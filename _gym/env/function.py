@@ -65,7 +65,7 @@ class SecondPrice:  # fix later
 
 @dataclass
 class CTR:
-    step_per_episode: int
+    trend_interval: int
     ad_feature_dim: int
     user_feature_dim: int
     random_state: int
@@ -94,14 +94,14 @@ class CTR:
             self.ad_feature_dim + self.user_feature_dim
         )  # to normalize
 
-        self.time_coef = self.random_.beta(25, 25, size=self.step_per_episode)
-        self.time_coef = np.convolve(self.time_step, np.ones(3) / 3, mode="same")
+        self.time_coef = self.random_.beta(25, 25, size=self.trend_interval)
+        self.time_coef = np.convolve(self.time_coef, np.ones(3) / 3, mode="same")
 
     def calc_prob(
         self, timestep: Union[int, Array[int]], contexts: Array[float]
     ) -> Array[float]:
         """map context vector into click/imp prob"""
-        return (self.contexts @ self.coef.T) * self.time_coef[timestep]
+        return (self.contexts @ self.coef.T) * self.time_coef[timestep % self.trend_interval]
 
 
 @dataclass
@@ -109,7 +109,7 @@ class CVR:
     ctr: CTR
 
     def __post_init__(self):
-        self.step_per_episode = self.ctr.step_per_episode
+        self.trend_interval = self.ctr.trend_interval
         self.ad_feature_dim = self.ctr.ad_feature_dim
         self.user_feature_dim = self.ctr.user_feature_dim
         self.random_ = self.ctr.random_
@@ -117,14 +117,13 @@ class CVR:
         residuals = self.random_.normal(
             loc=0.0, scale=0.1, size=self.ad_feature_dim + self.user_feature_dim
         )
-        residuals = residuals / (self.ad_feature_dim + self.user_feature_dim)
         self.coef = self.ctr.coef + residuals
 
         self.time_coef = self.random_.beta(40, 10, size=self.step_per_episode)
-        self.time_coef = np.convolve(self.time_step, np.ones(3) / 3, mode="same")
+        self.time_coef = np.convolve(self.time_coef, np.ones(3) / 3, mode="same")
 
     def calc_prob(
         self, timestep: Union[int, Array[int]], contexts: Array[float]
     ) -> Array[float]:
         """map context vector into conversion/click prob"""
-        return (self.contexts @ self.coef.T) * self.time_coef[timestep]
+        return (self.contexts @ self.coef.T) * self.time_coef[timestep % self.trend_interval]

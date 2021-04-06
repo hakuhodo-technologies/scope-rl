@@ -25,13 +25,14 @@ class RTBEnv(gym.Env):
         ] = None,  # maps categorical actions to adjust rate
         use_reward_predictor: bool = False,
         reward_predictor: Optional[BaseEstimator] = None,
-        step_per_episode: int = 7,
+        step_per_episode: int = 24,
         initial_budget: int = 10000,
         n_ads: int = 100,
         n_users: int = 100,
         ad_feature_dim: int = 5,
         user_feature_dim: int = 5,
         standard_bid_price: int = 100,
+        trend_interval: Optional[int] = None,
         n_dices: int = 10,
         wf_alpha: float = 2.0,
         candidate_ads: Array[int] = np.array([0]),  # ad idxes
@@ -62,6 +63,10 @@ class RTBEnv(gym.Env):
                 or max(self.action_meaning.values()) > 10
             ):
                 raise ValueError("the values of action_meaning must be in [0.1, 10]")
+        if not (isinstance(step_per_episode, int) and step_per_episode > 0):
+            raise ValueError(
+                f"step_per_episode must be a positive interger, but {step_per_episode} is given"
+            )
         if not (isinstance(initial_budget, int) and initial_budget > 0):
             raise ValueError(
                 f"action_dim must be a positive interger, but {action_dim} is given"
@@ -107,12 +112,12 @@ class RTBEnv(gym.Env):
                 objective=objective,
                 use_reward_predictor=use_reward_predictor,
                 reward_predictor=reward_predictor,
-                step_per_episode=step_per_episode,
                 n_ads=n_ads,
                 n_users=n_users,
                 ad_feature_dim=ad_feature_dim,
                 user_feature_dim=user_feature_dim,
                 standard_bid=standard_bid_price,
+                trend_interval=trend_interval,
                 n_dices=n_dices,
                 wf_alpha=wf_alpha,
                 random_state=random_state,
@@ -268,7 +273,7 @@ class RTBEnv(gym.Env):
 
     def fit_reward_predictor(self, n_samples: int = 10000) -> None:
         """pre-train reward regression used for calculating bids"""
-        self.simulator.fit_reward_predictor(n_samples)
+        self.simulator.fit_reward_predictor(self.step_per_episode, n_samples)
 
     def calc_ground_truth_policy_value(
         self, evaluation_policy: BasePolicy, n_episodes: int = 10000
