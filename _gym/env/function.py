@@ -13,6 +13,12 @@ class NormalDistribution:
     random_state: int
 
     def __post_init__(self):
+        if not isinstance(self.mean, float):
+            raise ValueError("mean must be a float number")
+        if not isinstance(self.std, float):
+            raise ValueError("std must be a float number")
+        if self.random_state is None:
+            raise ValueError("random_state must be given")
         self.random_ = check_random_state(self.random_state)
 
     def sample(self, size: int = 1) -> Array[float]:
@@ -22,6 +28,12 @@ class NormalDistribution:
 @dataclass
 class WinningFunction:
     alpha: float
+
+    def __post_init__(self):
+        if not (isinstance(self.alpha, float) and self.alpha > 0):
+            raise ValueError(
+                f"alpha must be a positive float number, but {self.alpha} is given"
+            )
 
     def calc_prob(self, consts: Array[float], bid_prices: Array[int]) -> Array[float]:
         """calc imp prob given winning price function"""
@@ -34,6 +46,12 @@ class SecondPrice:  # fix later
     random_state: int
 
     def __post_init__(self):
+        if not (isinstance(self.n_dices, int) and self.n_dices > 0):
+            raise ValueError(
+                f"n_dices must be a positive interger, but {self.n_dices} is given"
+            )
+        if self.random_state is None:
+            raise ValueError("random_state must be given")
         self.random_ = check_random_state(self.random_state)
 
     def sample(self, consts: Array[float], probs: Array[int]) -> Array[int]:
@@ -53,6 +71,20 @@ class CTR:
     random_state: int
 
     def __post_init__(self):
+        if not (isinstance(self.step_per_espisode, int) and self.step_per_episode > 0):
+            raise ValueError(
+                f"step_per_episode must be a positive interger, but {self.step_per_episode} is given"
+            )
+        if not (isinstance(self.ad_feature_dim, int) and self.ad_feature_dim > 0):
+            raise ValueError(
+                f"ad_feature_dim must be a positive interger, but {self.ad_feature_dim} is given"
+            )
+        if not (isinstance(self.user_feature_dim, int) and self.user_feature_dim > 0):
+            raise ValueError(
+                f"user_feature_dim must be a positive interger, but {self.user_feature_dim} is given"
+            )
+        if self.random_state is None:
+            raise ValueError("random_state must be given")
         self.random_ = check_random_state(self.random_state)
 
         self.coef = self.random_.normal(

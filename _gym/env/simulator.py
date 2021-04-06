@@ -6,7 +6,7 @@ import warnings
 
 import numpy as np
 from sklearn.base import BaseEstimator
-from sklearn.utils import check_random_state
+from sklearn.utils import check_random_state, check_X_y
 
 from env.function import WinningFunction, SecondPrice, CTR, CVR
 
@@ -185,7 +185,8 @@ class RTBSyntheticSimulator(BaseSimulator):
 
         rewards = self.random_.rand(n_samples) < probs
 
-        self.reward_predictor.fit(feature_vectors, rewards)
+        X, y = check_X_y(feature_vectors, rewards)
+        self.reward_predictor.fit(X, y)
 
     def _predict_reward(self, timestep: int, contexts: Array[float]) -> Array[float]:
         """obtain reward prediction used for calculating bids"""
