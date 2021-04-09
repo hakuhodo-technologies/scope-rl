@@ -70,10 +70,18 @@ class BaseSimulator(metaclass=ABCMeta):
 
 @dataclass
 class RTBSyntheticSimulator(BaseSimulator):
-    """Simulate bidding auction in Real-Time Bidding (RTB) setting for display advertising.
+    """Class to simulate bidding auction in Real-Time Bidding (RTB) setting for display advertising.
 
     Note
     -------
+    Intended to be called and initialized from RTBEnv class in env.py.
+
+    Simulate auctions as follows.
+        1. Determine bid price.
+            bid price = adjust rate * predicted/ground-truth reward ( * constant)
+
+        2. Calculate outcome probability and stochastically determine auction result.
+            auction results: (bid price,) cost (second price), impression, click, conversion
 
     Parameters
     -------
@@ -87,10 +95,11 @@ class RTBSyntheticSimulator(BaseSimulator):
 
     reward_predictor: Optional[BaseEstimator], default=None.
         A machine learning prediction model to predict the reward.
-        If use_reward_predictor=True, the reward predictor must be given.
+        Required only when using use_reward_predictor=True option.
 
     step_per_episode: int, default=24.
-        Total timestep in a episode in reinforcement learning (RL) environment.
+        Total timestep in an episode in reinforcement learning (RL) environment.
+        Note that we should use same value with RTBEnv class in env.py.
 
     n_ads: int, defalut=100.
         Number of ads used for fitting the reward predictor.
@@ -151,13 +160,20 @@ class RTBSyntheticSimulator(BaseSimulator):
             raise ValueError(
                 f"reward_predictor must be given when use_reward_predictor=True"
             )
-        if not (isinstance(self.n_ads, int) and self.n_ads > 0):
+        if not (
+            self.reward_predictor is None
+            or isinstance(self.reward_predictor, BaseEstimator)
+        ):
             raise ValueError(
-                f"n_ads must be a positive interger, but {self.n_ads} is given"
+                "reward_predictor must be the BaseEstimator or a child class of BaseEstimator"
             )
         if not (isinstance(self.step_per_episode, int) and self.step_per_episode > 0):
             raise ValueError(
                 f"step_per_episode must be a positive interger, but {self.step_per_episode} is given"
+            )
+        if not (isinstance(self.n_ads, int) and self.n_ads > 0):
+            raise ValueError(
+                f"n_ads must be a positive interger, but {self.n_ads} is given"
             )
         if not (isinstance(self.n_users, int) and self.n_users > 0):
             raise ValueError(
@@ -187,7 +203,7 @@ class RTBSyntheticSimulator(BaseSimulator):
             )
         if not (isinstance(self.wf_alpha, float) and self.wf_alpha > 0):
             raise ValueError(
-                f"wf_alpha must be a positive float number, but {self.wf_alpha} is given"
+                f"wf_alpha must be a positive float value, but {self.wf_alpha} is given"
             )
         if self.random_state is None:
             raise ValueError("random_state must be given")
@@ -246,37 +262,37 @@ class RTBSyntheticSimulator(BaseSimulator):
 
         Parameters
         -------
-        timestep: int
+        timestep: int.
             Timestep of the RL environment.
 
-        adjust rate: int
+        adjust rate: int.
             Adjust rate parameter for bidding price determination.
             Corresponds to the RL agent action.
 
-        ad_ids: NDArray[int], shape (search_volume, )
+        ad_ids: NDArray[int], shape (search_volume, ).
             IDs of the ads used for the auction bidding.
             (search_volume is determined in RL environment.)
 
-        user_ids: NDArray[int], shape (search_volume, )
+        user_ids: NDArray[int], shape (search_volume, ).
             IDs of the users who receives the winning ads.
             (search_volume is determined in RL environment.)
 
         Returns
         -------
-        auction_results: Tuple
-            bid_prices: NDArray[int], shape (search_volume, )
+        auction_results: Tuple.
+            bid_prices: NDArray[int], shape (search_volume, ).
                 Bid price used for each auction.
 
-            costs: NDArray[int], shape (search_volume, )
+            costs: NDArray[int], shape (search_volume, ).
                 Cost arised (i.e., second price) for each auction.
 
-            impressions: NDArray[int], shape (search_volume, )
+            impressions: NDArray[int], shape (search_volume, ).
                 Binary indicator of whether impression occured or not for each auction.
 
-            clicks: NDArray[int], shape (search_volume, )
+            clicks: NDArray[int], shape (search_volume, ).
                 Binary indicator of whether click occured or not for each auction.
 
-            conversions: NDArray[int], shape (search_volume, )
+            conversions: NDArray[int], shape (search_volume, ).
                 Binary indicator of whether conversion occured or not for each auction.
 
         """
@@ -286,28 +302,18 @@ class RTBSyntheticSimulator(BaseSimulator):
             )
         if not (isinstance(adjust_rate) and 0.1 <= adjust_rate <= 10):
             raise ValueError(
-                f"adjust_rate must be float number in [0.1, 10], but {adjust_rate} is given"
+                f"adjust_rate must be a float number in [0.1, 10], but {adjust_rate} is given"
             )
         if not isinstance(ad_ids, NDArray[int]):
-            raise ValueError(
-                "ad_ids must be NDArray of int values"
-            )
+            raise ValueError("ad_ids must be an NDArray of integers")
         if not isinstance(user_ids, NDArray[int]):
-            raise ValueError(
-                "user_ids must be NDArray of int values"
-            )
+            raise ValueError("user_ids must be an NDArray of integers")
         if ad_ids.min() < 0 or self.ad_ids.max() >= self.n_ads:
-            raise ValueError(
-                "ad_ids must be chosen from integer values in [0, n_ads)"
-            )
+            raise ValueError("ad_ids must be chosen from integer within [0, n_ads)")
         if user_ids.min() < 0 or self.user_ids.max() >= self.n_users:
-            raise ValueError(
-                "user_ids must be chosen from integer values in [0, n_users)"
-            )
+            raise ValueError("user_ids must be chosen from integer within [0, n_users)")
         if len(ad_ids) != len(user_ids):
-            raise ValueError(
-                "ad_ids and user_ids must have same length"
-            )
+            raise ValueError("ad_ids and user_ids must have same length")
 
         contexts = self._map_idx_to_contexts(ad_ids, user_ids)
         wf_consts = self.wf_consts[ad_ids]
@@ -331,7 +337,7 @@ class RTBSyntheticSimulator(BaseSimulator):
 
         Parameters
         -------
-        n_samples: int
+        n_samples: int.
             Number of samples to fit reward predictor.
 
         """
@@ -384,16 +390,16 @@ class RTBSyntheticSimulator(BaseSimulator):
 
         Parameters
         -------
-        timestep: int
+        timestep: int.
             Timestep of the RL environment.
 
-        contexts: NDArray[float], shape (search_volume, ad_feature_dim + user_feature_dim + 1)
+        contexts: NDArray[float], shape (search_volume, ad_feature_dim + user_feature_dim + 1).
             Context vector (contain both the ad and the user features) for each auction.
             (search_volume is determined in RL environment.)
 
         Returns
         -------
-        predicted_rewards: NDArray[float], shape (search_volume, )
+        predicted_rewards: NDArray[float], shape (search_volume, ).
             Predicted reward for each auction.
 
         """
@@ -410,16 +416,16 @@ class RTBSyntheticSimulator(BaseSimulator):
 
         Parameters
         -------
-        timestep: int
+        timestep: int.
             Timestep of the RL environment.
 
-        contexts: NDArray[float], shape (search_volume, ad_feature_dim + user_feature_dim + 1)
+        contexts: NDArray[float], shape (search_volume, ad_feature_dim + user_feature_dim + 1).
             Context vector (contain both the ad and the user features) for each auction.
             (search_volume is determined in RL environment.)
 
         Returns
         -------
-        expected_rewards: NDArray[float], shape(search_volume, )
+        expected_rewards: NDArray[float], shape(search_volume, ).
             Ground-truth (expected) reward for each auction when impression occurs.
 
         """
@@ -440,25 +446,25 @@ class RTBSyntheticSimulator(BaseSimulator):
 
         Note
         -------
-        Determine bid price as follows:
+        Determine bid price as follows.
             bid price = adjust rate * predicted/ground-truth reward ( * constant)
 
         Parameters
         -------
-        timestep: int
+        timestep: int.
             Timestep of the RL environment.
 
-        adjust rate: int
+        adjust rate: int.
             Adjust rate parameter for bidding price determination.
             Corresponds to the RL agent action.
 
-        contexts: NDArray[float], shape (search_volume, ad_feature_dim + user_feature_dim + 1)
+        contexts: NDArray[float], shape (search_volume, ad_feature_dim + user_feature_dim + 1).
             Context vector (contain both the ad and the user features) for each auction.
             (search_volume is determined in RL environment.)
 
         Returns
         -------
-        bid_prices: NDArray[int], shape(search_volume, )
+        bid_prices: NDArray[int], shape(search_volume, ).
             Bid price for each auction.
             Calclated from given adjust rate and the predicted/ground-truth rewards.
 
@@ -491,45 +497,45 @@ class RTBSyntheticSimulator(BaseSimulator):
 
         Note
         -------
-        Calculate probabilities using following functions:
-            impression: WinningFunction
-            cost: SecondPrice
-            click/impression: CTR
-            conversion/click: CVR
+        Calculate probabilities using following functions.
+            - impression: WinningFunction
+            - cost: SecondPrice
+            - click/impression: CTR
+            - conversion/click: CVR
 
         Parameters
         -------
-        timestep: int
+        timestep: int.
             Timestep of the RL environment.
 
-        wf_consts: NDArray[float], shape (search_volume, )
+        wf_consts: NDArray[float], shape (search_volume, ).
             Parameter for WinningFunction for each ad used in the auction.
             (search_volume is determined in RL environment.)
 
-        bid_prices: NDArray[float], shape(search_volume, )
+        bid_prices: NDArray[float], shape(search_volume, ).
             Bid price for each action.
             (search_volume is determined in RL environment.)
 
-        contexts: NDArray[float], shape (search_volume, ad_feature_dim + user_feature_dim + 1)
+        contexts: NDArray[float], shape (search_volume, ad_feature_dim + user_feature_dim + 1).
             Context vector (contain both the ad and the user features) for each auction.
             (search_volume is determined in RL environment.)
 
         Returns
         -------
-        auction_results: Tuple
-            bid_prices: NDArray[int], shape (search_volume, )
+        auction_results: Tuple.
+            bid_prices: NDArray[int], shape (search_volume, ).
                 Bid price used for each auction.
 
-            costs: NDArray[int], shape (search_volume, )
+            costs: NDArray[int], shape (search_volume, ).
                 Cost arised (i.e., second price) for each auction.
 
-            impressions: NDArray[int], shape (search_volume, )
+            impressions: NDArray[int], shape (search_volume, ).
                 Binary indicator of whether impression occured or not for each auction.
 
-            clicks: NDArray[int], shape (search_volume, )
+            clicks: NDArray[int], shape (search_volume, ).
                 Binary indicator of whether click occured or not for each auction.
 
-            conversions: NDArray[int], shape (search_volume, )
+            conversions: NDArray[int], shape (search_volume, ).
                 Binary indicator of whether conversion occured or not for each auction.
 
         """
@@ -554,17 +560,17 @@ class RTBSyntheticSimulator(BaseSimulator):
 
         Parameters
         -------
-        ad_ids: NDArray[int], shape (search_volume, )
+        ad_ids: NDArray[int], shape (search_volume, ).
             IDs of the ads used for the auction bidding.
             (search_volume is determined in RL environment.)
 
-        user_ids: NDArray[int], shape (search_volume, )
+        user_ids: NDArray[int], shape (search_volume, ).
             IDs of the users who receives the winning ads.
             (search_volume is determined in RL environment.)
 
         Returns
         -------
-        contexts: NDArray[float], shape (search_volume, ad_feature_dim + user_feature_dim + 1)
+        contexts: NDArray[float], shape (search_volume, ad_feature_dim + user_feature_dim + 1).
             Context vector (contain both the ad and the user features) for each auction.
 
         """
