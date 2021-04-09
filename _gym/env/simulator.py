@@ -18,9 +18,13 @@ class BaseSimulator(metaclass=ABCMeta):
 
     @abstractmethod
     def simulate_auction(
-        """Simulate bidding auction for given queries and return outcome."""
-        self, timestep: int, adjust_rate: int, ad_ids: NDArray[int], user_ids: NDArray[int]
+        self,
+        timestep: int,
+        adjust_rate: int,
+        ad_ids: NDArray[int],
+        user_ids: NDArray[int],
     ) -> Tuple[NDArray[int]]:
+        """Simulate bidding auction for given queries and return outcome."""
         raise NotImplementedError
 
     @abstractmethod
@@ -29,7 +33,9 @@ class BaseSimulator(metaclass=ABCMeta):
         raise NotImplementedError
 
     @abstractmethod
-    def _predict_reward(self, timestep: int, contexts: NDArray[float]) -> NDArray[float]:
+    def _predict_reward(
+        self, timestep: int, contexts: NDArray[float]
+    ) -> NDArray[float]:
         """Predict reward (i.e., auction outcome) to determine bidding price."""
         raise NotImplementedError
 
@@ -65,7 +71,7 @@ class BaseSimulator(metaclass=ABCMeta):
 @dataclass
 class RTBSyntheticSimulator(BaseSimulator):
     """Simulate bidding auction in Real-Time Bidding (RTB) setting for display advertising.
-    
+
     Note
     -------
 
@@ -191,14 +197,14 @@ class RTBSyntheticSimulator(BaseSimulator):
         self.ads = self.random_.rand((self.n_ads, self.ad_feature_dim))
         self.users = self.random_.rand((self.n_users, self.user_feature_dim))
 
-        # define winningfunc parameters for each ads
+        # define winning function parameters for each ads
         self.wf_consts = self.random_.normal(
             loc=(self.standard_bid_price) ** (1 / self.wf_alpha),
             scale=(self.standard_bid_price) ** (1 / self.wf_alpha) / 5,
             size=self.n_ads,
         )
 
-        # define winning_func and second_price sampler
+        # define winning function and second price sampler
         self.winning_function = WinningFunction(self.wf_alpha)
         self.second_price = SecondPrice(self.n_dices, self.random_state)
 
@@ -221,15 +227,28 @@ class RTBSyntheticSimulator(BaseSimulator):
             self.scaler = 12
 
     def simulate_auction(
-        self, timestep: int, adjust_rate: int, ad_ids: NDArray[int], user_ids: NDArray[int]
+        self,
+        timestep: int,
+        adjust_rate: int,
+        ad_ids: NDArray[int],
+        user_ids: NDArray[int],
     ) -> Tuple[NDArray[int]]:
         """Simulate bidding auction for given queries and return outcome.
-            
+
+        Note
+        -------
+        Simulation procedure is given as follows.
+        1. Determine bid price.
+            bid price = adjust rate * predicted/ground-truth reward ( * constant)
+
+        2. Calculate outcome probability and stochastically determine auction result.
+            auction results: (bid price,) cost (second price), impression, click, conversion
+
         Parameters
         -------
         timestep: int
             Timestep of the RL environment.
-        
+
         adjust rate: int
             Adjust rate parameter for bidding price determination.
             Corresponds to the RL agent action.
@@ -263,11 +282,19 @@ class RTBSyntheticSimulator(BaseSimulator):
         """
         if not (isinstance(timestep, int) and 0 < timestep < self.step_per_episode):
             raise ValueError(
-                f"timestep must be a positive interger and should not exceed {self.step_per_episode}, but {timestep} is given"
+                f"timestep must be a positive interger below {self.step_per_episode}, but {timestep} is given"
             )
         if not (isinstance(adjust_rate) and 0.1 <= adjust_rate <= 10):
             raise ValueError(
                 f"adjust_rate must be float number in [0.1, 10], but {adjust_rate} is given"
+            )
+        if not isinstance(ad_ids, NDArray[int]):
+            raise ValueError(
+                "ad_ids must be NDArray of int values"
+            )
+        if not isinstance(user_ids, NDArray[int]):
+            raise ValueError(
+                "user_ids must be NDArray of int values"
             )
         if ad_ids.min() < 0 or self.ad_ids.max() >= self.n_ads:
             raise ValueError(
@@ -278,7 +305,9 @@ class RTBSyntheticSimulator(BaseSimulator):
                 "user_ids must be chosen from integer values in [0, n_users)"
             )
         if len(ad_ids) != len(user_ids):
-            raise ValueError("ad_ids and user_ids must have same length")
+            raise ValueError(
+                "ad_ids and user_ids must have same length"
+            )
 
         contexts = self._map_idx_to_contexts(ad_ids, user_ids)
         wf_consts = self.wf_consts[ad_ids]
@@ -287,8 +316,8 @@ class RTBSyntheticSimulator(BaseSimulator):
         return self._calc_and_sample_outcome(timestep, wf_consts, bid_prices, contexts)
 
     def fit_reward_predictor(self, n_samples: int) -> None:
-        """Fit reward predictor in advance to use prediction in bidding price determination.
-        
+        """Fit reward predictor in advance (pre-train) to use prediction in bidding price determination.
+
         Note
         -------
         Intended only used when use_reward_predictor=True option.
@@ -311,7 +340,7 @@ class RTBSyntheticSimulator(BaseSimulator):
                 "when initialized with use_reward_predictor=False option, fitting does not take place"
             )
             return
-        
+
         if not (isinstance(n_samples, int) and n_samples > 0):
             raise ValueError(
                 f"n_samples must be a positive interger, but {n_samples} is given"
@@ -337,9 +366,11 @@ class RTBSyntheticSimulator(BaseSimulator):
         X, y = check_X_y(feature_vectors, rewards)
         self.reward_predictor.fit(X, y)
 
-    def _predict_reward(self, timestep: int, contexts: NDArray[float]) -> NDArray[float]:
+    def _predict_reward(
+        self, timestep: int, contexts: NDArray[float]
+    ) -> NDArray[float]:
         """Predict reward (i.e., auction outcome) to determine bidding price.
-        
+
         Note
         -------
         Intended only used when use_reward_predictor=True option.
@@ -354,7 +385,7 @@ class RTBSyntheticSimulator(BaseSimulator):
         Parameters
         -------
         timestep: int
-            Timestep of the (reinforcement learning (RL)) environment.
+            Timestep of the RL environment.
 
         contexts: NDArray[float], shape (search_volume, ad_feature_dim + user_feature_dim + 1)
             Context vector (contain both the ad and the user features) for each auction.
@@ -369,18 +400,18 @@ class RTBSyntheticSimulator(BaseSimulator):
         feature_vectors = np.concatenate(
             [contexts, np.full(len(contexts), timestep)], axis=1
         )
-        
+
         return self.reward_predictor.predict(feature_vectors)
 
     def _calc_ground_truth_reward(
         self, timestep: int, contexts: NDArray[float]
-    ) -> Array[float]:
+    ) -> NDArray[float]:
         """Calculate ground-truth reward (i.e., auction outcome) to determine bidding price.
 
         Parameters
         -------
         timestep: int
-            Timestep of the (reinforcement learning (RL)) environment.
+            Timestep of the RL environment.
 
         contexts: NDArray[float], shape (search_volume, ad_feature_dim + user_feature_dim + 1)
             Context vector (contain both the ad and the user features) for each auction.
@@ -393,52 +424,30 @@ class RTBSyntheticSimulator(BaseSimulator):
 
         """
         if self.objective == "click":
-            extected_rewards = self.ctr.calc_prob(timesteps, contexts)
+            expected_rewards = self.ctr.calc_prob(timestep, contexts)
 
         else:  # "conversion"
-            expected_rewawrds = self.ctr.calc_prob(timesteps, contexts) * self.cvr.calc_prob(
-                timesteps, contexts
-            )
+            expected_rewards = self.ctr.calc_prob(
+                timestep, contexts
+            ) * self.cvr.calc_prob(timestep, contexts)
 
         return expected_rewards
-
-    def _map_idx_to_contexts(
-        self, ad_ids: NDArray[int], user_ids: NDArray[int]
-    ) -> NDArray[float]:
-        """Map the ad and the user index into context vectors.
-        
-        Parameters
-        -------
-        ad_ids: NDArray[int], shape (search_volume, )
-            IDs of the ads used for the auction bidding.
-            (search_volume is determined in RL environment.)
-
-        user_ids: NDArray[int], shape (search_volume, )
-            IDs of the users who receives the winning ads.
-            (search_volume is determined in RL environment.)
-
-        Returns
-        -------
-        contexts: NDArray[float], shape (search_volume, ad_feature_dim + user_feature_dim + 1)
-            Context vector (contain both the ad and the user features) for each auction.
-
-        """
-        ad_features = self.ads[ad_ids]
-        user_features = self.users[user_ids]
-        contexts = np.concatenate([ad_features, user_features], axis=1)
-
-        return contexts
 
     def _determine_bid_price(
         self, timestep: int, adjust_rate: int, contexts: NDArray[float]
     ) -> NDArray[int]:
         """Determine the bidding price using given adjust rate and the predicted/ground-truth rewards.
-        
+
+        Note
+        -------
+        Determine bid price as follows:
+            bid price = adjust rate * predicted/ground-truth reward ( * constant)
+
         Parameters
         -------
         timestep: int
             Timestep of the RL environment.
-        
+
         adjust rate: int
             Adjust rate parameter for bidding price determination.
             Corresponds to the RL agent action.
@@ -479,6 +488,14 @@ class RTBSyntheticSimulator(BaseSimulator):
         contexts: NDArray[float],
     ) -> Tuple(NDArray[int]):
         """Calculate pre-determined probabilities from contexts and stochastically sample the outcome.
+
+        Note
+        -------
+        Calculate probabilities using following functions:
+            impression: WinningFunction
+            cost: SecondPrice
+            click/impression: CTR
+            conversion/click: CVR
 
         Parameters
         -------
@@ -529,3 +546,30 @@ class RTBSyntheticSimulator(BaseSimulator):
         costs = (second_prices * clicks).astype(int)
 
         return bid_prices, costs, impressions, clicks, conversions
+
+    def _map_idx_to_contexts(
+        self, ad_ids: NDArray[int], user_ids: NDArray[int]
+    ) -> NDArray[float]:
+        """Map the ad and the user index into context vectors.
+
+        Parameters
+        -------
+        ad_ids: NDArray[int], shape (search_volume, )
+            IDs of the ads used for the auction bidding.
+            (search_volume is determined in RL environment.)
+
+        user_ids: NDArray[int], shape (search_volume, )
+            IDs of the users who receives the winning ads.
+            (search_volume is determined in RL environment.)
+
+        Returns
+        -------
+        contexts: NDArray[float], shape (search_volume, ad_feature_dim + user_feature_dim + 1)
+            Context vector (contain both the ad and the user features) for each auction.
+
+        """
+        ad_features = self.ads[ad_ids]
+        user_features = self.users[user_ids]
+        contexts = np.concatenate([ad_features, user_features], axis=1)
+
+        return contexts
