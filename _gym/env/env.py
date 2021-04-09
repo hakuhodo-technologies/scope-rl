@@ -1,6 +1,6 @@
 from typing import Tuple, Dict, List
 from typing import Optional, Union, Any
-from nptyping import Array
+from nptyping import NDArray
 
 import gym
 from gym.spaces import Box, Discrete
@@ -35,10 +35,10 @@ class RTBEnv(gym.Env):
         trend_interval: Optional[int] = None,
         n_dices: int = 10,
         wf_alpha: float = 2.0,
-        candidate_ads: Array[int] = np.array([0]),  # ad idxes
-        candidate_users: Array[int] = np.array(range(10)),  # user idxes
-        candidate_ad_sampling_prob: Optional[Array[float]] = None,
-        candidate_user_sampling_prob: Optional[Array[float]] = None,
+        candidate_ads: NDArray[int] = np.array([0]),  # ad idxes
+        candidate_users: NDArray[int] = np.array(range(10)),  # user idxes
+        candidate_ad_sampling_prob: Optional[NDArray[float]] = None,
+        candidate_user_sampling_prob: Optional[NDArray[float]] = None,
         search_volume_distribution: Optional[List[NormalDistribution]] = None,
         random_state: int = 12345,
     ):
@@ -112,6 +112,7 @@ class RTBEnv(gym.Env):
                 objective=objective,
                 use_reward_predictor=use_reward_predictor,
                 reward_predictor=reward_predictor,
+                step_per_episode=step_per_episode,
                 n_ads=n_ads,
                 n_users=n_users,
                 ad_feature_dim=ad_feature_dim,
@@ -245,7 +246,7 @@ class RTBEnv(gym.Env):
 
         return np.array(obs.values()).astype(float), reward, done, info
 
-    def reset(self) -> Array[float]:
+    def reset(self) -> NDArray[float]:
         # initialize internal env state
         self.T += 1
         self.t = 0
@@ -273,11 +274,11 @@ class RTBEnv(gym.Env):
 
     def fit_reward_predictor(self, n_samples: int = 10000) -> None:
         """pre-train reward regression used for calculating bids"""
-        self.simulator.fit_reward_predictor(self.step_per_episode, n_samples)
+        self.simulator.fit_reward_predictor(n_samples)
 
     def calc_ground_truth_policy_value(
         self, evaluation_policy: BasePolicy, n_episodes: int = 10000
-    ) -> None:
+    ) -> float:
         """rollout policy and calculate mean episodic reward"""
         total_reward = 0.0
         for _ in range(n_episodes):

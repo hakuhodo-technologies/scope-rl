@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import Union
-from nptyping import Array
+from nptyping import NDArray
 
 import numpy as np
 from sklearn.utils import check_random_state
@@ -21,7 +21,7 @@ class NormalDistribution:
             raise ValueError("random_state must be given")
         self.random_ = check_random_state(self.random_state)
 
-    def sample(self, size: int = 1) -> Array[float]:
+    def sample(self, size: int = 1) -> NDArray[float]:
         return self.random_.normal(loc=self.mean, scale=self.std, size=size)
 
 
@@ -35,7 +35,7 @@ class WinningFunction:
                 f"alpha must be a positive float number, but {self.alpha} is given"
             )
 
-    def calc_prob(self, consts: Array[float], bid_prices: Array[int]) -> Array[float]:
+    def calc_prob(self, consts: NDArray[float], bid_prices: NDArray[int]) -> NDArray[float]:
         """calc imp prob given winning price function"""
         return (bid_prices ** self.alpha) / (consts + bid_prices ** self.alpha)
 
@@ -54,12 +54,12 @@ class SecondPrice:  # fix later
             raise ValueError("random_state must be given")
         self.random_ = check_random_state(self.random_state)
 
-    def sample(self, consts: Array[float], probs: Array[int]) -> Array[int]:
+    def sample(self, consts: NDArray[float], probs: NDArray[int]) -> NDArray[int]:
         """sample second price for each bid"""
         discounts = self.random_.rand((len(consts), self.n_dices)).max(axis=1)
         return self.inverse_winning_func(consts, probs * discounts).astype(int)
 
-    def inverse_winning_func(consts: Array[float], probs: Array[float]) -> Array[float]:
+    def inverse_winning_func(consts: NDArray[float], probs: NDArray[float]) -> NDArray[float]:
         return (probs * consts) / (1 - probs)
 
 
@@ -98,8 +98,8 @@ class CTR:
         self.time_coef = np.convolve(self.time_coef, np.ones(3) / 3, mode="same")
 
     def calc_prob(
-        self, timestep: Union[int, Array[int]], contexts: Array[float]
-    ) -> Array[float]:
+        self, timestep: Union[int, NDArray[int]], contexts: NDArray[float]
+    ) -> NDArray[float]:
         """map context vector into click/imp prob"""
         return (self.contexts @ self.coef.T) * self.time_coef[timestep % self.trend_interval]
 
@@ -123,7 +123,7 @@ class CVR:
         self.time_coef = np.convolve(self.time_coef, np.ones(3) / 3, mode="same")
 
     def calc_prob(
-        self, timestep: Union[int, Array[int]], contexts: Array[float]
-    ) -> Array[float]:
+        self, timestep: Union[int, NDArray[int]], contexts: NDArray[float]
+    ) -> NDArray[float]:
         """map context vector into conversion/click prob"""
         return (self.contexts @ self.coef.T) * self.time_coef[timestep % self.trend_interval]
