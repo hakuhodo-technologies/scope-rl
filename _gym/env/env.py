@@ -263,14 +263,14 @@ class RTBEnv(gym.Env):
                 f"candidate_users must be chosen from integer within [0, n_users)"
             )
         if not (
-            candidate_ad_sampling_prob is None or isinstance(candidate_ads),
+            candidate_ad_sampling_prob is None or (isinstance(candidate_ads, NDArray[float]) and candidate_ads.min() > 0),
             NDArray[float],
         ):
             raise ValueError(
-                "candidate_ad_sampling_prob must be an NDArray of float values"
+                "candidate_ad_sampling_prob must be an NDArray of positive float values"
             )
         if not (
-            candidate_user_sampling_prob is None or isinstance(candidate_users),
+            candidate_user_sampling_prob is None or (isinstance(candidate_users, NDArray[float]) and candidate_users.min() > 0),
             NDArray[float],
         ):
             raise ValueError(
@@ -382,6 +382,7 @@ class RTBEnv(gym.Env):
             self.search_volumes[i] = search_volume_distribution.sample(size=100).astype(
                 int
             )
+        self.search_volumes = np.clip(self.search_volumes, 5, None)
 
         # just for idx of search_volumes to sample from
         self.T = 0
@@ -394,7 +395,7 @@ class RTBEnv(gym.Env):
         The rollout procedure is given as follows.
         1. Sample ads and users for (search volume, ) auctions occur during the timestep.
 
-        2. Collect outcome for each auctions by submitting a query to the RTBSyntheticSimulator
+        2. Collect outcome for each auctions by submitting a query to the RTBSyntheticSimulator.
 
             (In RTBSyntheticSimulator)
             2-1. Determine bid price.
@@ -412,7 +413,7 @@ class RTBEnv(gym.Env):
         -------
         action: Union[int, float].
             RL agent action which indicates adjust rate parameter used for bid price determination.
-            Accept both discrete and continuos actions.
+            Both discrete and continuos actions are acceptable.
 
         Returns
         -------
@@ -577,7 +578,7 @@ class RTBEnv(gym.Env):
 
         Parameters
         -------
-        n_samples: int.
+        n_samples: int, default=10000.
             Number of samples to fit reward predictor in RTBSyntheticSimulator.
 
         """
@@ -598,7 +599,7 @@ class RTBEnv(gym.Env):
 
         Returns
         -------
-        mean_reward: float
+        mean_reward: float.
             Mean episode reward calculated through rollout.
 
         """

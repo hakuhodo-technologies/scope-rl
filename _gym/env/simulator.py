@@ -57,7 +57,7 @@ class BaseSimulator(metaclass=ABCMeta):
     def _determine_bid_price(
         self, timestep: int, adjust_rate: int, contexts: NDArray[float]
     ) -> NDArray[int]:
-        """Determine the bidding price using given adjust rate and the predicted/ground-truth rewards"""
+        """Determine the bidding price using given adjust rate and the predicted/ground-truth rewards."""
         raise NotImplementedError
 
     @abstractmethod
@@ -226,9 +226,9 @@ class RTBSyntheticSimulator(BaseSimulator):
 
         # define click/imp and conversion/click rate function
         self.ctr = CTR(
-            self.trend_interval,
             self.ad_feature_dim,
             self.user_feature_dim,
+            self.trend_interval,
             self.random_state,
         )
         self.cvr = CVR(self.ctr)
@@ -321,7 +321,7 @@ class RTBSyntheticSimulator(BaseSimulator):
 
         return self._calc_and_sample_outcome(timestep, wf_consts, bid_prices, contexts)
 
-    def fit_reward_predictor(self, n_samples: int) -> None:
+    def fit_reward_predictor(self, n_samples: int = 10000) -> None:
         """Fit reward predictor in advance (pre-train) to use prediction in bidding price determination.
 
         Note
@@ -337,7 +337,7 @@ class RTBSyntheticSimulator(BaseSimulator):
 
         Parameters
         -------
-        n_samples: int.
+        n_samples: int, default=10000.
             Number of samples to fit reward predictor.
 
         """
@@ -382,10 +382,10 @@ class RTBSyntheticSimulator(BaseSimulator):
         Intended only used when use_reward_predictor=True option.
 
         X and y of the prediction model is given as follows.
-        X (feature_vectors): NDArray[float], shape (search_volume, ad_feature_dim + user_feature_dim + 1)
+        X (feature_vectors): NDArray[float], shape (search_volume, ad_feature_dim + user_feature_dim + 1).
             Concatenated vector of contexts (ad_feature_vector + user_feature_vector) and timestep.
 
-        y (target values): NDArrray[int], shape (search_volume, )
+        y (target values): NDArrray[int], shape (search_volume, ).
             Reward (i.e., auction outcome) obtained in each auction.
 
         Parameters
@@ -500,8 +500,8 @@ class RTBSyntheticSimulator(BaseSimulator):
         Calculate probabilities using following functions.
             - impression: WinningFunction
             - cost: SecondPrice
-            - click/impression: CTR
-            - conversion/click: CVR
+            - click per impression: CTR
+            - conversion per click: CVR
 
         Parameters
         -------
