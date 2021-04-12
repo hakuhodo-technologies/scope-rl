@@ -156,15 +156,16 @@ class RTBEnv(gym.Env):
         # import necessary module from _gym
         from env.env import RTBEnv
         from policy.base import RandomPolicy
+
         # import necessary module from other library
         from sklearn.linear_model import LogisticRegression
 
         # initialize environment and define (RL) agent (i.e., policy)
-        env = RTBEnv()
-        agent = RandomPolicy(
+        env = RTBEnv(
             use_reward_predictor=True,
             reward_predictor=LogisticRegression(),
         )
+        agent = RandomPolicy()
 
         # when using use_reward_predictor=True option,
         # pretrain reward predictor used for bidding price determination
