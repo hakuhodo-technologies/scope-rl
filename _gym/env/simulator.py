@@ -133,7 +133,6 @@ class RTBSyntheticSimulator(BaseSimulator):
     -------
 
     """
-
     objective: str = "conversion"
     use_reward_predictor: bool = False
     reward_predictor: Optional[BaseEstimator] = None

@@ -101,7 +101,6 @@ class SyntheticDataset(BaseDataset):
         ...
 
     """
-
     env: gym.Env
     behavior_policy: BasePolicy
     random_state: int = 12345
@@ -221,7 +220,6 @@ class SyntheticDataset(BaseDataset):
             "info": infos,
             "pscore": action_probs,
         }
-
         return logged_dataset
 
     def pretrain_behavior_policy(self, n_episodes: int = 10000) -> None:

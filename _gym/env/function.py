@@ -22,7 +22,6 @@ class NormalDistribution:
         Random state.
 
     """
-
     mean: float
     std: float
     random_state: int = 12345.0
@@ -74,7 +73,6 @@ class WinningFunction:
     -------
 
     """
-
     alpha: float = 2.0
 
     def __post_init__(self):
@@ -132,7 +130,6 @@ class SecondPrice:  # fix later
     -------
 
     """
-
     n_dices: int
     random_state: int = 12345
 
@@ -221,7 +218,6 @@ class CTR:
         Random state.
 
     """
-
     ad_feature_dim: int
     user_feature_dim: int
     trend_interval: int
@@ -285,9 +281,11 @@ class CTR:
             )
         if not isinstance(contexts, NDArray[float]):
             raise ValueError("contexts must be an NDArray of float values")
-        return (self.contexts @ self.coef.T) * self.time_coef[
+
+        ctrs = (self.contexts @ self.coef.T) * self.time_coef[
             timestep % self.trend_interval
         ]
+        return ctrs
 
 
 @dataclass
@@ -310,7 +308,6 @@ class CVR:
         Pre-defined CTR function.
 
     """
-
     ctr: CTR
 
     def __post_init__(self):
@@ -361,6 +358,8 @@ class CVR:
             )
         if not isinstance(contexts, NDArray[float]):
             raise ValueError("contexts must be an NDArray of float values")
-        return (self.contexts @ self.coef.T) * self.time_coef[
+
+        cvrs = (self.contexts @ self.coef.T) * self.time_coef[
             timestep % self.trend_interval
         ]
+        return cvrs

@@ -190,7 +190,6 @@ class RTBEnv(gym.Env):
     -------
 
     """
-
     def __init__(
         self,
         semi_synthetic: bool = False,
