@@ -264,14 +264,19 @@ class RTBEnv(gym.Env):
                 f"candidate_users must be chosen from integer within [0, n_users)"
             )
         if not (
-            candidate_ad_sampling_prob is None or (isinstance(candidate_ads, NDArray[float]) and candidate_ads.min() > 0),
+            candidate_ad_sampling_prob is None
+            or (isinstance(candidate_ads, NDArray[float]) and candidate_ads.min() > 0),
             NDArray[float],
         ):
             raise ValueError(
                 "candidate_ad_sampling_prob must be an NDArray of positive float values"
             )
         if not (
-            candidate_user_sampling_prob is None or (isinstance(candidate_users, NDArray[float]) and candidate_users.min() > 0),
+            candidate_user_sampling_prob is None
+            or (
+                isinstance(candidate_users, NDArray[float])
+                and candidate_users.min() > 0
+            ),
             NDArray[float],
         ):
             raise ValueError(

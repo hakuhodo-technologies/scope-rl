@@ -12,6 +12,7 @@ from policy.policy import BasePolicy
 @dataclass
 class BaseDataset(metaclass=ABCMeta):
     """Base Class for dataset."""
+
     @abstractmethod
     def obtain_trajectories(self, n_episodes: int) -> Dict[str, Any]:
         """Roullout behavior policy and obtain trajectories."""
@@ -36,7 +37,7 @@ class SyntheticDataset(BaseDataset):
     -------
     Generate dataset for Offline reinforcement learning (RL) and off-policy evaluation (OPE).
 
-    
+
     Parameters
     -------
     env: gym.Env
@@ -98,16 +99,16 @@ class SyntheticDataset(BaseDataset):
             )
         >>> ground_truth_policy_value
         ...
-    
+
     """
+
     env: gym.Env
     behavior_policy: BasePolicy
     random_state: int = 12345
 
     def __post_init__(self):
         if not isinstance(env, gym.Env):
-            raise ValueError(
-                "env must be the gym.Env or a child class of the gym.Env")
+            raise ValueError("env must be the gym.Env or a child class of the gym.Env")
         if not isinstance(behavior_policy, BasePolicy):
             raise ValueError(
                 "behavior_policy must be the BasePolicy or a child class of the BasePolicy"
@@ -118,7 +119,7 @@ class SyntheticDataset(BaseDataset):
 
     def obtain_trajectories(self, n_episodes: int = 10000) -> Dict[str, Any]:
         """Roullout behavior policy and obtain trajectories.
-        
+
         Parameters
         -------
         n_episodes: int, default=10000.
@@ -161,7 +162,7 @@ class SyntheticDataset(BaseDataset):
 
             pscore: NDArray[float], shape (size, ).
                 Action choice probability of the behavior policy for the chosen action.
-        
+
         """
         if not (isinstance(n_episodes, int) and n_episodes > 0):
             raise ValueError(
@@ -225,12 +226,12 @@ class SyntheticDataset(BaseDataset):
 
     def pretrain_behavior_policy(self, n_episodes: int = 10000) -> None:
         """Pre-train behavior policy by interacting with environment.
-        
+
         Parameters
         -------
         n_episodes: int, default=10000.
             Number of episodes to train behavior policy.
-        
+
         """
         if not (isinstance(n_episodes, int) and n_episodes > 0):
             raise ValueError(
@@ -251,7 +252,7 @@ class SyntheticDataset(BaseDataset):
 
     def calc_ground_truth_policy_value(self, n_episodes: int = 10000) -> float:
         """Calculate ground-truth policy value of beahavior policy by rollout.
-        
+
         Parameters
         -------
         n_episodes: int, default=10000.
@@ -261,6 +262,6 @@ class SyntheticDataset(BaseDataset):
         -------
         mean_reward: float.
             Mean episode reward calculated through rollout.
-        
+
         """
         return self.env.calc_ground_truth_policy_value(self.behavior_policy, n_episodes)

@@ -9,7 +9,7 @@ from sklearn.utils import check_random_state
 @dataclass
 class NormalDistribution:
     """Class to sample from normal distribution.
-    
+
     Parameters
     -------
     mean: float.
@@ -20,17 +20,16 @@ class NormalDistribution:
 
     random_state: int, default=12345.
         Random state.
-    
+
     """
+
     mean: float
     std: float
-    random_state: int = 12345.
+    random_state: int = 12345.0
 
     def __post_init__(self):
         if not isinstance(self.mean, float):
-            raise ValueError(
-                f"mean must be a float number, but {self.mean} is given"
-            )
+            raise ValueError(f"mean must be a float number, but {self.mean} is given")
         if not isinstance(self.std, float):
             raise ValueError("std must be a float number, but {self.std} is given")
         if self.random_state is None:
@@ -39,7 +38,7 @@ class NormalDistribution:
 
     def sample(self, size: int = 1) -> NDArray[float]:
         """Sample random variables from the pre-determined normal distribution.
-        
+
         Parameters
         -------
         size: int, default=1.
@@ -49,19 +48,17 @@ class NormalDistribution:
         -------
         random_variables: NDArray[float], shape (size, ).
             Random variables sampled from the normal distribution.
-        
+
         """
         if not (isinstance(size, int) and size > 0):
-            raise ValueError(
-                f"size must be a positive integer, but {size} is given"
-            )
+            raise ValueError(f"size must be a positive integer, but {size} is given")
         return self.random_.normal(loc=self.mean, scale=self.std, size=size)
 
 
 @dataclass
 class WinningFunction:
     """Class to calculate auction winning rate for given bid price.
-    
+
     Note
     -------
     Calculate auction winning rate (i.e., impression probability) as follows.
@@ -77,6 +74,7 @@ class WinningFunction:
     -------
 
     """
+
     alpha: float = 2.0
 
     def __post_init__(self):
@@ -85,9 +83,11 @@ class WinningFunction:
                 f"alpha must be a positive float number, but {self.alpha} is given"
             )
 
-    def calc_prob(self, consts: NDArray[float], bid_prices: NDArray[int]) -> NDArray[float]:
+    def calc_prob(
+        self, consts: NDArray[float], bid_prices: NDArray[int]
+    ) -> NDArray[float]:
         """Calculate impression probability for given bid price.
-        
+
         Parameters
         -------
         consts: NDArray[float], shape (search_volume, ).
@@ -102,16 +102,12 @@ class WinningFunction:
         -------
         impression_probabilities: NDArray[float], shape (search_volume, ).
             Auction winning probability for each auction.
-        
+
         """
         if not (isinstance(consts, NDArray[float]) and consts.min() > 0):
-            raise ValueError(
-                "consts must be an NDArray of positive float values"
-            )
+            raise ValueError("consts must be an NDArray of positive float values")
         if not (isinstance(bid_prices, NDArray[int]) and bid_prices.min() > 0):
-            raise ValueError(
-                "bid_prices must be an NDArray of positive integers"
-            )
+            raise ValueError("bid_prices must be an NDArray of positive integers")
         return (bid_prices ** self.alpha) / (consts + bid_prices ** self.alpha)
 
 
@@ -123,7 +119,7 @@ class SecondPrice:  # fix later
     -------
     fix later
 
-    
+
     Parameters
     -------
     n_dices: int.
@@ -136,6 +132,7 @@ class SecondPrice:  # fix later
     -------
 
     """
+
     n_dices: int
     random_state: int = 12345
 
@@ -150,7 +147,7 @@ class SecondPrice:  # fix later
 
     def sample(self, consts: NDArray[float], probs: NDArray[int]) -> NDArray[int]:
         """Sample second price for each bid.
-        
+
         Parameters
         -------
         consts: NDArray[float], shape (search_volume, ).
@@ -168,20 +165,18 @@ class SecondPrice:  # fix later
 
         """
         if not (isinstance(consts, NDArray[float]) and consts.min() > 0):
-            raise ValueError(
-                "consts must be an NDArray of positive float values"
-            )
+            raise ValueError("consts must be an NDArray of positive float values")
         if not (isinstance(probs, NDArray[float]) and probs.min() > 0):
-            raise ValueError(
-                "probs must be an NDArray of positive float values"
-            )
+            raise ValueError("probs must be an NDArray of positive float values")
         discounts = self.random_.rand((len(consts), self.n_dices)).max(axis=1)
 
         return self._inverse_winning_function(consts, probs * discounts).astype(int)
 
-    def _inverse_winning_function(consts: NDArray[float], probs: NDArray[float]) -> NDArray[float]:
+    def _inverse_winning_function(
+        consts: NDArray[float], probs: NDArray[float]
+    ) -> NDArray[float]:
         """Calculate second price for given auction winning probability using inverse winning function.
-        
+
         Parameters
         -------
         consts: NDArray[float], shape (search_volume, ).
@@ -196,7 +191,7 @@ class SecondPrice:  # fix later
         -------
         second_prices: NDArray[float], shape (search_volume, ).
             Second price for each auction.
-        
+
         """
         return (probs * consts) / (1 - probs)
 
@@ -210,7 +205,7 @@ class CTR:
     We define two coefficient, context coefficient (coef) and time coefficient (time_coef).
     First, the value is calculated linearly from context vector and coef by inner product.
     Then, we multiply the value with time_coef and gain (ground-truth) CTR.
-    
+
     Parameters
     -------
     ad_feature_dim: int.
@@ -224,8 +219,9 @@ class CTR:
 
     random_state: int, default=12345.
         Random state.
-    
+
     """
+
     ad_feature_dim: int
     user_feature_dim: int
     trend_interval: int
@@ -262,7 +258,7 @@ class CTR:
         self, timestep: Union[int, NDArray[int]], contexts: NDArray[float]
     ) -> NDArray[float]:
         """Calculate CTR (i.e., click per impression) using context vectors.
-        
+
         Parameters
         -------
         timestep: Union[int, NDArray[int]], shape None/(n_samples, ).
@@ -278,17 +274,20 @@ class CTR:
         -------
         ctrs: NDArray[float], shape (search_volume/n_samples, ).
             Ground-truth CTR (i.e., click per impression) for each auction.
-        
+
         """
-        if not ((isinstance(timestep, int) and timestep > 0) or (isinstance(timestep, NDArray[int]) and timestep.min() > 0)):
+        if not (
+            (isinstance(timestep, int) and timestep > 0)
+            or (isinstance(timestep, NDArray[int]) and timestep.min() > 0)
+        ):
             raise ValueError(
                 "timestep must be non negative integer or an NDArray of non negative integers"
             )
         if not isinstance(contexts, NDArray[float]):
-            raise ValueError(
-                "contexts must be an NDArray of float values"
-            )
-        return (self.contexts @ self.coef.T) * self.time_coef[timestep % self.trend_interval]
+            raise ValueError("contexts must be an NDArray of float values")
+        return (self.contexts @ self.coef.T) * self.time_coef[
+            timestep % self.trend_interval
+        ]
 
 
 @dataclass
@@ -302,7 +301,7 @@ class CVR:
     First, the value is calculated linearly from context vector and coef by inner product.
     Then, we multiply the value with time_coef and gain (ground-truth) CVR.
 
-    To make correlation with CTR, we define coef of CVR by adding residuals sampled 
+    To make correlation with CTR, we define coef of CVR by adding residuals sampled
     from normal distribution to that of CTR.
 
     Parameters
@@ -311,6 +310,7 @@ class CVR:
         Pre-defined CTR function.
 
     """
+
     ctr: CTR
 
     def __post_init__(self):
@@ -334,7 +334,7 @@ class CVR:
         self, timestep: Union[int, NDArray[int]], contexts: NDArray[float]
     ) -> NDArray[float]:
         """Calculate CVR (i.e., conversion per click) using context vectors.
-        
+
         Parameters
         -------
         timestep: Union[int, NDArray[int]], shape None/(n_samples, ).
@@ -350,14 +350,17 @@ class CVR:
         -------
         cvrs: NDArray[float], shape (search_volume/n_samples, ).
             Ground-truth CVR (i.e., conversion per click) for each auction.
-        
+
         """
-        if not ((isinstance(timestep, int) and timestep > 0) or (isinstance(timestep, NDArray[int]) and timestep.min() > 0)):
+        if not (
+            (isinstance(timestep, int) and timestep > 0)
+            or (isinstance(timestep, NDArray[int]) and timestep.min() > 0)
+        ):
             raise ValueError(
                 "timestep must be non negative integer or an NDArray of non negative integers"
             )
         if not isinstance(contexts, NDArray[float]):
-            raise ValueError(
-                "contexts must be an NDArray of float values"
-            )
-        return (self.contexts @ self.coef.T) * self.time_coef[timestep % self.trend_interval]
+            raise ValueError("contexts must be an NDArray of float values")
+        return (self.contexts @ self.coef.T) * self.time_coef[
+            timestep % self.trend_interval
+        ]
