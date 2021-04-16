@@ -42,7 +42,7 @@ class SyntheticDataset(BaseDataset):
     behavior_policy: BasePolicy
         RL policy for data collection.
 
-    random_state: int, default=12345.
+    random_state: int, default=12345
         Random state.
 
     Examples
@@ -124,45 +124,45 @@ class SyntheticDataset(BaseDataset):
 
         Parameters
         -------
-        n_episodes: int, default=10000.
+        n_episodes: int, default=10000
             Number of trajectories to rollout behavior policy and collect data.
 
         Returns
         -------
-        logged_dataset: Dict.
-            size: int.
+        logged_dataset: Dict
+            size: int
                 Total steps the dataset records.
 
-            n_episodes: int.
+            n_episodes: int
                 Total episodes the dataset records.
 
-            step_per_episode: int.
+            step_per_episode: int
                 Total timesteps in an episode.
 
-            action_type: str.
+            action_type: str
                 Action type of the RL agent.
                 Either "discrete" or "continuous".
 
-            action_dim: int.
+            action_dim: int
                 Action dimensions of discrete actions.
                 If action_type is "continuous", None is recorded.
 
-            state: NDArray[float], shape (size, 7).
+            state: NDArray[float], shape (size, 7)
                 State of the RL environment.
 
-            action: NDArray[Union[int, float]], shape (size, ).
+            action: NDArray[Union[int, float]], shape (size, )
                 Action chosen by the behavior policy.
 
-            reward: NDArray[int], shape (size, ).
+            reward: NDArray[int], shape (size, )
                 Reward observed for each (state, action) pair.
 
-            done: NDArray[int], shape (size, ).
+            done: NDArray[int], shape (size, )
                 Whether an episode ends or not.
 
-            info: NDArray[Dict[str, int]], shape (size, ).
+            info: NDArray[Dict[str, int]], shape (size, )
                 Additional feedback information from RL environment.
 
-            pscore: NDArray[float], shape (size, ).
+            pscore: NDArray[float], shape (size, )
                 Action choice probability of the behavior policy for the chosen action.
 
         """
@@ -230,12 +230,12 @@ class SyntheticDataset(BaseDataset):
 
         Parameters
         -------
-        n_episodes: int, default=10000.
+        n_episodes: int, default=10000
             Number of episodes to train behavior policy.
 
         Returns
         -------
-        mean_reward: float.
+        mean_reward: float
             Mean episode reward calculated through rollout.
 
         """
@@ -246,7 +246,7 @@ class SyntheticDataset(BaseDataset):
 
         Parameters
         -------
-        n_episodes: int, default=10000.
+        n_episodes: int, default=10000
             Number of episodes to train behavior policy.
 
         """
@@ -276,7 +276,7 @@ class SyntheticDataset(BaseDataset):
 
         Parameters
         -------
-        n_samples: int, default=10000.
+        n_samples: int, default=10000
             Number of samples to fit reward predictor in RTBSyntheticSimulator.
 
         """
