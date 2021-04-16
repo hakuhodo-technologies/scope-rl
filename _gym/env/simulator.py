@@ -215,8 +215,8 @@ class RTBSyntheticSimulator(BaseSimulator):
 
         # define winning function parameters for each ads
         self.wf_consts = self.random_.normal(
-            loc=(self.standard_bid_price) ** (1 / self.wf_alpha),
-            scale=(self.standard_bid_price) ** (1 / self.wf_alpha) / 5,
+            loc=self.standard_bid_price ** (1 / self.wf_alpha),
+            scale=self.standard_bid_price ** (1 / self.wf_alpha) / 5,
             size=self.n_ads,
         )
 
@@ -258,7 +258,7 @@ class RTBSyntheticSimulator(BaseSimulator):
             bid price = adjust rate * predicted/ground-truth reward ( * constant)
 
         2. Calculate outcome probability and stochastically determine auction result.
-            auction results: (bid price,) cost (second price), impression, click, conversion
+            auction results: (bid price,) cost (i.e., second price), impression, click, conversion
 
         Parameters
         -------
@@ -296,9 +296,9 @@ class RTBSyntheticSimulator(BaseSimulator):
                 Binary indicator of whether conversion occured or not for each auction.
 
         """
-        if not (isinstance(timestep, int) and 0 < timestep < self.step_per_episode):
+        if not (isinstance(timestep, int) and 0 <= timestep < self.step_per_episode):
             raise ValueError(
-                f"timestep must be a positive interger below {self.step_per_episode}, but {timestep} is given"
+                f"timestep must be a interger within [0, {self.step_per_episode}), but {timestep} is given"
             )
         if not (isinstance(adjust_rate) and 0.1 <= adjust_rate <= 10):
             raise ValueError(
@@ -329,10 +329,10 @@ class RTBSyntheticSimulator(BaseSimulator):
         Intended only used when use_reward_predictor=True option.
 
         X and y of the prediction model is given as follows.
-        X (feature_vectors): NDArray[float], shape (n_samples, action_feature_dim + user_feature_dim + 1)
+        X (feature_vectors): NDArray[float], shape (n_samples, action_feature_dim + user_feature_dim + 1).
             Concatenated vector of ad_feature_vector, user_feature_vector, and timestep.
 
-        y (target values): NDArrray[int], shape (n_samples, )
+        y (target values): NDArrray[int], shape (n_samples, ).
             Reward (i.e., auction outcome) obtained in each auction.
 
         Parameters

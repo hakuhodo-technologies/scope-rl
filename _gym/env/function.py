@@ -1,3 +1,4 @@
+"""Mathematical Functions used in Real-Time Bidding (RTB) Simulation."""
 from dataclasses import dataclass
 from typing import Union
 from nptyping import NDArray
@@ -266,7 +267,7 @@ class CTR:
         -------
         CTR is calculated using both context coefficient (coef) and time coefficient (time_coef).
             CTR = (context @ coef) * time_coef, where @ denotes innner product.
-        
+
 
         Parameters
         -------

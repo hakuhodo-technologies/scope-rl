@@ -1,3 +1,4 @@
+"""Synthetic Dataset Generation."""
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
 from typing import Dict, Any
@@ -11,7 +12,7 @@ from policy.policy import BasePolicy
 
 @dataclass
 class BaseDataset(metaclass=ABCMeta):
-    """Base Class for dataset."""
+    """Base class for dataset."""
 
     @abstractmethod
     def obtain_trajectories(self, n_episodes: int) -> Dict[str, Any]:
@@ -133,10 +134,10 @@ class SyntheticDataset(BaseDataset):
                 Total steps the dataset records.
 
             n_episodes: int.
-                Total episode the dataset records.
+                Total episodes the dataset records.
 
             step_per_episode: int.
-                Number of steps recorded in an episode.
+                Total timesteps in an episode.
 
             action_type: str.
                 Action type of the RL agent.
@@ -153,7 +154,7 @@ class SyntheticDataset(BaseDataset):
                 Action chosen by the behavior policy.
 
             reward: NDArray[int], shape (size, ).
-                Reward observed for the (state, action) pair.
+                Reward observed for each (state, action) pair.
 
             done: NDArray[int], shape (size, ).
                 Whether an episode ends or not.
@@ -225,7 +226,7 @@ class SyntheticDataset(BaseDataset):
         return logged_dataset
 
     def calc_ground_truth_policy_value(self, n_episodes: int = 10000) -> float:
-        """Calculate ground-truth policy value of beahavior policy by rollout.
+        """Calculate ground-truth policy value of the beahavior policy by rollout.
 
         Parameters
         -------
@@ -241,7 +242,7 @@ class SyntheticDataset(BaseDataset):
         return self.env.calc_ground_truth_policy_value(self.behavior_policy, n_episodes)
 
     def pretrain_behavior_policy(self, n_episodes: int = 10000) -> None:
-        """Pre-train behavior policy by interacting with environment.
+        """Pre-train behavior policy by interacting with the environment.
 
         Parameters
         -------

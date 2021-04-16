@@ -1,3 +1,4 @@
+"""Reinforcement Learning (RL) Environment for Real-Time Bidding (RTB)."""
 from typing import Tuple, Dict, List
 from typing import Optional, Union, Any
 from nptyping import NDArray
@@ -25,8 +26,8 @@ class RTBEnv(gym.Env):
     Constrained Markov Decision Process (CMDP) definition are given as follows:
         timestep: int.
             Set 24h a day or seven days per week for instance.
-            We have (search volume, ) auctions during timesteps.
-            Note that each single auction do NOT correspond to each timestep.
+            We have (search volume, ) auctions during a timestep.
+            Note that each single auction do NOT correspond to the timestep.
 
         state: NDArray[float], shape (7, ).
             Statistical feedbacks of auctions during the timestep, including following values.
@@ -62,10 +63,10 @@ class RTBEnv(gym.Env):
         (Currently, only semi_synthetic=False option is available.)
 
         If semi_eynthetic=True, we fit simulator (especially WinningFuction, SecondPrice, CTR, CVR inside)
-        from real-world dataset.
+        from the real-world dataset.
 
     objective: str, default="conversion".
-        Objective outcome (i.e., reward) of the auction.
+        Objective outcome (i.e., reward) of the auctions.
         Choose either from "click" or "conversion".
 
     action_type: str, default="discrete".
@@ -73,11 +74,11 @@ class RTBEnv(gym.Env):
         Choose either from "discrete" or "continuous".
 
     action_dim: Optional[int], default=10.
-        Action dimention of discrete actions.
+        Dimentions of the discrete action.
         Required and used only when using action_type="discrete" option.
 
-    action_meaning: Optional[Dict[str, float]], default=None.
-        Dictionary which maps discrete action index into actions.
+    action_meaning: Optional[Dict[int, float]], default=None.
+        Dictionary which maps discrete action index into specific actions.
         Used when only when using action_type="discrete" option.
 
         Note that if None, the action meaning values automatically set to [0.1, 10] log sampled values.
@@ -94,7 +95,7 @@ class RTBEnv(gym.Env):
         Required only when using use_reward_predictor=True option.
 
     step_per_episode: int, default=24.
-        Total timestep in an episode.
+        Total timesteps in an episode.
 
     initial_budget: int, default=10000.
         Initial budget (i.e., constraint) for bidding during an episode.
@@ -131,19 +132,19 @@ class RTBEnv(gym.Env):
         Parameter in RTBSyntheticSimulator class.
         Parameter (exponential coefficient) for WinningFunction used in the auction.
 
-    candidate_ads: NDArray[int], default=np.arange(1).
+    candidate_ads: NDArray[int], shape (n_candidate_ads, ), default=np.arange(1).
         Ad ids used in auctions.
 
-    candidate_users: NDArray[int], default=np.arange(10).
+    candidate_users: NDArray[int], shape (n_candidate_users, ), default=np.arange(10).
         User ids used in auctions.
 
-    candidate_ad_sampling_prob: Optional[NDArray[float]], default=None.
+    candidate_ad_sampling_prob: Optional[NDArray[float]], shape (n_candidate_ads, ), default=None.
         Sampling probalities to determine which ad (id) is used in each auction.
 
-    candidate_user_sampling_prob: Optional[NDArray[float]], default=None.
+    candidate_user_sampling_prob: Optional[NDArray[float]], shape (n_candidate_users, ), default=None.
         Sampling probalities to determine which user (id) is used in each auction.
 
-    search_volume_distribution: Optional[List[NormalDistribution]], default=None.
+    search_volume_distribution: Optional[List[NormalDistribution]], shape (step_per_episode, ), default=None.
         Search volume distribution for each timestep.
 
     random_state: int, default=12345.
@@ -239,7 +240,9 @@ class RTBEnv(gym.Env):
             )
         if action_type == "discrete" and action_meaning is not None:
             if len(action_meaning) != action_dim:
-                raise ValueError("action_meaning must have same size with action_dim")
+                raise ValueError(
+                    "action_meaning must have the same size with action_dim"
+                )
             if min(action_meaning.values()) < 0.1 or max(action_meaning.values()) > 10:
                 raise ValueError(
                     "action_meaning must have float values within [0.1, 10]"
@@ -266,8 +269,10 @@ class RTBEnv(gym.Env):
             )
         if not (
             candidate_ad_sampling_prob is None
-            or (isinstance(candidate_ads, NDArray[float]) and candidate_ads.min() > 0),
-            NDArray[float],
+            or (
+                isinstance(candidate_ad_sampling_prob, NDArray[float])
+                and candidate_ad_sampling_prob.min() > 0
+            )
         ):
             raise ValueError(
                 "candidate_ad_sampling_prob must be an NDArray of positive float values"
@@ -275,10 +280,9 @@ class RTBEnv(gym.Env):
         if not (
             candidate_user_sampling_prob is None
             or (
-                isinstance(candidate_users, NDArray[float])
-                and candidate_users.min() > 0
-            ),
-            NDArray[float],
+                isinstance(candidate_user_sampling_prob, NDArray[float])
+                and candidate_user_sampling_prob.min() > 0
+            )
         ):
             raise ValueError(
                 "candidate_user_sampling_prob must be an NDArray of float values"
@@ -287,13 +291,13 @@ class RTBEnv(gym.Env):
             candidate_ad_sampling_prob
         ):
             raise ValueError(
-                f"candidate_ads and candidate_ad_sampling_prob must have same length"
+                f"candidate_ads and candidate_ad_sampling_prob must have the same length"
             )
         if candidate_user_sampling_prob is not None and len(candidate_users) != len(
             candidate_user_sampling_prob
         ):
             raise ValueError(
-                f"candidate_users and candidate_user_sampling_prob must have same length"
+                f"candidate_users and candidate_user_sampling_prob must have the same length"
             )
         if not (
             search_volume_distribution is None
@@ -328,7 +332,7 @@ class RTBEnv(gym.Env):
                 n_users=n_users,
                 ad_feature_dim=ad_feature_dim,
                 user_feature_dim=user_feature_dim,
-                standard_bid=standard_bid_price,
+                standard_bid_price=standard_bid_price,
                 trend_interval=trend_interval,
                 n_dices=n_dices,
                 wf_alpha=wf_alpha,
@@ -368,24 +372,27 @@ class RTBEnv(gym.Env):
         self.candidate_users = candidate_users
 
         if candidate_ad_sampling_prob is None:
-            candidate_ad_sampling_prob = (
-                np.array([1 / len(candidate_ads)] * candidate_ads),
+            candidate_ad_sampling_prob = np.full(
+                len(candidate_ads), 1 / len(candidate_ads)
             )
-        if candidate_user_sampling_prob is None:
-            candidate_user_sampling_prob = (
-                np.array([1 / len(candidate_users)] * candidate_users),
+        else:
+            self.candidate_ad_sampling_prob = candidate_ad_sampling_prob / np.sum(
+                candidate_ad_sampling_prob
             )
 
-        self.candidate_ad_sampling_prob = candidate_ad_sampling_prob / np.sum(
-            candidate_ad_sampling_prob
-        )
-        self.candidate_user_sampling_prob = candidate_user_sampling_prob / np.sum(
-            candidate_user_sampling_prob
-        )
+        if candidate_user_sampling_prob is None:
+            candidate_user_sampling_prob = np.full(
+                len(candidate_users), 1 / len(candidate_users)
+            )
+        else:
+            self.candidate_user_sampling_prob = candidate_user_sampling_prob / np.sum(
+                candidate_user_sampling_prob
+            )
 
         if search_volume_distribution is None:
-            search_volume_distribution = [NormalDistribution(mean=10, std=0.0)]
-        *step_per_episode,
+            search_volume_distribution = [
+                NormalDistribution(mean=10, std=0.0)
+            ] * step_per_episode
 
         self.search_volumes = np.zeros(step_per_episode, 100)
         for i in range(step_per_episode):
@@ -412,7 +419,7 @@ class RTBEnv(gym.Env):
                 bid price = adjust rate * predicted/ground-truth reward ( * constant)
 
             2-2. Calculate outcome probability and stochastically determine auction result.
-                auction results: (bid price,) cost (second price), impression, click, conversion
+                auction results: (bid price,) cost (i.e., second price), impression, click, conversion
 
         3. Check if the culumative cost during the timestep exceeds the remaining budget or not.
            (If exceeds, cancel the corresponding auction results.)
@@ -504,6 +511,9 @@ class RTBEnv(gym.Env):
         else:
             reward = total_conversion
 
+        # update timestep
+        self.t += 1
+
         obs = {
             "timestep": self.t,
             "remaining_budget": self.remaining_budget,
@@ -527,7 +537,6 @@ class RTBEnv(gym.Env):
         }
 
         # update logs
-        self.t += 1
         self.prev_remaining_budget = self.remaining_budget
 
         return np.array(obs.values()).astype(float), reward, done, info
@@ -566,9 +575,6 @@ class RTBEnv(gym.Env):
             "reward": 0,
             "adjust rate": 0,
         }
-
-        # update to the next timestep
-        self.t += 1
 
         return np.array(obs.values()).astype(float)
 
