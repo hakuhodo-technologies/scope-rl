@@ -208,15 +208,15 @@ class CTR:
     Then, we multiply the value with time_coef and gain (ground-truth) CTR.
 
     In short, CTR is calculated as follows.
-        CTR = (context @ coef) * time_coef, where @ denotes innner product.
+        CTR = (context @ coef) * time_coef, where @ denotes inner product.
 
     Parameters
     -------
     ad_feature_dim: int.
-        Dimentions of the ad feature vectors.
+        Dimensions of the ad feature vectors.
 
     user_feature_dim: int.
-        Dimentions of the user feature vectors.
+        Dimensions of the user feature vectors.
 
     trend_interval: int.
         Length of the CTR trend cycle.
@@ -266,7 +266,7 @@ class CTR:
         Note
         -------
         CTR is calculated using both context coefficient (coef) and time coefficient (time_coef).
-            CTR = (context @ coef) * time_coef, where @ denotes innner product.
+            CTR = (context @ coef) * time_coef, where @ denotes inner product.
 
 
         Parameters
@@ -353,7 +353,7 @@ class CVR:
         Note
         -------
         CVR is calculated using both context coefficient (coef) and time coefficient (time_coef).
-            CVR = (context @ coef) * time_coef, where @ denotes innner product.
+            CVR = (context @ coef) * time_coef, where @ denotes inner product.
 
         Parameters
         -------

@@ -37,7 +37,7 @@ class RTBEnv(gym.Env):
                   (budget consumption rate, cost per mille of impressions, auction winning rate, and reward)
                 - adjust rate (i.e., RL agent action) at previous timestep
 
-        action: Unioun[int, float].
+        action: Union[int, float].
             Adjust rate parameter used for the bid price calculation as follows.
             Note that the following bid price is individually determined for each auction.
                 bid price = adjust rate * predicted/ground-truth reward ( * constant)
@@ -49,7 +49,7 @@ class RTBEnv(gym.Env):
             Total clicks/conversions gained during the timestep.
 
         discount_rate: int, 1.
-            Discount factor for cululative reward calculation.
+            Discount factor for cumulative reward calculation.
             Set discount_rate = 1 (i.e., no discount) in RTB.
 
         constraint: int.
@@ -62,7 +62,7 @@ class RTBEnv(gym.Env):
         Otherwise the RTBSyntheticSimulator is used.
         (Currently, only semi_synthetic=False option is available.)
 
-        If semi_eynthetic=True, we fit simulator (especially WinningFuction, SecondPrice, CTR, CVR inside)
+        If semi_synthetic=True, we fit simulator (especially WinningFunction, SecondPrice, CTR, CVR inside)
         from the real-world dataset.
 
     objective: str, default="conversion".
@@ -74,7 +74,7 @@ class RTBEnv(gym.Env):
         Choose either from "discrete" or "continuous".
 
     action_dim: Optional[int], default=10.
-        Dimentions of the discrete action.
+        Dimensions of the discrete action.
         Required and used only when using action_type="discrete" option.
 
     action_meaning: Optional[Dict[int, float]], default=None.
@@ -110,11 +110,11 @@ class RTBEnv(gym.Env):
 
     ad_feature_dim: int, default=5.
         Parameter in RTBSyntheticSimulator class.
-        Dimentions of the ad feature vectors.
+        Dimensions of the ad feature vectors.
 
     user_feature_dim: int, default=5.
         Parameter in RTBSyntheticSimulator class.
-        Dimentions of the user feature vectors.
+        Dimensions of the user feature vectors.
 
     standard_bid_price: int, default = 100.
         Parameter in RTBSyntheticSimulator class.
@@ -173,7 +173,7 @@ class RTBEnv(gym.Env):
         # pretrain reward predictor used for bidding price determination
         env.fit_reward_predictor(n_samples=10000)
 
-        # openai gym like interaction with agent
+        # OpenAI Gym like interaction with agent
         for episode in range(1000):
             obs = env.reset()
             done = False
@@ -421,7 +421,7 @@ class RTBEnv(gym.Env):
             2-2. Calculate outcome probability and stochastically determine auction result.
                 auction results: (bid price,) cost (i.e., second price), impression, click, conversion
 
-        3. Check if the culumative cost during the timestep exceeds the remaining budget or not.
+        3. Check if the cumulative cost during the timestep exceeds the remaining budget or not.
            (If exceeds, cancel the corresponding auction results.)
 
         4. Aggregate auction results and return feedbacks to the RL agent.
@@ -451,7 +451,7 @@ class RTBEnv(gym.Env):
                 Wether the episode end or not.
 
             info: Dict[str, int].
-                Additinal feedbacks (total impressions, clicks, and conversions) for analysts.
+                Additional feedbacks (total impressions, clicks, and conversions) for analysts.
                 Note that those feedbacks are intended to be unobservable for the RL agent.
 
         """

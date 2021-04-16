@@ -16,12 +16,12 @@ class BaseDataset(metaclass=ABCMeta):
 
     @abstractmethod
     def obtain_trajectories(self, n_episodes: int) -> Dict[str, Any]:
-        """Roullout behavior policy and obtain trajectories."""
+        """Rollout behavior policy and obtain trajectories."""
         raise NotImplementedError
 
     @abstractmethod
     def calc_ground_truth_policy_value(self, n_episodes: int) -> float:
-        """Calculate ground-truth policy value of beahavior policy by rollout."""
+        """Calculate ground-truth policy value of behavior policy by rollout."""
         raise NotImplementedError
 
 
@@ -120,7 +120,7 @@ class SyntheticDataset(BaseDataset):
             self.env.fit_reward_predictor()
 
     def obtain_trajectories(self, n_episodes: int = 10000) -> Dict[str, Any]:
-        """Roullout behavior policy and obtain trajectories.
+        """Rollout behavior policy and obtain trajectories.
 
         Parameters
         -------
@@ -144,7 +144,7 @@ class SyntheticDataset(BaseDataset):
                 Either "discrete" or "continuous".
 
             action_dim: int.
-                Action dimention of discrete actions.
+                Action dimensions of discrete actions.
                 If action_type is "continuous", None is recorded.
 
             state: NDArray[float], shape (size, 7).
@@ -226,7 +226,7 @@ class SyntheticDataset(BaseDataset):
         return logged_dataset
 
     def calc_ground_truth_policy_value(self, n_episodes: int = 10000) -> float:
-        """Calculate ground-truth policy value of the beahavior policy by rollout.
+        """Calculate ground-truth policy value of the behavior policy by rollout.
 
         Parameters
         -------

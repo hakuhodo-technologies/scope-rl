@@ -101,17 +101,17 @@ class RTBSyntheticSimulator(BaseSimulator):
         Total timestep in an episode in reinforcement learning (RL) environment.
         Note that we should use same value with RTBEnv class in env.py.
 
-    n_ads: int, defalut=100.
+    n_ads: int, default=100.
         Number of ads used for fitting the reward predictor.
 
     n_users: int, default=100.
         Number of users used for fitting the reward predictor.
 
     ad_feature_dim: int, default=5.
-        Dimentions of the ad feature vectors.
+        Dimensions of the ad feature vectors.
 
     user_feature_dim: int, default=5.
-        Dimentions of the user feature vectors.
+        Dimensions of the user feature vectors.
 
     standard_bid_price: int, default = 100.
         Bid price whose impression probability is expected to be 0.5.
@@ -284,16 +284,16 @@ class RTBSyntheticSimulator(BaseSimulator):
                 Bid price used for each auction.
 
             costs: NDArray[int], shape (search_volume, ).
-                Cost arised (i.e., second price) for each auction.
+                Cost raised (i.e., second price) for each auction.
 
             impressions: NDArray[int], shape (search_volume, ).
-                Binary indicator of whether impression occured or not for each auction.
+                Binary indicator of whether impression occurred or not for each auction.
 
             clicks: NDArray[int], shape (search_volume, ).
-                Binary indicator of whether click occured or not for each auction.
+                Binary indicator of whether click occurred or not for each auction.
 
             conversions: NDArray[int], shape (search_volume, ).
-                Binary indicator of whether conversion occured or not for each auction.
+                Binary indicator of whether conversion occurred or not for each auction.
 
         """
         if not (isinstance(timestep, int) and 0 <= timestep < self.step_per_episode):
@@ -527,16 +527,16 @@ class RTBSyntheticSimulator(BaseSimulator):
                 Bid price used for each auction.
 
             costs: NDArray[int], shape (search_volume, ).
-                Cost arised (i.e., second price) for each auction.
+                Cost raised (i.e., second price) for each auction.
 
             impressions: NDArray[int], shape (search_volume, ).
-                Binary indicator of whether impression occured or not for each auction.
+                Binary indicator of whether impression occurred or not for each auction.
 
             clicks: NDArray[int], shape (search_volume, ).
-                Binary indicator of whether click occured or not for each auction.
+                Binary indicator of whether click occurred or not for each auction.
 
             conversions: NDArray[int], shape (search_volume, ).
-                Binary indicator of whether conversion occured or not for each auction.
+                Binary indicator of whether conversion occurred or not for each auction.
 
         """
         impression_probs = self.winning_function.calc_prob(wf_consts, bid_prices)
