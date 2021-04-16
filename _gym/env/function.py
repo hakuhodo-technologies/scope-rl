@@ -22,6 +22,7 @@ class NormalDistribution:
         Random state.
 
     """
+
     mean: float
     std: float
     random_state: int = 12345.0
@@ -73,6 +74,7 @@ class WinningFunction:
     -------
 
     """
+
     alpha: float = 2.0
 
     def __post_init__(self):
@@ -130,6 +132,7 @@ class SecondPrice:  # fix later
     -------
 
     """
+
     n_dices: int
     random_state: int = 12345
 
@@ -218,6 +221,7 @@ class CTR:
         Random state.
 
     """
+
     ad_feature_dim: int
     user_feature_dim: int
     trend_interval: int
@@ -308,6 +312,7 @@ class CVR:
         Pre-defined CTR function.
 
     """
+
     ctr: CTR
 
     def __post_init__(self):

@@ -19,11 +19,6 @@ class BaseDataset(metaclass=ABCMeta):
         raise NotImplementedError
 
     @abstractmethod
-    def pretrain_behavior_policy(self, n_episodes: int) -> None:
-        """Pre-train behavior policy by interacting with environment."""
-        raise NotImplementedError
-
-    @abstractmethod
     def calc_ground_truth_policy_value(self, n_episodes: int) -> float:
         """Calculate ground-truth policy value of beahavior policy by rollout."""
         raise NotImplementedError
@@ -58,6 +53,8 @@ class SyntheticDataset(BaseDataset):
         >>> from env.env import RTBEnv
         >>> from dataset.dataset import SyntheticDataset
         >>> from policy.dqn import DQN
+        # import necessary module from other library
+        >>> from sklearn.linear_model import LogisticRegression
 
         # initialize environment and define (RL) agent (i.e., policy)
         >>> env = RTBEnv(
@@ -69,12 +66,15 @@ class SyntheticDataset(BaseDataset):
         # initialize dataset class
         >>> dataset = SyntheticDataset(
                 env=env,
-                behavior_policy=dqn
+                behavior_policy=dqn,
             )
 
         # pretrain behavior policy before data collection
         >>> dataset.pretrain_behavior_policy()
-        >>> dataset
+
+        # data collection
+        >>> logged_dataset = dataset.obtain_trajectories(n_episodes=10000)
+        >>> logged_dataset
         {
             'size': 240000,
             'n_episodes': 10000,
@@ -90,9 +90,6 @@ class SyntheticDataset(BaseDataset):
             'pscore': array([[...]]),
         }
 
-        # data collection
-        >>> obtained_dataset = dataset.obtain_trajectories(n_episodes=10000)
-
         # ground-truth policy value of behavior policy
         >>> ground_truth_policy_value = dataset.calculate_ground_truth_policy_value(
                 n_episodes=10000
@@ -101,20 +98,25 @@ class SyntheticDataset(BaseDataset):
         ...
 
     """
+
     env: gym.Env
     behavior_policy: BasePolicy
     random_state: int = 12345
 
     def __post_init__(self):
-        if not isinstance(env, gym.Env):
+        if not isinstance(self.env, gym.Env):
             raise ValueError("env must be the gym.Env or a child class of the gym.Env")
-        if not isinstance(behavior_policy, BasePolicy):
+        if not isinstance(self.behavior_policy, BasePolicy):
             raise ValueError(
                 "behavior_policy must be the BasePolicy or a child class of the BasePolicy"
             )
         if self.random_state is None:
             raise ValueError("random_state must be given")
         self.random_ = check_random_state(self.random_state)
+
+        if self.env.use_reward_predictor:
+            print("pre-train reward predictor in RTB Simulator..")
+            self.env.fit_reward_predictor()
 
     def obtain_trajectories(self, n_episodes: int = 10000) -> Dict[str, Any]:
         """Roullout behavior policy and obtain trajectories.
@@ -222,6 +224,22 @@ class SyntheticDataset(BaseDataset):
         }
         return logged_dataset
 
+    def calc_ground_truth_policy_value(self, n_episodes: int = 10000) -> float:
+        """Calculate ground-truth policy value of beahavior policy by rollout.
+
+        Parameters
+        -------
+        n_episodes: int, default=10000.
+            Number of episodes to train behavior policy.
+
+        Returns
+        -------
+        mean_reward: float.
+            Mean episode reward calculated through rollout.
+
+        """
+        return self.env.calc_ground_truth_policy_value(self.behavior_policy, n_episodes)
+
     def pretrain_behavior_policy(self, n_episodes: int = 10000) -> None:
         """Pre-train behavior policy by interacting with environment.
 
@@ -248,18 +266,17 @@ class SyntheticDataset(BaseDataset):
                 )  # fix later
                 state = next_state
 
-    def calc_ground_truth_policy_value(self, n_episodes: int = 10000) -> float:
-        """Calculate ground-truth policy value of beahavior policy by rollout.
+    def fit_reward_predictor(self, n_samples: int = 10000) -> None:
+        """Pre-train reward prediction model used in env.simulator to calculate bid price.
+
+        Note
+        -------
+        Intended only used when env.use_reward_predictor=True option.
 
         Parameters
         -------
-        n_episodes: int, default=10000.
-            Number of episodes to train behavior policy.
-
-        Returns
-        -------
-        mean_reward: float.
-            Mean episode reward calculated through rollout.
+        n_samples: int, default=10000.
+            Number of samples to fit reward predictor in RTBSyntheticSimulator.
 
         """
-        return self.env.calc_ground_truth_policy_value(self.behavior_policy, n_episodes)
+        self.env.fit_reward_predictor(n_samples)

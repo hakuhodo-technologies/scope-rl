@@ -1,6 +1,7 @@
 from typing import Tuple, Dict, List
 from typing import Optional, Union, Any
 from nptyping import NDArray
+import warnings
 
 import gym
 from gym.spaces import Box, Discrete
@@ -190,6 +191,7 @@ class RTBEnv(gym.Env):
     -------
 
     """
+
     def __init__(
         self,
         semi_synthetic: bool = False,
@@ -355,6 +357,9 @@ class RTBEnv(gym.Env):
 
         else:  # "continuous"
             self.action_space = Box(low=0.1, high=10, shape=(1,))
+
+        # define reward range
+        self.reward_range = (0, np.inf)
 
         self.step_per_episode = step_per_episode
         self.initial_budget = initial_budget
@@ -568,10 +573,17 @@ class RTBEnv(gym.Env):
         return np.array(obs.values()).astype(float)
 
     def render(self, mode: str = "human") -> None:
-        """maybe add some plot later"""
+        """Maybe add some plot later."""
         pass
 
     def close(self) -> None:
+        warnings.warn(".close() is not implemented, nothing takes place")
+        pass
+
+    def seed(self, seed: int = None) -> None:
+        warnings.warn(
+            "nothing takes place since .seed() is not implemented, please reset seed by initializing the environment"
+        )
         pass
 
     def fit_reward_predictor(self, n_samples: int = 10000) -> None:
