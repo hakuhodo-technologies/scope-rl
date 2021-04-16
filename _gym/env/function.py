@@ -25,7 +25,7 @@ class NormalDistribution:
 
     mean: float
     std: float
-    random_state: int = 12345.0
+    random_state: int = 12345
 
     def __post_init__(self):
         if not isinstance(self.mean, float):
@@ -206,6 +206,9 @@ class CTR:
     First, the value is calculated linearly from context vector and coef by inner product.
     Then, we multiply the value with time_coef and gain (ground-truth) CTR.
 
+    In short, CTR is calculated as follows.
+        CTR = (context @ coef) * time_coef, where @ denotes innner product.
+
     Parameters
     -------
     ad_feature_dim: int.
@@ -259,6 +262,12 @@ class CTR:
     ) -> NDArray[float]:
         """Calculate CTR (i.e., click per impression) using context vectors.
 
+        Note
+        -------
+        CTR is calculated using both context coefficient (coef) and time coefficient (time_coef).
+            CTR = (context @ coef) * time_coef, where @ denotes innner product.
+        
+
         Parameters
         -------
         timestep: Union[int, NDArray[int]], shape None/(n_samples, ).
@@ -303,6 +312,9 @@ class CVR:
     First, the value is calculated linearly from context vector and coef by inner product.
     Then, we multiply the value with time_coef and gain (ground-truth) CVR.
 
+    In short, CVR is calculated as follows.
+        CVR = (context @ coef) * time_coef, where @ denotes innner product.
+
     To make correlation with CTR, we define coef of CVR by adding residuals sampled
     from normal distribution to that of CTR.
 
@@ -336,6 +348,11 @@ class CVR:
         self, timestep: Union[int, NDArray[int]], contexts: NDArray[float]
     ) -> NDArray[float]:
         """Calculate CVR (i.e., conversion per click) using context vectors.
+
+        Note
+        -------
+        CVR is calculated using both context coefficient (coef) and time coefficient (time_coef).
+            CVR = (context @ coef) * time_coef, where @ denotes innner product.
 
         Parameters
         -------
