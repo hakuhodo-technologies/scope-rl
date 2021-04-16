@@ -245,7 +245,7 @@ class RTBSyntheticSimulator(BaseSimulator):
     def simulate_auction(
         self,
         timestep: int,
-        adjust_rate: int,
+        adjust_rate: float,
         ad_ids: NDArray[int],
         user_ids: NDArray[int],
     ) -> Tuple[NDArray[int]]:
@@ -265,7 +265,7 @@ class RTBSyntheticSimulator(BaseSimulator):
         timestep: int.
             Timestep of the RL environment.
 
-        adjust rate: int.
+        adjust rate: float.
             Adjust rate parameter for bidding price determination.
             Corresponds to the RL agent action.
 
@@ -300,7 +300,7 @@ class RTBSyntheticSimulator(BaseSimulator):
             raise ValueError(
                 f"timestep must be a interger within [0, {self.step_per_episode}), but {timestep} is given"
             )
-        if not (isinstance(adjust_rate) and 0.1 <= adjust_rate <= 10):
+        if not (isinstance(adjust_rate, float) and 0.1 <= adjust_rate <= 10):
             raise ValueError(
                 f"adjust_rate must be a float number in [0.1, 10], but {adjust_rate} is given"
             )
@@ -440,7 +440,7 @@ class RTBSyntheticSimulator(BaseSimulator):
         return expected_rewards
 
     def _determine_bid_price(
-        self, timestep: int, adjust_rate: int, contexts: NDArray[float]
+        self, timestep: int, adjust_rate: float, contexts: NDArray[float]
     ) -> NDArray[int]:
         """Determine the bidding price using given adjust rate and the predicted/ground-truth rewards.
 
@@ -454,7 +454,7 @@ class RTBSyntheticSimulator(BaseSimulator):
         timestep: int.
             Timestep of the RL environment.
 
-        adjust rate: int.
+        adjust rate: float.
             Adjust rate parameter for bidding price determination.
             Corresponds to the RL agent action.
 
