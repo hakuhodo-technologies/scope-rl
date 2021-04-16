@@ -24,12 +24,12 @@ class RTBEnv(gym.Env):
     Use RTBSyntheticSimulator/RTBSemiSyntheticSimulator in simulator.py to collect auction results.
 
     Constrained Markov Decision Process (CMDP) definition are given as follows:
-        timestep: int.
+        timestep: int
             Set 24h a day or seven days per week for instance.
             We have (search volume, ) auctions during a timestep.
             Note that each single auction do NOT correspond to the timestep.
 
-        state: NDArray[float], shape (7, ).
+        state: NDArray[float], shape (7, )
             Statistical feedbacks of auctions during the timestep, including following values.
                 - timestep
                 - remaining budget
@@ -37,7 +37,7 @@ class RTBEnv(gym.Env):
                   (budget consumption rate, cost per mille of impressions, auction winning rate, and reward)
                 - adjust rate (i.e., RL agent action) at previous timestep
 
-        action: Union[int, float].
+        action: Union[int, float]
             Adjust rate parameter used for the bid price calculation as follows.
             Note that the following bid price is individually determined for each auction.
                 bid price = adjust rate * predicted/ground-truth reward ( * constant)
@@ -45,19 +45,19 @@ class RTBEnv(gym.Env):
             Both discrete and continuous actions are acceptable.
             Note that the value should be within [0.1, 10].
 
-        reward: int.
+        reward: int
             Total clicks/conversions gained during the timestep.
 
-        discount_rate: int, 1.
+        discount_rate: int, 1
             Discount factor for cumulative reward calculation.
             Set discount_rate = 1 (i.e., no discount) in RTB.
 
-        constraint: int.
+        constraint: int
             Total cost should not exceed the initial budget.
 
     Parameters
     -------
-    semi_synthetic: bool, default=False.
+    semi_synthetic: bool, default=False
         Whether to use semi-synthetic environment (RTBSemiSyntheticSimulator) or not.
         Otherwise the RTBSyntheticSimulator is used.
         (Currently, only semi_synthetic=False option is available.)
@@ -65,89 +65,89 @@ class RTBEnv(gym.Env):
         If semi_synthetic=True, we fit simulator (especially WinningFunction, SecondPrice, CTR, CVR inside)
         from the real-world dataset.
 
-    objective: str, default="conversion".
+    objective: str, default="conversion"
         Objective outcome (i.e., reward) of the auctions.
         Choose either from "click" or "conversion".
 
-    action_type: str, default="discrete".
+    action_type: str, default="discrete"
         Action type of the RL agent.
         Choose either from "discrete" or "continuous".
 
-    action_dim: Optional[int], default=10.
+    action_dim: Optional[int], default=10
         Dimensions of the discrete action.
         Required and used only when using action_type="discrete" option.
 
-    action_meaning: Optional[Dict[int, float]], default=None.
+    action_meaning: Optional[Dict[int, float]], default=None
         Dictionary which maps discrete action index into specific actions.
         Used when only when using action_type="discrete" option.
 
         Note that if None, the action meaning values automatically set to [0.1, 10] log sampled values.
             np.logspace(-1, 1, action_dim)
 
-    use_reward_predictor: bool, default=False.
+    use_reward_predictor: bool, default=False
         Parameter in RTBSyntheticSimulator class.
         Whether to use predicted reward to determine bidding price or not.
         Otherwise, the ground-truth (expected) reward is used.
 
-    reward_predictor: Optional[BaseEstimator], default=None.
+    reward_predictor: Optional[BaseEstimator], default=None
         Parameter in RTBSyntheticSimulator class.
         A machine learning prediction model to predict the reward.
         Required only when using use_reward_predictor=True option.
 
-    step_per_episode: int, default=24.
+    step_per_episode: int, default=24
         Total timesteps in an episode.
 
-    initial_budget: int, default=10000.
+    initial_budget: int, default=10000
         Initial budget (i.e., constraint) for bidding during an episode.
 
-    n_ads: int, default=100.
+    n_ads: int, default=100
         Parameter in RTBSyntheticSimulator class.
         Number of ads used for fitting the reward predictor.
 
-    n_users: int, default=100.
+    n_users: int, default=100
         Parameter in RTBSyntheticSimulator class.
         Number of users used for fitting the reward predictor.
 
-    ad_feature_dim: int, default=5.
+    ad_feature_dim: int, default=5
         Parameter in RTBSyntheticSimulator class.
         Dimensions of the ad feature vectors.
 
-    user_feature_dim: int, default=5.
+    user_feature_dim: int, default=5
         Parameter in RTBSyntheticSimulator class.
         Dimensions of the user feature vectors.
 
-    standard_bid_price: int, default = 100.
+    standard_bid_price: int, default = 100
         Parameter in RTBSyntheticSimulator class.
         Bid price whose impression probability is expected to be 0.5.
 
-    trend_interval: int, default=24.
+    trend_interval: int, default=24
         Parameter in RTBSyntheticSimulator class.
         Length of the ctr/cvr trend cycle.
 
-    n_dices: int, default=10.
+    n_dices: int, default=10
         Parameter in RTBSyntheticSimulator class.
         Number of the random_variables sampled to calculate second price.
 
-    wf_alpha: float, default=2.0.
+    wf_alpha: float, default=2.0
         Parameter in RTBSyntheticSimulator class.
         Parameter (exponential coefficient) for WinningFunction used in the auction.
 
-    candidate_ads: NDArray[int], shape (n_candidate_ads, ), default=np.arange(1).
+    candidate_ads: NDArray[int], shape (n_candidate_ads, ), default=np.arange(1)
         Ad ids used in auctions.
 
-    candidate_users: NDArray[int], shape (n_candidate_users, ), default=np.arange(10).
+    candidate_users: NDArray[int], shape (n_candidate_users, ), default=np.arange(10)
         User ids used in auctions.
 
-    candidate_ad_sampling_prob: Optional[NDArray[float]], shape (n_candidate_ads, ), default=None.
+    candidate_ad_sampling_prob: Optional[NDArray[float]], shape (n_candidate_ads, ), default=None
         Sampling probalities to determine which ad (id) is used in each auction.
 
-    candidate_user_sampling_prob: Optional[NDArray[float]], shape (n_candidate_users, ), default=None.
+    candidate_user_sampling_prob: Optional[NDArray[float]], shape (n_candidate_users, ), default=None
         Sampling probalities to determine which user (id) is used in each auction.
 
-    search_volume_distribution: Optional[List[NormalDistribution]], shape (step_per_episode, ), default=None.
+    search_volume_distribution: Optional[List[NormalDistribution]], shape (step_per_episode, ), default=None
         Search volume distribution for each timestep.
 
-    random_state: int, default=12345.
+    random_state: int, default=12345
         Random state.
 
     Examples
@@ -222,6 +222,8 @@ class RTBEnv(gym.Env):
         random_state: int = 12345,
     ):
         super().__init__()
+        if not isinstance(semi_synthetic, bool):
+            raise ValueError("semi_synthetic must be a boolean")
         if not (isinstance(objective, str) and objective in ["click", "conversion"]):
             raise ValueError(
                 f'objective must be either "click" or "conversion", but {self.objective} is given'
@@ -428,14 +430,14 @@ class RTBEnv(gym.Env):
 
         Parameters
         -------
-        action: Union[int, float].
+        action: Union[int, float]
             RL agent action which indicates adjust rate parameter used for bid price determination.
             Both discrete and continuos actions are acceptable.
 
         Returns
         -------
-        feedbacks: Tuple.
-            obs: NDArray[float], shape (7, ).
+        feedbacks: Tuple
+            obs: NDArray[float], shape (7, )
                 Statistical feedbacks of auctions during the timestep.
                 Corresponds to RL state, which include following components.
                     - timestep
@@ -444,13 +446,13 @@ class RTBEnv(gym.Env):
                       (budget consumption rate, cost per mille of impressions, auction winning rate, and reward)
                     - adjust rate (i.e., agent action) at previous timestep
 
-            reward: int.
+            reward: int
                 Total clicks/conversions gained during the timestep.
 
-            done: bool.
+            done: bool
                 Wether the episode end or not.
 
-            info: Dict[str, int].
+            info: Dict[str, int]
                 Additional feedbacks (total impressions, clicks, and conversions) for analysts.
                 Note that those feedbacks are intended to be unobservable for the RL agent.
 
@@ -550,7 +552,7 @@ class RTBEnv(gym.Env):
 
         Returns
         -------
-        obs: NDArray[float], shape (7, ).
+        obs: NDArray[float], shape (7, )
             Statistical feedbacks of auctions during the timestep.
             Corresponds to RL state, which include following components.
                 - timestep
@@ -601,7 +603,7 @@ class RTBEnv(gym.Env):
 
         Parameters
         -------
-        n_samples: int, default=10000.
+        n_samples: int, default=10000
             Number of samples to fit reward predictor in RTBSyntheticSimulator.
 
         """
@@ -614,15 +616,15 @@ class RTBEnv(gym.Env):
 
         Parameters
         -------
-        evaluation_policy: BasePolicy.
+        evaluation_policy: BasePolicy
             The RL agent (i.e., policy) to be evaluated.
 
-        n_episodes: int, default=10000.
+        n_episodes: int, default=10000
             Number of episodes to rollout.
 
         Returns
         -------
-        mean_reward: float.
+        mean_reward: float
             Mean episode reward calculated through rollout.
 
         """

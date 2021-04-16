@@ -13,13 +13,13 @@ class NormalDistribution:
 
     Parameters
     -------
-    mean: float.
+    mean: float
         Mean value of the normal distribution.
 
-    std: float.
+    std: float
         Standard deviation of the normal distribution.
 
-    random_state: int, default=12345.
+    random_state: int, default=12345
         Random state.
 
     """
@@ -42,12 +42,12 @@ class NormalDistribution:
 
         Parameters
         -------
-        size: int, default=1.
+        size: int, default=1
             Total numbers of the random variable to sample.
 
         Returns
         -------
-        random_variables: NDArray[float], shape (size, ).
+        random_variables: NDArray[float], shape (size, )
             Random variables sampled from the normal distribution.
 
         """
@@ -68,7 +68,7 @@ class WinningFunction:
 
     Parameters
     -------
-    alpha: float, default=2.0.
+    alpha: float, default=2.0
         Exponential coefficient parameter of the winning function.
 
     References
@@ -91,17 +91,17 @@ class WinningFunction:
 
         Parameters
         -------
-        consts: NDArray[float], shape (search_volume, ).
+        consts: NDArray[float], shape (search_volume, )
             Parameter of the winning price function for each ad.
             (search_volume is determined in reinforcement learning (RL) environment.)
 
-        bid_prices: NDArray[int], shape (search_volume, ).
+        bid_prices: NDArray[int], shape (search_volume, )
             Bid price for each auction.
             (search_volume is determined in RL environment.)
 
         Returns
         -------
-        impression_probabilities: NDArray[float], shape (search_volume, ).
+        impression_probabilities: NDArray[float], shape (search_volume, )
             Auction winning probability for each auction.
 
         """
@@ -123,10 +123,10 @@ class SecondPrice:  # fix later
 
     Parameters
     -------
-    n_dices: int.
+    n_dices: int
         Number of assumed participant to the auction.
 
-    random_state: int, default=12345.
+    random_state: int, default=12345
         Random state.
 
     References
@@ -151,17 +151,17 @@ class SecondPrice:  # fix later
 
         Parameters
         -------
-        consts: NDArray[float], shape (search_volume, ).
+        consts: NDArray[float], shape (search_volume, )
             Parameter of the winning price function for each ad.
             (search_volume is determined in RL environment.)
 
-        probs: NDArray[int], shape (search_volume, ).
+        probs: NDArray[int], shape (search_volume, )
             Auction winning probability for each auction.
             (search_volume is determined in RL environment.)
 
         Returns
         -------
-        second_prices: NDArray[int], shape (search_volume, ).
+        second_prices: NDArray[int], shape (search_volume, )
             Second price for each auction.
 
         """
@@ -180,17 +180,17 @@ class SecondPrice:  # fix later
 
         Parameters
         -------
-        consts: NDArray[float], shape (search_volume, ).
+        consts: NDArray[float], shape (search_volume, )
             Parameter of the winning price function for each ad.
             (search_volume is determined in RL environment.)
 
-        probs: NDArray[int], shape (search_volume, ).
+        probs: NDArray[int], shape (search_volume, )
             Auction winning probability of the second place for each auction.
             (search_volume is determined in RL environment.)
 
         Returns
         -------
-        second_prices: NDArray[float], shape (search_volume, ).
+        second_prices: NDArray[float], shape (search_volume, )
             Second price for each auction.
 
         """
@@ -212,16 +212,16 @@ class CTR:
 
     Parameters
     -------
-    ad_feature_dim: int.
+    ad_feature_dim: int
         Dimensions of the ad feature vectors.
 
-    user_feature_dim: int.
+    user_feature_dim: int
         Dimensions of the user feature vectors.
 
-    trend_interval: int.
+    trend_interval: int
         Length of the CTR trend cycle.
 
-    random_state: int, default=12345.
+    random_state: int, default=12345
         Random state.
 
     """
@@ -271,18 +271,18 @@ class CTR:
 
         Parameters
         -------
-        timestep: Union[int, NDArray[int]], shape None/(n_samples, ).
+        timestep: Union[int, NDArray[int]], shape None/(n_samples, )
             Timestep of the RL environment.
             (n_samples is determined in fit_reward_estimator function in simulator.)
 
-        contexts: NDArray[float], shape (search_volume/n_samples, ad_feature_dim + user_feature_dim).
+        contexts: NDArray[float], shape (search_volume/n_samples, ad_feature_dim + user_feature_dim)
             Context vector (both the ad and the user features) for each auction.
             (search_volume is determined in RL environment.)
             (n_samples is determined in fit_reward_estimator function in simulator.)
 
         Returns
         -------
-        ctrs: NDArray[float], shape (search_volume/n_samples, ).
+        ctrs: NDArray[float], shape (search_volume/n_samples, )
             Ground-truth CTR (i.e., click per impression) for each auction.
 
         """
@@ -357,18 +357,18 @@ class CVR:
 
         Parameters
         -------
-        timestep: Union[int, NDArray[int]], shape None/(n_samples, ).
+        timestep: Union[int, NDArray[int]], shape None/(n_samples, )
             Timestep of the RL environment.
             (n_samples is determined in fit_reward_estimator function in simulator.)
 
-        contexts: NDArray[float], shape (search_volume/n_samples, ad_feature_dim + user_feature_dim).
+        contexts: NDArray[float], shape (search_volume/n_samples, ad_feature_dim + user_feature_dim)
             Context vector (both the ad and the user features) for each auction.
             (search_volume is determined in RL environment.)
             (n_samples is determined in fit_reward_estimator function in simulator.)
 
         Returns
         -------
-        cvrs: NDArray[float], shape (search_volume/n_samples, ).
+        cvrs: NDArray[float], shape (search_volume/n_samples, )
             Ground-truth CVR (i.e., conversion per click) for each auction.
 
         """
