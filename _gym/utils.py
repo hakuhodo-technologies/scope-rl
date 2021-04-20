@@ -1,4 +1,4 @@
-"""Mathematical Functions used in environment."""
+"""Useful tools."""
 from dataclasses import dataclass
 from nptyping import NDArray
 
