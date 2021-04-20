@@ -19,7 +19,7 @@
 - Reference
 [name](link)
 
-# Checklist:
+## Checklist
 
 - [ ] pass unit test (or unnecessary)
 - [ ] no errors on newly made test cases
@@ -29,5 +29,5 @@
 - [ ] no warnings
 - [ ] work in progress
 
-# Comments:
+## Comments
  - Any other comments.
