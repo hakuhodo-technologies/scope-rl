@@ -10,9 +10,9 @@ import numpy as np
 from sklearn.base import BaseEstimator
 from sklearn.utils import check_random_state
 
-from env.function import NormalDistribution
-from env.simulator import RTBSyntheticSimulator
-from policy.policy import BasePolicy
+from function import NormalDistribution
+from simulator import RTBSyntheticSimulator
+from policy import BasePolicy
 
 
 class RTBEnv(gym.Env):
