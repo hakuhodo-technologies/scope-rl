@@ -1,28 +1,13 @@
 """Synthetic Dataset Generation."""
-from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
-from typing import Dict, Any
 
 import gym
 import numpy as np
 from sklearn.utils import check_random_state
 
-from policy.policy import BasePolicy
-
-
-@dataclass
-class BaseDataset(metaclass=ABCMeta):
-    """Base class for dataset."""
-
-    @abstractmethod
-    def obtain_trajectories(self, n_episodes: int) -> Dict[str, Any]:
-        """Rollout behavior policy and obtain trajectories."""
-        raise NotImplementedError
-
-    @abstractmethod
-    def calc_ground_truth_policy_value(self, n_episodes: int) -> float:
-        """Calculate ground-truth policy value of behavior policy by rollout."""
-        raise NotImplementedError
+from .base import BaseDataset
+from _gym.types import LoggedDataset
+from _gym.policy import BasePolicy
 
 
 @dataclass
@@ -51,9 +36,9 @@ class SyntheticDataset(BaseDataset):
     .. ::code-block:: python
 
         # import necessary module from _gym
-        >>> from env.env import RTBEnv
-        >>> from dataset.dataset import SyntheticDataset
-        >>> from policy.dqn import DQN
+        >>> from _gym.env import RTBEnv
+        >>> from _gym.dataset import SyntheticDataset
+        >>> from _gym.policy import DQN
         # import necessary module from other library
         >>> from sklearn.linear_model import LogisticRegression
 
@@ -119,7 +104,7 @@ class SyntheticDataset(BaseDataset):
             print("pre-train reward predictor in RTB Simulator..")
             self.env.fit_reward_predictor()
 
-    def obtain_trajectories(self, n_episodes: int = 10000) -> Dict[str, Any]:
+    def obtain_trajectories(self, n_episodes: int = 10000) -> LoggedDataset:
         """Rollout behavior policy and obtain trajectories.
 
         Parameters

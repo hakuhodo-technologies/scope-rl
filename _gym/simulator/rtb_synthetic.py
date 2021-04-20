@@ -1,5 +1,4 @@
 """Synthetic Bidding Auction Simulation."""
-from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
 from typing import Tuple, Optional
 from nptyping import NDArray
@@ -9,63 +8,8 @@ import numpy as np
 from sklearn.base import BaseEstimator
 from sklearn.utils import check_random_state, check_X_y
 
-from function import WinningFunction, CTR, CVR
-
-
-@dataclass
-class BaseSimulator(metaclass=ABCMeta):
-    """Base class for bidding auction simulators."""
-
-    @abstractmethod
-    def simulate_auction(
-        self,
-        timestep: int,
-        adjust_rate: int,
-        ad_ids: NDArray[int],
-        user_ids: NDArray[int],
-    ) -> Tuple[NDArray[int]]:
-        """Simulate bidding auction for given queries and return outcome."""
-        raise NotImplementedError
-
-    @abstractmethod
-    def fit_reward_predictor(self, n_samples: int) -> None:
-        """Fit reward predictor in advance to use prediction in bidding price determination."""
-        raise NotImplementedError
-
-    @abstractmethod
-    def _predict_reward(
-        self, timestep: int, contexts: NDArray[float]
-    ) -> NDArray[float]:
-        """Predict reward (i.e., auction outcome) to determine bidding price."""
-        raise NotImplementedError
-
-    @abstractmethod
-    def _calc_ground_truth_reward(
-        self, timestep: int, contexts: NDArray[float]
-    ) -> NDArray[float]:
-        """Calculate ground-truth reward (i.e., auction outcome) to determine bidding price."""
-        raise NotImplementedError
-
-    @abstractmethod
-    def _map_idx_to_contexts(
-        self, ad_ids: NDArray[int], user_ids: NDArray[int]
-    ) -> NDArray[float]:
-        """Map the ad and the user index into context vectors."""
-        raise NotImplementedError
-
-    @abstractmethod
-    def _determine_bid_price(
-        self, timestep: int, adjust_rate: int, contexts: NDArray[float]
-    ) -> NDArray[int]:
-        """Determine the bidding price using given adjust rate and the predicted/ground-truth rewards."""
-        raise NotImplementedError
-
-    @abstractmethod
-    def _calc_and_sample_outcome(
-        self, timestep: int, bid_prices: NDArray[int], contexts: NDArray[float]
-    ) -> Tuple[NDArray[float]]:
-        """Calculate pre-determined probabilities from contexts and stochastically sample the outcome."""
-        raise NotImplementedError
+from .base import BaseSimulator
+from .function import WinningFunction, CTR, CVR
 
 
 @dataclass
@@ -119,12 +63,6 @@ class RTBSyntheticSimulator(BaseSimulator):
     trend_interval: int, default=24
         Length of the ctr/cvr trend cycle.
         Default number indicates that the trend cycles every 24h.
-
-    n_dices: int, default=10
-        Number of the random_variables sampled to calculate second price.
-
-    wf_alpha: float, default=2.0
-        Parameter (exponential coefficient) for WinningFunction used in the auction.
 
     random_state: int, default=12345
         Random state.

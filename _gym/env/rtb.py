@@ -10,9 +10,9 @@ import numpy as np
 from sklearn.base import BaseEstimator
 from sklearn.utils import check_random_state
 
-from function import NormalDistribution
-from simulator import RTBSyntheticSimulator
-from policy import BasePolicy
+from _gym.utils import NormalDistribution
+from _gym.simulator import RTBSyntheticSimulator
+from _gym.policy import BasePolicy
 
 
 class RTBEnv(gym.Env):
@@ -148,8 +148,8 @@ class RTBEnv(gym.Env):
     .. codeblock:: python
 
         # import necessary module from _gym
-        from env.env import RTBEnv
-        from policy.base import RandomPolicy
+        from _gym.env import RTBEnv
+        from _gym.policy import RandomPolicy
 
         # import necessary module from other library
         from sklearn.linear_model import LogisticRegression
