@@ -9,7 +9,7 @@ import numpy as np
 from sklearn.base import BaseEstimator
 from sklearn.utils import check_random_state, check_X_y
 
-from env.function import WinningFunction, CTR, CVR
+from function import WinningFunction, CTR, CVR
 
 
 @dataclass
