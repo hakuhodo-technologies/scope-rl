@@ -9,7 +9,7 @@ import numpy as np
 from sklearn.base import BaseEstimator
 from sklearn.utils import check_random_state, check_X_y
 
-from env.function import WinningFunction, SecondPrice, CTR, CVR
+from env.function import WinningFunction, CTR, CVR
 
 
 @dataclass
@@ -144,8 +144,6 @@ class RTBSyntheticSimulator(BaseSimulator):
     user_feature_dim: int = 5
     standard_bid_price: int = 100
     trend_interval: int = 24
-    n_dices: int = 10
-    wf_alpha: float = 2.0
     random_state: int = 12345
 
     def __post_init__(self):
@@ -199,14 +197,6 @@ class RTBSyntheticSimulator(BaseSimulator):
             raise ValueError(
                 f"trend_interval must be a positive interger, but {self.trend_interval} is given"
             )
-        if not (isinstance(self.n_dices, int) and self.n_dices > 0):
-            raise ValueError(
-                f"n_dices must be a positive interger, but {self.n_dices} is given"
-            )
-        if not (isinstance(self.wf_alpha, float) and self.wf_alpha > 0):
-            raise ValueError(
-                f"wf_alpha must be a positive float value, but {self.wf_alpha} is given"
-            )
         if self.random_state is None:
             raise ValueError("random_state must be given")
         self.random_ = check_random_state(self.random_state)
@@ -216,15 +206,18 @@ class RTBSyntheticSimulator(BaseSimulator):
         self.users = self.random_.rand((self.n_users, self.user_feature_dim))
 
         # define winning function parameters for each ads
-        self.wf_consts = self.random_.normal(
-            loc=self.standard_bid_price ** (1 / self.wf_alpha),
-            scale=self.standard_bid_price ** (1 / self.wf_alpha) / 5,
+        self.wf_ks = self.random_.normal(
+            loc=50,
+            scale=5,
             size=self.n_ads,
+        )
+        self.wf_thetas = self.random_.normal(
+            loc=self.standard_bid_price * 0.02,
+            scale=(self.standard_bid_price * 0.02) / 5,
         )
 
         # define winning function and second price sampler
-        self.winning_function = WinningFunction(self.wf_alpha)
-        self.second_price = SecondPrice(self.n_dices, self.random_state)
+        self.winning_function = WinningFunction(self.random_state)
 
         # define click/imp and conversion/click rate function
         self.ctr = CTR(
@@ -317,11 +310,11 @@ class RTBSyntheticSimulator(BaseSimulator):
         if len(ad_ids) != len(user_ids):
             raise ValueError("ad_ids and user_ids must have same length")
 
+        ks, thetas = self.wf_ks[ad_ids], self.wf_thetas[ad_ids]
         contexts = self._map_idx_to_contexts(ad_ids, user_ids)
-        wf_consts = self.wf_consts[ad_ids]
         bid_prices = self._determine_bid_price(timestep, adjust_rate, contexts)
 
-        return self._calc_and_sample_outcome(timestep, wf_consts, bid_prices, contexts)
+        return self._calc_and_sample_outcome(timestep, ks, thetas, bid_prices, contexts)
 
     def fit_reward_predictor(self, n_samples: int = 10000) -> None:
         """Fit reward predictor in advance (pre-train) to use prediction in bidding price determination.
@@ -362,14 +355,12 @@ class RTBSyntheticSimulator(BaseSimulator):
         feature_vectors = np.concatenate([contexts, timesteps], axis=1)
 
         if self.objective == "click":
-            probs = self.ctr.calc_prob(timesteps, contexts)
+            rewards = self.ctr.sample_outcome(timesteps, contexts)
 
         else:  # "conversion"
-            probs = self.ctr.calc_prob(timesteps, contexts) * self.cvr.calc_prob(
+            rewards = self.ctr.sample_outcome(
                 timesteps, contexts
-            )
-
-        rewards = self.random_.rand(n_samples) < probs
+            ) * self.cvr.sample_outcome(timesteps, contexts)
 
         X, y = check_X_y(feature_vectors, rewards)
         self.reward_predictor.fit(X, y)
@@ -491,7 +482,8 @@ class RTBSyntheticSimulator(BaseSimulator):
     def _calc_and_sample_outcome(
         self,
         timestep: int,
-        wf_consts: NDArray[float],
+        ks: NDArray[float],
+        thetas: NDArray[float],
         bid_prices: NDArray[int],
         contexts: NDArray[float],
     ) -> Tuple(NDArray[int]):
@@ -510,8 +502,12 @@ class RTBSyntheticSimulator(BaseSimulator):
         timestep: int.
             Timestep of the RL environment.
 
-        wf_consts: NDArray[float], shape (search_volume, )
-            Parameter for WinningFunction for each ad used in the auction.
+        ks: NDArray[float], shape (search_volume, )
+            Shape parameter for WinningFunction for each ad used in the auction.
+            (search_volume is determined in RL environment.)
+
+        thetas: NDArray[float], shape (search_volume, )
+            Scale parameter for WinningFunction for each ad used in the auction.
             (search_volume is determined in RL environment.)
 
         bid_prices: NDArray[float], shape(search_volume, )
@@ -541,17 +537,12 @@ class RTBSyntheticSimulator(BaseSimulator):
                 Binary indicator of whether conversion occurred or not for each auction.
 
         """
-        impression_probs = self.winning_function.calc_prob(wf_consts, bid_prices)
-        second_prices = self.second_price.sample(wf_consts, impression_probs)
-        ctrs = self.ctr.calc_prob(timestep, contexts)
-        cvrs = self.cvr.calc_prob(timestep, contexts)
-
-        random_variables = self.random_.rand(len(bid_prices), 3)
-
-        impressions = (random_variables[:, 0] < impression_probs).astype(int)
-        clicks = ((random_variables[:, 1] < ctrs) * impressions).astype(int)
-        conversions = ((random_variables[:, 2] < cvrs) * clicks).astype(int)
-        costs = (second_prices * clicks).astype(int)
+        impressions, winning_prices = self.winning_function.sample_outcome(
+            ks, thetas, bid_prices
+        )
+        clicks = self.ctr.sample_outcome(timestep, contexts) * impressions
+        conversions = self.cvr.sample_outcome(timestep, contexts) * clicks
+        costs = winning_prices * clicks
 
         return bid_prices, costs, impressions, clicks, conversions
 

@@ -1,6 +1,6 @@
 """Mathematical Functions used in Real-Time Bidding (RTB) Simulation."""
 from dataclasses import dataclass
-from typing import Union
+from typing import Tuple, Union
 from nptyping import NDArray
 
 import numpy as np
@@ -58,42 +58,49 @@ class NormalDistribution:
 
 @dataclass
 class WinningFunction:
-    """Class to calculate auction winning rate for given bid price.
+    """Class to sample the winning price (i.e., second price) and compare with the given bid price.
 
     Note
     -------
-    Calculate auction winning rate (i.e., impression probability) as follows.
-        auction winning rate = (bid_price ** alpha) / (const + bid_price ** alpha),
-        where alpha and const is parameters to determine the shape of winning function.
+    Winning price distribution follows gamma distribution.
+
+    .. math::
+
+        p(x) = x^{k-1} \\frac{\\mathrm{e}^{- x / \\theta}}{\\theta^k \\Gamma(k)},
+
+    where :math:`\\Gamma(k) := (k-1)!` and :math:`k` and :math:`\\theta` are hyperparameters.
 
     Parameters
     -------
-    alpha: float, default=2.0
-        Exponential coefficient parameter of the winning function.
+    random_state: int = 12345
+        Random state.
 
     References
     -------
+    Wen-Yuan Zhu, Wen-Yueh Shih, Ying-Hsuan Lee, Wen-Chih Peng, and  Jiun-Long Huang.
+    "A Gamma-based Regression for Winning Price Estimation in Real-Time Bidding Advertising.", 2017.
 
     """
 
-    alpha: float = 2.0
-
     def __post_init__(self):
-        if not (isinstance(self.alpha, float) and self.alpha > 0):
-            raise ValueError(
-                f"alpha must be a positive float number, but {self.alpha} is given"
-            )
+        if self.random_state is None:
+            raise ValueError("random_state must be given")
+        self.random_ = check_random_state(self.random_state)
 
-    def calc_prob(
-        self, consts: NDArray[float], bid_prices: NDArray[int]
-    ) -> NDArray[float]:
+    def sample_outcome(
+        self, ks: NDArray[float], thetas: NDArray[float], bid_prices: NDArray[int]
+    ) -> Tuple(NDArray[int]):
         """Calculate impression probability for given bid price.
 
         Parameters
         -------
-        consts: NDArray[float], shape (search_volume, )
-            Parameter of the winning price function for each ad.
-            (search_volume is determined in reinforcement learning (RL) environment.)
+        ks: NDArray[int], shape (search_volume, )
+            Pre-defined shape hyperparameter for winning price (gamma) distribution for each ad.
+            (search_volume is determined in RL environment.)
+
+        thetas: NDArray[int], shape (search_volume, )
+            Pre-defined scale hyperparameter for winning price (gamma) distribution for each ad.
+            (search_volume is determined in RL environment.)
 
         bid_prices: NDArray[int], shape (search_volume, )
             Bid price for each auction.
@@ -101,100 +108,24 @@ class WinningFunction:
 
         Returns
         -------
-        impression_probabilities: NDArray[float], shape (search_volume, )
-            Auction winning probability for each auction.
+        impressions: NDArray[int], shape (search_volume, )
+            Whether impression occurred for each auction.
+
+        winning_prices: NDArray[int], shape (search_volume, )
+            Sampled winning price for each auction.
 
         """
-        if not (isinstance(consts, NDArray[float]) and consts.min() > 0):
-            raise ValueError("consts must be an NDArray of positive float values")
+        if not (isinstance(ks, NDArray[float]) and ks.min() > 0):
+            raise ValueError("ks must be an NDArray of positive float values")
+        if not (isinstance(thetas, NDArray[float]) and thetas.min() > 0):
+            raise ValueError("thetas must be an NDArray of positive float values")
         if not (isinstance(bid_prices, NDArray[int]) and bid_prices.min() > 0):
             raise ValueError("bid_prices must be an NDArray of positive integers")
-        return (bid_prices ** self.alpha) / (consts + bid_prices ** self.alpha)
 
+        winning_prices = self.random_.gamma(shape=ks, scale=thetas)
+        impressions = winning_prices < bid_prices
 
-@dataclass
-class SecondPrice:  # fix later
-    """Class to stochastically determine second price.
-
-    Note
-    -------
-    fix later
-
-
-    Parameters
-    -------
-    n_dices: int
-        Number of assumed participant to the auction.
-
-    random_state: int, default=12345
-        Random state.
-
-    References
-    -------
-
-    """
-
-    n_dices: int
-    random_state: int = 12345
-
-    def __post_init__(self):
-        if not (isinstance(self.n_dices, int) and self.n_dices > 0):
-            raise ValueError(
-                f"n_dices must be a positive interger, but {self.n_dices} is given"
-            )
-        if self.random_state is None:
-            raise ValueError("random_state must be given")
-        self.random_ = check_random_state(self.random_state)
-
-    def sample(self, consts: NDArray[float], probs: NDArray[int]) -> NDArray[int]:
-        """Sample second price for each bid.
-
-        Parameters
-        -------
-        consts: NDArray[float], shape (search_volume, )
-            Parameter of the winning price function for each ad.
-            (search_volume is determined in RL environment.)
-
-        probs: NDArray[int], shape (search_volume, )
-            Auction winning probability for each auction.
-            (search_volume is determined in RL environment.)
-
-        Returns
-        -------
-        second_prices: NDArray[int], shape (search_volume, )
-            Second price for each auction.
-
-        """
-        if not (isinstance(consts, NDArray[float]) and consts.min() > 0):
-            raise ValueError("consts must be an NDArray of positive float values")
-        if not (isinstance(probs, NDArray[float]) and probs.min() > 0):
-            raise ValueError("probs must be an NDArray of positive float values")
-        discounts = self.random_.rand((len(consts), self.n_dices)).max(axis=1)
-
-        return self._inverse_winning_function(consts, probs * discounts).astype(int)
-
-    def _inverse_winning_function(
-        consts: NDArray[float], probs: NDArray[float]
-    ) -> NDArray[float]:
-        """Calculate second price for given auction winning probability using inverse winning function.
-
-        Parameters
-        -------
-        consts: NDArray[float], shape (search_volume, )
-            Parameter of the winning price function for each ad.
-            (search_volume is determined in RL environment.)
-
-        probs: NDArray[int], shape (search_volume, )
-            Auction winning probability of the second place for each auction.
-            (search_volume is determined in RL environment.)
-
-        Returns
-        -------
-        second_prices: NDArray[float], shape (search_volume, )
-            Second price for each auction.
-
-        """
-        return (probs * consts) / (1 - probs)
+        return impressions.astype(int), winning_prices.astype(int)
 
 
 @dataclass
@@ -301,6 +232,32 @@ class CTR:
         ]
         return ctrs
 
+    def sample_outcome(
+        self, timestep: Union[int, NDArray[int]], contexts: NDArray[float]
+    ) -> NDArray[int]:
+        """Stochastically determine if click occurs or not in impression=True case.
+
+        Parameters
+        -------
+        timestep: Union[int, NDArray[int]], shape None/(n_samples, )
+            Timestep of the RL environment.
+            (n_samples is determined in fit_reward_estimator function in simulator.)
+
+        contexts: NDArray[float], shape (search_volume/n_samples, ad_feature_dim + user_feature_dim)
+            Context vector (both the ad and the user features) for each auction.
+            (search_volume is determined in RL environment.)
+            (n_samples is determined in fit_reward_estimator function in simulator.)
+
+        Returns
+        -------
+        clicks: NDArray[int], shape (search_volume/n_samples, )
+            Whether click occurs in impression=True case.
+
+        """
+        ctrs = self.calc_prob(timestep, contexts)
+        clicks = self.random_.rand(len(contexts)) < ctrs
+        return clicks.astype(int)
+
 
 @dataclass
 class CVR:
@@ -329,7 +286,7 @@ class CVR:
     ctr: CTR
 
     def __post_init__(self):
-        if not isinstance(ctr, CTR):
+        if not isinstance(self.ctr, CTR):
             raise ValueError("ctr must be the CTR or a child class of the CTR")
 
         self.trend_interval = self.ctr.trend_interval
@@ -386,3 +343,29 @@ class CVR:
             timestep % self.trend_interval
         ]
         return cvrs
+
+    def sample_outcome(
+        self, timestep: Union[int, NDArray[int]], contexts: NDArray[float]
+    ) -> NDArray[int]:
+        """Stochastically determine if conversion occurs or not in click=True case.
+
+        Parameters
+        -------
+        timestep: Union[int, NDArray[int]], shape None/(n_samples, )
+            Timestep of the RL environment.
+            (n_samples is determined in fit_reward_estimator function in simulator.)
+
+        contexts: NDArray[float], shape (search_volume/n_samples, ad_feature_dim + user_feature_dim)
+            Context vector (both the ad and the user features) for each auction.
+            (search_volume is determined in RL environment.)
+            (n_samples is determined in fit_reward_estimator function in simulator.)
+
+        Returns
+        -------
+        conversions: NDArray[int], shape (search_volume/n_samples, )
+            Whether conversion occurs in click=True case.
+
+        """
+        cvrs = self.calc_prob(timestep, contexts)
+        conversions = self.random_.rand(len(contexts)) < cvrs
+        return conversions.astype(int)

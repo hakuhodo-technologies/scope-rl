@@ -124,14 +124,6 @@ class RTBEnv(gym.Env):
         Parameter in RTBSyntheticSimulator class.
         Length of the ctr/cvr trend cycle.
 
-    n_dices: int, default=10
-        Parameter in RTBSyntheticSimulator class.
-        Number of the random_variables sampled to calculate second price.
-
-    wf_alpha: float, default=2.0
-        Parameter in RTBSyntheticSimulator class.
-        Parameter (exponential coefficient) for WinningFunction used in the auction.
-
     candidate_ads: NDArray[int], shape (n_candidate_ads, ), default=np.arange(1)
         Ad ids used in auctions.
 
@@ -212,8 +204,6 @@ class RTBEnv(gym.Env):
         user_feature_dim: int = 5,
         standard_bid_price: int = 100,
         trend_interval: Optional[int] = None,
-        n_dices: int = 10,
-        wf_alpha: float = 2.0,
         candidate_ads: NDArray[int] = np.arange(1),  # ad idxes
         candidate_users: NDArray[int] = np.arange(10),  # user idxes
         candidate_ad_sampling_prob: Optional[NDArray[float]] = None,
@@ -336,8 +326,6 @@ class RTBEnv(gym.Env):
                 user_feature_dim=user_feature_dim,
                 standard_bid_price=standard_bid_price,
                 trend_interval=trend_interval,
-                n_dices=n_dices,
-                wf_alpha=wf_alpha,
                 random_state=random_state,
             )
 
