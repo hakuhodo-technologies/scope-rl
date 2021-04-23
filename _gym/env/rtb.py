@@ -120,9 +120,10 @@ class RTBEnv(gym.Env):
         Parameter in RTBSyntheticSimulator class.
         Bid price whose impression probability is expected to be 0.5.
 
-    trend_interval: int, default=24
+    trend_interval: Optional[int], default=None
         Parameter in RTBSyntheticSimulator class.
         Length of the ctr/cvr trend cycle.
+        If None, trend_interval is set to step_per_episode.
 
     candidate_ads: NDArray[int], shape (n_candidate_ads, ), default=np.arange(1)
         Ad ids used in auctions.
@@ -184,7 +185,6 @@ class RTBEnv(gym.Env):
     -------
 
     """
-
     def __init__(
         self,
         semi_synthetic: bool = False,
@@ -307,7 +307,7 @@ class RTBEnv(gym.Env):
             )
         if random_state is None:
             raise ValueError("random_state must be given")
-        self.random_ = check_random_state(self.random_state)
+        self.random_ = check_random_state(random_state)
 
         # initialize simulator
         if semi_synthetic:
@@ -330,23 +330,26 @@ class RTBEnv(gym.Env):
             )
 
         self.objective = objective
+        self.use_reward_predictor = use_reward_predictor
 
         # define observation space
         self.observation_space = Box(
-            low=[0, 0, 0, 0, 0, 0, 0.1],
-            high=[step_per_episode, initial_budget, np.inf, np.inf, 1, np.inf, 10]
+            low=np.array([0, 0, 0, 0, 0, 0, 0.1]),
+            high=np.array([step_per_episode, initial_budget, np.inf, np.inf, 1, np.inf, 10]),
             # observations = (timestep, remaining_budget, BCR, CPM, WR, reward, adjust_rate)
         )
 
         # define action space
         self.action_type = action_type
+        self.action_dim = action_dim
+        self.action_meaning = action_meaning
 
         if self.action_type == "discrete":
             self.action_space = Discrete(action_dim)
 
             if self.action_meaning is None:
                 self.action_meaning = dict(
-                    zip(range(action_dim), np.logspace(-1, 1, action_dim))
+                    zip(range(self.action_dim), np.logspace(-1, 1, self.action_dim))
                 )
 
         else:  # "continuous"
@@ -362,8 +365,8 @@ class RTBEnv(gym.Env):
         self.candidate_users = candidate_users
 
         if candidate_ad_sampling_prob is None:
-            candidate_ad_sampling_prob = np.full(
-                len(candidate_ads), 1 / len(candidate_ads)
+            self.candidate_ad_sampling_prob = np.full(
+                len(self.candidate_ads), 1 / len(self.candidate_ads)
             )
         else:
             self.candidate_ad_sampling_prob = candidate_ad_sampling_prob / np.sum(
@@ -371,8 +374,8 @@ class RTBEnv(gym.Env):
             )
 
         if candidate_user_sampling_prob is None:
-            candidate_user_sampling_prob = np.full(
-                len(candidate_users), 1 / len(candidate_users)
+            self.candidate_user_sampling_prob = np.full(
+                len(self.candidate_users), 1 / len(self.candidate_users)
             )
         else:
             self.candidate_user_sampling_prob = candidate_user_sampling_prob / np.sum(
@@ -384,12 +387,10 @@ class RTBEnv(gym.Env):
                 NormalDistribution(mean=10, std=0.0)
             ] * step_per_episode
 
-        self.search_volumes = np.zeros(step_per_episode, 100)
+        self.search_volumes = np.zeros((step_per_episode, 100))
         for i in range(step_per_episode):
-            self.search_volumes[i] = search_volume_distribution.sample(size=100).astype(
-                int
-            )
-        self.search_volumes = np.clip(self.search_volumes, 5, None)
+            self.search_volumes[i] = search_volume_distribution[i].sample(size=100)
+        self.search_volumes = np.clip(self.search_volumes, 5, None).astype(int)
 
         # just for idx of search_volumes to sample from
         self.T = 0
@@ -529,7 +530,7 @@ class RTBEnv(gym.Env):
         # update logs
         self.prev_remaining_budget = self.remaining_budget
 
-        return np.array(obs.values()).astype(float), reward, done, info
+        return np.array(list(obs.values())).astype(float), reward, done, info
 
     def reset(self) -> NDArray[float]:
         """Initialize the environment.
@@ -566,7 +567,7 @@ class RTBEnv(gym.Env):
             "adjust rate": 0,
         }
 
-        return np.array(obs.values()).astype(float)
+        return np.array(list(obs.values())).astype(float)
 
     def render(self, mode: str = "human") -> None:
         """Maybe add some plot later."""

@@ -1,5 +1,6 @@
 """Useful tools."""
 from dataclasses import dataclass
+from typing import Union
 from nptyping import NDArray
 
 import numpy as np
@@ -23,14 +24,14 @@ class NormalDistribution:
 
     """
 
-    mean: float
-    std: float
+    mean: Union[int, float]
+    std: Union[int, float]
     random_state: int = 12345
 
     def __post_init__(self):
-        if not isinstance(self.mean, float):
+        if not isinstance(self.mean, (int, float)):
             raise ValueError(f"mean must be a float number, but {self.mean} is given")
-        if not isinstance(self.std, float):
+        if not isinstance(self.std, (int, float)):
             raise ValueError("std must be a float number, but {self.std} is given")
         if self.random_state is None:
             raise ValueError("random_state must be given")

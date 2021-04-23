@@ -32,6 +32,7 @@ class WinningFunction:
     "A Gamma-based Regression for Winning Price Estimation in Real-Time Bidding Advertising.", 2017.
 
     """
+    random_state: int = 12345
 
     def __post_init__(self):
         if self.random_state is None:
@@ -40,7 +41,7 @@ class WinningFunction:
 
     def sample_outcome(
         self, ks: NDArray[float], thetas: NDArray[float], bid_prices: NDArray[int]
-    ) -> Tuple(NDArray[int]):
+    ) -> Tuple[NDArray[int]]:
         """Calculate impression probability for given bid price.
 
         Parameters
@@ -70,8 +71,8 @@ class WinningFunction:
             raise ValueError("ks must be an NDArray of positive float values")
         if not (isinstance(thetas, NDArray[float]) and thetas.min() > 0):
             raise ValueError("thetas must be an NDArray of positive float values")
-        if not (isinstance(bid_prices, NDArray[int]) and bid_prices.min() > 0):
-            raise ValueError("bid_prices must be an NDArray of positive integers")
+        if not (isinstance(bid_prices, NDArray[int]) and bid_prices.min() >= 0):
+            raise ValueError("bid_prices must be an NDArray of non-negative integers")
 
         winning_prices = self.random_.gamma(shape=ks, scale=thetas)
         impressions = winning_prices < bid_prices
@@ -107,7 +108,6 @@ class CTR:
         Random state.
 
     """
-
     ad_feature_dim: int
     user_feature_dim: int
     trend_interval: int
@@ -169,8 +169,8 @@ class CTR:
 
         """
         if not (
-            (isinstance(timestep, int) and timestep > 0)
-            or (isinstance(timestep, NDArray[int]) and timestep.min() > 0)
+            (isinstance(timestep, int) and timestep >= 0)
+            or (isinstance(timestep, NDArray[int]) and timestep.min() >= 0)
         ):
             raise ValueError(
                 "timestep must be non negative integer or an NDArray of non negative integers"
@@ -178,9 +178,9 @@ class CTR:
         if not isinstance(contexts, NDArray[float]):
             raise ValueError("contexts must be an NDArray of float values")
 
-        ctrs = (self.contexts @ self.coef.T) * self.time_coef[
+        ctrs = (contexts @ self.coef.T) * self.time_coef[
             timestep % self.trend_interval
-        ]
+        ].flatten()
         return ctrs
 
     def sample_outcome(
@@ -222,7 +222,7 @@ class CVR:
     Then, we multiply the value with time_coef and gain (ground-truth) CVR.
 
     In short, CVR is calculated as follows.
-        CVR = (context @ coef) * time_coef, where @ denotes innner product.
+        CVR = (context @ coef) * time_coef, where @ denotes inner product.
 
     To make correlation with CTR, we define coef of CVR by adding residuals sampled
     from normal distribution to that of CTR.
@@ -233,16 +233,18 @@ class CVR:
         Pre-defined CTR function.
 
     """
-
     ctr: CTR
 
     def __post_init__(self):
+        """
+        # fix later, assertion fails.
         if not isinstance(self.ctr, CTR):
+            print(type(self.ctr))  # <class '_gym.simulator.function.CTR'>
             raise ValueError("ctr must be the CTR or a child class of the CTR")
-
-        self.trend_interval = self.ctr.trend_interval
+        """
         self.ad_feature_dim = self.ctr.ad_feature_dim
         self.user_feature_dim = self.ctr.user_feature_dim
+        self.trend_interval = self.ctr.trend_interval
         self.random_ = self.ctr.random_
 
         residuals = self.random_.normal(
@@ -250,7 +252,7 @@ class CVR:
         )
         self.coef = self.ctr.coef + residuals
 
-        self.time_coef = self.random_.beta(40, 10, size=self.step_per_episode)
+        self.time_coef = self.random_.beta(40, 10, size=self.trend_interval)
         self.time_coef = np.convolve(self.time_coef, np.ones(3) / 3, mode="same")
 
     def calc_prob(
@@ -281,8 +283,8 @@ class CVR:
 
         """
         if not (
-            (isinstance(timestep, int) and timestep > 0)
-            or (isinstance(timestep, NDArray[int]) and timestep.min() > 0)
+            (isinstance(timestep, int) and timestep >= 0)
+            or (isinstance(timestep, NDArray[int]) and timestep.min() >= 0)
         ):
             raise ValueError(
                 "timestep must be non negative integer or an NDArray of non negative integers"
@@ -290,9 +292,9 @@ class CVR:
         if not isinstance(contexts, NDArray[float]):
             raise ValueError("contexts must be an NDArray of float values")
 
-        cvrs = (self.contexts @ self.coef.T) * self.time_coef[
+        cvrs = (contexts @ self.coef.T) * self.time_coef[
             timestep % self.trend_interval
-        ]
+        ].flatten()
         return cvrs
 
     def sample_outcome(

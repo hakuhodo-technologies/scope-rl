@@ -1,6 +1,7 @@
 """Abstract Base Class for Simulation."""
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
+from typing import Tuple
 from nptyping import NDArray
 
 

@@ -60,9 +60,10 @@ class RTBSyntheticSimulator(BaseSimulator):
     standard_bid_price: int, default = 100
         Bid price whose impression probability is expected to be 0.5.
 
-    trend_interval: int, default=24
+    trend_interval: Optional[int], default=None
         Length of the ctr/cvr trend cycle.
-        Default number indicates that the trend cycles every 24h.
+        For example, trend_interval=24 indicates that the trend cycles every 24h.
+        If None, trend_interval is set to step_per_episode.
 
     random_state: int, default=12345
         Random state.
@@ -71,7 +72,6 @@ class RTBSyntheticSimulator(BaseSimulator):
     -------
 
     """
-
     objective: str = "conversion"
     use_reward_predictor: bool = False
     reward_predictor: Optional[BaseEstimator] = None
@@ -131,7 +131,7 @@ class RTBSyntheticSimulator(BaseSimulator):
             raise ValueError(
                 f"standard_bid_price must be a positive interger, but {self.standard_bid_price} is given"
             )
-        if not (isinstance(self.trend_interval, int) and self.trend_interval > 0):
+        if not (self.trend_interval is None or (isinstance(self.trend_interval, int) and self.trend_interval > 0)):
             raise ValueError(
                 f"trend_interval must be a positive interger, but {self.trend_interval} is given"
             )
@@ -140,8 +140,12 @@ class RTBSyntheticSimulator(BaseSimulator):
         self.random_ = check_random_state(self.random_state)
 
         # sample feature vectors for both ads and users
-        self.ads = self.random_.rand((self.n_ads, self.ad_feature_dim))
-        self.users = self.random_.rand((self.n_users, self.user_feature_dim))
+        self.ads = self.random_.rand(self.n_ads, self.ad_feature_dim)
+        self.users = self.random_.rand(self.n_users, self.user_feature_dim)
+
+        # set trend_interval if None
+        if self.trend_interval is None:
+            self.trend_interval = self.step_per_episode
 
         # define winning function parameters for each ads
         self.wf_ks = self.random_.normal(
@@ -152,6 +156,7 @@ class RTBSyntheticSimulator(BaseSimulator):
         self.wf_thetas = self.random_.normal(
             loc=self.standard_bid_price * 0.02,
             scale=(self.standard_bid_price * 0.02) / 5,
+            size=self.n_ads,
         )
 
         # define winning function and second price sampler
@@ -241,9 +246,9 @@ class RTBSyntheticSimulator(BaseSimulator):
             raise ValueError("ad_ids must be an NDArray of integers")
         if not isinstance(user_ids, NDArray[int]):
             raise ValueError("user_ids must be an NDArray of integers")
-        if ad_ids.min() < 0 or self.ad_ids.max() >= self.n_ads:
+        if ad_ids.min() < 0 or ad_ids.max() >= self.n_ads:
             raise ValueError("ad_ids must be chosen from integer within [0, n_ads)")
-        if user_ids.min() < 0 or self.user_ids.max() >= self.n_users:
+        if user_ids.min() < 0 or user_ids.max() >= self.n_users:
             raise ValueError("user_ids must be chosen from integer within [0, n_users)")
         if len(ad_ids) != len(user_ids):
             raise ValueError("ad_ids and user_ids must have same length")
@@ -289,7 +294,7 @@ class RTBSyntheticSimulator(BaseSimulator):
         user_ids = self.random_.choice(self.n_ads, n_samples)
         contexts = self._map_idx_to_contexts(ad_ids, user_ids)
 
-        timesteps = self.random_.choice(self.step_per_episode, n_samples)
+        timesteps = self.random_.choice(self.step_per_episode, n_samples).reshape((-1, 1))
         feature_vectors = np.concatenate([contexts, timesteps], axis=1)
 
         if self.objective == "click":
@@ -334,8 +339,9 @@ class RTBSyntheticSimulator(BaseSimulator):
             Predicted reward for each auction.
 
         """
+        timesteps = np.full(len(contexts), timestep).reshape((-1,1))
         feature_vectors = np.concatenate(
-            [contexts, np.full(len(contexts), timestep)], axis=1
+            [contexts, timesteps], axis=1
         )
 
         return self.reward_predictor.predict(feature_vectors)
@@ -424,7 +430,7 @@ class RTBSyntheticSimulator(BaseSimulator):
         thetas: NDArray[float],
         bid_prices: NDArray[int],
         contexts: NDArray[float],
-    ) -> Tuple(NDArray[int]):
+    ) -> Tuple[NDArray[int]]:
         """Calculate pre-determined probabilities from contexts and stochastically sample the outcome.
 
         Note
@@ -448,7 +454,7 @@ class RTBSyntheticSimulator(BaseSimulator):
             Scale parameter for WinningFunction for each ad used in the auction.
             (search_volume is determined in RL environment.)
 
-        bid_prices: NDArray[float], shape(search_volume, )
+        bid_prices: NDArray[int], shape(search_volume, )
             Bid price for each action.
             (search_volume is determined in RL environment.)
 

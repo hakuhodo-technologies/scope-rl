@@ -84,7 +84,6 @@ class SyntheticDataset(BaseDataset):
         ...
 
     """
-
     env: gym.Env
     behavior_policy: BasePolicy
     random_state: int = 12345
