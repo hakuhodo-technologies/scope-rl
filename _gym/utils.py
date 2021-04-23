@@ -13,10 +13,10 @@ class NormalDistribution:
 
     Parameters
     -------
-    mean: float
+    mean: Union[int, float]
         Mean value of the normal distribution.
 
-    std: float
+    std: Union[int, float]
         Standard deviation of the normal distribution.
 
     random_state: int, default=12345
