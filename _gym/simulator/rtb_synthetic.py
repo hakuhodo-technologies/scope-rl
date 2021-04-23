@@ -140,8 +140,8 @@ class RTBSyntheticSimulator(BaseSimulator):
         self.random_ = check_random_state(self.random_state)
 
         # sample feature vectors for both ads and users
-        self.ads = self.random_.rand(self.n_ads, self.ad_feature_dim)
-        self.users = self.random_.rand(self.n_users, self.user_feature_dim)
+        self.ads = self.random_.normal(size=(self.n_ads, self.ad_feature_dim)) + 1
+        self.users = self.random_.normal(size=(self.n_users, self.user_feature_dim)) + 1
 
         # set trend_interval if None
         if self.trend_interval is None:
@@ -259,7 +259,7 @@ class RTBSyntheticSimulator(BaseSimulator):
 
         return self._calc_and_sample_outcome(timestep, ks, thetas, bid_prices, contexts)
 
-    def fit_reward_predictor(self, n_samples: int = 10000) -> None:
+    def fit_reward_predictor(self, n_samples: int = 100000) -> None:
         """Fit reward predictor in advance (pre-train) to use prediction in bidding price determination.
 
         Note
@@ -275,7 +275,7 @@ class RTBSyntheticSimulator(BaseSimulator):
 
         Parameters
         -------
-        n_samples: int, default=10000
+        n_samples: int, default=100000
             Number of samples to fit reward predictor.
 
         """
@@ -344,7 +344,7 @@ class RTBSyntheticSimulator(BaseSimulator):
             [contexts, timesteps], axis=1
         )
 
-        return self.reward_predictor.predict(feature_vectors)
+        return self.reward_predictor.predict_proba(feature_vectors)[:,1]
 
     def _calc_ground_truth_reward(
         self, timestep: int, contexts: NDArray[float]

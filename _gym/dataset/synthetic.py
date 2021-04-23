@@ -251,7 +251,7 @@ class SyntheticDataset(BaseDataset):
                 )  # fix later
                 state = next_state
 
-    def fit_reward_predictor(self, n_samples: int = 10000) -> None:
+    def fit_reward_predictor(self, n_samples: int = 100000) -> None:
         """Pre-train reward prediction model used in env.simulator to calculate bid price.
 
         Note
@@ -260,7 +260,7 @@ class SyntheticDataset(BaseDataset):
 
         Parameters
         -------
-        n_samples: int, default=10000
+        n_samples: int, default=100000
             Number of samples to fit reward predictor in RTBSyntheticSimulator.
 
         """

@@ -40,7 +40,7 @@ class WinningFunction:
         self.random_ = check_random_state(self.random_state)
 
     def sample_outcome(
-        self, ks: NDArray[float], thetas: NDArray[float], bid_prices: NDArray[int]
+        self, ks: Union[NDArray[int], NDArray[float]], thetas: Union[NDArray[int], NDArray[float]], bid_prices: NDArray[int]
     ) -> Tuple[NDArray[int]]:
         """Calculate impression probability for given bid price.
 
@@ -67,14 +67,14 @@ class WinningFunction:
             Sampled winning price for each auction.
 
         """
-        if not (isinstance(ks, NDArray[float]) and ks.min() > 0):
+        if not (isinstance(ks, (NDArray[int], NDArray[float])) and ks.min() > 0):
             raise ValueError("ks must be an NDArray of positive float values")
-        if not (isinstance(thetas, NDArray[float]) and thetas.min() > 0):
+        if not (isinstance(thetas, (NDArray[int], NDArray[float])) and thetas.min() > 0):
             raise ValueError("thetas must be an NDArray of positive float values")
         if not (isinstance(bid_prices, NDArray[int]) and bid_prices.min() >= 0):
             raise ValueError("bid_prices must be an NDArray of non-negative integers")
 
-        winning_prices = self.random_.gamma(shape=ks, scale=thetas)
+        winning_prices = np.clip(self.random_.gamma(shape=ks, scale=thetas), 1, None)  # fix later
         impressions = winning_prices < bid_prices
 
         return impressions.astype(int), winning_prices.astype(int)
@@ -157,7 +157,7 @@ class CTR:
             Timestep of the RL environment.
             (n_samples is determined in fit_reward_estimator function in simulator.)
 
-        contexts: NDArray[float], shape (search_volume/n_samples, ad_feature_dim + user_feature_dim)
+        contexts: Union[NDArray[int], NDArray[float]], shape (search_volume/n_samples, ad_feature_dim + user_feature_dim)
             Context vector (both the ad and the user features) for each auction.
             (search_volume is determined in RL environment.)
             (n_samples is determined in fit_reward_estimator function in simulator.)
@@ -175,13 +175,13 @@ class CTR:
             raise ValueError(
                 "timestep must be non negative integer or an NDArray of non negative integers"
             )
-        if not isinstance(contexts, NDArray[float]):
+        if not isinstance(contexts, (NDArray[int], NDArray[float])):
             raise ValueError("contexts must be an NDArray of float values")
 
         ctrs = (contexts @ self.coef.T) * self.time_coef[
             timestep % self.trend_interval
         ].flatten()
-        return ctrs
+        return np.clip(ctrs, 0, 1)
 
     def sample_outcome(
         self, timestep: Union[int, NDArray[int]], contexts: NDArray[float]
@@ -295,7 +295,7 @@ class CVR:
         cvrs = (contexts @ self.coef.T) * self.time_coef[
             timestep % self.trend_interval
         ].flatten()
-        return cvrs
+        return np.clip(cvrs, 0, 1)
 
     def sample_outcome(
         self, timestep: Union[int, NDArray[int]], contexts: NDArray[float]

@@ -583,7 +583,7 @@ class RTBEnv(gym.Env):
         )
         pass
 
-    def fit_reward_predictor(self, n_samples: int = 10000) -> None:
+    def fit_reward_predictor(self, n_samples: int = 100000) -> None:
         """Pre-train reward prediction model used in simulator to calculate bid price.
 
         Note
@@ -592,7 +592,7 @@ class RTBEnv(gym.Env):
 
         Parameters
         -------
-        n_samples: int, default=10000
+        n_samples: int, default=100000
             Number of samples to fit reward predictor in RTBSyntheticSimulator.
 
         """
