@@ -1,6 +1,6 @@
 """Synthetic Bidding Auction Simulation."""
 from dataclasses import dataclass
-from typing import Tuple, Optional
+from typing import Tuple, Union, Optional
 from nptyping import NDArray
 import warnings
 
@@ -57,7 +57,7 @@ class RTBSyntheticSimulator(BaseSimulator):
     user_feature_dim: int, default=5
         Dimensions of the user feature vectors.
 
-    standard_bid_price: int, default = 100
+    standard_bid_price: Union[int, float], default = 100
         Bid price whose impression probability is expected to be 0.5.
 
     trend_interval: Optional[int], default=None
@@ -80,7 +80,7 @@ class RTBSyntheticSimulator(BaseSimulator):
     n_users: int = 100
     ad_feature_dim: int = 5
     user_feature_dim: int = 5
-    standard_bid_price: int = 100
+    standard_bid_price: Union[int, float] = 100
     trend_interval: int = 24
     random_state: int = 12345
 
@@ -126,7 +126,7 @@ class RTBSyntheticSimulator(BaseSimulator):
                 f"user_feature_dim must be a positive interger, but {self.user_feature_dim} is given"
             )
         if not (
-            isinstance(self.standard_bid_price, int) and self.standard_bid_price > 0
+            isinstance(self.standard_bid_price, (int, float)) and self.standard_bid_price > 0
         ):
             raise ValueError(
                 f"standard_bid_price must be a positive interger, but {self.standard_bid_price} is given"
@@ -183,7 +183,7 @@ class RTBSyntheticSimulator(BaseSimulator):
     def simulate_auction(
         self,
         timestep: int,
-        adjust_rate: float,
+        adjust_rate: Union[int, float],
         ad_ids: NDArray[int],
         user_ids: NDArray[int],
     ) -> Tuple[NDArray[int]]:
@@ -203,7 +203,7 @@ class RTBSyntheticSimulator(BaseSimulator):
         timestep: int
             Timestep of the RL environment.
 
-        adjust rate: float
+        adjust_rate: Union[int, float]
             Adjust rate parameter for bidding price determination.
             Corresponds to the RL agent action.
 
@@ -238,7 +238,7 @@ class RTBSyntheticSimulator(BaseSimulator):
             raise ValueError(
                 f"timestep must be a interger within [0, {self.step_per_episode}), but {timestep} is given"
             )
-        if not (isinstance(adjust_rate, float) and 0.1 <= adjust_rate <= 10):
+        if not (isinstance(adjust_rate, (int, float)) and 0.1 <= adjust_rate <= 10):
             raise ValueError(
                 f"adjust_rate must be a float number in [0.1, 10], but {adjust_rate} is given"
             )

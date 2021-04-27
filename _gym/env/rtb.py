@@ -73,9 +73,9 @@ class RTBEnv(gym.Env):
         Action type of the RL agent.
         Choose either from "discrete" or "continuous".
 
-    action_dim: Optional[int], default=10
+    action_dim: int, default=10
         Dimensions of the discrete action.
-        Required and used only when using action_type="discrete" option.
+        Used only when action_type="discrete" option.
 
     action_meaning: Optional[Dict[int, float]], default=None
         Dictionary which maps discrete action index into specific actions.
@@ -116,7 +116,7 @@ class RTBEnv(gym.Env):
         Parameter in RTBSyntheticSimulator class.
         Dimensions of the user feature vectors.
 
-    standard_bid_price: int, default = 100
+    standard_bid_price: Union[int, float], default = 100
         Parameter in RTBSyntheticSimulator class.
         Bid price whose impression probability is expected to be 0.5.
 
@@ -131,13 +131,16 @@ class RTBEnv(gym.Env):
     candidate_users: NDArray[int], shape (n_candidate_users, ), default=np.arange(10)
         User ids used in auctions.
 
-    candidate_ad_sampling_prob: Optional[NDArray[float]], shape (n_candidate_ads, ), default=None
+    candidate_ad_sampling_prob: Optional[Union[NDArray[int], NDArray[float]]], 
+                                shape (n_candidate_ads, ), default=None
         Sampling probalities to determine which ad (id) is used in each auction.
 
-    candidate_user_sampling_prob: Optional[NDArray[float]], shape (n_candidate_users, ), default=None
+    candidate_user_sampling_prob: Optional[Union[NDArray[int], NDArray[float]]], 
+                                  shape (n_candidate_users, ), default=None
         Sampling probalities to determine which user (id) is used in each auction.
 
-    search_volume_distribution: Optional[List[NormalDistribution]], shape (step_per_episode, ), default=None
+    search_volume_distribution: Union[NormalDistribution, List[NormalDistribution]], 
+                                shape (step_per_episode, ), default=NormalDistribution(mean=10, std=0)
         Search volume distribution for each timestep.
 
     random_state: int, default=12345
@@ -190,7 +193,7 @@ class RTBEnv(gym.Env):
         semi_synthetic: bool = False,
         objective: str = "conversion",  # "click"
         action_type: str = "discrete",  # "continuous"
-        action_dim: Optional[int] = 10,
+        action_dim: int = 10,
         action_meaning: Optional[
             Dict[int, float]
         ] = None,  # maps categorical actions to adjust rate
@@ -202,13 +205,13 @@ class RTBEnv(gym.Env):
         n_users: int = 100,
         ad_feature_dim: int = 5,
         user_feature_dim: int = 5,
-        standard_bid_price: int = 100,
+        standard_bid_price: Union[int, float] = 100,
         trend_interval: Optional[int] = None,
         candidate_ads: NDArray[int] = np.arange(1),  # ad idxes
         candidate_users: NDArray[int] = np.arange(10),  # user idxes
-        candidate_ad_sampling_prob: Optional[NDArray[float]] = None,
-        candidate_user_sampling_prob: Optional[NDArray[float]] = None,
-        search_volume_distribution: Optional[List[NormalDistribution]] = None,
+        candidate_ad_sampling_prob: Optional[Union[NDArray[int], NDArray[float]]] = None,
+        candidate_user_sampling_prob: Optional[Union[NDArray[int], NDArray[float]]] = None,
+        search_volume_distribution: Union[NormalDistribution, List[NormalDistribution]] = NormalDistribution(mean=10, std=0),
         random_state: int = 12345,
     ):
         super().__init__()
@@ -216,7 +219,7 @@ class RTBEnv(gym.Env):
             raise ValueError("semi_synthetic must be a boolean")
         if not (isinstance(objective, str) and objective in ["click", "conversion"]):
             raise ValueError(
-                f'objective must be either "click" or "conversion", but {self.objective} is given'
+                f'objective must be either "click" or "conversion", but {objective} is given'
             )
         if not (
             isinstance(action_type, str) and action_type in ["discrete", "continuous"]
@@ -245,7 +248,7 @@ class RTBEnv(gym.Env):
             )
         if not (isinstance(initial_budget, int) and initial_budget > 0):
             raise ValueError(
-                f"action_dim must be a positive interger, but {action_dim} is given"
+                f"initial_budget must be a positive interger, but {initial_budget} is given"
             )
         if not isinstance(candidate_ads, NDArray[int]):
             raise ValueError("candidate_ads must be an NDArray of integers")
@@ -262,7 +265,7 @@ class RTBEnv(gym.Env):
         if not (
             candidate_ad_sampling_prob is None
             or (
-                isinstance(candidate_ad_sampling_prob, NDArray[float])
+                isinstance(candidate_ad_sampling_prob, (NDArray[int], NDArray[float]))
                 and candidate_ad_sampling_prob.min() > 0
             )
         ):
@@ -272,7 +275,7 @@ class RTBEnv(gym.Env):
         if not (
             candidate_user_sampling_prob is None
             or (
-                isinstance(candidate_user_sampling_prob, NDArray[float])
+                isinstance(candidate_user_sampling_prob, (NDArray[int], NDArray[float]))
                 and candidate_user_sampling_prob.min() > 0
             )
         ):
@@ -292,15 +295,15 @@ class RTBEnv(gym.Env):
                 f"candidate_users and candidate_user_sampling_prob must have the same length"
             )
         if not (
-            search_volume_distribution is None
+            isinstance(search_volume_distribution, NormalDistribution)
             or isinstance(search_volume_distribution[0], NormalDistribution)
         ):
             raise ValueError(
-                "search_volume_distribution must be a list of NormalDistribution"
+                "search_volume_distribution must be a (list of) NormalDistribution"
             )
         if (
-            search_volume_distribution is not None
-            and len(search_volume_distribution) != self.step_per_episode
+            not isinstance(search_volume_distribution, NormalDistribution)
+            and len(search_volume_distribution) != step_per_episode
         ):
             raise ValueError(
                 f"length of search_volume_distribution must be same with step_per_episode"
@@ -336,6 +339,7 @@ class RTBEnv(gym.Env):
         self.observation_space = Box(
             low=np.array([0, 0, 0, 0, 0, 0, 0.1]),
             high=np.array([step_per_episode, initial_budget, np.inf, np.inf, 1, np.inf, 10]),
+            dtype=np.float32,
             # observations = (timestep, remaining_budget, BCR, CPM, WR, reward, adjust_rate)
         )
 
@@ -353,7 +357,7 @@ class RTBEnv(gym.Env):
                 )
 
         else:  # "continuous"
-            self.action_space = Box(low=0.1, high=10, shape=(1,))
+            self.action_space = Box(low=0.1, high=10, shape=(1,), dtype=np.float32)
 
         # define reward range
         self.reward_range = (0, np.inf)
@@ -382,10 +386,8 @@ class RTBEnv(gym.Env):
                 candidate_user_sampling_prob
             )
 
-        if search_volume_distribution is None:
-            search_volume_distribution = [
-                NormalDistribution(mean=10, std=0.0)
-            ] * step_per_episode
+        if isinstance(search_volume_distribution, NormalDistribution):
+            search_volume_distribution = [search_volume_distribution] * step_per_episode
 
         self.search_volumes = np.zeros((step_per_episode, 100))
         for i in range(step_per_episode):
@@ -447,15 +449,12 @@ class RTBEnv(gym.Env):
 
         """
         if self.action_type == "discrete":
-            if not (isinstance(action, int) and 0 <= action < self.action_space.n):
+            if not self.action_space.contains(action):
                 raise ValueError(
                     f"action must be an integer within [0, {self.action_space.n})"
                 )
         else:  # "continuous"
-            if not (
-                isinstance(action, float)
-                and self.action_space.low[0] <= action <= self.action_space.high[0]
-            ):
+            if not self.action_space.contains(np.array([action], dtype=np.float32)):
                 raise ValueError(
                     f"action must be a float value within ({self.action_space.low}, {self.action_space.high})"
                 )

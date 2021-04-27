@@ -100,7 +100,6 @@ class SyntheticDataset(BaseDataset):
         self.random_ = check_random_state(self.random_state)
 
         if self.env.use_reward_predictor:
-            print("pre-train reward predictor in RTB Simulator..")
             self.env.fit_reward_predictor()
 
     def obtain_trajectories(self, n_episodes: int = 10000) -> LoggedDataset:
