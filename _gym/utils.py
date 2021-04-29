@@ -31,8 +31,10 @@ class NormalDistribution:
     def __post_init__(self):
         if not isinstance(self.mean, (int, float)):
             raise ValueError(f"mean must be a float number, but {self.mean} is given")
-        if not isinstance(self.std, (int, float)):
-            raise ValueError("std must be a float number, but {self.std} is given")
+        if not isinstance(self.std, (int, float) and self.std >= 0):
+            raise ValueError(
+                "std must be a non-negative float number, but {self.std} is given"
+            )
         if self.random_state is None:
             raise ValueError("random_state must be given")
         self.random_ = check_random_state(self.random_state)

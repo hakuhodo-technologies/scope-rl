@@ -32,6 +32,7 @@ class WinningFunction:
     "A Gamma-based Regression for Winning Price Estimation in Real-Time Bidding Advertising.", 2017.
 
     """
+
     random_state: int = 12345
 
     def __post_init__(self):
@@ -40,7 +41,10 @@ class WinningFunction:
         self.random_ = check_random_state(self.random_state)
 
     def sample_outcome(
-        self, ks: Union[NDArray[int], NDArray[float]], thetas: Union[NDArray[int], NDArray[float]], bid_prices: NDArray[int]
+        self,
+        ks: Union[NDArray[int], NDArray[float]],
+        thetas: Union[NDArray[int], NDArray[float]],
+        bid_prices: NDArray[int],
     ) -> Tuple[NDArray[int]]:
         """Calculate impression probability for given bid price.
 
@@ -69,14 +73,18 @@ class WinningFunction:
         """
         if not (isinstance(ks, (NDArray[int], NDArray[float])) and ks.min() > 0):
             raise ValueError("ks must be an NDArray of positive float values")
-        if not (isinstance(thetas, (NDArray[int], NDArray[float])) and thetas.min() > 0):
+        if not (
+            isinstance(thetas, (NDArray[int], NDArray[float])) and thetas.min() > 0
+        ):
             raise ValueError("thetas must be an NDArray of positive float values")
         if not (isinstance(bid_prices, NDArray[int]) and bid_prices.min() >= 0):
             raise ValueError("bid_prices must be an NDArray of non-negative integers")
         if not (len(ks) == len(thetas) == len(bid_prices)):
             raise ValueError("ks, thetas, and bid_prices must have same length")
 
-        winning_prices = np.clip(self.random_.gamma(shape=ks, scale=thetas), 1, None)  # fix later
+        winning_prices = np.clip(
+            self.random_.gamma(shape=ks, scale=thetas), 1, None
+        )  # fix later
         impressions = winning_prices < bid_prices
 
         return impressions.astype(int), winning_prices.astype(int)
@@ -110,6 +118,7 @@ class CTR:
         Random state.
 
     """
+
     ad_feature_dim: int
     user_feature_dim: int
     trend_interval: int
@@ -177,10 +186,15 @@ class CTR:
             raise ValueError(
                 "timestep must be non negative integer or an NDArray of non negative integers"
             )
-        if not (isinstance(contexts, (NDArray[int], NDArray[float])) and contexts.shape[0] > 0):
+        if not (
+            isinstance(contexts, (NDArray[int], NDArray[float]))
+            and contexts.shape[0] > 0
+        ):
             raise ValueError("contexts must be a non-empty NDArray of float values")
         if contexts.shape[1] != self.ad_feature_dim + self.user_feature_dim:
-            raise ValueError("contexts must have same dimension with the sum of the ad_feature_dim and user_feature_dim")
+            raise ValueError(
+                "contexts must have same dimension with the sum of the ad_feature_dim and user_feature_dim"
+            )
         if not isinstance(timestep, int) and len(timestep) != len(contexts):
             raise ValueError("timestep and contexts must have same length")
 
@@ -239,6 +253,7 @@ class CVR:
         Pre-defined CTR function.
 
     """
+
     ctr: CTR
 
     def __post_init__(self):
@@ -295,10 +310,15 @@ class CVR:
             raise ValueError(
                 "timestep must be non negative integer or an NDArray of non negative integers"
             )
-        if not (isinstance(contexts, (NDArray[int], NDArray[float])) and contexts.shape[0] > 0):
+        if not (
+            isinstance(contexts, (NDArray[int], NDArray[float]))
+            and contexts.shape[0] > 0
+        ):
             raise ValueError("contexts must be a non-empty NDArray of float values")
         if contexts.shape[1] != self.ad_feature_dim + self.user_feature_dim:
-            raise ValueError("contexts must have same dimension with the sum of the ad_feature_dim and user_feature_dim")
+            raise ValueError(
+                "contexts must have same dimension with the sum of the ad_feature_dim and user_feature_dim"
+            )
         if not isinstance(timestep, int) and len(timestep) != len(contexts):
             raise ValueError("timestep and contexts must have same length")
 

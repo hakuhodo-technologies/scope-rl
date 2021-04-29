@@ -72,6 +72,7 @@ class RTBSyntheticSimulator(BaseSimulator):
     -------
 
     """
+
     objective: str = "conversion"
     use_reward_predictor: bool = False
     reward_predictor: Optional[BaseEstimator] = None
@@ -126,12 +127,16 @@ class RTBSyntheticSimulator(BaseSimulator):
                 f"user_feature_dim must be a positive interger, but {self.user_feature_dim} is given"
             )
         if not (
-            isinstance(self.standard_bid_price, (int, float)) and self.standard_bid_price > 0
+            isinstance(self.standard_bid_price, (int, float))
+            and self.standard_bid_price > 0
         ):
             raise ValueError(
                 f"standard_bid_price must be a positive interger, but {self.standard_bid_price} is given"
             )
-        if not (self.trend_interval is None or (isinstance(self.trend_interval, int) and self.trend_interval > 0)):
+        if not (
+            self.trend_interval is None
+            or (isinstance(self.trend_interval, int) and self.trend_interval > 0)
+        ):
             raise ValueError(
                 f"trend_interval must be a positive interger, but {self.trend_interval} is given"
             )
@@ -294,7 +299,9 @@ class RTBSyntheticSimulator(BaseSimulator):
         user_ids = self.random_.choice(self.n_ads, n_samples)
         contexts = self._map_idx_to_contexts(ad_ids, user_ids)
 
-        timesteps = self.random_.choice(self.step_per_episode, n_samples).reshape((-1, 1))
+        timesteps = self.random_.choice(self.step_per_episode, n_samples).reshape(
+            (-1, 1)
+        )
         feature_vectors = np.concatenate([contexts, timesteps], axis=1)
 
         if self.objective == "click":
@@ -339,12 +346,10 @@ class RTBSyntheticSimulator(BaseSimulator):
             Predicted reward for each auction.
 
         """
-        timesteps = np.full(len(contexts), timestep).reshape((-1,1))
-        feature_vectors = np.concatenate(
-            [contexts, timesteps], axis=1
-        )
+        timesteps = np.full(len(contexts), timestep).reshape((-1, 1))
+        feature_vectors = np.concatenate([contexts, timesteps], axis=1)
 
-        return self.reward_predictor.predict_proba(feature_vectors)[:,1]
+        return self.reward_predictor.predict_proba(feature_vectors)[:, 1]
 
     def _calc_ground_truth_reward(
         self, timestep: int, contexts: NDArray[float]
@@ -507,7 +512,7 @@ class RTBSyntheticSimulator(BaseSimulator):
 
         Returns
         -------
-        contexts: NDArray[float], shape (search_volume, ad_feature_dim + user_feature_dim + 1)
+        contexts: NDArray[float], shape (search_volume, ad_feature_dim + user_feature_dim)
             Context vector (contain both the ad and the user features) for each auction.
 
         """

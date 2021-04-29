@@ -131,15 +131,15 @@ class RTBEnv(gym.Env):
     candidate_users: NDArray[int], shape (n_candidate_users, ), default=np.arange(10)
         User ids used in auctions.
 
-    candidate_ad_sampling_prob: Optional[Union[NDArray[int], NDArray[float]]], 
+    candidate_ad_sampling_prob: Optional[Union[NDArray[int], NDArray[float]]],
                                 shape (n_candidate_ads, ), default=None
         Sampling probalities to determine which ad (id) is used in each auction.
 
-    candidate_user_sampling_prob: Optional[Union[NDArray[int], NDArray[float]]], 
+    candidate_user_sampling_prob: Optional[Union[NDArray[int], NDArray[float]]],
                                   shape (n_candidate_users, ), default=None
         Sampling probalities to determine which user (id) is used in each auction.
 
-    search_volume_distribution: Union[NormalDistribution, List[NormalDistribution]], 
+    search_volume_distribution: Union[NormalDistribution, List[NormalDistribution]],
                                 shape (step_per_episode, ), default=NormalDistribution(mean=10, std=0)
         Search volume distribution for each timestep.
 
@@ -188,6 +188,7 @@ class RTBEnv(gym.Env):
     -------
 
     """
+
     def __init__(
         self,
         semi_synthetic: bool = False,
@@ -209,9 +210,15 @@ class RTBEnv(gym.Env):
         trend_interval: Optional[int] = None,
         candidate_ads: NDArray[int] = np.arange(1),  # ad idxes
         candidate_users: NDArray[int] = np.arange(10),  # user idxes
-        candidate_ad_sampling_prob: Optional[Union[NDArray[int], NDArray[float]]] = None,
-        candidate_user_sampling_prob: Optional[Union[NDArray[int], NDArray[float]]] = None,
-        search_volume_distribution: Union[NormalDistribution, List[NormalDistribution]] = NormalDistribution(mean=10, std=0),
+        candidate_ad_sampling_prob: Optional[
+            Union[NDArray[int], NDArray[float]]
+        ] = None,
+        candidate_user_sampling_prob: Optional[
+            Union[NDArray[int], NDArray[float]]
+        ] = None,
+        search_volume_distribution: Union[
+            NormalDistribution, List[NormalDistribution]
+        ] = NormalDistribution(mean=10, std=0),
         random_state: int = 12345,
     ):
         super().__init__()
@@ -338,7 +345,9 @@ class RTBEnv(gym.Env):
         # define observation space
         self.observation_space = Box(
             low=np.array([0, 0, 0, 0, 0, 0, 0.1]),
-            high=np.array([step_per_episode, initial_budget, np.inf, np.inf, 1, np.inf, 10]),
+            high=np.array(
+                [step_per_episode, initial_budget, np.inf, np.inf, 1, np.inf, 10]
+            ),
             dtype=np.float32,
             # observations = (timestep, remaining_budget, BCR, CPM, WR, reward, adjust_rate)
         )
