@@ -196,7 +196,7 @@ class RTBEnv(gym.Env):
         action_type: str = "discrete",  # "continuous"
         action_dim: int = 10,
         action_meaning: Optional[
-            Dict[int, float]
+            Union[NDArray[int], NDArray[float]]
         ] = None,  # maps categorical actions to adjust rate
         use_reward_predictor: bool = False,
         reward_predictor: Optional[BaseEstimator] = None,
@@ -245,9 +245,12 @@ class RTBEnv(gym.Env):
                 raise ValueError(
                     "action_meaning must have the same size with action_dim"
                 )
-            if min(action_meaning.values()) < 0.1 or max(action_meaning.values()) > 10:
+            if not (
+                isinstance(action_meaning, (NDArray[int], NDArray[float]))
+                and 0.1 <= action_meaning.all() <= 10
+            ):
                 raise ValueError(
-                    "action_meaning must have float values within [0.1, 10]"
+                    "action_meaning must be an NDArray of float values within [0.1, 10]"
                 )
         if not (isinstance(step_per_episode, int) and step_per_episode > 0):
             raise ValueError(
@@ -261,11 +264,11 @@ class RTBEnv(gym.Env):
             raise ValueError("candidate_ads must be an NDArray of integers")
         if not isinstance(candidate_users, NDArray[int]):
             raise ValueError("candidate_users must be an NDArray of integers")
-        if candidate_ads.min() < 0 or candidate_ads.max() >= n_ads:
+        if not 0 <= candidate_ads.all() < n_ads:
             raise ValueError(
                 f"candidate_ads must be chosen from integer within [0, n_ads)"
             )
-        if candidate_users.min() < 0 or candidate_users.max() >= n_users:
+        if not 0 <= candidate_users.min() < n_users:
             raise ValueError(
                 f"candidate_users must be chosen from integer within [0, n_users)"
             )
@@ -361,9 +364,7 @@ class RTBEnv(gym.Env):
             self.action_space = Discrete(action_dim)
 
             if self.action_meaning is None:
-                self.action_meaning = dict(
-                    zip(range(self.action_dim), np.logspace(-1, 1, self.action_dim))
-                )
+                self.action_meaning = np.logspace(-1, 1, self.action_dim)
 
         else:  # "continuous"
             self.action_space = Box(low=0.1, high=10, shape=(1,), dtype=np.float32)

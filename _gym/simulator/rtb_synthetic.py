@@ -251,9 +251,9 @@ class RTBSyntheticSimulator(BaseSimulator):
             raise ValueError("ad_ids must be an NDArray of integers")
         if not isinstance(user_ids, NDArray[int]):
             raise ValueError("user_ids must be an NDArray of integers")
-        if ad_ids.min() < 0 or ad_ids.max() >= self.n_ads:
+        if not 0 <= ad_ids.all() < self.n_ads:
             raise ValueError("ad_ids must be chosen from integer within [0, n_ads)")
-        if user_ids.min() < 0 or user_ids.max() >= self.n_users:
+        if not 0 <= user_ids.all() < self.n_users:
             raise ValueError("user_ids must be chosen from integer within [0, n_users)")
         if len(ad_ids) != len(user_ids):
             raise ValueError("ad_ids and user_ids must have same length")
