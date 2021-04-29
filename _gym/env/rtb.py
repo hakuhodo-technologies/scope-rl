@@ -131,16 +131,15 @@ class RTBEnv(gym.Env):
     candidate_users: NDArray[int], shape (n_candidate_users, ), default=np.arange(10)
         User ids used in auctions.
 
-    candidate_ad_sampling_prob: Optional[Union[NDArray[int], NDArray[float]]],
+    candidate_ad_sampling_rate: Optional[Union[NDArray[int], NDArray[float]]],
                                 shape (n_candidate_ads, ), default=None
         Sampling probalities to determine which ad (id) is used in each auction.
 
-    candidate_user_sampling_prob: Optional[Union[NDArray[int], NDArray[float]]],
+    candidate_user_sampling_rate: Optional[Union[NDArray[int], NDArray[float]]],
                                   shape (n_candidate_users, ), default=None
         Sampling probalities to determine which user (id) is used in each auction.
 
-    search_volume_distribution: Union[NormalDistribution, List[NormalDistribution]],
-                                shape (step_per_episode, ), default=NormalDistribution(mean=10, std=0)
+    search_volume_distribution: NormalDistribution, default=NormalDistribution(mean=10, std=0)
         Search volume distribution for each timestep.
 
     random_state: int, default=12345
@@ -210,15 +209,15 @@ class RTBEnv(gym.Env):
         trend_interval: Optional[int] = None,
         candidate_ads: NDArray[int] = np.arange(1),  # ad idxes
         candidate_users: NDArray[int] = np.arange(10),  # user idxes
-        candidate_ad_sampling_prob: Optional[
+        candidate_ad_sampling_rate: Optional[
             Union[NDArray[int], NDArray[float]]
         ] = None,
-        candidate_user_sampling_prob: Optional[
+        candidate_user_sampling_rate: Optional[
             Union[NDArray[int], NDArray[float]]
         ] = None,
-        search_volume_distribution: Union[
-            NormalDistribution, List[NormalDistribution]
-        ] = NormalDistribution(mean=10, std=0),
+        search_volume_distribution: NormalDistribution = NormalDistribution(
+            mean=10, std=0
+        ),
         random_state: int = 12345,
     ):
         super().__init__()
@@ -273,43 +272,45 @@ class RTBEnv(gym.Env):
                 f"candidate_users must be chosen from integer within [0, n_users)"
             )
         if not (
-            candidate_ad_sampling_prob is None
+            candidate_ad_sampling_rate is None
             or (
-                isinstance(candidate_ad_sampling_prob, (NDArray[int], NDArray[float]))
-                and candidate_ad_sampling_prob.min() > 0
+                isinstance(candidate_ad_sampling_rate, (NDArray[int], NDArray[float]))
+                and candidate_ad_sampling_rate.min() > 0
             )
         ):
             raise ValueError(
-                "candidate_ad_sampling_prob must be an NDArray of positive float values"
+                "candidate_ad_sampling_rate must be an NDArray of positive float values"
             )
         if not (
             candidate_user_sampling_prob is None
             or (
-                isinstance(candidate_user_sampling_prob, (NDArray[int], NDArray[float]))
-                and candidate_user_sampling_prob.min() > 0
+                isinstance(candidate_user_sampling_rate, (NDArray[int], NDArray[float]))
+                and candidate_user_sampling_rate.min() > 0
             )
         ):
             raise ValueError(
-                "candidate_user_sampling_prob must be an NDArray of float values"
+                "candidate_user_sampling_rate must be an NDArray of float values"
             )
-        if candidate_ad_sampling_prob is not None and len(candidate_ads) != len(
-            candidate_ad_sampling_prob
+        if candidate_ad_sampling_rate is not None and len(candidate_ads) != len(
+            candidate_ad_sampling_rate
         ):
             raise ValueError(
-                f"candidate_ads and candidate_ad_sampling_prob must have the same length"
+                f"candidate_ads and candidate_ad_sampling_rate must have the same length"
             )
-        if candidate_user_sampling_prob is not None and len(candidate_users) != len(
-            candidate_user_sampling_prob
+        if candidate_user_sampling_rate is not None and len(candidate_users) != len(
+            candidate_user_sampling_rate
         ):
             raise ValueError(
-                f"candidate_users and candidate_user_sampling_prob must have the same length"
+                f"candidate_users and candidate_user_sampling_rate must have the same length"
             )
+        if not isinstance(search_volume_distribution, NormalDistribution):
+            raise ValueError("search_volume_distribution must be a NormalDistribution")
         if not (
-            isinstance(search_volume_distribution, NormalDistribution)
-            or isinstance(search_volume_distribution[0], NormalDistribution)
+            isinstance(search_volume_distribution.mean, (int, float))
+            or len(search_volume_distribution.mean) == step_per_episode
         ):
             raise ValueError(
-                "search_volume_distribution must be a (list of) NormalDistribution"
+                "length of search_volume_distribution must be same with step_per_episode"
             )
         if (
             not isinstance(search_volume_distribution, NormalDistribution)
@@ -351,7 +352,7 @@ class RTBEnv(gym.Env):
             high=np.array(
                 [step_per_episode, initial_budget, np.inf, np.inf, 1, np.inf, 10]
             ),
-            dtype=np.float32,
+            dtype=float,
             # observations = (timestep, remaining_budget, BCR, CPM, WR, reward, adjust_rate)
         )
 
@@ -367,7 +368,7 @@ class RTBEnv(gym.Env):
                 self.action_meaning = np.logspace(-1, 1, self.action_dim)
 
         else:  # "continuous"
-            self.action_space = Box(low=0.1, high=10, shape=(1,), dtype=np.float32)
+            self.action_space = Box(low=0.1, high=10, shape=(1,), dtype=float)
 
         # define reward range
         self.reward_range = (0, np.inf)
@@ -378,22 +379,22 @@ class RTBEnv(gym.Env):
         self.candidate_ads = candidate_ads
         self.candidate_users = candidate_users
 
-        if candidate_ad_sampling_prob is None:
-            self.candidate_ad_sampling_prob = np.full(
+        if candidate_ad_sampling_rate is None:
+            self.candidate_ad_sampling_rate = np.full(
                 len(self.candidate_ads), 1 / len(self.candidate_ads)
             )
         else:
-            self.candidate_ad_sampling_prob = candidate_ad_sampling_prob / np.sum(
-                candidate_ad_sampling_prob
+            self.candidate_ad_sampling_rate = candidate_ad_sampling_rate / np.sum(
+                candidate_ad_sampling_rate
             )
 
-        if candidate_user_sampling_prob is None:
-            self.candidate_user_sampling_prob = np.full(
+        if candidate_user_sampling_rate is None:
+            self.candidate_user_sampling_rate = np.full(
                 len(self.candidate_users), 1 / len(self.candidate_users)
             )
         else:
-            self.candidate_user_sampling_prob = candidate_user_sampling_prob / np.sum(
-                candidate_user_sampling_prob
+            self.candidate_user_sampling_rate = candidate_user_sampling_rate / np.sum(
+                candidate_user_sampling_rate
             )
 
         if isinstance(search_volume_distribution, NormalDistribution):
@@ -464,7 +465,7 @@ class RTBEnv(gym.Env):
                     f"action must be an integer within [0, {self.action_space.n})"
                 )
         else:  # "continuous"
-            if not self.action_space.contains(np.array([action], dtype=np.float32)):
+            if not self.action_space.contains(np.array([action])):
                 raise ValueError(
                     f"action must be a float value within ({self.action_space.low}, {self.action_space.high})"
                 )

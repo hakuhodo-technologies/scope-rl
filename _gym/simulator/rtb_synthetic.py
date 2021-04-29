@@ -415,7 +415,7 @@ class RTBSyntheticSimulator(BaseSimulator):
             predicted_rewards = self._predict_reward(timestep, contexts)
             bid_prices = (
                 adjust_rate * predicted_rewards * self.standard_bid_price * self.scaler
-            ).astype(int)
+            )
 
         else:
             ground_truth_rewards = self._calc_ground_truth_reward(timestep, contexts)
@@ -424,9 +424,9 @@ class RTBSyntheticSimulator(BaseSimulator):
                 * ground_truth_rewards
                 * self.standard_bid_price
                 * self.scaler
-            ).astype(int)
+            )
 
-        return bid_prices
+        return bid_prices.astype(int)
 
     def _calc_and_sample_outcome(
         self,
