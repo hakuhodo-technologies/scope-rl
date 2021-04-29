@@ -58,6 +58,7 @@ def test_ctr_init(ad_feature_dim, user_feature_dim, trend_interval):
         (np.array([1, 2]), np.array([-1, 2]), np.array([1, 2])),
         (np.array([-1, 2]), np.array([0, 2]), np.array([1, 2])),
         (np.array([1, 2]), np.array([1, 2]), np.array([-1, 2])),
+        (np.array([[1], [2]]), np.array([1], [2]), np.array([1], [2])),
     ],
 )
 def test_wf_sample_outcome(ks, thetas, bid_prices):
@@ -100,6 +101,7 @@ def test_wf_sample_outcome_():
         (np.array([0]), np.array([1.1, 2, 2])),
         (0, np.array([])),
         (0, np.array([[1.1], [2.2]])),
+        (0, np.array([[[1.1, 2.2]]])),
     ],
 )
 def test_ctr_cvr_function(timestep, contexts):

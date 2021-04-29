@@ -14,7 +14,9 @@ from _gym.utils import NormalDistribution
         (1, "1", 1)(1, "1.5", 1),
         (1, -1, 1),
         (1, np.array([1]), 1),
-        (1, 1, -1),
+        (np.array([1, 2]), np.array([1]), 1),
+        (np.array([[1], [2]]), np.array([[1], [2]]), 1),
+        (np.array([1, 2]), np.array([-1, 1]))(1, 1, -1),
         (1, 1, 1.5),
         (1, 1, "1"),
     ],
@@ -29,9 +31,16 @@ def test_init(mean, std, random_state):
     [
         (1, 1),
         (1.5, 1),
-        (0, 1)(-1, 1),
+        (0, 1),
+        (-1, 1),
         (1, 1.5),
         (1, 0),
+        (np.array([1]), np.array([1])),
+        (np.array([1.5, 2]), np.array([1, 2])),
+        (np.array([0, 2]), np.array([1, 2])),
+        (np.array([-1, 2]), np.array([1, 2])),
+        (np.array([1, 2]), np.array([1.5, 2])),
+        (np.array([1, 2]), np.array([0, 2])),
     ],
 )
 def test_init_(mean, std):
@@ -52,3 +61,11 @@ def test_function_():
 
     assert isinstance(random_variables, NDArray[float])
     assert len(random_variables) == 3
+
+    normal_distribution = NormalDistribution(
+        mean=np.array([1, 2]), std=np.array([1, 2])
+    )
+    random_variables = normal_distribution.sample(size=3)
+
+    assert isinstance(random_variables, NDArray[float])
+    assert random_variables.shape == (3, 2)

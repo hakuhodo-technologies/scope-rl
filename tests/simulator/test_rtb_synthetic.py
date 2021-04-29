@@ -1,7 +1,7 @@
 import pytest
 from nptyping import NDArray
-import numpy as np
 
+import numpy as np
 from sklearn.linear_model import LogisticRegression
 
 from _gym.simulator import RTBSyntheticSimulator
@@ -10,6 +10,7 @@ from _gym.simulator import RTBSyntheticSimulator
 def test_init():
     simulator = RTBSyntheticSimulator()
     assert simulator.objective == "conversion"
+    assert not simulator.use_reward_predictor
     assert simulator.step_per_episode == simulator.trend_interval
 
     simulator = RTBSyntheticSimulator(objective="conversion")
@@ -143,9 +144,9 @@ def test_init():
         (1, 1, np.array([0, 1]), np.array([-1, 1])),
         (1, 1, np.array([0, 1]), np.array([1.5, 1])),
         (1, 1, np.array([0, 1]), np.array([100, 1])),
-        (-1, 1, np.array([]), np.array([])),
-        (-1, 1, np.array([0]), np.array([0, 1])),
-        (-1, 1, np.array([[0], [1]]), np.array([[0], [1]])),
+        (1, 1, np.array([]), np.array([])),
+        (1, 1, np.array([0]), np.array([0, 1])),
+        (1, 1, np.array([[0], [1]]), np.array([[0], [1]])),
     ],
 )
 def test_simulate_auction(timestep, adjust_rate, ad_ids, user_ids):
