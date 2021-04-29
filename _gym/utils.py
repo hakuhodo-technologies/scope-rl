@@ -33,8 +33,9 @@ class NormalDistribution:
             raise ValueError(
                 f"mean must be a float number or an NDArray of float values, but {self.mean} is given"
             )
-        if not isinstance(
-            self.std, (int, float, NDArray[int], NDArray[float]) and self.std >= 0
+        if (
+            not isinstance(self.std, (int, float, NDArray[int], NDArray[float]))
+            and self.std >= 0
         ):
             raise ValueError(
                 f"std must be a non-negative float number or an NDArray of float values, but {self.std} is given"

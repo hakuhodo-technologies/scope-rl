@@ -282,7 +282,7 @@ class RTBEnv(gym.Env):
                 "candidate_ad_sampling_rate must be an NDArray of positive float values"
             )
         if not (
-            candidate_user_sampling_prob is None
+            candidate_user_sampling_rate is None
             or (
                 isinstance(candidate_user_sampling_rate, (NDArray[int], NDArray[float]))
                 and candidate_user_sampling_rate.min() > 0
@@ -479,12 +479,12 @@ class RTBEnv(gym.Env):
         ad_ids = self.random_.choice(
             self.candidate_ads,
             size=self.search_volumes[self.t - 1][self.T % 100],
-            p=self.candidate_ad_sampling_prob,
+            p=self.candidate_ad_sampling_rate,
         )
         user_ids = self.random_.choice(
             self.candidate_users,
             size=self.search_volumes[self.t - 1][self.T % 100],
-            p=self.candidate_user_sampling_prob,
+            p=self.candidate_user_sampling_rate,
         )
 
         # simulate auctions and gain results
