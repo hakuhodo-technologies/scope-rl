@@ -100,12 +100,10 @@ class RTBEnv(gym.Env):
         Initial budget (i.e., constraint) for bidding during an episode.
 
     n_ads: int, default=100
-        Parameter in RTBSyntheticSimulator class.
-        Number of ads used for fitting the reward predictor.
+        Number of ads used for auction bidding.
 
     n_users: int, default=100
-        Parameter in RTBSyntheticSimulator class.
-        Number of users used for fitting the reward predictor.
+        Number of users used for auction bidding.
 
     ad_feature_dim: int, default=5
         Parameter in RTBSyntheticSimulator class.
@@ -117,29 +115,24 @@ class RTBEnv(gym.Env):
 
     standard_bid_price: Union[int, float], default = 100
         Parameter in RTBSyntheticSimulator class.
-        Bid price whose impression probability is expected to be 0.5.
+        Bid price whose average impression probability is expected to be 0.5.
 
     trend_interval: Optional[int], default=None
         Parameter in RTBSyntheticSimulator class.
         Length of the ctr/cvr trend cycle.
         If None, trend_interval is set to step_per_episode.
 
-    candidate_ads: NDArray[int], shape (n_candidate_ads, ), default=np.arange(1)
-        Ad ids used in auctions.
-
-    candidate_users: NDArray[int], shape (n_candidate_users, ), default=np.arange(10)
-        User ids used in auctions.
-
-    candidate_ad_sampling_rate: Optional[Union[NDArray[int], NDArray[float]]],
-                                shape (n_candidate_ads, ), default=None
+    ad_sampling_rate: Optional[Union[NDArray[int], NDArray[float]]], shape (n_candidate_ads, ), default=None
         Sampling probalities to determine which ad (id) is used in each auction.
 
-    candidate_user_sampling_rate: Optional[Union[NDArray[int], NDArray[float]]],
-                                  shape (n_candidate_users, ), default=None
+    user_sampling_rate: Optional[Union[NDArray[int], NDArray[float]]], shape (n_candidate_users, ), default=None
         Sampling probalities to determine which user (id) is used in each auction.
 
     search_volume_distribution: NormalDistribution, default=NormalDistribution(mean=10, std=0)
         Search volume distribution for each timestep.
+
+    minimum_search_volume: int, default = 5
+        Minimum search volume at each timestep.
 
     random_state: int, default=12345
         Random state.
@@ -206,13 +199,12 @@ class RTBEnv(gym.Env):
         user_feature_dim: int = 5,
         standard_bid_price: Union[int, float] = 100,
         trend_interval: Optional[int] = None,
-        candidate_ads: np.ndarray = np.arange(1),  # ad idxes
-        candidate_users: np.ndarray = np.arange(10),  # user idxes
-        candidate_ad_sampling_rate: Optional[np.ndarray] = None,
-        candidate_user_sampling_rate: Optional[np.ndarray] = None,
+        ad_sampling_rate: Optional[np.ndarray] = None,
+        user_sampling_rate: Optional[np.ndarray] = None,
         search_volume_distribution: NormalDistribution = NormalDistribution(
             mean=10, std=0
         ),
+        minimum_search_volume: int = 5,
         random_state: int = 12345,
     ):
         super().__init__()
@@ -252,57 +244,45 @@ class RTBEnv(gym.Env):
             raise ValueError(
                 f"initial_budget must be a positive interger, but {initial_budget} is given"
             )
-        if not (
-            isinstance(candidate_ads, np.ndarray) and 0 <= candidate_ads.all() < n_ads
-        ):
+        if not (isinstance(n_ads, int) and n_ads > 0):
             raise ValueError(
-                f"candidate_ads must be chosen from integer within [0, n_ads)"
+                f"n_ads must be a positive interger, but {self.n_ads} is given"
+            )
+        if not (isinstance(n_users, int) and n_users > 0):
+            raise ValueError(
+                f"n_users must be a positive interger, but {self.n_users} is given"
             )
         if not (
-            isinstance(candidate_users, np.ndarray)
-            and 0 <= candidate_users.all() < n_users
+            ad_sampling_rate is None
+            or (isinstance(ad_sampling_rate, np.ndarray) and ad_sampling_rate.min() > 0)
         ):
             raise ValueError(
-                f"candidate_users must be chosen from integer within [0, n_users)"
+                "ad_sampling_rate must be an NDArray of positive float values"
             )
         if not (
-            candidate_ad_sampling_rate is None
+            user_sampling_rate is None
             or (
-                isinstance(candidate_ad_sampling_rate, np.ndarray)
-                and candidate_ad_sampling_rate.min() > 0
+                isinstance(user_sampling_rate, np.ndarray)
+                and user_sampling_rate.min() > 0
             )
         ):
             raise ValueError(
-                "candidate_ad_sampling_rate must be an NDArray of positive float values"
+                "user_sampling_rate must be an NDArray of positive float values"
             )
-        if not (
-            candidate_user_sampling_rate is None
-            or (
-                isinstance(candidate_user_sampling_rate, np.ndarray)
-                and candidate_user_sampling_rate.min() > 0
-            )
-        ):
-            raise ValueError(
-                "candidate_user_sampling_rate must be an NDArray of float values"
-            )
-        if candidate_ad_sampling_rate is not None and len(candidate_ads) != len(
-            candidate_ad_sampling_rate
-        ):
-            raise ValueError(
-                f"candidate_ads and candidate_ad_sampling_rate must have the same length"
-            )
-        if candidate_user_sampling_rate is not None and len(candidate_users) != len(
-            candidate_user_sampling_rate
-        ):
-            raise ValueError(
-                f"candidate_users and candidate_user_sampling_rate must have the same length"
-            )
+        if ad_sampling_rate is not None and n_ads != len(ad_sampling_rate):
+            raise ValueError("length of ad_sampling_rate must be equal to n_ads")
+        if user_sampling_rate is not None and n_users != len(user_sampling_rate):
+            raise ValueError("length of user_sampling_rate must be equal to n_users")
         if not (
             isinstance(search_volume_distribution.mean, (int, float))
             or len(search_volume_distribution.mean) == step_per_episode
         ):
             raise ValueError(
-                "length of search_volume_distribution must be same with step_per_episode"
+                "length of search_volume_distribution must be equal to step_per_episode"
+            )
+        if not (isinstance(minimum_search_volume, int) and minimum_search_volume > 0):
+            raise ValueError(
+                f"minimum_search_volume must be a positive integer, but {minimum_search_volume} is given"
             )
         if random_state is None:
             raise ValueError("random_state must be given")
@@ -341,6 +321,16 @@ class RTBEnv(gym.Env):
             # observations = (timestep, remaining_budget, BCR, CPM, WR, reward, adjust_rate)
         )
 
+        self.obs_keys = [
+            "timestep",
+            "remaining budget",
+            "budget consumption rate",
+            "cost per mille of impression",
+            "winning rate",
+            "reward",
+            "adjust rate",
+        ]
+
         # define action space
         self.action_type = action_type
         self.action_dim = action_dim
@@ -361,26 +351,18 @@ class RTBEnv(gym.Env):
         self.step_per_episode = step_per_episode
         self.initial_budget = initial_budget
 
-        self.candidate_ads = candidate_ads
-        self.candidate_users = candidate_users
+        self.candidate_ads = np.arange(n_ads)
+        self.candidate_users = np.arange(n_users)
 
-        if candidate_ad_sampling_rate is None:
-            self.candidate_ad_sampling_rate = np.full(
-                len(self.candidate_ads), 1 / len(self.candidate_ads)
-            )
+        if ad_sampling_rate is None:
+            self.ad_sampling_rate = np.full(n_ads, 1 / n_ads)
         else:
-            self.candidate_ad_sampling_rate = candidate_ad_sampling_rate / np.sum(
-                candidate_ad_sampling_rate
-            )
+            self.ad_sampling_rate = ad_sampling_rate / np.sum(ad_sampling_rate)
 
-        if candidate_user_sampling_rate is None:
-            self.candidate_user_sampling_rate = np.full(
-                len(self.candidate_users), 1 / len(self.candidate_users)
-            )
+        if user_sampling_rate is None:
+            self.user_sampling_rate = np.full(n_users, 1 / n_users)
         else:
-            self.candidate_user_sampling_rate = candidate_user_sampling_rate / np.sum(
-                candidate_user_sampling_rate
-            )
+            self.user_sampling_rate = user_sampling_rate / np.sum(user_sampling_rate)
 
         if isinstance(search_volume_distribution, NormalDistribution):
             search_volume_distribution = [search_volume_distribution] * step_per_episode
@@ -388,7 +370,9 @@ class RTBEnv(gym.Env):
         self.search_volumes = np.zeros((step_per_episode, 100))
         for i in range(step_per_episode):
             self.search_volumes[i] = search_volume_distribution[i].sample(size=100)
-        self.search_volumes = np.clip(self.search_volumes, 5, None).astype(int)
+        self.search_volumes = np.clip(
+            self.search_volumes, minimum_search_volume, None
+        ).astype(int)
 
         # just for idx of search_volumes to sample from
         self.T = 0
@@ -464,12 +448,12 @@ class RTBEnv(gym.Env):
         ad_ids = self.random_.choice(
             self.candidate_ads,
             size=self.search_volumes[self.t - 1][self.T % 100],
-            p=self.candidate_ad_sampling_rate,
+            p=self.ad_sampling_rate,
         )
         user_ids = self.random_.choice(
             self.candidate_users,
             size=self.search_volumes[self.t - 1][self.T % 100],
-            p=self.candidate_user_sampling_rate,
+            p=self.user_sampling_rate,
         )
 
         # simulate auctions and gain results
@@ -502,12 +486,16 @@ class RTBEnv(gym.Env):
 
         obs = {
             "timestep": self.t,
-            "remaining_budget": self.remaining_budget,
+            "remaining budget": self.remaining_budget,
             "budget consumption rate": (
                 self.prev_remaining_budget - self.remaining_budget
             )
-            / self.prev_remaining_budget,
-            "cost per mille of impression": (total_cost * 1000) / total_impression,
+            / self.prev_remaining_budget
+            if self.prev_remaining_budget
+            else 0,
+            "cost per mille of impression": (total_cost * 1000) / total_impression
+            if total_impression
+            else 0,
             "winning rate": total_impression / len(bid_prices),
             "reward": reward,
             "adjust rate": action,
@@ -520,6 +508,7 @@ class RTBEnv(gym.Env):
             "impression": total_impression,
             "click": total_click,
             "conversion": total_conversion,
+            "average bid price": np.mean(bid_prices),
         }
 
         # update logs
@@ -554,7 +543,7 @@ class RTBEnv(gym.Env):
         # initialize obs
         obs = {
             "timestep": self.t,
-            "remaining_budget": self.remaining_budget,
+            "remaining budget": self.remaining_budget,
             "budget consumption rate": 0,
             "cost per mille of impression": 0,
             "winning rate": 0,

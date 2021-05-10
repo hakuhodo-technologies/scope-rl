@@ -28,17 +28,20 @@ class NormalDistribution:
     random_state: int = 12345
 
     def __post_init__(self):
-        if not isinstance(self.std, (int, float)) and self.std >= 0:
-            raise ValueError(
-                f"std must be a non-negative float number or an NDArray of float values, but {self.std} is given"
-            )
-        if not isinstance(self.std, np.ndarray) and self.std.all() >= 0:
+        if not (
+            (isinstance(self.std, (int, float)) and self.std >= 0)
+            or (isinstance(self.std, np.ndarray) and self.std.all() >= 0)
+        ):
             raise ValueError(
                 f"std must be a non-negative float number or an NDArray of float values, but {self.std} is given"
             )
         if not (
             isinstance(self.mean, (int, float)) and isinstance(self.std, (int, float))
-        ) and len(self.mean) != len(self.std):
+        ) and not (
+            isinstance(self.mean, np.ndarray)
+            and isinstance(self.std, np.ndarray)
+            and len(self.mean) == len(self.std)
+        ):
             raise ValueError("mean and std must have the same length")
         if self.random_state is None:
             raise ValueError("random_state must be given")

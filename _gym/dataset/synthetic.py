@@ -27,6 +27,10 @@ class SyntheticDataset(BaseDataset):
     behavior_policy: BasePolicy
         RL policy for data collection.
 
+    n_samples_pretrain_reward_predictor: int, default=10000
+        Numbers of samples used to pretrain reward predictor.
+        Note that pretrain only takes place when env uses reward predictor.
+
     random_state: int, default=12345
         Random state.
 
@@ -59,22 +63,33 @@ class SyntheticDataset(BaseDataset):
         >>> dataset.pretrain_behavior_policy()
 
         # data collection
-        >>> logged_dataset = dataset.obtain_trajectories(n_episodes=10000)
+        >>> logged_dataset = dataset.obtain_trajectories(n_episodes=100)
         >>> logged_dataset
-        {
-            'size': 240000,
-            'n_episodes': 10000,
-            'step_per_episode': 24,
-            'action_type': 'discrete',
-            'action_dim': 10,
-            'state': array([[...]]),
-            'action': array([...]),
-            'reward': array([...]),
-            'done': array([...]),
-            'info': array([...]),
-            'terminal': array([...]),
-            'pscore': array([[...]]),
-        }
+        {'size': 2400,
+        'n_episodes': 100,
+        'step_per_episode': 24,
+        'action_type': 'discrete',
+        'action_dim': 10,
+        'state': array([[0.00000000e+00, 1.00000000e+04, 0.00000000e+00, ...,
+                0.00000000e+00, 0.00000000e+00, 0.00000000e+00],
+                [1.00000000e+00, 9.80000000e+03, 2.00000000e-02, ...,
+                1.00000000e+00, 1.00000000e+00, 5.00000000e+00],
+                [2.00000000e+00, 9.59500000e+03, 2.09183673e-02, ...,
+                1.00000000e+00, 2.00000000e+00, 6.00000000e+00],
+                ...,
+                [2.10000000e+01, 5.91900000e+03, 7.54451734e-02, ...,
+                1.00000000e+00, 1.00000000e+00, 4.00000000e+00],
+                [2.20000000e+01, 5.91900000e+03, 0.00000000e+00, ...,
+                0.00000000e+00, 0.00000000e+00, 2.00000000e+00],
+                [2.30000000e+01, 5.60500000e+03, 5.30495016e-02, ...,
+                1.00000000e+00, 0.00000000e+00, 9.00000000e+00]]),
+        'action': array([5., 6., 9., ..., 2., 9., 5.]),
+        'reward': array([1., 2., 3., ..., 0., 0., 1.]),
+        'done': array([0., 0., 0., ..., 0., 0., 1.]),
+        'info': {'impression': array([10., 10., 10., ...,  0., 10., 10.]),
+        'click': array([2., 2., 6., ..., 0., 3., 4.]),
+        'conversion': array([1., 2., 3., ..., 0., 0., 1.])},
+        'pscore': array([0.1, 0.1, 0.1, ..., 0.1, 0.1, 0.1])}
 
         # ground-truth policy value of behavior policy
         >>> ground_truth_policy_value = dataset.calculate_ground_truth_policy_value(
@@ -87,15 +102,23 @@ class SyntheticDataset(BaseDataset):
 
     env: gym.Env
     behavior_policy: BasePolicy
+    n_samples_pretrain_reward_predictor: int = 10000
     random_state: int = 12345
 
     def __post_init__(self):
+        if not (
+            isinstance(self.n_samples_pretrain_reward_predictor, int)
+            and self.n_samples_pretrain_reward_predictor > 0
+        ):
+            raise ValueError(
+                f"n_samples_pretrain_reward_predictor must be an positive integer, but {self.n_samples_pretrain_reward_predictor} is given"
+            )
         if self.random_state is None:
             raise ValueError("random_state must be given")
         self.random_ = check_random_state(self.random_state)
 
         if self.env.use_reward_predictor:
-            self.env.fit_reward_predictor()
+            self.env.fit_reward_predictor(self.n_samples_pretrain_reward_predictor)
 
     def obtain_trajectories(self, n_episodes: int = 10000) -> LoggedDataset:
         """Rollout behavior policy and obtain trajectories.
@@ -194,6 +217,7 @@ class SyntheticDataset(BaseDataset):
             "action_dim": self.env.action_dim
             if self.env.action_type == "discrete"
             else None,
+            "state_keys": self.env.obs_keys,
             "state": states,
             "action": actions,
             "reward": rewards,
@@ -244,18 +268,3 @@ class SyntheticDataset(BaseDataset):
                     state, action, next_state, reward, done
                 )  # fix later
                 state = next_state
-
-    def fit_reward_predictor(self, n_samples: int = 100000) -> None:
-        """Pre-train reward prediction model used in env.simulator to calculate bid price.
-
-        Note
-        -------
-        Intended only used when env.use_reward_predictor=True option.
-
-        Parameters
-        -------
-        n_samples: int, default=100000
-            Number of samples to fit reward predictor in RTBSyntheticSimulator.
-
-        """
-        self.env.fit_reward_predictor(n_samples)

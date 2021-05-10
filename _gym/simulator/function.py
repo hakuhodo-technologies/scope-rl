@@ -79,9 +79,7 @@ class WinningFunction:
         if not (len(ks) == len(thetas) == len(bid_prices)):
             raise ValueError("ks, thetas, and bid_prices must have same length")
 
-        winning_prices = np.clip(
-            self.random_.gamma(shape=ks, scale=thetas), 1, None
-        )  # fix later
+        winning_prices = np.clip(self.random_.gamma(shape=ks, scale=thetas), 1, None)
         impressions = winning_prices < bid_prices
 
         return impressions.astype(int), winning_prices.astype(int)
