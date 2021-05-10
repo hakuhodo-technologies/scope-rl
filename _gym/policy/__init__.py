@@ -1,7 +1,7 @@
 from .base import BasePolicy
 from .random import RandomPolicy
 
-__main__ = [
+__all__ = [
     "BasePolicy",
     "RandomPolicy",
 ]

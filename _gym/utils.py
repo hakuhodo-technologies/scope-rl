@@ -1,7 +1,6 @@
 """Useful tools."""
 from dataclasses import dataclass
 from typing import Union
-from nptyping import NDArray
 
 import numpy as np
 from sklearn.utils import check_random_state
@@ -24,27 +23,22 @@ class NormalDistribution:
 
     """
 
-    mean: Union[int, float, NDArray[int], NDArray[float]]
-    std: Union[int, float, NDArray[int], NDArray[float]]
+    mean: Union[int, float, np.ndarray]
+    std: Union[int, float, np.ndarray]
     random_state: int = 12345
 
     def __post_init__(self):
-        if not isinstance(self.mean, (int, float, NDArray[int], NDArray[float])):
-            raise ValueError(
-                f"mean must be a float number or an NDArray of float values, but {self.mean} is given"
-            )
-        if (
-            not isinstance(self.std, (int, float, NDArray[int], NDArray[float]))
-            and self.std >= 0
-        ):
+        if not isinstance(self.std, (int, float)) and self.std >= 0:
             raise ValueError(
                 f"std must be a non-negative float number or an NDArray of float values, but {self.std} is given"
             )
-        if (
-            not isinstance(self.mean, (int, float))
-            and isinstance(self.std, (int, float))
-            and len(self.mean) != len(self.std)
-        ):
+        if not isinstance(self.std, np.ndarray) and self.std.all() >= 0:
+            raise ValueError(
+                f"std must be a non-negative float number or an NDArray of float values, but {self.std} is given"
+            )
+        if not (
+            isinstance(self.mean, (int, float)) and isinstance(self.std, (int, float))
+        ) and len(self.mean) != len(self.std):
             raise ValueError("mean and std must have the same length")
         if self.random_state is None:
             raise ValueError("random_state must be given")
@@ -54,7 +48,7 @@ class NormalDistribution:
         if isinstance(self.mean, (int, float)):
             self.is_single_parameter = True
 
-    def sample(self, size: int = 1) -> NDArray[float]:
+    def sample(self, size: int = 1) -> np.ndarray:
         """Sample random variables from the pre-determined normal distribution.
 
         Parameters

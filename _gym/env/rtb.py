@@ -1,7 +1,6 @@
 """Reinforcement Learning (RL) Environment for Real-Time Bidding (RTB)."""
-from typing import Tuple, Dict, List
+from typing import Tuple
 from typing import Optional, Union, Any
-from nptyping import NDArray
 import warnings
 
 import gym
@@ -195,7 +194,7 @@ class RTBEnv(gym.Env):
         action_type: str = "discrete",  # "continuous"
         action_dim: int = 10,
         action_meaning: Optional[
-            Union[NDArray[int], NDArray[float]]
+            np.ndarray
         ] = None,  # maps categorical actions to adjust rate
         use_reward_predictor: bool = False,
         reward_predictor: Optional[BaseEstimator] = None,
@@ -207,22 +206,16 @@ class RTBEnv(gym.Env):
         user_feature_dim: int = 5,
         standard_bid_price: Union[int, float] = 100,
         trend_interval: Optional[int] = None,
-        candidate_ads: NDArray[int] = np.arange(1),  # ad idxes
-        candidate_users: NDArray[int] = np.arange(10),  # user idxes
-        candidate_ad_sampling_rate: Optional[
-            Union[NDArray[int], NDArray[float]]
-        ] = None,
-        candidate_user_sampling_rate: Optional[
-            Union[NDArray[int], NDArray[float]]
-        ] = None,
+        candidate_ads: np.ndarray = np.arange(1),  # ad idxes
+        candidate_users: np.ndarray = np.arange(10),  # user idxes
+        candidate_ad_sampling_rate: Optional[np.ndarray] = None,
+        candidate_user_sampling_rate: Optional[np.ndarray] = None,
         search_volume_distribution: NormalDistribution = NormalDistribution(
             mean=10, std=0
         ),
         random_state: int = 12345,
     ):
         super().__init__()
-        if not isinstance(semi_synthetic, bool):
-            raise ValueError("semi_synthetic must be a boolean")
         if not (isinstance(objective, str) and objective in ["click", "conversion"]):
             raise ValueError(
                 f'objective must be either "click" or "conversion", but {objective} is given'
@@ -234,10 +227,10 @@ class RTBEnv(gym.Env):
                 f'action_type must be either "discrete" or "continuous", but {action_type} is given'
             )
         if action_type == "discrete" and not (
-            isinstance(action_dim, int) and action_dim > 0
+            isinstance(action_dim, int) and action_dim > 1
         ):
             raise ValueError(
-                f"action_dim must be a positive interger, but {action_dim} is given"
+                f"action_dim must be a interger more than 1, but {action_dim} is given"
             )
         if action_type == "discrete" and action_meaning is not None:
             if len(action_meaning) != action_dim:
@@ -245,7 +238,7 @@ class RTBEnv(gym.Env):
                     "action_meaning must have the same size with action_dim"
                 )
             if not (
-                isinstance(action_meaning, (NDArray[int], NDArray[float]))
+                isinstance(action_meaning, np.ndarray)
                 and 0.1 <= action_meaning.all() <= 10
             ):
                 raise ValueError(
@@ -259,22 +252,23 @@ class RTBEnv(gym.Env):
             raise ValueError(
                 f"initial_budget must be a positive interger, but {initial_budget} is given"
             )
-        if not isinstance(candidate_ads, NDArray[int]):
-            raise ValueError("candidate_ads must be an NDArray of integers")
-        if not isinstance(candidate_users, NDArray[int]):
-            raise ValueError("candidate_users must be an NDArray of integers")
-        if not 0 <= candidate_ads.all() < n_ads:
+        if not (
+            isinstance(candidate_ads, np.ndarray) and 0 <= candidate_ads.all() < n_ads
+        ):
             raise ValueError(
                 f"candidate_ads must be chosen from integer within [0, n_ads)"
             )
-        if not 0 <= candidate_users.min() < n_users:
+        if not (
+            isinstance(candidate_users, np.ndarray)
+            and 0 <= candidate_users.all() < n_users
+        ):
             raise ValueError(
                 f"candidate_users must be chosen from integer within [0, n_users)"
             )
         if not (
             candidate_ad_sampling_rate is None
             or (
-                isinstance(candidate_ad_sampling_rate, (NDArray[int], NDArray[float]))
+                isinstance(candidate_ad_sampling_rate, np.ndarray)
                 and candidate_ad_sampling_rate.min() > 0
             )
         ):
@@ -284,7 +278,7 @@ class RTBEnv(gym.Env):
         if not (
             candidate_user_sampling_rate is None
             or (
-                isinstance(candidate_user_sampling_rate, (NDArray[int], NDArray[float]))
+                isinstance(candidate_user_sampling_rate, np.ndarray)
                 and candidate_user_sampling_rate.min() > 0
             )
         ):
@@ -303,21 +297,12 @@ class RTBEnv(gym.Env):
             raise ValueError(
                 f"candidate_users and candidate_user_sampling_rate must have the same length"
             )
-        if not isinstance(search_volume_distribution, NormalDistribution):
-            raise ValueError("search_volume_distribution must be a NormalDistribution")
         if not (
             isinstance(search_volume_distribution.mean, (int, float))
             or len(search_volume_distribution.mean) == step_per_episode
         ):
             raise ValueError(
                 "length of search_volume_distribution must be same with step_per_episode"
-            )
-        if (
-            not isinstance(search_volume_distribution, NormalDistribution)
-            and len(search_volume_distribution) != step_per_episode
-        ):
-            raise ValueError(
-                f"length of search_volume_distribution must be same with step_per_episode"
             )
         if random_state is None:
             raise ValueError("random_state must be given")
@@ -542,7 +527,7 @@ class RTBEnv(gym.Env):
 
         return np.array(list(obs.values())).astype(float), reward, done, info
 
-    def reset(self) -> NDArray[float]:
+    def reset(self) -> np.ndarray:
         """Initialize the environment.
 
         Note
@@ -627,10 +612,6 @@ class RTBEnv(gym.Env):
             Mean episode reward calculated through rollout.
 
         """
-        if not isinstance(evaluation_policy, BasePolicy):
-            raise ValueError(
-                "evaluation_policy must be the BasePolicy or a child class of BasePolicy"
-            )
         if not (isinstance(n_episodes, int) and n_episodes > 0):
             raise ValueError(
                 "n_episodes must be a positive integer, but {n_episodes} is given"

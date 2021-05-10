@@ -90,12 +90,6 @@ class SyntheticDataset(BaseDataset):
     random_state: int = 12345
 
     def __post_init__(self):
-        if not isinstance(self.env, gym.Env):
-            raise ValueError("env must be the gym.Env or a child class of the gym.Env")
-        if not isinstance(self.behavior_policy, BasePolicy):
-            raise ValueError(
-                "behavior_policy must be the BasePolicy or a child class of the BasePolicy"
-            )
         if self.random_state is None:
             raise ValueError("random_state must be given")
         self.random_ = check_random_state(self.random_state)
@@ -134,7 +128,7 @@ class SyntheticDataset(BaseDataset):
             state: NDArray[float], shape (size, 7)
                 State of the RL environment.
 
-            action: NDArray[Union[int, float]], shape (size, )
+            action: Union[NDArray[int], NDArray[float]], shape (size, )
                 Action chosen by the behavior policy.
 
             reward: NDArray[int], shape (size, )
@@ -143,7 +137,7 @@ class SyntheticDataset(BaseDataset):
             done: NDArray[int], shape (size, )
                 Whether an episode ends or not.
 
-            info: NDArray[Dict[str, int]], shape (size, )
+            info: Dict[str, NDArray[int]], shape (size, )
                 Additional feedback information from RL environment.
 
             pscore: NDArray[float], shape (size, )

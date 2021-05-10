@@ -1,7 +1,6 @@
 """Mathematical Functions used in Real-Time Bidding (RTB) Simulation."""
 from dataclasses import dataclass
 from typing import Tuple, Union
-from nptyping import NDArray
 
 import numpy as np
 from sklearn.utils import check_random_state
@@ -42,10 +41,10 @@ class WinningFunction:
 
     def sample_outcome(
         self,
-        ks: Union[NDArray[int], NDArray[float]],
-        thetas: Union[NDArray[int], NDArray[float]],
-        bid_prices: NDArray[int],
-    ) -> Tuple[NDArray[int]]:
+        ks: np.ndarray,
+        thetas: np.ndarray,
+        bid_prices: np.ndarray,
+    ) -> Tuple[np.ndarray]:
         """Calculate impression probability for given bid price.
 
         Parameters
@@ -71,13 +70,11 @@ class WinningFunction:
             Sampled winning price for each auction.
 
         """
-        if not (isinstance(ks, (NDArray[int], NDArray[float])) and ks.min() > 0):
+        if not (isinstance(ks, np.ndarray) and ks.min() > 0):
             raise ValueError("ks must be an NDArray of positive float values")
-        if not (
-            isinstance(thetas, (NDArray[int], NDArray[float])) and thetas.min() > 0
-        ):
+        if not (isinstance(thetas, np.ndarray) and thetas.min() > 0):
             raise ValueError("thetas must be an NDArray of positive float values")
-        if not (isinstance(bid_prices, NDArray[int]) and bid_prices.min() >= 0):
+        if not (isinstance(bid_prices, np.ndarray) and bid_prices.min() >= 0):
             raise ValueError("bid_prices must be an NDArray of non-negative integers")
         if not (len(ks) == len(thetas) == len(bid_prices)):
             raise ValueError("ks, thetas, and bid_prices must have same length")
@@ -152,8 +149,8 @@ class CTR:
         self.time_coef = np.convolve(self.time_coef, np.ones(3) / 3, mode="same")
 
     def calc_prob(
-        self, timestep: Union[int, NDArray[int]], contexts: NDArray[float]
-    ) -> NDArray[float]:
+        self, timestep: Union[int, np.ndarray], contexts: np.ndarray
+    ) -> np.ndarray:
         """Calculate CTR (i.e., click per impression) using context vectors.
 
         Note
@@ -181,17 +178,15 @@ class CTR:
         """
         if not (
             (isinstance(timestep, int) and timestep >= 0)
-            or (isinstance(timestep, NDArray[int]) and timestep.min() >= 0)
+            or (isinstance(timestep, np.ndarray) and timestep.min() >= 0)
         ):
             raise ValueError(
                 "timestep must be non negative integer or an NDArray of non negative integers"
             )
         if not (
-            isinstance(contexts, (NDArray[int], NDArray[float]))
-            and contexts.shape[0] > 0
+            isinstance(contexts, np.ndarray)
+            and contexts.shape[1] == self.ad_feature_dim + self.user_feature_dim
         ):
-            raise ValueError("contexts must be a non-empty NDArray of float values")
-        if contexts.shape[1] != self.ad_feature_dim + self.user_feature_dim:
             raise ValueError(
                 "contexts must have same dimension with the sum of the ad_feature_dim and user_feature_dim"
             )
@@ -204,8 +199,8 @@ class CTR:
         return np.clip(ctrs, 0, 1)
 
     def sample_outcome(
-        self, timestep: Union[int, NDArray[int]], contexts: NDArray[float]
-    ) -> NDArray[int]:
+        self, timestep: Union[int, np.ndarray], contexts: np.ndarray
+    ) -> np.ndarray:
         """Stochastically determine if click occurs or not in impression=True case.
 
         Parameters
@@ -257,12 +252,6 @@ class CVR:
     ctr: CTR
 
     def __post_init__(self):
-        """
-        # fix later, assertion fails.
-        if not isinstance(self.ctr, CTR):
-            print(type(self.ctr))  # <class '_gym.simulator.function.CTR'>
-            raise ValueError("ctr must be the CTR or a child class of the CTR")
-        """
         self.ad_feature_dim = self.ctr.ad_feature_dim
         self.user_feature_dim = self.ctr.user_feature_dim
         self.trend_interval = self.ctr.trend_interval
@@ -277,8 +266,8 @@ class CVR:
         self.time_coef = np.convolve(self.time_coef, np.ones(3) / 3, mode="same")
 
     def calc_prob(
-        self, timestep: Union[int, NDArray[int]], contexts: NDArray[float]
-    ) -> NDArray[float]:
+        self, timestep: Union[int, np.ndarray], contexts: np.ndarray
+    ) -> np.ndarray:
         """Calculate CVR (i.e., conversion per click) using context vectors.
 
         Note
@@ -305,17 +294,15 @@ class CVR:
         """
         if not (
             (isinstance(timestep, int) and timestep >= 0)
-            or (isinstance(timestep, NDArray[int]) and timestep.min() >= 0)
+            or (isinstance(timestep, np.ndarray) and timestep.min() >= 0)
         ):
             raise ValueError(
                 "timestep must be non negative integer or an NDArray of non negative integers"
             )
         if not (
-            isinstance(contexts, (NDArray[int], NDArray[float]))
-            and contexts.shape[0] > 0
+            isinstance(contexts, np.ndarray)
+            and contexts.shape[1] == self.ad_feature_dim + self.user_feature_dim
         ):
-            raise ValueError("contexts must be a non-empty NDArray of float values")
-        if contexts.shape[1] != self.ad_feature_dim + self.user_feature_dim:
             raise ValueError(
                 "contexts must have same dimension with the sum of the ad_feature_dim and user_feature_dim"
             )
@@ -328,8 +315,8 @@ class CVR:
         return np.clip(cvrs, 0, 1)
 
     def sample_outcome(
-        self, timestep: Union[int, NDArray[int]], contexts: NDArray[float]
-    ) -> NDArray[int]:
+        self, timestep: Union[int, np.ndarray], contexts: np.ndarray
+    ) -> np.ndarray:
         """Stochastically determine if conversion occurs or not in click=True case.
 
         Parameters
