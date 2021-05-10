@@ -113,9 +113,14 @@ class RTBEnv(gym.Env):
         Parameter in RTBSyntheticSimulator class.
         Dimensions of the user feature vectors.
 
-    standard_bid_price: Union[int, float], default = 100
+    standard_bid_price_distribution: NormalDistribution, default=NormalDistribution(mean=100, std=20)
         Parameter in RTBSyntheticSimulator class.
-        Bid price whose average impression probability is expected to be 0.5.
+        Distribution of the bid price whose average impression probability is expected to be 0.5.
+
+    minimum_standard_bid_price: Optional[int], default=None
+        Parameter in RTBSyntheticSimulator class.
+        Minimum value for standard bid price.
+        If None, minimum_standard_bid_price is set to standard_bid_price_distribution / 2.
 
     trend_interval: Optional[int], default=None
         Parameter in RTBSyntheticSimulator class.
@@ -128,10 +133,10 @@ class RTBEnv(gym.Env):
     user_sampling_rate: Optional[Union[NDArray[int], NDArray[float]]], shape (n_candidate_users, ), default=None
         Sampling probalities to determine which user (id) is used in each auction.
 
-    search_volume_distribution: NormalDistribution, default=NormalDistribution(mean=10, std=0)
+    search_volume_distribution: NormalDistribution, default=NormalDistribution(mean=30, std=10)
         Search volume distribution for each timestep.
 
-    minimum_search_volume: int, default = 5
+    minimum_search_volume: int, default = 10
         Minimum search volume at each timestep.
 
     random_state: int, default=12345
@@ -197,14 +202,17 @@ class RTBEnv(gym.Env):
         n_users: int = 100,
         ad_feature_dim: int = 5,
         user_feature_dim: int = 5,
-        standard_bid_price: Union[int, float] = 100,
+        standard_bid_price_distribution: NormalDistribution = NormalDistribution(
+            mean=100, std=20
+        ),
+        minimum_standard_bid_price: Optional[int] = None,
         trend_interval: Optional[int] = None,
         ad_sampling_rate: Optional[np.ndarray] = None,
         user_sampling_rate: Optional[np.ndarray] = None,
         search_volume_distribution: NormalDistribution = NormalDistribution(
-            mean=10, std=0
+            mean=30, std=10
         ),
-        minimum_search_volume: int = 5,
+        minimum_search_volume: int = 10,
         random_state: int = 12345,
     ):
         super().__init__()
@@ -275,6 +283,16 @@ class RTBEnv(gym.Env):
             raise ValueError("length of user_sampling_rate must be equal to n_users")
         if not (
             isinstance(search_volume_distribution.mean, (int, float))
+            and search_volume_distribution.mean > 0
+        ) and not (
+            isinstance(search_volume_distribution.mean, np.ndarray)
+            and search_volume_distribution.mean.min() > 0
+        ):
+            raise ValueError(
+                "search_volume_distribution.mean must be a positive float value or an NDArray of positive float values"
+            )
+        if not (
+            isinstance(search_volume_distribution.mean, (int, float))
             or len(search_volume_distribution.mean) == step_per_episode
         ):
             raise ValueError(
@@ -303,7 +321,8 @@ class RTBEnv(gym.Env):
                 n_users=n_users,
                 ad_feature_dim=ad_feature_dim,
                 user_feature_dim=user_feature_dim,
-                standard_bid_price=standard_bid_price,
+                standard_bid_price_distribution=standard_bid_price_distribution,
+                minimum_standard_bid_price=minimum_standard_bid_price,
                 trend_interval=trend_interval,
                 random_state=random_state,
             )
@@ -318,9 +337,7 @@ class RTBEnv(gym.Env):
                 [step_per_episode, initial_budget, np.inf, np.inf, 1, np.inf, 10]
             ),
             dtype=float,
-            # observations = (timestep, remaining_budget, BCR, CPM, WR, reward, adjust_rate)
         )
-
         self.obs_keys = [
             "timestep",
             "remaining budget",
@@ -351,8 +368,8 @@ class RTBEnv(gym.Env):
         self.step_per_episode = step_per_episode
         self.initial_budget = initial_budget
 
-        self.candidate_ads = np.arange(n_ads)
-        self.candidate_users = np.arange(n_users)
+        self.ad_ids = np.arange(n_ads)
+        self.user_ids = np.arange(n_users)
 
         if ad_sampling_rate is None:
             self.ad_sampling_rate = np.full(n_ads, 1 / n_ads)
@@ -446,12 +463,12 @@ class RTBEnv(gym.Env):
 
         # sample ads and users for auctions occur in a timestep
         ad_ids = self.random_.choice(
-            self.candidate_ads,
+            self.ad_ids,
             size=self.search_volumes[self.t - 1][self.T % 100],
             p=self.ad_sampling_rate,
         )
         user_ids = self.random_.choice(
-            self.candidate_users,
+            self.user_ids,
             size=self.search_volumes[self.t - 1][self.T % 100],
             p=self.user_sampling_rate,
         )

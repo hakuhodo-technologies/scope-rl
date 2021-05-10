@@ -7,6 +7,8 @@ import numpy as np
 from sklearn.base import BaseEstimator
 from sklearn.utils import check_random_state, check_X_y
 
+from _gym.utils import NormalDistribution
+
 from .base import BaseSimulator
 from .function import WinningFunction, CTR, CVR
 
@@ -56,8 +58,12 @@ class RTBSyntheticSimulator(BaseSimulator):
     user_feature_dim: int, default=5
         Dimensions of the user feature vectors.
 
-    standard_bid_price: Union[int, float], default = 100
-        Bid price whose impression probability is expected to be 0.5.
+    standard_bid_price_distribution: NormalDistribution, default=NormalDistribution(mean=100, std=20)
+        Distribution of the bid price whose average impression probability is expected to be 0.5.
+
+    minimum_standard_bid_price: int, default=None
+        Minimum value for standard bid price.
+        If None, minimum_standard_bid_price is set to standard_bid_price_distribution / 2.
 
     trend_interval: Optional[int], default=None
         Length of the ctr/cvr trend cycle.
@@ -80,7 +86,10 @@ class RTBSyntheticSimulator(BaseSimulator):
     n_users: int = 100
     ad_feature_dim: int = 5
     user_feature_dim: int = 5
-    standard_bid_price: Union[int, float] = 100
+    standard_bid_price_distribution: NormalDistribution = NormalDistribution(
+        mean=100, std=20
+    )
+    minimum_standard_bid_price: Optional[int] = None
     trend_interval: int = 24
     random_state: int = 12345
 
@@ -117,11 +126,24 @@ class RTBSyntheticSimulator(BaseSimulator):
                 f"user_feature_dim must be a positive interger, but {self.user_feature_dim} is given"
             )
         if not (
-            isinstance(self.standard_bid_price, (int, float))
-            and self.standard_bid_price > 0
+            isinstance(self.standard_bid_price_distribution.mean, (int, float))
+            and isinstance(self.standard_bid_price_distribution.std, (int, float))
         ):
             raise ValueError(
-                f"standard_bid_price must be a positive float value, but {self.standard_bid_price} is given"
+                "standard_bid_price_distribution must have single value for mean, std"
+            )
+        if self.standard_bid_price_distribution.mean <= 0:
+            raise ValueError(
+                f"standard_bid_price_distribution.mean must be a positive float value, but {self.standard_bid_price_distribution.mean} is given"
+            )
+        if self.minimum_standard_bid_price is not None and not (
+            isinstance(self.minimum_standard_bid_price, int)
+            and 0
+            < self.minimum_standard_bid_price
+            < self.standard_bid_price_distribution.mean
+        ):
+            raise ValueError(
+                f"minimum_standard_bid_price must be an integer within (0, standard_bid_price_distribution.mean), but {self.minimum_standard_bid_price} is given"
             )
         if not (
             self.trend_interval is None
@@ -138,24 +160,36 @@ class RTBSyntheticSimulator(BaseSimulator):
         self.ads = self.random_.normal(size=(self.n_ads, self.ad_feature_dim)) + 1
         self.users = self.random_.normal(size=(self.n_users, self.user_feature_dim)) + 1
 
-        # set trend_interval if None
-        if self.trend_interval is None:
-            self.trend_interval = self.step_per_episode
+        # define standard bid price for each ads
+        if self.minimum_standard_bid_price is None:
+            self.minimum_standard_bid_price = (
+                self.standard_bid_price_distribution.mean / 2
+            )
+        standard_bid_prices = np.clip(
+            self.standard_bid_price_distribution.sample(self.n_ads),
+            self.minimum_standard_bid_price,
+            None,
+        )
+        # average standard bid price
+        self.standard_bid_price = self.standard_bid_price_distribution.mean
 
-        # define winning function parameters for each ads
+        # define winning function
+        self.winning_function = WinningFunction(self.random_state)
+        # winning function parameter for each ad
         self.wf_ks = self.random_.normal(
             loc=50,
             scale=5,
             size=self.n_ads,
         )
         self.wf_thetas = self.random_.normal(
-            loc=self.standard_bid_price * 0.02,
-            scale=(self.standard_bid_price * 0.02) / 5,
+            loc=standard_bid_prices * 0.02,
+            scale=(standard_bid_prices * 0.02) / 5,
             size=self.n_ads,
         )
 
-        # define winning function and second price sampler
-        self.winning_function = WinningFunction(self.random_state)
+        # set trend_interval if None
+        if self.trend_interval is None:
+            self.trend_interval = self.step_per_episode
 
         # define click/imp and conversion/click rate function
         self.ctr = CTR(
