@@ -70,12 +70,24 @@ class WinningFunction:
             Sampled winning price for each auction.
 
         """
-        if not (isinstance(ks, np.ndarray) and ks.min() > 0):
-            raise ValueError("ks must be an NDArray of positive float values")
-        if not (isinstance(thetas, np.ndarray) and thetas.min() > 0):
-            raise ValueError("thetas must be an NDArray of positive float values")
-        if not (isinstance(bid_prices, np.ndarray) and bid_prices.min() >= 0):
-            raise ValueError("bid_prices must be an NDArray of non-negative integers")
+        if not (isinstance(ks, np.ndarray) and ks.ndim == 1 and ks.min() > 0):
+            raise ValueError(
+                "ks must be an 1-dimensional NDArray of positive float values"
+            )
+        if not (
+            isinstance(thetas, np.ndarray) and thetas.ndim == 1 and thetas.min() > 0
+        ):
+            raise ValueError(
+                "thetas must be an 1-dimensional NDArray of positive float values"
+            )
+        if not (
+            isinstance(bid_prices, np.ndarray)
+            and bid_prices.ndim == 1
+            and bid_prices.min() >= 0
+        ):
+            raise ValueError(
+                "bid_prices must be an 1-dimensional NDArray of non-negative integers"
+            )
         if not (len(ks) == len(thetas) == len(bid_prices)):
             raise ValueError("ks, thetas, and bid_prices must have same length")
 
@@ -176,17 +188,22 @@ class CTR:
         """
         if not (
             (isinstance(timestep, int) and timestep >= 0)
-            or (isinstance(timestep, np.ndarray) and timestep.min() >= 0)
+            or (
+                isinstance(timestep, np.ndarray)
+                and timestep.ndim == 1
+                and timestep.min() >= 0
+            )
         ):
             raise ValueError(
-                "timestep must be non negative integer or an NDArray of non negative integers"
+                "timestep must be an non-negative integer or an 1-dimensional NDArray of non-negative integers"
             )
         if not (
             isinstance(contexts, np.ndarray)
+            and contexts.ndim == 2
             and contexts.shape[1] == self.ad_feature_dim + self.user_feature_dim
         ):
             raise ValueError(
-                "contexts must have same dimension with the sum of the ad_feature_dim and user_feature_dim"
+                "contexts must have (ad_feature_dim + user_feature_dim) columns"
             )
         if not isinstance(timestep, int) and len(timestep) != len(contexts):
             raise ValueError("timestep and contexts must have same length")
@@ -292,17 +309,22 @@ class CVR:
         """
         if not (
             (isinstance(timestep, int) and timestep >= 0)
-            or (isinstance(timestep, np.ndarray) and timestep.min() >= 0)
+            or (
+                isinstance(timestep, np.ndarray)
+                and timestep.ndim == 1
+                and timestep.min() >= 0
+            )
         ):
             raise ValueError(
                 "timestep must be non negative integer or an NDArray of non negative integers"
             )
         if not (
             isinstance(contexts, np.ndarray)
+            and contexts.ndim == 2
             and contexts.shape[1] == self.ad_feature_dim + self.user_feature_dim
         ):
             raise ValueError(
-                "contexts must have same dimension with the sum of the ad_feature_dim and user_feature_dim"
+                "contexts must have (ad_feature_dim + user_feature_dim) columns"
             )
         if not isinstance(timestep, int) and len(timestep) != len(contexts):
             raise ValueError("timestep and contexts must have same length")

@@ -17,7 +17,7 @@ from _gym.utils import NormalDistribution
         (1, np.array([1]), 1),
         (np.array([1, 2]), np.array([1]), 1),
         (np.array([[1], [2]]), np.array([[1], [2]]), 1),
-        (np.array([1, 2]), np.array([-1, 1])),
+        (np.array([1, 2]), np.array([-1, 1]), 1),
         (1, 1, -1),
         (1, 1, 1.5),
         (1, 1, "1"),
@@ -49,7 +49,7 @@ def test_init_success_case(mean, std):
     NormalDistribution(mean, std)
 
 
-@pytest.mark.parameterize("size", [(1.5), (-1), (0), ("1")])
+@pytest.mark.parametrize("size", [(1.5), (-1), (0), ("1")])
 def test_function_failure_case(size):
     normal_distribution = NormalDistribution(mean=1, std=1)
 

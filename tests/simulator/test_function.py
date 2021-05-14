@@ -1,3 +1,4 @@
+from numpy.lib.function_base import interp
 import pytest
 from nptyping import NDArray
 
@@ -50,7 +51,6 @@ def test_ctr_init_failure_case(ad_feature_dim, user_feature_dim, trend_interval)
     "ks, thetas, bid_prices",
     [
         (np.array([]), np.array([]), np.array([])),
-        (np.array([1, 2]), np.array([1, 2]), np.array([1, 1.1])),
         (np.array([1, 2]), np.array([1, 2]), np.array([1])),
         (np.array([1, 2]), np.array([1]), np.array([1, 2])),
         (np.array([1]), np.array([1, 2]), np.array([1, 2])),
@@ -59,7 +59,7 @@ def test_ctr_init_failure_case(ad_feature_dim, user_feature_dim, trend_interval)
         (np.array([1, 2]), np.array([-1, 2]), np.array([1, 2])),
         (np.array([-1, 2]), np.array([0, 2]), np.array([1, 2])),
         (np.array([1, 2]), np.array([1, 2]), np.array([-1, 2])),
-        (np.array([[1], [2]]), np.array([1], [2]), np.array([1], [2])),
+        (np.array([[1], [2]]), np.array([[1], [2]]), np.array([[1], [2]])),
     ],
 )
 def test_wf_sample_outcome_failure_case(ks, thetas, bid_prices):
@@ -75,6 +75,7 @@ def test_wf_sample_outcome_failure_case(ks, thetas, bid_prices):
         (np.array([1, 2]), np.array([1, 2]), np.array([1, 2])),
         (np.array([0.5, 2]), np.array([1, 2]), np.array([1, 2])),
         (np.array([1, 2]), np.array([0.5, 2]), np.array([1, 2])),
+        (np.array([1, 2]), np.array([1, 2]), np.array([1, 1.1])),
         (np.array([1]), np.array([1]), np.array([1])),
     ],
 )
@@ -85,8 +86,8 @@ def test_wf_sample_outcome_success_case(ks, thetas, bid_prices):
         ks, thetas, bid_prices
     )
 
-    assert np.array_equal(impressions, impressions.astype(bool))
-    assert np.array_equal(impressions, winning_prices < bid_prices)
+    assert np.array_equal(impressions, impressions.astype(bool).astype(int))
+    assert np.array_equal(impressions, winning_prices < bid_prices.astype(int))
     assert isinstance(impressions, NDArray[int])
     assert isinstance(winning_prices, NDArray[int])
     assert bid_prices.shape == impressions.shape == winning_prices.shape
@@ -149,8 +150,8 @@ def test_ctr_cvr_function_success_case(timestep, contexts):
 
     assert 0 <= ctrs.all() <= 1
     assert 0 <= cvrs.all() <= 1
-    assert np.array_equal(clicks, ctrs.astype(bool))
-    assert np.array_equal(conversions, cvrs.astype(bool))
+    assert np.array_equal(clicks, clicks.astype(bool).astype(int))
+    assert np.array_equal(conversions, conversions.astype(bool).astype(int))
     assert isinstance(ctrs, NDArray[float])
     assert isinstance(cvrs, NDArray[float])
     assert isinstance(clicks, NDArray[int])
