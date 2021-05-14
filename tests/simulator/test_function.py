@@ -1,12 +1,13 @@
 import pytest
 from nptyping import NDArray
+
 import numpy as np
 
 from _gym.simulator.function import WinningFunction, CTR, CVR
 
 
 @pytest.mark.parametrize("random_state", [(-1), (1.5), ("1")])
-def test_init_random_state(random_state):
+def test_init_random_state_failure_case(random_state):
     with pytest.raises(ValueError):
         WinningFunction(random_state=random_state)
 
@@ -36,7 +37,7 @@ def test_init_random_state(random_state):
         (1, 1, "1"),
     ],
 )
-def test_ctr_init(ad_feature_dim, user_feature_dim, trend_interval):
+def test_ctr_init_failure_case(ad_feature_dim, user_feature_dim, trend_interval):
     with pytest.raises(ValueError):
         CTR(
             ad_feature_dim=ad_feature_dim,
@@ -61,7 +62,7 @@ def test_ctr_init(ad_feature_dim, user_feature_dim, trend_interval):
         (np.array([[1], [2]]), np.array([1], [2]), np.array([1], [2])),
     ],
 )
-def test_wf_sample_outcome(ks, thetas, bid_prices):
+def test_wf_sample_outcome_failure_case(ks, thetas, bid_prices):
     winning_function = WinningFunction()
 
     with pytest.raises(ValueError):
@@ -77,7 +78,7 @@ def test_wf_sample_outcome(ks, thetas, bid_prices):
         (np.array([1]), np.array([1]), np.array([1])),
     ],
 )
-def test_wf_sample_outcome_():
+def test_wf_sample_outcome_success_case(ks, thetas, bid_prices):
     winning_function = WinningFunction()
 
     impressions, winning_prices = winning_function.sample_outcome(
@@ -104,7 +105,7 @@ def test_wf_sample_outcome_():
         (0, np.array([[[1.1, 2.2]]])),
     ],
 )
-def test_ctr_cvr_function(timestep, contexts):
+def test_ctr_cvr_functions_failure_case(timestep, contexts):
     ctr = CTR(
         ad_feature_dim=1,
         user_feature_dim=1,
@@ -116,13 +117,13 @@ def test_ctr_cvr_function(timestep, contexts):
         ctr.calc_prob(timestep, contexts)
 
     with pytest.raises(ValueError):
-        clicks = ctr.sample_outcome(timestep, contexts)
+        ctr.sample_outcome(timestep, contexts)
 
     with pytest.raises(ValueError):
-        cvrs = cvr.calc_prob(timestep, contexts)
+        cvr.calc_prob(timestep, contexts)
 
     with pytest.raises(ValueError):
-        conversions = cvr.sample_outcome(timestep, contexts)
+        cvr.sample_outcome(timestep, contexts)
 
 
 @pytest.mark.parametrize(
@@ -133,7 +134,7 @@ def test_ctr_cvr_function(timestep, contexts):
         (np.array([0, 1]), np.array([[1.1, 2.2], [3.3, 4.4]])),
     ],
 )
-def test_ctr_cvr_function_(timestep, contexts):
+def test_ctr_cvr_function_success_case(timestep, contexts):
     ctr = CTR(
         ad_feature_dim=1,
         user_feature_dim=1,

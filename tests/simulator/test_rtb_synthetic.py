@@ -1,3 +1,4 @@
+from _gym.utils import NormalDistribution
 import pytest
 from nptyping import NDArray
 
@@ -8,32 +9,38 @@ from _gym.simulator import RTBSyntheticSimulator
 
 
 def test_init():
+    # default value check
     simulator = RTBSyntheticSimulator()
     assert simulator.objective == "conversion"
     assert not simulator.use_reward_predictor
     assert simulator.step_per_episode == simulator.trend_interval
 
+    # objective -- failure case
+    with pytest.raises(ValueError):
+        RTBSyntheticSimulator(objective="impression")
+
+    # objective -- success case
     simulator = RTBSyntheticSimulator(objective="conversion")
     assert simulator.objective == "conversion"
 
     simulator = RTBSyntheticSimulator(objective="click")
     assert simulator.objective == "click"
 
-    with pytest.raises(ValueError):
-        RTBSyntheticSimulator(objective="impression")
-
+    # use_reward_predictor -- failure case
     with pytest.raises(ValueError):
         RTBSyntheticSimulator(use_reward_predictor=True)
-
-    RTBSyntheticSimulator(
-        use_reward_predictor=True, reward_predictor=LogisticRegression()
-    )
 
     with pytest.raises(ValueError):
         RTBSyntheticSimulator(
             use_reward_predictor=True, reward_predictor=LogisticRegression
         )
 
+    # use_reward_predictor -- success case
+    RTBSyntheticSimulator(
+        use_reward_predictor=True, reward_predictor=LogisticRegression()
+    )
+
+    # step_per_episode -- failure case
     with pytest.raises(ValueError):
         RTBSyntheticSimulator(step_per_episode=0)
 
@@ -46,6 +53,7 @@ def test_init():
     with pytest.raises(ValueError):
         RTBSyntheticSimulator(step_per_episode="1")
 
+    # n_ads, n_users -- failure case
     with pytest.raises(ValueError):
         RTBSyntheticSimulator(n_ads=0)
 
@@ -70,6 +78,7 @@ def test_init():
     with pytest.raises(ValueError):
         RTBSyntheticSimulator(n_users="1")
 
+    # ad_feature_dim, user_feature_dim -- failure case
     with pytest.raises(ValueError):
         RTBSyntheticSimulator(ad_feature_dim=0)
 
@@ -94,17 +103,66 @@ def test_init():
     with pytest.raises(ValueError):
         RTBSyntheticSimulator(user_feature_dim="1")
 
+    # standard_bid_price_distribution -- failure case
     with pytest.raises(ValueError):
-        RTBSyntheticSimulator(standard_bid_price=0)
-
-    with pytest.raises(ValueError):
-        RTBSyntheticSimulator(standard_bid_price=-1)
+        RTBSyntheticSimulator(standard_bid_price_distribution=10)
 
     with pytest.raises(ValueError):
-        RTBSyntheticSimulator(user_feature_dim="1")
+        RTBSyntheticSimulator(
+            standard_bid_price_distribution=NormalDistribution(mean=0, std=0)
+        )
 
-    RTBSyntheticSimulator(standard_bid_price=1.5)
+    with pytest.raises(ValueError):
+        RTBSyntheticSimulator(
+            standard_bid_price_distribution=NormalDistribution(mean=-1, std=0)
+        )
 
+    with pytest.raises(ValueError):
+        RTBSyntheticSimulator(
+            standard_bid_price_distribution=NormalDistribution(mean="1", std=0)
+        )
+
+    with pytest.raises(ValueError):
+        RTBSyntheticSimulator(
+            standard_bid_price_distribution=NormalDistribution(mean=1, std=-1)
+        )
+
+    with pytest.raises(ValueError):
+        RTBSyntheticSimulator(
+            standard_bid_price_distribution=NormalDistribution(mean=1, std="1")
+        )
+
+    # standard_bid_price_distribution -- success case
+    RTBSyntheticSimulator(
+        standard_bid_price_distribution=NormalDistribution(mean=1, std=0)
+    )
+
+    RTBSyntheticSimulator(
+        standard_bid_price_distribution=NormalDistribution(mean=1.5, std=0)
+    )
+
+    RTBSyntheticSimulator(
+        standard_bid_price_distribution=NormalDistribution(mean=1, std=1.5)
+    )
+
+    # minimum_standard_bid_price -- failure case
+    with pytest.raises(ValueError):
+        RTBSyntheticSimulator(minimum_standard_bid_price=-1)
+
+    with pytest.raises(ValueError):
+        RTBSyntheticSimulator(minimum_standard_bid_price=101)
+
+    with pytest.raises(ValueError):
+        RTBSyntheticSimulator(minimum_standard_bid_price="1")
+
+    # minimum_standard_bid_price -- success case
+    RTBSyntheticSimulator(minimum_standard_bid_price=0)
+
+    RTBSyntheticSimulator(minimum_standard_bid_price=100)
+
+    RTBSyntheticSimulator(minimum_standard_bid_price=1.5)
+
+    # trend_interval -- failure case
     with pytest.raises(ValueError):
         RTBSyntheticSimulator(trend_interval=0)
 
@@ -117,6 +175,7 @@ def test_init():
     with pytest.raises(ValueError):
         RTBSyntheticSimulator(trend_interval="1")
 
+    # random_state -- failure case
     with pytest.raises(ValueError):
         RTBSyntheticSimulator(random_state=-1)
 
@@ -149,7 +208,7 @@ def test_init():
         (1, 1, np.array([[0], [1]]), np.array([[0], [1]])),
     ],
 )
-def test_simulate_auction(timestep, adjust_rate, ad_ids, user_ids):
+def test_simulate_auction_failure_case(timestep, adjust_rate, ad_ids, user_ids):
     simulator = RTBSyntheticSimulator()
 
     with pytest.raises(ValueError):
@@ -163,14 +222,14 @@ def test_simulate_auction(timestep, adjust_rate, ad_ids, user_ids):
         (1, 10, np.array([0, 1]), np.array([0, 1])),
     ],
 )
-def test_simulate_auction_(timestep, adjust_rate, ad_ids, user_ids):
+def test_simulate_auction_success_case(timestep, adjust_rate, ad_ids, user_ids):
     simulator = RTBSyntheticSimulator()
     bid_prices, costs, impressions, clicks, conversions = simulator.simulate_auction(
         timestep, adjust_rate, ad_ids, user_ids
     )
 
-    assert bid_prices >= costs
-    assert impressions >= clicks >= conversions
+    assert (bid_prices >= costs).all()
+    assert (impressions >= clicks >= conversions).all()
     assert np.array_equal(impressions, impressions.astype(bool))
     assert np.array_equal(clicks, clicks.astype(bool))
     assert np.array_equal(conversions, conversions.astype(bool))
@@ -183,8 +242,38 @@ def test_simulate_auction_(timestep, adjust_rate, ad_ids, user_ids):
     assert ad_ids.shape == impressions.shape == clicks.shape == conversions.Shape
 
 
+def test_simulate_auction_bid_prices_value_check():
+    simulator = RTBSyntheticSimulator()
+
+    bid_prices_01, _, _, _, _ = simulator.simulate_auction(
+        timestep=0,
+        adjust_rate=0.1,
+        ad_ids=np.arange(10),
+        user_ids=np.arange(10),
+    )
+    bid_prices_1, _, _, _, _ = simulator.simulate_auction(
+        timestep=0,
+        adjust_rate=1,
+        ad_ids=np.arange(10),
+        user_ids=np.arange(10),
+    )
+    bid_prices_5, _, _, _, _ = simulator.simulate_auction(
+        timestep=0,
+        adjust_rate=5,
+        ad_ids=np.arange(10),
+        user_ids=np.arange(10),
+    )
+    bid_prices_10, _, _, _, _ = simulator.simulate_auction(
+        timestep=0,
+        adjust_rate=10,
+        ad_ids=np.arange(10),
+        user_ids=np.arange(10),
+    )
+    assert (bid_prices_01 < bid_prices_1 < bid_prices_5 < bid_prices_10).all()
+
+
 @pytest.mark.parametrize("n_samples", [(-1), (0), (1.5), ("1")])
-def test_fit_reward_estimator(n_samples):
+def test_fit_reward_estimator_failure_case(n_samples):
     simulator = RTBSyntheticSimulator(
         use_reward_predictor=True,
         reward_predictor=LogisticRegression(),
@@ -194,7 +283,7 @@ def test_fit_reward_estimator(n_samples):
         simulator.fit_reward_predictor(n_samples)
 
 
-def test_predict_reward_and_calc_ground_truth_reward():
+def test_predict_reward_and_calc_ground_truth_reward_value_check():
     simulator_A = RTBSyntheticSimulator(
         objective="conversion",
         use_reward_predictor=True,
@@ -229,7 +318,7 @@ def test_predict_reward_and_calc_ground_truth_reward():
     assert len(contexts) == len(predicted_rewards) == len(ground_truth_rewards_A)
 
 
-def test_determine_bid_price():
+def test_determine_bid_price_value_check():
     simulator_A = RTBSyntheticSimulator(
         objective="conversion",
         ad_feature_dim=1,
@@ -269,7 +358,10 @@ def test_determine_bid_price():
         timestep=0, adjust_rate=1, contexts=contexts
     )
 
-    assert bid_prices_A >= 0
+    assert (bid_prices_A >= 0).all()
+    assert (bid_prices_B >= 0).all()
+    assert (bid_prices_C >= 0).all()
+    assert (bid_prices_D >= 0).all()
     assert not np.array_equal(bid_prices_A, bid_prices_B)
     assert not np.array_equal(bid_prices_B, bid_prices_C)
     assert not np.array_equal(bid_prices_C, bid_prices_D)
@@ -280,7 +372,7 @@ def test_determine_bid_price():
     assert len(contexts) == len(bid_prices)
 
 
-def test_map_idx_to_contexts():
+def test_map_idx_to_contexts_value_check():
     simulator = RTBSyntheticSimulator()
     contexts = simulator._map_idx_to_contexts(
         ad_ids=np.array([0, 1]),

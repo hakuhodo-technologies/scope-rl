@@ -262,20 +262,25 @@ class RTBEnv(gym.Env):
             )
         if not (
             ad_sampling_rate is None
-            or (isinstance(ad_sampling_rate, np.ndarray) and ad_sampling_rate.min() > 0)
+            or (
+                isinstance(ad_sampling_rate, np.ndarray)
+                and ad_sampling_rate.min() >= 0
+                and ad_sampling_rate.max() > 0
+            )
         ):
             raise ValueError(
-                "ad_sampling_rate must be an NDArray of positive float values"
+                "ad_sampling_rate must be an NDArray of non-negative float values"
             )
         if not (
             user_sampling_rate is None
             or (
                 isinstance(user_sampling_rate, np.ndarray)
-                and user_sampling_rate.min() > 0
+                and user_sampling_rate.min() >= 0
+                and user_sampling_rate.max() > 0
             )
         ):
             raise ValueError(
-                "user_sampling_rate must be an NDArray of positive float values"
+                "user_sampling_rate must be an NDArray of non-negative float values"
             )
         if ad_sampling_rate is not None and n_ads != len(ad_sampling_rate):
             raise ValueError("length of ad_sampling_rate must be equal to n_ads")
@@ -575,12 +580,12 @@ class RTBEnv(gym.Env):
         pass
 
     def close(self) -> None:
-        warnings.warn(".close() is not implemented, nothing takes place")
+        warnings.warn(".close() is not implemented")
         pass
 
     def seed(self, seed: int = None) -> None:
         warnings.warn(
-            "nothing takes place since .seed() is not implemented, please reset seed by initializing the environment"
+            ".seed() is not implemented, please reset seed by initializing the environment"
         )
         pass
 

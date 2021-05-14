@@ -61,7 +61,7 @@ class RTBSyntheticSimulator(BaseSimulator):
     standard_bid_price_distribution: NormalDistribution, default=NormalDistribution(mean=100, std=20)
         Distribution of the bid price whose average impression probability is expected to be 0.5.
 
-    minimum_standard_bid_price: int, default=None
+    minimum_standard_bid_price: Optional[Union[int, float]], default=None
         Minimum value for standard bid price.
         If None, minimum_standard_bid_price is set to standard_bid_price_distribution / 2.
 
@@ -89,7 +89,7 @@ class RTBSyntheticSimulator(BaseSimulator):
     standard_bid_price_distribution: NormalDistribution = NormalDistribution(
         mean=100, std=20
     )
-    minimum_standard_bid_price: Optional[int] = None
+    minimum_standard_bid_price: Optional[Union[int, float]] = None
     trend_interval: int = 24
     random_state: int = 12345
 
@@ -137,13 +137,13 @@ class RTBSyntheticSimulator(BaseSimulator):
                 f"standard_bid_price_distribution.mean must be a positive float value, but {self.standard_bid_price_distribution.mean} is given"
             )
         if self.minimum_standard_bid_price is not None and not (
-            isinstance(self.minimum_standard_bid_price, int)
+            isinstance(self.minimum_standard_bid_price, (int, float))
             and 0
-            < self.minimum_standard_bid_price
-            < self.standard_bid_price_distribution.mean
+            <= self.minimum_standard_bid_price
+            <= self.standard_bid_price_distribution.mean
         ):
             raise ValueError(
-                f"minimum_standard_bid_price must be an integer within (0, standard_bid_price_distribution.mean), but {self.minimum_standard_bid_price} is given"
+                f"minimum_standard_bid_price must be a float value within [0, standard_bid_price_distribution.mean], but {self.minimum_standard_bid_price} is given"
             )
         if not (
             self.trend_interval is None
