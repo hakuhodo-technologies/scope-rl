@@ -239,10 +239,12 @@ class RTBEnv(gym.Env):
                 )
             if not (
                 isinstance(action_meaning, np.ndarray)
-                and 0.1 <= action_meaning.all() <= 10
+                and action_meaning.ndim == 1
+                and 0.1 <= action_meaning.min() 
+                and action_meaning.max() <= 10
             ):
                 raise ValueError(
-                    "action_meaning must be an NDArray of float values within [0.1, 10]"
+                    "action_meaning must be an 1-dimensional NDArray of float values within [0.1, 10]"
                 )
         if not (isinstance(step_per_episode, int) and step_per_episode > 0):
             raise ValueError(
@@ -254,27 +256,29 @@ class RTBEnv(gym.Env):
             )
         if not (isinstance(n_ads, int) and n_ads > 0):
             raise ValueError(
-                f"n_ads must be a positive interger, but {self.n_ads} is given"
+                f"n_ads must be a positive interger, but {n_ads} is given"
             )
         if not (isinstance(n_users, int) and n_users > 0):
             raise ValueError(
-                f"n_users must be a positive interger, but {self.n_users} is given"
+                f"n_users must be a positive interger, but {n_users} is given"
             )
         if not (
             ad_sampling_rate is None
             or (
                 isinstance(ad_sampling_rate, np.ndarray)
+                and ad_sampling_rate.ndim == 1
                 and ad_sampling_rate.min() >= 0
                 and ad_sampling_rate.max() > 0
             )
         ):
             raise ValueError(
-                "ad_sampling_rate must be an NDArray of non-negative float values"
+                "ad_sampling_rate must be an 1-dimensional NDArray of non-negative float values"
             )
         if not (
             user_sampling_rate is None
             or (
                 isinstance(user_sampling_rate, np.ndarray)
+                and user_sampling_rate.ndim == 1
                 and user_sampling_rate.min() >= 0
                 and user_sampling_rate.max() > 0
             )
@@ -291,6 +295,7 @@ class RTBEnv(gym.Env):
             and search_volume_distribution.mean > 0
         ) and not (
             isinstance(search_volume_distribution.mean, np.ndarray)
+            and search_volume_distribution.mean.ndim == 1
             and search_volume_distribution.mean.min() > 0
         ):
             raise ValueError(
@@ -386,14 +391,15 @@ class RTBEnv(gym.Env):
         else:
             self.user_sampling_rate = user_sampling_rate / np.sum(user_sampling_rate)
 
-        if isinstance(search_volume_distribution, NormalDistribution):
-            search_volume_distribution = [search_volume_distribution] * step_per_episode
-
-        self.search_volumes = np.zeros((step_per_episode, 100))
-        for i in range(step_per_episode):
-            self.search_volumes[i] = search_volume_distribution[i].sample(size=100)
+        if isinstance(search_volume_distribution.mean, int):
+            search_volume_distribution = NormalDistribution(
+                mean=np.full(step_per_episode, search_volume_distribution.mean),
+                std=np.full(step_per_episode, search_volume_distribution.std),
+            )
         self.search_volumes = np.clip(
-            self.search_volumes, minimum_search_volume, None
+            search_volume_distribution.sample(size=100),
+            minimum_search_volume,
+            None
         ).astype(int)
 
         # just for idx of search_volumes to sample from
@@ -450,8 +456,12 @@ class RTBEnv(gym.Env):
                 Note that those feedbacks are intended to be unobservable for the RL agent.
 
         """
+        if not isinstance(action, (int, float, np.integer, np.floating)):
+            raise ValueError(
+                f"action must be a float number, but {action} is given"
+            )
         if self.action_type == "discrete":
-            if not self.action_space.contains(action):
+            if not (isinstance(action, (int, np.integer)) and 0 <= action < self.action_space.n):
                 raise ValueError(
                     f"action must be an integer within [0, {self.action_space.n})"
                 )
@@ -463,7 +473,7 @@ class RTBEnv(gym.Env):
 
         # map agent action into adjust rate
         adjust_rate = (
-            action if self.action_type == "continuous" else self.action_meaning[action]
+            action if self.action_type == "continuous" else self.action_meaning[int(action)]
         )
 
         # sample ads and users for auctions occur in a timestep
@@ -490,10 +500,10 @@ class RTBEnv(gym.Env):
         # check if auction bidding is possible
         masks = np.cumsum(costs) < self.remaining_budget
 
-        total_cost = np.sum(costs * masks)
-        total_impression = np.sum(impressions * masks)
-        total_click = np.sum(clicks * masks)
-        total_conversion = np.sum(conversions * masks)
+        total_cost = int(np.sum(costs * masks))
+        total_impression = int(np.sum(impressions * masks))
+        total_click = int(np.sum(clicks * masks))
+        total_conversion = int(np.sum(conversions * masks))
 
         self.remaining_budget -= total_cost
 

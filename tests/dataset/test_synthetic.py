@@ -27,7 +27,7 @@ def test_init_pretrain_samples_failure_case(n_samples_pretrain_reward_predictor)
         )
 
 
-@pytest.mark.parametrize("random_state", [(-1), (0), ("1"), (1.5)])
+@pytest.mark.parametrize("random_state", [(-1), ("1"), (1.5)])
 def test_init_random_state_failure_case(random_state):
     env = RTBEnv()
     agent = RandomPolicy(env)

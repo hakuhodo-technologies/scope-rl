@@ -12,7 +12,6 @@ from _gym.policy import RandomPolicy
 def test_init():
     # default value check
     env = RTBEnv()
-    assert not env.semi_synthtic
     assert not env.use_reward_predictor
     assert env.objective == "conversion"
     assert env.action_type == "discrete"
@@ -85,7 +84,7 @@ def test_init():
         RTBEnv(use_reward_predictor=True, reward_predictor=LogisticRegression)
 
     # use_reward_predictor -- success case
-    RTBEnv(use_reward_predictor=True, reward_predictor=LogisticRegression())
+    env = RTBEnv(use_reward_predictor=True, reward_predictor=LogisticRegression())
     assert env.simulator.use_reward_predictor
 
     # step_per_episode -- failure case
@@ -389,13 +388,17 @@ def test_init():
     )
 
     # minimum_search_volume -- failure_case
-    RTBEnv(minimum_search_volume=0)
+    with pytest.raises(ValueError):
+        RTBEnv(minimum_search_volume=0)
 
-    RTBEnv(minimum_search_volume=1.5)
+    with pytest.raises(ValueError):
+        RTBEnv(minimum_search_volume=1.5)
 
-    RTBEnv(minimum_search_volume=-1)
+    with pytest.raises(ValueError):
+        RTBEnv(minimum_search_volume=-1)
 
-    RTBEnv(minimum_search_volume="1")
+    with pytest.raises(ValueError):
+        RTBEnv(minimum_search_volume="1")
 
     # random_state -- failure case
     with pytest.raises(ValueError):
@@ -434,11 +437,11 @@ def test_step_continuous_success_case(action):
         )
 
         assert obs_0.shape == obs.shape == (7,)
-        assert isinstance(reward, int) and reward > 0
-        assert done == (step == env.step_per_episode)
-        assert isinstance(impression, NDArray[int])
-        assert isinstance(click, NDArray[int])
-        assert isinstance(conversion, NDArray[int])
+        assert isinstance(reward, int) and reward >= 0
+        assert done == (step == env.step_per_episode - 1)
+        assert isinstance(impression, int)
+        assert isinstance(click, int)
+        assert isinstance(conversion, int)
         assert impression >= click >= conversion >= 0
         assert reward == click
 
@@ -460,8 +463,8 @@ def test_step_discrete():
         action_type="discrete",
         action_dim=5,
     )
-    valid_action = np.logspace(-1, 1, 5)
-    invalid_action = valid_action + 0.1
+    valid_action = np.arange(5)
+    invalid_action = np.logspace(-1, 1, 5)
 
     # failure case
     for action in invalid_action:

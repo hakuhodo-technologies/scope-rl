@@ -186,13 +186,10 @@ class CTR:
             Ground-truth CTR (i.e., click per impression) for each auction.
 
         """
-        if not (
-            (isinstance(timestep, int) and timestep >= 0)
-            or (
-                isinstance(timestep, np.ndarray)
-                and timestep.ndim == 1
-                and timestep.min() >= 0
-            )
+        if not (isinstance(timestep, int) and timestep >= 0) and not (
+            isinstance(timestep, np.ndarray)
+            and timestep.ndim == 1
+            and timestep.min() >= 0
         ):
             raise ValueError(
                 "timestep must be an non-negative integer or an 1-dimensional NDArray of non-negative integers"
@@ -307,13 +304,10 @@ class CVR:
             Ground-truth CVR (i.e., conversion per click) for each auction.
 
         """
-        if not (
-            (isinstance(timestep, int) and timestep >= 0)
-            or (
-                isinstance(timestep, np.ndarray)
-                and timestep.ndim == 1
-                and timestep.min() >= 0
-            )
+        if not (isinstance(timestep, int) and timestep >= 0) and not (
+            isinstance(timestep, np.ndarray)
+            and timestep.ndim == 1
+            and timestep.min() >= 0
         ):
             raise ValueError(
                 "timestep must be non negative integer or an NDArray of non negative integers"

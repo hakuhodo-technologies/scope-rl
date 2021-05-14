@@ -16,7 +16,7 @@ class RandomPolicy(BasePolicy):
         if self.action_type == "discrete":
             return self.action_space.sample(), 1 / self.action_space.n
         else:
-            return self.action_space.sample(), 1 / (
+            return self.action_space.sample()[0], 1 / (
                 self.action_space.high - self.action_space.low
             )
 

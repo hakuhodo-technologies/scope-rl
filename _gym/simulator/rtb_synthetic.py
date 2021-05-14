@@ -105,6 +105,16 @@ class RTBSyntheticSimulator(BaseSimulator):
             raise ValueError(
                 f"reward_predictor must be given when use_reward_predictor=True"
             )
+        if self.use_reward_predictor and not isinstance(
+            self.reward_predictor, BaseEstimator
+        ):
+            raise ValueError(
+                "reward_predictor must be BaseEstimator or a child class of BaseEstimator"
+            )
+        if not self.use_reward_predictor and self.reward_predictor is not None:
+            warnings.warn(
+                "reward_predictor will not be used when use_reward_predictor=False option"
+            )
         if not (isinstance(self.step_per_episode, int) and self.step_per_episode > 0):
             raise ValueError(
                 f"step_per_episode must be a positive interger, but {self.step_per_episode} is given"
@@ -124,6 +134,10 @@ class RTBSyntheticSimulator(BaseSimulator):
         if not (isinstance(self.user_feature_dim, int) and self.user_feature_dim > 0):
             raise ValueError(
                 f"user_feature_dim must be a positive interger, but {self.user_feature_dim} is given"
+            )
+        if not isinstance(self.standard_bid_price_distribution, NormalDistribution):
+            raise ValueError(
+                "standard_bid_price_distribution must be a NormalDistribution"
             )
         if not (
             isinstance(self.standard_bid_price_distribution.mean, (int, float))
@@ -271,12 +285,24 @@ class RTBSyntheticSimulator(BaseSimulator):
             raise ValueError(
                 f"adjust_rate must be a float number in [0.1, 10], but {adjust_rate} is given"
             )
-        if not (isinstance(ad_ids, np.ndarray) and 0 <= ad_ids.all() < self.n_ads):
-            raise ValueError("ad_ids must be chosen from integer within [0, n_ads)")
         if not (
-            isinstance(user_ids, np.ndarray) and 0 <= user_ids.all() < self.n_users
+            isinstance(ad_ids, np.ndarray)
+            and ad_ids.ndim == 1
+            and 0 <= ad_ids.min()
+            and ad_ids.max() < self.n_ads
         ):
-            raise ValueError("user_ids must be chosen from integer within [0, n_users)")
+            raise ValueError(
+                "ad_ids must be 1-dimensional NDArray with integers within [0, n_ads)"
+            )
+        if not (
+            isinstance(user_ids, np.ndarray)
+            and user_ids.ndim == 1
+            and 0 <= user_ids.min()
+            and user_ids.max() < self.n_users
+        ):
+            raise ValueError(
+                "user_ids must be 1-dimensional NDArray with integers within [0, n_users)"
+            )
         if len(ad_ids) != len(user_ids):
             raise ValueError("ad_ids and user_ids must have same length")
 
@@ -321,10 +347,8 @@ class RTBSyntheticSimulator(BaseSimulator):
         user_ids = self.random_.choice(self.n_ads, n_samples)
         contexts = self._map_idx_to_contexts(ad_ids, user_ids)
 
-        timesteps = self.random_.choice(self.step_per_episode, n_samples).reshape(
-            (-1, 1)
-        )
-        feature_vectors = np.concatenate([contexts, timesteps], axis=1)
+        timesteps = self.random_.choice(self.step_per_episode, n_samples)
+        feature_vectors = np.concatenate([contexts, timesteps.reshape((-1, 1))], axis=1)
 
         if self.objective == "click":
             rewards = self.ctr.sample_outcome(timesteps, contexts)

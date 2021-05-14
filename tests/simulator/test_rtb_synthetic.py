@@ -198,10 +198,8 @@ def test_init():
         (1, -1, np.array([0, 1]), np.array([0, 1])),
         (1, "1", np.array([0, 1]), np.array([0, 1])),
         (1, 1, np.array([-1, 1]), np.array([0, 1])),
-        (1, 1, np.array([1.5, 1]), np.array([0, 1])),
         (1, 1, np.array([100, 1]), np.array([0, 1])),
         (1, 1, np.array([0, 1]), np.array([-1, 1])),
-        (1, 1, np.array([0, 1]), np.array([1.5, 1])),
         (1, 1, np.array([0, 1]), np.array([100, 1])),
         (1, 1, np.array([]), np.array([])),
         (1, 1, np.array([0]), np.array([0, 1])),
@@ -229,17 +227,18 @@ def test_simulate_auction_success_case(timestep, adjust_rate, ad_ids, user_ids):
     )
 
     assert (bid_prices >= costs).all()
-    assert (impressions >= clicks >= conversions).all()
-    assert np.array_equal(impressions, impressions.astype(bool))
-    assert np.array_equal(clicks, clicks.astype(bool))
-    assert np.array_equal(conversions, conversions.astype(bool))
+    assert (impressions >= clicks).all()
+    assert (clicks >= conversions).all()
+    assert np.array_equal(impressions, impressions.astype(bool).astype(int))
+    assert np.array_equal(clicks, clicks.astype(bool).astype(int))
+    assert np.array_equal(conversions, conversions.astype(bool).astype(int))
     assert isinstance(bid_prices, NDArray[int])
     assert isinstance(costs, NDArray[int])
     assert isinstance(impressions, NDArray[int])
     assert isinstance(clicks, NDArray[int])
     assert isinstance(conversions, NDArray[int])
-    assert ad_ids.shape == bid_prices.shape == costs.Shape
-    assert ad_ids.shape == impressions.shape == clicks.shape == conversions.Shape
+    assert ad_ids.shape == bid_prices.shape == costs.shape
+    assert ad_ids.shape == impressions.shape == clicks.shape == conversions.shape
 
 
 def test_simulate_auction_bid_prices_value_check():
@@ -269,7 +268,9 @@ def test_simulate_auction_bid_prices_value_check():
         ad_ids=np.arange(10),
         user_ids=np.arange(10),
     )
-    assert (bid_prices_01 < bid_prices_1 < bid_prices_5 < bid_prices_10).all()
+    assert (bid_prices_01 < bid_prices_1).all()
+    assert (bid_prices_1 < bid_prices_5).all()
+    assert (bid_prices_5 < bid_prices_10).all()
 
 
 @pytest.mark.parametrize("n_samples", [(-1), (0), (1.5), ("1")])
@@ -310,9 +311,9 @@ def test_predict_reward_and_calc_ground_truth_reward_value_check():
         timestep=0, contexts=contexts
     )
 
-    assert 0 <= predicted_rewards.all() <= 1
-    assert 0 <= ground_truth_rewards_A.all() <= 1
-    assert ground_truth_rewards_A <= ground_truth_rewards_B
+    assert 0 <= predicted_rewards.min() and predicted_rewards.max() <= 1
+    assert 0 <= ground_truth_rewards_A.min() and ground_truth_rewards_A.max() <= 1
+    assert (ground_truth_rewards_A <= ground_truth_rewards_B).all()
     assert isinstance(predicted_rewards, NDArray[float])
     assert isinstance(ground_truth_rewards_A, NDArray[float])
     assert len(contexts) == len(predicted_rewards) == len(ground_truth_rewards_A)
@@ -344,6 +345,9 @@ def test_determine_bid_price_value_check():
         user_feature_dim=1,
     )
 
+    simulator_C.fit_reward_predictor(n_samples=100)
+    simulator_D.fit_reward_predictor(n_samples=100)
+
     contexts = np.array([[1.1, 2.2], [3.3, 4.4]])
     bid_prices_A = simulator_A._determine_bid_price(
         timestep=0, adjust_rate=1, contexts=contexts
@@ -368,8 +372,8 @@ def test_determine_bid_price_value_check():
     assert not np.array_equal(bid_prices_D, bid_prices_A)
     assert not np.array_equal(bid_prices_A, bid_prices_C)
     assert not np.array_equal(bid_prices_B, bid_prices_D)
-    assert isinstance(bid_prices_A, NDArray[float])
-    assert len(contexts) == len(bid_prices)
+    assert isinstance(bid_prices_A, NDArray[int])
+    assert len(contexts) == len(bid_prices_A)
 
 
 def test_map_idx_to_contexts_value_check():
