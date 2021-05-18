@@ -180,16 +180,16 @@ class SyntheticDataset(BaseDataset):
             raise ValueError(
                 f"n_episodes must be a positive integer, but {n_episodes} is given"
             )
-        states = np.zeros(
+        states = np.empty(
             (
                 n_episodes * self.env.step_per_episode,
                 self.env.observation_space.shape[0],
             )
         )
-        actions = np.zeros(n_episodes * self.env.step_per_episode)
-        action_probs = np.zeros(n_episodes * self.env.step_per_episode)
-        rewards = np.zeros(n_episodes * self.env.step_per_episode)
-        dones = np.zeros(n_episodes * self.env.step_per_episode)
+        actions = np.empty(n_episodes * self.env.step_per_episode)
+        action_probs = np.empty(n_episodes * self.env.step_per_episode)
+        rewards = np.empty(n_episodes * self.env.step_per_episode)
+        dones = np.empty(n_episodes * self.env.step_per_episode)
         infos = {}
 
         idx = 0
@@ -204,7 +204,7 @@ class SyntheticDataset(BaseDataset):
                 if idx == 0:
                     info_keys = info.keys()
                     for key in info_keys:
-                        infos[key] = np.zeros(n_episodes * self.env.step_per_episode)
+                        infos[key] = np.empty(n_episodes * self.env.step_per_episode)
 
                 states[idx] = state
                 actions[idx] = action
