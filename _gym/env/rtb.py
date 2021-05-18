@@ -460,9 +460,7 @@ class RTBEnv(gym.Env):
 
         # map agent action into adjust rate
         adjust_rate = (
-            action
-            if self.action_type == "continuous"
-            else self.action_meaning[action]
+            action if self.action_type == "continuous" else self.action_meaning[action]
         )
 
         # sample ads and users for auctions occur in a timestep

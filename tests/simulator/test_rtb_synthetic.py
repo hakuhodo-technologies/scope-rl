@@ -27,14 +27,10 @@ def test_init():
 
     # use_reward_predictor -- failure case
     with pytest.raises(ValueError):
-        RTBSyntheticSimulator(
-            reward_predictor=LogisticRegression
-        )
+        RTBSyntheticSimulator(reward_predictor=LogisticRegression)
 
     # use_reward_predictor -- success case
-    RTBSyntheticSimulator(
-        reward_predictor=LogisticRegression()
-    )
+    RTBSyntheticSimulator(reward_predictor=LogisticRegression())
 
     # step_per_episode -- failure case
     with pytest.raises(ValueError):
