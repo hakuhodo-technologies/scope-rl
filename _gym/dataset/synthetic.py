@@ -101,10 +101,10 @@ class SyntheticDataset(BaseDataset):
         'pscore': array([0.1, 0.1, 0.1, ..., 0.1, 0.1, 0.1])}
 
         # ground-truth policy value of behavior policy
-        >>> ground_truth_policy_value = dataset.calculate_ground_truth_policy_value(
+        >>> on_policy_policy_value = dataset.calculate_on_policy_policy_value(
                 n_episodes=10000
             )
-        >>> ground_truth_policy_value
+        >>> on_policy_policy_value
         ...
 
     """
@@ -226,6 +226,9 @@ class SyntheticDataset(BaseDataset):
             "action_dim": self.env.action_dim
             if self.env.action_type == "discrete"
             else None,
+            "action_meaning": self.env.action_meaning
+            if self.env.action_type == "discrete"
+            else None,
             "state_keys": self.env.obs_keys,
             "state": states,
             "action": actions,
@@ -236,8 +239,8 @@ class SyntheticDataset(BaseDataset):
         }
         return logged_dataset
 
-    def calc_ground_truth_policy_value(self, n_episodes: int = 10000) -> float:
-        """Calculate ground-truth policy value of the behavior policy by rollout.
+    def calc_on_policy_policy_value(self, n_episodes: int = 10000) -> float:
+        """Calculate on-policy policy value of the behavior policy by rollout.
 
         Parameters
         -------
@@ -250,7 +253,7 @@ class SyntheticDataset(BaseDataset):
             Mean episode reward calculated through rollout.
 
         """
-        return self.env.calc_ground_truth_policy_value(self.behavior_policy, n_episodes)
+        return self.env.calc_on_policy_policy_value(self.behavior_policy, n_episodes)
 
     def pretrain_behavior_policy(self, n_episodes: int = 10000) -> None:
         """Pre-train behavior policy by interacting with the environment.

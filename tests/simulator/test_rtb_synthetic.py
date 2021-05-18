@@ -1,10 +1,9 @@
-from _gym.utils import NormalDistribution
 import pytest
-from nptyping import NDArray
 
 import numpy as np
 from sklearn.linear_model import LogisticRegression
 
+from _gym.utils import NormalDistribution
 from _gym.simulator import RTBSyntheticSimulator
 
 
@@ -232,11 +231,11 @@ def test_simulate_auction_success_case(timestep, adjust_rate, ad_ids, user_ids):
     assert np.array_equal(impressions, impressions.astype(bool).astype(int))
     assert np.array_equal(clicks, clicks.astype(bool).astype(int))
     assert np.array_equal(conversions, conversions.astype(bool).astype(int))
-    assert isinstance(bid_prices, NDArray[int])
-    assert isinstance(costs, NDArray[int])
-    assert isinstance(impressions, NDArray[int])
-    assert isinstance(clicks, NDArray[int])
-    assert isinstance(conversions, NDArray[int])
+    assert np.allclose(np.mod(bid_prices, 1), 0)
+    assert np.allclose(np.mod(costs, 1), 0)
+    assert np.allclose(np.mod(impressions, 1), 0)
+    assert np.allclose(np.mod(clicks, 1), 0)
+    assert np.allclose(np.mod(conversions, 1), 0)
     assert ad_ids.shape == bid_prices.shape == costs.shape
     assert ad_ids.shape == impressions.shape == clicks.shape == conversions.shape
 
@@ -314,8 +313,6 @@ def test_predict_reward_and_calc_ground_truth_reward_value_check():
     assert 0 <= predicted_rewards.min() and predicted_rewards.max() <= 1
     assert 0 <= ground_truth_rewards_A.min() and ground_truth_rewards_A.max() <= 1
     assert (ground_truth_rewards_A <= ground_truth_rewards_B).all()
-    assert isinstance(predicted_rewards, NDArray[float])
-    assert isinstance(ground_truth_rewards_A, NDArray[float])
     assert len(contexts) == len(predicted_rewards) == len(ground_truth_rewards_A)
 
 
@@ -372,8 +369,17 @@ def test_determine_bid_price_value_check():
     assert not np.array_equal(bid_prices_D, bid_prices_A)
     assert not np.array_equal(bid_prices_A, bid_prices_C)
     assert not np.array_equal(bid_prices_B, bid_prices_D)
-    assert isinstance(bid_prices_A, NDArray[int])
-    assert len(contexts) == len(bid_prices_A)
+    assert np.allclose(np.mod(bid_prices_A, 1), 0)
+    assert np.allclose(np.mod(bid_prices_B, 1), 0)
+    assert np.allclose(np.mod(bid_prices_C, 1), 0)
+    assert np.allclose(np.mod(bid_prices_D, 1), 0)
+    assert (
+        len(contexts)
+        == len(bid_prices_A)
+        == len(bid_prices_B)
+        == len(bid_prices_C)
+        == len(bid_prices_D)
+    )
 
 
 def test_map_idx_to_contexts_value_check():
@@ -383,5 +389,4 @@ def test_map_idx_to_contexts_value_check():
         user_ids=np.array([0, 1]),
     )
 
-    assert isinstance(contexts, NDArray[float])
     assert contexts.shape == (2, simulator.ad_feature_dim + simulator.user_feature_dim)

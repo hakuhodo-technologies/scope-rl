@@ -437,11 +437,11 @@ def test_step_continuous_success_case(action):
         )
 
         assert obs_0.shape == obs.shape == (7,)
-        assert isinstance(reward, int) and reward >= 0
+        assert np.allclose(np.mod(reward, 1), 0) and reward >= 0
         assert done == (step == env.step_per_episode - 1)
-        assert isinstance(impression, int)
-        assert isinstance(click, int)
-        assert isinstance(conversion, int)
+        assert np.allclose(np.mod(impression, 1), 0)
+        assert np.allclose(np.mod(click, 1), 0)
+        assert np.allclose(np.mod(conversion, 1), 0)
         assert impression >= click >= conversion >= 0
         assert reward == click
 
@@ -501,12 +501,12 @@ def test_fit_reward_predictor_success_case():
 
 
 @pytest.mark.parametrize("n_episodes", [(-1), (0), (1.5), ("1")])
-def test_calc_ground_truth_policy_value_failure_case(n_episodes):
+def test_calc_on_policy_policy_value_failure_case(n_episodes):
     env = RTBEnv()
     random_policy = RandomPolicy(env)
 
     with pytest.raises(ValueError):
-        env.calc_ground_truth_policy_value(
+        env.calc_on_policy_policy_value(
             evaluation_policy=random_policy,
             n_episodes=n_episodes,
         )

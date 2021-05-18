@@ -1,6 +1,4 @@
-from numpy.lib.function_base import interp
 import pytest
-from nptyping import NDArray
 
 import numpy as np
 
@@ -88,8 +86,8 @@ def test_wf_sample_outcome_success_case(ks, thetas, bid_prices):
 
     assert np.array_equal(impressions, impressions.astype(bool).astype(int))
     assert np.array_equal(impressions, winning_prices < bid_prices.astype(int))
-    assert isinstance(impressions, NDArray[int])
-    assert isinstance(winning_prices, NDArray[int])
+    assert np.allclose(np.mod(impressions, 1), 0)
+    assert np.allclose(np.mod(winning_prices, 1), 0)
     assert bid_prices.shape == impressions.shape == winning_prices.shape
 
 
@@ -152,9 +150,7 @@ def test_ctr_cvr_function_success_case(timestep, contexts):
     assert 0 <= cvrs.all() <= 1
     assert np.array_equal(clicks, clicks.astype(bool).astype(int))
     assert np.array_equal(conversions, conversions.astype(bool).astype(int))
-    assert isinstance(ctrs, NDArray[float])
-    assert isinstance(cvrs, NDArray[float])
-    assert isinstance(clicks, NDArray[int])
-    assert isinstance(conversions, NDArray[int])
+    assert np.allclose(np.mod(clicks, 1), 0)
+    assert np.allclose(np.mod(conversions, 1), 0)
     assert len(contexts) == len(ctrs) == len(cvrs)
     assert len(contexts) == len(clicks) == len(conversions)

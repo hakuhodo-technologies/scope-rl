@@ -1,5 +1,4 @@
 import pytest
-from nptyping import NDArray
 
 import numpy as np
 from sklearn.linear_model import LogisticRegression
@@ -50,7 +49,7 @@ def test_functions_failure_case(n_episodes):
         dataset.obtain_trajectories(n_episodes)
 
     with pytest.raises(ValueError):
-        dataset.calc_ground_truth_policy_value(n_episodes)
+        dataset.calc_on_policy_policy_value(n_episodes)
 
     with pytest.raises(ValueError):
         dataset.pretrain_behavior_policy(n_episodes)
@@ -81,12 +80,17 @@ def test_obtain_trajectories_random_policy_value_check(objective, action_type):
     assert (
         logged_dataset["action_dim"] == env.action_dim
         if action_type == "discrete"
-        else None
+        else True
+    )
+    assert (
+        (logged_dataset["action_meaning"] == env.action_meaning).all()
+        if action_type == "discrete"
+        else True
     )
     assert logged_dataset["state_keys"] == [
         "timestep",
-        "remaining_budget",
-        "budget comsumption rate",
+        "remaining budget",
+        "budget consumption rate",
         "cost per mille of impression",
         "winning rate",
         "reward",
@@ -101,14 +105,23 @@ def test_obtain_trajectories_random_policy_value_check(objective, action_type):
     pscore = logged_dataset["pscore"]
     info = logged_dataset["info"]
 
-    assert 0.1 <= action.all() <= 10
+    assert (
+        0 <= action.all() < env.action_dim
+        if action_type == "discrete"
+        else 0.1 <= action.all() <= 10
+    )
     assert 0 <= reward.all()
     assert np.array_equal(done, done.astype(bool))
-    assert np.allclose(pscore.unique(), 1 / env.action_dim)
-    assert isinstance(state, NDArray[float])
-    assert isinstance(action, (NDArray[int], NDArray([float])))
-    assert isinstance(reward, NDArray[int])
-    assert isinstance(done, NDArray[int])
+    assert (
+        np.allclose(np.unique(pscore), 1 / env.action_dim)
+        if action_type == "discrete"
+        else np.allclose(
+            np.unique(pscore), 1 / (env.action_space.high - env.action_space.low)
+        )
+    )
+    assert np.allclose(np.mod(action, 1), 0) if action_type == "discrete" else True
+    assert np.allclose(np.mod(reward, 1), 0)
+    assert np.allclose(np.mod(done, 1), 0)
     assert state.shape == (24 * 100, 7)
     assert action.shape == reward.shape == done.shape == (24 * 100,)
     assert action.shape == pscore.shape
@@ -126,19 +139,31 @@ def test_obtain_trajectories_random_policy_value_check(objective, action_type):
     assert 0 <= budget_comsumption_rate.all() <= 1
     assert 0 <= cost_per_mille_of_impression.all()
     assert 0 <= winning_rate.all() <= 1
-    assert (reward_ == reward).all()
-    assert (adjust_rate == action).all()
+    assert np.allclose(reward_.reshape(100, -1)[:, 1:], reward.reshape(100, -1)[:, :-1])
+    print(action.shape, adjust_rate.shape)
+    assert (
+        np.allclose(
+            adjust_rate.reshape(100, -1)[:, 1:],
+            env.action_meaning[action.astype(int)].reshape(100, -1)[:, :-1],
+        )
+        if action_type == "discrete"
+        else np.allclose(
+            adjust_rate.reshape(100, -1)[:, 1:], action.reshape(100, -1)[:, :-1]
+        )
+    )
 
     impression = info["impression"]
     click = info["click"]
     conversion = info["conversion"]
-    average_bid_price = info["average_bid_price"]
+    average_bid_price = info["average bid price"]
 
-    assert (0 <= conversion <= click <= impression).all()
+    assert (0 <= conversion).all()
+    assert (conversion <= click).all()
+    assert (click <= impression).all()
     assert 0 <= average_bid_price.all()
-    assert isinstance(impression, NDArray[int])
-    assert isinstance(click, NDArray[int])
-    assert isinstance(conversion, NDArray[int])
+    assert np.allclose(np.mod(impression, 1), 0)
+    assert np.allclose(np.mod(click, 1), 0)
+    assert np.allclose(np.mod(conversion, 1), 0)
 
     if objective == "click":
         assert (reward == click).all()

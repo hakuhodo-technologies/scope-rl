@@ -240,7 +240,7 @@ class RTBEnv(gym.Env):
             if not (
                 isinstance(action_meaning, np.ndarray)
                 and action_meaning.ndim == 1
-                and 0.1 <= action_meaning.min() 
+                and 0.1 <= action_meaning.min()
                 and action_meaning.max() <= 10
             ):
                 raise ValueError(
@@ -255,9 +255,7 @@ class RTBEnv(gym.Env):
                 f"initial_budget must be a positive interger, but {initial_budget} is given"
             )
         if not (isinstance(n_ads, int) and n_ads > 0):
-            raise ValueError(
-                f"n_ads must be a positive interger, but {n_ads} is given"
-            )
+            raise ValueError(f"n_ads must be a positive interger, but {n_ads} is given")
         if not (isinstance(n_users, int) and n_users > 0):
             raise ValueError(
                 f"n_users must be a positive interger, but {n_users} is given"
@@ -397,9 +395,7 @@ class RTBEnv(gym.Env):
                 std=np.full(step_per_episode, search_volume_distribution.std),
             )
         self.search_volumes = np.clip(
-            search_volume_distribution.sample(size=100),
-            minimum_search_volume,
-            None
+            search_volume_distribution.sample(size=100), minimum_search_volume, None
         ).astype(int)
 
         # just for idx of search_volumes to sample from
@@ -457,11 +453,12 @@ class RTBEnv(gym.Env):
 
         """
         if not isinstance(action, (int, float, np.integer, np.floating)):
-            raise ValueError(
-                f"action must be a float number, but {action} is given"
-            )
+            raise ValueError(f"action must be a float number, but {action} is given")
         if self.action_type == "discrete":
-            if not (isinstance(action, (int, np.integer)) and 0 <= action < self.action_space.n):
+            if not (
+                isinstance(action, (int, np.integer))
+                and 0 <= action < self.action_space.n
+            ):
                 raise ValueError(
                     f"action must be an integer within [0, {self.action_space.n})"
                 )
@@ -473,18 +470,20 @@ class RTBEnv(gym.Env):
 
         # map agent action into adjust rate
         adjust_rate = (
-            action if self.action_type == "continuous" else self.action_meaning[int(action)]
+            action
+            if self.action_type == "continuous"
+            else self.action_meaning[action]
         )
 
         # sample ads and users for auctions occur in a timestep
         ad_ids = self.random_.choice(
             self.ad_ids,
-            size=self.search_volumes[self.t - 1][self.T % 100],
+            size=self.search_volumes[self.T % 100][self.t - 1],
             p=self.ad_sampling_rate,
         )
         user_ids = self.random_.choice(
             self.user_ids,
-            size=self.search_volumes[self.t - 1][self.T % 100],
+            size=self.search_volumes[self.T % 100][self.t - 1],
             p=self.user_sampling_rate,
         )
 
@@ -500,10 +499,10 @@ class RTBEnv(gym.Env):
         # check if auction bidding is possible
         masks = np.cumsum(costs) < self.remaining_budget
 
-        total_cost = int(np.sum(costs * masks))
-        total_impression = int(np.sum(impressions * masks))
-        total_click = int(np.sum(clicks * masks))
-        total_conversion = int(np.sum(conversions * masks))
+        total_cost = np.sum(costs * masks)
+        total_impression = np.sum(impressions * masks)
+        total_click = np.sum(clicks * masks)
+        total_conversion = np.sum(conversions * masks)
 
         self.remaining_budget -= total_cost
 
@@ -530,7 +529,7 @@ class RTBEnv(gym.Env):
             else 0,
             "winning rate": total_impression / len(bid_prices),
             "reward": reward,
-            "adjust rate": action,
+            "adjust rate": adjust_rate,
         }
 
         done = self.t == self.step_per_episode
@@ -614,7 +613,7 @@ class RTBEnv(gym.Env):
         """
         self.simulator.fit_reward_predictor(n_samples)
 
-    def calc_ground_truth_policy_value(
+    def calc_on_policy_policy_value(
         self, evaluation_policy: BasePolicy, n_episodes: int = 10000
     ) -> float:
         """Rollout the RL agent (i.e., policy) and calculate mean episodic reward.

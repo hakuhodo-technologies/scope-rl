@@ -15,6 +15,6 @@ class BaseDataset(metaclass=ABCMeta):
         raise NotImplementedError
 
     @abstractmethod
-    def calc_ground_truth_policy_value(self, n_episodes: int) -> float:
+    def calc_on_policy_policy_value(self, n_episodes: int) -> float:
         """Calculate ground-truth policy value of behavior policy by rollout."""
         raise NotImplementedError
