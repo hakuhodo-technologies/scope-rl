@@ -85,11 +85,11 @@ class RTBEnv(gym.Env):
 
     reward_predictor: Optional[BaseEstimator], default=None
         Parameter in RTBSyntheticSimulator class.
-        A machine learning prediction model to predict the reward to determine the bidding price.
+        A machine learning model to predict the reward to determine the bidding price.
         If None, the ground-truth (expected) reward is used instead of the predicted one.
 
     step_per_episode: int, default=24
-        Total timesteps in an episode.
+        Number of timesteps in an episode.
 
     initial_budget: int, default=10000
         Initial budget (i.e., constraint) for bidding during an episode.
@@ -166,7 +166,7 @@ class RTBEnv(gym.Env):
                 action = agent.act(obs)
                 obs, reward, done, info = env.step(action)
 
-        # calculate ground-truth policy value
+        # calculate on-policy policy value
         performance = env.calc_ground_truth_policy_value(
             evaluation_policy=agent,
             n_episodes=10000,

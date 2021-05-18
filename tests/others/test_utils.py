@@ -1,5 +1,5 @@
 import pytest
-from nptyping import NDArray
+
 import numpy as np
 
 from _gym.utils import NormalDistribution
@@ -61,13 +61,11 @@ def test_function_success_case():
     normal_distribution = NormalDistribution(mean=1, std=1)
     random_variables = normal_distribution.sample(size=3)
 
-    assert isinstance(random_variables, NDArray[float])
-    assert len(random_variables) == 3
+    assert random_variables.shape == (3, )
 
     normal_distribution = NormalDistribution(
         mean=np.array([1, 2]), std=np.array([1, 2])
     )
     random_variables = normal_distribution.sample(size=3)
 
-    assert isinstance(random_variables, NDArray[float])
     assert random_variables.shape == (3, 2)

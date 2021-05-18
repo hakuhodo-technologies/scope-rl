@@ -35,11 +35,11 @@ class RTBSyntheticSimulator(BaseSimulator):
         Choose either from "click" or "conversion".
 
     reward_predictor: Optional[BaseEstimator], default=None
-        A machine learning prediction model to predict the reward to determine the bidding price.
+        A machine learning model to predict the reward to determine the bidding price.
         If None, the ground-truth (expected) reward is used instead of the predicted one.
 
     step_per_episode: int, default=24
-        Total timestep in an episode in reinforcement learning (RL) environment.
+        Number of timestep in an episode in reinforcement learning (RL) environment.
         Note that we should use same value with RTBEnv class in env.py.
 
     n_ads: int, default=100
@@ -89,10 +89,7 @@ class RTBSyntheticSimulator(BaseSimulator):
     random_state: int = 12345
 
     def __post_init__(self):
-        if not (
-            isinstance(self.objective, str)
-            and self.objective in ["click", "conversion"]
-        ):
+        if not self.objective in ["click", "conversion"]:
             raise ValueError(
                 f'objective must be either "click" or "conversion", but {self.objective} is given'
             )
@@ -279,6 +276,7 @@ class RTBSyntheticSimulator(BaseSimulator):
             )
         if not (
             isinstance(ad_ids, np.ndarray)
+            and np.allclose(np.mod(ad_ids, 1), 0)
             and ad_ids.ndim == 1
             and 0 <= ad_ids.min()
             and ad_ids.max() < self.n_ads
@@ -288,6 +286,7 @@ class RTBSyntheticSimulator(BaseSimulator):
             )
         if not (
             isinstance(user_ids, np.ndarray)
+            and np.allclose(np.mod(user_ids, 1), 0)
             and user_ids.ndim == 1
             and 0 <= user_ids.min()
             and user_ids.max() < self.n_users
@@ -326,7 +325,7 @@ class RTBSyntheticSimulator(BaseSimulator):
         """
         if not self.use_reward_predictor:
             warnings.warn(
-                "when initialized with use_reward_predictor=False option, fitting does not take place"
+                "when reward_predictor is not given, fitting does not take place"
             )
             return
 
