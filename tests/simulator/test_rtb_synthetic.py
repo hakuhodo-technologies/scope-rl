@@ -27,16 +27,13 @@ def test_init():
 
     # use_reward_predictor -- failure case
     with pytest.raises(ValueError):
-        RTBSyntheticSimulator(use_reward_predictor=True)
-
-    with pytest.raises(ValueError):
         RTBSyntheticSimulator(
-            use_reward_predictor=True, reward_predictor=LogisticRegression
+            reward_predictor=LogisticRegression
         )
 
     # use_reward_predictor -- success case
     RTBSyntheticSimulator(
-        use_reward_predictor=True, reward_predictor=LogisticRegression()
+        reward_predictor=LogisticRegression()
     )
 
     # step_per_episode -- failure case
@@ -275,7 +272,6 @@ def test_simulate_auction_bid_prices_value_check():
 @pytest.mark.parametrize("n_samples", [(-1), (0), (1.5), ("1")])
 def test_fit_reward_estimator_failure_case(n_samples):
     simulator = RTBSyntheticSimulator(
-        use_reward_predictor=True,
         reward_predictor=LogisticRegression(),
     )
 
@@ -286,14 +282,12 @@ def test_fit_reward_estimator_failure_case(n_samples):
 def test_predict_reward_and_calc_ground_truth_reward_value_check():
     simulator_A = RTBSyntheticSimulator(
         objective="conversion",
-        use_reward_predictor=True,
         reward_predictor=LogisticRegression(),
         ad_feature_dim=1,
         user_feature_dim=1,
     )
     simulator_B = RTBSyntheticSimulator(
         objective="click",
-        use_reward_predictor=True,
         reward_predictor=LogisticRegression(),
         ad_feature_dim=1,
         user_feature_dim=1,
@@ -329,14 +323,12 @@ def test_determine_bid_price_value_check():
     )
     simulator_C = RTBSyntheticSimulator(
         objective="conversion",
-        use_reward_predictor=True,
         reward_predictor=LogisticRegression(),
         ad_feature_dim=1,
         user_feature_dim=1,
     )
     simulator_D = RTBSyntheticSimulator(
         objective="click",
-        use_reward_predictor=True,
         reward_predictor=LogisticRegression(),
         ad_feature_dim=1,
         user_feature_dim=1,

@@ -13,7 +13,6 @@ from _gym.policy import RandomPolicy
 )
 def test_init_pretrain_samples_failure_case(n_samples_pretrain_reward_predictor):
     env = RTBEnv(
-        use_reward_predictor=True,
         reward_predictor=LogisticRegression(),
     )
     agent = RandomPolicy(env)

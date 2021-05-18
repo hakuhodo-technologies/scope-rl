@@ -83,15 +83,10 @@ class RTBEnv(gym.Env):
         Note that if None, the action meaning values automatically set to [0.1, 10] log sampled values.
             np.logspace(-1, 1, action_dim)
 
-    use_reward_predictor: bool, default=False
-        Parameter in RTBSyntheticSimulator class.
-        Whether to use predicted reward to determine bidding price or not.
-        Otherwise, the ground-truth (expected) reward is used.
-
     reward_predictor: Optional[BaseEstimator], default=None
         Parameter in RTBSyntheticSimulator class.
-        A machine learning prediction model to predict the reward.
-        Required only when using use_reward_predictor=True option.
+        A machine learning prediction model to predict the reward to determine the bidding price.
+        If None, the ground-truth (expected) reward is used instead of the predicted one.
 
     step_per_episode: int, default=24
         Total timesteps in an episode.
@@ -155,10 +150,7 @@ class RTBEnv(gym.Env):
         from sklearn.linear_model import LogisticRegression
 
         # initialize environment and define (RL) agent (i.e., policy)
-        env = RTBEnv(
-            use_reward_predictor=True,
-            reward_predictor=LogisticRegression(),
-        )
+        env = RTBEnv(reward_predictor=LogisticRegression())
         agent = RandomPolicy()
 
         # when using use_reward_predictor=True option,
@@ -194,7 +186,6 @@ class RTBEnv(gym.Env):
         action_meaning: Optional[
             np.ndarray
         ] = None,  # maps categorical actions to adjust rate
-        use_reward_predictor: bool = False,
         reward_predictor: Optional[BaseEstimator] = None,
         step_per_episode: int = 24,
         initial_budget: int = 10000,
@@ -322,7 +313,6 @@ class RTBEnv(gym.Env):
         else:
             self.simulator = RTBSyntheticSimulator(
                 objective=objective,
-                use_reward_predictor=use_reward_predictor,
                 reward_predictor=reward_predictor,
                 step_per_episode=step_per_episode,
                 n_ads=n_ads,
@@ -336,7 +326,7 @@ class RTBEnv(gym.Env):
             )
 
         self.objective = objective
-        self.use_reward_predictor = use_reward_predictor
+        self.use_reward_predictor = self.simulator.use_reward_predictor
 
         # define observation space
         self.observation_space = Box(

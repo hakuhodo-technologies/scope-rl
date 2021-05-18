@@ -78,13 +78,10 @@ def test_init():
 
     # use_reward_predictor -- failure case
     with pytest.raises(ValueError):
-        RTBEnv(use_reward_predictor=True)
-
-    with pytest.raises(ValueError):
-        RTBEnv(use_reward_predictor=True, reward_predictor=LogisticRegression)
+        RTBEnv(reward_predictor=LogisticRegression)
 
     # use_reward_predictor -- success case
-    env = RTBEnv(use_reward_predictor=True, reward_predictor=LogisticRegression())
+    env = RTBEnv(reward_predictor=LogisticRegression())
     assert env.simulator.use_reward_predictor
 
     # step_per_episode -- failure case
@@ -481,7 +478,7 @@ def test_step_discrete():
 
 @pytest.mark.parametrize("n_samples", [(-1), (0), (1.5), ("1")])
 def test_fit_reward_predictor_failure_case(n_samples):
-    env = RTBEnv(use_reward_predictor=True, reward_predictor=LogisticRegression())
+    env = RTBEnv(reward_predictor=LogisticRegression())
 
     with pytest.raises(ValueError):
         env.fit_reward_predictor(n_samples)
@@ -489,7 +486,6 @@ def test_fit_reward_predictor_failure_case(n_samples):
 
 def test_fit_reward_predictor_success_case():
     env = RTBEnv(
-        use_reward_predictor=True,
         reward_predictor=LogisticRegression(),
         ad_feature_dim=2,
         user_feature_dim=2,

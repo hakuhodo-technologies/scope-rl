@@ -34,13 +34,9 @@ class RTBSyntheticSimulator(BaseSimulator):
         Objective outcome (i.e., reward) of the auction.
         Choose either from "click" or "conversion".
 
-    use_reward_predictor: bool, default=False
-        Whether to use predicted reward to determine bidding price or not.
-        Otherwise, the ground-truth (expected) reward is used.
-
     reward_predictor: Optional[BaseEstimator], default=None
-        A machine learning prediction model to predict the reward.
-        Required only when using use_reward_predictor=True option.
+        A machine learning prediction model to predict the reward to determine the bidding price.
+        If None, the ground-truth (expected) reward is used instead of the predicted one.
 
     step_per_episode: int, default=24
         Total timestep in an episode in reinforcement learning (RL) environment.
@@ -79,7 +75,6 @@ class RTBSyntheticSimulator(BaseSimulator):
     """
 
     objective: str = "conversion"
-    use_reward_predictor: bool = False
     reward_predictor: Optional[BaseEstimator] = None
     step_per_episode: int = 24
     n_ads: int = 100
@@ -101,19 +96,11 @@ class RTBSyntheticSimulator(BaseSimulator):
             raise ValueError(
                 f'objective must be either "click" or "conversion", but {self.objective} is given'
             )
-        if self.use_reward_predictor and self.reward_predictor is None:
-            raise ValueError(
-                f"reward_predictor must be given when use_reward_predictor=True"
-            )
-        if self.use_reward_predictor and not isinstance(
+        if self.reward_predictor is not None and not isinstance(
             self.reward_predictor, BaseEstimator
         ):
             raise ValueError(
                 "reward_predictor must be BaseEstimator or a child class of BaseEstimator"
-            )
-        if not self.use_reward_predictor and self.reward_predictor is not None:
-            warnings.warn(
-                "reward_predictor will not be used when use_reward_predictor=False option"
             )
         if not (isinstance(self.step_per_episode, int) and self.step_per_episode > 0):
             raise ValueError(
@@ -169,6 +156,11 @@ class RTBSyntheticSimulator(BaseSimulator):
         if self.random_state is None:
             raise ValueError("random_state must be given")
         self.random_ = check_random_state(self.random_state)
+
+        if self.reward_predictor is None:
+            self.use_reward_predictor = False
+        else:
+            self.use_reward_predictor = True
 
         # sample feature vectors for both ads and users
         self.ads = self.random_.normal(size=(self.n_ads, self.ad_feature_dim)) + 1
