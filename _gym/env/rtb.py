@@ -76,7 +76,7 @@ class RTBEnv(gym.Env):
         Dimensions of the discrete action.
         Used only when action_type="discrete" option.
 
-    action_meaning: Optional[Dict[int, float]], default=None
+    action_meaning: Optional[NDArray[float]], default=None
         Dictionary which maps discrete action index into specific actions.
         Used when only when using action_type="discrete" option.
 
@@ -115,7 +115,7 @@ class RTBEnv(gym.Env):
     minimum_standard_bid_price: Optional[int], default=None
         Parameter in RTBSyntheticSimulator class.
         Minimum value for standard bid price.
-        If None, minimum_standard_bid_price is set to standard_bid_price_distribution / 2.
+        If None, minimum_standard_bid_price is set to standard_bid_price_distribution.mean / 2.
 
     trend_interval: Optional[int], default=None
         Parameter in RTBSyntheticSimulator class.
@@ -167,7 +167,7 @@ class RTBEnv(gym.Env):
                 obs, reward, done, info = env.step(action)
 
         # calculate on-policy policy value
-        performance = env.calc_ground_truth_policy_value(
+        performance = env.calc_on_policy_policy_value(
             evaluation_policy=agent,
             n_episodes=10000,
         )

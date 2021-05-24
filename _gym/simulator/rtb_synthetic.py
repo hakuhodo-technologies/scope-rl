@@ -59,7 +59,7 @@ class RTBSyntheticSimulator(BaseSimulator):
 
     minimum_standard_bid_price: Optional[Union[int, float]], default=None
         Minimum value for standard bid price.
-        If None, minimum_standard_bid_price is set to standard_bid_price_distribution / 2.
+        If None, minimum_standard_bid_price is set to standard_bid_price_distribution.mean / 2.
 
     trend_interval: Optional[int], default=None
         Length of the ctr/cvr trend cycle.
