@@ -307,9 +307,7 @@ class RTBEnv(gym.Env):
 
         # initialize simulator
         if semi_synthetic:
-            raise ValueError(
-                "currently semi-synthetic env have not been implemented, please choose semi_synthetic=False option"
-            )
+            raise NotImplementedError()
         else:
             self.simulator = RTBSyntheticSimulator(
                 objective=objective,
