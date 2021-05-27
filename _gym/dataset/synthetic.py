@@ -47,10 +47,7 @@ class SyntheticDataset(BaseDataset):
         >>> from sklearn.linear_model import LogisticRegression
 
         # initialize environment and define (RL) agent (i.e., policy)
-        >>> env = RTBEnv(
-                use_reward_predictor=True,
-                reward_predictor=LogisticRegression(),
-            )
+        >>> env = RTBEnv(reward_predictor=LogisticRegression())
         >>> dqn = DQN()
 
         # initialize dataset class
@@ -102,7 +99,7 @@ class SyntheticDataset(BaseDataset):
                 347.97058824,  13.22580645])},
          'pscore': array([0.1, 0.1, 0.1, ..., 0.1, 0.1, 0.1])}
 
-        # oon-policy policy value of behavior policy
+        # on-policy policy value of behavior policy
         >>> on_policy_policy_value = dataset.calc_on_policy_policy_value(
                 n_episodes=10000
             )
