@@ -17,7 +17,7 @@ def test_init():
     assert env.action_type == "discrete"
 
     # semi_synthetic -- not implemented
-    with pytest.raises(ValueError):
+    with pytest.raises(NotImplementedError):
         RTBEnv(semi_synthetic=True)
 
     # objective -- failure case
