@@ -1,5 +1,6 @@
 """Synthetic Dataset Generation."""
 from dataclasses import dataclass
+from tqdm import tqdm
 
 import gym
 import numpy as np
@@ -192,7 +193,11 @@ class SyntheticDataset(BaseDataset):
         infos = {}
 
         idx = 0
-        for _ in range(n_episodes):
+        for _ in tqdm(
+            np.arange(n_episodes),
+            desc="[obtain_trajectories]",
+            total=n_episodes,
+        ):
             state = self.env.reset()
             done = False
 
@@ -267,12 +272,16 @@ class SyntheticDataset(BaseDataset):
             raise ValueError(
                 f"n_episodes must be a positive integer, but {n_episodes} is given"
             )
-        for _ in range(n_episodes):
+        for _ in tqdm(
+            np.arange(n_episodes),
+            desc="[pretrain_behavior_policy]",
+            total=n_episodes,
+        ):
             state = self.env.reset()
             done = False
 
             while not done:
-                action, action_prob = self.behavior_policy.act(state)  # fix later
+                action, action_prob = self.behavior_policy.act(state)  # predict
                 next_state, reward, done, _ = self.env.step(action)
 
                 self.behavior_policy.update(

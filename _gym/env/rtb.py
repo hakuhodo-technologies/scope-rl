@@ -1,6 +1,6 @@
 """Reinforcement Learning (RL) Environment for Real-Time Bidding (RTB)."""
-from typing import Tuple
-from typing import Optional, Union, Any
+from typing import Tuple, Optional, Union, Any
+from tqdm import tqdm
 import warnings
 
 import gym
@@ -624,12 +624,16 @@ class RTBEnv(gym.Env):
             )
 
         total_reward = 0.0
-        for _ in range(n_episodes):
+        for _ in tqdm(
+            np.arange(n_episodes),
+            desc="[calc_on_policy_policy_value]",
+            total=n_episodes,
+        ):
             state = self.reset()
             done = False
 
             while not done:
-                action, _ = evaluation_policy.act(state)  # fix later
+                action, _ = evaluation_policy.act(state)  # predict
                 state, reward, done, _ = self.step(action)
                 total_reward += reward
 
