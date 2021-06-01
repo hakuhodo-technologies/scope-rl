@@ -117,6 +117,11 @@ class RTBEnv(gym.Env):
         Minimum value for standard bid price.
         If None, minimum_standard_bid_price is set to standard_bid_price_distribution.mean / 2.
 
+    bid_scaler: Optional[Union[int, float]], default=None
+        Parameter in RTBSyntheticSimulator class.
+        Scaling factor (constant value) used for bid price determination.
+        If None, _set_bid_scaler() function is called to set bid_scaler.
+
     trend_interval: Optional[int], default=None
         Parameter in RTBSyntheticSimulator class.
         Length of the ctr/cvr trend cycle.
@@ -194,14 +199,15 @@ class RTBEnv(gym.Env):
         ad_feature_dim: int = 5,
         user_feature_dim: int = 5,
         standard_bid_price_distribution: NormalDistribution = NormalDistribution(
-            mean=100, std=10
+            mean=50, std=5
         ),
         minimum_standard_bid_price: Optional[int] = None,
+        bid_scaler: Optional[Union[int, float]] = None,
         trend_interval: Optional[int] = None,
         ad_sampling_rate: Optional[np.ndarray] = None,
         user_sampling_rate: Optional[np.ndarray] = None,
         search_volume_distribution: NormalDistribution = NormalDistribution(
-            mean=300, std=30
+            mean=200, std=20
         ),
         minimum_search_volume: int = 10,
         random_state: int = 12345,
@@ -319,6 +325,7 @@ class RTBEnv(gym.Env):
                 user_feature_dim=user_feature_dim,
                 standard_bid_price_distribution=standard_bid_price_distribution,
                 minimum_standard_bid_price=minimum_standard_bid_price,
+                bid_scaler=bid_scaler,
                 trend_interval=trend_interval,
                 random_state=random_state,
             )
@@ -558,16 +565,18 @@ class RTBEnv(gym.Env):
         self.prev_remaining_budget = self.remaining_budget = self.initial_budget
 
         # initialize obs
+        random_variable_ = self.random_.uniform(size=3)
+        reward_ = self.random_.randint(3)
+        adjust_rate_ = self.action_space.sample()
         obs = {
             "timestep": self.t,
             "remaining budget": self.remaining_budget,
-            "budget consumption rate": 0,
-            "cost per mille of impression": 0,
-            "winning rate": 0,
-            "reward": 0,
-            "adjust rate": 0,
+            "budget consumption rate": random_variable_[0],
+            "cost per mille of impression": random_variable_[1],
+            "winning rate": random_variable_[2],
+            "reward": reward_,
+            "adjust rate": adjust_rate_,
         }
-
         return np.array(list(obs.values())).astype(float)
 
     def render(self, mode: str = "human") -> None:

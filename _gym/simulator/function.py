@@ -150,12 +150,8 @@ class CTR:
             raise ValueError("random_state must be given")
         self.random_ = check_random_state(self.random_state)
 
-        self.coef = self.random_.normal(
-            loc=0.0, scale=0.5, size=self.ad_feature_dim + self.user_feature_dim
-        )
-        self.coef = self.coef / (
-            self.ad_feature_dim + self.user_feature_dim
-        )  # to normalize
+        coef_dim = self.ad_feature_dim + self.user_feature_dim
+        self.coef = self.random_.normal(loc=0.0, scale=0.5 / coef_dim, size=coef_dim)
 
         # define intermittent time_coef using trigonometric function
         n_wave = 10
@@ -309,12 +305,8 @@ class CVR:
             raise ValueError("random_state must be given")
         self.random_ = check_random_state(self.random_state)
 
-        self.coef = self.random_.normal(
-            loc=0.0, scale=0.5, size=self.ad_feature_dim + self.user_feature_dim
-        )
-        self.coef = self.coef / (
-            self.ad_feature_dim + self.user_feature_dim
-        )  # to normalize
+        coef_dim = self.ad_feature_dim + self.user_feature_dim
+        self.coef = self.random_.normal(loc=0.0, scale=0.5 / coef_dim, size=coef_dim)
 
         # define intermittent time_coef using trigonometric function
         n_wave = 10

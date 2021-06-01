@@ -61,6 +61,10 @@ class RTBSyntheticSimulator(BaseSimulator):
         Minimum value for standard bid price.
         If None, minimum_standard_bid_price is set to standard_bid_price_distribution.mean / 2.
 
+    bid_scaler: Optional[Union[int, float]], default=None
+        Scaling factor (constant value) used for bid price determination.
+        If None, _set_bid_scaler() function is called to set bid_scaler.
+
     trend_interval: Optional[int], default=None
         Length of the ctr/cvr trend cycle.
         For example, trend_interval=24 indicates that the trend cycles every 24h.
@@ -82,9 +86,10 @@ class RTBSyntheticSimulator(BaseSimulator):
     ad_feature_dim: int = 5
     user_feature_dim: int = 5
     standard_bid_price_distribution: NormalDistribution = NormalDistribution(
-        mean=100, std=10
+        mean=50, std=5
     )
     minimum_standard_bid_price: Optional[Union[int, float]] = None
+    bid_scaler: Optional[Union[int, float]] = None
     trend_interval: int = 24
     random_state: int = 12345
 
@@ -150,6 +155,12 @@ class RTBSyntheticSimulator(BaseSimulator):
             raise ValueError(
                 f"trend_interval must be a positive interger, but {self.trend_interval} is given"
             )
+        if self.bid_scaler is not None and not (
+            isinstance(self.bid_scaler, (int, float)) and self.bid_scaler > 0
+        ):
+            raise ValueError(
+                f"scaler must be a positive float value, but {self.scaler} is given"
+            )
         if self.random_state is None:
             raise ValueError("random_state must be given")
         self.random_ = check_random_state(self.random_state)
@@ -208,14 +219,8 @@ class RTBSyntheticSimulator(BaseSimulator):
             random_state=self.random_state + 1,
         )
 
-        # fix later
-        # define scaler for bidding function
-        # numbers are from predicted reward:
-        # click / impression ~= 1/4, conversion / impression ~= 1/12
-        if self.objective == "click":
-            self.scaler = 4
-        else:  # "conversion"
-            self.scaler = 12
+        # define impression difficulty on users
+        self.ks_coef = 1 + self.ads @ self.ctr.coef[: self.ad_feature_dim]
 
     def simulate_auction(
         self,
@@ -303,10 +308,13 @@ class RTBSyntheticSimulator(BaseSimulator):
             raise ValueError("ad_ids and user_ids must have same length")
 
         ks, thetas = self.wf_ks[ad_ids], self.wf_thetas[ad_ids]
+        ks_coef = self.ks_coef[user_ids]
         contexts = self._map_idx_to_contexts(ad_ids, user_ids)
         bid_prices = self._determine_bid_price(timestep, adjust_rate, contexts)
 
-        return self._calc_and_sample_outcome(timestep, ks, thetas, bid_prices, contexts)
+        return self._calc_and_sample_outcome(
+            timestep, ks * ks_coef, thetas, bid_prices, contexts
+        )
 
     def fit_reward_predictor(self, n_samples: int = 100000) -> None:
         """Fit reward predictor in advance (pre-train) to use prediction in bidding price determination.
@@ -357,7 +365,41 @@ class RTBSyntheticSimulator(BaseSimulator):
         X, y = check_X_y(feature_vectors, rewards)
         self.reward_predictor.fit(X, y)
 
-    def _predict_reward(self, timestep: int, contexts: np.ndarray) -> np.ndarray:
+    def _set_bid_scaler(self, n_samples: int = 100000) -> np.ndarray:
+        """Fit scaling factor used for bid price determination
+
+        Note
+        -------
+        bid_scaler is approximate reciprocal of predicted reward.
+            bid_scaler ~= 1 / predicted_rewards`
+
+        Parameters
+        -------
+        n_samples: int, default=100000
+            Number of samples to fit bid_scaler.
+
+        """
+        if not (isinstance(n_samples, int) and n_samples > 0):
+            raise ValueError(
+                f"n_samples must be a positive interger, but {n_samples} is given"
+            )
+
+        ad_ids = self.random_.choice(self.n_ads, n_samples)
+        user_ids = self.random_.choice(self.n_ads, n_samples)
+        contexts = self._map_idx_to_contexts(ad_ids, user_ids)
+        timesteps = self.random_.choice(self.step_per_episode, n_samples)
+
+        if self.use_reward_predictor:
+            predicted_rewards = self._predict_reward(timesteps, contexts)
+            self.bid_scaler = 1 / predicted_rewards.mean()
+
+        else:
+            ground_truth_rewards = self._calc_ground_truth_reward(timesteps, contexts)
+            self.bid_scaler = 1 / ground_truth_rewards.mean()
+
+    def _predict_reward(
+        self, timestep: Union[int, np.ndarray], contexts: np.ndarray
+    ) -> np.ndarray:
         """Predict reward (i.e., auction outcome) to determine bidding price.
 
         Note
@@ -386,19 +428,21 @@ class RTBSyntheticSimulator(BaseSimulator):
             Predicted reward for each auction.
 
         """
-        timesteps = np.full(len(contexts), timestep).reshape((-1, 1))
-        feature_vectors = np.concatenate([contexts, timesteps], axis=1)
+        if isinstance(timestep, int):
+            timestep = np.full(len(contexts), timestep)
+        timestep = timestep.reshape((-1, 1))
+        feature_vectors = np.concatenate([contexts, timestep], axis=1)
 
         return self.reward_predictor.predict_proba(feature_vectors)[:, 1]
 
     def _calc_ground_truth_reward(
-        self, timestep: int, contexts: np.ndarray
+        self, timestep: Union[int, np.ndarray], contexts: np.ndarray
     ) -> np.ndarray:
         """Calculate ground-truth reward (i.e., auction outcome) to determine bidding price.
 
         Parameters
         -------
-        timestep: int
+        timestep: Union[int, np.ndarray]
             Timestep of the RL environment.
 
         contexts: NDArray[float], shape (search_volume, ad_feature_dim + user_feature_dim + 1)
@@ -451,10 +495,16 @@ class RTBSyntheticSimulator(BaseSimulator):
             Calclated from given adjust rate and the predicted/ground-truth rewards.
 
         """
+        if self.bid_scaler is None:
+            self._set_bid_scaler()
+
         if self.use_reward_predictor:
             predicted_rewards = self._predict_reward(timestep, contexts)
             bid_prices = (
-                adjust_rate * predicted_rewards * self.standard_bid_price * self.scaler
+                adjust_rate
+                * predicted_rewards
+                * self.standard_bid_price
+                * self.bid_scaler
             )
 
         else:
@@ -463,7 +513,7 @@ class RTBSyntheticSimulator(BaseSimulator):
                 adjust_rate
                 * ground_truth_rewards
                 * self.standard_bid_price
-                * self.scaler
+                * self.bid_scaler
             )
 
         return bid_prices.astype(int)
