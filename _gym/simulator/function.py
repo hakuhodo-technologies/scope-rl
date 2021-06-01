@@ -5,6 +5,8 @@ from typing import Tuple, Union
 import numpy as np
 from sklearn.utils import check_random_state
 
+from _gym.utils import sigmoid
+
 
 @dataclass
 class WinningFunction:
@@ -149,14 +151,32 @@ class CTR:
         self.random_ = check_random_state(self.random_state)
 
         self.coef = self.random_.normal(
-            loc=0.5, scale=0.1, size=self.ad_feature_dim + self.user_feature_dim
+            loc=0.0, scale=0.5, size=self.ad_feature_dim + self.user_feature_dim
         )
         self.coef = self.coef / (
             self.ad_feature_dim + self.user_feature_dim
         )  # to normalize
 
-        self.time_coef = self.random_.beta(25, 25, size=self.trend_interval)
-        self.time_coef = np.convolve(self.time_coef, np.ones(3) / 3, mode="same")
+        # define intermittent time_coef using trigonometric function
+        n_wave = 10
+        time_coef_weight = self.random_.beta(5, 20, size=n_wave)
+        start_point = self.random_.uniform(size=n_wave)
+
+        time_coef = np.zeros(self.trend_interval + 20)
+        for i in range(10):
+            time_coef += time_coef_weight[i] * (
+                np.cos(
+                    (
+                        np.arange(self.trend_interval + 20) * (i + 1) * np.pi
+                        + start_point[i] * 2 * np.pi
+                    )
+                    / self.trend_interval
+                )
+                + 1
+            )
+
+        start_idx = np.random.randint(5, 15)
+        self.time_coef = time_coef[start_idx : start_idx + self.trend_interval] / n_wave
 
     def calc_prob(
         self, timestep: Union[int, np.ndarray], contexts: np.ndarray
@@ -205,10 +225,11 @@ class CTR:
         if not isinstance(timestep, int) and len(timestep) != len(contexts):
             raise ValueError("timestep and contexts must have same length")
 
-        ctrs = (contexts @ self.coef.T) * self.time_coef[
-            timestep % self.trend_interval
-        ].flatten()
-        return np.clip(ctrs, 0, 1)
+        ctrs = (
+            sigmoid(contexts @ self.coef.T)
+            * self.time_coef[timestep % self.trend_interval].flatten()
+        )
+        return ctrs
 
     def sample_outcome(
         self, timestep: Union[int, np.ndarray], contexts: np.ndarray
@@ -239,8 +260,7 @@ class CTR:
 
 @dataclass
 class CVR:
-    """
-    Class to calculate ground-truth CVR (i.e., conversion per click).
+    """Class to calculate ground-truth CVR (i.e., conversion per click).
 
     Note
     -------
@@ -251,31 +271,71 @@ class CVR:
     In short, CVR is calculated as follows.
         CVR = (context @ coef) * time_coef, where @ denotes inner product.
 
-    To make correlation with CTR, we define coef of CVR by adding residuals sampled
-    from normal distribution to that of CTR.
-
     Parameters
     -------
-    ctr: CTR
-        Pre-defined CTR function.
+    ad_feature_dim: int
+        Dimensions of the ad feature vectors.
+
+    user_feature_dim: int
+        Dimensions of the user feature vectors.
+
+    trend_interval: int
+        Length of the CVR trend cycle.
+
+    random_state: int, default=12345
+        Random state.
 
     """
 
-    ctr: CTR
+    ad_feature_dim: int
+    user_feature_dim: int
+    trend_interval: int
+    random_state: int = 12345
 
     def __post_init__(self):
-        self.ad_feature_dim = self.ctr.ad_feature_dim
-        self.user_feature_dim = self.ctr.user_feature_dim
-        self.trend_interval = self.ctr.trend_interval
-        self.random_ = self.ctr.random_
+        if not (isinstance(self.ad_feature_dim, int) and self.ad_feature_dim > 0):
+            raise ValueError(
+                f"ad_feature_dim must be a positive interger, but {self.ad_feature_dim} is given"
+            )
+        if not (isinstance(self.user_feature_dim, int) and self.user_feature_dim > 0):
+            raise ValueError(
+                f"user_feature_dim must be a positive interger, but {self.user_feature_dim} is given"
+            )
+        if not (isinstance(self.trend_interval, int) and self.trend_interval > 0):
+            raise ValueError(
+                f"trend_interval must be a positive interger, but {self.trend_interval} is given"
+            )
+        if self.random_state is None:
+            raise ValueError("random_state must be given")
+        self.random_ = check_random_state(self.random_state)
 
-        residuals = self.random_.normal(
-            loc=0.0, scale=0.1, size=self.ad_feature_dim + self.user_feature_dim
+        self.coef = self.random_.normal(
+            loc=0.0, scale=0.5, size=self.ad_feature_dim + self.user_feature_dim
         )
-        self.coef = self.ctr.coef + residuals
+        self.coef = self.coef / (
+            self.ad_feature_dim + self.user_feature_dim
+        )  # to normalize
 
-        self.time_coef = self.random_.beta(40, 10, size=self.trend_interval)
-        self.time_coef = np.convolve(self.time_coef, np.ones(3) / 3, mode="same")
+        # define intermittent time_coef using trigonometric function
+        n_wave = 10
+        time_coef_weight = self.random_.beta(25, 25, size=n_wave)
+        start_point = self.random_.uniform(size=n_wave)
+
+        time_coef = np.zeros(self.trend_interval + 20)
+        for i in range(10):
+            time_coef += time_coef_weight[i] * (
+                np.cos(
+                    (
+                        np.arange(self.trend_interval + 20) * (i + 1) * np.pi
+                        + start_point[i] * 2 * np.pi
+                    )
+                    / self.trend_interval
+                )
+                + 1
+            )
+
+        start_idx = np.random.randint(5, 15)
+        self.time_coef = time_coef[start_idx : start_idx + self.trend_interval] / n_wave
 
     def calc_prob(
         self, timestep: Union[int, np.ndarray], contexts: np.ndarray
@@ -287,13 +347,14 @@ class CVR:
         CVR is calculated using both context coefficient (coef) and time coefficient (time_coef).
             CVR = (context @ coef) * time_coef, where @ denotes inner product.
 
+
         Parameters
         -------
         timestep: Union[int, NDArray[int]], shape None/(n_samples, )
             Timestep of the RL environment.
             (n_samples is determined in fit_reward_estimator function in simulator.)
 
-        contexts: NDArray[float], shape (search_volume/n_samples, ad_feature_dim + user_feature_dim)
+        contexts: Union[NDArray[int], NDArray[float]], shape (search_volume/n_samples, ad_feature_dim + user_feature_dim)
             Context vector (both the ad and the user features) for each auction.
             (search_volume is determined in RL environment.)
             (n_samples is determined in fit_reward_estimator function in simulator.)
@@ -310,7 +371,7 @@ class CVR:
             and timestep.min() >= 0
         ):
             raise ValueError(
-                "timestep must be non negative integer or an NDArray of non negative integers"
+                "timestep must be an non-negative integer or an 1-dimensional NDArray of non-negative integers"
             )
         if not (
             isinstance(contexts, np.ndarray)
@@ -323,15 +384,16 @@ class CVR:
         if not isinstance(timestep, int) and len(timestep) != len(contexts):
             raise ValueError("timestep and contexts must have same length")
 
-        cvrs = (contexts @ self.coef.T) * self.time_coef[
-            timestep % self.trend_interval
-        ].flatten()
-        return np.clip(cvrs, 0, 1)
+        cvrs = (
+            sigmoid(contexts @ self.coef.T)
+            * self.time_coef[timestep % self.trend_interval].flatten()
+        )
+        return cvrs
 
     def sample_outcome(
         self, timestep: Union[int, np.ndarray], contexts: np.ndarray
     ) -> np.ndarray:
-        """Stochastically determine if conversion occurs or not in click=True case.
+        """Stochastically determine if click occurs or not in click=True case.
 
         Parameters
         -------
@@ -347,7 +409,7 @@ class CVR:
         Returns
         -------
         conversions: NDArray[int], shape (search_volume/n_samples, )
-            Whether conversion occurs in click=True case.
+            Whether click occurs in click=True case.
 
         """
         cvrs = self.calc_prob(timestep, contexts)

@@ -83,3 +83,8 @@ class NormalDistribution:
                 loc=self.mean, scale=self.std, size=(size, len(self.mean))
             )
         return random_variables
+
+
+def sigmoid(x: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
+    """Sigmoid function"""
+    return 1 / (1 + np.exp(-x))

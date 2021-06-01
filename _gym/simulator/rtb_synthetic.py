@@ -82,7 +82,7 @@ class RTBSyntheticSimulator(BaseSimulator):
     ad_feature_dim: int = 5
     user_feature_dim: int = 5
     standard_bid_price_distribution: NormalDistribution = NormalDistribution(
-        mean=100, std=20
+        mean=100, std=10
     )
     minimum_standard_bid_price: Optional[Union[int, float]] = None
     trend_interval: int = 24
@@ -160,8 +160,8 @@ class RTBSyntheticSimulator(BaseSimulator):
             self.use_reward_predictor = True
 
         # sample feature vectors for both ads and users
-        self.ads = self.random_.normal(size=(self.n_ads, self.ad_feature_dim)) + 1
-        self.users = self.random_.normal(size=(self.n_users, self.user_feature_dim)) + 1
+        self.ads = self.random_.normal(size=(self.n_ads, self.ad_feature_dim))
+        self.users = self.random_.normal(size=(self.n_users, self.user_feature_dim))
 
         # define standard bid price for each ads
         if self.minimum_standard_bid_price is None:
@@ -196,12 +196,17 @@ class RTBSyntheticSimulator(BaseSimulator):
 
         # define click/imp and conversion/click rate function
         self.ctr = CTR(
-            self.ad_feature_dim,
-            self.user_feature_dim,
-            self.trend_interval,
-            self.random_state,
+            ad_feature_dim=self.ad_feature_dim,
+            user_feature_dim=self.user_feature_dim,
+            trend_interval=self.trend_interval,
+            random_state=self.random_state,
         )
-        self.cvr = CVR(self.ctr)
+        self.cvr = CVR(
+            ad_feature_dim=self.ad_feature_dim,
+            user_feature_dim=self.user_feature_dim,
+            trend_interval=self.trend_interval,
+            random_state=self.random_state + 1,
+        )
 
         # fix later
         # define scaler for bidding function

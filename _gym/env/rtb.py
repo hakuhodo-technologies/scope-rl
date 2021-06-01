@@ -194,14 +194,14 @@ class RTBEnv(gym.Env):
         ad_feature_dim: int = 5,
         user_feature_dim: int = 5,
         standard_bid_price_distribution: NormalDistribution = NormalDistribution(
-            mean=100, std=20
+            mean=100, std=10
         ),
         minimum_standard_bid_price: Optional[int] = None,
         trend_interval: Optional[int] = None,
         ad_sampling_rate: Optional[np.ndarray] = None,
         user_sampling_rate: Optional[np.ndarray] = None,
         search_volume_distribution: NormalDistribution = NormalDistribution(
-            mean=30, std=10
+            mean=300, std=30
         ),
         minimum_search_volume: int = 10,
         random_state: int = 12345,
