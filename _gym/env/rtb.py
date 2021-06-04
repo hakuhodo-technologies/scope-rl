@@ -55,13 +55,6 @@ class RTBEnv(gym.Env):
 
     Parameters
     -------
-    semi_synthetic: bool, default=False
-        Whether to use semi-synthetic environment (RTBSemiSyntheticSimulator) or not.
-        Otherwise the RTBSyntheticSimulator is used.
-        (Currently, only semi_synthetic=False option is available.)
-
-        If semi_synthetic=True, we fit simulator (especially WinningFunction, SecondPrice, CTR, CVR inside)
-        from the real-world dataset.
 
     objective: str, default="conversion"
         Objective outcome (i.e., reward) of the auctions.
@@ -115,11 +108,6 @@ class RTBEnv(gym.Env):
         Parameter in RTBSyntheticSimulator class.
         Minimum value for standard bid price.
         If None, minimum_standard_bid_price is set to standard_bid_price_distribution.mean / 2.
-
-    bid_scaler: Optional[Union[int, float]], default=None
-        Parameter in RTBSyntheticSimulator class.
-        Scaling factor (constant value) used for bid price determination.
-        If None, _set_bid_scaler() function is called to set bid_scaler.
 
     trend_interval: Optional[int], default=None
         Parameter in RTBSyntheticSimulator class.
@@ -183,7 +171,6 @@ class RTBEnv(gym.Env):
 
     def __init__(
         self,
-        semi_synthetic: bool = False,
         objective: str = "conversion",  # "click"
         step_per_episode: int = 24,
         initial_budget: int = 10000,
@@ -195,7 +182,6 @@ class RTBEnv(gym.Env):
             mean=50, std=5
         ),
         minimum_standard_bid_price: Optional[int] = None,
-        bid_scaler: Optional[Union[int, float]] = None,
         trend_interval: Optional[int] = None,
         ad_sampling_rate: Optional[np.ndarray] = None,
         user_sampling_rate: Optional[np.ndarray] = None,
@@ -279,21 +265,18 @@ class RTBEnv(gym.Env):
         self.random_ = check_random_state(random_state)
 
         # initialize simulator
-        if semi_synthetic:
-            raise NotImplementedError()
-        else:
-            self.simulator = RTBSyntheticSimulator(
-                objective=objective,
-                step_per_episode=step_per_episode,
-                n_ads=n_ads,
-                n_users=n_users,
-                ad_feature_dim=ad_feature_dim,
-                user_feature_dim=user_feature_dim,
-                standard_bid_price_distribution=standard_bid_price_distribution,
-                minimum_standard_bid_price=minimum_standard_bid_price,
-                trend_interval=trend_interval,
-                random_state=random_state,
-            )
+        self.simulator = RTBSyntheticSimulator(
+            objective=objective,
+            step_per_episode=step_per_episode,
+            n_ads=n_ads,
+            n_users=n_users,
+            ad_feature_dim=ad_feature_dim,
+            user_feature_dim=user_feature_dim,
+            standard_bid_price_distribution=standard_bid_price_distribution,
+            minimum_standard_bid_price=minimum_standard_bid_price,
+            trend_interval=trend_interval,
+            random_state=random_state,
+        )
 
         self.objective = objective
         self.use_reward_predictor = self.simulator.use_reward_predictor
