@@ -21,3 +21,10 @@ class BaseSimulator(metaclass=ABCMeta):
     ) -> Tuple[np.ndarray]:
         """Simulate bidding auction for given queries and return outcome."""
         raise NotImplementedError
+
+    @abstractmethod
+    def _map_idx_to_contexts(
+        self, ad_ids: np.ndarray, user_ids: np.ndarray
+    ) -> np.ndarray:
+        """Map the ad and the user index into context vectors."""
+        raise NotImplementedError

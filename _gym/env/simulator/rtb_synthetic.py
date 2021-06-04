@@ -113,6 +113,9 @@ class RTBSyntheticSimulator(BaseSimulator):
             raise ValueError("random_state must be given")
         self.random_ = check_random_state(self.random_state)
 
+        self.ads = self.random_.normal(size=(self.n_ads, self.ad_feature_dim))
+        self.users = self.random_.normal(size=(self.n_users, self.user_feature_dim))
+
         # define standard bid price for each ads
         if self.minimum_standard_bid_price is None:
             self.minimum_standard_bid_price = (
@@ -273,3 +276,30 @@ class RTBSyntheticSimulator(BaseSimulator):
         costs = winning_prices * clicks
 
         return costs, impressions, clicks, conversions
+
+    def _map_idx_to_contexts(
+        self, ad_ids: np.ndarray, user_ids: np.ndarray
+    ) -> np.ndarray:
+        """Map the ad and the user index into context vectors.
+
+        Parameters
+        -------
+        ad_ids: NDArray[int], shape (search_volume, )
+            IDs of the ads used for the auction bidding.
+            (search_volume is determined in RL environment.)
+
+        user_ids: NDArray[int], shape (search_volume, )
+            IDs of the users who receives the winning ads.
+            (search_volume is determined in RL environment.)
+
+        Returns
+        -------
+        contexts: NDArray[float], shape (search_volume, ad_feature_dim + user_feature_dim)
+            Context vector (contain both the ad and the user features) for each auction.
+
+        """
+        ad_features = self.ads[ad_ids]
+        user_features = self.users[user_ids]
+        contexts = np.concatenate([ad_features, user_features], axis=1)
+
+        return contexts

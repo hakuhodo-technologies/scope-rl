@@ -4,7 +4,7 @@ from tqdm import tqdm
 import warnings
 
 import gym
-from gym.spaces import Box, Discrete
+from gym.spaces import Box
 import numpy as np
 from sklearn.utils import check_random_state
 
@@ -145,10 +145,6 @@ class RTBEnv(gym.Env):
         env = RTBEnv(reward_predictor=LogisticRegression())
         agent = RandomPolicy()
 
-        # when using use_reward_predictor=True option,
-        # pretrain reward predictor used for bidding price determination
-        env.fit_reward_predictor(n_samples=10000)
-
         # OpenAI Gym like interaction with agent
         for episode in range(1000):
             obs = env.reset()
@@ -277,15 +273,15 @@ class RTBEnv(gym.Env):
             trend_interval=trend_interval,
             random_state=random_state,
         )
+        self.standard_bid_price = self.simulator.standard_bid_price
 
         self.objective = objective
-        self.use_reward_predictor = self.simulator.use_reward_predictor
 
         # define observation space
         self.observation_space = Box(
-            low=np.array([0, 0, 0, 0, 0, 0, 0.1]),
+            low=np.array([0, 0, 0, 0, 0, 0, 0]),
             high=np.array(
-                [step_per_episode, initial_budget, np.inf, np.inf, 1, np.inf, 10]
+                [step_per_episode, initial_budget, np.inf, np.inf, 1, np.inf, np.inf]
             ),
             dtype=float,
         )
@@ -310,10 +306,6 @@ class RTBEnv(gym.Env):
 
         self.ad_ids = np.arange(n_ads)
         self.user_ids = np.arange(n_users)
-
-        # sample feature vectors for both ads and users
-        self.ads = self.random_.normal(size=(n_ads, ad_feature_dim))
-        self.users = self.random_.normal(size=(n_users, user_feature_dim))
 
         if ad_sampling_rate is None:
             self.ad_sampling_rate = np.full(n_ads, 1 / n_ads)
@@ -514,33 +506,6 @@ class RTBEnv(gym.Env):
             ".seed() is not implemented, please reset seed by initializing the environment"
         )
         pass
-
-    def _map_idx_to_contexts(
-        self, ad_ids: np.ndarray, user_ids: np.ndarray
-    ) -> np.ndarray:
-        """Map the ad and the user index into context vectors.
-
-        Parameters
-        -------
-        ad_ids: NDArray[int], shape (search_volume, )
-            IDs of the ads used for the auction bidding.
-            (search_volume is determined in RL environment.)
-
-        user_ids: NDArray[int], shape (search_volume, )
-            IDs of the users who receives the winning ads.
-            (search_volume is determined in RL environment.)
-
-        Returns
-        -------
-        contexts: NDArray[float], shape (search_volume, ad_feature_dim + user_feature_dim)
-            Context vector (contain both the ad and the user features) for each auction.
-
-        """
-        ad_features = self.ads[ad_ids]
-        user_features = self.users[user_ids]
-        contexts = np.concatenate([ad_features, user_features], axis=1)
-
-        return contexts
 
     def calc_on_policy_policy_value(
         self, evaluation_policy: BasePolicy, n_episodes: int = 10000
