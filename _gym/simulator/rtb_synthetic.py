@@ -1,11 +1,9 @@
 """Synthetic Bidding Auction Simulation."""
 from dataclasses import dataclass
 from typing import Tuple, Union, Optional
-import warnings
 
 import numpy as np
-from sklearn.base import BaseEstimator
-from sklearn.utils import check_random_state, check_X_y
+from sklearn.utils import check_random_state
 
 from _gym.utils import NormalDistribution
 
@@ -15,28 +13,14 @@ from .function import WinningFunction, CTR, CVR
 
 @dataclass
 class RTBSyntheticSimulator(BaseSimulator):
-    """Class to simulate bidding auction in Real-Time Bidding (RTB) setting for display advertising.
-
-    Note
-    -------
-    Intended to be called and initialized from RTBEnv class in env.py.
-
-    Simulate auctions as follows.
-        1. Determine bid price.
-            bid price = adjust rate * predicted/ground-truth reward ( * constant)
-
-        2. Calculate outcome probability and stochastically determine auction result.
-            auction results: (bid price,) cost (second price), impression, click, conversion
+    """Class to calculate outcome probability and stochastically determine auction result 
+       in Real-Time Bidding (RTB) setting for display advertising.
 
     Parameters
     -------
     objective: str, default="conversion"
         Objective outcome (i.e., reward) of the auction.
         Choose either from "click" or "conversion".
-
-    reward_predictor: Optional[BaseEstimator], default=None
-        A machine learning model to predict the reward to determine the bidding price.
-        If None, the ground-truth (expected) reward is used instead of the predicted one.
 
     step_per_episode: int, default=24
         Number of timestep in an episode in reinforcement learning (RL) environment.
@@ -55,15 +39,13 @@ class RTBSyntheticSimulator(BaseSimulator):
         Dimensions of the user feature vectors.
 
     standard_bid_price_distribution: NormalDistribution, default=NormalDistribution(mean=100, std=20)
+        Parameter in RTBSyntheticSimulator class.
         Distribution of the bid price whose average impression probability is expected to be 0.5.
 
-    minimum_standard_bid_price: Optional[Union[int, float]], default=None
+    minimum_standard_bid_price: Optional[int], default=None
+        Parameter in RTBSyntheticSimulator class.
         Minimum value for standard bid price.
         If None, minimum_standard_bid_price is set to standard_bid_price_distribution.mean / 2.
-
-    bid_scaler: Optional[Union[int, float]], default=None
-        Scaling factor (constant value) used for bid price determination.
-        If None, _set_bid_scaler() function is called to set bid_scaler.
 
     trend_interval: Optional[int], default=None
         Length of the ctr/cvr trend cycle.
@@ -79,7 +61,6 @@ class RTBSyntheticSimulator(BaseSimulator):
     """
 
     objective: str = "conversion"
-    reward_predictor: Optional[BaseEstimator] = None
     step_per_episode: int = 24
     n_ads: int = 100
     n_users: int = 100
@@ -89,7 +70,6 @@ class RTBSyntheticSimulator(BaseSimulator):
         mean=50, std=5
     )
     minimum_standard_bid_price: Optional[Union[int, float]] = None
-    bid_scaler: Optional[Union[int, float]] = None
     trend_interval: int = 24
     random_state: int = 12345
 
@@ -97,12 +77,6 @@ class RTBSyntheticSimulator(BaseSimulator):
         if not self.objective in ["click", "conversion"]:
             raise ValueError(
                 f'objective must be either "click" or "conversion", but {self.objective} is given'
-            )
-        if self.reward_predictor is not None and not isinstance(
-            self.reward_predictor, BaseEstimator
-        ):
-            raise ValueError(
-                "reward_predictor must be BaseEstimator or a child class of BaseEstimator"
             )
         if not (isinstance(self.step_per_episode, int) and self.step_per_episode > 0):
             raise ValueError(
@@ -129,50 +103,15 @@ class RTBSyntheticSimulator(BaseSimulator):
                 "standard_bid_price_distribution must be a NormalDistribution"
             )
         if not (
-            isinstance(self.standard_bid_price_distribution.mean, (int, float))
-            and isinstance(self.standard_bid_price_distribution.std, (int, float))
-        ):
-            raise ValueError(
-                "standard_bid_price_distribution must have single value for mean, std"
-            )
-        if self.standard_bid_price_distribution.mean <= 0:
-            raise ValueError(
-                f"standard_bid_price_distribution.mean must be a positive float value, but {self.standard_bid_price_distribution.mean} is given"
-            )
-        if self.minimum_standard_bid_price is not None and not (
-            isinstance(self.minimum_standard_bid_price, (int, float))
-            and 0
-            <= self.minimum_standard_bid_price
-            <= self.standard_bid_price_distribution.mean
-        ):
-            raise ValueError(
-                f"minimum_standard_bid_price must be a float value within [0, standard_bid_price_distribution.mean], but {self.minimum_standard_bid_price} is given"
-            )
-        if not (
             self.trend_interval is None
             or (isinstance(self.trend_interval, int) and self.trend_interval > 0)
         ):
             raise ValueError(
                 f"trend_interval must be a positive interger, but {self.trend_interval} is given"
             )
-        if self.bid_scaler is not None and not (
-            isinstance(self.bid_scaler, (int, float)) and self.bid_scaler > 0
-        ):
-            raise ValueError(
-                f"scaler must be a positive float value, but {self.scaler} is given"
-            )
         if self.random_state is None:
             raise ValueError("random_state must be given")
         self.random_ = check_random_state(self.random_state)
-
-        if self.reward_predictor is None:
-            self.use_reward_predictor = False
-        else:
-            self.use_reward_predictor = True
-
-        # sample feature vectors for both ads and users
-        self.ads = self.random_.normal(size=(self.n_ads, self.ad_feature_dim))
-        self.users = self.random_.normal(size=(self.n_users, self.user_feature_dim))
 
         # define standard bid price for each ads
         if self.minimum_standard_bid_price is None:
@@ -228,17 +167,11 @@ class RTBSyntheticSimulator(BaseSimulator):
         adjust_rate: Union[int, float],
         ad_ids: np.ndarray,
         user_ids: np.ndarray,
+        contexts: np.ndarray,
+        bid_prices: np.ndarray,
     ) -> Tuple[np.ndarray]:
-        """Simulate bidding auction for given queries and return outcome.
-
-        Note
-        -------
-        Simulation procedure is given as follows.
-        1. Determine bid price.
-            bid price = adjust rate * predicted/ground-truth reward ( * constant)
-
-        2. Calculate outcome probability and stochastically determine auction result.
-            auction results: (bid price,) cost (i.e., second price), impression, click, conversion
+        """Simulate bidding auction for given queries.
+           (calculate outcome probability and stochastically determine auction result.)
 
         Parameters
         -------
@@ -257,12 +190,17 @@ class RTBSyntheticSimulator(BaseSimulator):
             IDs of the users who receives the winning ads.
             (search_volume is determined in RL environment.)
 
+        contexts: NDArray[float], shape (search_volume, ad_feature_dim + user_feature_dim)
+            Context vector (contain both the ad and the user features) for each auction.
+            (search_volume is determined in RL environment.)
+
+        bid_prices: NDArray[int], shape(search_volume, )
+            Bid price for each action.
+            (search_volume is determined in RL environment.)
+
         Returns
         -------
         auction_results: Tuple
-            bid_prices: NDArray[int], shape (search_volume, )
-                Bid price used for each auction.
-
             costs: NDArray[int], shape (search_volume, )
                 Cost raised (i.e., second price) for each auction.
 
@@ -286,7 +224,6 @@ class RTBSyntheticSimulator(BaseSimulator):
             )
         if not (
             isinstance(ad_ids, np.ndarray)
-            and np.allclose(np.mod(ad_ids, 1), 0)
             and ad_ids.ndim == 1
             and 0 <= ad_ids.min()
             and ad_ids.max() < self.n_ads
@@ -296,7 +233,6 @@ class RTBSyntheticSimulator(BaseSimulator):
             )
         if not (
             isinstance(user_ids, np.ndarray)
-            and np.allclose(np.mod(user_ids, 1), 0)
             and user_ids.ndim == 1
             and 0 <= user_ids.min()
             and user_ids.max() < self.n_users
@@ -304,310 +240,36 @@ class RTBSyntheticSimulator(BaseSimulator):
             raise ValueError(
                 "user_ids must be 1-dimensional NDArray with integers within [0, n_users)"
             )
-        if len(ad_ids) != len(user_ids):
-            raise ValueError("ad_ids and user_ids must have same length")
+        if not (
+            isinstance(contexts, np.ndarray)
+            and contexts.ndim == 2
+        ):
+            raise ValueError(
+                "contexts must be 2-dimentional NDArray"
+            )
+        if contexts.shape[1] != self.ad_feature_dim + self.user_feature_dim:
+            raise ValueError(
+                "the length of axis 1 of the contexts must be same with ad_feature_dim + user_feature_dim"
+            )
+        if not (
+            isinstance(bid_prices, np.ndarray)
+            and bid_prices.ndim == 1
+            and 0 <= bid_prices.min()
+        ):
+            raise ValueError(
+                "ad_ids must be 1-dimensional NDArray with non-negative integers"
+            )
+        if not (len(ad_ids) == len(user_ids) == len(contexts) == len(bid_prices)):
+            raise ValueError("ad_ids, user_ids, contexts, and bid_prices must have same length")
 
         ks, thetas = self.wf_ks[ad_ids], self.wf_thetas[ad_ids]
         ks_coef = self.ks_coef[user_ids]
-        contexts = self._map_idx_to_contexts(ad_ids, user_ids)
-        bid_prices = self._determine_bid_price(timestep, adjust_rate, contexts)
 
-        return self._calc_and_sample_outcome(
-            timestep, ks * ks_coef, thetas, bid_prices, contexts
-        )
-
-    def fit_reward_predictor(self, n_samples: int = 100000) -> None:
-        """Fit reward predictor in advance (pre-train) to use prediction in bidding price determination.
-
-        Note
-        -------
-        Intended only used when use_reward_predictor=True option.
-
-        X and y of the prediction model is given as follows.
-        X (feature_vectors): NDArray[float], shape (n_samples, action_feature_dim + user_feature_dim + 1)
-            Concatenated vector of ad_feature_vector, user_feature_vector, and timestep.
-
-        y (target values): NDArrray[int], shape (n_samples, )
-            Reward (i.e., auction outcome) obtained in each auction.
-
-        Parameters
-        -------
-        n_samples: int, default=100000
-            Number of samples to fit reward predictor.
-
-        """
-        if not self.use_reward_predictor:
-            warnings.warn(
-                "when reward_predictor is not given, fitting does not take place"
-            )
-            return
-
-        if not (isinstance(n_samples, int) and n_samples > 0):
-            raise ValueError(
-                f"n_samples must be a positive interger, but {n_samples} is given"
-            )
-
-        ad_ids = self.random_.choice(self.n_ads, n_samples)
-        user_ids = self.random_.choice(self.n_ads, n_samples)
-        contexts = self._map_idx_to_contexts(ad_ids, user_ids)
-
-        timesteps = self.random_.choice(self.step_per_episode, n_samples)
-        feature_vectors = np.concatenate([contexts, timesteps.reshape((-1, 1))], axis=1)
-
-        if self.objective == "click":
-            rewards = self.ctr.sample_outcome(timesteps, contexts)
-
-        else:  # "conversion"
-            rewards = self.ctr.sample_outcome(
-                timesteps, contexts
-            ) * self.cvr.sample_outcome(timesteps, contexts)
-
-        X, y = check_X_y(feature_vectors, rewards)
-        self.reward_predictor.fit(X, y)
-
-    def _set_bid_scaler(self, n_samples: int = 100000) -> np.ndarray:
-        """Fit scaling factor used for bid price determination
-
-        Note
-        -------
-        bid_scaler is approximate reciprocal of predicted reward.
-            bid_scaler ~= 1 / predicted_rewards`
-
-        Parameters
-        -------
-        n_samples: int, default=100000
-            Number of samples to fit bid_scaler.
-
-        """
-        if not (isinstance(n_samples, int) and n_samples > 0):
-            raise ValueError(
-                f"n_samples must be a positive interger, but {n_samples} is given"
-            )
-
-        ad_ids = self.random_.choice(self.n_ads, n_samples)
-        user_ids = self.random_.choice(self.n_ads, n_samples)
-        contexts = self._map_idx_to_contexts(ad_ids, user_ids)
-        timesteps = self.random_.choice(self.step_per_episode, n_samples)
-
-        if self.use_reward_predictor:
-            predicted_rewards = self._predict_reward(timesteps, contexts)
-            self.bid_scaler = 1 / predicted_rewards.mean()
-
-        else:
-            ground_truth_rewards = self._calc_ground_truth_reward(timesteps, contexts)
-            self.bid_scaler = 1 / ground_truth_rewards.mean()
-
-    def _predict_reward(
-        self, timestep: Union[int, np.ndarray], contexts: np.ndarray
-    ) -> np.ndarray:
-        """Predict reward (i.e., auction outcome) to determine bidding price.
-
-        Note
-        -------
-        Intended only used when use_reward_predictor=True option.
-
-        X and y of the prediction model is given as follows.
-        X (feature_vectors): NDArray[float], shape (search_volume, ad_feature_dim + user_feature_dim + 1)
-            Concatenated vector of contexts (ad_feature_vector + user_feature_vector) and timestep.
-
-        y (target values): NDArrray[int], shape (search_volume, )
-            Reward (i.e., auction outcome) obtained in each auction.
-
-        Parameters
-        -------
-        timestep: int
-            Timestep of the RL environment.
-
-        contexts: NDArray[float], shape (search_volume, ad_feature_dim + user_feature_dim + 1)
-            Context vector (contain both the ad and the user features) for each auction.
-            (search_volume is determined in RL environment.)
-
-        Returns
-        -------
-        predicted_rewards: NDArray[float], shape (search_volume, )
-            Predicted reward for each auction.
-
-        """
-        if isinstance(timestep, int):
-            timestep = np.full(len(contexts), timestep)
-        timestep = timestep.reshape((-1, 1))
-        feature_vectors = np.concatenate([contexts, timestep], axis=1)
-
-        return self.reward_predictor.predict_proba(feature_vectors)[:, 1]
-
-    def _calc_ground_truth_reward(
-        self, timestep: Union[int, np.ndarray], contexts: np.ndarray
-    ) -> np.ndarray:
-        """Calculate ground-truth reward (i.e., auction outcome) to determine bidding price.
-
-        Parameters
-        -------
-        timestep: Union[int, np.ndarray]
-            Timestep of the RL environment.
-
-        contexts: NDArray[float], shape (search_volume, ad_feature_dim + user_feature_dim + 1)
-            Context vector (contain both the ad and the user features) for each auction.
-            (search_volume is determined in RL environment.)
-
-        Returns
-        -------
-        expected_rewards: NDArray[float], shape(search_volume, )
-            Ground-truth (expected) reward for each auction when impression occurs.
-
-        """
-        if self.objective == "click":
-            expected_rewards = self.ctr.calc_prob(timestep, contexts)
-
-        else:  # "conversion"
-            expected_rewards = self.ctr.calc_prob(
-                timestep, contexts
-            ) * self.cvr.calc_prob(timestep, contexts)
-
-        return expected_rewards
-
-    def _determine_bid_price(
-        self, timestep: int, adjust_rate: float, contexts: np.ndarray
-    ) -> np.ndarray:
-        """Determine the bidding price using given adjust rate and the predicted/ground-truth rewards.
-
-        Note
-        -------
-        Determine bid price as follows.
-            bid price = adjust rate * predicted/ground-truth reward ( * constant)
-
-        Parameters
-        -------
-        timestep: int
-            Timestep of the RL environment.
-
-        adjust rate: float
-            Adjust rate parameter for bidding price determination.
-            Corresponds to the RL agent action.
-
-        contexts: NDArray[float], shape (search_volume, ad_feature_dim + user_feature_dim + 1)
-            Context vector (contain both the ad and the user features) for each auction.
-            (search_volume is determined in RL environment.)
-
-        Returns
-        -------
-        bid_prices: NDArray[int], shape(search_volume, )
-            Bid price for each auction.
-            Calclated from given adjust rate and the predicted/ground-truth rewards.
-
-        """
-        if self.bid_scaler is None:
-            self._set_bid_scaler()
-
-        if self.use_reward_predictor:
-            predicted_rewards = self._predict_reward(timestep, contexts)
-            bid_prices = (
-                adjust_rate
-                * predicted_rewards
-                * self.standard_bid_price
-                * self.bid_scaler
-            )
-
-        else:
-            ground_truth_rewards = self._calc_ground_truth_reward(timestep, contexts)
-            bid_prices = (
-                adjust_rate
-                * ground_truth_rewards
-                * self.standard_bid_price
-                * self.bid_scaler
-            )
-
-        return bid_prices.astype(int)
-
-    def _calc_and_sample_outcome(
-        self,
-        timestep: int,
-        ks: np.ndarray,
-        thetas: np.ndarray,
-        bid_prices: np.ndarray,
-        contexts: np.ndarray,
-    ) -> Tuple[np.ndarray]:
-        """Calculate pre-determined probabilities from contexts and stochastically sample the outcome.
-
-        Note
-        -------
-        Calculate probabilities using following functions.
-            - impression: WinningFunction
-            - cost: SecondPrice
-            - click per impression: CTR
-            - conversion per click: CVR
-
-        Parameters
-        -------
-        timestep: int.
-            Timestep of the RL environment.
-
-        ks: NDArray[float], shape (search_volume, )
-            Shape parameter for WinningFunction for each ad used in the auction.
-            (search_volume is determined in RL environment.)
-
-        thetas: NDArray[float], shape (search_volume, )
-            Scale parameter for WinningFunction for each ad used in the auction.
-            (search_volume is determined in RL environment.)
-
-        bid_prices: NDArray[int], shape(search_volume, )
-            Bid price for each action.
-            (search_volume is determined in RL environment.)
-
-        contexts: NDArray[float], shape (search_volume, ad_feature_dim + user_feature_dim + 1)
-            Context vector (contain both the ad and the user features) for each auction.
-            (search_volume is determined in RL environment.)
-
-        Returns
-        -------
-        auction_results: Tuple
-            bid_prices: NDArray[int], shape (search_volume, )
-                Bid price used for each auction.
-
-            costs: NDArray[int], shape (search_volume, )
-                Cost raised (i.e., second price) for each auction.
-
-            impressions: NDArray[int], shape (search_volume, )
-                Binary indicator of whether impression occurred or not for each auction.
-
-            clicks: NDArray[int], shape (search_volume, )
-                Binary indicator of whether click occurred or not for each auction.
-
-            conversions: NDArray[int], shape (search_volume, )
-                Binary indicator of whether conversion occurred or not for each auction.
-
-        """
         impressions, winning_prices = self.winning_function.sample_outcome(
-            ks, thetas, bid_prices
+            ks * ks_coef, thetas, bid_prices
         )
         clicks = self.ctr.sample_outcome(timestep, contexts) * impressions
         conversions = self.cvr.sample_outcome(timestep, contexts) * clicks
         costs = winning_prices * clicks
 
-        return bid_prices, costs, impressions, clicks, conversions
-
-    def _map_idx_to_contexts(
-        self, ad_ids: np.ndarray, user_ids: np.ndarray
-    ) -> np.ndarray:
-        """Map the ad and the user index into context vectors.
-
-        Parameters
-        -------
-        ad_ids: NDArray[int], shape (search_volume, )
-            IDs of the ads used for the auction bidding.
-            (search_volume is determined in RL environment.)
-
-        user_ids: NDArray[int], shape (search_volume, )
-            IDs of the users who receives the winning ads.
-            (search_volume is determined in RL environment.)
-
-        Returns
-        -------
-        contexts: NDArray[float], shape (search_volume, ad_feature_dim + user_feature_dim)
-            Context vector (contain both the ad and the user features) for each auction.
-
-        """
-        ad_features = self.ads[ad_ids]
-        user_features = self.users[user_ids]
-        contexts = np.concatenate([ad_features, user_features], axis=1)
-
-        return contexts
+        return costs, impressions, clicks, conversions

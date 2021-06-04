@@ -6,7 +6,6 @@ import warnings
 import gym
 from gym.spaces import Box, Discrete
 import numpy as np
-from sklearn.base import BaseEstimator
 from sklearn.utils import check_random_state
 
 from _gym.utils import NormalDistribution
@@ -186,12 +185,6 @@ class RTBEnv(gym.Env):
         self,
         semi_synthetic: bool = False,
         objective: str = "conversion",  # "click"
-        action_type: str = "discrete",  # "continuous"
-        action_dim: int = 10,
-        action_meaning: Optional[
-            np.ndarray
-        ] = None,  # maps categorical actions to adjust rate
-        reward_predictor: Optional[BaseEstimator] = None,
         step_per_episode: int = 24,
         initial_budget: int = 10000,
         n_ads: int = 100,
@@ -217,32 +210,6 @@ class RTBEnv(gym.Env):
             raise ValueError(
                 f'objective must be either "click" or "conversion", but {objective} is given'
             )
-        if not (
-            isinstance(action_type, str) and action_type in ["discrete", "continuous"]
-        ):
-            raise ValueError(
-                f'action_type must be either "discrete" or "continuous", but {action_type} is given'
-            )
-        if action_type == "discrete" and not (
-            isinstance(action_dim, int) and action_dim > 1
-        ):
-            raise ValueError(
-                f"action_dim must be a interger more than 1, but {action_dim} is given"
-            )
-        if action_type == "discrete" and action_meaning is not None:
-            if len(action_meaning) != action_dim:
-                raise ValueError(
-                    "action_meaning must have the same size with action_dim"
-                )
-            if not (
-                isinstance(action_meaning, np.ndarray)
-                and action_meaning.ndim == 1
-                and 0.1 <= action_meaning.min()
-                and action_meaning.max() <= 10
-            ):
-                raise ValueError(
-                    "action_meaning must be an 1-dimensional NDArray of float values within [0.1, 10]"
-                )
         if not (isinstance(step_per_episode, int) and step_per_episode > 0):
             raise ValueError(
                 f"step_per_episode must be a positive interger, but {step_per_episode} is given"
@@ -317,7 +284,6 @@ class RTBEnv(gym.Env):
         else:
             self.simulator = RTBSyntheticSimulator(
                 objective=objective,
-                reward_predictor=reward_predictor,
                 step_per_episode=step_per_episode,
                 n_ads=n_ads,
                 n_users=n_users,
@@ -325,7 +291,6 @@ class RTBEnv(gym.Env):
                 user_feature_dim=user_feature_dim,
                 standard_bid_price_distribution=standard_bid_price_distribution,
                 minimum_standard_bid_price=minimum_standard_bid_price,
-                bid_scaler=bid_scaler,
                 trend_interval=trend_interval,
                 random_state=random_state,
             )
@@ -351,19 +316,8 @@ class RTBEnv(gym.Env):
             "adjust rate",
         ]
 
-        # define action space
-        self.action_type = action_type
-        self.action_dim = action_dim
-        self.action_meaning = action_meaning
-
-        if self.action_type == "discrete":
-            self.action_space = Discrete(action_dim)
-
-            if self.action_meaning is None:
-                self.action_meaning = np.logspace(-1, 1, self.action_dim)
-
-        else:  # "continuous"
-            self.action_space = Box(low=0.1, high=10, shape=(1,), dtype=float)
+        # define action space (adjust rate range)
+        self.action_space = Box(low=0.0, high=np.inf, shape=(1,), dtype=float)
 
         # define reward range
         self.reward_range = (0, np.inf)
@@ -373,6 +327,10 @@ class RTBEnv(gym.Env):
 
         self.ad_ids = np.arange(n_ads)
         self.user_ids = np.arange(n_users)
+
+        # sample feature vectors for both ads and users
+        self.ads = self.random_.normal(size=(n_ads, ad_feature_dim))
+        self.users = self.random_.normal(size=(n_users, user_feature_dim))
 
         if ad_sampling_rate is None:
             self.ad_sampling_rate = np.full(n_ads, 1 / n_ads)
@@ -404,25 +362,21 @@ class RTBEnv(gym.Env):
         The rollout procedure is given as follows.
         1. Sample ads and users for (search volume, ) auctions occur during the timestep.
 
-        2. Collect outcome for each auctions by submitting a query to the RTBSyntheticSimulator.
-
-            (In RTBSyntheticSimulator)
-            2-1. Determine bid price.
+        2. Determine bid price. (In Bidder)
                 bid price = adjust rate * predicted/ground-truth reward ( * constant)
 
-            2-2. Calculate outcome probability and stochastically determine auction result.
-                auction results: (bid price,) cost (i.e., second price), impression, click, conversion
+        3. Calculate outcome probability and stochastically determine auction result. (in )
+                auction results: cost (i.e., second price), impression, click, conversion
 
-        3. Check if the cumulative cost during the timestep exceeds the remaining budget or not.
+        4. Check if the cumulative cost during the timestep exceeds the remaining budget or not.
            (If exceeds, cancel the corresponding auction results.)
 
-        4. Aggregate auction results and return feedbacks to the RL agent.
+        5. Aggregate auction results and return feedbacks to the RL agent.
 
         Parameters
         -------
-        action: Union[int, float]
-            RL agent action which indicates adjust rate parameter used for bid price determination.
-            Both discrete and continuos actions are acceptable.
+        action: float
+            RL agent action which corresponds to the adjust rate parameter used for bid price calculation.
 
         Returns
         -------
@@ -447,26 +401,9 @@ class RTBEnv(gym.Env):
                 Note that those feedbacks are intended to be unobservable for the RL agent.
 
         """
-        if not isinstance(action, (int, float, np.integer, np.floating)):
-            raise ValueError(f"action must be a float number, but {action} is given")
-        if self.action_type == "discrete":
-            if not (
-                isinstance(action, (int, np.integer))
-                and 0 <= action < self.action_space.n
-            ):
-                raise ValueError(
-                    f"action must be an integer within [0, {self.action_space.n})"
-                )
-        else:  # "continuous"
-            if not self.action_space.contains(np.array([action])):
-                raise ValueError(
-                    f"action must be a float value within ({self.action_space.low}, {self.action_space.high})"
-                )
-
-        # map agent action into adjust rate
-        adjust_rate = (
-            action if self.action_type == "continuous" else self.action_meaning[action]
-        )
+        if not isinstance(action, float):
+            raise ValueError(f"action must be a float value, but {action} is given")
+        adjust_rate = action
 
         # sample ads and users for auctions occur in a timestep
         ad_ids = self.random_.choice(
@@ -479,19 +416,21 @@ class RTBEnv(gym.Env):
             size=self.search_volumes[self.T % 100][self.t - 1],
             p=self.user_sampling_rate,
         )
+        contexts = self._map_idx_to_contexts(ad_ids, user_ids)
+
+        # determine bid price
+        # bid_prices =  # TODO
 
         # simulate auctions and gain results
         (
-            bid_prices,
             costs,
             impressions,
             clicks,
             conversions,
-        ) = self.simulator.simulate_auction(self.t, adjust_rate, ad_ids, user_ids)
+        ) = self.simulator.simulate_auction(self.t, adjust_rate, ad_ids, user_ids, contexts, bid_prices)
 
         # check if auction bidding is possible
         masks = np.cumsum(costs) < self.remaining_budget
-
         total_cost = np.sum(costs * masks)
         total_impression = np.sum(impressions * masks)
         total_click = np.sum(clicks * masks)
@@ -593,20 +532,32 @@ class RTBEnv(gym.Env):
         )
         pass
 
-    def fit_reward_predictor(self, n_samples: int = 100000) -> None:
-        """Pre-train reward prediction model used in simulator to calculate bid price.
-
-        Note
-        -------
-        Intended only used when use_reward_predictor=True option.
+    def _map_idx_to_contexts(
+        self, ad_ids: np.ndarray, user_ids: np.ndarray
+    ) -> np.ndarray:
+        """Map the ad and the user index into context vectors.
 
         Parameters
         -------
-        n_samples: int, default=100000
-            Number of samples to fit reward predictor in RTBSyntheticSimulator.
+        ad_ids: NDArray[int], shape (search_volume, )
+            IDs of the ads used for the auction bidding.
+            (search_volume is determined in RL environment.)
+
+        user_ids: NDArray[int], shape (search_volume, )
+            IDs of the users who receives the winning ads.
+            (search_volume is determined in RL environment.)
+
+        Returns
+        -------
+        contexts: NDArray[float], shape (search_volume, ad_feature_dim + user_feature_dim)
+            Context vector (contain both the ad and the user features) for each auction.
 
         """
-        self.simulator.fit_reward_predictor(n_samples)
+        ad_features = self.ads[ad_ids]
+        user_features = self.users[user_ids]
+        contexts = np.concatenate([ad_features, user_features], axis=1)
+
+        return contexts
 
     def calc_on_policy_policy_value(
         self, evaluation_policy: BasePolicy, n_episodes: int = 10000
