@@ -18,13 +18,6 @@ class RTBSyntheticSimulator(BaseSimulator):
 
     Parameters
     -------
-    objective: str, default="conversion"
-        Objective outcome (i.e., reward) of the auction.
-        Choose either from "click" or "conversion".
-
-    step_per_episode: int, default=24
-        Number of timestep in an episode in reinforcement learning (RL) environment.
-        Note that we should use same value with RTBEnv class in env.py.
 
     n_ads: int, default=100
         Number of ads used for fitting the reward predictor.
@@ -60,8 +53,6 @@ class RTBSyntheticSimulator(BaseSimulator):
 
     """
 
-    objective: str = "conversion"
-    step_per_episode: int = 24
     n_ads: int = 100
     n_users: int = 100
     ad_feature_dim: int = 5
@@ -74,14 +65,6 @@ class RTBSyntheticSimulator(BaseSimulator):
     random_state: int = 12345
 
     def __post_init__(self):
-        if not self.objective in ["click", "conversion"]:
-            raise ValueError(
-                f'objective must be either "click" or "conversion", but {self.objective} is given'
-            )
-        if not (isinstance(self.step_per_episode, int) and self.step_per_episode > 0):
-            raise ValueError(
-                f"step_per_episode must be a positive interger, but {self.step_per_episode} is given"
-            )
         if not (isinstance(self.n_ads, int) and self.n_ads > 0):
             raise ValueError(
                 f"n_ads must be a positive interger, but {self.n_ads} is given"
@@ -143,10 +126,6 @@ class RTBSyntheticSimulator(BaseSimulator):
             size=self.n_ads,
         )
 
-        # set trend_interval if None
-        if self.trend_interval is None:
-            self.trend_interval = self.step_per_episode
-
         # define click/imp and conversion/click rate function
         self.ctr = CTR(
             ad_feature_dim=self.ad_feature_dim,
@@ -162,15 +141,14 @@ class RTBSyntheticSimulator(BaseSimulator):
         )
 
         # define impression difficulty on users
+        # the more likely the users click, the higher bid prices they have
         self.ks_coef = 1 + self.ads @ self.ctr.coef[: self.ad_feature_dim]
 
-    def simulate_auction(
+    def calc_and_sample_outcome(
         self,
         timestep: int,
-        adjust_rate: Union[int, float],
         ad_ids: np.ndarray,
         user_ids: np.ndarray,
-        contexts: np.ndarray,
         bid_prices: np.ndarray,
     ) -> Tuple[np.ndarray]:
         """Simulate bidding auction for given queries.
@@ -179,11 +157,7 @@ class RTBSyntheticSimulator(BaseSimulator):
         Parameters
         -------
         timestep: int
-            Timestep of the RL environment.
-
-        adjust_rate: Union[int, float]
-            Adjust rate parameter for bidding price determination.
-            Corresponds to the RL agent action.
+            Corresponds to the timestep of the RL environment.
 
         ad_ids: NDArray[int], shape (search_volume, )
             IDs of the ads used for the auction bidding.
@@ -191,10 +165,6 @@ class RTBSyntheticSimulator(BaseSimulator):
 
         user_ids: NDArray[int], shape (search_volume, )
             IDs of the users who receives the winning ads.
-            (search_volume is determined in RL environment.)
-
-        contexts: NDArray[float], shape (search_volume, ad_feature_dim + user_feature_dim)
-            Context vector (contain both the ad and the user features) for each auction.
             (search_volume is determined in RL environment.)
 
         bid_prices: NDArray[int], shape(search_volume, )
@@ -217,13 +187,9 @@ class RTBSyntheticSimulator(BaseSimulator):
                 Binary indicator of whether conversion occurred or not for each auction.
 
         """
-        if not (isinstance(timestep, int) and 0 <= timestep < self.step_per_episode):
+        if not (isinstance(timestep, int) and 0 <= timestep):
             raise ValueError(
-                f"timestep must be a interger within [0, {self.step_per_episode}), but {timestep} is given"
-            )
-        if not (isinstance(adjust_rate, (int, float)) and 0.1 <= adjust_rate <= 10):
-            raise ValueError(
-                f"adjust_rate must be a float number in [0.1, 10], but {adjust_rate} is given"
+                f"timestep must be a non-negative interger, but {timestep} is given"
             )
         if not (
             isinstance(ad_ids, np.ndarray)
@@ -244,17 +210,6 @@ class RTBSyntheticSimulator(BaseSimulator):
                 "user_ids must be 1-dimensional NDArray with integers within [0, n_users)"
             )
         if not (
-            isinstance(contexts, np.ndarray)
-            and contexts.ndim == 2
-        ):
-            raise ValueError(
-                "contexts must be 2-dimentional NDArray"
-            )
-        if contexts.shape[1] != self.ad_feature_dim + self.user_feature_dim:
-            raise ValueError(
-                "the length of axis 1 of the contexts must be same with ad_feature_dim + user_feature_dim"
-            )
-        if not (
             isinstance(bid_prices, np.ndarray)
             and bid_prices.ndim == 1
             and 0 <= bid_prices.min()
@@ -262,9 +217,10 @@ class RTBSyntheticSimulator(BaseSimulator):
             raise ValueError(
                 "ad_ids must be 1-dimensional NDArray with non-negative integers"
             )
-        if not (len(ad_ids) == len(user_ids) == len(contexts) == len(bid_prices)):
+        if not (len(ad_ids) == len(user_ids) == len(bid_prices)):
             raise ValueError("ad_ids, user_ids, contexts, and bid_prices must have same length")
 
+        contexts = self.map_idx_to_contexts(ad_ids, user_ids)
         ks, thetas = self.wf_ks[ad_ids], self.wf_thetas[ad_ids]
         ks_coef = self.ks_coef[user_ids]
 
@@ -277,7 +233,7 @@ class RTBSyntheticSimulator(BaseSimulator):
 
         return costs, impressions, clicks, conversions
 
-    def _map_idx_to_contexts(
+    def map_idx_to_contexts(
         self, ad_ids: np.ndarray, user_ids: np.ndarray
     ) -> np.ndarray:
         """Map the ad and the user index into context vectors.

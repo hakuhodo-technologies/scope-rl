@@ -8,22 +8,22 @@ import numpy as np
 
 @dataclass
 class BaseSimulator(metaclass=ABCMeta):
-    """Base class for bidding auction simulators."""
+    """Base class to calculate outcome probability and stochastically determine auction result."""
 
     @abstractmethod
-    def simulate_auction(
+    def calc_and_sample_outcome(
         self,
         timestep: int,
         ad_ids: np.ndarray,
         user_ids: np.ndarray,
-        contexts: np.ndarray,
         bid_prices: np.ndarray,
     ) -> Tuple[np.ndarray]:
-        """Simulate bidding auction for given queries and return outcome."""
+        """Simulate bidding auction for given queries.
+           (calculate outcome probability and stochastically determine auction result.)"""
         raise NotImplementedError
 
     @abstractmethod
-    def _map_idx_to_contexts(
+    def map_idx_to_contexts(
         self, ad_ids: np.ndarray, user_ids: np.ndarray
     ) -> np.ndarray:
         """Map the ad and the user index into context vectors."""
