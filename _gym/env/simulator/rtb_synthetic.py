@@ -13,12 +13,11 @@ from .function import WinningFunction, CTR, CVR
 
 @dataclass
 class RTBSyntheticSimulator(BaseSimulator):
-    """Class to calculate outcome probability and stochastically determine auction result 
+    """Class to calculate outcome probability and stochastically determine auction result
        in Real-Time Bidding (RTB) setting for display advertising.
 
     Parameters
     -------
-
     n_ads: int, default=100
         Number of ads used for fitting the reward predictor.
 
@@ -141,8 +140,68 @@ class RTBSyntheticSimulator(BaseSimulator):
         )
 
         # define impression difficulty on users
-        # the more likely the users click, the higher bid prices they have
+        # the more likely the users click, the higher the bid prices they have
         self.ks_coef = 1 + self.ads @ self.ctr.coef[: self.ad_feature_dim]
+
+    def generate_auction(self, search_volume: int):
+        """Sample ad and user pair for each auction.
+
+        Parameters
+        -------
+        search_volume: int
+            Total numbers of auction to raise.
+
+        Returns
+        -------
+        ad_ids: NDArray[int], shape (search_volume, )
+            IDs of the ads used for the auction bidding.
+
+        user_ids: NDArray[int], shape (search_volume, )
+            IDs of the users who receives the winning ads.
+
+        """
+        if not (isinstance(search_volume, int) and 0 <= search_volume):
+            raise ValueError(
+                f"search_volume must be a non-negative interger, but {search_volume} is given"
+            )
+        ad_ids = self.random_.choice(
+            self.ad_ids,
+            size=search_volume,
+            p=self.ad_sampling_rate,
+        )
+        user_ids = self.random_.choice(
+            self.user_ids,
+            size=search_volume,
+            p=self.user_sampling_rate,
+        )
+        return ad_ids, user_ids
+
+    def map_idx_to_contexts(
+        self, ad_ids: np.ndarray, user_ids: np.ndarray
+    ) -> np.ndarray:
+        """Map the ad and the user index into context vectors.
+
+        Parameters
+        -------
+        ad_ids: NDArray[int], shape (search_volume, )
+            IDs of the ads used for the auction bidding.
+            (search_volume is determined in RL environment.)
+
+        user_ids: NDArray[int], shape (search_volume, )
+            IDs of the users who receives the winning ads.
+            (search_volume is determined in RL environment.)
+
+        Returns
+        -------
+        contexts: NDArray[float], shape (search_volume, ad_feature_dim + user_feature_dim)
+            Context vector (contain both the ad and the user features) for each auction.
+
+        """
+        ad_features = self.ads[ad_ids]
+        user_features = self.users[user_ids]
+        contexts = np.concatenate([ad_features, user_features], axis=1)
+
+        return contexts
 
     def calc_and_sample_outcome(
         self,
@@ -218,7 +277,9 @@ class RTBSyntheticSimulator(BaseSimulator):
                 "ad_ids must be 1-dimensional NDArray with non-negative integers"
             )
         if not (len(ad_ids) == len(user_ids) == len(bid_prices)):
-            raise ValueError("ad_ids, user_ids, contexts, and bid_prices must have same length")
+            raise ValueError(
+                "ad_ids, user_ids, contexts, and bid_prices must have same length"
+            )
 
         contexts = self.map_idx_to_contexts(ad_ids, user_ids)
         ks, thetas = self.wf_ks[ad_ids], self.wf_thetas[ad_ids]
@@ -232,30 +293,3 @@ class RTBSyntheticSimulator(BaseSimulator):
         costs = winning_prices * clicks
 
         return costs, impressions, clicks, conversions
-
-    def map_idx_to_contexts(
-        self, ad_ids: np.ndarray, user_ids: np.ndarray
-    ) -> np.ndarray:
-        """Map the ad and the user index into context vectors.
-
-        Parameters
-        -------
-        ad_ids: NDArray[int], shape (search_volume, )
-            IDs of the ads used for the auction bidding.
-            (search_volume is determined in RL environment.)
-
-        user_ids: NDArray[int], shape (search_volume, )
-            IDs of the users who receives the winning ads.
-            (search_volume is determined in RL environment.)
-
-        Returns
-        -------
-        contexts: NDArray[float], shape (search_volume, ad_feature_dim + user_feature_dim)
-            Context vector (contain both the ad and the user features) for each auction.
-
-        """
-        ad_features = self.ads[ad_ids]
-        user_features = self.users[user_ids]
-        contexts = np.concatenate([ad_features, user_features], axis=1)
-
-        return contexts
