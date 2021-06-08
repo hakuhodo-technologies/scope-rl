@@ -9,8 +9,10 @@ import numpy as np
 from sklearn.utils import check_random_state
 
 from _gym.utils import NormalDistribution
-from _gym.simulator import RTBSyntheticSimulator
 from _gym.policy import BasePolicy
+
+from .bidder import Bidder
+from .simulator.rtb_synthetic import RTBSyntheticSimulator
 
 
 class RTBEnv(gym.Env):
@@ -200,40 +202,6 @@ class RTBEnv(gym.Env):
             raise ValueError(
                 f"initial_budget must be a positive interger, but {initial_budget} is given"
             )
-        if not (isinstance(n_ads, int) and n_ads > 0):
-            raise ValueError(f"n_ads must be a positive interger, but {n_ads} is given")
-        if not (isinstance(n_users, int) and n_users > 0):
-            raise ValueError(
-                f"n_users must be a positive interger, but {n_users} is given"
-            )
-        if not (
-            ad_sampling_rate is None
-            or (
-                isinstance(ad_sampling_rate, np.ndarray)
-                and ad_sampling_rate.ndim == 1
-                and ad_sampling_rate.min() >= 0
-                and ad_sampling_rate.max() > 0
-            )
-        ):
-            raise ValueError(
-                "ad_sampling_rate must be an 1-dimensional NDArray of non-negative float values"
-            )
-        if not (
-            user_sampling_rate is None
-            or (
-                isinstance(user_sampling_rate, np.ndarray)
-                and user_sampling_rate.ndim == 1
-                and user_sampling_rate.min() >= 0
-                and user_sampling_rate.max() > 0
-            )
-        ):
-            raise ValueError(
-                "user_sampling_rate must be an NDArray of non-negative float values"
-            )
-        if ad_sampling_rate is not None and n_ads != len(ad_sampling_rate):
-            raise ValueError("length of ad_sampling_rate must be equal to n_ads")
-        if user_sampling_rate is not None and n_users != len(user_sampling_rate):
-            raise ValueError("length of user_sampling_rate must be equal to n_users")
         if not (
             isinstance(search_volume_distribution.mean, (int, float))
             and search_volume_distribution.mean > 0
@@ -260,22 +228,28 @@ class RTBEnv(gym.Env):
             raise ValueError("random_state must be given")
         self.random_ = check_random_state(random_state)
 
-        # initialize simulator
+        self.objective = objective
+
+        # initialize simulator and bidder
         self.simulator = RTBSyntheticSimulator(
-            objective=objective,
-            step_per_episode=step_per_episode,
             n_ads=n_ads,
             n_users=n_users,
             ad_feature_dim=ad_feature_dim,
             user_feature_dim=user_feature_dim,
+            ad_sampling_rate=ad_sampling_rate,
+            user_sampling_rate=user_sampling_rate,
             standard_bid_price_distribution=standard_bid_price_distribution,
             minimum_standard_bid_price=minimum_standard_bid_price,
             trend_interval=trend_interval,
             random_state=random_state,
         )
+        self.bidder = Bidder(
+            simulator=self.simulator,
+            objective=self.objective,
+            random_state=random_state,
+        )
+        self.bidder.auto_fit_scaler(step_per_episode=step_per_episode)
         self.standard_bid_price = self.simulator.standard_bid_price
-
-        self.objective = objective
 
         # define observation space
         self.observation_space = Box(
@@ -304,19 +278,6 @@ class RTBEnv(gym.Env):
         self.step_per_episode = step_per_episode
         self.initial_budget = initial_budget
 
-        self.ad_ids = np.arange(n_ads)
-        self.user_ids = np.arange(n_users)
-
-        if ad_sampling_rate is None:
-            self.ad_sampling_rate = np.full(n_ads, 1 / n_ads)
-        else:
-            self.ad_sampling_rate = ad_sampling_rate / np.sum(ad_sampling_rate)
-
-        if user_sampling_rate is None:
-            self.user_sampling_rate = np.full(n_users, 1 / n_users)
-        else:
-            self.user_sampling_rate = user_sampling_rate / np.sum(user_sampling_rate)
-
         if isinstance(search_volume_distribution.mean, int):
             search_volume_distribution = NormalDistribution(
                 mean=np.full(step_per_episode, search_volume_distribution.mean),
@@ -338,10 +299,10 @@ class RTBEnv(gym.Env):
         1. Sample ads and users for (search volume, ) auctions occur during the timestep.
 
         2. Determine bid price. (In Bidder)
-                bid price = adjust rate * predicted/ground-truth reward ( * constant)
+            bid price = adjust rate * predicted/ground-truth reward ( * constant)
 
-        3. Calculate outcome probability and stochastically determine auction result. (in )
-                auction results: cost (i.e., second price), impression, click, conversion
+        3. Calculate outcome probability and stochastically determine auction result. (in Simulator)
+            auction results: cost (i.e., second price), impression, click, conversion
 
         4. Check if the cumulative cost during the timestep exceeds the remaining budget or not.
            (If exceeds, cancel the corresponding auction results.)
@@ -381,20 +342,13 @@ class RTBEnv(gym.Env):
         adjust_rate = action
 
         # sample ads and users for auctions occur in a timestep
-        ad_ids = self.random_.choice(
-            self.ad_ids,
-            size=self.search_volumes[self.T % 100][self.t - 1],
-            p=self.ad_sampling_rate,
-        )
-        user_ids = self.random_.choice(
-            self.user_ids,
-            size=self.search_volumes[self.T % 100][self.t - 1],
-            p=self.user_sampling_rate,
-        )
-        contexts = self._map_idx_to_contexts(ad_ids, user_ids)
+        search_volume = self.search_volumes[self.T % 100][self.t - 1]
+        ad_ids, user_ids = self.simulator.generate_auction(search_volume)
 
         # determine bid price
-        # bid_prices =  # TODO
+        bid_prices = self.bidder.determine_bid_price(
+            self.t, adjust_rate, ad_ids, user_ids
+        )
 
         # simulate auctions and gain results
         (
@@ -402,7 +356,7 @@ class RTBEnv(gym.Env):
             impressions,
             clicks,
             conversions,
-        ) = self.simulator.simulate_auction(self.t, adjust_rate, ad_ids, user_ids, contexts, bid_prices)
+        ) = self.simulator.calc_and_sample_outcome(self.t, ad_ids, user_ids, bid_prices)
 
         # check if auction bidding is possible
         masks = np.cumsum(costs) < self.remaining_budget
