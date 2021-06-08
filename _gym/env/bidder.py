@@ -1,6 +1,6 @@
 """Bid Price Calculation."""
 from dataclasses import dataclass
-from typing import Tuple, Union, Optional
+from typing import Union, Optional
 import warnings
 
 import numpy as np
@@ -53,7 +53,7 @@ class Bidder:
     random_state: int = 12345
 
     def __post_init__(self):
-        if not self.objective in ["click", "conversion"]:
+        if self.objective not in ["click", "conversion"]:
             raise ValueError(
                 f'objective must be either "click" or "conversion", but {self.objective} is given'
             )
@@ -73,12 +73,11 @@ class Bidder:
             raise ValueError("random_state must be given")
         self.random_ = check_random_state(self.random_state)
 
-        if self.reward_predictor is None:
-            self.use_reward_predictor = False
-        else:
-            self.use_reward_predictor = True
+        self.use_reward_predictor = False if self.reward_predictor is None else True
 
-        self.standard_bid_price = self.simulator.standard_bid_price
+    @property
+    def standard_bid_price(self):
+        return self.simulator.standard_bid_price
 
     def determine_bid_price(
         self,

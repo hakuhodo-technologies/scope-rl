@@ -39,11 +39,12 @@ class RTBEnv(gym.Env):
 
         action: Union[int, float]
             Adjust rate parameter used for the bid price calculation as follows.
-            Note that the following bid price is individually determined for each auction.
-                bid price = adjust rate * predicted/ground-truth reward ( * constant)
+            (Bid price is individually determined for each auction.)
+                bid price = adjust rate * ground-truth reward ( * constant)
+            Note that, we can also use predicted reward instead of ground-truth reward in the above equation
+            if we use CustomizedRTBEnv Wrapper.
 
-            Both discrete and continuous actions are acceptable.
-            Note that the value should be within [0.1, 10].
+            Acceptable action range is [0, np.infty).
 
         reward: int
             Total clicks/conversions gained during the timestep.
@@ -61,26 +62,6 @@ class RTBEnv(gym.Env):
     objective: str, default="conversion"
         Objective outcome (i.e., reward) of the auctions.
         Choose either from "click" or "conversion".
-
-    action_type: str, default="discrete"
-        Action type of the RL agent.
-        Choose either from "discrete" or "continuous".
-
-    action_dim: int, default=10
-        Dimensions of the discrete action.
-        Used only when action_type="discrete" option.
-
-    action_meaning: Optional[NDArray[float]], default=None
-        Dictionary which maps discrete action index into specific actions.
-        Used when only when using action_type="discrete" option.
-
-        Note that if None, the action meaning values automatically set to [0.1, 10] log sampled values.
-            np.logspace(-1, 1, action_dim)
-
-    reward_predictor: Optional[BaseEstimator], default=None
-        Parameter in RTBSyntheticSimulator class.
-        A machine learning model to predict the reward to determine the bidding price.
-        If None, the ground-truth (expected) reward is used instead of the predicted one.
 
     step_per_episode: int, default=24
         Number of timesteps in an episode.
@@ -102,6 +83,14 @@ class RTBEnv(gym.Env):
         Parameter in RTBSyntheticSimulator class.
         Dimensions of the user feature vectors.
 
+    ad_sampling_rate: Optional[Union[NDArray[int], NDArray[float]]], shape (n_candidate_ads, ), default=None
+        Parameter in RTBSyntheticSimulator class.
+        Sampling probalities to determine which ad (id) is used in each auction.
+
+    user_sampling_rate: Optional[Union[NDArray[int], NDArray[float]]], shape (n_candidate_users, ), default=None
+        Parameter in RTBSyntheticSimulator class.
+        Sampling probalities to determine which user (id) is used in each auction.
+
     standard_bid_price_distribution: NormalDistribution, default=NormalDistribution(mean=100, std=20)
         Parameter in RTBSyntheticSimulator class.
         Distribution of the bid price whose average impression probability is expected to be 0.5.
@@ -115,12 +104,6 @@ class RTBEnv(gym.Env):
         Parameter in RTBSyntheticSimulator class.
         Length of the ctr/cvr trend cycle.
         If None, trend_interval is set to step_per_episode.
-
-    ad_sampling_rate: Optional[Union[NDArray[int], NDArray[float]]], shape (n_candidate_ads, ), default=None
-        Sampling probalities to determine which ad (id) is used in each auction.
-
-    user_sampling_rate: Optional[Union[NDArray[int], NDArray[float]]], shape (n_candidate_users, ), default=None
-        Sampling probalities to determine which user (id) is used in each auction.
 
     search_volume_distribution: NormalDistribution, default=NormalDistribution(mean=30, std=10)
         Search volume distribution for each timestep.
@@ -140,12 +123,9 @@ class RTBEnv(gym.Env):
         from _gym.env import RTBEnv
         from _gym.policy import RandomPolicy
 
-        # import necessary module from other library
-        from sklearn.linear_model import LogisticRegression
-
         # initialize environment and define (RL) agent (i.e., policy)
-        env = RTBEnv(reward_predictor=LogisticRegression())
-        agent = RandomPolicy()
+        env = RTBEnv()
+        agent = RandomPolicy(env)
 
         # OpenAI Gym like interaction with agent
         for episode in range(1000):
@@ -176,13 +156,13 @@ class RTBEnv(gym.Env):
         n_users: int = 100,
         ad_feature_dim: int = 5,
         user_feature_dim: int = 5,
+        ad_sampling_rate: Optional[np.ndarray] = None,
+        user_sampling_rate: Optional[np.ndarray] = None,
         standard_bid_price_distribution: NormalDistribution = NormalDistribution(
             mean=50, std=5
         ),
         minimum_standard_bid_price: Optional[int] = None,
         trend_interval: Optional[int] = None,
-        ad_sampling_rate: Optional[np.ndarray] = None,
-        user_sampling_rate: Optional[np.ndarray] = None,
         search_volume_distribution: NormalDistribution = NormalDistribution(
             mean=200, std=20
         ),
@@ -249,7 +229,6 @@ class RTBEnv(gym.Env):
             random_state=random_state,
         )
         self.bidder.auto_fit_scaler(step_per_episode=step_per_episode)
-        self.standard_bid_price = self.simulator.standard_bid_price
 
         # define observation space
         self.observation_space = Box(
@@ -287,8 +266,12 @@ class RTBEnv(gym.Env):
             search_volume_distribution.sample(size=100), minimum_search_volume, None
         ).astype(int)
 
-        # just for idx of search_volumes to sample from
+        # idx of search_volumes to sample from
         self.T = 0
+
+    @property
+    def standard_bid_price(self):
+        return self.simulator.standard_bid_price
 
     def step(self, action: Union[int, float]) -> Tuple[Any]:
         """Rollout auctions arise during the timestep and return feedbacks to the agent.
@@ -337,20 +320,22 @@ class RTBEnv(gym.Env):
                 Note that those feedbacks are intended to be unobservable for the RL agent.
 
         """
-        if not isinstance(action, float):
-            raise ValueError(f"action must be a float value, but {action} is given")
+        if not (isinstance(action, float) and action >= 0):
+            raise ValueError(
+                f"action must be a non-negative float value, but {action} is given"
+            )
         adjust_rate = action
 
-        # sample ads and users for auctions occur in a timestep
+        # 1. sample ads and users for auctions occur in a timestep
         search_volume = self.search_volumes[self.T % 100][self.t - 1]
         ad_ids, user_ids = self.simulator.generate_auction(search_volume)
 
-        # determine bid price
+        # 2. determine bid price
         bid_prices = self.bidder.determine_bid_price(
             self.t, adjust_rate, ad_ids, user_ids
         )
 
-        # simulate auctions and gain results
+        # 3. simulate auctions and gain results
         (
             costs,
             impressions,
@@ -358,7 +343,7 @@ class RTBEnv(gym.Env):
             conversions,
         ) = self.simulator.calc_and_sample_outcome(self.t, ad_ids, user_ids, bid_prices)
 
-        # check if auction bidding is possible
+        # 4. check if auction bidding is possible
         masks = np.cumsum(costs) < self.remaining_budget
         total_cost = np.sum(costs * masks)
         total_impression = np.sum(impressions * masks)
@@ -367,7 +352,7 @@ class RTBEnv(gym.Env):
 
         self.remaining_budget -= total_cost
 
-        # prepare returns
+        # 5. prepare returns
         if self.objective == "click":
             reward = total_click
         else:

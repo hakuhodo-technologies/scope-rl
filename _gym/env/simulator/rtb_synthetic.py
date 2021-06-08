@@ -124,6 +124,15 @@ class RTBSyntheticSimulator(BaseSimulator):
             raise ValueError(
                 "standard_bid_price_distribution must be a NormalDistribution"
             )
+        if self.minimum_standard_bid_price is not None and not (
+            isinstance(self.minimum_standard_bid_price, (int, float))
+            and 0
+            <= self.minimum_standard_bid_price
+            <= self.standard_bid_price_distribution.mean
+        ):
+            raise ValueError(
+                f"minimum_standard_bid_price must be a float value within [0, standard_bid_price_distribution.mean], but {self.minimum_standard_bid_price} is given"
+            )
         if not (
             self.trend_interval is None
             or (isinstance(self.trend_interval, int) and self.trend_interval > 0)
@@ -274,10 +283,8 @@ class RTBSyntheticSimulator(BaseSimulator):
             raise ValueError(
                 "user_ids must be 1-dimensional NDArray with integers within [0, n_users)"
             )
-        if not (len(ad_ids) == len(user_ids) == len(bid_prices)):
-            raise ValueError(
-                "ad_ids, user_ids, contexts, and bid_prices must have same length"
-            )
+        if not (len(ad_ids) == len(user_ids)):
+            raise ValueError("ad_ids and user_ids must have same length")
 
         ad_features = self.ads[ad_ids]
         user_features = self.users[user_ids]

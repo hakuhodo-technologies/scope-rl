@@ -1,5 +1,6 @@
 """Customization of RL setting by decision makers."""
 from typing import Tuple, Optional, Union, Any
+from tqdm import tqdm
 
 import gym
 from gym.spaces import Box, Discrete
@@ -12,6 +13,60 @@ from _gym.policy import BasePolicy
 
 class CustomizedRTBEnv(gym.Env):
     """Wrapper class for RTBEnv to customize RL action space and bidder by decision makers.
+
+    Note
+    -------
+    We can customize three following decision making using CustomizedEnv.
+        - reward_predictor in Bidder class
+            We use predicted rewards to calculate bid price as follows.
+                bid price = adjust rate * predicted reward ( * constant)
+            If None, we use ground-truth reward instead of predicted reward.
+
+        - scaler in Bidder class
+            Scaler defines constant in the bid price calculation as follows.
+                bid price = adjust rate * predicted reward ( * constant)
+                constant = scaler * standard_bid_price
+            where standard_bid_price indicates the average of standard_bid_price
+            (bid price which has approximately 50% impression probability) over all ads.
+
+        - action space for agent
+            We transform continual adjust rate space [0, \infty) into agent action space.
+            Both discrete and continuous actions are acceptable.
+
+            Note that the action space should be within [0.1, 10].
+            Instead, we can tune multiplication of adjust rate using scaler.
+
+    Constrained Markov Decision Process (CMDP) definition are given as follows:
+        timestep: int
+            Set 24h a day or seven days per week for instance.
+            We have (search volume, ) auctions during a timestep.
+            Note that each single auction do NOT correspond to the timestep.
+
+        state: NDArray[float], shape (7, )
+            Statistical feedbacks of auctions during the timestep, including following values.
+                - timestep
+                - remaining budget
+                - impression level features at the previous timestep
+                  (budget consumption rate, cost per mille of impressions, auction winning rate, and reward)
+                - adjust rate (i.e., RL agent action) at previous timestep
+
+        action: Union[int, float]
+            Adjust rate parameter used for the bid price calculation as follows.
+            Note that the following bid price is individually determined for each auction.
+                bid price = adjust rate * predicted/ground-truth reward ( * constant)
+
+            Both discrete and continuous actions are acceptable.
+            Note that the value should be within [0.1, 10]. We can change adjust rate using scaler.
+
+        reward: int
+            Total clicks/conversions gained during the timestep.
+
+        discount_rate: int, 1
+            Discount factor for cumulative reward calculation.
+            Set discount_rate = 1 (i.e., no discount) in RTB.
+
+        constraint: int
+            Total cost should not exceed the initial budget.
 
     Parameters
     -------
@@ -26,7 +81,7 @@ class CustomizedRTBEnv(gym.Env):
     scaler: Optional[Union[int, float]], default=None
         Parameter in Bidder.
         Scaling factor (constant value) used for bid price determination.
-        If None, one should call auto_fit_scaler().
+        If None, scaler is autofitted by bidder.auto_fit_scaler().
 
     action_type: str, default="discrete"
         Action type of the RL agent.
@@ -41,6 +96,45 @@ class CustomizedRTBEnv(gym.Env):
         Used when only when using action_type="discrete" option.
         Note that if None, the action meaning values automatically set to [0.1, 10] log sampled values.
             np.logspace(-1, 1, action_dim)
+
+    Examples
+    -------
+
+    .. codeblock:: python
+
+        # import necessary module from _gym
+        from _gym.env import RTBEnv
+        from _gym.policy import RandomPolicy
+
+        # import from other libraries
+        from sklearn.linear_model import LogisticRegression
+
+        # initialize and customize environment
+        original_env = RTBEnv()
+        env = CustomizedEnv(
+            original_env,
+            reward_predictor=LogisticRegression(),
+            scaler=None,  # autofit
+            action_type="discrete",
+        )
+
+        # define (RL) agent (i.e., policy)
+        agent = RandomPolicy(env)
+
+        # OpenAI Gym like interaction with agent
+        for episode in range(1000):
+            obs = env.reset()
+            done = False
+
+            while not done:
+                action = agent.act(obs)
+                obs, reward, done, info = env.step(action)
+
+        # calculate on-policy policy value
+        performance = env.calc_on_policy_policy_value(
+            evaluation_policy=agent,
+            n_episodes=10000,
+        )
 
     """
 
@@ -88,8 +182,13 @@ class CustomizedRTBEnv(gym.Env):
         self.env = original_env
 
         # set reward predictor
-        self.env.bidder.custom_set_reward_predictor(reward_predictor=reward_predictor)
-        self.env.bidder.fit_reward_predictor(step_per_episode=self.env.step_per_episode)
+        if reward_predictor is not None:
+            self.env.bidder.custom_set_reward_predictor(
+                reward_predictor=reward_predictor
+            )
+            self.env.bidder.fit_reward_predictor(
+                step_per_episode=self.env.step_per_episode
+            )
 
         # set scaler
         if scaler is None:
@@ -239,9 +338,26 @@ class CustomizedRTBEnv(gym.Env):
             Mean episode reward calculated through rollout.
 
         """
-        return self.env.calc_on_policy_policy_value(
-            evaluation_policy=evaluation_policy, n_episodes=n_episodes
-        )
+        if not (isinstance(n_episodes, int) and n_episodes > 0):
+            raise ValueError(
+                "n_episodes must be a positive integer, but {n_episodes} is given"
+            )
+
+        total_reward = 0.0
+        for _ in tqdm(
+            np.arange(n_episodes),
+            desc="[calc_on_policy_policy_value]",
+            total=n_episodes,
+        ):
+            state = self.reset()
+            done = False
+
+            while not done:
+                action, _ = evaluation_policy.act(state)  # predict
+                state, reward, done, _ = self.step(action)
+                total_reward += reward
+
+        return total_reward / n_episodes
 
     def render(self, mode: str = "human") -> None:
         self.env.render(mode)
