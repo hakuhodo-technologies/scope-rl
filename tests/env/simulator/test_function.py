@@ -5,6 +5,7 @@ import numpy as np
 from _gym.simulator.function import WinningFunction, CTR, CVR
 
 
+# fix
 @pytest.mark.parametrize("random_state", [(-1), (1.5), ("1")])
 def test_init_random_state_failure_case(random_state):
     with pytest.raises(ValueError):
