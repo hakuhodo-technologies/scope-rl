@@ -484,7 +484,11 @@ class RTBEnv(gym.Env):
             done = False
 
             while not done:
-                action, _ = evaluation_policy.act(state)  # predict
+                try:
+                    action, _ = evaluation_policy.act(state)  # predict
+                except:
+                    action = evaluation_policy.act(state)
+
                 state, reward, done, _ = self.step(action)
                 total_reward += reward
 
