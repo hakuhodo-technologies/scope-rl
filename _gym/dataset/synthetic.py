@@ -41,15 +41,22 @@ class SyntheticDataset(BaseDataset):
     .. ::code-block:: python
 
         # import necessary module from _gym
-        >>> from _gym.env import RTBEnv
+        >>> from _gym.env import RTBEnv, CustomizedRTBEnv
         >>> from _gym.dataset import SyntheticDataset
         >>> from _gym.policy import DQN
         # import necessary module from other library
         >>> from sklearn.linear_model import LogisticRegression
 
         # initialize environment and define (RL) agent (i.e., policy)
-        >>> env = RTBEnv(reward_predictor=LogisticRegression())
+        >>> env = RTBEnv()
         >>> dqn = DQN()
+
+        # customize environment from the decision makers' perspective
+        >>> env = CustomizedRTBEnv(
+                original_env=env,
+                reward_predictor=LogisticRegression(),
+                action_type="discrete",
+            )
 
         # initialize dataset class
         >>> dataset = SyntheticDataset(
@@ -64,48 +71,48 @@ class SyntheticDataset(BaseDataset):
         >>> logged_dataset = dataset.obtain_trajectories(n_episodes=100)
         >>> logged_dataset
         {'size': 2400,
-         'n_episodes': 100,
-         'step_per_episode': 24,
-         'action_type': 'discrete',
-         'action_dim': 10,
-         'action_meaning': array([ 0.1       ,  0.16681005,  0.27825594,  0.46415888,  0.77426368,
+        'n_episodes': 100,
+        'step_per_episode': 24,
+        'action_type': 'discrete',
+        'action_dim': 10,
+        'action_meaning': array([ 0.1       ,  0.16681005,  0.27825594,  0.46415888,  0.77426368,
                 1.29154967,  2.15443469,  3.59381366,  5.9948425 , 10.        ]),
-         'state_keys': ['timestep',
-          'remaining budget',
-          'budget consumption rate',
-          'cost per mille of impression',
-          'winning rate',
-          'reward',
-          'adjust rate'],
-         'state': array([[0.00000000e+00, 1.00000000e+04, 0.00000000e+00, ...,
-                0.00000000e+00, 0.00000000e+00, 0.00000000e+00],
-                [1.00000000e+00, 9.71300000e+03, 2.87000000e-02, ...,
-                4.54545455e-01, 1.00000000e+00, 4.64158883e-01],
-                [2.00000000e+00, 8.72000000e+03, 1.02234119e-01, ...,
-                1.00000000e+00, 5.00000000e+00, 5.99484250e+00],
-                ...,
-                [2.10000000e+01, 7.10000000e+01, 0.00000000e+00, ...,
+        'state_keys': ['timestep',
+        'remaining budget',
+        'budget consumption rate',
+        'cost per mille of impression',
+        'winning rate',
+        'reward',
+        'adjust rate'],
+        'state': array([[0.00000000e+00, 1.00000000e+04, 2.15246222e-01, ...,
+                1.88961951e-01, 2.00000000e+00, 2.98123434e-01],
+                [1.00000000e+00, 9.00300000e+03, 9.97000000e-02, ...,
+                9.07079646e-01, 0.00000000e+00, 1.29154967e+00],
+                [2.00000000e+00, 9.00300000e+03, 0.00000000e+00, ...,
                 0.00000000e+00, 0.00000000e+00, 1.00000000e-01],
-                [2.20000000e+01, 7.10000000e+01, 0.00000000e+00, ...,
-                8.33333333e-02, 0.00000000e+00, 2.78255940e-01],
-                [2.30000000e+01, 7.10000000e+01, 0.00000000e+00, ...,
-                0.00000000e+00, 0.00000000e+00, 2.15443469e+00]]),
-         'action': array([3., 8., 8., ..., 2., 6., 0.]),
-         'reward': array([1., 5., 4., ..., 0., 0., 0.]),
-         'done': array([0., 0., 0., ..., 0., 0., 1.]),
-         'info': {'impression': array([10., 24., 31., ...,  2.,  0.,  0.]),
-          'click': array([ 4., 10., 12., ...,  0.,  0.,  0.]),
-          'conversion': array([1., 5., 4., ..., 0., 0., 0.]),
-          'average bid price': array([ 81.72727273, 839.16666667, 964.19354839, ...,  32.79166667,
-                347.97058824,  13.22580645])},
-         'pscore': array([0.1, 0.1, 0.1, ..., 0.1, 0.1, 0.1])}
+                ...,
+                [2.10000000e+01, 3.00000000e+00, 0.00000000e+00, ...,
+                1.32158590e-02, 0.00000000e+00, 4.64158883e-01],
+                [2.20000000e+01, 3.00000000e+00, 0.00000000e+00, ...,
+                8.46560847e-02, 0.00000000e+00, 5.99484250e+00],
+                [2.30000000e+01, 3.00000000e+00, 0.00000000e+00, ...,
+                0.00000000e+00, 0.00000000e+00, 5.99484250e+00]]),
+        'action': array([5., 0., 9., ..., 8., 8., 5.]),
+        'reward': array([0., 0., 6., ..., 0., 0., 0.]),
+        'done': array([0., 0., 0., ..., 0., 0., 1.]),
+        'info': {'impression': array([205.,   0., 226., ...,  16.,   0.,  15.]),
+        'click': array([20.,  0., 20., ...,  0.,  0.,  0.]),
+        'conversion': array([0., 0., 6., ..., 0., 0., 0.]),
+        'average bid price': array([ 68.64159292,   4.93777778, 487.30088496, ..., 348.17460317,
+                302.79534884,  58.60294118])},
+        'pscore': array([0.1, 0.1, 0.1, ..., 0.1, 0.1, 0.1])}
 
         # on-policy policy value of behavior policy
         >>> on_policy_policy_value = dataset.calc_on_policy_policy_value(
                 n_episodes=10000
             )
         >>> on_policy_policy_value
-        44.9
+        48.7
 
     """
 
@@ -125,9 +132,6 @@ class SyntheticDataset(BaseDataset):
         if self.random_state is None:
             raise ValueError("random_state must be given")
         self.random_ = check_random_state(self.random_state)
-
-        if self.env.use_reward_predictor:
-            self.env.fit_reward_predictor(self.n_samples_pretrain_reward_predictor)
 
     def obtain_trajectories(self, n_episodes: int = 10000) -> LoggedDataset:
         """Rollout behavior policy and obtain trajectories.

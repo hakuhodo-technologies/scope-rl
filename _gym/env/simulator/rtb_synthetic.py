@@ -228,7 +228,7 @@ class RTBSyntheticSimulator(BaseSimulator):
             IDs of the users who receives the winning ads.
 
         """
-        if not (isinstance(volume, int) and 0 <= volume):
+        if not (isinstance(volume, (int, np.integer)) and volume >= 0):
             raise ValueError(
                 f"volume must be a non-negative interger, but {volume} is given"
             )

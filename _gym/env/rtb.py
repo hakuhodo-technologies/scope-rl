@@ -210,6 +210,9 @@ class RTBEnv(gym.Env):
 
         self.objective = objective
 
+        if trend_interval is None:
+            trend_interval = step_per_episode
+
         # initialize simulator and bidder
         self.simulator = RTBSyntheticSimulator(
             n_ads=n_ads,
@@ -249,6 +252,7 @@ class RTBEnv(gym.Env):
         ]
 
         # define action space (adjust rate range)
+        self.action_type = "continuous"
         self.action_space = Box(low=0.0, high=np.inf, shape=(1,), dtype=float)
 
         # define reward range

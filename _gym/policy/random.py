@@ -1,6 +1,7 @@
 from typing import Tuple, Union
 
 import gym
+from gym.spaces import Discrete
 import numpy as np
 
 from .base import BasePolicy
