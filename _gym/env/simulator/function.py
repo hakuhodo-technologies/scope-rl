@@ -171,7 +171,7 @@ class CTR:
                 + 1
             )
 
-        start_idx = np.random.randint(5, 15)
+        start_idx = self.random_.randint(5, 15)
         self.time_coef = time_coef[start_idx : start_idx + self.trend_interval] / n_wave
 
     def calc_prob(
@@ -326,7 +326,7 @@ class CVR:
                 + 1
             )
 
-        start_idx = np.random.randint(5, 15)
+        start_idx = self.random_.randint(5, 15)
         self.time_coef = time_coef[start_idx : start_idx + self.trend_interval] / n_wave
 
     def calc_prob(
