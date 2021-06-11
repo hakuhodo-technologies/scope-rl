@@ -221,6 +221,7 @@ class Bidder:
                 "reward_predictor must be BaseEstimator or a child class of BaseEstimator"
             )
         self.reward_predictor = reward_predictor
+        self.use_reward_predictor = True
 
     def fit_reward_predictor(
         self, step_per_episode: int, n_samples: int = 100000

@@ -28,10 +28,6 @@ class SyntheticDataset(BaseDataset):
     behavior_policy: BasePolicy
         RL policy for data collection.
 
-    n_samples_pretrain_reward_predictor: int, default=10000
-        Numbers of samples used to pretrain reward predictor.
-        Note that pretrain only takes place when env uses reward predictor.
-
     random_state: int, default=12345
         Random state.
 
@@ -118,17 +114,9 @@ class SyntheticDataset(BaseDataset):
 
     env: gym.Env
     behavior_policy: BasePolicy
-    n_samples_pretrain_reward_predictor: int = 10000
     random_state: int = 12345
 
     def __post_init__(self):
-        if not (
-            isinstance(self.n_samples_pretrain_reward_predictor, int)
-            and self.n_samples_pretrain_reward_predictor > 0
-        ):
-            raise ValueError(
-                f"n_samples_pretrain_reward_predictor must be an positive integer, but {self.n_samples_pretrain_reward_predictor} is given"
-            )
         if self.random_state is None:
             raise ValueError("random_state must be given")
         self.random_ = check_random_state(self.random_state)

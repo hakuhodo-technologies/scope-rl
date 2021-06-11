@@ -103,7 +103,7 @@ class CustomizedRTBEnv(gym.Env):
     .. codeblock:: python
 
         # import necessary module from _gym
-        from _gym.env import RTBEnv
+        from _gym.env import RTBEnv, CustomizedRTBEnv
         from _gym.policy import RandomPolicy
 
         # import from other libraries

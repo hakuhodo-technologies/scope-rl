@@ -424,7 +424,7 @@ class RTBEnv(gym.Env):
         # initialize obs
         random_variable_ = self.random_.uniform(size=3)
         reward_ = self.random_.randint(3)
-        adjust_rate_ = self.action_space.sample()
+        adjust_rate_ = self.action_space.sample()[0]
         obs = {
             "timestep": self.t,
             "remaining budget": self.remaining_budget,
