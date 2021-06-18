@@ -323,6 +323,14 @@ invalid_input_of_ctr_cvr_functions = [
     (
         1,
         1,
+        np.array([1.5, 0]),
+        np.array([[1.1, 2.2], [3.3, 4.4]]),
+        ValueError,
+        "timestep must be an non-negative integer",
+    ),
+    (
+        1,
+        1,
         0,
         np.array([1.1, 2.2]),
         ValueError,
@@ -394,6 +402,7 @@ valid_input_of_ctr_cvr_functions = [
     (1, 1, 2, 0, np.array([[1.1, 2.2], [3.3, 4.4]])),
     (1, 1, 2, 3, np.array([[1.1, 2.2], [3.3, 4.4]])),
     (1, 1, 2, np.array([0, 3]), np.array([[1.1, 2.2], [3.3, 4.4]])),
+    (1, 1, 2, 0, np.array([[-1.1, -2.2], [3.3, 4.4]])),
 ]
 
 
