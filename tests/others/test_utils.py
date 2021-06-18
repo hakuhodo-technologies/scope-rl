@@ -99,7 +99,7 @@ valid_input_of_init = [
     "mean, std",
     valid_input_of_init,
 )
-def test_init_success_case(mean, std):
+def test_init_using_valid_input(mean, std):
     NormalDistribution(mean, std)
 
 
