@@ -2,89 +2,129 @@ import pytest
 
 import numpy as np
 
-from _gym.simulator.function import WinningFunction, CTR, CVR
+from _gym.env.simulator.function import WinningFunction, CTR, CVR
 
 
-# fix
 @pytest.mark.parametrize("random_state", [(-1), (1.5), ("1")])
-def test_init_random_state_failure_case(random_state):
+def test_winning_function_init_using_invalid_input(random_state):
     with pytest.raises(ValueError):
         WinningFunction(random_state=random_state)
 
-    with pytest.raises(ValueError):
-        CTR(
-            ad_feature_dim=1,
-            user_feature_dim=1,
-            trend_interval=1,
-            random_state=random_state,
-        )
+
+# ks, thetas, bid_prices, err, description
+invalid_input_of_winning_function_sample_outcome = [
+    (
+        np.array([]),
+        np.array([]),
+        np.array([]),
+        ValueError,
+        "ks must be an 1-dimensional NDArray",
+    ),
+    (
+        np.array([[1], [2]]),
+        np.array([[1], [2]]),
+        np.array([[1], [2]]),
+        ValueError,
+        "ks must be an 1-dimensional NDArray",
+    ),
+    (
+        np.array([-1, 2]),
+        np.array([1, 2]),
+        np.array([1, 2]),
+        ValueError,
+        "ks must be an 1-dimensional NDArray of positive",
+    ),
+    (
+        np.array([0, 2]),
+        np.array([1, 2]),
+        np.array([1, 2]),
+        ValueError,
+        "ks must be an 1-dimensional NDArray of positive",
+    ),
+    (
+        np.array([1, 2]),
+        np.array([-1, 2]),
+        np.array([1, 2]),
+        ValueError,
+        "thetas must be an 1-dimensional NDArray of positive",
+    ),
+    (
+        np.array([1, 2]),
+        np.array([0, 2]),
+        np.array([1, 2]),
+        ValueError,
+        "thetas must be an 1-dimensional NDArray of positive",
+    ),
+    (
+        np.array([1, 2]),
+        np.array([1, 2]),
+        np.array([-1, 2]),
+        ValueError,
+        "bid_prices must be an 1-dimensional NDArray of non-negative",
+    ),
+    (
+        np.array([1, 2]),
+        np.array([1, 2]),
+        np.array([1]),
+        ValueError,
+        "ks, thetas, and bid_prices must have same length",
+    ),
+    (
+        np.array([1, 2]),
+        np.array([1]),
+        np.array([1, 2]),
+        ValueError,
+        "ks, thetas, and bid_prices must have same length",
+    ),
+    (
+        np.array([1]),
+        np.array([1, 2]),
+        np.array([1, 2]),
+        ValueError,
+        "ks, thetas, and bid_prices must have same length",
+    ),
+]
 
 
 @pytest.mark.parametrize(
-    "ad_feature_dim, user_feature_dim, trend_interval",
-    [
-        (-1, 1, 1),
-        (0, 1, 1),
-        (1.5, 1, 1),
-        ("1", 1, 1),
-        (1, -1, 1),
-        (1, 0, 1),
-        (1.5, 1, 1),
-        ("1", 1, 1),
-        (1, 1, -1),
-        (1, 1, 0),
-        (1, 1, 1.5),
-        (1, 1, "1"),
-    ],
+    "ks, thetas, bid_prices, err, description",
+    invalid_input_of_winning_function_sample_outcome,
 )
-def test_ctr_init_failure_case(ad_feature_dim, user_feature_dim, trend_interval):
-    with pytest.raises(ValueError):
-        CTR(
-            ad_feature_dim=ad_feature_dim,
-            user_feature_dim=user_feature_dim,
-            trend_interval=trend_interval,
-        )
-
-
-@pytest.mark.parametrize(
-    "ks, thetas, bid_prices",
-    [
-        (np.array([]), np.array([]), np.array([])),
-        (np.array([1, 2]), np.array([1, 2]), np.array([1])),
-        (np.array([1, 2]), np.array([1]), np.array([1, 2])),
-        (np.array([1]), np.array([1, 2]), np.array([1, 2])),
-        (np.array([-1, 2]), np.array([1, 2]), np.array([1, 2])),
-        (np.array([0, 2]), np.array([1, 2]), np.array([1, 2])),
-        (np.array([1, 2]), np.array([-1, 2]), np.array([1, 2])),
-        (np.array([-1, 2]), np.array([0, 2]), np.array([1, 2])),
-        (np.array([1, 2]), np.array([1, 2]), np.array([-1, 2])),
-        (np.array([[1], [2]]), np.array([[1], [2]]), np.array([[1], [2]])),
-    ],
-)
-def test_wf_sample_outcome_failure_case(ks, thetas, bid_prices):
+def test_winning_price_sample_outcome_using_invalid_input(
+    ks,
+    thetas,
+    bid_prices,
+    err,
+    description,
+):
     winning_function = WinningFunction()
-
-    with pytest.raises(ValueError):
+    with pytest.raises(err, match=f"{description}*"):
         winning_function.sample_outcome(ks, thetas, bid_prices)
 
 
+# ks, thetas, bid_prices
+valid_input_of_winning_function_sample_outcome = [
+    (np.array([1, 2]), np.array([1, 2]), np.array([1, 2])),
+    (np.array([0.5, 2]), np.array([1, 2]), np.array([1, 2])),
+    (np.array([1, 2]), np.array([0.5, 2]), np.array([1, 2])),
+    (np.array([1, 2]), np.array([1, 2]), np.array([1, 1.1])),
+    (np.array([1]), np.array([1]), np.array([1])),
+]
+
+
 @pytest.mark.parametrize(
     "ks, thetas, bid_prices",
-    [
-        (np.array([1, 2]), np.array([1, 2]), np.array([1, 2])),
-        (np.array([0.5, 2]), np.array([1, 2]), np.array([1, 2])),
-        (np.array([1, 2]), np.array([0.5, 2]), np.array([1, 2])),
-        (np.array([1, 2]), np.array([1, 2]), np.array([1, 1.1])),
-        (np.array([1]), np.array([1]), np.array([1])),
-    ],
+    valid_input_of_winning_function_sample_outcome,
 )
-def test_wf_sample_outcome_success_case(ks, thetas, bid_prices):
+def test_winning_price_sample_outcome_using_valid_input(
+    ks,
+    thetas,
+    bid_prices,
+):
     winning_function = WinningFunction()
-
     impressions, winning_prices = winning_function.sample_outcome(
         ks, thetas, bid_prices
     )
-
     assert np.array_equal(impressions, impressions.astype(bool).astype(int))
     assert np.array_equal(impressions, winning_prices < bid_prices.astype(int))
     assert np.allclose(np.mod(impressions, 1), 0)
@@ -92,56 +132,292 @@ def test_wf_sample_outcome_success_case(ks, thetas, bid_prices):
     assert bid_prices.shape == impressions.shape == winning_prices.shape
 
 
+# ad_feature_dim, user_feature_dim, trend_interval, random_state, err, description
+invalid_input_of_ctr_cvr_init = [
+    (
+        -1,
+        1,
+        1,
+        1,
+        ValueError,
+        "ad_feature_dim must be a positive",
+    ),
+    (
+        0,
+        1,
+        1,
+        1,
+        ValueError,
+        "ad_feature_dim must be a positive",
+    ),
+    (
+        1.5,
+        1,
+        1,
+        1,
+        ValueError,
+        "ad_feature_dim must be a positive interger",
+    ),
+    (
+        "1",
+        1,
+        1,
+        1,
+        ValueError,
+        "ad_feature_dim must be a positive interger",
+    ),
+    (
+        1,
+        -1,
+        1,
+        1,
+        ValueError,
+        "user_feature_dim must be a positive",
+    ),
+    (
+        1,
+        0,
+        1,
+        1,
+        ValueError,
+        "user_feature_dim must be a positive",
+    ),
+    (
+        1,
+        1.5,
+        1,
+        1,
+        ValueError,
+        "user_feature_dim must be a positive interger",
+    ),
+    (
+        1,
+        "1",
+        1,
+        1,
+        ValueError,
+        "user_feature_dim must be a positive interger",
+    ),
+    (
+        1,
+        1,
+        -1,
+        1,
+        ValueError,
+        "trend_interval must be a positive",
+    ),
+    (
+        1,
+        1,
+        0,
+        1,
+        ValueError,
+        "trend_interval must be a positive",
+    ),
+    (
+        1,
+        1,
+        1.5,
+        1,
+        ValueError,
+        "trend_interval must be a positive interger",
+    ),
+    (
+        1,
+        1,
+        "1",
+        1,
+        ValueError,
+        "trend_interval must be a positive interger",
+    ),
+    (
+        1,
+        1,
+        1,
+        -1,
+        ValueError,
+        "",
+    ),
+    (
+        1,
+        1,
+        1,
+        1.5,
+        ValueError,
+        "",
+    ),
+    (
+        1,
+        1,
+        1,
+        "1",
+        ValueError,
+        "",
+    ),
+]
+
+
 @pytest.mark.parametrize(
-    "timestep, contexts",
-    [
-        (-1, np.array([[1.1, 2.2], [3.3, 4.4]])),
-        ("0", np.array([[1.1, 2.2], [3.3, 4.4]])),
-        (1.5, np.array([[1.1, 2.2], [3.3, 4.4]])),
-        (np.array([-1, 0]), np.array([1.1, 2.2])),
-        (np.array([0]), np.array([1.1, 2, 2])),
-        (0, np.array([])),
-        (0, np.array([[1.1], [2.2]])),
-        (0, np.array([[[1.1, 2.2]]])),
-    ],
+    "ad_feature_dim, user_feature_dim, trend_interval, random_state, err, description",
+    invalid_input_of_ctr_cvr_init,
 )
-def test_ctr_cvr_functions_failure_case(timestep, contexts):
+def test_ctr_cvr_init_using_invalid_input(
+    ad_feature_dim,
+    user_feature_dim,
+    trend_interval,
+    random_state,
+    err,
+    description,
+):
+    with pytest.raises(err, match=f"{description}*"):
+        CTR(
+            ad_feature_dim=ad_feature_dim,
+            user_feature_dim=user_feature_dim,
+            trend_interval=trend_interval,
+            random_state=random_state,
+        )
+
+    with pytest.raises(err, match=f"{description}*"):
+        CVR(
+            ad_feature_dim=ad_feature_dim,
+            user_feature_dim=user_feature_dim,
+            trend_interval=trend_interval,
+            random_state=random_state,
+        )
+
+
+# ad_feature_dim, user_feature_dim, timestep, contexts, err, description
+invalid_input_of_ctr_cvr_functions = [
+    (
+        1,
+        1,
+        -1,
+        np.array([[1.1, 2.2], [3.3, 4.4]]),
+        ValueError,
+        "timestep must be an non-negative",
+    ),
+    (
+        1,
+        1,
+        1.5,
+        np.array([[1.1, 2.2], [3.3, 4.4]]),
+        ValueError,
+        "timestep must be an non-negative integer",
+    ),
+    (
+        1,
+        1,
+        "0",
+        np.array([[1.1, 2.2], [3.3, 4.4]]),
+        ValueError,
+        "timestep must be an non-negative integer",
+    ),
+    (
+        1,
+        1,
+        np.array([-1, 0]),
+        np.array([[1.1, 2.2], [3.3, 4.4]]),
+        ValueError,
+        "timestep must be an non-negative",
+    ),
+    (
+        1,
+        1,
+        0,
+        np.array([1.1, 2.2]),
+        ValueError,
+        "contexts must be 2-dimensional",
+    ),
+    (
+        0,
+        np.array([]),
+        ValueError,
+        "contexts must be 2-dimensional",
+    ),
+    (
+        1,
+        1,
+        0,
+        np.array([[1.1], [2.2]]),
+        ValueError,
+        "contexts must be 2-dimensional",
+    ),
+    (1, 1, 0, np.array([[[1.1, 2.2]]]), ValueError, "contexts must be 2-dimensional"),
+    (
+        1,
+        1,
+        np.array([0]),
+        np.array([[1.1, 2.2], [3.3, 4.4]]),
+        ValueError,
+        "timestep and contexts must have same length",
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    "ad_feature_dim, user_feature_dim, timestep, contexts, err, description",
+    invalid_input_of_ctr_cvr_functions,
+)
+def test_ctr_csv_functions_using_invalid_input(
+    ad_feature_dim,
+    user_feature_dim,
+    timestep,
+    contexts,
+    err,
+    description,
+):
     ctr = CTR(
-        ad_feature_dim=1,
-        user_feature_dim=1,
+        ad_feature_dim=ad_feature_dim,
+        user_feature_dim=user_feature_dim,
         trend_interval=2,
     )
-    cvr = CVR(ctr)
-
-    with pytest.raises(ValueError):
+    cvr = CVR(
+        ad_feature_dim=ad_feature_dim,
+        user_feature_dim=user_feature_dim,
+        trend_interval=2,
+    )
+    with pytest.raises(err, match=f"{description}*"):
         ctr.calc_prob(timestep, contexts)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(err, match=f"{description}*"):
         ctr.sample_outcome(timestep, contexts)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(err, match=f"{description}*"):
         cvr.calc_prob(timestep, contexts)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(err, match=f"{description}*"):
         cvr.sample_outcome(timestep, contexts)
 
 
-@pytest.mark.parametrize(
-    "timestep, contexts",
-    [
-        (0, np.array([[1.1, 2.2], [3.3, 4.4]])),
-        (3, np.array([[1.1, 2.2], [3.3, 4.4]])),
-        (np.array([0, 1]), np.array([[1.1, 2.2], [3.3, 4.4]])),
-    ],
-)
-def test_ctr_cvr_function_success_case(timestep, contexts):
-    ctr = CTR(
-        ad_feature_dim=1,
-        user_feature_dim=1,
-        trend_interval=2,
-    )
-    cvr = CVR(ctr)
+# ad_feature_dim, user_feature_dim, trend_interval, timestep, contexts
+valid_input_of_ctr_cvr_functions = [
+    (1, 1, 2, 0, np.array([[1.1, 2.2], [3.3, 4.4]])),
+    (1, 1, 2, 3, np.array([[1.1, 2.2], [3.3, 4.4]])),
+    (1, 1, 2, np.array([0, 3]), np.array([[1.1, 2.2], [3.3, 4.4]])),
+]
 
+
+@pytest.mark.parametrize(
+    "ad_feature_dim, user_feature_dim, trend_interval, timestep, contexts",
+    valid_input_of_ctr_cvr_functions,
+)
+def test_ctr_csv_functions_using_valid_input(
+    ad_feature_dim,
+    user_feature_dim,
+    trend_interval,
+    timestep,
+    contexts,
+):
+    ctr = CTR(
+        ad_feature_dim=ad_feature_dim,
+        user_feature_dim=user_feature_dim,
+        trend_interval=trend_interval,
+    )
+    cvr = CVR(
+        ad_feature_dim=ad_feature_dim,
+        user_feature_dim=user_feature_dim,
+        trend_interval=trend_interval,
+    )
     ctrs = ctr.calc_prob(timestep, contexts)
     clicks = ctr.sample_outcome(timestep, contexts)
     cvrs = cvr.calc_prob(timestep, contexts)

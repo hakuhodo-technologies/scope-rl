@@ -63,27 +63,9 @@ invalid_input_of_init = [
         ValueError,
         "mean and std must have the same length",
     ),
-    (
-        1,
-        1,
-        -1,
-        ValueError,
-        ""
-    ),
-    (
-        1,
-        1,
-        1.5,
-        ValueError,
-        ""
-    ),
-    (
-        1,
-        1,
-        "1",
-        ValueError,
-        ""
-    ),
+    (1, 1, -1, ValueError, ""),
+    (1, 1, 1.5, ValueError, ""),
+    (1, 1, "1", ValueError, ""),
 ]
 
 
