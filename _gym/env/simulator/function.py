@@ -216,7 +216,7 @@ class CTR:
             and contexts.shape[1] == self.ad_feature_dim + self.user_feature_dim
         ):
             raise ValueError(
-                "contexts must have (ad_feature_dim + user_feature_dim) columns"
+                "contexts must be 2-dimensional NDArray with (ad_feature_dim + user_feature_dim) columns"
             )
         if not isinstance(timestep, int) and len(timestep) != len(contexts):
             raise ValueError("timestep and contexts must have same length")
@@ -371,7 +371,7 @@ class CVR:
             and contexts.shape[1] == self.ad_feature_dim + self.user_feature_dim
         ):
             raise ValueError(
-                "contexts must have (ad_feature_dim + user_feature_dim) columns"
+                "contexts must be 2-dimensional NDArray with (ad_feature_dim + user_feature_dim) columns"
             )
         if not isinstance(timestep, int) and len(timestep) != len(contexts):
             raise ValueError("timestep and contexts must have same length")

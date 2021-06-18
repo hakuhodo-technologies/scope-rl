@@ -124,6 +124,10 @@ class RTBSyntheticSimulator(BaseSimulator):
             raise ValueError(
                 "standard_bid_price_distribution must be a NormalDistribution"
             )
+        if not isinstance(self.standard_bid_price_distribution.mean, (int, float)):
+            raise ValueError(
+                "standard_bid_price_distribution must have a single parameter for mean and std"
+            )
         if self.minimum_standard_bid_price is not None and not (
             isinstance(self.minimum_standard_bid_price, (int, float))
             and 0
@@ -228,9 +232,9 @@ class RTBSyntheticSimulator(BaseSimulator):
             IDs of the users who receives the winning ads.
 
         """
-        if not (isinstance(volume, (int, np.integer)) and volume >= 0):
+        if not (isinstance(volume, (int, np.integer)) and volume > 0):
             raise ValueError(
-                f"volume must be a non-negative interger, but {volume} is given"
+                f"volume must be a positive interger, but {volume} is given"
             )
         ad_ids = self.random_.choice(
             self.ad_ids,
@@ -348,9 +352,7 @@ class RTBSyntheticSimulator(BaseSimulator):
                 "bid_prices must be 1-dimensional NDArray with non-negative integers"
             )
         if not (len(ad_ids) == len(user_ids) == len(bid_prices)):
-            raise ValueError(
-                "ad_ids, user_ids, contexts, and bid_prices must have same length"
-            )
+            raise ValueError("ad_ids, user_ids, and bid_prices must have same length")
 
         contexts = self.map_idx_to_contexts(ad_ids, user_ids)
         ks, thetas = self.wf_ks[ad_ids], self.wf_thetas[ad_ids]

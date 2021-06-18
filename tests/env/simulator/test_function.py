@@ -8,21 +8,21 @@ from _gym.env.simulator.function import WinningFunction, CTR, CVR
 # ks, thetas, bid_prices, err, description
 invalid_input_of_winning_function_sample_outcome = [
     (
-        np.array([[1], [2]]),
+        np.array([[1], [2]]),  #
         np.array([[1], [2]]),
         np.array([[1], [2]]),
         ValueError,
         "ks must be an 1-dimensional NDArray",
     ),
     (
-        np.array([-1, 2]),
+        np.array([-1, 2]),  #
         np.array([1, 2]),
         np.array([1, 2]),
         ValueError,
         "ks must be an 1-dimensional NDArray of positive",
     ),
     (
-        np.array([0, 2]),
+        np.array([0, 2]),  #
         np.array([1, 2]),
         np.array([1, 2]),
         ValueError,
@@ -30,14 +30,14 @@ invalid_input_of_winning_function_sample_outcome = [
     ),
     (
         np.array([1, 2]),
-        np.array([-1, 2]),
+        np.array([-1, 2]),  #
         np.array([1, 2]),
         ValueError,
         "thetas must be an 1-dimensional NDArray of positive",
     ),
     (
         np.array([1, 2]),
-        np.array([0, 2]),
+        np.array([0, 2]),  #
         np.array([1, 2]),
         ValueError,
         "thetas must be an 1-dimensional NDArray of positive",
@@ -45,26 +45,26 @@ invalid_input_of_winning_function_sample_outcome = [
     (
         np.array([1, 2]),
         np.array([1, 2]),
-        np.array([-1, 2]),
+        np.array([-1, 2]),  #
         ValueError,
         "bid_prices must be an 1-dimensional NDArray of non-negative",
     ),
     (
         np.array([1, 2]),
         np.array([1, 2]),
-        np.array([1]),
+        np.array([1]),  #
         ValueError,
         "ks, thetas, and bid_prices must have same length",
     ),
     (
         np.array([1, 2]),
-        np.array([1]),
+        np.array([1]),  #
         np.array([1, 2]),
         ValueError,
         "ks, thetas, and bid_prices must have same length",
     ),
     (
-        np.array([1]),
+        np.array([1]),  #
         np.array([1, 2]),
         np.array([1, 2]),
         ValueError,
@@ -122,28 +122,28 @@ def test_winning_price_sample_outcome_using_valid_input(
 # ad_feature_dim, user_feature_dim, trend_interval, err, description
 invalid_input_of_ctr_cvr_init = [
     (
-        -1,
+        -1,  #
         1,
         1,
         ValueError,
         "ad_feature_dim must be a positive",
     ),
     (
-        0,
+        0,  #
         1,
         1,
         ValueError,
         "ad_feature_dim must be a positive",
     ),
     (
-        1.5,
+        1.5,  #
         1,
         1,
         ValueError,
         "ad_feature_dim must be a positive interger",
     ),
     (
-        "1",
+        "1",  #
         1,
         1,
         ValueError,
@@ -151,28 +151,28 @@ invalid_input_of_ctr_cvr_init = [
     ),
     (
         1,
-        -1,
+        -1,  #
         1,
         ValueError,
         "user_feature_dim must be a positive",
     ),
     (
         1,
-        0,
+        0,  #
         1,
         ValueError,
         "user_feature_dim must be a positive",
     ),
     (
         1,
-        1.5,
+        1.5,  #
         1,
         ValueError,
         "user_feature_dim must be a positive interger",
     ),
     (
         1,
-        "1",
+        "1",  #
         1,
         ValueError,
         "user_feature_dim must be a positive interger",
@@ -180,28 +180,28 @@ invalid_input_of_ctr_cvr_init = [
     (
         1,
         1,
-        -1,
+        -1,  #
         ValueError,
         "trend_interval must be a positive",
     ),
     (
         1,
         1,
-        0,
+        0,  #
         ValueError,
         "trend_interval must be a positive",
     ),
     (
         1,
         1,
-        1.5,
+        1.5,  #
         ValueError,
         "trend_interval must be a positive interger",
     ),
     (
         1,
         1,
-        "1",
+        "1",  #
         ValueError,
         "trend_interval must be a positive interger",
     ),
@@ -239,7 +239,7 @@ invalid_input_of_ctr_cvr_functions = [
     (
         1,
         1,
-        -1,
+        -1,  #
         np.array([[1.1, 2.2], [3.3, 4.4]]),
         ValueError,
         "timestep must be an non-negative",
@@ -247,7 +247,7 @@ invalid_input_of_ctr_cvr_functions = [
     (
         1,
         1,
-        1.5,
+        1.5,  #
         np.array([[1.1, 2.2], [3.3, 4.4]]),
         ValueError,
         "timestep must be an non-negative integer",
@@ -255,7 +255,7 @@ invalid_input_of_ctr_cvr_functions = [
     (
         1,
         1,
-        "0",
+        "0",  #
         np.array([[1.1, 2.2], [3.3, 4.4]]),
         ValueError,
         "timestep must be an non-negative integer",
@@ -263,7 +263,7 @@ invalid_input_of_ctr_cvr_functions = [
     (
         1,
         1,
-        np.array([-1, 0]),
+        np.array([-1, 0]),  #
         np.array([[1.1, 2.2], [3.3, 4.4]]),
         ValueError,
         "timestep must be an non-negative",
@@ -271,7 +271,7 @@ invalid_input_of_ctr_cvr_functions = [
     (
         1,
         1,
-        np.array([1.5, 0]),
+        np.array([1.5, 0]),  #
         np.array([[1.1, 2.2], [3.3, 4.4]]),
         IndexError,
         "arrays used as indices must be of integer",
@@ -279,7 +279,7 @@ invalid_input_of_ctr_cvr_functions = [
     (
         1,
         1,
-        0,
+        0,  #
         np.array([1.1, 2.2]),
         ValueError,
         "contexts must be 2-dimensional",
@@ -288,7 +288,7 @@ invalid_input_of_ctr_cvr_functions = [
         1,
         1,
         0,
-        np.array([]),
+        np.array([]),  #
         ValueError,
         "contexts must be 2-dimensional",
     ),
@@ -296,16 +296,23 @@ invalid_input_of_ctr_cvr_functions = [
         1,
         1,
         0,
-        np.array([[1.1], [2.2]]),
+        np.array([[1.1], [2.2]]),  #
         ValueError,
         "contexts must be 2-dimensional",
     ),
-    (1, 1, 0, np.array([[[1.1, 2.2]]]), ValueError, "contexts must be 2-dimensional"),
     (
         1,
         1,
-        np.array([0]),
-        np.array([[1.1, 2.2], [3.3, 4.4]]),
+        0,  #
+        np.array([[[1.1, 2.2]]]),
+        ValueError,
+        "contexts must be 2-dimensional",
+    ),
+    (
+        1,
+        1,
+        np.array([0]),  #
+        np.array([[1.1, 2.2], [3.3, 4.4]]),  #
         ValueError,
         "timestep and contexts must have same length",
     ),
