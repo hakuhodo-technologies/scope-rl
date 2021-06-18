@@ -5,11 +5,10 @@ import numpy as np
 from _gym.utils import NormalDistribution
 
 
-# mean, std, random_state, err, description
+# mean, std, err, description
 invalid_input_of_init = [
     (
         "1",
-        1,
         1,
         ValueError,
         "mean must be a float number or",
@@ -17,65 +16,55 @@ invalid_input_of_init = [
     (
         np.array([[1], [2]]),
         np.array([[1], [2]]),
-        1,
         ValueError,
         "mean must be a float number or an 1-dimensional",
     ),
     (
         1,
         "1",
-        1,
         ValueError,
         "std must be a non-negative float number or",
     ),
     (
         1,
         -1,
-        1,
         ValueError,
         "std must be a non-negative float number or",
     ),
     (
         np.array([1, 2]),
         np.array([-1, 1]),
-        1,
         ValueError,
         "std must be a non-negative float number or",
     ),
     (
         np.array([1]),
         1,
-        1,
         ValueError,
         "mean and std must have the same length",
     ),
     (
         1,
         np.array([1]),
-        1,
         ValueError,
         "mean and std must have the same length",
     ),
     (
         np.array([1, 2]),
         np.array([1]),
-        1,
         ValueError,
         "mean and std must have the same length",
     ),
-    (1, 1, -1, ValueError, ""),
-    (1, 1, 1.5, ValueError, ""),
-    (1, 1, "1", ValueError, ""),
 ]
 
 
 @pytest.mark.parametrize(
-    "mean, std, random_state, err, description",
+    "mean, std, err, description",
     invalid_input_of_init,
 )
-def test_init_using_invalid_input(mean, std, random_state, err, description):
+def test_init_using_invalid_input(mean, std, err, description):
     with pytest.raises(err, match=f"{description}*"):
-        NormalDistribution(mean, std, random_state)
+        NormalDistribution(mean, std)
 
 
 # mean, std
