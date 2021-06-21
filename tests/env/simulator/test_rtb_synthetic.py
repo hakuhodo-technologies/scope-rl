@@ -557,7 +557,7 @@ valid_input_of_init = [
     "n_ads, n_users, ad_feature_dim, user_feature_dim, ad_sampling_rate, user_sampling_rate, standard_bid_price_distribution, minimum_standard_bid_price, trend_interval",
     valid_input_of_init,
 )
-def test_init_using_invalid_input(
+def test_init_using_valid_input(
     n_ads,
     n_users,
     ad_feature_dim,
