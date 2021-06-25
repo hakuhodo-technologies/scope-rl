@@ -127,7 +127,7 @@ class Bidder:
             )
         if not (isinstance(adjust_rate, float) and adjust_rate >= 0):
             raise ValueError(
-                f"adjust_rate must be a non-negative interger, but {adjust_rate} is given"
+                f"adjust_rate must be a non-negative float value, but {adjust_rate} is given"
             )
 
         contexts = self.simulator.map_idx_to_contexts(ad_ids, user_ids)
