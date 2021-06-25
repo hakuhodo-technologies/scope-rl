@@ -121,6 +121,11 @@ class Bidder:
             Calclated from given adjust rate and the predicted/ground-truth rewards.
 
         """
+        if self.scaler is None:
+            raise RuntimeError(
+                "scalar should be given, please call .auto_fit_scaler() or .custom_set_scaler() before calling .determine_bid_price()"
+            )
+
         if not (isinstance(timestep, int) and timestep >= 0):
             raise ValueError(
                 f"timestep must be a non-negative interger, but {timestep} is given"
@@ -131,9 +136,6 @@ class Bidder:
             )
 
         contexts = self.simulator.map_idx_to_contexts(ad_ids, user_ids)
-
-        if self.scaler is None:
-            self.auto_fit_scaler()
 
         if self.use_reward_predictor:
             predicted_rewards = self._predict_reward(timestep, contexts)

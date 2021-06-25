@@ -200,8 +200,8 @@ invalid_input_of_determine_bid_price = [
         0.5,
         np.array([0.1, 0.1]),  #
         np.arange(2, dtype=int),
-        ValueError,
-        "ad_ids must be 1-dimensional NDArray with integers",
+        IndexError,
+        "arrays used as indices must be of integer",
     ),
     (
         2,
@@ -240,8 +240,8 @@ invalid_input_of_determine_bid_price = [
         0.5,
         np.arange(2, dtype=int),
         np.array([0.1, 0.1]),  #
-        ValueError,
-        "user_ids must be 1-dimensional NDArray with integers",
+        IndexError,
+        "arrays used as indices must be of integer",
     ),
     (
         2,
@@ -295,6 +295,7 @@ def test_determine_bid_price_using_invalid_input(
 ):
     simulator = RTBSyntheticSimulator(n_ads=n_ads, n_users=n_users)
     bidder = Bidder(simulator=simulator)
+    bidder.auto_fit_scaler(step_per_episode=5)
 
     with pytest.raises(err, match=f"{description}*"):
         bidder.determine_bid_price(
@@ -305,11 +306,26 @@ def test_determine_bid_price_using_invalid_input(
         )
 
 
+def test_determine_bid_price_runtimeerror():
+    bidder = Bidder(simulator=RTBSyntheticSimulator())
+
+    with pytest.raises(RuntimeError):
+        bidder.determine_bid_price(
+            timestep=1,
+            adjust_rate=1.0,
+            ad_ids=np.arange(5),
+            user_ids=np.arange(5),
+        )
+
+
 def test_determine_bid_price_using_valid_input():
     timestep = 0
     adjust_rate = 1.0
     ad_ids = np.arange(5)
     user_ids = np.arange(5)
+
+    step_per_episode = 5
+    n_samples = 100
 
     bidder_A = Bidder(
         simulator=RTBSyntheticSimulator(),
@@ -331,6 +347,18 @@ def test_determine_bid_price_using_valid_input():
         objective="click",
         reward_predictor=None,
     )
+
+    bidder_A.fit_reward_predictor(
+        step_per_episode=step_per_episode, n_samples=n_samples
+    )
+    bidder_B.fit_reward_predictor(
+        step_per_episode=step_per_episode, n_samples=n_samples
+    )
+
+    bidder_A.auto_fit_scaler(step_per_episode=step_per_episode, n_samples=n_samples)
+    bidder_B.auto_fit_scaler(step_per_episode=step_per_episode, n_samples=n_samples)
+    bidder_C.auto_fit_scaler(step_per_episode=step_per_episode, n_samples=n_samples)
+    bidder_D.auto_fit_scaler(step_per_episode=step_per_episode, n_samples=n_samples)
 
     bid_prices_A = bidder_A.determine_bid_price(
         timestep=timestep,
@@ -374,6 +402,8 @@ def test_determine_bid_price_using_different_adjust_rate():
     adjust_rate_high = 5.0
 
     bidder = Bidder(simulator=RTBSyntheticSimulator())
+    bidder.auto_fit_scaler(step_per_episode=5)
+
     bid_prices_low = bidder.determine_bid_price(
         timestep=timestep,
         adjust_rate=adjust_rate_low,
@@ -469,23 +499,30 @@ def test_auto_fit_scaler_using_valid_input():
 
     bidder_A = Bidder(
         simulator=RTBSyntheticSimulator(),
-        objective="conversion",
+        objective="click",
         reward_predictor=LogisticRegression(),
     )
     bidder_B = Bidder(
         simulator=RTBSyntheticSimulator(),
-        objective="click",
+        objective="conversion",
         reward_predictor=LogisticRegression(),
     )
     bidder_C = Bidder(
         simulator=RTBSyntheticSimulator(),
-        objective="conversion",
+        objective="click",
         reward_predictor=None,
     )
     bidder_D = Bidder(
         simulator=RTBSyntheticSimulator(),
-        objective="click",
+        objective="conversion",
         reward_predictor=None,
+    )
+
+    bidder_A.fit_reward_predictor(
+        step_per_episode=step_per_episode, n_samples=n_samples
+    )
+    bidder_B.fit_reward_predictor(
+        step_per_episode=step_per_episode, n_samples=n_samples
     )
 
     bidder_A.auto_fit_scaler(step_per_episode=step_per_episode, n_samples=n_samples)
@@ -521,7 +558,9 @@ def test_custom_set_reward_predictor_using_valid_input():
 def test_fit_reward_predictor_using_invalid_input(
     step_per_episode, n_samples, err, description
 ):
-    bidder = Bidder(simulator=RTBSyntheticSimulator())
+    bidder = Bidder(
+        simulator=RTBSyntheticSimulator(), reward_predictor=LogisticRegression()
+    )
 
     with pytest.raises(err, match=f"{description}*"):
         bidder.fit_reward_predictor(
