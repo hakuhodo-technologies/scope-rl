@@ -85,25 +85,25 @@ def test_init_using_invalid_input(
 valid_input_of_init = [
     (
         RTBSyntheticSimulator(),
-        "click",
+        "conversion",
         LogisticRegression(),
         0.1,
     ),
     (
         RTBSyntheticSimulator(),
-        "conversion",
+        "click",
         None,
         0.1,
     ),
     (
         RTBSyntheticSimulator(),
-        "click",
+        "conversion",
         LogisticRegression(),
         1,
     ),
     (
         RTBSyntheticSimulator(),
-        "conversion",
+        "click",
         LogisticRegression(),
         None,
     ),
@@ -499,22 +499,22 @@ def test_auto_fit_scaler_using_valid_input():
 
     bidder_A = Bidder(
         simulator=RTBSyntheticSimulator(),
-        objective="click",
+        objective="conversion",
         reward_predictor=LogisticRegression(),
     )
     bidder_B = Bidder(
         simulator=RTBSyntheticSimulator(),
-        objective="conversion",
+        objective="click",
         reward_predictor=LogisticRegression(),
     )
     bidder_C = Bidder(
         simulator=RTBSyntheticSimulator(),
-        objective="click",
+        objective="conversion",
         reward_predictor=None,
     )
     bidder_D = Bidder(
         simulator=RTBSyntheticSimulator(),
-        objective="conversion",
+        objective="click",
         reward_predictor=None,
     )
 
@@ -572,19 +572,19 @@ def test_fit_reward_predictor_using_invalid_input(
 # objective, reward_predictor
 valid_input_of_fit_reward_predictor = [
     (
-        "click",
-        LogisticRegression(),
-    ),
-    (
         "conversion",
         LogisticRegression(),
     ),
     (
         "click",
+        LogisticRegression(),
+    ),
+    (
+        "conversion",
         None,
     ),
     (
-        "conversion",
+        "click",
         None,
     ),
 ]
