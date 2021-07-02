@@ -243,12 +243,12 @@ class RTBEnv(gym.Env):
         )
         self.obs_keys = [
             "timestep",
-            "remaining budget",
-            "budget consumption rate",
-            "cost per mille of impression",
-            "winning rate",
+            "remaining_budget",
+            "budget_consumption_rate",
+            "cost_per_mille_of_impression",
+            "winning_rate",
             "reward",
-            "adjust rate",
+            "adjust_rate",
         ]
 
         # define action space (adjust rate range)
@@ -367,19 +367,19 @@ class RTBEnv(gym.Env):
 
         obs = {
             "timestep": self.t,
-            "remaining budget": self.remaining_budget,
-            "budget consumption rate": (
+            "remaining_budget": self.remaining_budget,
+            "budget_consumption_rate": (
                 self.prev_remaining_budget - self.remaining_budget
             )
             / self.prev_remaining_budget
             if self.prev_remaining_budget
             else 0,
-            "cost per mille of impression": (total_cost * 1000) / total_impression
+            "cost_per_mille_of_impression": (total_cost * 1000) / total_impression
             if total_impression
             else 0,
-            "winning rate": total_impression / len(bid_prices),
+            "winning_rate": total_impression / len(bid_prices),
             "reward": reward,
-            "adjust rate": adjust_rate,
+            "adjust_rate": adjust_rate,
         }
 
         done = self.t == self.step_per_episode
@@ -389,7 +389,7 @@ class RTBEnv(gym.Env):
             "impression": total_impression,
             "click": total_click,
             "conversion": total_conversion,
-            "average bid price": np.mean(bid_prices),
+            "average_bid_price": np.mean(bid_prices),
         }
 
         # update logs
@@ -427,12 +427,12 @@ class RTBEnv(gym.Env):
         adjust_rate_ = self.action_space.sample()[0]
         obs = {
             "timestep": self.t,
-            "remaining budget": self.remaining_budget,
-            "budget consumption rate": random_variable_[0],
-            "cost per mille of impression": random_variable_[1],
-            "winning rate": random_variable_[2],
+            "remaining_budget": self.remaining_budget,
+            "budget_consumption_rate": random_variable_[0],
+            "cost_per_mille_of_impression": random_variable_[1],
+            "winning_rate": random_variable_[2],
             "reward": reward_,
-            "adjust rate": adjust_rate_,
+            "adjust_rate": adjust_rate_,
         }
         return np.array(list(obs.values())).astype(float)
 

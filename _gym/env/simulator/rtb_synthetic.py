@@ -110,7 +110,7 @@ class RTBSyntheticSimulator(BaseSimulator):
             )
         ):
             raise ValueError(
-                "user_sampling_rate must be an NDArray of non-negative float values"
+                "user_sampling_rate must be an 1-dimensional NDArray of non-negative float values"
             )
         if self.ad_sampling_rate is not None and self.n_ads != len(
             self.ad_sampling_rate

@@ -175,7 +175,7 @@ invalid_input_of_init = [
         50,
         24,
         ValueError,
-        "ad_feature_dim must be a positive",
+        "user_feature_dim must be a positive",
     ),
     (
         5,
@@ -188,7 +188,7 @@ invalid_input_of_init = [
         50,
         24,
         ValueError,
-        "ad_feature_dim must be a positive",
+        "user_feature_dim must be a positive",
     ),
     (
         5,
@@ -201,7 +201,7 @@ invalid_input_of_init = [
         50,
         24,
         ValueError,
-        "ad_feature_dim must be a positive interger",
+        "user_feature_dim must be a positive interger",
     ),
     (
         5,
@@ -214,7 +214,7 @@ invalid_input_of_init = [
         50,
         24,
         ValueError,
-        "ad_feature_dim must be a positive interger",
+        "user_feature_dim must be a positive interger",
     ),
     (
         5,

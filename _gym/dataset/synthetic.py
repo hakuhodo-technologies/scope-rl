@@ -74,12 +74,12 @@ class SyntheticDataset(BaseDataset):
         'action_meaning': array([ 0.1       ,  0.16681005,  0.27825594,  0.46415888,  0.77426368,
                 1.29154967,  2.15443469,  3.59381366,  5.9948425 , 10.        ]),
         'state_keys': ['timestep',
-        'remaining budget',
-        'budget consumption rate',
-        'cost per mille of impression',
-        'winning rate',
+        'remaining_budget',
+        'budget_consumption_rate',
+        'cost_per_mille_of_impression',
+        'winning_rate',
         'reward',
-        'adjust rate'],
+        'adjust_rate'],
         'state': array([[0.00000000e+00, 1.00000000e+04, 2.15246222e-01, ...,
                 1.88961951e-01, 2.00000000e+00, 2.98123434e-01],
                 [1.00000000e+00, 9.00300000e+03, 9.97000000e-02, ...,
@@ -99,7 +99,7 @@ class SyntheticDataset(BaseDataset):
         'info': {'impression': array([205.,   0., 226., ...,  16.,   0.,  15.]),
         'click': array([20.,  0., 20., ...,  0.,  0.,  0.]),
         'conversion': array([0., 0., 6., ..., 0., 0., 0.]),
-        'average bid price': array([ 68.64159292,   4.93777778, 487.30088496, ..., 348.17460317,
+        'average_bid_price': array([ 68.64159292,   4.93777778, 487.30088496, ..., 348.17460317,
                 302.79534884,  58.60294118])},
         'pscore': array([0.1, 0.1, 0.1, ..., 0.1, 0.1, 0.1])}
 
@@ -182,7 +182,7 @@ class SyntheticDataset(BaseDataset):
         action_probs = np.empty(n_episodes * self.env.step_per_episode)
         rewards = np.empty(n_episodes * self.env.step_per_episode)
         dones = np.empty(n_episodes * self.env.step_per_episode)
-        infos = {}
+        info = {}
 
         idx = 0
         for _ in tqdm(
@@ -195,12 +195,12 @@ class SyntheticDataset(BaseDataset):
 
             while not done:
                 action, action_prob = self.behavior_policy.act(state)  # fix later
-                next_state, reward, done, info = self.env.step(action)
+                next_state, reward, done, info_ = self.env.step(action)
 
                 if idx == 0:
-                    info_keys = info.keys()
+                    info_keys = info_.keys()
                     for key in info_keys:
-                        infos[key] = np.empty(n_episodes * self.env.step_per_episode)
+                        info[key] = np.empty(n_episodes * self.env.step_per_episode)
 
                 states[idx] = state
                 actions[idx] = action
@@ -208,8 +208,8 @@ class SyntheticDataset(BaseDataset):
                 rewards[idx] = reward
                 dones[idx] = done
 
-                for key, value in info.items():
-                    infos[key][idx] = value
+                for key, value in info_.items():
+                    info[key][idx] = value
 
                 idx += 1
                 state = next_state
@@ -230,7 +230,7 @@ class SyntheticDataset(BaseDataset):
             "action": actions,
             "reward": rewards,
             "done": dones,
-            "info": infos,
+            "info": info,
             "pscore": action_probs,
         }
         return logged_dataset
