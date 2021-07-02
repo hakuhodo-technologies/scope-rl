@@ -9,7 +9,7 @@ from _gym.utils import sigmoid
 
 
 @dataclass
-class WinningFunction:
+class WinningPriceDistribution:
     """Class to sample the winning price (i.e., second price) and compare with the given bid price.
 
     Note

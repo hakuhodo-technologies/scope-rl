@@ -2,11 +2,11 @@ import pytest
 
 import numpy as np
 
-from _gym.env.simulator.function import WinningFunction, CTR, CVR
+from _gym.env.simulator.function import WinningPriceDistribution, CTR, CVR
 
 
 # ks, thetas, bid_prices, err, description
-invalid_input_of_winning_function_sample_outcome = [
+invalid_input_of_winning_price_distribution_sample_outcome = [
     (
         np.array([[1], [2]]),  #
         np.array([[1], [2]]),
@@ -75,22 +75,22 @@ invalid_input_of_winning_function_sample_outcome = [
 
 @pytest.mark.parametrize(
     "ks, thetas, bid_prices, err, description",
-    invalid_input_of_winning_function_sample_outcome,
+    invalid_input_of_winning_price_distribution_sample_outcome,
 )
-def test_winning_price_sample_outcome_using_invalid_input(
+def test_winning_price_distribution_sample_outcome_using_invalid_input(
     ks,
     thetas,
     bid_prices,
     err,
     description,
 ):
-    winning_function = WinningFunction()
+    winning_price_distribution = WinningPriceDistribution()
     with pytest.raises(err, match=f"{description}*"):
-        winning_function.sample_outcome(ks, thetas, bid_prices)
+        winning_price_distribution.sample_outcome(ks, thetas, bid_prices)
 
 
 # ks, thetas, bid_prices
-valid_input_of_winning_function_sample_outcome = [
+valid_input_of_winning_price_distribution_sample_outcome = [
     (np.array([1, 2]), np.array([1, 2]), np.array([1, 2])),
     (np.array([0.5, 2]), np.array([1, 2]), np.array([1, 2])),
     (np.array([1, 2]), np.array([0.5, 2]), np.array([1, 2])),
@@ -101,15 +101,15 @@ valid_input_of_winning_function_sample_outcome = [
 
 @pytest.mark.parametrize(
     "ks, thetas, bid_prices",
-    valid_input_of_winning_function_sample_outcome,
+    valid_input_of_winning_price_distribution_sample_outcome,
 )
-def test_winning_price_sample_outcome_using_valid_input(
+def test_winning_price_distribution_sample_outcome_using_valid_input(
     ks,
     thetas,
     bid_prices,
 ):
-    winning_function = WinningFunction()
-    impressions, winning_prices = winning_function.sample_outcome(
+    winning_price_distribution = WinningPriceDistribution()
+    impressions, winning_prices = winning_price_distribution.sample_outcome(
         ks, thetas, bid_prices
     )
     assert np.array_equal(impressions, impressions.astype(bool).astype(int))

@@ -8,7 +8,7 @@ from sklearn.utils import check_random_state
 from _gym.utils import NormalDistribution
 
 from .base import BaseSimulator
-from .function import WinningFunction, CTR, CVR
+from .function import WinningPriceDistribution, CTR, CVR, WinningPriceDistribution
 
 
 @dataclass
@@ -180,7 +180,7 @@ class RTBSyntheticSimulator(BaseSimulator):
         )
 
         # define winning function
-        self.winning_function = WinningFunction(self.random_state)
+        self.winning_price_distribution = WinningPriceDistribution(self.random_state)
         # winning function parameter for each ad
         self.wf_ks = self.random_.normal(
             loc=50,
@@ -358,7 +358,7 @@ class RTBSyntheticSimulator(BaseSimulator):
         ks, thetas = self.wf_ks[ad_ids], self.wf_thetas[ad_ids]
         ks_coef = self.ks_coef[user_ids]
 
-        impressions, winning_prices = self.winning_function.sample_outcome(
+        impressions, winning_prices = self.winning_price_distribution.sample_outcome(
             ks * ks_coef, thetas, bid_prices
         )
         clicks = self.ctr.sample_outcome(timestep, contexts) * impressions
