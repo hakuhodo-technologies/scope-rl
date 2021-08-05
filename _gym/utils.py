@@ -1,6 +1,6 @@
 """Useful tools."""
 from dataclasses import dataclass
-from typing import Union
+from typing import Dict, Union, Any
 
 import numpy as np
 from sklearn.utils import check_random_state
@@ -88,3 +88,16 @@ class NormalDistribution:
 def sigmoid(x: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
     """Sigmoid function"""
     return 1 / (1 + np.exp(-x))
+
+
+def estimate_confidence_interval_by_bootstrap(
+    samples: np.ndarray,
+    alpha: float = 0.05,
+    n_bootstrap_samples: int = 100,
+    random_state: int = 12345,
+):
+    raise NotImplementedError()
+
+
+def check_logged_dataset(logged_dataset: Dict[str, Any]):
+    raise NotImplementedError()
