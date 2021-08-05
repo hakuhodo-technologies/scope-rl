@@ -90,6 +90,10 @@ def sigmoid(x: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
     return 1 / (1 + np.exp(-x))
 
 
+def action_scaler():
+    raise NotImplementedError()
+
+
 def estimate_confidence_interval_by_bootstrap(
     samples: np.ndarray,
     alpha: float = 0.05,
@@ -101,3 +105,7 @@ def estimate_confidence_interval_by_bootstrap(
 
 def check_logged_dataset(logged_dataset: Dict[str, Any]):
     raise NotImplementedError()
+
+
+def check_scaler(x: Union[int, float]):
+    raise NotImplementedError
