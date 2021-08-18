@@ -194,7 +194,7 @@ class SyntheticDataset(BaseDataset):
             done = False
 
             while not done:
-                action, action_prob = self.behavior_policy.act(state)  # fix later
+                action, action_prob = self.behavior_policy.act(state)
                 next_state, reward, done, info_ = self.env.step(action)
 
                 if idx == 0:
@@ -227,7 +227,9 @@ class SyntheticDataset(BaseDataset):
             else None,
             "state_keys": self.env.obs_keys,
             "state": states,
-            "action": actions,
+            "action": actions
+            if self.env.action_type == "discrete"
+            else actions.reshape((-1, 1)),
             "reward": rewards,
             "done": dones,
             "info": info,

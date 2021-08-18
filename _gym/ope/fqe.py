@@ -28,8 +28,8 @@ class NeuralEstimator(nn.Module):
         self.fc3 = nn.Linear(hidden_size, output_size)
 
     def forward(self, x):
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
+        x = torch.sigmoid(self.fc1(x))
+        x = torch.sigmoid(self.fc2(x))
         x = self.fc3(x)
         return x
 
@@ -46,7 +46,7 @@ class QFunction(BaseEstimator):
         self.is_neural_estimator = isinstance(self.base_estimator, nn.Module)
 
         if self.is_neural_estimator:
-            torch.random.manual_seed(self.random_seed)
+            torch.random.manual_seed(self.random_state)
 
             self.device = torch.device(self.device)
             self.loss_fn = nn.MSELoss()
@@ -63,18 +63,20 @@ class QFunction(BaseEstimator):
         targets: np.ndarray,
     ):
         if self.is_neural_estimator:
-            states = torch.tensor(states)
-            actions = torch.tensor(actions)
+            states = torch.from_numpy(states).float()
 
             if self.is_continuous:
+                actions = torch.from_numpy(actions).float()
                 inputs = torch.cat((states, actions), dim=1).to(self.device)
                 preds = self.base_estimator(inputs)
 
             else:
+                actions = torch.from_numpy(actions.reshape((-1, 1))).to(torch.int64)
                 inputs = states.to(self.device)
-                preds = self.base_estimator(inputs)[actions]
+                preds = self.base_estimator(inputs)
+                preds = torch.gather(preds, 1, actions)
 
-            targets = torch.tensor(targets).to(self.device)
+            targets = torch.from_numpy(targets.reshape((-1, 1))).float().to(self.device)
             loss = self.loss_fn(preds, targets)
 
             self.optimizer.zero_grad()
@@ -87,31 +89,43 @@ class QFunction(BaseEstimator):
 
     def predict(
         self,
-        states,
-        actions,
+        states: np.ndarray,
+        actions: np.ndarray,
     ):
         if self.is_neural_estimator:
-            states = torch.tensor(states)
-            actions = torch.tensor(actions)
+            states = torch.from_numpy(states).float()
 
             with torch.no_grad():
                 if self.is_continuous:
-                    inputs = states.to(self.device)
+                    actions = torch.from_numpy(actions).float()
+                    inputs = torch.cat((states, actions), dim=1).to(self.device)
+                    preds = self.base_estimator(inputs)
 
                 else:
-                    inputs = torch.cat((states, actions), dim=1).to(self.device)
+                    actions = torch.from_numpy(actions.reshape((-1, 1))).to(torch.int64)
+                    inputs = states.to(self.device)
+                    preds = self.base_estimator(inputs)
+                    preds = torch.gather(preds, 1, actions)
 
-                return self.base_estimator(inputs)
+                return np.array(preds).flatten()
 
 
 @dataclass
 class FittedQEvaluation:
     base_estimator: Union[BaseEstimator, nn.Module]
-    optimizer = Optional[torch.optim.optimizer]
+    optimizer: Optional[torch.optim.Optimizer] = None
+    is_continuous: bool = False
+    device: str = "cuda" if torch.cuda.is_available() else "cpu"
     random_state: int = 12345
 
     def __post_init__(self):
-        self.q_function = QFunction(self.base_estimator, self.random_state)
+        self.q_function = QFunction(
+            base_estimator=self.base_estimator,
+            optimizer=self.optimizer,
+            is_continuous=self.is_continuous,
+            device=self.device,
+            random_state=self.random_state,
+        )
         self.random_ = check_random_state(self.random_state)
 
     def fit(
@@ -122,7 +136,8 @@ class FittedQEvaluation:
         n_iterations: int = 100,
         gamma: float = 1.0,
     ):
-        check_logged_dataset()
+        # check_logged_dataset(logged_dataset)
+        # assert is_continuous
         data_size = len(logged_dataset["state"])
 
         for i in tqdm(
@@ -140,7 +155,12 @@ class FittedQEvaluation:
             if i == 0:
                 next_values = np.empty(batch_size)
             else:
-                next_actions = evaluation_policy.act()
+                if self.is_continuous:
+                    next_actions = np.empty((batch_size, actions.shape[1]))
+                else:
+                    next_actions = np.empty(batch_size)
+                for i in range(batch_size):
+                    next_actions[i] = evaluation_policy.act(next_states[i])[0]
                 next_values = self.predict_state_action_value(
                     states=next_states, actions=next_actions
                 ) * (1 - dones)
