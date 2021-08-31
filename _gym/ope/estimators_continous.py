@@ -18,8 +18,49 @@ kernel_functions = {
 
 
 @dataclass
+class ContinuousDirectMethod(BaseOffPolicyEstimator):
+    """Direct Method (DM) for continuous OPE (assume deterministic policies)."""
+
+    estimator_name = "dm"
+
+    def _estimate_trajectory_values(
+        self,
+        estimated_state_action_value: np.ndarray,
+    ) -> np.ndarray:
+        return estimated_state_action_value[:, 0]
+
+    def estimate_policy_value(
+        self,
+        estimated_state_action_value: np.ndarray,
+        **kwargs,
+    ) -> float:
+        estimated_policy_value = self._estimate_trajectory_values(
+            estimated_state_action_value,
+        ).mean()
+        return estimated_policy_value
+
+    def estimate_interval(
+        self,
+        estimated_state_action_value: np.ndarray,
+        alpha: float = 0.05,
+        n_bootstrap_samples: int = 10000,
+        random_state: int = 12345,
+        **kwargs,
+    ) -> Dict[str, float]:
+        estimated_trajectory_values = self._estimate_trajectory_values(
+            estimated_state_action_value,
+        )
+        return estimate_confidence_interval_by_bootstrap(
+            samples=estimated_trajectory_values,
+            alpha=alpha,
+            n_bootstrap_samples=n_bootstrap_samples,
+            random_state=random_state,
+        )
+
+
+@dataclass
 class ContinuousStepWiseImportanceSampling(BaseOffPolicyEstimator):
-    """Step-wise Importance Sampling (SIS)."""
+    """Step-wise Importance Sampling (SIS) for continuous OPE (assume deterministic policies)."""
 
     kernel: str = "gaussian"
     band_width: float = 1.0
@@ -103,7 +144,7 @@ class ContinuousStepWiseImportanceSampling(BaseOffPolicyEstimator):
 
 @dataclass
 class ContinuousDoublyRobust(BaseOffPolicyEstimator):
-    """Doubly Robust (DR)."""
+    """Doubly Robust (DR) for continuous OPE (assume deterministic policies)."""
 
     kernel: str = "gaussian"
     band_width: float = 1.0

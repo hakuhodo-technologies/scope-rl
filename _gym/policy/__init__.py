@@ -1,7 +1,11 @@
-from .base import BasePolicy
-from .random import RandomPolicy
+from _gym.policy.wrapper import BaseHead
+from _gym.policy.wrapper import EpsilonGreedyHead
+from _gym.policy.wrapper import SoftmaxHead
+from _gym.policy.wrapper import GaussianHead
 
 __all__ = [
-    "BasePolicy",
-    "RandomPolicy",
+    "BaseHead",
+    "EpsilonGreedyHead",
+    "SoftmaxHead",
+    "GaussianHead",
 ]

@@ -1,9 +1,26 @@
 """Useful tools."""
+from numpy.lib.index_tricks import diag_indices
 from dataclasses import dataclass
 from typing import Dict, Union, Any
 
 import numpy as np
 from sklearn.utils import check_random_state
+
+from d3rlpy.dataset import MDPDataset
+from d3rlpy.ope import DiscreteFQE
+from d3rlpy.ope import FQE as ContinuousFQE
+from d3rlpy.algos import DiscreteRandomPolicy
+from d3rlpy.algos import RandomPolicy as ContinuousRandomPolicy
+
+
+from _gym.types import LoggedDataset
+from _gym.ope import (
+    BaseOffPolicyEstimator,
+    DiscreteDirectMethod,
+    DiscreteDoublyRobust,
+    ContinuousDirectMethod,
+    ContinuousDoublyRobust,
+)
 
 
 @dataclass
@@ -103,9 +120,54 @@ def estimate_confidence_interval_by_bootstrap(
     raise NotImplementedError()
 
 
-def check_logged_dataset(logged_dataset: Dict[str, Any]):
+def check_logged_dataset(logged_dataset: LoggedDataset):
     raise NotImplementedError()
 
 
 def check_scaler(x: Union[int, float]):
     raise NotImplementedError
+
+
+def convert_logged_dataset_into_MDPDataset(logged_dataset: LoggedDataset):
+    check_logged_dataset(logged_dataset)
+    if logged_dataset["action_type"] == "discrete":
+        return MDPDataset(
+            observations=logged_dataset["state"],
+            actions=logged_dataset["action"],
+            rewards=logged_dataset["reward"],
+            terminals=logged_dataset["done"],
+            episode_terminals=logged_dataset["done"],
+            discrete_action=True,
+        )
+    else:
+        return MDPDataset(
+            observations=logged_dataset["state"],
+            actions=logged_dataset["action"],
+            rewards=logged_dataset["reward"],
+            terminals=logged_dataset["done"],
+            episode_terminals=logged_dataset["done"],
+        )
+
+
+def check_base_model_args(
+    dataset: MDPDataset,
+    args: Dict[str, Any],
+    action_type: str,
+):
+    args_ = copy.deepcopy(args)
+    algo = (
+        DiscreteRandomPolicy()
+        if action_type == "discrete"
+        else ContinuousRandomPolicy()
+    )
+    algo.build_with_dataset(dataset)
+    args_["algo"] = algo
+
+    try:
+        fqe = (
+            DiscreteFQE(**args_) if action_type == "discrete" else ContinuousFQE(**args)
+        )
+    except:
+        raise ValueError(
+            "base_model_args are invalid, please use default or refer to d3rlpy docs https://d3rlpy.readthedocs.io/en/v0.91/references/off_policy_evaluation.html"
+        )
