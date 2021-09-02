@@ -6,6 +6,7 @@ from typing import Dict, Union, Any
 import numpy as np
 from sklearn.utils import check_random_state
 
+import gym
 from d3rlpy.dataset import MDPDataset
 from d3rlpy.ope import DiscreteFQE
 from d3rlpy.ope import FQE as ContinuousFQE
@@ -13,7 +14,7 @@ from d3rlpy.algos import DiscreteRandomPolicy
 from d3rlpy.algos import RandomPolicy as ContinuousRandomPolicy
 
 
-from _gym.types import LoggedDataset
+from _gym.types import LoggedDataset, OPEInputDict
 from _gym.ope import (
     BaseOffPolicyEstimator,
     DiscreteDirectMethod,
@@ -171,3 +172,16 @@ def check_base_model_args(
         raise ValueError(
             "base_model_args are invalid, please use default or refer to d3rlpy docs https://d3rlpy.readthedocs.io/en/v0.91/references/off_policy_evaluation.html"
         )
+
+
+def check_if_valid_env_and_logged_dataset(
+    env: gym.Env,
+    logged_dataset: LoggedDataset,
+):
+    raise NotImplementedError()
+
+
+def check_input_dict(
+    input_dict: OPEInputDict,
+):
+    raise NotImplementedError()

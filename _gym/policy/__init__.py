@@ -2,10 +2,12 @@ from _gym.policy.wrapper import BaseHead
 from _gym.policy.wrapper import EpsilonGreedyHead
 from _gym.policy.wrapper import SoftmaxHead
 from _gym.policy.wrapper import GaussianHead
+from _gym.policy.wrapper import ContinuousEvalHead
 
 __all__ = [
     "BaseHead",
     "EpsilonGreedyHead",
     "SoftmaxHead",
     "GaussianHead",
+    "ContinuousEvalHead",
 ]

@@ -23,6 +23,9 @@ class ContinuousDirectMethod(BaseOffPolicyEstimator):
 
     estimator_name = "dm"
 
+    def __post_init__(self):
+        self.action_type = "continuous"
+
     def _estimate_trajectory_values(
         self,
         estimated_state_action_value: np.ndarray,
@@ -67,9 +70,10 @@ class ContinuousStepWiseImportanceSampling(BaseOffPolicyEstimator):
     estimator_name: str = "sis"
 
     def __post_init__(self):
+        self.action_type = "continuous"
+
         if self.kernel not in ["gaussian"]:
             raise ValueError('kernel must be "gaussian", but {self.kernel} is given')
-
         self.kernel_function = kernel_functions[self.kernel]
 
     def _estimate_trajectory_values(
@@ -149,6 +153,13 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
     kernel: str = "gaussian"
     band_width: float = 1.0
     estimator_name = "dr"
+
+    def __post_init__(self):
+        self.action_type = "continuous"
+
+        if self.kernel not in ["gaussian"]:
+            raise ValueError('kernel must be "gaussian", but {self.kernel} is given')
+        self.kernel_function = kernel_functions[self.kernel]
 
     def _estimate_trajectory_values(
         self,

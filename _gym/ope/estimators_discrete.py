@@ -32,7 +32,10 @@ class BaseOffPolicyEstimator(metaclass=ABCMeta):
 class DiscreteDirectMethod(BaseOffPolicyEstimator):
     """Direct Method (DM) for discrete OPE."""
 
-    estimator_name = "dm"
+    estimator_name: str = "dm"
+
+    def __post_init__(self):
+        self.action_type = "discrete"
 
     def _estimate_trajectory_values(
         self,
@@ -90,6 +93,9 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
     """Trajectory-wise Important Sampling (TIS)."""
 
     estimator_name = "tis"
+
+    def __post_init__(self):
+        self.action_type = "discrete"
 
     def _estimate_trajectory_values(
         self,
@@ -152,6 +158,9 @@ class DiscreteStepWiseImportanceSampling(BaseOffPolicyEstimator):
 
     estimator_name = "sis"
 
+    def __post_init__(self):
+        self.action_type = "discrete"
+
     def _estimate_trajectory_values(
         self,
         rewards: np.ndarray,
@@ -211,6 +220,9 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
     """Doubly Robust (DR) for a stochastic policy."""
 
     estimator_name = "dr"
+
+    def __post_init__(self):
+        self.action_type = "discrete"
 
     def _estimate_trajectory_values(
         self,
