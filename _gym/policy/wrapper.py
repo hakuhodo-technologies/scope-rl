@@ -1,4 +1,5 @@
 """Wrapper class to convert greedy policy into stochastic."""
+from abc import abstractmethod
 import warnings
 from typing import List
 from typing import Sequence, Optional, Union, Any
@@ -24,7 +25,11 @@ class BaseHead(metaclass=ABCMeta):
         raise NotImplementedError()
 
     @abstractmethod
-    def calculate_pscore(self, x: np.ndarray, action: Optional[np.ndarray]):
+    def calculate_action_choice_propability(self, x: np.ndarray):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def calculate_pscore_given_action(self, x: np.ndarray, action: np.ndarray):
         raise NotImplementedError()
 
     def predict(self, x: np.ndarray):
@@ -32,6 +37,9 @@ class BaseHead(metaclass=ABCMeta):
 
     def predict_value(self, x: np.ndarray, action: np.ndarray, with_std: bool = False):
         return self.base_algo.predict_value(x, action, with_std)
+
+    def sample_action(self, x: np.ndarray):
+        return self.base_algo.sample_action(x)
 
     def build_with_dataset(self, dataset: MDPDataset):
         return self.base_algo.build_with_dataset(dataset)
@@ -65,9 +73,6 @@ class BaseHead(metaclass=ABCMeta):
 
     def update(self, batch: TransitionMiniBatch):
         return self.base_algo.update(batch)
-
-    def sample_action(self, x: Union[np.ndarray, List[Any]]):
-        return self.base_algo.sample_action(x)
 
     def create_impl(self, observation_shape: Sequence[int], action_size: int):
         return self.base_algo.create_impl(observation_shape, action_size)
@@ -165,23 +170,38 @@ class EpsilonGreedyHead(BaseHead):
         self.random_ = check_random_state(self.random_state)
 
     def stochastic_action_with_pscore(self, x: np.ndarrray):
-        greedy_actions = self.base_algo.predict(x)
-        random_actions = self.random_.randint(self.n_actions, size=len(x))
-        greedy_masks = self.random_.rand(len(x)) > self.epsilon
-        actions = greedy_actions * greedy_masks + random_actions * (1 - greedy_masks)
-        pscores = (1 - self.epsilon) * greedy_masks + (
-            self.epsilon / self.n_actions
-        ) * (1 - greedy_masks)
-        return actions, pscores
+        greedy_action = self.base_algo.predict(x)
+        random_action = self.random_.randint(self.n_actions, size=len(x))
+        greedy_mask = self.random_.rand(len(x)) > self.epsilon
+        action = greedy_action * greedy_mask + random_action * (1 - greedy_mask)
+        pscore = (1 - self.epsilon) * greedy_mask + (self.epsilon / self.n_actions) * (
+            1 - greedy_mask
+        )
+        return action, pscore
 
     def calculate_pscore(self, x: np.ndarray):
-        greedy_actions = self.base_algo.predict(x)
-        greedy_action_matrix = self.action_matrix[greedy_actions]
+        greedy_action = self.base_algo.predict(x)
+        greedy_action_matrix = self.action_matrix[greedy_action]
         uniform_matrix = np.ones_like(greedy_action_matrix, dtype=float)
-        pscores = (1 - self.epsilon) * greedy_action_matrix + (
+        pscore = (1 - self.epsilon) * greedy_action_matrix + (
             self.epsilon / self.n_actions
         ) * uniform_matrix
-        return pscores  # shape (n_steps, n_actions)
+        return pscore  # shape (n_steps, n_actions)
+
+    def calculate_pscore_given_action(self, x: np.ndarray, action: np.ndarray):
+        greedy_action = self.base_algo.predict(x)
+        greedy_mask = greedy_action == action
+        pscore = (1 - self.epsilon + self.epsilon / self.n_actions) * greedy_mask + (
+            self.epsilon / self.n_actions
+        ) * (1 - greedy_mask)
+        return pscore
+
+    def sample_action(self, x: np.ndarray):
+        greedy_action = self.base_algo.predict(x)
+        random_action = self.random_.randint(self.n_actions, size=len(x))
+        greedy_mask = self.random_.rand(len(x)) > self.epsilon
+        action = greedy_action * greedy_mask + random_action * (1 - greedy_mask)
+        return action
 
 
 @dataclass
@@ -196,12 +216,84 @@ class SoftmaxHead(BaseHead):
     def __post_init__(self):
         self.random_ = check_random_state(self.random_state)
 
+    def _softmax(self, x: np.ndarray):
+        return np.exp(x) / np.sum(np.exp(x), axis=1, keepdims=True)
+
     def stochastic_action_with_pscore(self, x: np.ndarray):
-        # hard to follow..
+        prob = self.calculate_pscore(x)
+
+        action = []
+        for i in range(len(prob)):
+            action.append(self.random_.choice(self.n_actions, p=prob[i]))
+        action = np.array(action)
+
+        action_id = np.array(
+            [action[i] + i * self.n_actions for i in range(len(action))]
+        ).flatten()
+        pscore = prob.flatten()[action_id]
+
+        return action, pscore
+
+    def calculate_pscore(self, x: np.ndarray):
+        # duplicate x
+        # (n_samples, dim) -> (n_samples * n_actions, dim)
         x_ = []
         for i in range(x.shape[0]):
             x_.append(np.tile(x[i], (self.n_actions, 1)))
-
         x_ = np.array(x_).reshape((-1, x.shape[1]))
+
         a_ = np.tile(np.arange(self.n_actions), x.shape[0])
         predicted_value = self.base_algo.predict_value(x_, a_)
+
+        return self._softmax(predicted_value)
+
+    def calculate_pscore_given_action(self, x: np.ndarray, action: np.ndarray):
+        prob = self.calculate_pscore(x)
+        actions_id = np.array(
+            [action[i] + i * self.n_actions for i in range(len(action))]
+        ).flatten()
+        return prob.flatten()[actions_id]
+
+    def sample_action(self, x: np.ndarray):
+        prob = self.calculate_pscore(x)
+
+        action = []
+        for i in range(len(prob)):
+            action.append(self.random_.choice(self.n_actions, p=prob[i]))
+
+        return np.array(action)
+
+
+@dataclass
+class GaussianHead:
+    base_algo: AlgoBase
+    sigma: np.ndarray
+    random_state = 12345
+
+    def __post_init__(self):
+        if not (
+            isinstance(self.sigma, np.ndarray)
+            and self.sigma.shape == (self.base_algo.action_size,)
+        ):
+            raise ValueError("sigma must have the same size with env.action_space")
+        self.random_ = check_random_state(self.random_state)
+
+    def _calc_pscore(self, greedy_action: np.ndarray, action: np.ndarray):
+        prob = np.exp(
+            -((greedy_action - action) ** 2) / (2 * self.sigma ** 2)
+        ) / np.sqrt(2 * np.pi * self.sigma ** 2)
+        return np.prod(prob, axis=1)
+
+    def stochastic_action_with_pscore(self, x: np.ndarray):
+        greedy_action = self.base_algo.predict(x)
+        action = self.random_.normal(loc=greedy_action, scale=self.sigma)
+        pscore = self._calc_pscore(greedy_action, action)
+        return action, pscore
+
+    def calculate_pscore_given_action(self, x: np.ndrray, action: np.ndarray):
+        greedy_action = self.base_algo.predict(x)
+        return self._calc_pscore(greedy_action, action)
+
+    def sample_action(self, x: np.ndarray):
+        greedy_action = self.base_algo.predict(x)
+        return self.random_.normal(loc=greedy_action, scale=self.sigma)
