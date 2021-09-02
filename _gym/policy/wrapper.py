@@ -1,8 +1,6 @@
 """Wrapper class to convert greedy policy into stochastic."""
 from abc import abstractmethod
-import warnings
-from typing import List
-from typing import Sequence, Optional, Union, Any
+from typing import Sequence
 from dataclasses import dataclass
 
 import numpy as np
@@ -18,9 +16,6 @@ from d3rlpy.dataset import MDPDataset, Transition
 class BaseHead(metaclass=ABCMeta):
     """Base class to convert greedy policy into stochastic."""
 
-    base_algo: AlgoBase
-    name: str
-
     @abstractmethod
     def stochastic_action_with_pscore(self, x: np.ndarray):
         raise NotImplementedError()
@@ -31,6 +26,10 @@ class BaseHead(metaclass=ABCMeta):
 
     @abstractmethod
     def calculate_pscore_given_action(self, x: np.ndarray, action: np.ndarray):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def predict_counterfactual_state_action_value(self, x: np.ndarray):
         raise NotImplementedError()
 
     def predict(self, x: np.ndarray):
@@ -168,6 +167,7 @@ class EpsilonGreedyHead(BaseHead):
     random_state: int = 12345
 
     def __post_init__(self):
+        self.action_type = "discrete"
         self.action_matrix = np.eye(self.n_actions)
         self.random_ = check_random_state(self.random_state)
 
@@ -181,7 +181,7 @@ class EpsilonGreedyHead(BaseHead):
         )
         return action, pscore
 
-    def calculate_pscore(self, x: np.ndarray):
+    def calculate_action_choice_probability(self, x: np.ndarray):
         greedy_action = self.base_algo.predict(x)
         greedy_action_matrix = self.action_matrix[greedy_action]
         uniform_matrix = np.ones_like(greedy_action_matrix, dtype=float)
@@ -197,6 +197,16 @@ class EpsilonGreedyHead(BaseHead):
             self.epsilon / self.n_actions
         ) * (1 - greedy_mask)
         return pscore
+
+    def predict_counterfactual_state_action_value(self, x: np.ndarray):
+        # duplicate x
+        # (n_samples, dim) -> (n_samples * n_actions, dim)
+        x_ = []
+        for i in range(x.shape[0]):
+            x_.append(np.tile(x[i], (self.n_actions, 1)))
+        x_ = np.array(x_).reshape((-1, x.shape[1]))
+        a_ = np.tile(np.arange(self.n_actions), x.shape[0])
+        return self.base_algo.predict_value(x_, a_)
 
     def sample_action(self, x: np.ndarray):
         greedy_action = self.base_algo.predict(x)
@@ -217,6 +227,7 @@ class SoftmaxHead(BaseHead):
     random_state = 12345
 
     def __post_init__(self):
+        self.action_type = "discrete"
         self.random_ = check_random_state(self.random_state)
 
     def _softmax(self, x: np.ndarray):
@@ -227,16 +238,6 @@ class SoftmaxHead(BaseHead):
     def _gumble_max_trick(self, x: np.ndarray):
         gumble_variable = -np.log(-np.log(self.random_.rand(len(x), self.n_actions)))
         return np.argmax(x / self.tau + gumble_variable, axis=1)
-
-    def _predict_value(self, x: np.ndarray):
-        # duplicate x
-        # (n_samples, dim) -> (n_samples * n_actions, dim)
-        x_ = []
-        for i in range(x.shape[0]):
-            x_.append(np.tile(x[i], (self.n_actions, 1)))
-        x_ = np.array(x_).reshape((-1, x.shape[1]))
-        a_ = np.tile(np.arange(self.n_actions), x.shape[0])
-        return self.base_algo.predict_value(x_, a_)
 
     def stochastic_action_with_pscore(self, x: np.ndarray):
         predicted_value = self._predict_value(x)
@@ -250,9 +251,9 @@ class SoftmaxHead(BaseHead):
 
         return action, pscore
 
-    def calculate_pscore(self, x: np.ndarray):
-        predicted_value = self._predict_value(x)
-        return self._softmax(predicted_value)
+    def calculate_action_choice_probability(self, x: np.ndarray):
+        predicted_value = self.predict_counterfactual_state_action_value(x)
+        return self._softmax(predicted_value)  # (n_samples, n_actions)
 
     def calculate_pscore_given_action(self, x: np.ndarray, action: np.ndarray):
         prob = self.calculate_pscore(x)
@@ -260,6 +261,14 @@ class SoftmaxHead(BaseHead):
             [action[i] + i * self.n_actions for i in range(len(action))]
         ).flatten()
         return prob.flatten()[actions_id]
+
+    def predict_counterfactual_state_action_value(self, x: np.ndarray):
+        x_ = []
+        for i in range(x.shape[0]):
+            x_.append(np.tile(x[i], (self.n_actions, 1)))
+        x_ = np.array(x_).reshape((-1, x.shape[1]))
+        a_ = np.tile(np.arange(self.n_actions), x.shape[0])
+        return self.base_algo.predict_value(x_, a_)  # (n_samples, n_actions)
 
     def sample_action(self, x: np.ndarray):
         predicted_value = self._predict_value(x)
@@ -279,6 +288,7 @@ class GaussianHead(BaseHead):
             and self.sigma.shape == (self.base_algo.action_size,)
         ):
             raise ValueError("sigma must have the same size with env.action_space")
+        self.action_type = "continuous"
         self.random_ = check_random_state(self.random_state)
 
     def _calc_pscore(self, greedy_action: np.ndarray, action: np.ndarray):
@@ -307,5 +317,8 @@ class ContinuousEvalHead(BaseHead):
     base_algo: AlgoBase
     name: str
 
+    def __post_init__(self):
+        self.action_type = "discrete"
+
     def sample_action(self, x: np.ndarray):
-        return self.base_algo.predict(x)  # greeedy-action
+        return self.base_algo.predict(x)  # greedy-action
