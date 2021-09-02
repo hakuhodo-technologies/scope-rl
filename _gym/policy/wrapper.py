@@ -19,6 +19,7 @@ class BaseHead(metaclass=ABCMeta):
     """Base class to convert greedy policy into stochastic."""
 
     base_algo: AlgoBase
+    name: str
 
     @abstractmethod
     def stochastic_action_with_pscore(self, x: np.ndarray):
@@ -161,6 +162,7 @@ class EpsilonGreedyHead(BaseHead):
     """Class to convert greedy policy into e-greedy."""
 
     base_algo: AlgoBase
+    name: str
     n_actions: int
     epsilon: float
     random_state: int = 12345
@@ -209,6 +211,7 @@ class SoftmaxHead(BaseHead):
     """Class to convert policy values into softmax policy."""
 
     base_algo: AlgoBase
+    name: str
     n_actions: int
     tau: float = 1.0
     random_state = 12345
@@ -217,15 +220,28 @@ class SoftmaxHead(BaseHead):
         self.random_ = check_random_state(self.random_state)
 
     def _softmax(self, x: np.ndarray):
-        return np.exp(x) / np.sum(np.exp(x), axis=1, keepdims=True)
+        return np.exp(x / self.tau) / np.sum(
+            np.exp(x / self.tau), axis=1, keepdims=True
+        )
+
+    def _gumble_max_trick(self, x: np.ndarray):
+        gumble_variable = -np.log(-np.log(self.random_.rand(len(x), self.n_actions)))
+        return np.argmax(x / self.tau + gumble_variable, axis=1)
+
+    def _predict_value(self, x: np.ndarray):
+        # duplicate x
+        # (n_samples, dim) -> (n_samples * n_actions, dim)
+        x_ = []
+        for i in range(x.shape[0]):
+            x_.append(np.tile(x[i], (self.n_actions, 1)))
+        x_ = np.array(x_).reshape((-1, x.shape[1]))
+        a_ = np.tile(np.arange(self.n_actions), x.shape[0])
+        return self.base_algo.predict_value(x_, a_)
 
     def stochastic_action_with_pscore(self, x: np.ndarray):
-        prob = self.calculate_pscore(x)
-
-        action = []
-        for i in range(len(prob)):
-            action.append(self.random_.choice(self.n_actions, p=prob[i]))
-        action = np.array(action)
+        predicted_value = self._predict_value(x)
+        prob = self._softmax(predicted_value)
+        action = self._gumble_max_trick(predicted_value)
 
         action_id = np.array(
             [action[i] + i * self.n_actions for i in range(len(action))]
@@ -235,16 +251,7 @@ class SoftmaxHead(BaseHead):
         return action, pscore
 
     def calculate_pscore(self, x: np.ndarray):
-        # duplicate x
-        # (n_samples, dim) -> (n_samples * n_actions, dim)
-        x_ = []
-        for i in range(x.shape[0]):
-            x_.append(np.tile(x[i], (self.n_actions, 1)))
-        x_ = np.array(x_).reshape((-1, x.shape[1]))
-
-        a_ = np.tile(np.arange(self.n_actions), x.shape[0])
-        predicted_value = self.base_algo.predict_value(x_, a_)
-
+        predicted_value = self._predict_value(x)
         return self._softmax(predicted_value)
 
     def calculate_pscore_given_action(self, x: np.ndarray, action: np.ndarray):
@@ -255,18 +262,14 @@ class SoftmaxHead(BaseHead):
         return prob.flatten()[actions_id]
 
     def sample_action(self, x: np.ndarray):
-        prob = self.calculate_pscore(x)
-
-        action = []
-        for i in range(len(prob)):
-            action.append(self.random_.choice(self.n_actions, p=prob[i]))
-
-        return np.array(action)
+        predicted_value = self._predict_value(x)
+        return self._gumble_max_trick(predicted_value)
 
 
 @dataclass
-class GaussianHead:
+class GaussianHead(BaseHead):
     base_algo: AlgoBase
+    namse: str
     sigma: np.ndarray
     random_state = 12345
 
@@ -297,3 +300,12 @@ class GaussianHead:
     def sample_action(self, x: np.ndarray):
         greedy_action = self.base_algo.predict(x)
         return self.random_.normal(loc=greedy_action, scale=self.sigma)
+
+
+@dataclass
+class ContinuousEvalHead(BaseHead):
+    base_algo: AlgoBase
+    name: str
+
+    def sample_action(self, x: np.ndarray):
+        return self.base_algo.predict(x)  # greeedy-action
