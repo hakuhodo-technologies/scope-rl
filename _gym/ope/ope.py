@@ -1,6 +1,7 @@
 """Off-Policy Evaluation Class to Streamline OPE."""
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Tuple, Optional, Any
+from pathlib import Path
 
 from collections import defaultdict
 from tqdm import tqdm
@@ -72,15 +73,190 @@ class OffPolicyEvaluation:
             policy_value_dict[eval_policy]["on_policy"] = input_dict[eval_policy][
                 "on_policy_policy_value"
             ]
-
             for estimator_name, estimator in self.ope_estimators_.items():
                 policy_value_dict[eval_policy][
                     estimator_name
                 ] = estimator.estimate_policy_value(
                     **input_dict[eval_policy],
                 )
-
         return policy_value_dict
+
+    def estimate_intervals(
+        self,
+        input_dict: OPEInputDict,
+        alpha: float = 0.05,
+        n_bootstrap_samples: int = 100,
+        random_state: Optional[int] = None,
+    ) -> Dict[str, Dict[str, float]]:
+        """Estimate confidence intervals of policy values using nonparametric bootstrap procedure."""
+        check_input_dict(input_dict)
+
+        policy_value_interval_dict = defaultdict(dict)
+
+        for eval_policy in input_dict.keys():
+            for estimator_name, estimator in self.ope_estimators_.items():
+                policy_value_interval_dict[eval_policy][
+                    estimator_name
+                ] = estimator.estimate_interval(
+                    **input_dict[eval_policy],
+                    alpha=alpha,
+                    n_bootstrap_samples=n_bootstrap_samples,
+                    random_state=random_state,
+                )
+        return policy_value_interval_dict
+
+    def summarize_off_policy_estimates(
+        self,
+        input_dict: OPEInputDict,
+        alpha: float = 0.05,
+        n_bootstrap_samples: int = 100,
+        random_state: Optional[int] = None,
+    ) -> Tuple[DataFrame, DataFrame]:
+        """Summarize policy values and their confidence intervals estimated by OPE estimators."""
+        policy_value_dict = self.estimate_policy_values(input_dict)
+        policy_value_interval_dict = self.estimate_policy_values(
+            input_dict,
+            alpha=alpha,
+            n_bootstrap_samples=n_bootstrap_samples,
+            random_state=random_state,
+        )
+
+        policy_value_df_dict = dict()
+        policy_value_interval_df_dict = dict()
+
+        for eval_policy in input_dict.keys():
+            policy_value_df_ = DataFrame(
+                policy_value_dict[eval_policy],
+                index=["policy_value"],
+            ).T
+
+            on_policy_policy_value = policy_value_dict[eval_policy]["on_policy"]
+            if on_policy_policy_value is not None and on_policy_policy_value > 0:
+                policy_value_df_["relative_policy_value"] = (
+                    policy_value_df_ / on_policy_policy_value
+                )
+            else:
+                policy_value_df_["relative_policy_value"] = np.nan
+            policy_value_dict
+            policy_value_df_dict[eval_policy] = policy_value_df_
+
+            policy_value_interval_df_dict[eval_policy] = DataFrame(
+                policy_value_interval_dict[eval_policy],
+            ).T
+
+        return policy_value_df_dict, policy_value_interval_df_dict
+
+    def visualize_off_policy_estimates(
+        self,
+        input_dict: OPEInputDict,
+        alpha: float = 0.05,
+        is_relative: bool = False,
+        n_bootstrap_samples: int = 100,
+        random_state: Optional[int] = None,
+        fig_dir: Optional[Path] = None,
+        fig_name: str = "estimated_policy_value.png",
+    ) -> None:
+        """Visualize policy values estimated by OPE estimators."""
+        if fig_dir is not None:
+            assert isinstance(fig_dir, Path), "fig_dir must be a Path"
+        if fig_name is not None:
+            assert isinstance(fig_name, str), "fig_dir must be a string"
+        check_input_dict(input_dict)
+
+        estimated_round_rewards_df_dict = dict()
+        for eval_policy in input_dict.keys():
+            estimated_round_rewards_dict_ = dict()
+            for estimator_name, estimator in self.ope_estimators_.items():
+                estimated_round_rewards_dict_[
+                    estimator_name
+                ] = estimator._estimate_round_rewards(**input_dict[eval_policy])
+            estimated_round_rewards_df_ = DataFrame(estimated_round_rewards_dict_)
+
+            if is_relative:
+                if (
+                    input_dict[eval_policy]["on_policy"] is not None
+                    and input_dict[eval_policy]["on_policy"] > 0
+                ):
+                    estimated_round_rewards_df_dict[eval_policy] = (
+                        estimated_round_rewards_df_
+                        / input_dict[eval_policy]["on_policy"]
+                    )
+                else:
+                    raise ValueError()
+
+            else:
+                estimated_round_rewards_df_dict[
+                    eval_policy
+                ] = estimated_round_rewards_df_
+
+        plt.style.use("ggplot")
+        fig = plt.figure(figsize=(8, 6.2 * len(input_dict)))
+
+        for i, eval_policy in input_dict.keys():
+            ax = fig.add_subplot(len(self.ope_estimators_), 1, i + 1)
+            sns.barplot(
+                data=estimated_round_rewards_df_dict[eval_policy],
+                ax=ax,
+                ci=100 * (1 - alpha),
+                n_boot=n_bootstrap_samples,
+                seed=random_state,
+            )
+            if input_dict[eval_policy]["on_policy"] is not None and not is_relative:
+                ax.axhline(input_dict[eval_policy]["on_policy"])
+            ax.set_title(eval_policy, fontsize=20)
+            ax.set_ylabel(
+                f"Estimated Policy Value (± {np.int(100*(1 - alpha))}% CI)", fontsize=20
+            )
+            plt.yticks(fontsize=15)
+            plt.xticks(fontsize=25 - 2 * len(self.ope_estimators_))
+
+        if fig_dir:
+            fig.savefig(str(fig_dir / fig_name))
+
+    def evaluate_performance_of_estimators(
+        self,
+        input_dict: OPEInputDict,
+        metric: str = "relative-ee",
+    ) -> Dict[str, float]:
+        """Evaluate estimation performance of OPE estimators."""
+        eval_metric_ope_dict = defaultdict(dict)
+        policy_value_dict = self.estimate_policy_values(input_dict)
+
+        if metric == "relative-ee":
+            for eval_policy in input_dict.keys():
+                for estimator in self.ope_estimators_.keys():
+                    relative_ee_ = (
+                        policy_value_dict[eval_policy]
+                        - input_dict[eval_policy]["on_policy"]
+                    ) / input_dict[eval_policy]["on_policy"]
+                    eval_metric_ope_dict[eval_policy][estimator] = np.abs(relative_ee_)
+
+        else:
+            for eval_policy in input_dict.keys():
+                for estimator in self.ope_estimators_.keys():
+                    se_ = (
+                        policy_value_dict[eval_policy]
+                        - input_dict[eval_policy]["on_policy"]
+                    ) ** 2
+                    eval_metric_ope_dict[eval_policy][estimator] = se_
+
+        return eval_metric_ope_dict
+
+    def summarize_estimators_comparison(
+        self,
+        input_dict: OPEInputDict,
+        metric: str = "relative-ee",
+    ) -> DataFrame:
+        eval_metric_ope_df = DataFrame()
+        eval_metric_ope_dict = self.evaluate_performance_of_estimators(
+            input_dict, metric
+        )
+
+        for eval_policy in input_dict.keys():
+            eval_metric_ope_df[eval_policy] = DataFrame(
+                eval_metric_ope_dict[eval_policy]
+            ).T
+        return eval_metric_ope_df
 
 
 @dataclass
