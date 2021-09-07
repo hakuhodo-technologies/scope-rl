@@ -1,5 +1,5 @@
 """Wrapper class to convert greedy policy into stochastic."""
-from abc import abstractmethod
+from abc import abstractmethod, ABCMeta
 from typing import Sequence
 from dataclasses import dataclass
 
@@ -9,7 +9,8 @@ import gym
 from sklearn.utils import check_random_state
 
 from d3rlpy.algos import AlgoBase
-from d3rlpy.dataset import MDPDataset, Transition
+from d3rlpy.dataset import MDPDataset, Transition, TransitionMiniBatch
+from d3rlpy.logger import D3RLPyLogger
 
 
 @dataclass
@@ -21,7 +22,7 @@ class BaseHead(metaclass=ABCMeta):
         raise NotImplementedError()
 
     @abstractmethod
-    def calculate_action_choice_propability(self, x: np.ndarray):
+    def calculate_action_choice_probability(self, x: np.ndarray):
         raise NotImplementedError()
 
     @abstractmethod
@@ -41,10 +42,22 @@ class BaseHead(metaclass=ABCMeta):
     def sample_action(self, x: np.ndarray):
         return self.base_algo.sample_action(x)
 
+    def predict_online(self, x: np.ndarray):
+        return self.predict(x.reshape((1, -1)))
+
+    def predict_value_online(self, x: np.ndarray):
+        return self.predict_value(x.reshape((1, -1)))
+
+    def sample_action_online(self, x: np.ndarray):
+        return self.sample_action(x.reshape(1, -1))
+
+    def stochastic_action_with_pscore_online(self, x: np.ndarray):
+        return self.stochastic_action_with_pscore(x.reshape(1, -1))
+
     def build_with_dataset(self, dataset: MDPDataset):
         return self.base_algo.build_with_dataset(dataset)
 
-    def build_with_env(self, env: gym.env):
+    def build_with_env(self, env: gym.Env):
         return self.base_algo.build_with_env(env)
 
     def copy_policy_from(self, algo: AlgoBase):
@@ -68,7 +81,7 @@ class BaseHead(metaclass=ABCMeta):
     def generate_new_data(self, transition: Transition):
         return self.base_algo.generate_new_data(transition)
 
-    def collect(self, env: gym.env, **kwargs):
+    def collect(self, env: gym.Env, **kwargs):
         return self.base_algo.collect(env, **kwargs)
 
     def update(self, batch: TransitionMiniBatch):
@@ -171,7 +184,7 @@ class EpsilonGreedyHead(BaseHead):
         self.action_matrix = np.eye(self.n_actions)
         self.random_ = check_random_state(self.random_state)
 
-    def stochastic_action_with_pscore(self, x: np.ndarrray):
+    def stochastic_action_with_pscore(self, x: np.ndarray):
         greedy_action = self.base_algo.predict(x)
         random_action = self.random_.randint(self.n_actions, size=len(x))
         greedy_mask = self.random_.rand(len(x)) > self.epsilon
@@ -303,7 +316,7 @@ class GaussianHead(BaseHead):
         pscore = self._calc_pscore(greedy_action, action)
         return action, pscore
 
-    def calculate_pscore_given_action(self, x: np.ndrray, action: np.ndarray):
+    def calculate_pscore_given_action(self, x: np.ndarray, action: np.ndarray):
         greedy_action = self.base_algo.predict(x)
         return self._calc_pscore(greedy_action, action)
 

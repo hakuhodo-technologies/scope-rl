@@ -15,13 +15,6 @@ from d3rlpy.algos import RandomPolicy as ContinuousRandomPolicy
 
 
 from _gym.types import LoggedDataset, OPEInputDict
-from _gym.ope import (
-    BaseOffPolicyEstimator,
-    DiscreteDirectMethod,
-    DiscreteDoublyRobust,
-    ContinuousDirectMethod,
-    ContinuousDoublyRobust,
-)
 
 
 @dataclass
@@ -103,13 +96,13 @@ class NormalDistribution:
         return random_variables
 
 
+def action_scaler():
+    raise NotImplementedError()
+
+
 def sigmoid(x: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
     """Sigmoid function"""
     return 1 / (1 + np.exp(-x))
-
-
-def action_scaler():
-    raise NotImplementedError()
 
 
 def estimate_confidence_interval_by_bootstrap(
@@ -117,8 +110,20 @@ def estimate_confidence_interval_by_bootstrap(
     alpha: float = 0.05,
     n_bootstrap_samples: int = 100,
     random_state: int = 12345,
-):
-    raise NotImplementedError()
+) -> Dict[str, float]:
+    """Estimate confidence interval by nonparametric bootstrap-like procedure."""
+    random_ = check_random_state(random_state)
+    boot_samples = [
+        np.mean(random_.choice(samples, size=samples.shape[0]))
+        for i in range(n_bootstrap_samples)
+    ]
+    lower_bound = np.percentile(boot_samples, 100 * (alpha / 2))
+    upper_bound = np.percentile(boot_samples, 100 * (1.0 - alpha / 2))
+    return {
+        "mean": np.mean(boot_samples),
+        f"{100 * (1. - alpha)}% CI (lower)": lower_bound,
+        f"{100 * (1. - alpha)}% CI (upper)": upper_bound,
+    }
 
 
 def check_logged_dataset(logged_dataset: LoggedDataset):

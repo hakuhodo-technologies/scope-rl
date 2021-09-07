@@ -6,9 +6,9 @@ import gym
 import numpy as np
 from sklearn.utils import check_random_state
 
-from .base import BaseDataset
+from _gym.dataset.base import BaseDataset
 from _gym.types import LoggedDataset
-from _gym.policy import BasePolicy
+from _gym.policy import BaseHead
 
 
 @dataclass
@@ -25,7 +25,7 @@ class SyntheticDataset(BaseDataset):
     env: gym.Env
         Reinforcement learning (RL) environment.
 
-    behavior_policy: BasePolicy
+    behavior_policy: AlgoBase
         RL policy for data collection.
 
     random_state: int, default=12345
@@ -113,7 +113,7 @@ class SyntheticDataset(BaseDataset):
     """
 
     env: gym.Env
-    behavior_policy: BasePolicy
+    behavior_policy: BaseHead
     random_state: int = 12345
 
     def __post_init__(self):
@@ -194,7 +194,10 @@ class SyntheticDataset(BaseDataset):
             done = False
 
             while not done:
-                action, action_prob = self.behavior_policy.act(state)
+                (
+                    action,
+                    action_prob,
+                ) = self.behavior_policy.stochastic_action_with_pscore(state)
                 next_state, reward, done, info_ = self.env.step(action)
 
                 if idx == 0:
@@ -251,10 +254,10 @@ class SyntheticDataset(BaseDataset):
             Mean episode reward calculated through rollout.
 
         """
-        return self.env.calc_on_policy_policy_value(self.behavior_policy, n_episodes)
+        raise NotImplementedError()
 
     def pretrain_behavior_policy(self, n_episodes: int = 10000) -> None:
-        """Pre-train behavior policy by interacting with the environment.
+        """Pre-train behavior policy by interacting with the environment. (fix later)
 
         Parameters
         -------
@@ -266,19 +269,4 @@ class SyntheticDataset(BaseDataset):
             raise ValueError(
                 f"n_episodes must be a positive integer, but {n_episodes} is given"
             )
-        for _ in tqdm(
-            np.arange(n_episodes),
-            desc="[pretrain_behavior_policy]",
-            total=n_episodes,
-        ):
-            state = self.env.reset()
-            done = False
-
-            while not done:
-                action, action_prob = self.behavior_policy.act(state)  # predict
-                next_state, reward, done, _ = self.env.step(action)
-
-                self.behavior_policy.update(
-                    state, action, next_state, reward, done
-                )  # fix later
-                state = next_state
+        raise NotImplementedError()

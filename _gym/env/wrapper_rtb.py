@@ -8,7 +8,6 @@ from sklearn.base import BaseEstimator
 import numpy as np
 
 from _gym.env import RTBEnv
-from _gym.policy import BasePolicy
 
 
 class CustomizedRTBEnv(gym.Env):
@@ -275,8 +274,6 @@ class CustomizedRTBEnv(gym.Env):
                 Note that those feedbacks are intended to be unobservable for the RL agent.
 
         """
-        if not isinstance(action, (int, float, np.integer, np.floating)):
-            raise ValueError(f"action must be a float number, but {action} is given")
         if self.action_type == "discrete":
             if not (
                 isinstance(action, (int, np.integer))
@@ -318,50 +315,6 @@ class CustomizedRTBEnv(gym.Env):
 
         """
         return self.env.reset()
-
-    def calc_on_policy_policy_value(
-        self, evaluation_policy: BasePolicy, n_episodes: int = 10000
-    ) -> float:
-        """Rollout the RL agent (i.e., policy) and calculate mean episodic reward.
-
-        Parameters
-        -------
-        evaluation_policy: BasePolicy
-            The RL agent (i.e., policy) to be evaluated.
-
-        n_episodes: int, default=10000
-            Number of episodes to rollout.
-
-        Returns
-        -------
-        mean_reward: float
-            Mean episode reward calculated through rollout.
-
-        """
-        if not (isinstance(n_episodes, int) and n_episodes > 0):
-            raise ValueError(
-                "n_episodes must be a positive integer, but {n_episodes} is given"
-            )
-
-        total_reward = 0.0
-        for _ in tqdm(
-            np.arange(n_episodes),
-            desc="[calc_on_policy_policy_value]",
-            total=n_episodes,
-        ):
-            state = self.reset()
-            done = False
-
-            while not done:
-                try:
-                    action, _ = evaluation_policy.act(state)  # predict
-                except:
-                    action = evaluation_policy.act(state)
-
-                state, reward, done, _ = self.step(action)
-                total_reward += reward
-
-        return total_reward / n_episodes
 
     def render(self, mode: str = "human") -> None:
         self.env.render(mode)

@@ -9,7 +9,6 @@ import numpy as np
 from sklearn.utils import check_random_state
 
 from _gym.utils import NormalDistribution
-from _gym.policy import BasePolicy
 
 from .bidder import Bidder
 from .simulator.rtb_synthetic import RTBSyntheticSimulator
@@ -441,55 +440,7 @@ class RTBEnv(gym.Env):
         pass
 
     def close(self) -> None:
-        warnings.warn(".close() is not implemented")
         pass
 
     def seed(self, seed: int = None) -> None:
-        warnings.warn(
-            ".seed() is not implemented, please reset seed by initializing the environment"
-        )
-        pass
-
-    def calc_on_policy_policy_value(
-        self, evaluation_policy: BasePolicy, n_episodes: int = 10000
-    ) -> float:
-        """Rollout the RL agent (i.e., policy) and calculate mean episodic reward.
-
-        Parameters
-        -------
-        evaluation_policy: BasePolicy
-            The RL agent (i.e., policy) to be evaluated.
-
-        n_episodes: int, default=10000
-            Number of episodes to rollout.
-
-        Returns
-        -------
-        mean_reward: float
-            Mean episode reward calculated through rollout.
-
-        """
-        if not (isinstance(n_episodes, int) and n_episodes > 0):
-            raise ValueError(
-                "n_episodes must be a positive integer, but {n_episodes} is given"
-            )
-
-        total_reward = 0.0
-        for _ in tqdm(
-            np.arange(n_episodes),
-            desc="[calc_on_policy_policy_value]",
-            total=n_episodes,
-        ):
-            state = self.reset()
-            done = False
-
-            while not done:
-                try:
-                    action, _ = evaluation_policy.act(state)  # predict
-                except:
-                    action = evaluation_policy.act(state)
-
-                state, reward, done, _ = self.step(action)
-                total_reward += reward
-
-        return total_reward / n_episodes
+        self.random_ = check_random_state(seed)
