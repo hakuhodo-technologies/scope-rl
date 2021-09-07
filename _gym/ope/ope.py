@@ -51,6 +51,7 @@ class OffPolicyEvaluation:
     def __post__init__(self) -> None:
         "Initialize class."
         self.action_type = self.logged_dataset["action_type"]
+        self.step_per_episode = self.logged_dataset["step_per_episode"]
 
         self.ope_estimators_ = dict()
         for estimator in self.ope_estimators:
@@ -61,9 +62,25 @@ class OffPolicyEvaluation:
                     f"one of the ope_estimators, {estimator.estimator_name} does not much action_type in logged_dataset. Please use {self.action_type} type instead."
                 )
 
+        behavior_policy_pscore = self.logged_dataset["pscore"].reshape(
+            (-1, self.step_per_episode)
+        )
+        behavior_policy_step_wise_pscore = np.cumprod(behavior_policy_pscore, axis=1)
+        behavior_policy_trajectory_wise_pscore = np.tile(
+            behavior_policy_step_wise_pscore[:, -1], (self.step_per_episode, 1)
+        ).T
+
+        self.input_dict_ = {
+            "actions": self.logged_dataset["action"],
+            "rewards": self.logged_dataset["reward"],
+            "behavior_policy_step_wise_pscore": behavior_policy_step_wise_pscore.flatten(),
+            "behavior_policy_trajectory_wise_pscore": behavior_policy_trajectory_wise_pscore.flatten(),
+        }
+
     def estimate_policy_values(
         self,
         input_dict: OPEInputDict,
+        gamma: float = 1.0,
     ) -> Dict[str, float]:
         check_input_dict(input_dict)
 
@@ -78,12 +95,15 @@ class OffPolicyEvaluation:
                     estimator_name
                 ] = estimator.estimate_policy_value(
                     **input_dict[eval_policy],
+                    **self.input_dict_,
+                    gamma=gamma,
                 )
         return policy_value_dict
 
     def estimate_intervals(
         self,
         input_dict: OPEInputDict,
+        gamma: float = 1.0,
         alpha: float = 0.05,
         n_bootstrap_samples: int = 100,
         random_state: Optional[int] = None,
@@ -99,6 +119,8 @@ class OffPolicyEvaluation:
                     estimator_name
                 ] = estimator.estimate_interval(
                     **input_dict[eval_policy],
+                    **self.input_dict_,
+                    gamma=gamma,
                     alpha=alpha,
                     n_bootstrap_samples=n_bootstrap_samples,
                     random_state=random_state,
@@ -108,6 +130,7 @@ class OffPolicyEvaluation:
     def summarize_off_policy_estimates(
         self,
         input_dict: OPEInputDict,
+        gamma: float = 1.0,
         alpha: float = 0.05,
         n_bootstrap_samples: int = 100,
         random_state: Optional[int] = None,
@@ -116,6 +139,7 @@ class OffPolicyEvaluation:
         policy_value_dict = self.estimate_policy_values(input_dict)
         policy_value_interval_dict = self.estimate_policy_values(
             input_dict,
+            gamma=gamma,
             alpha=alpha,
             n_bootstrap_samples=n_bootstrap_samples,
             random_state=random_state,
@@ -149,6 +173,7 @@ class OffPolicyEvaluation:
     def visualize_off_policy_estimates(
         self,
         input_dict: OPEInputDict,
+        gamma: float = 1.0,
         alpha: float = 0.05,
         is_relative: bool = False,
         n_bootstrap_samples: int = 100,
@@ -169,17 +194,18 @@ class OffPolicyEvaluation:
             for estimator_name, estimator in self.ope_estimators_.items():
                 estimated_round_rewards_dict_[
                     estimator_name
-                ] = estimator._estimate_round_rewards(**input_dict[eval_policy])
+                ] = estimator._estimate_round_rewards(
+                    **input_dict[eval_policy],
+                    **self.input_dict_,
+                    gamma=gamma,
+                )
             estimated_round_rewards_df_ = DataFrame(estimated_round_rewards_dict_)
 
+            on_policy_policy_value = input_dict[eval_policy]["on_policy_policy_value"]
             if is_relative:
-                if (
-                    input_dict[eval_policy]["on_policy"] is not None
-                    and input_dict[eval_policy]["on_policy"] > 0
-                ):
+                if on_policy_policy_value is not None and on_policy_policy_value > 0:
                     estimated_round_rewards_df_dict[eval_policy] = (
-                        estimated_round_rewards_df_
-                        / input_dict[eval_policy]["on_policy"]
+                        estimated_round_rewards_df_ / on_policy_policy_value
                     )
                 else:
                     raise ValueError()
@@ -201,8 +227,9 @@ class OffPolicyEvaluation:
                 n_boot=n_bootstrap_samples,
                 seed=random_state,
             )
-            if input_dict[eval_policy]["on_policy"] is not None and not is_relative:
-                ax.axhline(input_dict[eval_policy]["on_policy"])
+            on_policy_policy_value = input_dict[eval_policy]["on_policy_policy_value"]
+            if on_policy_policy_value is not None and not is_relative:
+                ax.axhline(on_policy_policy_value)
             ax.set_title(eval_policy, fontsize=20)
             ax.set_ylabel(
                 f"Estimated Policy Value (± {np.int(100*(1 - alpha))}% CI)", fontsize=20
@@ -216,28 +243,33 @@ class OffPolicyEvaluation:
     def evaluate_performance_of_estimators(
         self,
         input_dict: OPEInputDict,
+        gamma: float = 1.0,
         metric: str = "relative-ee",
     ) -> Dict[str, float]:
         """Evaluate estimation performance of OPE estimators."""
         eval_metric_ope_dict = defaultdict(dict)
-        policy_value_dict = self.estimate_policy_values(input_dict)
+        policy_value_dict = self.estimate_policy_values(input_dict, gamma=gamma)
 
         if metric == "relative-ee":
             for eval_policy in input_dict.keys():
+                on_policy_policy_value = input_dict[eval_policy][
+                    "on_policy_policy_value"
+                ]
+
                 for estimator in self.ope_estimators_.keys():
                     relative_ee_ = (
-                        policy_value_dict[eval_policy]
-                        - input_dict[eval_policy]["on_policy"]
-                    ) / input_dict[eval_policy]["on_policy"]
+                        policy_value_dict[eval_policy] - on_policy_policy_value
+                    ) / on_policy_policy_value
                     eval_metric_ope_dict[eval_policy][estimator] = np.abs(relative_ee_)
 
         else:
             for eval_policy in input_dict.keys():
+                on_policy_policy_value = input_dict[eval_policy][
+                    "on_policy_policy_value"
+                ]
+
                 for estimator in self.ope_estimators_.keys():
-                    se_ = (
-                        policy_value_dict[eval_policy]
-                        - input_dict[eval_policy]["on_policy"]
-                    ) ** 2
+                    se_ = (policy_value_dict[eval_policy] - on_policy_policy_value) ** 2
                     eval_metric_ope_dict[eval_policy][estimator] = se_
 
         return eval_metric_ope_dict
@@ -245,13 +277,15 @@ class OffPolicyEvaluation:
     def summarize_estimators_comparison(
         self,
         input_dict: OPEInputDict,
+        gamma: float = 1.0,
         metric: str = "relative-ee",
     ) -> DataFrame:
         eval_metric_ope_df = DataFrame()
         eval_metric_ope_dict = self.evaluate_performance_of_estimators(
-            input_dict, metric
+            input_dict,
+            gamma=gamma,
+            metric=metric,
         )
-
         for eval_policy in input_dict.keys():
             eval_metric_ope_df[eval_policy] = DataFrame(
                 eval_metric_ope_dict[eval_policy]
@@ -327,6 +361,12 @@ class CreateOPEInput:
             scorers={},
         )
 
+    def obtain_evaluation_policy_action(
+        self,
+        evaluation_policy: BaseHead,
+    ) -> np.ndarray:
+        return evaluation_policy.predict(x=self.logged_dataset["state"])
+
     def obtain_pscore_for_observed_state_action(
         self,
         evaluation_policy: BaseHead,
@@ -340,7 +380,9 @@ class CreateOPEInput:
         self,
         evaluation_policy: BaseHead,
     ) -> np.ndarray:
-        base_pscore = self.obtain_pscore_for_observed_state_action(evaluation_policy)
+        base_pscore = self.obtain_pscore_for_observed_state_action(
+            evaluation_policy
+        ).reshape((-1, self.step_per_episode))
         return np.cumprod(base_pscore, axis=1).flatten()
 
     def obtain_trajectory_wise_pscore(
@@ -428,12 +470,27 @@ class CreateOPEInput:
             total=len(evaluation_policies),
         ):
             # input for IPW, DR
-            input_dict[evaluation_policies[i].name][
-                "step_wise_pscore"
-            ] = self.obtain_step_wise_pscore(evaluation_policies[i])
-            input_dict[evaluation_policies[i].name][
-                "trajectory_wise_pscore"
-            ] = self.obtain_trajectory_wise_pscore(evaluation_policies[i])
+            if self.action_type == "discrete":
+                input_dict[evaluation_policies[i].name][
+                    "evaluation_policy_step_wise_pscore"
+                ] = self.obtain_step_wise_pscore(evaluation_policies[i])
+                input_dict[evaluation_policies[i].name][
+                    "evaluation_policy_trajectory_wise_pscore"
+                ] = self.obtain_trajectory_wise_pscore(evaluation_policies[i])
+                input_dict[evaluation_policies[i].name][
+                    "evaluation_policy_actions"
+                ] = None
+            else:
+                input_dict[evaluation_policies[i].name][
+                    "evaluation_policy_step_wise_pscore"
+                ] = None
+                input_dict[evaluation_policies[i].name][
+                    "evaluation_policy_trajectory_wise_pscore"
+                ] = None
+                input_dict[evaluation_policies[i].name][
+                    "evaluation_policy_actions"
+                ] = self.obtain_evaluation_policy_action(evaluation_policies[i])
+
             # input for DM, DR
             if self.use_base_model:
                 state_action_value, pscore = self.obtain_state_action_value_with_pscore(

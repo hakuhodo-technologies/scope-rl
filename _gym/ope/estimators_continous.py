@@ -28,30 +28,30 @@ class ContinuousDirectMethod(BaseOffPolicyEstimator):
 
     def _estimate_trajectory_values(
         self,
-        estimated_state_action_value: np.ndarray,
+        initial_state_value: np.ndarray,
     ) -> np.ndarray:
-        return estimated_state_action_value[:, 0]
+        return initial_state_value
 
     def estimate_policy_value(
         self,
-        estimated_state_action_value: np.ndarray,
+        initial_state_value: np.ndarray,
         **kwargs,
     ) -> float:
         estimated_policy_value = self._estimate_trajectory_values(
-            estimated_state_action_value,
+            initial_state_value,
         ).mean()
         return estimated_policy_value
 
     def estimate_interval(
         self,
-        estimated_state_action_value: np.ndarray,
+        initial_state_value: np.ndarray,
         alpha: float = 0.05,
         n_bootstrap_samples: int = 10000,
         random_state: int = 12345,
         **kwargs,
     ) -> Dict[str, float]:
         estimated_trajectory_values = self._estimate_trajectory_values(
-            estimated_state_action_value,
+            initial_state_value,
         )
         return estimate_confidence_interval_by_bootstrap(
             samples=estimated_trajectory_values,
@@ -80,7 +80,7 @@ class ContinuousStepWiseImportanceSampling(BaseOffPolicyEstimator):
         self,
         actions: np.ndarray,
         rewards: np.ndarray,
-        behavior_policy_step_pscore: np.ndarray,
+        behavior_policy_step_wise_pscore: np.ndarray,
         evaluation_policy_actions: np.ndarray,
         gamma: float = 1.0,
     ) -> np.ndarray:
@@ -95,7 +95,7 @@ class ContinuousStepWiseImportanceSampling(BaseOffPolicyEstimator):
         estimated_trajectory_values = (
             (
                 (self.kernel_function(distance) * rewards / self.band_width)
-                / behavior_policy_step_pscore
+                / behavior_policy_step_wise_pscore
             )
             * discount
         ).sum(axis=1)
@@ -106,7 +106,7 @@ class ContinuousStepWiseImportanceSampling(BaseOffPolicyEstimator):
         self,
         actions: np.ndarray,
         rewards: np.ndarray,
-        behavior_policy_step_pscore: np.ndarray,
+        behavior_policy_step_wise_pscore: np.ndarray,
         evaluation_policy_actions: np.ndarray,
         gamma: float = 1.0,
         **kwargs,
@@ -114,7 +114,7 @@ class ContinuousStepWiseImportanceSampling(BaseOffPolicyEstimator):
         return self._estimate_trajectory_values(
             actions,
             rewards,
-            behavior_policy_step_pscore,
+            behavior_policy_step_wise_pscore,
             evaluation_policy_actions,
             gamma,
         ).mean()
@@ -123,7 +123,7 @@ class ContinuousStepWiseImportanceSampling(BaseOffPolicyEstimator):
         self,
         actions: np.ndarray,
         rewards: np.ndarray,
-        behavior_policy_step_pscore: np.ndarray,
+        behavior_policy_step_wise_pscore: np.ndarray,
         evaluation_policy_actions: np.ndarray,
         gamma: float = 1.0,
         alpha: float = 0.05,
@@ -134,7 +134,7 @@ class ContinuousStepWiseImportanceSampling(BaseOffPolicyEstimator):
         estimated_trajectory_values = self._estimate_trajectory_values(
             actions,
             rewards,
-            behavior_policy_step_pscore,
+            behavior_policy_step_wise_pscore,
             evaluation_policy_actions,
             gamma,
         )
@@ -166,7 +166,7 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
         actions: np.ndarray,
         rewards: np.ndarray,
         behavior_policy_step_pscore: np.ndarray,
-        estimated_state_action_value: np.ndarray,
+        counterfactual_state_action_value: np.ndarray,
         evaluation_policy_actions: np.ndarray,
         gamma: float = 1.0,
     ) -> np.ndarray:
@@ -187,12 +187,12 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
                 (
                     (
                         kernel_functions(distance)
-                        * (rewards - estimated_state_action_value)
+                        * (rewards - counterfactual_state_action_value)
                     )
                     / self.band_width
                 )
                 / pscores
-                + estimated_state_action_value / pscores_prev
+                + counterfactual_state_action_value / pscores_prev
             )
             * discount
         ).sum(axis=1)
@@ -203,8 +203,8 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
         self,
         actions: np.ndarray,
         rewards: np.ndarray,
-        behavior_policy_step_pscore: np.ndarray,
-        estimated_state_action_value: np.ndarray,
+        behavior_policy_step_wise_pscore: np.ndarray,
+        counterfactual_state_action_value: np.ndarray,
         evaluation_policy_actions: np.ndarray,
         gamma: float = 1.0,
         **kwargs,
@@ -212,8 +212,8 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
         return self._estimate_trajectory_values(
             actions,
             rewards,
-            behavior_policy_step_pscore,
-            estimated_state_action_value,
+            behavior_policy_step_wise_pscore,
+            counterfactual_state_action_value,
             evaluation_policy_actions,
             gamma,
         ).mean()
@@ -222,8 +222,8 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
         self,
         actions: np.ndarray,
         rewards: np.ndarray,
-        behavior_policy_step_pscore: np.ndarray,
-        estimated_state_action_value: np.ndarray,
+        behavior_policy_step_wise_pscore: np.ndarray,
+        counterfactual_state_action_value: np.ndarray,
         evaluation_policy_actions: np.ndarray,
         gamma: float = 1.0,
         alpha: float = 0.05,
@@ -234,8 +234,8 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
         estimated_trajectory_values = self._estimate_trajectory_values(
             actions,
             rewards,
-            behavior_policy_step_pscore,
-            estimated_state_action_value,
+            behavior_policy_step_wise_pscore,
+            counterfactual_state_action_value,
             evaluation_policy_actions,
             gamma,
         )
