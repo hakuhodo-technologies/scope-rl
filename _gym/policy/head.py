@@ -1,6 +1,6 @@
 """Wrapper class to convert greedy policy into stochastic."""
 from abc import abstractmethod, ABCMeta
-from typing import Sequence
+from typing import Sequence, Union
 from dataclasses import dataclass
 
 import numpy as np
@@ -43,16 +43,26 @@ class BaseHead(metaclass=ABCMeta):
         return self.base_algo.sample_action(x)
 
     def predict_online(self, x: np.ndarray):
-        return self.predict(x.reshape((1, -1)))
+        return self.predict(x.reshape((1, -1)))[0]
 
-    def predict_value_online(self, x: np.ndarray):
-        return self.predict_value(x.reshape((1, -1)))
+    def predict_value_online(
+        self,
+        x: np.ndarray,
+        action: Union[np.ndarray, int, float],
+        with_std: bool = False,
+    ):
+        if isinstance(action, (int, float)):
+            action = np.array([[action]])
+        else:
+            action.reshape((1, -1))
+        return self.predict_value(x.reshape((1, -1)), action, with_std=with_std)[0]
 
     def sample_action_online(self, x: np.ndarray):
-        return self.sample_action(x.reshape(1, -1))
+        return self.sample_action(x.reshape(1, -1))[0]
 
     def stochastic_action_with_pscore_online(self, x: np.ndarray):
-        return self.stochastic_action_with_pscore(x.reshape(1, -1))
+        action, pscore = self.stochastic_action_with_pscore(x.reshape(1, -1))
+        return action[0], pscore[0]
 
     def build_with_dataset(self, dataset: MDPDataset):
         return self.base_algo.build_with_dataset(dataset)
@@ -167,6 +177,24 @@ class BaseHead(metaclass=ABCMeta):
     @property
     def action_logger(self):
         return self.base_algo.action_logger
+
+
+@dataclass
+class OnlineHead(BaseHead):
+
+    base_algo: AlgoBase
+
+    def stochastic_action_with_pscore(self, x: np.ndarray):
+        pass
+
+    def calculate_action_choice_probability(self, x: np.ndarray):
+        pass
+
+    def calculate_pscore_given_action(self, x: np.ndarray, action: np.ndarray):
+        pass
+
+    def predict_counterfactual_state_action_value(self, x: np.ndarray):
+        pass
 
 
 @dataclass

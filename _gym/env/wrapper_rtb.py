@@ -8,6 +8,7 @@ from sklearn.base import BaseEstimator
 import numpy as np
 
 from _gym.env import RTBEnv
+from _gym.types import Action
 
 
 class CustomizedRTBEnv(gym.Env):
@@ -86,7 +87,7 @@ class CustomizedRTBEnv(gym.Env):
         Action type of the RL agent.
         Choose either from "discrete" or "continuous".
 
-    action_dim: int, default=10
+    n_actions: int, default=10
         Dimensions of the discrete action.
         Used only when action_type="discrete" option.
 
@@ -94,7 +95,7 @@ class CustomizedRTBEnv(gym.Env):
         Dictionary which maps discrete action index into specific actions.
         Used when only when using action_type="discrete" option.
         Note that if None, the action meaning values automatically set to [0.1, 10] log sampled values.
-            np.logspace(-1, 1, action_dim)
+            np.logspace(-1, 1, n_actions)
 
     Examples
     -------
@@ -143,7 +144,7 @@ class CustomizedRTBEnv(gym.Env):
         reward_predictor: Optional[BaseEstimator] = None,
         scaler: Optional[Union[int, float]] = None,
         action_type: str = "discrete",  # "continuous"
-        action_dim: int = 10,
+        n_actions: int = 10,
         action_meaning: Optional[
             np.ndarray
         ] = None,  # maps categorical actions to adjust rate
@@ -158,15 +159,15 @@ class CustomizedRTBEnv(gym.Env):
                 f'action_type must be either "discrete" or "continuous", but {action_type} is given'
             )
         if action_type == "discrete" and not (
-            isinstance(action_dim, int) and action_dim > 1
+            isinstance(n_actions, int) and n_actions > 1
         ):
             raise ValueError(
-                f"action_dim must be a interger more than 1, but {action_dim} is given"
+                f"n_actions must be a interger more than 1, but {n_actions} is given"
             )
         if action_type == "discrete" and action_meaning is not None:
-            if len(action_meaning) != action_dim:
+            if len(action_meaning) != n_actions:
                 raise ValueError(
-                    "action_meaning must have the same size with action_dim"
+                    "action_meaning must have the same size with n_actions"
                 )
             if not (
                 isinstance(action_meaning, np.ndarray)
@@ -214,14 +215,15 @@ class CustomizedRTBEnv(gym.Env):
 
         # define action space
         self.action_type = action_type
-        self.action_dim = action_dim
+        self.n_actions = n_actions
+        self.action_dim = 1
         self.action_meaning = action_meaning
 
         if self.action_type == "discrete":
-            self.action_space = Discrete(action_dim)
+            self.action_space = Discrete(n_actions)
 
             if self.action_meaning is None:
-                self.action_meaning = np.logspace(-1, 1, self.action_dim)
+                self.action_meaning = np.logspace(-1, 1, self.n_actions)
 
         else:  # "continuous"
             self.action_space = Box(low=0.1, high=10, shape=(1,), dtype=float)
@@ -242,12 +244,12 @@ class CustomizedRTBEnv(gym.Env):
     def initial_budget(self):
         return self.env.initial_budget
 
-    def step(self, action: Union[int, float]) -> Tuple[Any]:
+    def step(self, action: Action) -> Tuple[Any]:
         """Rollout auctions arise during the timestep and return feedbacks to the agent.
 
         Parameters
         -------
-        action: Union[int, float]
+        action: Action (Union[int, float, np.integer, np.float, np.ndarray])
             RL agent action which indicates adjust rate parameter used for bid price determination.
             Both discrete and continuos actions are acceptable.
 
@@ -280,20 +282,22 @@ class CustomizedRTBEnv(gym.Env):
                 and 0 <= action < self.action_space.n
             ):
                 raise ValueError(
-                    f"action must be an integer within [0, {self.action_space.n})"
+                    f"action must be an integer within [0, {self.action_space.n}), but {action} is given"
                 )
         else:  # "continuous"
-            if not self.action_space.contains(np.array([action])):
+            if isinstance(action, Union[int, float, np.integer, np.float]):
+                action = np.array([action])
+            if not self.action_space.contains(action):
                 raise ValueError(
                     f"action must be a float value within ({self.action_space.low}, {self.action_space.high})"
                 )
 
-        # map agent action into adjust rate
-        adjust_rate = (
+        # map agent action into meaningful value
+        action = (
             action if self.action_type == "continuous" else self.action_meaning[action]
         )
 
-        return self.env.step(action=adjust_rate)
+        return self.env.step(action)
 
     def reset(self) -> np.ndarray:
         """Initialize the environment.

@@ -9,6 +9,7 @@ import numpy as np
 from sklearn.utils import check_random_state
 
 from _gym.utils import NormalDistribution
+from _gym.types import Action
 
 from .bidder import Bidder
 from .simulator.rtb_synthetic import RTBSyntheticSimulator
@@ -252,6 +253,7 @@ class RTBEnv(gym.Env):
 
         # define action space (adjust rate range)
         self.action_type = "continuous"
+        self.action_dim = 1
         self.action_space = Box(low=0.0, high=np.inf, shape=(1,), dtype=float)
 
         # define reward range
@@ -276,7 +278,7 @@ class RTBEnv(gym.Env):
     def standard_bid_price(self):
         return self.simulator.standard_bid_price
 
-    def step(self, action: Union[int, float]) -> Tuple[Any]:
+    def step(self, action: Action) -> Tuple[Any]:
         """Rollout auctions arise during the timestep and return feedbacks to the agent.
 
         Note
@@ -297,7 +299,7 @@ class RTBEnv(gym.Env):
 
         Parameters
         -------
-        action: float
+        action: Action (Union[int, float, np.integer, np.float, np.ndarray])
             RL agent action which corresponds to the adjust rate parameter used for bid price calculation.
 
         Returns
@@ -323,10 +325,23 @@ class RTBEnv(gym.Env):
                 Note that those feedbacks are intended to be unobservable for the RL agent.
 
         """
-        if not (isinstance(action, float) and action >= 0):
+        err = False
+        if isinstance(action, (int, float, np.integer, np.float)):
+            if not action >= 0:
+                err = True
+        elif isinstance(action, np.ndarray):
+            if not action.shape == (1,):
+                err = True
+            else:
+                action = action[0]
+        else:
+            err = True
+
+        if err:
             raise ValueError(
                 f"action must be a non-negative float value, but {action} is given"
             )
+
         adjust_rate = action
 
         # 1. sample ads and users for auctions occur in a timestep

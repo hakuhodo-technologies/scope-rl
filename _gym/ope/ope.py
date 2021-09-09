@@ -433,7 +433,7 @@ class CreateOPEInput:
             done = False
 
             while not done:
-                action = evaluation_policy.sample_action(state)
+                action = evaluation_policy.sample_action_online(state)
                 state, reward, done, _ = env.step(action)
                 total_reward += reward
 

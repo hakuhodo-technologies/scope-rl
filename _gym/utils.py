@@ -190,3 +190,9 @@ def check_input_dict(
     input_dict: OPEInputDict,
 ):
     raise NotImplementedError()
+
+
+def check_synthetic_dataset_configurations(
+    configurations: Dict[str, Any],
+):
+    raise NotImplementedError()
