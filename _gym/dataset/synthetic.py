@@ -255,17 +255,21 @@ class SyntheticDataset(BaseDataset):
                     for key in info_keys:
                         info[key] = np.empty(n_episodes * self.step_per_episode)
 
-                states[idx] = state
-                actions[idx] = action
-                action_probs[idx] = action_prob
-                rewards[idx] = reward
-                dones[idx] = done
+                if done:
+                    state = self.env.reset()
 
-                for key, value in info_.items():
-                    info[key][idx] = value
+                else:
+                    states[idx] = state
+                    actions[idx] = action
+                    action_probs[idx] = action_prob
+                    rewards[idx] = reward
+                    dones[idx] = done
 
-                idx += 1
-                state = next_state
+                    for key, value in info_.items():
+                        info[key][idx] = value
+
+                    idx += 1
+                    state = next_state
 
         logged_dataset = {
             "size": n_episodes * self.step_per_episode,
