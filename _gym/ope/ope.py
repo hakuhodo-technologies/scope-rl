@@ -314,6 +314,7 @@ class CreateOPEInput:
     def __post_init__(self) -> None:
         "Initialize class."
         self.action_type = self.logged_dataset["action_type"]
+        self.n_actions = self.logged_dataset["n_actions"]
         self.step_per_episode = self.logged_dataset["step_per_episode"]
         self.mdp_dataset = convert_logged_dataset_into_MDPDataset(self.logged_dataset)
 
@@ -415,6 +416,10 @@ class CreateOPEInput:
         state_action_value, pscore = self.obtain_state_action_value_with_pscore(
             evaluation_policy
         )
+
+        if self.action_type == "discrete":
+            state_action_value.reshape(self.n_actions)
+
         state_value = np.sum(state_action_value * pscore, axis=1)
         return state_value.reshape((-1, self.step_per_episode))[:, 0]  # (n_samples, )
 
