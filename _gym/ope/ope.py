@@ -48,7 +48,7 @@ class OffPolicyEvaluation:
     logged_dataset: LoggedDataset
     ope_estimators: List[BaseOffPolicyEstimator]
 
-    def __post__init__(self) -> None:
+    def __post_init__(self) -> None:
         "Initialize class."
         self.action_type = self.logged_dataset["action_type"]
         self.step_per_episode = self.logged_dataset["step_per_episode"]
@@ -430,9 +430,9 @@ class CreateOPEInput:
         n_episodes: int = 1000,
     ) -> float:
         total_reward = 0.0
-        for _ in tqdm(
-            np.arange(n_episodes),
-            desc="[calc_on_policy_policy_value]",
+        for i in tqdm(
+            range(n_episodes),
+            desc="[calculate on-policy policy value]",
             total=n_episodes,
         ):
             state = env.reset()
@@ -460,7 +460,7 @@ class CreateOPEInput:
                     f"one of the evaluation_policies, {eval_policy.name} does not much action_type in logged_dataset. Please use {self.action_type} type instead."
                 )
 
-        if self.use_base_model:
+        if self.use_base_model and False:
             for i in tqdm(
                 range(len(evaluation_policies)),
                 desc="[fit FQE model]",
