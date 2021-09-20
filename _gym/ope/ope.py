@@ -418,12 +418,13 @@ class CreateOPEInput:
         )
 
         if self.action_type == "discrete":
-            state_action_value.reshape(self.n_actions)
+            state_action_value = state_action_value.reshape((-1, self.n_actions))
 
         state_value = np.sum(state_action_value * pscore, axis=1)
         return state_value.reshape((-1, self.step_per_episode))[:, 0]  # (n_samples, )
 
     def evaluate_online(
+        self,
         env: gym.Env,
         evaluation_policy: BaseHead,
         n_episodes: int = 1000,
@@ -520,7 +521,10 @@ class CreateOPEInput:
             if env is not None:
                 input_dict[evaluation_policies[i].name][
                     "on_policy_policy_value"
-                ] = self.evaluate_online(env, evaluation_policies[i])
+                ] = self.evaluate_online(
+                    env,
+                    evaluation_policies[i],
+                )
             else:
                 input_dict[evaluation_policies[i].name]["on_policy_policy_value"] = None
 
