@@ -403,7 +403,7 @@ class CreateOPEInput:
                 self.logged_dataset["state"]
             )
         )
-        pscore = evaluation_policy.calculate_action_choice_propability(
+        pscore = evaluation_policy.calculate_action_choice_probability(
             self.logged_dataset["state"]
         )
         return state_action_value, pscore  # (n_samples, n_actions)
