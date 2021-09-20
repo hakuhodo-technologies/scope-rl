@@ -13,6 +13,7 @@ __all__ = [
     "DiscreteTrajectoryWiseImportanceSampling",
     "DiscreteStepWiseImportanceSampling",
     "DiscreteDoublyRobust",
-    "ContinuousDirectMethod" "ContinuousStepWiseImportanceSampling",
+    "ContinuousDirectMethod",
+    "ContinuousStepWiseImportanceSampling",
     "ContinuousDoublyRobust",
 ]
