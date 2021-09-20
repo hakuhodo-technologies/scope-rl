@@ -462,7 +462,7 @@ class CreateOPEInput:
                     f"one of the evaluation_policies, {eval_policy.name} does not much action_type in logged_dataset. Please use {self.action_type} type instead."
                 )
 
-        if self.use_base_model and False:
+        if self.use_base_model:
             for i in tqdm(
                 range(len(evaluation_policies)),
                 desc="[fit FQE model]",
