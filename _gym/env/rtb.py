@@ -376,7 +376,7 @@ class RTBEnv(gym.Env):
         else:
             reward = total_conversion
 
-        done = self.t == self.step_per_episode
+        done = self.t == self.step_per_episode - 1
 
         if done:
             obs = self.reset()
