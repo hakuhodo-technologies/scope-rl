@@ -138,7 +138,7 @@ class OffPolicyEvaluation:
     ) -> Tuple[DataFrame, DataFrame]:
         """Summarize policy values and their confidence intervals estimated by OPE estimators."""
         policy_value_dict = self.estimate_policy_values(input_dict)
-        policy_value_interval_dict = self.estimate_policy_values(
+        policy_value_interval_dict = self.estimate_intervals(
             input_dict,
             gamma=gamma,
             alpha=alpha,
@@ -189,40 +189,42 @@ class OffPolicyEvaluation:
             assert isinstance(fig_name, str), "fig_dir must be a string"
         check_input_dict(input_dict)
 
-        estimated_round_rewards_df_dict = dict()
+        estimated_trajectory_values_df_dict = dict()
         for eval_policy in input_dict.keys():
-            estimated_round_rewards_dict_ = dict()
+            estimated_trajectory_values_dict_ = dict()
             for estimator_name, estimator in self.ope_estimators_.items():
-                estimated_round_rewards_dict_[
+                estimated_trajectory_values_dict_[
                     estimator_name
-                ] = estimator._estimate_round_rewards(
+                ] = estimator._estimate_trajectory_values(
                     **input_dict[eval_policy],
                     **self.input_dict_,
                     gamma=gamma,
                 )
-            estimated_round_rewards_df_ = DataFrame(estimated_round_rewards_dict_)
+            estimated_trajectory_values_df_ = DataFrame(
+                estimated_trajectory_values_dict_
+            )
 
             on_policy_policy_value = input_dict[eval_policy]["on_policy_policy_value"]
             if is_relative:
                 if on_policy_policy_value is not None and on_policy_policy_value > 0:
-                    estimated_round_rewards_df_dict[eval_policy] = (
-                        estimated_round_rewards_df_ / on_policy_policy_value
+                    estimated_trajectory_values_df_dict[eval_policy] = (
+                        estimated_trajectory_values_df_ / on_policy_policy_value
                     )
                 else:
                     raise ValueError()
 
             else:
-                estimated_round_rewards_df_dict[
+                estimated_trajectory_values_df_dict[
                     eval_policy
-                ] = estimated_round_rewards_df_
+                ] = estimated_trajectory_values_df_
 
         plt.style.use("ggplot")
         fig = plt.figure(figsize=(8, 6.2 * len(input_dict)))
 
-        for i, eval_policy in input_dict.keys():
+        for i, eval_policy in enumerate(input_dict.keys()):
             ax = fig.add_subplot(len(self.ope_estimators_), 1, i + 1)
             sns.barplot(
-                data=estimated_round_rewards_df_dict[eval_policy],
+                data=estimated_trajectory_values_df_dict[eval_policy],
                 ax=ax,
                 ci=100 * (1 - alpha),
                 n_boot=n_bootstrap_samples,
@@ -231,12 +233,12 @@ class OffPolicyEvaluation:
             on_policy_policy_value = input_dict[eval_policy]["on_policy_policy_value"]
             if on_policy_policy_value is not None and not is_relative:
                 ax.axhline(on_policy_policy_value)
-            ax.set_title(eval_policy, fontsize=20)
+            ax.set_title(eval_policy, fontsize=10)
             ax.set_ylabel(
-                f"Estimated Policy Value (± {np.int(100*(1 - alpha))}% CI)", fontsize=20
+                f"Estimated Policy Value (± {np.int(100*(1 - alpha))}% CI)", fontsize=8
             )
-            plt.yticks(fontsize=15)
-            plt.xticks(fontsize=25 - 2 * len(self.ope_estimators_))
+            plt.yticks(fontsize=10)
+            plt.xticks(fontsize=20 - 2 * len(self.ope_estimators_))
 
         if fig_dir:
             fig.savefig(str(fig_dir / fig_name))
@@ -259,7 +261,8 @@ class OffPolicyEvaluation:
 
                 for estimator in self.ope_estimators_.keys():
                     relative_ee_ = (
-                        policy_value_dict[eval_policy] - on_policy_policy_value
+                        policy_value_dict[eval_policy][estimator]
+                        - on_policy_policy_value
                     ) / on_policy_policy_value
                     eval_metric_ope_dict[eval_policy][estimator] = np.abs(relative_ee_)
 
@@ -270,7 +273,10 @@ class OffPolicyEvaluation:
                 ]
 
                 for estimator in self.ope_estimators_.keys():
-                    se_ = (policy_value_dict[eval_policy] - on_policy_policy_value) ** 2
+                    se_ = (
+                        policy_value_dict[eval_policy][estimator]
+                        - on_policy_policy_value
+                    ) ** 2
                     eval_metric_ope_dict[eval_policy][estimator] = se_
 
         return eval_metric_ope_dict
@@ -289,7 +295,7 @@ class OffPolicyEvaluation:
         )
         for eval_policy in input_dict.keys():
             eval_metric_ope_df[eval_policy] = DataFrame(
-                eval_metric_ope_dict[eval_policy]
+                eval_metric_ope_dict[eval_policy], index=[eval_policy]
             ).T
         return eval_metric_ope_df
 

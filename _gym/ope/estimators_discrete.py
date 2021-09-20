@@ -40,6 +40,7 @@ class DiscreteDirectMethod(BaseOffPolicyEstimator):
     def _estimate_trajectory_values(
         self,
         initial_state_value,
+        **kwargs,
     ) -> np.ndarray:
         return initial_state_value
 
@@ -84,6 +85,7 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         behavior_policy_trajectory_wise_pscore: np.ndarray,
         evaluation_policy_trajectory_wise_pscore: np.ndarray,
         gamma: float = 1.0,
+        **kwargs,
     ) -> np.ndarray:
         weights = (
             evaluation_policy_trajectory_wise_pscore
@@ -155,6 +157,7 @@ class DiscreteStepWiseImportanceSampling(BaseOffPolicyEstimator):
         behavior_policy_step_wise_pscore: np.ndarray,
         evaluation_policy_step_wise_pscore: np.ndarray,
         gamma: float = 1.0,
+        **kwargs,
     ) -> np.ndarray:
         weights = evaluation_policy_step_wise_pscore / behavior_policy_step_wise_pscore
         undiscounted_values = (rewards * weights).reshape((-1, step_per_episode))
@@ -225,6 +228,7 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
         counterfactual_state_action_value: np.ndarray,
         counterfactual_pscore: np.ndarray,
         gamma: float = 1.0,
+        **kwargs,
     ) -> np.ndarray:
         baselines = (counterfactual_state_action_value * counterfactual_pscore).sum(
             axis=1
