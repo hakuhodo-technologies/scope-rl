@@ -1,5 +1,5 @@
 """Useful tools."""
-from numpy.lib.index_tricks import diag_indices
+import copy
 from dataclasses import dataclass
 from typing import Dict, Union, Any
 
@@ -127,11 +127,13 @@ def estimate_confidence_interval_by_bootstrap(
 
 
 def check_logged_dataset(logged_dataset: LoggedDataset):
-    raise NotImplementedError()
+    pass
+    # raise NotImplementedError()
 
 
 def check_scaler(x: Union[int, float]):
-    raise NotImplementedError
+    pass
+    # raise NotImplementedError
 
 
 def convert_logged_dataset_into_MDPDataset(logged_dataset: LoggedDataset):
@@ -183,16 +185,19 @@ def check_if_valid_env_and_logged_dataset(
     env: gym.Env,
     logged_dataset: LoggedDataset,
 ):
-    raise NotImplementedError()
+    pass
+    # raise NotImplementedError()
 
 
 def check_input_dict(
     input_dict: OPEInputDict,
 ):
-    raise NotImplementedError()
+    pass
+    # raise NotImplementedError()
 
 
 def check_synthetic_dataset_configurations(
     configurations: Dict[str, Any],
 ):
-    raise NotImplementedError()
+    pass
+    # raise NotImplementedError()

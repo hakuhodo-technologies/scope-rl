@@ -79,21 +79,24 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 
     def _estimate_trajectory_values(
         self,
+        step_per_episode: int,
         rewards: np.ndarray,
         behavior_policy_trajectory_wise_pscore: np.ndarray,
         evaluation_policy_trajectory_wise_pscore: np.ndarray,
         gamma: float = 1.0,
     ) -> np.ndarray:
-        discount = np.full(rewards.shape[0], gamma).cumprod()
         weights = (
             evaluation_policy_trajectory_wise_pscore
             / behavior_policy_trajectory_wise_pscore
         )
-        estimated_trajectory_values = ((rewards * weights) * discount).sum(axis=1)
+        undiscounted_values = (rewards * weights).reshape((-1, step_per_episode))
+        discount = np.full(undiscounted_values.shape[1], gamma).cumprod()
+        estimated_trajectory_values = (undiscounted_values * discount).sum(axis=1)
         return estimated_trajectory_values
 
     def estimate_policy_value(
         self,
+        step_per_episode: int,
         rewards: np.ndarray,
         behavior_policy_trajectory_wise_pscore: np.ndarray,
         evaluation_policy_trajectory_wise_pscore: np.ndarray,
@@ -101,6 +104,7 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         **kwargs,
     ) -> float:
         estimated_policy_value = self._estimate_trajectory_values(
+            step_per_episode,
             rewards,
             behavior_policy_trajectory_wise_pscore,
             evaluation_policy_trajectory_wise_pscore,
@@ -110,6 +114,7 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 
     def estimate_interval(
         self,
+        step_per_episode: int,
         rewards: np.ndarray,
         behavior_policy_trajectory_wise_pscore: np.ndarray,
         evaluation_policy_trajectory_wise_pscore: np.ndarray,
@@ -120,6 +125,7 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         **kwargs,
     ) -> Dict[str, float]:
         estimated_trajectory_values = self._estimate_trajectory_values(
+            step_per_episode,
             rewards,
             behavior_policy_trajectory_wise_pscore,
             evaluation_policy_trajectory_wise_pscore,
@@ -144,20 +150,21 @@ class DiscreteStepWiseImportanceSampling(BaseOffPolicyEstimator):
 
     def _estimate_trajectory_values(
         self,
+        step_per_episode: int,
         rewards: np.ndarray,
         behavior_policy_step_wise_pscore: np.ndarray,
         evaluation_policy_step_wise_pscore: np.ndarray,
         gamma: float = 1.0,
     ) -> np.ndarray:
-        discount = np.full(rewards.shape[0], gamma).cumprod()
         weights = evaluation_policy_step_wise_pscore / behavior_policy_step_wise_pscore
-
-        estimated_trajectory_values = ((rewards * weights) * discount).sum(axis=1)
-
+        undiscounted_values = (rewards * weights).reshape((-1, step_per_episode))
+        discount = np.full(undiscounted_values.shape[1], gamma).cumprod()
+        estimated_trajectory_values = (undiscounted_values * discount).sum(axis=1)
         return estimated_trajectory_values
 
     def estimate_policy_value(
         self,
+        step_per_episode: int,
         rewards: np.ndarray,
         behavior_policy_step_wise_pscore: np.ndarray,
         evaluation_policy_step_wise_pscore: np.ndarray,
@@ -165,6 +172,7 @@ class DiscreteStepWiseImportanceSampling(BaseOffPolicyEstimator):
         **kwargs,
     ) -> float:
         return self._estimate_trajectory_values(
+            step_per_episode,
             rewards,
             behavior_policy_step_wise_pscore,
             evaluation_policy_step_wise_pscore,
@@ -173,6 +181,7 @@ class DiscreteStepWiseImportanceSampling(BaseOffPolicyEstimator):
 
     def estimate_interval(
         self,
+        step_per_episode: int,
         rewards: np.ndarray,
         behavior_policy_step_wise_pscore: np.ndarray,
         evaluation_policy_step_wise_pscore: np.ndarray,
@@ -183,6 +192,7 @@ class DiscreteStepWiseImportanceSampling(BaseOffPolicyEstimator):
         **kwargs,
     ) -> Dict[str, float]:
         estimated_trajectory_values = self._estimate_trajectory_values(
+            step_per_episode,
             rewards,
             behavior_policy_step_wise_pscore,
             evaluation_policy_step_wise_pscore,
@@ -207,6 +217,7 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
 
     def _estimate_trajectory_values(
         self,
+        step_per_episode: int,
         actions: np.ndarray,
         rewards: np.ndarray,
         behavior_policy_step_wise_pscore: np.ndarray,
@@ -215,53 +226,62 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
         counterfactual_pscore: np.ndarray,
         gamma: float = 1.0,
     ) -> np.ndarray:
-        discount = np.full(rewards.shape[0], gamma).cumprod()
-
         baselines = (counterfactual_state_action_value * counterfactual_pscore).sum(
-            axis=2
+            axis=1
         )
-
         estimated_values = np.empty_like(rewards, dtype=float)
-        for i in range(actions.shape[0]):
-            for j in range(actions.shape[1]):
-                estimated_values[i, j] = counterfactual_state_action_value[
-                    i, j, actions[i, j]
-                ]
+        for i in range(len(actions)):
+            estimated_values[i] = counterfactual_state_action_value[i, actions[i]]
 
-        weights = evaluation_policy_step_wise_pscore / behavior_policy_step_wise_pscore
+        weights = (
+            evaluation_policy_step_wise_pscore / behavior_policy_step_wise_pscore
+        ).reshape((-1, step_per_episode))
         weights_prev = np.roll(weights, 1, axis=1)
         weights_prev[:, 0] = 1
 
-        estimated_trajectory_values = (
-            (weights * (rewards - estimated_values) + weights_prev * baselines)
-            * discount
-        ).sum(axis=1)
+        weights = weights.flatten()
+        weights_prev = weights_prev.flatten()
+
+        undiscounted_values = (
+            weights * (rewards - estimated_values) + weights_prev * baselines
+        ).reshape((-1, step_per_episode))
+        discount = np.full(undiscounted_values.shape[1], gamma).cumprod()
+        estimated_trajectory_values = (undiscounted_values * discount).sum(axis=1)
 
         return estimated_trajectory_values
 
     def estimate_policy_value(
         self,
+        step_per_episode: int,
+        actions: np.ndarray,
         rewards: np.ndarray,
         behavior_policy_step_wise_pscore: np.ndarray,
         evaluation_policy_step_wise_pscore: np.ndarray,
         counterfactual_state_action_value: np.ndarray,
+        counterfactual_pscore: np.ndarray,
         gamma: float = 1.0,
         **kwargs,
     ) -> float:
         return self._estimate_trajectory_values(
+            step_per_episode,
+            actions,
             rewards,
             behavior_policy_step_wise_pscore,
             evaluation_policy_step_wise_pscore,
             counterfactual_state_action_value,
+            counterfactual_pscore,
             gamma=gamma,
         ).mean()
 
     def estimate_interval(
         self,
+        step_per_episode: int,
+        actions: np.ndarray,
         rewards: np.ndarray,
         behavior_policy_step_wise_pscore: np.ndarray,
         evaluation_policy_step_wise_pscore: np.ndarray,
         counterfactual_state_action_value: np.ndarray,
+        counterfactual_pscore: np.ndarray,
         gamma: float = 1.0,
         alpha: float = 0.05,
         n_bootstrap_samples: int = 10000,
@@ -269,10 +289,13 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
         **kwargs,
     ) -> Dict[str, float]:
         estimated_trajectory_values = self._estimate_trajectory_values(
+            step_per_episode,
+            actions,
             rewards,
             behavior_policy_step_wise_pscore,
             evaluation_policy_step_wise_pscore,
             counterfactual_state_action_value,
+            counterfactual_pscore,
             gamma=gamma,
         )
         return estimate_confidence_interval_by_bootstrap(

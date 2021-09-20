@@ -71,7 +71,8 @@ class OffPolicyEvaluation:
         ).T
 
         self.input_dict_ = {
-            "actions": self.logged_dataset["action"],
+            "step_per_episode": self.step_per_episode,
+            "actions": self.logged_dataset["action"].astype(int),
             "rewards": self.logged_dataset["reward"],
             "behavior_policy_step_wise_pscore": behavior_policy_step_wise_pscore.flatten(),
             "behavior_policy_trajectory_wise_pscore": behavior_policy_trajectory_wise_pscore.flatten(),
@@ -315,6 +316,7 @@ class CreateOPEInput:
         "Initialize class."
         self.action_type = self.logged_dataset["action_type"]
         self.n_actions = self.logged_dataset["n_actions"]
+        self.action_dim = self.logged_dataset["action_dim"]
         self.step_per_episode = self.logged_dataset["step_per_episode"]
         self.mdp_dataset = convert_logged_dataset_into_MDPDataset(self.logged_dataset)
 
@@ -403,7 +405,7 @@ class CreateOPEInput:
             evaluation_policy.predict_counterfactual_state_action_value(
                 self.logged_dataset["state"]
             )
-        )
+        ).reshape((-1, self.n_actions))
         pscore = evaluation_policy.calculate_action_choice_probability(
             self.logged_dataset["state"]
         )
