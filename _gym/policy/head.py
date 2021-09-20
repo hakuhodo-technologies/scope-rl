@@ -14,7 +14,7 @@ from d3rlpy.logger import D3RLPyLogger
 
 
 @dataclass
-class BaseHead(metaclass=ABCMeta):
+class BaseHead(AlgoBase):
     """Base class to convert greedy policy into stochastic."""
 
     @abstractmethod
@@ -104,7 +104,7 @@ class BaseHead(metaclass=ABCMeta):
         return self.base_algo.get_action_type()
 
     def get_params(self, **kwargs):
-        return self.base_algo.get_parames()
+        return self.base_algo.get_params()
 
     def load_model(self, fname: str):
         return self.base_algo.load_model(fname)

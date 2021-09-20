@@ -13,7 +13,7 @@ class BaseOffPolicyEstimator(metaclass=ABCMeta):
     """Base class for OPE estimators for discrete actions."""
 
     @abstractmethod
-    def _estimate_trajectory_rewards(self) -> Union[np.ndarray]:
+    def _estimate_trajectory_values(self) -> Union[np.ndarray]:
         """Estimate trajectory-wise rewards."""
         raise NotImplementedError
 

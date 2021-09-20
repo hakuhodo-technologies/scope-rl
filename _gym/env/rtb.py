@@ -376,27 +376,35 @@ class RTBEnv(gym.Env):
         else:
             reward = total_conversion
 
-        # update timestep
-        self.t += 1
-
-        obs = {
-            "timestep": self.t,
-            "remaining_budget": self.remaining_budget,
-            "budget_consumption_rate": (
-                self.prev_remaining_budget - self.remaining_budget
-            )
-            / self.prev_remaining_budget
-            if self.prev_remaining_budget
-            else 0,
-            "cost_per_mille_of_impression": (total_cost * 1000) / total_impression
-            if total_impression
-            else 0,
-            "winning_rate": total_impression / len(bid_prices),
-            "reward": reward,
-            "adjust_rate": adjust_rate,
-        }
-
         done = self.t == self.step_per_episode
+
+        if done:
+            obs = self.reset()
+
+        else:
+            # update timestep
+            self.t += 1
+
+            obs = {
+                "timestep": self.t,
+                "remaining_budget": self.remaining_budget,
+                "budget_consumption_rate": (
+                    self.prev_remaining_budget - self.remaining_budget
+                )
+                / self.prev_remaining_budget
+                if self.prev_remaining_budget
+                else 0,
+                "cost_per_mille_of_impression": (total_cost * 1000) / total_impression
+                if total_impression
+                else 0,
+                "winning_rate": total_impression / len(bid_prices),
+                "reward": reward,
+                "adjust_rate": adjust_rate,
+            }
+            obs = np.array(list(obs.values())).astype(float)
+
+            # update logs
+            self.prev_remaining_budget = self.remaining_budget
 
         # we use 'info' to obtain supplemental feedbacks beside rewards
         info = {
@@ -406,10 +414,7 @@ class RTBEnv(gym.Env):
             "average_bid_price": np.mean(bid_prices),
         }
 
-        # update logs
-        self.prev_remaining_budget = self.remaining_budget
-
-        return np.array(list(obs.values())).astype(float), reward, done, info
+        return obs, reward, done, info
 
     def reset(self) -> np.ndarray:
         """Initialize the environment.

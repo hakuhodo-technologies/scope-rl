@@ -311,14 +311,14 @@ class CreateOPEInput:
     base_model_args: Optional[Dict[str, Any]] = None
     use_base_model: bool = False
 
-    def __post__init__(self) -> None:
+    def __post_init__(self) -> None:
         "Initialize class."
         self.action_type = self.logged_dataset["action_type"]
         self.step_per_episode = self.logged_dataset["step_per_episode"]
         self.mdp_dataset = convert_logged_dataset_into_MDPDataset(self.logged_dataset)
 
         if self.use_base_model:
-            self.fqe = []
+            self.fqe = dict()
             if self.base_model_args is None:
                 self.base_model_args = {
                     "n_epochs": 200,
