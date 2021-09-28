@@ -96,10 +96,6 @@ class NormalDistribution:
         return random_variables
 
 
-def action_scaler():
-    raise NotImplementedError()
-
-
 def sigmoid(x: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
     """Sigmoid function"""
     return 1 / (1 + np.exp(-x))

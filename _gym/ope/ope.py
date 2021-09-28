@@ -429,6 +429,14 @@ class CreateOPEInput:
         )
         return state_action_value, pscore  # (n_samples, n_actions)
 
+    def obtain_state_action_value_deterministic(
+        self,
+        evaluation_policy: BaseHead,
+    ) -> np.ndarray:
+        state = self.logged_dataset["state"]
+        action = evaluation_policy.predict(state)
+        return self.fqe[evaluation_policy.name].predict_value(state, action)
+
     def obtain_initial_state_value_discrete(
         self,
         evaluation_policy: BaseHead,
@@ -444,9 +452,7 @@ class CreateOPEInput:
         self,
         evaluation_policy: BaseHead,
     ) -> np.ndarray:
-        state = self.logged_dataset["state"]
-        action = evaluation_policy.predict(state)
-        state_value = self.fqe[evaluation_policy.name].predict_value(state, action)
+        state_value = self.obtain_state_action_value_deterministic(evaluation_policy)
         return state_value.reshape((-1, self.step_per_episode))[:, 0]  # (n_samples, )
 
     def evaluate_online(
@@ -553,6 +559,11 @@ class CreateOPEInput:
                     ] = None
             else:
                 if self.use_base_model:
+                    input_dict[evaluation_policies[i].name][
+                        "counterfactual_state_action_value"
+                    ] = self.obtain_state_action_value_deterministic(
+                        evaluation_policies[i]
+                    )
                     input_dict[evaluation_policies[i].name][
                         "initial_state_value"
                     ] = self.obtain_initial_state_value_continuous(
