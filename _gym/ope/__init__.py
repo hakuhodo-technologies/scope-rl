@@ -5,9 +5,10 @@ from _gym.ope.estimators_discrete import DiscreteDirectMethod
 from _gym.ope.estimators_discrete import DiscreteTrajectoryWiseImportanceSampling
 from _gym.ope.estimators_discrete import DiscreteStepWiseImportanceSampling
 from _gym.ope.estimators_discrete import DiscreteDoublyRobust
-from _gym.ope.estimators_continous import ContinuousDirectMethod
-from _gym.ope.estimators_continous import ContinuousStepWiseImportanceSampling
-from _gym.ope.estimators_continous import ContinuousDoublyRobust
+from _gym.ope.estimators_continuous import ContinuousDirectMethod
+from _gym.ope.estimators_continuous import ContinuousTrajectoryWiseImportanceSampling
+from _gym.ope.estimators_continuous import ContinuousStepWiseImportanceSampling
+from _gym.ope.estimators_continuous import ContinuousDoublyRobust
 
 __all__ = [
     "BaseOffPolicyEstimator",
@@ -18,6 +19,7 @@ __all__ = [
     "DiscreteStepWiseImportanceSampling",
     "DiscreteDoublyRobust",
     "ContinuousDirectMethod",
+    "ContinuousTrajectoryWiseImportanceSampling",
     "ContinuousStepWiseImportanceSampling",
     "ContinuousDoublyRobust",
 ]

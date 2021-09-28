@@ -68,6 +68,7 @@ class ContinuousDirectMethod(BaseOffPolicyEstimator):
 class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
     """Trajectory-wise Importance Sampling (TIS) for continuous OPE (assume deterministic policies)."""
 
+    action_space: Box
     kernel: str = "gaussian"
     band_width: float = 1.0
     estimator_name: str = "tis"
@@ -151,6 +152,7 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 class ContinuousStepWiseImportanceSampling(BaseOffPolicyEstimator):
     """Step-wise Importance Sampling (SIS) for continuous OPE (assume deterministic policies)."""
 
+    action_space: Box
     kernel: str = "gaussian"
     band_width: float = 1.0
     estimator_name: str = "sis"
@@ -238,6 +240,7 @@ class ContinuousStepWiseImportanceSampling(BaseOffPolicyEstimator):
 class ContinuousDoublyRobust(BaseOffPolicyEstimator):
     """Doubly Robust (DR) for continuous OPE (assume deterministic policies)."""
 
+    action_space: Box
     kernel: str = "gaussian"
     band_width: float = 1.0
     estimator_name = "dr"
