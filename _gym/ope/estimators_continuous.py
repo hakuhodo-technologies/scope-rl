@@ -96,7 +96,11 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 
         estimated_trajectory_values = (
             (
-                (self.kernel_function(distance) * rewards / self.scaling_factor)
+                (
+                    self.kernel_function(distance, self.scaling_factor)
+                    * rewards
+                    / self.scaling_factor
+                )
                 / behavior_policy_trajectory_wise_pscore
             )
             * discount
@@ -256,9 +260,10 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
 
     def _estimate_trajectory_values(
         self,
+        step_per_episode: int,
         actions: np.ndarray,
         rewards: np.ndarray,
-        behavior_policy_step_pscore: np.ndarray,
+        behavior_policy_step_wise_pscore: np.ndarray,
         counterfactual_state_action_value: np.ndarray,
         evaluation_policy_actions: np.ndarray,
         gamma: float = 1.0,
@@ -267,15 +272,16 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
         discount = np.full(rewards.shape[0], gamma).cumprod()
         distance = (actions - evaluation_policy_actions) / self.scaling_factor
 
-        pscores = behavior_policy_step_pscore
-        pscores_prev = np.roll(pscores, 1, axis=1)
+        pscores = behavior_policy_step_wise_pscore
+        pscores_prev = np.roll(pscores, 1).reshape((-1, step_per_episode))
         pscores_prev[:, 0] = 1
+        pscores_prev = pscores_prev.flatten()
 
         estimated_trajectory_values = (
             (
                 (
                     (
-                        kernel_functions(distance, self.scaling_factor)
+                        self.kernel_function(distance, self.scaling_factor)
                         * (rewards - counterfactual_state_action_value)
                     )
                     / self.scaling_factor
@@ -290,6 +296,7 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
 
     def estimate_policy_value(
         self,
+        step_per_episode: int,
         actions: np.ndarray,
         rewards: np.ndarray,
         behavior_policy_step_wise_pscore: np.ndarray,
@@ -299,6 +306,7 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
         **kwargs,
     ) -> float:
         return self._estimate_trajectory_values(
+            step_per_episode,
             actions,
             rewards,
             behavior_policy_step_wise_pscore,
@@ -309,6 +317,7 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
 
     def estimate_interval(
         self,
+        step_per_episode: int,
         actions: np.ndarray,
         rewards: np.ndarray,
         behavior_policy_step_wise_pscore: np.ndarray,
@@ -321,6 +330,7 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
         **kwargs,
     ) -> Dict[str, float]:
         estimated_trajectory_values = self._estimate_trajectory_values(
+            step_per_episode,
             actions,
             rewards,
             behavior_policy_step_wise_pscore,
