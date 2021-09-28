@@ -8,8 +8,8 @@ from _gym.utils import estimate_confidence_interval_by_bootstrap
 from _gym.ope import BaseOffPolicyEstimator
 
 
-def gaussian_kernel():
-    raise NotImplementedError()
+def gaussian_kernel(dist, scale):
+    return np.exp(-(dist ** 2) / (2 * scale ** 2))
 
 
 kernel_functions = {
@@ -176,7 +176,11 @@ class ContinuousStepWiseImportanceSampling(BaseOffPolicyEstimator):
 
         estimated_trajectory_values = (
             (
-                (self.kernel_function(distance) * rewards / self.scaling_factor)
+                (
+                    self.kernel_function(distance, self.scaling_factor)
+                    * rewards
+                    / self.scaling_factor
+                )
                 / behavior_policy_step_wise_pscore
             )
             * discount
@@ -266,7 +270,7 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
             (
                 (
                     (
-                        kernel_functions(distance)
+                        kernel_functions(distance, self.scaling_factor)
                         * (rewards - counterfactual_state_action_value)
                     )
                     / self.scaling_factor
