@@ -30,10 +30,6 @@ class BaseHead(AlgoBase):
     def calculate_pscore_given_action(self, x: np.ndarray, action: np.ndarray):
         raise NotImplementedError()
 
-    @abstractmethod
-    def predict_counterfactual_state_action_value(self, x: np.ndarray):
-        raise NotImplementedError()
-
     def predict(self, x: np.ndarray):
         return self.base_algo.predict(x)
 
@@ -194,9 +190,6 @@ class OnlineHead(BaseHead):
     def calculate_pscore_given_action(self, x: np.ndarray, action: np.ndarray):
         pass
 
-    def predict_counterfactual_state_action_value(self, x: np.ndarray):
-        pass
-
 
 @dataclass
 class DiscreteEpsilonGreedyHead(BaseHead):
@@ -240,16 +233,6 @@ class DiscreteEpsilonGreedyHead(BaseHead):
         ) * (1 - greedy_mask)
         return pscore
 
-    def predict_counterfactual_state_action_value(self, x: np.ndarray):
-        # duplicate x
-        # (n_samples, dim) -> (n_samples * n_actions, dim)
-        x_ = []
-        for i in range(x.shape[0]):
-            x_.append(np.tile(x[i], (self.n_actions, 1)))
-        x_ = np.array(x_).reshape((-1, x.shape[1]))
-        a_ = np.tile(np.arange(self.n_actions), x.shape[0])
-        return self.base_algo.predict_value(x_, a_)
-
     def sample_action(self, x: np.ndarray):
         greedy_action = self.base_algo.predict(x)
         random_action = self.random_.randint(self.n_actions, size=len(x))
@@ -281,6 +264,14 @@ class DiscreteSoftmaxHead(BaseHead):
         gumble_variable = -np.log(-np.log(self.random_.rand(len(x), self.n_actions)))
         return np.argmax(x / self.tau + gumble_variable, axis=1)
 
+    def _predict_counterfactual_state_action_value(self, x: np.ndarray):
+        x_ = []
+        for i in range(x.shape[0]):
+            x_.append(np.tile(x[i], (self.n_actions, 1)))
+        x_ = np.array(x_).reshape((-1, x.shape[1]))
+        a_ = np.tile(np.arange(self.n_actions), x.shape[0])
+        return self.base_algo.predict_value(x_, a_)  # (n_samples, n_actions)
+
     def stochastic_action_with_pscore(self, x: np.ndarray):
         predicted_value = self._predict_value(x)
         prob = self._softmax(predicted_value)
@@ -294,7 +285,7 @@ class DiscreteSoftmaxHead(BaseHead):
         return action, pscore
 
     def calculate_action_choice_probability(self, x: np.ndarray):
-        predicted_value = self.predict_counterfactual_state_action_value(x)
+        predicted_value = self._predict_counterfactual_state_action_value(x)
         return self._softmax(predicted_value)  # (n_samples, n_actions)
 
     def calculate_pscore_given_action(self, x: np.ndarray, action: np.ndarray):
@@ -303,14 +294,6 @@ class DiscreteSoftmaxHead(BaseHead):
             [action[i] + i * self.n_actions for i in range(len(action))]
         ).flatten()
         return prob.flatten()[actions_id]
-
-    def predict_counterfactual_state_action_value(self, x: np.ndarray):
-        x_ = []
-        for i in range(x.shape[0]):
-            x_.append(np.tile(x[i], (self.n_actions, 1)))
-        x_ = np.array(x_).reshape((-1, x.shape[1]))
-        a_ = np.tile(np.arange(self.n_actions), x.shape[0])
-        return self.base_algo.predict_value(x_, a_)  # (n_samples, n_actions)
 
     def sample_action(self, x: np.ndarray):
         predicted_value = self._predict_value(x)

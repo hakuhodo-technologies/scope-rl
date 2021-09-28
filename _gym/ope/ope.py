@@ -342,6 +342,20 @@ class CreateOPEInput:
                 action_type=self.action_type,
             )
 
+    def _predict_counterfactual_state_action_value(
+        self,
+        evaluation_policy: BaseHead,
+    ) -> np.ndarray:
+        x = self.logged_dataset["state"]
+        x_ = []
+        for i in range(x.shape[0]):
+            x_.append(np.tile(x[i], (self.n_actions, 1)))
+        x_ = np.array(x_).reshape((-1, x.shape[1]))
+        a_ = np.tile(np.arange(self.n_actions), x.shape[0])
+        return self.fqe[evaluation_policy.name].predict_value(
+            x_, a_
+        )  # (n_samples, n_actions)
+
     def construct_FQE(
         self,
         evaluation_policy: BaseHead,
@@ -408,27 +422,31 @@ class CreateOPEInput:
         evaluation_policy: BaseHead,
     ) -> np.ndarray:
         state_action_value = (
-            evaluation_policy.predict_counterfactual_state_action_value(
-                self.logged_dataset["state"]
-            )
+            self._predict_counterfactual_state_action_value(evaluation_policy)
         ).reshape((-1, self.n_actions))
         pscore = evaluation_policy.calculate_action_choice_probability(
             self.logged_dataset["state"]
         )
         return state_action_value, pscore  # (n_samples, n_actions)
 
-    def obtain_initial_state_value(
+    def obtain_initial_state_value_discrete(
         self,
         evaluation_policy: BaseHead,
     ) -> np.ndarray:
         state_action_value, pscore = self.obtain_state_action_value_with_pscore(
             evaluation_policy
         )
-
-        if self.action_type == "discrete":
-            state_action_value = state_action_value.reshape((-1, self.n_actions))
-
+        state_action_value = state_action_value.reshape((-1, self.n_actions))
         state_value = np.sum(state_action_value * pscore, axis=1)
+        return state_value.reshape((-1, self.step_per_episode))[:, 0]  # (n_samples, )
+
+    def obtain_initial_state_value_continuous(
+        self,
+        evaluation_policy: BaseHead,
+    ) -> np.ndarray:
+        state = self.logged_dataset["state"]
+        action = evaluation_policy.predict(state)
+        state_value = self.fqe[evaluation_policy.name].predict_value(state, action)
         return state_value.reshape((-1, self.step_per_episode))[:, 0]  # (n_samples, )
 
     def evaluate_online(
@@ -506,25 +524,45 @@ class CreateOPEInput:
                 ] = self.obtain_evaluation_policy_action(evaluation_policies[i])
 
             # input for DM, DR
-            if self.use_base_model:
-                state_action_value, pscore = self.obtain_state_action_value_with_pscore(
-                    evaluation_policies[i]
-                )
-                input_dict[evaluation_policies[i].name][
-                    "counterfactual_state_action_value"
-                ] = state_action_value
-                input_dict[evaluation_policies[i].name][
-                    "counterfactual_pscore"
-                ] = pscore
-                input_dict[evaluation_policies[i].name][
-                    "initial_state_value"
-                ] = self.obtain_initial_state_value(evaluation_policies[i])
+            if self.action_type == "discrete":
+                if self.use_base_model:
+                    (
+                        state_action_value,
+                        pscore,
+                    ) = self.obtain_state_action_value_with_pscore(
+                        evaluation_policies[i]
+                    )
+                    input_dict[evaluation_policies[i].name][
+                        "counterfactual_state_action_value"
+                    ] = state_action_value
+                    input_dict[evaluation_policies[i].name][
+                        "counterfactual_pscore"
+                    ] = pscore
+                    input_dict[evaluation_policies[i].name][
+                        "initial_state_value"
+                    ] = self.obtain_initial_state_value_discrete(evaluation_policies[i])
+                else:
+                    input_dict[evaluation_policies[i].name][
+                        "counterfactual_state_action_value"
+                    ] = None
+                    input_dict[evaluation_policies[i].name][
+                        "counterfactual_pscore"
+                    ] = None
+                    input_dict[evaluation_policies[i].name][
+                        "initial_state_value"
+                    ] = None
             else:
-                input_dict[evaluation_policies[i].name][
-                    "counterfactual_state_action_value"
-                ] = None
-                input_dict[evaluation_policies[i].name]["counterfactual_pscore"] = None
-                input_dict[evaluation_policies[i].name]["initial_state_value"] = None
+                if self.use_base_model:
+                    input_dict[evaluation_policies[i].name][
+                        "initial_state_value"
+                    ] = self.obtain_initial_state_value_continuous(
+                        evaluation_policies[i]
+                    )
+                else:
+                    input_dict[evaluation_policies[i].name][
+                        "initial_state_value"
+                    ] = None
+
             # input for the evaluation of OPE estimators
             if env is not None:
                 input_dict[evaluation_policies[i].name][
