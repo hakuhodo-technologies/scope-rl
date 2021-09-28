@@ -4,6 +4,8 @@ from typing import Dict
 
 import numpy as np
 
+from gym.space import Box
+
 from _gym.utils import estimate_confidence_interval_by_bootstrap
 from _gym.ope import BaseOffPolicyEstimator
 
