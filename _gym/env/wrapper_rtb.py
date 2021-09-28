@@ -285,7 +285,7 @@ class CustomizedRTBEnv(gym.Env):
                     f"action must be an integer within [0, {self.action_space.n}), but {action} is given"
                 )
         else:  # "continuous"
-            if isinstance(action, Union[int, float, np.integer, np.float]):
+            if isinstance(action, (int, float, np.integer, np.float)):
                 action = np.array([action])
             if not self.action_space.contains(action):
                 raise ValueError(

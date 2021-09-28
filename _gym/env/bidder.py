@@ -130,7 +130,8 @@ class Bidder:
             raise ValueError(
                 f"timestep must be a non-negative interger, but {timestep} is given"
             )
-        if not (isinstance(adjust_rate, float) and adjust_rate >= 0):
+        if not (isinstance(adjust_rate, (float, np.float, np.float32)) and adjust_rate >= 0):
+            print(adjust_rate, type(adjust_rate))
             raise ValueError(
                 f"adjust_rate must be a non-negative float value, but {adjust_rate} is given"
             )

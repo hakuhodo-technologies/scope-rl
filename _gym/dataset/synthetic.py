@@ -227,8 +227,8 @@ class SyntheticDataset(BaseDataset):
             actions = np.empty(n_episodes * self.step_per_episode)
             action_probs = np.empty(n_episodes * self.step_per_episode)
         else:
-            actions = np.empty(n_episodes * self.step_per_episode, self.action_dim)
-            action_probs = np.empty(n_episodes * self.step_per_episode, self.action_dim)
+            actions = np.empty((n_episodes * self.step_per_episode, self.action_dim))
+            action_probs = np.empty((n_episodes * self.step_per_episode, self.action_dim))
 
         rewards = np.empty(n_episodes * self.step_per_episode)
         dones = np.empty(n_episodes * self.step_per_episode)
