@@ -335,7 +335,6 @@ class CreateOPEInput:
                     "q_func_factory": "qr",
                     "learning_rate": 1e-4,
                     "use_gpu": torch.cuda.is_available(),
-                    "encoder_params": {"hidden_units": [20]},
                 }
             check_base_model_args(
                 dataset=self.mdp_dataset,
@@ -460,7 +459,7 @@ class CreateOPEInput:
         self,
         env: gym.Env,
         evaluation_policy: BaseHead,
-        n_episodes: int = 1000,
+        n_episodes: int = 100,
     ) -> float:
         total_reward = 0.0
         for i in tqdm(
@@ -482,6 +481,9 @@ class CreateOPEInput:
         self,
         evaluation_policies: List[BaseHead],
         env: Optional[gym.Env] = None,
+        n_epochs: Optional[int] = None,
+        n_steps: Optional[int] = None,  # should be more than n_steps_per_epoch
+        n_steps_per_epoch: int = 10000,
     ) -> OPEInputDict:
 
         if env is not None:
@@ -499,7 +501,12 @@ class CreateOPEInput:
                 desc="[fit FQE model]",
                 total=len(evaluation_policies),
             ):
-                self.construct_FQE(evaluation_policies[i])
+                self.construct_FQE(
+                    evaluation_policies[i],
+                    n_epochs=n_epochs,
+                    n_steps=n_steps,
+                    n_steps_per_epoch=n_steps_per_epoch,
+                )
 
         input_dict = defaultdict(dict)
 

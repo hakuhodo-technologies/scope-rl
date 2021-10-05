@@ -63,10 +63,10 @@ class RTBEnv(gym.Env):
         Objective outcome (i.e., reward) of the auctions.
         Choose either from "click" or "conversion".
 
-    step_per_episode: int, default=24
+    step_per_episode: int, default=7
         Number of timesteps in an episode.
 
-    initial_budget: int, default=10000
+    initial_budget: int, default=3000
         Initial budget (i.e., constraint) for bidding during an episode.
 
     n_ads: int, default=100
@@ -150,8 +150,8 @@ class RTBEnv(gym.Env):
     def __init__(
         self,
         objective: str = "conversion",  # "click"
-        step_per_episode: int = 24,
-        initial_budget: int = 10000,
+        step_per_episode: int = 7,
+        initial_budget: int = 3000,
         n_ads: int = 100,
         n_users: int = 100,
         ad_feature_dim: int = 5,
