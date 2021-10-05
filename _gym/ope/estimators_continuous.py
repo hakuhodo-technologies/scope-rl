@@ -11,7 +11,7 @@ from _gym.ope import BaseOffPolicyEstimator
 
 
 def gaussian_kernel(dist, scale):
-    return np.exp(-(dist ** 2) / (2 * scale ** 2))
+    return np.exp(-(dist ** 2) / 2) / np.sqrt(2 * np.pi)
 
 
 kernel_functions = {
@@ -75,9 +75,7 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 
     def __post_init__(self):
         self.action_type = "continuous"
-        self.scaling_factor = self.band_width * (
-            self.action_space.high - self.action_space.low
-        )
+        self.scaling_factor = self.band_width
         if self.kernel not in ["gaussian"]:
             raise ValueError('kernel must be "gaussian", but {self.kernel} is given')
         self.kernel_function = kernel_functions[self.kernel]
@@ -96,11 +94,7 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 
         estimated_trajectory_values = (
             (
-                (
-                    self.kernel_function(distance, self.scaling_factor)
-                    * rewards
-                    / self.scaling_factor
-                )
+                (self.kernel_function(distance) * rewards / self.scaling_factor)
                 / behavior_policy_trajectory_wise_pscore
             )
             * discount
