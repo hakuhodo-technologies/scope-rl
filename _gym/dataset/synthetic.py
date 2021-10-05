@@ -122,6 +122,8 @@ class SyntheticDataset(BaseDataset):
     random_state: int = 12345
 
     def __post_init__(self):
+        self.state_dim = self.env.observation_space.shape[0]
+
         if isinstance(self.env.action_space, Discrete):
             self.action_type = "discrete"
             self.n_actions = self.env.action_space.n
@@ -129,7 +131,7 @@ class SyntheticDataset(BaseDataset):
         else:
             self.action_type = "continuous"
             self.n_actions = None
-            self.action_dim = len(self.env.action_space.high)
+            self.action_dim = self.env.action_space.shape[0]
 
         if isinstance(self.env, (RTBEnv, CustomizedRTBEnv)):
             self.step_per_episode = self.env.step_per_episode
@@ -277,6 +279,7 @@ class SyntheticDataset(BaseDataset):
             "n_actions": self.n_actions,
             "action_dim": self.action_dim,
             "action_meaning": self.action_meaning,
+            "state_dim": self.state_dim,
             "state_keys": self.state_keys,
             "state": states,
             "action": actions,

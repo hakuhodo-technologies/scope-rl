@@ -200,6 +200,8 @@ class OffPolicyEvaluation:
                     **self.input_dict_,
                     gamma=gamma,
                 )
+            for key, value in estimated_trajectory_values_dict_.items():
+                print(key, value.shape)
             estimated_trajectory_values_df_ = DataFrame(
                 estimated_trajectory_values_dict_
             )
@@ -323,6 +325,7 @@ class CreateOPEInput:
         self.action_type = self.logged_dataset["action_type"]
         self.n_actions = self.logged_dataset["n_actions"]
         self.action_dim = self.logged_dataset["action_dim"]
+        self.state_dim = self.logged_dataset["state_dim"]
         self.step_per_episode = self.logged_dataset["step_per_episode"]
         self.mdp_dataset = convert_logged_dataset_into_MDPDataset(self.logged_dataset)
 
@@ -433,7 +436,9 @@ class CreateOPEInput:
         self,
         evaluation_policy: BaseHead,
     ) -> np.ndarray:
-        state = self.logged_dataset["state"]
+        state = self.logged_dataset["state"].reshape(
+            (-1, self.step_per_episode, self.state_dim)
+        )[:, 0, :]
         action = evaluation_policy.predict(state)
         return self.fqe[evaluation_policy.name].predict_value(state, action)
 
