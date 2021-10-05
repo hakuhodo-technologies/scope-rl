@@ -104,15 +104,15 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         distance = (actions - evaluation_policy_actions) / self.band_width
         similarity_weight = (self.kernel_function(distance) / self.band_width).cumprod(
             axis=1
-        )[:, 0]
+        )[:, -1]
         similarity_weight = np.tile(
             similarity_weight.reshape((-1, 1)), step_per_episode
         )
 
         estimated_trajectory_values = (
             discount
-            * similarity_weight
             * rewards
+            * similarity_weight
             / behavior_policy_trajectory_wise_pscore
         ).sum(axis=1)
 
@@ -208,7 +208,7 @@ class ContinuousStepWiseImportanceSampling(BaseOffPolicyEstimator):
             axis=1
         )
         estimated_trajectory_values = (
-            discount * similarity_weight * rewards / behavior_policy_step_wise_pscore
+            discount * rewards * similarity_weight / behavior_policy_step_wise_pscore
         ).sum(axis=1)
 
         return estimated_trajectory_values
@@ -309,14 +309,18 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
         similarity_weight = (self.kernel_function(distance) / self.band_width).cumprod(
             axis=1
         )
+        similarity_weight_prev = np.roll(similarity_weight, 1, axis=1)
+        similarity_weight_prev[:, 0] = 1
 
         estimated_trajectory_values = (
             discount
             * (
-                similarity_weight
-                * (rewards - counterfactual_state_action_value)
+                (rewards - counterfactual_state_action_value)
+                * similarity_weight
                 / pscores
-                + counterfactual_state_action_value / pscores_prev
+                + counterfactual_state_action_value
+                * similarity_weight_prev
+                / pscores_prev
             )
         ).sum(axis=1)
 

@@ -454,7 +454,7 @@ class CreateOPEInput:
         evaluation_policy: BaseHead,
     ) -> np.ndarray:
         state_value = self.obtain_state_action_value_deterministic(evaluation_policy)
-        return state_value.reshape((-1, self.step_per_episode, self.state_dim))[:, 0, :]
+        return state_value.reshape((-1, self.step_per_episode))[:, 0]
 
     def evaluate_online(
         self,
