@@ -434,9 +434,7 @@ class CreateOPEInput:
         self,
         evaluation_policy: BaseHead,
     ) -> np.ndarray:
-        state = self.logged_dataset["state"].reshape(
-            (-1, self.step_per_episode, self.state_dim)
-        )[:, 0, :]
+        state = self.logged_dataset["state"]
         action = evaluation_policy.predict(state)
         return self.fqe[evaluation_policy.name].predict_value(state, action)
 
@@ -455,7 +453,8 @@ class CreateOPEInput:
         self,
         evaluation_policy: BaseHead,
     ) -> np.ndarray:
-        return self.obtain_state_action_value_deterministic(evaluation_policy)
+        state_value = self.obtain_state_action_value_deterministic(evaluation_policy)
+        return state_value.reshape((-1, self.step_per_episode, self.state_dim))[:, 0, :]
 
     def evaluate_online(
         self,
