@@ -200,8 +200,6 @@ class OffPolicyEvaluation:
                     **self.input_dict_,
                     gamma=gamma,
                 )
-            for key, value in estimated_trajectory_values_dict_.items():
-                print(key, value.shape)
             estimated_trajectory_values_df_ = DataFrame(
                 estimated_trajectory_values_dict_
             )
