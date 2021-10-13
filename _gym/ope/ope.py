@@ -15,6 +15,8 @@ import seaborn as sns
 import gym
 from d3rlpy.ope import DiscreteFQE
 from d3rlpy.ope import FQE as ContinuousFQE
+from d3rlpy.models.encoders import VectorEncoderFactory
+from d3rlpy.models.q_functions import MeanQFunctionFactory
 
 from _gym.ope import BaseOffPolicyEstimator
 from _gym.policy import BaseHead
@@ -331,8 +333,8 @@ class CreateOPEInput:
             self.fqe = dict()
             if self.base_model_args is None:
                 self.base_model_args = {
-                    "n_epochs": 200,
-                    "q_func_factory": "qr",
+                    "encoder_factory": VectorEncoderFactory(hidden_units=[30, 30]),
+                    "q_func_factory": MeanQFunctionFactory(),
                     "learning_rate": 1e-4,
                     "use_gpu": torch.cuda.is_available(),
                 }
