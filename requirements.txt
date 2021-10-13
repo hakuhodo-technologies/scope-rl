@@ -1,3 +1,5 @@
 numpy>=1.20.0
 scikit-learn>=0.24.1
 gym>=0.17.3
+obp>=0.5.1
+d3rlpy>=0.91
