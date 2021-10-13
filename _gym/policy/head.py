@@ -323,18 +323,18 @@ class ContinuousTruncatedGaussianHead(BaseHead):
         self.random_ = check_random_state(self.random_state)
 
     def _calc_pscore(self, greedy_action: np.ndarray, action: np.ndarray):
-        a = (self.minimum - greedy_action) / self.sigma
-        b = (self.maximum - greedy_action) / self.sigma
-        y = (action - greedy_action) / self.sigma
-        prob = truncnorm.pdf(y, a, b)
+        prob = truncnorm.pdf(
+            action,
+            a=(self.minimum - greedy_action) / self.sigma,
+            b=(self.maximum - greedy_action) / self.sigma,
+            loc=greedy_action,
+            scale=self.sigma,
+        )
         return np.prod(prob, axis=1)
 
     def stochastic_action_with_pscore(self, x: np.ndarray):
         greedy_action = self.base_algo.predict(x)
-        a = (self.minimum - greedy_action) / self.sigma
-        b = (self.maximum - greedy_action) / self.sigma
-        y = truncnorm.rvs(a, b).reshape((-1, 1))
-        action = y * self.sigma + greedy_action
+        action = self.sample_action(x)
         pscore = self._calc_pscore(greedy_action, action)
         return action, pscore
 
@@ -344,9 +344,13 @@ class ContinuousTruncatedGaussianHead(BaseHead):
 
     def sample_action(self, x: np.ndarray):
         greedy_action = self.base_algo.predict(x)
-        a = (self.minimum - greedy_action) / self.sigma
-        b = (self.maximum - greedy_action) / self.sigma
-        return truncnorm.rvs(a, b).reshape((-1, 1))
+        action = truncnorm.rvs(
+            a=(self.minimum - greedy_action) / self.sigma,
+            b=(self.maximum - greedy_action) / self.sigma,
+            loc=greedy_action,
+            scale=self.sigma,
+        ).reshape((-1, 1))
+        return action
 
 
 @dataclass
