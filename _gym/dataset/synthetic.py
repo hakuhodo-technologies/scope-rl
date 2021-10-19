@@ -12,9 +12,9 @@ from _gym.env import RTBEnv, CustomizedRTBEnv
 from _gym.dataset import BaseDataset
 from _gym.policy import BaseHead
 from _gym.types import LoggedDataset
-from _gym.utils import (
+from _gym.utils import check_synthetic_dataset_configurations
+from _gym.ope.online import (
     calc_on_policy_policy_value,
-    check_synthetic_dataset_configurations,
 )
 
 
@@ -423,19 +423,3 @@ class SyntheticDataset(BaseDataset):
             "pscore": action_probs,
         }
         return logged_dataset
-
-    def calc_on_policy_policy_value(self, n_episodes: int = 100) -> float:
-        """Calculate on-policy policy value of the behavior policy by rollout.
-
-        Parameters
-        -------
-        n_episodes: int, default=10000
-            Number of episodes to train behavior policy.
-
-        Returns
-        -------
-        mean_reward: float
-            Mean episode reward calculated through rollout.
-
-        """
-        return calc_on_policy_policy_value(self.env, self.behavior_policy, n_episodes)

@@ -69,7 +69,7 @@ class RTBSyntheticSimulator(BaseSimulator):
     )
     minimum_standard_bid_price: Optional[Union[int, float]] = None
     trend_interval: int = 24
-    random_state: int = 12345
+    random_state: Optional[int] = None
 
     def __post_init__(self):
         if not (isinstance(self.n_ads, int) and self.n_ads > 0):

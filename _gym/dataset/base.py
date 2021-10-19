@@ -13,8 +13,3 @@ class BaseDataset(metaclass=ABCMeta):
     def obtain_trajectories(self, n_episodes: int) -> LoggedDataset:
         """Rollout behavior policy and obtain trajectories."""
         raise NotImplementedError
-
-    @abstractmethod
-    def calc_on_policy_policy_value(self, n_episodes: int) -> float:
-        """Calculate ground-truth policy value of behavior policy by rollout."""
-        raise NotImplementedError

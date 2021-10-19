@@ -19,10 +19,10 @@ from d3rlpy.models.encoders import VectorEncoderFactory
 from d3rlpy.models.q_functions import MeanQFunctionFactory
 
 from _gym.ope import BaseOffPolicyEstimator
+from _gym.ope.online import calc_on_policy_policy_value
 from _gym.policy import BaseHead
 from _gym.types import LoggedDataset, OPEInputDict
 from _gym.utils import (
-    calc_on_policy_policy_value,
     convert_logged_dataset_into_MDPDataset,
     check_base_model_args,
     check_if_valid_env_and_logged_dataset,
@@ -331,7 +331,7 @@ class CreateOPEInput:
         self.mdp_dataset = convert_logged_dataset_into_MDPDataset(self.logged_dataset)
 
         if self.use_base_model:
-            self.fqe = dict()
+            self.fqe = {}
             if self.base_model_args is None:
                 self.base_model_args = {
                     "encoder_factory": VectorEncoderFactory(hidden_units=[30, 30]),
@@ -369,23 +369,27 @@ class CreateOPEInput:
         if n_epochs is None and n_steps is None:
             n_steps = n_steps_per_epoch
 
-        if self.action_type == "discrete":
-            self.fqe[evaluation_policy.name] = DiscreteFQE(
-                algo=evaluation_policy, **self.base_model_args
-            )
-        else:
-            self.fqe[evaluation_policy.name] = ContinuousFQE(
-                algo=evaluation_policy, **self.base_model_args
-            )
+        if evaluation_policy.name in self.fqe:
+            pass
 
-        self.fqe[evaluation_policy.name].fit(
-            self.mdp_dataset.episodes,
-            eval_episodes=self.mdp_dataset.episodes,
-            n_epochs=n_epochs,
-            n_steps=n_steps,
-            n_steps_per_epoch=n_steps_per_epoch,
-            scorers={},
-        )
+        else:
+            if self.action_type == "discrete":
+                self.fqe[evaluation_policy.name] = DiscreteFQE(
+                    algo=evaluation_policy, **self.base_model_args
+                )
+            else:
+                self.fqe[evaluation_policy.name] = ContinuousFQE(
+                    algo=evaluation_policy, **self.base_model_args
+                )
+
+            self.fqe[evaluation_policy.name].fit(
+                self.mdp_dataset.episodes,
+                eval_episodes=self.mdp_dataset.episodes,
+                n_epochs=n_epochs,
+                n_steps=n_steps,
+                n_steps_per_epoch=n_steps_per_epoch,
+                scorers={},
+            )
 
     def obtain_evaluation_policy_action(
         self,
@@ -466,6 +470,7 @@ class CreateOPEInput:
         n_steps: Optional[int] = None,  # should be more than n_steps_per_epoch
         n_steps_per_epoch: int = 10000,
         n_episodes_on_policy_evaluation: int = 100,
+        random_state: Optional[int] = None,
     ) -> OPEInputDict:
 
         if env is not None:
@@ -572,6 +577,7 @@ class CreateOPEInput:
                     env,
                     evaluation_policies[i],
                     n_episodes=n_episodes_on_policy_evaluation,
+                    random_state=random_state,
                 )
             else:
                 input_dict[evaluation_policies[i].name]["on_policy_policy_value"] = None
