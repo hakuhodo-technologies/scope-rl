@@ -12,7 +12,10 @@ from _gym.env import RTBEnv, CustomizedRTBEnv
 from _gym.dataset import BaseDataset
 from _gym.policy import BaseHead
 from _gym.types import LoggedDataset
-from _gym.utils import calc_on_policy_policy_value, check_synthetic_dataset_configurations
+from _gym.utils import (
+    calc_on_policy_policy_value,
+    check_synthetic_dataset_configurations,
+)
 
 
 @dataclass

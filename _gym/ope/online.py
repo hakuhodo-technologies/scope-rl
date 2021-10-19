@@ -17,8 +17,8 @@ from _gym.utils import estimate_confidence_interval_by_bootstrap
 
 
 def visualize_on_policy_policy_value(
-    env: gym.Env, 
-    policies: List[Union[AlgoBase, BaseHead]], 
+    env: gym.Env,
+    policies: List[Union[AlgoBase, BaseHead]],
     policy_names: List[str],
     n_episodes=100,
     alpha: float = 0.05,
@@ -30,7 +30,7 @@ def visualize_on_policy_policy_value(
     on_policy_Policy_value_dict = {}
     for policy, name in zip(policies, policy_names):
         on_policy_Policy_value_dict[name] = rollout_policy_online(
-            env=env, 
+            env=env,
             policy=policy,
             n_episodes=n_episodes,
             random_state=random_state,
@@ -42,16 +42,14 @@ def visualize_on_policy_policy_value(
         n_boot=n_bootstrap_samples,
         seed=random_state,
     )
-    plt.ylabel(
-        f"On-Policy Policy Value (± {np.int(100*(1 - alpha))}% CI)", fontsize=8
-    )
+    plt.ylabel(f"On-Policy Policy Value (± {np.int(100*(1 - alpha))}% CI)", fontsize=8)
     if fig_dir:
-            fig.savefig(str(fig_dir / fig_name))
+        fig.savefig(str(fig_dir / fig_name))
 
 
 def calc_on_policy_policy_value(
-    env: gym.Env, 
-    policy: Union[AlgoBase, BaseHead], 
+    env: gym.Env,
+    policy: Union[AlgoBase, BaseHead],
     n_episodes=100,
     random_state: Optional[int] = None,
 ):
@@ -64,8 +62,8 @@ def calc_on_policy_policy_value(
 
 
 def calc_on_policy_policy_value_interval(
-    env: gym.Env, 
-    policy: Union[AlgoBase, BaseHead], 
+    env: gym.Env,
+    policy: Union[AlgoBase, BaseHead],
     n_episodes: int = 100,
     alpha: float = 0.05,
     n_bootstrap_samples: int = 100,
@@ -85,14 +83,14 @@ def calc_on_policy_policy_value_interval(
 
 
 def rollout_policy_online(
-    env: gym.Env, 
-    policy: Union[AlgoBase, BaseHead], 
+    env: gym.Env,
+    policy: Union[AlgoBase, BaseHead],
     n_episodes: int = 100,
     random_state: Optional[int] = None,
 ):
     on_policy_policy_values = np.zeros(n_episodes)
     env.seed(random_state)
-    
+
     if isinstance(policy, AlgoBase):
         policy = OnlineHead(policy)
 
