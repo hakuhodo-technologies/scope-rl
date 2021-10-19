@@ -1,6 +1,6 @@
 """Wrapper class to convert greedy policy into stochastic."""
-from abc import abstractmethod, ABCMeta
-from typing import Sequence, Union
+from abc import abstractmethod
+from typing import Sequence, Union, Optional
 from dataclasses import dataclass
 
 import numpy as np
@@ -199,7 +199,7 @@ class DiscreteEpsilonGreedyHead(BaseHead):
     name: str
     n_actions: int
     epsilon: float
-    random_state: int = 12345
+    random_state: Optional[int] = None
 
     def __post_init__(self):
         self.action_type = "discrete"
@@ -244,7 +244,7 @@ class DiscreteSoftmaxHead(BaseHead):
     name: str
     n_actions: int
     tau: float = 1.0
-    random_state = 12345
+    random_state: Optional[int] = None
 
     def __post_init__(self):
         self.action_type = "discrete"
@@ -296,13 +296,53 @@ class DiscreteSoftmaxHead(BaseHead):
 
 
 @dataclass
+class ContinuousEpsilonGreedyHead(BaseHead):
+    """Class to convert greedy policy into e-greedy."""
+
+    base_algo: AlgoBase
+    name: str
+    epsilon: float
+    minimum: np.ndarray
+    maximum: np.ndarray
+    random_state: Optional[int] = None
+
+    def __post_init__(self):
+        self.action_type = "continuous"
+        self.uniform_pscore = 1 / (self.maximum - self.minimum)
+        self.random_ = check_random_state(self.random_state)
+
+    def stochastic_action_with_pscore(self, x: np.ndarray):
+        action = self.sample_action(x)
+        pscore = self.calculate_pscore_given_action(x, action)
+        return action, pscore
+
+    def calculate_pscore_given_action(self, x: np.ndarray, action: np.ndarray):
+        greedy_action = self.base_algo.predict(x)
+        greedy_mask = greedy_action == action
+        pscore = (
+            1 - self.epsilon + self.epsilon * self.uniform_pscore
+        ) * greedy_mask + (self.epsilon * self.uniform_pscore) * (1 - greedy_mask)
+        return pscore
+
+    def sample_action(self, x: np.ndarray):
+        greedy_action = self.base_algo.predict(x)
+        random_action = self.random_.uniform(
+            low=self.minimum, high=self.maximum, size=greedy_action.shape
+        )
+        greedy_mask = self.random_.rand(len(x)) > self.epsilon
+        greedy_mask = np.tile(greedy_mask, (greedy_action.shape[1], 1)).T
+        action = greedy_action * greedy_mask + random_action * (1 - greedy_mask)
+        return action
+
+
+@dataclass
 class ContinuousTruncatedGaussianHead(BaseHead):
     base_algo: AlgoBase
     name: str
     sigma: np.ndarray
     minimum: np.ndarray
     maximum: np.ndarray
-    random_state = 12345
+    random_state: Optional[int] = None
 
     def __post_init__(self):
         # fix later
@@ -345,6 +385,70 @@ class ContinuousTruncatedGaussianHead(BaseHead):
             loc=greedy_action,
             scale=self.sigma,
         ).reshape((-1, 1))
+        return action
+
+
+@dataclass
+class ContinuousMixtureHead(BaseHead):
+    base_algo: AlgoBase
+    name: str
+    epsilon: float
+    sigma: np.ndarray
+    minimum: np.ndarray
+    maximum: np.ndarray
+    random_state: Optional[int] = None
+
+    def __post_init__(self):
+        # fix later
+        """
+        print(self.sigma.shape, self.base_algo.action_size)
+        if not (
+            isinstance(self.sigma, np.ndarray)
+            and self.sigma.shape == self.base_algo.action_size
+        ):
+            raise ValueError("sigma must have the same size with env.action_space")
+        """
+        self.action_type = "continuous"
+        self.uniform_pscore = 1 / (self.maximum - self.minimum)
+        self.random_ = check_random_state(self.random_state)
+
+    def truncnorm_pscore(self, greedy_action: np.ndarray, action: np.ndarray):
+        prob = truncnorm.pdf(
+            action,
+            a=(self.minimum - greedy_action) / self.sigma,
+            b=(self.maximum - greedy_action) / self.sigma,
+            loc=greedy_action,
+            scale=self.sigma,
+        )
+        return np.prod(prob, axis=1)
+
+    def stochastic_action_with_pscore(self, x: np.ndarray):
+        greedy_action = self.base_algo.predict(x)
+        action = self.sample_action(x)
+        pscore = self.calculate_pscore_given_action(x, action)
+        return action, pscore
+
+    def calculate_pscore_given_action(self, x: np.ndarray, action: np.ndarray):
+        greedy_action = self.base_algo.predict(x)
+        pscore = (1 - self.epsilon) * self.truncnorm_pscore(
+            greedy_action, action
+        ) + self.epsilon * self.uniform_pscore
+        return pscore
+
+    def sample_action(self, x: np.ndarray):
+        greedy_action = self.base_algo.predict(x)
+        gaussian_action = truncnorm.rvs(
+            a=(self.minimum - greedy_action) / self.sigma,
+            b=(self.maximum - greedy_action) / self.sigma,
+            loc=greedy_action,
+            scale=self.sigma,
+        ).reshape((-1, 1))
+        random_action = self.random_.uniform(
+            low=self.minimum, high=self.maximum, size=greedy_action.shape
+        )
+        greedy_mask = self.random_.rand(len(x)) > self.epsilon
+        greedy_mask = np.tile(greedy_mask, (greedy_action.shape[1], 1)).T
+        action = gaussian_action * greedy_mask + random_action * (1 - greedy_mask)
         return action
 
 

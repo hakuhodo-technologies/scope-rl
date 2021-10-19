@@ -308,3 +308,121 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
             n_bootstrap_samples=n_bootstrap_samples,
             random_state=random_state,
         )
+
+
+@dataclass
+class DiscreteSelfNormalizedTrajectoryWiseImportanceSampling(
+    DiscreteTrajectoryWiseImportanceSampling
+):
+    """Self-Normalized Trajectory-wise Important Sampling (SNTIS)."""
+
+    estimator_name = "sntis"
+
+    def __post_init__(self):
+        self.action_type = "discrete"
+
+    def _estimate_trajectory_values(
+        self,
+        step_per_episode: int,
+        rewards: np.ndarray,
+        behavior_policy_trajectory_wise_pscore: np.ndarray,
+        evaluation_policy_trajectory_wise_pscore: np.ndarray,
+        gamma: float = 1.0,
+        **kwargs,
+    ) -> np.ndarray:
+        weights = (
+            evaluation_policy_trajectory_wise_pscore
+            / behavior_policy_trajectory_wise_pscore
+        )
+        weight_mean = weights.reshape((-1, step_per_episode)).mean(axis=0)
+        self_normalized_weights = weights / np.tile(
+            weight_mean, len(weights) // step_per_episode
+        )
+
+        undiscounted_values = (rewards * self_normalized_weights).reshape(
+            (-1, step_per_episode)
+        )
+        discount = np.full(undiscounted_values.shape[1], gamma).cumprod()
+        estimated_trajectory_values = (undiscounted_values * discount).sum(axis=1)
+        return estimated_trajectory_values
+
+
+@dataclass
+class DiscreteSelfNormalizedStepWiseImportanceSampling(
+    DiscreteStepWiseImportanceSampling
+):
+    """Self-Normalized Step-wise Importance Sampling (SNSIS)."""
+
+    estimator_name = "snsis"
+
+    def __post_init__(self):
+        self.action_type = "discrete"
+
+    def _estimate_trajectory_values(
+        self,
+        step_per_episode: int,
+        rewards: np.ndarray,
+        behavior_policy_step_wise_pscore: np.ndarray,
+        evaluation_policy_step_wise_pscore: np.ndarray,
+        gamma: float = 1.0,
+        **kwargs,
+    ) -> np.ndarray:
+        weights = evaluation_policy_step_wise_pscore / behavior_policy_step_wise_pscore
+        weight_mean = weights.reshape((-1, step_per_episode)).mean(axis=0)
+        self_normalized_weights = weights / np.tile(
+            weight_mean, len(weights) // step_per_episode
+        )
+
+        undiscounted_values = (rewards * self_normalized_weights).reshape(
+            (-1, step_per_episode)
+        )
+        discount = np.full(undiscounted_values.shape[1], gamma).cumprod()
+        estimated_trajectory_values = (undiscounted_values * discount).sum(axis=1)
+        return estimated_trajectory_values
+
+
+@dataclass
+class DiscreteSelfNormalizedDoublyRobust(DiscreteDoublyRobust):
+    """Self-Normalized Doubly Robust (SNDR)."""
+
+    estimator_name = "sndr"
+
+    def __post_init__(self):
+        self.action_type = "discrete"
+
+    def _estimate_trajectory_values(
+        self,
+        step_per_episode: int,
+        actions: np.ndarray,
+        rewards: np.ndarray,
+        behavior_policy_step_wise_pscore: np.ndarray,
+        evaluation_policy_step_wise_pscore: np.ndarray,
+        counterfactual_state_action_value: np.ndarray,
+        counterfactual_pscore: np.ndarray,
+        gamma: float = 1.0,
+        **kwargs,
+    ) -> np.ndarray:
+        baselines = (counterfactual_state_action_value * counterfactual_pscore).sum(
+            axis=1
+        )
+        estimated_values = np.empty_like(rewards, dtype=float)
+        for i in range(len(actions)):
+            estimated_values[i] = counterfactual_state_action_value[i, actions[i]]
+
+        weights = (
+            evaluation_policy_step_wise_pscore / behavior_policy_step_wise_pscore
+        ).reshape((-1, step_per_episode))
+        weights_prev = np.roll(weights, 1, axis=1)
+        weights_prev[:, 0] = 1
+
+        weights_prev_mean = weights_prev.mean(axis=0)
+        weights_prev = weights_prev.flatten() / np.tile(weights_prev_mean, len(weights))
+        weights = weights.flatten() / np.tile(weights_prev_mean, len(weights))
+
+        undiscounted_values = (
+            weights * (rewards - estimated_values) + weights_prev * baselines
+        ).reshape((-1, step_per_episode))
+        discount = np.full(undiscounted_values.shape[1], gamma).cumprod()
+        estimated_trajectory_values = (undiscounted_values * discount).sum(axis=1)
+
+        return estimated_trajectory_values

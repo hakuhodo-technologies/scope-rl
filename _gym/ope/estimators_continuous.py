@@ -376,3 +376,210 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
             n_bootstrap_samples=n_bootstrap_samples,
             random_state=random_state,
         )
+
+
+@dataclass
+class ContinuousSelfNormalizedTrajectoryWiseImportanceSampling(
+    ContinuousTrajectoryWiseImportanceSampling
+):
+    """Slf-Normalized Trajectory-wise Importance Sampling (SNTIS) for continuous OPE (assume deterministic policies)."""
+
+    action_dim: int
+    kernel: str = "gaussian"
+    band_width: Optional[np.ndarray] = None
+    estimator_name: str = "sntis"
+
+    def __post_init__(self):
+        self.action_type = "continuous"
+        if self.band_width is None:
+            self.band_width = np.ones(self.action_dim)
+        if self.kernel not in ["gaussian"]:
+            raise ValueError('kernel must be "gaussian", but {self.kernel} is given')
+        self.kernel_function = kernel_functions[self.kernel]
+
+    def _estimate_trajectory_values(
+        self,
+        step_per_episode: int,
+        actions: np.ndarray,
+        rewards: np.ndarray,
+        behavior_policy_trajectory_wise_pscore: np.ndarray,
+        evaluation_policy_actions: np.ndarray,
+        gamma: float = 1.0,
+        **kwargs,
+    ) -> np.ndarray:
+        actions = actions.reshape((-1, step_per_episode, self.action_dim))
+        evaluation_policy_actions = evaluation_policy_actions.reshape(
+            (-1, step_per_episode, self.action_dim)
+        )
+        rewards = rewards.reshape((-1, step_per_episode))
+        importance_weight = 1 / (
+            behavior_policy_trajectory_wise_pscore.reshape((-1, step_per_episode))
+        )
+        importance_weight_mean = importance_weight.mean(axis=0)
+        importance_weight_mean = np.tile(
+            importance_weight_mean, len(importance_weight)
+        ).reshape((-1, step_per_episode))
+        self_normalized_importance_weight = importance_weight / importance_weight_mean
+
+        discount = np.full(rewards.shape[1], gamma).cumprod()
+        distance = (actions - evaluation_policy_actions) / self.band_width
+        similarity_weight = (self.kernel_function(distance) / self.band_width).cumprod(
+            axis=1
+        )[:, -1]
+        similarity_weight = np.tile(
+            similarity_weight.reshape((-1, 1)), step_per_episode
+        )
+
+        estimated_trajectory_values = (
+            discount * rewards * similarity_weight * self_normalized_importance_weight
+        ).sum(axis=1)
+
+        return estimated_trajectory_values
+
+
+@dataclass
+class ContinuousSelfNormalizedStepWiseImportanceSampling(
+    ContinuousStepWiseImportanceSampling
+):
+    """Self-Normalized Step-wise Importance Sampling (SNSIS) for continuous OPE (assume deterministic policies)."""
+
+    action_dim: int
+    kernel: str = "gaussian"
+    band_width: Optional[np.ndarray] = None
+    estimator_name: str = "snsis"
+
+    def __post_init__(self):
+        self.action_type = "continuous"
+        if self.band_width is None:
+            self.band_width = np.ones(self.action_dim)
+        if self.kernel not in ["gaussian"]:
+            raise ValueError('kernel must be "gaussian", but {self.kernel} is given')
+        self.kernel_function = kernel_functions[self.kernel]
+
+    def _estimate_trajectory_values(
+        self,
+        step_per_episode: int,
+        actions: np.ndarray,
+        rewards: np.ndarray,
+        behavior_policy_step_wise_pscore: np.ndarray,
+        evaluation_policy_actions: np.ndarray,
+        gamma: float = 1.0,
+        **kwargs,
+    ) -> np.ndarray:
+        actions = actions.reshape((-1, step_per_episode, self.action_dim))
+        evaluation_policy_actions = evaluation_policy_actions.reshape(
+            (-1, step_per_episode, self.action_dim)
+        )
+        rewards = rewards.reshape((-1, step_per_episode))
+        importance_weight = 1 / (
+            behavior_policy_step_wise_pscore.reshape((-1, step_per_episode))
+        )
+        importance_weight_mean = importance_weight.mean(axis=0)
+        importance_weight_mean = np.tile(
+            importance_weight_mean, len(importance_weight)
+        ).reshape((-1, step_per_episode))
+        self_normalized_importance_weight = importance_weight / importance_weight_mean
+
+        discount = np.full(rewards.shape[1], gamma).cumprod()
+        distance = (actions - evaluation_policy_actions) / self.band_width
+        similarity_weight = (self.kernel_function(distance) / self.band_width).cumprod(
+            axis=1
+        )
+
+        similarity_weight_mean = similarity_weight.mean(axis=0)
+        similarity_weight_mean = np.tile(
+            similarity_weight_mean, len(similarity_weight)
+        ).reshape((-1, step_per_episode))
+        self_normalized_similarity_weight = similarity_weight / similarity_weight_mean
+
+        estimated_trajectory_values = (
+            discount * rewards * similarity_weight * self_normalized_importance_weight
+        ).sum(axis=1)
+
+        return estimated_trajectory_values
+
+
+@dataclass
+class ContinuousSelfNormalizedDoublyRobust(ContinuousDoublyRobust):
+    """Self-Normalized Doubly Robust (SNDR) for continuous OPE (assume deterministic policies)."""
+
+    action_dim: int
+    kernel: str = "gaussian"
+    band_width: Optional[np.ndarray] = None
+    estimator_name = "sndr"
+
+    def __post_init__(self):
+        self.action_type = "continuous"
+        if self.band_width is None:
+            self.band_width = np.ones(self.action_dim)
+        if self.kernel not in ["gaussian"]:
+            raise ValueError('kernel must be "gaussian", but {self.kernel} is given')
+        self.kernel_function = kernel_functions[self.kernel]
+
+    def _estimate_trajectory_values(
+        self,
+        step_per_episode: int,
+        actions: np.ndarray,
+        rewards: np.ndarray,
+        behavior_policy_step_wise_pscore: np.ndarray,
+        counterfactual_state_action_value: np.ndarray,
+        evaluation_policy_actions: np.ndarray,
+        gamma: float = 1.0,
+        **kwargs,
+    ) -> np.ndarray:
+
+        actions = actions.reshape((-1, step_per_episode, self.action_dim))
+        evaluation_policy_actions = evaluation_policy_actions.reshape(
+            (-1, step_per_episode, self.action_dim)
+        )
+
+        rewards = rewards.reshape((-1, step_per_episode))
+        counterfactual_state_action_value = counterfactual_state_action_value.reshape(
+            (-1, step_per_episode)
+        )
+
+        pscores = behavior_policy_step_wise_pscore.reshape((-1, step_per_episode))
+        pscores_prev = np.roll(pscores, 1, axis=1)
+        pscores_prev[:, 0] = 1
+
+        importance_weight = 1 / pscores
+        importance_weight_prev = 1 / pscores_prev
+        importance_weight_prev_mean = importance_weight_prev.mean(axis=0)
+        importance_weight_prev_mean = np.tile(
+            importance_weight_prev_mean, len(importance_weight)
+        ).reshape((-1, step_per_episode))
+        self_normalized_importance_weight_prev = (
+            importance_weight_prev / importance_weight_prev_mean
+        )
+        self_normalized_importance_weight = (
+            importance_weight / importance_weight_prev_mean
+        )
+
+        discount = np.full(rewards.shape[1], gamma).cumprod()
+        distance = (actions - evaluation_policy_actions) / self.band_width
+        similarity_weight = (self.kernel_function(distance) / self.band_width).cumprod(
+            axis=1
+        )
+        similarity_weight_prev = np.roll(similarity_weight, 1, axis=1)
+        similarity_weight_prev[:, 0] = 1
+
+        similarity_weight_prev_mean = similarity_weight_prev.mean(axis=0)
+        similarity_weight_prev_mean = np.tile(
+            similarity_weight_prev_mean, len(similarity_weight)
+        ).reshape((-1, step_per_episode))
+        similarity_weight_prev = similarity_weight_prev / similarity_weight_prev_mean
+        similarity_weight = similarity_weight / similarity_weight_prev_mean
+
+        estimated_trajectory_values = (
+            discount
+            * (
+                (rewards - counterfactual_state_action_value)
+                * similarity_weight
+                * self_normalized_importance_weight
+                + counterfactual_state_action_value
+                * similarity_weight_prev
+                * self_normalized_importance_weight_prev
+            )
+        ).sum(axis=1)
+
+        return estimated_trajectory_values
