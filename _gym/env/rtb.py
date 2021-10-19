@@ -1,7 +1,5 @@
 """Reinforcement Learning (RL) Environment for Real-Time Bidding (RTB)."""
-from typing import Tuple, Optional, Union, Any
-from tqdm import tqdm
-import warnings
+from typing import Tuple, Optional, Any
 
 import gym
 from gym.spaces import Box
@@ -263,16 +261,14 @@ class RTBEnv(gym.Env):
         self.initial_budget = initial_budget
 
         if isinstance(search_volume_distribution.mean, int):
-            search_volume_distribution = NormalDistribution(
+            self.search_volume_distribution = NormalDistribution(
                 mean=np.full(step_per_episode, search_volume_distribution.mean),
                 std=np.full(step_per_episode, search_volume_distribution.std),
             )
-        self.search_volumes = np.clip(
-            search_volume_distribution.sample(size=100), minimum_search_volume, None
-        ).astype(int)
+        else:
+            self.search_volume_distribution = search_volume_distribution
 
-        # idx of search_volumes to sample from
-        self.T = 0
+        self.minimum_search_volume = minimum_search_volume
 
     @property
     def standard_bid_price(self):
@@ -345,7 +341,7 @@ class RTBEnv(gym.Env):
         adjust_rate = action
 
         # 1. sample ads and users for auctions occur in a timestep
-        search_volume = self.search_volumes[self.T % 100][self.t - 1]
+        search_volume = self.search_volumes[self.t - 1]
         ad_ids, user_ids = self.simulator.generate_auction(search_volume)
 
         # 2. determine bid price
@@ -436,9 +432,11 @@ class RTBEnv(gym.Env):
 
         """
         # initialize internal env state
-        self.T += 1
         self.t = 0
         self.prev_remaining_budget = self.remaining_budget = self.initial_budget
+        self.search_volumes = np.clip(
+            self.search_volume_distribution.sample(), self.minimum_search_volume, None
+        ).astype(int)
 
         # initialize obs
         random_variable_ = self.random_.uniform(size=3)
@@ -463,3 +461,8 @@ class RTBEnv(gym.Env):
 
     def seed(self, seed: Optional[int] = None) -> None:
         self.random_ = check_random_state(seed)
+        self.search_volume_distribution.random_ = check_random_state(seed)
+        self.simulator.random_ = check_random_state(seed)
+        self.similator.winning_price_distribution.random_ = check_random_state(seed)
+        self.similator.ctr.random_ = check_random_state(seed)
+        self.similator.cvr.random_ = check_random_state(seed)

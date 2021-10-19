@@ -132,51 +132,6 @@ def check_scaler(x: Union[int, float]):
     # raise NotImplementedError
 
 
-def convert_logged_dataset_into_MDPDataset(logged_dataset: LoggedDataset):
-    check_logged_dataset(logged_dataset)
-    if logged_dataset["action_type"] == "discrete":
-        return MDPDataset(
-            observations=logged_dataset["state"],
-            actions=logged_dataset["action"],
-            rewards=logged_dataset["reward"],
-            terminals=logged_dataset["done"],
-            episode_terminals=logged_dataset["done"],
-            discrete_action=True,
-        )
-    else:
-        return MDPDataset(
-            observations=logged_dataset["state"],
-            actions=logged_dataset["action"],
-            rewards=logged_dataset["reward"],
-            terminals=logged_dataset["done"],
-            episode_terminals=logged_dataset["done"],
-        )
-
-
-def check_base_model_args(
-    dataset: MDPDataset,
-    args: Dict[str, Any],
-    action_type: str,
-):
-    args_ = copy.deepcopy(args)
-    algo = (
-        DiscreteRandomPolicy()
-        if action_type == "discrete"
-        else ContinuousRandomPolicy()
-    )
-    algo.build_with_dataset(dataset)
-    args_["algo"] = algo
-
-    try:
-        fqe = (
-            DiscreteFQE(**args_) if action_type == "discrete" else ContinuousFQE(**args)
-        )
-    except:
-        raise ValueError(
-            "base_model_args are invalid, please use default or refer to d3rlpy docs https://d3rlpy.readthedocs.io/en/v0.91/references/off_policy_evaluation.html"
-        )
-
-
 def check_if_valid_env_and_logged_dataset(
     env: gym.Env,
     logged_dataset: LoggedDataset,

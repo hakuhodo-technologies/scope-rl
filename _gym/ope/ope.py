@@ -4,7 +4,7 @@ from typing import Dict, List, Tuple, Optional, Any
 from pathlib import Path
 
 from collections import defaultdict
-from tqdm import tqdm
+from tqdm.autonotebook import tqdm
 
 import torch
 import numpy as np
@@ -13,18 +13,18 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 import gym
+from d3rlpy.dataset import MDPDataset
 from d3rlpy.ope import DiscreteFQE
 from d3rlpy.ope import FQE as ContinuousFQE
 from d3rlpy.models.encoders import VectorEncoderFactory
 from d3rlpy.models.q_functions import MeanQFunctionFactory
 
 from _gym.ope import BaseOffPolicyEstimator
-from _gym.ope.online import calc_on_policy_policy_value
+from _gym.ope.online import rollout_policy_online
 from _gym.policy import BaseHead
 from _gym.types import LoggedDataset, OPEInputDict
 from _gym.utils import (
-    convert_logged_dataset_into_MDPDataset,
-    check_base_model_args,
+    estimate_confidence_interval_by_bootstrap,
     check_if_valid_env_and_logged_dataset,
     check_input_dict,
 )
@@ -93,7 +93,7 @@ class OffPolicyEvaluation:
         for eval_policy in input_dict.keys():
             policy_value_dict[eval_policy]["on_policy"] = input_dict[eval_policy][
                 "on_policy_policy_value"
-            ]
+            ].mean()
             for estimator_name, estimator in self.ope_estimators_.items():
                 policy_value_dict[eval_policy][
                     estimator_name
@@ -158,7 +158,7 @@ class OffPolicyEvaluation:
                 index=["policy_value"],
             ).T
 
-            on_policy_policy_value = policy_value_dict[eval_policy]["on_policy"]
+            on_policy_policy_value = policy_value_dict[eval_policy]["on_policy"].mean()
             if on_policy_policy_value is not None and on_policy_policy_value > 0:
                 policy_value_df_["relative_policy_value"] = (
                     policy_value_df_ / on_policy_policy_value
@@ -180,6 +180,7 @@ class OffPolicyEvaluation:
         gamma: float = 1.0,
         alpha: float = 0.05,
         is_relative: bool = False,
+        sharey: bool = False,
         n_bootstrap_samples: int = 100,
         random_state: Optional[int] = None,
         fig_dir: Optional[Path] = None,
@@ -211,7 +212,7 @@ class OffPolicyEvaluation:
             if is_relative:
                 if on_policy_policy_value is not None and on_policy_policy_value > 0:
                     estimated_trajectory_values_df_dict[eval_policy] = (
-                        estimated_trajectory_values_df_ / on_policy_policy_value
+                        estimated_trajectory_values_df_ / on_policy_policy_value.mean()
                     )
                 else:
                     raise ValueError()
@@ -225,7 +226,11 @@ class OffPolicyEvaluation:
         fig = plt.figure(figsize=(8, 6.2 * len(input_dict)))
 
         for i, eval_policy in enumerate(input_dict.keys()):
-            ax = fig.add_subplot(len(self.ope_estimators_), 1, i + 1)
+            if i == 0:
+                ax = ax0 = fig.add_subplot(len(self.ope_estimators_), 1, i + 1)
+            elif sharey:
+                ax = fig.add_subplot(len(self.ope_estimators_), 1, i + 1, sharey=ax0)
+
             sns.barplot(
                 data=estimated_trajectory_values_df_dict[eval_policy],
                 ax=ax,
@@ -235,7 +240,18 @@ class OffPolicyEvaluation:
             )
             on_policy_policy_value = input_dict[eval_policy]["on_policy_policy_value"]
             if on_policy_policy_value is not None and not is_relative:
-                ax.axhline(on_policy_policy_value)
+                on_policy_interval = estimate_confidence_interval_by_bootstrap(
+                    samples=on_policy_policy_value,
+                    alpha=alpha,
+                    n_bootstrap_samples=n_bootstrap_samples,
+                    random_state=random_state,
+                )
+                ax.axhline(on_policy_interval["mean"])
+                ax.axhspan(
+                    ymin=on_policy_interval[f"{100 * (1. - alpha)}% CI (lower)"],
+                    ymax=on_policy_interval[f"{100 * (1. - alpha)}% CI (upper)"],
+                    alpha=0.3,
+                )
             ax.set_title(eval_policy, fontsize=10)
             ax.set_ylabel(
                 f"Estimated Policy Value (± {np.int(100*(1 - alpha))}% CI)", fontsize=8
@@ -273,7 +289,7 @@ class OffPolicyEvaluation:
             for eval_policy in input_dict.keys():
                 on_policy_policy_value = input_dict[eval_policy][
                     "on_policy_policy_value"
-                ]
+                ].mean()
 
                 for estimator in self.ope_estimators_.keys():
                     se_ = (
@@ -323,12 +339,30 @@ class CreateOPEInput:
 
     def __post_init__(self) -> None:
         "Initialize class."
+        self.n_episodes = self.logged_dataset["n_episodes"]
         self.action_type = self.logged_dataset["action_type"]
         self.n_actions = self.logged_dataset["n_actions"]
         self.action_dim = self.logged_dataset["action_dim"]
         self.state_dim = self.logged_dataset["state_dim"]
         self.step_per_episode = self.logged_dataset["step_per_episode"]
-        self.mdp_dataset = convert_logged_dataset_into_MDPDataset(self.logged_dataset)
+
+        if self.logged_dataset["action_type"] == "discrete":
+            self.mdp_dataset = MDPDataset(
+                observations=self.logged_dataset["state"],
+                actions=self.logged_dataset["action"],
+                rewards=self.logged_dataset["reward"],
+                terminals=self.logged_dataset["done"],
+                episode_terminals=self.logged_dataset["terminal"],
+                discrete_action=True,
+            )
+        else:
+            self.mdp_dataset = MDPDataset(
+                observations=self.logged_dataset["state"],
+                actions=self.logged_dataset["action"],
+                rewards=self.logged_dataset["reward"],
+                terminals=self.logged_dataset["done"],
+                episode_terminals=self.logged_dataset["terminal"],
+            )
 
         if self.use_base_model:
             self.fqe = {}
@@ -339,11 +373,6 @@ class CreateOPEInput:
                     "learning_rate": 1e-4,
                     "use_gpu": torch.cuda.is_available(),
                 }
-            check_base_model_args(
-                dataset=self.mdp_dataset,
-                args=self.base_model_args,
-                action_type=self.action_type,
-            )
 
     def _predict_counterfactual_state_action_value(
         self,
@@ -469,7 +498,6 @@ class CreateOPEInput:
         n_epochs: Optional[int] = None,
         n_steps: Optional[int] = None,  # should be more than n_steps_per_epoch
         n_steps_per_epoch: int = 10000,
-        n_episodes_on_policy_evaluation: int = 100,
         random_state: Optional[int] = None,
     ) -> OPEInputDict:
 
@@ -573,10 +601,10 @@ class CreateOPEInput:
             if env is not None:
                 input_dict[evaluation_policies[i].name][
                     "on_policy_policy_value"
-                ] = calc_on_policy_policy_value(
+                ] = rollout_policy_online(
                     env,
                     evaluation_policies[i],
-                    n_episodes=n_episodes_on_policy_evaluation,
+                    n_episodes=self.n_episodes,
                     random_state=random_state,
                 )
             else:

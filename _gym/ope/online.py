@@ -1,6 +1,6 @@
 "On-Policy Performance Comparison."
 from pandas.core.frame import DataFrame
-from tqdm import tqdm
+from tqdm.autonotebook import tqdm
 from typing import List, Union, Optional
 from pathlib import Path
 
