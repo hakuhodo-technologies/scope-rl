@@ -65,7 +65,9 @@ class RTBSyntheticSimulator(BaseSimulator):
     ad_sampling_rate: Optional[np.ndarray] = None
     user_sampling_rate: Optional[np.ndarray] = None
     standard_bid_price_distribution: NormalDistribution = NormalDistribution(
-        mean=50, std=5
+        mean=50,
+        std=5,
+        random_state=12345,
     )
     minimum_standard_bid_price: Optional[Union[int, float]] = None
     trend_interval: int = 24

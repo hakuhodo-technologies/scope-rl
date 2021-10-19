@@ -218,12 +218,17 @@ class OffPolicyEvaluation:
                     raise ValueError()
 
             else:
+                if on_policy_policy_value is not None:
+                    estimated_trajectory_values_df_[
+                        "on_policy"
+                    ] = on_policy_policy_value
+
                 estimated_trajectory_values_df_dict[
                     eval_policy
                 ] = estimated_trajectory_values_df_
 
         plt.style.use("ggplot")
-        fig = plt.figure(figsize=(8, 6.2 * len(input_dict)))
+        fig = plt.figure(figsize=(2 * len(self.ope_estimators_), 12 * len(input_dict)))
 
         for i, eval_policy in enumerate(input_dict.keys()):
             if i == 0:
@@ -252,12 +257,12 @@ class OffPolicyEvaluation:
                     ymax=on_policy_interval[f"{100 * (1. - alpha)}% CI (upper)"],
                     alpha=0.3,
                 )
-            ax.set_title(eval_policy, fontsize=10)
+            ax.set_title(eval_policy, fontsize=16)
             ax.set_ylabel(
-                f"Estimated Policy Value (± {np.int(100*(1 - alpha))}% CI)", fontsize=8
+                f"Estimated Policy Value (± {np.int(100*(1 - alpha))}% CI)", fontsize=12
             )
-            plt.yticks(fontsize=10)
-            plt.xticks(fontsize=20 - 2 * len(self.ope_estimators_))
+            plt.yticks(fontsize=12)
+            plt.xticks(fontsize=12)
 
         if fig_dir:
             fig.savefig(str(fig_dir / fig_name))

@@ -36,13 +36,16 @@ def visualize_on_policy_policy_value(
             random_state=random_state,
         )
     plt.style.use("ggplot")
+    plt.figure(figsize=(2 * len(policies), 4))
     sns.barplot(
         data=DataFrame(on_policy_Policy_value_dict),
         ci=100 * (1 - alpha),
         n_boot=n_bootstrap_samples,
         seed=random_state,
     )
-    plt.ylabel(f"On-Policy Policy Value (± {np.int(100*(1 - alpha))}% CI)", fontsize=8)
+    plt.ylabel(f"On-Policy Policy Value (± {np.int(100*(1 - alpha))}% CI)", fontsize=12)
+    plt.xticks(fontsize=12)
+    plt.yticks(fontsize=12)
     if fig_dir:
         fig.savefig(str(fig_dir / fig_name))
 

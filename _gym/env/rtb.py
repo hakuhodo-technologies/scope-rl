@@ -157,12 +157,16 @@ class RTBEnv(gym.Env):
         ad_sampling_rate: Optional[np.ndarray] = None,
         user_sampling_rate: Optional[np.ndarray] = None,
         standard_bid_price_distribution: NormalDistribution = NormalDistribution(
-            mean=50, std=5
+            mean=50,
+            std=5,
+            random_state=12345,
         ),
         minimum_standard_bid_price: Optional[int] = None,
         trend_interval: Optional[int] = None,
         search_volume_distribution: NormalDistribution = NormalDistribution(
-            mean=200, std=20
+            mean=200,
+            std=20,
+            random_state=12345,
         ),
         minimum_search_volume: int = 10,
         random_state: Optional[int] = None,
@@ -264,6 +268,7 @@ class RTBEnv(gym.Env):
             self.search_volume_distribution = NormalDistribution(
                 mean=np.full(step_per_episode, search_volume_distribution.mean),
                 std=np.full(step_per_episode, search_volume_distribution.std),
+                random_state=random_state,
             )
         else:
             self.search_volume_distribution = search_volume_distribution
@@ -436,7 +441,7 @@ class RTBEnv(gym.Env):
         self.prev_remaining_budget = self.remaining_budget = self.initial_budget
         self.search_volumes = np.clip(
             self.search_volume_distribution.sample(), self.minimum_search_volume, None
-        ).astype(int)
+        ).astype(int)[0]
 
         # initialize obs
         random_variable_ = self.random_.uniform(size=3)
@@ -463,6 +468,6 @@ class RTBEnv(gym.Env):
         self.random_ = check_random_state(seed)
         self.search_volume_distribution.random_ = check_random_state(seed)
         self.simulator.random_ = check_random_state(seed)
-        self.similator.winning_price_distribution.random_ = check_random_state(seed)
-        self.similator.ctr.random_ = check_random_state(seed)
-        self.similator.cvr.random_ = check_random_state(seed)
+        self.simulator.winning_price_distribution.random_ = check_random_state(seed)
+        self.simulator.ctr.random_ = check_random_state(seed)
+        self.simulator.cvr.random_ = check_random_state(seed)
