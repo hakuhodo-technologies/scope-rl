@@ -12,7 +12,7 @@ from _gym.env import RTBEnv, CustomizedRTBEnv
 from _gym.dataset import BaseDataset
 from _gym.policy import BaseHead
 from _gym.types import LoggedDataset
-from _gym.utils import check_synthetic_dataset_configurations
+from _gym.utils import calc_on_policy_policy_value, check_synthetic_dataset_configurations
 
 
 @dataclass
@@ -119,7 +119,7 @@ class SyntheticDataset(BaseDataset):
     env: gym.Env
     behavior_policy: BaseHead
     configurations: Optional[Dict[str, Any]] = None
-    random_state: int = 12345
+    random_state: Optional[int] = None
 
     def __post_init__(self):
         self.state_dim = self.env.observation_space.shape[0]
@@ -160,6 +160,7 @@ class SyntheticDataset(BaseDataset):
         if self.random_state is None:
             raise ValueError("random_state must be given")
         self.random_ = check_random_state(self.random_state)
+        self.env.seed(self.random_state)
 
     def obtain_trajectories(self, n_episodes: int = 10000) -> LoggedDataset:
         """Rollout behavior policy and obtain trajectories.
@@ -420,7 +421,7 @@ class SyntheticDataset(BaseDataset):
         }
         return logged_dataset
 
-    def calc_on_policy_policy_value(self, n_episodes: int = 10000) -> float:
+    def calc_on_policy_policy_value(self, n_episodes: int = 100) -> float:
         """Calculate on-policy policy value of the behavior policy by rollout.
 
         Parameters
@@ -434,18 +435,4 @@ class SyntheticDataset(BaseDataset):
             Mean episode reward calculated through rollout.
 
         """
-        total_reward = 0.0
-        for _ in tqdm(
-            np.arange(n_episodes),
-            desc="[calc_on_policy_policy_value]",
-            total=n_episodes,
-        ):
-            state = self.env.reset()
-            done = False
-
-            while not done:
-                action = self.behavior_policy.sample_action_online(state)
-                state, reward, done, _ = self.env.step(action)
-                total_reward += reward
-
-        return total_reward / n_episodes
+        return calc_on_policy_policy_value(self.env, self.behavior_policy, n_episodes)

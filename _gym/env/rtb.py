@@ -167,7 +167,7 @@ class RTBEnv(gym.Env):
             mean=200, std=20
         ),
         minimum_search_volume: int = 10,
-        random_state: int = 12345,
+        random_state: Optional[int]=None,
     ):
         super().__init__()
         if not (isinstance(objective, str) and objective in ["click", "conversion"]):
@@ -456,11 +456,10 @@ class RTBEnv(gym.Env):
         return np.array(list(obs.values())).astype(float)
 
     def render(self, mode: str = "human") -> None:
-        """Maybe add some plot later."""
         pass
 
     def close(self) -> None:
         pass
 
-    def seed(self, seed: int = None) -> None:
+    def seed(self, seed: Optional[int]=None) -> None:
         self.random_ = check_random_state(seed)

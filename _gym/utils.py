@@ -1,7 +1,8 @@
 """Useful tools."""
 import copy
 from dataclasses import dataclass
-from typing import Dict, Union, Any
+from typing import Dict, Union, Any, Optional
+from pathlib import Path
 
 import numpy as np
 from sklearn.utils import check_random_state
@@ -12,7 +13,6 @@ from d3rlpy.ope import DiscreteFQE
 from d3rlpy.ope import FQE as ContinuousFQE
 from d3rlpy.algos import DiscreteRandomPolicy
 from d3rlpy.algos import RandomPolicy as ContinuousRandomPolicy
-
 
 from _gym.types import LoggedDataset, OPEInputDict
 
@@ -105,7 +105,7 @@ def estimate_confidence_interval_by_bootstrap(
     samples: np.ndarray,
     alpha: float = 0.05,
     n_bootstrap_samples: int = 100,
-    random_state: int = 12345,
+    random_state: Optional[int] = None,
 ) -> Dict[str, float]:
     """Estimate confidence interval by nonparametric bootstrap-like procedure."""
     random_ = check_random_state(random_state)

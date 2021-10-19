@@ -22,6 +22,7 @@ from _gym.ope import BaseOffPolicyEstimator
 from _gym.policy import BaseHead
 from _gym.types import LoggedDataset, OPEInputDict
 from _gym.utils import (
+    calc_on_policy_policy_value,
     convert_logged_dataset_into_MDPDataset,
     check_base_model_args,
     check_if_valid_env_and_logged_dataset,
@@ -457,28 +458,6 @@ class CreateOPEInput:
         state_value = self.obtain_state_action_value_deterministic(evaluation_policy)
         return state_value.reshape((-1, self.step_per_episode))[:, 0]
 
-    def evaluate_online(
-        self,
-        env: gym.Env,
-        evaluation_policy: BaseHead,
-        n_episodes: int = 100,
-    ) -> float:
-        total_reward = 0.0
-        for i in tqdm(
-            range(n_episodes),
-            desc="[calculate on-policy policy value]",
-            total=n_episodes,
-        ):
-            state = env.reset()
-            done = False
-
-            while not done:
-                action = evaluation_policy.sample_action_online(state)
-                state, reward, done, _ = env.step(action)
-                total_reward += reward
-
-        return total_reward / n_episodes
-
     def obtain_whole_inputs(
         self,
         evaluation_policies: List[BaseHead],
@@ -486,6 +465,7 @@ class CreateOPEInput:
         n_epochs: Optional[int] = None,
         n_steps: Optional[int] = None,  # should be more than n_steps_per_epoch
         n_steps_per_epoch: int = 10000,
+        n_episodes_on_policy_evaluation: int = 100,
     ) -> OPEInputDict:
 
         if env is not None:
@@ -588,9 +568,10 @@ class CreateOPEInput:
             if env is not None:
                 input_dict[evaluation_policies[i].name][
                     "on_policy_policy_value"
-                ] = self.evaluate_online(
+                ] = calc_on_policy_policy_value(
                     env,
                     evaluation_policies[i],
+                    n_episodes=n_episodes_on_policy_evaluation,
                 )
             else:
                 input_dict[evaluation_policies[i].name]["on_policy_policy_value"] = None
