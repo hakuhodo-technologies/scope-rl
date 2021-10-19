@@ -20,7 +20,7 @@ def visualize_on_policy_policy_value(
     env: gym.Env,
     policies: List[Union[AlgoBase, BaseHead]],
     policy_names: List[str],
-    n_episodes=100,
+    n_episodes: int = 100,
     alpha: float = 0.05,
     n_bootstrap_samples: int = 100,
     random_state: Optional[int] = None,
@@ -50,15 +50,29 @@ def visualize_on_policy_policy_value(
 def calc_on_policy_policy_value(
     env: gym.Env,
     policy: Union[AlgoBase, BaseHead],
-    n_episodes=100,
+    n_episodes: int = 100,
+    use_bootstrap: bool = False,
+    alpha: float = 0.05,
+    n_bootstrap_samples: int = 100,
     random_state: Optional[int] = None,
 ):
-    return rollout_policy_online(
-        env=env,
-        policy=policy,
-        n_episodes=n_episodes,
-        random_state=random_state,
-    ).mean()
+    if use_bootstrap:
+        on_policy_policy_value = calc_on_policy_policy_value_interval(
+            env=env,
+            policy=policy,
+            n_episodes=n_episodes,
+            alpha=alpha,
+            n_bootstrap_samples=n_bootstrap_samples,
+            random_state=random_state,
+        )
+    else:
+        on_policy_policy_value = rollout_policy_online(
+            env=env,
+            policy=policy,
+            n_episodes=n_episodes,
+            random_state=random_state,
+        ).mean()
+    return on_policy_policy_value
 
 
 def calc_on_policy_policy_value_interval(
@@ -73,6 +87,7 @@ def calc_on_policy_policy_value_interval(
         env=env,
         policy=policy,
         n_episodes=n_episodes,
+        random_state=random_state,
     )
     return estimate_confidence_interval_by_bootstrap(
         samples=on_policy_policy_values,

@@ -36,7 +36,7 @@ class NormalDistribution:
 
     mean: Union[int, float, np.ndarray]
     std: Union[int, float, np.ndarray]
-    random_state: int = 12345
+    random_state: Optional[int] = None
 
     def __post_init__(self):
         if not isinstance(self.mean, (int, float)) and not (
