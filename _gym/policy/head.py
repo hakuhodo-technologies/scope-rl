@@ -207,13 +207,8 @@ class DiscreteEpsilonGreedyHead(BaseHead):
         self.random_ = check_random_state(self.random_state)
 
     def stochastic_action_with_pscore(self, x: np.ndarray):
-        greedy_action = self.base_algo.predict(x)
-        random_action = self.random_.randint(self.n_actions, size=len(x))
-        greedy_mask = self.random_.rand(len(x)) > self.epsilon
-        action = greedy_action * greedy_mask + random_action * (1 - greedy_mask)
-        pscore = (1 - self.epsilon) * greedy_mask + (self.epsilon / self.n_actions) * (
-            1 - greedy_mask
-        )
+        action = self.sample_action(x)
+        pscore = self.calculate_pscore_given_action(x, action)
         return action, pscore
 
     def calculate_action_choice_probability(self, x: np.ndarray):
