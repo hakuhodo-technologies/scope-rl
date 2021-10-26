@@ -1,18 +1,11 @@
 """Useful tools."""
-import copy
+from collections import defaultdict
 from dataclasses import dataclass
 from typing import Dict, Union, Any, Optional
-from pathlib import Path
-
-import numpy as np
-from sklearn.utils import check_random_state
 
 import gym
-from d3rlpy.dataset import MDPDataset
-from d3rlpy.ope import DiscreteFQE
-from d3rlpy.ope import FQE as ContinuousFQE
-from d3rlpy.algos import DiscreteRandomPolicy
-from d3rlpy.algos import RandomPolicy as ContinuousRandomPolicy
+import numpy as np
+from sklearn.utils import check_random_state
 
 from _gym.types import LoggedDataset, OPEInputDict
 
@@ -120,6 +113,12 @@ def estimate_confidence_interval_by_bootstrap(
         f"{100 * (1. - alpha)}% CI (lower)": lower_bound,
         f"{100 * (1. - alpha)}% CI (upper)": upper_bound,
     }
+
+
+def defaultdict_to_dict(d):
+    if isinstance(d, defaultdict):
+        d = {k: defaultdict_to_dict(v) for k, v in d.items()}
+    return d
 
 
 def check_logged_dataset(logged_dataset: LoggedDataset):
