@@ -419,7 +419,9 @@ class ContinuousSelfNormalizedTrajectoryWiseImportanceSampling(
         importance_weight_mean = np.tile(
             importance_weight_mean, len(importance_weight)
         ).reshape((-1, step_per_episode))
-        self_normalized_importance_weight = importance_weight / importance_weight_mean
+        self_normalized_importance_weight = importance_weight / (
+            importance_weight_mean + 1e-10
+        )
 
         discount = np.full(rewards.shape[1], gamma).cumprod()
         distance = (actions - evaluation_policy_actions) / self.band_width
@@ -478,19 +480,15 @@ class ContinuousSelfNormalizedStepWiseImportanceSampling(
         importance_weight_mean = np.tile(
             importance_weight_mean, len(importance_weight)
         ).reshape((-1, step_per_episode))
-        self_normalized_importance_weight = importance_weight / importance_weight_mean
+        self_normalized_importance_weight = importance_weight / (
+            importance_weight_mean + 1e-10
+        )
 
         discount = np.full(rewards.shape[1], gamma).cumprod()
         distance = (actions - evaluation_policy_actions) / self.band_width
         similarity_weight = (self.kernel_function(distance) / self.band_width).cumprod(
             axis=1
         )
-
-        similarity_weight_mean = similarity_weight.mean(axis=0)
-        similarity_weight_mean = np.tile(
-            similarity_weight_mean, len(similarity_weight)
-        ).reshape((-1, step_per_episode))
-        self_normalized_similarity_weight = similarity_weight / similarity_weight_mean
 
         estimated_trajectory_values = (
             discount * rewards * similarity_weight * self_normalized_importance_weight
@@ -548,11 +546,11 @@ class ContinuousSelfNormalizedDoublyRobust(ContinuousDoublyRobust):
         importance_weight_prev_mean = np.tile(
             importance_weight_prev_mean, len(importance_weight)
         ).reshape((-1, step_per_episode))
-        self_normalized_importance_weight_prev = (
-            importance_weight_prev / importance_weight_prev_mean
+        self_normalized_importance_weight_prev = importance_weight_prev / (
+            importance_weight_prev_mean + 1e-10
         )
-        self_normalized_importance_weight = (
-            importance_weight / importance_weight_prev_mean
+        self_normalized_importance_weight = importance_weight / (
+            importance_weight_prev_mean + 1e-10
         )
 
         discount = np.full(rewards.shape[1], gamma).cumprod()
@@ -562,13 +560,6 @@ class ContinuousSelfNormalizedDoublyRobust(ContinuousDoublyRobust):
         )
         similarity_weight_prev = np.roll(similarity_weight, 1, axis=1)
         similarity_weight_prev[:, 0] = 1
-
-        similarity_weight_prev_mean = similarity_weight_prev.mean(axis=0)
-        similarity_weight_prev_mean = np.tile(
-            similarity_weight_prev_mean, len(similarity_weight)
-        ).reshape((-1, step_per_episode))
-        similarity_weight_prev = similarity_weight_prev / similarity_weight_prev_mean
-        similarity_weight = similarity_weight / similarity_weight_prev_mean
 
         estimated_trajectory_values = (
             discount

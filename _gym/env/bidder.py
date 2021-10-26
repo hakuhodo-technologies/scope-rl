@@ -53,10 +53,6 @@ class Bidder:
     random_state: int = 12345
 
     def __post_init__(self):
-        if not isinstance(self.simulator, BaseSimulator):
-            raise ValueError(
-                "simulator must be BaseSimulator or a child class of BaseSimulator"
-            )
         if self.objective not in ["click", "conversion"]:
             raise ValueError(
                 f'objective must be either "click" or "conversion", but {self.objective} is given'

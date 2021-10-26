@@ -336,7 +336,7 @@ class DiscreteSelfNormalizedTrajectoryWiseImportanceSampling(
         )
         weight_mean = weights.reshape((-1, step_per_episode)).mean(axis=0)
         self_normalized_weights = weights / np.tile(
-            weight_mean, len(weights) // step_per_episode
+            weight_mean + 1e-10, len(weights) // step_per_episode
         )
 
         undiscounted_values = (rewards * self_normalized_weights).reshape(
@@ -370,7 +370,7 @@ class DiscreteSelfNormalizedStepWiseImportanceSampling(
         weights = evaluation_policy_step_wise_pscore / behavior_policy_step_wise_pscore
         weight_mean = weights.reshape((-1, step_per_episode)).mean(axis=0)
         self_normalized_weights = weights / np.tile(
-            weight_mean, len(weights) // step_per_episode
+            weight_mean + 1e-10, len(weights) // step_per_episode
         )
 
         undiscounted_values = (rewards * self_normalized_weights).reshape(
@@ -416,8 +416,10 @@ class DiscreteSelfNormalizedDoublyRobust(DiscreteDoublyRobust):
         weights_prev[:, 0] = 1
 
         weights_prev_mean = weights_prev.mean(axis=0)
-        weights_prev = weights_prev.flatten() / np.tile(weights_prev_mean, len(weights))
-        weights = weights.flatten() / np.tile(weights_prev_mean, len(weights))
+        weights_prev = weights_prev.flatten() / np.tile(
+            weights_prev_mean + 1e-10, len(weights)
+        )
+        weights = weights.flatten() / np.tile(weights_prev_mean + 1e-10, len(weights))
 
         undiscounted_values = (
             weights * (rewards - estimated_values) + weights_prev * baselines

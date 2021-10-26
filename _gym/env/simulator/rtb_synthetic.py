@@ -7,8 +7,12 @@ from sklearn.utils import check_random_state
 
 from _gym.utils import NormalDistribution
 
-from .base import BaseSimulator
-from .function import WinningPriceDistribution, CTR, CVR, WinningPriceDistribution
+from .base import (
+    BaseSimulator,
+    BaseWinningPriceDistribution,
+    BaseClickAndConversionRate,
+)
+from .function import WinningPriceDistribution, ClickThroughRate, ConversionRate
 
 
 @dataclass
@@ -43,6 +47,12 @@ class RTBSyntheticSimulator(BaseSimulator):
     user_sampling_rate: Optional[Union[NDArray[int], NDArray[float]]], shape (n_users, ), default=None
         Sampling probalities to determine which user (id) is used in each auction.
 
+    WinningPriceDistribution:
+
+    ClickTroughRate:
+
+    ConversionRate:
+
     standard_bid_price_distribution: NormalDistribution, default=NormalDistribution(mean=100, std=20)
         Distribution of the bid price whose average impression probability is expected to be 0.5.
 
@@ -68,6 +78,9 @@ class RTBSyntheticSimulator(BaseSimulator):
     user_feature_vector: Optional[np.ndarray] = None
     ad_sampling_rate: Optional[np.ndarray] = None
     user_sampling_rate: Optional[np.ndarray] = None
+    WinningPriceDistribution: BaseWinningPriceDistribution = WinningPriceDistribution
+    ClickThroughRate: BaseClickAndConversionRate = ClickThroughRate
+    ConversionRate: BaseClickAndConversionRate = ConversionRate
     standard_bid_price_distribution: NormalDistribution = NormalDistribution(
         mean=50,
         std=5,
@@ -204,7 +217,7 @@ class RTBSyntheticSimulator(BaseSimulator):
             )
 
         # define winning function
-        self.winning_price_distribution = WinningPriceDistribution(
+        self.winning_price_distribution = self.WinningPriceDistribution(
             n_ads=self.n_ads,
             n_users=self.n_users,
             ad_feature_dim=self.ad_feature_dim,
@@ -215,7 +228,7 @@ class RTBSyntheticSimulator(BaseSimulator):
             random_state=self.random_state,
         )
         # define click/imp and conversion/click rate function
-        self.ctr = CTR(
+        self.ctr = self.ClickThroughRate(
             n_ads=self.n_ads,
             n_users=self.n_users,
             ad_feature_dim=self.ad_feature_dim,
@@ -223,7 +236,7 @@ class RTBSyntheticSimulator(BaseSimulator):
             step_per_episode=self.step_per_episode,
             random_state=self.random_state,
         )
-        self.cvr = CVR(
+        self.cvr = self.ConversionRate(
             n_ads=self.n_ads,
             n_users=self.n_users,
             ad_feature_dim=self.ad_feature_dim,
@@ -291,7 +304,7 @@ class RTBSyntheticSimulator(BaseSimulator):
     def map_idx_to_features(
         self, ad_ids: np.ndarray, user_ids: np.ndarray
     ) -> np.ndarray:
-        """Map the ad and the user index into context vectors.
+        """Map the ad and the user index into feature vectors.
 
         Parameters
         -------

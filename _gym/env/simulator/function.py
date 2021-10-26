@@ -5,12 +5,13 @@ from typing import Tuple, Union, Optional
 import numpy as np
 from sklearn.utils import check_random_state
 
-from _gym.utils import NormalDistribution
-from _gym.utils import sigmoid
+from ...utils import NormalDistribution
+from ...utils import sigmoid
+from .base import BaseWinningPriceDistribution, BaseClickAndConversionRate
 
 
 @dataclass
-class WinningPriceDistribution:
+class WinningPriceDistribution(BaseWinningPriceDistribution):
     """Class to sample the winning price (i.e., second price) and compare with the given bid price.
 
     Note
@@ -158,7 +159,7 @@ class WinningPriceDistribution:
 
 
 @dataclass
-class CTR:
+class ClickThroughRate(BaseClickAndConversionRate):
     """Class to calculate ground-truth CTR (i.e., click per impression).
 
     Note
@@ -252,7 +253,7 @@ class CTR:
         user_feature_vector: np.ndarray,
         timestep: Union[int, np.ndarray],
     ) -> np.ndarray:
-        """Calculate CTR (i.e., click per impression) using context vectors.
+        """Calculate CTR (i.e., click per impression).
 
         Note
         -------
@@ -356,7 +357,7 @@ class CTR:
 
 
 @dataclass
-class CVR:
+class ConversionRate(BaseClickAndConversionRate):
     """Class to calculate ground-truth CVR (i.e., conversion per click).
 
     Note

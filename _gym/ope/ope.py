@@ -218,15 +218,9 @@ class OffPolicyEvaluation:
                 else:
                     raise ValueError()
 
-            else:
-                if on_policy_policy_value is not None:
-                    estimated_trajectory_values_df_[
-                        "on_policy"
-                    ] = on_policy_policy_value
-
-                estimated_trajectory_values_df_dict[
-                    eval_policy
-                ] = estimated_trajectory_values_df_
+            estimated_trajectory_values_df_dict[
+                eval_policy
+            ] = estimated_trajectory_values_df_
 
         plt.style.use("ggplot")
         fig = plt.figure(figsize=(2 * len(self.ope_estimators_), 12 * len(input_dict)))
@@ -247,13 +241,23 @@ class OffPolicyEvaluation:
                 seed=random_state,
             )
             on_policy_policy_value = input_dict[eval_policy]["on_policy_policy_value"]
-            if on_policy_policy_value is not None and not is_relative:
+            if on_policy_policy_value is not None:
                 on_policy_interval = estimate_confidence_interval_by_bootstrap(
                     samples=on_policy_policy_value,
                     alpha=alpha,
                     n_bootstrap_samples=n_bootstrap_samples,
                     random_state=random_state,
                 )
+            if is_relative:
+                ax.axhline(1.0)
+                ax.axhspan(
+                    ymin=on_policy_interval[f"{100 * (1. - alpha)}% CI (lower)"]
+                    / on_policy_interval["mean"],
+                    ymax=on_policy_interval[f"{100 * (1. - alpha)}% CI (upper)"]
+                    / on_policy_interval["mean"],
+                    alpha=0.3,
+                )
+            else:
                 ax.axhline(on_policy_interval["mean"])
                 ax.axhspan(
                     ymin=on_policy_interval[f"{100 * (1. - alpha)}% CI (lower)"],

@@ -11,6 +11,16 @@ from _gym.types import Action
 
 from .bidder import Bidder
 from .simulator.rtb_synthetic import RTBSyntheticSimulator
+from .simulator.base import (
+    BaseSimulator,
+    BaseWinningPriceDistribution,
+    BaseClickAndConversionRate,
+)
+from .simulator.function import (
+    WinningPriceDistribution,
+    ClickThroughRate,
+    ConversionRate,
+)
 
 
 class RTBEnv(gym.Env):
@@ -93,6 +103,14 @@ class RTBEnv(gym.Env):
         Parameter in RTBSyntheticSimulator class.
         Sampling probalities to determine which user (id) is used in each auction.
 
+    Simulator:
+
+    WinningPriceDistribution:
+
+    ClickTroughRate:
+
+    ConversionRate:
+
     standard_bid_price_distribution: NormalDistribution, default=NormalDistribution(mean=100, std=20)
         Parameter in RTBSyntheticSimulator class.
         Distribution of the bid price whose average impression probability is expected to be 0.5.
@@ -158,6 +176,10 @@ class RTBEnv(gym.Env):
         user_feature_vector: Optional[np.ndarray] = None,
         ad_sampling_rate: Optional[np.ndarray] = None,
         user_sampling_rate: Optional[np.ndarray] = None,
+        Simulator: BaseSimulator = RTBSyntheticSimulator,
+        WinningPriceDistribution: BaseWinningPriceDistribution = WinningPriceDistribution,
+        ClickThroughRate: BaseClickAndConversionRate = ClickThroughRate,
+        ConversionRate: BaseClickAndConversionRate = ConversionRate,
         standard_bid_price_distribution: NormalDistribution = NormalDistribution(
             mean=50,
             std=5,
@@ -214,7 +236,7 @@ class RTBEnv(gym.Env):
         self.objective = objective
 
         # initialize simulator and bidder
-        self.simulator = RTBSyntheticSimulator(
+        self.simulator = Simulator(
             cost_indicator=cost_indicator,
             step_per_episode=step_per_episode,
             n_ads=n_ads,
@@ -225,6 +247,9 @@ class RTBEnv(gym.Env):
             user_feature_vector=user_feature_vector,
             ad_sampling_rate=ad_sampling_rate,
             user_sampling_rate=user_sampling_rate,
+            WinningPriceDistribution=WinningPriceDistribution,
+            ClickThroughRate=ClickThroughRate,
+            ConversionRate=ConversionRate,
             standard_bid_price_distribution=standard_bid_price_distribution,
             minimum_standard_bid_price=minimum_standard_bid_price,
             random_state=random_state,
@@ -466,10 +491,16 @@ class RTBEnv(gym.Env):
         pass
 
     def seed(self, seed: Optional[int] = None) -> None:
-        self.random_ = check_random_state(seed)
-        self.search_volume_distribution.random_ = check_random_state(seed)
+        if seed is None:
+            pass
 
-        self.simulator.random_ = check_random_state(seed)
-        self.simulator.winning_price_distribution.random_ = check_random_state(seed)
-        self.simulator.ctr.random_ = check_random_state(seed)
-        self.simulator.cvr.random_ = check_random_state(seed)
+        else:
+            self.random_ = check_random_state(seed)
+            self.search_volume_distribution.random_ = check_random_state(seed)
+
+            self.simulator.random_ = check_random_state(seed)
+            self.simulator.winning_price_distribution.random_ = check_random_state(seed)
+            self.simulator.ctr.random_ = check_random_state(seed)
+            self.simulator.cvr.random_ = check_random_state(
+                seed + 1
+            )  # to differenciate CVR from CTR
