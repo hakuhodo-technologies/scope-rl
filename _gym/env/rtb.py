@@ -61,6 +61,10 @@ class RTBEnv(gym.Env):
         Objective outcome (i.e., reward) of the auctions.
         Choose either from "click" or "conversion".
 
+    cost_indicator: str, default="click"
+        Defines when the cost arises.
+        Choose either from "impression", "click" or "conversion".
+
     step_per_episode: int, default=7
         Number of timesteps in an episode.
 
@@ -97,11 +101,6 @@ class RTBEnv(gym.Env):
         Parameter in RTBSyntheticSimulator class.
         Minimum value for standard bid price.
         If None, minimum_standard_bid_price is set to standard_bid_price_distribution.mean / 2.
-
-    trend_interval: Optional[int], default=None
-        Parameter in RTBSyntheticSimulator class.
-        Length of the ctr/cvr trend cycle.
-        If None, trend_interval is set to step_per_episode.
 
     search_volume_distribution: NormalDistribution, default=NormalDistribution(mean=30, std=10)
         Search volume distribution for each timestep.
@@ -147,13 +146,16 @@ class RTBEnv(gym.Env):
 
     def __init__(
         self,
-        objective: str = "conversion",  # "click"
+        objective: str = "conversion",  # "impression", "click"
+        cost_indicator: str = "click",  # "impression", "conversion"
         step_per_episode: int = 7,
         initial_budget: int = 3000,
         n_ads: int = 100,
         n_users: int = 100,
         ad_feature_dim: int = 5,
         user_feature_dim: int = 5,
+        ad_feature_vector: Optional[np.ndarray] = None,
+        user_feature_vector: Optional[np.ndarray] = None,
         ad_sampling_rate: Optional[np.ndarray] = None,
         user_sampling_rate: Optional[np.ndarray] = None,
         standard_bid_price_distribution: NormalDistribution = NormalDistribution(
@@ -162,7 +164,6 @@ class RTBEnv(gym.Env):
             random_state=12345,
         ),
         minimum_standard_bid_price: Optional[int] = None,
-        trend_interval: Optional[int] = None,
         search_volume_distribution: NormalDistribution = NormalDistribution(
             mean=200,
             std=20,
@@ -212,20 +213,20 @@ class RTBEnv(gym.Env):
 
         self.objective = objective
 
-        if trend_interval is None:
-            trend_interval = step_per_episode
-
         # initialize simulator and bidder
         self.simulator = RTBSyntheticSimulator(
+            cost_indicator=cost_indicator,
+            step_per_episode=step_per_episode,
             n_ads=n_ads,
             n_users=n_users,
             ad_feature_dim=ad_feature_dim,
             user_feature_dim=user_feature_dim,
+            ad_feature_vector=ad_feature_vector,
+            user_feature_vector=user_feature_vector,
             ad_sampling_rate=ad_sampling_rate,
             user_sampling_rate=user_sampling_rate,
             standard_bid_price_distribution=standard_bid_price_distribution,
             minimum_standard_bid_price=minimum_standard_bid_price,
-            trend_interval=trend_interval,
             random_state=random_state,
         )
         self.bidder = Bidder(
@@ -374,7 +375,7 @@ class RTBEnv(gym.Env):
         # 5. prepare returns
         if self.objective == "click":
             reward = total_click
-        else:
+        elif self.objective == "conversion":
             reward = total_conversion
 
         done = self.t == self.step_per_episode - 1
@@ -467,6 +468,7 @@ class RTBEnv(gym.Env):
     def seed(self, seed: Optional[int] = None) -> None:
         self.random_ = check_random_state(seed)
         self.search_volume_distribution.random_ = check_random_state(seed)
+
         self.simulator.random_ = check_random_state(seed)
         self.simulator.winning_price_distribution.random_ = check_random_state(seed)
         self.simulator.ctr.random_ = check_random_state(seed)

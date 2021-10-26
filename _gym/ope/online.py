@@ -125,6 +125,7 @@ def rollout_policy_online(
                 action = policy.predict_online(state)
                 state, reward, done, _ = env.step(action)
                 episode_reward += reward
+
             on_policy_policy_values[i] = episode_reward
 
     else:
@@ -141,6 +142,7 @@ def rollout_policy_online(
                 action = policy.sample_action_online(state)
                 state, reward, done, _ = env.step(action)
                 episode_reward += reward
+
             on_policy_policy_values[i] = episode_reward
 
     return on_policy_policy_values

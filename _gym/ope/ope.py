@@ -27,6 +27,7 @@ from _gym.utils import (
     estimate_confidence_interval_by_bootstrap,
     check_if_valid_env_and_logged_dataset,
     check_input_dict,
+    defaultdict_to_dict,
 )
 
 
@@ -102,7 +103,7 @@ class OffPolicyEvaluation:
                     **self.input_dict_,
                     gamma=gamma,
                 )
-        return policy_value_dict
+        return defaultdict_to_dict(policy_value_dict)
 
     def estimate_intervals(
         self,
@@ -129,7 +130,7 @@ class OffPolicyEvaluation:
                     n_bootstrap_samples=n_bootstrap_samples,
                     random_state=random_state,
                 )
-        return policy_value_interval_dict
+        return defaultdict_to_dict(policy_value_interval_dict)
 
     def summarize_off_policy_estimates(
         self,
@@ -235,6 +236,8 @@ class OffPolicyEvaluation:
                 ax = ax0 = fig.add_subplot(len(self.ope_estimators_), 1, i + 1)
             elif sharey:
                 ax = fig.add_subplot(len(self.ope_estimators_), 1, i + 1, sharey=ax0)
+            else:
+                ax = fig.add_subplot(len(self.ope_estimators_), 1, i + 1)
 
             sns.barplot(
                 data=estimated_trajectory_values_df_dict[eval_policy],
@@ -303,7 +306,7 @@ class OffPolicyEvaluation:
                     ) ** 2
                     eval_metric_ope_dict[eval_policy][estimator] = se_
 
-        return eval_metric_ope_dict
+        return defaultdict_to_dict(eval_metric_ope_dict)
 
     def summarize_estimators_comparison(
         self,
@@ -333,7 +336,7 @@ class CreateOPEInput:
     logged_dataset: LoggedDataset
         Logged dataset used to conduct OPE.
 
-    base_model_args: Optional[Dict[str, Any]], default = None
+    base_model_args: Optional[Dict[str, Any]], default=None
         Arguments of baseline Fitted Q Evaluation (FQE) model.
 
     """
@@ -502,7 +505,8 @@ class CreateOPEInput:
         env: Optional[gym.Env] = None,
         n_epochs: Optional[int] = None,
         n_steps: Optional[int] = None,  # should be more than n_steps_per_epoch
-        n_steps_per_epoch: int = 10000,
+        n_steps_per_epoch: Optional[int] = None,
+        n_episodes_on_policy_evaluation: Optional[int] = None,
         random_state: Optional[int] = None,
     ) -> OPEInputDict:
 
@@ -516,6 +520,9 @@ class CreateOPEInput:
                 )
 
         if self.use_base_model:
+            if n_steps_per_epoch is None:
+                n_steps_per_epoch = 10000
+
             for i in tqdm(
                 range(len(evaluation_policies)),
                 desc="[fit FQE model]",
@@ -604,15 +611,19 @@ class CreateOPEInput:
 
             # input for the evaluation of OPE estimators
             if env is not None:
+                if n_episodes_on_policy_evaluation is None:
+                    n_episodes_on_policy_evaluation = self.n_episodes
+
                 input_dict[evaluation_policies[i].name][
                     "on_policy_policy_value"
                 ] = rollout_policy_online(
                     env,
                     evaluation_policies[i],
-                    n_episodes=self.n_episodes,
+                    n_episodes=n_episodes_on_policy_evaluation,
                     random_state=random_state,
                 )
+
             else:
                 input_dict[evaluation_policies[i].name]["on_policy_policy_value"] = None
 
-        return input_dict
+        return defaultdict_to_dict(input_dict)

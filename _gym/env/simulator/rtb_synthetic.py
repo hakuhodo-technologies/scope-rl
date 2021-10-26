@@ -18,6 +18,13 @@ class RTBSyntheticSimulator(BaseSimulator):
 
     Parameters
     -------
+    cost_indicator: str, default="click"
+        Defines when the cost arises.
+        Choose either from "impression", "click" or "conversion".
+
+    step_per_episode: int, default=7
+        Number of timesteps in an episode.
+
     n_ads: int, default=100
         Number of ads used for fitting the reward predictor.
 
@@ -37,18 +44,11 @@ class RTBSyntheticSimulator(BaseSimulator):
         Sampling probalities to determine which user (id) is used in each auction.
 
     standard_bid_price_distribution: NormalDistribution, default=NormalDistribution(mean=100, std=20)
-        Parameter in RTBSyntheticSimulator class.
         Distribution of the bid price whose average impression probability is expected to be 0.5.
 
     minimum_standard_bid_price: Optional[int], default=None
-        Parameter in RTBSyntheticSimulator class.
         Minimum value for standard bid price.
         If None, minimum_standard_bid_price is set to standard_bid_price_distribution.mean / 2.
-
-    trend_interval: Optional[int], default=None
-        Length of the ctr/cvr trend cycle.
-        For example, trend_interval=24 indicates that the trend cycles every 24h.
-        If None, trend_interval is set to step_per_episode.
 
     random_state: int, default=12345
         Random state.
@@ -58,10 +58,14 @@ class RTBSyntheticSimulator(BaseSimulator):
 
     """
 
+    cost_indicator: str = "click"
+    step_per_episode: int = 7
     n_ads: int = 100
     n_users: int = 100
     ad_feature_dim: int = 5
     user_feature_dim: int = 5
+    ad_feature_vector: Optional[np.ndarray] = None
+    user_feature_vector: Optional[np.ndarray] = None
     ad_sampling_rate: Optional[np.ndarray] = None
     user_sampling_rate: Optional[np.ndarray] = None
     standard_bid_price_distribution: NormalDistribution = NormalDistribution(
@@ -70,7 +74,6 @@ class RTBSyntheticSimulator(BaseSimulator):
         random_state=12345,
     )
     minimum_standard_bid_price: Optional[Union[int, float]] = None
-    trend_interval: int = 24
     random_state: Optional[int] = None
 
     def __post_init__(self):
@@ -89,6 +92,26 @@ class RTBSyntheticSimulator(BaseSimulator):
         if not (isinstance(self.user_feature_dim, int) and self.user_feature_dim > 0):
             raise ValueError(
                 f"user_feature_dim must be a positive interger, but {self.user_feature_dim} is given"
+            )
+        if not (
+            self.ad_feature_vector is None
+            or (
+                isinstance(self.ad_feature_vector, np.ndarray)
+                and self.ad_feature_dim.shape == (self.n_ads, self.ad_feature_dim)
+            )
+        ):
+            raise ValueError(
+                "ad_feature_vector must be an 2-dimensional NDArray with shape (n_ads, ad_feature_dim)"
+            )
+        if not (
+            self.user_feature_vector is None
+            or (
+                isinstance(self.user_feature_vector, np.ndarray)
+                and self.user_feature_dim.shape == (self.n_users, self.user_feature_dim)
+            )
+        ):
+            raise ValueError(
+                "user_feature_vector must be an 2-dimensional NDArray with shape (n_users, user_feature_dim)"
             )
         if not (
             self.ad_sampling_rate is None
@@ -140,90 +163,90 @@ class RTBSyntheticSimulator(BaseSimulator):
                 f"minimum_standard_bid_price must be a float value within [0, standard_bid_price_distribution.mean], but {self.minimum_standard_bid_price} is given"
             )
         if not (
-            self.trend_interval is None
-            or (isinstance(self.trend_interval, int) and self.trend_interval > 0)
+            self.step_per_episode is None
+            or (isinstance(self.step_per_episode, int) and self.step_per_episode > 0)
         ):
             raise ValueError(
-                f"trend_interval must be a positive interger, but {self.trend_interval} is given"
+                f"step_per_episode must be a positive interger, but {self.step_per_episode} is given"
             )
         if self.random_state is None:
             raise ValueError("random_state must be given")
         self.random_ = check_random_state(self.random_state)
 
-        self.ads = self.random_.normal(size=(self.n_ads, self.ad_feature_dim))
-        self.users = self.random_.normal(size=(self.n_users, self.user_feature_dim))
+        if self.ad_feature_vector is None:
+            self.ad_feature_vector = self.random_.normal(
+                size=(self.n_ads, self.ad_feature_dim)
+            )
+        if self.user_feature_vector is None:
+            self.user_feature_vector = self.random_.normal(
+                size=(self.n_users, self.user_feature_dim)
+            )
 
         self.ad_ids = np.arange(self.n_ads)
         self.user_ids = np.arange(self.n_users)
 
         if self.ad_sampling_rate is None:
-            self.ad_sampling_rate = np.full(self.n_ads, 1 / self.n_ads)
+            self.ad_sampling_rate = np.full(
+                (self.n_ads, self.step_per_episode), 1 / self.n_ads
+            )
         else:
             self.ad_sampling_rate = self.ad_sampling_rate / np.sum(
-                self.ad_sampling_rate
+                self.ad_sampling_rate, axis=1
             )
 
         if self.user_sampling_rate is None:
-            self.user_sampling_rate = np.full(self.n_users, 1 / self.n_users)
+            self.user_sampling_rate = np.full(
+                (self.n_users, self.step_per_episode), 1 / self.n_users
+            )
         else:
             self.user_sampling_rate = self.user_sampling_rate / np.sum(
-                self.user_sampling_rate
+                self.user_sampling_rate, axis=1
             )
-
-        # define standard bid price for each ads
-        if self.minimum_standard_bid_price is None:
-            self.minimum_standard_bid_price = (
-                self.standard_bid_price_distribution.mean / 2
-            )
-        standard_bid_prices = np.clip(
-            self.standard_bid_price_distribution.sample(self.n_ads),
-            self.minimum_standard_bid_price,
-            None,
-        )
 
         # define winning function
-        self.winning_price_distribution = WinningPriceDistribution(self.random_state)
-        # winning function parameter for each ad
-        self.wf_ks = self.random_.normal(
-            loc=50,
-            scale=5,
-            size=self.n_ads,
-        )
-        self.wf_thetas = self.random_.normal(
-            loc=standard_bid_prices * 0.02,
-            scale=(standard_bid_prices * 0.02) / 5,
-            size=self.n_ads,
-        )
-
-        # define click/imp and conversion/click rate function
-        self.ctr = CTR(
+        self.winning_price_distribution = WinningPriceDistribution(
+            n_ads=self.n_ads,
+            n_users=self.n_users,
             ad_feature_dim=self.ad_feature_dim,
             user_feature_dim=self.user_feature_dim,
-            trend_interval=self.trend_interval,
+            step_per_episode=self.step_per_episode,
+            standard_bid_price_distribution=self.standard_bid_price_distribution,
+            minimum_standard_bid_price=self.minimum_standard_bid_price,
+            random_state=self.random_state,
+        )
+        # define click/imp and conversion/click rate function
+        self.ctr = CTR(
+            n_ads=self.n_ads,
+            n_users=self.n_users,
+            ad_feature_dim=self.ad_feature_dim,
+            user_feature_dim=self.user_feature_dim,
+            step_per_episode=self.step_per_episode,
             random_state=self.random_state,
         )
         self.cvr = CVR(
+            n_ads=self.n_ads,
+            n_users=self.n_users,
             ad_feature_dim=self.ad_feature_dim,
             user_feature_dim=self.user_feature_dim,
-            trend_interval=self.trend_interval,
-            random_state=self.random_state + 1,
+            step_per_episode=self.step_per_episode,
+            random_state=self.random_state
+            + 1,  # to differenciate the coef with that of CTR
         )
-
-        # define impression difficulty on users
-        # the more likely the users click, the higher the bid prices they have
-        self.ks_coef = 1 + self.ads @ self.ctr.coef[: self.ad_feature_dim]
 
     @property
     def standard_bid_price(self):
-        return self.standard_bid_price_distribution.mean
+        return self.winning_price_distribution.standard_bid_price
 
-    def generate_auction(self, volume: int):
+    def generate_auction(self, volume: int, timestep: int):
         """Sample ad and user pair for each auction.
 
         Parameters
         -------
         volume: int
             Total numbers of auction to generate.
+
+        timestep: Union[int, NDArray[int]], shape None/(n_samples, )
+            Timestep of the RL environment.
 
         Returns
         -------
@@ -241,12 +264,12 @@ class RTBSyntheticSimulator(BaseSimulator):
         ad_ids = self.random_.choice(
             self.ad_ids,
             size=volume,
-            p=self.ad_sampling_rate,
+            p=self.ad_sampling_rate[timestep],
         )
         user_ids = self.random_.choice(
             self.user_ids,
             size=volume,
-            p=self.user_sampling_rate,
+            p=self.user_sampling_rate[timestep],
         )
         return ad_ids, user_ids
 
@@ -292,8 +315,8 @@ class RTBSyntheticSimulator(BaseSimulator):
         if not (len(ad_ids) == len(user_ids)):
             raise ValueError("ad_ids and user_ids must have same length")
 
-        ad_features = self.ads[ad_ids]
-        user_features = self.users[user_ids]
+        ad_features = self.ad_feature_vector[ad_ids]
+        user_features = self.user_feature_vector[user_ids]
         contexts = np.concatenate([ad_features, user_features], axis=1)
 
         return contexts
@@ -356,15 +379,43 @@ class RTBSyntheticSimulator(BaseSimulator):
         if not (len(ad_ids) == len(user_ids) == len(bid_prices)):
             raise ValueError("ad_ids, user_ids, and bid_prices must have same length")
 
-        contexts = self.map_idx_to_contexts(ad_ids, user_ids)
-        ks, thetas = self.wf_ks[ad_ids], self.wf_thetas[ad_ids]
-        ks_coef = self.ks_coef[user_ids]
+        ad_feature_vector = self.ad_feature_vector[ad_ids]
+        user_feature_vector = self.user_feature_vector[user_ids]
 
         impressions, winning_prices = self.winning_price_distribution.sample_outcome(
-            ks * ks_coef, thetas, bid_prices
+            bid_prices=bid_prices,
+            ad_ids=ad_ids,
+            user_ids=user_ids,
+            ad_feature_vector=ad_feature_vector,
+            user_feature_vector=user_feature_vector,
+            timestep=timestep,
         )
-        clicks = self.ctr.sample_outcome(timestep, contexts) * impressions
-        conversions = self.cvr.sample_outcome(timestep, contexts) * clicks
-        costs = winning_prices * clicks
+        clicks = (
+            self.ctr.sample_outcome(
+                ad_ids=ad_ids,
+                user_ids=user_ids,
+                ad_feature_vector=ad_feature_vector,
+                user_feature_vector=user_feature_vector,
+                timestep=timestep,
+            )
+            * impressions
+        )
+        conversions = (
+            self.cvr.sample_outcome(
+                ad_ids=ad_ids,
+                user_ids=user_ids,
+                ad_feature_vector=ad_feature_vector,
+                user_feature_vector=user_feature_vector,
+                timestep=timestep,
+            )
+            * clicks
+        )
+
+        if self.cost_indicator == "impression":
+            costs = winning_prices * impressions
+        elif self.cost_indicator == "click":
+            costs = winning_prices * clicks
+        elif self.cost_indicator == "conversion":
+            costs = winning_prices * conversions
 
         return costs, impressions, clicks, conversions

@@ -1,10 +1,11 @@
 """Mathematical Functions used in Real-Time Bidding (RTB) Simulation."""
 from dataclasses import dataclass
-from typing import Tuple, Union
+from typing import Tuple, Union, Optional
 
 import numpy as np
 from sklearn.utils import check_random_state
 
+from _gym.utils import NormalDistribution
 from _gym.utils import sigmoid
 
 
@@ -15,6 +16,7 @@ class WinningPriceDistribution:
     Note
     -------
     Winning price distribution follows gamma distribution.
+    Please override this class to define your own WinningPriceDistribution.
 
     .. math::
 
@@ -24,7 +26,29 @@ class WinningPriceDistribution:
 
     Parameters
     -------
-    random_state: int, default=12345
+    n_ads: int, default=None
+        Number of ads.
+
+    n_users: int, default=None
+        Number of users. (not used, but for API consistency)
+
+    ad_feature_dim: int
+        Dimensions of the ad feature vectors. (not used, but for API consistency)
+
+    user_feature_dim: int
+        Dimensions of the user feature vectors. (not used, but for API consistency)
+
+    step_per_episode: int
+        Length of the CTR trend cycle. (not used, but for API consistency)
+
+    standard_bid_price_distribution: NormalDistribution, default=NormalDistribution(mean=100, std=20)
+        Distribution of the bid price whose average impression probability is expected to be 0.5.
+
+    minimum_standard_bid_price: Optional[int], default=None
+        Minimum value for standard bid price.
+        If None, minimum_standard_bid_price is set to standard_bid_price_distribution.mean / 2.
+
+    random_state: Optional[int], default=None
         Random state.
 
     References
@@ -34,34 +58,78 @@ class WinningPriceDistribution:
 
     """
 
-    random_state: int = 12345
+    n_ads: int
+    n_users: int
+    ad_feature_dim: int
+    user_feature_dim: int
+    step_per_episode: int
+    standard_bid_price_distribution: NormalDistribution = NormalDistribution(
+        mean=50,
+        std=5,
+        random_state=12345,
+    )
+    minimum_standard_bid_price: Optional[Union[int, float]] = None
+    random_state: Optional[int] = None
 
     def __post_init__(self):
+        if self.minimum_standard_bid_price is None:
+            self.minimum_standard_bid_price = (
+                self.standard_bid_price_distribution.mean / 2
+            )
         if self.random_state is None:
             raise ValueError("random_state must be given")
         self.random_ = check_random_state(self.random_state)
 
+        standard_bid_prices = np.clip(
+            self.standard_bid_price_distribution.sample(self.n_ads),
+            self.minimum_standard_bid_price,
+            None,
+        )
+        self.ks = self.random_.normal(
+            loc=50,
+            scale=5,
+            size=self.n_ads,
+        )
+        self.thetas = self.random_.normal(
+            loc=standard_bid_prices * 0.02,
+            scale=(standard_bid_prices * 0.02) / 5,
+            size=self.n_ads,
+        )
+
+    @property
+    def standard_bid_price(self):
+        return self.standard_bid_price_distribution.mean
+
     def sample_outcome(
         self,
-        ks: np.ndarray,
-        thetas: np.ndarray,
         bid_prices: np.ndarray,
+        ad_ids: np.ndarray,
+        user_ids: np.ndarray,
+        ad_feature_vector: np.ndarray,
+        user_feature_vector: np.ndarray,
+        timestep: Union[int, np.ndarray],
     ) -> Tuple[np.ndarray]:
         """Calculate impression probability for given bid price.
 
         Parameters
         -------
-        ks: NDArray[int], shape (search_volume, )
-            Pre-defined shape hyperparameter for winning price (gamma) distribution for each ad.
-            (search_volume is determined in RL environment.)
-
-        thetas: NDArray[int], shape (search_volume, )
-            Pre-defined scale hyperparameter for winning price (gamma) distribution for each ad.
-            (search_volume is determined in RL environment.)
-
         bid_prices: NDArray[int], shape (search_volume, )
             Bid price for each auction.
-            (search_volume is determined in RL environment.)
+
+        ad_ids: NDArray[int], shape (search_volume/n_samples, )
+            Ad ids used for each auction. (not used, but for API consistency)
+
+        user_ids: NDArray[int], shape (search_volume/n_samples, )
+            User ids used for each auction. (not used, but for API consistency)
+
+        ad_feature_vector: Union[NDArray[int], NDArray[float]], shape (search_volume/n_samples, ad_feature_dim)
+            Ad feature vector for each auction.
+
+        user_feature_vector: Union[NDArray[int], NDArray[float]], shape (search_volume/n_samples, user_feature_dim)
+            User feature vector for each auction.
+
+        timestep: Union[int, NDArray[int]], shape None/(n_samples, )
+            Timestep of the RL environment.
 
         Returns
         -------
@@ -72,16 +140,6 @@ class WinningPriceDistribution:
             Sampled winning price for each auction.
 
         """
-        if not (isinstance(ks, np.ndarray) and ks.ndim == 1 and ks.min() > 0):
-            raise ValueError(
-                "ks must be an 1-dimensional NDArray of positive float values"
-            )
-        if not (
-            isinstance(thetas, np.ndarray) and thetas.ndim == 1 and thetas.min() > 0
-        ):
-            raise ValueError(
-                "thetas must be an 1-dimensional NDArray of positive float values"
-            )
         if not (
             isinstance(bid_prices, np.ndarray)
             and bid_prices.ndim == 1
@@ -90,12 +148,10 @@ class WinningPriceDistribution:
             raise ValueError(
                 "bid_prices must be an 1-dimensional NDArray of non-negative integers"
             )
-        if not (len(ks) == len(thetas) == len(bid_prices)):
-            raise ValueError("ks, thetas, and bid_prices must have same length")
-
-        winning_prices = np.clip(self.random_.gamma(shape=ks, scale=thetas), 1, None)
+        winning_prices = np.clip(
+            self.random_.gamma(shape=ks[ad_ids], scale=thetas[ad_ids]), 1, None
+        )
         impressions = winning_prices < bid_prices
-
         return impressions.astype(int), winning_prices.astype(int)
 
 
@@ -112,26 +168,36 @@ class CTR:
     In short, CTR is calculated as follows.
         CTR = (context @ coef) * time_coef, where @ denotes inner product.
 
+    Please override this class to define your own CTR.
+
     Parameters
     -------
+    n_ads: int, default=None
+        Number of ads. (not used, but for API consistency)
+
+    n_users: int, default=None
+        Number of users. (not used, but for API consistency)
+
     ad_feature_dim: int
         Dimensions of the ad feature vectors.
 
     user_feature_dim: int
         Dimensions of the user feature vectors.
 
-    trend_interval: int
+    step_per_episode: int
         Length of the CTR trend cycle.
 
-    random_state: int, default=12345
+    random_state: Optional[int], default=None
         Random state.
 
     """
 
+    n_ads: int
+    n_users: int
     ad_feature_dim: int
     user_feature_dim: int
-    trend_interval: int
-    random_state: int = 12345
+    step_per_episode: int
+    random_state: Optional[int] = None
 
     def __post_init__(self):
         if not (isinstance(self.ad_feature_dim, int) and self.ad_feature_dim > 0):
@@ -142,9 +208,9 @@ class CTR:
             raise ValueError(
                 f"user_feature_dim must be a positive interger, but {self.user_feature_dim} is given"
             )
-        if not (isinstance(self.trend_interval, int) and self.trend_interval > 0):
+        if not (isinstance(self.step_per_episode, int) and self.step_per_episode > 0):
             raise ValueError(
-                f"trend_interval must be a positive interger, but {self.trend_interval} is given"
+                f"step_per_episode must be a positive interger, but {self.step_per_episode} is given"
             )
         if self.random_state is None:
             raise ValueError("random_state must be given")
@@ -158,24 +224,31 @@ class CTR:
         time_coef_weight = self.random_.beta(5, 20, size=n_wave)
         start_point = self.random_.uniform(size=n_wave)
 
-        time_coef = np.zeros(self.trend_interval + 20)
+        time_coef = np.zeros(self.step_per_episode + 20)
         for i in range(10):
             time_coef += time_coef_weight[i] * (
                 np.cos(
                     (
-                        np.arange(self.trend_interval + 20) * (i + 1) * np.pi
+                        np.arange(self.step_per_episode + 20) * (i + 1) * np.pi
                         + start_point[i] * 2 * np.pi
                     )
-                    / self.trend_interval
+                    / self.step_per_episode
                 )
                 + 1
             )
 
         start_idx = self.random_.randint(5, 15)
-        self.time_coef = time_coef[start_idx : start_idx + self.trend_interval] / n_wave
+        self.time_coef = (
+            time_coef[start_idx : start_idx + self.step_per_episode] / n_wave
+        )
 
     def calc_prob(
-        self, timestep: Union[int, np.ndarray], contexts: np.ndarray
+        self,
+        ad_ids: np.ndarray,
+        user_ids: np.ndarray,
+        ad_feature_vector: np.ndarray,
+        user_feature_vector: np.ndarray,
+        timestep: Union[int, np.ndarray],
     ) -> np.ndarray:
         """Calculate CTR (i.e., click per impression) using context vectors.
 
@@ -184,17 +257,22 @@ class CTR:
         CTR is calculated using both context coefficient (coef) and time coefficient (time_coef).
             CTR = (context @ coef) * time_coef, where @ denotes inner product.
 
-
         Parameters
         -------
+        ad_ids: NDArray[int], shape (search_volume/n_samples, )
+            Ad ids used for each auction. (not used, but for API consistency)
+
+        user_ids: NDArray[int], shape (search_volume/n_samples, )
+            User ids used for each auction. (not used, but for API consistency)
+
+        ad_feature_vector: Union[NDArray[int], NDArray[float]], shape (search_volume/n_samples, ad_feature_dim)
+            Ad feature vector for each auction.
+
+        user_feature_vector: Union[NDArray[int], NDArray[float]], shape (search_volume/n_samples, user_feature_dim)
+            User feature vector for each auction.
+
         timestep: Union[int, NDArray[int]], shape None/(n_samples, )
             Timestep of the RL environment.
-            (n_samples is determined in fit_reward_estimator function in simulator.)
-
-        contexts: Union[NDArray[int], NDArray[float]], shape (search_volume/n_samples, ad_feature_dim + user_feature_dim)
-            Context vector (both the ad and the user features) for each auction.
-            (search_volume is determined in RL environment.)
-            (n_samples is determined in fit_reward_estimator function in simulator.)
 
         Returns
         -------
@@ -211,37 +289,52 @@ class CTR:
                 "timestep must be an non-negative integer or an 1-dimensional NDArray of non-negative integers"
             )
         if not (
-            isinstance(contexts, np.ndarray)
-            and contexts.ndim == 2
-            and contexts.shape[1] == self.ad_feature_dim + self.user_feature_dim
+            isinstance(ad_feature_vector, np.ndarray)
+            and ad_feature_vector.ndim == 2
+            and ad_feature_vector.shape[1] == self.ad_feature_dim
         ):
             raise ValueError(
-                "contexts must be 2-dimensional NDArray with (ad_feature_dim + user_feature_dim) columns"
+                "ad_feature_vector must be 2-dimensional NDArray with shape (*, ad_feature_dim)"
             )
-        if not isinstance(timestep, int) and len(timestep) != len(contexts):
-            raise ValueError("timestep and contexts must have same length")
+        if not (
+            isinstance(user_feature_vector, np.ndarray)
+            and user_feature_vector.ndim == 2
+            and user_feature_vector.shape[1] == self.ad_feature_dim
+        ):
+            raise ValueError(
+                "user_feature_vector must be 2-dimensional NDArray with shape (*, user_feature_dim)"
+            )
 
-        ctrs = (
-            sigmoid(contexts @ self.coef.T)
-            * self.time_coef[timestep % self.trend_interval].flatten()
-        )
+        contexts = np.concatenate([ad_feature_vector, user_feature_vector], axis=1)
+        ctrs = sigmoid(contexts @ self.coef.T) * self.time_coef[timestep].flatten()
         return ctrs
 
     def sample_outcome(
-        self, timestep: Union[int, np.ndarray], contexts: np.ndarray
+        self,
+        ad_ids: np.ndarray,
+        user_ids: np.ndarray,
+        ad_feature_vector: np.ndarray,
+        user_feature_vector: np.ndarray,
+        timestep: Union[int, np.ndarray],
     ) -> np.ndarray:
-        """Stochastically determine if click occurs or not in impression=True case.
+        """Stochastically determine whether click occurs or not in impression=True case.
 
         Parameters
         -------
+        ad_ids: NDArray[int], shape (search_volume/n_samples, )
+            Ad ids used for each auction. (not used, but for API consistency)
+
+        user_ids: NDArray[int], shape (search_volume/n_samples, )
+            User ids used for each auction. (not used, but for API consistency)
+
+        ad_feature_vector: Union[NDArray[int], NDArray[float]], shape (search_volume/n_samples, ad_feature_dim)
+            Ad feature vector for each auction.
+
+        user_feature_vector: Union[NDArray[int], NDArray[float]], shape (search_volume/n_samples, user_feature_dim)
+            User feature vector for each auction.
+
         timestep: Union[int, NDArray[int]], shape None/(n_samples, )
             Timestep of the RL environment.
-            (n_samples is determined in fit_reward_estimator function in simulator.)
-
-        contexts: NDArray[float], shape (search_volume/n_samples, ad_feature_dim + user_feature_dim)
-            Context vector (both the ad and the user features) for each auction.
-            (search_volume is determined in RL environment.)
-            (n_samples is determined in fit_reward_estimator function in simulator.)
 
         Returns
         -------
@@ -249,8 +342,14 @@ class CTR:
             Whether click occurs in impression=True case.
 
         """
-        ctrs = self.calc_prob(timestep, contexts)
-        clicks = self.random_.rand(len(contexts)) < ctrs
+        ctrs = self.calc_prob(
+            timestep=timestep,
+            ad_ids=ad_ids,
+            user_ids=user_ids,
+            ad_feature_vector=ad_feature_vector,
+            user_feature_vector=user_feature_vector,
+        )
+        clicks = self.random_.rand(len(ad_ids)) < ctrs
         return clicks.astype(int)
 
 
@@ -267,26 +366,36 @@ class CVR:
     In short, CVR is calculated as follows.
         CVR = (context @ coef) * time_coef, where @ denotes inner product.
 
+    Please override this class to define your own CTR.
+
     Parameters
     -------
+    n_ads: int, default=None
+        Number of ads. (not used, but for API consistency)
+
+    n_users: int, default=None
+        Number of users. (not used, but for API consistency)
+
     ad_feature_dim: int
         Dimensions of the ad feature vectors.
 
     user_feature_dim: int
         Dimensions of the user feature vectors.
 
-    trend_interval: int
+    step_per_episode: int
         Length of the CVR trend cycle.
 
-    random_state: int, default=12345
+    random_state: Optional[int], default=None
         Random state.
 
     """
 
+    n_ads: int
+    n_users: int
     ad_feature_dim: int
     user_feature_dim: int
-    trend_interval: int
-    random_state: int = 12345
+    step_per_episode: int
+    random_state: Optional[int] = None
 
     def __post_init__(self):
         if not (isinstance(self.ad_feature_dim, int) and self.ad_feature_dim > 0):
@@ -297,9 +406,9 @@ class CVR:
             raise ValueError(
                 f"user_feature_dim must be a positive interger, but {self.user_feature_dim} is given"
             )
-        if not (isinstance(self.trend_interval, int) and self.trend_interval > 0):
+        if not (isinstance(self.step_per_episode, int) and self.step_per_episode > 0):
             raise ValueError(
-                f"trend_interval must be a positive interger, but {self.trend_interval} is given"
+                f"step_per_episode must be a positive interger, but {self.step_per_episode} is given"
             )
         if self.random_state is None:
             raise ValueError("random_state must be given")
@@ -313,24 +422,31 @@ class CVR:
         time_coef_weight = self.random_.beta(25, 25, size=n_wave)
         start_point = self.random_.uniform(size=n_wave)
 
-        time_coef = np.zeros(self.trend_interval + 20)
+        time_coef = np.zeros(self.step_per_episode + 20)
         for i in range(10):
             time_coef += time_coef_weight[i] * (
                 np.cos(
                     (
-                        np.arange(self.trend_interval + 20) * (i + 1) * np.pi
+                        np.arange(self.step_per_episode + 20) * (i + 1) * np.pi
                         + start_point[i] * 2 * np.pi
                     )
-                    / self.trend_interval
+                    / self.step_per_episode
                 )
                 + 1
             )
 
         start_idx = self.random_.randint(5, 15)
-        self.time_coef = time_coef[start_idx : start_idx + self.trend_interval] / n_wave
+        self.time_coef = (
+            time_coef[start_idx : start_idx + self.step_per_episode] / n_wave
+        )
 
     def calc_prob(
-        self, timestep: Union[int, np.ndarray], contexts: np.ndarray
+        self,
+        ad_ids: np.ndarray,
+        user_ids: np.ndarray,
+        ad_feature_vector: np.ndarray,
+        user_feature_vector: np.ndarray,
+        timestep: Union[int, np.ndarray],
     ) -> np.ndarray:
         """Calculate CVR (i.e., conversion per click) using context vectors.
 
@@ -342,19 +458,25 @@ class CVR:
 
         Parameters
         -------
+        ad_ids: NDArray[int], shape (search_volume/n_samples, )
+            Ad ids used for each auction. (not used, but for API consistency)
+
+        user_ids: NDArray[int], shape (search_volume/n_samples, )
+            User ids used for each auction. (not used, but for API consistency)
+
+        ad_feature_vector: Union[NDArray[int], NDArray[float]], shape (search_volume/n_samples, ad_feature_dim)
+            Ad feature vector for each auction.
+
+        user_feature_vector: Union[NDArray[int], NDArray[float]], shape (search_volume/n_samples, user_feature_dim)
+            User feature vector for each auction.
+
         timestep: Union[int, NDArray[int]], shape None/(n_samples, )
             Timestep of the RL environment.
-            (n_samples is determined in fit_reward_estimator function in simulator.)
-
-        contexts: Union[NDArray[int], NDArray[float]], shape (search_volume/n_samples, ad_feature_dim + user_feature_dim)
-            Context vector (both the ad and the user features) for each auction.
-            (search_volume is determined in RL environment.)
-            (n_samples is determined in fit_reward_estimator function in simulator.)
 
         Returns
         -------
         cvrs: NDArray[float], shape (search_volume/n_samples, )
-            Ground-truth CVR (i.e., conversion per click) for each auction.
+            Ground-truth CTR (i.e., conversion per click) for each auction.
 
         """
         if not (isinstance(timestep, int) and timestep >= 0) and not (
@@ -366,44 +488,65 @@ class CVR:
                 "timestep must be an non-negative integer or an 1-dimensional NDArray of non-negative integers"
             )
         if not (
-            isinstance(contexts, np.ndarray)
-            and contexts.ndim == 2
-            and contexts.shape[1] == self.ad_feature_dim + self.user_feature_dim
+            isinstance(ad_feature_vector, np.ndarray)
+            and ad_feature_vector.ndim == 2
+            and ad_feature_vector.shape[1] == self.ad_feature_dim
         ):
             raise ValueError(
-                "contexts must be 2-dimensional NDArray with (ad_feature_dim + user_feature_dim) columns"
+                "ad_feature_vector must be 2-dimensional NDArray with shape (*, ad_feature_dim)"
             )
-        if not isinstance(timestep, int) and len(timestep) != len(contexts):
-            raise ValueError("timestep and contexts must have same length")
+        if not (
+            isinstance(user_feature_vector, np.ndarray)
+            and user_feature_vector.ndim == 2
+            and user_feature_vector.shape[1] == self.ad_feature_dim
+        ):
+            raise ValueError(
+                "user_feature_vector must be 2-dimensional NDArray with shape (*, user_feature_dim)"
+            )
 
-        cvrs = (
-            sigmoid(contexts @ self.coef.T)
-            * self.time_coef[timestep % self.trend_interval].flatten()
-        )
+        contexts = np.concatenate([ad_feature_vector, user_feature_vector], axis=1)
+        cvrs = sigmoid(contexts @ self.coef.T) * self.time_coef[timestep].flatten()
         return cvrs
 
     def sample_outcome(
-        self, timestep: Union[int, np.ndarray], contexts: np.ndarray
+        self,
+        ad_ids: np.ndarray,
+        user_ids: np.ndarray,
+        ad_feature_vector: np.ndarray,
+        user_feature_vector: np.ndarray,
+        timestep: Union[int, np.ndarray],
     ) -> np.ndarray:
-        """Stochastically determine if click occurs or not in click=True case.
+        """Stochastically determine whether conversion occurs or not in click=True case.
 
         Parameters
         -------
+        ad_ids: NDArray[int], shape (search_volume/n_samples, )
+            Ad ids used for each auction. (not used, but for API consistency)
+
+        user_ids: NDArray[int], shape (search_volume/n_samples, )
+            User ids used for each auction. (not used, but for API consistency)
+
+        ad_feature_vector: Union[NDArray[int], NDArray[float]], shape (search_volume/n_samples, ad_feature_dim)
+            Ad feature vector for each auction.
+
+        user_feature_vector: Union[NDArray[int], NDArray[float]], shape (search_volume/n_samples, user_feature_dim)
+            User feature vector for each auction.
+
         timestep: Union[int, NDArray[int]], shape None/(n_samples, )
             Timestep of the RL environment.
-            (n_samples is determined in fit_reward_estimator function in simulator.)
-
-        contexts: NDArray[float], shape (search_volume/n_samples, ad_feature_dim + user_feature_dim)
-            Context vector (both the ad and the user features) for each auction.
-            (search_volume is determined in RL environment.)
-            (n_samples is determined in fit_reward_estimator function in simulator.)
 
         Returns
         -------
         conversions: NDArray[int], shape (search_volume/n_samples, )
-            Whether click occurs in click=True case.
+            Whether conversion occurs in click=True case.
 
         """
-        cvrs = self.calc_prob(timestep, contexts)
-        conversions = self.random_.rand(len(contexts)) < cvrs
+        cvrs = self.calc_prob(
+            ad_ids=ad_ids,
+            user_ids=user_ids,
+            ad_feature_vector=ad_feature_vector,
+            user_feature_vector=user_feature_vector,
+            timestep=timestep,
+        )
+        conversions = self.random_.rand(len(ad_ids)) < cvrs
         return conversions.astype(int)
