@@ -138,16 +138,30 @@ class Bidder:
                 f"adjust_rate must be a non-negative float value, but {adjust_rate} is given"
             )
 
-        contexts = self.simulator.map_idx_to_contexts(ad_ids, user_ids)
+        ad_feature_vector, user_feature_vector = self.simulator.map_idx_to_features(
+            ad_ids, user_ids
+        )
 
         if self.use_reward_predictor:
-            predicted_rewards = self._predict_reward(timestep, contexts)
+            predicted_rewards = self._predict_reward(
+                ad_ids=ad_ids,
+                user_ids=user_ids,
+                ad_feature_vector=ad_feature_vector,
+                user_feature_vector=user_feature_vector,
+                timestep=timestep,
+            )
             bid_prices = (
                 adjust_rate * predicted_rewards * self.standard_bid_price * self.scaler
             )
 
         else:
-            ground_truth_rewards = self._calc_ground_truth_reward(timestep, contexts)
+            ground_truth_rewards = self._calc_ground_truth_reward(
+                ad_ids=ad_ids,
+                user_ids=user_ids,
+                ad_feature_vector=ad_feature_vector,
+                user_feature_vector=user_feature_vector,
+                timestep=timestep,
+            )
             bid_prices = (
                 adjust_rate
                 * ground_truth_rewards
@@ -201,16 +215,30 @@ class Bidder:
                 f"n_samples must be a positive interger, but {n_samples} is given"
             )
 
-        ad_ids, user_ids = self.simulator.generate_auction(n_samples)
-        contexts = self.simulator.map_idx_to_contexts(ad_ids, user_ids)
         timesteps = self.random_.choice(step_per_episode, n_samples)
+        ad_ids, user_ids = self.simulator.generate_auction(n_samples)
+        ad_feature_vector, user_feature_vector = self.simulator.map_idx_to_features(
+            ad_ids, user_ids
+        )
 
         if self.use_reward_predictor:
-            predicted_rewards = self._predict_reward(timesteps, contexts)
+            predicted_rewards = self._predict_reward(
+                ad_ids=ad_ids,
+                user_ids=user_ids,
+                ad_feature_vector=ad_feature_vector,
+                user_feature_vector=user_feature_vector,
+                timestep=timesteps,
+            )
             self.scaler = 1 / predicted_rewards.mean()
 
         else:
-            ground_truth_rewards = self._calc_ground_truth_reward(timesteps, contexts)
+            ground_truth_rewards = self._calc_ground_truth_reward(
+                ad_ids=ad_ids,
+                user_ids=user_ids,
+                ad_feature_vector=ad_feature_vector,
+                user_feature_vector=user_feature_vector,
+                timestep=timesteps,
+            )
             self.scaler = 1 / ground_truth_rewards.mean()
 
     def custom_set_reward_predictor(self, reward_predictor: BaseEstimator):
@@ -274,22 +302,46 @@ class Bidder:
             )
 
         ad_ids, user_ids = self.simulator.generate_auction(n_samples)
-        contexts = self.simulator.map_idx_to_contexts(ad_ids, user_ids)
+        ad_feature_vector, user_feature_vector = self.simulator.map_idx_to_features(
+            ad_ids, user_ids
+        )
+        contexts = np.concatenate([ad_feature_vector, user_feature_vector], axis=1)
         timesteps = self.random_.choice(step_per_episode, n_samples)
         feature_vectors = np.concatenate([contexts, timesteps.reshape((-1, 1))], axis=1)
 
         if self.objective == "click":
-            rewards = self.simulator.ctr.sample_outcome(timesteps, contexts)
+            rewards = self.simulator.ctr.sample_outcome(
+                ad_ids=ad_ids,
+                user_ids=user_ids,
+                ad_feature_vector=ad_feature_vector,
+                user_feature_vector=user_feature_vector,
+                timestep=timesteps,
+            )
         else:  # "conversion"
             rewards = self.simulator.ctr.sample_outcome(
-                timesteps, contexts
-            ) * self.simulator.cvr.sample_outcome(timesteps, contexts)
+                ad_ids=ad_ids,
+                user_ids=user_ids,
+                ad_feature_vector=ad_feature_vector,
+                user_feature_vector=user_feature_vector,
+                timestep=timesteps,
+            ) * self.simulator.cvr.sample_outcome(
+                ad_ids=ad_ids,
+                user_ids=user_ids,
+                ad_feature_vector=ad_feature_vector,
+                user_feature_vector=user_feature_vector,
+                timestep=timesteps,
+            )
 
         X, y = check_X_y(feature_vectors, rewards)
         self.reward_predictor.fit(X, y)
 
     def _predict_reward(
-        self, timestep: Union[int, np.ndarray], contexts: np.ndarray
+        self,
+        ad_ids: np.ndarray,
+        user_ids: np.ndarray,
+        ad_feature_vector: np.ndarray,
+        user_feature_vector: np.ndarray,
+        timestep: Union[int, np.ndarray],
     ) -> np.ndarray:
         """Predict reward (i.e., auction outcome) to determine bidding price.
 
@@ -321,8 +373,9 @@ class Bidder:
 
         """
         if isinstance(timestep, int):
-            timestep = np.full(len(contexts), timestep)
+            timestep = np.full(len(ad_ids), timestep)
         timestep = timestep.reshape((-1, 1))
+        contexts = np.concatenate([ad_feature_vector, user_feature_vector], axis=1)
 
         X = np.concatenate([contexts, timestep], axis=1)
         predicted_rewards = (
@@ -333,7 +386,12 @@ class Bidder:
         return predicted_rewards
 
     def _calc_ground_truth_reward(
-        self, timestep: Union[int, np.ndarray], contexts: np.ndarray
+        self,
+        ad_ids: np.ndarray,
+        user_ids: np.ndarray,
+        ad_feature_vector: np.ndarray,
+        user_feature_vector: np.ndarray,
+        timestep: Union[int, np.ndarray],
     ) -> np.ndarray:
         """Calculate ground-truth reward (i.e., auction outcome) to determine bidding price.
 
@@ -354,10 +412,26 @@ class Bidder:
 
         """
         if self.objective == "click":
-            expected_rewards = self.simulator.ctr.calc_prob(timestep, contexts)
+            expected_rewards = self.simulator.ctr.calc_prob(
+                ad_ids=ad_ids,
+                user_ids=user_ids,
+                ad_feature_vector=ad_feature_vector,
+                user_feature_vector=user_feature_vector,
+                timestep=timestep,
+            )
         else:  # "conversion"
             expected_rewards = self.simulator.ctr.calc_prob(
-                timestep, contexts
-            ) * self.simulator.cvr.calc_prob(timestep, contexts)
+                ad_ids=ad_ids,
+                user_ids=user_ids,
+                ad_feature_vector=ad_feature_vector,
+                user_feature_vector=user_feature_vector,
+                timestep=timestep,
+            ) * self.simulator.cvr.calc_prob(
+                ad_ids=ad_ids,
+                user_ids=user_ids,
+                ad_feature_vector=ad_feature_vector,
+                user_feature_vector=user_feature_vector,
+                timestep=timestep,
+            )
 
         return expected_rewards

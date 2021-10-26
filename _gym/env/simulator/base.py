@@ -16,13 +16,6 @@ class BaseSimulator(metaclass=ABCMeta):
         raise NotImplementedError
 
     @abstractmethod
-    def map_idx_to_contexts(
-        self, ad_ids: np.ndarray, user_ids: np.ndarray
-    ) -> np.ndarray:
-        """Map the ad and the user index into context vectors."""
-        raise NotImplementedError
-
-    @abstractmethod
     def calc_and_sample_outcome(
         self,
         timestep: int,

@@ -187,7 +187,7 @@ class RTBSyntheticSimulator(BaseSimulator):
 
         if self.ad_sampling_rate is None:
             self.ad_sampling_rate = np.full(
-                (self.n_ads, self.step_per_episode), 1 / self.n_ads
+                (self.step_per_episode, self.n_ads), 1 / self.n_ads
             )
         else:
             self.ad_sampling_rate = self.ad_sampling_rate / np.sum(
@@ -196,7 +196,7 @@ class RTBSyntheticSimulator(BaseSimulator):
 
         if self.user_sampling_rate is None:
             self.user_sampling_rate = np.full(
-                (self.n_users, self.step_per_episode), 1 / self.n_users
+                (self.step_per_episode, self.n_users), 1 / self.n_users
             )
         else:
             self.user_sampling_rate = self.user_sampling_rate / np.sum(
@@ -237,7 +237,7 @@ class RTBSyntheticSimulator(BaseSimulator):
     def standard_bid_price(self):
         return self.winning_price_distribution.standard_bid_price
 
-    def generate_auction(self, volume: int, timestep: int):
+    def generate_auction(self, volume: int, timestep: Optional[int] = None):
         """Sample ad and user pair for each auction.
 
         Parameters
@@ -245,7 +245,7 @@ class RTBSyntheticSimulator(BaseSimulator):
         volume: int
             Total numbers of auction to generate.
 
-        timestep: Union[int, NDArray[int]], shape None/(n_samples, )
+        timestep: Optional[int], default=None
             Timestep of the RL environment.
 
         Returns
@@ -261,19 +261,34 @@ class RTBSyntheticSimulator(BaseSimulator):
             raise ValueError(
                 f"volume must be a positive interger, but {volume} is given"
             )
-        ad_ids = self.random_.choice(
-            self.ad_ids,
-            size=volume,
-            p=self.ad_sampling_rate[timestep],
-        )
-        user_ids = self.random_.choice(
-            self.user_ids,
-            size=volume,
-            p=self.user_sampling_rate[timestep],
-        )
+
+        if isinstance(timestep, int):
+            ad_ids = self.random_.choice(
+                self.ad_ids,
+                size=volume,
+                p=self.ad_sampling_rate[timestep],
+            )
+            user_ids = self.random_.choice(
+                self.user_ids,
+                size=volume,
+                p=self.user_sampling_rate[timestep],
+            )
+
+        else:
+            ad_ids = self.random_.choice(
+                self.ad_ids,
+                size=volume,
+                p=self.ad_sampling_rate.mean(axis=0),
+            )
+            user_ids = self.random_.choice(
+                self.user_ids,
+                size=volume,
+                p=self.user_sampling_rate.mean(axis=0),
+            )
+
         return ad_ids, user_ids
 
-    def map_idx_to_contexts(
+    def map_idx_to_features(
         self, ad_ids: np.ndarray, user_ids: np.ndarray
     ) -> np.ndarray:
         """Map the ad and the user index into context vectors.
@@ -290,8 +305,11 @@ class RTBSyntheticSimulator(BaseSimulator):
 
         Returns
         -------
-        contexts: NDArray[float], shape (search_volume, ad_feature_dim + user_feature_dim)
-            Context vector (contain both the ad and the user features) for each auction.
+        ad_feature_vector: Union[NDArray[int], NDArray[float]], shape (search_volume/n_samples, ad_feature_dim)
+            Ad feature vector for each auction.
+
+        user_feature_vector: Union[NDArray[int], NDArray[float]], shape (search_volume/n_samples, user_feature_dim)
+            User feature vector for each auction.
 
         """
         if not (
@@ -317,9 +335,7 @@ class RTBSyntheticSimulator(BaseSimulator):
 
         ad_features = self.ad_feature_vector[ad_ids]
         user_features = self.user_feature_vector[user_ids]
-        contexts = np.concatenate([ad_features, user_features], axis=1)
-
-        return contexts
+        return ad_features, user_features
 
     def calc_and_sample_outcome(
         self,

@@ -149,7 +149,9 @@ class WinningPriceDistribution:
                 "bid_prices must be an 1-dimensional NDArray of non-negative integers"
             )
         winning_prices = np.clip(
-            self.random_.gamma(shape=ks[ad_ids], scale=thetas[ad_ids]), 1, None
+            self.random_.gamma(shape=self.ks[ad_ids], scale=self.thetas[ad_ids]),
+            1,
+            None,
         )
         impressions = winning_prices < bid_prices
         return impressions.astype(int), winning_prices.astype(int)
@@ -419,7 +421,7 @@ class CVR:
 
         # define intermittent time_coef using trigonometric function
         n_wave = 10
-        time_coef_weight = self.random_.beta(25, 25, size=n_wave)
+        time_coef_weight = self.random_.beta(10, 15, size=n_wave)
         start_point = self.random_.uniform(size=n_wave)
 
         time_coef = np.zeros(self.step_per_episode + 20)
@@ -476,7 +478,7 @@ class CVR:
         Returns
         -------
         cvrs: NDArray[float], shape (search_volume/n_samples, )
-            Ground-truth CTR (i.e., conversion per click) for each auction.
+            Ground-truth CVR (i.e., conversion per click) for each auction.
 
         """
         if not (isinstance(timestep, int) and timestep >= 0) and not (
