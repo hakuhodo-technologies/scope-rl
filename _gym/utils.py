@@ -7,7 +7,7 @@ import gym
 import numpy as np
 from sklearn.utils import check_random_state
 
-from _gym.types import LoggedDataset, OPEInputDict
+from .types import LoggedDataset, OPEInputDict
 
 
 @dataclass

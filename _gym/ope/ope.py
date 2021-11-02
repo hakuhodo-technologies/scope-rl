@@ -19,11 +19,11 @@ from d3rlpy.ope import FQE as ContinuousFQE
 from d3rlpy.models.encoders import VectorEncoderFactory
 from d3rlpy.models.q_functions import MeanQFunctionFactory
 
-from _gym.ope import BaseOffPolicyEstimator
-from _gym.ope.online import rollout_policy_online
-from _gym.policy import BaseHead
-from _gym.types import LoggedDataset, OPEInputDict
-from _gym.utils import (
+from ..ope.estimators_discrete import BaseOffPolicyEstimator
+from ..ope.online import rollout_policy_online
+from ..policy.head import BaseHead
+from ..types import LoggedDataset, OPEInputDict
+from ..utils import (
     estimate_confidence_interval_by_bootstrap,
     check_if_valid_env_and_logged_dataset,
     check_input_dict,

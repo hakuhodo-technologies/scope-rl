@@ -12,8 +12,8 @@ import seaborn as sns
 import gym
 from d3rlpy.algos import AlgoBase
 
-from _gym.policy import BaseHead, OnlineHead
-from _gym.utils import estimate_confidence_interval_by_bootstrap
+from ..policy.head import BaseHead, OnlineHead
+from ..utils import estimate_confidence_interval_by_bootstrap
 
 
 def visualize_on_policy_policy_value(

@@ -7,8 +7,8 @@ from gym.spaces import Box, Discrete
 from sklearn.base import BaseEstimator
 import numpy as np
 
-from _gym.env import RTBEnv
-from _gym.types import Action
+from ..env.rtb import RTBEnv
+from ..types import Action
 
 
 class CustomizedRTBEnv(gym.Env):

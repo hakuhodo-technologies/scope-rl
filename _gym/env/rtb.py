@@ -6,8 +6,8 @@ from gym.spaces import Box
 import numpy as np
 from sklearn.utils import check_random_state
 
-from _gym.utils import NormalDistribution
-from _gym.types import Action
+from ..utils import NormalDistribution
+from ..types import Action
 
 from .bidder import Bidder
 from .simulator.rtb_synthetic import RTBSyntheticSimulator

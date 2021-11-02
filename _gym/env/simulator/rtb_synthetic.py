@@ -5,14 +5,13 @@ from typing import Tuple, Union, Optional
 import numpy as np
 from sklearn.utils import check_random_state
 
-from _gym.utils import NormalDistribution
-
 from .base import (
     BaseSimulator,
     BaseWinningPriceDistribution,
     BaseClickAndConversionRate,
 )
 from .function import WinningPriceDistribution, ClickThroughRate, ConversionRate
+from ...utils import NormalDistribution
 
 
 @dataclass

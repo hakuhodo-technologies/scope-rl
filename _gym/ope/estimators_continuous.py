@@ -6,8 +6,8 @@ import numpy as np
 
 from gym.spaces import Box
 
-from _gym.utils import estimate_confidence_interval_by_bootstrap
-from _gym.ope import BaseOffPolicyEstimator
+from ..utils import estimate_confidence_interval_by_bootstrap
+from ..ope.estimators_discrete import BaseOffPolicyEstimator
 
 
 def gaussian_kernel(dist):
