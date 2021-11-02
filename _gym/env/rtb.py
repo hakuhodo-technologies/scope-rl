@@ -12,7 +12,6 @@ from _gym.types import Action
 from .bidder import Bidder
 from .simulator.rtb_synthetic import RTBSyntheticSimulator
 from .simulator.base import (
-    BaseSimulator,
     BaseWinningPriceDistribution,
     BaseClickAndConversionRate,
 )
@@ -45,21 +44,20 @@ class RTBEnv(gym.Env):
                   (budget consumption rate, cost per mille of impressions, auction winning rate, and reward)
                 - adjust rate (i.e., RL agent action) at previous timestep
 
-        action: Union[int, float]
-            Adjust rate parameter used for the bid price calculation as follows.
+        action: Union[int, float, NDArray] (:math:`\\in [0, \\infty)`)
+            Adjust rate parameter used for determining the bid price as follows.
             (Bid price is individually determined for each auction.)
-                bid price = adjust rate * ground-truth reward ( * constant)
-            Note that, we can also use predicted reward instead of ground-truth reward in the above equation
-            if we use CustomizedRTBEnv Wrapper.
 
-            Acceptable action range is [0, np.infty).
+                :math:`bid_price_{t, i} = adjust_rate_{t} \\times ground_truth_reward_{t, i} ( \\times const.)`
+
+            Note that, you can also use predicted reward instead of ground-truth reward in the above equation.
+            Please also refer to CustomizedRTBEnv Wrapper.
 
         reward: int
             Total clicks/conversions gained during the timestep.
 
-        discount_rate: int, 1
+        discount_rate: int (= 1)
             Discount factor for cumulative reward calculation.
-            Set discount_rate = 1 (i.e., no discount) in RTB.
 
         constraint: int
             Total cost should not exceed the initial budget.
@@ -79,44 +77,48 @@ class RTBEnv(gym.Env):
         Number of timesteps in an episode.
 
     initial_budget: int, default=3000
-        Initial budget (i.e., constraint) for bidding during an episode.
+        Initial budget (i.e., constraint) for an episode.
 
     n_ads: int, default=100
-        Number of ads used for auction bidding.
+        Number of (candidate) ads used for auction bidding.
 
     n_users: int, default=100
-        Number of users used for auction bidding.
+        Number of (candidate) users used for auction bidding.
 
     ad_feature_dim: int, default=5
-        Parameter in RTBSyntheticSimulator class.
         Dimensions of the ad feature vectors.
 
     user_feature_dim: int, default=5
-        Parameter in RTBSyntheticSimulator class.
         Dimensions of the user feature vectors.
 
-    ad_sampling_rate: Optional[Union[NDArray[int], NDArray[float]]], shape (n_candidate_ads, ), default=None
-        Parameter in RTBSyntheticSimulator class.
+    ad_sampling_rate: Optional[NDArray], shape (n_ads, ad_feature_dim), default=None
+        Feature vectors that characterizes each ad.
+
+    user_sampling_rate: Optional[NDArray], shape (n_users, user_feature_dim), default=None
+        Feature vectors that characterizes each user.
+
+    ad_sampling_rate: Optional[NDArray], shape (step_per_episode, n_ads), default=None
         Sampling probalities to determine which ad (id) is used in each auction.
 
-    user_sampling_rate: Optional[Union[NDArray[int], NDArray[float]]], shape (n_candidate_users, ), default=None
-        Parameter in RTBSyntheticSimulator class.
+    user_sampling_rate: Optional[NDArray], shape (step_per_episode, n_users), default=None
         Sampling probalities to determine which user (id) is used in each auction.
 
-    Simulator:
+    WinningPriceDistribution: BaseWinningPriceDistribution
+        Winning price distribution of auctions.
+        Both class and instance are acceptable.
 
-    WinningPriceDistribution:
+    ClickThroughRate: BaseClickAndConversionRate
+        Click through rate (i.e., click / impression).
+        Both class and instance are acceptable.
 
-    ClickTroughRate:
-
-    ConversionRate:
+    ConversionRate: BaseClickAndConversionRate
+        Conversion rate (i.e., conversion / click).
+        Both class and instance are acceptable.
 
     standard_bid_price_distribution: NormalDistribution, default=NormalDistribution(mean=100, std=20)
-        Parameter in RTBSyntheticSimulator class.
         Distribution of the bid price whose average impression probability is expected to be 0.5.
 
     minimum_standard_bid_price: Optional[int], default=None
-        Parameter in RTBSyntheticSimulator class.
         Minimum value for standard bid price.
         If None, minimum_standard_bid_price is set to standard_bid_price_distribution.mean / 2.
 
@@ -126,7 +128,7 @@ class RTBEnv(gym.Env):
     minimum_search_volume: int, default = 10
         Minimum search volume at each timestep.
 
-    random_state: int, default=12345
+    random_state: Optional[int], default=None
         Random state.
 
     Examples
@@ -136,11 +138,23 @@ class RTBEnv(gym.Env):
 
         # import necessary module from _gym
         from _gym.env import RTBEnv
-        from _gym.policy import RandomPolicy
+        from _gym.policy import OnlineHead
+        from _gym.ope.online import calc_on_policy_policy_value
+
+        # import necessary module from other libraries
+        from d3rlpy.algos import RandomPolicy
+        from d3rlpy.preprocessing import MinMaxActionScaler
 
         # initialize environment and define (RL) agent (i.e., policy)
-        env = RTBEnv()
-        agent = RandomPolicy(env)
+        env = RTBEnv(random_state=12345)
+        agent = OnlineHead(
+            RandomPolicy(
+                action_scaler=MinMaxActionScaler(
+                    minimum=0.1,
+                    maximum=10,
+                )
+            )
+        )
 
         # OpenAI Gym like interaction with agent
         for episode in range(1000):
@@ -148,17 +162,25 @@ class RTBEnv(gym.Env):
             done = False
 
             while not done:
-                action = agent.act(obs)
+                action = agent.predict_online(obs)
                 obs, reward, done, info = env.step(action)
 
         # calculate on-policy policy value
-        performance = env.calc_on_policy_policy_value(
-            evaluation_policy=agent,
-            n_episodes=10000,
+        on_policy_performance = calc_on_policy_policy_value(
+            env,
+            agent,
+            n_episodes=100,
+            random_state=12345
         )
+        on_policy_performance  # 13.44
 
     References
     -------
+    Takuma Seno and Michita Imai.
+    "d3rlpy: An Offline Deep Reinforcement Library.", 2021.
+
+    Greg Brockman, Vicki Cheung, Ludwig Pettersson, Jonas Schneider, John Schulman, Jie Tang, Wojciech Zaremba.
+    "OpenAI Gym.", 2016.
 
     """
 
@@ -176,7 +198,6 @@ class RTBEnv(gym.Env):
         user_feature_vector: Optional[np.ndarray] = None,
         ad_sampling_rate: Optional[np.ndarray] = None,
         user_sampling_rate: Optional[np.ndarray] = None,
-        Simulator: BaseSimulator = RTBSyntheticSimulator,
         WinningPriceDistribution: BaseWinningPriceDistribution = WinningPriceDistribution,
         ClickThroughRate: BaseClickAndConversionRate = ClickThroughRate,
         ConversionRate: BaseClickAndConversionRate = ConversionRate,
@@ -207,28 +228,6 @@ class RTBEnv(gym.Env):
             raise ValueError(
                 f"initial_budget must be a positive interger, but {initial_budget} is given"
             )
-        if not (
-            isinstance(search_volume_distribution.mean, (int, float))
-            and search_volume_distribution.mean > 0
-        ) and not (
-            isinstance(search_volume_distribution.mean, np.ndarray)
-            and search_volume_distribution.mean.ndim == 1
-            and search_volume_distribution.mean.min() > 0
-        ):
-            raise ValueError(
-                "search_volume_distribution.mean must be a positive float value or an NDArray of positive float values"
-            )
-        if not (
-            isinstance(search_volume_distribution.mean, (int, float))
-            or len(search_volume_distribution.mean) == step_per_episode
-        ):
-            raise ValueError(
-                "length of search_volume_distribution must be equal to step_per_episode"
-            )
-        if not (isinstance(minimum_search_volume, int) and minimum_search_volume > 0):
-            raise ValueError(
-                f"minimum_search_volume must be a positive integer, but {minimum_search_volume} is given"
-            )
         if random_state is None:
             raise ValueError("random_state must be given")
         self.random_ = check_random_state(random_state)
@@ -236,7 +235,7 @@ class RTBEnv(gym.Env):
         self.objective = objective
 
         # initialize simulator and bidder
-        self.simulator = Simulator(
+        self.simulator = RTBSyntheticSimulator(
             cost_indicator=cost_indicator,
             step_per_episode=step_per_episode,
             n_ads=n_ads,
@@ -252,6 +251,8 @@ class RTBEnv(gym.Env):
             ConversionRate=ConversionRate,
             standard_bid_price_distribution=standard_bid_price_distribution,
             minimum_standard_bid_price=minimum_standard_bid_price,
+            search_volume_distribution=search_volume_distribution,
+            minimum_search_volume=minimum_search_volume,
             random_state=random_state,
         )
         self.bidder = Bidder(
@@ -290,17 +291,6 @@ class RTBEnv(gym.Env):
         self.step_per_episode = step_per_episode
         self.initial_budget = initial_budget
 
-        if isinstance(search_volume_distribution.mean, int):
-            self.search_volume_distribution = NormalDistribution(
-                mean=np.full(step_per_episode, search_volume_distribution.mean),
-                std=np.full(step_per_episode, search_volume_distribution.std),
-                random_state=random_state,
-            )
-        else:
-            self.search_volume_distribution = search_volume_distribution
-
-        self.minimum_search_volume = minimum_search_volume
-
     @property
     def standard_bid_price(self):
         return self.simulator.standard_bid_price
@@ -311,10 +301,10 @@ class RTBEnv(gym.Env):
         Note
         -------
         The rollout procedure is given as follows.
-        1. Sample ads and users for (search volume, ) auctions occur during the timestep.
+        1. Sample ads and users for (search volume, ) auctions occur during the timestep. (in Simulator)
 
         2. Determine bid price. (In Bidder)
-            bid price = adjust rate * predicted/ground-truth reward ( * constant)
+            :math:`bid_price_{t, i} = adjust_rate_{t} \\times predicted_reward_{t,i}/ground_truth_reward_{t, i} ( \\times const.)`
 
         3. Calculate outcome probability and stochastically determine auction result. (in Simulator)
             auction results: cost (i.e., second price), impression, click, conversion
@@ -326,7 +316,7 @@ class RTBEnv(gym.Env):
 
         Parameters
         -------
-        action: Action (Union[int, float, np.integer, np.float, np.ndarray])
+        action: Action (Union[int, float, NDArray])
             RL agent action which corresponds to the adjust rate parameter used for bid price calculation.
 
         Returns
@@ -349,7 +339,7 @@ class RTBEnv(gym.Env):
 
             info: Dict[str, int]
                 Additional feedbacks (total impressions, clicks, and conversions) for analysts.
-                Note that those feedbacks are intended to be unobservable for the RL agent.
+                Note that those feedbacks are unobservable to the agent.
 
         """
         err = False
@@ -372,12 +362,11 @@ class RTBEnv(gym.Env):
         adjust_rate = action
 
         # 1. sample ads and users for auctions occur in a timestep
-        search_volume = self.search_volumes[self.t - 1]
-        ad_ids, user_ids = self.simulator.generate_auction(search_volume)
+        ad_ids, user_ids = self.simulator.generate_auction(timestep=self.t)
 
         # 2. determine bid price
         bid_prices = self.bidder.determine_bid_price(
-            self.t, adjust_rate, ad_ids, user_ids
+            timestep=self.t, adjust_rate=adjust_rate, ad_ids=ad_ids, user_ids=user_ids
         )
 
         # 3. simulate auctions and gain results
@@ -386,7 +375,9 @@ class RTBEnv(gym.Env):
             impressions,
             clicks,
             conversions,
-        ) = self.simulator.calc_and_sample_outcome(self.t, ad_ids, user_ids, bid_prices)
+        ) = self.simulator.calc_and_sample_outcome(
+            timestep=self.t, ad_ids=ad_ids, user_ids=user_ids, bid_prices=bid_prices
+        )
 
         # 4. check if auction bidding is possible
         masks = np.cumsum(costs) < self.remaining_budget
@@ -435,6 +426,7 @@ class RTBEnv(gym.Env):
 
         # we use 'info' to obtain supplemental feedbacks beside rewards
         info = {
+            "search_volume": len(bid_prices),
             "impression": total_impression,
             "click": total_click,
             "conversion": total_conversion,
@@ -465,9 +457,6 @@ class RTBEnv(gym.Env):
         # initialize internal env state
         self.t = 0
         self.prev_remaining_budget = self.remaining_budget = self.initial_budget
-        self.search_volumes = np.clip(
-            self.search_volume_distribution.sample(), self.minimum_search_volume, None
-        ).astype(int)[0]
 
         # initialize obs
         random_variable_ = self.random_.uniform(size=3)
@@ -491,16 +480,23 @@ class RTBEnv(gym.Env):
         pass
 
     def seed(self, seed: Optional[int] = None) -> None:
+        """Reset random state (seed).
+
+        Parameters
+        -------
+        seed: Optional[int], default=None
+            Random state.
+
+        """
         if seed is None:
             pass
 
         else:
             self.random_ = check_random_state(seed)
-            self.search_volume_distribution.random_ = check_random_state(seed)
-
             self.simulator.random_ = check_random_state(seed)
+            self.simulator.search_volume_distribution.random_ = check_random_state(seed)
             self.simulator.winning_price_distribution.random_ = check_random_state(seed)
             self.simulator.ctr.random_ = check_random_state(seed)
             self.simulator.cvr.random_ = check_random_state(
                 seed + 1
-            )  # to differenciate CVR from CTR
+            )  # to differentiate CVR from CTR

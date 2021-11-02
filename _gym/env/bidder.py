@@ -19,12 +19,12 @@ class Bidder:
     Intended to be called and initialized from RTBEnv class in env.py.
 
     Determine bid price by the following formula.
-        bid price = adjust rate * predicted/ground-truth reward ( * constant)
+        :math:`bid_price_{t, i} = adjust_rate_{t} \\times predicted_reward_{t,i}/ground_truth_reward_{t, i} ( \\times const.)`
 
     Parameters
     -------
     simulator: BaseSimulator
-        Simulator of auctions.
+        Auction simulator.
 
     objective: str, default="conversion"
         Objective outcome (i.e., reward) of the auction.
@@ -38,11 +38,16 @@ class Bidder:
         Scaling factor (constant value) used for bid price determination.
         If None, one should call auto_fit_scaler().
 
-    random_state: int, default=12345
+    random_state: Optional[int], default=None
         Random state.
 
     References
     -------
+    Di Wu, Xiujun Chen, Xun Yang, Hao Wang, Qing Tan, Xiaoxun Zhang, Jian Xu, and Kun Gai.
+    "Budget Constrained Bidding by Model-free Reinforcement Learning in Display Advertising.", 2018.
+
+    Jun Zhao, Guang Qiu, Ziyu Guan, Wei Zhao, and Xiaofei He.
+    "Deep Reinforcement Learning for Sponsored Search Real-time Bidding.", 2018.
 
     """
 
@@ -50,7 +55,7 @@ class Bidder:
     objective: str = "conversion"
     reward_predictor: Optional[BaseEstimator] = None
     scaler: Optional[Union[int, float]] = None
-    random_state: int = 12345
+    random_state: Optional[int] = None
 
     def __post_init__(self):
         if self.objective not in ["click", "conversion"]:
@@ -91,30 +96,26 @@ class Bidder:
         Note
         -------
         Determine bid price as follows.
-            bid price = adjust rate * predicted/ground-truth reward ( * constant)
+            :math:`bid_price_{t, i} = adjust_rate_{t} \\times predicted_reward_{t,i}/ground_truth_reward_{t, i} ( \\times const.)`
 
         Parameters
         -------
         timestep: int
             Timestep of the RL environment.
 
-        adjust rate: float
-            Adjust rate parameter for bidding price determination.
-            Corresponds to the RL agent action.
+        adjust_rate: float
+            Adjust rate parameter for the bidding price.
 
         ad_ids: NDArray[int], shape (search_volume, )
-            IDs of the ads used for the auction bidding.
-            (search_volume is determined in RL environment.)
+            IDs of the ads.
 
         user_ids: NDArray[int], shape (search_volume, )
-            IDs of the users who receives the winning ads.
-            (search_volume is determined in RL environment.)
+            IDs of the users.
 
         Returns
         -------
         bid_prices: NDArray[int], shape(search_volume, )
             Bid price for each auction.
-            Calclated from given adjust rate and the predicted/ground-truth rewards.
 
         """
         if self.scaler is None:
@@ -135,7 +136,8 @@ class Bidder:
             )
 
         ad_feature_vector, user_feature_vector = self.simulator.map_idx_to_features(
-            ad_ids, user_ids
+            ad_ids=ad_ids,
+            user_ids=user_ids,
         )
 
         if self.use_reward_predictor:
@@ -212,9 +214,10 @@ class Bidder:
             )
 
         timesteps = self.random_.choice(step_per_episode, n_samples)
-        ad_ids, user_ids = self.simulator.generate_auction(n_samples)
+        ad_ids, user_ids = self.simulator.generate_auction(volume=n_samples)
         ad_feature_vector, user_feature_vector = self.simulator.map_idx_to_features(
-            ad_ids, user_ids
+            ad_ids=ad_ids,
+            user_ids=user_ids,
         )
 
         if self.use_reward_predictor:
@@ -266,12 +269,11 @@ class Bidder:
         Intended only used when use_reward_predictor=True option.
 
         X and y of the prediction model is given as follows.
+            X: NDArray[float], shape (search_volume, ad_feature_dim + user_feature_dim + 1)
+                Concatenated vector of contexts (ad_feature_vector + user_feature_vector) and timestep.
 
-        X: NDArray[float], shape (search_volume, ad_feature_dim + user_feature_dim + 1)
-            Concatenated vector of contexts (ad_feature_vector + user_feature_vector) and timestep.
-
-        y: NDArrray[int], shape (search_volume, )
-            Reward (i.e., auction outcome) obtained in each auction.
+            y: NDArrray[int], shape (search_volume, )
+                Reward (i.e., auction outcome) obtained in each auction.
 
         Parameters
         -------
@@ -346,21 +348,28 @@ class Bidder:
         Intended only used when use_reward_predictor=True option.
 
         X and y of the prediction model is given as follows.
+            X: NDArray[float], shape (search_volume, ad_feature_dim + user_feature_dim + 1)
+                Concatenated vector of contexts (ad_feature_vector + user_feature_vector) and timestep.
 
-        X: NDArray[float], shape (search_volume, ad_feature_dim + user_feature_dim + 1)
-            Concatenated vector of contexts (ad_feature_vector + user_feature_vector) and timestep.
-
-        y: NDArrray[int], shape (search_volume, )
-            Reward (i.e., auction outcome) obtained in each auction.
+            y: NDArrray[int], shape (search_volume, )
+                Reward (i.e., auction outcome) obtained in each auction.
 
         Parameters
         -------
-        timestep: int
-            Timestep of the RL environment.
+        ad_ids: NDArray[int], shape (search_volume, )
+            IDs of the ads.
 
-        contexts: NDArray[float], shape (search_volume, ad_feature_dim + user_feature_dim + 1)
-            Context vector (contain both the ad and the user features) for each auction.
-            (search_volume is determined in RL environment.)
+        user_ids: NDArray[int], shape (search_volume, )
+            IDs of the users.
+
+        ad_feature_vector: NDArray[float], shape (search_volume, ad_feature_dim)
+            Feature vector of the ads.
+
+        user_feature_vector: NDArray[float], shape (search_volume, user_feature_dim)
+            Feature vector of the users.
+
+        timestep: int
+            Timestep in the RL environment.
 
         Returns
         -------
@@ -393,13 +402,20 @@ class Bidder:
 
         Parameters
         -------
+        ad_ids: NDArray[int], shape (search_volume, )
+            IDs of the ads.
+
+        user_ids: NDArray[int], shape (search_volume, )
+            IDs of the users.
+
+        ad_feature_vector: NDArray[float], shape (search_volume, ad_feature_dim)
+            Feature vector of the ads.
+
+        user_feature_vector: NDArray[float], shape (search_volume, user_feature_dim)
+            Feature vector of the users.
 
         timestep: Union[int, np.ndarray]
-            Timestep of the RL environment.
-
-        contexts: NDArray[float], shape (search_volume, ad_feature_dim + user_feature_dim + 1)
-            Context vector (contain both the ad and the user features) for each auction.
-            (search_volume is determined in RL environment.)
+            Timestep in the RL environment.
 
         Returns
         -------

@@ -144,10 +144,3 @@ def check_input_dict(
 ):
     pass
     # raise NotImplementedError()
-
-
-def check_synthetic_dataset_configurations(
-    configurations: Dict[str, Any],
-):
-    pass
-    # raise NotImplementedError()

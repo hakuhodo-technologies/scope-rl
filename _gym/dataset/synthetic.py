@@ -1,6 +1,6 @@
 """Synthetic Dataset Generation."""
 from dataclasses import dataclass
-from typing import Dict, Any, Optional
+from typing import Optional
 from tqdm.autonotebook import tqdm
 
 import gym
@@ -12,7 +12,6 @@ from _gym.env import RTBEnv, CustomizedRTBEnv
 from _gym.dataset import BaseDataset
 from _gym.policy import BaseHead
 from _gym.types import LoggedDataset
-from _gym.utils import check_synthetic_dataset_configurations
 
 
 @dataclass
@@ -32,7 +31,10 @@ class SyntheticDataset(BaseDataset):
     behavior_policy: AlgoBase
         RL policy for data collection.
 
-    random_state: int, default=12345
+    step_per_episode: Optional[int], default=None (> 0)
+        Number of timesteps in an episode.
+
+    random_state: Optional[int], default=None (>= 0)
         Random state.
 
     Examples
@@ -43,13 +45,16 @@ class SyntheticDataset(BaseDataset):
         # import necessary module from _gym
         >>> from _gym.env import RTBEnv, CustomizedRTBEnv
         >>> from _gym.dataset import SyntheticDataset
-        >>> from _gym.policy import DQN
-        # import necessary module from other library
-        >>> from sklearn.linear_model import LogisticRegression
+        >>> from _gym.policy import DiscreteEpsilonGreedyHead
 
-        # initialize environment and define (RL) agent (i.e., policy)
-        >>> env = RTBEnv()
-        >>> dqn = DQN()
+        # import necessary module from other libraries
+        >>> from sklearn.linear_model import LogisticRegression
+        >>> from d3rlpy.algos import DoubleDQN
+        >>> from d3rlpy.online.buffers import ReplayBuffer
+        >>> from d3rlpy.online.explorers import ConstantEpsilonGreedy
+
+        # initialize environment
+        >>> env = RTBEnv(random_state=12345)
 
         # customize environment from the decision makers' perspective
         >>> env = CustomizedRTBEnv(
@@ -58,21 +63,43 @@ class SyntheticDataset(BaseDataset):
                 action_type="discrete",
             )
 
+        # define (RL) agent (i.e., policy) and train on the environment
+        >>> ddqn = DoubleDQN()
+        >>> buffer = ReplayBuffer(
+                maxlen=10000,
+                env=env,
+            )
+        >>> explorer = ConstantEpsilonGreedy(
+                epsilon=0.3,
+            )
+        >>> ddqn.fit_online(
+                env=env,
+                buffer=buffer,
+                explorer=explorer,
+            )
+
+        # convert ddqn policy to stochastic data collection policy
+        >>> behavior_policy = DiscreteEpsilonGreedyHead(
+                ddqn,
+                n_actions=env.action_space.n,
+                epsilon=0.3,
+                name="ddqn_epsilon_0.3",
+                random_state=12345,
+            )
+
         # initialize dataset class
         >>> dataset = SyntheticDataset(
                 env=env,
-                behavior_policy=dqn,
+                behavior_policy=behavior_policy,
+                random_state=12345,
             )
 
-        # pretrain behavior policy before data collection
-        >>> dataset.pretrain_behavior_policy()
-
         # data collection
-        >>> logged_dataset = dataset.obtain_trajectories(n_episodes=100)
+        >>> logged_dataset = dataset.obtain_trajectories(n_episodes=100, obtain_info=True)
         >>> logged_dataset
-        {'size': 2400,
+        {'size': 700,
         'n_episodes': 100,
-        'step_per_episode': 24,
+        'step_per_episode': 7,
         'action_type': 'discrete',
         'action_dim': 10,
         'action_meaning': array([ 0.1       ,  0.16681005,  0.27825594,  0.46415888,  0.77426368,
@@ -84,41 +111,46 @@ class SyntheticDataset(BaseDataset):
         'winning_rate',
         'reward',
         'adjust_rate'],
-        'state': array([[0.00000000e+00, 1.00000000e+04, 2.15246222e-01, ...,
-                1.88961951e-01, 2.00000000e+00, 2.98123434e-01],
-                [1.00000000e+00, 9.00300000e+03, 9.97000000e-02, ...,
-                9.07079646e-01, 0.00000000e+00, 1.29154967e+00],
-                [2.00000000e+00, 9.00300000e+03, 0.00000000e+00, ...,
-                0.00000000e+00, 0.00000000e+00, 1.00000000e-01],
+        'state': array([[0.00000000e+00, 3.00000000e+03, 9.29616093e-01,, ...,
+                1.83918812e-01, 2.00000000e+00, 3.88548181e-01],
+                [1.00000000e+00, 1.91000000e+03, 3.63333333e-01, ...,
+                1.00000000e+00, 6.00000000e+00, 3.59381366e+00],
+                [2.00000000e+00, 1.91000000e+03, 0.00000000e+00, ...,
+                0.00000000e+00, 0.00000000e+00, 1.66810054e-01],
                 ...,
-                [2.10000000e+01, 3.00000000e+00, 0.00000000e+00, ...,
-                1.32158590e-02, 0.00000000e+00, 4.64158883e-01],
-                [2.20000000e+01, 3.00000000e+00, 0.00000000e+00, ...,
-                8.46560847e-02, 0.00000000e+00, 5.99484250e+00],
-                [2.30000000e+01, 3.00000000e+00, 0.00000000e+00, ...,
-                0.00000000e+00, 0.00000000e+00, 5.99484250e+00]]),
-        'action': array([5., 0., 9., ..., 8., 8., 5.]),
-        'reward': array([0., 0., 6., ..., 0., 0., 0.]),
+                [4.00000000e+00, 1.57700000e+03, 2.83507497e-01, ...,
+                1.00000000e+00, 4.00000000e+00, 3.59381366e+00],
+                [5.00000000e+00, 8.50000000e+02, 4.61001902e-01, ...,
+                1.00000000e+00, 4.00000000e+00, 3.59381366e+00],
+                [6.00000000e+00, 8.50000000e+02, 0.00000000e+00, ...,
+                0.00000000e+00, 0.00000000e+00, 1.00000000e-01]]),
+        'action': array([7., 1., 4., ..., 7., 0., 8.]),
+        'reward': array([ 6.,  0.,  0., ..., 4.,  0.,  4.]),
         'done': array([0., 0., 0., ..., 0., 0., 1.]),
-        'info': {'impression': array([205.,   0., 226., ...,  16.,   0.,  15.]),
-        'click': array([20.,  0., 20., ...,  0.,  0.,  0.]),
-        'conversion': array([0., 0., 6., ..., 0., 0., 0.]),
-        'average_bid_price': array([ 68.64159292,   4.93777778, 487.30088496, ..., 348.17460317,
-                302.79534884,  58.60294118])},
-        'pscore': array([0.1, 0.1, 0.1, ..., 0.1, 0.1, 0.1])}
+        'terminal': array([0., 0., 0., ..., 0., 0., 1.]),
+        'info': {'impression': array([201.,   0.,  64., ..., 199.,   0., 162.]),
+        'click': array([21.,  0.,  7., ...,  16.,  0., 18.]),
+        'conversion': array([ 6.,  0.,  0., ..., 4.,  0.,  4.]),
+        'average_bid_price': array([195.39800995,   8.24102564,  39.63157895, ..., 172.16080402,
+                   4.21126761, 280.82222222])},
+        'pscore': array([0.73, 0.73, 0.73, ..., 0.73, 0.03, 0.73])}
 
-        # on-policy policy value of behavior policy
-        >>> on_policy_policy_value = dataset.calc_on_policy_policy_value(
-                n_episodes=10000
-            )
-        >>> on_policy_policy_value
-        48.7
+    References
+    -------
+    Yuta Saito, Shunsuke Aihara, Megumi Matsutani, Yusuke Narita.
+    "Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation.", 2021.
+
+    Takuma Seno and Michita Imai.
+    "d3rlpy: An Offline Deep Reinforcement Library.", 2021.
+
+    Greg Brockman, Vicki Cheung, Ludwig Pettersson, Jonas Schneider, John Schulman, Jie Tang, Wojciech Zaremba.
+    "OpenAI Gym.", 2016.
 
     """
 
     env: gym.Env
     behavior_policy: BaseHead
-    configurations: Optional[Dict[str, Any]] = None
+    step_per_episode: Optional[int] = None
     random_state: Optional[int] = None
 
     def __post_init__(self):
@@ -134,23 +166,16 @@ class SyntheticDataset(BaseDataset):
             self.action_dim = self.env.action_space.shape[0]
 
         if isinstance(self.env, (RTBEnv, CustomizedRTBEnv)):
+            self.is_rtb_env = True
             self.step_per_episode = self.env.step_per_episode
             self.action_meaning = (
                 self.env.action_meaning if self.action_type == "discrete" else None
             )
             self.state_keys = self.env.obs_keys
         else:
-            self.step_per_episode = None
+            self.is_rtb_env = False
             self.action_meaning = None
             self.state_keys = None
-
-        if self.configurations is not None:
-            self.configurations = check_synthetic_dataset_configurations(
-                self.configurations
-            )
-            self.step_per_episode = self.configurations["step_per_episode"]
-            self.action_meaning = self.configurations["action_meaning"]
-            self.state_keys = self.configurations["state_keys"]
 
         if self.step_per_episode is None:
             self.max_episode_steps = self.env._max_episode_steps
@@ -162,38 +187,63 @@ class SyntheticDataset(BaseDataset):
         self.random_ = check_random_state(self.random_state)
         self.env.seed(self.random_state)
 
-    def obtain_trajectories(self, n_episodes: int = 10000) -> LoggedDataset:
-        """Rollout behavior policy and obtain trajectories.
+    def obtain_trajectories(
+        self, n_episodes: int = 10000, obtain_info: bool = False
+    ) -> LoggedDataset:
+        """Rollout the behavior policy and obtain trajectories.
+
+        Note
+        -------
+        This function is intended to be used for the environment which has fixed length of episodes.
+        Please use `.obtain_steps` when using the environment which has varing length of episodes.
+        Also, make sure you initialize the class with `step_per_episode` before calling this function.
 
         Parameters
         -------
-        n_episodes: int, default=10000
+        n_episodes: int, default=10000 (> 0)
             Number of trajectories to rollout behavior policy and collect data.
+
+        obtain_info: bool, default=False
+            Whether to gain info from environment or not.
 
         Returns
         -------
         logged_dataset: Dict
             size: int
-                Total steps the dataset records.
+                Number of steps the dataset records.
 
             n_episodes: int
-                Total episodes the dataset records.
+                Number of episodes the dataset records.
 
             step_per_episode: int
-                Total timesteps in an episode.
+                Number of timesteps in an episode.
 
             action_type: str
                 Action type of the RL agent.
                 Either "discrete" or "continuous".
 
-            action_dim: int
-                Action dimensions of discrete actions.
-                If action_type is "continuous", None is recorded.
+            n_actions: Optional[int]
+                Number of discrete actions.
+                If action_type is "continuous", `None` is recorded.
 
-            state: NDArray[float], shape (size, 7)
-                State of the RL environment.
+            action_dim: Optional[int]
+                Dimensions of actions.
+                If action_type is "discrete", `None` is recorded.
 
-            action: Union[NDArray[int], NDArray[float]], shape (size, )
+            action_meaning: Optional[Dict[int, Any]]
+                Dictionary which maps discrete action index into specific actions.
+                If action_type is "continuous", `None` is recorded.
+
+            state_dim: int
+                Dimensions of states.
+
+            state_keys: Optional[List[str]]
+                Name of the state variable at each dimension.
+
+            state: NDArray[float], shape (size, state_dim)
+                State observed in the environment.
+
+            action: Union[NDArray[int], NDArray[float]], shape (size, ) or (size, action_dim)
                 Action chosen by the behavior policy.
 
             reward: NDArray[int], shape (size, )
@@ -205,17 +255,15 @@ class SyntheticDataset(BaseDataset):
             terminal: NDArray[int], shape (size, )
                 Whether an episode reaches pre-defined maximum steps.
 
-            info: Dict[str, NDArray[int]], shape (size, )
-                Additional feedback information from RL environment.
+            info: Dict[str, Unioun[NDArray, List]], shape (size, ) or (size, action_dim)
+                Additional feedbacks from the environment.
 
             pscore: NDArray[float], shape (size, )
                 Action choice probability of the behavior policy for the chosen action.
 
         """
         if self.step_per_episode is None:
-            raise ValueError(
-                f"when the total timestep in episode is flexible, use .obtain_steps() instead"
-            )
+            raise ValueError(f"step_per_episode")
         if not (isinstance(n_episodes, int) and n_episodes > 0):
             raise ValueError(
                 f"n_episodes must be a positive integer, but {n_episodes} is given"
@@ -255,19 +303,29 @@ class SyntheticDataset(BaseDataset):
                 ) = self.behavior_policy.stochastic_action_with_pscore_online(state)
                 next_state, reward, done, info_ = self.env.step(action)
 
-                if idx == 0:
-                    info_keys = info_.keys()
-                    for key in info_keys:
-                        info[key] = np.empty(n_episodes * self.step_per_episode)
-
                 states[idx] = state
                 actions[idx] = action
                 action_probs[idx] = action_prob
                 rewards[idx] = reward
                 dones[idx] = done
 
-                for key, value in info_.items():
-                    info[key][idx] = value
+                if obtain_info:
+                    if idx == 0:
+                        info_keys = info_.keys()
+
+                        if self.is_rtb_env:
+                            for key in info_keys:
+                                info[key] = np.empty(n_episodes * self.step_per_episode)
+                        else:
+                            for key in info_keys:
+                                info[key] = []
+
+                    if self.is_rtb_env:
+                        for key, value in info_.items():
+                            info[key][idx] = value
+                    else:
+                        for key, value in info_.items():
+                            info[key].append(value)
 
                 idx += 1
                 state = next_state
@@ -292,38 +350,57 @@ class SyntheticDataset(BaseDataset):
         }
         return logged_dataset
 
-    def obtain_steps(self, n_steps: int = 100000) -> LoggedDataset:
-        """Rollout behavior policy and obtain steps.
+    def obtain_steps(
+        self, n_steps: int = 100000, obtain_info: bool = False
+    ) -> LoggedDataset:
+        """Rollout the behavior policy and obtain steps.
 
         Parameters
         -------
-        n_steps: int, default=100000
+        n_steps: int, default=100000 (> 0)
             Number of steps to rollout behavior policy and collect data.
+
+        obtain_info: bool, default=False
+            Whether to gain info from environment or not.
 
         Returns
         -------
         logged_dataset: Dict
             size: int
-                Total steps the dataset records.
+                Number of steps the dataset records.
 
             n_episodes: int
-                Total episodes the dataset records.
+                Number of episodes the dataset records.
 
             step_per_episode: int
-                Total timesteps in an episode.
+                Number of timesteps in an episode.
 
             action_type: str
                 Action type of the RL agent.
                 Either "discrete" or "continuous".
 
-            action_dim: int
-                Action dimensions of discrete actions.
-                If action_type is "continuous", None is recorded.
+            n_actions: Optional[int]
+                Number of discrete actions.
+                If action_type is "continuous", `None` is recorded.
 
-            state: NDArray[float], shape (size, 7)
-                State of the RL environment.
+            action_dim: Optional[int]
+                Dimensions of actions.
+                If action_type is "discrete", `None` is recorded.
 
-            action: Union[NDArray[int], NDArray[float]], shape (size, )
+            action_meaning: Optional[Dict[int, Any]]
+                Dictionary which maps discrete action index into specific actions.
+                If action_type is "continuous", `None` is recorded.
+
+            state_dim: int
+                Dimensions of states.
+
+            state_keys: Optional[List[str]]
+                Name of the state variable at each dimension.
+
+            state: NDArray[float], shape (size, state_dim)
+                State observed in the environment.
+
+            action: Union[NDArray[int], NDArray[float]], shape (size, ) or (size, action_dim)
                 Action chosen by the behavior policy.
 
             reward: NDArray[int], shape (size, )
@@ -335,8 +412,8 @@ class SyntheticDataset(BaseDataset):
             terminal: NDArray[int], shape (size, )
                 Whether an episode reaches pre-defined maximum steps.
 
-            info: Dict[str, NDArray[int]], shape (size, )
-                Additional feedback information from RL environment.
+            info: Dict[str, Unioun[NDArray, List]], shape (size, ) or (size, action_dim)
+                Additional feedbacks from the environment.
 
             pscore: NDArray[float], shape (size, )
                 Action choice probability of the behavior policy for the chosen action.

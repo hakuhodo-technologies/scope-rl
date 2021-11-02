@@ -30,28 +30,34 @@ class RTBSyntheticSimulator(BaseSimulator):
         Number of timesteps in an episode.
 
     n_ads: int, default=100
-        Number of ads used for fitting the reward predictor.
+        Number of (candidate) ads used for auction bidding.
 
     n_users: int, default=100
-        Number of users used for fitting the reward predictor.
+        Number of (candidate) users used for auction bidding.
 
-    ad_feature_dim: int, default=5
-        Dimensions of the ad feature vectors.
+    ad_sampling_rate: Optional[NDArray], shape (n_ads, ad_feature_dim), default=None
+        Feature vectors that characterizes each ad.
 
-    user_feature_dim: int, default=5
-        Dimensions of the user feature vectors.
+    user_sampling_rate: Optional[NDArray], shape (n_users, user_feature_dim), default=None
+        Feature vectors that characterizes each user.
 
-    ad_sampling_rate: Optional[Union[NDArray[int], NDArray[float]]], shape (n_ads, ), default=None
+    ad_sampling_rate: Optional[NDArray], shape (n_ads, ), default=None
         Sampling probalities to determine which ad (id) is used in each auction.
 
-    user_sampling_rate: Optional[Union[NDArray[int], NDArray[float]]], shape (n_users, ), default=None
+    user_sampling_rate: Optional[NDArray], shape (n_users, ), default=None
         Sampling probalities to determine which user (id) is used in each auction.
 
-    WinningPriceDistribution:
+    WinningPriceDistribution: BaseWinningPriceDistribution
+        Winning price distribution of auctions.
+        Both class and instance are acceptable.
 
-    ClickTroughRate:
+    ClickThroughRate: BaseClickAndConversionRate
+        Click through rate (i.e., click / impression).
+        Both class and instance are acceptable.
 
-    ConversionRate:
+    ConversionRate: BaseClickAndConversionRate
+        Conversion rate (i.e., conversion / click).
+        Both class and instance are acceptable.
 
     standard_bid_price_distribution: NormalDistribution, default=NormalDistribution(mean=100, std=20)
         Distribution of the bid price whose average impression probability is expected to be 0.5.
@@ -60,11 +66,22 @@ class RTBSyntheticSimulator(BaseSimulator):
         Minimum value for standard bid price.
         If None, minimum_standard_bid_price is set to standard_bid_price_distribution.mean / 2.
 
-    random_state: int, default=12345
+    search_volume_distribution: NormalDistribution, default=NormalDistribution(mean=30, std=10)
+        Search volume distribution for each timestep.
+
+    minimum_search_volume: int, default = 10
+        Minimum search volume at each timestep.
+
+    random_state: Optional[int], default=None
         Random state.
 
     References
     -------
+    Di Wu, Xiujun Chen, Xun Yang, Hao Wang, Qing Tan, Xiaoxun Zhang, Jian Xu, and Kun Gai.
+    "Budget Constrained Bidding by Model-free Reinforcement Learning in Display Advertising.", 2018.
+
+    Jun Zhao, Guang Qiu, Ziyu Guan, Wei Zhao, and Xiaofei He.
+    "Deep Reinforcement Learning for Sponsored Search Real-time Bidding.", 2018.
 
     """
 
@@ -87,6 +104,12 @@ class RTBSyntheticSimulator(BaseSimulator):
         random_state=12345,
     )
     minimum_standard_bid_price: Optional[Union[int, float]] = None
+    search_volume_distribution: NormalDistribution = NormalDistribution(
+        mean=200,
+        std=20,
+        random_state=12345,
+    )
+    minimum_search_volume: int = 10
     random_state: Optional[int] = None
 
     def __post_init__(self):
@@ -176,6 +199,31 @@ class RTBSyntheticSimulator(BaseSimulator):
                 f"minimum_standard_bid_price must be a float value within [0, standard_bid_price_distribution.mean], but {self.minimum_standard_bid_price} is given"
             )
         if not (
+            isinstance(self.search_volume_distribution.mean, (int, float))
+            and self.search_volume_distribution.mean > 0
+        ) and not (
+            isinstance(self.search_volume_distribution.mean, np.ndarray)
+            and self.search_volume_distribution.mean.ndim == 1
+            and self.search_volume_distribution.mean.min() > 0
+        ):
+            raise ValueError(
+                "search_volume_distribution.mean must be a positive float value or an NDArray of positive float values"
+            )
+        if not (
+            isinstance(self.search_volume_distribution.mean, (int, float))
+            or len(self.search_volume_distribution.mean) == self.step_per_episode
+        ):
+            raise ValueError(
+                "length of search_volume_distribution must be equal to step_per_episode"
+            )
+        if not (
+            isinstance(self.minimum_search_volume, int)
+            and self.minimum_search_volume > 0
+        ):
+            raise ValueError(
+                f"minimum_search_volume must be a positive integer, but {self.minimum_search_volume} is given"
+            )
+        if not (
             self.step_per_episode is None
             or (isinstance(self.step_per_episode, int) and self.step_per_episode > 0)
         ):
@@ -216,66 +264,100 @@ class RTBSyntheticSimulator(BaseSimulator):
                 self.user_sampling_rate, axis=1
             )
 
+        if isinstance(self.search_volume_distribution.mean, int):
+            self.search_volume_distribution = NormalDistribution(
+                mean=np.full(
+                    self.step_per_episode, self.search_volume_distribution.mean
+                ),
+                std=np.full(self.step_per_episode, self.search_volume_distribution.std),
+                random_state=self.random_state,
+            )
+
         # define winning function
-        self.winning_price_distribution = self.WinningPriceDistribution(
-            n_ads=self.n_ads,
-            n_users=self.n_users,
-            ad_feature_dim=self.ad_feature_dim,
-            user_feature_dim=self.user_feature_dim,
-            step_per_episode=self.step_per_episode,
-            standard_bid_price_distribution=self.standard_bid_price_distribution,
-            minimum_standard_bid_price=self.minimum_standard_bid_price,
-            random_state=self.random_state,
-        )
+        if isinstance(self.WinningPriceDistribution, BaseWinningPriceDistribution):
+            # check
+            self.winning_price_distribution = self.WinningPriceDistribution
+        else:
+            self.winning_price_distribution = self.WinningPriceDistribution(
+                n_ads=self.n_ads,
+                n_users=self.n_users,
+                ad_feature_dim=self.ad_feature_dim,
+                user_feature_dim=self.user_feature_dim,
+                step_per_episode=self.step_per_episode,
+                standard_bid_price_distribution=self.standard_bid_price_distribution,
+                minimum_standard_bid_price=self.minimum_standard_bid_price,
+                random_state=self.random_state,
+            )
         # define click/imp and conversion/click rate function
-        self.ctr = self.ClickThroughRate(
-            n_ads=self.n_ads,
-            n_users=self.n_users,
-            ad_feature_dim=self.ad_feature_dim,
-            user_feature_dim=self.user_feature_dim,
-            step_per_episode=self.step_per_episode,
-            random_state=self.random_state,
-        )
-        self.cvr = self.ConversionRate(
-            n_ads=self.n_ads,
-            n_users=self.n_users,
-            ad_feature_dim=self.ad_feature_dim,
-            user_feature_dim=self.user_feature_dim,
-            step_per_episode=self.step_per_episode,
-            random_state=self.random_state
-            + 1,  # to differenciate the coef with that of CTR
-        )
+        if isinstance(self.ClickThroughRate, BaseClickAndConversionRate):
+            # check
+            self.ctr = self.ClickThroughRate
+        else:
+            self.ctr = self.ClickThroughRate(
+                n_ads=self.n_ads,
+                n_users=self.n_users,
+                ad_feature_dim=self.ad_feature_dim,
+                user_feature_dim=self.user_feature_dim,
+                step_per_episode=self.step_per_episode,
+                random_state=self.random_state,
+            )
+        if isinstance(self.ConversionRate, BaseClickAndConversionRate):
+            # check
+            self.cvr = self.ConversionRate
+        else:
+            self.cvr = self.ConversionRate(
+                n_ads=self.n_ads,
+                n_users=self.n_users,
+                ad_feature_dim=self.ad_feature_dim,
+                user_feature_dim=self.user_feature_dim,
+                step_per_episode=self.step_per_episode,
+                random_state=self.random_state
+                + 1,  # to differentiate the coef with that of CTR
+            )
 
     @property
     def standard_bid_price(self):
         return self.winning_price_distribution.standard_bid_price
 
-    def generate_auction(self, volume: int, timestep: Optional[int] = None):
+    def generate_auction(
+        self, volume: Optional[int] = None, timestep: Optional[int] = None
+    ):
         """Sample ad and user pair for each auction.
 
         Parameters
         -------
-        volume: int
-            Total numbers of auction to generate.
+        volume: Optional[int], default=None
+            Total numbers of the auctions to generate.
 
         timestep: Optional[int], default=None
-            Timestep of the RL environment.
+            Timestep in the RL environment.
 
         Returns
         -------
         ad_ids: NDArray[int], shape (volume, )
-            IDs of the ads used for the auction bidding.
+            IDs of the ads.
 
         user_ids: NDArray[int], shape (volume, )
-            IDs of the users who receives the winning ads.
+            IDs of the users.
 
         """
-        if not (isinstance(volume, (int, np.integer)) and volume > 0):
-            raise ValueError(
-                f"volume must be a positive interger, but {volume} is given"
-            )
+        # stochastically determine search volume
+        if volume is None:
+            if timestep is None:
+                volume = np.clip(
+                    self.search_volume_distribution.sample(),
+                    self.minimum_search_volume,
+                    None,
+                ).astype(int)[0][0]
 
-        if isinstance(timestep, int):
+            else:
+                volume = np.clip(
+                    self.search_volume_distribution.sample(),
+                    self.minimum_search_volume,
+                    None,
+                ).astype(int)[0][timestep - 1]
+
+        if timestep is not None:
             ad_ids = self.random_.choice(
                 self.ad_ids,
                 size=volume,
@@ -309,11 +391,11 @@ class RTBSyntheticSimulator(BaseSimulator):
         Parameters
         -------
         ad_ids: NDArray[int], shape (search_volume, )
-            IDs of the ads used for the auction bidding.
+            IDs of the ads.
             (search_volume is determined in RL environment.)
 
         user_ids: NDArray[int], shape (search_volume, )
-            IDs of the users who receives the winning ads.
+            IDs of the users.
             (search_volume is determined in RL environment.)
 
         Returns
@@ -363,15 +445,13 @@ class RTBSyntheticSimulator(BaseSimulator):
         Parameters
         -------
         timestep: int
-            Corresponds to the timestep of the RL environment.
+            Timestep in the RL environment.
 
         ad_ids: NDArray[int], shape (search_volume, )
-            IDs of the ads used for the auction bidding.
-            (search_volume is determined in RL environment.)
+            IDs of the ads.
 
         user_ids: NDArray[int], shape (search_volume, )
-            IDs of the users who receives the winning ads.
-            (search_volume is determined in RL environment.)
+            IDs of the users.
 
         bid_prices: NDArray[int], shape(search_volume, )
             Bid price for each action.

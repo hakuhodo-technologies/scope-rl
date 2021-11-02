@@ -21,7 +21,7 @@ class WinningPriceDistribution(BaseWinningPriceDistribution):
 
     .. math::
 
-        p(x) = x^{k-1} \\frac{\\mathrm{e}^{- x / \\theta}}{\\theta^k \\Gamma(k)},
+        p(x) = x^{k-1} \\frac{\\exp(- x / \\theta)}{\\theta^k \\Gamma(k)},
 
     where :math:`\\Gamma(k) := (k-1)!` and :math:`k` and :math:`\\theta` are hyperparameters.
 
@@ -130,7 +130,7 @@ class WinningPriceDistribution(BaseWinningPriceDistribution):
             User feature vector for each auction.
 
         timestep: Union[int, NDArray[int]], shape None/(n_samples, )
-            Timestep of the RL environment.
+            Timestep in the RL environment.
 
         Returns
         -------
@@ -275,7 +275,7 @@ class ClickThroughRate(BaseClickAndConversionRate):
             User feature vector for each auction.
 
         timestep: Union[int, NDArray[int]], shape None/(n_samples, )
-            Timestep of the RL environment.
+            Timestep in the RL environment.
 
         Returns
         -------
@@ -337,7 +337,7 @@ class ClickThroughRate(BaseClickAndConversionRate):
             User feature vector for each auction.
 
         timestep: Union[int, NDArray[int]], shape None/(n_samples, )
-            Timestep of the RL environment.
+            Timestep in the RL environment.
 
         Returns
         -------
@@ -474,7 +474,7 @@ class ConversionRate(BaseClickAndConversionRate):
             User feature vector for each auction.
 
         timestep: Union[int, NDArray[int]], shape None/(n_samples, )
-            Timestep of the RL environment.
+            Timestep in the RL environment.
 
         Returns
         -------
@@ -536,7 +536,7 @@ class ConversionRate(BaseClickAndConversionRate):
             User feature vector for each auction.
 
         timestep: Union[int, NDArray[int]], shape None/(n_samples, )
-            Timestep of the RL environment.
+            Timestep in the RL environment.
 
         Returns
         -------

@@ -19,22 +19,23 @@ class CustomizedRTBEnv(gym.Env):
     We can customize three following decision making using CustomizedEnv.
         - reward_predictor in Bidder class
             We use predicted rewards to calculate bid price as follows.
-                bid price = adjust rate * predicted reward ( * constant)
+                :math:`bid_price_{t, i} = adjust_rate_{t} \\times predicted_reward_{t,i} ( \\times const.)`
+
             If None, we use ground-truth reward instead of predicted reward.
 
         - scaler in Bidder class
-            Scaler defines constant in the bid price calculation as follows.
-                bid price = adjust rate * predicted reward ( * constant)
-                constant = scaler * standard_bid_price
+            Scaler defines const.in the bid price calculation as follows.
+                :math:`const. = scaler \\times standard_bid_price`
+
             where standard_bid_price indicates the average of standard_bid_price
             (bid price which has approximately 50% impression probability) over all ads.
 
         - action space for agent
-            We transform continual adjust rate space [0, \infty) into agent action space.
+            We transform continual adjust rate space :math:`[0, \infty)` into agent action space.
             Both discrete and continuous actions are acceptable.
 
-            Note that the action space should be within [0.1, 10].
-            Instead, we can tune multiplication of adjust rate using scaler.
+            Note that we recommend you to set action space within [0.1, 10].
+            Instead, you can tune multiplication of adjust rate using scaler.
 
     Constrained Markov Decision Process (CMDP) definition are given as follows:
         timestep: int
@@ -50,18 +51,17 @@ class CustomizedRTBEnv(gym.Env):
                   (budget consumption rate, cost per mille of impressions, auction winning rate, and reward)
                 - adjust rate (i.e., RL agent action) at previous timestep
 
-        action: Union[int, float]
+        action: Union[int, float, NDArray]
             Adjust rate parameter used for the bid price calculation as follows.
             Note that the following bid price is individually determined for each auction.
-                bid price = adjust rate * predicted/ground-truth reward ( * constant)
+                :math:`bid_price_{t, i} = adjust_rate_{t} \\times predicted_reward_{t,i}/ground_truth_reward_{t, i} ( \\times const.)`
 
             Both discrete and continuous actions are acceptable.
-            Note that the value should be within [0.1, 10]. We can change adjust rate using scaler.
 
         reward: int
             Total clicks/conversions gained during the timestep.
 
-        discount_rate: int, 1
+        discount_rate: int (= 1)
             Discount factor for cumulative reward calculation.
             Set discount_rate = 1 (i.e., no discount) in RTB.
 
@@ -74,12 +74,10 @@ class CustomizedRTBEnv(gym.Env):
         Original RTB environment.
 
     reward_predictor: Optional[BaseEstimator], default=None
-        Parameter in Bidder.
         A machine learning model to predict the reward to determine the bidding price.
         If None, the ground-truth (expected) reward is used instead of the predicted one.
 
     scaler: Optional[Union[int, float]], default=None
-        Parameter in Bidder.
         Scaling factor (constant value) used for bid price determination.
         If None, scaler is autofitted by bidder.auto_fit_scaler().
 
@@ -94,7 +92,8 @@ class CustomizedRTBEnv(gym.Env):
     action_meaning: Optional[NDArray[float]], default=None
         Dictionary which maps discrete action index into specific actions.
         Used when only when using action_type="discrete" option.
-        Note that if None, the action meaning values automatically set to [0.1, 10] log sampled values.
+
+        If None, the action meaning values automatically set to [0.1, 10] log sampled values.
             np.logspace(-1, 1, n_actions)
 
     Examples
@@ -103,23 +102,25 @@ class CustomizedRTBEnv(gym.Env):
     .. codeblock:: python
 
         # import necessary module from _gym
-        from _gym.env import RTBEnv, CustomizedRTBEnv
-        from _gym.policy import RandomPolicy
+        from _gym.env import RTBEnv
+        from _gym.policy import OnlineHead
+        from _gym.ope.online import calc_on_policy_policy_value
 
-        # import from other libraries
+        # import necessary module from other libraries
         from sklearn.linear_model import LogisticRegression
+        from d3rlpy.algos import DiscreteRandomPolicy
 
         # initialize and customize environment
-        original_env = RTBEnv()
-        env = CustomizedEnv(
-            original_env,
+        env = RTBEnv(random_state=12345)
+        env = CustomizedRTBEnv(
+            original_env=env,
             reward_predictor=LogisticRegression(),
-            scaler=None,  # autofit
             action_type="discrete",
         )
 
         # define (RL) agent (i.e., policy)
-        agent = RandomPolicy(env)
+        agent = OnlineHead(DiscreteRandomPolicy())
+        agent.build_with_env(env)
 
         # OpenAI Gym like interaction with agent
         for episode in range(1000):
@@ -127,14 +128,31 @@ class CustomizedRTBEnv(gym.Env):
             done = False
 
             while not done:
-                action = agent.act(obs)
+                action = agent.predict_online(obs)
                 obs, reward, done, info = env.step(action)
 
         # calculate on-policy policy value
-        performance = env.calc_on_policy_policy_value(
-            evaluation_policy=agent,
-            n_episodes=10000,
+        on_policy_performance = calc_on_policy_policy_value(
+            env,
+            agent,
+            n_episodes=100,
+            random_state=12345
         )
+        on_policy_performance  # 11.75
+
+    References
+    -------
+    Takuma Seno and Michita Imai.
+    "d3rlpy: An Offline Deep Reinforcement Library.", 2021.
+
+    Di Wu, Xiujun Chen, Xun Yang, Hao Wang, Qing Tan, Xiaoxun Zhang, Jian Xu, and Kun Gai.
+    "Budget Constrained Bidding by Model-free Reinforcement Learning in Display Advertising.", 2018.
+
+    Jun Zhao, Guang Qiu, Ziyu Guan, Wei Zhao, and Xiaofei He.
+    "Deep Reinforcement Learning for Sponsored Search Real-time Bidding.", 2018.
+
+    Greg Brockman, Vicki Cheung, Ludwig Pettersson, Jonas Schneider, John Schulman, Jie Tang, and Wojciech Zaremba.
+    "OpenAI Gym.", 2016.
 
     """
 
