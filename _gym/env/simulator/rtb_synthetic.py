@@ -41,10 +41,10 @@ class RTBSyntheticSimulator(BaseSimulator):
     user_sampling_rate: Optional[NDArray], shape (n_users, user_feature_dim), default=None
         Feature vectors that characterizes each user.
 
-    ad_sampling_rate: Optional[NDArray], shape (n_ads, ), default=None
+    ad_sampling_rate: Optional[NDArray], shape (step_per_episode, n_ads), default=None
         Sampling probalities to determine which ad (id) is used in each auction.
 
-    user_sampling_rate: Optional[NDArray], shape (n_users, ), default=None
+    user_sampling_rate: Optional[NDArray], shape (step_per_episode, n_users), default=None
         Sampling probalities to determine which user (id) is used in each auction.
 
     WinningPriceDistribution: BaseWinningPriceDistribution
