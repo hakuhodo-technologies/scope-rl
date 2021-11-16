@@ -4,8 +4,6 @@ from typing import Dict, Optional
 
 import numpy as np
 
-from gym.spaces import Box
-
 from ..utils import estimate_confidence_interval_by_bootstrap
 from ..ope.estimators_discrete import BaseOffPolicyEstimator
 
@@ -21,7 +19,25 @@ kernel_functions = {
 
 @dataclass
 class ContinuousDirectMethod(BaseOffPolicyEstimator):
-    """Direct Method (DM) for continuous OPE (assume deterministic policies)."""
+    """Direct Method (DM) for continuous OPE (assume deterministic policies).
+
+    Note
+    -------
+    DM estimates policy value using initial state value given by Fitted Q Evaluation (FQE) as follows.
+
+    .. math::
+
+        \\hat{V}_{\\mathrm{DM}} (\\pi_e; \\mathcal{D}) := \\mathbb{E}_n [\\mathbb{E}_{a_0 \\sim \\pi_e(a_0 \\mid s_0)} [\\hat{Q}(x_0, a_0)] ],
+
+    where :math:`\\mathcal{D}=\\{\\{(s_t, a_t, r_t)\\}_{t=0}^T\\}_{i=1}^n` is logged dataset with :math:`n` trajectories of data.
+    :math:`T` indicates step per episode. :math:`\\hat{Q}(x_t, a_t)` is estimated Q value given state-action pair.
+
+    Parameters
+    -------
+    estimator_name: str, default="dm"
+        Name of the estimator.
+
+    """
 
     estimator_name = "dm"
 
@@ -33,6 +49,20 @@ class ContinuousDirectMethod(BaseOffPolicyEstimator):
         initial_state_value: np.ndarray,
         **kwargs,
     ) -> np.ndarray:
+        """Estimate trajectory-wise policy value.
+
+        Parameters
+        -------
+        initial_state_value: NDArray, shape (n_episodes, )
+            Estimated initial state value.
+
+        Return
+        -------
+        estimated_trajectory_wise_policy_value: NDArray, shape (n_episodes, )
+            Estimated policy value for each trajectory.
+            (Equivalent to initial_state_value in DM.)
+
+        """
         return initial_state_value
 
     def estimate_policy_value(
@@ -40,6 +70,19 @@ class ContinuousDirectMethod(BaseOffPolicyEstimator):
         initial_state_value: np.ndarray,
         **kwargs,
     ) -> float:
+        """Estimate policy value of evaluation policy.
+
+        Parameters
+        -------
+        initial_state_value: NDArray, shape (n_episodes, )
+            Estimated initial state value.
+
+        Return
+        -------
+        V_hat: NDArray, shape (n_episodes, )
+            Estimated policy value.
+
+        """
         estimated_policy_value = self._estimate_trajectory_values(
             initial_state_value,
         ).mean()
@@ -50,9 +93,31 @@ class ContinuousDirectMethod(BaseOffPolicyEstimator):
         initial_state_value: np.ndarray,
         alpha: float = 0.05,
         n_bootstrap_samples: int = 10000,
-        random_state: int = 12345,
+        random_state: Optional[int] = None,
         **kwargs,
     ) -> Dict[str, float]:
+        """Estimate confidence interval of policy value by nonparametric bootstrap procedure.
+
+        Parameters
+        -------
+        initial_state_value: NDArray, shape (n_episodes, )
+            Estimated initial state value.
+
+        alpha: float, default=0.05 (0, 1)
+            Significant level.
+
+        n_bootstrap_samples: int, default=10000 (> 0)
+            Number of resampling performed in the bootstrap procedure.
+
+        random_state: int, default=None (>= 0)
+            Random state.
+
+        Return
+        -------
+        estimated_confidence_interval: Dict[str, float]
+            Dictionary storing the estimated mean and upper-lower confidence bounds.
+
+        """
         estimated_trajectory_values = self._estimate_trajectory_values(
             initial_state_value,
         )
@@ -66,7 +131,36 @@ class ContinuousDirectMethod(BaseOffPolicyEstimator):
 
 @dataclass
 class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
-    """Trajectory-wise Importance Sampling (TIS) for continuous OPE (assume deterministic policies)."""
+    """Trajectory-wise Importance Sampling (TIS) for continuous OPE (assume deterministic policies).
+
+    Note
+    -------
+    TIS estimates policy value using trajectory-wise importance weight as follows.
+
+    .. math::
+
+        \\hat{V}_{\\mathrm{TIS}} (\\pi_e; \\mathcal{D}) := \\mathbb{E}_{n} [\\sum_{t=0}^T \\gamma^t w_{1:T} r_t],
+
+    where :math:`w_{0:T} := \\prod_{t=1}^T \\frac{\\pi_e(a_t \\mid s_t)}{\\pi_b(a_t \\mid s_t)}`
+
+    Parameters
+    -------
+    action_dim: int (> 0)
+        Dimensions of actions.
+
+    kernel: str, default="gaussian"
+        Choice of kernel function.
+        "gaussian" is acceptable.
+
+    band_width: Optional[np.ndarray]
+        A bandwidth hyperparameter for each action dimension.
+        A larger value increases bias instead of reducing variance.
+        A smaller value increased variance instead of reducing bias.
+
+    estimator_name: str, default="tis"
+        Name of the estimator.
+
+    """
 
     action_dim: int
     kernel: str = "gaussian"
@@ -91,6 +185,35 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         gamma: float = 1.0,
         **kwargs,
     ) -> np.ndarray:
+        """Estimate trajectory-wise policy value.
+
+        Parameters
+        -------
+        step_per_episode: int (> 0)
+            Number of timesteps in an episode.
+
+        actions: NDArray, shape (n_episodes * step_per_episode, action_dim)
+            Action chosen by behavior policy.
+
+        rewards: NDArray, shape (n_episodes * step_per_episode, )
+            Reward observation.
+
+        behavior_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+            Trajectory-wise action choice probability by behavior policy,
+            i.e., :math:`\\prod_{t=0}^T \\pi_b(a_t \\mid s_t)`
+
+        evaluation_policy_actions: NDArray, shape (n_episodes * step_per_episode, action_dim)
+            Action chosen by evaluation policy.
+
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
+
+        Return
+        -------
+        estimated_trajectory_wise_policy_value: NDArray, shape (n_episodes, )
+            Estimated policy value for each trajectory.
+
+        """
         actions = actions.reshape((-1, step_per_episode, self.action_dim))
         evaluation_policy_actions = evaluation_policy_actions.reshape(
             (-1, step_per_episode, self.action_dim)
@@ -128,6 +251,35 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         gamma: float = 1.0,
         **kwargs,
     ) -> float:
+        """Estimate policy value of evaluation policy.
+
+        Parameters
+        -------
+        step_per_episode: int (> 0)
+            Number of timesteps in an episode.
+
+        actions: NDArray, shape (n_episodes * step_per_episode, action_dim)
+            Action chosen by behavior policy.
+
+        rewards: NDArray, shape (n_episodes * step_per_episode, )
+            Reward observation.
+
+        behavior_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+            Trajectory-wise action choice probability by behavior policy,
+            i.e., :math:`\\prod_{t=0}^T \\pi_b(a_t \\mid s_t)`
+
+        evaluation_policy_actions: NDArray, shape (n_episodes * step_per_episode, action_dim)
+            Action chosen by evaluation policy.
+
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
+
+        Return
+        -------
+        V_hat: NDArray, shape (n_episodes, )
+            Estimated policy value.
+
+        """
         return self._estimate_trajectory_values(
             step_per_episode,
             actions,
@@ -150,6 +302,44 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         random_state: int = 12345,
         **kwargs,
     ) -> Dict[str, float]:
+        """Estimate confidence interval of policy value by nonparametric bootstrap procedure.
+
+        Parameters
+        -------
+        step_per_episode: int (> 0)
+            Number of timesteps in an episode.
+
+        actions: NDArray, shape (n_episodes * step_per_episode, action_dim)
+            Action chosen by behavior policy.
+
+        rewards: NDArray, shape (n_episodes * step_per_episode, )
+            Reward observation.
+
+        behavior_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+            Trajectory-wise action choice probability by behavior policy,
+            i.e., :math:`\\prod_{t=0}^T \\pi_b(a_t \\mid s_t)`
+
+        evaluation_policy_actions: NDArray, shape (n_episodes * step_per_episode, action_dim)
+            Action chosen by evaluation policy.
+
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
+
+        alpha: float, default=0.05 (0, 1)
+            Significant level.
+
+        n_bootstrap_samples: int, default=10000 (> 0)
+            Number of resampling performed in the bootstrap procedure.
+
+        random_state: int, default=None (>= 0)
+            Random state.
+
+        Return
+        -------
+        estimated_confidence_interval: Dict[str, float]
+            Dictionary storing the estimated mean and upper-lower confidence bounds.
+
+        """
         estimated_trajectory_values = self._estimate_trajectory_values(
             step_per_episode,
             actions,
@@ -168,7 +358,36 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 
 @dataclass
 class ContinuousStepWiseImportanceSampling(BaseOffPolicyEstimator):
-    """Step-wise Importance Sampling (SIS) for continuous OPE (assume deterministic policies)."""
+    """Step-wise Importance Sampling (SIS) for continuous OPE (assume deterministic policies).
+
+    Note
+    -------
+    SIS estimates policy value using step-wise importance weight as follows.
+
+    .. math::
+
+        \\hat{V}_{\\mathrm{SIS}} (\\pi_e; \\mathcal{D}) := \\mathbb{E}_{n} [\\sum_{t=0}^T \\gamma^t w_{0:t} r_t],
+
+    where :math:`w_{0:t} := \\prod_{t'=0}^t \\frac{\\pi_e(a_{t'} \\mid s_{t'})}{\\pi_b(a_{t'} \\mid s_{t'})}`
+
+    Parameters
+    -------
+    action_dim: int (> 0)
+        Dimensions of actions.
+
+    kernel: str, default="gaussian"
+        Choice of kernel function.
+        "gaussian" is acceptable.
+
+    band_width: Optional[np.ndarray]
+        A bandwidth hyperparameter for each action dimension.
+        A larger value increases bias instead of reducing variance.
+        A smaller value increased variance instead of reducing bias.
+
+    estimator_name: str, default="sis"
+        Name of the estimator.
+
+    """
 
     action_dim: int
     kernel: str = "gaussian"
@@ -193,6 +412,35 @@ class ContinuousStepWiseImportanceSampling(BaseOffPolicyEstimator):
         gamma: float = 1.0,
         **kwargs,
     ) -> np.ndarray:
+        """Estimate trajectory-wise policy value.
+
+        Parameters
+        -------
+        step_per_episode: int (> 0)
+            Number of timesteps in an episode.
+
+        actions: NDArray, shape (n_episodes * step_per_episode, action_dim)
+            Action chosen by behavior policy.
+
+        rewards: NDArray, shape (n_episodes * step_per_episode, )
+            Reward observation.
+
+        behavior_policy_step_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+            Step-wise action choice probability by behavior policy,
+            i.e., :math:`\\prod_{t'=0}^t \\pi_b(a_{t'} \\mid s_{t'})`
+
+        evaluation_policy_actions: NDArray, shape (n_episodes * step_per_episode, action_dim)
+            Action chosen by evaluation policy.
+
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
+
+        Return
+        -------
+        estimated_trajectory_wise_policy_value: NDArray, shape (n_episodes, )
+            Estimated policy value for each trajectory.
+
+        """
         actions = actions.reshape((-1, step_per_episode, self.action_dim))
         evaluation_policy_actions = evaluation_policy_actions.reshape(
             (-1, step_per_episode, self.action_dim)
@@ -223,6 +471,35 @@ class ContinuousStepWiseImportanceSampling(BaseOffPolicyEstimator):
         gamma: float = 1.0,
         **kwargs,
     ) -> float:
+        """Estimate policy value of evaluation policy.
+
+        Parameters
+        -------
+        step_per_episode: int (> 0)
+            Number of timesteps in an episode.
+
+        actions: NDArray, shape (n_episodes * step_per_episode, action_dim)
+            Action chosen by behavior policy.
+
+        rewards: NDArray, shape (n_episodes * step_per_episode, )
+            Reward observation.
+
+        behavior_policy_step_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+            Step-wise action choice probability by behavior policy,
+            i.e., :math:`\\prod_{t'=0}^t \\pi_b(a_{t'} \\mid s_{t'})`
+
+        evaluation_policy_actions: NDArray, shape (n_episodes * step_per_episode, action_dim)
+            Action chosen by evaluation policy.
+
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
+
+        Return
+        -------
+        V_hat: NDArray, shape (n_episodes, )
+            Estimated policy value.
+
+        """
         return self._estimate_trajectory_values(
             step_per_episode,
             actions,
@@ -245,6 +522,44 @@ class ContinuousStepWiseImportanceSampling(BaseOffPolicyEstimator):
         random_state: int = 12345,
         **kwargs,
     ) -> Dict[str, float]:
+        """Estimate confidence interval of policy value by nonparametric bootstrap procedure.
+
+        Parameters
+        -------
+        step_per_episode: int (> 0)
+            Number of timesteps in an episode.
+
+        actions: NDArray, shape (n_episodes * step_per_episode, action_dim)
+            Action chosen by behavior policy.
+
+        rewards: NDArray, shape (n_episodes * step_per_episode, )
+            Reward observation.
+
+        behavior_policy_step_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+            Step-wise action choice probability by behavior policy,
+            i.e., :math:`\\prod_{t'=0}^t \\pi_b(a_{t'} \\mid s_{t'})`
+
+        evaluation_policy_actions: NDArray, shape (n_episodes * step_per_episode, action_dim)
+            Action chosen by evaluation policy.
+
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
+
+        alpha: float, default=0.05 (0, 1)
+            Significant level.
+
+        n_bootstrap_samples: int, default=10000 (> 0)
+            Number of resampling performed in the bootstrap procedure.
+
+        random_state: int, default=None (>= 0)
+            Random state.
+
+        Return
+        -------
+        estimated_confidence_interval: Dict[str, float]
+            Dictionary storing the estimated mean and upper-lower confidence bounds.
+
+        """
         estimated_trajectory_values = self._estimate_trajectory_values(
             step_per_episode,
             actions,
@@ -263,7 +578,37 @@ class ContinuousStepWiseImportanceSampling(BaseOffPolicyEstimator):
 
 @dataclass
 class ContinuousDoublyRobust(BaseOffPolicyEstimator):
-    """Doubly Robust (DR) for continuous OPE (assume deterministic policies)."""
+    """Doubly Robust (DR) for continuous OPE (assume deterministic policies).
+
+    Note
+    -------
+    DR estimates policy value using step-wise importance weight and :math:`\\hat{Q}` as follows.
+
+    .. math::
+
+        \\hat{V}_{\\mathrm{DR}} (\\pi_e; \\mathcal{D})
+        := \\mathbb{E}_{n} [\\sum_{t=0}^T \\gamma^t (w_{0:t} (r_t - \\hat{Q}(s_t, a_t)) + w_{0:t-1} \\mathbb{E}_{a \\sim \\pi_e(a \\mid s_t)}[\\hat{Q}(s_t, a)])],
+
+    where :math:`w_{0:t} := \\prod_{t'=0}^t \\frac{\\pi_e(a_{t'} \\mid s_{t'})}{\\pi_b(a_{t'} \\mid s_{t'})}`
+
+    Parameters
+    -------
+    action_dim: int (> 0)
+        Dimensions of actions.
+
+    kernel: str, default="gaussian"
+        Choice of kernel function.
+        "gaussian" is acceptable.
+
+    band_width: Optional[np.ndarray]
+        A bandwidth hyperparameter for each action dimension.
+        A larger value increases bias instead of reducing variance.
+        A smaller value increased variance instead of reducing bias.
+
+    estimator_name: str, default="dr"
+        Name of the estimator.
+
+    """
 
     action_dim: int
     kernel: str = "gaussian"
@@ -289,7 +634,38 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
         gamma: float = 1.0,
         **kwargs,
     ) -> np.ndarray:
+        """Estimate trajectory-wise policy value.
 
+        Parameters
+        -------
+        step_per_episode: int (> 0)
+            Number of timesteps in an episode.
+
+        actions: NDArray, shape (n_episodes * step_per_episode, action_dim)
+            Action chosen by behavior policy.
+
+        rewards: NDArray, shape (n_episodes * step_per_episode, )
+            Reward observation.
+
+        behavior_policy_step_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+            Step-wise action choice probability by behavior policy,
+            i.e., :math:`\\prod_{t'=0}^t \\pi_b(a_{t'} \\mid s_{t'})`
+
+        counterfactual_state_action_value: NDArray, shape (n_episodes * step_per_episode, )
+            :math:`\\hat{Q}` for the action chosen by evaluation policy.
+
+        evaluation_policy_actions: NDArray, shape (n_episodes * step_per_episode, action_dim)
+            Action chosen by evaluation policy.
+
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
+
+        Return
+        -------
+        estimated_trajectory_wise_policy_value: NDArray, shape (n_episodes, )
+            Estimated policy value for each trajectory.
+
+        """
         actions = actions.reshape((-1, step_per_episode, self.action_dim))
         evaluation_policy_actions = evaluation_policy_actions.reshape(
             (-1, step_per_episode, self.action_dim)
@@ -337,6 +713,38 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
         gamma: float = 1.0,
         **kwargs,
     ) -> float:
+        """Estimate policy value of evaluation policy.
+
+        Parameters
+        -------
+        step_per_episode: int (> 0)
+            Number of timesteps in an episode.
+
+        actions: NDArray, shape (n_episodes * step_per_episode, action_dim)
+            Action chosen by behavior policy.
+
+        rewards: NDArray, shape (n_episodes * step_per_episode, )
+            Reward observation.
+
+        behavior_policy_step_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+            Step-wise action choice probability by behavior policy,
+            i.e., :math:`\\prod_{t'=0}^t \\pi_b(a_{t'} \\mid s_{t'})`
+
+        counterfactual_state_action_value: NDArray, shape (n_episodes * step_per_episode, )
+            :math:`\\hat{Q}` for the action chosen by evaluation policy.
+
+        evaluation_policy_actions: NDArray, shape (n_episodes * step_per_episode, action_dim)
+            Action chosen by evaluation policy.
+
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
+
+        Return
+        -------
+        V_hat: NDArray, shape (n_episodes, )
+            Estimated policy value.
+
+        """
         return self._estimate_trajectory_values(
             step_per_episode,
             actions,
@@ -361,6 +769,47 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
         random_state: int = 12345,
         **kwargs,
     ) -> Dict[str, float]:
+        """Estimate confidence interval of policy value by nonparametric bootstrap procedure.
+
+        Parameters
+        -------
+        step_per_episode: int (> 0)
+            Number of timesteps in an episode.
+
+        actions: NDArray, shape (n_episodes * step_per_episode, action_dim)
+            Action chosen by behavior policy.
+
+        rewards: NDArray, shape (n_episodes * step_per_episode, )
+            Reward observation.
+
+        behavior_policy_step_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+            Step-wise action choice probability by behavior policy,
+            i.e., :math:`\\prod_{t'=0}^t \\pi_b(a_{t'} \\mid s_{t'})`
+
+        counterfactual_state_action_value: NDArray, shape (n_episodes * step_per_episode, )
+            :math:`\\hat{Q}` for the action chosen by evaluation policy.
+
+        evaluation_policy_actions: NDArray, shape (n_episodes * step_per_episode, action_dim)
+            Action chosen by evaluation policy.
+
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
+
+        alpha: float, default=0.05 (0, 1)
+            Significant level.
+
+        n_bootstrap_samples: int, default=10000 (> 0)
+            Number of resampling performed in the bootstrap procedure.
+
+        random_state: int, default=None (>= 0)
+            Random state.
+
+        Return
+        -------
+        estimated_confidence_interval: Dict[str, float]
+            Dictionary storing the estimated mean and upper-lower confidence bounds.
+
+        """
         estimated_trajectory_values = self._estimate_trajectory_values(
             step_per_episode,
             actions,
@@ -382,7 +831,37 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
 class ContinuousSelfNormalizedTrajectoryWiseImportanceSampling(
     ContinuousTrajectoryWiseImportanceSampling
 ):
-    """Slf-Normalized Trajectory-wise Importance Sampling (SNTIS) for continuous OPE (assume deterministic policies)."""
+    """Self-Normalized Trajectory-wise Importance Sampling (SNTIS) for continuous OPE (assume deterministic policies).
+
+    Note
+    -------
+    SNTIS estimates policy value using self-normalized trajectory-wise importance weight as follows.
+
+    .. math::
+
+        \\hat{V}_{\\mathrm{SNTIS}} (\\pi_e; \\mathcal{D})
+        := \\mathbb{E}_{n} [\\sum_{t=0}^T \\gamma^t \\frac{w_{1:T}}{\\mathbb{E}_n [w_{1:T}]} r_t],
+
+    where :math:`w_{0:T} := \\prod_{t=1}^T \\frac{\\pi_e(a_t \\mid s_t)}{\\pi_b(a_t \\mid s_t)}`
+
+    Parameters
+    -------
+    action_dim: int (> 0)
+        Dimensions of actions.
+
+    kernel: str, default="gaussian"
+        Choice of kernel function.
+        "gaussian" is acceptable.
+
+    band_width: Optional[np.ndarray]
+        A bandwidth hyperparameter for each action dimension.
+        A larger value increases bias instead of reducing variance.
+        A smaller value increased variance instead of reducing bias.
+
+    estimator_name: str, default="sntis"
+        Name of the estimator.
+
+    """
 
     action_dim: int
     kernel: str = "gaussian"
@@ -407,6 +886,35 @@ class ContinuousSelfNormalizedTrajectoryWiseImportanceSampling(
         gamma: float = 1.0,
         **kwargs,
     ) -> np.ndarray:
+        """Estimate trajectory-wise policy value.
+
+        Parameters
+        -------
+        step_per_episode: int (> 0)
+            Number of timesteps in an episode.
+
+        actions: NDArray, shape (n_episodes * step_per_episode, action_dim)
+            Action chosen by behavior policy.
+
+        rewards: NDArray, shape (n_episodes * step_per_episode, )
+            Reward observation.
+
+        behavior_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+            Trajectory-wise action choice probability by behavior policy,
+            i.e., :math:`\\prod_{t=0}^T \\pi_b(a_t \\mid s_t)`
+
+        evaluation_policy_actions: NDArray, shape (n_episodes * step_per_episode, action_dim)
+            Action chosen by evaluation policy.
+
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
+
+        Return
+        -------
+        estimated_trajectory_wise_policy_value: NDArray, shape (n_episodes, )
+            Estimated policy value for each trajectory.
+
+        """
         actions = actions.reshape((-1, step_per_episode, self.action_dim))
         evaluation_policy_actions = evaluation_policy_actions.reshape(
             (-1, step_per_episode, self.action_dim)
@@ -443,7 +951,37 @@ class ContinuousSelfNormalizedTrajectoryWiseImportanceSampling(
 class ContinuousSelfNormalizedStepWiseImportanceSampling(
     ContinuousStepWiseImportanceSampling
 ):
-    """Self-Normalized Step-wise Importance Sampling (SNSIS) for continuous OPE (assume deterministic policies)."""
+    """Self-Normalized Step-wise Importance Sampling (SNSIS) for continuous OPE (assume deterministic policies).
+
+    Note
+    -------
+    SNSIS estimates policy value using self-normalized step-wise importance weight as follows.
+
+    .. math::
+
+        \\hat{V}_{\\mathrm{SNSIS}} (\\pi_e; \\mathcal{D})
+        := \\mathbb{E}_{n} [\\sum_{t=0}^T \\gamma^t \\frac{w_{1:t}}{\\mathbb{E}_n [w_{1:t}]} r_t],
+
+    where :math:`w_{0:t} := \\prod_{t'=1}^t \\frac{\\pi_e(a_{t'} \\mid s_{t'})}{\\pi_b(a_{t'} \\mid s_{t'})}`
+
+    Parameters
+    -------
+    action_dim: int (> 0)
+        Dimensions of actions.
+
+    kernel: str, default="gaussian"
+        Choice of kernel function.
+        "gaussian" is acceptable.
+
+    band_width: Optional[np.ndarray]
+        A bandwidth hyperparameter for each action dimension.
+        A larger value increases bias instead of reducing variance.
+        A smaller value increased variance instead of reducing bias.
+
+    estimator_name: str, default="snsis"
+        Name of the estimator.
+
+    """
 
     action_dim: int
     kernel: str = "gaussian"
@@ -468,6 +1006,35 @@ class ContinuousSelfNormalizedStepWiseImportanceSampling(
         gamma: float = 1.0,
         **kwargs,
     ) -> np.ndarray:
+        """Estimate trajectory-wise policy value.
+
+        Parameters
+        -------
+        step_per_episode: int (> 0)
+            Number of timesteps in an episode.
+
+        actions: NDArray, shape (n_episodes * step_per_episode, action_dim)
+            Action chosen by behavior policy.
+
+        rewards: NDArray, shape (n_episodes * step_per_episode, )
+            Reward observation.
+
+        behavior_policy_step_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+            Step-wise action choice probability by behavior policy,
+            i.e., :math:`\\prod_{t'=0}^t \\pi_b(a_{t'} \\mid s_{t'})`
+
+        evaluation_policy_actions: NDArray, shape (n_episodes * step_per_episode, action_dim)
+            Action chosen by evaluation policy.
+
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
+
+        Return
+        -------
+        estimated_trajectory_wise_policy_value: NDArray, shape (n_episodes, )
+            Estimated policy value for each trajectory.
+
+        """
         actions = actions.reshape((-1, step_per_episode, self.action_dim))
         evaluation_policy_actions = evaluation_policy_actions.reshape(
             (-1, step_per_episode, self.action_dim)
@@ -499,7 +1066,39 @@ class ContinuousSelfNormalizedStepWiseImportanceSampling(
 
 @dataclass
 class ContinuousSelfNormalizedDoublyRobust(ContinuousDoublyRobust):
-    """Self-Normalized Doubly Robust (SNDR) for continuous OPE (assume deterministic policies)."""
+    """Self-Normalized Doubly Robust (SNDR) for continuous OPE (assume deterministic policies).
+
+    Note
+    -------
+    SNDR estimates policy value using self-normalized step-wise importance weight and :math:`\\hat{Q}` as follows.
+
+    .. math::
+
+        \\hat{V}_{\\mathrm{DR}} (\\pi_e; \\mathcal{D})
+        := \\mathbb{E}_{n} [\\sum_{t=0}^T \\gamma^t \\frac{w_{0:t-1}}{\\mathbb{E}_n [w_{0:t-1}]}
+                (w_t (r_t - \\hat{Q}(s_t, a_t)) + \\mathbb{E}_{a \\sim \\pi_e(a \\mid s_t)}[\\hat{Q}(s_t, a)])],
+
+    where :math:`w_{0:t} := \\prod_{t'=0}^t \\frac{\\pi_e(a_{t'} \\mid s_{t'})}{\\pi_b(a_{t'} \\mid s_{t'})}`
+    and :math:`w_{t}} := \\frac{\\pi_e(a_t \\mid s_t)}{\\pi_b(a_t \\mid s_t)}`
+
+    Parameters
+    -------
+    action_dim: int (> 0)
+        Dimensions of actions.
+
+    kernel: str, default="gaussian"
+        Choice of kernel function.
+        "gaussian" is acceptable.
+
+    band_width: Optional[np.ndarray]
+        A bandwidth hyperparameter for each action dimension.
+        A larger value increases bias instead of reducing variance.
+        A smaller value increased variance instead of reducing bias.
+
+    estimator_name: str, default="sndr"
+        Name of the estimator.
+
+    """
 
     action_dim: int
     kernel: str = "gaussian"
@@ -525,7 +1124,38 @@ class ContinuousSelfNormalizedDoublyRobust(ContinuousDoublyRobust):
         gamma: float = 1.0,
         **kwargs,
     ) -> np.ndarray:
+        """Estimate trajectory-wise policy value.
 
+        Parameters
+        -------
+        step_per_episode: int (> 0)
+            Number of timesteps in an episode.
+
+        actions: NDArray, shape (n_episodes * step_per_episode, action_dim)
+            Action chosen by behavior policy.
+
+        rewards: NDArray, shape (n_episodes * step_per_episode, )
+            Reward observation.
+
+        behavior_policy_step_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+            Step-wise action choice probability by behavior policy,
+            i.e., :math:`\\prod_{t'=0}^t \\pi_b(a_{t'} \\mid s_{t'})`
+
+        counterfactual_state_action_value: NDArray, shape (n_episodes * step_per_episode, )
+            :math:`\\hat{Q}` for the action chosen by evaluation policy.
+
+        evaluation_policy_actions: NDArray, shape (n_episodes * step_per_episode, action_dim)
+            Action chosen by evaluation policy.
+
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
+
+        Return
+        -------
+        estimated_trajectory_wise_policy_value: NDArray, shape (n_episodes, )
+            Estimated policy value for each trajectory.
+
+        """
         actions = actions.reshape((-1, step_per_episode, self.action_dim))
         evaluation_policy_actions = evaluation_policy_actions.reshape(
             (-1, step_per_episode, self.action_dim)

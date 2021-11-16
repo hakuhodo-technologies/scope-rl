@@ -38,7 +38,7 @@ class CustomizedRTBEnv(gym.Env):
             Instead, you can tune multiplication of adjust rate using scaler.
 
     Constrained Markov Decision Process (CMDP) definition are given as follows:
-        timestep: int
+        timestep: int (> 0)
             Set 24h a day or seven days per week for instance.
             We have (search volume, ) auctions during a timestep.
             Note that each single auction do NOT correspond to the timestep.
@@ -51,21 +51,21 @@ class CustomizedRTBEnv(gym.Env):
                   (budget consumption rate, cost per mille of impressions, auction winning rate, and reward)
                 - adjust rate (i.e., RL agent action) at previous timestep
 
-        action: Union[int, float, NDArray]
+        action: Union[int, float, NDArray] (> 0)
             Adjust rate parameter used for the bid price calculation as follows.
             Note that the following bid price is individually determined for each auction.
                 :math:`bid_price_{t, i} = adjust_rate_{t} \\times predicted_reward_{t,i}/ground_truth_reward_{t, i} ( \\times const.)`
 
             Both discrete and continuous actions are acceptable.
 
-        reward: int
+        reward: int (> 0)
             Total clicks/conversions gained during the timestep.
 
         discount_rate: int (= 1)
             Discount factor for cumulative reward calculation.
             Set discount_rate = 1 (i.e., no discount) in RTB.
 
-        constraint: int
+        constraint: int (> 0)
             Total cost should not exceed the initial budget.
 
     Parameters
@@ -77,7 +77,7 @@ class CustomizedRTBEnv(gym.Env):
         A machine learning model to predict the reward to determine the bidding price.
         If None, the ground-truth (expected) reward is used instead of the predicted one.
 
-    scaler: Optional[Union[int, float]], default=None
+    scaler: Optional[Union[int, float]], default=None (> 0)
         Scaling factor (constant value) used for bid price determination.
         If None, scaler is autofitted by bidder.auto_fit_scaler().
 
@@ -85,7 +85,7 @@ class CustomizedRTBEnv(gym.Env):
         Action type of the RL agent.
         Choose either from "discrete" or "continuous".
 
-    n_actions: int, default=10
+    n_actions: int, default=10 (> 0)
         Dimensions of the discrete action.
         Used only when action_type="discrete" option.
 
@@ -283,7 +283,7 @@ class CustomizedRTBEnv(gym.Env):
                     (budget consumption rate, cost per mille of impressions, auction winning rate, and reward)
                     - adjust rate (i.e., agent action) at previous timestep
 
-            reward: int
+            reward: int (>= 0)
                 Total clicks/conversions gained during the timestep.
 
             done: bool

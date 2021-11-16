@@ -87,6 +87,33 @@ class OffPolicyEvaluation:
         input_dict: OPEInputDict,
         gamma: float = 1.0,
     ) -> Dict[str, float]:
+        """Estimate the policy value of evaluation policy.
+
+        Parameters
+        -------
+        input_dict: OPEInputDict
+            Dictionary of the OPE inputs for each evaluation policy.
+            Please refer to `CreateOPEInput` class for the detail.
+            key: [evaluation_policy_name][
+                evaluation_policy_step_wise_pscore,
+                evaluation_policy_trajectory_wise_pscore,
+                evaluation_policy_actions,
+                counterfactual_state_action_value,
+                counterfactual_pscore,
+                initial_state_value,
+                on_policy_policy_value,
+            ]
+
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
+
+        Return
+        -------
+        policy_value_dict: Dict[str, Dict[str, float]]
+            Dictionary containing estimated policy value of each evaluation policy by OPE estimators.
+            key: [evaluation_policy_name][OPE_estimator_name]
+
+        """
         check_input_dict(input_dict)
 
         policy_value_dict = defaultdict(dict)
@@ -113,7 +140,43 @@ class OffPolicyEvaluation:
         n_bootstrap_samples: int = 100,
         random_state: Optional[int] = None,
     ) -> Dict[str, Dict[str, float]]:
-        """Estimate confidence intervals of policy values using nonparametric bootstrap procedure."""
+        """Estimate confidence intervals of policy values using nonparametric bootstrap procedure.
+
+        Parameters
+        -------
+        input_dict: OPEInputDict
+            Dictionary of the OPE inputs for each evaluation policy.
+            Please refer to `CreateOPEInput` class for the detail.
+            key: [evaluation_policy_name][
+                evaluation_policy_step_wise_pscore,
+                evaluation_policy_trajectory_wise_pscore,
+                evaluation_policy_actions,
+                counterfactual_state_action_value,
+                counterfactual_pscore,
+                initial_state_value,
+                on_policy_policy_value,
+            ]
+
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
+
+        alpha: float, default=0.05 (0, 1)
+            Significant level.
+
+        n_bootstrap_samples: int, default=10000 (> 0)
+            Number of resampling performed in the bootstrap procedure.
+
+        random_state: int, default=None (>= 0)
+            Random state.
+
+        Return
+        -------
+        policy_value_interval_dict: Dict[str, Dict[str, float]]
+            Dictionary containing estimated confidence intervals estimated
+            using nonparametric bootstrap procedure.
+            key: [evaluation_policy_name][OPE_estimator_name]
+
+        """
         check_input_dict(input_dict)
 
         policy_value_interval_dict = defaultdict(dict)
@@ -139,8 +202,43 @@ class OffPolicyEvaluation:
         alpha: float = 0.05,
         n_bootstrap_samples: int = 100,
         random_state: Optional[int] = None,
-    ) -> Tuple[DataFrame, DataFrame]:
-        """Summarize policy values and their confidence intervals estimated by OPE estimators."""
+    ) -> Tuple[Dict[str, DataFrame], Dict[str, DataFrame]]:
+        """Summarize policy values and their confidence intervals estimated by OPE estimators.
+
+        Parameters
+        -------
+        input_dict: OPEInputDict
+            Dictionary of the OPE inputs for each evaluation policy.
+            Please refer to `CreateOPEInput` class for the detail.
+            key: [evaluation_policy_name][
+                evaluation_policy_step_wise_pscore,
+                evaluation_policy_trajectory_wise_pscore,
+                evaluation_policy_actions,
+                counterfactual_state_action_value,
+                counterfactual_pscore,
+                initial_state_value,
+                on_policy_policy_value,
+            ]
+
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
+
+        alpha: float, default=0.05 (0, 1)
+            Significant level.
+
+        n_bootstrap_samples: int, default=10000 (> 0)
+            Number of resampling performed in the bootstrap procedure.
+
+        random_state: int, default=None (>= 0)
+            Random state.
+
+        Return
+        -------
+        (policy_value_df_dict, policy_value_interval_df_dict): Tuple[Dict[str, DataFrame], Dict[str, DataFrame]]
+            Dictionary containing policy values and their confidence intervals.
+            key: [evaluation_policy_name]
+
+        """
         policy_value_dict = self.estimate_policy_values(input_dict)
         policy_value_interval_dict = self.estimate_intervals(
             input_dict,
@@ -180,14 +278,57 @@ class OffPolicyEvaluation:
         input_dict: OPEInputDict,
         gamma: float = 1.0,
         alpha: float = 0.05,
-        is_relative: bool = False,
-        sharey: bool = False,
         n_bootstrap_samples: int = 100,
         random_state: Optional[int] = None,
+        is_relative: bool = False,
+        sharey: bool = False,
         fig_dir: Optional[Path] = None,
         fig_name: str = "estimated_policy_value.png",
     ) -> None:
-        """Visualize policy values estimated by OPE estimators."""
+        """Visualize policy values estimated by OPE estimators.
+
+        Parameters
+        -------
+        input_dict: OPEInputDict
+            Dictionary of the OPE inputs for each evaluation policy.
+            Please refer to `CreateOPEInput` class for the detail.
+            key: [evaluation_policy_name][
+                evaluation_policy_step_wise_pscore,
+                evaluation_policy_trajectory_wise_pscore,
+                evaluation_policy_actions,
+                counterfactual_state_action_value,
+                counterfactual_pscore,
+                initial_state_value,
+                on_policy_policy_value,
+            ]
+
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
+
+        alpha: float, default=0.05 (0, 1)
+            Significant level.
+
+        n_bootstrap_samples: int, default=10000 (> 0)
+            Number of resampling performed in the bootstrap procedure.
+
+        random_state: int, default=None (>= 0)
+            Random state.
+
+        is_relative: bool, default=False
+            If `True`, the method visualizes the estimated policy values of evaluation policy
+            relative to the ground-truth policy value of behavior policy.
+
+        sharey: bool, default=False
+            If `True`, the y-axis will be shared among different evaluation policies.
+
+        fig_dir: Path, default=None
+            Path to store the bar figure.
+            If `None` is given, the figure will not be saved.
+
+        fig_name: str, default="estimated_policy_value.png"
+            Name of the bar figure.
+
+        """
         if fig_dir is not None:
             assert isinstance(fig_dir, Path), "fig_dir must be a Path"
         if fig_name is not None:
@@ -279,8 +420,54 @@ class OffPolicyEvaluation:
         input_dict: OPEInputDict,
         gamma: float = 1.0,
         metric: str = "relative-ee",
-    ) -> Dict[str, float]:
-        """Evaluate estimation performance of OPE estimators."""
+    ) -> Dict[str, Dict[str, float]]:
+        """Evaluate estimation performance of OPE estimators.
+
+        Note
+        -------
+        Evaluate the estimation performance of OPE estimators by relative estimation error (relative-EE) or squared error (SE).
+
+        .. math ::
+
+            \\mathrm{Relative-EE}(\\hat{V}; \\mathcal{D})
+            := \\left| \\frac{\\hat{V}(\\pi_e; \\mathcal{D}) - V_{\\mathrm{on}}(\\pi_e)}{V_{\\mathrm{on}}(\\pi_e)} \\right|,
+
+        .. math ::
+
+            \\mathrm{SE}(\\hat{V}; \\mathcal{D}) := \\left( \\hat{V}(\\pi_e; \\mathcal{D}) - V_{\\mathrm{on} \\right)^2,
+
+        where :math:`V_{\\mathrm{on}}(\\pi_e)` is the on-policy policy value of the evaluation policy :math:`\\pi_e`.
+        :math:`\\hat{V}(\\pi_e; \\mathcal{D})` is the estimated policy value by an OPE estimator :math:`\\hat{V}` and logged dataset :math:`\\mathcal{D}`.
+
+        Parameters
+        -------
+        input_dict: OPEInputDict
+            Dictionary of the OPE inputs for each evaluation policy.
+            Please refer to `CreateOPEInput` class for the detail.
+            key: [evaluation_policy_name][
+                evaluation_policy_step_wise_pscore,
+                evaluation_policy_trajectory_wise_pscore,
+                evaluation_policy_actions,
+                counterfactual_state_action_value,
+                counterfactual_pscore,
+                initial_state_value,
+                on_policy_policy_value,
+            ]
+
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
+
+        metric: str, default="relative-ee"
+            Evaluation metric used to evaluate and compare the estimation performance of OPE estimators.
+            Either "relative-ee" or "se".
+
+        Return
+        -------
+        eval_metric_ope_dict: Dict[str, DIct[str, float]]
+            Dictionary containing evaluation metric for evaluating the estimation performance of OPE estimators.
+            key: [evaluation_policy_name][OPE_estimator_name]
+
+        """
         eval_metric_ope_dict = defaultdict(dict)
         policy_value_dict = self.estimate_policy_values(input_dict, gamma=gamma)
 
@@ -318,6 +505,36 @@ class OffPolicyEvaluation:
         gamma: float = 1.0,
         metric: str = "relative-ee",
     ) -> DataFrame:
+        """Summarize performance comparison of OPE estimators.
+
+        Parameters
+        -------
+        input_dict: OPEInputDict
+            Dictionary of the OPE inputs for each evaluation policy.
+            Please refer to `CreateOPEInput` class for the detail.
+            key: [evaluation_policy_name][
+                evaluation_policy_step_wise_pscore,
+                evaluation_policy_trajectory_wise_pscore,
+                evaluation_policy_actions,
+                counterfactual_state_action_value,
+                counterfactual_pscore,
+                initial_state_value,
+                on_policy_policy_value,
+            ]
+
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
+
+        metric: str, default="relative-ee"
+            Evaluation metric used to evaluate and compare the estimation performance of OPE estimators.
+            Either "relative-ee" or "se".
+
+        Return
+        -------
+        eval_metric_ope_df: DataFrame
+            Dictionary containing evaluation metric for evaluating the estimation performance of OPE estimators.
+
+        """
         eval_metric_ope_df = DataFrame()
         eval_metric_ope_dict = self.evaluate_performance_of_estimators(
             input_dict,

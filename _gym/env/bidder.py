@@ -34,11 +34,11 @@ class Bidder:
         A machine learning model to predict the reward to determine the bidding price.
         If None, the ground-truth (expected) reward is used instead of the predicted one.
 
-    scaler: Optional[Union[int, float]], default=None
+    scaler: Optional[Union[int, float]], default=None (> 0)
         Scaling factor (constant value) used for bid price determination.
         If None, one should call auto_fit_scaler().
 
-    random_state: Optional[int], default=None
+    random_state: Optional[int], default=None (>= 0)
         Random state.
 
     References
@@ -100,10 +100,10 @@ class Bidder:
 
         Parameters
         -------
-        timestep: int
+        timestep: int (> 0)
             Timestep of the RL environment.
 
-        adjust_rate: float
+        adjust_rate: float (>= 0)
             Adjust rate parameter for the bidding price.
 
         ad_ids: NDArray[int], shape (search_volume, )
@@ -174,7 +174,7 @@ class Bidder:
 
         Parameters
         -------
-        scaler: Union[int, float]
+        scaler: Union[int, float] (> 0)
             Scaling factor (constant value) used in bid price calculation.
 
         """
@@ -197,10 +197,10 @@ class Bidder:
 
         Parameters
         -------
-        step_per_episode: int
+        step_per_episode: int (> 0)
             Number of timesteps in a episode.
 
-        n_samples: int, default=100000
+        n_samples: int, default=100000 (> 0)
             Number of samples to fit bid_scaler.
 
         """
@@ -277,10 +277,10 @@ class Bidder:
 
         Parameters
         -------
-        step_per_episode: int
+        step_per_episode: int (> 0)
             Number of timesteps in a episode.
 
-        n_samples: int, default=100000
+        n_samples: int, default=100000 (> 0)
             Number of samples to fit reward predictor.
 
         """
@@ -368,7 +368,7 @@ class Bidder:
         user_feature_vector: NDArray[float], shape (search_volume, user_feature_dim)
             Feature vector of the users.
 
-        timestep: int
+        timestep: int (> 0)
             Timestep in the RL environment.
 
         Returns

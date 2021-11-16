@@ -30,7 +30,7 @@ class SyntheticDataset(BaseDataset):
         Reinforcement learning (RL) environment.
 
     behavior_policy: AlgoBase
-        RL policy for data collection.
+        RL policy that collects data.
 
     step_per_episode: Optional[int], default=None (> 0)
         Number of timesteps in an episode.
@@ -138,13 +138,13 @@ class SyntheticDataset(BaseDataset):
 
     References
     -------
-    Yuta Saito, Shunsuke Aihara, Megumi Matsutani, Yusuke Narita.
+    Yuta Saito, Shunsuke Aihara, Megumi Matsutani, and Yusuke Narita.
     "Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation.", 2021.
 
     Takuma Seno and Michita Imai.
     "d3rlpy: An Offline Deep Reinforcement Library.", 2021.
 
-    Greg Brockman, Vicki Cheung, Ludwig Pettersson, Jonas Schneider, John Schulman, Jie Tang, Wojciech Zaremba.
+    Greg Brockman, Vicki Cheung, Ludwig Pettersson, Jonas Schneider, John Schulman, Jie Tang, abd Wojciech Zaremba.
     "OpenAI Gym.", 2016.
 
     """
@@ -210,24 +210,24 @@ class SyntheticDataset(BaseDataset):
         Returns
         -------
         logged_dataset: Dict
-            size: int
+            size: int (> 0)
                 Number of steps the dataset records.
 
-            n_episodes: int
+            n_episodes: int (> 0)
                 Number of episodes the dataset records.
 
-            step_per_episode: int
+            step_per_episode: int (> 0)
                 Number of timesteps in an episode.
 
             action_type: str
                 Action type of the RL agent.
                 Either "discrete" or "continuous".
 
-            n_actions: Optional[int]
+            n_actions: Optional[int] (> 0)
                 Number of discrete actions.
                 If action_type is "continuous", `None` is recorded.
 
-            action_dim: Optional[int]
+            action_dim: Optional[int] (> 0)
                 Dimensions of actions.
                 If action_type is "discrete", `None` is recorded.
 
@@ -235,7 +235,7 @@ class SyntheticDataset(BaseDataset):
                 Dictionary which maps discrete action index into specific actions.
                 If action_type is "continuous", `None` is recorded.
 
-            state_dim: int
+            state_dim: int (> 0)
                 Dimensions of states.
 
             state_keys: Optional[List[str]]
@@ -367,24 +367,24 @@ class SyntheticDataset(BaseDataset):
         Returns
         -------
         logged_dataset: Dict
-            size: int
+            size: int (> 0)
                 Number of steps the dataset records.
 
-            n_episodes: int
+            n_episodes: int (> 0)
                 Number of episodes the dataset records.
 
-            step_per_episode: int
+            step_per_episode: int (> 0)
                 Number of timesteps in an episode.
 
             action_type: str
                 Action type of the RL agent.
                 Either "discrete" or "continuous".
 
-            n_actions: Optional[int]
+            n_actions: Optional[int] (> 0)
                 Number of discrete actions.
                 If action_type is "continuous", `None` is recorded.
 
-            action_dim: Optional[int]
+            action_dim: Optional[int] (> 0)
                 Dimensions of actions.
                 If action_type is "discrete", `None` is recorded.
 
@@ -392,7 +392,7 @@ class SyntheticDataset(BaseDataset):
                 Dictionary which maps discrete action index into specific actions.
                 If action_type is "continuous", `None` is recorded.
 
-            state_dim: int
+            state_dim: int (> 0)
                 Dimensions of states.
 
             state_keys: Optional[List[str]]
@@ -462,10 +462,23 @@ class SyntheticDataset(BaseDataset):
             next_state, reward, done, info_ = self.env.step(action)
             terminal = step == self.max_episode_steps - 1
 
-            if idx == 0:
-                info_keys = info_.keys()
-                for key in info_keys:
-                    info[key] = np.empty(n_steps)
+            if obtain_info:
+                if idx == 0:
+                    info_keys = info_.keys()
+
+                    if self.is_rtb_env:
+                        for key in info_keys:
+                            info[key] = np.empty(n_episodes * self.step_per_episode)
+                    else:
+                        for key in info_keys:
+                            info[key] = []
+
+                if self.is_rtb_env:
+                    for key, value in info_.items():
+                        info[key][idx] = value
+                else:
+                    for key, value in info_.items():
+                        info[key].append(value)
 
             states[idx] = state
             actions[idx] = action

@@ -25,13 +25,13 @@ class RTBSyntheticSimulator(BaseSimulator):
         Defines when the cost arises.
         Choose either from "impression", "click" or "conversion".
 
-    step_per_episode: int, default=7
+    step_per_episode: int, default=7 (> 0)
         Number of timesteps in an episode.
 
-    n_ads: int, default=100
+    n_ads: int, default=100 (> 0)
         Number of (candidate) ads used for auction bidding.
 
-    n_users: int, default=100
+    n_users: int, default=100 (> 0)
         Number of (candidate) users used for auction bidding.
 
     ad_sampling_rate: Optional[NDArray], shape (n_ads, ad_feature_dim), default=None
@@ -61,17 +61,17 @@ class RTBSyntheticSimulator(BaseSimulator):
     standard_bid_price_distribution: NormalDistribution, default=NormalDistribution(mean=100, std=20)
         Distribution of the bid price whose average impression probability is expected to be 0.5.
 
-    minimum_standard_bid_price: Optional[int], default=None
+    minimum_standard_bid_price: Optional[int], default=None (> 0)
         Minimum value for standard bid price.
         If None, minimum_standard_bid_price is set to standard_bid_price_distribution.mean / 2.
 
     search_volume_distribution: NormalDistribution, default=NormalDistribution(mean=30, std=10)
         Search volume distribution for each timestep.
 
-    minimum_search_volume: int, default = 10
+    minimum_search_volume: int, default = 10 (> 0)
         Minimum search volume at each timestep.
 
-    random_state: Optional[int], default=None
+    random_state: Optional[int], default=None (>= 0)
         Random state.
 
     References
@@ -325,10 +325,10 @@ class RTBSyntheticSimulator(BaseSimulator):
 
         Parameters
         -------
-        volume: Optional[int], default=None
+        volume: Optional[int], default=None (> 0)
             Total numbers of the auctions to generate.
 
-        timestep: Optional[int], default=None
+        timestep: Optional[int], default=None (> 0)
             Timestep in the RL environment.
 
         Returns
@@ -443,7 +443,7 @@ class RTBSyntheticSimulator(BaseSimulator):
 
         Parameters
         -------
-        timestep: int
+        timestep: int (> 0)
             Timestep in the RL environment.
 
         ad_ids: NDArray[int], shape (search_volume, )

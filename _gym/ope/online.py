@@ -27,6 +27,39 @@ def visualize_on_policy_policy_value(
     fig_dir: Optional[Path] = None,
     fig_name: str = "on_policy_policy_value.png",
 ):
+    """Visualize on-policy policy value of the given policies.
+
+    Parameters
+    -------
+    env: gym.Env
+        Reinforcement learning (RL) environment.
+
+    policies: List[Union[AlgoBase, BaseHead]]
+        List of policies to be evaluated.
+
+    policy_names: List[str]
+        Name of policies.
+
+    n_episodes: int, default=100 (> 0)
+        Number of trajectories to rollout.
+
+    alpha: float, default=0.05 (0, 1)
+            Significant level.
+
+    n_bootstrap_samples: int, default=10000 (> 0)
+        Number of resampling performed in the bootstrap procedure.
+
+    random_state: int, default=None (>= 0)
+        Random state.
+
+    fig_dir: Path, default=None
+        Path to store the bar figure.
+        If `None` is given, the figure will not be saved.
+
+    fig_name: str, default="on_policy_policy_value.png"
+        Name of the bar figure.
+
+    """
     on_policy_Policy_value_dict = {}
     for policy, name in zip(policies, policy_names):
         on_policy_Policy_value_dict[name] = rollout_policy_online(
@@ -59,6 +92,37 @@ def calc_on_policy_policy_value(
     n_bootstrap_samples: int = 100,
     random_state: Optional[int] = None,
 ):
+    """Calculate on-policy policy value of the given policy.
+
+    Parameters
+    -------
+    env: gym.Env
+        Reinforcement learning (RL) environment.
+
+    policy: Union[AlgoBase, BaseHead]
+        A policy to be evaluated.
+
+    use_bootstrap: bool, default=False
+        Whether to use bootstrap sampling or not.
+
+    n_episodes: int, default=100 (> 0)
+        Number of trajectories to rollout.
+
+    alpha: float, default=0.05 (0, 1)
+            Significant level.
+
+    n_bootstrap_samples: int, default=10000 (> 0)
+        Number of resampling performed in the bootstrap procedure.
+
+    random_state: int, default=None (>= 0)
+        Random state.
+
+    Return
+    -------
+    on_policy_policy_value: float
+        Average on-policy policy value.
+
+    """
     if use_bootstrap:
         on_policy_policy_value = calc_on_policy_policy_value_interval(
             env=env,
@@ -86,6 +150,34 @@ def calc_on_policy_policy_value_interval(
     n_bootstrap_samples: int = 100,
     random_state: Optional[int] = None,
 ):
+    """Calculate confidence interval of on-policy policy value by nonparametric bootstrap procedure.
+
+    Parameters
+    -------
+    env: gym.Env
+        Reinforcement learning (RL) environment.
+
+    policy: Union[AlgoBase, BaseHead]
+        A policy to be evaluated.
+
+    n_episodes: int, default=100 (> 0)
+        Number of trajectories to rollout.
+
+    alpha: float, default=0.05 (0, 1)
+            Significant level.
+
+    n_bootstrap_samples: int, default=10000 (> 0)
+        Number of resampling performed in the bootstrap procedure.
+
+    random_state: int, default=None (>= 0)
+        Random state.
+
+    Return
+    -------
+    on_policy_confidence_interval: Dict[str, float]
+        Dictionary storing the calculated mean and upper-lower confidence bounds.
+
+    """
     on_policy_policy_values = rollout_policy_online(
         env=env,
         policy=policy,
@@ -106,6 +198,28 @@ def rollout_policy_online(
     n_episodes: int = 100,
     random_state: Optional[int] = None,
 ):
+    """Rollout policy on the environment and collect trajectory-wise on-policy policy value.
+
+    Parameters
+    -------
+    env: gym.Env
+        Reinforcement learning (RL) environment.
+
+    policy: Union[AlgoBase, BaseHead]
+        A policy to be evaluated.
+
+    n_episodes: int, default=100 (> 0)
+        Number of trajectories to rollout.
+
+    random_state: int, default=None (>= 0)
+        Random state.
+
+    Return
+    -------
+    on_policy_policy_values: NDArray
+        Trajectory-wise on-policy policy values.
+
+    """
     on_policy_policy_values = np.zeros(n_episodes)
     env.seed(random_state)
 

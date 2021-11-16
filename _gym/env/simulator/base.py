@@ -30,8 +30,7 @@ class BaseSimulator(metaclass=ABCMeta):
         user_ids: np.ndarray,
         bid_prices: np.ndarray,
     ) -> Tuple[np.ndarray]:
-        """Simulate bidding auction for given queries.
-        (calculate outcome probability and stochastically determine auction result.)"""
+        """Simulate bidding auction for given queries."""
         raise NotImplementedError
 
 

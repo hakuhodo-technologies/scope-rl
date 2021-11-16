@@ -27,34 +27,34 @@ class WinningPriceDistribution(BaseWinningPriceDistribution):
 
     Parameters
     -------
-    n_ads: int, default=None
+    n_ads: int (> 0)
         Number of ads.
 
-    n_users: int, default=None
+    n_users: int (> 0)
         Number of users. (not used, but for API consistency)
 
-    ad_feature_dim: int
+    ad_feature_dim: int (> 0)
         Dimensions of the ad feature vectors. (not used, but for API consistency)
 
-    user_feature_dim: int
+    user_feature_dim: int (> 0)
         Dimensions of the user feature vectors. (not used, but for API consistency)
 
-    step_per_episode: int
+    step_per_episode: int (> 0)
         Length of the CTR trend cycle. (not used, but for API consistency)
 
     standard_bid_price_distribution: NormalDistribution, default=NormalDistribution(mean=100, std=20)
         Distribution of the bid price whose average impression probability is expected to be 0.5.
 
-    minimum_standard_bid_price: Optional[int], default=None
+    minimum_standard_bid_price: Optional[int], default=None (> 0)
         Minimum value for standard bid price.
         If None, minimum_standard_bid_price is set to standard_bid_price_distribution.mean / 2.
 
-    random_state: Optional[int], default=None
+    random_state: Optional[int], default=None (>= 0)
         Random state.
 
     References
     -------
-    Wen-Yuan Zhu, Wen-Yueh Shih, Ying-Hsuan Lee, Wen-Chih Peng, and  Jiun-Long Huang.
+    Wen-Yuan Zhu, Wen-Yueh Shih, Ying-Hsuan Lee, Wen-Chih Peng, and Jiun-Long Huang.
     "A Gamma-based Regression for Winning Price Estimation in Real-Time Bidding Advertising.", 2017.
 
     """
@@ -175,22 +175,22 @@ class ClickThroughRate(BaseClickAndConversionRate):
 
     Parameters
     -------
-    n_ads: int, default=None
+    n_ads: int (> 0)
         Number of ads. (not used, but for API consistency)
 
-    n_users: int, default=None
+    n_users: int (> 0)
         Number of users. (not used, but for API consistency)
 
-    ad_feature_dim: int
+    ad_feature_dim: int (> 0)
         Dimensions of the ad feature vectors.
 
-    user_feature_dim: int
+    user_feature_dim: int (> 0)
         Dimensions of the user feature vectors.
 
-    step_per_episode: int
+    step_per_episode: int (> 0)
         Length of the CTR trend cycle.
 
-    random_state: Optional[int], default=None
+    random_state: Optional[int], default=None (>= 0)
         Random state.
 
     """
@@ -373,22 +373,22 @@ class ConversionRate(BaseClickAndConversionRate):
 
     Parameters
     -------
-    n_ads: int, default=None
+    n_ads: int (> 0)
         Number of ads. (not used, but for API consistency)
 
-    n_users: int, default=None
+    n_users: int (> 0)
         Number of users. (not used, but for API consistency)
 
-    ad_feature_dim: int
+    ad_feature_dim: int (> 0)
         Dimensions of the ad feature vectors.
 
-    user_feature_dim: int
+    user_feature_dim: int (> 0)
         Dimensions of the user feature vectors.
 
-    step_per_episode: int
+    step_per_episode: int (> 0)
         Length of the CVR trend cycle.
 
-    random_state: Optional[int], default=None
+    random_state: Optional[int], default=None (>= 0)
         Random state.
 
     """

@@ -31,7 +31,7 @@ class RTBEnv(gym.Env):
     Use RTBSyntheticSimulator/RTBSemiSyntheticSimulator in simulator.py to collect auction results.
 
     Constrained Markov Decision Process (CMDP) definition are given as follows:
-        timestep: int
+        timestep: int (> 0)
             Set 24h a day or seven days per week for instance.
             We have (search volume, ) auctions during a timestep.
             Note that each single auction do NOT correspond to the timestep.
@@ -44,7 +44,7 @@ class RTBEnv(gym.Env):
                   (budget consumption rate, cost per mille of impressions, auction winning rate, and reward)
                 - adjust rate (i.e., RL agent action) at previous timestep
 
-        action: Union[int, float, NDArray] (:math:`\\in [0, \\infty)`)
+        action: Union[int, float, NDArray] (:math:`\\in [0, \\infty)`) (>= 0)
             Adjust rate parameter used for determining the bid price as follows.
             (Bid price is individually determined for each auction.)
 
@@ -53,13 +53,13 @@ class RTBEnv(gym.Env):
             Note that, you can also use predicted reward instead of ground-truth reward in the above equation.
             Please also refer to CustomizedRTBEnv Wrapper.
 
-        reward: int
+        reward: int (>= 0)
             Total clicks/conversions gained during the timestep.
 
         discount_rate: int (= 1)
             Discount factor for cumulative reward calculation.
 
-        constraint: int
+        constraint: int (> 0)
             Total cost should not exceed the initial budget.
 
     Parameters
@@ -73,22 +73,22 @@ class RTBEnv(gym.Env):
         Defines when the cost arises.
         Choose either from "impression", "click" or "conversion".
 
-    step_per_episode: int, default=7
+    step_per_episode: int, default=7 (> 0)
         Number of timesteps in an episode.
 
-    initial_budget: int, default=3000
+    initial_budget: int, default=3000 (> 0)
         Initial budget (i.e., constraint) for an episode.
 
-    n_ads: int, default=100
+    n_ads: int, default=100 (> 0)
         Number of (candidate) ads used for auction bidding.
 
-    n_users: int, default=100
+    n_users: int, default=100 (> 0)
         Number of (candidate) users used for auction bidding.
 
-    ad_feature_dim: int, default=5
+    ad_feature_dim: int, default=5 (> 0)
         Dimensions of the ad feature vectors.
 
-    user_feature_dim: int, default=5
+    user_feature_dim: int, default=5 (> 0)
         Dimensions of the user feature vectors.
 
     ad_sampling_rate: Optional[NDArray], shape (n_ads, ad_feature_dim), default=None
@@ -118,17 +118,17 @@ class RTBEnv(gym.Env):
     standard_bid_price_distribution: NormalDistribution, default=NormalDistribution(mean=100, std=20)
         Distribution of the bid price whose average impression probability is expected to be 0.5.
 
-    minimum_standard_bid_price: Optional[int], default=None
+    minimum_standard_bid_price: Optional[int], default=None (> 0)
         Minimum value for standard bid price.
         If None, minimum_standard_bid_price is set to standard_bid_price_distribution.mean / 2.
 
     search_volume_distribution: NormalDistribution, default=NormalDistribution(mean=30, std=10)
         Search volume distribution for each timestep.
 
-    minimum_search_volume: int, default = 10
+    minimum_search_volume: int, default = 10 (> 0)
         Minimum search volume at each timestep.
 
-    random_state: Optional[int], default=None
+    random_state: Optional[int], default=None (>= 0)
         Random state.
 
     Examples
@@ -179,7 +179,7 @@ class RTBEnv(gym.Env):
     Takuma Seno and Michita Imai.
     "d3rlpy: An Offline Deep Reinforcement Library.", 2021.
 
-    Greg Brockman, Vicki Cheung, Ludwig Pettersson, Jonas Schneider, John Schulman, Jie Tang, Wojciech Zaremba.
+    Greg Brockman, Vicki Cheung, Ludwig Pettersson, Jonas Schneider, John Schulman, Jie Tang, and Wojciech Zaremba.
     "OpenAI Gym.", 2016.
 
     """
@@ -316,7 +316,7 @@ class RTBEnv(gym.Env):
 
         Parameters
         -------
-        action: Action (Union[int, float, NDArray])
+        action: Action (Union[int, float, NDArray]) (>= 0)
             RL agent action which corresponds to the adjust rate parameter used for bid price calculation.
 
         Returns
@@ -331,7 +331,7 @@ class RTBEnv(gym.Env):
                       (budget consumption rate, cost per mille of impressions, auction winning rate, and reward)
                     - adjust rate (i.e., agent action) at previous timestep
 
-            reward: int
+            reward: int (>= 0)
                 Total clicks/conversions gained during the timestep.
 
             done: bool

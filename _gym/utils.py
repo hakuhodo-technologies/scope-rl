@@ -1,7 +1,7 @@
 """Useful tools."""
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Dict, Union, Any, Optional
+from typing import Dict, Union, Optional
 
 import gym
 import numpy as np
@@ -22,7 +22,7 @@ class NormalDistribution:
     std: Union[int, float, NDArray[int], NDArray[float]]
         Standard deviation of the normal distribution.
 
-    random_state: int, default=12345
+    random_state: int, default=None (>= 0)
         Random state.
 
     """
@@ -67,7 +67,7 @@ class NormalDistribution:
 
         Parameters
         -------
-        size: int, default=1
+        size: int, default=1 (> 0)
             Total numbers of the random variable to sample.
 
         Returns
