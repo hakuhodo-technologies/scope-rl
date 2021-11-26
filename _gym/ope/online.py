@@ -44,7 +44,7 @@ def visualize_on_policy_policy_value(
         Number of trajectories to rollout.
 
     alpha: float, default=0.05 (0, 1)
-            Significant level.
+        Significant level.
 
     n_bootstrap_samples: int, default=10000 (> 0)
         Number of resampling performed in the bootstrap procedure.
@@ -109,7 +109,7 @@ def calc_on_policy_policy_value(
         Number of trajectories to rollout.
 
     alpha: float, default=0.05 (0, 1)
-            Significant level.
+        Significant level.
 
     n_bootstrap_samples: int, default=10000 (> 0)
         Number of resampling performed in the bootstrap procedure.
@@ -164,7 +164,7 @@ def calc_on_policy_policy_value_interval(
         Number of trajectories to rollout.
 
     alpha: float, default=0.05 (0, 1)
-            Significant level.
+        Significant level.
 
     n_bootstrap_samples: int, default=10000 (> 0)
         Number of resampling performed in the bootstrap procedure.

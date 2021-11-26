@@ -100,7 +100,21 @@ def estimate_confidence_interval_by_bootstrap(
     n_bootstrap_samples: int = 100,
     random_state: Optional[int] = None,
 ) -> Dict[str, float]:
-    """Estimate confidence interval by nonparametric bootstrap-like procedure."""
+    """Estimate confidence interval by nonparametric bootstrap-like procedure.
+    
+    samples: NDArray
+        Samples.
+
+    alpha: float, default=0.05 (0, 1)
+        Significant level.
+
+    n_bootstrap_samples: int, default=10000 (> 0)
+        Number of resampling performed in the bootstrap procedure.
+
+    random_state: int, default=None (>= 0)
+        Random state.
+    
+    """
     random_ = check_random_state(random_state)
     boot_samples = [
         np.mean(random_.choice(samples, size=samples.shape[0]))
@@ -115,10 +129,11 @@ def estimate_confidence_interval_by_bootstrap(
     }
 
 
-def defaultdict_to_dict(d):
-    if isinstance(d, defaultdict):
-        d = {k: defaultdict_to_dict(v) for k, v in d.items()}
-    return d
+def defaultdict_to_dict(dict_):
+    """Class to transform defaultdict into dict."""
+    if isinstance(dict_, defaultdict):
+        dict_ = {key: defaultdict_to_dict(value) for key, value in dict_.items()}
+    return dict_
 
 
 def check_logged_dataset(logged_dataset: LoggedDataset):
