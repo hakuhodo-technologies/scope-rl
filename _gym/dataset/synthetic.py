@@ -6,7 +6,7 @@ from tqdm.autonotebook import tqdm
 import gym
 from gym.spaces import Discrete
 import numpy as np
-from sklearn.utils import check_random_state
+from sklearn.utils import check_scalar, check_random_state
 
 from ..env.rtb import RTBEnv
 from ..env.wrapper_rtb import CustomizedRTBEnv
@@ -155,6 +155,13 @@ class SyntheticDataset(BaseDataset):
     random_state: Optional[int] = None
 
     def __post_init__(self):
+        if not isinstance(self.env, gym.Env):
+            raise ValueError(
+                f"env must be a child class of gym.Env",
+            )
+        if not isinstance(self.behavior_policy, BaseHead):
+            raise ValueError(f"behavior_policy must be a child class of BaseHead")
+
         self.state_dim = self.env.observation_space.shape[0]
 
         if isinstance(self.env.action_space, Discrete):
@@ -182,6 +189,9 @@ class SyntheticDataset(BaseDataset):
             self.max_episode_steps = self.env._max_episode_steps
         else:
             self.max_episode_steps = self.step_per_episode
+        check_scalar(
+            self.step_per_episode, name="step_per_episode", target_type=int, min_val=1
+        )
 
         if self.random_state is None:
             raise ValueError("random_state must be given")
@@ -264,11 +274,16 @@ class SyntheticDataset(BaseDataset):
 
         """
         if self.step_per_episode is None:
-            raise ValueError(f"step_per_episode")
-        if not (isinstance(n_episodes, int) and n_episodes > 0):
-            raise ValueError(
-                f"n_episodes must be a positive integer, but {n_episodes} is given"
+            raise RuntimeError(
+                f"Please initialize SyntheticDataset class with step_per_episode to use .obtain_trajectories()"
             )
+        check_scalar(
+            n_episodes,
+            name="n_espisodes",
+            target_type=int,
+            min_val=1,
+        )
+
         states = np.empty(
             (
                 n_episodes * self.step_per_episode,
@@ -329,6 +344,9 @@ class SyntheticDataset(BaseDataset):
                             info[key].append(value)
 
                 idx += 1
+                if idx % self.step_per_episode == 0:
+                    done = True
+
                 state = next_state
 
         logged_dataset = {
@@ -420,10 +438,7 @@ class SyntheticDataset(BaseDataset):
                 Action choice probability of the behavior policy for the chosen action.
 
         """
-        if not (isinstance(n_steps, int) and n_steps > 0):
-            raise ValueError(
-                f"n_steps must be a positive integer, but {n_steps} is given"
-            )
+        check_scalar(n_steps, name="n_steps", target_type=int, min_val=1)
         states = np.empty(
             (
                 n_steps,

@@ -5,10 +5,12 @@ from tqdm import tqdm
 import gym
 from gym.spaces import Box, Discrete
 from sklearn.base import BaseEstimator
+from sklearn.utils import check_scalar
 import numpy as np
 
 from ..env.rtb import RTBEnv
-from ..types import Action
+from ..utils import check_array
+from ..types import Action, Numeric
 
 
 class CustomizedRTBEnv(gym.Env):
@@ -81,6 +83,12 @@ class CustomizedRTBEnv(gym.Env):
         Scaling factor (constant value) used for bid price determination.
         If None, scaler is autofitted by bidder.auto_fit_scaler().
 
+    action_min: float, default=0.1 (> 0)
+        Minimum value of action.
+
+    action_max: float, default=10.0 (> 0)
+        Maximum value of action.
+
     action_type: str, default="discrete"
         Action type of the RL agent.
         Choose either from "discrete" or "continuous".
@@ -93,7 +101,7 @@ class CustomizedRTBEnv(gym.Env):
         Dictionary which maps discrete action index into specific actions.
         Used when only when using action_type="discrete" option.
 
-        If None, the action meaning values automatically set to [0.1, 10] log sampled values.
+        If None, the action meaning values automatically set to [action_min, action_max] log sampled values.
             np.logspace(-1, 1, n_actions)
 
     Examples
@@ -161,6 +169,8 @@ class CustomizedRTBEnv(gym.Env):
         original_env: RTBEnv,
         reward_predictor: Optional[BaseEstimator] = None,
         scaler: Optional[Union[int, float]] = None,
+        action_min: float = 0.1,
+        action_max: float = 10.0,
         action_type: str = "discrete",  # "continuous"
         n_actions: int = 10,
         action_meaning: Optional[
@@ -170,34 +180,36 @@ class CustomizedRTBEnv(gym.Env):
         super().__init__()
         if not isinstance(original_env, RTBEnv):
             raise ValueError("original_env must be RTBEnv or a child class of RTBEnv")
-        if not (
-            isinstance(action_type, str) and action_type in ["discrete", "continuous"]
-        ):
+        self.env = original_env
+
+        check_scalar(action_min, name="action_min", target_type=(int, float), min_val=0)
+        check_scalar(action_max, name="action_max", target_type=(int, float), min_val=0)
+        if action_min >= action_max:
+            raise ValueError("action_min must be smaller than action_max")
+
+        if action_type not in ["discrete", "continuous"]:
             raise ValueError(
                 f'action_type must be either "discrete" or "continuous", but {action_type} is given'
             )
-        if action_type == "discrete" and not (
-            isinstance(n_actions, int) and n_actions > 1
-        ):
-            raise ValueError(
-                f"n_actions must be a interger more than 1, but {n_actions} is given"
-            )
-        if action_type == "discrete" and action_meaning is not None:
-            if len(action_meaning) != n_actions:
-                raise ValueError(
-                    "action_meaning must have the same size with n_actions"
-                )
-            if not (
-                isinstance(action_meaning, np.ndarray)
-                and action_meaning.ndim == 1
-                and 0.1 <= action_meaning.min()
-                and action_meaning.max() <= 10
-            ):
-                raise ValueError(
-                    "action_meaning must be an 1-dimensional NDArray of float values within [0.1, 10]"
+        if action_type == "discrete":
+            check_scalar(n_actions, name="n_acitons", target_type=int, min_val=2)
+
+            if action_meaning is None:
+                self.action_meaning = np.logspace(
+                    np.log10(action_min), np.log10(action_max), self.n_actions
                 )
 
-        self.env = original_env
+            check_array(
+                action_meaning,
+                name="action_meaning",
+                expected_dim=1,
+                min_val=action_min,
+                max_val=action_max,
+            )
+            if action_meaning.shape[0] != n_actions:
+                raise ValueError(
+                    "Expected `action_meaning.shape[0] == n_actions`, but found False"
+                )
 
         # set reward predictor
         if reward_predictor is not None:
@@ -216,7 +228,7 @@ class CustomizedRTBEnv(gym.Env):
 
         # define observation space
         self.observation_space = Box(
-            low=np.array([0, 0, 0, 0, 0, 0, 0.1]),
+            low=np.array([0, 0, 0, 0, 0, 0, action_min]),
             high=np.array(
                 [
                     self.env.step_per_episode,
@@ -225,7 +237,7 @@ class CustomizedRTBEnv(gym.Env):
                     np.inf,
                     1,
                     np.inf,
-                    10,
+                    action_max,
                 ]
             ),
             dtype=float,
@@ -240,11 +252,10 @@ class CustomizedRTBEnv(gym.Env):
         if self.action_type == "discrete":
             self.action_space = Discrete(n_actions)
 
-            if self.action_meaning is None:
-                self.action_meaning = np.logspace(-1, 1, self.n_actions)
-
         else:  # "continuous"
-            self.action_space = Box(low=0.1, high=10, shape=(1,), dtype=float)
+            self.action_space = Box(
+                low=action_min, high=action_max, shape=(1,), dtype=float
+            )
 
     @property
     def obs_keys(self):
@@ -303,7 +314,7 @@ class CustomizedRTBEnv(gym.Env):
                     f"action must be an integer within [0, {self.action_space.n}), but {action} is given"
                 )
         else:  # "continuous"
-            if isinstance(action, (int, float, np.integer, np.float)):
+            if isinstance(action, Numeric):
                 action = np.array([action])
             if not self.action_space.contains(action):
                 raise ValueError(

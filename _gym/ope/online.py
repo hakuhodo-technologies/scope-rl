@@ -11,9 +11,12 @@ import seaborn as sns
 
 import gym
 from d3rlpy.algos import AlgoBase
+from sklearn.utils import check_scalar, check_random_state
 
 from ..policy.head import BaseHead, OnlineHead
 from ..utils import estimate_confidence_interval_by_bootstrap
+from ..utils import check_confidence_interval_argument
+from ..utils import check_array
 
 
 def visualize_on_policy_policy_value(
@@ -60,6 +63,12 @@ def visualize_on_policy_policy_value(
         Name of the bar figure.
 
     """
+    check_confidence_interval_argument(
+        alpha=alpha,
+        n_bootstrap_samples=n_bootstrap_samples,
+        random_state=random_state,
+    )
+
     on_policy_Policy_value_dict = {}
     for policy, name in zip(policies, policy_names):
         on_policy_Policy_value_dict[name] = rollout_policy_online(
@@ -80,7 +89,7 @@ def visualize_on_policy_policy_value(
     plt.xticks(fontsize=12)
     plt.yticks(fontsize=12)
     if fig_dir:
-        fig.savefig(str(fig_dir / fig_name))
+        plt.savefig(str(fig_dir / fig_name))
 
 
 def calc_on_policy_policy_value(
@@ -220,6 +229,19 @@ def rollout_policy_online(
         Trajectory-wise on-policy policy values.
 
     """
+    if not isinstance(env, gym.Env):
+        raise ValueError(
+            f"env must be a child class of gym.Env",
+        )
+    if not isinstance(policy, (AlgoBase, BaseHead)):
+        raise ValueError(f"policy must be a child class of either AlgoBase or BaseHead")
+    check_scalar(
+        n_episodes,
+        name="n_episodes",
+        target_type=int,
+        min_val=1,
+    )
+
     on_policy_policy_values = np.zeros(n_episodes)
     env.seed(random_state)
 

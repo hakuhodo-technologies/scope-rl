@@ -5,9 +5,12 @@ import warnings
 
 import numpy as np
 from sklearn.base import BaseEstimator, is_classifier
-from sklearn.utils import check_random_state, check_X_y
+from sklearn.utils import check_scalar, check_random_state, check_X_y
+
+from _gym.types import Numeric
 
 from .simulator.base import BaseSimulator
+from ..utils import check_array
 
 
 @dataclass
@@ -58,6 +61,8 @@ class Bidder:
     random_state: Optional[int] = None
 
     def __post_init__(self):
+        if not isinstance(self.simulator, BaseSimulator):
+            raise ValueError("simulator must be a child class of BaseSimulator")
         if self.objective not in ["click", "conversion"]:
             raise ValueError(
                 f'objective must be either "click" or "conversion", but {self.objective} is given'
@@ -68,12 +73,12 @@ class Bidder:
             raise ValueError(
                 "reward_predictor must be BaseEstimator or a child class of BaseEstimator"
             )
-        if self.scaler is not None and not (
-            isinstance(self.scaler, (int, float)) and self.scaler > 0
-        ):
-            raise ValueError(
-                f"scaler must be a positive float value, but {self.scaler} is given"
-            )
+        check_scalar(
+            self.scaler,
+            name="scaler",
+            target_type=(int, float),
+            min_val=0,
+        )
         if self.random_state is None:
             raise ValueError("random_state must be given")
         self.random_ = check_random_state(self.random_state)
@@ -123,17 +128,18 @@ class Bidder:
                 "scalar should be given, please call .auto_fit_scaler() or .custom_set_scaler() before calling .determine_bid_price()"
             )
 
-        if not (isinstance(timestep, int) and timestep >= 0):
-            raise ValueError(
-                f"timestep must be a non-negative interger, but {timestep} is given"
-            )
-        if not (
-            isinstance(adjust_rate, (float, np.float, np.float32)) and adjust_rate >= 0
-        ):
-            print(adjust_rate, type(adjust_rate))
-            raise ValueError(
-                f"adjust_rate must be a non-negative float value, but {adjust_rate} is given"
-            )
+        check_scalar(
+            timestep,
+            name="timestep",
+            target_type=int,
+            min_val=0,
+        )
+        check_scalar(
+            adjust_rate,
+            name="adjust_rate",
+            target_type=Numeric,
+            min_val=0,
+        )
 
         ad_feature_vector, user_feature_vector = self.simulator.map_idx_to_features(
             ad_ids=ad_ids,
@@ -178,12 +184,11 @@ class Bidder:
             Scaling factor (constant value) used in bid price calculation.
 
         """
-        if not (isinstance(scaler, (int, float)) and scaler > 0):
-            raise ValueError(
-                f"scaler must be a positive float value, but{scaler} is given"
-            )
-        warnings.warn(
-            "autofit is recommended for scaler, please call .auto_fit_scaler() to autofit"
+        check_scalar(
+            scaler,
+            name="scaler",
+            target_type=(int, float),
+            min_val=0,
         )
         self.scaler = scaler
 
@@ -204,14 +209,18 @@ class Bidder:
             Number of samples to fit bid_scaler.
 
         """
-        if not (isinstance(step_per_episode, int) and step_per_episode >= 0):
-            raise ValueError(
-                f"step_per_episode must be a non-negative interger, but {step_per_episode} is given"
-            )
-        if not (isinstance(n_samples, int) and n_samples > 0):
-            raise ValueError(
-                f"n_samples must be a positive interger, but {n_samples} is given"
-            )
+        check_scalar(
+            step_per_episode,
+            name="step_per_episode",
+            target_type=int,
+            min_val=1,
+        )
+        check_scalar(
+            n_samples,
+            name="n_samples",
+            target_type=int,
+            min_val=1,
+        )
 
         timesteps = self.random_.choice(step_per_episode, n_samples)
         ad_ids, user_ids = self.simulator.generate_auction(volume=n_samples)
@@ -253,9 +262,7 @@ class Bidder:
         if reward_predictor is not None and not isinstance(
             reward_predictor, BaseEstimator
         ):
-            raise ValueError(
-                "reward_predictor must be BaseEstimator or a child class of BaseEstimator"
-            )
+            raise ValueError("reward_predictor must be a child class of BaseEstimator")
         self.reward_predictor = reward_predictor
         self.use_reward_predictor = True
 
@@ -285,19 +292,21 @@ class Bidder:
 
         """
         if not self.use_reward_predictor:
-            warnings.warn(
-                "when reward_predictor is not given, fitting does not take place"
+            raise RuntimeError(
+                "Please set the attribute, reward_predictor, before calling .fit_reward_predictor()"
             )
-            return
-
-        if not (isinstance(step_per_episode, int) and step_per_episode >= 0):
-            raise ValueError(
-                f"step_per_episode must be a non-negative interger, but {step_per_episode} is given"
-            )
-        if not (isinstance(n_samples, int) and n_samples > 0):
-            raise ValueError(
-                f"n_samples must be a positive interger, but {n_samples} is given"
-            )
+        check_scalar(
+            step_per_episode,
+            name="step_per_episode",
+            target_type=int,
+            min_val=1,
+        )
+        check_scalar(
+            n_samples,
+            name="n_samples",
+            target_type=int,
+            min_val=1,
+        )
 
         ad_ids, user_ids = self.simulator.generate_auction(n_samples)
         ad_feature_vector, user_feature_vector = self.simulator.map_idx_to_features(
@@ -368,7 +377,7 @@ class Bidder:
         user_feature_vector: NDArray[float], shape (search_volume, user_feature_dim)
             Feature vector of the users.
 
-        timestep: int (> 0)
+        timestep: Union[int, NDArray[int]] (> 0)
             Timestep in the RL environment.
 
         Returns
@@ -377,10 +386,27 @@ class Bidder:
             Predicted reward for each auction.
 
         """
-        if isinstance(timestep, int):
-            timestep = np.full(len(ad_ids), timestep)
-        timestep = timestep.reshape((-1, 1))
+        check_array(
+            ad_ids,
+            name="ad_ids",
+            expected_dim=1,
+        )
+        check_array(
+            ad_feature_vector,
+            name="ad_feature_vector",
+            expected_dim=2,
+        )
+        check_array(
+            user_feature_vector,
+            name="user_feature_vector",
+            expected_dim=2,
+        )
         contexts = np.concatenate([ad_feature_vector, user_feature_vector], axis=1)
+
+        if isinstance(timestep, int):
+            timestep = np.full(ad_ids.shape[0], timestep)
+        check_array(timestep, name="timestep", expected_dim=1, min_val=0)
+        timestep = timestep.reshape((-1, 1))
 
         X = np.concatenate([contexts, timestep], axis=1)
         predicted_rewards = (

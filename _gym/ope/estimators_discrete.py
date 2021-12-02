@@ -1,11 +1,13 @@
 """Off-Policy Estimators for Discrete Actions."""
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
-from typing import Dict, Union
+from typing import Dict
 
 import numpy as np
+from sklearn.utils import check_scalar
 
 from ..utils import estimate_confidence_interval_by_bootstrap
+from ..utils import check_array
 
 
 @dataclass
@@ -77,11 +79,8 @@ class DiscreteDirectMethod(BaseOffPolicyEstimator):
         return initial_state_value
 
     def estimate_policy_value(self, initial_state_value: np.ndarray, **kwargs) -> float:
-        estimated_policy_value = self._estimate_trajectory_values(
-            initial_state_value
-        ).mean()
         """Estimate policy value of evaluation policy.
-        
+
         Parameters
         -------
         initial_state_value: NDArray, shape (n_episodes, )
@@ -91,8 +90,16 @@ class DiscreteDirectMethod(BaseOffPolicyEstimator):
         -------
         V_hat: NDArray, shape (n_episodes, )
             Estimated policy value.
-        
+
         """
+        check_array(
+            initial_state_value,
+            name="initial_state_value",
+            expected_dim=1,
+        )
+        estimated_policy_value = self._estimate_trajectory_values(
+            initial_state_value
+        ).mean()
         return estimated_policy_value
 
     def estimate_interval(
@@ -125,6 +132,11 @@ class DiscreteDirectMethod(BaseOffPolicyEstimator):
             Dictionary storing the estimated mean and upper-lower confidence bounds.
 
         """
+        check_array(
+            initial_state_value,
+            name="initial_state_value",
+            expected_dim=1,
+        )
         estimated_trajectory_values = self._estimate_trajectory_values(
             initial_state_value
         )
@@ -178,9 +190,6 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
-        actions: NDArray, shape (n_episodes * step_per_episode, action_dim)
-            Action chosen by behavior policy.
-
         rewards: NDArray, shape (n_episodes * step_per_episode, )
             Reward observation.
 
@@ -226,9 +235,6 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
-        actions: NDArray, shape (n_episodes * step_per_episode, action_dim)
-            Action chosen by behavior policy.
-
         rewards: NDArray, shape (n_episodes * step_per_episode, )
             Reward observation.
 
@@ -249,6 +255,42 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
             Estimated policy value.
 
         """
+        check_scalar(
+            step_per_episode,
+            name="step_per_episode",
+            target_type=int,
+            min_val=1,
+        )
+        check_array(
+            rewards,
+            name="rewards",
+            expected_dim=1,
+        )
+        check_array(
+            behavior_policy_trajectory_wise_pscore,
+            name="behavior_policy_trajectory_wise_pscore",
+            expected_dim=1,
+            min_val=0.0,
+            max_val=1.0,
+        )
+        check_array(
+            evaluation_policy_trajectory_wise_pscore,
+            name="evaluation_policy_trajectory_wise_pscore",
+            expected_dim=1,
+            min_val=0.0,
+            max_val=1.0,
+        )
+        if not (
+            rewards.shape[0]
+            == behavior_policy_trajectory_wise_pscore.shape[0]
+            == evaluation_policy_trajectory_wise_pscore.shape[0]
+        ):
+            raise ValueError(
+                "Expected `rewards.shape[0] == behavior_policy_trajectory_wise_pscore.shape[0] == evaluation_policy_trajectory_wise_pscore.shape[0]`"
+                ", but found False"
+            )
+        check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
+
         estimated_policy_value = self._estimate_trajectory_values(
             step_per_episode,
             rewards,
@@ -276,9 +318,6 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         -------
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
-
-        actions: NDArray, shape (n_episodes * step_per_episode, action_dim)
-            Action chosen by behavior policy.
 
         rewards: NDArray, shape (n_episodes * step_per_episode, )
             Reward observation.
@@ -309,6 +348,42 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
             Dictionary storing the estimated mean and upper-lower confidence bounds.
 
         """
+        check_scalar(
+            step_per_episode,
+            name="step_per_episode",
+            target_type=int,
+            min_val=1,
+        )
+        check_array(
+            rewards,
+            name="rewards",
+            expected_dim=1,
+        )
+        check_array(
+            behavior_policy_trajectory_wise_pscore,
+            name="behavior_policy_trajectory_wise_pscore",
+            expected_dim=1,
+            min_val=0.0,
+            max_val=1.0,
+        )
+        check_array(
+            evaluation_policy_trajectory_wise_pscore,
+            name="evaluation_policy_trajectory_wise_pscore",
+            expected_dim=1,
+            min_val=0.0,
+            max_val=1.0,
+        )
+        if not (
+            rewards.shape[0]
+            == behavior_policy_trajectory_wise_pscore.shape[0]
+            == evaluation_policy_trajectory_wise_pscore.shape[0]
+        ):
+            raise ValueError(
+                "Expected `rewards.shape[0] == behavior_policy_trajectory_wise_pscore.shape[0] == evaluation_policy_trajectory_wise_pscore.shape[0]`"
+                ", but found False"
+            )
+        check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
+
         estimated_trajectory_values = self._estimate_trajectory_values(
             step_per_episode,
             rewards,
@@ -366,9 +441,6 @@ class DiscreteStepWiseImportanceSampling(BaseOffPolicyEstimator):
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
-        actions: NDArray, shape (n_episodes * step_per_episode, action_dim)
-            Action chosen by behavior policy.
-
         rewards: NDArray, shape (n_episodes * step_per_episode, )
             Reward observation.
 
@@ -411,9 +483,6 @@ class DiscreteStepWiseImportanceSampling(BaseOffPolicyEstimator):
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
-        actions: NDArray, shape (n_episodes * step_per_episode, action_dim)
-            Action chosen by behavior policy.
-
         rewards: NDArray, shape (n_episodes * step_per_episode, )
             Reward observation.
 
@@ -434,6 +503,42 @@ class DiscreteStepWiseImportanceSampling(BaseOffPolicyEstimator):
             Estimated policy value.
 
         """
+        check_scalar(
+            step_per_episode,
+            name="step_per_episode",
+            target_type=int,
+            min_val=1,
+        )
+        check_array(
+            rewards,
+            name="rewards",
+            expected_dim=1,
+        )
+        check_array(
+            behavior_policy_step_wise_pscore,
+            name="behavior_policy_step_wise_pscore",
+            expected_dim=1,
+            min_val=0.0,
+            max_val=1.0,
+        )
+        check_array(
+            evaluation_policy_step_wise_pscore,
+            name="evaluation_policy_step_wise_pscore",
+            expected_dim=1,
+            min_val=0.0,
+            max_val=1.0,
+        )
+        if not (
+            rewards.shape[0]
+            == behavior_policy_step_wise_pscore.shape[0]
+            == evaluation_policy_step_wise_pscore.shape[0]
+        ):
+            raise ValueError(
+                "Expected `rewards.shape[0] == behavior_policy_step_wise_pscore.shape[0] == evaluation_policy_step_wise_pscore.shape[0]`"
+                ", but found False"
+            )
+        check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
+
         return self._estimate_trajectory_values(
             step_per_episode,
             rewards,
@@ -460,9 +565,6 @@ class DiscreteStepWiseImportanceSampling(BaseOffPolicyEstimator):
         -------
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
-
-        actions: NDArray, shape (n_episodes * step_per_episode, action_dim)
-            Action chosen by behavior policy.
 
         rewards: NDArray, shape (n_episodes * step_per_episode, )
             Reward observation.
@@ -493,6 +595,42 @@ class DiscreteStepWiseImportanceSampling(BaseOffPolicyEstimator):
             Dictionary storing the estimated mean and upper-lower confidence bounds.
 
         """
+        check_scalar(
+            step_per_episode,
+            name="step_per_episode",
+            target_type=int,
+            min_val=1,
+        )
+        check_array(
+            rewards,
+            name="rewards",
+            expected_dim=1,
+        )
+        check_array(
+            behavior_policy_step_wise_pscore,
+            name="behavior_policy_step_wise_pscore",
+            expected_dim=1,
+            min_val=0.0,
+            max_val=1.0,
+        )
+        check_array(
+            evaluation_policy_step_wise_pscore,
+            name="evaluation_policy_step_wise_pscore",
+            expected_dim=1,
+            min_val=0.0,
+            max_val=1.0,
+        )
+        if not (
+            rewards.shape[0]
+            == behavior_policy_step_wise_pscore.shape[0]
+            == evaluation_policy_step_wise_pscore.shape[0]
+        ):
+            raise ValueError(
+                "Expected `rewards.shape[0] == behavior_policy_step_wise_pscore.shape[0] == evaluation_policy_step_wise_pscore.shape[0]`"
+                ", but found False"
+            )
+        check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
+
         estimated_trajectory_values = self._estimate_trajectory_values(
             step_per_episode,
             rewards,
@@ -553,9 +691,6 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
         -------
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
-
-        actions: NDArray, shape (n_episodes * step_per_episode, action_dim)
-            Action chosen by behavior policy.
 
         rewards: NDArray, shape (n_episodes * step_per_episode, )
             Reward observation.
@@ -626,9 +761,6 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
-        actions: NDArray, shape (n_episodes * step_per_episode, action_dim)
-            Action chosen by behavior policy.
-
         rewards: NDArray, shape (n_episodes * step_per_episode, )
             Reward observation.
 
@@ -655,6 +787,70 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
             Estimated policy value.
 
         """
+        check_scalar(
+            step_per_episode,
+            name="step_per_episode",
+            target_type=int,
+            min_val=1,
+        )
+        check_array(
+            rewards,
+            name="rewards",
+            expected_dim=1,
+        )
+        check_array(
+            behavior_policy_step_wise_pscore,
+            name="behavior_policy_step_wise_pscore",
+            expected_dim=1,
+            min_val=0.0,
+            max_val=1.0,
+        )
+        check_array(
+            evaluation_policy_step_wise_pscore,
+            name="evaluation_policy_step_wise_pscore",
+            expected_dim=1,
+            min_val=0.0,
+            max_val=1.0,
+        )
+        check_array(
+            counterfactual_state_action_value,
+            name="counterfactual_state_action_value",
+            expected_dim=2,
+        )
+        check_array(
+            counterfactual_pscore,
+            name="counterfactual_pscore",
+            expected_dim=2,
+            min_val=0.0,
+            max_val=1.0,
+        )
+        if not (
+            rewards.shape[0]
+            == behavior_policy_step_wise_pscore.shape[0]
+            == evaluation_policy_step_wise_pscore.shape[0]
+            == counterfactual_state_action_value.shape[0]
+            == counterfactual_pscore.shape[0]
+        ):
+            raise ValueError(
+                "Expected `rewards.shape[0] == behavior_policy_step_wise_pscore.shape[0] == evaluation_policy_step_wise_pscore.shape[0] "
+                "== counterfactual_state_action_value.shape[0] == counterfactual_pscore.shape[0]`"
+                ", but found False"
+            )
+        if counterfactual_state_action_value.shape[1] != counterfactual_pscore.shape[1]:
+            raise ValueError(
+                "Expected `counterfactual_state_action_value.shape[1] == counterfactual_pscore.shape[1]`"
+                ", but found False"
+            )
+        if not np.allclose(
+            counterfactual_pscore.sum(axis=1),
+            np.ones(np.ones(counterfactual_pscore.shape[0])),
+        ):
+            raise ValueError(
+                "Expected `counterfactual_pscore.sum(axis=1) == np.ones(np.ones(counterfactual_pscore.shape[0]))`"
+                ", but found it False"
+            )
+        check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
+
         return self._estimate_trajectory_values(
             step_per_episode,
             actions,
@@ -687,9 +883,6 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
         -------
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
-
-        actions: NDArray, shape (n_episodes * step_per_episode, action_dim)
-            Action chosen by behavior policy.
 
         rewards: NDArray, shape (n_episodes * step_per_episode, )
             Reward observation.
@@ -726,6 +919,70 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
             Dictionary storing the estimated mean and upper-lower confidence bounds.
 
         """
+        check_scalar(
+            step_per_episode,
+            name="step_per_episode",
+            target_type=int,
+            min_val=1,
+        )
+        check_array(
+            rewards,
+            name="rewards",
+            expected_dim=1,
+        )
+        check_array(
+            behavior_policy_step_wise_pscore,
+            name="behavior_policy_step_wise_pscore",
+            expected_dim=1,
+            min_val=0.0,
+            max_val=1.0,
+        )
+        check_array(
+            evaluation_policy_step_wise_pscore,
+            name="evaluation_policy_step_wise_pscore",
+            expected_dim=1,
+            min_val=0.0,
+            max_val=1.0,
+        )
+        check_array(
+            counterfactual_state_action_value,
+            name="counterfactual_state_action_value",
+            expected_dim=2,
+        )
+        check_array(
+            counterfactual_pscore,
+            name="counterfactual_pscore",
+            expected_dim=2,
+            min_val=0.0,
+            max_val=1.0,
+        )
+        if not (
+            rewards.shape[0]
+            == behavior_policy_step_wise_pscore.shape[0]
+            == evaluation_policy_step_wise_pscore.shape[0]
+            == counterfactual_state_action_value.shape[0]
+            == counterfactual_pscore.shape[0]
+        ):
+            raise ValueError(
+                "Expected `rewards.shape[0] == behavior_policy_step_wise_pscore.shape[0] == evaluation_policy_step_wise_pscore.shape[0] "
+                "== counterfactual_state_action_value.shape[0] == counterfactual_pscore.shape[0]`"
+                ", but found False"
+            )
+        if counterfactual_state_action_value.shape[1] != counterfactual_pscore.shape[1]:
+            raise ValueError(
+                "Expected `counterfactual_state_action_value.shape[1] == counterfactual_pscore.shape[1]`"
+                ", but found False"
+            )
+        if not np.allclose(
+            counterfactual_pscore.sum(axis=1),
+            np.ones(np.ones(counterfactual_pscore.shape[0])),
+        ):
+            raise ValueError(
+                "Expected `counterfactual_pscore.sum(axis=1) == np.ones(np.ones(counterfactual_pscore.shape[0]))`"
+                ", but found it False"
+            )
+        check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
+
         estimated_trajectory_values = self._estimate_trajectory_values(
             step_per_episode,
             actions,
@@ -788,9 +1045,6 @@ class DiscreteSelfNormalizedTrajectoryWiseImportanceSampling(
         -------
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
-
-        actions: NDArray, shape (n_episodes * step_per_episode, action_dim)
-            Action chosen by behavior policy.
 
         rewards: NDArray, shape (n_episodes * step_per_episode, )
             Reward observation.
@@ -874,9 +1128,6 @@ class DiscreteSelfNormalizedStepWiseImportanceSampling(
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
-        actions: NDArray, shape (n_episodes * step_per_episode, action_dim)
-            Action chosen by behavior policy.
-
         rewards: NDArray, shape (n_episodes * step_per_episode, )
             Reward observation.
 
@@ -958,9 +1209,6 @@ class DiscreteSelfNormalizedDoublyRobust(DiscreteDoublyRobust):
         -------
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
-
-        actions: NDArray, shape (n_episodes * step_per_episode, action_dim)
-            Action chosen by behavior policy.
 
         rewards: NDArray, shape (n_episodes * step_per_episode, )
             Reward observation.

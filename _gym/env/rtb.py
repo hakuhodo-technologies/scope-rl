@@ -4,10 +4,10 @@ from typing import Tuple, Optional, Any
 import gym
 from gym.spaces import Box
 import numpy as np
-from sklearn.utils import check_random_state
+from sklearn.utils import check_scalar, check_random_state
 
 from ..utils import NormalDistribution
-from ..types import Action
+from ..types import Action, Numeric
 
 from .bidder import Bidder
 from .simulator.rtb_synthetic import RTBSyntheticSimulator
@@ -216,23 +216,31 @@ class RTBEnv(gym.Env):
         random_state: Optional[int] = None,
     ):
         super().__init__()
-        if not (isinstance(objective, str) and objective in ["click", "conversion"]):
+        if objective not in ["click", "conversion"]:
             raise ValueError(
                 f'objective must be either "click" or "conversion", but {objective} is given'
             )
-        if not (isinstance(step_per_episode, int) and step_per_episode > 0):
-            raise ValueError(
-                f"step_per_episode must be a positive interger, but {step_per_episode} is given"
-            )
-        if not (isinstance(initial_budget, int) and initial_budget > 0):
-            raise ValueError(
-                f"initial_budget must be a positive interger, but {initial_budget} is given"
-            )
+        self.objective = objective
+
+        check_scalar(
+            step_per_episode,
+            name="step_per_episode",
+            target_type=int,
+            min_val=1,
+        )
+        self.step_per_episode = step_per_episode
+
+        check_scalar(
+            initial_budget,
+            name="initial_budget",
+            target_type=int,
+            min_val=1,
+        )
+        self.initial_budget = initial_budget
+
         if random_state is None:
             raise ValueError("random_state must be given")
         self.random_ = check_random_state(random_state)
-
-        self.objective = objective
 
         # initialize simulator and bidder
         self.simulator = RTBSyntheticSimulator(
@@ -288,9 +296,6 @@ class RTBEnv(gym.Env):
         # define reward range
         self.reward_range = (0, np.inf)
 
-        self.step_per_episode = step_per_episode
-        self.initial_budget = initial_budget
-
     @property
     def standard_bid_price(self):
         return self.simulator.standard_bid_price
@@ -343,7 +348,7 @@ class RTBEnv(gym.Env):
 
         """
         err = False
-        if isinstance(action, (int, float, np.integer, np.float)):
+        if isinstance(action, Numeric):
             if not action >= 0:
                 err = True
         elif isinstance(action, np.ndarray):

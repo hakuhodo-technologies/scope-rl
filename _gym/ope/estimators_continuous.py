@@ -3,8 +3,9 @@ from dataclasses import dataclass
 from typing import Dict, Optional
 
 import numpy as np
+from sklearn.utils.validation import check_scalar
 
-from ..utils import estimate_confidence_interval_by_bootstrap
+from ..utils import check_array, estimate_confidence_interval_by_bootstrap
 from ..ope.estimators_discrete import BaseOffPolicyEstimator
 
 
@@ -83,6 +84,11 @@ class ContinuousDirectMethod(BaseOffPolicyEstimator):
             Estimated policy value.
 
         """
+        check_array(
+            initial_state_value,
+            name="initial_state_value",
+            expected_dim=1,
+        )
         estimated_policy_value = self._estimate_trajectory_values(
             initial_state_value,
         ).mean()
@@ -118,6 +124,11 @@ class ContinuousDirectMethod(BaseOffPolicyEstimator):
             Dictionary storing the estimated mean and upper-lower confidence bounds.
 
         """
+        check_array(
+            initial_state_value,
+            name="initial_state_value",
+            expected_dim=1,
+        )
         estimated_trajectory_values = self._estimate_trajectory_values(
             initial_state_value,
         )
@@ -169,11 +180,20 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 
     def __post_init__(self):
         self.action_type = "continuous"
-        if self.band_width is None:
-            self.band_width = np.ones(self.action_dim)
+
+        check_scalar(
+            self.action_dim,
+            name="action_dim",
+            target_type=int,
+            min_val=1,
+        )
+
         if self.kernel not in ["gaussian"]:
             raise ValueError('kernel must be "gaussian", but {self.kernel} is given')
         self.kernel_function = kernel_functions[self.kernel]
+
+        if self.band_width is None:
+            self.band_width = np.ones(self.action_dim)
 
     def _estimate_trajectory_values(
         self,
@@ -246,7 +266,7 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         step_per_episode: int,
         actions: np.ndarray,
         rewards: np.ndarray,
-        behavior_policy_step_wise_pscore: np.ndarray,
+        behavior_policy_trajectory_wise_pscore: np.ndarray,
         evaluation_policy_actions: np.ndarray,
         gamma: float = 1.0,
         **kwargs,
@@ -280,11 +300,58 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
             Estimated policy value.
 
         """
+        check_scalar(
+            step_per_episode,
+            name="step_per_episode",
+            target_type=int,
+            min_val=1,
+        )
+        check_array(
+            actions,
+            name="actions",
+            expected_dim=2,
+        )
+        check_array(
+            rewards,
+            name="rewards",
+            expected_dim=1,
+        )
+        check_array(
+            behavior_policy_trajectory_wise_pscore,
+            name="behavior_policy_trajectory_wise_pscore",
+            expected_dim=1,
+            min_val=0.0,
+            max_val=1.0,
+        )
+        check_array(
+            evaluation_policy_actions,
+            name="evaluation_policy_actions",
+            expected_dim=2,
+        )
+        if not (
+            actions.shape[0]
+            == rewards.shape[0]
+            == behavior_policy_trajectory_wise_pscore.shape[0]
+            == evaluation_policy_actions.shape[0]
+        ):
+            raise ValueError(
+                "Expected `actions.shape[0] == rewards.shape[0] == behavior_policy_trajectory_wise_pscore.shape[0] == evaluation_policy_actions.shape[0]`"
+                ", but found False"
+            )
+        if not (
+            actions.shape[1] == evaluation_policy_actions.shape[1] == self.action_dim
+        ):
+            raise ValueError(
+                "Expected `actions.shape[1] == evaluation_policy_actions.shape[1] == action_dim`"
+                ", but found False"
+            )
+        check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
+
         return self._estimate_trajectory_values(
             step_per_episode,
             actions,
             rewards,
-            behavior_policy_step_wise_pscore,
+            behavior_policy_trajectory_wise_pscore,
             evaluation_policy_actions,
             gamma,
         ).mean()
@@ -294,7 +361,7 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         step_per_episode: int,
         actions: np.ndarray,
         rewards: np.ndarray,
-        behavior_policy_step_wise_pscore: np.ndarray,
+        behavior_policy_trajectory_wise_pscore: np.ndarray,
         evaluation_policy_actions: np.ndarray,
         gamma: float = 1.0,
         alpha: float = 0.05,
@@ -340,11 +407,58 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
             Dictionary storing the estimated mean and upper-lower confidence bounds.
 
         """
+        check_scalar(
+            step_per_episode,
+            name="step_per_episode",
+            target_type=int,
+            min_val=1,
+        )
+        check_array(
+            actions,
+            name="actions",
+            expected_dim=2,
+        )
+        check_array(
+            rewards,
+            name="rewards",
+            expected_dim=1,
+        )
+        check_array(
+            behavior_policy_trajectory_wise_pscore,
+            name="behavior_policy_trajectory_wise_pscore",
+            expected_dim=1,
+            min_val=0.0,
+            max_val=1.0,
+        )
+        check_array(
+            evaluation_policy_actions,
+            name="evaluation_policy_actions",
+            expected_dim=2,
+        )
+        if not (
+            actions.shape[0]
+            == rewards.shape[0]
+            == behavior_policy_trajectory_wise_pscore.shape[0]
+            == evaluation_policy_actions.shape[0]
+        ):
+            raise ValueError(
+                "Expected `actions.shape[0] == rewards.shape[0] == behavior_policy_trajectory_wise_pscore.shape[0] == evaluation_policy_actions.shape[0]`"
+                ", but found False"
+            )
+        if not (
+            actions.shape[1] == evaluation_policy_actions.shape[1] == self.action_dim
+        ):
+            raise ValueError(
+                "Expected `actions.shape[1] == evaluation_policy_actions.shape[1] == action_dim`"
+                ", but found False"
+            )
+        check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
+
         estimated_trajectory_values = self._estimate_trajectory_values(
             step_per_episode,
             actions,
             rewards,
-            behavior_policy_step_wise_pscore,
+            behavior_policy_trajectory_wise_pscore,
             evaluation_policy_actions,
             gamma,
         )
@@ -396,11 +510,20 @@ class ContinuousStepWiseImportanceSampling(BaseOffPolicyEstimator):
 
     def __post_init__(self):
         self.action_type = "continuous"
-        if self.band_width is None:
-            self.band_width = np.ones(self.action_dim)
+
+        check_scalar(
+            self.action_dim,
+            name="action_dim",
+            target_type=int,
+            min_val=1,
+        )
+
         if self.kernel not in ["gaussian"]:
             raise ValueError('kernel must be "gaussian", but {self.kernel} is given')
         self.kernel_function = kernel_functions[self.kernel]
+
+        if self.band_width is None:
+            self.band_width = np.ones(self.action_dim)
 
     def _estimate_trajectory_values(
         self,
@@ -500,6 +623,53 @@ class ContinuousStepWiseImportanceSampling(BaseOffPolicyEstimator):
             Estimated policy value.
 
         """
+        check_scalar(
+            step_per_episode,
+            name="step_per_episode",
+            target_type=int,
+            min_val=1,
+        )
+        check_array(
+            actions,
+            name="actions",
+            expected_dim=2,
+        )
+        check_array(
+            rewards,
+            name="rewards",
+            expected_dim=1,
+        )
+        check_array(
+            behavior_policy_step_wise_pscore,
+            name="behavior_policy_step_wise_pscore",
+            expected_dim=1,
+            min_val=0.0,
+            max_val=1.0,
+        )
+        check_array(
+            evaluation_policy_actions,
+            name="evaluation_policy_actions",
+            expected_dim=2,
+        )
+        if not (
+            actions.shape[0]
+            == rewards.shape[0]
+            == behavior_policy_step_wise_pscore.shape[0]
+            == evaluation_policy_actions.shape[0]
+        ):
+            raise ValueError(
+                "Expected `actions.shape[0] == rewards.shape[0] == behavior_policy_step_wise_pscore.shape[0] == evaluation_policy_actions.shape[0]`"
+                ", but found False"
+            )
+        if not (
+            actions.shape[1] == evaluation_policy_actions.shape[1] == self.action_dim
+        ):
+            raise ValueError(
+                "Expected `actions.shape[1] == evaluation_policy_actions.shape[1] == action_dim`"
+                ", but found False"
+            )
+        check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
+
         return self._estimate_trajectory_values(
             step_per_episode,
             actions,
@@ -560,6 +730,53 @@ class ContinuousStepWiseImportanceSampling(BaseOffPolicyEstimator):
             Dictionary storing the estimated mean and upper-lower confidence bounds.
 
         """
+        check_scalar(
+            step_per_episode,
+            name="step_per_episode",
+            target_type=int,
+            min_val=1,
+        )
+        check_array(
+            actions,
+            name="actions",
+            expected_dim=2,
+        )
+        check_array(
+            rewards,
+            name="rewards",
+            expected_dim=1,
+        )
+        check_array(
+            behavior_policy_step_wise_pscore,
+            name="behavior_policy_step_wise_pscore",
+            expected_dim=1,
+            min_val=0.0,
+            max_val=1.0,
+        )
+        check_array(
+            evaluation_policy_actions,
+            name="evaluation_policy_actions",
+            expected_dim=2,
+        )
+        if not (
+            actions.shape[0]
+            == rewards.shape[0]
+            == behavior_policy_step_wise_pscore.shape[0]
+            == evaluation_policy_actions.shape[0]
+        ):
+            raise ValueError(
+                "Expected `actions.shape[0] == rewards.shape[0] == behavior_policy_step_wise_pscore.shape[0] == evaluation_policy_actions.shape[0]`"
+                ", but found False"
+            )
+        if not (
+            actions.shape[1] == evaluation_policy_actions.shape[1] == self.action_dim
+        ):
+            raise ValueError(
+                "Expected `actions.shape[1] == evaluation_policy_actions.shape[1] == action_dim`"
+                ", but found False"
+            )
+        check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
+
         estimated_trajectory_values = self._estimate_trajectory_values(
             step_per_episode,
             actions,
@@ -617,11 +834,20 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
 
     def __post_init__(self):
         self.action_type = "continuous"
-        if self.band_width is None:
-            self.band_width = np.ones(self.action_dim)
+
+        check_scalar(
+            self.action_dim,
+            name="action_dim",
+            target_type=int,
+            min_val=1,
+        )
+
         if self.kernel not in ["gaussian"]:
             raise ValueError('kernel must be "gaussian", but {self.kernel} is given')
         self.kernel_function = kernel_functions[self.kernel]
+
+        if self.band_width is None:
+            self.band_width = np.ones(self.action_dim)
 
     def _estimate_trajectory_values(
         self,
@@ -745,6 +971,53 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
             Estimated policy value.
 
         """
+        check_scalar(
+            step_per_episode,
+            name="step_per_episode",
+            target_type=int,
+            min_val=1,
+        )
+        check_array(
+            actions,
+            name="actions",
+            expected_dim=2,
+        )
+        check_array(
+            rewards,
+            name="rewards",
+            expected_dim=1,
+        )
+        check_array(
+            behavior_policy_step_wise_pscore,
+            name="behavior_policy_step_wise_pscore",
+            expected_dim=1,
+            min_val=0.0,
+            max_val=1.0,
+        )
+        check_array(
+            evaluation_policy_actions,
+            name="evaluation_policy_actions",
+            expected_dim=2,
+        )
+        if not (
+            actions.shape[0]
+            == rewards.shape[0]
+            == behavior_policy_step_wise_pscore.shape[0]
+            == evaluation_policy_actions.shape[0]
+        ):
+            raise ValueError(
+                "Expected `actions.shape[0] == rewards.shape[0] == behavior_policy_step_wise_pscore.shape[0] == evaluation_policy_actions.shape[0]`"
+                ", but found False"
+            )
+        if not (
+            actions.shape[1] == evaluation_policy_actions.shape[1] == self.action_dim
+        ):
+            raise ValueError(
+                "Expected `actions.shape[1] == evaluation_policy_actions.shape[1] == action_dim`"
+                ", but found False"
+            )
+        check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
+
         return self._estimate_trajectory_values(
             step_per_episode,
             actions,
@@ -810,6 +1083,53 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
             Dictionary storing the estimated mean and upper-lower confidence bounds.
 
         """
+        check_scalar(
+            step_per_episode,
+            name="step_per_episode",
+            target_type=int,
+            min_val=1,
+        )
+        check_array(
+            actions,
+            name="actions",
+            expected_dim=2,
+        )
+        check_array(
+            rewards,
+            name="rewards",
+            expected_dim=1,
+        )
+        check_array(
+            behavior_policy_step_wise_pscore,
+            name="behavior_policy_step_wise_pscore",
+            expected_dim=1,
+            min_val=0.0,
+            max_val=1.0,
+        )
+        check_array(
+            evaluation_policy_actions,
+            name="evaluation_policy_actions",
+            expected_dim=2,
+        )
+        if not (
+            actions.shape[0]
+            == rewards.shape[0]
+            == behavior_policy_step_wise_pscore.shape[0]
+            == evaluation_policy_actions.shape[0]
+        ):
+            raise ValueError(
+                "Expected `actions.shape[0] == rewards.shape[0] == behavior_policy_step_wise_pscore.shape[0] == evaluation_policy_actions.shape[0]`"
+                ", but found False"
+            )
+        if not (
+            actions.shape[1] == evaluation_policy_actions.shape[1] == self.action_dim
+        ):
+            raise ValueError(
+                "Expected `actions.shape[1] == evaluation_policy_actions.shape[1] == action_dim`"
+                ", but found False"
+            )
+        check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
+
         estimated_trajectory_values = self._estimate_trajectory_values(
             step_per_episode,
             actions,
@@ -870,11 +1190,20 @@ class ContinuousSelfNormalizedTrajectoryWiseImportanceSampling(
 
     def __post_init__(self):
         self.action_type = "continuous"
-        if self.band_width is None:
-            self.band_width = np.ones(self.action_dim)
+
+        check_scalar(
+            self.action_dim,
+            name="action_dim",
+            target_type=int,
+            min_val=1,
+        )
+
         if self.kernel not in ["gaussian"]:
             raise ValueError('kernel must be "gaussian", but {self.kernel} is given')
         self.kernel_function = kernel_functions[self.kernel]
+
+        if self.band_width is None:
+            self.band_width = np.ones(self.action_dim)
 
     def _estimate_trajectory_values(
         self,
@@ -990,11 +1319,20 @@ class ContinuousSelfNormalizedStepWiseImportanceSampling(
 
     def __post_init__(self):
         self.action_type = "continuous"
-        if self.band_width is None:
-            self.band_width = np.ones(self.action_dim)
+
+        check_scalar(
+            self.action_dim,
+            name="action_dim",
+            target_type=int,
+            min_val=1,
+        )
+
         if self.kernel not in ["gaussian"]:
             raise ValueError('kernel must be "gaussian", but {self.kernel} is given')
         self.kernel_function = kernel_functions[self.kernel]
+
+        if self.band_width is None:
+            self.band_width = np.ones(self.action_dim)
 
     def _estimate_trajectory_values(
         self,
@@ -1107,11 +1445,20 @@ class ContinuousSelfNormalizedDoublyRobust(ContinuousDoublyRobust):
 
     def __post_init__(self):
         self.action_type = "continuous"
-        if self.band_width is None:
-            self.band_width = np.ones(self.action_dim)
+
+        check_scalar(
+            self.action_dim,
+            name="action_dim",
+            target_type=int,
+            min_val=1,
+        )
+
         if self.kernel not in ["gaussian"]:
             raise ValueError('kernel must be "gaussian", but {self.kernel} is given')
         self.kernel_function = kernel_functions[self.kernel]
+
+        if self.band_width is None:
+            self.band_width = np.ones(self.action_dim)
 
     def _estimate_trajectory_values(
         self,

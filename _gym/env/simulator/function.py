@@ -3,11 +3,12 @@ from dataclasses import dataclass
 from typing import Tuple, Union, Optional
 
 import numpy as np
-from sklearn.utils import check_random_state
+from sklearn.utils import check_scalar, check_random_state
 
+from .base import BaseWinningPriceDistribution, BaseClickAndConversionRate
 from ...utils import NormalDistribution
 from ...utils import sigmoid
-from .base import BaseWinningPriceDistribution, BaseClickAndConversionRate
+from ...utils import check_array
 
 
 @dataclass
@@ -45,7 +46,7 @@ class WinningPriceDistribution(BaseWinningPriceDistribution):
     standard_bid_price_distribution: NormalDistribution, default=NormalDistribution(mean=100, std=20)
         Distribution of the bid price whose average impression probability is expected to be 0.5.
 
-    minimum_standard_bid_price: Optional[int], default=None (> 0)
+    minimum_standard_bid_price: Optional[Union[int, float]], default=None (> 0)
         Minimum value for standard bid price.
         If None, minimum_standard_bid_price is set to standard_bid_price_distribution.mean / 2.
 
@@ -73,10 +74,21 @@ class WinningPriceDistribution(BaseWinningPriceDistribution):
     random_state: Optional[int] = None
 
     def __post_init__(self):
+        check_scalar(self.n_ads, name="n_ads", target_type=int, min_val=1)
+        if not isinstance(self.standard_bid_price_distribution, NormalDistribution):
+            raise ValueError(
+                f"standard_bid_price_distribution must be a child class of NormalDistribution"
+            )
         if self.minimum_standard_bid_price is None:
             self.minimum_standard_bid_price = (
                 self.standard_bid_price_distribution.mean / 2
             )
+        check_scalar(
+            self.minimum_standard_bid_price,
+            name="minimum_standard_bid_price",
+            target_type=(int, float),
+            min_val=0,
+        )
         if self.random_state is None:
             raise ValueError("random_state must be given")
         self.random_ = check_random_state(self.random_state)
@@ -141,14 +153,20 @@ class WinningPriceDistribution(BaseWinningPriceDistribution):
             Sampled winning price for each auction.
 
         """
-        if not (
-            isinstance(bid_prices, np.ndarray)
-            and bid_prices.ndim == 1
-            and bid_prices.min() >= 0
-        ):
-            raise ValueError(
-                "bid_prices must be an 1-dimensional NDArray of non-negative integers"
-            )
+        check_array(
+            bid_prices,
+            name="bid_prices",
+            expected_dim=1,
+            min_val=0,
+        )
+        check_array(
+            ad_ids,
+            name="ad_ids",
+            expected_dim=1,
+            expected_dtype=int,
+            min_val=0,
+            max_val=self.n_ads - 1,
+        )
         winning_prices = np.clip(
             self.random_.gamma(shape=self.ks[ad_ids], scale=self.thetas[ad_ids]),
             1,
@@ -203,18 +221,24 @@ class ClickThroughRate(BaseClickAndConversionRate):
     random_state: Optional[int] = None
 
     def __post_init__(self):
-        if not (isinstance(self.ad_feature_dim, int) and self.ad_feature_dim > 0):
-            raise ValueError(
-                f"ad_feature_dim must be a positive interger, but {self.ad_feature_dim} is given"
-            )
-        if not (isinstance(self.user_feature_dim, int) and self.user_feature_dim > 0):
-            raise ValueError(
-                f"user_feature_dim must be a positive interger, but {self.user_feature_dim} is given"
-            )
-        if not (isinstance(self.step_per_episode, int) and self.step_per_episode > 0):
-            raise ValueError(
-                f"step_per_episode must be a positive interger, but {self.step_per_episode} is given"
-            )
+        check_scalar(
+            self.ad_feature_dim,
+            name="ad_feature_dim",
+            target_type=int,
+            min_val=1,
+        )
+        check_scalar(
+            self.user_feature_dim,
+            name="user_feature_dim",
+            target_type=int,
+            min_val=1,
+        )
+        check_scalar(
+            self.step_per_episode,
+            name="step_per_episode",
+            target_type=int,
+            min_val=1,
+        )
         if self.random_state is None:
             raise ValueError("random_state must be given")
         self.random_ = check_random_state(self.random_state)
@@ -283,31 +307,37 @@ class ClickThroughRate(BaseClickAndConversionRate):
             Ground-truth CTR (i.e., click per impression) for each auction.
 
         """
+        check_array(
+            ad_feature_vector,
+            name="ad_feature_vector",
+            expected_dim=2,
+        )
+        check_array(
+            user_feature_vector,
+            name="user_feature_vector",
+            expected_dim=2,
+        )
+        if ad_feature_vector.shape[1] != self.ad_feature_dim:
+            raise ValueError(
+                "Expected `ad_feature_dim.shape[1] == ad_feature_dim`, but found False"
+            )
+        if user_feature_vector.shape[1] != self.user_feature_dim:
+            raise ValueError(
+                "Expected `user_feature_dim.shape[1] == user_feature_dim`, but found False"
+            )
+        if ad_feature_vector.shape[0] != user_feature_vector.shape[0]:
+            raise ValueError(
+                "Expected ad_feature_dim and user_feature_dim must have the same length"
+            )
         if not (isinstance(timestep, int) and timestep >= 0) and not (
             isinstance(timestep, np.ndarray)
+            and np.issubsctype(timestep, int)
             and timestep.ndim == 1
             and timestep.min() >= 0
         ):
             raise ValueError(
                 "timestep must be an non-negative integer or an 1-dimensional NDArray of non-negative integers"
             )
-        if not (
-            isinstance(ad_feature_vector, np.ndarray)
-            and ad_feature_vector.ndim == 2
-            and ad_feature_vector.shape[1] == self.ad_feature_dim
-        ):
-            raise ValueError(
-                "ad_feature_vector must be 2-dimensional NDArray with shape (*, ad_feature_dim)"
-            )
-        if not (
-            isinstance(user_feature_vector, np.ndarray)
-            and user_feature_vector.ndim == 2
-            and user_feature_vector.shape[1] == self.ad_feature_dim
-        ):
-            raise ValueError(
-                "user_feature_vector must be 2-dimensional NDArray with shape (*, user_feature_dim)"
-            )
-
         contexts = np.concatenate([ad_feature_vector, user_feature_vector], axis=1)
         ctrs = sigmoid(contexts @ self.coef.T) * self.time_coef[timestep].flatten()
         return ctrs
@@ -401,18 +431,24 @@ class ConversionRate(BaseClickAndConversionRate):
     random_state: Optional[int] = None
 
     def __post_init__(self):
-        if not (isinstance(self.ad_feature_dim, int) and self.ad_feature_dim > 0):
-            raise ValueError(
-                f"ad_feature_dim must be a positive interger, but {self.ad_feature_dim} is given"
-            )
-        if not (isinstance(self.user_feature_dim, int) and self.user_feature_dim > 0):
-            raise ValueError(
-                f"user_feature_dim must be a positive interger, but {self.user_feature_dim} is given"
-            )
-        if not (isinstance(self.step_per_episode, int) and self.step_per_episode > 0):
-            raise ValueError(
-                f"step_per_episode must be a positive interger, but {self.step_per_episode} is given"
-            )
+        check_scalar(
+            self.ad_feature_dim,
+            name="ad_feature_dim",
+            target_type=int,
+            min_val=1,
+        )
+        check_scalar(
+            self.user_feature_dim,
+            name="user_feature_dim",
+            target_type=int,
+            min_val=1,
+        )
+        check_scalar(
+            self.step_per_episode,
+            name="step_per_episode",
+            target_type=int,
+            min_val=1,
+        )
         if self.random_state is None:
             raise ValueError("random_state must be given")
         self.random_ = check_random_state(self.random_state)
@@ -482,31 +518,37 @@ class ConversionRate(BaseClickAndConversionRate):
             Ground-truth CVR (i.e., conversion per click) for each auction.
 
         """
+        check_array(
+            ad_feature_vector,
+            name="ad_feature_vector",
+            expected_dim=2,
+        )
+        check_array(
+            user_feature_vector,
+            name="user_feature_vector",
+            expected_dim=2,
+        )
+        if ad_feature_vector.shape[1] != self.ad_feature_dim:
+            raise ValueError(
+                "Expected `ad_feature_dim.shape[1] == ad_feature_dim`, but found False"
+            )
+        if user_feature_vector.shape[1] != self.user_feature_dim:
+            raise ValueError(
+                "Expected `user_feature_dim.shape[1] == user_feature_dim`, but found False"
+            )
+        if ad_feature_vector.shape[0] != user_feature_vector.shape[0]:
+            raise ValueError(
+                "Expected ad_feature_dim and user_feature_dim must have the same length"
+            )
         if not (isinstance(timestep, int) and timestep >= 0) and not (
             isinstance(timestep, np.ndarray)
+            and np.issubsctype(timestep, int)
             and timestep.ndim == 1
             and timestep.min() >= 0
         ):
             raise ValueError(
                 "timestep must be an non-negative integer or an 1-dimensional NDArray of non-negative integers"
             )
-        if not (
-            isinstance(ad_feature_vector, np.ndarray)
-            and ad_feature_vector.ndim == 2
-            and ad_feature_vector.shape[1] == self.ad_feature_dim
-        ):
-            raise ValueError(
-                "ad_feature_vector must be 2-dimensional NDArray with shape (*, ad_feature_dim)"
-            )
-        if not (
-            isinstance(user_feature_vector, np.ndarray)
-            and user_feature_vector.ndim == 2
-            and user_feature_vector.shape[1] == self.ad_feature_dim
-        ):
-            raise ValueError(
-                "user_feature_vector must be 2-dimensional NDArray with shape (*, user_feature_dim)"
-            )
-
         contexts = np.concatenate([ad_feature_vector, user_feature_vector], axis=1)
         cvrs = sigmoid(contexts @ self.coef.T) * self.time_coef[timestep].flatten()
         return cvrs

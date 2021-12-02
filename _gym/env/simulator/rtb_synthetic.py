@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import Tuple, Union, Optional
 
 import numpy as np
-from sklearn.utils import check_random_state
+from sklearn.utils import check_scalar, check_random_state
 
 from .base import (
     BaseSimulator,
@@ -12,6 +12,8 @@ from .base import (
 )
 from .function import WinningPriceDistribution, ClickThroughRate, ConversionRate
 from ...utils import NormalDistribution
+from ...utils import check_array
+from ...types import Numeric
 
 
 @dataclass
@@ -34,10 +36,10 @@ class RTBSyntheticSimulator(BaseSimulator):
     n_users: int, default=100 (> 0)
         Number of (candidate) users used for auction bidding.
 
-    ad_sampling_rate: Optional[NDArray], shape (n_ads, ad_feature_dim), default=None
+    ad_feature_vector: Optional[NDArray], shape (n_ads, ad_feature_dim), default=None
         Feature vectors that characterizes each ad.
 
-    user_sampling_rate: Optional[NDArray], shape (n_users, user_feature_dim), default=None
+    user_feature_vector: Optional[NDArray], shape (n_users, user_feature_dim), default=None
         Feature vectors that characterizes each user.
 
     ad_sampling_rate: Optional[NDArray], shape (step_per_episode, n_ads), default=None
@@ -112,79 +114,123 @@ class RTBSyntheticSimulator(BaseSimulator):
     random_state: Optional[int] = None
 
     def __post_init__(self):
-        if not (isinstance(self.n_ads, int) and self.n_ads > 0):
+        if self.click_indicator not in ["impression", "click", "conversion"]:
             raise ValueError(
-                f"n_ads must be a positive interger, but {self.n_ads} is given"
+                f"click_indicator must be 'impression', 'click', or 'conversion', but {self.click_indicator} is given"
             )
-        if not (isinstance(self.n_users, int) and self.n_users > 0):
+        check_scalar(
+            self.step_per_episode,
+            name="step_per_episode",
+            target_type=int,
+            min_val=1,
+        )
+
+        check_scalar(
+            self.n_ads,
+            name="n_ads",
+            target_type=int,
+            min_val=1,
+        )
+        check_scalar(
+            self.n_users,
+            name="n_users",
+            target_type=int,
+            min_val=1,
+        )
+        self.ad_ids = np.arange(self.n_ads)
+        self.user_ids = np.arange(self.n_users)
+
+        check_scalar(
+            self.ad_feature_dim,
+            name="ad_feature_dim",
+            target_type=int,
+            min_val=1,
+        )
+        check_scalar(
+            self.user_feature_dim,
+            name="user_feature_dim",
+            target_type=int,
+            min_val=1,
+        )
+        if self.ad_feature_vector is None:
+            self.ad_feature_vector = self.random_.normal(
+                size=(self.n_ads, self.ad_feature_dim)
+            )
+        check_array(
+            self.ad_feature_vector,
+            name="ad_feature_vector",
+            expected_dim=2,
+        )
+        if self.ad_feature_dim.shape != (self.n_ads, self.ad_feature_dim):
             raise ValueError(
-                f"n_users must be a positive interger, but {self.n_users} is given"
+                "The shape of ad_feature_vector must be (n_ads, ad_feature_dim)"
             )
-        if not (isinstance(self.ad_feature_dim, int) and self.ad_feature_dim > 0):
+        if self.user_feature_vector is None:
+            self.user_feature_vector = self.random_.normal(
+                size=(self.n_users, self.user_feature_dim)
+            )
+        check_array(
+            self.user_feature_vector,
+            name="user_feature_vector",
+            expected_dim=2,
+        )
+        if self.user_feature_dim.shape != (self.n_users, self.user_feature_dim):
             raise ValueError(
-                f"ad_feature_dim must be a positive interger, but {self.ad_feature_dim} is given"
+                "The shape of user_feature_vector must be (n_users, user_feature_dim)"
             )
-        if not (isinstance(self.user_feature_dim, int) and self.user_feature_dim > 0):
+
+        if self.ad_sampling_rate is None:
+            self.ad_sampling_rate = np.full(
+                (self.step_per_episode, self.n_ads), 1 / self.n_ads
+            )
+        else:
+            self.ad_sampling_rate = self.ad_sampling_rate / np.sum(
+                self.ad_sampling_rate, axis=1
+            )
+        check_array(
+            self.ad_sampling_rate,
+            name="ad_sampling_rate",
+            expected_dim=2,
+        )
+        if self.ad_sampling_rate.shape != (self.step_per_episode, self.n_ads):
             raise ValueError(
-                f"user_feature_dim must be a positive interger, but {self.user_feature_dim} is given"
+                "The shape of ad_sampling_rate must be (step_per_episode, n_ads)"
             )
-        if not (
-            self.ad_feature_vector is None
-            or (
-                isinstance(self.ad_feature_vector, np.ndarray)
-                and self.ad_feature_dim.shape == (self.n_ads, self.ad_feature_dim)
-            )
+        if not np.allclose(
+            self.ad_sampling_rate.sum(axis=1), np.ones(self.step_per_episode)
         ):
             raise ValueError(
-                "ad_feature_vector must be an 2-dimensional NDArray with shape (n_ads, ad_feature_dim)"
+                "Expected `ad_sampling_rate.sum(axis=1) == np.ones(step_per_episode)`, but found False"
             )
-        if not (
-            self.user_feature_vector is None
-            or (
-                isinstance(self.user_feature_vector, np.ndarray)
-                and self.user_feature_dim.shape == (self.n_users, self.user_feature_dim)
+        if self.user_sampling_rate is None:
+            self.user_sampling_rate = np.full(
+                (self.step_per_episode, self.n_users), 1 / self.n_users
             )
+        else:
+            self.user_sampling_rate = self.user_sampling_rate / np.sum(
+                self.user_sampling_rate, axis=1
+            )
+        check_array(
+            self.user_sampling_rate,
+            name="user_sampling_rate",
+            expected_dim=2,
+        )
+        if self.user_sampling_rate.shape != (self.step_per_episode, self.n_users):
+            raise ValueError(
+                "The shape of user_sampling_rate must be (step_per_episode, n_users)"
+            )
+        if not np.allclose(
+            self.user_sampling_rate.sum(axis=1), np.ones(self.step_per_episode)
         ):
             raise ValueError(
-                "user_feature_vector must be an 2-dimensional NDArray with shape (n_users, user_feature_dim)"
+                "Expected `user_sampling_rate.sum(axis=1) == np.ones(step_per_episode)`, but found False"
             )
-        if not (
-            self.ad_sampling_rate is None
-            or (
-                isinstance(self.ad_sampling_rate, np.ndarray)
-                and self.ad_sampling_rate.ndim == 1
-                and self.ad_sampling_rate.min() >= 0
-                and self.ad_sampling_rate.max() > 0
-            )
-        ):
-            raise ValueError(
-                "ad_sampling_rate must be an 1-dimensional NDArray of non-negative float values"
-            )
-        if not (
-            self.user_sampling_rate is None
-            or (
-                isinstance(self.user_sampling_rate, np.ndarray)
-                and self.user_sampling_rate.ndim == 1
-                and self.user_sampling_rate.min() >= 0
-                and self.user_sampling_rate.max() > 0
-            )
-        ):
-            raise ValueError(
-                "user_sampling_rate must be an 1-dimensional NDArray of non-negative float values"
-            )
-        if self.ad_sampling_rate is not None and self.n_ads != len(
-            self.ad_sampling_rate
-        ):
-            raise ValueError("length of ad_sampling_rate must be equal to n_ads")
-        if self.user_sampling_rate is not None and self.n_users != len(
-            self.user_sampling_rate
-        ):
-            raise ValueError("length of user_sampling_rate must be equal to n_users")
+
         if not isinstance(self.standard_bid_price_distribution, NormalDistribution):
             raise ValueError(
                 "standard_bid_price_distribution must be a NormalDistribution"
             )
-        if not isinstance(self.standard_bid_price_distribution.mean, (int, float)):
+        if not isinstance(self.standard_bid_price_distribution.mean, Numeric):
             raise ValueError(
                 "standard_bid_price_distribution must have a single parameter for mean and std"
             )
@@ -197,73 +243,8 @@ class RTBSyntheticSimulator(BaseSimulator):
             raise ValueError(
                 f"minimum_standard_bid_price must be a float value within [0, standard_bid_price_distribution.mean], but {self.minimum_standard_bid_price} is given"
             )
-        if not (
-            isinstance(self.search_volume_distribution.mean, (int, float))
-            and self.search_volume_distribution.mean > 0
-        ) and not (
-            isinstance(self.search_volume_distribution.mean, np.ndarray)
-            and self.search_volume_distribution.mean.ndim == 1
-            and self.search_volume_distribution.mean.min() > 0
-        ):
-            raise ValueError(
-                "search_volume_distribution.mean must be a positive float value or an NDArray of positive float values"
-            )
-        if not (
-            isinstance(self.search_volume_distribution.mean, (int, float))
-            or len(self.search_volume_distribution.mean) == self.step_per_episode
-        ):
-            raise ValueError(
-                "length of search_volume_distribution must be equal to step_per_episode"
-            )
-        if not (
-            isinstance(self.minimum_search_volume, int)
-            and self.minimum_search_volume > 0
-        ):
-            raise ValueError(
-                f"minimum_search_volume must be a positive integer, but {self.minimum_search_volume} is given"
-            )
-        if not (
-            self.step_per_episode is None
-            or (isinstance(self.step_per_episode, int) and self.step_per_episode > 0)
-        ):
-            raise ValueError(
-                f"step_per_episode must be a positive interger, but {self.step_per_episode} is given"
-            )
-        if self.random_state is None:
-            raise ValueError("random_state must be given")
-        self.random_ = check_random_state(self.random_state)
 
-        if self.ad_feature_vector is None:
-            self.ad_feature_vector = self.random_.normal(
-                size=(self.n_ads, self.ad_feature_dim)
-            )
-        if self.user_feature_vector is None:
-            self.user_feature_vector = self.random_.normal(
-                size=(self.n_users, self.user_feature_dim)
-            )
-
-        self.ad_ids = np.arange(self.n_ads)
-        self.user_ids = np.arange(self.n_users)
-
-        if self.ad_sampling_rate is None:
-            self.ad_sampling_rate = np.full(
-                (self.step_per_episode, self.n_ads), 1 / self.n_ads
-            )
-        else:
-            self.ad_sampling_rate = self.ad_sampling_rate / np.sum(
-                self.ad_sampling_rate, axis=1
-            )
-
-        if self.user_sampling_rate is None:
-            self.user_sampling_rate = np.full(
-                (self.step_per_episode, self.n_users), 1 / self.n_users
-            )
-        else:
-            self.user_sampling_rate = self.user_sampling_rate / np.sum(
-                self.user_sampling_rate, axis=1
-            )
-
-        if isinstance(self.search_volume_distribution.mean, int):
+        if isinstance(self.search_volume_distribution.mean, Numeric):
             self.search_volume_distribution = NormalDistribution(
                 mean=np.full(
                     self.step_per_episode, self.search_volume_distribution.mean
@@ -271,12 +252,35 @@ class RTBSyntheticSimulator(BaseSimulator):
                 std=np.full(self.step_per_episode, self.search_volume_distribution.std),
                 random_state=self.random_state,
             )
+        check_array(
+            self.search_volume_distribution.mean,
+            name="search_volume_distribution.mean",
+            expected_dim=1,
+            min_val=0,
+        )
+
+        if not (
+            isinstance(self.search_volume_distribution.mean, (int, float))
+            or len(self.search_volume_distribution.mean) == self.step_per_episode
+        ):
+            raise ValueError(
+                "length of search_volume_distribution must be equal to step_per_episode"
+            )
+        check_scalar(
+            self.minimum_search_volume,
+            name="minimum_search_volume",
+            target_type=int,
+            min_val=1,
+        )
+
+        if self.random_state is None:
+            raise ValueError("random_state must be given")
+        self.random_ = check_random_state(self.random_state)
 
         # define winning function
         if isinstance(self.WinningPriceDistribution, BaseWinningPriceDistribution):
-            # check
             self.winning_price_distribution = self.WinningPriceDistribution
-        else:
+        elif issubclass(self.WinningPriceDistribution, BaseWinningPriceDistribution):
             self.winning_price_distribution = self.WinningPriceDistribution(
                 n_ads=self.n_ads,
                 n_users=self.n_users,
@@ -287,11 +291,15 @@ class RTBSyntheticSimulator(BaseSimulator):
                 minimum_standard_bid_price=self.minimum_standard_bid_price,
                 random_state=self.random_state,
             )
+        else:
+            raise ValueError(
+                "WinningPriceDistribution must be a child class of BaseWinningPriceDistribution"
+            )
+
         # define click/imp and conversion/click rate function
         if isinstance(self.ClickThroughRate, BaseClickAndConversionRate):
-            # check
             self.ctr = self.ClickThroughRate
-        else:
+        elif issubclass(self.ClickThroughRate, BaseClickAndConversionRate):
             self.ctr = self.ClickThroughRate(
                 n_ads=self.n_ads,
                 n_users=self.n_users,
@@ -300,10 +308,14 @@ class RTBSyntheticSimulator(BaseSimulator):
                 step_per_episode=self.step_per_episode,
                 random_state=self.random_state,
             )
-        if isinstance(self.ConversionRate, BaseClickAndConversionRate):
-            # check
-            self.cvr = self.ConversionRate
         else:
+            raise ValueError(
+                "ClickThroughRate must be a child class of BaseClickAndConversionRate"
+            )
+
+        if isinstance(self.ConversionRate, BaseClickAndConversionRate):
+            self.cvr = self.ConversionRate
+        elif issubclass(self.ConversionRate, BaseClickAndConversionRate):
             self.cvr = self.ConversionRate(
                 n_ads=self.n_ads,
                 n_users=self.n_users,
@@ -312,6 +324,10 @@ class RTBSyntheticSimulator(BaseSimulator):
                 step_per_episode=self.step_per_episode,
                 random_state=self.random_state
                 + 1,  # to differentiate the coef with that of CTR
+            )
+        else:
+            raise ValueError(
+                "ConversionRate must be a child class of BaseClickAndConversionRate"
             )
 
     @property
@@ -355,8 +371,15 @@ class RTBSyntheticSimulator(BaseSimulator):
                     self.minimum_search_volume,
                     None,
                 ).astype(int)[0][timestep - 1]
+        check_scalar(
+            volume,
+            name="volume",
+            target_type=int,
+            min_val=1,
+        )
 
         if timestep is not None:
+            check_scalar(timestep, name="timestep", target_type=int, min_val=1)
             ad_ids = self.random_.choice(
                 self.ad_ids,
                 size=volume,
@@ -406,26 +429,24 @@ class RTBSyntheticSimulator(BaseSimulator):
             User feature vector for each auction.
 
         """
-        if not (
-            isinstance(ad_ids, np.ndarray)
-            and ad_ids.ndim == 1
-            and 0 <= ad_ids.min()
-            and ad_ids.max() < self.n_ads
-        ):
-            raise ValueError(
-                "ad_ids must be 1-dimensional NDArray with integers within [0, n_ads)"
-            )
-        if not (
-            isinstance(user_ids, np.ndarray)
-            and user_ids.ndim == 1
-            and 0 <= user_ids.min()
-            and user_ids.max() < self.n_users
-        ):
-            raise ValueError(
-                "user_ids must be 1-dimensional NDArray with integers within [0, n_users)"
-            )
-        if not (len(ad_ids) == len(user_ids)):
-            raise ValueError("ad_ids and user_ids must have same length")
+        check_array(
+            ad_ids,
+            name="ad_ids",
+            expected_dim=1,
+            expected_dtype=int,
+            min_val=0,
+            max_val=self.n_ads - 1,
+        )
+        check_array(
+            user_ids,
+            name="user_ids",
+            expected_dim=1,
+            expected_dtype=int,
+            min_val=0,
+            max_val=self.n_users - 1,
+        )
+        if ad_ids.shape[0] != user_ids.shape[0]:
+            raise ValueError("ad_ids and user_ids must have the same length")
 
         ad_features = self.ad_feature_vector[ad_ids]
         user_features = self.user_feature_vector[user_ids]
@@ -472,20 +493,36 @@ class RTBSyntheticSimulator(BaseSimulator):
                 Binary indicator of whether conversion occurred or not for each auction.
 
         """
-        if not (isinstance(timestep, int) and timestep >= 0):
-            raise ValueError(
-                f"timestep must be a non-negative interger, but {timestep} is given"
-            )
-        if not (
-            isinstance(bid_prices, np.ndarray)
-            and bid_prices.ndim == 1
-            and 0 <= bid_prices.min()
-        ):
-            raise ValueError(
-                "bid_prices must be 1-dimensional NDArray with non-negative integers"
-            )
-        if not (len(ad_ids) == len(user_ids) == len(bid_prices)):
-            raise ValueError("ad_ids, user_ids, and bid_prices must have same length")
+        check_scalar(
+            timestep,
+            name="timestep",
+            target_type=int,
+            min_val=0,
+        )
+        check_array(
+            ad_ids,
+            name="ad_ids",
+            expected_dim=1,
+            expected_dtype=int,
+            min_val=0,
+            max_val=self.n_ads - 1,
+        )
+        check_array(
+            user_ids,
+            name="user_ids",
+            expected_dim=1,
+            expected_dtype=int,
+            min_val=0,
+            max_val=self.n_users - 1,
+        )
+        if ad_ids.shape[0] != user_ids.shape[0]:
+            raise ValueError("ad_ids and user_ids must have the same length")
+        check_array(
+            bid_prices,
+            name="bid_prices",
+            expected_dim=1,
+            min_val=0,
+        )
 
         ad_feature_vector = self.ad_feature_vector[ad_ids]
         user_feature_vector = self.user_feature_vector[user_ids]

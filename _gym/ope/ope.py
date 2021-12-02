@@ -697,7 +697,7 @@ class CreateOPEInput:
         -------
         evaluation_policy_action: NDArray
             Evaluation policy action :math:`a_t \\sim \\pi_e(a_t \\mid s_t)`.
-        
+
         """
         return evaluation_policy.predict(x=self.logged_dataset["state"])
 
@@ -716,7 +716,7 @@ class CreateOPEInput:
         -------
         evaluation_policy_pscore: NDArray
             Evaluation policy pscore :math:`\\pi_e(a_t \\mid s_t)`.
-        
+
         """
         return evaluation_policy.calculate_pscore_given_action(
             x=self.logged_dataset["state"],
@@ -738,7 +738,7 @@ class CreateOPEInput:
         -------
         evaluation_policy_step_wise_pscore: NDArray
             Evaluation policy's step-wise pscore :math:`\\prod_{t'=1}^t \\pi_e(a_{t'} \\mid s_{t'})`.
-        
+
         """
         base_pscore = self.obtain_pscore_for_observed_state_action(
             evaluation_policy
@@ -760,7 +760,7 @@ class CreateOPEInput:
         -------
         evaluation_policy_trajectory_wise_pscore: NDArray
             Evaluation policy's trajectory-wise pscore :math:`\\prod_{t=1}^T \\pi_e(a_t \\mid s_t)`.
-        
+
         """
         base_pscore = self.obtain_step_wise_pscore(evaluation_policy).reshape(
             (-1, self.step_per_episode)
@@ -785,7 +785,7 @@ class CreateOPEInput:
 
         counterfactual_state_action_value: NDArray, shape (n_samples, n_actions)
             State action values for all observed state and possible action.
-        
+
         """
         state_action_value = (
             self._predict_counterfactual_state_action_value(evaluation_policy)
@@ -810,7 +810,7 @@ class CreateOPEInput:
         -------
         counterfactual_state_action_value: NDArray, shape (n_samples, n_actions)
             State action values for the observed state and action chosen by evaluation policy.
-        
+
         """
         state = self.logged_dataset["state"]
         action = evaluation_policy.predict(state)
@@ -831,7 +831,7 @@ class CreateOPEInput:
         -------
         initial_state_value: NDArray, shape (n_samples, n_actions)
             State action values for the observed state and action chosen by evaluation policy.
-        
+
         """
         state_action_value, pscore = self.obtain_state_action_value_with_pscore(
             evaluation_policy
@@ -855,7 +855,7 @@ class CreateOPEInput:
         -------
         initial_state_value: NDArray, shape (n_samples, n_actions)
             State action values for the observed state and action chosen by evaluation policy.
-        
+
         """
         state_value = self.obtain_state_action_value_deterministic(evaluation_policy)
         return state_value.reshape((-1, self.step_per_episode))[:, 0]
@@ -896,7 +896,7 @@ class CreateOPEInput:
         -------
         initial_state_value: NDArray, shape (n_samples, n_actions)
             State action values for the observed state and action chosen by evaluation policy.
-        
+
         """
         if env is not None:
             check_if_valid_env_and_logged_dataset(env, self.logged_dataset)
