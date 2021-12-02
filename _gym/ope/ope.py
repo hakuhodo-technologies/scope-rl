@@ -4,6 +4,7 @@ from typing import Dict, List, Tuple, Optional, Any
 from pathlib import Path
 
 from collections import defaultdict
+from sklearn.utils.validation import check_scalar
 from tqdm.autonotebook import tqdm
 
 import torch
@@ -13,6 +14,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 import gym
+from gym.spaces import Box, Discrete
 from d3rlpy.dataset import MDPDataset
 from d3rlpy.ope import DiscreteFQE
 from d3rlpy.ope import FQE as ContinuousFQE
@@ -24,6 +26,7 @@ from ..ope.online import rollout_policy_online
 from ..policy.head import BaseHead
 from ..types import LoggedDataset, OPEInputDict
 from ..utils import (
+    check_logged_dataset,
     estimate_confidence_interval_by_bootstrap,
     check_if_valid_env_and_logged_dataset,
     check_input_dict,
@@ -54,6 +57,7 @@ class OffPolicyEvaluation:
 
     def __post_init__(self) -> None:
         "Initialize class."
+        check_logged_dataset(self.logged_dataset)
         self.action_type = self.logged_dataset["action_type"]
         self.step_per_episode = self.logged_dataset["step_per_episode"]
 
@@ -62,8 +66,8 @@ class OffPolicyEvaluation:
             self.ope_estimators_[estimator.estimator_name] = estimator
 
             if estimator.action_type != self.action_type:
-                raise ValueError(
-                    f"one of the ope_estimators, {estimator.estimator_name} does not much action_type in logged_dataset. Please use {self.action_type} type instead."
+                raise RuntimeError(
+                    f"One of the ope_estimators, {estimator.estimator_name} does not match action_type in logged_dataset. Please use {self.action_type} type instead"
                 )
 
         behavior_policy_pscore = self.logged_dataset["pscore"].reshape(
@@ -114,8 +118,6 @@ class OffPolicyEvaluation:
             key: [evaluation_policy_name][OPE_estimator_name]
 
         """
-        check_input_dict(input_dict)
-
         policy_value_dict = defaultdict(dict)
 
         for eval_policy in input_dict.keys():
@@ -177,8 +179,6 @@ class OffPolicyEvaluation:
             key: [evaluation_policy_name][OPE_estimator_name]
 
         """
-        check_input_dict(input_dict)
-
         policy_value_interval_dict = defaultdict(dict)
 
         for eval_policy in input_dict.keys():
@@ -329,11 +329,10 @@ class OffPolicyEvaluation:
             Name of the bar figure.
 
         """
-        if fig_dir is not None:
-            assert isinstance(fig_dir, Path), "fig_dir must be a Path"
-        if fig_name is not None:
-            assert isinstance(fig_name, str), "fig_dir must be a string"
-        check_input_dict(input_dict)
+        if fig_dir is not None and not isinstance(fig_dir, Path):
+            raise ValueError(f"fig_dir must be a Path, but {type(fig_dir)} is given")
+        if fig_name is not None and not isinstance(fig_name, str):
+            raise ValueError(f"fig_dir must be a string, but {type(fig_dir)} is given")
 
         estimated_trajectory_values_df_dict = dict()
         for eval_policy in input_dict.keys():
@@ -468,6 +467,10 @@ class OffPolicyEvaluation:
             key: [evaluation_policy_name][OPE_estimator_name]
 
         """
+        if metric not in ["relative-ee", "se"]:
+            raise ValueError(
+                f"metric must be either 'relative-ee' or 'se', but {metric} is given"
+            )
         eval_metric_ope_dict = defaultdict(dict)
         policy_value_dict = self.estimate_policy_values(input_dict, gamma=gamma)
 
@@ -535,6 +538,10 @@ class OffPolicyEvaluation:
             Dictionary containing evaluation metric for evaluating the estimation performance of OPE estimators.
 
         """
+        if metric not in ["relative-ee", "se"]:
+            raise ValueError(
+                f"metric must be either 'relative-ee' or 'se', but {metric} is given"
+            )
         eval_metric_ope_df = DataFrame()
         eval_metric_ope_dict = self.evaluate_performance_of_estimators(
             input_dict,
@@ -571,6 +578,7 @@ class CreateOPEInput:
 
     def __post_init__(self) -> None:
         "Initialize class."
+        check_logged_dataset(self.logged_dataset)
         self.n_episodes = self.logged_dataset["n_episodes"]
         self.action_type = self.logged_dataset["action_type"]
         self.n_actions = self.logged_dataset["n_actions"]
@@ -657,6 +665,17 @@ class CreateOPEInput:
             Number of steps in an epoch.
 
         """
+        if not isinstance(evaluation_policy, BaseHead):
+            raise ValueError(f"evaluation_policy must be a child class of BaseHead")
+
+        if n_epochs is not None:
+            check_scalar(n_epochs, name="n_epochs", target_type=int, min_val=1)
+        if n_steps is not None:
+            check_scalar(n_steps, name="n_steps", target_type=int, min_val=1)
+        check_scalar(
+            n_steps_per_epoch, name="n_steps_per_epoch", target_type=int, min_val=1
+        )
+
         if n_epochs is None and n_steps is None:
             n_steps = n_steps_per_epoch
 
@@ -699,6 +718,8 @@ class CreateOPEInput:
             Evaluation policy action :math:`a_t \\sim \\pi_e(a_t \\mid s_t)`.
 
         """
+        if not isinstance(evaluation_policy, BaseHead):
+            raise ValueError(f"evaluation_policy must be a child class of BaseHead")
         return evaluation_policy.predict(x=self.logged_dataset["state"])
 
     def obtain_pscore_for_observed_state_action(
@@ -718,6 +739,8 @@ class CreateOPEInput:
             Evaluation policy pscore :math:`\\pi_e(a_t \\mid s_t)`.
 
         """
+        if not isinstance(evaluation_policy, BaseHead):
+            raise ValueError(f"evaluation_policy must be a child class of BaseHead")
         return evaluation_policy.calculate_pscore_given_action(
             x=self.logged_dataset["state"],
             action=self.logged_dataset["action"],
@@ -740,6 +763,8 @@ class CreateOPEInput:
             Evaluation policy's step-wise pscore :math:`\\prod_{t'=1}^t \\pi_e(a_{t'} \\mid s_{t'})`.
 
         """
+        if not isinstance(evaluation_policy, BaseHead):
+            raise ValueError(f"evaluation_policy must be a child class of BaseHead")
         base_pscore = self.obtain_pscore_for_observed_state_action(
             evaluation_policy
         ).reshape((-1, self.step_per_episode))
@@ -762,6 +787,8 @@ class CreateOPEInput:
             Evaluation policy's trajectory-wise pscore :math:`\\prod_{t=1}^T \\pi_e(a_t \\mid s_t)`.
 
         """
+        if not isinstance(evaluation_policy, BaseHead):
+            raise ValueError(f"evaluation_policy must be a child class of BaseHead")
         base_pscore = self.obtain_step_wise_pscore(evaluation_policy).reshape(
             (-1, self.step_per_episode)
         )[:, -1]
@@ -787,6 +814,8 @@ class CreateOPEInput:
             State action values for all observed state and possible action.
 
         """
+        if not isinstance(evaluation_policy, BaseHead):
+            raise ValueError(f"evaluation_policy must be a child class of BaseHead")
         state_action_value = (
             self._predict_counterfactual_state_action_value(evaluation_policy)
         ).reshape((-1, self.n_actions))
@@ -812,6 +841,8 @@ class CreateOPEInput:
             State action values for the observed state and action chosen by evaluation policy.
 
         """
+        if not isinstance(evaluation_policy, BaseHead):
+            raise ValueError(f"evaluation_policy must be a child class of BaseHead")
         state = self.logged_dataset["state"]
         action = evaluation_policy.predict(state)
         return self.fqe[evaluation_policy.name].predict_value(state, action)
@@ -833,6 +864,8 @@ class CreateOPEInput:
             State action values for the observed state and action chosen by evaluation policy.
 
         """
+        if not isinstance(evaluation_policy, BaseHead):
+            raise ValueError(f"evaluation_policy must be a child class of BaseHead")
         state_action_value, pscore = self.obtain_state_action_value_with_pscore(
             evaluation_policy
         )
@@ -857,6 +890,8 @@ class CreateOPEInput:
             State action values for the observed state and action chosen by evaluation policy.
 
         """
+        if not isinstance(evaluation_policy, BaseHead):
+            raise ValueError(f"evaluation_policy must be a child class of BaseHead")
         state_value = self.obtain_state_action_value_deterministic(evaluation_policy)
         return state_value.reshape((-1, self.step_per_episode))[:, 0]
 
@@ -899,13 +934,31 @@ class CreateOPEInput:
 
         """
         if env is not None:
-            check_if_valid_env_and_logged_dataset(env, self.logged_dataset)
+            if isinstance(env.action_space, Box) and self.action_type == "discrete":
+                raise RuntimeError(
+                    f"Found mismatch in action_type between env and logged_dataset"
+                )
+            elif (
+                isinstance(env.action_space, Discrete)
+                and self.action_type == "continuous"
+            ):
+                raise RuntimeError(
+                    f"Found mismatch in action_type between env and logged_dataset"
+                )
 
         for eval_policy in evaluation_policies:
             if eval_policy.action_type != self.action_type:
-                raise ValueError(
-                    f"one of the evaluation_policies, {eval_policy.name} does not much action_type in logged_dataset. Please use {self.action_type} type instead."
+                raise RuntimeError(
+                    f"One of the evaluation_policies, {eval_policy.name} does not match action_type in logged_dataset. Please use {self.action_type} type instead."
                 )
+
+        if n_episodes_on_policy_evaluation is not None:
+            check_scalar(
+                n_episodes_on_policy_evaluation,
+                name="n_episodes_on_policy_evaluation",
+                target_type=int,
+                min_val=1,
+            )
 
         if self.use_base_model:
             if n_steps_per_epoch is None:

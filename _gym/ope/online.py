@@ -68,6 +68,10 @@ def visualize_on_policy_policy_value(
         n_bootstrap_samples=n_bootstrap_samples,
         random_state=random_state,
     )
+    if fig_dir is not None and not isinstance(fig_dir, Path):
+        raise ValueError(f"fig_dir must be a Path, but {type(fig_dir)} is given")
+    if fig_name is not None and not isinstance(fig_name, str):
+        raise ValueError(f"fig_dir must be a string, but {type(fig_dir)} is given")
 
     on_policy_Policy_value_dict = {}
     for policy, name in zip(policies, policy_names):

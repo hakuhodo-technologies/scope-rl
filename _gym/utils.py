@@ -1,13 +1,12 @@
 """Useful tools."""
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Dict, Union, Optional, Tuple
+from typing import DefaultDict, Dict, Union, Optional, Any
 
-import gym
 import numpy as np
 from sklearn.utils import check_scalar, check_random_state
 
-from .types import LoggedDataset, OPEInputDict, Numeric
+from .types import LoggedDataset, Numeric
 
 
 @dataclass
@@ -96,6 +95,8 @@ def estimate_confidence_interval_by_bootstrap(
 ) -> Dict[str, float]:
     """Estimate confidence interval by nonparametric bootstrap-like procedure.
 
+    Parameters
+    -------
     samples: NDArray
         Samples.
 
@@ -105,8 +106,13 @@ def estimate_confidence_interval_by_bootstrap(
     n_bootstrap_samples: int, default=10000 (> 0)
         Number of resampling performed in the bootstrap procedure.
 
-    random_state: int, default=None (>= 0)
+    random_state: Optional[int], default=None (>= 0)
         Random state.
+
+    Returns
+    -------
+    estimated_confidence_interval: Dict[str, float]
+        Dictionary storing the estimated mean and upper-lower confidence bounds.
 
     """
     check_confidence_interval_argument(
@@ -136,7 +142,7 @@ def sigmoid(x: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
     return 1 / (1 + np.exp(-x))
 
 
-def defaultdict_to_dict(dict_):
+def defaultdict_to_dict(dict_: Union[Dict[Any, Any], DefaultDict[Any, Any]]):
     """Class to transform defaultdict into dict."""
     if isinstance(dict_, defaultdict):
         dict_ = {key: defaultdict_to_dict(value) for key, value in dict_.items()}
@@ -198,29 +204,55 @@ def check_array(
 
 
 def check_logged_dataset(logged_dataset: LoggedDataset):
-    pass
-    # raise NotImplementedError()
+    """Check logged dataset keys.
+
+    Parameters
+    -------
+    logged_dataset: LoggedDataset
+        Logged dataset.
+
+    """
+    dataset_keys = logged_dataset.keys()
+    for expected_key in [
+        "n_episodes",
+        "action_type",
+        "n_actions",
+        "action_dim",
+        "state_dim",
+        "step_per_episode",
+        "action",
+        "reward",
+        "pscore",
+        "done",
+        "terminal",
+    ]:
+        if not expected_key in dataset_keys:
+            raise RuntimeError(f"{expected_key} does not exist in logged_dataset")
 
 
-def check_scaler(x: Union[int, float]):
-    pass
-    # raise NotImplementedError
-
-
-def check_confidence_interval_argument():
-    pass
-
-
-def check_if_valid_env_and_logged_dataset(
-    env: gym.Env,
-    logged_dataset: LoggedDataset,
+def check_confidence_interval_argument(
+    alpha: float,
+    n_bootstrap_samples: int,
+    random_state: Optional[int] = None,
 ):
-    pass
-    # raise NotImplementedError()
+    """Check confidence interval arguments.
 
+    Parameters
+    -------
+    alpha: float, default=0.05 (0, 1)
+        Significant level.
 
-def check_input_dict(
-    input_dict: OPEInputDict,
-):
-    pass
-    # raise NotImplementedError()
+    n_bootstrap_samples: int, default=10000 (> 0)
+        Number of resampling performed in the bootstrap procedure.
+
+    random_state: Optional[int], default=None (>= 0)
+        Random state.
+
+    """
+    check_scalar(alpha, name="alpha", target_type=float, min_val=0.0, max_val=1.0)
+    check_scalar(
+        n_bootstrap_samples, name="n_bootstrap_samples", target_type=int, min_val=1
+    )
+    if random_state is None:
+        raise ValueError("random_state must be given")
+    check_random_state(random_state)

@@ -140,6 +140,10 @@ class RTBSyntheticSimulator(BaseSimulator):
         self.ad_ids = np.arange(self.n_ads)
         self.user_ids = np.arange(self.n_users)
 
+        if self.random_state is None:
+            raise ValueError("random_state must be given")
+        self.random_ = check_random_state(self.random_state)
+
         check_scalar(
             self.ad_feature_dim,
             name="ad_feature_dim",
@@ -272,10 +276,6 @@ class RTBSyntheticSimulator(BaseSimulator):
             target_type=int,
             min_val=1,
         )
-
-        if self.random_state is None:
-            raise ValueError("random_state must be given")
-        self.random_ = check_random_state(self.random_state)
 
         # define winning function
         if isinstance(self.WinningPriceDistribution, BaseWinningPriceDistribution):
