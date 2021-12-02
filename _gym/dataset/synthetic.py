@@ -157,10 +157,10 @@ class SyntheticDataset(BaseDataset):
     def __post_init__(self):
         if not isinstance(self.env, gym.Env):
             raise ValueError(
-                f"env must be a child class of gym.Env",
+                "env must be a child class of gym.Env",
             )
         if not isinstance(self.behavior_policy, BaseHead):
-            raise ValueError(f"behavior_policy must be a child class of BaseHead")
+            raise ValueError("behavior_policy must be a child class of BaseHead")
 
         self.state_dim = self.env.observation_space.shape[0]
 
@@ -275,7 +275,7 @@ class SyntheticDataset(BaseDataset):
         """
         if self.step_per_episode is None:
             raise RuntimeError(
-                f"Please initialize SyntheticDataset class with step_per_episode to use .obtain_trajectories()"
+                "Please initialize SyntheticDataset class with step_per_episode to use .obtain_trajectories()"
             )
         check_scalar(
             n_episodes,
