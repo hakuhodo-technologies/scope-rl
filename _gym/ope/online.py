@@ -1,5 +1,4 @@
 "On-Policy Performance Comparison."
-from pandas.core.frame import DataFrame
 from tqdm.autonotebook import tqdm
 from typing import List, Union, Optional
 from pathlib import Path
@@ -11,12 +10,11 @@ import seaborn as sns
 
 import gym
 from d3rlpy.algos import AlgoBase
-from sklearn.utils import check_scalar, check_random_state
+from sklearn.utils import check_scalar
 
 from ..policy.head import BaseHead, OnlineHead
 from ..utils import estimate_confidence_interval_by_bootstrap
 from ..utils import check_confidence_interval_argument
-from ..utils import check_array
 
 
 def visualize_on_policy_policy_value(
@@ -235,10 +233,10 @@ def rollout_policy_online(
     """
     if not isinstance(env, gym.Env):
         raise ValueError(
-            f"env must be a child class of gym.Env",
+            "env must be a child class of gym.Env",
         )
     if not isinstance(policy, (AlgoBase, BaseHead)):
-        raise ValueError(f"policy must be a child class of either AlgoBase or BaseHead")
+        raise ValueError("policy must be a child class of either AlgoBase or BaseHead")
     check_scalar(
         n_episodes,
         name="n_episodes",

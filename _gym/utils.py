@@ -226,7 +226,7 @@ def check_logged_dataset(logged_dataset: LoggedDataset):
         "done",
         "terminal",
     ]:
-        if not expected_key in dataset_keys:
+        if expected_key not in dataset_keys:
             raise RuntimeError(f"{expected_key} does not exist in logged_dataset")
 
 

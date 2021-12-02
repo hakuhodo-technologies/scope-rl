@@ -16,7 +16,6 @@ from _gym.ope.estimators_continuous import ContinuousDirectMethod
 from _gym.ope.estimators_continuous import ContinuousTrajectoryWiseImportanceSampling
 from _gym.ope.estimators_continuous import ContinuousStepWiseImportanceSampling
 from _gym.ope.estimators_continuous import ContinuousDoublyRobust
-from _gym.ope.estimators_continuous import ContinuousDirectMethod
 from _gym.ope.estimators_continuous import (
     ContinuousSelfNormalizedTrajectoryWiseImportanceSampling,
 )

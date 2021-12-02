@@ -1,7 +1,6 @@
 """Bid Price Calculation."""
 from dataclasses import dataclass
 from typing import Union, Optional
-import warnings
 
 import numpy as np
 from sklearn.base import BaseEstimator, is_classifier

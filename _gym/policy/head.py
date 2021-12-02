@@ -5,11 +5,9 @@ from dataclasses import dataclass
 
 import numpy as np
 from scipy.stats import truncnorm
-from sklearn.utils.validation import check_scalar
-from _gym.utils import check_array
 
 import gym
-from sklearn.utils import check_random_state
+from sklearn.utils import check_scalar, check_random_state
 
 from d3rlpy.algos import AlgoBase
 from d3rlpy.dataset import MDPDataset, Transition, TransitionMiniBatch

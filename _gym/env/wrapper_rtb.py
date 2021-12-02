@@ -1,6 +1,5 @@
 """Customization of RL setting by decision makers."""
 from typing import Tuple, Optional, Union, Any
-from tqdm import tqdm
 
 import gym
 from gym.spaces import Box, Discrete
@@ -33,7 +32,7 @@ class CustomizedRTBEnv(gym.Env):
             (bid price which has approximately 50% impression probability) over all ads.
 
         - action space for agent
-            We transform continual adjust rate space :math:`[0, \infty)` into agent action space.
+            We transform continual adjust rate space :math:`[0, \\infty)` into agent action space.
             Both discrete and continuous actions are acceptable.
 
             Note that we recommend you to set action space within [0.1, 10].

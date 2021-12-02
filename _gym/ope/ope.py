@@ -28,8 +28,6 @@ from ..types import LoggedDataset, OPEInputDict
 from ..utils import (
     check_logged_dataset,
     estimate_confidence_interval_by_bootstrap,
-    check_if_valid_env_and_logged_dataset,
-    check_input_dict,
     defaultdict_to_dict,
 )
 
@@ -666,7 +664,7 @@ class CreateOPEInput:
 
         """
         if not isinstance(evaluation_policy, BaseHead):
-            raise ValueError(f"evaluation_policy must be a child class of BaseHead")
+            raise ValueError("evaluation_policy must be a child class of BaseHead")
 
         if n_epochs is not None:
             check_scalar(n_epochs, name="n_epochs", target_type=int, min_val=1)
@@ -719,7 +717,7 @@ class CreateOPEInput:
 
         """
         if not isinstance(evaluation_policy, BaseHead):
-            raise ValueError(f"evaluation_policy must be a child class of BaseHead")
+            raise ValueError("evaluation_policy must be a child class of BaseHead")
         return evaluation_policy.predict(x=self.logged_dataset["state"])
 
     def obtain_pscore_for_observed_state_action(
@@ -740,7 +738,7 @@ class CreateOPEInput:
 
         """
         if not isinstance(evaluation_policy, BaseHead):
-            raise ValueError(f"evaluation_policy must be a child class of BaseHead")
+            raise ValueError("evaluation_policy must be a child class of BaseHead")
         return evaluation_policy.calculate_pscore_given_action(
             x=self.logged_dataset["state"],
             action=self.logged_dataset["action"],
@@ -764,7 +762,7 @@ class CreateOPEInput:
 
         """
         if not isinstance(evaluation_policy, BaseHead):
-            raise ValueError(f"evaluation_policy must be a child class of BaseHead")
+            raise ValueError("evaluation_policy must be a child class of BaseHead")
         base_pscore = self.obtain_pscore_for_observed_state_action(
             evaluation_policy
         ).reshape((-1, self.step_per_episode))
@@ -788,7 +786,7 @@ class CreateOPEInput:
 
         """
         if not isinstance(evaluation_policy, BaseHead):
-            raise ValueError(f"evaluation_policy must be a child class of BaseHead")
+            raise ValueError("evaluation_policy must be a child class of BaseHead")
         base_pscore = self.obtain_step_wise_pscore(evaluation_policy).reshape(
             (-1, self.step_per_episode)
         )[:, -1]
@@ -815,7 +813,7 @@ class CreateOPEInput:
 
         """
         if not isinstance(evaluation_policy, BaseHead):
-            raise ValueError(f"evaluation_policy must be a child class of BaseHead")
+            raise ValueError("evaluation_policy must be a child class of BaseHead")
         state_action_value = (
             self._predict_counterfactual_state_action_value(evaluation_policy)
         ).reshape((-1, self.n_actions))
@@ -842,7 +840,7 @@ class CreateOPEInput:
 
         """
         if not isinstance(evaluation_policy, BaseHead):
-            raise ValueError(f"evaluation_policy must be a child class of BaseHead")
+            raise ValueError("evaluation_policy must be a child class of BaseHead")
         state = self.logged_dataset["state"]
         action = evaluation_policy.predict(state)
         return self.fqe[evaluation_policy.name].predict_value(state, action)
@@ -865,7 +863,7 @@ class CreateOPEInput:
 
         """
         if not isinstance(evaluation_policy, BaseHead):
-            raise ValueError(f"evaluation_policy must be a child class of BaseHead")
+            raise ValueError("evaluation_policy must be a child class of BaseHead")
         state_action_value, pscore = self.obtain_state_action_value_with_pscore(
             evaluation_policy
         )
@@ -891,7 +889,7 @@ class CreateOPEInput:
 
         """
         if not isinstance(evaluation_policy, BaseHead):
-            raise ValueError(f"evaluation_policy must be a child class of BaseHead")
+            raise ValueError("evaluation_policy must be a child class of BaseHead")
         state_value = self.obtain_state_action_value_deterministic(evaluation_policy)
         return state_value.reshape((-1, self.step_per_episode))[:, 0]
 
@@ -936,14 +934,14 @@ class CreateOPEInput:
         if env is not None:
             if isinstance(env.action_space, Box) and self.action_type == "discrete":
                 raise RuntimeError(
-                    f"Found mismatch in action_type between env and logged_dataset"
+                    "Found mismatch in action_type between env and logged_dataset"
                 )
             elif (
                 isinstance(env.action_space, Discrete)
                 and self.action_type == "continuous"
             ):
                 raise RuntimeError(
-                    f"Found mismatch in action_type between env and logged_dataset"
+                    "Found mismatch in action_type between env and logged_dataset"
                 )
 
         for eval_policy in evaluation_policies:
