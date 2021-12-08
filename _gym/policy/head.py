@@ -1,17 +1,12 @@
 """Wrapper class to convert greedy policy into stochastic."""
 from abc import abstractmethod
-from typing import Sequence, Union, Optional
+from typing import Union, Optional
 from dataclasses import dataclass
 
 import numpy as np
 from scipy.stats import truncnorm
-
-import gym
 from sklearn.utils import check_scalar, check_random_state
-
 from d3rlpy.algos import AlgoBase
-from d3rlpy.dataset import MDPDataset, Transition, TransitionMiniBatch
-from d3rlpy.logger import D3RLPyLogger
 
 
 @dataclass
@@ -32,15 +27,6 @@ class BaseHead(AlgoBase):
     def calculate_pscore_given_action(self, x: np.ndarray, action: np.ndarray):
         """Calculate pscore given action."""
         raise NotImplementedError()
-
-    def predict(self, x: np.ndarray):
-        return self.base_algo.predict(x)
-
-    def predict_value(self, x: np.ndarray, action: np.ndarray, with_std: bool = False):
-        return self.base_algo.predict_value(x, action, with_std)
-
-    def sample_action(self, x: np.ndarray):
-        return self.base_algo.sample_action(x)
 
     def predict_online(self, x: np.ndarray):
         return self.predict(x.reshape((1, -1)))[0]
@@ -64,119 +50,11 @@ class BaseHead(AlgoBase):
         action, pscore = self.stochastic_action_with_pscore(x.reshape(1, -1))
         return action[0], pscore[0]
 
-    def build_with_dataset(self, dataset: MDPDataset):
-        return self.base_algo.build_with_dataset(dataset)
-
-    def build_with_env(self, env: gym.Env):
-        return self.base_algo.build_with_env(env)
-
-    def copy_policy_from(self, algo: AlgoBase):
-        return self.base_algo.copy_policy_from(algo)
-
-    def copy_q_function_from(self, algo: AlgoBase):
-        return self.base_algo.copy_q_function_from(algo)
-
-    def fit(self, dataset: MDPDataset, **kwargs):
-        return self.base_algo.fit(dataset, **kwargs)
-
-    def fit_batch_online(self, env: gym.Env, **kwargs):
-        return self.base_algo.fit_batch_online(env, **kwargs)
-
-    def fit_online(self, env: gym.Env, **kwargs):
-        return self.base_algo.fit_online(env, **kwargs)
-
-    def fitter(self, env: gym.Env, **kwargs):
-        return self.base_algo.fitter(env, **kwargs)
-
-    def generate_new_data(self, transition: Transition):
-        return self.base_algo.generate_new_data(transition)
-
-    def collect(self, env: gym.Env, **kwargs):
-        return self.base_algo.collect(env, **kwargs)
-
-    def update(self, batch: TransitionMiniBatch):
-        return self.base_algo.update(batch)
-
-    def create_impl(self, observation_shape: Sequence[int], action_size: int):
-        return self.base_algo.create_impl(observation_shape, action_size)
-
-    def get_action_type(self):
-        return self.base_algo.get_action_type()
-
-    def get_params(self, **kwargs):
-        return self.base_algo.get_params()
-
-    def load_model(self, fname: str):
-        return self.base_algo.load_model(fname)
-
-    def from_json(self, fname: str, **kwargs):
-        return self.base_algo.from_json(fname, **kwargs)
-
-    def save_model(self, fname: str):
-        return self.base_algo.save_model(fname)
-
-    def save_params(self, logger: D3RLPyLogger):
-        return self.base_algo.save_model(logger)
-
-    def save_policy(self, fname: str, **kwargs):
-        return self.base_algo.save_policy(fname, **kwargs)
-
-    def set_active_logger(self, logger: D3RLPyLogger):
-        return self.base_algo.set_active_logger(logger)
-
-    def set_grad_step(self, grad_step: int):
-        return self.base_algo.set_grad_step(grad_step)
-
-    def set_params(self, **params):
-        return self.base_algo.set_params(**params)
-
-    @property
-    def scaler(self):
-        return self.base_algo.scaler
-
-    @property
-    def action_scalar(self):
-        return self.base_algo.action_scaler
-
-    @property
-    def reward_scaler(self):
-        return self.base_algo.reward_scaler
-
-    @property
-    def observation_space(self):
-        return self.base_algo.observation_space
-
-    @property
-    def action_size(self):
-        return self.base_algo.action_size
-
-    @property
-    def gamma(self):
-        return self.base_algo.gamma
-
-    @property
-    def batch_size(self):
-        return self.base_algo.batch_size
-
-    @property
-    def grad_step(self):
-        return self.base_algo.grad_step
-
-    @property
-    def n_frames(self):
-        return self.base_algo.n_frames
-
-    @property
-    def n_steps(self):
-        return self.base_algo.n_steps
-
-    @property
-    def impl(self):
-        return self.base_algo.impl
-
-    @property
-    def action_logger(self):
-        return self.base_algo.action_logger
+    def __getattr__(self, key):
+        try:
+            return object.__getattribute__(self.base_algo, key)
+        except:
+            raise AttributeError()
 
 
 @dataclass

@@ -354,7 +354,9 @@ class OffPolicyEvaluation:
                         estimated_trajectory_values_df_ / on_policy_policy_value.mean()
                     )
                 else:
-                    raise ValueError()
+                    raise ValueError(
+                        f"on_policy_policy_value must be a positive value, but {on_policy_policy_value} is given"
+                    )
 
             estimated_trajectory_values_df_dict[
                 eval_policy

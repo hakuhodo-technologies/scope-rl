@@ -11,8 +11,7 @@ from .base import (
     BaseClickAndConversionRate,
 )
 from .function import WinningPriceDistribution, ClickThroughRate, ConversionRate
-from ...utils import NormalDistribution
-from ...utils import check_array
+from ...utils import NormalDistribution, check_array
 from ...types import Numeric
 
 

@@ -13,8 +13,10 @@ from d3rlpy.algos import AlgoBase
 from sklearn.utils import check_scalar
 
 from ..policy.head import BaseHead, OnlineHead
-from ..utils import estimate_confidence_interval_by_bootstrap
-from ..utils import check_confidence_interval_argument
+from ..utils import (
+    estimate_confidence_interval_by_bootstrap,
+    check_confidence_interval_argument,
+)
 
 
 def visualize_on_policy_policy_value(

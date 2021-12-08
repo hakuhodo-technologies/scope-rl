@@ -1,5 +1,7 @@
-from _gym.env.simulator.function import BaseWinningPriceDistribution
-from _gym.env.simulator.function import BaseClickAndConversionRate
+from _gym.env.simulator.function import (
+    BaseWinningPriceDistribution,
+    BaseClickAndConversionRate,
+)
 
 
 __all__ = [

@@ -10,14 +10,7 @@
  - How the logic works?
 
 ## Links
-- JIRA ticket
-(http://xxxx)
-
-- Confluence
-(http://xxxx)
-
-- Reference
-[name](link)
+- [reference name](link)
 
 ## Checklist
 
