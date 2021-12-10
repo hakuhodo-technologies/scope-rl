@@ -194,8 +194,8 @@ class CustomizedRTBEnv(gym.Env):
             check_scalar(n_actions, name="n_acitons", target_type=int, min_val=2)
 
             if action_meaning is None:
-                self.action_meaning = np.logspace(
-                    np.log10(action_min), np.log10(action_max), self.n_actions
+                action_meaning = np.logspace(
+                    np.log10(action_min), np.log10(action_max), n_actions
                 )
 
             check_array(
@@ -209,6 +209,7 @@ class CustomizedRTBEnv(gym.Env):
                 raise ValueError(
                     "Expected `action_meaning.shape[0] == n_actions`, but found False"
                 )
+            self.action_meaning = action_meaning
 
         # set reward predictor
         if reward_predictor is not None:

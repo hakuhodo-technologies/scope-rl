@@ -89,7 +89,7 @@ class OffPolicyEvaluation:
             "behavior_policy_trajectory_wise_pscore": behavior_policy_trajectory_wise_pscore.flatten(),
         }
 
-    def estimate_policy_values(
+    def estimate_policy_value(
         self,
         input_dict: OPEInputDict,
         gamma: float = 1.0,
@@ -145,7 +145,7 @@ class OffPolicyEvaluation:
         n_bootstrap_samples: int = 100,
         random_state: Optional[int] = None,
     ) -> Dict[str, Dict[str, float]]:
-        """Estimate confidence intervals of policy values using nonparametric bootstrap procedure.
+        """Estimate confidence intervals of policy value using nonparametric bootstrap procedure.
 
         Parameters
         -------
@@ -206,7 +206,7 @@ class OffPolicyEvaluation:
         n_bootstrap_samples: int = 100,
         random_state: Optional[int] = None,
     ) -> Tuple[Dict[str, DataFrame], Dict[str, DataFrame]]:
-        """Summarize policy values and their confidence intervals estimated by OPE estimators.
+        """Summarize policy value and their confidence intervals estimated by OPE estimators.
 
         Parameters
         -------
@@ -238,11 +238,11 @@ class OffPolicyEvaluation:
         Return
         -------
         (policy_value_df_dict, policy_value_interval_df_dict): Tuple[Dict[str, DataFrame], Dict[str, DataFrame]]
-            Dictionary containing policy values and their confidence intervals.
+            Dictionary containing policy value and their confidence intervals.
             key: [evaluation_policy_name]
 
         """
-        policy_value_dict = self.estimate_policy_values(input_dict)
+        policy_value_dict = self.estimate_policy_value(input_dict)
         policy_value_interval_dict = self.estimate_intervals(
             input_dict,
             gamma=gamma,
@@ -288,7 +288,7 @@ class OffPolicyEvaluation:
         fig_dir: Optional[Path] = None,
         fig_name: str = "estimated_policy_value.png",
     ) -> None:
-        """Visualize policy values estimated by OPE estimators.
+        """Visualize policy value estimated by OPE estimators.
 
         Parameters
         -------
@@ -318,7 +318,7 @@ class OffPolicyEvaluation:
             Random state.
 
         is_relative: bool, default=False
-            If `True`, the method visualizes the estimated policy values of evaluation policy
+            If `True`, the method visualizes the estimated policy value of evaluation policy
             relative to the ground-truth policy value of behavior policy.
 
         sharey: bool, default=False
@@ -337,35 +337,33 @@ class OffPolicyEvaluation:
         if fig_name is not None and not isinstance(fig_name, str):
             raise ValueError(f"fig_dir must be a string, but {type(fig_dir)} is given")
 
-        estimated_trajectory_values_df_dict = dict()
+        estimated_trajectory_value_df_dict = dict()
         for eval_policy in input_dict.keys():
-            estimated_trajectory_values_dict_ = dict()
+            estimated_trajectory_value_dict_ = dict()
             for estimator_name, estimator in self.ope_estimators_.items():
-                estimated_trajectory_values_dict_[
+                estimated_trajectory_value_dict_[
                     estimator_name
-                ] = estimator._estimate_trajectory_values(
+                ] = estimator._estimate_trajectory_value(
                     **input_dict[eval_policy],
                     **self.input_dict_,
                     gamma=gamma,
                 )
-            estimated_trajectory_values_df_ = DataFrame(
-                estimated_trajectory_values_dict_
-            )
+            estimated_trajectory_value_df_ = DataFrame(estimated_trajectory_value_dict_)
 
             on_policy_policy_value = input_dict[eval_policy]["on_policy_policy_value"]
             if is_relative:
                 if on_policy_policy_value is not None and on_policy_policy_value > 0:
-                    estimated_trajectory_values_df_dict[eval_policy] = (
-                        estimated_trajectory_values_df_ / on_policy_policy_value.mean()
+                    estimated_trajectory_value_df_dict[eval_policy] = (
+                        estimated_trajectory_value_df_ / on_policy_policy_value.mean()
                     )
                 else:
                     raise ValueError(
                         f"on_policy_policy_value must be a positive value, but {on_policy_policy_value} is given"
                     )
 
-            estimated_trajectory_values_df_dict[
+            estimated_trajectory_value_df_dict[
                 eval_policy
-            ] = estimated_trajectory_values_df_
+            ] = estimated_trajectory_value_df_
 
         plt.style.use("ggplot")
         fig = plt.figure(figsize=(2 * len(self.ope_estimators_), 12 * len(input_dict)))
@@ -379,7 +377,7 @@ class OffPolicyEvaluation:
                 ax = fig.add_subplot(len(self.ope_estimators_), 1, i + 1)
 
             sns.barplot(
-                data=estimated_trajectory_values_df_dict[eval_policy],
+                data=estimated_trajectory_value_df_dict[eval_policy],
                 ax=ax,
                 ci=100 * (1 - alpha),
                 n_boot=n_bootstrap_samples,
@@ -477,7 +475,7 @@ class OffPolicyEvaluation:
                 f"metric must be either 'relative-ee' or 'se', but {metric} is given"
             )
         eval_metric_ope_dict = defaultdict(dict)
-        policy_value_dict = self.estimate_policy_values(input_dict, gamma=gamma)
+        policy_value_dict = self.estimate_policy_value(input_dict, gamma=gamma)
 
         if metric == "relative-ee":
             for eval_policy in input_dict.keys():
@@ -630,33 +628,6 @@ class CreateOPEInput:
                     "use_gpu": torch.cuda.is_available(),
                 }
 
-    def predict_counterfactual_state_action_value(
-        self,
-        evaluation_policy: BaseHead,
-    ) -> np.ndarray:
-        """Predict counterfactual state action values.
-
-        Parameters
-        -------
-        evaluation_policy: BaseHead
-            Evaluation policy.
-
-        Return
-        -------
-        counterfactual_state_action_value: NDArray, shape (n_samples, n_actions)
-            State action values for all observed state and possible action.
-
-        """
-        x = self.logged_dataset["state"]
-        x_ = []
-        for i in range(x.shape[0]):
-            x_.append(np.tile(x[i], (self.n_actions, 1)))
-        x_ = np.array(x_).reshape((-1, x.shape[1]))
-        a_ = np.tile(np.arange(self.n_actions), x.shape[0])
-        return self.fqe[evaluation_policy.name].predict_value(
-            x_, a_
-        )  # (n_samples, n_actions)
-
     def build_and_fit_FQE(
         self,
         evaluation_policy: BaseHead,
@@ -716,6 +687,34 @@ class CreateOPEInput:
                 n_steps_per_epoch=n_steps_per_epoch,
                 scorers={},
             )
+
+    def predict_state_action_value(
+        self,
+        evaluation_policy: BaseHead,
+    ) -> np.ndarray:
+        """Predict state action value for all actions.
+
+        Parameters
+        -------
+        evaluation_policy: BaseHead
+            Evaluation policy.
+
+        Return
+        -------
+        state_action_value_prediction: NDArray, shape (n_samples, n_actions)
+            State action value for observed state and all actions,
+            i.e., math`\\hat{Q}(s, a) \\forall a \\in \\mathcal{A}`.
+
+        """
+        x = self.logged_dataset["state"]
+        x_ = []
+        for i in range(x.shape[0]):
+            x_.append(np.tile(x[i], (self.n_actions, 1)))
+        x_ = np.array(x_).reshape((-1, x.shape[1]))
+        a_ = np.tile(np.arange(self.n_actions), x.shape[0])
+        return self.fqe[evaluation_policy.name].predict_value(
+            x_, a_
+        )  # (n_samples, n_actions)
 
     def obtain_evaluation_policy_action(
         self,
@@ -827,7 +826,7 @@ class CreateOPEInput:
             Evaluation policy pscore :math:`\\pi_e(a_t \\mid s_t)`.
 
         state_action_value_prediction: NDArray, shape (n_samples, n_actions)
-            State action values for all observed state and possible action.
+            State action value for all observed state and possible action.
 
         """
         if not isinstance(evaluation_policy, BaseHead):
@@ -854,7 +853,7 @@ class CreateOPEInput:
         Return
         -------
         state_action_value_prediction: NDArray, shape (n_samples, n_actions)
-            State action values for the observed state and action chosen by evaluation policy.
+            State action value for the observed state and action chosen by evaluation policy.
 
         """
         if not isinstance(evaluation_policy, BaseHead):
@@ -877,7 +876,7 @@ class CreateOPEInput:
         Return
         -------
         initial_state_value_prediction: NDArray, shape (n_samples, n_actions)
-            State action values for the observed state and action chosen by evaluation policy.
+            State action value for the observed state and action chosen by evaluation policy.
 
         """
         if not isinstance(evaluation_policy, BaseHead):
@@ -906,7 +905,7 @@ class CreateOPEInput:
         Return
         -------
         initial_state_value_prediction: NDArray, shape (n_samples, n_actions)
-            State action values for the observed state and action chosen by evaluation policy.
+            State action value for the observed state and action chosen by evaluation policy.
 
         """
         if not isinstance(evaluation_policy, BaseHead):

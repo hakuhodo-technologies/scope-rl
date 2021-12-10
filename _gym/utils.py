@@ -202,12 +202,12 @@ def check_array(
                 f"The elements of {name} must be {expected_dtype}, but got {array.dtype}"
             )
     if min_val is not None:
-        if not array.min() < min_val:
+        if array.min() < min_val:
             raise ValueError(
                 f"The elements of {name} must be larger than {min_val}, but got minimum value {array.min()}"
             )
     if max_val is not None:
-        if not array.max() > max_val:
+        if array.max() > max_val:
             raise ValueError(
                 f"The elements of {name} must be smaller than {max_val}, but got maximum value {array.max()}"
             )

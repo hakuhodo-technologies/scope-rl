@@ -113,9 +113,9 @@ class RTBSyntheticSimulator(BaseSimulator):
     random_state: Optional[int] = None
 
     def __post_init__(self):
-        if self.click_indicator not in ["impression", "click", "conversion"]:
+        if self.cost_indicator not in ["impression", "click", "conversion"]:
             raise ValueError(
-                f"click_indicator must be 'impression', 'click', or 'conversion', but {self.click_indicator} is given"
+                f"cost_indicator must be 'impression', 'click', or 'conversion', but {self.click_indicator} is given"
             )
         check_scalar(
             self.step_per_episode,
@@ -164,7 +164,7 @@ class RTBSyntheticSimulator(BaseSimulator):
             name="ad_feature_vector",
             expected_dim=2,
         )
-        if self.ad_feature_dim.shape != (self.n_ads, self.ad_feature_dim):
+        if self.ad_feature_vector.shape != (self.n_ads, self.ad_feature_dim):
             raise ValueError(
                 "The shape of ad_feature_vector must be (n_ads, ad_feature_dim)"
             )
@@ -177,7 +177,7 @@ class RTBSyntheticSimulator(BaseSimulator):
             name="user_feature_vector",
             expected_dim=2,
         )
-        if self.user_feature_dim.shape != (self.n_users, self.user_feature_dim):
+        if self.user_feature_vector.shape != (self.n_users, self.user_feature_dim):
             raise ValueError(
                 "The shape of user_feature_vector must be (n_users, user_feature_dim)"
             )
@@ -373,12 +373,12 @@ class RTBSyntheticSimulator(BaseSimulator):
         check_scalar(
             volume,
             name="volume",
-            target_type=int,
+            target_type=(int, np.integer),
             min_val=1,
         )
 
         if timestep is not None:
-            check_scalar(timestep, name="timestep", target_type=int, min_val=1)
+            check_scalar(timestep, name="timestep", target_type=int, min_val=0)
             ad_ids = self.random_.choice(
                 self.ad_ids,
                 size=volume,

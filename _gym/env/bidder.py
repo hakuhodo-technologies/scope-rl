@@ -72,12 +72,13 @@ class Bidder:
             raise ValueError(
                 "reward_predictor must be BaseEstimator or a child class of BaseEstimator"
             )
-        check_scalar(
-            self.scaler,
-            name="scaler",
-            target_type=(int, float),
-            min_val=0,
-        )
+        if self.scaler is not None:
+            check_scalar(
+                self.scaler,
+                name="scaler",
+                target_type=(int, float),
+                min_val=0,
+            )
         if self.random_state is None:
             raise ValueError("random_state must be given")
         self.random_ = check_random_state(self.random_state)

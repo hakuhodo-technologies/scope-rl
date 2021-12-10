@@ -1,12 +1,18 @@
 """Wrapper class to convert greedy policy into stochastic."""
 from abc import abstractmethod
-from typing import Union, Optional
+from typing import Union, Optional, Sequence
 from dataclasses import dataclass
 
 import numpy as np
 from scipy.stats import truncnorm
 from sklearn.utils import check_scalar, check_random_state
+
+import gym
 from d3rlpy.algos import AlgoBase
+from d3rlpy.dataset import MDPDataset, Transition, TransitionMiniBatch
+from d3rlpy.logger import D3RLPyLogger
+
+from ..utils import check_array
 
 
 @dataclass
@@ -50,11 +56,128 @@ class BaseHead(AlgoBase):
         action, pscore = self.stochastic_action_with_pscore(x.reshape(1, -1))
         return action[0], pscore[0]
 
-    def __getattr__(self, key):
-        try:
-            return object.__getattribute__(self.base_policy, key)
-        except:
-            raise AttributeError()
+    def predict(self, x: np.ndarray):
+        return self.base_policy.predict(x)
+
+    def predict_value(self, x: np.ndarray, action: np.ndarray, with_std: bool = False):
+        return self.base_policy.predict_value(x, action, with_std)
+
+    def sample_action(self, x: np.ndarray):
+        return self.base_policy.sample_action(x)
+
+    def build_with_dataset(self, dataset: MDPDataset):
+        return self.base_policy.build_with_dataset(dataset)
+
+    def build_with_env(self, env: gym.Env):
+        return self.base_policy.build_with_env(env)
+
+    def copy_policy_from(self, algo: AlgoBase):
+        return self.base_policy.copy_policy_from(algo)
+
+    def copy_q_function_from(self, algo: AlgoBase):
+        return self.base_policy.copy_q_function_from(algo)
+
+    def fit(self, dataset: MDPDataset, **kwargs):
+        return self.base_policy.fit(dataset, **kwargs)
+
+    def fit_batch_online(self, env: gym.Env, **kwargs):
+        return self.base_policy.fit_batch_online(env, **kwargs)
+
+    def fit_online(self, env: gym.Env, **kwargs):
+        return self.base_policy.fit_online(env, **kwargs)
+
+    def fitter(self, env: gym.Env, **kwargs):
+        return self.base_policy.fitter(env, **kwargs)
+
+    def generate_new_data(self, transition: Transition):
+        return self.base_policy.generate_new_data(transition)
+
+    def collect(self, env: gym.Env, **kwargs):
+        return self.base_policy.collect(env, **kwargs)
+
+    def update(self, batch: TransitionMiniBatch):
+        return self.base_policy.update(batch)
+
+    def create_impl(self, observation_shape: Sequence[int], action_size: int):
+        return self.base_policy.create_impl(observation_shape, action_size)
+
+    def get_action_type(self):
+        return self.base_policy.get_action_type()
+
+    def get_params(self, **kwargs):
+        return self.base_policy.get_params()
+
+    def load_model(self, fname: str):
+        return self.base_policy.load_model(fname)
+
+    def from_json(self, fname: str, **kwargs):
+        return self.base_policy.from_json(fname, **kwargs)
+
+    def save_model(self, fname: str):
+        return self.base_policy.save_model(fname)
+
+    def save_params(self, logger: D3RLPyLogger):
+        return self.base_policy.save_model(logger)
+
+    def save_policy(self, fname: str, **kwargs):
+        return self.base_policy.save_policy(fname, **kwargs)
+
+    def set_active_logger(self, logger: D3RLPyLogger):
+        return self.base_policy.set_active_logger(logger)
+
+    def set_grad_step(self, grad_step: int):
+        return self.base_policy.set_grad_step(grad_step)
+
+    def set_params(self, **params):
+        return self.base_policy.set_params(**params)
+
+    @property
+    def scaler(self):
+        return self.base_policy.scaler
+
+    @property
+    def action_scalar(self):
+        return self.base_policy.action_scaler
+
+    @property
+    def reward_scaler(self):
+        return self.base_policy.reward_scaler
+
+    @property
+    def observation_space(self):
+        return self.base_policy.observation_space
+
+    @property
+    def action_size(self):
+        return self.base_policy.action_size
+
+    @property
+    def gamma(self):
+        return self.base_policy.gamma
+
+    @property
+    def batch_size(self):
+        return self.base_policy.batch_size
+
+    @property
+    def grad_step(self):
+        return self.base_policy.grad_step
+
+    @property
+    def n_frames(self):
+        return self.base_policy.n_frames
+
+    @property
+    def n_steps(self):
+        return self.base_policy.n_steps
+
+    @property
+    def impl(self):
+        return self.base_policy.impl
+
+    @property
+    def action_logger(self):
+        return self.base_policy.action_logger
 
 
 @dataclass
@@ -433,9 +556,9 @@ class ContinuousEpsilonGreedyHead(BaseHead):
             self.epsilon, name="epsilon", target_type=float, min_val=0.0, max_val=1.0
         )
 
-        check_scalar(self.minimum, name="minimum", target_type=float)
-        check_scalar(self.maximum, name="maximum", target_type=float)
-        if self.minimum >= self.maximum:
+        check_array(self.minimum, name="minimum", expected_dim=1)
+        check_array(self.maximum, name="maximum", expected_dim=1)
+        if np.any(self.minimum >= self.maximum):
             raise ValueError("minimum must be smaller than maximum")
         self.uniform_pscore = 1 / (self.maximum - self.minimum)
 
@@ -554,9 +677,9 @@ class ContinuousTruncatedGaussianHead(BaseHead):
 
         check_scalar(self.sigma, name="sigma", target_type=float, min_val=0.0)
 
-        check_scalar(self.minimum, name="minimum", target_type=float)
-        check_scalar(self.maximum, name="maximum", target_type=float)
-        if self.minimum >= self.maximum:
+        check_array(self.minimum, name="minimum", expected_dim=1)
+        check_array(self.maximum, name="maximum", expected_dim=1)
+        if np.any(self.minimum >= self.maximum):
             raise ValueError("minimum must be smaller than maximum")
         self.uniform_pscore = 1 / (self.maximum - self.minimum)
 
@@ -705,9 +828,9 @@ class ContinuousMixtureHead(BaseHead):
         )
         check_scalar(self.sigma, name="sigma", target_type=float, min_val=0.0)
 
-        check_scalar(self.minimum, name="minimum", target_type=float)
-        check_scalar(self.maximum, name="maximum", target_type=float)
-        if self.minimum >= self.maximum:
+        check_array(self.minimum, name="minimum", expected_dim=1)
+        check_array(self.maximum, name="maximum", expected_dim=1)
+        if np.any(self.minimum >= self.maximum):
             raise ValueError("minimum must be smaller than maximum")
         self.uniform_pscore = 1 / (self.maximum - self.minimum)
 

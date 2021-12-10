@@ -15,7 +15,7 @@ class BaseOffPolicyEstimator(metaclass=ABCMeta):
     """Base class for OPE estimators for discrete action."""
 
     @abstractmethod
-    def _estimate_trajectory_values(self) -> np.ndarray:
+    def _estimate_trajectory_value(self) -> np.ndarray:
         """Estimate trajectory-wise reward."""
         raise NotImplementedError
 
@@ -68,7 +68,7 @@ class DiscreteDirectMethod(BaseOffPolicyEstimator):
     def __post_init__(self):
         self.action_type = "discrete"
 
-    def _estimate_trajectory_values(
+    def _estimate_trajectory_value(
         self,
         initial_state_value_prediction,
         **kwargs,
@@ -110,7 +110,7 @@ class DiscreteDirectMethod(BaseOffPolicyEstimator):
             name="initial_state_value_prediction",
             expected_dim=1,
         )
-        estimated_policy_value = self._estimate_trajectory_values(
+        estimated_policy_value = self._estimate_trajectory_value(
             initial_state_value_prediction
         ).mean()
         return estimated_policy_value
@@ -150,7 +150,7 @@ class DiscreteDirectMethod(BaseOffPolicyEstimator):
             name="initial_state_value_prediction",
             expected_dim=1,
         )
-        estimated_trajectory_value = self._estimate_trajectory_values(
+        estimated_trajectory_value = self._estimate_trajectory_value(
             initial_state_value_prediction
         )
         return estimate_confidence_interval_by_bootstrap(
@@ -198,7 +198,7 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
     def __post_init__(self):
         self.action_type = "discrete"
 
-    def _estimate_trajectory_values(
+    def _estimate_trajectory_value(
         self,
         step_per_episode: int,
         reward: np.ndarray,
@@ -315,7 +315,7 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
             )
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
 
-        estimated_policy_value = self._estimate_trajectory_values(
+        estimated_policy_value = self._estimate_trajectory_value(
             step_per_episode=step_per_episode,
             reward=reward,
             behavior_policy_trajectory_wise_pscore=behavior_policy_trajectory_wise_pscore,
@@ -408,7 +408,7 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
             )
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
 
-        estimated_trajectory_value = self._estimate_trajectory_values(
+        estimated_trajectory_value = self._estimate_trajectory_value(
             step_per_episode=step_per_episode,
             reward=reward,
             behavior_policy_trajectory_wise_pscore=behavior_policy_trajectory_wise_pscore,
@@ -460,7 +460,7 @@ class DiscreteStepWiseImportanceSampling(BaseOffPolicyEstimator):
     def __post_init__(self):
         self.action_type = "discrete"
 
-    def _estimate_trajectory_values(
+    def _estimate_trajectory_value(
         self,
         step_per_episode: int,
         reward: np.ndarray,
@@ -574,7 +574,7 @@ class DiscreteStepWiseImportanceSampling(BaseOffPolicyEstimator):
             )
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
 
-        return self._estimate_trajectory_values(
+        return self._estimate_trajectory_value(
             step_per_episode=step_per_episode,
             reward=reward,
             behavior_policy_step_wise_pscore=behavior_policy_step_wise_pscore,
@@ -666,7 +666,7 @@ class DiscreteStepWiseImportanceSampling(BaseOffPolicyEstimator):
             )
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
 
-        estimated_trajectory_value = self._estimate_trajectory_values(
+        estimated_trajectory_value = self._estimate_trajectory_value(
             step_per_episode=step_per_episode,
             reward=reward,
             behavior_policy_step_wise_pscore=behavior_policy_step_wise_pscore,
@@ -725,7 +725,7 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
     def __post_init__(self):
         self.action_type = "discrete"
 
-    def _estimate_trajectory_values(
+    def _estimate_trajectory_value(
         self,
         step_per_episode: int,
         action: np.ndarray,
@@ -916,15 +916,15 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
             )
         if not np.allclose(
             evaluation_policy_action_dist.sum(axis=1),
-            np.ones(np.ones(evaluation_policy_action_dist.shape[0])),
+            np.ones(evaluation_policy_action_dist.shape[0]),
         ):
             raise ValueError(
-                "Expected `evaluation_policy_action_dist.sum(axis=1) == np.ones(np.ones(evaluation_policy_action_dist.shape[0]))`"
+                "Expected `evaluation_policy_action_dist.sum(axis=1) == np.ones(evaluation_policy_action_dist.shape[0])`"
                 ", but found it False"
             )
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
 
-        return self._estimate_trajectory_values(
+        return self._estimate_trajectory_value(
             step_per_episode=step_per_episode,
             action=action,
             reward=reward,
@@ -1064,15 +1064,15 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
             )
         if not np.allclose(
             evaluation_policy_action_dist.sum(axis=1),
-            np.ones(np.ones(evaluation_policy_action_dist.shape[0])),
+            np.ones(evaluation_policy_action_dist.shape[0]),
         ):
             raise ValueError(
-                "Expected `evaluation_policy_action_dist.sum(axis=1) == np.ones(np.ones(evaluation_policy_action_dist.shape[0]))`"
+                "Expected `evaluation_policy_action_dist.sum(axis=1) == np.ones(evaluation_policy_action_dist.shape[0])`"
                 ", but found it False"
             )
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
 
-        estimated_trajectory_value = self._estimate_trajectory_values(
+        estimated_trajectory_value = self._estimate_trajectory_value(
             step_per_episode=step_per_episode,
             action=action,
             reward=reward,
@@ -1136,7 +1136,7 @@ class DiscreteSelfNormalizedTrajectoryWiseImportanceSampling(
     def __post_init__(self):
         self.action_type = "discrete"
 
-    def _estimate_trajectory_values(
+    def _estimate_trajectory_value(
         self,
         step_per_episode: int,
         reward: np.ndarray,
@@ -1235,7 +1235,7 @@ class DiscreteSelfNormalizedStepWiseImportanceSampling(
     def __post_init__(self):
         self.action_type = "discrete"
 
-    def _estimate_trajectory_values(
+    def _estimate_trajectory_value(
         self,
         step_per_episode: int,
         reward: np.ndarray,
@@ -1334,7 +1334,7 @@ class DiscreteSelfNormalizedDoublyRobust(DiscreteDoublyRobust):
     def __post_init__(self):
         self.action_type = "discrete"
 
-    def _estimate_trajectory_values(
+    def _estimate_trajectory_value(
         self,
         step_per_episode: int,
         action: np.ndarray,
