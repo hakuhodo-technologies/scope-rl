@@ -19,12 +19,12 @@ class BaseHead(AlgoBase):
         raise NotImplementedError()
 
     @abstractmethod
-    def calculate_action_choice_probability(self, x: np.ndarray):
+    def calc_action_choice_probability(self, x: np.ndarray):
         """Calcullate action choice probabilities."""
         raise NotImplementedError()
 
     @abstractmethod
-    def calculate_pscore_given_action(self, x: np.ndarray, action: np.ndarray):
+    def calc_pscore_given_action(self, x: np.ndarray, action: np.ndarray):
         """Calculate pscore given action."""
         raise NotImplementedError()
 
@@ -73,10 +73,10 @@ class OnlineHead(BaseHead):
     def stochastic_action_with_pscore(self, x: np.ndarray):
         pass
 
-    def calculate_action_choice_probability(self, x: np.ndarray):
+    def calc_action_choice_probability(self, x: np.ndarray):
         pass
 
-    def calculate_pscore_given_action(self, x: np.ndarray, action: np.ndarray):
+    def calc_pscore_given_action(self, x: np.ndarray, action: np.ndarray):
         pass
 
 
@@ -116,7 +116,7 @@ class DiscreteEpsilonGreedyHead(BaseHead):
         if not isinstance(self.base_policy, AlgoBase):
             raise ValueError("base_policy must be a child class of AlgoBase")
 
-        check_scalar(self.n_actions, name="actions", target_type=int, min_val=2)
+        check_scalar(self.n_actions, name="n_actions", target_type=int, min_val=2)
         self.action_matrix = np.eye(self.n_actions)
 
         check_scalar(
@@ -145,10 +145,10 @@ class DiscreteEpsilonGreedyHead(BaseHead):
 
         """
         action = self.sample_action(x)
-        pscore = self.calculate_pscore_given_action(x, action)
+        pscore = self.calc_pscore_given_action(x, action)
         return action, pscore
 
-    def calculate_action_choice_probability(self, x: np.ndarray):
+    def calc_action_choice_probability(self, x: np.ndarray):
         """Calcullate action choice probabilities.
 
         Parameters
@@ -170,7 +170,7 @@ class DiscreteEpsilonGreedyHead(BaseHead):
         ) * uniform_matrix
         return pscore  # shape (n_samples, n_actions)
 
-    def calculate_pscore_given_action(self, x: np.ndarray, action: np.ndarray):
+    def calc_pscore_given_action(self, x: np.ndarray, action: np.ndarray):
         """Calculate pscore given action.
 
         Parameters
@@ -331,7 +331,7 @@ class DiscreteSoftmaxHead(BaseHead):
 
         return action, pscore
 
-    def calculate_action_choice_probability(self, x: np.ndarray):
+    def calc_action_choice_probability(self, x: np.ndarray):
         """Calcullate action choice probabilities.
 
         Parameters
@@ -348,7 +348,7 @@ class DiscreteSoftmaxHead(BaseHead):
         predicted_value = self._predict_counterfactual_state_action_value(x)
         return self._softmax(predicted_value)  # (n_samples, n_actions)
 
-    def calculate_pscore_given_action(self, x: np.ndarray, action: np.ndarray):
+    def calc_pscore_given_action(self, x: np.ndarray, action: np.ndarray):
         """Calculate pscore given action.
 
         Parameters
@@ -365,7 +365,7 @@ class DiscreteSoftmaxHead(BaseHead):
             Pscore of the given state and action.
 
         """
-        prob = self.calculate_pscore(x)
+        prob = self.calc_pscore(x)
         actions_id = np.array(
             [action[i] + i * self.n_actions for i in range(len(action))]
         ).flatten()
@@ -461,10 +461,10 @@ class ContinuousEpsilonGreedyHead(BaseHead):
 
         """
         action = self.sample_action(x)
-        pscore = self.calculate_pscore_given_action(x, action)
+        pscore = self.calc_pscore_given_action(x, action)
         return action, pscore
 
-    def calculate_pscore_given_action(self, x: np.ndarray, action: np.ndarray):
+    def calc_pscore_given_action(self, x: np.ndarray, action: np.ndarray):
         """Calculate pscore given action.
 
         Parameters
@@ -612,7 +612,7 @@ class ContinuousTruncatedGaussianHead(BaseHead):
         pscore = self._calc_pscore(greedy_action, action)
         return action, pscore
 
-    def calculate_pscore_given_action(self, x: np.ndarray, action: np.ndarray):
+    def calc_pscore_given_action(self, x: np.ndarray, action: np.ndarray):
         """Calculate pscore given action.
 
         Parameters
@@ -759,10 +759,10 @@ class ContinuousMixtureHead(BaseHead):
 
         """
         action = self.sample_action(x)
-        pscore = self.calculate_pscore_given_action(x, action)
+        pscore = self.calc_pscore_given_action(x, action)
         return action, pscore
 
-    def calculate_pscore_given_action(self, x: np.ndarray, action: np.ndarray):
+    def calc_pscore_given_action(self, x: np.ndarray, action: np.ndarray):
         """Calculate pscore given action.
 
         Parameters

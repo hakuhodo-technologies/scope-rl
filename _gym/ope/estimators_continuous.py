@@ -169,7 +169,7 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         Choice of kernel function.
         "gaussian" is acceptable.
 
-    band_width: Optional[np.ndarray]
+    band_width: Optional[NDArray]
         A bandwidth hyperparameter for each action dimension.
         A larger value increases bias instead of reducing variance.
         A smaller value increased variance instead of reducing bias.
@@ -368,12 +368,12 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
 
         return self._estimate_trajectory_value(
-            step_per_episode,
-            action,
-            reward,
-            behavior_policy_trajectory_wise_pscore,
-            evaluation_policy_action,
-            gamma,
+            step_per_episode=step_per_episode,
+            action=action,
+            reward=reward,
+            behavior_policy_trajectory_wise_pscore=behavior_policy_trajectory_wise_pscore,
+            evaluation_policy_action=evaluation_policy_action,
+            gamma=gamma,
         ).mean()
 
     def estimate_interval(
@@ -475,12 +475,12 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
 
         estimated_trajectory_value = self._estimate_trajectory_value(
-            step_per_episode,
-            action,
-            reward,
-            behavior_policy_trajectory_wise_pscore,
-            evaluation_policy_action,
-            gamma,
+            step_per_episode=step_per_episode,
+            action=action,
+            reward=reward,
+            behavior_policy_trajectory_wise_pscore=behavior_policy_trajectory_wise_pscore,
+            evaluation_policy_action=evaluation_policy_action,
+            gamma=gamma,
         )
         return estimate_confidence_interval_by_bootstrap(
             samples=estimated_trajectory_value,
@@ -513,7 +513,7 @@ class ContinuousStepWiseImportanceSampling(BaseOffPolicyEstimator):
         Choice of kernel function.
         "gaussian" is acceptable.
 
-    band_width: Optional[np.ndarray]
+    band_width: Optional[NDArray]
         A bandwidth hyperparameter for each action dimension.
         A larger value increases bias instead of reducing variance.
         A smaller value increased variance instead of reducing bias.
@@ -705,12 +705,12 @@ class ContinuousStepWiseImportanceSampling(BaseOffPolicyEstimator):
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
 
         return self._estimate_trajectory_value(
-            step_per_episode,
-            action,
-            reward,
-            behavior_policy_step_wise_pscore,
-            evaluation_policy_action,
-            gamma,
+            step_per_episode=step_per_episode,
+            action=action,
+            reward=reward,
+            behavior_policy_step_wise_pscore=behavior_policy_step_wise_pscore,
+            evaluation_policy_action=evaluation_policy_action,
+            gamma=gamma,
         ).mean()
 
     def estimate_interval(
@@ -812,12 +812,12 @@ class ContinuousStepWiseImportanceSampling(BaseOffPolicyEstimator):
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
 
         estimated_trajectory_value = self._estimate_trajectory_value(
-            step_per_episode,
-            action,
-            reward,
-            behavior_policy_step_wise_pscore,
-            evaluation_policy_action,
-            gamma,
+            step_per_episode=step_per_episode,
+            action=action,
+            reward=reward,
+            behavior_policy_step_wise_pscore=behavior_policy_step_wise_pscore,
+            evaluation_policy_action=evaluation_policy_action,
+            gamma=gamma,
         )
         return estimate_confidence_interval_by_bootstrap(
             samples=estimated_trajectory_value,
@@ -851,7 +851,7 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
         Choice of kernel function.
         "gaussian" is acceptable.
 
-    band_width: Optional[np.ndarray]
+    band_width: Optional[NDArray]
         A bandwidth hyperparameter for each action dimension.
         A larger value increases bias instead of reducing variance.
         A smaller value increased variance instead of reducing bias.
@@ -1071,13 +1071,13 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
 
         return self._estimate_trajectory_value(
-            step_per_episode,
-            action,
-            reward,
-            behavior_policy_step_wise_pscore,
-            evaluation_policy_action,
-            state_action_value_prediction,
-            gamma,
+            step_per_episode=step_per_episode,
+            action=action,
+            reward=reward,
+            behavior_policy_step_wise_pscore=behavior_policy_step_wise_pscore,
+            evaluation_policy_action=evaluation_policy_action,
+            state_action_value_prediction=state_action_value_prediction,
+            gamma=gamma,
         ).mean()
 
     def estimate_interval(
@@ -1184,13 +1184,13 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
 
         estimated_trajectory_value = self._estimate_trajectory_value(
-            step_per_episode,
-            action,
-            reward,
-            behavior_policy_step_wise_pscore,
-            evaluation_policy_action,
-            state_action_value_prediction,
-            gamma,
+            step_per_episode=step_per_episode,
+            action=action,
+            reward=reward,
+            behavior_policy_step_wise_pscore=behavior_policy_step_wise_pscore,
+            evaluation_policy_action=evaluation_policy_action,
+            state_action_value_prediction=state_action_value_prediction,
+            gamma=gamma,
         )
         return estimate_confidence_interval_by_bootstrap(
             samples=estimated_trajectory_value,
@@ -1226,7 +1226,7 @@ class ContinuousSelfNormalizedTrajectoryWiseImportanceSampling(
         Choice of kernel function.
         "gaussian" is acceptable.
 
-    band_width: Optional[np.ndarray]
+    band_width: Optional[NDArray]
         A bandwidth hyperparameter for each action dimension.
         A larger value increases bias instead of reducing variance.
         A smaller value increased variance instead of reducing bias.
@@ -1375,7 +1375,7 @@ class ContinuousSelfNormalizedStepWiseImportanceSampling(
         Choice of kernel function.
         "gaussian" is acceptable.
 
-    band_width: Optional[np.ndarray]
+    band_width: Optional[NDArray]
         A bandwidth hyperparameter for each action dimension.
         A larger value increases bias instead of reducing variance.
         A smaller value increased variance instead of reducing bias.
@@ -1521,7 +1521,7 @@ class ContinuousSelfNormalizedDoublyRobust(ContinuousDoublyRobust):
         Choice of kernel function.
         "gaussian" is acceptable.
 
-    band_width: Optional[np.ndarray]
+    band_width: Optional[NDArray]
         A bandwidth hyperparameter for each action dimension.
         A larger value increases bias instead of reducing variance.
         A smaller value increased variance instead of reducing bias.

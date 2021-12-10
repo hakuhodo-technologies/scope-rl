@@ -1,7 +1,8 @@
-"""Off-Policy Estimators for Discrete Actions."""
+"""Off-Policy Estimators for Discrete action."""
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
 from typing import Dict
+from matplotlib.pyplot import step
 
 import numpy as np
 from sklearn.utils import check_scalar
@@ -11,7 +12,7 @@ from ..utils import estimate_confidence_interval_by_bootstrap, check_array
 
 @dataclass
 class BaseOffPolicyEstimator(metaclass=ABCMeta):
-    """Base class for OPE estimators for discrete actions."""
+    """Base class for OPE estimators for discrete action."""
 
     @abstractmethod
     def _estimate_trajectory_values(self) -> np.ndarray:
@@ -315,11 +316,11 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
 
         estimated_policy_value = self._estimate_trajectory_values(
-            step_per_episode,
-            reward,
-            behavior_policy_trajectory_wise_pscore,
-            evaluation_policy_trajectory_wise_pscore,
-            gamma,
+            step_per_episode=step_per_episode,
+            reward=reward,
+            behavior_policy_trajectory_wise_pscore=behavior_policy_trajectory_wise_pscore,
+            evaluation_policy_trajectory_wise_pscore=evaluation_policy_trajectory_wise_pscore,
+            gamma=gamma,
         ).mean()
         return estimated_policy_value
 
@@ -408,10 +409,10 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
 
         estimated_trajectory_value = self._estimate_trajectory_values(
-            step_per_episode,
-            reward,
-            behavior_policy_trajectory_wise_pscore,
-            evaluation_policy_trajectory_wise_pscore,
+            step_per_episode=step_per_episode,
+            reward=reward,
+            behavior_policy_trajectory_wise_pscore=behavior_policy_trajectory_wise_pscore,
+            evaluation_policy_trajectory_wise_pscore=evaluation_policy_trajectory_wise_pscore,
             gamma=gamma,
         )
         return estimate_confidence_interval_by_bootstrap(
@@ -574,10 +575,10 @@ class DiscreteStepWiseImportanceSampling(BaseOffPolicyEstimator):
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
 
         return self._estimate_trajectory_values(
-            step_per_episode,
-            reward,
-            behavior_policy_step_wise_pscore,
-            evaluation_policy_step_wise_pscore,
+            step_per_episode=step_per_episode,
+            reward=reward,
+            behavior_policy_step_wise_pscore=behavior_policy_step_wise_pscore,
+            evaluation_policy_step_wise_pscore=evaluation_policy_step_wise_pscore,
             gamma=gamma,
         ).mean()
 
@@ -666,10 +667,10 @@ class DiscreteStepWiseImportanceSampling(BaseOffPolicyEstimator):
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
 
         estimated_trajectory_value = self._estimate_trajectory_values(
-            step_per_episode,
-            reward,
-            behavior_policy_step_wise_pscore,
-            evaluation_policy_step_wise_pscore,
+            step_per_episode=step_per_episode,
+            reward=reward,
+            behavior_policy_step_wise_pscore=behavior_policy_step_wise_pscore,
+            evaluation_policy_step_wise_pscore=evaluation_policy_step_wise_pscore,
             gamma=gamma,
         )
         return estimate_confidence_interval_by_bootstrap(
@@ -727,7 +728,7 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
     def _estimate_trajectory_values(
         self,
         step_per_episode: int,
-        actions: np.ndarray,
+        action: np.ndarray,
         reward: np.ndarray,
         behavior_policy_step_wise_pscore: np.ndarray,
         evaluation_policy_step_wise_pscore: np.ndarray,
@@ -743,6 +744,9 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
+        action: NDArray, shape (n_episodes * step_per_episode, )
+            Action chosen by behavior policy.
+
         reward: NDArray, shape (n_episodes * step_per_episode, )
             Reward observation.
 
@@ -754,12 +758,12 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
             Step-wise action choice probability of evaluation policy,
             i.e., :math:`\\prod_{t'=0}^t \\pi_b(a_{t'} \\mid s_{t'})`
 
-        evaluation_policy_action_dist: NDArray, shape (n_episodes * step_per_episode, n_actions)
-            Action choice probability of evaluation policy for all actions,
+        evaluation_policy_action_dist: NDArray, shape (n_episodes * step_per_episode, n_action)
+            Action choice probability of evaluation policy for all action,
             i.e., :math:`\\pi_e(a \mid s_t) \\forall a \\in \\mathcal{A}`
 
-        state_action_value_prediction: NDArray, shape (n_episodes * step_per_episode, n_actions)
-            :math:`\\hat{Q}` for all actions,
+        state_action_value_prediction: NDArray, shape (n_episodes * step_per_episode, n_action)
+            :math:`\\hat{Q}` for all action,
             i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
 
         gamma: float, default=1.0 (0, 1]
@@ -775,8 +779,8 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
             axis=1
         )
         estimated_value = np.empty_like(reward, dtype=float)
-        for i in range(len(actions)):
-            estimated_value[i] = state_action_value_prediction[i, actions[i]]
+        for i in range(len(action)):
+            estimated_value[i] = state_action_value_prediction[i, action[i]]
 
         weight = (
             evaluation_policy_step_wise_pscore / behavior_policy_step_wise_pscore
@@ -798,7 +802,7 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
     def estimate_policy_value(
         self,
         step_per_episode: int,
-        actions: np.ndarray,
+        action: np.ndarray,
         reward: np.ndarray,
         behavior_policy_step_wise_pscore: np.ndarray,
         evaluation_policy_step_wise_pscore: np.ndarray,
@@ -814,6 +818,9 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
+        action: NDArray, shape (n_episodes * step_per_episode, )
+            Action chosen by behavior policy.
+
         reward: NDArray, shape (n_episodes * step_per_episode, )
             Reward observation.
 
@@ -825,12 +832,12 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
             Step-wise action choice probability of evaluation policy,
             i.e., :math:`\\prod_{t'=0}^t \\pi_b(a_{t'} \\mid s_{t'})`
 
-        evaluation_policy_action_dist: NDArray, shape (n_episodes * step_per_episode, n_actions)
-            Action choice probability of evaluation policy for all actions,
+        evaluation_policy_action_dist: NDArray, shape (n_episodes * step_per_episode, n_action)
+            Action choice probability of evaluation policy for all action,
             i.e., :math:`\\pi_e(a \mid s_t) \\forall a \\in \\mathcal{A}`
 
-        state_action_value_prediction: NDArray, shape (n_episodes * step_per_episode, n_actions)
-            :math:`\\hat{Q}` for all actions,
+        state_action_value_prediction: NDArray, shape (n_episodes * step_per_episode, n_action)
+            :math:`\\hat{Q}` for all action,
             i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
 
         gamma: float, default=1.0 (0, 1]
@@ -879,15 +886,23 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
             min_val=0.0,
             max_val=1.0,
         )
+        check_array(
+            action,
+            name="action",
+            expected_dim=1,
+            min_val=0,
+            max_val=evaluation_policy_action_dist.shape[1] - 1,
+        )
         if not (
-            reward.shape[0]
+            action.shape[0]
+            == reward.shape[0]
             == behavior_policy_step_wise_pscore.shape[0]
             == evaluation_policy_step_wise_pscore.shape[0]
             == state_action_value_prediction.shape[0]
             == evaluation_policy_action_dist.shape[0]
         ):
             raise ValueError(
-                "Expected `reward.shape[0] == behavior_policy_step_wise_pscore.shape[0] == evaluation_policy_step_wise_pscore.shape[0] "
+                "Expected `action.shape[0] == reward.shape[0] == behavior_policy_step_wise_pscore.shape[0] == evaluation_policy_step_wise_pscore.shape[0] "
                 "== state_action_value_prediction.shape[0] == evaluation_policy_action_dist.shape[0]`"
                 ", but found False"
             )
@@ -910,20 +925,20 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
 
         return self._estimate_trajectory_values(
-            step_per_episode,
-            actions,
-            reward,
-            behavior_policy_step_wise_pscore,
-            evaluation_policy_step_wise_pscore,
-            evaluation_policy_action_dist,
-            state_action_value_prediction,
+            step_per_episode=step_per_episode,
+            action=action,
+            reward=reward,
+            behavior_policy_step_wise_pscore=behavior_policy_step_wise_pscore,
+            evaluation_policy_step_wise_pscore=evaluation_policy_step_wise_pscore,
+            evaluation_policy_action_dist=evaluation_policy_action_dist,
+            state_action_value_prediction=state_action_value_prediction,
             gamma=gamma,
         ).mean()
 
     def estimate_interval(
         self,
         step_per_episode: int,
-        actions: np.ndarray,
+        action: np.ndarray,
         reward: np.ndarray,
         behavior_policy_step_wise_pscore: np.ndarray,
         evaluation_policy_step_wise_pscore: np.ndarray,
@@ -942,6 +957,9 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
+        action: NDArray, shape (n_episodes * step_per_episode, )
+            Action chosen by behavior policy.
+
         reward: NDArray, shape (n_episodes * step_per_episode, )
             Reward observation.
 
@@ -953,12 +971,12 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
             Step-wise action choice probability of evaluation policy,
             i.e., :math:`\\prod_{t'=0}^t \\pi_b(a_{t'} \\mid s_{t'})`
 
-        evaluation_policy_action_dist: NDArray, shape (n_episodes * step_per_episode, n_actions)
-            Action choice probability of evaluation policy for all actions,
+        evaluation_policy_action_dist: NDArray, shape (n_episodes * step_per_episode, n_action)
+            Action choice probability of evaluation policy for all action,
             i.e., :math:`\\pi_e(a \mid s_t) \\forall a \\in \\mathcal{A}`
 
-        state_action_value_prediction: NDArray, shape (n_episodes * step_per_episode, n_actions)
-            :math:`\\hat{Q}` for all actions,
+        state_action_value_prediction: NDArray, shape (n_episodes * step_per_episode, n_action)
+            :math:`\\hat{Q}` for all action,
             i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
 
         gamma: float, default=1.0 (0, 1]
@@ -1016,15 +1034,23 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
             min_val=0.0,
             max_val=1.0,
         )
+        check_array(
+            action,
+            name="action",
+            expected_dim=1,
+            min_val=0,
+            max_val=evaluation_policy_action_dist.shape[1] - 1,
+        )
         if not (
-            reward.shape[0]
+            action.shape[0]
+            == reward.shape[0]
             == behavior_policy_step_wise_pscore.shape[0]
             == evaluation_policy_step_wise_pscore.shape[0]
             == state_action_value_prediction.shape[0]
             == evaluation_policy_action_dist.shape[0]
         ):
             raise ValueError(
-                "Expected `reward.shape[0] == behavior_policy_step_wise_pscore.shape[0] == evaluation_policy_step_wise_pscore.shape[0] "
+                "Expected `action.shape[0] == reward.shape[0] == behavior_policy_step_wise_pscore.shape[0] == evaluation_policy_step_wise_pscore.shape[0] "
                 "== state_action_value_prediction.shape[0] == evaluation_policy_action_dist.shape[0]`"
                 ", but found False"
             )
@@ -1047,13 +1073,13 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
 
         estimated_trajectory_value = self._estimate_trajectory_values(
-            step_per_episode,
-            actions,
-            reward,
-            behavior_policy_step_wise_pscore,
-            evaluation_policy_step_wise_pscore,
-            evaluation_policy_action_dist,
-            state_action_value_prediction,
+            step_per_episode=step_per_episode,
+            action=action,
+            reward=reward,
+            behavior_policy_step_wise_pscore=behavior_policy_step_wise_pscore,
+            evaluation_policy_step_wise_pscore=evaluation_policy_step_wise_pscore,
+            evaluation_policy_action_dist=evaluation_policy_action_dist,
+            state_action_value_prediction=state_action_value_prediction,
             gamma=gamma,
         )
         return estimate_confidence_interval_by_bootstrap(
@@ -1311,7 +1337,7 @@ class DiscreteSelfNormalizedDoublyRobust(DiscreteDoublyRobust):
     def _estimate_trajectory_values(
         self,
         step_per_episode: int,
-        actions: np.ndarray,
+        action: np.ndarray,
         reward: np.ndarray,
         behavior_policy_step_wise_pscore: np.ndarray,
         evaluation_policy_step_wise_pscore: np.ndarray,
@@ -1327,6 +1353,9 @@ class DiscreteSelfNormalizedDoublyRobust(DiscreteDoublyRobust):
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
+        action: NDArray, shape (n_episodes * step_per_episode, )
+            Action chosen by behavior policy.
+
         reward: NDArray, shape (n_episodes * step_per_episode, )
             Reward observation.
 
@@ -1338,12 +1367,12 @@ class DiscreteSelfNormalizedDoublyRobust(DiscreteDoublyRobust):
             Step-wise action choice probability of evaluation policy,
             i.e., :math:`\\prod_{t'=0}^t \\pi_b(a_{t'} \\mid s_{t'})`
 
-        evaluation_policy_action_dist: NDArray, shape (n_episodes * step_per_episode, n_actions)
-            Action choice probability of evaluation policy for all actions,
+        evaluation_policy_action_dist: NDArray, shape (n_episodes * step_per_episode, n_action)
+            Action choice probability of evaluation policy for all action,
             i.e., :math:`\\pi_e(a \mid s_t) \\forall a \\in \\mathcal{A}`
 
-        state_action_value_prediction: NDArray, shape (n_episodes * step_per_episode, n_actions)
-            :math:`\\hat{Q}` for all actions,
+        state_action_value_prediction: NDArray, shape (n_episodes * step_per_episode, n_action)
+            :math:`\\hat{Q}` for all action,
             i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
 
         gamma: float, default=1.0 (0, 1]
@@ -1359,8 +1388,8 @@ class DiscreteSelfNormalizedDoublyRobust(DiscreteDoublyRobust):
             axis=1
         )
         estimated_value = np.empty_like(reward, dtype=float)
-        for i in range(len(actions)):
-            estimated_value[i] = state_action_value_prediction[i, actions[i]]
+        for i in range(len(action)):
+            estimated_value[i] = state_action_value_prediction[i, action[i]]
 
         weight = (
             evaluation_policy_step_wise_pscore / behavior_policy_step_wise_pscore
