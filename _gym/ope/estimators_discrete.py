@@ -49,6 +49,17 @@ class DiscreteDirectMethod(BaseOffPolicyEstimator):
     estimator_name: str, default="dm"
         Name of the estimator.
 
+    References
+    -------
+    Yuta Saito, Shunsuke Aihara, Megumi Matsutani, and Yusuke Narita.
+    "Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation.", 2021.
+
+    Hoang Le, Cameron Voloshin, and Yisong Yue.
+    "Batch Policy Learning under Constraints.", 2019.
+
+    Alina Beygelzimer and John Langford.
+    "The Offset Tree for Learning with Partial Labels.", 2009.
+
     """
 
     estimator_name: str = "dm"
@@ -165,6 +176,17 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
     -------
     estimator_name: str, default="tis"
         Name of the estimator.
+
+    References
+    -------
+    Yuta Saito, Shunsuke Aihara, Megumi Matsutani, and Yusuke Narita.
+    "Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation.", 2021.
+
+    Alex Strehl, John Langford, Sham Kakade, and Lihong Li.
+    "Learning from Logged Implicit Exploration Data.", 2010.
+
+    Doina Precup, Richard S. Sutton, and Satinder P. Singh.
+    "Eligibility Traces for Off-Policy Policy Evaluation.", 2000.
 
     """
 
@@ -417,6 +439,17 @@ class DiscreteStepWiseImportanceSampling(BaseOffPolicyEstimator):
     estimator_name: str, default="sis"
         Name of the estimator.
 
+    References
+    -------
+    Yuta Saito, Shunsuke Aihara, Megumi Matsutani, and Yusuke Narita.
+    "Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation.", 2021.
+
+    Alex Strehl, John Langford, Sham Kakade, and Lihong Li.
+    "Learning from Logged Implicit Exploration Data.", 2010.
+
+    Doina Precup, Richard S. Sutton, and Satinder P. Singh.
+    "Eligibility Traces for Off-Policy Policy Evaluation.", 2000.
+
     """
 
     estimator_name = "sis"
@@ -664,6 +697,23 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
     -------
     estimator_name: str, default="dr"
         Name of the estimator.
+
+    References
+    -------
+    Yuta Saito, Shunsuke Aihara, Megumi Matsutani, and Yusuke Narita.
+    "Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation.", 2021.
+
+    Hoang Le, Cameron Voloshin, and Yisong Yue.
+    "Batch Policy Learning under Constraints.", 2019.
+
+    Nan Jiang and Lihong Li.
+    "Doubly Robust Off-policy Value Evaluation for Reinforcement Learning.", 2016.
+
+    Philip S. Thomas and Emma Brunskill.
+    "Data-Efficient Off-Policy Policy Evaluation for Reinforcement Learning.", 2016.
+
+    Miroslav Dudík, Dumitru Erhan, John Langford, and Lihong Li.
+    "Doubly Robust Policy Evaluation and Optimization.", 2014.
 
     """
 
@@ -1022,6 +1072,23 @@ class DiscreteSelfNormalizedTrajectoryWiseImportanceSampling(
     estimator_name: str, default="sntis"
         Name of the estimator.
 
+    References
+    -------
+    Yuta Saito, Shunsuke Aihara, Megumi Matsutani, and Yusuke Narita.
+    "Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation.", 2021.
+
+    Nathan Kallus and Masatoshi Uehara.
+    "Intrinsically Efficient, Stable, and Bounded Off-Policy Evaluation for Reinforcement Learning.", 2019.
+
+    Adith Swaminathan and Thorsten Joachims.
+    "The Self-Normalized Estimator for Counterfactual Learning.", 2015.
+
+    Alex Strehl, John Langford, Sham Kakade, and Lihong Li.
+    "Learning from Logged Implicit Exploration Data.", 2010.
+
+    Doina Precup, Richard S. Sutton, and Satinder P. Singh.
+    "Eligibility Traces for Off-Policy Policy Evaluation.", 2000.
+
     """
 
     estimator_name = "sntis"
@@ -1104,6 +1171,23 @@ class DiscreteSelfNormalizedStepWiseImportanceSampling(
     estimator_name: str, default="snsis"
         Name of the estimator.
 
+    References
+    -------
+    Yuta Saito, Shunsuke Aihara, Megumi Matsutani, and Yusuke Narita.
+    "Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation.", 2021.
+
+    Nathan Kallus and Masatoshi Uehara.
+    "Intrinsically Efficient, Stable, and Bounded Off-Policy Evaluation for Reinforcement Learning.", 2019.
+
+    Adith Swaminathan and Thorsten Joachims.
+    "The Self-Normalized Estimator for Counterfactual Learning.", 2015.
+
+    Alex Strehl, John Langford, Sham Kakade, and Lihong Li.
+    "Learning from Logged Implicit Exploration Data.", 2010.
+
+    Doina Precup, Richard S. Sutton, and Satinder P. Singh.
+    "Eligibility Traces for Off-Policy Policy Evaluation.", 2000.
+
     """
 
     estimator_name = "snsis"
@@ -1182,6 +1266,26 @@ class DiscreteSelfNormalizedDoublyRobust(DiscreteDoublyRobust):
     -------
     estimator_name: str, default="sndr"
         Name of the estimator.
+
+    References
+    -------
+    Yuta Saito, Shunsuke Aihara, Megumi Matsutani, and Yusuke Narita.
+    "Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation.", 2021.
+
+    Hoang Le, Cameron Voloshin, and Yisong Yue.
+    "Batch Policy Learning under Constraints.", 2019.
+
+    Nathan Kallus and Masatoshi Uehara.
+    "Intrinsically Efficient, Stable, and Bounded Off-Policy Evaluation for Reinforcement Learning.", 2019.
+
+    Nan Jiang and Lihong Li.
+    "Doubly Robust Off-policy Value Evaluation for Reinforcement Learning.", 2016.
+
+    Philip S. Thomas and Emma Brunskill.
+    "Data-Efficient Off-Policy Policy Evaluation for Reinforcement Learning.", 2016.
+
+    Miroslav Dudík, Dumitru Erhan, John Langford, and Lihong Li.
+    "Doubly Robust Policy Evaluation and Optimization.", 2014.
 
     """
 

@@ -48,6 +48,11 @@ class OffPolicyEvaluation:
     Examples
     ----------
 
+    References
+    -------
+    Yuta Saito, Shunsuke Aihara, Megumi Matsutani, and Yusuke Narita.
+    "Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation.", 2021.
+
     """
 
     logged_dataset: LoggedDataset
@@ -569,6 +574,17 @@ class CreateOPEInput:
 
     use_base_model: bool, default=False
         Whether to use FQE and obtain :math:`\\hat{Q}`.
+
+    References
+    -------
+    Yuta Saito, Shunsuke Aihara, Megumi Matsutani, and Yusuke Narita.
+    "Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation.", 2021.
+
+    Takuma Seno and Michita Imai.
+    "d3rlpy: An Offline Deep Reinforcement Library.", 2021.
+
+    Hoang Le, Cameron Voloshin, and Yisong Yue.
+    "Batch Policy Learning under Constraints.", 2019.
 
     """
 

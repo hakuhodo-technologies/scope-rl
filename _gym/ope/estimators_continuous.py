@@ -5,17 +5,12 @@ from typing import Dict, Optional
 import numpy as np
 from sklearn.utils.validation import check_scalar
 
-from ..utils import check_array, estimate_confidence_interval_by_bootstrap
+from ..utils import (
+    check_array,
+    estimate_confidence_interval_by_bootstrap,
+    kernel_functions,
+)
 from ..ope.estimators_discrete import BaseOffPolicyEstimator
-
-
-def gaussian_kernel(dist):
-    return (np.exp(-(dist ** 2) / 2) / np.sqrt(2 * np.pi)).sum(axis=-1)
-
-
-kernel_functions = {
-    "gaussian": gaussian_kernel,
-}
 
 
 @dataclass
@@ -37,6 +32,17 @@ class ContinuousDirectMethod(BaseOffPolicyEstimator):
     -------
     estimator_name: str, default="dm"
         Name of the estimator.
+
+    References
+    -------
+    Yuta Saito, Shunsuke Aihara, Megumi Matsutani, and Yusuke Narita.
+    "Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation.", 2021.
+
+    Hoang Le, Cameron Voloshin, and Yisong Yue.
+    "Batch Policy Learning under Constraints.", 2019.
+
+    Alina Beygelzimer and John Langford.
+    "The Offset Tree for Learning with Partial Labels.", 2009.
 
     """
 
@@ -170,6 +176,20 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 
     estimator_name: str, default="tis"
         Name of the estimator.
+
+    References
+    -------
+    Yuta Saito, Shunsuke Aihara, Megumi Matsutani, and Yusuke Narita.
+    "Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation.", 2021.
+
+    Nathan Kallus and Angela Zhou.
+    "Policy Evaluation and Optimization with Continuous Treatments.", 2019.
+
+    Alex Strehl, John Langford, Sham Kakade, and Lihong Li.
+    "Learning from Logged Implicit Exploration Data.", 2010.
+
+    Doina Precup, Richard S. Sutton, and Satinder P. Singh.
+    "Eligibility Traces for Off-Policy Policy Evaluation.", 2000.
 
     """
 
@@ -501,6 +521,20 @@ class ContinuousStepWiseImportanceSampling(BaseOffPolicyEstimator):
     estimator_name: str, default="sis"
         Name of the estimator.
 
+    References
+    -------
+    Yuta Saito, Shunsuke Aihara, Megumi Matsutani, and Yusuke Narita.
+    "Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation.", 2021.
+
+    Nathan Kallus and Angela Zhou.
+    "Policy Evaluation and Optimization with Continuous Treatments.", 2019.
+
+    Alex Strehl, John Langford, Sham Kakade, and Lihong Li.
+    "Learning from Logged Implicit Exploration Data.", 2010.
+
+    Doina Precup, Richard S. Sutton, and Satinder P. Singh.
+    "Eligibility Traces for Off-Policy Policy Evaluation.", 2000.
+
     """
 
     action_dim: int
@@ -824,6 +858,26 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
 
     estimator_name: str, default="dr"
         Name of the estimator.
+
+    References
+    -------
+    Yuta Saito, Shunsuke Aihara, Megumi Matsutani, and Yusuke Narita.
+    "Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation.", 2021.
+
+    Nathan Kallus and Angela Zhou.
+    "Policy Evaluation and Optimization with Continuous Treatments.", 2019.
+
+    Hoang Le, Cameron Voloshin, and Yisong Yue.
+    "Batch Policy Learning under Constraints.", 2019.
+
+    Nan Jiang and Lihong Li.
+    "Doubly Robust Off-policy Value Evaluation for Reinforcement Learning.", 2016.
+
+    Philip S. Thomas and Emma Brunskill.
+    "Data-Efficient Off-Policy Policy Evaluation for Reinforcement Learning.", 2016.
+
+    Miroslav Dudík, Dumitru Erhan, John Langford, and Lihong Li.
+    "Doubly Robust Policy Evaluation and Optimization.", 2014.
 
     """
 
@@ -1181,6 +1235,26 @@ class ContinuousSelfNormalizedTrajectoryWiseImportanceSampling(
     estimator_name: str, default="sntis"
         Name of the estimator.
 
+    References
+    -------
+    Yuta Saito, Shunsuke Aihara, Megumi Matsutani, and Yusuke Narita.
+    "Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation.", 2021.
+
+    Nathan Kallus and Angela Zhou.
+    "Policy Evaluation and Optimization with Continuous Treatments.", 2019.
+
+    Nathan Kallus and Masatoshi Uehara.
+    "Intrinsically Efficient, Stable, and Bounded Off-Policy Evaluation for Reinforcement Learning.", 2019.
+
+    Adith Swaminathan and Thorsten Joachims.
+    "The Self-Normalized Estimator for Counterfactual Learning.", 2015.
+
+    Alex Strehl, John Langford, Sham Kakade, and Lihong Li.
+    "Learning from Logged Implicit Exploration Data.", 2010.
+
+    Doina Precup, Richard S. Sutton, and Satinder P. Singh.
+    "Eligibility Traces for Off-Policy Policy Evaluation.", 2000.
+
     """
 
     action_dim: int
@@ -1310,6 +1384,26 @@ class ContinuousSelfNormalizedStepWiseImportanceSampling(
     estimator_name: str, default="snsis"
         Name of the estimator.
 
+    References
+    -------
+    Yuta Saito, Shunsuke Aihara, Megumi Matsutani, and Yusuke Narita.
+    "Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation.", 2021.
+
+    Nathan Kallus and Angela Zhou.
+    "Policy Evaluation and Optimization with Continuous Treatments.", 2019.
+
+    Nathan Kallus and Masatoshi Uehara.
+    "Intrinsically Efficient, Stable, and Bounded Off-Policy Evaluation for Reinforcement Learning.", 2019.
+
+    Adith Swaminathan and Thorsten Joachims.
+    "The Self-Normalized Estimator for Counterfactual Learning.", 2015.
+
+    Alex Strehl, John Langford, Sham Kakade, and Lihong Li.
+    "Learning from Logged Implicit Exploration Data.", 2010.
+
+    Doina Precup, Richard S. Sutton, and Satinder P. Singh.
+    "Eligibility Traces for Off-Policy Policy Evaluation.", 2000.
+
     """
 
     action_dim: int
@@ -1436,6 +1530,28 @@ class ContinuousSelfNormalizedDoublyRobust(ContinuousDoublyRobust):
     estimator_name: str, default="sndr"
         Name of the estimator.
 
+    References
+    -------
+    Yuta Saito, Shunsuke Aihara, Megumi Matsutani, and Yusuke Narita.
+    "Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation.", 2021.
+
+    Hoang Le, Cameron Voloshin, and Yisong Yue.
+    "Batch Policy Learning under Constraints.", 2019.
+
+    Nathan Kallus and Angela Zhou.
+    "Policy Evaluation and Optimization with Continuous Treatments.", 2019.
+
+    Nathan Kallus and Masatoshi Uehara.
+    "Intrinsically Efficient, Stable, and Bounded Off-Policy Evaluation for Reinforcement Learning.", 2019.
+
+    Nan Jiang and Lihong Li.
+    "Doubly Robust Off-policy Value Evaluation for Reinforcement Learning.", 2016.
+
+    Philip S. Thomas and Emma Brunskill.
+    "Data-Efficient Off-Policy Policy Evaluation for Reinforcement Learning.", 2016.
+
+    Miroslav Dudík, Dumitru Erhan, John Langford, and Lihong Li.
+    "Doubly Robust Policy Evaluation and Optimization.", 2014.
     """
 
     action_dim: int
