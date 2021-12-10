@@ -341,7 +341,6 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
             name="behavior_policy_trajectory_wise_pscore",
             expected_dim=1,
             min_val=0.0,
-            max_val=1.0,
         )
         check_array(
             evaluation_policy_action,
@@ -448,7 +447,6 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
             name="behavior_policy_trajectory_wise_pscore",
             expected_dim=1,
             min_val=0.0,
-            max_val=1.0,
         )
         check_array(
             evaluation_policy_action,
@@ -678,7 +676,6 @@ class ContinuousStepWiseImportanceSampling(BaseOffPolicyEstimator):
             name="behavior_policy_step_wise_pscore",
             expected_dim=1,
             min_val=0.0,
-            max_val=1.0,
         )
         check_array(
             evaluation_policy_action,
@@ -785,7 +782,6 @@ class ContinuousStepWiseImportanceSampling(BaseOffPolicyEstimator):
             name="behavior_policy_step_wise_pscore",
             expected_dim=1,
             min_val=0.0,
-            max_val=1.0,
         )
         check_array(
             evaluation_policy_action,
@@ -1044,7 +1040,6 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
             name="behavior_policy_step_wise_pscore",
             expected_dim=1,
             min_val=0.0,
-            max_val=1.0,
         )
         check_array(
             evaluation_policy_action,
@@ -1157,7 +1152,6 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
             name="behavior_policy_step_wise_pscore",
             expected_dim=1,
             min_val=0.0,
-            max_val=1.0,
         )
         check_array(
             evaluation_policy_action,
