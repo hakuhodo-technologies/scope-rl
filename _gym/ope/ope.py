@@ -47,6 +47,106 @@ class OffPolicyEvaluation:
 
     Examples
     ----------
+    .. ::code-block:: python
+
+        # import necessary module from _gym
+        >>> from _gym.env import RTBEnv, CustomizedRTBEnv
+        >>> from _gym.dataset import SyntheticDataset
+        >>> from _gym.policy import DiscreteEpsilonGreedyHead
+        >>> from _gym.ope import CreateOPEInput
+        >>> from _gym.ope import OffPolicyEvaluation
+        >>> from _gym.ope import DiscreteTrajectoryWiseImportanceSampling as TIS
+        >>> from _gym.ope import DiscreteStepWiseImportanceSampling as SIS
+
+        # import necessary module from other libraries
+        >>> from sklearn.linear_model import LogisticRegression
+        >>> from d3rlpy.algos import DoubleDQN
+        >>> from d3rlpy.online.buffers import ReplayBuffer
+        >>> from d3rlpy.online.explorers import ConstantEpsilonGreedy
+
+        # initialize environment
+        >>> env = RTBEnv(random_state=12345)
+
+        # customize environment from the decision makers' perspective
+        >>> env = CustomizedRTBEnv(
+                original_env=env,
+                reward_predictor=LogisticRegression(),
+                action_type="discrete",
+            )
+
+        # define (RL) agent (i.e., policy) and train on the environment
+        >>> ddqn = DoubleDQN()
+        >>> buffer = ReplayBuffer(
+                maxlen=10000,
+                env=env,
+            )
+        >>> explorer = ConstantEpsilonGreedy(
+                epsilon=0.3,
+            )
+        >>> ddqn.fit_online(
+                env=env,
+                buffer=buffer,
+                explorer=explorer,
+            )
+
+        # convert ddqn policy to stochastic data collection policy
+        >>> behavior_policy = DiscreteEpsilonGreedyHead(
+                ddqn,
+                n_actions=env.action_space.n,
+                epsilon=0.3,
+                name="ddqn_epsilon_0.3",
+                random_state=12345,
+            )
+
+        # initialize dataset class
+        >>> dataset = SyntheticDataset(
+                env=env,
+                behavior_policy=behavior_policy,
+                random_state=12345,
+            )
+
+        # data collection
+        >>> logged_dataset = dataset.obtain_trajectories(n_episodes=100, obtain_info=True)
+
+        # evaluation policy
+        >>> ddqn_ = DiscreteEpsilonGreedyHead(
+            base_policy=ddqn,
+            n_actions=env.action_space.n,
+            name="ddqn",
+            epsilon=0.0,
+            random_state=12345
+        )
+        >>> random_ = DiscreteEpsilonGreedyHead(
+            base_policy=ddqn,
+            n_actions=env.action_space.n,
+            name="random",
+            epsilon=1.0,
+            random_state=12345
+        )
+
+        # create input for off-policy evaluation (OPE)
+        >>> prep = CreateOPEInput(
+            logged_dataset=logged_dataset,
+        )
+        >>> input_dict = prep.obtain_whole_inputs(
+            evaluation_policies=[ddqn_, random_],
+            env=env,
+            n_episodes_on_policy_evaluation=100,
+            random_state=12345,
+        )
+
+        # OPE
+        >>> ope = OffPolicyEvaluation(
+            logged_dataset=logged_dataset,
+            ope_estimators=[TIS(), SIS()],
+        )
+        >>> policy_value_dict = ope.estimate_policy_value(
+            input_dict=input_dict,
+        )
+        >>> policy_value_dict
+        {'ddqn': {'on_policy': 15.5, 'tis': 22.901319216705502, 'sis': 17.970922685707617},
+        'random': {'on_policy': 15.5, 'tis': 0.555637908601827, 'sis': 6.108053435521632}}
+
 
     References
     -------
