@@ -1635,6 +1635,7 @@ class ContinuousSelfNormalizedDoublyRobust(ContinuousDoublyRobust):
 
         importance_weight = 1 / pscores
         importance_weight_prev = 1 / pscores_prev
+
         importance_weight_prev_mean = importance_weight_prev.mean(axis=0)
         importance_weight_prev_mean = np.tile(
             importance_weight_prev_mean, len(importance_weight)
@@ -1642,8 +1643,13 @@ class ContinuousSelfNormalizedDoublyRobust(ContinuousDoublyRobust):
         self_normalized_importance_weight_prev = importance_weight_prev / (
             importance_weight_prev_mean + 1e-10
         )
+
+        importance_weight_mean = importance_weight.mean(axis=0)
+        importance_weight_mean = np.tile(
+            importance_weight_mean, len(importance_weight)
+        ).reshape((-1, step_per_episode))
         self_normalized_importance_weight = importance_weight / (
-            importance_weight_prev_mean + 1e-10
+            importance_weight_mean + 1e-10
         )
 
         discount = np.full(rewards.shape[1], gamma).cumprod()

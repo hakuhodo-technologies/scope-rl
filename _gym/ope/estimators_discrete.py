@@ -1356,7 +1356,9 @@ class DiscreteSelfNormalizedDoublyRobust(DiscreteDoublyRobust):
         weights_prev = weights_prev.flatten() / np.tile(
             weights_prev_mean + 1e-10, len(weights)
         )
-        weights = weights.flatten() / np.tile(weights_prev_mean + 1e-10, len(weights))
+
+        weights_mean = weights.mean(axis=0)
+        weights = weights.flatten() / np.tile(weights_mean + 1e-10, len(weights))
 
         undiscounted_values = (
             weights * (rewards - estimated_values) + weights_prev * baselines
