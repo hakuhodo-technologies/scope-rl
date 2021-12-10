@@ -83,8 +83,8 @@ class OffPolicyEvaluation:
 
         self.input_dict_ = {
             "step_per_episode": self.step_per_episode,
-            "actions": self.logged_dataset["action"].astype(int),
-            "rewards": self.logged_dataset["reward"],
+            "action": self.logged_dataset["action"].astype(int),
+            "reward": self.logged_dataset["reward"],
             "behavior_policy_step_wise_pscore": behavior_policy_step_wise_pscore.flatten(),
             "behavior_policy_trajectory_wise_pscore": behavior_policy_trajectory_wise_pscore.flatten(),
         }
@@ -104,10 +104,10 @@ class OffPolicyEvaluation:
             key: [evaluation_policy_name][
                 evaluation_policy_step_wise_pscore,
                 evaluation_policy_trajectory_wise_pscore,
-                evaluation_policy_actions,
-                counterfactual_state_action_value,
-                counterfactual_pscore,
-                initial_state_value,
+                evaluation_policy_action,
+                evaluation_policy_action_dist,
+                state_action_value_prediction,
+                initial_state_value_prediction,
                 on_policy_policy_value,
             ]
 
@@ -155,10 +155,10 @@ class OffPolicyEvaluation:
             key: [evaluation_policy_name][
                 evaluation_policy_step_wise_pscore,
                 evaluation_policy_trajectory_wise_pscore,
-                evaluation_policy_actions,
-                counterfactual_state_action_value,
-                counterfactual_pscore,
-                initial_state_value,
+                evaluation_policy_action,
+                evaluation_policy_action_dist,
+                state_action_value_prediction,
+                initial_state_value_prediction,
                 on_policy_policy_value,
             ]
 
@@ -216,10 +216,10 @@ class OffPolicyEvaluation:
             key: [evaluation_policy_name][
                 evaluation_policy_step_wise_pscore,
                 evaluation_policy_trajectory_wise_pscore,
-                evaluation_policy_actions,
-                counterfactual_state_action_value,
-                counterfactual_pscore,
-                initial_state_value,
+                evaluation_policy_action,
+                evaluation_policy_action_dist,
+                state_action_value_prediction,
+                initial_state_value_prediction,
                 on_policy_policy_value,
             ]
 
@@ -298,10 +298,10 @@ class OffPolicyEvaluation:
             key: [evaluation_policy_name][
                 evaluation_policy_step_wise_pscore,
                 evaluation_policy_trajectory_wise_pscore,
-                evaluation_policy_actions,
-                counterfactual_state_action_value,
-                counterfactual_pscore,
-                initial_state_value,
+                evaluation_policy_action,
+                evaluation_policy_action_dist,
+                state_action_value_prediction,
+                initial_state_value_prediction,
                 on_policy_policy_value,
             ]
 
@@ -451,10 +451,10 @@ class OffPolicyEvaluation:
             key: [evaluation_policy_name][
                 evaluation_policy_step_wise_pscore,
                 evaluation_policy_trajectory_wise_pscore,
-                evaluation_policy_actions,
-                counterfactual_state_action_value,
-                counterfactual_pscore,
-                initial_state_value,
+                evaluation_policy_action,
+                evaluation_policy_action_dist,
+                state_action_value_prediction,
+                initial_state_value_prediction,
                 on_policy_policy_value,
             ]
 
@@ -523,10 +523,10 @@ class OffPolicyEvaluation:
             key: [evaluation_policy_name][
                 evaluation_policy_step_wise_pscore,
                 evaluation_policy_trajectory_wise_pscore,
-                evaluation_policy_actions,
-                counterfactual_state_action_value,
-                counterfactual_pscore,
-                initial_state_value,
+                evaluation_policy_action,
+                evaluation_policy_action_dist,
+                state_action_value_prediction,
+                initial_state_value_prediction,
                 on_policy_policy_value,
             ]
 
@@ -630,7 +630,7 @@ class CreateOPEInput:
                     "use_gpu": torch.cuda.is_available(),
                 }
 
-    def _predict_counterfactual_state_action_value(
+    def predict_counterfactual_state_action_value(
         self,
         evaluation_policy: BaseHead,
     ) -> np.ndarray:
@@ -657,7 +657,7 @@ class CreateOPEInput:
             x_, a_
         )  # (n_samples, n_actions)
 
-    def construct_FQE(
+    def build_and_fit_FQE(
         self,
         evaluation_policy: BaseHead,
         n_epochs: Optional[int] = None,
@@ -757,7 +757,7 @@ class CreateOPEInput:
         """
         if not isinstance(evaluation_policy, BaseHead):
             raise ValueError("evaluation_policy must be a child class of BaseHead")
-        return evaluation_policy.calculate_pscore_given_action(
+        return evaluation_policy.calc_pscore_given_action(
             x=self.logged_dataset["state"],
             action=self.logged_dataset["action"],
         )
@@ -810,11 +810,11 @@ class CreateOPEInput:
         )[:, -1]
         return np.tile(base_pscore, (self.step_per_episode, 1)).T.flatten()
 
-    def obtain_state_action_value_with_pscore(
+    def obtain_action_dist_with_state_action_value_prediction_discrete(
         self,
         evaluation_policy: BaseHead,
     ) -> np.ndarray:
-        """Obtain pscore and Q hat for the observed state action pair.
+        """Obtain action choice probability of the discrete evaluation policy and its Q hat for the observed state.
 
         Parameters
         -------
@@ -823,28 +823,28 @@ class CreateOPEInput:
 
         Return
         -------
-        evaluation_policy_pscore: NDArray
+        evaluation_policy_action_dist: NDArray
             Evaluation policy pscore :math:`\\pi_e(a_t \\mid s_t)`.
 
-        counterfactual_state_action_value: NDArray, shape (n_samples, n_actions)
+        state_action_value_prediction: NDArray, shape (n_samples, n_actions)
             State action values for all observed state and possible action.
 
         """
         if not isinstance(evaluation_policy, BaseHead):
             raise ValueError("evaluation_policy must be a child class of BaseHead")
-        state_action_value = (
-            self._predict_counterfactual_state_action_value(evaluation_policy)
-        ).reshape((-1, self.n_actions))
-        pscore = evaluation_policy.calculate_action_choice_probability(
+        action_dist = evaluation_policy.calc_action_choice_probability(
             self.logged_dataset["state"]
         )
-        return state_action_value, pscore  # (n_samples, n_actions)
+        state_action_value_prediction = (
+            self.predict_state_action_value(evaluation_policy)
+        ).reshape((-1, self.n_actions))
+        return action_dist, state_action_value_prediction  # (n_samples, n_actions)
 
-    def obtain_state_action_value_deterministic(
+    def obtain_state_action_value_prediction_continuous(
         self,
         evaluation_policy: BaseHead,
     ) -> np.ndarray:
-        """Obtain Expected value of Q hat for the deterministic evaluation policy.
+        """Obtain Q hat for the continuous (deterministic) evaluation policy.
 
         Parameters
         -------
@@ -853,7 +853,7 @@ class CreateOPEInput:
 
         Return
         -------
-        counterfactual_state_action_value: NDArray, shape (n_samples, n_actions)
+        state_action_value_prediction: NDArray, shape (n_samples, n_actions)
             State action values for the observed state and action chosen by evaluation policy.
 
         """
@@ -863,7 +863,7 @@ class CreateOPEInput:
         action = evaluation_policy.predict(state)
         return self.fqe[evaluation_policy.name].predict_value(state, action)
 
-    def obtain_initial_state_value_discrete(
+    def obtain_initial_state_value_prediction_discrete(
         self,
         evaluation_policy: BaseHead,
     ) -> np.ndarray:
@@ -876,20 +876,23 @@ class CreateOPEInput:
 
         Return
         -------
-        initial_state_value: NDArray, shape (n_samples, n_actions)
+        initial_state_value_prediction: NDArray, shape (n_samples, n_actions)
             State action values for the observed state and action chosen by evaluation policy.
 
         """
         if not isinstance(evaluation_policy, BaseHead):
             raise ValueError("evaluation_policy must be a child class of BaseHead")
-        state_action_value, pscore = self.obtain_state_action_value_with_pscore(
+        (
+            state_action_value,
+            pscore,
+        ) = self.obtain_action_dist_with_state_action_value_prediction_discrete(
             evaluation_policy
         )
         state_action_value = state_action_value.reshape((-1, self.n_actions))
         state_value = np.sum(state_action_value * pscore, axis=1)
         return state_value.reshape((-1, self.step_per_episode))[:, 0]  # (n_samples, )
 
-    def obtain_initial_state_value_continuous(
+    def obtain_initial_state_value_prediction_continuous(
         self,
         evaluation_policy: BaseHead,
     ) -> np.ndarray:
@@ -902,13 +905,15 @@ class CreateOPEInput:
 
         Return
         -------
-        initial_state_value: NDArray, shape (n_samples, n_actions)
+        initial_state_value_prediction: NDArray, shape (n_samples, n_actions)
             State action values for the observed state and action chosen by evaluation policy.
 
         """
         if not isinstance(evaluation_policy, BaseHead):
             raise ValueError("evaluation_policy must be a child class of BaseHead")
-        state_value = self.obtain_state_action_value_deterministic(evaluation_policy)
+        state_value = self.obtain_state_action_value_prediction_continuous(
+            evaluation_policy
+        )
         return state_value.reshape((-1, self.step_per_episode))[:, 0]
 
     def obtain_whole_inputs(
@@ -945,8 +950,55 @@ class CreateOPEInput:
 
         Return
         -------
-        initial_state_value: NDArray, shape (n_samples, n_actions)
-            State action values for the observed state and action chosen by evaluation policy.
+        input_dict: OPEInputDict
+            Dictionary of the OPE inputs for each evaluation policy.
+            key: [evaluation_policy_name][
+                evaluation_policy_step_wise_pscore,
+                evaluation_policy_trajectory_wise_pscore,
+                evaluation_policy_action,
+                evaluation_policy_action_dist,
+                state_action_value_prediction,
+                initial_state_value_prediction,
+                on_policy_policy_value,
+            ]
+
+            evaluation_policy_step_wise_pscore: Optional[NDArray], shape (n_episodes * step_per_episodes, )
+                Step-wise action choice probability of evaluation policy,
+                i.e., :math:`\\prod_{t'=0}^t \\pi_e(a_{t'} \\mid s_{t'})`
+                If action_type == "continuous", `None` is recorded.
+
+            evaluation_policy_trajectory_wise_pscore: Optional[NDArray], shape (n_episodes * step_per_episodes, )
+                Trajectory-wise action choice probability of evaluation policy,
+                i.e., :math:`\\prod_{t=0}^T \\pi_e(a_t \\mid s_t)`
+                If action_type == "continuous", `None` is recorded.
+
+            evaluation_policy_action: Optional[NDArray], shape (n_episodes * step_per_episodes, )
+                Action chosen by the deterministic evaluation policy.
+                If action_type == "discrete", `None` is recorded.
+
+            evaluation_policy_action_dist: Optional[NDArray], shape (n_episodes * step_per_episode, n_actions)
+                Action choice probability of evaluation policy for all actions,
+                i.e., :math:`\\pi_e(a \mid s_t) \\forall a \\in \\mathcal{A}`
+                If action_type == "continuous", `None` is recorded.
+
+            state_action_value_prediction: Optional[NDArray]
+                If action_type == "discrete", :math:`\\hat{Q}` for all actions,
+                i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
+                shape (n_episodes * step_per_episode, n_actions)
+
+                If action_type == "continuous", :math:`\\hat{Q}` for the action chosen by evaluation policy,
+                i.e., :math:`\\hat{Q}(s_t, \\pi_e(a \mid s_t))`.
+                shape (n_episodes * step_per_episode, )
+
+                If use_base_model == False, `None` is recorded.
+
+            initial_state_value_prediction: Optional[NDArray], shape (n_episodes, )
+                Estimated initial state value.
+                If use_base_model == False, `None` is recorded.
+
+            on_policy_policy_value: Optional[NDArray], shape (n_episodes_on_policy_evaluation, )
+                On-policy policy value.
+                If env is None, `None` is recorded.
 
         """
         if env is not None:
@@ -965,7 +1017,8 @@ class CreateOPEInput:
         for eval_policy in evaluation_policies:
             if eval_policy.action_type != self.action_type:
                 raise RuntimeError(
-                    f"One of the evaluation_policies, {eval_policy.name} does not match action_type in logged_dataset. Please use {self.action_type} type instead."
+                    f"One of the evaluation_policies, {eval_policy.name} does not match action_type in logged_dataset."
+                    " Please use {self.action_type} action type instead."
                 )
 
         if n_episodes_on_policy_evaluation is not None:
@@ -985,7 +1038,7 @@ class CreateOPEInput:
                 desc="[fit FQE model]",
                 total=len(evaluation_policies),
             ):
-                self.construct_FQE(
+                self.build_and_fit_FQE(
                     evaluation_policies[i],
                     n_epochs=n_epochs,
                     n_steps=n_steps,
@@ -1008,7 +1061,7 @@ class CreateOPEInput:
                     "evaluation_policy_trajectory_wise_pscore"
                 ] = self.obtain_trajectory_wise_pscore(evaluation_policies[i])
                 input_dict[evaluation_policies[i].name][
-                    "evaluation_policy_actions"
+                    "evaluation_policy_action"
                 ] = None
             else:
                 input_dict[evaluation_policies[i].name][
@@ -1018,52 +1071,57 @@ class CreateOPEInput:
                     "evaluation_policy_trajectory_wise_pscore"
                 ] = None
                 input_dict[evaluation_policies[i].name][
-                    "evaluation_policy_actions"
+                    "evaluation_policy_action"
                 ] = self.obtain_evaluation_policy_action(evaluation_policies[i])
 
             # input for DM, DR
             if self.action_type == "discrete":
                 if self.use_base_model:
                     (
-                        state_action_value,
-                        pscore,
-                    ) = self.obtain_state_action_value_with_pscore(
+                        action_dist,
+                        state_action_value_prediction,
+                    ) = self.obtain_action_dist_with_state_action_value_prediction_discrete(
                         evaluation_policies[i]
                     )
                     input_dict[evaluation_policies[i].name][
-                        "counterfactual_state_action_value"
-                    ] = state_action_value
+                        "evaluation_policy_action_dist"
+                    ] = action_dist
                     input_dict[evaluation_policies[i].name][
-                        "counterfactual_pscore"
-                    ] = pscore
+                        "state_action_value_prediction"
+                    ] = state_action_value_prediction
                     input_dict[evaluation_policies[i].name][
-                        "initial_state_value"
-                    ] = self.obtain_initial_state_value_discrete(evaluation_policies[i])
+                        "initial_state_value_prediction"
+                    ] = self.obtain_initial_state_value_prediction_discrete(
+                        evaluation_policies[i]
+                    )
                 else:
                     input_dict[evaluation_policies[i].name][
-                        "counterfactual_state_action_value"
+                        "evaluation_policy_action_dist"
                     ] = None
                     input_dict[evaluation_policies[i].name][
-                        "counterfactual_pscore"
+                        "state_action_value_prediction"
                     ] = None
                     input_dict[evaluation_policies[i].name][
-                        "initial_state_value"
+                        "initial_state_value_prediction"
                     ] = None
             else:
                 if self.use_base_model:
                     input_dict[evaluation_policies[i].name][
-                        "counterfactual_state_action_value"
-                    ] = self.obtain_state_action_value_deterministic(
+                        "state_action_value_prediction"
+                    ] = self.obtain_state_action_value_prediction_continuous(
                         evaluation_policies[i]
                     )
                     input_dict[evaluation_policies[i].name][
-                        "initial_state_value"
-                    ] = self.obtain_initial_state_value_continuous(
+                        "initial_state_value_prediction"
+                    ] = self.obtain_initial_state_value_prediction_continuous(
                         evaluation_policies[i]
                     )
                 else:
                     input_dict[evaluation_policies[i].name][
-                        "initial_state_value"
+                        "state_action_value_prediction"
+                    ] = None
+                    input_dict[evaluation_policies[i].name][
+                        "initial_state_value_prediction"
                     ] = None
 
             # input for the evaluation of OPE estimators

@@ -52,7 +52,7 @@ class BaseHead(AlgoBase):
 
     def __getattr__(self, key):
         try:
-            return object.__getattribute__(self.base_algo, key)
+            return object.__getattribute__(self.base_policy, key)
         except:
             raise AttributeError()
 
@@ -63,12 +63,12 @@ class OnlineHead(BaseHead):
 
     Parameters
     -------
-    base_algo: AlgoBase
+    base_policy: AlgoBase
         Reinforcement learning (RL) policy.
 
     """
 
-    base_algo: AlgoBase
+    base_policy: AlgoBase
 
     def stochastic_action_with_pscore(self, x: np.ndarray):
         pass
@@ -86,7 +86,7 @@ class DiscreteEpsilonGreedyHead(BaseHead):
 
     Parameters
     -------
-    base_algo: AlgoBase
+    base_policy: AlgoBase
         Reinforcement learning (RL) policy.
 
     name: str
@@ -103,7 +103,7 @@ class DiscreteEpsilonGreedyHead(BaseHead):
 
     """
 
-    base_algo: AlgoBase
+    base_policy: AlgoBase
     name: str
     n_actions: int
     epsilon: float
@@ -113,8 +113,8 @@ class DiscreteEpsilonGreedyHead(BaseHead):
         "Initialize class."
         self.action_type = "discrete"
 
-        if not isinstance(self.base_algo, AlgoBase):
-            raise ValueError("base_algo must be a child class of AlgoBase")
+        if not isinstance(self.base_policy, AlgoBase):
+            raise ValueError("base_policy must be a child class of AlgoBase")
 
         check_scalar(self.n_actions, name="actions", target_type=int, min_val=2)
         self.action_matrix = np.eye(self.n_actions)
@@ -162,7 +162,7 @@ class DiscreteEpsilonGreedyHead(BaseHead):
             Pscore of the sample action.
 
         """
-        greedy_action = self.base_algo.predict(x)
+        greedy_action = self.base_policy.predict(x)
         greedy_action_matrix = self.action_matrix[greedy_action]
         uniform_matrix = np.ones_like(greedy_action_matrix, dtype=float)
         pscore = (1 - self.epsilon) * greedy_action_matrix + (
@@ -187,7 +187,7 @@ class DiscreteEpsilonGreedyHead(BaseHead):
             Pscore of the given state and action.
 
         """
-        greedy_action = self.base_algo.predict(x)
+        greedy_action = self.base_policy.predict(x)
         greedy_mask = greedy_action == action
         pscore = (1 - self.epsilon + self.epsilon / self.n_actions) * greedy_mask + (
             self.epsilon / self.n_actions
@@ -208,7 +208,7 @@ class DiscreteEpsilonGreedyHead(BaseHead):
             Sampled action for each state.
 
         """
-        greedy_action = self.base_algo.predict(x)
+        greedy_action = self.base_policy.predict(x)
         random_action = self.random_.randint(self.n_actions, size=len(x))
         greedy_mask = self.random_.rand(len(x)) > self.epsilon
         action = greedy_action * greedy_mask + random_action * (1 - greedy_mask)
@@ -221,7 +221,7 @@ class DiscreteSoftmaxHead(BaseHead):
 
     Parameters
     -------
-    base_algo: AlgoBase
+    base_policy: AlgoBase
         Reinforcement learning (RL) policy.
 
     name: str
@@ -238,7 +238,7 @@ class DiscreteSoftmaxHead(BaseHead):
 
     """
 
-    base_algo: AlgoBase
+    base_policy: AlgoBase
     name: str
     n_actions: int
     tau: float = 1.0
@@ -248,8 +248,8 @@ class DiscreteSoftmaxHead(BaseHead):
         """Initialize class."""
         self.action_type = "discrete"
 
-        if not isinstance(self.base_algo, AlgoBase):
-            raise ValueError("base_algo must be a child class of AlgoBase")
+        if not isinstance(self.base_policy, AlgoBase):
+            raise ValueError("base_policy must be a child class of AlgoBase")
 
         check_scalar(self.n_actions, name="actions", target_type=int, min_val=2)
         check_scalar(self.tau, name="tau", target_type=float, min_val=0.0)
@@ -301,7 +301,7 @@ class DiscreteSoftmaxHead(BaseHead):
             x_.append(np.tile(x[i], (self.n_actions, 1)))
         x_ = np.array(x_).reshape((-1, x.shape[1]))
         a_ = np.tile(np.arange(self.n_actions), x.shape[0])
-        return self.base_algo.predict_value(x_, a_)  # (n_samples, n_actions)
+        return self.base_policy.predict_value(x_, a_)  # (n_samples, n_actions)
 
     def stochastic_action_with_pscore(self, x: np.ndarray):
         """Sample stochastic action with its pscore.
@@ -395,7 +395,7 @@ class ContinuousEpsilonGreedyHead(BaseHead):
 
     Parameters
     -------
-    base_algo: AlgoBase
+    base_policy: AlgoBase
         Reinforcement learning (RL) policy.
 
     name: str
@@ -415,7 +415,7 @@ class ContinuousEpsilonGreedyHead(BaseHead):
 
     """
 
-    base_algo: AlgoBase
+    base_policy: AlgoBase
     name: str
     epsilon: float
     minimum: np.ndarray
@@ -426,8 +426,8 @@ class ContinuousEpsilonGreedyHead(BaseHead):
         """Initialize class."""
         self.action_type = "continuous"
 
-        if not isinstance(self.base_algo, AlgoBase):
-            raise ValueError("base_algo must be a child class of AlgoBase")
+        if not isinstance(self.base_policy, AlgoBase):
+            raise ValueError("base_policy must be a child class of AlgoBase")
 
         check_scalar(
             self.epsilon, name="epsilon", target_type=float, min_val=0.0, max_val=1.0
@@ -481,7 +481,7 @@ class ContinuousEpsilonGreedyHead(BaseHead):
             Pscore of the given state and action.
 
         """
-        greedy_action = self.base_algo.predict(x)
+        greedy_action = self.base_policy.predict(x)
         greedy_mask = greedy_action == action
         pscore = (
             1 - self.epsilon + self.epsilon * self.uniform_pscore
@@ -502,7 +502,7 @@ class ContinuousEpsilonGreedyHead(BaseHead):
             Sampled action for each state.
 
         """
-        greedy_action = self.base_algo.predict(x)
+        greedy_action = self.base_policy.predict(x)
         random_action = self.random_.uniform(
             low=self.minimum, high=self.maximum, size=greedy_action.shape
         )
@@ -518,7 +518,7 @@ class ContinuousTruncatedGaussianHead(BaseHead):
 
     Parameters
     -------
-    base_algo: AlgoBase
+    base_policy: AlgoBase
         Reinforcement learning (RL) policy.
 
     name: str
@@ -538,7 +538,7 @@ class ContinuousTruncatedGaussianHead(BaseHead):
 
     """
 
-    base_algo: AlgoBase
+    base_policy: AlgoBase
     name: str
     sigma: np.ndarray
     minimum: np.ndarray
@@ -549,8 +549,8 @@ class ContinuousTruncatedGaussianHead(BaseHead):
         """Initialize class."""
         self.action_type = "continuous"
 
-        if not isinstance(self.base_algo, AlgoBase):
-            raise ValueError("base_algo must be a child class of AlgoBase")
+        if not isinstance(self.base_policy, AlgoBase):
+            raise ValueError("base_policy must be a child class of AlgoBase")
 
         check_scalar(self.sigma, name="sigma", target_type=float, min_val=0.0)
 
@@ -607,7 +607,7 @@ class ContinuousTruncatedGaussianHead(BaseHead):
             Pscore of the sampled action.
 
         """
-        greedy_action = self.base_algo.predict(x)
+        greedy_action = self.base_policy.predict(x)
         action = self.sample_action(x)
         pscore = self._calc_pscore(greedy_action, action)
         return action, pscore
@@ -629,7 +629,7 @@ class ContinuousTruncatedGaussianHead(BaseHead):
             Pscore of the given state and action.
 
         """
-        greedy_action = self.base_algo.predict(x)
+        greedy_action = self.base_policy.predict(x)
         return self._calc_pscore(greedy_action, action)
 
     def sample_action(self, x: np.ndarray):
@@ -646,7 +646,7 @@ class ContinuousTruncatedGaussianHead(BaseHead):
             Sampled action for each state.
 
         """
-        greedy_action = self.base_algo.predict(x)
+        greedy_action = self.base_policy.predict(x)
         action = truncnorm.rvs(
             a=(self.minimum - greedy_action) / self.sigma,
             b=(self.maximum - greedy_action) / self.sigma,
@@ -662,7 +662,7 @@ class ContinuousMixtureHead(BaseHead):
 
     Parameters
     -------
-    base_algo: AlgoBase
+    base_policy: AlgoBase
         Reinforcement learning (RL) policy.
 
     name: str
@@ -685,7 +685,7 @@ class ContinuousMixtureHead(BaseHead):
 
     """
 
-    base_algo: AlgoBase
+    base_policy: AlgoBase
     name: str
     epsilon: float
     sigma: np.ndarray
@@ -697,8 +697,8 @@ class ContinuousMixtureHead(BaseHead):
         """Initialize dataset."""
         self.action_type = "continuous"
 
-        if not isinstance(self.base_algo, AlgoBase):
-            raise ValueError("base_algo must be a child class of AlgoBase")
+        if not isinstance(self.base_policy, AlgoBase):
+            raise ValueError("base_policy must be a child class of AlgoBase")
 
         check_scalar(
             self.epsilon, name="epsilon", target_type=float, min_val=0.0, max_val=1.0
@@ -779,7 +779,7 @@ class ContinuousMixtureHead(BaseHead):
             Pscore of the given state and action.
 
         """
-        greedy_action = self.base_algo.predict(x)
+        greedy_action = self.base_policy.predict(x)
         pscore = (1 - self.epsilon) * self.truncnorm_pscore(
             greedy_action, action
         ) + self.epsilon * self.uniform_pscore
@@ -799,7 +799,7 @@ class ContinuousMixtureHead(BaseHead):
             Sampled action for each state.
 
         """
-        greedy_action = self.base_algo.predict(x)
+        greedy_action = self.base_policy.predict(x)
         gaussian_action = truncnorm.rvs(
             a=(self.minimum - greedy_action) / self.sigma,
             b=(self.maximum - greedy_action) / self.sigma,
@@ -821,7 +821,7 @@ class ContinuousEvalHead(BaseHead):
 
     Parameters
     -------
-    base_algo: AlgoBase
+    base_policy: AlgoBase
         Reinforcement learning (RL) policy.
 
     name: str
@@ -829,14 +829,14 @@ class ContinuousEvalHead(BaseHead):
 
     """
 
-    base_algo: AlgoBase
+    base_policy: AlgoBase
     name: str
 
     def __post_init__(self):
         """Initialize class."""
         self.action_type = "continuous"
-        if not isinstance(self.base_algo, AlgoBase):
-            raise ValueError("base_algo must be a child class of AlgoBase")
+        if not isinstance(self.base_policy, AlgoBase):
+            raise ValueError("base_policy must be a child class of AlgoBase")
 
     def sample_action(self, x: np.ndarray):
         """Sample action.
@@ -852,4 +852,4 @@ class ContinuousEvalHead(BaseHead):
             Sampled action for each state.
 
         """
-        return self.base_algo.predict(x)  # greedy-action
+        return self.base_policy.predict(x)  # greedy-action
