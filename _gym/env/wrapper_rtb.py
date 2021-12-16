@@ -7,9 +7,9 @@ from sklearn.base import BaseEstimator
 from sklearn.utils import check_scalar
 import numpy as np
 
-from ..env.rtb import RTBEnv
-from ..utils import check_array
-from ..types import Action, Numeric
+from _gym.env.rtb import RTBEnv
+from _gym.utils import check_array
+from _gym.types import Action, Numeric
 
 
 class CustomizedRTBEnv(gym.Env):

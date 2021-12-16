@@ -6,7 +6,7 @@ from typing import DefaultDict, Dict, Union, Optional, Any
 import numpy as np
 from sklearn.utils import check_scalar, check_random_state
 
-from .types import LoggedDataset, Numeric
+from _gym.types import LoggedDataset, Numeric
 
 
 @dataclass

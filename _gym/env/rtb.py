@@ -6,16 +6,16 @@ from gym.spaces import Box
 import numpy as np
 from sklearn.utils import check_scalar, check_random_state
 
-from ..utils import NormalDistribution
-from ..types import Action, Numeric
+from _gym.utils import NormalDistribution
+from _gym.types import Action, Numeric
 
-from .bidder import Bidder
-from .simulator.rtb_synthetic import RTBSyntheticSimulator
-from .simulator.base import (
+from _gym.env.bidder import Bidder
+from _gym.env.simulator.rtb_synthetic import RTBSyntheticSimulator
+from _gym.env.simulator.base import (
     BaseWinningPriceDistribution,
     BaseClickAndConversionRate,
 )
-from .simulator.function import (
+from _gym.env.simulator.function import (
     WinningPriceDistribution,
     ClickThroughRate,
     ConversionRate,

@@ -2,7 +2,7 @@
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
 
-from ..types import LoggedDataset
+from _gym.types import LoggedDataset
 
 
 @dataclass

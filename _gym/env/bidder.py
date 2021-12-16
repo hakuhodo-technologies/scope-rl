@@ -8,8 +8,8 @@ from sklearn.utils import check_scalar, check_random_state, check_X_y
 
 from _gym.types import Numeric
 
-from .simulator.base import BaseSimulator
-from ..utils import check_array
+from _gym.env.simulator.base import BaseSimulator
+from _gym.utils import check_array
 
 
 @dataclass

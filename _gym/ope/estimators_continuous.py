@@ -5,12 +5,12 @@ from typing import Dict, Optional
 import numpy as np
 from sklearn.utils.validation import check_scalar
 
-from ..utils import (
+from _gym.utils import (
     check_array,
     estimate_confidence_interval_by_bootstrap,
     kernel_functions,
 )
-from ..ope.estimators_discrete import BaseOffPolicyEstimator
+from _gym.ope.estimators_discrete import BaseOffPolicyEstimator
 
 
 @dataclass

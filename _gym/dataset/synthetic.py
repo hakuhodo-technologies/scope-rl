@@ -8,11 +8,11 @@ from gym.spaces import Discrete
 import numpy as np
 from sklearn.utils import check_scalar, check_random_state
 
-from ..env.rtb import RTBEnv
-from ..env.wrapper_rtb import CustomizedRTBEnv
-from .base import BaseDataset
-from ..policy.head import BaseHead
-from ..types import LoggedDataset
+from _gym.env.rtb import RTBEnv
+from _gym.env.wrapper_rtb import CustomizedRTBEnv
+from _gym.dataset.base import BaseDataset
+from _gym.policy.head import BaseHead
+from _gym.types import LoggedDataset
 
 
 @dataclass

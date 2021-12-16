@@ -2,12 +2,11 @@
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
 from typing import Dict
-from matplotlib.pyplot import step
 
 import numpy as np
 from sklearn.utils import check_scalar
 
-from ..utils import estimate_confidence_interval_by_bootstrap, check_array
+from _gym.utils import estimate_confidence_interval_by_bootstrap, check_array
 
 
 @dataclass

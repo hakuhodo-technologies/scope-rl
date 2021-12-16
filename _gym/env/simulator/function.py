@@ -5,10 +5,13 @@ from typing import Tuple, Union, Optional
 import numpy as np
 from sklearn.utils import check_scalar, check_random_state
 
-from .base import BaseWinningPriceDistribution, BaseClickAndConversionRate
-from ...utils import NormalDistribution
-from ...utils import sigmoid
-from ...utils import check_array
+from _gym.env.simulator.base import (
+    BaseWinningPriceDistribution,
+    BaseClickAndConversionRate,
+)
+from _gym.utils import NormalDistribution
+from _gym.utils import sigmoid
+from _gym.utils import check_array
 
 
 @dataclass

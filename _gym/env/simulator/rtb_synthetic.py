@@ -10,9 +10,13 @@ from .base import (
     BaseWinningPriceDistribution,
     BaseClickAndConversionRate,
 )
-from .function import WinningPriceDistribution, ClickThroughRate, ConversionRate
-from ...utils import NormalDistribution, check_array
-from ...types import Numeric
+from _gym.env.simulator.function import (
+    WinningPriceDistribution,
+    ClickThroughRate,
+    ConversionRate,
+)
+from _gym.utils import NormalDistribution, check_array
+from _gym.types import Numeric
 
 
 @dataclass

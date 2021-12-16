@@ -12,8 +12,8 @@ import gym
 from d3rlpy.algos import AlgoBase
 from sklearn.utils import check_scalar
 
-from ..policy.head import BaseHead, OnlineHead
-from ..utils import (
+from _gym.policy.head import BaseHead, OnlineHead
+from _gym.utils import (
     estimate_confidence_interval_by_bootstrap,
     check_confidence_interval_argument,
 )
