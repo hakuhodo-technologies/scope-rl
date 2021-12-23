@@ -93,7 +93,7 @@ class CustomizedRTBEnv(gym.Env):
         Choose either from "discrete" or "continuous".
 
     n_actions: int, default=10 (> 0)
-        Dimensions of the discrete action.
+        Number of the discrete actions.
         Used only when action_type="discrete" option.
 
     action_meaning: Optional[NDArray[float]], default=None
