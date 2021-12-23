@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import Dict, Optional
 
 import numpy as np
-from scipy.stats import truncnorm
+from scipy.stats import norm, truncnorm
 from sklearn.utils import check_scalar
 
 from _gym.ope.estimators_discrete import BaseOffPolicyEstimator
@@ -165,14 +165,21 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
     action_dim: int (> 0)
         Dimensions of actions.
 
-    action_min: NDArray, shape (action_dim, )
+    sigma: Optional[NDArray], shape (action_dim, ), default=None
+        Standard deviation of Gaussian distribution (i.e., band_width hyperparameter of gaussian kernel).
+        If `None`, sigma is set to 1 for all dimensions.
+
+    use_truncated_kernel: bool, default=False
+        Whether to use Truncated Gaussian kernel or not.
+        If `False`, (normal) Gaussian kernel is used.
+
+    action_min: Optional[NDArray], shape (action_dim, ), default=None
         Minimum value of action vector.
+        When use_truncated_kernel == True, action_min must be given.
 
-    action_max: NDArray, shape (action_dim, )
+    action_max: Optional[NDArray], shape (action_dim, ), default=None
         Maximum value of action vector.
-
-    sigma: NDArray, shape (action_dim, )
-        Standard deviation of Gaussian distribution.
+        When use_truncated_kernel == True, action_max must be given.
 
     estimator_name: str, default="tis"
         Name of the estimator.
@@ -194,9 +201,10 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
     """
 
     action_dim: int
-    action_min: np.ndarray
-    action_max: np.ndarray
-    sigma: np.ndarray
+    sigma: Optional[np.ndarray] = None
+    use_truncated_kernel: bool = False
+    action_min: Optional[np.ndarray] = None
+    action_max: Optional[np.ndarray] = None
     estimator_name: str = "tis"
 
     def __post_init__(self):
@@ -208,9 +216,14 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
             target_type=int,
             min_val=1,
         )
-        check_array(self.action_min, name="action_min", expected_dim=1)
-        check_array(self.action_max, name="action_max", expected_dim=1)
+
+        if self.sigma is None:
+            self.sigma = np.ones(self.action_dim)
         check_array(self.sigma, name="sigma", expected_dim=1, min_val=0.0)
+
+        if self.use_truncated_kernel:
+            check_array(self.action_min, name="action_min", expected_dim=1)
+            check_array(self.action_max, name="action_max", expected_dim=1)
 
     def _estimate_trajectory_value(
         self,
@@ -261,13 +274,21 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         )
         discount = np.full(reward.shape[1], gamma).cumprod()
 
-        similarity_weight = truncnorm.pdf(
-            evaluation_policy_action,
-            a=(self.action_min - action) / self.sigma,
-            b=(self.action_max - action) / self.sigma,
-            loc=action,
-            scale=self.sigma,
-        ).cumprod(axis=1)[:, -1]
+        if self.use_truncated_kernel:
+            similarity_weight = truncnorm.pdf(
+                evaluation_policy_action,
+                a=(self.action_min - action) / self.sigma,
+                b=(self.action_max - action) / self.sigma,
+                loc=action,
+                scale=self.sigma,
+            ).cumprod(axis=1)[:, -1, 0]
+        else:
+            similarity_weight = norm.pdf(
+                evaluation_policy_action,
+                loc=action,
+                scale=self.sigma,
+            ).cumprod(axis=1)[:, -1, 0]
+
         similarity_weight = np.tile(
             similarity_weight.reshape((-1, 1)), step_per_episode
         )
@@ -507,14 +528,21 @@ class ContinuousStepWiseImportanceSampling(BaseOffPolicyEstimator):
     action_dim: int (> 0)
         Dimensions of actions.
 
-    action_min: NDArray, shape (action_dim, )
+    sigma: Optional[NDArray], shape (action_dim, ), default=None
+        Standard deviation of Gaussian distribution (i.e., band_width hyperparameter of gaussian kernel).
+        If `None`, sigma is set to 1 for all dimensions.
+
+    use_truncated_kernel: bool, default=False
+        Whether to use Truncated Gaussian kernel or not.
+        If `False`, (normal) Gaussian kernel is used.
+
+    action_min: Optional[NDArray], shape (action_dim, ), default=None
         Minimum value of action vector.
+        When use_truncated_kernel == True, action_min must be given.
 
-    action_max: NDArray, shape (action_dim, )
+    action_max: Optional[NDArray], shape (action_dim, ), default=None
         Maximum value of action vector.
-
-    sigma: NDArray, shape (action_dim, )
-        Standard deviation of Gaussian distribution.
+        When use_truncated_kernel == True, action_max must be given.
 
     estimator_name: str, default="sis"
         Name of the estimator.
@@ -536,9 +564,10 @@ class ContinuousStepWiseImportanceSampling(BaseOffPolicyEstimator):
     """
 
     action_dim: int
-    action_min: np.ndarray
-    action_max: np.ndarray
-    sigma: np.ndarray
+    sigma: Optional[np.ndarray] = None
+    use_truncated_kernel: bool = False
+    action_min: Optional[np.ndarray] = None
+    action_max: Optional[np.ndarray] = None
     estimator_name: str = "sis"
 
     def __post_init__(self):
@@ -550,9 +579,14 @@ class ContinuousStepWiseImportanceSampling(BaseOffPolicyEstimator):
             target_type=int,
             min_val=1,
         )
-        check_array(self.action_min, name="action_min", expected_dim=1)
-        check_array(self.action_max, name="action_max", expected_dim=1)
+
+        if self.sigma is None:
+            self.sigma = np.ones(self.action_dim)
         check_array(self.sigma, name="sigma", expected_dim=1, min_val=0.0)
+
+        if self.use_truncated_kernel:
+            check_array(self.action_min, name="action_min", expected_dim=1)
+            check_array(self.action_max, name="action_max", expected_dim=1)
 
     def _estimate_trajectory_value(
         self,
@@ -603,13 +637,20 @@ class ContinuousStepWiseImportanceSampling(BaseOffPolicyEstimator):
         )
         discount = np.full(reward.shape[1], gamma).cumprod()
 
-        similarity_weight = truncnorm.pdf(
-            evaluation_policy_action,
-            a=(self.action_min - action) / self.sigma,
-            b=(self.action_max - action) / self.sigma,
-            loc=action,
-            scale=self.sigma,
-        ).cumprod(axis=1)
+        if self.use_truncated_kernel:
+            similarity_weight = truncnorm.pdf(
+                evaluation_policy_action,
+                a=(self.action_min - action) / self.sigma,
+                b=(self.action_max - action) / self.sigma,
+                loc=action,
+                scale=self.sigma,
+            ).cumprod(axis=1)[:, :, 0]
+        else:
+            similarity_weight = norm.pdf(
+                evaluation_policy_action,
+                loc=action,
+                scale=self.sigma,
+            ).cumprod(axis=1)[:, :, 0]
 
         estimated_trajectory_value = (
             discount * reward * similarity_weight / behavior_policy_step_wise_pscore
@@ -844,14 +885,23 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
     action_dim: int (> 0)
         Dimensions of actions.
 
-    action_min: NDArray, shape (action_dim, )
+    sigma: Optional[NDArray], shape (action_dim, ), default=None
+        Standard deviation of Gaussian distribution (i.e., band_width hyperparameter of gaussian kernel).
+        If `None`, sigma is set to 1 for all dimensions.
+
+    use_truncated_kernel: bool, default=False
+        Whether to use Truncated Gaussian kernel or not.
+        If `False`, (normal) Gaussian kernel is used.
+
+        When action_space is clipped, use_truncated_kernel should be set as `True`.
+
+    action_min: Optional[NDArray], shape (action_dim, ), default=None
         Minimum value of action vector.
+        When use_truncated_kernel == True, action_min must be given.
 
-    action_max: NDArray, shape (action_dim, )
+    action_max: Optional[NDArray], shape (action_dim, ), default=None
         Maximum value of action vector.
-
-    sigma: NDArray, shape (action_dim, )
-        Standard deviation of Gaussian distribution.
+        When use_truncated_kernel == True, action_max must be given.
 
     estimator_name: str, default="dr"
         Name of the estimator.
@@ -879,9 +929,10 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
     """
 
     action_dim: int
-    action_min: np.ndarray
-    action_max: np.ndarray
-    sigma: np.ndarray
+    sigma: Optional[np.ndarray] = None
+    use_truncated_kernel: bool = False
+    action_min: Optional[np.ndarray] = None
+    action_max: Optional[np.ndarray] = None
     estimator_name = "dr"
 
     def __post_init__(self):
@@ -893,9 +944,14 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
             target_type=int,
             min_val=1,
         )
-        check_array(self.action_min, name="action_min", expected_dim=1)
-        check_array(self.action_max, name="action_max", expected_dim=1)
+
+        if self.sigma is None:
+            self.sigma = np.ones(self.action_dim)
         check_array(self.sigma, name="sigma", expected_dim=1, min_val=0.0)
+
+        if self.use_truncated_kernel:
+            check_array(self.action_min, name="action_min", expected_dim=1)
+            check_array(self.action_max, name="action_max", expected_dim=1)
 
     def _estimate_trajectory_value(
         self,
@@ -957,13 +1013,20 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
 
         discount = np.full(reward.shape[1], gamma).cumprod()
 
-        similarity_weight = truncnorm.pdf(
-            evaluation_policy_action,
-            a=(self.action_min - action) / self.sigma,
-            b=(self.action_max - action) / self.sigma,
-            loc=action,
-            scale=self.sigma,
-        ).cumprod(axis=1)
+        if self.use_truncated_kernel:
+            similarity_weight = truncnorm.pdf(
+                evaluation_policy_action,
+                a=(self.action_min - action) / self.sigma,
+                b=(self.action_max - action) / self.sigma,
+                loc=action,
+                scale=self.sigma,
+            ).cumprod(axis=1)[:, :, 0]
+        else:
+            similarity_weight = norm.pdf(
+                evaluation_policy_action,
+                loc=action,
+                scale=self.sigma,
+            ).cumprod(axis=1)[:, :, 0]
 
         similarity_weight_prev = np.roll(similarity_weight, 1, axis=1)
         similarity_weight_prev[:, 0] = 1
@@ -1219,14 +1282,21 @@ class ContinuousSelfNormalizedTrajectoryWiseImportanceSampling(
     action_dim: int (> 0)
         Dimensions of actions.
 
-    action_min: NDArray, shape (action_dim, )
+    sigma: Optional[NDArray], shape (action_dim, ), default=None
+        Standard deviation of Gaussian distribution (i.e., band_width hyperparameter of gaussian kernel).
+        If `None`, sigma is set to 1 for all dimensions.
+
+    use_truncated_kernel: bool, default=False
+        Whether to use Truncated Gaussian kernel or not.
+        If `False`, (normal) Gaussian kernel is used.
+
+    action_min: Optional[NDArray], shape (action_dim, ), default=None
         Minimum value of action vector.
+        When use_truncated_kernel == True, action_min must be given.
 
-    action_max: NDArray, shape (action_dim, )
+    action_max: Optional[NDArray], shape (action_dim, ), default=None
         Maximum value of action vector.
-
-    sigma: NDArray, shape (action_dim, )
-        Standard deviation of Gaussian distribution.
+        When use_truncated_kernel == True, action_max must be given.
 
     estimator_name: str, default="sntis"
         Name of the estimator.
@@ -1254,9 +1324,10 @@ class ContinuousSelfNormalizedTrajectoryWiseImportanceSampling(
     """
 
     action_dim: int
-    action_min: np.ndarray
-    action_max: np.ndarray
-    sigma: np.ndarray
+    sigma: Optional[np.ndarray] = None
+    use_truncated_kernel: bool = False
+    action_min: Optional[np.ndarray] = None
+    action_max: Optional[np.ndarray] = None
     estimator_name: str = "sntis"
 
     def __post_init__(self):
@@ -1268,9 +1339,14 @@ class ContinuousSelfNormalizedTrajectoryWiseImportanceSampling(
             target_type=int,
             min_val=1,
         )
-        check_array(self.action_min, name="action_min", expected_dim=1)
-        check_array(self.action_max, name="action_max", expected_dim=1)
+
+        if self.sigma is None:
+            self.sigma = np.ones(self.action_dim)
         check_array(self.sigma, name="sigma", expected_dim=1, min_val=0.0)
+
+        if self.use_truncated_kernel:
+            check_array(self.action_min, name="action_min", expected_dim=1)
+            check_array(self.action_max, name="action_max", expected_dim=1)
 
     def _estimate_trajectory_value(
         self,
@@ -1316,33 +1392,38 @@ class ContinuousSelfNormalizedTrajectoryWiseImportanceSampling(
             (-1, step_per_episode, self.action_dim)
         )
         reward = reward.reshape((-1, step_per_episode))
-        discount = np.full(reward.shape[1], gamma).cumprod()
-
         importance_weight = 1 / (
             behavior_policy_trajectory_wise_pscore.reshape((-1, step_per_episode))
         )
-        importance_weight_mean = importance_weight.mean(axis=0)
-        importance_weight_mean = np.tile(
-            importance_weight_mean, len(importance_weight)
-        ).reshape((-1, step_per_episode))
-        self_normalized_importance_weight = importance_weight / (
-            importance_weight_mean + 1e-10
-        )
+        discount = np.full(reward.shape[1], gamma).cumprod()
 
-        similarity_weight = truncnorm.pdf(
-            evaluation_policy_action,
-            a=(self.action_min - action) / self.sigma,
-            b=(self.action_max - action) / self.sigma,
-            loc=action,
-            scale=self.sigma,
-        ).cumprod(axis=1)[:, -1]
+        if self.use_truncated_kernel:
+            similarity_weight = truncnorm.pdf(
+                evaluation_policy_action,
+                a=(self.action_min - action) / self.sigma,
+                b=(self.action_max - action) / self.sigma,
+                loc=action,
+                scale=self.sigma,
+            ).cumprod(axis=1)[:, -1, 0]
+        else:
+            similarity_weight = norm.pdf(
+                evaluation_policy_action,
+                loc=action,
+                scale=self.sigma,
+            ).cumprod(axis=1)[:, -1, 0]
+
         similarity_weight = np.tile(
             similarity_weight.reshape((-1, 1)), step_per_episode
         )
 
-        estimated_trajectory_value = (
-            discount * reward * similarity_weight * self_normalized_importance_weight
-        ).sum(axis=1)
+        weight = similarity_weight / importance_weight
+        weight_mean = weight.mean(axis=0)
+        weight_mean = np.tile(weight_mean, len(weight)).reshape((-1, step_per_episode))
+        self_normalized_weight = weight / (weight_mean + 1e-10)
+
+        estimated_trajectory_value = (discount * reward * self_normalized_weight).sum(
+            axis=1
+        )
 
         return estimated_trajectory_value
 
@@ -1369,14 +1450,21 @@ class ContinuousSelfNormalizedStepWiseImportanceSampling(
     action_dim: int (> 0)
         Dimensions of actions.
 
-    action_min: NDArray, shape (action_dim, )
+    sigma: Optional[NDArray], shape (action_dim, ), default=None
+        Standard deviation of Gaussian distribution (i.e., band_width hyperparameter of gaussian kernel).
+        If `None`, sigma is set to 1 for all dimensions.
+
+    use_truncated_kernel: bool, default=False
+        Whether to use Truncated Gaussian kernel or not.
+        If `False`, (normal) Gaussian kernel is used.
+
+    action_min: Optional[NDArray], shape (action_dim, ), default=None
         Minimum value of action vector.
+        When use_truncated_kernel == True, action_min must be given.
 
-    action_max: NDArray, shape (action_dim, )
+    action_max: Optional[NDArray], shape (action_dim, ), default=None
         Maximum value of action vector.
-
-    sigma: NDArray, shape (action_dim, )
-        Standard deviation of Gaussian distribution.
+        When use_truncated_kernel == True, action_max must be given.
 
     estimator_name: str, default="snsis"
         Name of the estimator.
@@ -1404,9 +1492,10 @@ class ContinuousSelfNormalizedStepWiseImportanceSampling(
     """
 
     action_dim: int
-    action_min: np.ndarray
-    action_max: np.ndarray
-    sigma: np.ndarray
+    sigma: Optional[np.ndarray] = None
+    use_truncated_kernel: bool = False
+    action_min: Optional[np.ndarray] = None
+    action_max: Optional[np.ndarray] = None
     band_width: Optional[np.ndarray] = None
     estimator_name: str = "snsis"
 
@@ -1419,9 +1508,14 @@ class ContinuousSelfNormalizedStepWiseImportanceSampling(
             target_type=int,
             min_val=1,
         )
-        check_array(self.action_min, name="action_min", expected_dim=1)
-        check_array(self.action_max, name="action_max", expected_dim=1)
+
+        if self.sigma is None:
+            self.sigma = np.ones(self.action_dim)
         check_array(self.sigma, name="sigma", expected_dim=1, min_val=0.0)
+
+        if self.use_truncated_kernel:
+            check_array(self.action_min, name="action_min", expected_dim=1)
+            check_array(self.action_max, name="action_max", expected_dim=1)
 
     def _estimate_trajectory_value(
         self,
@@ -1467,30 +1561,34 @@ class ContinuousSelfNormalizedStepWiseImportanceSampling(
             (-1, step_per_episode, self.action_dim)
         )
         reward = reward.reshape((-1, step_per_episode))
-        discount = np.full(reward.shape[1], gamma).cumprod()
-
         importance_weight = 1 / (
             behavior_policy_step_wise_pscore.reshape((-1, step_per_episode))
         )
-        importance_weight_mean = importance_weight.mean(axis=0)
-        importance_weight_mean = np.tile(
-            importance_weight_mean, len(importance_weight)
-        ).reshape((-1, step_per_episode))
-        self_normalized_importance_weight = importance_weight / (
-            importance_weight_mean + 1e-10
+        discount = np.full(reward.shape[1], gamma).cumprod()
+
+        if self.use_truncated_kernel:
+            similarity_weight = truncnorm.pdf(
+                evaluation_policy_action,
+                a=(self.action_min - action) / self.sigma,
+                b=(self.action_max - action) / self.sigma,
+                loc=action,
+                scale=self.sigma,
+            ).cumprod(axis=1)[:, :, 0]
+        else:
+            similarity_weight = norm.pdf(
+                evaluation_policy_action,
+                loc=action,
+                scale=self.sigma,
+            ).cumprod(axis=1)[:, :, 0]
+
+        weight = similarity_weight / importance_weight
+        weight_mean = weight.mean(axis=0)
+        weight_mean = np.tile(weight_mean, len(weight)).reshape((-1, step_per_episode))
+        self_normalized_weight = weight / (weight_mean + 1e-10)
+
+        estimated_trajectory_value = (discount * reward * self_normalized_weight).sum(
+            axis=1
         )
-
-        similarity_weight = truncnorm.pdf(
-            evaluation_policy_action,
-            a=(self.action_min - action) / self.sigma,
-            b=(self.action_max - action) / self.sigma,
-            loc=action,
-            scale=self.sigma,
-        ).cumprod(axis=1)
-
-        estimated_trajectory_value = (
-            discount * reward * similarity_weight * self_normalized_importance_weight
-        ).sum(axis=1)
 
         return estimated_trajectory_value
 
@@ -1517,14 +1615,21 @@ class ContinuousSelfNormalizedDoublyRobust(ContinuousDoublyRobust):
     action_dim: int (> 0)
         Dimensions of actions.
 
-    action_min: NDArray, shape (action_dim, )
+    sigma: Optional[NDArray], shape (action_dim, ), default=None
+        Standard deviation of Gaussian distribution (i.e., band_width hyperparameter of gaussian kernel).
+        If `None`, sigma is set to 1 for all dimensions.
+
+    use_truncated_kernel: bool, default=False
+        Whether to use Truncated Gaussian kernel or not.
+        If `False`, (normal) Gaussian kernel is used.
+
+    action_min: Optional[NDArray], shape (action_dim, ), default=None
         Minimum value of action vector.
+        When use_truncated_kernel == True, action_min must be given.
 
-    action_max: NDArray, shape (action_dim, )
+    action_max: Optional[NDArray], shape (action_dim, ), default=None
         Maximum value of action vector.
-
-    sigma: NDArray, shape (action_dim, )
-        Standard deviation of Gaussian distribution.
+        When use_truncated_kernel == True, action_max must be given.
 
     estimator_name: str, default="sndr"
         Name of the estimator.
@@ -1554,9 +1659,10 @@ class ContinuousSelfNormalizedDoublyRobust(ContinuousDoublyRobust):
     """
 
     action_dim: int
-    action_min: np.ndarray
-    action_max: np.ndarray
-    sigma: np.ndarray
+    sigma: Optional[np.ndarray] = None
+    use_truncated_kernel: bool = False
+    action_min: Optional[np.ndarray] = None
+    action_max: Optional[np.ndarray] = None
     estimator_name = "sndr"
 
     def __post_init__(self):
@@ -1568,9 +1674,14 @@ class ContinuousSelfNormalizedDoublyRobust(ContinuousDoublyRobust):
             target_type=int,
             min_val=1,
         )
-        check_array(self.action_min, name="action_min", expected_dim=1)
-        check_array(self.action_max, name="action_max", expected_dim=1)
+
+        if self.sigma is None:
+            self.sigma = np.ones(self.action_dim)
         check_array(self.sigma, name="sigma", expected_dim=1, min_val=0.0)
+
+        if self.use_truncated_kernel:
+            check_array(self.action_min, name="action_min", expected_dim=1)
+            check_array(self.action_max, name="action_max", expected_dim=1)
 
     def _estimate_trajectory_value(
         self,
@@ -1633,44 +1744,47 @@ class ContinuousSelfNormalizedDoublyRobust(ContinuousDoublyRobust):
         importance_weight = 1 / pscore
         importance_weight_prev = 1 / pscore_prev
 
-        importance_weight_prev_mean = importance_weight_prev.mean(axis=0)
-        importance_weight_prev_mean = np.tile(
-            importance_weight_prev_mean, len(importance_weight)
-        ).reshape((-1, step_per_episode))
-        self_normalized_importance_weight_prev = importance_weight_prev / (
-            importance_weight_prev_mean + 1e-10
-        )
-
-        importance_weight_mean = importance_weight.mean(axis=0)
-        importance_weight_mean = np.tile(
-            importance_weight_mean, len(importance_weight)
-        ).reshape((-1, step_per_episode))
-        self_normalized_importance_weight = importance_weight / (
-            importance_weight_mean + 1e-10
-        )
-
         discount = np.full(reward.shape[1], gamma).cumprod()
 
-        similarity_weight = truncnorm.pdf(
-            evaluation_policy_action,
-            a=(self.action_min - action) / self.sigma,
-            b=(self.action_max - action) / self.sigma,
-            loc=action,
-            scale=self.sigma,
-        ).cumprod(axis=1)
+        if self.use_truncated_kernel:
+            similarity_weight = truncnorm.pdf(
+                evaluation_policy_action,
+                a=(self.action_min - action) / self.sigma,
+                b=(self.action_max - action) / self.sigma,
+                loc=action,
+                scale=self.sigma,
+            ).cumprod(axis=1)[:, :, 0]
+        else:
+            similarity_weight = norm.pdf(
+                evaluation_policy_action,
+                loc=action,
+                scale=self.sigma,
+            ).cumprod(axis=1)[:, :, 0]
 
         similarity_weight_prev = np.roll(similarity_weight, 1, axis=1)
         similarity_weight_prev[:, 0] = 1
 
+        weight = similarity_weight / importance_weight
+        weight_mean = weight.mean(axis=0)
+        weight_mean = np.tile(weight_mean, len(weight)).reshape((-1, step_per_episode))
+        self_normalized_weight = weight / (weight_mean + 1e-10)
+
+        weight_prev = similarity_weight_prev / importance_weight_prev
+        weight_prev_mean = weight_prev.mean(axis=0)
+        weight_prev_mean = np.tile(weight_prev_mean, len(weight_prev)).reshape(
+            (-1, step_per_episode)
+        )
+        self_normalized_weight_prev = weight_prev / (weight_prev_mean + 1e-10)
+
+        estimated_trajectory_value = (discount * reward * self_normalized_weight).sum(
+            axis=1
+        )
+
         estimated_trajectory_value = (
             discount
             * (
-                (reward - state_action_value_prediction)
-                * similarity_weight
-                * self_normalized_importance_weight
-                + state_action_value_prediction
-                * similarity_weight_prev
-                * self_normalized_importance_weight_prev
+                (reward - state_action_value_prediction) * self_normalized_weight
+                + state_action_value_prediction * self_normalized_weight_prev
             )
         ).sum(axis=1)
 

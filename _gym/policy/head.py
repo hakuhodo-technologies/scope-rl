@@ -4,7 +4,7 @@ from typing import Union, Optional, Sequence
 from dataclasses import dataclass
 
 import numpy as np
-from scipy.stats import truncnorm
+from scipy.stats import norm, truncnorm
 from sklearn.utils import check_scalar, check_random_state
 
 import gym
@@ -514,8 +514,139 @@ class DiscreteSoftmaxHead(BaseHead):
 
 
 @dataclass
-class ContinuousTruncatedGaussianHead(BaseHead):
+class ContinuousGaussianHead(BaseHead):
     """Class to sample action from Gaussian distribution.
+
+    Note
+    -------
+    This class should be used when action_space is not clipped.
+    Otherwise, please use ContinuousTruncatedGaussianHead instead.
+
+    Parameters
+    -------
+    base_policy: AlgoBase
+        Reinforcement learning (RL) policy.
+
+    name: str
+        Name of the policy.
+
+    sigma: NDArray, shape (action_dim, )
+        Standard deviation of Gaussian distribution.
+
+    random_state: Optional[int], default=None (>= 0)
+        Random state.
+
+    """
+
+    base_policy: AlgoBase
+    name: str
+    sigma: np.ndarray
+    random_state: Optional[int] = None
+
+    def __post_init__(self):
+        """Initialize class."""
+        self.action_type = "continuous"
+
+        if not isinstance(self.base_policy, AlgoBase):
+            raise ValueError("base_policy must be a child class of AlgoBase")
+
+        check_array(self.sigma, name="sigma", expected_dim=1, min_val=0.0)
+
+        if self.random_state is None:
+            raise ValueError("random_state must be given")
+        self.random_ = check_random_state(self.random_state)
+
+    def _calc_pscore(self, greedy_action: np.ndarray, action: np.ndarray):
+        """Calculate pscore.
+
+        Parameters
+        -------
+        greedy_action: NDArray, (n_samples, action_dim)
+            Greedy action.
+
+        action: NDArray, (n_samples, action_dim)
+            Sampled Action.
+
+        Return
+        -------
+        pscore: NDArray, (n_samples, )
+            Pscore of the sampled action.
+
+        """
+        prob = norm.pdf(
+            action,
+            loc=greedy_action,
+            scale=self.sigma,
+        )
+        return np.prod(prob, axis=1)
+
+    def stochastic_action_with_pscore(self, x: np.ndarray):
+        """Sample stochastic action with its pscore.
+
+        Parameters
+        -------
+        x: NDArray, shape (n_samples, state_dim)
+            State.
+
+        Return
+        -------
+        action: NDArray, shape (n_samples, action_dim)
+            Sampled action.
+
+        pscore: NDArray, shape (n_samples, )
+            Pscore of the sampled action.
+
+        """
+        greedy_action = self.base_policy.predict(x)
+        action = self.sample_action(x)
+        pscore = self._calc_pscore(greedy_action, action)
+        return action, pscore
+
+    def calc_pscore_given_action(self, x: np.ndarray, action: np.ndarray):
+        """Calculate pscore given action.
+
+        Parameters
+        -------
+        x: NDArray, shape (n_samples, state_dim)
+            State.
+
+        action: NDArray, shape (n_samples, action_dim)
+            Action.
+
+        Return
+        -------
+        pscore: NDArray, shape (n_samples, )
+            Pscore of the given state and action.
+
+        """
+        greedy_action = self.base_policy.predict(x)
+        return self._calc_pscore(greedy_action, action)
+
+    def sample_action(self, x: np.ndarray):
+        """Sample action.
+
+        Parameters
+        -------
+        x: NDArray, shape (n_samples, state_dim)
+            State.
+
+        Return
+        -------
+        action: NDArray, shape (n_samples, action_dim)
+            Sampled action for each state.
+
+        """
+        greedy_action = self.base_policy.predict(x)
+        action = norm.rvs(
+            loc=greedy_action,
+            scale=self.sigma,
+        ).reshape((-1, 1))
+        return action
+
+
+@dataclass
+class ContinuousTruncatedGaussianHead(BaseHead):
+    """Class to sample action from Truncated Gaussian distribution.
 
     Parameters
     -------
