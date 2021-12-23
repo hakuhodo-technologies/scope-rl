@@ -156,9 +156,11 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 
     .. math::
 
-        \\hat{V}_{\\mathrm{TIS}} (\\pi_e; \\mathcal{D}) := \\mathbb{E}_{n} [\\sum_{t=0}^T \\gamma^t w_{1:T} r_t],
+        \\hat{V}_{\\mathrm{TIS}} (\\pi_e; \\mathcal{D}) := \\mathbb{E}_{n} [\\sum_{t=0}^T \\gamma^t w_{0:T} \\delta(\\pi_e, a_{0:t}) r_t],
 
-    where :math:`w_{0:T} := \\prod_{t=1}^T \\frac{\\pi_e(a_t \\mid s_t)}{\\pi_b(a_t \\mid s_t)}`
+    where :math:`w_{0:T} := \\prod_{t=1}^T \\frac{1}{\\pi_b(a_t \\mid s_t)}` is the inverse propensity weight
+    and :math:`\\delta(\\pi_e, a_{0:T}) = \\prod_{t=1}^T K(\\pi_e(s_t), a_t)` indicates similarity between action in dataset and that of evaluation policy.
+    Note that :math:`K(\\cdot)` is a kernel function.
 
     Parameters
     -------
@@ -519,9 +521,11 @@ class ContinuousStepWiseImportanceSampling(BaseOffPolicyEstimator):
 
     .. math::
 
-        \\hat{V}_{\\mathrm{SIS}} (\\pi_e; \\mathcal{D}) := \\mathbb{E}_{n} [\\sum_{t=0}^T \\gamma^t w_{0:t} r_t],
+        \\hat{V}_{\\mathrm{SIS}} (\\pi_e; \\mathcal{D}) := \\mathbb{E}_{n} [\\sum_{t=0}^T \\gamma^t w_{0:t} \\delta(\\pi_e, a_{0:t}) r_t],
 
-    where :math:`w_{0:t} := \\prod_{t'=0}^t \\frac{\\pi_e(a_{t'} \\mid s_{t'})}{\\pi_b(a_{t'} \\mid s_{t'})}`
+    where :math:`w_{0:t} := \\prod_{t'=0}^t \\frac{1}{\\pi_b(a_{t'} \\mid s_{t'})}`
+    and :math:`\\delta(\\pi_e, a_{0:t}) = \\prod_{t'=1}^t K(\\pi_e(s_{t'}), a_{t'})` indicates similarity between action in dataset and that of evaluation policy.
+    Note that :math:`K(\\cdot)` is a kernel function.
 
     Parameters
     -------
@@ -876,9 +880,12 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
     .. math::
 
         \\hat{V}_{\\mathrm{DR}} (\\pi_e; \\mathcal{D})
-        := \\mathbb{E}_{n} [\\sum_{t=0}^T \\gamma^t (w_{0:t} (r_t - \\hat{Q}(s_t, a_t)) + w_{0:t-1} \\mathbb{E}_{a \\sim \\pi_e(a \\mid s_t)}[\\hat{Q}(s_t, a)])],
+        := \\mathbb{E}_{n} [\\sum_{t=0}^T \\gamma^t (w_{0:t} \\delta(\\pi_e, a_{0:t}) (r_t - \\hat{Q}(s_t, a_t))
+            + w_{0:t-1} \\delta(\\pi_e, a_{0:t-1}) \\mathbb{E}_{a \\sim \\pi_e(a \\mid s_t)}[\\hat{Q}(s_t, a)])],
 
-    where :math:`w_{0:t} := \\prod_{t'=0}^t \\frac{\\pi_e(a_{t'} \\mid s_{t'})}{\\pi_b(a_{t'} \\mid s_{t'})}`
+    where :math:`w_{0:t} := \\prod_{t'=0}^t \\frac{1}{\\pi_b(a_{t'} \\mid s_{t'})}`
+    and :math:`\\delta(\\pi_e, a_{0:t}) = \\prod_{t'=1}^t K(\\pi_e(s_{t'}), a_{t'})` indicates similarity between action in dataset and that of evaluation policy.
+    Note that :math:`K(\\cdot)` is a kernel function.
 
     Parameters
     -------
@@ -1273,9 +1280,11 @@ class ContinuousSelfNormalizedTrajectoryWiseImportanceSampling(
     .. math::
 
         \\hat{V}_{\\mathrm{SNTIS}} (\\pi_e; \\mathcal{D})
-        := \\mathbb{E}_{n} [\\sum_{t=0}^T \\gamma^t \\frac{w_{1:T}}{\\mathbb{E}_n [w_{1:T}]} r_t],
+        := \\mathbb{E}_{n} [\\sum_{t=0}^T \\gamma^t \\frac{w_{1:T} \\delta(\\pi_e, a_{0:T})}{\\mathbb{E}_n [w_{1:T} \\delta(\\pi_e, a_{0:T})]} r_t],
 
-    where :math:`w_{0:T} := \\prod_{t=1}^T \\frac{\\pi_e(a_t \\mid s_t)}{\\pi_b(a_t \\mid s_t)}`
+    where :math:`w_{0:T} := \\prod_{t=1}^T \\frac{1}{\\pi_b(a_t \\mid s_t)}`
+    and :math:`\\delta(\\pi_e, a_{0:T}) = \\prod_{t=1}^T K(\\pi_e(s_t), a_t)` indicates similarity between action in dataset and that of evaluation policy.
+    Note that :math:`K(\\cdot)` is a kernel function.
 
     Parameters
     -------
@@ -1441,9 +1450,11 @@ class ContinuousSelfNormalizedStepWiseImportanceSampling(
     .. math::
 
         \\hat{V}_{\\mathrm{SNSIS}} (\\pi_e; \\mathcal{D})
-        := \\mathbb{E}_{n} [\\sum_{t=0}^T \\gamma^t \\frac{w_{1:t}}{\\mathbb{E}_n [w_{1:t}]} r_t],
+        := \\mathbb{E}_{n} [\\sum_{t=0}^T \\gamma^t \\frac{w_{1:t} \\delta(\\pi_e, a_{0:t})}{\\mathbb{E}_n [w_{1:t} \\delta(\\pi_e, a_{0:t})]} r_t],
 
-    where :math:`w_{0:t} := \\prod_{t'=1}^t \\frac{\\pi_e(a_{t'} \\mid s_{t'})}{\\pi_b(a_{t'} \\mid s_{t'})}`
+    where :math:`w_{0:t} := \\prod_{t'=1}^t \\frac{1}{\\pi_b(a_{t'} \\mid s_{t'})}`
+    and :math:`\\delta(\\pi_e, a_{0:t}) = \\prod_{t'=1}^t K(\\pi_e(s_{t'}), a_{t'})` indicates similarity between action in dataset and that of evaluation policy.
+    Note that :math:`K(\\cdot)` is a kernel function.
 
     Parameters
     -------
@@ -1604,11 +1615,12 @@ class ContinuousSelfNormalizedDoublyRobust(ContinuousDoublyRobust):
     .. math::
 
         \\hat{V}_{\\mathrm{DR}} (\\pi_e; \\mathcal{D})
-        := \\mathbb{E}_{n} [\\sum_{t=0}^T \\gamma^t \\frac{w_{0:t-1}}{\\mathbb{E}_n [w_{0:t-1}]}
-                (w_t (r_t - \\hat{Q}(s_t, a_t)) + \\mathbb{E}_{a \\sim \\pi_e(a \\mid s_t)}[\\hat{Q}(s_t, a)])],
+        := \\mathbb{E}_{n} [\\sum_{t=0}^T \\gamma^t ( \\frac{w_{0:t} \\delta(\\pi_e, a_{0:t})}{\\mathbb{E}_n[w_{0:t} \\delta(\\pi_e, a_{0:t})]} (r_t - \\hat{Q}(s_t, a_t))
+            + \\frac{w_{0:t-1} \\delta(\\pi_e, a_{0:t-1})}{\\mathbb{E}_n[w_{0:t-1} \\delta(\\pi_e, a_{0:t-1})]} \\mathbb{E}_{a \\sim \\pi_e(a \\mid s_t)}[\\hat{Q}(s_t, a)])],
 
-    where :math:`w_{0:t} := \\prod_{t'=0}^t \\frac{\\pi_e(a_{t'} \\mid s_{t'})}{\\pi_b(a_{t'} \\mid s_{t'})}`
-    and :math:`w_{t}} := \\frac{\\pi_e(a_t \\mid s_t)}{\\pi_b(a_t \\mid s_t)}`
+    where :math:`w_{0:t} := \\prod_{t'=0}^t \\frac{1}{\\pi_b(a_{t'} \\mid s_{t'})}`
+    and :math:`\\delta(\\pi_e, a_{0:t}) = \\prod_{t'=1}^t K(\\pi_e(s_{t'}), a_{t'})` indicates similarity between action in dataset and that of evaluation policy.
+    Note that :math:`K(\\cdot)` is a kernel function.
 
     Parameters
     -------
@@ -1769,7 +1781,8 @@ class ContinuousSelfNormalizedDoublyRobust(ContinuousDoublyRobust):
         weight_mean = np.tile(weight_mean, len(weight)).reshape((-1, step_per_episode))
         self_normalized_weight = weight / (weight_mean + 1e-10)
 
-        weight_prev = similarity_weight_prev / importance_weight_prev
+        # weight_prev = similarity_weight_prev / importance_weight_prev
+        weight_prev = importance_weight_prev
         weight_prev_mean = weight_prev.mean(axis=0)
         weight_prev_mean = np.tile(weight_prev_mean, len(weight_prev)).reshape(
             (-1, step_per_episode)
