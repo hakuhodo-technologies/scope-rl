@@ -142,16 +142,6 @@ def sigmoid(x: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
     return 1 / (1 + np.exp(-x))
 
 
-def gaussian_kernel(x):
-    """Gaussian kernel"""
-    return (np.exp(-(x ** 2) / 2) / np.sqrt(2 * np.pi)).sum(axis=-1)
-
-
-kernel_functions = {
-    "gaussian": gaussian_kernel,
-}
-
-
 def defaultdict_to_dict(dict_: Union[Dict[Any, Any], DefaultDict[Any, Any]]):
     """Class to transform defaultdict into dict."""
     if isinstance(dict_, defaultdict):

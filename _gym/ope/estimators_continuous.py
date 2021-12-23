@@ -3,14 +3,14 @@ from dataclasses import dataclass
 from typing import Dict, Optional
 
 import numpy as np
-from sklearn.utils.validation import check_scalar
+from scipy.stats import truncnorm
+from sklearn.utils import check_scalar
 
+from _gym.ope.estimators_discrete import BaseOffPolicyEstimator
 from _gym.utils import (
     check_array,
     estimate_confidence_interval_by_bootstrap,
-    kernel_functions,
 )
-from _gym.ope.estimators_discrete import BaseOffPolicyEstimator
 
 
 @dataclass
@@ -165,14 +165,14 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
     action_dim: int (> 0)
         Dimensions of actions.
 
-    kernel: str, default="gaussian"
-        Choice of kernel function.
-        "gaussian" is acceptable.
+    action_min: NDArray, shape (action_dim, )
+        Minimum value of action vector.
 
-    band_width: Optional[NDArray]
-        A bandwidth hyperparameter for each action dimension.
-        A larger value increases bias instead of reducing variance.
-        A smaller value increased variance instead of reducing bias.
+    action_max: NDArray, shape (action_dim, )
+        Maximum value of action vector.
+
+    sigma: NDArray, shape (action_dim, )
+        Standard deviation of Gaussian distribution.
 
     estimator_name: str, default="tis"
         Name of the estimator.
@@ -194,8 +194,9 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
     """
 
     action_dim: int
-    kernel: str = "gaussian"
-    band_width: Optional[np.ndarray] = None
+    action_min: np.ndarray
+    action_max: np.ndarray
+    sigma: np.ndarray
     estimator_name: str = "tis"
 
     def __post_init__(self):
@@ -207,13 +208,9 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
             target_type=int,
             min_val=1,
         )
-
-        if self.kernel not in ["gaussian"]:
-            raise ValueError(f'kernel must be "gaussian", but {self.kernel} is given')
-        self.kernel_function = kernel_functions[self.kernel]
-
-        if self.band_width is None:
-            self.band_width = np.ones(self.action_dim)
+        check_array(self.action_min, name="action_min", expected_dim=1)
+        check_array(self.action_max, name="action_max", expected_dim=1)
+        check_array(self.sigma, name="sigma", expected_dim=1, min_val=0.0)
 
     def _estimate_trajectory_value(
         self,
@@ -262,12 +259,15 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         behavior_policy_trajectory_wise_pscore = (
             behavior_policy_trajectory_wise_pscore.reshape((-1, step_per_episode))
         )
-
         discount = np.full(reward.shape[1], gamma).cumprod()
-        distance = (action - evaluation_policy_action) / self.band_width
-        similarity_weight = (self.kernel_function(distance) / self.band_width).cumprod(
-            axis=1
-        )[:, -1]
+
+        similarity_weight = truncnorm.pdf(
+            evaluation_policy_action,
+            a=(self.action_min - action) / self.sigma,
+            b=(self.action_max - action) / self.sigma,
+            loc=action,
+            scale=self.sigma,
+        ).cumprod(axis=1)[:, -1]
         similarity_weight = np.tile(
             similarity_weight.reshape((-1, 1)), step_per_episode
         )
@@ -507,14 +507,14 @@ class ContinuousStepWiseImportanceSampling(BaseOffPolicyEstimator):
     action_dim: int (> 0)
         Dimensions of actions.
 
-    kernel: str, default="gaussian"
-        Choice of kernel function.
-        "gaussian" is acceptable.
+    action_min: NDArray, shape (action_dim, )
+        Minimum value of action vector.
 
-    band_width: Optional[NDArray]
-        A bandwidth hyperparameter for each action dimension.
-        A larger value increases bias instead of reducing variance.
-        A smaller value increased variance instead of reducing bias.
+    action_max: NDArray, shape (action_dim, )
+        Maximum value of action vector.
+
+    sigma: NDArray, shape (action_dim, )
+        Standard deviation of Gaussian distribution.
 
     estimator_name: str, default="sis"
         Name of the estimator.
@@ -536,8 +536,9 @@ class ContinuousStepWiseImportanceSampling(BaseOffPolicyEstimator):
     """
 
     action_dim: int
-    kernel: str = "gaussian"
-    band_width: Optional[np.ndarray] = None
+    action_min: np.ndarray
+    action_max: np.ndarray
+    sigma: np.ndarray
     estimator_name: str = "sis"
 
     def __post_init__(self):
@@ -549,13 +550,9 @@ class ContinuousStepWiseImportanceSampling(BaseOffPolicyEstimator):
             target_type=int,
             min_val=1,
         )
-
-        if self.kernel not in ["gaussian"]:
-            raise ValueError(f'kernel must be "gaussian", but {self.kernel} is given')
-        self.kernel_function = kernel_functions[self.kernel]
-
-        if self.band_width is None:
-            self.band_width = np.ones(self.action_dim)
+        check_array(self.action_min, name="action_min", expected_dim=1)
+        check_array(self.action_max, name="action_max", expected_dim=1)
+        check_array(self.sigma, name="sigma", expected_dim=1, min_val=0.0)
 
     def _estimate_trajectory_value(
         self,
@@ -604,12 +601,16 @@ class ContinuousStepWiseImportanceSampling(BaseOffPolicyEstimator):
         behavior_policy_step_wise_pscore = behavior_policy_step_wise_pscore.reshape(
             (-1, step_per_episode)
         )
-
         discount = np.full(reward.shape[1], gamma).cumprod()
-        distance = (action - evaluation_policy_action) / self.band_width
-        similarity_weight = (self.kernel_function(distance) / self.band_width).cumprod(
-            axis=1
-        )
+
+        similarity_weight = truncnorm.pdf(
+            evaluation_policy_action,
+            a=(self.action_min - action) / self.sigma,
+            b=(self.action_max - action) / self.sigma,
+            loc=action,
+            scale=self.sigma,
+        ).cumprod(axis=1)
+
         estimated_trajectory_value = (
             discount * reward * similarity_weight / behavior_policy_step_wise_pscore
         ).sum(axis=1)
@@ -843,14 +844,14 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
     action_dim: int (> 0)
         Dimensions of actions.
 
-    kernel: str, default="gaussian"
-        Choice of kernel function.
-        "gaussian" is acceptable.
+    action_min: NDArray, shape (action_dim, )
+        Minimum value of action vector.
 
-    band_width: Optional[NDArray]
-        A bandwidth hyperparameter for each action dimension.
-        A larger value increases bias instead of reducing variance.
-        A smaller value increased variance instead of reducing bias.
+    action_max: NDArray, shape (action_dim, )
+        Maximum value of action vector.
+
+    sigma: NDArray, shape (action_dim, )
+        Standard deviation of Gaussian distribution.
 
     estimator_name: str, default="dr"
         Name of the estimator.
@@ -878,8 +879,9 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
     """
 
     action_dim: int
-    kernel: str = "gaussian"
-    band_width: Optional[np.ndarray] = None
+    action_min: np.ndarray
+    action_max: np.ndarray
+    sigma: np.ndarray
     estimator_name = "dr"
 
     def __post_init__(self):
@@ -891,13 +893,9 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
             target_type=int,
             min_val=1,
         )
-
-        if self.kernel not in ["gaussian"]:
-            raise ValueError(f'kernel must be "gaussian", but {self.kernel} is given')
-        self.kernel_function = kernel_functions[self.kernel]
-
-        if self.band_width is None:
-            self.band_width = np.ones(self.action_dim)
+        check_array(self.action_min, name="action_min", expected_dim=1)
+        check_array(self.action_max, name="action_max", expected_dim=1)
+        check_array(self.sigma, name="sigma", expected_dim=1, min_val=0.0)
 
     def _estimate_trajectory_value(
         self,
@@ -958,10 +956,15 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
         pscore_prev[:, 0] = 1
 
         discount = np.full(reward.shape[1], gamma).cumprod()
-        distance = (action - evaluation_policy_action) / self.band_width
-        similarity_weight = (self.kernel_function(distance) / self.band_width).cumprod(
-            axis=1
-        )
+
+        similarity_weight = truncnorm.pdf(
+            evaluation_policy_action,
+            a=(self.action_min - action) / self.sigma,
+            b=(self.action_max - action) / self.sigma,
+            loc=action,
+            scale=self.sigma,
+        ).cumprod(axis=1)
+
         similarity_weight_prev = np.roll(similarity_weight, 1, axis=1)
         similarity_weight_prev[:, 0] = 1
 
@@ -1216,14 +1219,14 @@ class ContinuousSelfNormalizedTrajectoryWiseImportanceSampling(
     action_dim: int (> 0)
         Dimensions of actions.
 
-    kernel: str, default="gaussian"
-        Choice of kernel function.
-        "gaussian" is acceptable.
+    action_min: NDArray, shape (action_dim, )
+        Minimum value of action vector.
 
-    band_width: Optional[NDArray]
-        A bandwidth hyperparameter for each action dimension.
-        A larger value increases bias instead of reducing variance.
-        A smaller value increased variance instead of reducing bias.
+    action_max: NDArray, shape (action_dim, )
+        Maximum value of action vector.
+
+    sigma: NDArray, shape (action_dim, )
+        Standard deviation of Gaussian distribution.
 
     estimator_name: str, default="sntis"
         Name of the estimator.
@@ -1251,8 +1254,9 @@ class ContinuousSelfNormalizedTrajectoryWiseImportanceSampling(
     """
 
     action_dim: int
-    kernel: str = "gaussian"
-    band_width: Optional[np.ndarray] = None
+    action_min: np.ndarray
+    action_max: np.ndarray
+    sigma: np.ndarray
     estimator_name: str = "sntis"
 
     def __post_init__(self):
@@ -1264,13 +1268,9 @@ class ContinuousSelfNormalizedTrajectoryWiseImportanceSampling(
             target_type=int,
             min_val=1,
         )
-
-        if self.kernel not in ["gaussian"]:
-            raise ValueError(f'kernel must be "gaussian", but {self.kernel} is given')
-        self.kernel_function = kernel_functions[self.kernel]
-
-        if self.band_width is None:
-            self.band_width = np.ones(self.action_dim)
+        check_array(self.action_min, name="action_min", expected_dim=1)
+        check_array(self.action_max, name="action_max", expected_dim=1)
+        check_array(self.sigma, name="sigma", expected_dim=1, min_val=0.0)
 
     def _estimate_trajectory_value(
         self,
@@ -1316,6 +1316,8 @@ class ContinuousSelfNormalizedTrajectoryWiseImportanceSampling(
             (-1, step_per_episode, self.action_dim)
         )
         reward = reward.reshape((-1, step_per_episode))
+        discount = np.full(reward.shape[1], gamma).cumprod()
+
         importance_weight = 1 / (
             behavior_policy_trajectory_wise_pscore.reshape((-1, step_per_episode))
         )
@@ -1327,11 +1329,13 @@ class ContinuousSelfNormalizedTrajectoryWiseImportanceSampling(
             importance_weight_mean + 1e-10
         )
 
-        discount = np.full(reward.shape[1], gamma).cumprod()
-        distance = (action - evaluation_policy_action) / self.band_width
-        similarity_weight = (self.kernel_function(distance) / self.band_width).cumprod(
-            axis=1
-        )[:, -1]
+        similarity_weight = truncnorm.pdf(
+            evaluation_policy_action,
+            a=(self.action_min - action) / self.sigma,
+            b=(self.action_max - action) / self.sigma,
+            loc=action,
+            scale=self.sigma,
+        ).cumprod(axis=1)[:, -1]
         similarity_weight = np.tile(
             similarity_weight.reshape((-1, 1)), step_per_episode
         )
@@ -1365,14 +1369,14 @@ class ContinuousSelfNormalizedStepWiseImportanceSampling(
     action_dim: int (> 0)
         Dimensions of actions.
 
-    kernel: str, default="gaussian"
-        Choice of kernel function.
-        "gaussian" is acceptable.
+    action_min: NDArray, shape (action_dim, )
+        Minimum value of action vector.
 
-    band_width: Optional[NDArray]
-        A bandwidth hyperparameter for each action dimension.
-        A larger value increases bias instead of reducing variance.
-        A smaller value increased variance instead of reducing bias.
+    action_max: NDArray, shape (action_dim, )
+        Maximum value of action vector.
+
+    sigma: NDArray, shape (action_dim, )
+        Standard deviation of Gaussian distribution.
 
     estimator_name: str, default="snsis"
         Name of the estimator.
@@ -1400,7 +1404,9 @@ class ContinuousSelfNormalizedStepWiseImportanceSampling(
     """
 
     action_dim: int
-    kernel: str = "gaussian"
+    action_min: np.ndarray
+    action_max: np.ndarray
+    sigma: np.ndarray
     band_width: Optional[np.ndarray] = None
     estimator_name: str = "snsis"
 
@@ -1413,13 +1419,9 @@ class ContinuousSelfNormalizedStepWiseImportanceSampling(
             target_type=int,
             min_val=1,
         )
-
-        if self.kernel not in ["gaussian"]:
-            raise ValueError(f'kernel must be "gaussian", but {self.kernel} is given')
-        self.kernel_function = kernel_functions[self.kernel]
-
-        if self.band_width is None:
-            self.band_width = np.ones(self.action_dim)
+        check_array(self.action_min, name="action_min", expected_dim=1)
+        check_array(self.action_max, name="action_max", expected_dim=1)
+        check_array(self.sigma, name="sigma", expected_dim=1, min_val=0.0)
 
     def _estimate_trajectory_value(
         self,
@@ -1465,6 +1467,8 @@ class ContinuousSelfNormalizedStepWiseImportanceSampling(
             (-1, step_per_episode, self.action_dim)
         )
         reward = reward.reshape((-1, step_per_episode))
+        discount = np.full(reward.shape[1], gamma).cumprod()
+
         importance_weight = 1 / (
             behavior_policy_step_wise_pscore.reshape((-1, step_per_episode))
         )
@@ -1476,11 +1480,13 @@ class ContinuousSelfNormalizedStepWiseImportanceSampling(
             importance_weight_mean + 1e-10
         )
 
-        discount = np.full(reward.shape[1], gamma).cumprod()
-        distance = (action - evaluation_policy_action) / self.band_width
-        similarity_weight = (self.kernel_function(distance) / self.band_width).cumprod(
-            axis=1
-        )
+        similarity_weight = truncnorm.pdf(
+            evaluation_policy_action,
+            a=(self.action_min - action) / self.sigma,
+            b=(self.action_max - action) / self.sigma,
+            loc=action,
+            scale=self.sigma,
+        ).cumprod(axis=1)
 
         estimated_trajectory_value = (
             discount * reward * similarity_weight * self_normalized_importance_weight
@@ -1511,14 +1517,14 @@ class ContinuousSelfNormalizedDoublyRobust(ContinuousDoublyRobust):
     action_dim: int (> 0)
         Dimensions of actions.
 
-    kernel: str, default="gaussian"
-        Choice of kernel function.
-        "gaussian" is acceptable.
+    action_min: NDArray, shape (action_dim, )
+        Minimum value of action vector.
 
-    band_width: Optional[NDArray]
-        A bandwidth hyperparameter for each action dimension.
-        A larger value increases bias instead of reducing variance.
-        A smaller value increased variance instead of reducing bias.
+    action_max: NDArray, shape (action_dim, )
+        Maximum value of action vector.
+
+    sigma: NDArray, shape (action_dim, )
+        Standard deviation of Gaussian distribution.
 
     estimator_name: str, default="sndr"
         Name of the estimator.
@@ -1548,8 +1554,9 @@ class ContinuousSelfNormalizedDoublyRobust(ContinuousDoublyRobust):
     """
 
     action_dim: int
-    kernel: str = "gaussian"
-    band_width: Optional[np.ndarray] = None
+    action_min: np.ndarray
+    action_max: np.ndarray
+    sigma: np.ndarray
     estimator_name = "sndr"
 
     def __post_init__(self):
@@ -1561,13 +1568,9 @@ class ContinuousSelfNormalizedDoublyRobust(ContinuousDoublyRobust):
             target_type=int,
             min_val=1,
         )
-
-        if self.kernel not in ["gaussian"]:
-            raise ValueError(f'kernel must be "gaussian", but {self.kernel} is given')
-        self.kernel_function = kernel_functions[self.kernel]
-
-        if self.band_width is None:
-            self.band_width = np.ones(self.action_dim)
+        check_array(self.action_min, name="action_min", expected_dim=1)
+        check_array(self.action_max, name="action_max", expected_dim=1)
+        check_array(self.sigma, name="sigma", expected_dim=1, min_val=0.0)
 
     def _estimate_trajectory_value(
         self,
@@ -1647,10 +1650,15 @@ class ContinuousSelfNormalizedDoublyRobust(ContinuousDoublyRobust):
         )
 
         discount = np.full(reward.shape[1], gamma).cumprod()
-        distance = (action - evaluation_policy_action) / self.band_width
-        similarity_weight = (self.kernel_function(distance) / self.band_width).cumprod(
-            axis=1
-        )
+
+        similarity_weight = truncnorm.pdf(
+            evaluation_policy_action,
+            a=(self.action_min - action) / self.sigma,
+            b=(self.action_max - action) / self.sigma,
+            loc=action,
+            scale=self.sigma,
+        ).cumprod(axis=1)
+
         similarity_weight_prev = np.roll(similarity_weight, 1, axis=1)
         similarity_weight_prev[:, 0] = 1
 

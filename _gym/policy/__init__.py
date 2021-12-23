@@ -3,9 +3,7 @@ from _gym.policy.head import (
     OnlineHead,
     DiscreteEpsilonGreedyHead,
     DiscreteSoftmaxHead,
-    ContinuousEpsilonGreedyHead,
     ContinuousTruncatedGaussianHead,
-    ContinuousMixtureHead,
     ContinuousEvalHead,
 )
 
@@ -15,8 +13,6 @@ __all__ = [
     "OnlineHead",
     "DiscreteEpsilonGreedyHead",
     "DiscreteSoftmaxHead",
-    "ContinuousEpsilonGreedyHead",
     "ContinuousTruncatedGaussianHead",
-    "ContinuousMixtureHead",
     "ContinuousEvalHead",
 ]
