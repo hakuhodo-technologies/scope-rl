@@ -2,14 +2,14 @@
 
 - [ ] New feature
 - [ ] Bugfix
-- [ ] hotfix
+- [ ] Document / Docstring
 - [ ] Other
 
 ## Description
  - What has been changed?
  - How the logic works?
 
-## Links
+## References
 - [reference name](link)
 
 ## Checklist
