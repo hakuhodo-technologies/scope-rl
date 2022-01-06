@@ -91,10 +91,10 @@ class RTBEnv(gym.Env):
     user_feature_dim: int, default=5 (> 0)
         Dimensions of the user feature vectors.
 
-    ad_sampling_rate: Optional[NDArray], shape (n_ads, ad_feature_dim), default=None
+    ad_feature_vector: Optional[NDArray], shape (n_ads, ad_feature_dim), default=None
         Feature vectors that characterizes each ad.
 
-    user_sampling_rate: Optional[NDArray], shape (n_users, user_feature_dim), default=None
+    user_feature_vector: Optional[NDArray], shape (n_users, user_feature_dim), default=None
         Feature vectors that characterizes each user.
 
     ad_sampling_rate: Optional[NDArray], shape (step_per_episode, n_ads), default=None
