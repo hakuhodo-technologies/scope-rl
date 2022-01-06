@@ -45,10 +45,10 @@ class RTBSyntheticSimulator(BaseSimulator):
     user_feature_vector: Optional[NDArray], shape (n_users, user_feature_dim), default=None
         Feature vectors that characterizes each user.
 
-    ad_sampling_rate: Optional[NDArray], shape (step_per_episode, n_ads), default=None
+    ad_sampling_rate: Optional[NDArray], shape (step_per_episode, n_ads) or (n_ads, ), default=None
         Sampling probalities to determine which ad (id) is used in each auction.
 
-    user_sampling_rate: Optional[NDArray], shape (step_per_episode, n_users), default=None
+    user_sampling_rate: Optional[NDArray], shape (step_per_episode, n_users) or (n_uses, ), default=None
         Sampling probalities to determine which user (id) is used in each auction.
 
     WinningPriceDistribution: BaseWinningPriceDistribution
@@ -63,14 +63,14 @@ class RTBSyntheticSimulator(BaseSimulator):
         Conversion rate (i.e., conversion / click).
         Both class and instance are acceptable.
 
-    standard_bid_price_distribution: NormalDistribution, default=NormalDistribution(mean=100, std=20)
+    standard_bid_price_distribution: NormalDistribution, default=NormalDistribution(mean=50, std=5, random_state=12345)
         Distribution of the bid price whose average impression probability is expected to be 0.5.
 
     minimum_standard_bid_price: Optional[int], default=None (> 0)
         Minimum value for standard bid price.
         If None, minimum_standard_bid_price is set to standard_bid_price_distribution.mean / 2.
 
-    search_volume_distribution: NormalDistribution, default=NormalDistribution(mean=30, std=10)
+    search_volume_distribution: NormalDistribution, default=NormalDistribution(mean=200, std=20, random_state=12345)
         Search volume distribution for each timestep.
 
     minimum_search_volume: int, default = 10 (> 0)
@@ -190,14 +190,22 @@ class RTBSyntheticSimulator(BaseSimulator):
             self.ad_sampling_rate = np.full(
                 (self.step_per_episode, self.n_ads), 1 / self.n_ads
             )
-        else:
-            self.ad_sampling_rate = self.ad_sampling_rate / np.sum(
-                self.ad_sampling_rate, axis=1
-            )
+        elif isinstance(self.ad_sampling_rate, np.ndarray):
+            if self.ad_sampling_rate.ndim == 1:
+                self.ad_sampling_rate = np.tile(
+                    self.ad_sampling_rate / self.ad_sampling_rate.sum(),
+                    (self.step_per_episode, 1)
+                )
+            else:
+                self.ad_sampling_rate = self.ad_sampling_rate / np.tile(
+                    np.sum(self.ad_sampling_rate, axis=1),
+                    (self.n_ads, 1)
+                ).T
         check_array(
             self.ad_sampling_rate,
             name="ad_sampling_rate",
             expected_dim=2,
+            min_val=0,
         )
         if self.ad_sampling_rate.shape != (self.step_per_episode, self.n_ads):
             raise ValueError(
@@ -213,10 +221,17 @@ class RTBSyntheticSimulator(BaseSimulator):
             self.user_sampling_rate = np.full(
                 (self.step_per_episode, self.n_users), 1 / self.n_users
             )
-        else:
-            self.user_sampling_rate = self.user_sampling_rate / np.sum(
-                self.user_sampling_rate, axis=1
-            )
+        elif isinstance(self.user_sampling_rate, np.ndarray):
+            if self.user_sampling_rate.ndim == 1:
+                self.user_sampling_rate = np.tile(
+                    self.user_sampling_rate / self.user_sampling_rate.sum(),
+                    (self.step_per_episode, 1)
+                )
+            else:
+                self.user_sampling_rate = self.user_sampling_rate / np.tile(
+                    np.sum(self.user_sampling_rate, axis=1),
+                    (self.n_users, 1)
+                ).T
         check_array(
             self.user_sampling_rate,
             name="user_sampling_rate",

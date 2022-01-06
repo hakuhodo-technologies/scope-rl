@@ -353,7 +353,7 @@ class ClickThroughRate(BaseClickAndConversionRate):
         user_feature_vector: np.ndarray,
         timestep: Union[int, np.ndarray],
     ) -> np.ndarray:
-        """Stochastically determine whether click occurs or not in impression=True case.
+        """Stochastically determine whether click occurs in impression=True case.
 
         Parameters
         -------
@@ -564,7 +564,7 @@ class ConversionRate(BaseClickAndConversionRate):
         user_feature_vector: np.ndarray,
         timestep: Union[int, np.ndarray],
     ) -> np.ndarray:
-        """Stochastically determine whether conversion occurs or not in click=True case.
+        """Stochastically determine whether conversion occurs in click=True case.
 
         Parameters
         -------
