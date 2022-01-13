@@ -205,7 +205,17 @@ class OnlineHead(BaseHead):
 
 @dataclass
 class DiscreteEpsilonGreedyHead(BaseHead):
-    """Class to convert greedy policy into e-greedy.
+    """Class to convert a deterministic policy into an epsilon-greedy policy.
+
+    Note
+    -------
+    Epsilon-greedy policy stochastically chooses actions (i.e., :math:`a \\in \\mathcal{A}`) given state :math:`s` as follows.
+
+    .. math::
+        \\pi(a \mid s) := (1 - \\epsilon) * \\mathbb{I}(a = a*)) + \\epsilon / |\\mathcal{A}|
+
+    where :math:`\\epsilon` is the probability of taking random actions and :math:`a*` is the greedy action.
+    :math:`\\mathbb{I}(\\cdot)` denotes indicator function.
 
     Parameters
     -------
@@ -340,7 +350,17 @@ class DiscreteEpsilonGreedyHead(BaseHead):
 
 @dataclass
 class DiscreteSoftmaxHead(BaseHead):
-    """Class to convert policy values into softmax policy.
+    """Class to convert a Q-learning based policy into a softmax policy.
+
+    Note
+    -------
+    Softmax policy stochastically chooses actions (i.e., :math:`a \\in \\mathcal{A}`) given state :math:`s` as follows.
+
+    .. math::
+        \\pi(a \mid s) := \\frac{\\exp(Q(s, a) / \\tau)}{\\sum_{a' \\in A} \\exp(Q(s, a') / \\tau)}
+
+    where :math:`\\tau` is the temperature parameter of the softmax function.
+    :math:`Q(s, a)` is the predicted value for the given :math:`(s, a)` pair.
 
     Parameters
     -------
@@ -406,8 +426,8 @@ class DiscreteSoftmaxHead(BaseHead):
         gumble_variable = -np.log(-np.log(self.random_.rand(len(x), self.n_actions)))
         return np.argmax(x / self.tau + gumble_variable, axis=1)
 
-    def _predict_counterfactual_state_action_value(self, x: np.ndarray):
-        """Predict counterfactual state action value.
+    def _predict_value(self, x: np.ndarray):
+        """Predict state action value for all possible actions.
 
         Parameters
         -------
@@ -425,7 +445,9 @@ class DiscreteSoftmaxHead(BaseHead):
             x_.append(np.tile(x[i], (self.n_actions, 1)))
         x_ = np.array(x_).reshape((-1, x.shape[1]))
         a_ = np.tile(np.arange(self.n_actions), x.shape[0])
-        return self.base_policy.predict_value(x_, a_)  # (n_samples, n_actions)
+        return self.base_policy.predict_value(x_, a_).reshape(
+            (-1, self.n_actions)
+        )  # (n_samples, n_actions)
 
     def stochastic_action_with_pscore(self, x: np.ndarray):
         """Sample stochastic action with its pscore.
@@ -521,6 +543,14 @@ class ContinuousGaussianHead(BaseHead):
     -------
     This class should be used when action_space is not clipped.
     Otherwise, please use ContinuousTruncatedGaussianHead instead.
+
+    Given a deterministic policy, gaussian policy samples action :math:`a \\in \mathcal{A}` given state :math:`s` as follows.
+
+    .. math::
+        a \\sim Normal(\\pi(s), \\sigma)
+
+    where :math:`\\sigma` is the standard deviation of the normal distribution.
+    :math:`\\pi(s)` is the action chosen by the deterministic policy.
 
     Parameters
     -------
@@ -647,6 +677,16 @@ class ContinuousGaussianHead(BaseHead):
 @dataclass
 class ContinuousTruncatedGaussianHead(BaseHead):
     """Class to sample action from Truncated Gaussian distribution.
+
+    Note
+    -------
+    Given a deterministic policy, truncated gaussian policy samples action :math:`a \\in \mathcal{A}` given state :math:`s` as follows.
+
+    .. math::
+        a \\sim TruncNorm(\\pi(s), \\sigma)
+
+    where :math:`\\sigma` is the standard deviation of the truncated normal distribution.
+    :math:`\\pi(s)` is the action chosen by the deterministic policy.
 
     Parameters
     -------

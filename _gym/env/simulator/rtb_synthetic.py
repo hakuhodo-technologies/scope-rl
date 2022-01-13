@@ -194,13 +194,13 @@ class RTBSyntheticSimulator(BaseSimulator):
             if self.ad_sampling_rate.ndim == 1:
                 self.ad_sampling_rate = np.tile(
                     self.ad_sampling_rate / self.ad_sampling_rate.sum(),
-                    (self.step_per_episode, 1)
+                    (self.step_per_episode, 1),
                 )
             else:
-                self.ad_sampling_rate = self.ad_sampling_rate / np.tile(
-                    np.sum(self.ad_sampling_rate, axis=1),
-                    (self.n_ads, 1)
-                ).T
+                self.ad_sampling_rate = (
+                    self.ad_sampling_rate
+                    / np.tile(np.sum(self.ad_sampling_rate, axis=1), (self.n_ads, 1)).T
+                )
         check_array(
             self.ad_sampling_rate,
             name="ad_sampling_rate",
@@ -225,13 +225,15 @@ class RTBSyntheticSimulator(BaseSimulator):
             if self.user_sampling_rate.ndim == 1:
                 self.user_sampling_rate = np.tile(
                     self.user_sampling_rate / self.user_sampling_rate.sum(),
-                    (self.step_per_episode, 1)
+                    (self.step_per_episode, 1),
                 )
             else:
-                self.user_sampling_rate = self.user_sampling_rate / np.tile(
-                    np.sum(self.user_sampling_rate, axis=1),
-                    (self.n_users, 1)
-                ).T
+                self.user_sampling_rate = (
+                    self.user_sampling_rate
+                    / np.tile(
+                        np.sum(self.user_sampling_rate, axis=1), (self.n_users, 1)
+                    ).T
+                )
         check_array(
             self.user_sampling_rate,
             name="user_sampling_rate",
