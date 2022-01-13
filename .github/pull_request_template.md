@@ -2,28 +2,25 @@
 
 - [ ] New feature
 - [ ] Bugfix
-- [ ] hotfix
+- [ ] Document / Docstring
 - [ ] Other
 
 ## Description
- - 何をどう変更したか
- - ロジックがどう動くのか
- - DBからどういうクエリで何をとってそれに何を処理するのか etc
+ - What has been changed?
+ - How the logic works?
 
-## Links
-- JIRA ticket
-(http://xxxx)
+## References
+- [reference name](link)
 
-- Confluence
-(http://xxxx)
+## Checklist
 
-# Checklist:
+- [ ] pass unit test (or unnecessary)
+- [ ] no errors on newly made test cases
+- [ ] no errors on existing test cases
+- [ ] applied black formatter
+- [ ] no errors on flake8
+- [ ] no warnings
+- [ ] work in progress
 
-- [ ] unit testを作成済（もしくは必要がない）
-- [ ] 新しく作成したtestでエラーが発生していない
-- [ ] 既存のtestでエラーが発生していない
-- [ ] flake8でエラーが発生していない
-- [ ] 今回の変更により、新しい警告を生成していない
-
-# Comments:
- - 特にレビューして欲しい観点、申し送り事項等あればここに記載
+## Comments
+ - Any other comments.
