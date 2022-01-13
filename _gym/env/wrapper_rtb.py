@@ -55,7 +55,9 @@ class CustomizedRTBEnv(gym.Env):
         action: Union[int, float, NDArray] (> 0)
             Adjust rate parameter used for the bid price calculation as follows.
             Note that the following bid price is individually determined for each auction.
-                :math:`bid_price_{t, i} = adjust_rate_{t} \\times predicted_reward_{t,i}/ground_truth_reward_{t, i} ( \\times const.)`
+
+            .. math::
+                {bid price}_{t, i} = {adjust rate}_{t} \\times {predicted reward}_{t,i} ( \\times {const.})
 
             Both discrete and continuous actions are acceptable.
 
@@ -100,7 +102,7 @@ class CustomizedRTBEnv(gym.Env):
         Dictionary which maps discrete action index into specific actions.
         Used when only when using action_type="discrete" option.
 
-        If None, the action meaning values automatically set to [action_min, action_max] log sampled values.
+        If None, the values are automatically set to [action_min, action_max] as follows.
             np.logspace(-1, 1, n_actions)
 
     Examples

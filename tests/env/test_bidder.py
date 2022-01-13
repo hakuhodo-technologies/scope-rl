@@ -224,7 +224,7 @@ invalid_input_of_determine_bid_price = [
         2 * np.ones(2, dtype=int),  #
         np.arange(2, dtype=int),
         ValueError,
-        "ad_ids must be 1-dimensional NDArray with integers within \[0, n_ads\)",
+        "ad_ids must be 1-dimensional NDArray with integers",
     ),
     (
         2,
@@ -254,7 +254,7 @@ invalid_input_of_determine_bid_price = [
         np.arange(2, dtype=int),
         -np.ones(2, dtype=int),  #
         ValueError,
-        "user_ids must be 1-dimensional NDArray with integers within \[0, n_users\)",
+        "user_ids must be 1-dimensional NDArray with integers",
     ),
     (
         2,
@@ -264,7 +264,7 @@ invalid_input_of_determine_bid_price = [
         np.arange(2),
         2 * np.ones(2, dtype=int),  #
         ValueError,
-        "user_ids must be 1-dimensional NDArray with integers within \[0, n_users\)",
+        "user_ids must be 1-dimensional NDArray with integers",
     ),
     (
         2,

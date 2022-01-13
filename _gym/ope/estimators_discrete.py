@@ -759,7 +759,7 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
 
         evaluation_policy_action_dist: NDArray, shape (n_episodes * step_per_episode, n_action)
             Action choice probability of evaluation policy for all action,
-            i.e., :math:`\\pi_e(a \mid s_t) \\forall a \\in \\mathcal{A}`
+            i.e., :math:`\\pi_e(a \\mid s_t) \\forall a \\in \\mathcal{A}`
 
         state_action_value_prediction: NDArray, shape (n_episodes * step_per_episode, n_action)
             :math:`\\hat{Q}` for all action,
@@ -833,7 +833,7 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
 
         evaluation_policy_action_dist: NDArray, shape (n_episodes * step_per_episode, n_action)
             Action choice probability of evaluation policy for all action,
-            i.e., :math:`\\pi_e(a \mid s_t) \\forall a \\in \\mathcal{A}`
+            i.e., :math:`\\pi_e(a \\mid s_t) \\forall a \\in \\mathcal{A}`
 
         state_action_value_prediction: NDArray, shape (n_episodes * step_per_episode, n_action)
             :math:`\\hat{Q}` for all action,
@@ -972,7 +972,7 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
 
         evaluation_policy_action_dist: NDArray, shape (n_episodes * step_per_episode, n_action)
             Action choice probability of evaluation policy for all action,
-            i.e., :math:`\\pi_e(a \mid s_t) \\forall a \\in \\mathcal{A}`
+            i.e., :math:`\\pi_e(a \\mid s_t) \\forall a \\in \\mathcal{A}`
 
         state_action_value_prediction: NDArray, shape (n_episodes * step_per_episode, n_action)
             :math:`\\hat{Q}` for all action,
@@ -1368,7 +1368,7 @@ class DiscreteSelfNormalizedDoublyRobust(DiscreteDoublyRobust):
 
         evaluation_policy_action_dist: NDArray, shape (n_episodes * step_per_episode, n_action)
             Action choice probability of evaluation policy for all action,
-            i.e., :math:`\\pi_e(a \mid s_t) \\forall a \\in \\mathcal{A}`
+            i.e., :math:`\\pi_e(a \\mid s_t) \\forall a \\in \\mathcal{A}`
 
         state_action_value_prediction: NDArray, shape (n_episodes * step_per_episode, n_action)
             :math:`\\hat{Q}` for all action,

@@ -993,7 +993,7 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
 
         state_action_value_prediction: NDArray, shape (n_episodes * step_per_episode, )
             :math:`\\hat{Q}` for the action chosen by evaluation policy,
-            i.e., :math:`\\hat{Q}(s_t, \\pi_e(a \mid s_t))`.
+            i.e., :math:`\\hat{Q}(s_t, \\pi_e(a \\mid s_t))`.
 
         gamma: float, default=1.0 (0, 1]
             Discount factor.
@@ -1081,7 +1081,7 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
 
         state_action_value_prediction: NDArray, shape (n_episodes * step_per_episode, )
             :math:`\\hat{Q}` for the action chosen by evaluation policy,
-            i.e., :math:`\\hat{Q}(s_t, \\pi_e(a \mid s_t))`.
+            i.e., :math:`\\hat{Q}(s_t, \\pi_e(a \\mid s_t))`.
 
         gamma: float, default=1.0 (0, 1]
             Discount factor.
@@ -1184,7 +1184,7 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
 
         state_action_value_prediction: NDArray, shape (n_episodes * step_per_episode, )
             :math:`\\hat{Q}` for the action chosen by evaluation policy,
-            i.e., :math:`\\hat{Q}(s_t, \\pi_e(a \mid s_t))`.
+            i.e., :math:`\\hat{Q}(s_t, \\pi_e(a \\mid s_t))`.
 
         gamma: float, default=1.0 (0, 1]
             Discount factor.
@@ -1728,7 +1728,7 @@ class ContinuousSelfNormalizedDoublyRobust(ContinuousDoublyRobust):
 
         state_action_value_prediction: NDArray, shape (n_episodes * step_per_episode, )
             :math:`\\hat{Q}` for the action chosen by evaluation policy,
-            i.e., :math:`\\hat{Q}(s_t, \\pi_e(a \mid s_t))`.
+            i.e., :math:`\\hat{Q}(s_t, \\pi_e(a \\mid s_t))`.
 
         gamma: float, default=1.0 (0, 1]
             Discount factor.

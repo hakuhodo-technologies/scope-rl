@@ -10,7 +10,7 @@ from .base import (
     BaseWinningPriceDistribution,
     BaseClickAndConversionRate,
 )
-from _gym.env.simulator.function import (
+from _gym.env.simulator.function import (  # noqa: F401
     WinningPriceDistribution,
     ClickThroughRate,
     ConversionRate,
@@ -99,9 +99,11 @@ class RTBSyntheticSimulator(BaseSimulator):
     user_feature_vector: Optional[np.ndarray] = None
     ad_sampling_rate: Optional[np.ndarray] = None
     user_sampling_rate: Optional[np.ndarray] = None
-    WinningPriceDistribution: BaseWinningPriceDistribution = WinningPriceDistribution
-    ClickThroughRate: BaseClickAndConversionRate = ClickThroughRate
-    ConversionRate: BaseClickAndConversionRate = ConversionRate
+    WinningPriceDistribution: BaseWinningPriceDistribution = (  # noqa: F811
+        WinningPriceDistribution
+    )
+    ClickThroughRate: BaseClickAndConversionRate = ClickThroughRate  # noqa: F811
+    ConversionRate: BaseClickAndConversionRate = ConversionRate  # noqa: F811
     standard_bid_price_distribution: NormalDistribution = NormalDistribution(
         mean=50,
         std=5,

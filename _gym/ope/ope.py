@@ -1077,7 +1077,7 @@ class CreateOPEInput:
 
             evaluation_policy_action_dist: Optional[NDArray], shape (n_episodes * step_per_episode, n_actions)
                 Action choice probability of evaluation policy for all actions,
-                i.e., :math:`\\pi_e(a \mid s_t) \\forall a \\in \\mathcal{A}`
+                i.e., :math:`\\pi_e(a \\mid s_t) \\forall a \\in \\mathcal{A}`
                 If action_type == "continuous", `None` is recorded.
 
             state_action_value_prediction: Optional[NDArray]
@@ -1086,7 +1086,7 @@ class CreateOPEInput:
                 shape (n_episodes * step_per_episode, n_actions)
 
                 If action_type == "continuous", :math:`\\hat{Q}` for the action chosen by evaluation policy,
-                i.e., :math:`\\hat{Q}(s_t, \\pi_e(a \mid s_t))`.
+                i.e., :math:`\\hat{Q}(s_t, \\pi_e(a \\mid s_t))`.
                 shape (n_episodes * step_per_episode, )
 
                 If use_base_model == False, `None` is recorded.

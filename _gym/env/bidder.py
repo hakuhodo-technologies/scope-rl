@@ -21,7 +21,9 @@ class Bidder:
     Intended to be called and initialized from RTBEnv class in env.py.
 
     Determine bid price by the following formula.
-        :math:`bid_price_{t, i} = adjust_rate_{t} \\times predicted_reward_{t,i}/ground_truth_reward_{t, i} ( \\times const.)`
+
+    .. math::
+        {bid price}_{t, i} = {adjust rate}_{t} \\times {predicted reward}_{t,i} ( \\times {const.})
 
     Parameters
     -------
@@ -101,7 +103,9 @@ class Bidder:
         Note
         -------
         Determine bid price as follows.
-            :math:`bid_price_{t, i} = adjust_rate_{t} \\times predicted_reward_{t,i}/ground_truth_reward_{t, i} ( \\times const.)`
+
+        .. math::
+            {bid price}_{t, i} = {adjust rate}_{t} \\times {predicted reward}_{t,i} ( \\times {const.})
 
         Parameters
         -------

@@ -80,7 +80,7 @@ class WinningPriceDistribution(BaseWinningPriceDistribution):
         check_scalar(self.n_ads, name="n_ads", target_type=int, min_val=1)
         if not isinstance(self.standard_bid_price_distribution, NormalDistribution):
             raise ValueError(
-                f"standard_bid_price_distribution must be a child class of NormalDistribution"
+                "standard_bid_price_distribution must be a child class of NormalDistribution"
             )
         if self.minimum_standard_bid_price is None:
             self.minimum_standard_bid_price = (

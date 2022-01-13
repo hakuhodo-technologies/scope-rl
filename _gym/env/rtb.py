@@ -48,7 +48,8 @@ class RTBEnv(gym.Env):
             Adjust rate parameter used for determining the bid price as follows.
             (Bid price is individually determined for each auction.)
 
-                :math:`bid_price_{t, i} = adjust_rate_{t} \\times ground_truth_reward_{t, i} ( \\times const.)`
+            .. math::
+                {bid price}_{t, i} = {adjust rate}_{t} \\times {predicted reward}_{t,i} ( \\times {const.})
 
             Note that, you can also use predicted reward instead of ground-truth reward in the above equation.
             Please also refer to CustomizedRTBEnv Wrapper.

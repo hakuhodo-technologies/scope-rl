@@ -212,7 +212,7 @@ class DiscreteEpsilonGreedyHead(BaseHead):
     Epsilon-greedy policy stochastically chooses actions (i.e., :math:`a \\in \\mathcal{A}`) given state :math:`s` as follows.
 
     .. math::
-        \\pi(a \mid s) := (1 - \\epsilon) * \\mathbb{I}(a = a*)) + \\epsilon / |\\mathcal{A}|
+        \\pi(a \\mid s) := (1 - \\epsilon) * \\mathbb{I}(a = a*)) + \\epsilon / |\\mathcal{A}|
 
     where :math:`\\epsilon` is the probability of taking random actions and :math:`a*` is the greedy action.
     :math:`\\mathbb{I}(\\cdot)` denotes indicator function.
@@ -357,7 +357,7 @@ class DiscreteSoftmaxHead(BaseHead):
     Softmax policy stochastically chooses actions (i.e., :math:`a \\in \\mathcal{A}`) given state :math:`s` as follows.
 
     .. math::
-        \\pi(a \mid s) := \\frac{\\exp(Q(s, a) / \\tau)}{\\sum_{a' \\in A} \\exp(Q(s, a') / \\tau)}
+        \\pi(a \\mid s) := \\frac{\\exp(Q(s, a) / \\tau)}{\\sum_{a' \\in A} \\exp(Q(s, a') / \\tau)}
 
     where :math:`\\tau` is the temperature parameter of the softmax function.
     :math:`Q(s, a)` is the predicted value for the given :math:`(s, a)` pair.
@@ -373,8 +373,9 @@ class DiscreteSoftmaxHead(BaseHead):
     n_actions: int (> 0)
         Numbers of actions.
 
-    tau: float, default=1.0 (-\infty, \infty)
+    tau: float, default=1.0 (:math:`\\in (- \\infty, \\infty)`)
         Temperature parameter.
+        A negative value leads to a sub-optimal policy.
 
     random_state: Optional[int], default=None (>= 0)
         Random state.
@@ -544,7 +545,7 @@ class ContinuousGaussianHead(BaseHead):
     This class should be used when action_space is not clipped.
     Otherwise, please use ContinuousTruncatedGaussianHead instead.
 
-    Given a deterministic policy, gaussian policy samples action :math:`a \\in \mathcal{A}` given state :math:`s` as follows.
+    Given a deterministic policy, gaussian policy samples action :math:`a \\in \\mathcal{A}` given state :math:`s` as follows.
 
     .. math::
         a \\sim Normal(\\pi(s), \\sigma)
@@ -680,7 +681,7 @@ class ContinuousTruncatedGaussianHead(BaseHead):
 
     Note
     -------
-    Given a deterministic policy, truncated gaussian policy samples action :math:`a \\in \mathcal{A}` given state :math:`s` as follows.
+    Given a deterministic policy, truncated gaussian policy samples action :math:`a \\in \\mathcal{A}` given state :math:`s` as follows.
 
     .. math::
         a \\sim TruncNorm(\\pi(s), \\sigma)

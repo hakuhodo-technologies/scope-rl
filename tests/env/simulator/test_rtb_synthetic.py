@@ -360,7 +360,7 @@ invalid_input_of_init = [
         -1,  #
         24,
         ValueError,
-        "minimum_standard_bid_price must be a float value within [0, standard_bid_price_distribution.mean]",
+        "minimum_standard_bid_price must be a float value within",
     ),
     (
         5,
@@ -373,7 +373,7 @@ invalid_input_of_init = [
         101,  #
         24,
         ValueError,
-        "minimum_standard_bid_price must be a float value within [0, standard_bid_price_distribution.mean]",
+        "minimum_standard_bid_price must be a float value within",
     ),
     (
         5,
@@ -386,7 +386,7 @@ invalid_input_of_init = [
         "1",  #
         24,
         ValueError,
-        "minimum_standard_bid_price must be a float value within [0, standard_bid_price_distribution.mean]",
+        "minimum_standard_bid_price must be a float value within",
     ),
     (
         5,
@@ -614,7 +614,7 @@ invalid_input_of_map_idx_to_contexts = [
         -np.ones(3, dtype=int),  #
         np.ones(3, dtype=int),
         ValueError,
-        "ad_ids must be 1-dimensional NDArray with integers within \[0, n_ads\)",
+        "ad_ids must be 1-dimensional NDArray with integers within",
     ),
     (
         2,
@@ -630,7 +630,7 @@ invalid_input_of_map_idx_to_contexts = [
         np.arange(3, dtype=int),  #
         np.ones(3, dtype=int),
         ValueError,
-        "ad_ids must be 1-dimensional NDArray with integers within \[0, n_ads\)",
+        "ad_ids must be 1-dimensional NDArray with integers within",
     ),
     (
         2,
@@ -638,7 +638,7 @@ invalid_input_of_map_idx_to_contexts = [
         np.ones((2, 3), dtype=int),  #
         np.ones(3, dtype=int),
         ValueError,
-        "ad_ids must be 1-dimensional NDArray with integers within \[0, n_ads\)",
+        "ad_ids must be 1-dimensional NDArray with integers within",
     ),
     (
         2,
@@ -646,7 +646,7 @@ invalid_input_of_map_idx_to_contexts = [
         np.ones(3, dtype=int),
         -np.ones(3, dtype=int),  #
         ValueError,
-        "user_ids must be 1-dimensional NDArray with integers within \[0, n_users\)",
+        "user_ids must be 1-dimensional NDArray with integers within",
     ),
     (
         2,
@@ -662,7 +662,7 @@ invalid_input_of_map_idx_to_contexts = [
         np.ones(3, dtype=int),
         np.arange(3, dtype=int),  #
         ValueError,
-        "user_ids must be 1-dimensional NDArray with integers within \[0, n_users\)",
+        "user_ids must be 1-dimensional NDArray with integers within",
     ),
     (
         2,
@@ -670,7 +670,7 @@ invalid_input_of_map_idx_to_contexts = [
         np.ones(3, dtype=int),
         np.ones((2, 3), dtype=int),  #
         ValueError,
-        "user_ids must be 1-dimensional NDArray with integers within \[0, n_users\)",
+        "user_ids must be 1-dimensional NDArray with integers within",
     ),
     (
         2,
@@ -776,7 +776,7 @@ invalid_input_of_calc_and_sample_outcome = [
         np.ones(3, dtype=int),
         np.ones(3, dtype=int),
         ValueError,
-        "ad_ids must be 1-dimensional NDArray with integers within \[0, n_ads\)",
+        "ad_ids must be 1-dimensional NDArray with integers within",
     ),
     (
         2,
@@ -796,7 +796,7 @@ invalid_input_of_calc_and_sample_outcome = [
         np.ones(3, dtype=int),
         np.ones(3, dtype=int),
         ValueError,
-        "ad_ids must be 1-dimensional NDArray with integers within \[0, n_ads\)",
+        "ad_ids must be 1-dimensional NDArray with integers within",
     ),
     (
         2,
@@ -806,7 +806,7 @@ invalid_input_of_calc_and_sample_outcome = [
         -np.ones(3, dtype=int),  #
         np.ones(3, dtype=int),
         ValueError,
-        "user_ids must be 1-dimensional NDArray with integers within \[0, n_users\)",
+        "user_ids must be 1-dimensional NDArray with integers within",
     ),
     (
         2,
@@ -826,7 +826,7 @@ invalid_input_of_calc_and_sample_outcome = [
         np.arange(3, dtype=int),  #
         np.ones(3, dtype=int),
         ValueError,
-        "user_ids must be 1-dimensional NDArray with integers within \[0, n_users\)",
+        "user_ids must be 1-dimensional NDArray with integers within",
     ),
     (
         2,
