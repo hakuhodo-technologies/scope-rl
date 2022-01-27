@@ -20,7 +20,9 @@
 
 ## Overview
 
-*OfflineGym* is an open-source Python Software for implementing the whole procedure of offline Reinforcement Learning (offline RL), from data collection to offline policy learning, evaluation, and selection. Our software includes a series of modules to implement synthetic dataset generation and dataset preprocessing, Off-Policy Evaluation (OPE) estimators, and also Off-Policy Selection (OPS) methods. The software is also compatible with [d3rlpy](https://github.com/takuseno/d3rlpy), which provides the algorithm implementation of both online and offline RL methods, to streamline the implementation from learning and evaluation in a unified interface. It enables an easy, flexible and reliable experiment in offline RL research on any environment with [OpenAI Gym](https://github.com/st-tech/zr-obp)-like interface (from basic one to practical setup) and also simplify the practical implementation on a variety of customized dataset.
+*OfflineGym* is an open-source Python Software for implementing the whole procedure of offline Reinforcement Learning (offline RL), from data collection to offline policy learning, evaluation, and selection. Our software includes a series of modules to implement synthetic dataset generation and dataset preprocessing, Off-Policy Evaluation (OPE) estimators, and Off-Policy Selection (OPS) methods. 
+
+This software is also compatible with [d3rlpy](https://github.com/takuseno/d3rlpy), which provides the algorithm implementation of both online and offline RL methods, to streamline the implementation from learning and evaluation in an unified interface. OfflineGym enables an easy, flexible and reliable experiment in offline RL research on any environment with [OpenAI Gym](https://github.com/st-tech/zr-obp)-like interface (from basic one to practical setup) and also simplify the practical implementation on a variety of customized dataset.
 
 Our software facilitate evaluation and algorithm comparison related to the following research topics:
 
@@ -30,8 +32,7 @@ Our software facilitate evaluation and algorithm comparison related to the follo
 
 - **Off-Policy Selection**: OPS aims to select the best policy from several candidate policies using offline logged data. OfflineGym supports basic implementation of OPS methods and provide some metrics to evaluate OPS result.
 
-This software is intended for the episodic RL setup. For those aimed for contextual bandits, please also refer to [Open Bandit Pipeline](https://github.com/st-tech/zr-obp). \
-To provide an example of conducting customized experiment in a practical setup, we also provide [RTBGym](./rtb_gym), an RL environment for Real-Time Bidding (RTB) under this repository.
+This software is intended for the episodic RL setup. For those aimed for contextual bandits, please also refer to [Open Bandit Pipeline](https://github.com/st-tech/zr-obp).
 
 ### Implementations
 
@@ -92,6 +93,8 @@ To provide an example of conducting customized experiment in a practical setup, 
 Note that, in addition to the above OPE and OPS methods, researcher can easily implement compare their own estimators using a generic abstract class.
 Practitioners can also use the above implementation with their real-world data to evaluate and choose counterfactual policies.
 
+To provide an example of conducting customized experiment in a practical setup, we also provide [RTBGym](./rtbgym), an RL environment for Real-Time Bidding (RTB) under this repository.
+
 ## Installation
 
 You can install OfflineGym using Python's package manager `pip`.
@@ -110,7 +113,7 @@ OfflineGym supports Python 3.7 or newer. See [pyproject.toml](./pyproject.toml) 
 
 ## Usage
 
-Here, we provide an example workflow from of offline RL, OPE, and OPS using [RTBGym](./rtb_gym).
+Here, we provide an example workflow from of offline RL, OPE, and OPS using [RTBGym](./rtbgym).
 
 ### Synthetic Dataset Generation and Data Preprocessing
 
