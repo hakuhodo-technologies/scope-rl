@@ -1,9 +1,8 @@
-# OfflineGym: Offline Reinforcement Learning Pipeline for Real World Applications
-
+# OfflineGym: A pipeline for offline reinforcement learning research and applications
 <details>
 <summary><strong>Table of Contents </strong>(click to expand)</summary>
 
-- [OfflineGym: Offline Reinforcement Learning Pipeline for Real World Applications](#offlinegym-offline-reinforcement-learning-pipeline-for-real-world-applications)
+- [OfflineGym: A pipeline for offline reinforcement learning research and applications](#offlinegym-a-pipeline-for-offline-reinforcement-learning-research-and-applications)
 - [Overview](#overview)
 - [Installation](#installation)
 - [Usage](#usage)
