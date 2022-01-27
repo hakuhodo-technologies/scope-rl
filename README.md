@@ -3,13 +3,13 @@
 <details>
 <summary><strong>Table of Contents </strong>(click to expand)</summary>
 
-- [OfflineGym: Offline Reinforcement Learning Pipeline for Real World Applications](#offlinegym:-offline-reinforcement-learning-pipeline-for-real-world-applications)
+- [OfflineGym: Offline Reinforcement Learning Pipeline for Real World Applications](#offlinegym-offline-reinforcement-learning-pipeline-for-real-world-applications)
 - [Overview](#overview)
 - [Installation](#installation)
 - [Usage](#usage)
-  - [Synthetic Dataset Generation and Data Preprocessing]
-  - [Offline Reinforcement Learning]
-  - [Off-Policy Evaluation and Selection]
+  - [Synthetic Dataset Generation and Data Preprocessing](#synthetic-dataset-generation-and-data-preprocessing)
+  - [Offline Reinforcement Learning](#offline-reinforcement-learning)
+  - [Off-Policy Evaluation and Selection](#off-policy-evaluation-and-selection)
 - [Citation](#citation)
 - [Contribution](#contribution)
 - [License](#license)
@@ -52,6 +52,8 @@ To provide an example of conducting customized experiment in a practical setup, 
   - Gaussian
   - Truncated Gaussian
 
+</details>
+
 <details>
 <summary><strong>OPE Estimators </strong>(click to expand)</summary>
 <br>
@@ -65,6 +67,8 @@ To provide an example of conducting customized experiment in a practical setup, 
   - Self-Normalized Doubly Robust
 - Cumulative Distribution Function Estimation
 
+</details>
+
 <details>
 <summary><strong>OPS Methods </strong>(click to expand)</summary>
 <br>
@@ -73,6 +77,8 @@ To provide an example of conducting customized experiment in a practical setup, 
 - Empirical Bernstein
 - T-test
 - BayesDICE
+
+</details>
 
 <details>
 <summary><strong>Evaluation Metrics of OPS </strong>(click to expand)</summary>
@@ -96,8 +102,8 @@ pip install offlinegym
 
 You can also install OfflineGym from source.
 ```bash
-git clone https://github.com/negocia-inc/offline_gym
-cd offline_gym
+git clone https://github.com/negocia-inc/offlinegym
+cd offlinegym
 python setup.py install
 ```
 
@@ -278,7 +284,7 @@ This project is licensed under - see [LICENSE](LICENSE) file for details.
 
 ## Project Team
 
-- [Haruka Kiyohara](https://sites.google.com/view/harukakiyohara) (**Main COntributor**; Tokyo Institute of Technology)
+- [Haruka Kiyohara](https://sites.google.com/view/harukakiyohara) (**Main Contributor**; Tokyo Institute of Technology)
 - Kosuke Kawakami (negocia Inc.)
 - [Yuta Saito](https://usaito.github.io/) (Cornell University)
 
