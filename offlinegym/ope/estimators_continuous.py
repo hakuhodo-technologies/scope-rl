@@ -6,8 +6,8 @@ import numpy as np
 from scipy.stats import norm, truncnorm
 from sklearn.utils import check_scalar
 
-from _gym.ope.estimators_discrete import BaseOffPolicyEstimator
-from _gym.utils import (
+from offlinegym.ope.estimators_discrete import BaseOffPolicyEstimator
+from offlinegym.utils import (
     check_array,
     estimate_confidence_interval_by_bootstrap,
 )

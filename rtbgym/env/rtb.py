@@ -6,16 +6,16 @@ from gym.spaces import Box
 import numpy as np
 from sklearn.utils import check_scalar, check_random_state
 
-from _gym.utils import NormalDistribution
-from _gym.types import Action, Numeric
+from rtbgym.utils import NormalDistribution
+from rtbgym.types import Action, Numeric
 
-from _gym.env.bidder import Bidder
-from _gym.env.simulator.rtb_synthetic import RTBSyntheticSimulator
-from _gym.env.simulator.base import (
+from rtbgym.env.bidder import Bidder
+from rtbgym.env.simulator.rtb_synthetic import RTBSyntheticSimulator
+from rtbgym.env.simulator.base import (
     BaseWinningPriceDistribution,
     BaseClickAndConversionRate,
 )
-from _gym.env.simulator.function import (
+from rtbgym.env.simulator.function import (
     WinningPriceDistribution,
     ClickThroughRate,
     ConversionRate,
@@ -137,10 +137,10 @@ class RTBEnv(gym.Env):
 
     .. codeblock:: python
 
-        # import necessary module from _gym
-        from _gym.env import RTBEnv
-        from _gym.policy import OnlineHead
-        from _gym.ope.online import calc_on_policy_policy_value
+        # import necessary module from rtbgym
+        from rtbgym.env import RTBEnv
+        from rtbgym.policy import OnlineHead
+        from rtbgym.ope.online import calc_on_policy_policy_value
 
         # import necessary module from other libraries
         from d3rlpy.algos import RandomPolicy

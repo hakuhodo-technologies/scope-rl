@@ -1,8 +1,8 @@
-from _gym.ope.ope import (
+from offlinegym.ope.ope import (
     OffPolicyEvaluation,
     CreateOPEInput,
 )
-from _gym.ope.estimators_discrete import (
+from offlinegym.ope.estimators_discrete import (
     BaseOffPolicyEstimator,
     DiscreteDirectMethod,
     DiscreteTrajectoryWiseImportanceSampling,
@@ -12,7 +12,7 @@ from _gym.ope.estimators_discrete import (
     DiscreteSelfNormalizedStepWiseImportanceSampling,
     DiscreteSelfNormalizedDoublyRobust,
 )
-from _gym.ope.estimators_continuous import (
+from offlinegym.ope.estimators_continuous import (
     ContinuousDirectMethod,
     ContinuousTrajectoryWiseImportanceSampling,
     ContinuousStepWiseImportanceSampling,

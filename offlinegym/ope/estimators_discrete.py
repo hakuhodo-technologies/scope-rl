@@ -6,7 +6,7 @@ from typing import Dict
 import numpy as np
 from sklearn.utils import check_scalar
 
-from _gym.utils import estimate_confidence_interval_by_bootstrap, check_array
+from offlinegym.utils import estimate_confidence_interval_by_bootstrap, check_array
 
 
 @dataclass

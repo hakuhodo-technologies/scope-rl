@@ -5,18 +5,18 @@ from typing import Tuple, Union, Optional
 import numpy as np
 from sklearn.utils import check_scalar, check_random_state
 
-from .base import (
+from rtbgym.env.simulator.base import (
     BaseSimulator,
     BaseWinningPriceDistribution,
     BaseClickAndConversionRate,
 )
-from _gym.env.simulator.function import (  # noqa: F401
+from rtbgym.env.simulator.function import (  # noqa: F401
     WinningPriceDistribution,
     ClickThroughRate,
     ConversionRate,
 )
-from _gym.utils import NormalDistribution, check_array
-from _gym.types import Numeric
+from rtbgym.utils import NormalDistribution, check_array
+from rtbgym.types import Numeric
 
 
 @dataclass

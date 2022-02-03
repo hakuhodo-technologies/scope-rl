@@ -1,5 +1,5 @@
-from _gym.dataset.base import BaseDataset
-from _gym.dataset.synthetic import SyntheticDataset
+from offlinegym.dataset.base import BaseDataset
+from offlinegym.dataset.synthetic import SyntheticDataset
 
 __all__ = [
     "BaseDataset",

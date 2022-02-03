@@ -1,91 +1,11 @@
 """Useful tools."""
 from collections import defaultdict
-from dataclasses import dataclass
 from typing import DefaultDict, Dict, Union, Optional, Any
 
 import numpy as np
 from sklearn.utils import check_scalar, check_random_state
 
-from _gym.types import LoggedDataset, Numeric
-
-
-@dataclass
-class NormalDistribution:
-    """Class to sample from normal distribution.
-
-    Parameters
-    -------
-    mean: Union[int, float, NDArray[int], NDArray[float]]
-        Mean value of the normal distribution.
-
-    std: Union[int, float, NDArray[int], NDArray[float]]
-        Standard deviation of the normal distribution.
-
-    random_state: int, default=None (>= 0)
-        Random state.
-
-    """
-
-    mean: Union[int, float, np.ndarray]
-    std: Union[int, float, np.ndarray]
-    random_state: Optional[int] = None
-
-    def __post_init__(self):
-        if not isinstance(self.mean, Numeric) and not (
-            isinstance(self.mean, np.ndarray) and self.mean.ndim == 1
-        ):
-            raise ValueError(
-                "mean must be a float number or an 1-dimensional NDArray of float values"
-            )
-        if not (isinstance(self.std, Numeric) and self.std >= 0) and not (
-            isinstance(self.std, np.ndarray)
-            and self.std.ndim == 1
-            and self.std.min() >= 0
-        ):
-            raise ValueError(
-                "std must be a non-negative float number or an 1-dimensional NDArray of non-negative float values"
-            )
-        if not (
-            isinstance(self.mean, Numeric) and isinstance(self.std, Numeric)
-        ) and not (
-            isinstance(self.mean, np.ndarray)
-            and isinstance(self.std, np.ndarray)
-            and len(self.mean) == len(self.std)
-        ):
-            raise ValueError("mean and std must have the same length")
-        if self.random_state is None:
-            raise ValueError("random_state must be given")
-        self.random_ = check_random_state(self.random_state)
-
-        self.is_single_parameter = False
-        if isinstance(self.mean, Numeric):
-            self.is_single_parameter = True
-
-    def sample(self, size: int = 1) -> np.ndarray:
-        """Sample random variables from the pre-determined normal distribution.
-
-        Parameters
-        -------
-        size: int, default=1 (> 0)
-            Total numbers of the random variable to sample.
-
-        Returns
-        -------
-        random_variables: NDArray[float], shape (size, )
-            Random variables sampled from the normal distribution.
-
-        """
-        check_scalar(size, name="size", target_type=int, min_val=1)
-        if self.is_single_parameter:
-            random_variables = self.random_.normal(
-                loc=self.mean, scale=self.std, size=size
-            )
-        else:
-            random_variables = self.random_.normal(
-                loc=self.mean, scale=self.std, size=(size, len(self.mean))
-            )
-        return random_variables
-
+from offlinegym.types import LoggedDataset
 
 def estimate_confidence_interval_by_bootstrap(
     samples: np.ndarray,
@@ -135,11 +55,6 @@ def estimate_confidence_interval_by_bootstrap(
         f"{100 * (1. - alpha)}% CI (lower)": lower_bound,
         f"{100 * (1. - alpha)}% CI (upper)": upper_bound,
     }
-
-
-def sigmoid(x: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
-    """Sigmoid function"""
-    return 1 / (1 + np.exp(-x))
 
 
 def defaultdict_to_dict(dict_: Union[Dict[Any, Any], DefaultDict[Any, Any]]):

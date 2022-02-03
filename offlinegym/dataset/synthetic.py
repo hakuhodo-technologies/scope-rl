@@ -8,11 +8,11 @@ from gym.spaces import Discrete
 import numpy as np
 from sklearn.utils import check_scalar, check_random_state
 
-from _gym.env.rtb import RTBEnv
-from _gym.env.wrapper_rtb import CustomizedRTBEnv
-from _gym.dataset.base import BaseDataset
-from _gym.policy.head import BaseHead
-from _gym.types import LoggedDataset
+from rtbgym.env.rtb import RTBEnv
+from rtbgym.env.wrapper_rtb import CustomizedRTBEnv
+from offlinegym.dataset.base import BaseDataset
+from offlinegym.policy.head import BaseHead
+from offlinegym.types import LoggedDataset
 
 
 @dataclass
@@ -43,12 +43,12 @@ class SyntheticDataset(BaseDataset):
 
     .. ::code-block:: python
 
-        # import necessary module from _gym
-        >>> from _gym.env import RTBEnv, CustomizedRTBEnv
-        >>> from _gym.dataset import SyntheticDataset
-        >>> from _gym.policy import DiscreteEpsilonGreedyHead
+        # import necessary module from offlinegym
+        >>> from offlinegym.dataset import SyntheticDataset
+        >>> from offlinegym.policy import DiscreteEpsilonGreedyHead
 
         # import necessary module from other libraries
+        >>> from rtbgym import RTBEnv, CustomizedRTBEnv
         >>> from sklearn.linear_model import LogisticRegression
         >>> from d3rlpy.algos import DoubleDQN
         >>> from d3rlpy.online.buffers import ReplayBuffer

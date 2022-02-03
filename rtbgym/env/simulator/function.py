@@ -5,13 +5,13 @@ from typing import Tuple, Union, Optional
 import numpy as np
 from sklearn.utils import check_scalar, check_random_state
 
-from _gym.env.simulator.base import (
+from rtbgym.env.simulator.base import (
     BaseWinningPriceDistribution,
     BaseClickAndConversionRate,
 )
-from _gym.utils import NormalDistribution
-from _gym.utils import sigmoid
-from _gym.utils import check_array
+from rtbgym.utils import NormalDistribution
+from rtbgym.utils import sigmoid
+from rtbgym.utils import check_array
 
 
 @dataclass

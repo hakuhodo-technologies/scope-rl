@@ -17,7 +17,7 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'RTB-Gym'
+project = 'OfflineGym'
 copyright = '2022, Haruka Kiyohara, Kosuke Kawakami, Yuta Saito'
 author = 'Haruka Kiyohara, Kosuke Kawakami, Yuta Saito'
 

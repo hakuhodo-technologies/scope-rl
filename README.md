@@ -22,7 +22,7 @@
 
 *OfflineGym* is an open-source Python Software for implementing the whole procedure of offline Reinforcement Learning (offline RL), from data collection to offline policy learning, evaluation, and selection. Our software includes a series of modules to implement synthetic dataset generation and dataset preprocessing, Off-Policy Evaluation (OPE) estimators, and Off-Policy Selection (OPS) methods. 
 
-This software is also compatible with [d3rlpy](https://github.com/takuseno/d3rlpy), which provides the algorithm implementation of both online and offline RL methods, to streamline the implementation from learning and evaluation in an unified interface. OfflineGym enables an easy, flexible and reliable experiment in offline RL research on any environment with [OpenAI Gym](https://github.com/st-tech/zr-obp)-like interface (from basic one to practical setup) and also simplify the practical implementation on a variety of customized dataset.
+This software is also compatible with [d3rlpy](https://github.com/takuseno/d3rlpy), which provides the algorithm implementation of both online and offline RL methods, to streamline the implementation from learning and evaluation in an unified interface. OfflineGym enables an easy, flexible and reliable experiment in offline RL research on any environment with [OpenAI Gym](https://gym.openai.com)-like interface (from basic one to practical setup) and also simplify the practical implementation on a variety of customized dataset.
 
 Our software facilitate evaluation and algorithm comparison related to the following research topics:
 
@@ -65,7 +65,6 @@ This software is intended for the episodic RL setup. For those aimed for context
   - Self-Normalized Trajectory-wise Importance Sampling
   - Self-Normalized Step-wise Importance Sampling
   - Self-Normalized Doubly Robust
-- Cumulative Distribution Function Estimation
 
 </details>
 
@@ -76,7 +75,6 @@ This software is intended for the episodic RL setup. For those aimed for context
 - Hoeffding
 - Empirical Bernstein
 - T-test
-- BayesDICE
 
 </details>
 
@@ -170,7 +168,7 @@ logged_dataset = dataset.obtain_trajectories(n_episodes=10000)
 ```
 
 ### Offline Reinforcement Learning
-Now we are ready to learn a new policy only from logged data using d3rlpy.
+Now we are ready to learn a new policy only from logged data using [d3rlpy](https://github.com/takuseno/d3rlpy).
 
 ```Python
 # implement offline RL procedure using OfflineGym and d3rlpy
@@ -187,7 +185,7 @@ offlinerl_dataset = MDPDataset(
     rewards=logged_dataset["reward"],
     terminals=logged_dataset["done"],
     episode_terminals=logged_dataset["done"],
-    discrete_action=False,
+    discrete_action=True,
 )
 # initialize algorithm
 cql = DiscreteCQL()
@@ -201,7 +199,7 @@ cql.fit(
 
 ### Off-Policy Evaluation and Selection
 
-Then, let's evaluate the performance of the learned policy using offline logged data. We also compare the estimation results from various OPE estimators, Direct Method (DM), Trajectory-wise Importance Sampling (TIS), Step-wise Importance Sampling (SIS), and Doubly Robust (DR).
+Finally, we evaluate the performance of the learned policy using offline logged data. We also compare the estimation results from various OPE estimators, Direct Method (DM), Trajectory-wise Importance Sampling (TIS), Step-wise Importance Sampling (SIS), and Doubly Robust (DR).
 
 ```Python
 # implement OPE procedure using OfflineGym
@@ -262,7 +260,7 @@ ope.visualize_off_policy_estimates(
 )
 ```
 
-A formal quickstart example with RTB is available at [examples/quickstart/rtb_synthetic_discrete.ipynb](./examples/quickstart/rtb_synthetic_discrete.ipynb) (discrete action space) and [examples/quickstart/rtb_synthetic_continuous.ipynb](./examples/quickstart/rtb_synthetic_continuous.ipynb) (continuous action space).
+A formal quickstart example with RTBGym is available at `[quickstart]`(./examples/quickstart/rtb_synthetic_discrete.ipynb) (discrete action space) and [quickstart/rtb_synthetic_continuous.ipynb](./examples/quickstart/rtb_synthetic_continuous.ipynb) (continuous action space).
 
 ## Citation
 

@@ -7,9 +7,9 @@ from sklearn.base import BaseEstimator
 from sklearn.utils import check_scalar
 import numpy as np
 
-from _gym.env.rtb import RTBEnv
-from _gym.utils import check_array
-from _gym.types import Action, Numeric
+from rtbgym.env.rtb import RTBEnv
+from rtbgym.utils import check_array
+from rtbgym.types import Action, Numeric
 
 
 class CustomizedRTBEnv(gym.Env):
@@ -110,10 +110,10 @@ class CustomizedRTBEnv(gym.Env):
 
     .. codeblock:: python
 
-        # import necessary module from _gym
-        from _gym.env import RTBEnv
-        from _gym.policy import OnlineHead
-        from _gym.ope.online import calc_on_policy_policy_value
+        # import necessary module from rtbgym
+        from rtbgym.env import RTBEnv
+        from rtbgym.policy import OnlineHead
+        from rtbgym.ope.online import calc_on_policy_policy_value
 
         # import necessary module from other libraries
         from sklearn.linear_model import LogisticRegression

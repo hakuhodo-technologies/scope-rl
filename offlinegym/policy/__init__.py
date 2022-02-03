@@ -1,4 +1,4 @@
-from _gym.policy.head import (
+from offlinegym.policy.head import (
     BaseHead,
     OnlineHead,
     DiscreteEpsilonGreedyHead,

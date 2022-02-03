@@ -12,18 +12,18 @@ Overview
 This library aims to facilitate the an easy, flexible and reliable experiment in offline RL research and to provide a streamlined implementation also for practitioners.
 OfflineGym includes a series of modules to implement synthetic dataset generation and dataset preprocessing, a variety of OPE estimators, and also Off-Policy Selection (OPS) methods. 
 
-OfflineGym is applicable to any RL environment with [OpenAI Gym](https://github.com/st-tech/zr-obp)-like interface.
-The library is also compatible with [d3rlpy](https://github.com/takuseno/d3rlpy), which provides the algorithm implementation of both online and offline RL methods.
+OfflineGym is applicable to any RL environment with `[OpenAI Gym] <https://gym.openai.com>'_-like interface.
+The library is also compatible with `[d3rlpy] <https://github.com/takuseno/d3rlpy>`_, which provides the algorithm implementation of both online and offline RL methods.
 
 Our software facilitate implementation, evaluation and algorithm comparison related to the following research topics:
 
-- **Offline Reinforcement Learning**: Offline RL aims to learn a new policy from only offline logged data collected by a behavior policy. 
+* **Offline Reinforcement Learning**: Offline RL aims to learn a new policy from only offline logged data collected by a behavior policy. 
 OfflineGym enables flexible experiment using customized dataset on diverse environments collected by various behavior policies.
 
-- **Off-Policy Evaluation**: OPE aims to evaluate the performance of a counterfactual policy using only offline logged data. 
+* **Off-Policy Evaluation**: OPE aims to evaluate the performance of a counterfactual policy using only offline logged data. 
 OfflineGym supports basic implementation of OPE estimators and streamline the experimental procedure to evaluate OPE estimators.
 
-- **Off-Policy Selection**: OPS aims to select the best policy from several candidate policies using offline logged data. 
+* **Off-Policy Selection**: OPS aims to select the best policy from several candidate policies using offline logged data. 
 OfflineGym supports basic implementation of OPS methods and provide some metrics to evaluate OPS result.
 
 This website contains pages with example implementations that demonstrates the usage of this library.
@@ -54,6 +54,10 @@ Discrete / Continuous OPE
 
 Off-Policy Selection
 ----------
+
+
+In addition to the offline RL/OPE related resources, we provide a configurative RL environment for Real-Time Bidding (RTB) as a sub-package of this library.
+Please refer to `[RTBGym's documentation] <>`_ for the details.
 
 Citation
 ~~~~~~~~~~
@@ -89,31 +93,19 @@ Table of Contents
 
 .. toctree::
    :maxdepth: 3
-   :caption: Online Reinforcement Learning (online RL):
+   :caption: Online and Offline Reinforcement Learning (online/offline RL):
 
-   online_rl
-
-.. toctree::
-   :maxdepth: 3
-   :caption: Offline Reinforcement Learning (offline RL):
-
-   offline_rl
+   online_offline_rl
    wrapper
+   online_evaluation
 
 .. toctree::
    :maxdepth: 3
-   :caption: Off-Policy Evaluation (OPE):
+   :caption: Off-Policy Evaluation and Selection (OPE/OPS):
 
-   ope
-   estimators
-   evaluation_of_ope
-
-.. toctree::
-   :maxdepth: 3
-   :caption: Off-Policy Selection (OPS):
-
-   ops
-   evaluation_of_ops
+   ope_ops
+   ope_estimators
+   evaluation_of_ope_ops
 
 .. toctree::
    :maxdepth: 3
@@ -124,13 +116,24 @@ Table of Contents
 
 .. toctree::
    :maxdepth: 3
+   :caption: Sub-package RTBGym:
+
+   rtbgym_about
+   rtbgym_conf
+   rtbgym_quickstart
+
+.. toctree::
+   :maxdepth: 3
    :caption: Package Reference:
+
+   offlinegym
+   rtbgym
 
 .. toctree::
    :caption: Others:
 
-   Github <>
-   LISENSE <>
+   Github <https://github.com/negocia-inc/offlinegym>
+   LISENSE <https://github.com/negocia-inc/offlinegym/blob/main/LICENSE>
    references
 
 Indices and tables

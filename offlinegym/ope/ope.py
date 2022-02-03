@@ -21,11 +21,11 @@ from d3rlpy.ope import FQE as ContinuousFQE
 from d3rlpy.models.encoders import VectorEncoderFactory
 from d3rlpy.models.q_functions import MeanQFunctionFactory
 
-from _gym.ope.estimators_discrete import BaseOffPolicyEstimator
-from _gym.ope.online import rollout_policy_online
-from _gym.policy.head import BaseHead
-from _gym.types import LoggedDataset, OPEInputDict
-from _gym.utils import (
+from offlinegym.ope.estimators_discrete import BaseOffPolicyEstimator
+from offlinegym.ope.online import rollout_policy_online
+from offlinegym.policy.head import BaseHead
+from offlinegym.types import LoggedDataset, OPEInputDict
+from offlinegym.utils import (
     check_logged_dataset,
     estimate_confidence_interval_by_bootstrap,
     defaultdict_to_dict,
@@ -43,22 +43,22 @@ class OffPolicyEvaluation:
 
     ope_estimators: List[BaseOffPolicyEstimator]
         List of OPE estimators used to evaluate the policy value of evaluation policy.
-        Estimators must follow the interface of `_gym.ope.BaseOffPolicyEstimator`.
+        Estimators must follow the interface of `offlinegym.ope.BaseOffPolicyEstimator`.
 
     Examples
     ----------
     .. ::code-block:: python
 
-        # import necessary module from _gym
-        >>> from _gym.env import RTBEnv, CustomizedRTBEnv
-        >>> from _gym.dataset import SyntheticDataset
-        >>> from _gym.policy import DiscreteEpsilonGreedyHead
-        >>> from _gym.ope import CreateOPEInput
-        >>> from _gym.ope import OffPolicyEvaluation
-        >>> from _gym.ope import DiscreteTrajectoryWiseImportanceSampling as TIS
-        >>> from _gym.ope import DiscreteStepWiseImportanceSampling as SIS
+        # import necessary module from offlinegym
+        >>> from offlinegym.dataset import SyntheticDataset
+        >>> from offlinegym.policy import DiscreteEpsilonGreedyHead
+        >>> from offlinegym.ope import CreateOPEInput
+        >>> from offlinegym.ope import OffPolicyEvaluation
+        >>> from offlinegym.ope import DiscreteTrajectoryWiseImportanceSampling as TIS
+        >>> from offlinegym.ope import DiscreteStepWiseImportanceSampling as SIS
 
         # import necessary module from other libraries
+        >>> from rtbgym import RTBEnv, CustomizedRTBEnv
         >>> from sklearn.linear_model import LogisticRegression
         >>> from d3rlpy.algos import DoubleDQN
         >>> from d3rlpy.online.buffers import ReplayBuffer
