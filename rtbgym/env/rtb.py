@@ -9,7 +9,7 @@ from sklearn.utils import check_scalar, check_random_state
 from rtbgym.utils import NormalDistribution
 from rtbgym.types import Action, Numeric
 
-from rtbgym.env.bidder import Bidder
+from rtbgym.env.simulation.bidder import Bidder
 from rtbgym.env.simulator.rtb_synthetic import RTBSyntheticSimulator
 from rtbgym.env.simulator.base import (
     BaseWinningPriceDistribution,

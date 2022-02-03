@@ -7,6 +7,7 @@ from sklearn.utils import check_scalar, check_random_state
 
 from offlinegym.types import LoggedDataset
 
+
 def estimate_confidence_interval_by_bootstrap(
     samples: np.ndarray,
     alpha: float = 0.05,
