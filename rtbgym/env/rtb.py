@@ -9,7 +9,7 @@ from sklearn.utils import check_scalar, check_random_state
 from rtbgym.utils import NormalDistribution
 from rtbgym.types import Action, Numeric
 
-from rtbgym.env.simulation.bidder import Bidder
+from rtbgym.env.simulator.bidder import Bidder
 from rtbgym.env.simulator.rtb_synthetic import RTBSyntheticSimulator
 from rtbgym.env.simulator.base import (
     BaseWinningPriceDistribution,
@@ -49,6 +49,7 @@ class RTBEnv(gym.Env):
             (Bid price is individually determined for each auction.)
 
             .. math::
+            
                 {bid price}_{t, i} = {adjust rate}_{t} \\times {predicted reward}_{t,i} ( \\times {const.})
 
             Note that, you can also use predicted reward instead of ground-truth reward in the above equation.

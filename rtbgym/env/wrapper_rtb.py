@@ -57,6 +57,7 @@ class CustomizedRTBEnv(gym.Env):
             Note that the following bid price is individually determined for each auction.
 
             .. math::
+            
                 {bid price}_{t, i} = {adjust rate}_{t} \\times {predicted reward}_{t,i} ( \\times {const.})
 
             Both discrete and continuous actions are acceptable.

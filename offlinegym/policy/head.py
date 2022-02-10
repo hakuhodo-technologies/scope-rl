@@ -212,6 +212,7 @@ class DiscreteEpsilonGreedyHead(BaseHead):
     Epsilon-greedy policy stochastically chooses actions (i.e., :math:`a \\in \\mathcal{A}`) given state :math:`s` as follows.
 
     .. math::
+
         \\pi(a \\mid s) := (1 - \\epsilon) * \\mathbb{I}(a = a*)) + \\epsilon / |\\mathcal{A}|
 
     where :math:`\\epsilon` is the probability of taking random actions and :math:`a*` is the greedy action.
@@ -357,6 +358,7 @@ class DiscreteSoftmaxHead(BaseHead):
     Softmax policy stochastically chooses actions (i.e., :math:`a \\in \\mathcal{A}`) given state :math:`s` as follows.
 
     .. math::
+
         \\pi(a \\mid s) := \\frac{\\exp(Q(s, a) / \\tau)}{\\sum_{a' \\in A} \\exp(Q(s, a') / \\tau)}
 
     where :math:`\\tau` is the temperature parameter of the softmax function.
@@ -548,6 +550,7 @@ class ContinuousGaussianHead(BaseHead):
     Given a deterministic policy, gaussian policy samples action :math:`a \\in \\mathcal{A}` given state :math:`s` as follows.
 
     .. math::
+
         a \\sim Normal(\\pi(s), \\sigma)
 
     where :math:`\\sigma` is the standard deviation of the normal distribution.
@@ -684,6 +687,7 @@ class ContinuousTruncatedGaussianHead(BaseHead):
     Given a deterministic policy, truncated gaussian policy samples action :math:`a \\in \\mathcal{A}` given state :math:`s` as follows.
 
     .. math::
+    
         a \\sim TruncNorm(\\pi(s), \\sigma)
 
     where :math:`\\sigma` is the standard deviation of the truncated normal distribution.

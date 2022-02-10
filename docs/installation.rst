@@ -8,7 +8,7 @@ From ``pip``:
 
 .. code-block:: bash
 
-    pip install obp
+    pip install offlinegym
 
 From source:
 

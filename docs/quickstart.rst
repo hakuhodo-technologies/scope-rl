@@ -182,6 +182,6 @@ Users can implement their own OPE estimators by following the interface of :clas
 :class:`obp.ope.OffPolicyEvaluation` class summarizes and compares the estimation results of various OPE estimators.
 It also provides some functions for OPS from several candidate policies.
 
-A formal quickstart example with RTBGym is available at `[quickstart] <https://github.com/negocia-inc/offlinegym/blob/main/examples/quickstart>`_.
+A formal quickstart example with RTBGym is available `[here] <https://github.com/negocia-inc/offlinegym/blob/main/examples/quickstart>`_.
 
 

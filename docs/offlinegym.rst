@@ -27,3 +27,9 @@ ope module
     offlinegym.ope.estimators_continuous
     offlinegym.ope.online
 
+others
+----------
+.. autosummary::
+    :toctree: _autosummary
+
+    offlinegym.utils
