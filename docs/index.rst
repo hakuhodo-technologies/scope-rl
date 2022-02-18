@@ -3,7 +3,7 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-OfflineGym; a Python library for offline reinforcement learning and off-policy evaluation
+OfflineGym; a Python library for offline reinforcement learning, off-policy evaluation, and selection
 ===================================
 
 Overview
