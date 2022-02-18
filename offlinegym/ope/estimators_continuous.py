@@ -8,8 +8,11 @@ from sklearn.utils import check_scalar
 
 from offlinegym.ope.estimators_discrete import BaseOffPolicyEstimator
 from offlinegym.utils import (
+    estimate_confidence_interval_by_bootstrap, 
+    estimate_confidence_interval_by_hoeffding, 
+    estimate_confidence_interval_by_empirical_bernstein, 
+    estimate_confidence_interval_by_t_test, 
     check_array,
-    estimate_confidence_interval_by_bootstrap,
 )
 
 
@@ -50,6 +53,13 @@ class ContinuousDirectMethod(BaseOffPolicyEstimator):
 
     def __post_init__(self):
         self.action_type = "continuous"
+
+        self._estimate_confidence_interval = {
+            "bootstrap": estimate_confidence_interval_by_bootstrap,
+            "hoeffding": estimate_confidence_interval_by_hoeffding,
+            "bernstein": estimate_confidence_interval_by_empirical_bernstein,
+            "ttest": estimate_confidence_interval_by_t_test,
+        }
 
     def _estimate_trajectory_value(
         self,
@@ -104,6 +114,7 @@ class ContinuousDirectMethod(BaseOffPolicyEstimator):
         self,
         initial_state_value_prediction: np.ndarray,
         alpha: float = 0.05,
+        ci: str = "bootstrap",
         n_bootstrap_samples: int = 10000,
         random_state: Optional[int] = None,
         **kwargs,
@@ -135,10 +146,13 @@ class ContinuousDirectMethod(BaseOffPolicyEstimator):
             name="initial_state_value_prediction",
             expected_dim=1,
         )
+        if ci not in self._estimate_confidence_interval.keys():
+            raise ValueError(f"ci must be one of 'bootstrap', 'hoeffding', 'bernstein', or 'ttest', but {ci} is given")
+            
         estimated_trajectory_value = self._estimate_trajectory_value(
             initial_state_value_prediction,
         )
-        return estimate_confidence_interval_by_bootstrap(
+        return self._estimate_confidence_interval[ci](
             samples=estimated_trajectory_value,
             alpha=alpha,
             n_bootstrap_samples=n_bootstrap_samples,
@@ -226,6 +240,13 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         if self.use_truncated_kernel:
             check_array(self.action_min, name="action_min", expected_dim=1)
             check_array(self.action_max, name="action_max", expected_dim=1)
+
+        self._estimate_confidence_interval = {
+            "bootstrap": estimate_confidence_interval_by_bootstrap,
+            "hoeffding": estimate_confidence_interval_by_hoeffding,
+            "bernstein": estimate_confidence_interval_by_empirical_bernstein,
+            "ttest": estimate_confidence_interval_by_t_test,
+        }
 
     def _estimate_trajectory_value(
         self,
@@ -407,6 +428,7 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         evaluation_policy_action: np.ndarray,
         gamma: float = 1.0,
         alpha: float = 0.05,
+        ci: str = "bootstrap",
         n_bootstrap_samples: int = 10000,
         random_state: int = 12345,
         **kwargs,
@@ -436,6 +458,9 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 
         alpha: float, default=0.05 (0, 1)
             Significant level.
+
+        ci: str, default="bootstrap"
+            Estimation method for confidence interval.
 
         n_bootstrap_samples: int, default=10000 (> 0)
             Number of resampling performed in the bootstrap procedure.
@@ -495,6 +520,9 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
             )
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
 
+        if ci not in self._estimate_confidence_interval.keys():
+            raise ValueError(f"ci must be one of 'bootstrap', 'hoeffding', 'bernstein', or 'ttest', but {ci} is given")
+
         estimated_trajectory_value = self._estimate_trajectory_value(
             step_per_episode=step_per_episode,
             action=action,
@@ -503,7 +531,7 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
             evaluation_policy_action=evaluation_policy_action,
             gamma=gamma,
         )
-        return estimate_confidence_interval_by_bootstrap(
+        return self._estimate_confidence_interval[ci](
             samples=estimated_trajectory_value,
             alpha=alpha,
             n_bootstrap_samples=n_bootstrap_samples,
@@ -591,6 +619,13 @@ class ContinuousStepWiseImportanceSampling(BaseOffPolicyEstimator):
         if self.use_truncated_kernel:
             check_array(self.action_min, name="action_min", expected_dim=1)
             check_array(self.action_max, name="action_max", expected_dim=1)
+
+        self._estimate_confidence_interval = {
+            "bootstrap": estimate_confidence_interval_by_bootstrap,
+            "hoeffding": estimate_confidence_interval_by_hoeffding,
+            "bernstein": estimate_confidence_interval_by_empirical_bernstein,
+            "ttest": estimate_confidence_interval_by_t_test,
+        }
 
     def _estimate_trajectory_value(
         self,
@@ -765,6 +800,7 @@ class ContinuousStepWiseImportanceSampling(BaseOffPolicyEstimator):
         evaluation_policy_action: np.ndarray,
         gamma: float = 1.0,
         alpha: float = 0.05,
+        ci: str = "bootstrap",
         n_bootstrap_samples: int = 10000,
         random_state: int = 12345,
         **kwargs,
@@ -794,6 +830,9 @@ class ContinuousStepWiseImportanceSampling(BaseOffPolicyEstimator):
 
         alpha: float, default=0.05 (0, 1)
             Significant level.
+
+        ci: str, default="bootstrap"
+            Estimation method for confidence interval.
 
         n_bootstrap_samples: int, default=10000 (> 0)
             Number of resampling performed in the bootstrap procedure.
@@ -853,6 +892,9 @@ class ContinuousStepWiseImportanceSampling(BaseOffPolicyEstimator):
             )
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
 
+        if ci not in self._estimate_confidence_interval.keys():
+            raise ValueError(f"ci must be one of 'bootstrap', 'hoeffding', 'bernstein', or 'ttest', but {ci} is given")
+
         estimated_trajectory_value = self._estimate_trajectory_value(
             step_per_episode=step_per_episode,
             action=action,
@@ -861,7 +903,7 @@ class ContinuousStepWiseImportanceSampling(BaseOffPolicyEstimator):
             evaluation_policy_action=evaluation_policy_action,
             gamma=gamma,
         )
-        return estimate_confidence_interval_by_bootstrap(
+        return self._estimate_confidence_interval[ci](
             samples=estimated_trajectory_value,
             alpha=alpha,
             n_bootstrap_samples=n_bootstrap_samples,
@@ -959,6 +1001,13 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
         if self.use_truncated_kernel:
             check_array(self.action_min, name="action_min", expected_dim=1)
             check_array(self.action_max, name="action_max", expected_dim=1)
+
+        self._estimate_confidence_interval = {
+            "bootstrap": estimate_confidence_interval_by_bootstrap,
+            "hoeffding": estimate_confidence_interval_by_hoeffding,
+            "bernstein": estimate_confidence_interval_by_empirical_bernstein,
+            "ttest": estimate_confidence_interval_by_t_test,
+        }
 
     def _estimate_trajectory_value(
         self,
@@ -1158,6 +1207,7 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
         state_action_value_prediction: np.ndarray,
         gamma: float = 1.0,
         alpha: float = 0.05,
+        ci: str = "bootstrap",
         n_bootstrap_samples: int = 10000,
         random_state: int = 12345,
         **kwargs,
@@ -1191,6 +1241,9 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
 
         alpha: float, default=0.05 (0, 1)
             Significant level.
+
+        ci: str, default="bootstrap"
+            Estimation method for confidence interval.
 
         n_bootstrap_samples: int, default=10000 (> 0)
             Number of resampling performed in the bootstrap procedure.
@@ -1250,6 +1303,9 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
             )
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
 
+        if ci not in self._estimate_confidence_interval.keys():
+            raise ValueError(f"ci must be one of 'bootstrap', 'hoeffding', 'bernstein', or 'ttest', but {ci} is given")
+
         estimated_trajectory_value = self._estimate_trajectory_value(
             step_per_episode=step_per_episode,
             action=action,
@@ -1259,7 +1315,7 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
             state_action_value_prediction=state_action_value_prediction,
             gamma=gamma,
         )
-        return estimate_confidence_interval_by_bootstrap(
+        return self._estimate_confidence_interval[ci](
             samples=estimated_trajectory_value,
             alpha=alpha,
             n_bootstrap_samples=n_bootstrap_samples,
@@ -1356,6 +1412,13 @@ class ContinuousSelfNormalizedTrajectoryWiseImportanceSampling(
         if self.use_truncated_kernel:
             check_array(self.action_min, name="action_min", expected_dim=1)
             check_array(self.action_max, name="action_max", expected_dim=1)
+
+        self._estimate_confidence_interval = {
+            "bootstrap": estimate_confidence_interval_by_bootstrap,
+            "hoeffding": estimate_confidence_interval_by_hoeffding,
+            "bernstein": estimate_confidence_interval_by_empirical_bernstein,
+            "ttest": estimate_confidence_interval_by_t_test,
+        }
 
     def _estimate_trajectory_value(
         self,
@@ -1528,6 +1591,13 @@ class ContinuousSelfNormalizedStepWiseImportanceSampling(
             check_array(self.action_min, name="action_min", expected_dim=1)
             check_array(self.action_max, name="action_max", expected_dim=1)
 
+        self._estimate_confidence_interval = {
+            "bootstrap": estimate_confidence_interval_by_bootstrap,
+            "hoeffding": estimate_confidence_interval_by_hoeffding,
+            "bernstein": estimate_confidence_interval_by_empirical_bernstein,
+            "ttest": estimate_confidence_interval_by_t_test,
+        }
+
     def _estimate_trajectory_value(
         self,
         step_per_episode: int,
@@ -1694,6 +1764,13 @@ class ContinuousSelfNormalizedDoublyRobust(ContinuousDoublyRobust):
         if self.use_truncated_kernel:
             check_array(self.action_min, name="action_min", expected_dim=1)
             check_array(self.action_max, name="action_max", expected_dim=1)
+
+        self._estimate_confidence_interval = {
+            "bootstrap": estimate_confidence_interval_by_bootstrap,
+            "hoeffding": estimate_confidence_interval_by_hoeffding,
+            "bernstein": estimate_confidence_interval_by_empirical_bernstein,
+            "ttest": estimate_confidence_interval_by_t_test,
+        }
 
     def _estimate_trajectory_value(
         self,

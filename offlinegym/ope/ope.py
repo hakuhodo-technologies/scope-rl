@@ -28,6 +28,9 @@ from offlinegym.types import LoggedDataset, OPEInputDict
 from offlinegym.utils import (
     check_logged_dataset,
     estimate_confidence_interval_by_bootstrap,
+    estimate_confidence_interval_by_hoeffding, 
+    estimate_confidence_interval_by_empirical_bernstein, 
+    estimate_confidence_interval_by_t_test, 
     defaultdict_to_dict,
 )
 
@@ -189,6 +192,13 @@ class OffPolicyEvaluation:
             "behavior_policy_trajectory_wise_pscore": behavior_policy_trajectory_wise_pscore.flatten(),
         }
 
+        self._estimate_confidence_interval = {
+            "bootstrap": estimate_confidence_interval_by_bootstrap,
+            "hoeffding": estimate_confidence_interval_by_hoeffding,
+            "bernstein": estimate_confidence_interval_by_empirical_bernstein,
+            "ttest": estimate_confidence_interval_by_t_test,
+        }
+
     def estimate_policy_value(
         self,
         input_dict: OPEInputDict,
@@ -242,6 +252,7 @@ class OffPolicyEvaluation:
         input_dict: OPEInputDict,
         gamma: float = 1.0,
         alpha: float = 0.05,
+        ci: str = "bootstrap",
         n_bootstrap_samples: int = 100,
         random_state: Optional[int] = None,
     ) -> Dict[str, Dict[str, float]]:
@@ -268,6 +279,9 @@ class OffPolicyEvaluation:
         alpha: float, default=0.05 (0, 1)
             Significant level.
 
+        ci: str, default="bootstrap"
+            Estimation method for confidence interval.
+
         n_bootstrap_samples: int, default=10000 (> 0)
             Number of resampling performed in the bootstrap procedure.
 
@@ -293,6 +307,7 @@ class OffPolicyEvaluation:
                     **self.input_dict_,
                     gamma=gamma,
                     alpha=alpha,
+                    ci=ci,
                     n_bootstrap_samples=n_bootstrap_samples,
                     random_state=random_state,
                 )
@@ -303,6 +318,7 @@ class OffPolicyEvaluation:
         input_dict: OPEInputDict,
         gamma: float = 1.0,
         alpha: float = 0.05,
+        ci: str = "bootstrap",
         n_bootstrap_samples: int = 100,
         random_state: Optional[int] = None,
     ) -> Tuple[Dict[str, DataFrame], Dict[str, DataFrame]]:
@@ -332,6 +348,9 @@ class OffPolicyEvaluation:
         n_bootstrap_samples: int, default=10000 (> 0)
             Number of resampling performed in the bootstrap procedure.
 
+        ci: str, default="bootstrap"
+            Estimation method for confidence interval.
+
         random_state: int, default=None (>= 0)
             Random state.
 
@@ -347,6 +366,7 @@ class OffPolicyEvaluation:
             input_dict,
             gamma=gamma,
             alpha=alpha,
+            ci=ci,
             n_bootstrap_samples=n_bootstrap_samples,
             random_state=random_state,
         )
@@ -381,6 +401,7 @@ class OffPolicyEvaluation:
         input_dict: OPEInputDict,
         gamma: float = 1.0,
         alpha: float = 0.05,
+        ci: str="bootstrap",
         n_bootstrap_samples: int = 100,
         random_state: Optional[int] = None,
         is_relative: bool = False,
@@ -411,6 +432,9 @@ class OffPolicyEvaluation:
         alpha: float, default=0.05 (0, 1)
             Significant level.
 
+        ci: str, default="bootstrap"
+            Estimation method for confidence interval.
+
         n_bootstrap_samples: int, default=10000 (> 0)
             Number of resampling performed in the bootstrap procedure.
 
@@ -432,6 +456,8 @@ class OffPolicyEvaluation:
             Name of the bar figure.
 
         """
+        if ci not in self._estimate_confidence_interval.keys():
+            raise ValueError(f"ci must be one of 'bootstrap', 'hoeffding', 'bernstein', or 'ttest', but {ci} is given")
         if fig_dir is not None and not isinstance(fig_dir, Path):
             raise ValueError(f"fig_dir must be a Path, but {type(fig_dir)} is given")
         if fig_name is not None and not isinstance(fig_name, str):
@@ -485,7 +511,7 @@ class OffPolicyEvaluation:
             )
             on_policy_policy_value = input_dict[eval_policy]["on_policy_policy_value"]
             if on_policy_policy_value is not None:
-                on_policy_interval = estimate_confidence_interval_by_bootstrap(
+                on_policy_interval = self._estimate_confidence_interval[ci](
                     samples=on_policy_policy_value,
                     alpha=alpha,
                     n_bootstrap_samples=n_bootstrap_samples,

@@ -2,6 +2,7 @@
 from collections import defaultdict
 from typing import DefaultDict, Dict, Union, Optional, Any
 
+import scipy
 import numpy as np
 from sklearn.utils import check_scalar, check_random_state
 
@@ -36,7 +37,7 @@ def estimate_confidence_interval_by_bootstrap(
         Dictionary storing the estimated mean and upper-lower confidence bounds.
 
     """
-    check_confidence_interval_argument(
+    check_bootstrap_confidence_interval_argument(
         alpha=alpha,
         n_bootstrap_samples=n_bootstrap_samples,
         random_state=random_state,
@@ -55,6 +56,101 @@ def estimate_confidence_interval_by_bootstrap(
         "mean": np.mean(boot_samples),
         f"{100 * (1. - alpha)}% CI (lower)": lower_bound,
         f"{100 * (1. - alpha)}% CI (upper)": upper_bound,
+    }
+
+def estimate_confidence_interval_by_hoeffding(
+    samples: np.ndarray,
+    alpha: float = 0.05,
+    **kwargs,
+) -> Dict[str, float]:
+    """Estimate confidence interval by nonparametric bootstrap-like procedure.
+
+    Parameters
+    -------
+    samples: NDArray
+        Samples.
+
+    alpha: float, default=0.05 (0, 1)
+        Significant level.
+
+    Returns
+    -------
+    estimated_confidence_interval: Dict[str, float]
+        Dictionary storing the estimated mean and upper-lower confidence bounds.
+
+    """
+    check_scalar(alpha, name="alpha", target_type=float, min_val=0.0, max_val=1.0)
+    mean = samples.mean()
+    ci = samples.max() * np.sqrt(np.log(2 / alpha) / 2 * len(samples))
+    return {
+        "mean": mean,
+        f"{100 * (1. - alpha)}% CI (lower)": mean - ci,
+        f"{100 * (1. - alpha)}% CI (upper)": mean + ci,
+    }
+
+
+def estimate_confidence_interval_by_empirical_bernstein(
+    samples: np.ndarray,
+    alpha: float = 0.05,
+    **kwargs,
+) -> Dict[str, float]:
+    """Estimate confidence interval by nonparametric bootstrap-like procedure.
+
+    Parameters
+    -------
+    samples: NDArray
+        Samples.
+
+    alpha: float, default=0.05 (0, 1)
+        Significant level.
+
+    Returns
+    -------
+    estimated_confidence_interval: Dict[str, float]
+        Dictionary storing the estimated mean and upper-lower confidence bounds.
+
+    """
+    check_scalar(alpha, name="alpha", target_type=float, min_val=0.0, max_val=1.0)
+    n = len(samples)
+    mean = samples.mean()
+    ci = 7 * samples.max() * np.log(2 / alpha) / (3 * (n - 1)) + np.sqrt(2 * np.log(2 / alpha) * samples.var() / (n - 1))
+    return {
+        "mean": mean,
+        f"{100 * (1. - alpha)}% CI (lower)": mean - ci,
+        f"{100 * (1. - alpha)}% CI (upper)": mean + ci,
+    }
+
+
+def estimate_confidence_interval_by_t_test(
+    samples: np.ndarray,
+    alpha: float = 0.05,
+    **kwargs,
+) -> Dict[str, float]:
+    """Estimate confidence interval by nonparametric bootstrap-like procedure.
+
+    Parameters
+    -------
+    samples: NDArray
+        Samples.
+
+    alpha: float, default=0.05 (0, 1)
+        Significant level.
+
+    Returns
+    -------
+    estimated_confidence_interval: Dict[str, float]
+        Dictionary storing the estimated mean and upper-lower confidence bounds.
+
+    """
+    check_scalar(alpha, name="alpha", target_type=float, min_val=0.0, max_val=1.0)
+    n = len(samples)
+    t = scipy.stats.t.ppf(1 - alpha, n - 1)
+    mean = samples.mean()
+    ci = t * samples.std(ddof=1) / np.sqrt(n)
+    return {
+        "mean": mean,
+        f"{100 * (1. - alpha)}% CI (lower)": mean - ci,
+        f"{100 * (1. - alpha)}% CI (upper)": mean + ci,
     }
 
 
@@ -146,7 +242,7 @@ def check_logged_dataset(logged_dataset: LoggedDataset):
             raise RuntimeError(f"{expected_key} does not exist in logged_dataset")
 
 
-def check_confidence_interval_argument(
+def check_bootstrap_confidence_interval_argument(
     alpha: float,
     n_bootstrap_samples: int,
     random_state: Optional[int] = None,
