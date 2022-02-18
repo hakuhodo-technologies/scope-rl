@@ -58,6 +58,7 @@ def estimate_confidence_interval_by_bootstrap(
         f"{100 * (1. - alpha)}% CI (upper)": upper_bound,
     }
 
+
 def estimate_confidence_interval_by_hoeffding(
     samples: np.ndarray,
     alpha: float = 0.05,
@@ -113,7 +114,9 @@ def estimate_confidence_interval_by_empirical_bernstein(
     check_scalar(alpha, name="alpha", target_type=float, min_val=0.0, max_val=1.0)
     n = len(samples)
     mean = samples.mean()
-    ci = 7 * samples.max() * np.log(2 / alpha) / (3 * (n - 1)) + np.sqrt(2 * np.log(2 / alpha) * samples.var() / (n - 1))
+    ci = 7 * samples.max() * np.log(2 / alpha) / (3 * (n - 1)) + np.sqrt(
+        2 * np.log(2 / alpha) * samples.var() / (n - 1)
+    )
     return {
         "mean": mean,
         f"{100 * (1. - alpha)}% CI (lower)": mean - ci,

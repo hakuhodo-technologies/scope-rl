@@ -28,9 +28,9 @@ from offlinegym.types import LoggedDataset, OPEInputDict
 from offlinegym.utils import (
     check_logged_dataset,
     estimate_confidence_interval_by_bootstrap,
-    estimate_confidence_interval_by_hoeffding, 
-    estimate_confidence_interval_by_empirical_bernstein, 
-    estimate_confidence_interval_by_t_test, 
+    estimate_confidence_interval_by_hoeffding,
+    estimate_confidence_interval_by_empirical_bernstein,
+    estimate_confidence_interval_by_t_test,
     defaultdict_to_dict,
 )
 
@@ -401,7 +401,7 @@ class OffPolicyEvaluation:
         input_dict: OPEInputDict,
         gamma: float = 1.0,
         alpha: float = 0.05,
-        ci: str="bootstrap",
+        ci: str = "bootstrap",
         n_bootstrap_samples: int = 100,
         random_state: Optional[int] = None,
         is_relative: bool = False,
@@ -457,7 +457,9 @@ class OffPolicyEvaluation:
 
         """
         if ci not in self._estimate_confidence_interval.keys():
-            raise ValueError(f"ci must be one of 'bootstrap', 'hoeffding', 'bernstein', or 'ttest', but {ci} is given")
+            raise ValueError(
+                f"ci must be one of 'bootstrap', 'hoeffding', 'bernstein', or 'ttest', but {ci} is given"
+            )
         if fig_dir is not None and not isinstance(fig_dir, Path):
             raise ValueError(f"fig_dir must be a Path, but {type(fig_dir)} is given")
         if fig_name is not None and not isinstance(fig_name, str):

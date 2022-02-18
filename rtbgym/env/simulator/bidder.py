@@ -105,7 +105,7 @@ class Bidder:
         Determine bid price as follows.
 
         .. math::
-        
+
             {bid price}_{t, i} = {adjust rate}_{t} \\times {predicted reward}_{t,i} ( \\times {const.})
 
         Parameters

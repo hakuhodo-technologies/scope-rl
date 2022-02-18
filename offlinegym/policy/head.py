@@ -687,7 +687,7 @@ class ContinuousTruncatedGaussianHead(BaseHead):
     Given a deterministic policy, truncated gaussian policy samples action :math:`a \\in \\mathcal{A}` given state :math:`s` as follows.
 
     .. math::
-    
+
         a \\sim TruncNorm(\\pi(s), \\sigma)
 
     where :math:`\\sigma` is the standard deviation of the truncated normal distribution.

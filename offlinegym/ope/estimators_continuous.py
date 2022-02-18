@@ -8,10 +8,10 @@ from sklearn.utils import check_scalar
 
 from offlinegym.ope.estimators_discrete import BaseOffPolicyEstimator
 from offlinegym.utils import (
-    estimate_confidence_interval_by_bootstrap, 
-    estimate_confidence_interval_by_hoeffding, 
-    estimate_confidence_interval_by_empirical_bernstein, 
-    estimate_confidence_interval_by_t_test, 
+    estimate_confidence_interval_by_bootstrap,
+    estimate_confidence_interval_by_hoeffding,
+    estimate_confidence_interval_by_empirical_bernstein,
+    estimate_confidence_interval_by_t_test,
     check_array,
 )
 
@@ -147,8 +147,10 @@ class ContinuousDirectMethod(BaseOffPolicyEstimator):
             expected_dim=1,
         )
         if ci not in self._estimate_confidence_interval.keys():
-            raise ValueError(f"ci must be one of 'bootstrap', 'hoeffding', 'bernstein', or 'ttest', but {ci} is given")
-            
+            raise ValueError(
+                f"ci must be one of 'bootstrap', 'hoeffding', 'bernstein', or 'ttest', but {ci} is given"
+            )
+
         estimated_trajectory_value = self._estimate_trajectory_value(
             initial_state_value_prediction,
         )
@@ -521,7 +523,9 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
 
         if ci not in self._estimate_confidence_interval.keys():
-            raise ValueError(f"ci must be one of 'bootstrap', 'hoeffding', 'bernstein', or 'ttest', but {ci} is given")
+            raise ValueError(
+                f"ci must be one of 'bootstrap', 'hoeffding', 'bernstein', or 'ttest', but {ci} is given"
+            )
 
         estimated_trajectory_value = self._estimate_trajectory_value(
             step_per_episode=step_per_episode,
@@ -893,7 +897,9 @@ class ContinuousStepWiseImportanceSampling(BaseOffPolicyEstimator):
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
 
         if ci not in self._estimate_confidence_interval.keys():
-            raise ValueError(f"ci must be one of 'bootstrap', 'hoeffding', 'bernstein', or 'ttest', but {ci} is given")
+            raise ValueError(
+                f"ci must be one of 'bootstrap', 'hoeffding', 'bernstein', or 'ttest', but {ci} is given"
+            )
 
         estimated_trajectory_value = self._estimate_trajectory_value(
             step_per_episode=step_per_episode,
@@ -1304,7 +1310,9 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
 
         if ci not in self._estimate_confidence_interval.keys():
-            raise ValueError(f"ci must be one of 'bootstrap', 'hoeffding', 'bernstein', or 'ttest', but {ci} is given")
+            raise ValueError(
+                f"ci must be one of 'bootstrap', 'hoeffding', 'bernstein', or 'ttest', but {ci} is given"
+            )
 
         estimated_trajectory_value = self._estimate_trajectory_value(
             step_per_episode=step_per_episode,

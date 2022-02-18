@@ -6,7 +6,13 @@ from typing import Dict
 import numpy as np
 from sklearn.utils import check_scalar
 
-from offlinegym.utils import estimate_confidence_interval_by_bootstrap, check_array
+from offlinegym.utils import (
+    estimate_confidence_interval_by_bootstrap,
+    estimate_confidence_interval_by_hoeffding,
+    estimate_confidence_interval_by_empirical_bernstein,
+    estimate_confidence_interval_by_t_test,
+    check_array,
+)
 
 
 @dataclass
@@ -67,6 +73,13 @@ class DiscreteDirectMethod(BaseOffPolicyEstimator):
     def __post_init__(self):
         self.action_type = "discrete"
 
+        self._estimate_confidence_interval = {
+            "bootstrap": estimate_confidence_interval_by_bootstrap,
+            "hoeffding": estimate_confidence_interval_by_hoeffding,
+            "bernstein": estimate_confidence_interval_by_empirical_bernstein,
+            "ttest": estimate_confidence_interval_by_t_test,
+        }
+
     def _estimate_trajectory_value(
         self,
         initial_state_value_prediction,
@@ -118,6 +131,7 @@ class DiscreteDirectMethod(BaseOffPolicyEstimator):
         self,
         initial_state_value_prediction: np.ndarray,
         alpha: float = 0.05,
+        ci: str = "bootstrap",
         n_bootstrap_samples: int = 10000,
         random_state: int = 12345,
         **kwargs,
@@ -131,6 +145,9 @@ class DiscreteDirectMethod(BaseOffPolicyEstimator):
 
         alpha: float, default=0.05 (0, 1)
             Significant level.
+
+        ci: str, default="bootstrap"
+            Estimation method for confidence interval.
 
         n_bootstrap_samples: int, default=10000 (> 0)
             Number of resampling performed in the bootstrap procedure.
@@ -149,10 +166,15 @@ class DiscreteDirectMethod(BaseOffPolicyEstimator):
             name="initial_state_value_prediction",
             expected_dim=1,
         )
+        if ci not in self._estimate_confidence_interval.keys():
+            raise ValueError(
+                f"ci must be one of 'bootstrap', 'hoeffding', 'bernstein', or 'ttest', but {ci} is given"
+            )
+
         estimated_trajectory_value = self._estimate_trajectory_value(
             initial_state_value_prediction
         )
-        return estimate_confidence_interval_by_bootstrap(
+        return self._estimate_confidence_interval[ci](
             samples=estimated_trajectory_value,
             alpha=alpha,
             n_bootstrap_samples=n_bootstrap_samples,
@@ -196,6 +218,13 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 
     def __post_init__(self):
         self.action_type = "discrete"
+
+        self._estimate_confidence_interval = {
+            "bootstrap": estimate_confidence_interval_by_bootstrap,
+            "hoeffding": estimate_confidence_interval_by_hoeffding,
+            "bernstein": estimate_confidence_interval_by_empirical_bernstein,
+            "ttest": estimate_confidence_interval_by_t_test,
+        }
 
     def _estimate_trajectory_value(
         self,
@@ -331,6 +360,7 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         evaluation_policy_trajectory_wise_pscore: np.ndarray,
         gamma: float = 1.0,
         alpha: float = 0.05,
+        ci: str = "bootstrap",
         n_bootstrap_samples: int = 10000,
         random_state: int = 12345,
         **kwargs,
@@ -358,6 +388,9 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 
         alpha: float, default=0.05 (0, 1)
             Significant level.
+
+        ci: str, default="bootstrap"
+            Estimation method for confidence interval.
 
         n_bootstrap_samples: int, default=10000 (> 0)
             Number of resampling performed in the bootstrap procedure.
@@ -407,6 +440,11 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
             )
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
 
+        if ci not in self._estimate_confidence_interval.keys():
+            raise ValueError(
+                f"ci must be one of 'bootstrap', 'hoeffding', 'bernstein', or 'ttest', but {ci} is given"
+            )
+
         estimated_trajectory_value = self._estimate_trajectory_value(
             step_per_episode=step_per_episode,
             reward=reward,
@@ -414,7 +452,7 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
             evaluation_policy_trajectory_wise_pscore=evaluation_policy_trajectory_wise_pscore,
             gamma=gamma,
         )
-        return estimate_confidence_interval_by_bootstrap(
+        return self._estimate_confidence_interval[ci](
             samples=estimated_trajectory_value,
             alpha=alpha,
             n_bootstrap_samples=n_bootstrap_samples,
@@ -458,6 +496,13 @@ class DiscreteStepWiseImportanceSampling(BaseOffPolicyEstimator):
 
     def __post_init__(self):
         self.action_type = "discrete"
+
+        self._estimate_confidence_interval = {
+            "bootstrap": estimate_confidence_interval_by_bootstrap,
+            "hoeffding": estimate_confidence_interval_by_hoeffding,
+            "bernstein": estimate_confidence_interval_by_empirical_bernstein,
+            "ttest": estimate_confidence_interval_by_t_test,
+        }
 
     def _estimate_trajectory_value(
         self,
@@ -589,6 +634,7 @@ class DiscreteStepWiseImportanceSampling(BaseOffPolicyEstimator):
         evaluation_policy_step_wise_pscore: np.ndarray,
         gamma: float = 1.0,
         alpha: float = 0.05,
+        ci: str = "bootstrap",
         n_bootstrap_samples: int = 10000,
         random_state: int = 12345,
         **kwargs,
@@ -616,6 +662,9 @@ class DiscreteStepWiseImportanceSampling(BaseOffPolicyEstimator):
 
         alpha: float, default=0.05 (0, 1)
             Significant level.
+
+        ci: str, default="bootstrap"
+            Estimation method for confidence interval.
 
         n_bootstrap_samples: int, default=10000 (> 0)
             Number of resampling performed in the bootstrap procedure.
@@ -665,6 +714,11 @@ class DiscreteStepWiseImportanceSampling(BaseOffPolicyEstimator):
             )
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
 
+        if ci not in self._estimate_confidence_interval.keys():
+            raise ValueError(
+                f"ci must be one of 'bootstrap', 'hoeffding', 'bernstein', or 'ttest', but {ci} is given"
+            )
+
         estimated_trajectory_value = self._estimate_trajectory_value(
             step_per_episode=step_per_episode,
             reward=reward,
@@ -672,7 +726,7 @@ class DiscreteStepWiseImportanceSampling(BaseOffPolicyEstimator):
             evaluation_policy_step_wise_pscore=evaluation_policy_step_wise_pscore,
             gamma=gamma,
         )
-        return estimate_confidence_interval_by_bootstrap(
+        return self._estimate_confidence_interval[ci](
             samples=estimated_trajectory_value,
             alpha=alpha,
             n_bootstrap_samples=n_bootstrap_samples,
@@ -723,6 +777,13 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
 
     def __post_init__(self):
         self.action_type = "discrete"
+
+        self._estimate_confidence_interval = {
+            "bootstrap": estimate_confidence_interval_by_bootstrap,
+            "hoeffding": estimate_confidence_interval_by_hoeffding,
+            "bernstein": estimate_confidence_interval_by_empirical_bernstein,
+            "ttest": estimate_confidence_interval_by_t_test,
+        }
 
     def _estimate_trajectory_value(
         self,
@@ -945,6 +1006,7 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
         state_action_value_prediction: np.ndarray,
         gamma: float = 1.0,
         alpha: float = 0.05,
+        ci: str = "bootstrap",
         n_bootstrap_samples: int = 10000,
         random_state: int = 12345,
         **kwargs,
@@ -983,6 +1045,9 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
 
         alpha: float, default=0.05 (0, 1)
             Significant level.
+
+        ci: str, default="bootstrap"
+            Estimation method for confidence interval.
 
         n_bootstrap_samples: int, default=10000 (> 0)
             Number of resampling performed in the bootstrap procedure.
@@ -1071,6 +1136,11 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
             )
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
 
+        if ci not in self._estimate_confidence_interval.keys():
+            raise ValueError(
+                f"ci must be one of 'bootstrap', 'hoeffding', 'bernstein', or 'ttest', but {ci} is given"
+            )
+
         estimated_trajectory_value = self._estimate_trajectory_value(
             step_per_episode=step_per_episode,
             action=action,
@@ -1081,7 +1151,7 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
             state_action_value_prediction=state_action_value_prediction,
             gamma=gamma,
         )
-        return estimate_confidence_interval_by_bootstrap(
+        return self._estimate_confidence_interval[ci](
             samples=estimated_trajectory_value,
             alpha=alpha,
             n_bootstrap_samples=n_bootstrap_samples,
@@ -1134,6 +1204,13 @@ class DiscreteSelfNormalizedTrajectoryWiseImportanceSampling(
 
     def __post_init__(self):
         self.action_type = "discrete"
+
+        self._estimate_confidence_interval = {
+            "bootstrap": estimate_confidence_interval_by_bootstrap,
+            "hoeffding": estimate_confidence_interval_by_hoeffding,
+            "bernstein": estimate_confidence_interval_by_empirical_bernstein,
+            "ttest": estimate_confidence_interval_by_t_test,
+        }
 
     def _estimate_trajectory_value(
         self,
@@ -1234,6 +1311,13 @@ class DiscreteSelfNormalizedStepWiseImportanceSampling(
     def __post_init__(self):
         self.action_type = "discrete"
 
+        self._estimate_confidence_interval = {
+            "bootstrap": estimate_confidence_interval_by_bootstrap,
+            "hoeffding": estimate_confidence_interval_by_hoeffding,
+            "bernstein": estimate_confidence_interval_by_empirical_bernstein,
+            "ttest": estimate_confidence_interval_by_t_test,
+        }
+
     def _estimate_trajectory_value(
         self,
         step_per_episode: int,
@@ -1332,6 +1416,13 @@ class DiscreteSelfNormalizedDoublyRobust(DiscreteDoublyRobust):
 
     def __post_init__(self):
         self.action_type = "discrete"
+
+        self._estimate_confidence_interval = {
+            "bootstrap": estimate_confidence_interval_by_bootstrap,
+            "hoeffding": estimate_confidence_interval_by_hoeffding,
+            "bernstein": estimate_confidence_interval_by_empirical_bernstein,
+            "ttest": estimate_confidence_interval_by_t_test,
+        }
 
     def _estimate_trajectory_value(
         self,
