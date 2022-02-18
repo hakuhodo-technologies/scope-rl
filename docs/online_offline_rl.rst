@@ -23,9 +23,9 @@ The goal of RL is to maximize the following expected cumulative reward (i.e., po
     where :math:`\gamma` is a discount rate and :math:`\tau := (s_t, a_t, s_{t+1}, r_t)_{t=0}^{T-1}` is the trajectory of the policy which is sampled from 
     :math:`p_{\pi}(\tau) := d_0(s_0) \prod_{t=0}^{T-1} \pi(a_t | s_t) \mathcal{T}(s_{t+1} | s_t, a_t) P_r(r_t | s_t, a_t)`.
 
-There are several approaches to maximize the policy value. Below, we review three basic methods, On-Policy Gradient, Q-Learning, and Actor-Critic.
+There are several approaches to maximize the policy value. Below, we review three basic methods, On-Policy Policy Gradient, Q-Learning, and Actor-Critic.
 
-On-Policy Gradient
+On-Policy Policy Gradient
 ----------
 One of the most naive approach to maximize the policy value is to directly learn a policy through gradient ascent as follows.
 
@@ -33,7 +33,7 @@ One of the most naive approach to maximize the policy value is to directly learn
 
     \theta_{k+1} \leftarrow \theta_{k} + \nabla J(\pi_{\theta_k})
 
-where \theta is a set of policy parameter. 
+where :math:`\theta` is a set of policy parameter. 
 
 We can estimate the policy gradient :math:`J(\pi)` via on-policy estimation as follows.
 
@@ -43,7 +43,7 @@ We can estimate the policy gradient :math:`J(\pi)` via on-policy estimation as f
 
 where :math:`\mathbb{E}_n [\cdot]` takes empirical average over :math:`n` trajectories sampled from online interactions.
 
-The benefit of On-Policy Gradient is that it enables an unbiased estimation of the policy value as :math:`n` grows. 
+The benefit of On-Policy Policy Gradient is that it enables an unbiased estimation of the policy value as :math:`n` grows. 
 However, as the algorithm needs :math:`n` trajectories collected by :math:`\pi_{k-1}` every time the policy is updated to :math:`\pi_{k}`, the algorithm is known to suffer from *sample inefficiency* and instability.
 
 Q-Learning
@@ -57,39 +57,51 @@ Specifically, it aims to learn the following state value :math:`V(s_t)` and stat
 
     Q(s_t, a_t) := \mathbb{E}_{\tau_{t:T-1} \sim p_{\pi}(\tau_{t:T-1} | s_t, a_t)} \left[ sum_{t'=t}^{T-1} \gamma^{t'-t} r_{t'} \right]
 
-where :math:`\tau_{t:T-1}` is the trajectory from timestep :math:`t` to `T-1`.
+where :math:`\tau_{t:T-1}` is the trajectory from timestep :math:`t` to :math:`T-1`.
 
-Using the recursive relation between :math:`V(\cdot)` and :math:`Q(\cdot)`, we can derive the following Bellman equation which is useful learning Q-function.
+Using the recursive connection between :math:`V(\cdot)` and :math:`Q(\cdot)`, we can derive the following Bellman equation to learn Q-function (i.e., :math:`Q`).
 
 .. math::
 
     Q(s_t, a_t) = r_t + \mathbb{E}_{(s_{t+1}, a_{t+1}) \sim \mathcal{T}(s_{t+1} | s_t, a_t) \pi(a_{t+1} | s_{t+1})} [ Q(s_t+1, a_{t+1}) ]
 
-For example, when we use a greedy policy Q-Learning learns Q-Function and update policy alternately as follows.
+For example, when we use a greedy policy, Q-Learning learns Q-Function and update policy alternately as follows.
 
 .. math::
 
     \hat{Q}_{k+1} \leftarrow \argmin_{Q_{k+1}} \mathbb{E}_n [ \left( Q_{k+1}(s_t, a_t) - (r_t + \hat{Q}_k(s_{t+1}, \pi_k(s_{t+1}))) \right)^2 ]
 
-where n state-action pairs are randomly sampled from the replay buffer, which scores the past observation :mathrm:`(s_t, a_t, s_{t+1}, r_t)`.
+where :math:`n` state-action pairs are randomly sampled from the replay buffer, which stores the past observations :math:`(s_t, a_t, s_{t+1}, r_t)`.
 :math:`\pi_k` chooses actions as :math:`\pi_k(a_t \mid s_t) := \mathbb{I} \{ \argmax_{a_t \in \calA}  \hat{Q}_k(s_t, a_t) }`, where :math:`I \{\cdot\}` is the indicator function.
 
-Though this strategy enhances sample efficiency compared to On-Policy Gradient, this method can suffer from bias in estimation.
+Though this strategy enhances sample efficiency compared to On-Policy Policy Gradient, this method can suffer from bias in estimation.
 That is, when :math:`\hat{Q}(\cdot)` fails estimate the true state-action value, the action choice easily becomes sub-optimal.
 
 To alleviate the estimation error of :math:`\hat{Q}(\cdot)`, we often use epsilon-greedy policy, which chooses random actions with probability :math:`\epsilon`.
-This exploration helps improve the quality of \hat{Q}(\cdot), however, it still sometimes become unsafe suddenly during the training.
+Such *exploration* helps improve the quality of \hat{Q}(\cdot) by alleviating the estimation error on unseen state-action pairs. 
 
 Actor-Critic
 ----------
 Actor-critic is a hybrid of Policy Gradient and Q-Learning.
-It first estimate Q-function and then calculate the advantage of choosing actions to derive an approximated policy gradient as follows.
+It first estimate Q-function and then calculate the advantage of choosing actions (:math:`A(s, a) := Q(s, a) - V(s)`) to derive an approximated policy gradient as follows.
 
 .. math::
 
+    \hat{Q}_{k+1} \leftarrow \argmin_{Q_{k+1}} \mathbb{E}_n [ \left( Q_{k+1}(s_t, a_t) - (r_t + \hat{Q}_k(s_{t+1}, \pi_k(s_{t+1}))) \right)^2 ]
 
+    \theta_{k+1} \leftarrow \theta_{k} + \nabla \matnbb{E}_n \left[ \sum_{t=0}^{T-1} \nabla \log \pi(a_t | s_t) \gamma^t \hat{A}(s_t, a_t) \right \right]
+
+where :math:`\hat{A}(s_t, a_t) := \hat{Q}(s_t, a_t) - \mathbb{E}_{a \sim \pi(a_t \mid s_t)} \left[ \hat{Q}(s_t, a) \right]`.
+
+Compared to the (vanilla) On-policy Policy Gradient, Actor-Critic stabilizes the policy gradient and enhances sample efficiency by the use of :math:`\hat{Q}`.
+Note that, compared to Q-learning, Actor-Critic is more suitable in continuous action space because we do not have to discretize the action space to choose actions.
+
+Example of 
 
 
 Offline Reinforcement Learning
 ~~~~~~~~~~
+Online learning can still be unsafe in the initial learning phase due to sub-optimal actions choice.
+Moreover, 
+
 So far, we have seen that
