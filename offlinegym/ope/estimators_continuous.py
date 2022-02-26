@@ -6,7 +6,7 @@ import numpy as np
 from scipy.stats import norm, truncnorm
 from sklearn.utils import check_scalar
 
-from offlinegym.ope.estimators_discrete import BaseOffPolicyEstimator
+from offlinegym.ope.estimators_base import BaseOffPolicyEstimator
 from offlinegym.utils import (
     estimate_confidence_interval_by_bootstrap,
     estimate_confidence_interval_by_hoeffding,

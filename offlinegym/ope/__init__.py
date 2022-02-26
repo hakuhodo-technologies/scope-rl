@@ -2,8 +2,12 @@ from offlinegym.ope.ope import (
     OffPolicyEvaluation,
     CreateOPEInput,
 )
-from offlinegym.ope.estimators_discrete import (
+from offlinegym.ope.estimators_base import (
     BaseOffPolicyEstimator,
+    BaseCumulativeDistributionalOffPolicyEstimator,
+    BaseWorstCaseDistributionalOffPolicyEstimator,
+)
+from offlinegym.ope.estimators_discrete import (
     DiscreteDirectMethod,
     DiscreteTrajectoryWiseImportanceSampling,
     DiscreteStepWiseImportanceSampling,
@@ -25,6 +29,8 @@ from offlinegym.ope.estimators_continuous import (
 
 __all__ = [
     "BaseOffPolicyEstimator",
+    "BaseCumulativeDistributionalOffPolicyEstimator",
+    "BaseWorstCaseDistributionalOffPolicyEstimator",
     "OffPolicyEvaluation",
     "CreateOPEInput",
     "DiscreteDirectMethod",

@@ -1,11 +1,11 @@
 """Off-Policy Estimators for Discrete action."""
-from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
 from typing import Dict
 
 import numpy as np
 from sklearn.utils import check_scalar
 
+from offlinegym.ope.estimators_base import BaseOffPolicyEstimator
 from offlinegym.utils import (
     estimate_confidence_interval_by_bootstrap,
     estimate_confidence_interval_by_hoeffding,
@@ -13,26 +13,6 @@ from offlinegym.utils import (
     estimate_confidence_interval_by_t_test,
     check_array,
 )
-
-
-@dataclass
-class BaseOffPolicyEstimator(metaclass=ABCMeta):
-    """Base class for OPE estimators for discrete action."""
-
-    @abstractmethod
-    def _estimate_trajectory_value(self) -> np.ndarray:
-        """Estimate trajectory-wise reward."""
-        raise NotImplementedError
-
-    @abstractmethod
-    def estimate_policy_value(self) -> float:
-        """Estimate the policy value of evaluation policy."""
-        raise NotImplementedError
-
-    @abstractmethod
-    def estimate_interval(self) -> Dict[str, float]:
-        """Estimate confidence interval of policy value by nonparametric bootstrap procedure."""
-        raise NotImplementedError
 
 
 @dataclass
