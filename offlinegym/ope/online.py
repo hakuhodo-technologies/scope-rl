@@ -10,12 +10,11 @@ import seaborn as sns
 
 import gym
 from d3rlpy.algos import AlgoBase
-from sklearn.utils import check_scalar
+from sklearn.utils import check_scalar, check_random_state
 
 from offlinegym.policy.head import BaseHead, OnlineHead
 from offlinegym.utils import (
     estimate_confidence_interval_by_bootstrap,
-    check_confidence_interval_argument,
 )
 
 
@@ -63,11 +62,14 @@ def visualize_on_policy_policy_value(
         Name of the bar figure.
 
     """
-    check_confidence_interval_argument(
-        alpha=alpha,
-        n_bootstrap_samples=n_bootstrap_samples,
-        random_state=random_state,
+    check_scalar(alpha, name="alpha", target_type=float, min_val=0.0, max_val=1.0)
+    check_scalar(
+        n_bootstrap_samples, name="n_bootstrap_samples", target_type=int, min_val=1
     )
+    if random_state is None:
+        raise ValueError("random_state must be given")
+    check_random_state(random_state)
+
     if fig_dir is not None and not isinstance(fig_dir, Path):
         raise ValueError(f"fig_dir must be a Path, but {type(fig_dir)} is given")
     if fig_name is not None and not isinstance(fig_name, str):

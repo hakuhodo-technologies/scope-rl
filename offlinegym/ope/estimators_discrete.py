@@ -1,6 +1,6 @@
 """Off-Policy Estimators for Discrete action."""
 from dataclasses import dataclass
-from typing import Dict
+from typing import Dict, Optional
 
 import numpy as np
 from sklearn.utils import check_scalar
@@ -113,7 +113,7 @@ class DiscreteDirectMethod(BaseOffPolicyEstimator):
         alpha: float = 0.05,
         ci: str = "bootstrap",
         n_bootstrap_samples: int = 10000,
-        random_state: int = 12345,
+        random_state: Optional[int] = None,
         **kwargs,
     ) -> Dict[str, float]:
         """Estimate confidence interval of policy value by nonparametric bootstrap procedure.
@@ -342,7 +342,7 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         alpha: float = 0.05,
         ci: str = "bootstrap",
         n_bootstrap_samples: int = 10000,
-        random_state: int = 12345,
+        random_state: Optional[int] = None,
         **kwargs,
     ) -> Dict[str, float]:
         """Estimate confidence interval of policy value by nonparametric bootstrap procedure.
@@ -616,7 +616,7 @@ class DiscreteStepWiseImportanceSampling(BaseOffPolicyEstimator):
         alpha: float = 0.05,
         ci: str = "bootstrap",
         n_bootstrap_samples: int = 10000,
-        random_state: int = 12345,
+        random_state: Optional[int] = None,
         **kwargs,
     ) -> Dict[str, float]:
         """Estimate confidence interval of policy value by nonparametric bootstrap procedure.
@@ -988,7 +988,7 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
         alpha: float = 0.05,
         ci: str = "bootstrap",
         n_bootstrap_samples: int = 10000,
-        random_state: int = 12345,
+        random_state: Optional[int] = None,
         **kwargs,
     ) -> Dict[str, float]:
         """Estimate confidence interval of policy value by nonparametric bootstrap procedure.

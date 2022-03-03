@@ -1,12 +1,28 @@
 """Useful tools."""
 from collections import defaultdict
-from typing import DefaultDict, Dict, Union, Optional, Any
+from dataclasses import dataclass
+from typing import DefaultDict, Dict, Union, Optional, Any, Iterable
 
 import scipy
 import numpy as np
 from sklearn.utils import check_scalar, check_random_state
+import torch
+from torch import optim
 
 from offlinegym.types import LoggedDataset
+
+
+@dataclass
+class Optimizer:
+    base: optim
+    config: Dict[str, Any]
+
+    def __post_init__(self):
+        if issubclass(self.base, optim.SGD) and "lr" not in self.config.keys():
+            raise ValueError("when using optim.SGD, lr is required in config")
+
+    def instantiate(self, params: Iterable[torch.Tensor]):
+        return self.base(params, self.config)
 
 
 def estimate_confidence_interval_by_bootstrap(
@@ -37,10 +53,9 @@ def estimate_confidence_interval_by_bootstrap(
         Dictionary storing the estimated mean and upper-lower confidence bounds.
 
     """
-    check_bootstrap_confidence_interval_argument(
-        alpha=alpha,
-        n_bootstrap_samples=n_bootstrap_samples,
-        random_state=random_state,
+    check_scalar(alpha, name="alpha", target_type=float, min_val=0.0, max_val=1.0)
+    check_scalar(
+        n_bootstrap_samples, name="n_bootstrap_samples", target_type=int, min_val=1
     )
     if random_state is None:
         raise ValueError("random_state must be given")
@@ -243,31 +258,3 @@ def check_logged_dataset(logged_dataset: LoggedDataset):
     ]:
         if expected_key not in dataset_keys:
             raise RuntimeError(f"{expected_key} does not exist in logged_dataset")
-
-
-def check_bootstrap_confidence_interval_argument(
-    alpha: float,
-    n_bootstrap_samples: int,
-    random_state: Optional[int] = None,
-):
-    """Check confidence interval arguments.
-
-    Parameters
-    -------
-    alpha: float, default=0.05 (0, 1)
-        Significant level.
-
-    n_bootstrap_samples: int, default=10000 (> 0)
-        Number of resampling performed in the bootstrap procedure.
-
-    random_state: Optional[int], default=None (>= 0)
-        Random state.
-
-    """
-    check_scalar(alpha, name="alpha", target_type=float, min_val=0.0, max_val=1.0)
-    check_scalar(
-        n_bootstrap_samples, name="n_bootstrap_samples", target_type=int, min_val=1
-    )
-    if random_state is None:
-        raise ValueError("random_state must be given")
-    check_random_state(random_state)
