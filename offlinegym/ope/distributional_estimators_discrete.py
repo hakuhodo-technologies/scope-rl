@@ -1,20 +1,21 @@
 """Distributional Off-Policy Estimators for Discrete action."""
 from dataclasses import dataclass
-from multiprocessing.sharedctypes import Value
-from typing import Dict, Tuple, Optional
+from typing import Tuple, Optional
 
 import numpy as np
 from sklearn.utils import check_scalar
+import torch
+from torch import optim
 
 from offlinegym.ope.estimators_base import (
     BaseCumulativeDistributionalOffPolicyEstimator,
     BaseDistributionallyRobustOffPolicyEstimator,
 )
-from offlinegym.utils import check_array
+from offlinegym.utils import Optimizer, check_array
 
 
 @dataclass
-def DiscreteCumulativeDistributionalDirectMethod(
+class DiscreteCumulativeDistributionalDirectMethod(
     BaseCumulativeDistributionalOffPolicyEstimator,
 ):
     """Direct Method (DM) for estimating cumulative distribution function (CDF) in discrete OPE.
@@ -76,31 +77,31 @@ def DiscreteCumulativeDistributionalDirectMethod(
     def __post_init__(self):
         self.action_type = "discrete"
 
-        if not use_observations_as_reward_scale:
-            if r_min is None:
+        if not self.use_observations_as_reward_scale:
+            if self.r_min is None:
                 raise ValueError(
                     "r_min must be given when `use_observations_as_reward_scale == False`"
                 )
-            if r_max is None:
+            if self.r_max is None:
                 raise ValueError(
                     "r_max must be given when `use_observations_as_reward_scale == False`"
                 )
-            if n_partition is None:
+            if self.n_partition is None:
                 raise ValueError(
                     "r_min must be given when `use_observations_as_reward_scale == False`"
                 )
             check_scalar(
-                r_min,
+                self.r_min,
                 name="r_min",
                 target_type=float,
             )
             check_scalar(
-                r_max,
+                self.r_max,
                 name="r_max",
                 target_type=float,
             )
             check_scalar(
-                n_partition,
+                self.n_partition,
                 name="n_partition",
                 target_type=int,
                 min_val=1,
@@ -378,7 +379,7 @@ def DiscreteCumulativeDistributionalDirectMethod(
 
 
 @dataclass
-def DiscreteCumulativeDistributionalImportanceSampling(
+class DiscreteCumulativeDistributionalImportanceSampling(
     BaseCumulativeDistributionalOffPolicyEstimator,
 ):
     """Importance Sampling (IS) for estimating cumulative distribution function (CDF) in discrete OPE.
@@ -440,31 +441,31 @@ def DiscreteCumulativeDistributionalImportanceSampling(
     def __post_init__(self):
         self.action_type = "discrete"
 
-        if not use_observations_as_reward_scale:
-            if r_min is None:
+        if not self.use_observations_as_reward_scale:
+            if self.r_min is None:
                 raise ValueError(
                     "r_min must be given when `use_observations_as_reward_scale == False`."
                 )
-            if r_max is None:
+            if self.r_max is None:
                 raise ValueError(
                     "r_max must be given when `use_observations_as_reward_scale == False`."
                 )
-            if n_partition is None:
+            if self.n_partition is None:
                 raise ValueError(
                     "r_min must be given when `use_observations_as_reward_scale == False`."
                 )
             check_scalar(
-                r_min,
+                self.r_min,
                 name="r_min",
                 target_type=float,
             )
             check_scalar(
-                r_max,
+                self.r_max,
                 name="r_max",
                 target_type=float,
             )
             check_scalar(
-                n_partition,
+                self.n_partition,
                 name="n_partition",
                 target_type=int,
                 min_val=1,
@@ -807,7 +808,7 @@ def DiscreteCumulativeDistributionalImportanceSampling(
 
 
 @dataclass
-def DiscreteCumulativeDistributionalDoublyRobust(
+class DiscreteCumulativeDistributionalDoublyRobust(
     BaseCumulativeDistributionalOffPolicyEstimator,
 ):
     """Doubly Robust (DR) for estimating cumulative distribution function (CDF) in discrete OPE.
@@ -875,31 +876,31 @@ def DiscreteCumulativeDistributionalDoublyRobust(
     def __post_init__(self):
         self.action_type = "discrete"
 
-        if not use_observations_as_reward_scale:
-            if r_min is None:
+        if not self.use_observations_as_reward_scale:
+            if self.r_min is None:
                 raise ValueError(
                     "r_min must be given when `use_observations_as_reward_scale == False`."
                 )
-            if r_max is None:
+            if self.r_max is None:
                 raise ValueError(
                     "r_max must be given when `use_observations_as_reward_scale == False`."
                 )
-            if n_partition is None:
+            if self.n_partition is None:
                 raise ValueError(
                     "r_min must be given when `use_observations_as_reward_scale == False`."
                 )
             check_scalar(
-                r_min,
+                self.r_min,
                 name="r_min",
                 target_type=float,
             )
             check_scalar(
-                r_max,
+                self.r_max,
                 name="r_max",
                 target_type=float,
             )
             check_scalar(
-                n_partition,
+                self.n_partition,
                 name="n_partition",
                 target_type=int,
                 min_val=1,
@@ -1282,7 +1283,7 @@ def DiscreteCumulativeDistributionalDoublyRobust(
 
 
 @dataclass
-def DiscreteCumulativeDistributionalSelfNormalizedImportanceSampling(
+class DiscreteCumulativeDistributionalSelfNormalizedImportanceSampling(
     DiscreteCumulativeDistributionalImportanceSampling,
 ):
     """Self Normalized Importance Sampling (SNIS) for estimating cumulative distribution function (CDF) in discrete OPE.
@@ -1350,31 +1351,31 @@ def DiscreteCumulativeDistributionalSelfNormalizedImportanceSampling(
     def __post_init__(self):
         self.action_type = "discrete"
 
-        if not use_observations_as_reward_scale:
-            if r_min is None:
+        if not self.use_observations_as_reward_scale:
+            if self.r_min is None:
                 raise ValueError(
                     "r_min must be given when `use_observations_as_reward_scale == False`."
                 )
-            if r_max is None:
+            if self.r_max is None:
                 raise ValueError(
                     "r_max must be given when `use_observations_as_reward_scale == False`."
                 )
-            if n_partition is None:
+            if self.n_partition is None:
                 raise ValueError(
                     "r_min must be given when `use_observations_as_reward_scale == False`."
                 )
             check_scalar(
-                r_min,
+                self.r_min,
                 name="r_min",
                 target_type=float,
             )
             check_scalar(
-                r_max,
+                self.r_max,
                 name="r_max",
                 target_type=float,
             )
             check_scalar(
-                n_partition,
+                self.n_partition,
                 name="n_partition",
                 target_type=int,
                 min_val=1,
@@ -1475,7 +1476,7 @@ def DiscreteCumulativeDistributionalSelfNormalizedImportanceSampling(
         sort_idxes = trajectory_wise_reward.argsort()
         sorted_importance_weight = trajectory_wise_importance_weight[sort_idxes]
         cumulative_density = np.clip(
-            sorted_importance_weight.cumsum() / trajectory_wise_importance_weight, 0, 1
+            sorted_importance_weight.cumsum() / weight_sum, 0, 1
         )
 
         histogram = np.histgram(
@@ -1486,7 +1487,7 @@ def DiscreteCumulativeDistributionalSelfNormalizedImportanceSampling(
 
 
 @dataclass
-def DiscreteCumulativeDistributionalSelfNormalizedDoublyRobust(
+class DiscreteCumulativeDistributionalSelfNormalizedDoublyRobust(
     DiscreteCumulativeDistributionalDoublyRobust,
 ):
     """Self Normalized Doubly Robust (SNDR) for estimating cumulative distribution function (CDF) in discrete OPE.
@@ -1554,31 +1555,31 @@ def DiscreteCumulativeDistributionalSelfNormalizedDoublyRobust(
     def __post_init__(self):
         self.action_type = "discrete"
 
-        if not use_observations_as_reward_scale:
-            if r_min is None:
+        if not self.use_observations_as_reward_scale:
+            if self.r_min is None:
                 raise ValueError(
                     "r_min must be given when `use_observations_as_reward_scale == False`."
                 )
-            if r_max is None:
+            if self.r_max is None:
                 raise ValueError(
                     "r_max must be given when `use_observations_as_reward_scale == False`."
                 )
-            if n_partition is None:
+            if self.n_partition is None:
                 raise ValueError(
                     "r_min must be given when `use_observations_as_reward_scale == False`."
                 )
             check_scalar(
-                r_min,
+                self.r_min,
                 name="r_min",
                 target_type=float,
             )
             check_scalar(
-                r_max,
+                self.r_max,
                 name="r_max",
                 target_type=float,
             )
             check_scalar(
-                n_partition,
+                self.n_partition,
                 name="n_partition",
                 target_type=int,
                 min_val=1,
@@ -1703,3 +1704,642 @@ def DiscreteCumulativeDistributionalSelfNormalizedDoublyRobust(
 
         cumulative_density = weighted_residual + histogram_baseline
         return np.clip(np.maximum.accumulate(cumulative_density), 0, 1), reward_scale
+
+
+@dataclass
+class DiscreteDistributionallyRobustImportanceSampling(
+    BaseDistributionallyRobustOffPolicyEstimator
+):
+    """Importance Sampling (IS) for estimating the worst case performance in a distributionally robust manner.
+
+     Note
+    -------
+    IS estimates the worst case policy value using importance sampling techniques as follows.
+
+    .. math::
+
+        aaa
+
+    where
+
+    Parameters
+    -------
+    optimizer: Optimizer, default=Optimizer(SGD, config={"lr": 0.001})
+        Optimizer for tuning alpha.
+
+    initial_alpha: float, default=1.0 (> 0)
+        Initial temperature parameter of the exponential function.
+
+    max_gradient_steps: int, default=100 (> 0)
+        Maximum number of gradient steps in turning alpha.
+
+    delta: float, default=0.1 (> 0)
+        Allowance of the distributional shift.
+
+    estimator_name: str, default="dr_is"
+        Name of the estimator.
+
+    References
+    -------
+    Nathan Kallus, Xiaojie Mao, Kaiwen Wang, and Zhengyuan Zhou.
+    "Doubly Robust Distributionally Robust Off-Policy Evaluation and Learning.", 2022.
+
+    Nian Si, Fan Zhang, Zhengyuan Zhou, and Jose Blanchet.
+    "Distributional Robust Batch Contextual Bandits.", 2020.
+
+    Alex Strehl, John Langford, Sham Kakade, and Lihong Li.
+    "Learning from Logged Implicit Exploration Data.", 2010.
+
+    Doina Precup, Richard S. Sutton, and Satinder P. Singh.
+    "Eligibility Traces for Off-Policy Policy Evaluation.", 2000.
+
+    """
+
+    optimizer: Optimizer = Optimizer(optim.SGD, config={"lr": 0.001})
+    initial_alpha: float = 1.0
+    max_gradient_steps: int = 100
+    delta: float = 0.05
+    estimator_name: str = "dr_is"
+
+    def __post_init__(self):
+        self.action_type = "discrete"
+
+        check_scalar(self.initial_alpha, name="initial_alpha", type=float, min_val=0.0)
+        check_scalar(
+            self.max_gradient_steps, name="max_gradient_steps", type=int, min_val=1
+        )
+        check_scalar(self.delta, name="delta", type=float, min_val=0.0)
+
+    def estimate_worst_case_policy_value(
+        self,
+        step_per_episode: int,
+        reward: np.ndarray,
+        behavior_policy_trajectory_wise_pscore: np.ndarray,
+        evaluation_policy_trajectory_wise_pscore: np.ndarray,
+        gamma: float = 1.0,
+        **kwargs,
+    ) -> float:
+        """Estimate the worst case policy value in a distributionally robust manner.
+
+        Parameters
+        -------
+        step_per_episode: int (> 0)
+            Number of timesteps in an episode.
+
+        reward: NDArray, shape (n_episodes * step_per_episode, )
+            Reward observation.
+
+        behavior_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+            Trajectory-wise action choice probability of behavior policy,
+            i.e., :math:`\\prod_{t=0}^T \\pi_b(a_t \\mid s_t)`
+
+        evaluation_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+            Trajectory-wise action choice probability of evaluation policy,
+            i.e., :math:`\\prod_{t=0}^T \\pi_e(a_t \\mid s_t)`
+
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
+
+        Return
+        -------
+        estimated_distributionally_robust_worst_case_policy_value: float
+            Estimated worst case objective.
+
+        """
+        check_scalar(step_per_episode, name="step_per_episode", type=int, min_val=1)
+        check_scalar(gamma, name="gamma", type=float, min_val=0.0, max_val=1.0)
+        check_array(reward, name="reward", expected_dim=1)
+        check_array(
+            behavior_policy_trajectory_wise_pscore,
+            name="behavior_policy_trajectory_wise_pscore",
+            expected_dim=1,
+            min_val=0.0,
+            max_val=1.0,
+        )
+        check_array(
+            evaluation_policy_trajectory_wise_pscore,
+            name="evaluation_policy_trajectory_wise_pscore",
+            expected_dim=1,
+            min_val=0.0,
+            max_val=1.0,
+        )
+        if reward.shape[0] % step_per_episode:
+            raise ValueError(
+                "Expected `reward.shape[0] \\% step_per_episode == 0`, but found False"
+            )
+        if behavior_policy_trajectory_wise_pscore.shape[0] % step_per_episode:
+            raise ValueError(
+                "Expected `behavior_policy_trajectory_wise_pscore.shape[0] \\% step_per_episode == 0`, but found False"
+            )
+        if evaluation_policy_trajectory_wise_pscore.shape[0] % step_per_episode:
+            raise ValueError(
+                "Expected `evaluation_policy_trajectory_wise_pscore.shape[0] \\% step_per_episode == 0`, but found False"
+            )
+        if not (
+            reward.shape[0]
+            == behavior_policy_trajectory_wise_pscore.shape[0]
+            == evaluation_policy_trajectory_wise_pscore.shape[0]
+        ):
+            raise ValueError(
+                "Expected `reward.shape[0] == behavior_policy_trajectory_wise_pscore.shape[0] == evaluation_policy_trajectory_wise_pscore.shape[0]`, but found False"
+            )
+        (
+            trajectory_wise_reward,
+            trajectory_wise_importance_weight,
+        ) = self._aggregate_trajectory_wise_statistics_discrete(
+            step_per_episode=step_per_episode,
+            reward=reward,
+            behavior_policy_trajectory_wise_pscore=behavior_policy_trajectory_wise_pscore,
+            evaluation_policy_trajectory_wise_pscore=evaluation_policy_trajectory_wise_pscore,
+            gamma=gamma,
+        )
+
+        trajectory_wise_reward = torch.tensor(
+            trajectory_wise_reward, dtype=torch.float, require_grad=False
+        )
+        trajectory_wise_importance_weight = torch.tensor(
+            trajectory_wise_reward, dtype=torch.float, require_grad=False
+        )
+
+        alpha_prior = self.initial_alpha
+        alpha = torch.tensor([self.initial_alpha], dtype=torch.float, require_grad=True)
+        optimizer = self.optimizer.instantiate([alpha])
+
+        for _ in range(self.max_gradient_steps):
+            estimated_exponential_policy_value = (
+                trajectory_wise_importance_weight
+                * torch.exp(-trajectory_wise_reward / alpha)
+            ).mean()
+            objective = -alpha * (
+                torch.log(estimated_exponential_policy_value) + self.delta
+            )
+            loss = -objective
+
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+            if np.abs(alpha.item() - alpha_prior) < 0.01 * alpha_prior:
+                break
+            else:
+                alpha_prior = alpha.item()
+
+        return objective.item()
+
+
+@dataclass
+class DiscreteDistributionallyRobustSelfNormalizedImportanceSampling(
+    BaseDistributionallyRobustOffPolicyEstimator
+):
+    """Self Normalized Importance Sampling (SNIS) for estimating the worst case performance in a distributionally robust manner.
+
+     Note
+    -------
+    SNIS estimates the worst case policy value using importance sampling techniques as follows.
+
+    .. math::
+
+        aaa
+
+    where
+
+    Parameters
+    -------
+    optimizer: Optimizer, default=Optimizer(SGD, config={"lr": 0.001})
+        Optimizer for tuning alpha.
+
+    initial_alpha: float, default=1.0 (> 0)
+        Initial temperature parameter of the exponential function.
+
+    max_gradient_steps: int, default=100 (> 0)
+        Maximum number of gradient steps in turning alpha.
+
+    delta: float, default=0.1 (> 0)
+        Allowance of the distributional shift.
+
+    estimator_name: str, default="dr_snis"
+        Name of the estimator.
+
+    References
+    -------
+    Nathan Kallus, Xiaojie Mao, Kaiwen Wang, and Zhengyuan Zhou.
+    "Doubly Robust Distributionally Robust Off-Policy Evaluation and Learning.", 2022.
+
+    Nian Si, Fan Zhang, Zhengyuan Zhou, and Jose Blanchet.
+    "Distributional Robust Batch Contextual Bandits.", 2020.
+
+    Alex Strehl, John Langford, Sham Kakade, and Lihong Li.
+    "Learning from Logged Implicit Exploration Data.", 2010.
+
+    Doina Precup, Richard S. Sutton, and Satinder P. Singh.
+    "Eligibility Traces for Off-Policy Policy Evaluation.", 2000.
+
+    """
+
+    optimizer: Optimizer = Optimizer(optim.SGD, config={"lr": 0.001})
+    initial_alpha: float = 1.0
+    max_gradient_steps: int = 100
+    delta: float = 0.05
+    estimator_name: str = "dr_snis"
+
+    def __post_init__(self):
+        self.action_type = "discrete"
+
+        check_scalar(self.initial_alpha, name="initial_alpha", type=float, min_val=0.0)
+        check_scalar(
+            self.max_gradient_steps, name="max_gradient_steps", type=int, min_val=1
+        )
+        check_scalar(self.delta, name="delta", type=float, min_val=0.0)
+
+    def estimate_worst_case_policy_value(
+        self,
+        step_per_episode: int,
+        reward: np.ndarray,
+        behavior_policy_trajectory_wise_pscore: np.ndarray,
+        evaluation_policy_trajectory_wise_pscore: np.ndarray,
+        gamma: float = 1.0,
+        **kwargs,
+    ) -> float:
+        """Estimate the worst case policy value in a distributionally robust manner.
+
+        Parameters
+        -------
+        step_per_episode: int (> 0)
+            Number of timesteps in an episode.
+
+        reward: NDArray, shape (n_episodes * step_per_episode, )
+            Reward observation.
+
+        behavior_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+            Trajectory-wise action choice probability of behavior policy,
+            i.e., :math:`\\prod_{t=0}^T \\pi_b(a_t \\mid s_t)`
+
+        evaluation_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+            Trajectory-wise action choice probability of evaluation policy,
+            i.e., :math:`\\prod_{t=0}^T \\pi_e(a_t \\mid s_t)`
+
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
+
+        Return
+        -------
+        estimated_distributionally_robust_worst_case_policy_value: float
+            Estimated worst case objective.
+
+        """
+        check_scalar(step_per_episode, name="step_per_episode", type=int, min_val=1)
+        check_scalar(gamma, name="gamma", type=float, min_val=0.0, max_val=1.0)
+        check_array(reward, name="reward", expected_dim=1)
+        check_array(
+            behavior_policy_trajectory_wise_pscore,
+            name="behavior_policy_trajectory_wise_pscore",
+            expected_dim=1,
+            min_val=0.0,
+            max_val=1.0,
+        )
+        check_array(
+            evaluation_policy_trajectory_wise_pscore,
+            name="evaluation_policy_trajectory_wise_pscore",
+            expected_dim=1,
+            min_val=0.0,
+            max_val=1.0,
+        )
+        if reward.shape[0] % step_per_episode:
+            raise ValueError(
+                "Expected `reward.shape[0] \\% step_per_episode == 0`, but found False"
+            )
+        if behavior_policy_trajectory_wise_pscore.shape[0] % step_per_episode:
+            raise ValueError(
+                "Expected `behavior_policy_trajectory_wise_pscore.shape[0] \\% step_per_episode == 0`, but found False"
+            )
+        if evaluation_policy_trajectory_wise_pscore.shape[0] % step_per_episode:
+            raise ValueError(
+                "Expected `evaluation_policy_trajectory_wise_pscore.shape[0] \\% step_per_episode == 0`, but found False"
+            )
+        if not (
+            reward.shape[0]
+            == behavior_policy_trajectory_wise_pscore.shape[0]
+            == evaluation_policy_trajectory_wise_pscore.shape[0]
+        ):
+            raise ValueError(
+                "Expected `reward.shape[0] == behavior_policy_trajectory_wise_pscore.shape[0] == evaluation_policy_trajectory_wise_pscore.shape[0]`, but found False"
+            )
+        (
+            trajectory_wise_reward,
+            trajectory_wise_importance_weight,
+        ) = self._aggregate_trajectory_wise_statistics_discrete(
+            step_per_episode=step_per_episode,
+            reward=reward,
+            behavior_policy_trajectory_wise_pscore=behavior_policy_trajectory_wise_pscore,
+            evaluation_policy_trajectory_wise_pscore=evaluation_policy_trajectory_wise_pscore,
+            gamma=gamma,
+        )
+
+        weight_sum = trajectory_wise_reward.sum()
+        trajectory_wise_reward = torch.tensor(
+            trajectory_wise_reward, dtype=torch.float, require_grad=False
+        )
+        trajectory_wise_importance_weight = torch.tensor(
+            trajectory_wise_reward, dtype=torch.float, require_grad=False
+        )
+
+        alpha_prior = self.initial_alpha
+        alpha = torch.tensor([self.initial_alpha], dtype=torch.float, require_grad=True)
+        optimizer = self.optimizer.instantiate([alpha])
+
+        for _ in range(self.max_gradient_steps):
+            estimated_exponential_policy_value = (
+                trajectory_wise_importance_weight
+                * torch.exp(-trajectory_wise_reward / alpha)
+            ).sum() / weight_sum
+            objective = -alpha * (
+                torch.log(estimated_exponential_policy_value) + self.delta
+            )
+            loss = -objective
+
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+            if np.abs(alpha.item() - alpha_prior) < 0.01 * alpha_prior:
+                break
+            else:
+                alpha_prior = alpha.item()
+
+        return objective.item()
+
+
+@dataclass
+class DiscreteDistributionallyRobustDoublyRobust(
+    BaseDistributionallyRobustOffPolicyEstimator
+):
+    """Doubly Robust (DR) for estimating the worst case performance in a distributionally robust manner.
+
+     Note
+    -------
+    DR estimates the worst case policy value using importance sampling techniques as follows.
+
+    .. math::
+
+        aaa
+
+    where
+
+    Parameters
+    -------
+    optimizer: Optimizer, default=Optimizer(SGD, config={"lr": 0.001})
+        Optimizer for tuning alpha.
+
+    initial_alpha: float, default=1.0 (> 0)
+        Initial temperature parameter of the exponential function.
+
+    max_gradient_steps: int, default=100 (> 0)
+        Maximum number of gradient steps in turning alpha.
+
+    delta: float, default=0.1 (> 0)
+        Allowance of the distributional shift.
+
+    n_folds: int, default=3
+        Number of folds in cross-fitting.
+
+    estimator_name: str, default="dr_dr"
+        Name of the estimator.
+
+    References
+    -------
+    Nathan Kallus, Xiaojie Mao, Kaiwen Wang, and Zhengyuan Zhou.
+    "Doubly Robust Distributionally Robust Off-Policy Evaluation and Learning.", 2022.
+
+    Nian Si, Fan Zhang, Zhengyuan Zhou, and Jose Blanchet.
+    "Distributional Robust Batch Contextual Bandits.", 2020.
+
+    Nathan Kallus, Xiaojie Mao, Masatoshi Uehara.
+    "Localized Debiased Machine Learning: Efficient Inference on Quantile Treatment Effects and Beyond.", 2019.
+
+    Alex Strehl, John Langford, Sham Kakade, and Lihong Li.
+    "Learning from Logged Implicit Exploration Data.", 2010.
+
+    Doina Precup, Richard S. Sutton, and Satinder P. Singh.
+    "Eligibility Traces for Off-Policy Policy Evaluation.", 2000.
+
+    """
+
+    optimizer: Optimizer = Optimizer(optim.SGD, config={"lr": 0.001})
+    initial_alpha: float = 1.0
+    max_gradient_steps: int = 100
+    delta: float = 0.05
+    n_folds: int = 3
+    estimator_name: str = "dr_is"
+
+    def __post_init__(self):
+        self.action_type = "discrete"
+
+        check_scalar(self.initial_alpha, name="initial_alpha", type=float, min_val=0.0)
+        check_scalar(
+            self.max_gradient_steps, name="max_gradient_steps", type=int, min_val=1
+        )
+        check_scalar(self.delta, name="delta", type=float, min_val=0.0)
+
+    def _calculate_exponential_policy_value_given_alpha(
+        self,
+        trajectory_wise_reward: np.ndarray,
+        trajectory_wise_importance_weight: np.ndarray,
+        trajectory_wise_reward_prediction: np.ndarray,
+        alpha: float,
+    ):
+        """Calculate exponential policy value given alpha.
+
+        Parameters
+        -------
+        trajectory_wise_reward: NDArray, shape (n_episodes, )
+            Trajectory wise reward observed by the behavior policy.
+
+        trajectory_wise_importance_weight: NDArray, shape (n_episodes, )
+            Trajectory wise importance weight.
+
+        alpha: float
+            Temperature parameter of the exponential function.
+
+        moment: int
+            If 0 is given, return :math:`W_0`. If 1 is given, return :math:`W_1`.
+            See Kallus et al. (2022) for the details.
+
+        Return
+        -------
+        estimated_worst_case_policy_value: float
+            Estimated worst case policy value.
+
+        """
+
+        return -alpha * (np.log(estimated_exponential_policy_value) + self.delta)
+
+    def _calculate_alpha_prior(
+        self,
+        trajectory_wise_reward: np.ndarray,
+        trajectory_wise_importance_weight: np.ndarray,
+    ):
+        """Use SNIS for finding prior value of alpha for each fold.
+
+        Parameters
+        -------
+        trajectory_wise_reward: NDArray, shape (n_episodes, )
+            Trajectory wise reward observed by the behavior policy.
+
+        trajectory_wise_importance_weight: NDArray, shape (n_episodes, )
+            Trajectory wise importance weight.
+
+        Return
+        -------
+        alpha_prior: float
+            Prior value of the temperature parameter of the exponential function..
+
+        """
+        weight_sum = trajectory_wise_reward.sum()
+        trajectory_wise_reward = torch.tensor(
+            trajectory_wise_reward, dtype=torch.float, require_grad=False
+        )
+        trajectory_wise_importance_weight = torch.tensor(
+            trajectory_wise_reward, dtype=torch.float, require_grad=False
+        )
+
+        alpha_prior = self.initial_alpha
+        alpha = torch.tensor([self.initial_alpha], dtype=torch.float, require_grad=True)
+        optimizer = self.optimizer.instantiate([alpha])
+
+        for _ in range(self.max_gradient_steps):
+            estimated_exponential_policy_value = (
+                trajectory_wise_importance_weight
+                * torch.exp(-trajectory_wise_reward / alpha)
+            ).sum() / weight_sum
+            objective = -alpha * (
+                torch.log(estimated_exponential_policy_value) + self.delta
+            )
+            loss = -objective
+
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+            if np.abs(alpha.item() - alpha_prior) < 0.01 * alpha_prior:
+                break
+            else:
+                alpha_prior = alpha.item()
+
+        return alpha.item()
+
+    def estimate_worst_case_policy_value(
+        self,
+        step_per_episode: int,
+        reward: np.ndarray,
+        behavior_policy_trajectory_wise_pscore: np.ndarray,
+        evaluation_policy_trajectory_wise_pscore: np.ndarray,
+        gamma: float = 1.0,
+        **kwargs,
+    ) -> float:
+        """Estimate the worst case policy value in a distributionally robust manner.
+
+        Parameters
+        -------
+        step_per_episode: int (> 0)
+            Number of timesteps in an episode.
+
+        reward: NDArray, shape (n_episodes * step_per_episode, )
+            Reward observation.
+
+        behavior_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+            Trajectory-wise action choice probability of behavior policy,
+            i.e., :math:`\\prod_{t=0}^T \\pi_b(a_t \\mid s_t)`
+
+        evaluation_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+            Trajectory-wise action choice probability of evaluation policy,
+            i.e., :math:`\\prod_{t=0}^T \\pi_e(a_t \\mid s_t)`
+
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
+
+        Return
+        -------
+        estimated_distributionally_robust_worst_case_policy_value: float
+            Estimated worst case objective.
+
+        """
+        check_scalar(step_per_episode, name="step_per_episode", type=int, min_val=1)
+        check_scalar(gamma, name="gamma", type=float, min_val=0.0, max_val=1.0)
+        check_array(reward, name="reward", expected_dim=1)
+        check_array(
+            behavior_policy_trajectory_wise_pscore,
+            name="behavior_policy_trajectory_wise_pscore",
+            expected_dim=1,
+            min_val=0.0,
+            max_val=1.0,
+        )
+        check_array(
+            evaluation_policy_trajectory_wise_pscore,
+            name="evaluation_policy_trajectory_wise_pscore",
+            expected_dim=1,
+            min_val=0.0,
+            max_val=1.0,
+        )
+        if reward.shape[0] % step_per_episode:
+            raise ValueError(
+                "Expected `reward.shape[0] \\% step_per_episode == 0`, but found False"
+            )
+        if behavior_policy_trajectory_wise_pscore.shape[0] % step_per_episode:
+            raise ValueError(
+                "Expected `behavior_policy_trajectory_wise_pscore.shape[0] \\% step_per_episode == 0`, but found False"
+            )
+        if evaluation_policy_trajectory_wise_pscore.shape[0] % step_per_episode:
+            raise ValueError(
+                "Expected `evaluation_policy_trajectory_wise_pscore.shape[0] \\% step_per_episode == 0`, but found False"
+            )
+        if not (
+            reward.shape[0]
+            == behavior_policy_trajectory_wise_pscore.shape[0]
+            == evaluation_policy_trajectory_wise_pscore.shape[0]
+        ):
+            raise ValueError(
+                "Expected `reward.shape[0] == behavior_policy_trajectory_wise_pscore.shape[0] == evaluation_policy_trajectory_wise_pscore.shape[0]`, but found False"
+            )
+        (
+            trajectory_wise_reward,
+            trajectory_wise_importance_weight,
+        ) = self._aggregate_trajectory_wise_statistics_discrete(
+            step_per_episode=step_per_episode,
+            reward=reward,
+            behavior_policy_trajectory_wise_pscore=behavior_policy_trajectory_wise_pscore,
+            evaluation_policy_trajectory_wise_pscore=evaluation_policy_trajectory_wise_pscore,
+            gamma=gamma,
+        )
+
+        weight_sum = trajectory_wise_reward.sum()
+        trajectory_wise_reward = torch.tensor(
+            trajectory_wise_reward, dtype=torch.float, require_grad=False
+        )
+        trajectory_wise_importance_weight = torch.tensor(
+            trajectory_wise_reward, dtype=torch.float, require_grad=False
+        )
+
+        alpha_prior = self.initial_alpha
+        alpha = torch.tensor([self.initial_alpha], dtype=torch.float, require_grad=True)
+        optimizer = self.optimizer.instantiate([alpha])
+
+        for _ in range(self.max_gradient_steps):
+            estimated_exponential_policy_value = (
+                trajectory_wise_importance_weight
+                * torch.exp(-trajectory_wise_reward / alpha)
+            ).sum() / weight_sum
+            objective = -alpha * (
+                torch.log(estimated_exponential_policy_value) + self.delta
+            )
+            loss = -objective
+
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+            if np.abs(alpha.item() - alpha_prior) < 0.01 * alpha_prior:
+                break
+            else:
+                alpha_prior = alpha.item()
+
+        return objective.item()
