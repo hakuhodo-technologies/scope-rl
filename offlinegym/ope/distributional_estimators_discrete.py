@@ -8,7 +8,7 @@ from sklearn.utils import check_scalar
 
 from offlinegym.ope.estimators_base import (
     BaseCumulativeDistributionalOffPolicyEstimator,
-    BaseWorstCaseDistributionalOffPolicyEstimator,
+    BaseDistributionallyRobustOffPolicyEstimator,
 )
 from offlinegym.utils import check_array
 
@@ -112,19 +112,27 @@ def DiscreteCumulativeDistributionalDirectMethod(
 
     def estimate_cumulative_distribution_function(
         self,
-        trajectory_wise_reward,
-        initial_state_value_prediction,
+        step_per_episode: int,
+        reward: np.ndarray,
+        initial_state_value_prediction: np.ndarray,
+        gamma: float = 1.0,
         **kwargs,
     ) -> Tuple[np.ndarray]:
         """Estimate cumulative distribution function.
 
         Parameters
         -------
-        trajectory_wise_reward: NDArray, shape (n_episodes, )
-            Trajectory wise reward observed by the behavior policy.
+        step_per_episode: int (> 0)
+            Number of timesteps in an episode.
+
+        reward: NDArray, shape (n_episodes * step_per_episode, )
+            Reward observation.
 
         initial_state_value_prediction: NDArray, shape (n_episodes, )
             Estimated initial state value.
+
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
 
         Return
         -------
@@ -132,21 +140,33 @@ def DiscreteCumulativeDistributionalDirectMethod(
             Estimated cumulative distribution function for the pre-defined reward scale.
 
         """
-        check_array(
-            trajectory_wise_reward,
-            name="trajectory_wise_reward",
-            expected_dim=1,
-        )
+        check_scalar(step_per_episode, name="step_per_episode", type=int, min_val=1)
+        check_scalar(gamma, name="gamma", type=float, min_val=0.0, max_val=1.0)
+        check_array(reward, name="reward", expected_dim=1)
         check_array(
             initial_state_value_prediction,
             name="initial_state_value_prediction",
             expected_dim=1,
         )
-        if trajectory_wise_reward.shape == initial_state_value_prediction.shape:
+        if reward.shape[0] % step_per_episode:
             raise ValueError(
-                "trajectory_wise_reward and initial_state_value_prediction must have the same length"
+                "Expected `reward.shape[0] \\% step_per_episode == 0`, but found False"
+            )
+        if reward.shape[0] // step_per_episode != initial_state_value_prediction:
+            raise ValueError(
+                "Expected `reward.shape[0] // step_per_episode == initial_state_value_prediction`, but found False"
             )
 
+        (
+            trajectory_wise_reward,
+            trajectory_wise_importance_weight,
+            initial_state_value_prediction,
+        ) = self._aggregate_trajectory_wise_statistics_discrete(
+            step_per_episode=step_per_episode,
+            reward=reward,
+            initial_state_value_prediction=initial_state_value_prediction,
+            gamma=gamma,
+        )
         if self.use_observations_as_reward_scale:
             reward_scale = np.sort(np.unique(trajectory_wise_reward))
         else:
@@ -159,19 +179,27 @@ def DiscreteCumulativeDistributionalDirectMethod(
 
     def estimate_mean(
         self,
-        trajectory_wise_reward,
-        initial_state_value_prediction,
+        step_per_episode: int,
+        reward: np.ndarray,
+        initial_state_value_prediction: np.ndarray,
+        gamma: float = 1.0,
         **kwargs,
     ) -> float:
         """Estimate mean.
 
         Parameters
         -------
-        trajectory_wise_reward: NDArray, shape (n_episodes, )
-            Trajectory wise reward observed by the behavior policy.
+        step_per_episode: int (> 0)
+            Number of timesteps in an episode.
+
+        reward: NDArray, shape (n_episodes * step_per_episode, )
+            Reward observation.
 
         initial_state_value_prediction: NDArray, shape (n_episodes, )
             Estimated initial state value.
+
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
 
         Return
         -------
@@ -183,26 +211,36 @@ def DiscreteCumulativeDistributionalDirectMethod(
             cumulative_density,
             reward_scale,
         ) = self.estimate_cumulative_distribution_function(
-            trajectory_wise_reward=trajectory_wise_reward,
+            step_per_episode=step_per_episode,
+            reward=reward,
             initial_state_value_prediction=initial_state_value_prediction,
+            gamma=gamma,
         )
         return (np.diff(cumulative_density) * reward_scale[1:]).sum()
 
     def estimate_variance(
         self,
-        trajectory_wise_reward,
-        initial_state_value_prediction,
+        step_per_episode: int,
+        reward: np.ndarray,
+        initial_state_value_prediction: np.ndarray,
+        gamma: float = 1.0,
         **kwargs,
     ) -> float:
         """Estimate variance.
 
         Parameters
         -------
-        trajectory_wise_reward: NDArray, shape (n_episodes, )
-            Trajectory wise reward observed by the behavior policy.
+        step_per_episode: int (> 0)
+            Number of timesteps in an episode.
+
+        reward: NDArray, shape (n_episodes * step_per_episode, )
+            Reward observation.
 
         initial_state_value_prediction: NDArray, shape (n_episodes, )
             Estimated initial state value.
+
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
 
         Return
         -------
@@ -214,31 +252,43 @@ def DiscreteCumulativeDistributionalDirectMethod(
             cumulative_density,
             reward_scale,
         ) = self.estimate_cumulative_distribution_function(
-            trajectory_wise_reward=trajectory_wise_reward,
+            step_per_episode=step_per_episode,
+            reward=reward,
             initial_state_value_prediction=initial_state_value_prediction,
+            gamma=gamma,
         )
         mean = self.estimate_mean(
-            trajectory_wise_reward=trajectory_wise_reward,
+            step_per_episode=step_per_episode,
+            reward=reward,
             initial_state_value_prediction=initial_state_value_prediction,
+            gamma=gamma,
         )
         return (np.diff(cumulative_density) * (reward_scale[1:] - mean) ** 2).sum()
 
     def estimate_conditional_value_at_risk(
         self,
-        trajectory_wise_reward,
-        initial_state_value_prediction,
-        alpha,
+        step_per_episode: int,
+        reward: np.ndarray,
+        initial_state_value_prediction: np.ndarray,
+        gamma: float = 1.0,
+        alpha: float = 0.05,
         **kwargs,
     ):
         """Estimate conditional value at risk.
 
         Parameters
         -------
-        trajectory_wise_reward: NDArray, shape (n_episodes, )
-            Trajectory wise reward observed by the behavior policy.
+        step_per_episode: int (> 0)
+            Number of timesteps in an episode.
+
+        reward: NDArray, shape (n_episodes * step_per_episode, )
+            Reward observation.
 
         initial_state_value_prediction: NDArray, shape (n_episodes, )
             Estimated initial state value.
+
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
 
         alpha: float, default=0.05
             Proportion of the sided region.
@@ -254,28 +304,38 @@ def DiscreteCumulativeDistributionalDirectMethod(
             cumulative_density,
             reward_scale,
         ) = self.estimate_cumulative_distribution_function(
-            trajectory_wise_reward=trajectory_wise_reward,
+            step_per_episode=step_per_episode,
+            reward=reward,
             initial_state_value_prediction=initial_state_value_prediction,
+            gamma=gamma,
         )
         lower_idx = np.argmin(cumulative_density > alpha)
         return (np.diff(cumulative_density) * reward_scale[1:])[: lower_idx + 1].sum()
 
     def estimate_interquartile_range(
         self,
-        trajectory_wise_reward,
-        initial_state_value_prediction,
-        alpha,
+        step_per_episode: int,
+        reward: np.ndarray,
+        initial_state_value_prediction: np.ndarray,
+        gamma: float = 1.0,
+        alpha: float = 0.05,
         **kwargs,
     ) -> float:
         """Estimate interquartile range.
 
         Parameters
         -------
-        trajectory_wise_reward: NDArray, shape (n_episodes, )
-            Trajectory wise reward observed by the behavior policy.
+        step_per_episode: int (> 0)
+            Number of timesteps in an episode.
+
+        reward: NDArray, shape (n_episodes * step_per_episode, )
+            Reward observation.
 
         initial_state_value_prediction: NDArray, shape (n_episodes, )
             Estimated initial state value.
+
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
 
         alpha: float, default=0.05
             Proportion of the sided region.
@@ -291,12 +351,16 @@ def DiscreteCumulativeDistributionalDirectMethod(
             cumulative_density,
             reward_scale,
         ) = self.estimate_cumulative_distribution_function(
-            trajectory_wise_reward=trajectory_wise_reward,
+            step_per_episode=step_per_episode,
+            reward=reward,
             initial_state_value_prediction=initial_state_value_prediction,
+            gamma=gamma,
         )
         mean = self.estimate_mean(
-            trajectory_wise_reward=trajectory_wise_reward,
+            step_per_episode=step_per_episode,
+            reward=reward,
             initial_state_value_prediction=initial_state_value_prediction,
+            gamma=gamma,
         )
         lower_idx = np.argmin(cumulative_density > alpha)
         upper_idx = np.argmin(cumulative_density > 1 - alpha)
@@ -412,19 +476,33 @@ def DiscreteCumulativeDistributionalImportanceSampling(
 
     def estimate_cumulative_distribution_function(
         self,
-        trajectory_wise_reward,
-        trajectory_wise_importance_weight,
+        step_per_episode: int,
+        reward: np.ndarray,
+        behavior_policy_trajectory_wise_pscore: np.ndarray,
+        evaluation_policy_trajectory_wise_pscore: np.ndarray,
+        gamma: float = 1.0,
         **kwargs,
     ) -> Tuple[np.ndarray]:
         """Estimate cumulative distribution function.
 
         Parameters
         -------
-        trajectory_wise_reward: NDArray, shape (n_episodes, )
-            Trajectory wise reward observed by the behavior policy.
+        step_per_episode: int (> 0)
+            Number of timesteps in an episode.
 
-        trajectory_wise_importance_weight: NDArray, shape (n_episodes, )
-            Trajectory wise importance weight.
+        reward: NDArray, shape (n_episodes * step_per_episode, )
+            Reward observation.
+
+        behavior_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+            Trajectory-wise action choice probability of behavior policy,
+            i.e., :math:`\\prod_{t=0}^T \\pi_b(a_t \\mid s_t)`
+
+        evaluation_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+            Trajectory-wise action choice probability of evaluation policy,
+            i.e., :math:`\\prod_{t=0}^T \\pi_e(a_t \\mid s_t)`
+
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
 
         Return
         -------
@@ -432,20 +510,54 @@ def DiscreteCumulativeDistributionalImportanceSampling(
             Estimated cumulative distribution function for the pre-defined reward scale.
 
         """
+        check_scalar(step_per_episode, name="step_per_episode", type=int, min_val=1)
+        check_scalar(gamma, name="gamma", type=float, min_val=0.0, max_val=1.0)
+        check_array(reward, name="reward", expected_dim=1)
         check_array(
-            trajectory_wise_reward,
-            name="trajectory_wise_reward",
+            behavior_policy_trajectory_wise_pscore,
+            name="behavior_policy_trajectory_wise_pscore",
             expected_dim=1,
+            min_val=0.0,
+            max_val=1.0,
         )
         check_array(
-            trajectory_wise_importance_weight,
-            name="trajectory_wise_importance_weight",
+            evaluation_policy_trajectory_wise_pscore,
+            name="evaluation_policy_trajectory_wise_pscore",
             expected_dim=1,
+            min_val=0.0,
+            max_val=1.0,
         )
-        if trajectory_wise_reward.shape == trajectory_wise_importance_weight.shape:
+        if reward.shape[0] % step_per_episode:
             raise ValueError(
-                "trajectory_wise_reward and trajectory_wise_importance_weight must have the same length"
+                "Expected `reward.shape[0] \\% step_per_episode == 0`, but found False"
             )
+        if behavior_policy_trajectory_wise_pscore.shape[0] % step_per_episode:
+            raise ValueError(
+                "Expected `behavior_policy_trajectory_wise_pscore.shape[0] \\% step_per_episode == 0`, but found False"
+            )
+        if evaluation_policy_trajectory_wise_pscore.shape[0] % step_per_episode:
+            raise ValueError(
+                "Expected `evaluation_policy_trajectory_wise_pscore.shape[0] \\% step_per_episode == 0`, but found False"
+            )
+        if not (
+            reward.shape[0]
+            == behavior_policy_trajectory_wise_pscore.shape[0]
+            == evaluation_policy_trajectory_wise_pscore.shape[0]
+        ):
+            raise ValueError(
+                "Expected `reward.shape[0] == behavior_policy_trajectory_wise_pscore.shape[0] == evaluation_policy_trajectory_wise_pscore.shape[0]`, but found False"
+            )
+        (
+            trajectory_wise_reward,
+            trajectory_wise_importance_weight,
+            initial_state_value_prediction,
+        ) = self._aggregate_trajectory_wise_statistics_discrete(
+            step_per_episode=step_per_episode,
+            reward=reward,
+            behavior_policy_trajectory_wise_pscore=behavior_policy_trajectory_wise_pscore,
+            evaluation_policy_trajectory_wise_pscore=evaluation_policy_trajectory_wise_pscore,
+            gamma=gamma,
+        )
 
         n = len(trajectory_wise_reward)
 
@@ -466,19 +578,33 @@ def DiscreteCumulativeDistributionalImportanceSampling(
 
     def estimate_mean(
         self,
-        trajectory_wise_reward,
-        trajectory_wise_importance_weight,
+        step_per_episode: int,
+        reward: np.ndarray,
+        behavior_policy_trajectory_wise_pscore: np.ndarray,
+        evaluation_policy_trajectory_wise_pscore: np.ndarray,
+        gamma: float = 1.0,
         **kwargs,
     ) -> float:
         """Estimate mean.
 
         Parameters
         -------
-        trajectory_wise_reward: NDArray, shape (n_episodes, )
-            Trajectory wise reward observed by the behavior policy.
+        step_per_episode: int (> 0)
+            Number of timesteps in an episode.
 
-        trajectory_wise_importance_weight: NDArray, shape (n_episodes, )
-            Trajectory wise importance weight.
+        reward: NDArray, shape (n_episodes * step_per_episode, )
+            Reward observation.
+
+        behavior_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+            Trajectory-wise action choice probability of behavior policy,
+            i.e., :math:`\\prod_{t=0}^T \\pi_b(a_t \\mid s_t)`
+
+        evaluation_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+            Trajectory-wise action choice probability of evaluation policy,
+            i.e., :math:`\\prod_{t=0}^T \\pi_e(a_t \\mid s_t)`
+
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
 
         Return
         -------
@@ -490,26 +616,43 @@ def DiscreteCumulativeDistributionalImportanceSampling(
             cumulative_density,
             reward_scale,
         ) = self.estimate_cumulative_distribution_function(
-            trajectory_wise_reward=trajectory_wise_reward,
-            trajectory_wise_importance_weight=trajectory_wise_importance_weight,
+            step_per_episode=step_per_episode,
+            reward=reward,
+            behavior_policy_trajectory_wise_pscore=behavior_policy_trajectory_wise_pscore,
+            evaluation_policy_trajectory_wise_pscore=evaluation_policy_trajectory_wise_pscore,
+            gamma=gamma,
         )
         return (np.diff(cumulative_density) * reward_scale[1:]).sum()
 
     def estimate_variance(
         self,
-        trajectory_wise_reward,
-        trajectory_wise_importance_weight,
+        step_per_episode: int,
+        reward: np.ndarray,
+        behavior_policy_trajectory_wise_pscore: np.ndarray,
+        evaluation_policy_trajectory_wise_pscore: np.ndarray,
+        gamma: float = 1.0,
         **kwargs,
     ) -> float:
         """Estimate variance.
 
         Parameters
         -------
-        trajectory_wise_reward: NDArray, shape (n_episodes, )
-            Trajectory wise reward observed by the behavior policy.
+        step_per_episode: int (> 0)
+            Number of timesteps in an episode.
 
-        trajectory_wise_importance_weight: NDArray, shape (n_episodes, )
-            Trajectory wise importance weight.
+        reward: NDArray, shape (n_episodes * step_per_episode, )
+            Reward observation.
+
+        behavior_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+            Trajectory-wise action choice probability of behavior policy,
+            i.e., :math:`\\prod_{t=0}^T \\pi_b(a_t \\mid s_t)`
+
+        evaluation_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+            Trajectory-wise action choice probability of evaluation policy,
+            i.e., :math:`\\prod_{t=0}^T \\pi_e(a_t \\mid s_t)`
+
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
 
         Return
         -------
@@ -521,31 +664,51 @@ def DiscreteCumulativeDistributionalImportanceSampling(
             cumulative_density,
             reward_scale,
         ) = self.estimate_cumulative_distribution_function(
-            trajectory_wise_reward=trajectory_wise_reward,
-            trajectory_wise_importance_weight=trajectory_wise_importance_weight,
+            step_per_episode=step_per_episode,
+            reward=reward,
+            behavior_policy_trajectory_wise_pscore=behavior_policy_trajectory_wise_pscore,
+            evaluation_policy_trajectory_wise_pscore=evaluation_policy_trajectory_wise_pscore,
+            gamma=gamma,
         )
         mean = self.estimate_mean(
-            trajectory_wise_reward=trajectory_wise_reward,
-            trajectory_wise_importance_weight=trajectory_wise_importance_weight,
+            step_per_episode=step_per_episode,
+            reward=reward,
+            behavior_policy_trajectory_wise_pscore=behavior_policy_trajectory_wise_pscore,
+            evaluation_policy_trajectory_wise_pscore=evaluation_policy_trajectory_wise_pscore,
+            gamma=gamma,
         )
         return (np.diff(cumulative_density) * (reward_scale[1:] - mean) ** 2).sum()
 
     def estimate_conditional_value_at_risk(
         self,
-        trajectory_wise_reward,
-        trajectory_wise_importance_weight,
-        alpha,
+        step_per_episode: int,
+        reward: np.ndarray,
+        behavior_policy_trajectory_wise_pscore: np.ndarray,
+        evaluation_policy_trajectory_wise_pscore: np.ndarray,
+        gamma: float = 1.0,
+        alpha: float = 0.05,
         **kwargs,
     ):
         """Estimate conditional value at risk.
 
         Parameters
         -------
-        trajectory_wise_reward: NDArray, shape (n_episodes, )
-            Trajectory wise reward observed by the behavior policy.
+        step_per_episode: int (> 0)
+            Number of timesteps in an episode.
 
-        trajectory_wise_importance_weight: NDArray, shape (n_episodes, )
-            Trajectory wise importance weight.
+        reward: NDArray, shape (n_episodes * step_per_episode, )
+            Reward observation.
+
+        behavior_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+            Trajectory-wise action choice probability of behavior policy,
+            i.e., :math:`\\prod_{t=0}^T \\pi_b(a_t \\mid s_t)`
+
+        evaluation_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+            Trajectory-wise action choice probability of evaluation policy,
+            i.e., :math:`\\prod_{t=0}^T \\pi_e(a_t \\mid s_t)`
+
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
 
         alpha: float, default=0.05
             Proportion of the sided region.
@@ -561,28 +724,45 @@ def DiscreteCumulativeDistributionalImportanceSampling(
             cumulative_density,
             reward_scale,
         ) = self.estimate_cumulative_distribution_function(
-            trajectory_wise_reward=trajectory_wise_reward,
-            trajectory_wise_importance_weight=trajectory_wise_importance_weight,
+            step_per_episode=step_per_episode,
+            reward=reward,
+            behavior_policy_trajectory_wise_pscore=behavior_policy_trajectory_wise_pscore,
+            evaluation_policy_trajectory_wise_pscore=evaluation_policy_trajectory_wise_pscore,
+            gamma=gamma,
         )
         lower_idx = np.argmin(cumulative_density > alpha)
         return (np.diff(cumulative_density) * reward_scale[1:])[: lower_idx + 1].sum()
 
     def estimate_interquartile_range(
         self,
-        trajectory_wise_reward,
-        trajectory_wise_importance_weight,
-        alpha,
+        step_per_episode: int,
+        reward: np.ndarray,
+        behavior_policy_trajectory_wise_pscore: np.ndarray,
+        evaluation_policy_trajectory_wise_pscore: np.ndarray,
+        gamma: float = 1.0,
+        alpha: float = 0.05,
         **kwargs,
     ) -> float:
         """Estimate interquartile range.
 
         Parameters
         -------
-        trajectory_wise_reward: NDArray, shape (n_episodes, )
-            Trajectory wise reward observed by the behavior policy.
+        step_per_episode: int (> 0)
+            Number of timesteps in an episode.
 
-        trajectory_wise_importance_weight: NDArray, shape (n_episodes, )
-            Trajectory wise importance weight.
+        reward: NDArray, shape (n_episodes * step_per_episode, )
+            Reward observation.
+
+        behavior_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+            Trajectory-wise action choice probability of behavior policy,
+            i.e., :math:`\\prod_{t=0}^T \\pi_b(a_t \\mid s_t)`
+
+        evaluation_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+            Trajectory-wise action choice probability of evaluation policy,
+            i.e., :math:`\\prod_{t=0}^T \\pi_e(a_t \\mid s_t)`
+
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
 
         alpha: float, default=0.05
             Proportion of the sided region.
@@ -598,12 +778,18 @@ def DiscreteCumulativeDistributionalImportanceSampling(
             cumulative_density,
             reward_scale,
         ) = self.estimate_cumulative_distribution_function(
-            trajectory_wise_reward=trajectory_wise_reward,
-            trajectory_wise_importance_weight=trajectory_wise_importance_weight,
+            step_per_episode=step_per_episode,
+            reward=reward,
+            behavior_policy_trajectory_wise_pscore=behavior_policy_trajectory_wise_pscore,
+            evaluation_policy_trajectory_wise_pscore=evaluation_policy_trajectory_wise_pscore,
+            gamma=gamma,
         )
         mean = self.estimate_mean(
-            trajectory_wise_reward=trajectory_wise_reward,
-            trajectory_wise_importance_weight=trajectory_wise_importance_weight,
+            step_per_episode=step_per_episode,
+            reward=reward,
+            behavior_policy_trajectory_wise_pscore=behavior_policy_trajectory_wise_pscore,
+            evaluation_policy_trajectory_wise_pscore=evaluation_policy_trajectory_wise_pscore,
+            gamma=gamma,
         )
         lower_idx = np.argmin(cumulative_density > alpha)
         upper_idx = np.argmin(cumulative_density > 1 - alpha)
@@ -725,23 +911,37 @@ def DiscreteCumulativeDistributionalDoublyRobust(
 
     def estimate_cumulative_distribution_function(
         self,
-        trajectory_wise_reward,
-        trajectory_wise_importance_weight,
-        initial_state_value_prediction,
+        step_per_episode: int,
+        reward: np.ndarray,
+        behavior_policy_trajectory_wise_pscore: np.ndarray,
+        evaluation_policy_trajectory_wise_pscore: np.ndarray,
+        initial_state_value_prediction: np.ndarray,
+        gamma: float = 1.0,
         **kwargs,
     ) -> Tuple[np.ndarray]:
         """Estimate cumulative distribution function.
 
         Parameters
         -------
-        trajectory_wise_reward: NDArray, shape (n_episodes, )
-            Trajectory wise reward observed by the behavior policy.
+        step_per_episode: int (> 0)
+            Number of timesteps in an episode.
 
-        trajectory_wise_importance_weight: NDArray, shape (n_episodes, )
-            Trajectory wise importance weight.
+        reward: NDArray, shape (n_episodes * step_per_episode, )
+            Reward observation.
+
+        behavior_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+            Trajectory-wise action choice probability of behavior policy,
+            i.e., :math:`\\prod_{t=0}^T \\pi_b(a_t \\mid s_t)`
+
+        evaluation_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+            Trajectory-wise action choice probability of evaluation policy,
+            i.e., :math:`\\prod_{t=0}^T \\pi_e(a_t \\mid s_t)`
 
         initial_state_value_prediction: NDArray, shape (n_episodes, )
             Estimated initial state value.
+
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
 
         Return
         -------
@@ -749,20 +949,62 @@ def DiscreteCumulativeDistributionalDoublyRobust(
             Estimated cumulative distribution function for the pre-defined reward scale.
 
         """
+        check_scalar(step_per_episode, name="step_per_episode", type=int, min_val=1)
+        check_scalar(gamma, name="gamma", type=float, min_val=0.0, max_val=1.0)
+        check_array(reward, name="reward", expected_dim=1)
         check_array(
-            trajectory_wise_reward,
-            name="trajectory_wise_reward",
+            behavior_policy_trajectory_wise_pscore,
+            name="behavior_policy_trajectory_wise_pscore",
             expected_dim=1,
+            min_val=0.0,
+            max_val=1.0,
         )
         check_array(
-            trajectory_wise_importance_weight,
-            name="trajectory_wise_importance_weight",
+            evaluation_policy_trajectory_wise_pscore,
+            name="evaluation_policy_trajectory_wise_pscore",
+            expected_dim=1,
+            min_val=0.0,
+            max_val=1.0,
+        )
+        check_array(
+            initial_state_value_prediction,
+            name="initial_state_value_prediction",
             expected_dim=1,
         )
-        if trajectory_wise_reward.shape == trajectory_wise_importance_weight.shape:
+        if reward.shape[0] % step_per_episode:
             raise ValueError(
-                "trajectory_wise_reward and trajectory_wise_importance_weight must have the same length"
+                "Expected `reward.shape[0] \\% step_per_episode == 0`, but found False"
             )
+        if behavior_policy_trajectory_wise_pscore.shape[0] % step_per_episode:
+            raise ValueError(
+                "Expected `behavior_policy_trajectory_wise_pscore.shape[0] \\% step_per_episode == 0`, but found False"
+            )
+        if evaluation_policy_trajectory_wise_pscore.shape[0] % step_per_episode:
+            raise ValueError(
+                "Expected `evaluation_policy_trajectory_wise_pscore.shape[0] \\% step_per_episode == 0`, but found False"
+            )
+        if not (
+            reward.shape[0] // step_per_episode
+            == behavior_policy_trajectory_wise_pscore.shape[0] // step_per_episode
+            == evaluation_policy_trajectory_wise_pscore.shape[0] // step_per_episode
+            == initial_state_value_prediction
+        ):
+            raise ValueError(
+                "Expected `reward.shape[0] // step_per_episode == behavior_policy_trajectory_wise_pscore.shape[0] // step_per_episode "
+                "== evaluation_policy_trajectory_wise_pscore.shape[0] // step_per_episode == initial_state_value_prediction`, but found False"
+            )
+        (
+            trajectory_wise_reward,
+            trajectory_wise_importance_weight,
+            initial_state_value_prediction,
+        ) = self._aggregate_trajectory_wise_statistics_discrete(
+            step_per_episode=step_per_episode,
+            reward=reward,
+            behavior_policy_trajectory_wise_pscore=behavior_policy_trajectory_wise_pscore,
+            evaluation_policy_trajectory_wise_pscore=evaluation_policy_trajectory_wise_pscore,
+            initial_state_value_prediction=initial_state_value_prediction,
+            gamma=gamma,
+        )
 
         n = len(trajectory_wise_reward)
 
@@ -789,23 +1031,37 @@ def DiscreteCumulativeDistributionalDoublyRobust(
 
     def estimate_mean(
         self,
-        trajectory_wise_reward,
-        trajectory_wise_importance_weight,
-        initial_state_value_prediction,
+        step_per_episode: int,
+        reward: np.ndarray,
+        behavior_policy_trajectory_wise_pscore: np.ndarray,
+        evaluation_policy_trajectory_wise_pscore: np.ndarray,
+        initial_state_value_prediction: np.ndarray,
+        gamma: float = 1.0,
         **kwargs,
     ) -> float:
         """Estimate mean.
 
         Parameters
         -------
-        trajectory_wise_reward: NDArray, shape (n_episodes, )
-            Trajectory wise reward observed by the behavior policy.
+        step_per_episode: int (> 0)
+            Number of timesteps in an episode.
 
-        trajectory_wise_importance_weight: NDArray, shape (n_episodes, )
-            Trajectory wise importance weight.
+        reward: NDArray, shape (n_episodes * step_per_episode, )
+            Reward observation.
+
+        behavior_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+            Trajectory-wise action choice probability of behavior policy,
+            i.e., :math:`\\prod_{t=0}^T \\pi_b(a_t \\mid s_t)`
+
+        evaluation_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+            Trajectory-wise action choice probability of evaluation policy,
+            i.e., :math:`\\prod_{t=0}^T \\pi_e(a_t \\mid s_t)`
 
         initial_state_value_prediction: NDArray, shape (n_episodes, )
             Estimated initial state value.
+
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
 
         Return
         -------
@@ -817,31 +1073,48 @@ def DiscreteCumulativeDistributionalDoublyRobust(
             cumulative_density,
             reward_scale,
         ) = self.estimate_cumulative_distribution_function(
-            trajectory_wise_reward=trajectory_wise_reward,
-            trajectory_wise_importance_weight=trajectory_wise_importance_weight,
+            step_per_episode=step_per_episode,
+            reward=reward,
+            behavior_policy_trajectory_wise_pscore=behavior_policy_trajectory_wise_pscore,
+            evaluation_policy_trajectory_wise_pscore=evaluation_policy_trajectory_wise_pscore,
             initial_state_value_prediction=initial_state_value_prediction,
+            gamma=gamma,
         )
         return (np.diff(cumulative_density) * reward_scale[1:]).sum()
 
     def estimate_variance(
         self,
-        trajectory_wise_reward,
-        trajectory_wise_importance_weight,
-        initial_state_value_prediction,
+        step_per_episode: int,
+        reward: np.ndarray,
+        behavior_policy_trajectory_wise_pscore: np.ndarray,
+        evaluation_policy_trajectory_wise_pscore: np.ndarray,
+        initial_state_value_prediction: np.ndarray,
+        gamma: float = 1.0,
         **kwargs,
     ) -> float:
         """Estimate variance.
 
         Parameters
         -------
-        trajectory_wise_reward: NDArray, shape (n_episodes, )
-            Trajectory wise reward observed by the behavior policy.
+        step_per_episode: int (> 0)
+            Number of timesteps in an episode.
 
-        trajectory_wise_importance_weight: NDArray, shape (n_episodes, )
-            Trajectory wise importance weight.
+        reward: NDArray, shape (n_episodes * step_per_episode, )
+            Reward observation.
+
+        behavior_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+            Trajectory-wise action choice probability of behavior policy,
+            i.e., :math:`\\prod_{t=0}^T \\pi_b(a_t \\mid s_t)`
+
+        evaluation_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+            Trajectory-wise action choice probability of evaluation policy,
+            i.e., :math:`\\prod_{t=0}^T \\pi_e(a_t \\mid s_t)`
 
         initial_state_value_prediction: NDArray, shape (n_episodes, )
             Estimated initial state value.
+
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
 
         Return
         -------
@@ -853,37 +1126,57 @@ def DiscreteCumulativeDistributionalDoublyRobust(
             cumulative_density,
             reward_scale,
         ) = self.estimate_cumulative_distribution_function(
-            trajectory_wise_reward=trajectory_wise_reward,
-            trajectory_wise_importance_weight=trajectory_wise_importance_weight,
+            step_per_episode=step_per_episode,
+            reward=reward,
+            behavior_policy_trajectory_wise_pscore=behavior_policy_trajectory_wise_pscore,
+            evaluation_policy_trajectory_wise_pscore=evaluation_policy_trajectory_wise_pscore,
             initial_state_value_prediction=initial_state_value_prediction,
+            gamma=gamma,
         )
         mean = self.estimate_mean(
-            trajectory_wise_reward=trajectory_wise_reward,
-            trajectory_wise_importance_weight=trajectory_wise_importance_weight,
+            step_per_episode=step_per_episode,
+            reward=reward,
+            behavior_policy_trajectory_wise_pscore=behavior_policy_trajectory_wise_pscore,
+            evaluation_policy_trajectory_wise_pscore=evaluation_policy_trajectory_wise_pscore,
             initial_state_value_prediction=initial_state_value_prediction,
+            gamma=gamma,
         )
         return (np.diff(cumulative_density) * (reward_scale[1:] - mean) ** 2).sum()
 
     def estimate_conditional_value_at_risk(
         self,
-        trajectory_wise_reward,
-        trajectory_wise_importance_weight,
-        initial_state_value_prediction,
-        alpha,
+        step_per_episode: int,
+        reward: np.ndarray,
+        behavior_policy_trajectory_wise_pscore: np.ndarray,
+        evaluation_policy_trajectory_wise_pscore: np.ndarray,
+        initial_state_value_prediction: np.ndarray,
+        gamma: float = 1.0,
+        alpha: float = 0.05,
         **kwargs,
     ):
         """Estimate conditional value at risk.
 
         Parameters
         -------
-        trajectory_wise_reward: NDArray, shape (n_episodes, )
-            Trajectory wise reward observed by the behavior policy.
+        step_per_episode: int (> 0)
+            Number of timesteps in an episode.
 
-        trajectory_wise_importance_weight: NDArray, shape (n_episodes, )
-            Trajectory wise importance weight.
+        reward: NDArray, shape (n_episodes * step_per_episode, )
+            Reward observation.
+
+        behavior_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+            Trajectory-wise action choice probability of behavior policy,
+            i.e., :math:`\\prod_{t=0}^T \\pi_b(a_t \\mid s_t)`
+
+        evaluation_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+            Trajectory-wise action choice probability of evaluation policy,
+            i.e., :math:`\\prod_{t=0}^T \\pi_e(a_t \\mid s_t)`
 
         initial_state_value_prediction: NDArray, shape (n_episodes, )
             Estimated initial state value.
+
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
 
         alpha: float, default=0.05
             Proportion of the sided region.
@@ -899,33 +1192,50 @@ def DiscreteCumulativeDistributionalDoublyRobust(
             cumulative_density,
             reward_scale,
         ) = self.estimate_cumulative_distribution_function(
-            trajectory_wise_reward=trajectory_wise_reward,
-            trajectory_wise_importance_weight=trajectory_wise_importance_weight,
+            step_per_episode=step_per_episode,
+            reward=reward,
+            behavior_policy_trajectory_wise_pscore=behavior_policy_trajectory_wise_pscore,
+            evaluation_policy_trajectory_wise_pscore=evaluation_policy_trajectory_wise_pscore,
             initial_state_value_prediction=initial_state_value_prediction,
+            gamma=gamma,
         )
         lower_idx = np.argmin(cumulative_density > alpha)
         return (np.diff(cumulative_density) * reward_scale[1:])[: lower_idx + 1].sum()
 
     def estimate_interquartile_range(
         self,
-        trajectory_wise_reward,
-        trajectory_wise_importance_weight,
-        initial_state_value_prediction,
-        alpha,
+        step_per_episode: int,
+        reward: np.ndarray,
+        behavior_policy_trajectory_wise_pscore: np.ndarray,
+        evaluation_policy_trajectory_wise_pscore: np.ndarray,
+        initial_state_value_prediction: np.ndarray,
+        gamma: float = 1.0,
+        alpha: float = 0.05,
         **kwargs,
     ) -> float:
         """Estimate interquartile range.
 
         Parameters
         -------
-        trajectory_wise_reward: NDArray, shape (n_episodes, )
-            Trajectory wise reward observed by the behavior policy.
+        step_per_episode: int (> 0)
+            Number of timesteps in an episode.
 
-        trajectory_wise_importance_weight: NDArray, shape (n_episodes, )
-            Trajectory wise importance weight.
+        reward: NDArray, shape (n_episodes * step_per_episode, )
+            Reward observation.
+
+        behavior_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+            Trajectory-wise action choice probability of behavior policy,
+            i.e., :math:`\\prod_{t=0}^T \\pi_b(a_t \\mid s_t)`
+
+        evaluation_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+            Trajectory-wise action choice probability of evaluation policy,
+            i.e., :math:`\\prod_{t=0}^T \\pi_e(a_t \\mid s_t)`
 
         initial_state_value_prediction: NDArray, shape (n_episodes, )
             Estimated initial state value.
+
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
 
         alpha: float, default=0.05
             Proportion of the sided region.
@@ -941,14 +1251,20 @@ def DiscreteCumulativeDistributionalDoublyRobust(
             cumulative_density,
             reward_scale,
         ) = self.estimate_cumulative_distribution_function(
-            trajectory_wise_reward=trajectory_wise_reward,
-            trajectory_wise_importance_weight=trajectory_wise_importance_weight,
+            step_per_episode=step_per_episode,
+            reward=reward,
+            behavior_policy_trajectory_wise_pscore=behavior_policy_trajectory_wise_pscore,
+            evaluation_policy_trajectory_wise_pscore=evaluation_policy_trajectory_wise_pscore,
             initial_state_value_prediction=initial_state_value_prediction,
+            gamma=gamma,
         )
         mean = self.estimate_mean(
-            trajectory_wise_reward=trajectory_wise_reward,
-            trajectory_wise_importance_weight=trajectory_wise_importance_weight,
+            step_per_episode=step_per_episode,
+            reward=reward,
+            behavior_policy_trajectory_wise_pscore=behavior_policy_trajectory_wise_pscore,
+            evaluation_policy_trajectory_wise_pscore=evaluation_policy_trajectory_wise_pscore,
             initial_state_value_prediction=initial_state_value_prediction,
+            gamma=gamma,
         )
         lower_idx = np.argmin(cumulative_density > alpha)
         upper_idx = np.argmin(cumulative_density > 1 - alpha)
@@ -1066,19 +1382,33 @@ def DiscreteCumulativeDistributionalSelfNormalizedImportanceSampling(
 
     def estimate_cumulative_distribution_function(
         self,
-        trajectory_wise_reward,
-        trajectory_wise_importance_weight,
+        step_per_episode: int,
+        reward: np.ndarray,
+        behavior_policy_trajectory_wise_pscore: np.ndarray,
+        evaluation_policy_trajectory_wise_pscore: np.ndarray,
+        gamma: float = 1.0,
         **kwargs,
     ) -> Tuple[np.ndarray]:
         """Estimate cumulative distribution function.
 
         Parameters
         -------
-        trajectory_wise_reward: NDArray, shape (n_episodes, )
-            Trajectory wise reward observed by the behavior policy.
+        step_per_episode: int (> 0)
+            Number of timesteps in an episode.
 
-        trajectory_wise_importance_weight: NDArray, shape (n_episodes, )
-            Trajectory wise importance weight.
+        reward: NDArray, shape (n_episodes * step_per_episode, )
+            Reward observation.
+
+        behavior_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+            Trajectory-wise action choice probability of behavior policy,
+            i.e., :math:`\\prod_{t=0}^T \\pi_b(a_t \\mid s_t)`
+
+        evaluation_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+            Trajectory-wise action choice probability of evaluation policy,
+            i.e., :math:`\\prod_{t=0}^T \\pi_e(a_t \\mid s_t)`
+
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
 
         Return
         -------
@@ -1086,20 +1416,54 @@ def DiscreteCumulativeDistributionalSelfNormalizedImportanceSampling(
             Estimated cumulative distribution function for the pre-defined reward scale.
 
         """
+        check_scalar(step_per_episode, name="step_per_episode", type=int, min_val=1)
+        check_scalar(gamma, name="gamma", type=float, min_val=0.0, max_val=1.0)
+        check_array(reward, name="reward", expected_dim=1)
         check_array(
-            trajectory_wise_reward,
-            name="trajectory_wise_reward",
+            behavior_policy_trajectory_wise_pscore,
+            name="behavior_policy_trajectory_wise_pscore",
             expected_dim=1,
+            min_val=0.0,
+            max_val=1.0,
         )
         check_array(
-            trajectory_wise_importance_weight,
-            name="trajectory_wise_importance_weight",
+            evaluation_policy_trajectory_wise_pscore,
+            name="evaluation_policy_trajectory_wise_pscore",
             expected_dim=1,
+            min_val=0.0,
+            max_val=1.0,
         )
-        if trajectory_wise_reward.shape == trajectory_wise_importance_weight.shape:
+        if reward.shape[0] % step_per_episode:
             raise ValueError(
-                "trajectory_wise_reward and trajectory_wise_importance_weight must have the same length"
+                "Expected `reward.shape[0] \\% step_per_episode == 0`, but found False"
             )
+        if behavior_policy_trajectory_wise_pscore.shape[0] % step_per_episode:
+            raise ValueError(
+                "Expected `behavior_policy_trajectory_wise_pscore.shape[0] \\% step_per_episode == 0`, but found False"
+            )
+        if evaluation_policy_trajectory_wise_pscore.shape[0] % step_per_episode:
+            raise ValueError(
+                "Expected `evaluation_policy_trajectory_wise_pscore.shape[0] \\% step_per_episode == 0`, but found False"
+            )
+        if not (
+            reward.shape[0]
+            == behavior_policy_trajectory_wise_pscore.shape[0]
+            == evaluation_policy_trajectory_wise_pscore.shape[0]
+        ):
+            raise ValueError(
+                "Expected `reward.shape[0] == behavior_policy_trajectory_wise_pscore.shape[0] == evaluation_policy_trajectory_wise_pscore.shape[0]`, but found False"
+            )
+        (
+            trajectory_wise_reward,
+            trajectory_wise_importance_weight,
+            initial_state_value_prediction,
+        ) = self._aggregate_trajectory_wise_statistics_discrete(
+            step_per_episode=step_per_episode,
+            reward=reward,
+            behavior_policy_trajectory_wise_pscore=behavior_policy_trajectory_wise_pscore,
+            evaluation_policy_trajectory_wise_pscore=evaluation_policy_trajectory_wise_pscore,
+            gamma=gamma,
+        )
 
         weight_sum = trajectory_wise_importance_weight.sum()
 
@@ -1222,23 +1586,37 @@ def DiscreteCumulativeDistributionalSelfNormalizedDoublyRobust(
 
     def estimate_cumulative_distribution_function(
         self,
-        trajectory_wise_reward,
-        trajectory_wise_importance_weight,
-        initial_state_value_prediction,
+        step_per_episode: int,
+        reward: np.ndarray,
+        behavior_policy_trajectory_wise_pscore: np.ndarray,
+        evaluation_policy_trajectory_wise_pscore: np.ndarray,
+        initial_state_value_prediction: np.ndarray,
+        gamma: float = 1.0,
         **kwargs,
     ) -> Tuple[np.ndarray]:
         """Estimate cumulative distribution function.
 
         Parameters
         -------
-        trajectory_wise_reward: NDArray, shape (n_episodes, )
-            Trajectory wise reward observed by the behavior policy.
+        step_per_episode: int (> 0)
+            Number of timesteps in an episode.
 
-        trajectory_wise_importance_weight: NDArray, shape (n_episodes, )
-            Trajectory wise importance weight.
+        reward: NDArray, shape (n_episodes * step_per_episode, )
+            Reward observation.
+
+        behavior_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+            Trajectory-wise action choice probability of behavior policy,
+            i.e., :math:`\\prod_{t=0}^T \\pi_b(a_t \\mid s_t)`
+
+        evaluation_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+            Trajectory-wise action choice probability of evaluation policy,
+            i.e., :math:`\\prod_{t=0}^T \\pi_e(a_t \\mid s_t)`
 
         initial_state_value_prediction: NDArray, shape (n_episodes, )
             Estimated initial state value.
+
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
 
         Return
         -------
@@ -1246,20 +1624,62 @@ def DiscreteCumulativeDistributionalSelfNormalizedDoublyRobust(
             Estimated cumulative distribution function for the pre-defined reward scale.
 
         """
+        check_scalar(step_per_episode, name="step_per_episode", type=int, min_val=1)
+        check_scalar(gamma, name="gamma", type=float, min_val=0.0, max_val=1.0)
+        check_array(reward, name="reward", expected_dim=1)
         check_array(
-            trajectory_wise_reward,
-            name="trajectory_wise_reward",
+            behavior_policy_trajectory_wise_pscore,
+            name="behavior_policy_trajectory_wise_pscore",
             expected_dim=1,
+            min_val=0.0,
+            max_val=1.0,
         )
         check_array(
-            trajectory_wise_importance_weight,
-            name="trajectory_wise_importance_weight",
+            evaluation_policy_trajectory_wise_pscore,
+            name="evaluation_policy_trajectory_wise_pscore",
+            expected_dim=1,
+            min_val=0.0,
+            max_val=1.0,
+        )
+        check_array(
+            initial_state_value_prediction,
+            name="initial_state_value_prediction",
             expected_dim=1,
         )
-        if trajectory_wise_reward.shape == trajectory_wise_importance_weight.shape:
+        if reward.shape[0] % step_per_episode:
             raise ValueError(
-                "trajectory_wise_reward and trajectory_wise_importance_weight must have the same length"
+                "Expected `reward.shape[0] \\% step_per_episode == 0`, but found False"
             )
+        if behavior_policy_trajectory_wise_pscore.shape[0] % step_per_episode:
+            raise ValueError(
+                "Expected `behavior_policy_trajectory_wise_pscore.shape[0] \\% step_per_episode == 0`, but found False"
+            )
+        if evaluation_policy_trajectory_wise_pscore.shape[0] % step_per_episode:
+            raise ValueError(
+                "Expected `evaluation_policy_trajectory_wise_pscore.shape[0] \\% step_per_episode == 0`, but found False"
+            )
+        if not (
+            reward.shape[0] // step_per_episode
+            == behavior_policy_trajectory_wise_pscore.shape[0] // step_per_episode
+            == evaluation_policy_trajectory_wise_pscore.shape[0] // step_per_episode
+            == initial_state_value_prediction
+        ):
+            raise ValueError(
+                "Expected `reward.shape[0] // step_per_episode == behavior_policy_trajectory_wise_pscore.shape[0] // step_per_episode "
+                "== evaluation_policy_trajectory_wise_pscore.shape[0] // step_per_episode == initial_state_value_prediction`, but found False"
+            )
+        (
+            trajectory_wise_reward,
+            trajectory_wise_importance_weight,
+            initial_state_value_prediction,
+        ) = self._aggregate_trajectory_wise_statistics_discrete(
+            step_per_episode=step_per_episode,
+            reward=reward,
+            behavior_policy_trajectory_wise_pscore=behavior_policy_trajectory_wise_pscore,
+            evaluation_policy_trajectory_wise_pscore=evaluation_policy_trajectory_wise_pscore,
+            initial_state_value_prediction=initial_state_value_prediction,
+            gamma=gamma,
+        )
 
         n = len(trajectory_wise_reward)
 

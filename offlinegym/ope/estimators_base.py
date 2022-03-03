@@ -1,7 +1,7 @@
 """Abstract Base class for Off-Policy Estimator."""
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
-from typing import Dict, Tuple
+from typing import Dict, Optional, Tuple
 
 import numpy as np
 
@@ -55,9 +55,133 @@ class BaseCumulativeDistributionalOffPolicyEstimator(metaclass=ABCMeta):
         """Estimate interquartile range of the policy value."""
         raise NotImplementedError
 
+    def _aggregate_trajectory_wise_statistics_discrete(
+        self,
+        step_per_episode: int,
+        reward: Optional[np.ndarray] = None,
+        behavior_policy_trajectory_wise_pscore: Optional[np.ndarray] = None,
+        evaluation_policy_trajectory_wise_pscore: Optional[np.ndarray] = None,
+        initial_state_value_prediction: Optional[np.ndarray] = None,
+        gamma: float = 1.0,
+    ):
+        """Aggregate step-wise observation into trajectory wise statistics for the discrete action setup.
+
+        Parameters
+        -------
+        step_per_episode: int (> 0)
+            Number of timesteps in an episode.
+
+        reward: NDArray, shape (n_episodes * step_per_episode, )
+            Reward observation.
+
+        behavior_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+            Trajectory-wise action choice probability of behavior policy,
+            i.e., :math:`\\prod_{t=0}^T \\pi_b(a_t \\mid s_t)`
+
+        evaluation_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+            Trajectory-wise action choice probability of evaluation policy,
+            i.e., :math:`\\prod_{t=0}^T \\pi_e(a_t \\mid s_t)`
+
+        initial_state_value_prediction: NDArray, shape (n_episodes, )
+            Estimated initial state value.
+
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
+
+        Return
+        -------
+        trajectory_wise_reward: NDArray, shape (n_episodes, )
+            Trajectory wise reward observed by the behavior policy.
+
+        trajectory_wise_importance_weight: NDArray, shape (n_episodes, )
+            Trajectory wise importance weight.
+
+        initial_state_value_prediction: NDArray, shape (n_episodes, )
+            Estimated initial state value.
+
+        """
+        trajectory_wise_importance_weight = None
+        trajectory_wise_reward = None
+
+        if reward is not None:
+            reward = reward.reshape((-1, step_per_episode))
+            discount = np.full(reward.shape[1], gamma).cumprod()
+            trajectory_wise_reward = (reward * discount).sum(axis=1)
+
+        if (
+            behavior_policy_trajectory_wise_pscore is not None
+            and evaluation_policy_trajectory_wise_pscore is not None
+        ):
+            behavior_policy_trajectory_wise_pscore = (
+                behavior_policy_trajectory_wise_pscore.reshape((-1, step_per_episode))[
+                    :, 0
+                ]
+            )
+            evaluation_policy_trajectory_wise_pscore = (
+                evaluation_policy_trajectory_wise_pscore.reshape(
+                    (-1, step_per_episode)
+                )[:, 0]
+            )
+            trajectory_wise_importance_weight = (
+                evaluation_policy_trajectory_wise_pscore
+                / behavior_policy_trajectory_wise_pscore
+            )
+
+        return (
+            trajectory_wise_reward,
+            trajectory_wise_importance_weight,
+            initial_state_value_prediction,
+        )
+
+    def _aggregate_trajectory_wise_statistics_continuous(
+        self,
+        step_per_episode: int,
+        reward: Optional[np.ndarray] = None,
+        behavior_policy_trajectory_wise_pscore: Optional[np.ndarray] = None,
+        evaluation_policy_trajectory_wise_pscore: Optional[np.ndarray] = None,
+        initial_state_value_prediction: Optional[np.ndarray] = None,
+        gamma: float = 1.0,
+    ):
+        """Aggregate step-wise observation into trajectory wise statistics for the continuous action setup.
+
+        Parameters
+        -------
+        step_per_episode: int (> 0)
+            Number of timesteps in an episode.
+
+        reward: NDArray, shape (n_episodes * step_per_episode, )
+            Reward observation.
+
+        behavior_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+            Trajectory-wise action choice probability of behavior policy,
+            i.e., :math:`\\prod_{t=0}^T \\pi_b(a_t \\mid s_t)`
+
+        evaluation_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+            Trajectory-wise action choice probability of evaluation policy,
+            i.e., :math:`\\prod_{t=0}^T \\pi_e(a_t \\mid s_t)`
+
+        initial_state_value_prediction: NDArray, shape (n_episodes, )
+            Estimated initial state value.
+
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
+
+        Return
+        -------
+        trajectory_wise_reward: NDArray, shape (n_episodes, )
+            Trajectory wise reward observed by the behavior policy.
+
+        trajectory_wise_importance_weight: NDArray, shape (n_episodes, )
+            Trajectory wise importance weight.
+
+        initial_state_value_prediction: NDArray, shape (n_episodes, )
+            Estimated initial state value.
+
+        """
+
 
 @dataclass
-class BaseWorstCaseDistributionalOffPolicyEstimator(metaclass=ABCMeta):
+class BaseDistributionallyRobustOffPolicyEstimator(metaclass=ABCMeta):
     """Base class for Worst Case Distributional OPE estimators."""
 
     @abstractmethod

@@ -5,7 +5,7 @@ from offlinegym.ope.ope import (
 from offlinegym.ope.estimators_base import (
     BaseOffPolicyEstimator,
     BaseCumulativeDistributionalOffPolicyEstimator,
-    BaseWorstCaseDistributionalOffPolicyEstimator,
+    BaseDistributionallyRobustOffPolicyEstimator,
 )
 from offlinegym.ope.estimators_discrete import (
     DiscreteDirectMethod,
@@ -25,12 +25,19 @@ from offlinegym.ope.estimators_continuous import (
     ContinuousSelfNormalizedStepWiseImportanceSampling,
     ContinuousSelfNormalizedDoublyRobust,
 )
+from offlinegym.ope.distributional_estimators_discrete import (
+    DiscreteCumulativeDistributionalDirectMethod,
+    DiscreteCumulativeDistributionalImportanceSampling,
+    DiscreteCumulativeDistributionalDoublyRobust,
+    DiscreteCumulativeDistributionalSelfNormalizedImportanceSampling,
+    DiscreteCumulativeDistributionalSelfNormalizedDoublyRobust,
+)
 
 
 __all__ = [
     "BaseOffPolicyEstimator",
     "BaseCumulativeDistributionalOffPolicyEstimator",
-    "BaseWorstCaseDistributionalOffPolicyEstimator",
+    "BaseDistributionallyRobustOffPolicyEstimator",
     "OffPolicyEvaluation",
     "CreateOPEInput",
     "DiscreteDirectMethod",
@@ -47,4 +54,9 @@ __all__ = [
     "ContinuousSelfNormalizedTrajectoryWiseImportanceSampling",
     "ContinuousSelfNormalizedStepWiseImportanceSampling",
     "ContinuousSelfNormalizedDoublyRobust",
+    "DiscreteCumulativeDistributionalDirectMethod",
+    "DiscreteCumulativeDistributionalImportanceSampling",
+    "DiscreteCumulativeDistributionalDoublyRobust",
+    "DiscreteCumulativeDistributionalSelfNormalizedImportanceSampling",
+    "DiscreteCumulativeDistributionalSelfNormalizedDoublyRobust",
 ]
