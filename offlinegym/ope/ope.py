@@ -1,5 +1,6 @@
 """Off-Policy Evaluation Class to Streamline OPE."""
 from dataclasses import dataclass
+from socket import AF_AAL5
 from typing import Dict, List, Tuple, Optional, Any
 from pathlib import Path
 
@@ -950,7 +951,7 @@ class CreateOPEInput:
 
         Return
         -------
-        evaluation_policy_action_dist: NDArray
+        evaluation_policy_action_dist: NDArray, shape (n_samples, n_actions)
             Evaluation policy pscore :math:`\\pi_e(a_t \\mid s_t)`.
 
         state_action_value_prediction: NDArray, shape (n_samples, n_actions)
@@ -980,7 +981,7 @@ class CreateOPEInput:
 
         Return
         -------
-        state_action_value_prediction: NDArray, shape (n_samples, n_actions)
+        state_action_value_prediction: NDArray, shape (n_samples, )
             State action value for the observed state and action chosen by evaluation policy.
 
         """
@@ -1043,6 +1044,31 @@ class CreateOPEInput:
         )
         return state_value.reshape((-1, self.step_per_episode))[:, 0]
 
+    def obtain_initial_state_action_distribution(
+        self,
+        evaluation_policy: BaseHead,
+    ) -> np.ndarray:
+        """Obtain Evaluation policy pscore of discrete actions at the initial state of each episode.
+
+        Parameters
+        -------
+        evaluation_policy: BaseHead
+            Evaluation policy.
+
+        Return
+        -------
+        initial_state_action_distribution: NDArray, shape (n_episodes, n_actions)
+            Evaluation policy pscore at the initial state of each episode.
+
+        """
+        if not isinstance(evaluation_policy, BaseHead):
+            raise ValueError("evaluation_policy must be a child class of BaseHead")
+        state = self.logged_dataset["state"].reshape(
+            (-1, self.step_per_episode, self.state_dim)
+        )
+        action_dist = evaluation_policy.calc_action_choice_probability(state[:, 0, :])
+        return action_dist
+
     def obtain_whole_inputs(
         self,
         evaluation_policies: List[BaseHead],
@@ -1075,6 +1101,9 @@ class CreateOPEInput:
         n_episodes_on_policy_evaluation: Optional[int], default=None (> 0)
             Number of episodes to perform on-policy evaluation.
 
+        random_state: int, default=None (>= 0)
+            Random state.
+
         Return
         -------
         input_dict: OPEInputDict
@@ -1087,6 +1116,9 @@ class CreateOPEInput:
                 state_action_value_prediction,
                 initial_state_value_prediction,
                 on_policy_policy_value,
+                initial_state,
+                initial_state_action,
+                initial_state_action_distribution,
             ]
 
             evaluation_policy_step_wise_pscore: Optional[NDArray], shape (n_episodes * step_per_episodes, )
@@ -1099,7 +1131,7 @@ class CreateOPEInput:
                 i.e., :math:`\\prod_{t=0}^T \\pi_e(a_t \\mid s_t)`
                 If action_type == "continuous", `None` is recorded.
 
-            evaluation_policy_action: Optional[NDArray], shape (n_episodes * step_per_episodes, )
+            evaluation_policy_action: Optional[NDArray], shape (n_episodes * step_per_episodes, action_dim)
                 Action chosen by the deterministic evaluation policy.
                 If action_type == "discrete", `None` is recorded.
 
@@ -1126,6 +1158,10 @@ class CreateOPEInput:
             on_policy_policy_value: Optional[NDArray], shape (n_episodes_on_policy_evaluation, )
                 On-policy policy value.
                 If env is None, `None` is recorded.
+
+            initial_state_action_distribution: NDArray, shape (n_episodes, n_actions)
+                Evaluation policy pscore at the initial state of each episode.
+                If action_type == "continuous", `None` is recorded.
 
         """
         if env is not None:
@@ -1250,6 +1286,18 @@ class CreateOPEInput:
                     input_dict[evaluation_policies[i].name][
                         "initial_state_value_prediction"
                     ] = None
+
+            # input for the distributionally robust OPE estimators
+            if self.action_type == "discrete":
+                input_dict[evaluation_policies[i].name][
+                    "initial_state_action_distribution"
+                ] = self.obtain_initial_state_action_distribution(
+                    evaluation_policies[i]
+                )
+            else:
+                input_dict[evaluation_policies[i].name][
+                    "initial_state_action_distribution"
+                ] = None
 
             # input for the evaluation of OPE estimators
             if env is not None:

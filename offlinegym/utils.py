@@ -1,28 +1,13 @@
 """Useful tools."""
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import DefaultDict, Dict, Union, Optional, Any, Iterable
+from typing import DefaultDict, Dict, Union, Optional, Any
 
 import scipy
 import numpy as np
 from sklearn.utils import check_scalar, check_random_state
-import torch
-from torch import optim
 
 from offlinegym.types import LoggedDataset
-
-
-@dataclass
-class Optimizer:
-    base: optim
-    config: Dict[str, Any]
-
-    def __post_init__(self):
-        if issubclass(self.base, optim.SGD) and "lr" not in self.config.keys():
-            raise ValueError("when using optim.SGD, lr is required in config")
-
-    def instantiate(self, params: Iterable[torch.Tensor]):
-        return self.base(params, self.config)
 
 
 def estimate_confidence_interval_by_bootstrap(

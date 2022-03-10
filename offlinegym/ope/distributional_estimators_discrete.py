@@ -3,15 +3,16 @@ from dataclasses import dataclass
 from typing import Tuple, Optional
 
 import numpy as np
+
+from sklearn.base import BaseEstimator
+from sklearn.model_selection import train_test_split
 from sklearn.utils import check_scalar
-import torch
-from torch import optim
 
 from offlinegym.ope.estimators_base import (
     BaseCumulativeDistributionalOffPolicyEstimator,
     BaseDistributionallyRobustOffPolicyEstimator,
 )
-from offlinegym.utils import Optimizer, check_array
+from offlinegym.utils import check_array
 
 
 @dataclass
@@ -1724,14 +1725,14 @@ class DiscreteDistributionallyRobustImportanceSampling(
 
     Parameters
     -------
-    optimizer: Optimizer, default=Optimizer(SGD, config={"lr": 0.001})
-        Optimizer for tuning alpha.
-
-    initial_alpha: float, default=1.0 (> 0)
+    alpha_prior: float, default=1.0 (> 0)
         Initial temperature parameter of the exponential function.
 
-    max_gradient_steps: int, default=100 (> 0)
-        Maximum number of gradient steps in turning alpha.
+    max_steps: int, default=100 (> 0)
+        Maximum steps in turning alpha.
+
+    epsilon: float, default=0.01
+        Convergence criterion of alpha.
 
     delta: float, default=0.1 (> 0)
         Allowance of the distributional shift.
@@ -1755,20 +1756,56 @@ class DiscreteDistributionallyRobustImportanceSampling(
 
     """
 
-    optimizer: Optimizer = Optimizer(optim.SGD, config={"lr": 0.001})
-    initial_alpha: float = 1.0
-    max_gradient_steps: int = 100
+    alpha_prior: float = 1.0
+    max_steps: int = 100
+    epsilon: float = 0.01
     delta: float = 0.05
     estimator_name: str = "dr_is"
 
     def __post_init__(self):
         self.action_type = "discrete"
 
-        check_scalar(self.initial_alpha, name="initial_alpha", type=float, min_val=0.0)
-        check_scalar(
-            self.max_gradient_steps, name="max_gradient_steps", type=int, min_val=1
-        )
+        check_scalar(self.alpha_prior, name="alpha_prior", type=float, min_val=0.0)
+        check_scalar(self.max_steps, name="max_steps", type=int, min_val=1)
+        check_scalar(self.epsilon, name="epsilon", type=float, min_val=0.0)
         check_scalar(self.delta, name="delta", type=float, min_val=0.0)
+
+    def _estimate_policy_value_momentum_given_alpha(
+        self,
+        trajectory_wise_reward: np.ndarray,
+        trajectory_wise_importance_weight: np.ndarray,
+        alpha: float,
+        momentum: int,
+    ):
+        """Calculate exponential policy value given alpha.
+
+        Parameters
+        -------
+        trajectory_wise_reward: NDArray, shape (n_episodes, )
+            Trajectory wise reward observed by the behavior policy.
+
+        trajectory_wise_importance_weight: NDArray, shape (n_episodes, )
+            Trajectory wise importance weight.
+
+        alpha: float
+            Temperature parameter of the exponential function.
+
+        momentum: int
+            When :math:`n` is given, :math:`W_n` is calculated.
+            See Kallus et al. (2022) for the details.
+
+        Return
+        -------
+        estimated_policy_value_momentum: float
+            Estimated exponential policy value (:math:`W_n`).
+
+        """
+        trajectory_wise_reward_momentum = trajectory_wise_reward ** momentum * np.exp(
+            -trajectory_wise_reward / alpha
+        )
+        return (
+            trajectory_wise_importance_weight * trajectory_wise_reward_momentum
+        ).mean()
 
     def estimate_worst_case_policy_value(
         self,
@@ -1854,37 +1891,45 @@ class DiscreteDistributionallyRobustImportanceSampling(
             gamma=gamma,
         )
 
-        trajectory_wise_reward = torch.tensor(
-            trajectory_wise_reward, dtype=torch.float, require_grad=False
-        )
-        trajectory_wise_importance_weight = torch.tensor(
-            trajectory_wise_reward, dtype=torch.float, require_grad=False
-        )
+        n = trajectory_wise_reward.shape[0]
 
-        alpha_prior = self.initial_alpha
-        alpha = torch.tensor([self.initial_alpha], dtype=torch.float, require_grad=True)
-        optimizer = self.optimizer.instantiate([alpha])
-
-        for _ in range(self.max_gradient_steps):
-            estimated_exponential_policy_value = (
-                trajectory_wise_importance_weight
-                * torch.exp(-trajectory_wise_reward / alpha)
-            ).mean()
-            objective = -alpha * (
-                torch.log(estimated_exponential_policy_value) + self.delta
+        alpha = self.alpha_prior
+        for _ in range(self.max_steps):
+            W_0 = self._estimate_policy_value_momentum_given_alpha(
+                trajectory_wise_reward=trajectory_wise_reward,
+                trajectory_wise_importance_weight=trajectory_wise_importance_weight,
+                alpha=alpha,
+                momentum=0,
             )
-            loss = -objective
+            W_1 = self._estimate_policy_value_momentum_given_alpha(
+                trajectory_wise_reward=trajectory_wise_reward,
+                trajectory_wise_importance_weight=trajectory_wise_importance_weight,
+                alpha=alpha,
+                momentum=1,
+            )
+            W_2 = self._estimate_policy_value_momentum_given_alpha(
+                trajectory_wise_reward=trajectory_wise_reward,
+                trajectory_wise_importance_weight=trajectory_wise_importance_weight,
+                alpha=alpha,
+                momentum=2,
+            )
+            objective = -alpha * (np.log(W_0) + self.delta)
+            first_order_derivative = -W_1 / (alpha * n * W_0) - np.log(W_0) - self.delta
+            second_order_derivative = W_1 ** 2 / (
+                alpha ** 3 * n ** 2 * W_0 ** 2
+            ) - W_2 / (alpha ** 3 * n * W_0)
 
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
+            alpha_prior = alpha
+            alpha = np.clip(
+                alpha_prior - first_order_derivative / second_order_derivative,
+                0,
+                1 / self.delta,
+            )
 
-            if np.abs(alpha.item() - alpha_prior) < 0.01 * alpha_prior:
+            if np.abs(alpha - alpha_prior) < self.epsilon:
                 break
-            else:
-                alpha_prior = alpha.item()
 
-        return objective.item()
+        return objective
 
 
 @dataclass
@@ -1905,14 +1950,14 @@ class DiscreteDistributionallyRobustSelfNormalizedImportanceSampling(
 
     Parameters
     -------
-    optimizer: Optimizer, default=Optimizer(SGD, config={"lr": 0.001})
-        Optimizer for tuning alpha.
-
-    initial_alpha: float, default=1.0 (> 0)
+    alpha_prior: float, default=1.0 (> 0)
         Initial temperature parameter of the exponential function.
 
-    max_gradient_steps: int, default=100 (> 0)
-        Maximum number of gradient steps in turning alpha.
+    max_steps: int, default=100 (> 0)
+        Maximum steps in turning alpha.
+
+    epsilon: float, default=0.01
+        Convergence criterion of alpha.
 
     delta: float, default=0.1 (> 0)
         Allowance of the distributional shift.
@@ -1936,20 +1981,56 @@ class DiscreteDistributionallyRobustSelfNormalizedImportanceSampling(
 
     """
 
-    optimizer: Optimizer = Optimizer(optim.SGD, config={"lr": 0.001})
-    initial_alpha: float = 1.0
-    max_gradient_steps: int = 100
+    alpha_prior: float = 1.0
+    max_steps: int = 100
+    epsilon: float = 0.01
     delta: float = 0.05
     estimator_name: str = "dr_snis"
 
     def __post_init__(self):
         self.action_type = "discrete"
 
-        check_scalar(self.initial_alpha, name="initial_alpha", type=float, min_val=0.0)
-        check_scalar(
-            self.max_gradient_steps, name="max_gradient_steps", type=int, min_val=1
-        )
+        check_scalar(self.alpha_prior, name="alpha_prior", type=float, min_val=0.0)
+        check_scalar(self.max_steps, name="max_steps", type=int, min_val=1)
+        check_scalar(self.epsilon, name="epsilon", type=float, min_val=0.0)
         check_scalar(self.delta, name="delta", type=float, min_val=0.0)
+
+    def _estimate_policy_value_momentum_given_alpha(
+        self,
+        trajectory_wise_reward: np.ndarray,
+        trajectory_wise_importance_weight: np.ndarray,
+        alpha: float,
+        momentum: int,
+    ):
+        """Calculate exponential policy value given alpha.
+
+        Parameters
+        -------
+        trajectory_wise_reward: NDArray, shape (n_episodes, )
+            Trajectory wise reward observed by the behavior policy.
+
+        trajectory_wise_importance_weight: NDArray, shape (n_episodes, )
+            Trajectory wise importance weight.
+
+        alpha: float
+            Temperature parameter of the exponential function.
+
+        momentum: int
+            When :math:`n` is given, :math:`W_n` is calculated.
+            See Kallus et al. (2022) for the details.
+
+        Return
+        -------
+        estimated_policy_value_momentum: float
+            Estimated exponential policy value (:math:`W_n`).
+
+        """
+        trajectory_wise_reward_momentum = trajectory_wise_reward ** momentum * np.exp(
+            -trajectory_wise_reward / alpha
+        )
+        return (
+            trajectory_wise_importance_weight * trajectory_wise_reward_momentum
+        ).sum() / trajectory_wise_importance_weight.sum()
 
     def estimate_worst_case_policy_value(
         self,
@@ -2035,38 +2116,47 @@ class DiscreteDistributionallyRobustSelfNormalizedImportanceSampling(
             gamma=gamma,
         )
 
-        weight_sum = trajectory_wise_reward.sum()
-        trajectory_wise_reward = torch.tensor(
-            trajectory_wise_reward, dtype=torch.float, require_grad=False
-        )
-        trajectory_wise_importance_weight = torch.tensor(
-            trajectory_wise_reward, dtype=torch.float, require_grad=False
-        )
+        weight_sum = trajectory_wise_importance_weight.sum()
 
-        alpha_prior = self.initial_alpha
-        alpha = torch.tensor([self.initial_alpha], dtype=torch.float, require_grad=True)
-        optimizer = self.optimizer.instantiate([alpha])
-
-        for _ in range(self.max_gradient_steps):
-            estimated_exponential_policy_value = (
-                trajectory_wise_importance_weight
-                * torch.exp(-trajectory_wise_reward / alpha)
-            ).sum() / weight_sum
-            objective = -alpha * (
-                torch.log(estimated_exponential_policy_value) + self.delta
+        alpha = self.alpha_prior
+        for _ in range(self.max_steps):
+            W_0 = self._estimate_policy_value_momentum_given_alpha(
+                trajectory_wise_reward=trajectory_wise_reward,
+                trajectory_wise_importance_weight=trajectory_wise_importance_weight,
+                alpha=alpha,
+                momentum=0,
             )
-            loss = -objective
+            W_1 = self._estimate_policy_value_momentum_given_alpha(
+                trajectory_wise_reward=trajectory_wise_reward,
+                trajectory_wise_importance_weight=trajectory_wise_importance_weight,
+                alpha=alpha,
+                momentum=1,
+            )
+            W_2 = self._estimate_policy_value_momentum_given_alpha(
+                trajectory_wise_reward=trajectory_wise_reward,
+                trajectory_wise_importance_weight=trajectory_wise_importance_weight,
+                alpha=alpha,
+                momentum=2,
+            )
+            objective = -alpha * (np.log(W_0) + self.delta)
+            first_order_derivative = (
+                -W_1 / (alpha * weight_sum * W_0) - np.log(W_0) - self.delta
+            )
+            second_order_derivative = W_1 ** 2 / (
+                alpha ** 3 * weight_sum ** 2 * W_0 ** 2
+            ) - W_2 / (alpha ** 3 * weight_sum * W_0)
 
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
+            alpha_prior = alpha
+            alpha = np.clip(
+                alpha_prior - first_order_derivative / second_order_derivative,
+                0,
+                1 / self.delta,
+            )
 
-            if np.abs(alpha.item() - alpha_prior) < 0.01 * alpha_prior:
+            if np.abs(alpha - alpha_prior) < self.epsilon:
                 break
-            else:
-                alpha_prior = alpha.item()
 
-        return objective.item()
+        return objective
 
 
 @dataclass
@@ -2087,14 +2177,17 @@ class DiscreteDistributionallyRobustDoublyRobust(
 
     Parameters
     -------
-    optimizer: Optimizer, default=Optimizer(SGD, config={"lr": 0.001})
-        Optimizer for tuning alpha.
+    baseline_estimator: BaseEstimator
+        Baseline Estimator :math:`\hat{f}(\\cdot)`.
 
-    initial_alpha: float, default=1.0 (> 0)
+    alpha_prior: float, default=1.0 (> 0)
         Initial temperature parameter of the exponential function.
 
-    max_gradient_steps: int, default=100 (> 0)
-        Maximum number of gradient steps in turning alpha.
+    max_steps: int, default=100 (> 0)
+        Maximum steps in turning alpha.
+
+    epsilon: float, default=0.01
+        Convergence criterion of alpha.
 
     delta: float, default=0.1 (> 0)
         Allowance of the distributional shift.
@@ -2124,28 +2217,29 @@ class DiscreteDistributionallyRobustDoublyRobust(
 
     """
 
-    optimizer: Optimizer = Optimizer(optim.SGD, config={"lr": 0.001})
-    initial_alpha: float = 1.0
-    max_gradient_steps: int = 100
+    baseline_estimator: BaseEstimator
+    alpha_prior: float = 1.0
+    max_steps: int = 100
+    epsilon: float = 0.01
     delta: float = 0.05
     n_folds: int = 3
-    estimator_name: str = "dr_is"
+    estimator_name: str = "dr_dr"
 
     def __post_init__(self):
         self.action_type = "discrete"
 
-        check_scalar(self.initial_alpha, name="initial_alpha", type=float, min_val=0.0)
-        check_scalar(
-            self.max_gradient_steps, name="max_gradient_steps", type=int, min_val=1
-        )
+        check_scalar(self.alpha_prior, name="alpha_prior", type=float, min_val=0.0)
+        check_scalar(self.max_steps, name="max_steps", type=int, min_val=1)
+        check_scalar(self.epsilon, name="epsilon", type=float, min_val=0.0)
         check_scalar(self.delta, name="delta", type=float, min_val=0.0)
+        check_scalar(self.n_folds, name="n_folds", type=int, min_val=1)
 
-    def _calculate_exponential_policy_value_given_alpha(
+    def _estimate_policy_value_momentum_by_snis(
         self,
         trajectory_wise_reward: np.ndarray,
         trajectory_wise_importance_weight: np.ndarray,
-        trajectory_wise_reward_prediction: np.ndarray,
         alpha: float,
+        momentum: int,
     ):
         """Calculate exponential policy value given alpha.
 
@@ -2160,25 +2254,30 @@ class DiscreteDistributionallyRobustDoublyRobust(
         alpha: float
             Temperature parameter of the exponential function.
 
-        moment: int
-            If 0 is given, return :math:`W_0`. If 1 is given, return :math:`W_1`.
+        momentum: int
+            When :math:`n` is given, :math:`W_n` is calculated.
             See Kallus et al. (2022) for the details.
 
         Return
         -------
-        estimated_worst_case_policy_value: float
-            Estimated worst case policy value.
+        estimated_policy_value_momentum: float
+            Estimated exponential policy value (:math:`W_n`).
 
         """
+        trajectory_wise_reward_momentum = trajectory_wise_reward ** momentum * np.exp(
+            -trajectory_wise_reward / alpha
+        )
+        return (
+            trajectory_wise_importance_weight * trajectory_wise_reward_momentum
+        ).sum() / trajectory_wise_importance_weight.sum()
 
-        return -alpha * (np.log(estimated_exponential_policy_value) + self.delta)
-
-    def _calculate_alpha_prior(
+    def _initialize_alpha(
         self,
         trajectory_wise_reward: np.ndarray,
         trajectory_wise_importance_weight: np.ndarray,
+        fit_episodes: np.ndarray,
     ):
-        """Use SNIS for finding prior value of alpha for each fold.
+        """Initialize alpha for each fold.
 
         Parameters
         -------
@@ -2188,44 +2287,245 @@ class DiscreteDistributionallyRobustDoublyRobust(
         trajectory_wise_importance_weight: NDArray, shape (n_episodes, )
             Trajectory wise importance weight.
 
+        fit_episodes: NDArray, shape (n_folds, n_episodes // 2)
+            Episodes used for fitting alpha.
+
         Return
         -------
-        alpha_prior: float
-            Prior value of the temperature parameter of the exponential function..
+        Initial_alpha: NDArray, shape (n_folds, )
+            Initial alpha for each fold.
 
         """
-        weight_sum = trajectory_wise_reward.sum()
-        trajectory_wise_reward = torch.tensor(
-            trajectory_wise_reward, dtype=torch.float, require_grad=False
-        )
-        trajectory_wise_importance_weight = torch.tensor(
-            trajectory_wise_reward, dtype=torch.float, require_grad=False
-        )
+        alpha = np.zeros(self.n_folds)
+        for k in self.n_folds:
+            weight_sum_ = trajectory_wise_importance_weight[fit_episodes[k]].sum()
 
-        alpha_prior = self.initial_alpha
-        alpha = torch.tensor([self.initial_alpha], dtype=torch.float, require_grad=True)
-        optimizer = self.optimizer.instantiate([alpha])
+            alpha_ = self.alpha_prior
+            for _ in range(self.max_steps):
+                W_0 = self._estimate_policy_value_momentum_by_snis(
+                    trajectory_wise_reward=trajectory_wise_reward[fit_episodes[k]],
+                    trajectory_wise_importance_weight=trajectory_wise_importance_weight[
+                        fit_episodes[k]
+                    ],
+                    alpha=alpha_,
+                    momentum=0,
+                )
+                W_1 = self._estimate_policy_value_momentum_by_snis(
+                    trajectory_wise_reward=trajectory_wise_reward[fit_episodes[k]],
+                    trajectory_wise_importance_weight=trajectory_wise_importance_weight[
+                        fit_episodes[k]
+                    ],
+                    alpha=alpha_,
+                    momentum=1,
+                )
+                W_2 = self._estimate_policy_value_momentum_by_snis(
+                    trajectory_wise_reward=trajectory_wise_reward[fit_episodes[k]],
+                    trajectory_wise_importance_weight=trajectory_wise_importance_weight[
+                        fit_episodes[k]
+                    ],
+                    alpha=alpha_,
+                    momentum=2,
+                )
+                first_order_derivative_ = (
+                    -W_1 / (alpha * weight_sum_ * W_0) - np.log(W_0) - self.delta
+                )
+                second_order_derivative_ = W_1 ** 2 / (
+                    alpha ** 3 * weight_sum_ ** 2 * W_0 ** 2
+                ) - W_2 / (alpha ** 3 * weight_sum_ * W_0)
 
-        for _ in range(self.max_gradient_steps):
-            estimated_exponential_policy_value = (
-                trajectory_wise_importance_weight
-                * torch.exp(-trajectory_wise_reward / alpha)
-            ).sum() / weight_sum
-            objective = -alpha * (
-                torch.log(estimated_exponential_policy_value) + self.delta
+                alpha_prior_ = alpha_
+                alpha_ = np.clip(
+                    alpha_prior_ - first_order_derivative_ / second_order_derivative_,
+                    0,
+                    1 / self.delta,
+                )
+
+                if np.abs(alpha_ - alpha_prior_) < self.epsilon:
+                    break
+
+            alpha[k] = alpha_
+
+        return alpha
+
+    def _predict_trajectory_wise_reward_momentum_given_initial_alpha(
+        self,
+        n_actions: int,
+        initial_state: np.ndarray,
+        initial_state_action: np.ndarray,
+        trajectory_wise_reward: np.ndarray,
+        initial_alpha: np.ndarray,
+        train_episodes: np.ndarray,
+        momentum: int,
+    ):
+        """Predict trajectory wise reward momentum given alpha (:math:`hat{f}(\\cdot; \\alpha)`).
+
+        Parameters
+        -------
+        n_actions: int
+            Number of the discrete actions.
+
+        initial_state: NDArray, shape (n_episodes, state_dim)
+            Initial state observed at each episode.
+
+        initial_state_action: NDArray, shape (n_episodes, )
+            Initial action chosen by the behavior policy.
+
+        trajectory_wise_reward: NDArray, shape (n_episodes, )
+            Trajectory wise reward observed by the behavior policy.
+
+        initial_alpha: NDArray, shape (n_folds, )
+            Temperature parameter of the exponential function.
+
+        train_episodes: NDArray, shape (n_folds, n_episode // 2)
+            Episodes used for training the model.
+
+        momentum: int
+            When :math:`n` is given, :math:`W_n` is calculated.
+            See Kallus et al. (2022) for the details.
+
+        Return
+        -------
+        trajectory_wise_reward_prediction: NDArray, shape (n_folds, n_episodes, n_actions)
+            Estimated trajectory wise reward (:math:`hat{f}(\\cdot; \\alpha)`).
+
+        """
+        n_episodes, state_dim = initial_state.shape
+
+        # prediction set
+        X_ = np.zeros(n_episodes * n_actions, state_dim + 1)
+        X_[:, -1] = np.tile(np.arange(n_actions), n_episodes)
+        for i in range(n_episodes):
+            X_[n_actions * i : n_actions * (i + 1), :-1] = np.tile(
+                initial_state[i], (n_actions, 1)
             )
-            loss = -objective
 
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
+        trajectory_wise_reward_prediction = np.zeros(
+            (self.n_folds, n_episodes, n_actions)
+        )
+        for k in range(self.n_folds):
+            # train
+            X = np.concatenate(
+                (
+                    initial_state[train_episodes[k]],
+                    initial_state_action[train_episodes[k], np.newaxis],
+                ),
+                axis=1,
+            )
+            y = trajectory_wise_reward[train_episodes[k]] ** momentum * np.exp(
+                -trajectory_wise_reward[train_episodes[k]] / initial_alpha
+            )
+            self.baseline_estimator.fit(X, y)
 
-            if np.abs(alpha.item() - alpha_prior) < 0.01 * alpha_prior:
-                break
-            else:
-                alpha_prior = alpha.item()
+            # prediction
+            trajectory_wise_reward_prediction[k] = self.baseline_estimator.predict(
+                X_
+            ).reshape((-1, n_actions))
 
-        return alpha.item()
+        return trajectory_wise_reward_prediction
+
+    def _estimate_policy_value_momentum_given_alpha(
+        self,
+        trajectory_wise_reward: np.ndarray,
+        trajectory_wise_importance_weight: np.ndarray,
+        trajectory_wise_reward_prediction: np.ndarray,
+        initial_state_action: np.ndarray,
+        initial_state_action_distribution: np.ndarray,
+        alpha: float,
+        momentum: int,
+    ):
+        """Calculate exponential policy value given alpha.
+
+        Parameters
+        -------
+        trajectory_wise_reward: NDArray, shape (n_episodes, )
+            Trajectory wise reward observed by the behavior policy.
+
+        trajectory_wise_importance_weight: NDArray, shape (n_episodes, )
+            Trajectory wise importance weight.
+
+        trajectory_wise_reward_prediction: NDArray, shape (n_folds, n_episodes, n_actions)
+            Estimated trajectory wise reward (:math:`hat{f}(\\cdot; \\alpha)`).
+
+        initial_state_action: NDArray, shape (n_episodes, )
+            Initial action chosen by the behavior policy.
+
+        initial_state_action_distribution: NDArray, shape (n_episodes, n_actions)
+            Evaluation policy pscore at the initial state of each episode.
+
+        alpha: float
+            Temperature parameter of the exponential function.
+
+        momentum: int
+            If 0 is given, return :math:`W_0`. If 1 is given, return :math:`W_1`.
+            See Kallus et al. (2022) for the details.
+
+        Return
+        -------
+        estimated_policy_value_momentum: float
+            Estimated exponential policy value (:math:`W_0` or :math:`W_1`).
+
+        """
+        n_episodes = trajectory_wise_reward.shape[0]
+
+        estimated_policy_value_momentum = np.zeros(self.n_folds)
+        for k in self.n_folds:
+            predicted_reward_for_the_taken_action_ = trajectory_wise_reward_prediction[
+                k, np.arange(n_episodes), initial_state_action
+            ]
+
+            baseline_ = (
+                initial_state_action_distribution[k]
+                * trajectory_wise_reward_prediction[k]
+            ).mean(axis=1)
+            residual_ = (
+                trajectory_wise_reward ** momentum
+                * np.exp(-trajectory_wise_reward / alpha)
+                - predicted_reward_for_the_taken_action_
+            )
+
+            estimated_policy_value_momentum[k] = (
+                trajectory_wise_importance_weight * residual_ + baseline_
+            ).mean()
+
+        return estimated_policy_value_momentum.mean()
+
+    def _estimate_policy_value_momentum_derivative_given_alpha(
+        self,
+        trajectory_wise_reward: np.ndarray,
+        trajectory_wise_importance_weight: np.ndarray,
+        alpha: float,
+        momentum: int,
+    ):
+        """Calculate exponential policy value given alpha.
+
+        Parameters
+        -------
+        trajectory_wise_reward: NDArray, shape (n_episodes, )
+            Trajectory wise reward observed by the behavior policy.
+
+        trajectory_wise_importance_weight: NDArray, shape (n_episodes, )
+            Trajectory wise importance weight.
+
+        alpha: float
+            Temperature parameter of the exponential function.
+
+        momentum: int
+            If 0 is given, return :math:`W_0`. If 1 is given, return :math:`W_1`.
+            See Kallus et al. (2022) for the details.
+
+        Return
+        -------
+        estimated_policy_value_momentum_derivative: float
+            Estimated exponential policy value (:math:`W_0` or :math:`W_1`).
+
+        """
+        trajectory_wise_reward_momentum = trajectory_wise_reward ** (
+            momentum + 1
+        ) * np.exp(-trajectory_wise_reward / alpha)
+        estimated_policy_value_momentum_derivative = (
+            trajectory_wise_importance_weight * trajectory_wise_reward_momentum
+        ).mean() / alpha ** 2
+        return estimated_policy_value_momentum_derivative
 
     def estimate_worst_case_policy_value(
         self,
@@ -2233,7 +2533,11 @@ class DiscreteDistributionallyRobustDoublyRobust(
         reward: np.ndarray,
         behavior_policy_trajectory_wise_pscore: np.ndarray,
         evaluation_policy_trajectory_wise_pscore: np.ndarray,
+        initial_state: np.ndarray,
+        initial_state_action: np.ndarray,
+        initial_state_action_distribution: np.ndarray,
         gamma: float = 1.0,
+        random_state: Optional[int] = None,
         **kwargs,
     ) -> float:
         """Estimate the worst case policy value in a distributionally robust manner.
@@ -2254,8 +2558,20 @@ class DiscreteDistributionallyRobustDoublyRobust(
             Trajectory-wise action choice probability of evaluation policy,
             i.e., :math:`\\prod_{t=0}^T \\pi_e(a_t \\mid s_t)`
 
+        initial_state: NDArray, shape (n_episodes, state_dim)
+            Initial state observed at each episode.
+
+        initial_state_action: NDArray, shape (n_episodes, )
+            Initial action chosen by the behavior policy.
+
+        initial_state_action_distribution: NDArray, shape (n_episodes, n_actions)
+            Evaluation policy pscore at the initial state of each episode.
+
         gamma: float, default=1.0 (0, 1]
             Discount factor.
+
+        random_state: int, default=None (>= 0)
+            Random state.
 
         Return
         -------
@@ -2280,6 +2596,23 @@ class DiscreteDistributionallyRobustDoublyRobust(
             min_val=0.0,
             max_val=1.0,
         )
+        check_array(
+            initial_state,
+            name="initial_state",
+            expected_dim=2,
+        )
+        check_array(
+            initial_state_action,
+            name="initial_state_action",
+            expected_dim=1,
+        )
+        check_array(
+            initial_state_action_distribution,
+            name="initial_state_action_distribution",
+            expected_dim=2,
+            min_val=0.0,
+            max_val=1.0,
+        )
         if reward.shape[0] % step_per_episode:
             raise ValueError(
                 "Expected `reward.shape[0] \\% step_per_episode == 0`, but found False"
@@ -2296,10 +2629,16 @@ class DiscreteDistributionallyRobustDoublyRobust(
             reward.shape[0]
             == behavior_policy_trajectory_wise_pscore.shape[0]
             == evaluation_policy_trajectory_wise_pscore.shape[0]
+            == initial_state.shape[0]
+            == initial_state_action.shape[0]
+            == initial_state_action_distribution[0]
         ):
             raise ValueError(
-                "Expected `reward.shape[0] == behavior_policy_trajectory_wise_pscore.shape[0] == evaluation_policy_trajectory_wise_pscore.shape[0]`, but found False"
+                "Expected `action.shape[0] == reward.shape[0] == behavior_policy_trajectory_wise_pscore.shape[0] == evaluation_policy_trajectory_wise_pscore.shape[0]"
+                "== initial_state.shape[0] == initial_state_action.shape[0] == initial_state_action_distribution.shape[0]`, but found False"
             )
+        if random_state is None:
+            raise ValueError("random_state must be given")
         (
             trajectory_wise_reward,
             trajectory_wise_importance_weight,
@@ -2310,36 +2649,92 @@ class DiscreteDistributionallyRobustDoublyRobust(
             evaluation_policy_trajectory_wise_pscore=evaluation_policy_trajectory_wise_pscore,
             gamma=gamma,
         )
+        n_episodes = trajectory_wise_importance_weight.shape[0]
 
-        weight_sum = trajectory_wise_reward.sum()
-        trajectory_wise_reward = torch.tensor(
-            trajectory_wise_reward, dtype=torch.float, require_grad=False
-        )
-        trajectory_wise_importance_weight = torch.tensor(
-            trajectory_wise_reward, dtype=torch.float, require_grad=False
-        )
-
-        alpha_prior = self.initial_alpha
-        alpha = torch.tensor([self.initial_alpha], dtype=torch.float, require_grad=True)
-        optimizer = self.optimizer.instantiate([alpha])
-
-        for _ in range(self.max_gradient_steps):
-            estimated_exponential_policy_value = (
-                trajectory_wise_importance_weight
-                * torch.exp(-trajectory_wise_reward / alpha)
-            ).sum() / weight_sum
-            objective = -alpha * (
-                torch.log(estimated_exponential_policy_value) + self.delta
+        fit_episodes = np.zeros((self.n_fold, n_episodes // 2))
+        train_episodes = np.zeros((self.n_fold, n_episodes // 2))
+        for k in range(self.n_folds):
+            fit_episodes[k], train_episodes[k] = train_test_split(
+                np.arange(n_episodes),
+                test_size=n_episodes // 2,
+                train_size=n_episodes // 2,
+                random_state=random_state + k,
             )
-            loss = -objective
 
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
+        initial_alpha = self._initialize_alpha(
+            trajectory_wise_reward=trajectory_wise_reward,
+            trajectory_wise_importance_weight=trajectory_wise_importance_weight,
+            fit_episodes=fit_episodes,
+        )
+        f_0 = self._predict_trajectory_wise_reward_momentum_given_initial_alpha(
+            n_actions=initial_state_action_distribution.shape[1],
+            initial_state=initial_state,
+            initial_state_action=initial_state_action,
+            trajectory_wise_reward=trajectory_wise_reward,
+            initial_alpha=initial_alpha,
+            train_episodes=train_episodes,
+            momentum=0,
+        )
+        f_1 = self._predict_trajectory_wise_reward_momentum_given_initial_alpha(
+            n_actions=initial_state_action_distribution.shape[1],
+            initial_state=initial_state,
+            initial_state_action=initial_state_action,
+            trajectory_wise_reward=trajectory_wise_reward,
+            initial_alpha=initial_alpha,
+            train_episodes=train_episodes,
+            momentum=0,
+        )
 
-            if np.abs(alpha.item() - alpha_prior) < 0.01 * alpha_prior:
+        alpha = initial_alpha.mean()
+        for _ in range(self.max_steps):
+            W_0 = self._estimate_policy_value_momentum_given_alpha(
+                trajectory_wise_reward=trajectory_wise_reward,
+                trajectory_wise_importance_weight=trajectory_wise_importance_weight,
+                trajectory_wise_reward_prediction=f_0,
+                initial_state_action=initial_state_action,
+                initial_state_action_distribution=initial_state_action_distribution,
+                alpha=alpha,
+                momentum=0,
+            )
+            W_1 = self._estimate_policy_value_momentum_given_alpha(
+                trajectory_wise_reward=trajectory_wise_reward,
+                trajectory_wise_importance_weight=trajectory_wise_importance_weight,
+                trajectory_wise_reward_prediction=f_1,
+                initial_state_action=initial_state_action,
+                initial_state_action_distribution=initial_state_action_distribution,
+                alpha=alpha,
+                momentum=1,
+            )
+            W_0_derivative = (
+                self._estimate_policy_value_momentum_derivative_given_alpha(
+                    trajectory_wise_reward=trajectory_wise_reward,
+                    trajectory_wise_importance_weight=trajectory_wise_importance_weight,
+                    alpha=alpha,
+                    momentum=0,
+                )
+            )
+            W_1_derivative = (
+                self._estimate_policy_value_momentum_derivative_given_alpha(
+                    trajectory_wise_reward=trajectory_wise_reward,
+                    trajectory_wise_importance_weight=trajectory_wise_importance_weight,
+                    alpha=alpha,
+                    momentum=1,
+                )
+            )
+            objective = -alpha * (np.log(W_0) + self.delta)
+            momentum = -W_1 / (alpha * W_0) - np.log(W_0) - self.delta
+            momentum_derivative = (
+                -W_0_derivative / W_0
+                - (alpha * W_1_derivative * W_0 - W_1 * (W_0 + alpha * W_0_derivative))
+                / (alpha * W_0) ** 2
+            )
+
+            alpha_prior = alpha
+            alpha = np.clip(
+                alpha_prior - momentum / momentum_derivative, 0, 1 / self.delta
+            )
+
+            if np.abs(alpha - alpha_prior) < self.epsilon:
                 break
-            else:
-                alpha_prior = alpha.item()
 
-        return objective.item()
+        return objective
