@@ -1977,6 +1977,11 @@ class DiscreteDistributionallyRobustDoublyRobust(
         self.action_type = "discrete"
         check_scalar(self.n_folds, name="n_folds", type=int, min_val=1)
 
+        if not isinstance(self.baseline_estimator, BaseEstimator):
+            raise ValueError(
+                "baseline_estimator must be a child class of BaseEstimator"
+            )
+
     def _estimate_policy_value_momentum_by_snis(
         self,
         trajectory_wise_reward: np.ndarray,

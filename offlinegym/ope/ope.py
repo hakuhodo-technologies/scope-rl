@@ -21,7 +21,11 @@ from d3rlpy.ope import FQE as ContinuousFQE
 from d3rlpy.models.encoders import VectorEncoderFactory
 from d3rlpy.models.q_functions import MeanQFunctionFactory
 
-from offlinegym.ope.estimators_discrete import BaseOffPolicyEstimator
+from offlinegym.ope.estimators_base import (
+    BaseOffPolicyEstimator,
+    BaseCumulativeDistributionalOffPolicyEstimator,
+    BaseDistributionallyRobustOffPolicyEstimator,
+)
 from offlinegym.ope.online import rollout_policy_online
 from offlinegym.policy.head import BaseHead
 from offlinegym.types import LoggedDataset, OPEInputDict
@@ -171,16 +175,23 @@ class DiscreteOffPolicyEvaluation:
     def __post_init__(self) -> None:
         "Initialize class."
         check_logged_dataset(self.logged_dataset)
-        self.action_type = self.logged_dataset["action_type"]
         self.step_per_episode = self.logged_dataset["step_per_episode"]
+
+        if self.logged_dataset["action_type"] != "discrete":
+            raise RuntimeError("logged_dataset does not `discrete` action_type")
 
         self.ope_estimators_ = dict()
         for estimator in self.ope_estimators:
             self.ope_estimators_[estimator.estimator_name] = estimator
 
-            if estimator.action_type != self.action_type:
+            if estimator.action_type != "discrete":
                 raise RuntimeError(
-                    f"One of the ope_estimators, {estimator.estimator_name} does not match action_type in logged_dataset. Please use {self.action_type} type instead"
+                    f"One of the ope_estimators, {estimator.estimator_name} does not match `discrete` action_type"
+                )
+
+            if not isinstance(estimator, BaseOffPolicyEstimator):
+                raise RuntimeError(
+                    f"ope_estimators must be child classes of BaseOffPolicyEstimator, but one of them, {estimator.estimator_name} is not"
                 )
 
         behavior_policy_pscore = self.logged_dataset["pscore"].reshape(
@@ -873,8 +884,24 @@ class ContinuousOffPolicyEvaluation:
     def __post_init__(self) -> None:
         "Initialize class."
         check_logged_dataset(self.logged_dataset)
-        self.action_type = self.logged_dataset["action_type"]
         self.step_per_episode = self.logged_dataset["step_per_episode"]
+
+        if self.logged_dataset["action_type"] != "continuous":
+            raise ValueError("logged_dataset does not `continuous` action_type")
+
+        self.ope_estimators_ = dict()
+        for estimator in self.ope_estimators:
+            self.ope_estimators_[estimator.estimator_name] = estimator
+
+            if estimator.action_type != "continuous":
+                raise RuntimeError(
+                    f"One of the ope_estimators, {estimator.estimator_name} does not match `continuous` action_type"
+                )
+
+            if not isinstance(estimator, BaseOffPolicyEstimator):
+                raise RuntimeError(
+                    f"ope_estimators must be child classes of BaseOffPolicyEstimator, but one of them, {estimator.estimator_name} is not"
+                )
 
         if self.sigma is not None:
             check_array(self.sigma, name="sigma", expected_dim=1, min_val=0.0)
@@ -882,15 +909,6 @@ class ContinuousOffPolicyEvaluation:
         if self.use_truncated_kernel:
             check_array(self.action_min, name="action_min", expected_dim=1)
             check_array(self.action_max, name="action_max", expected_dim=1)
-
-        self.ope_estimators_ = dict()
-        for estimator in self.ope_estimators:
-            self.ope_estimators_[estimator.estimator_name] = estimator
-
-            if estimator.action_type != self.action_type:
-                raise RuntimeError(
-                    f"One of the ope_estimators, {estimator.estimator_name} does not match action_type in logged_dataset. Please use {self.action_type} type instead"
-                )
 
         behavior_policy_pscore = self.logged_dataset["pscore"].reshape(
             (-1, self.step_per_episode)
@@ -1593,8 +1611,27 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
     def __post_init__(self) -> None:
         "Initialize class."
         check_logged_dataset(self.logged_dataset)
-        self.action_type = self.logged_dataset["action_type"]
         self.step_per_episode = self.logged_dataset["step_per_episode"]
+
+        if self.logged_dataset["action_type"] != "discrete":
+            raise ValueError("logged_dataset does not `discrete` action_type")
+
+        self.ope_estimators_ = dict()
+        for estimator in self.ope_estimators:
+            self.ope_estimators_[estimator.estimator_name] = estimator
+
+            if estimator.action_type != "discrete":
+                raise RuntimeError(
+                    f"One of the ope_estimators, {estimator.estimator_name} does not match `discrete` action_type"
+                )
+
+            if not isinstance(
+                estimator, BaseCumulativeDistributionalOffPolicyEstimator
+            ):
+                raise RuntimeError(
+                    f"ope_estimators must be child classes of BaseCumulativeDistributionalOffPolicyEstimator, but one of them, {estimator.estimator_name} is not"
+                )
+
         if not self.use_observations_as_reward_scale:
             if self.scale_min is None:
                 raise ValueError(
@@ -1624,15 +1661,6 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
                 target_type=int,
                 min_val=1,
             )
-
-        self.ope_estimators_ = dict()
-        for estimator in self.ope_estimators:
-            self.ope_estimators_[estimator.estimator_name] = estimator
-
-            if estimator.action_type != self.action_type:
-                raise RuntimeError(
-                    f"One of the ope_estimators, {estimator.estimator_name} does not match action_type in logged_dataset. Please use {self.action_type} type instead"
-                )
 
         behavior_policy_pscore = self.logged_dataset["pscore"].reshape(
             (-1, self.step_per_episode)
@@ -2046,6 +2074,10 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
             Name of the bar figure.
 
         """
+        if hue not in ["estimator", "policy"]:
+            raise ValueError(
+                f"hue must be either `estimator` or `policy`, but {hue} is given"
+            )
         if fig_dir is not None and not isinstance(fig_dir, Path):
             raise ValueError(f"fig_dir must be a Path, but {type(fig_dir)} is given")
         if fig_name is not None and not isinstance(fig_name, str):
@@ -2271,21 +2303,28 @@ class DiscreteDistributionallyRobustOffPolicyEvaluation:
     def __post_init__(self) -> None:
         "Initialize class."
         check_logged_dataset(self.logged_dataset)
-        self.action_type = self.logged_dataset["action_type"]
         self.step_per_episode = self.logged_dataset["step_per_episode"]
 
-        check_scalar(self.alpha_prior, name="alpha_prior", type=float, min_val=0.0)
-        check_scalar(self.max_steps, name="max_steps", type=int, min_val=1)
-        check_scalar(self.epsilon, name="epsilon", type=float, min_val=0.0)
+        if self.logged_dataset["action_type"] != "discrete":
+            raise ValueError("logged_dataset does not `discrete` action_type")
 
         self.ope_estimators_ = dict()
         for estimator in self.ope_estimators:
             self.ope_estimators_[estimator.estimator_name] = estimator
 
-            if estimator.action_type != self.action_type:
+            if estimator.action_type != "discrete":
                 raise RuntimeError(
-                    f"One of the ope_estimators, {estimator.estimator_name} does not match action_type in logged_dataset. Please use {self.action_type} type instead"
+                    f"One of the ope_estimators, {estimator.estimator_name} does not match `discrete` action_type"
                 )
+
+            if not isinstance(estimator, BaseDistributionallyRobustOffPolicyEstimator):
+                raise RuntimeError(
+                    f"ope_estimators must be child classes of BaseDistributionallyRobustOffPolicyEstimator, but one of them, {estimator.estimator_name} is not"
+                )
+
+        check_scalar(self.alpha_prior, name="alpha_prior", type=float, min_val=0.0)
+        check_scalar(self.max_steps, name="max_steps", type=int, min_val=1)
+        check_scalar(self.epsilon, name="epsilon", type=float, min_val=0.0)
 
         behavior_policy_pscore = self.logged_dataset["pscore"].reshape(
             (-1, self.step_per_episode)
@@ -2364,6 +2403,7 @@ class DiscreteDistributionallyRobustOffPolicyEvaluation:
         input_dict: OPEInputDict,
         gamma: float = 1.0,
         delta: float = 0.05,
+        random_state: Optional[int] = None,
     ) -> Dict[str, float]:
         """Estimate the worst case policy value of evaluation policy.
 
@@ -2387,6 +2427,9 @@ class DiscreteDistributionallyRobustOffPolicyEvaluation:
 
         delta: float, default=0.05 (> 0)
             Allowance of the distributional shift.
+
+        random_state: int, default=None (>= 0)
+            Random state.
 
         Return
         -------
@@ -2422,6 +2465,7 @@ class DiscreteDistributionallyRobustOffPolicyEvaluation:
                     alpha_prior=self.alpha_prior,
                     max_steps=self.max_steps,
                     epsilon=self.epsilon,
+                    random_state=random_state,
                 )
 
         return defaultdict_to_dict(worst_case_policy_value_dict)
