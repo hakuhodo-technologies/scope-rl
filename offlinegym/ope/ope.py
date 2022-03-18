@@ -1,15 +1,14 @@
 """Off-Policy Evaluation Class to Streamline OPE."""
 from dataclasses import dataclass
-from socket import AF_AAL5
 from typing import Dict, List, Tuple, Optional, Any
 from pathlib import Path
 
 from collections import defaultdict
-from sklearn.utils.validation import check_scalar
 from tqdm.autonotebook import tqdm
 
 import torch
 import numpy as np
+from sklearn.utils import check_scalar
 from pandas import DataFrame
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -157,6 +156,12 @@ class OffPolicyEvaluation:
     Yuta Saito, Shunsuke Aihara, Megumi Matsutani, and Yusuke Narita.
     "Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation.", 2021.
 
+    Josiah P. Hanna, Peter Stone, and Scott Niekum.
+    "Bootstrapping with Models: Confidence Intervals for Off-Policy Evaluation.", 2017.
+
+    Philip S. Thomas, Georgios Theocharous, and Mohammad Ghavamzadeh.
+    "High Confidence Off-Policy Evaluation.", 2015.
+
     """
 
     logged_dataset: LoggedDataset
@@ -235,9 +240,13 @@ class OffPolicyEvaluation:
         policy_value_dict = defaultdict(dict)
 
         for eval_policy in input_dict.keys():
-            policy_value_dict[eval_policy]["on_policy"] = input_dict[eval_policy][
-                "on_policy_policy_value"
-            ].mean()
+            if input_dict[eval_policy]["on_policy_policy_value"] is not None:
+                policy_value_dict[eval_policy]["on_policy"] = input_dict[eval_policy][
+                    "on_policy_policy_value"
+                ].mean()
+            else:
+                policy_value_dict[eval_policy]["on_policy"] = None
+
             for estimator_name, estimator in self.ope_estimators_.items():
                 policy_value_dict[eval_policy][
                     estimator_name
@@ -291,7 +300,7 @@ class OffPolicyEvaluation:
 
         Return
         -------
-        policy_value_interval_dict: Dict[str, Dict[str, float]]
+        policy_value_interval_dict: Dict[str, Dict[str, Dict[str, float]]]
             Dictionary containing estimated confidence intervals estimated
             using nonparametric bootstrap procedure.
             key: [evaluation_policy_name][OPE_estimator_name]
@@ -300,6 +309,19 @@ class OffPolicyEvaluation:
         policy_value_interval_dict = defaultdict(dict)
 
         for eval_policy in input_dict.keys():
+            if input_dict[eval_policy]["on_policy_policy_value"] is not None:
+                policy_value_interval_dict[eval_policy][
+                    "on_policy"
+                ] = self._estimate_confidence_interval[ci](
+                    input_dict[eval_policy]["on_policy_policy_value"],
+                    gamma=gamma,
+                    alpha=alpha,
+                    n_bootstrap_samples=n_bootstrap_samples,
+                    random_state=random_state,
+                )
+            else:
+                policy_value_interval_dict[eval_policy]["on_policy"] = None
+
             for estimator_name, estimator in self.ope_estimators_.items():
                 policy_value_interval_dict[eval_policy][
                     estimator_name
@@ -312,6 +334,7 @@ class OffPolicyEvaluation:
                     n_bootstrap_samples=n_bootstrap_samples,
                     random_state=random_state,
                 )
+
         return defaultdict_to_dict(policy_value_interval_dict)
 
     def summarize_off_policy_estimates(
@@ -381,7 +404,11 @@ class OffPolicyEvaluation:
                 index=["policy_value"],
             ).T
 
-            on_policy_policy_value = policy_value_dict[eval_policy]["on_policy"].mean()
+            on_policy_policy_value = None
+            if policy_value_dict[eval_policy]["on_policy"] is not None:
+                on_policy_policy_value = policy_value_dict[eval_policy][
+                    "on_policy"
+                ].mean()
             if on_policy_policy_value is not None and on_policy_policy_value > 0:
                 policy_value_df_["relative_policy_value"] = (
                     policy_value_df_ / on_policy_policy_value
@@ -685,6 +712,991 @@ class OffPolicyEvaluation:
                 eval_metric_ope_dict[eval_policy], index=[eval_policy]
             ).T
         return eval_metric_ope_df
+
+
+@dataclass
+class CumulativeDistributionalOffPolicyEvaluation:
+    """Class to conduct cumulative distributional OPE by multiple estimators simultaneously.
+
+    Parameters
+    -----------
+    logged_dataset: LoggedDataset
+        Logged dataset used to conduct OPE.
+
+    ope_estimators: List[BaseOffPolicyEstimator]
+        List of OPE estimators used to evaluate the policy value of evaluation policy.
+        Estimators must follow the interface of `offlinegym.ope.BaseCumulativeDistributionalOffPolicyEstimator`.
+
+    r_min: float, default=None
+        Minimum reward in CDF.
+        When `use_observations_as_reward_scale == False`, a value must be given.
+
+    r_max: float, default=None
+        Maximum reward in CDF.
+        When `use_observations_as_reward_scale == False`, a value must be given.
+
+    n_partitiion: int, default=None
+        Number of partition in reward scale (x-axis of CDF).
+        When `use_observations_as_reward_scale == False`, a value must be given.
+
+    use_observations_as_reward_scale: bool, default=False
+        Whether to use the reward observed by the behavior policy as the reward scale.
+        If True, the reward scale follows the one defined in Chundak et al. (2021).
+        If False, the reward scale is uniform, following Huang et al. (2021).
+
+    Examples
+    ----------
+    .. ::code-block:: python
+
+        # import necessary module from offlinegym
+        >>> from offlinegym.dataset import SyntheticDataset
+        >>> from offlinegym.policy import DiscreteEpsilonGreedyHead
+        >>> from offlinegym.ope import CreateOPEInput
+        >>> from offlinegym.ope import CumulativeDistributionalOffPolicyEvaluation
+        >>> from offlinegym.ope import DiscreteCumulativeDistributionalImportanceSampling as CDIS
+        >>> from offlinegym.ope import DiscreteCumulativeDistributionalSelfNormalizedImportanceSampling as CDSNIS
+
+        # import necessary module from other libraries
+        >>> from rtbgym import RTBEnv, CustomizedRTBEnv
+        >>> from sklearn.linear_model import LogisticRegression
+        >>> from d3rlpy.algos import DoubleDQN
+        >>> from d3rlpy.online.buffers import ReplayBuffer
+        >>> from d3rlpy.online.explorers import ConstantEpsilonGreedy
+
+        # initialize environment
+        >>> env = RTBEnv(random_state=12345)
+
+        # customize environment from the decision makers' perspective
+        >>> env = CustomizedRTBEnv(
+                original_env=env,
+                reward_predictor=LogisticRegression(),
+                action_type="discrete",
+            )
+
+        # define (RL) agent (i.e., policy) and train on the environment
+        >>> ddqn = DoubleDQN()
+        >>> buffer = ReplayBuffer(
+                maxlen=10000,
+                env=env,
+            )
+        >>> explorer = ConstantEpsilonGreedy(
+                epsilon=0.3,
+            )
+        >>> ddqn.fit_online(
+                env=env,
+                buffer=buffer,
+                explorer=explorer,
+            )
+
+        # convert ddqn policy to stochastic data collection policy
+        >>> behavior_policy = DiscreteEpsilonGreedyHead(
+                ddqn,
+                n_actions=env.action_space.n,
+                epsilon=0.3,
+                name="ddqn_epsilon_0.3",
+                random_state=12345,
+            )
+
+        # initialize dataset class
+        >>> dataset = SyntheticDataset(
+                env=env,
+                behavior_policy=behavior_policy,
+                random_state=12345,
+            )
+
+        # data collection
+        >>> logged_dataset = dataset.obtain_trajectories(n_episodes=100, obtain_info=True)
+
+        # evaluation policy
+        >>> ddqn_ = DiscreteEpsilonGreedyHead(
+            base_policy=ddqn,
+            n_actions=env.action_space.n,
+            name="ddqn",
+            epsilon=0.0,
+            random_state=12345
+        )
+        >>> random_ = DiscreteEpsilonGreedyHead(
+            base_policy=ddqn,
+            n_actions=env.action_space.n,
+            name="random",
+            epsilon=1.0,
+            random_state=12345
+        )
+
+        # create input for off-policy evaluation (OPE)
+        >>> prep = CreateOPEInput(
+            logged_dataset=logged_dataset,
+        )
+        >>> input_dict = prep.obtain_whole_inputs(
+            evaluation_policies=[ddqn_, random_],
+            env=env,
+            n_episodes_on_policy_evaluation=100,
+            random_state=12345,
+        )
+
+        # OPE
+        >>> ope = OffPolicyEvaluation(
+            logged_dataset=logged_dataset,
+            ope_estimators=[TIS(), SIS()],
+        )
+        >>> policy_value_dict = ope.estimate_policy_value(
+            input_dict=input_dict,
+        )
+        >>> policy_value_dict
+        {'ddqn': {'on_policy': 15.5, 'tis': 22.901319216705502, 'sis': 17.970922685707617},
+        'random': {'on_policy': 15.5, 'tis': 0.555637908601827, 'sis': 6.108053435521632}}
+
+
+    References
+    -------
+    Yash Chandak, Scott Niekum, Bruno Castro da Silva, Erik Learned-Miller, Emma Brunskill, and Philip S. Thomas.
+    "Universal Off-Policy Evaluation.", 2021.
+
+    Audrey Huang, Liu Leqi, Zachary C. Lipton, and Kamyar Azizzadenesheli.
+    "Off-Policy Risk Assessment in Contextual Bandits.", 2021.
+
+    """
+
+    logged_dataset: LoggedDataset
+    ope_estimators: List[BaseOffPolicyEstimator]
+    r_min: Optional[float] = None
+    r_max: Optional[float] = None
+    n_partition: Optional[int] = None
+    use_observations_as_reward_scale: bool = False
+
+    def __post_init__(self) -> None:
+        "Initialize class."
+        check_logged_dataset(self.logged_dataset)
+        self.action_type = self.logged_dataset["action_type"]
+        self.step_per_episode = self.logged_dataset["step_per_episode"]
+        if not self.use_observations_as_reward_scale:
+            if self.r_min is None:
+                raise ValueError(
+                    "r_min must be given when `use_observations_as_reward_scale == False`"
+                )
+            if self.r_max is None:
+                raise ValueError(
+                    "r_max must be given when `use_observations_as_reward_scale == False`"
+                )
+            if self.n_partition is None:
+                raise ValueError(
+                    "r_min must be given when `use_observations_as_reward_scale == False`"
+                )
+            check_scalar(
+                self.r_min,
+                name="r_min",
+                target_type=float,
+            )
+            check_scalar(
+                self.r_max,
+                name="r_max",
+                target_type=float,
+            )
+            check_scalar(
+                self.n_partition,
+                name="n_partition",
+                target_type=int,
+                min_val=1,
+            )
+
+        self.ope_estimators_ = dict()
+        for estimator in self.ope_estimators:
+            self.ope_estimators_[estimator.estimator_name] = estimator
+
+            if estimator.action_type != self.action_type:
+                raise RuntimeError(
+                    f"One of the ope_estimators, {estimator.estimator_name} does not match action_type in logged_dataset. Please use {self.action_type} type instead"
+                )
+
+        behavior_policy_pscore = self.logged_dataset["pscore"].reshape(
+            (-1, self.step_per_episode)
+        )
+        behavior_policy_step_wise_pscore = np.cumprod(behavior_policy_pscore, axis=1)
+        behavior_policy_trajectory_wise_pscore = np.tile(
+            behavior_policy_step_wise_pscore[:, -1], (self.step_per_episode, 1)
+        ).T
+
+        self.input_dict_ = {
+            "step_per_episode": self.step_per_episode,
+            "action": self.logged_dataset["action"].astype(int),
+            "reward": self.logged_dataset["reward"],
+            "behavior_policy_step_wise_pscore": behavior_policy_step_wise_pscore.flatten(),
+            "behavior_policy_trajectory_wise_pscore": behavior_policy_trajectory_wise_pscore.flatten(),
+        }
+
+    def obtain_reward_scale(self, gamma: float = 1.0) -> np.ndarray:
+        """Obtain reward scale of the cumulative distribution function.
+
+        Parameters
+        -------
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
+
+        Return
+        -------
+        reward_scale: NDArray, shape (n_partition, )
+            Reward scale of the cumulative distribution function.
+
+        """
+        check_scalar(gamma, name="gamma", type=float, min_val=0.0, max_val=1.0)
+
+        if self.use_observations_as_reward_scale:
+            behavior_policy_reward = self.input_dict_["reward"].reshape(
+                (-1, self.step_per_episode)
+            )
+            discount = np.full(behavior_policy_reward.shape[1], gamma).cumprod()
+            behavior_policy_trajectory_wise_reward = (
+                behavior_policy_reward * discount
+            ).sum(axis=1)
+            reward_scale = np.sort(np.unique(behavior_policy_trajectory_wise_reward))
+        else:
+            reward_scale = np.linspace(self.r_min, self.r_max, num=self.n_partition)
+
+        return reward_scale
+
+    def estimate_cumulative_distribution_function(
+        self,
+        input_dict: OPEInputDict,
+        gamma: float = 1.0,
+    ):
+        """Estimate the cumulative distribution of the trajectory wise reward of evaluation policy.
+
+        Parameters
+        -------
+        input_dict: OPEInputDict
+            Dictionary of the OPE inputs for each evaluation policy.
+            Please refer to `CreateOPEInput` class for the detail.
+            key: [evaluation_policy_name][
+                evaluation_policy_step_wise_pscore,
+                evaluation_policy_trajectory_wise_pscore,
+                evaluation_policy_action,
+                evaluation_policy_action_dist,
+                state_action_value_prediction,
+                initial_state_value_prediction,
+                on_policy_policy_value,
+            ]
+
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
+
+        Return
+        -------
+        cumulative_distribution_dict: Dict[str, Dict[str, np.ndarray]]
+            Dictionary containing estimated cumulative distribution of each evaluation policy by OPE estimators.
+            key: [evaluation_policy_name][OPE_estimator_name]
+
+        """
+        cumulative_distribution_dict = defaultdict(dict)
+        reward_scale = self.obtain_reward_scale(gamma=gamma)
+
+        for eval_policy in input_dict.keys():
+            if input_dict[eval_policy]["on_policy_policy_value"] is not None:
+                cumulative_distribution_dict[eval_policy]["on_policy"] = np.histgram(
+                    input_dict[eval_policy]["on_policy_policy_value"],
+                    bins=reward_scale,
+                    density=True,
+                )[0]
+            else:
+                cumulative_distribution_dict[eval_policy]["on_policy"] = None
+
+            for estimator_name, estimator in self.ope_estimators_.items():
+                cumulative_distribution_dict[eval_policy][
+                    estimator_name
+                ] = estimator.estimate_cumulative_distribution_function(
+                    **input_dict[eval_policy],
+                    **self.input_dict_,
+                    step_per_episode=self.step_per_episode,
+                    reward_scale=reward_scale,
+                    gamma=gamma,
+                )
+
+        return defaultdict_to_dict(cumulative_distribution_dict)
+
+    def estimate_mean(
+        self,
+        input_dict: OPEInputDict,
+        gamma: float = 1.0,
+    ):
+        """Estimate the mean of the trajectory wise reward (i.e., policy value) of evaluation policy.
+
+        Parameters
+        -------
+        input_dict: OPEInputDict
+            Dictionary of the OPE inputs for each evaluation policy.
+            Please refer to `CreateOPEInput` class for the detail.
+            key: [evaluation_policy_name][
+                evaluation_policy_step_wise_pscore,
+                evaluation_policy_trajectory_wise_pscore,
+                evaluation_policy_action,
+                evaluation_policy_action_dist,
+                state_action_value_prediction,
+                initial_state_value_prediction,
+                on_policy_policy_value,
+            ]
+
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
+
+        Return
+        -------
+        mean_dict: Dict[str, Dict[str, float]]
+            Dictionary containing estimated mean trajectory wise reward of each evaluation policy by OPE estimators.
+            key: [evaluation_policy_name][OPE_estimator_name]
+
+        """
+        mean_dict = defaultdict(dict)
+        reward_scale = self.obtain_reward_scale(gamma=gamma)
+
+        for eval_policy in input_dict.keys():
+            if input_dict[eval_policy]["on_policy_policy_value"] is not None:
+                cumulative_density = np.histgram(
+                    input_dict[eval_policy]["on_policy_policy_value"],
+                    bins=reward_scale,
+                    density=True,
+                )[0]
+                mean_dict[eval_policy]["on_policy"] = (
+                    np.diff(cumulative_density) * reward_scale[1:]
+                ).sum()
+            else:
+                mean_dict[eval_policy]["on_policy"] = None
+
+            for estimator_name, estimator in self.ope_estimators_.items():
+                mean_dict[eval_policy][estimator_name] = estimator.estimate_mean(
+                    **input_dict[eval_policy],
+                    **self.input_dict_,
+                    step_per_episode=self.step_per_episode,
+                    reward_scale=reward_scale,
+                    gamma=gamma,
+                )
+
+        return defaultdict_to_dict(mean_dict)
+
+    def estimate_variance(
+        self,
+        input_dict: OPEInputDict,
+        gamma: float = 1.0,
+    ):
+        """Estimate the variance of the trajectory wise reward of evaluation policy.
+
+        Parameters
+        -------
+        input_dict: OPEInputDict
+            Dictionary of the OPE inputs for each evaluation policy.
+            Please refer to `CreateOPEInput` class for the detail.
+            key: [evaluation_policy_name][
+                evaluation_policy_step_wise_pscore,
+                evaluation_policy_trajectory_wise_pscore,
+                evaluation_policy_action,
+                evaluation_policy_action_dist,
+                state_action_value_prediction,
+                initial_state_value_prediction,
+                on_policy_policy_value,
+            ]
+
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
+
+        Return
+        -------
+        variance_dict: Dict[str, Dict[str, float]]
+            Dictionary containing estimated variance of trajectory wise reward of each evaluation policy by OPE estimators.
+            key: [evaluation_policy_name][OPE_estimator_name]
+
+        """
+        variance_dict = defaultdict(dict)
+        reward_scale = self.obtain_reward_scale(gamma=gamma)
+
+        for eval_policy in input_dict.keys():
+            if input_dict[eval_policy]["on_policy_policy_value"] is not None:
+                cumulative_density = np.histgram(
+                    input_dict[eval_policy]["on_policy_policy_value"],
+                    bins=reward_scale,
+                    density=True,
+                )[0]
+                mean = (np.diff(cumulative_density) * reward_scale[1:]).sum()
+                variance_dict[eval_policy]["on_policy"] = (
+                    np.diff(cumulative_density) * (reward_scale[1:] - mean) ** 2
+                ).sum()
+            else:
+                variance_dict[eval_policy]["on_policy"] = None
+
+            for estimator_name, estimator in self.ope_estimators_.items():
+                variance_dict[eval_policy][
+                    estimator_name
+                ] = estimator.estimate_variance(
+                    **input_dict[eval_policy],
+                    **self.input_dict_,
+                    step_per_episode=self.step_per_episode,
+                    reward_scale=reward_scale,
+                    gamma=gamma,
+                )
+
+        return defaultdict_to_dict(variance_dict)
+
+    def estimate_conditional_value_at_risk(
+        self,
+        input_dict: OPEInputDict,
+        gamma: float = 1.0,
+        alpha: float = 0.05,
+    ):
+        """Estimate the conditional value at risk of the trajectory wise reward of evaluation policy.
+
+        Parameters
+        -------
+        input_dict: OPEInputDict
+            Dictionary of the OPE inputs for each evaluation policy.
+            Please refer to `CreateOPEInput` class for the detail.
+            key: [evaluation_policy_name][
+                evaluation_policy_step_wise_pscore,
+                evaluation_policy_trajectory_wise_pscore,
+                evaluation_policy_action,
+                evaluation_policy_action_dist,
+                state_action_value_prediction,
+                initial_state_value_prediction,
+                on_policy_policy_value,
+            ]
+
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
+
+        alpha: float, default=0.05
+            Proportion of the sided region.
+
+        Return
+        -------
+        conditional_value_at_risk_dict: Dict[str, Dict[str, float]]
+            Dictionary containing estimated conditional value at risk of trajectory wise reward of each evaluation policy by OPE estimators.
+            key: [evaluation_policy_name][OPE_estimator_name]
+
+        """
+        conditional_value_at_risk_dict = defaultdict(dict)
+        reward_scale = self.obtain_reward_scale(gamma=gamma)
+
+        for eval_policy in input_dict.keys():
+            if input_dict[eval_policy]["on_policy_policy_value"] is not None:
+                cumulative_density = np.histgram(
+                    input_dict[eval_policy]["on_policy_policy_value"],
+                    bins=reward_scale,
+                    density=True,
+                )[0]
+                lower_idx = np.argmin(cumulative_density > alpha)
+                conditional_value_at_risk_dict[eval_policy]["on_policy"] = (
+                    np.diff(cumulative_density) * reward_scale[1:]
+                )[: lower_idx + 1].sum()
+            else:
+                conditional_value_at_risk_dict[eval_policy]["on_policy"] = None
+
+            for estimator_name, estimator in self.ope_estimators_.items():
+                conditional_value_at_risk_dict[eval_policy][
+                    estimator_name
+                ] = estimator.estimate_conditional_value_at_risk(
+                    **input_dict[eval_policy],
+                    **self.input_dict_,
+                    step_per_episode=self.step_per_episode,
+                    reward_scale=reward_scale,
+                    gamma=gamma,
+                    alpha=alpha,
+                )
+
+        return defaultdict_to_dict(conditional_value_at_risk_dict)
+
+    def estimate_interquartile_range(
+        self,
+        input_dict: OPEInputDict,
+        gamma: float = 1.0,
+        alpha: float = 0.05,
+    ):
+        """Estimate the interquartile range of the trajectory wise reward of evaluation policy.
+
+        Parameters
+        -------
+        input_dict: OPEInputDict
+            Dictionary of the OPE inputs for each evaluation policy.
+            Please refer to `CreateOPEInput` class for the detail.
+            key: [evaluation_policy_name][
+                evaluation_policy_step_wise_pscore,
+                evaluation_policy_trajectory_wise_pscore,
+                evaluation_policy_action,
+                evaluation_policy_action_dist,
+                state_action_value_prediction,
+                initial_state_value_prediction,
+                on_policy_policy_value,
+            ]
+
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
+
+        alpha: float, default=0.05
+            Proportion of the sided region.
+
+        Return
+        -------
+        interquartile_range_dict: Dict[str, Dict[str, Dict[str, float]]]
+            Dictionary containing estimated interquartile range at risk of trajectory wise reward of each evaluation policy by OPE estimators.
+            key: [evaluation_policy_name][OPE_estimator_name][quartile_name]
+
+        """
+        interquartile_range_dict = defaultdict(dict)
+        reward_scale = self.obtain_reward_scale(gamma=gamma)
+
+        for eval_policy in input_dict.keys():
+            if input_dict[eval_policy]["on_policy_policy_value"] is not None:
+                cumulative_density = np.histgram(
+                    input_dict[eval_policy]["on_policy_policy_value"],
+                    bins=reward_scale,
+                    density=True,
+                )[0]
+                mean = (np.diff(cumulative_density) * reward_scale[1:]).sum()
+                lower_idx = np.argmin(cumulative_density > alpha)
+                upper_idx = np.argmin(cumulative_density > 1 - alpha)
+
+                interquartile_range_dict[eval_policy]["on_policy"] = {
+                    "mean": mean,
+                    f"{100 * (1. - alpha)}% quartile (lower)": (
+                        reward_scale[lower_idx] + reward_scale[lower_idx + 1]
+                    )
+                    / 2,
+                    f"{100 * (1. - alpha)}% quartile (upper)": (
+                        reward_scale[upper_idx] + reward_scale[upper_idx + 1]
+                    )
+                    / 2,
+                }
+            else:
+                interquartile_range_dict[eval_policy]["on_policy"] = None
+
+            for estimator_name, estimator in self.ope_estimators_.items():
+                interquartile_range_dict[eval_policy][
+                    estimator_name
+                ] = estimator.estimate_interquartile_range(
+                    **input_dict[eval_policy],
+                    **self.input_dict_,
+                    step_per_episode=self.step_per_episode,
+                    reward_scale=reward_scale,
+                    gamma=gamma,
+                    alpha=alpha,
+                )
+
+        return defaultdict_to_dict(interquartile_range_dict)
+
+    def visualize_cumulative_distribution_function(
+        self,
+        input_dict: OPEInputDict,
+        gamma: float = 1.0,
+        hue: str = "estimator",
+        fig_dir: Optional[Path] = None,
+        fig_name: str = "estimated_cumulative_distribution_function.png",
+    ) -> None:
+        """Visualize policy value estimated by OPE estimators.
+
+        Parameters
+        -------
+        input_dict: OPEInputDict
+            Dictionary of the OPE inputs for each evaluation policy.
+            Please refer to `CreateOPEInput` class for the detail.
+            key: [evaluation_policy_name][
+                evaluation_policy_step_wise_pscore,
+                evaluation_policy_trajectory_wise_pscore,
+                evaluation_policy_action,
+                evaluation_policy_action_dist,
+                state_action_value_prediction,
+                initial_state_value_prediction,
+                on_policy_policy_value,
+            ]
+
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
+
+        hue: str, default="estimator"
+            Hue of the plot.
+            Choose either from "estimator" or "policy".
+
+        fig_dir: Path, default=None
+            Path to store the bar figure.
+            If `None` is given, the figure will not be saved.
+
+        fig_name: str, default="estimated_policy_value.png"
+            Name of the bar figure.
+
+        """
+        if fig_dir is not None and not isinstance(fig_dir, Path):
+            raise ValueError(f"fig_dir must be a Path, but {type(fig_dir)} is given")
+        if fig_name is not None and not isinstance(fig_name, str):
+            raise ValueError(f"fig_dir must be a string, but {type(fig_dir)} is given")
+
+        reward_scale = self.obtain_reward_scale(gamma=gamma)
+        cumulative_distribution_function_dict = (
+            self.estimate_cumulative_distribution_function(
+                input_dict=input_dict,
+                gamma=gamma,
+            )
+        )
+
+        if hue == "estimator":
+            n_figs = len(self.ope_estimators_ + 1)
+        else:
+            n_figs = len(input_dict)
+
+        plt.style.use("ggplot")
+        fig, axes = plt.subplots(nrows=n_figs // 3, ncols=min(3, n_figs))
+
+        if hue == "estimator":
+            for i, eval_policy in enumerate(input_dict.keys()):
+                for j, ope_estimator in enumerate(self.ope_estimators_):
+                    axes[i // 3, i % 3].plot(
+                        reward_scale,
+                        cumulative_distribution_function_dict[eval_policy][
+                            ope_estimator
+                        ],
+                        label=ope_estimator,
+                    )
+
+                if input_dict[eval_policy]["on_policy"] is not None:
+                    axes[i // 3, i % 3].plot(
+                        reward_scale,
+                        cumulative_distribution_function_dict[eval_policy]["on_policy"],
+                        label="on_policy",
+                    )
+
+                axes[i // 3, i % 3].title(eval_policy)
+                axes[i // 3, i % 3].xlabel("trajectory wise reward")
+                axes[i // 3, i % 3].ylabel("cumulative probability")
+                axes[i // 3, i % 3].legend()
+
+        else:
+            for i, ope_estimator in enumerate(self.ope_estimators_):
+                for j, eval_policy in enumerate(input_dict.keys()):
+                    axes[i // 3, i % 3].plot(
+                        reward_scale,
+                        cumulative_distribution_function_dict[eval_policy][
+                            ope_estimator
+                        ],
+                        label=eval_policy,
+                    )
+
+                axes[i // 3, i % 3].title(ope_estimator)
+                axes[i // 3, i % 3].xlabel("trajectory wise reward")
+                axes[i // 3, i % 3].ylabel("cumulative probability")
+                axes[i // 3, i % 3].legend()
+
+            if input_dict[eval_policy]["on_policy"] is not None:
+                for j, eval_policy in enumerate(input_dict.keys()):
+                    axes[i // 3, i % 3].plot(
+                        reward_scale,
+                        cumulative_distribution_function_dict[eval_policy]["on_policy"],
+                        label=eval_policy,
+                    )
+
+                axes[(i + 1) // 3, (i + 1) % 3].title("on_policy")
+                axes[(i + 1) // 3, (i + 1) % 3].xlabel("trajectory wise reward")
+                axes[(i + 1) // 3, (i + 1) % 3].ylabel("cumulative probability")
+                axes[(i + 1) // 3, (i + 1) % 3].legend()
+
+        fig.tight_layout()
+        plt.show()
+
+        if fig_dir:
+            fig.savefig(str(fig_dir / fig_name))
+
+
+@dataclass
+class DistributionallyRobustOffPolicyEvaluation:
+    """Class to conduct distributionally robust OPE by multiple estimators simultaneously.
+
+    Parameters
+    -----------
+    logged_dataset: LoggedDataset
+        Logged dataset used to conduct OPE.
+
+    ope_estimators: List[BaseOffPolicyEstimator]
+        List of OPE estimators used to evaluate the policy value of evaluation policy.
+        Estimators must follow the interface of `offlinegym.ope.BaseDistributionallyRobustOffPolicyEstimator`.
+
+    alpha_prior: float, default=1.0 (> 0)
+        Initial temperature parameter of the exponential function.
+
+    max_steps: int, default=100 (> 0)
+        Maximum steps in turning alpha.
+
+    epsilon: float, default=0.01
+        Convergence criterion of alpha.
+
+    Examples
+    ----------
+    # TODO
+    .. ::code-block:: python
+
+        # import necessary module from offlinegym
+        >>> from offlinegym.dataset import SyntheticDataset
+        >>> from offlinegym.policy import DiscreteEpsilonGreedyHead
+        >>> from offlinegym.ope import CreateOPEInput
+        >>> from offlinegym.ope import OffPolicyEvaluation
+        >>> from offlinegym.ope import DiscreteTrajectoryWiseImportanceSampling as TIS
+        >>> from offlinegym.ope import DiscreteStepWiseImportanceSampling as SIS
+
+        # import necessary module from other libraries
+        >>> from rtbgym import RTBEnv, CustomizedRTBEnv
+        >>> from sklearn.linear_model import LogisticRegression
+        >>> from d3rlpy.algos import DoubleDQN
+        >>> from d3rlpy.online.buffers import ReplayBuffer
+        >>> from d3rlpy.online.explorers import ConstantEpsilonGreedy
+
+        # initialize environment
+        >>> env = RTBEnv(random_state=12345)
+
+        # customize environment from the decision makers' perspective
+        >>> env = CustomizedRTBEnv(
+                original_env=env,
+                reward_predictor=LogisticRegression(),
+                action_type="discrete",
+            )
+
+        # define (RL) agent (i.e., policy) and train on the environment
+        >>> ddqn = DoubleDQN()
+        >>> buffer = ReplayBuffer(
+                maxlen=10000,
+                env=env,
+            )
+        >>> explorer = ConstantEpsilonGreedy(
+                epsilon=0.3,
+            )
+        >>> ddqn.fit_online(
+                env=env,
+                buffer=buffer,
+                explorer=explorer,
+            )
+
+        # convert ddqn policy to stochastic data collection policy
+        >>> behavior_policy = DiscreteEpsilonGreedyHead(
+                ddqn,
+                n_actions=env.action_space.n,
+                epsilon=0.3,
+                name="ddqn_epsilon_0.3",
+                random_state=12345,
+            )
+
+        # initialize dataset class
+        >>> dataset = SyntheticDataset(
+                env=env,
+                behavior_policy=behavior_policy,
+                random_state=12345,
+            )
+
+        # data collection
+        >>> logged_dataset = dataset.obtain_trajectories(n_episodes=100, obtain_info=True)
+
+        # evaluation policy
+        >>> ddqn_ = DiscreteEpsilonGreedyHead(
+            base_policy=ddqn,
+            n_actions=env.action_space.n,
+            name="ddqn",
+            epsilon=0.0,
+            random_state=12345
+        )
+        >>> random_ = DiscreteEpsilonGreedyHead(
+            base_policy=ddqn,
+            n_actions=env.action_space.n,
+            name="random",
+            epsilon=1.0,
+            random_state=12345
+        )
+
+        # create input for off-policy evaluation (OPE)
+        >>> prep = CreateOPEInput(
+            logged_dataset=logged_dataset,
+        )
+        >>> input_dict = prep.obtain_whole_inputs(
+            evaluation_policies=[ddqn_, random_],
+            env=env,
+            n_episodes_on_policy_evaluation=100,
+            random_state=12345,
+        )
+
+        # OPE
+        >>> ope = OffPolicyEvaluation(
+            logged_dataset=logged_dataset,
+            ope_estimators=[TIS(), SIS()],
+        )
+        >>> policy_value_dict = ope.estimate_policy_value(
+            input_dict=input_dict,
+        )
+        >>> policy_value_dict
+        {'ddqn': {'on_policy': 15.5, 'tis': 22.901319216705502, 'sis': 17.970922685707617},
+        'random': {'on_policy': 15.5, 'tis': 0.555637908601827, 'sis': 6.108053435521632}}
+
+
+    References
+    -------
+    Nathan Kallus, Xiaojie Mao, Kaiwen Wang, and Zhengyuan Zhou.
+    "Doubly Robust Distributionally Robust Off-Policy Evaluation and Learning.", 2022.
+
+    Nian Si, Fan Zhang, Zhengyuan Zhou, and Jose Blanchet.
+    "Distributional Robust Batch Contextual Bandits.", 2020.
+
+    """
+
+    logged_dataset: LoggedDataset
+    ope_estimators: List[BaseOffPolicyEstimator]
+    alpha_prior: float = 1.0
+    max_steps: int = 100
+    epsilon: float = 0.01
+
+    def __post_init__(self) -> None:
+        "Initialize class."
+        check_logged_dataset(self.logged_dataset)
+        self.action_type = self.logged_dataset["action_type"]
+        self.step_per_episode = self.logged_dataset["step_per_episode"]
+
+        check_scalar(self.alpha_prior, name="alpha_prior", type=float, min_val=0.0)
+        check_scalar(self.max_steps, name="max_steps", type=int, min_val=1)
+        check_scalar(self.epsilon, name="epsilon", type=float, min_val=0.0)
+
+        self.ope_estimators_ = dict()
+        for estimator in self.ope_estimators:
+            self.ope_estimators_[estimator.estimator_name] = estimator
+
+            if estimator.action_type != self.action_type:
+                raise RuntimeError(
+                    f"One of the ope_estimators, {estimator.estimator_name} does not match action_type in logged_dataset. Please use {self.action_type} type instead"
+                )
+
+        behavior_policy_pscore = self.logged_dataset["pscore"].reshape(
+            (-1, self.step_per_episode)
+        )
+        behavior_policy_step_wise_pscore = np.cumprod(behavior_policy_pscore, axis=1)
+        behavior_policy_trajectory_wise_pscore = np.tile(
+            behavior_policy_step_wise_pscore[:, -1], (self.step_per_episode, 1)
+        ).T
+
+        self.input_dict_ = {
+            "step_per_episode": self.step_per_episode,
+            "action": self.logged_dataset["action"].astype(int),
+            "reward": self.logged_dataset["reward"],
+            "behavior_policy_step_wise_pscore": behavior_policy_step_wise_pscore.flatten(),
+            "behavior_policy_trajectory_wise_pscore": behavior_policy_trajectory_wise_pscore.flatten(),
+            "initial_state": self.logged_dataset["state"].reshape(
+                (-1, self.step_per_episode)
+            )[:, 0],
+            "initial_state_action": self.logged_dataset["action"]
+            .astype(int)
+            .reshape((-1, self.step_per_episode))[:, 0],
+        }
+
+    def _estimate_worst_case_on_policy_policy_value(
+        self, on_policy_policy_value: np.ndarray, delta: float = 0.05
+    ):
+        """Estimate the worst case policy value of evaluation policy.
+
+        Parameters
+        -------
+        on_policy_policy_value: NDArray, shape(n_episodes, )
+            On policy policy value.
+
+        delta: float, default=0.05 (> 0)
+            Allowance of the distributional shift.
+
+        Return
+        -------
+        estimated_distributionally_robust_worst_case_policy_value: float
+            Estimated worst case objective.
+
+        """
+        n = on_policy_policy_value.shape[0]
+
+        alpha = self.alpha_prior
+        for _ in range(self.max_steps):
+            W_0 = (
+                on_policy_policy_value ** 0 * np.exp(-on_policy_policy_value / alpha)
+            ).mean()
+            W_1 = (
+                on_policy_policy_value ** 1 * np.exp(-on_policy_policy_value / alpha)
+            ).mean()
+            W_2 = (
+                on_policy_policy_value ** 2 * np.exp(-on_policy_policy_value / alpha)
+            ).mean()
+            objective = -alpha * (np.log(W_0) + delta)
+            first_order_derivative = -W_1 / (alpha * n * W_0) - np.log(W_0) - delta
+            second_order_derivative = W_1 ** 2 / (
+                alpha ** 3 * n ** 2 * W_0 ** 2
+            ) - W_2 / (alpha ** 3 * n * W_0)
+
+            alpha_prior = alpha
+            alpha = np.clip(
+                alpha_prior - first_order_derivative / second_order_derivative,
+                0,
+                1 / delta,
+            )
+
+            if np.abs(alpha - alpha_prior) < self.epsilon:
+                break
+
+        return objective
+
+    def estimate_worst_case_policy_value(
+        self,
+        input_dict: OPEInputDict,
+        gamma: float = 1.0,
+        delta: float = 0.05,
+    ) -> Dict[str, float]:
+        """Estimate the worst case policy value of evaluation policy.
+
+        Parameters
+        -------
+        input_dict: OPEInputDict
+            Dictionary of the OPE inputs for each evaluation policy.
+            Please refer to `CreateOPEInput` class for the detail.
+            key: [evaluation_policy_name][
+                evaluation_policy_step_wise_pscore,
+                evaluation_policy_trajectory_wise_pscore,
+                evaluation_policy_action,
+                evaluation_policy_action_dist,
+                state_action_value_prediction,
+                initial_state_value_prediction,
+                on_policy_policy_value,
+            ]
+
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
+
+        delta: float, default=0.05 (> 0)
+            Allowance of the distributional shift.
+
+        Return
+        -------
+        worst_case_policy_value_dict: Dict[str, Dict[str, float]]
+            Dictionary containing estimated policy value of each evaluation policy by OPE estimators.
+            key: [evaluation_policy_name][OPE_estimator_name]
+
+        """
+        worst_case_policy_value_dict = defaultdict(dict)
+
+        for eval_policy in input_dict.keys():
+            if input_dict[eval_policy]["on_policy_policy_value"] is not None:
+                worst_case_policy_value_dict[eval_policy][
+                    "on_policy"
+                ] = self._estimate_worst_case_on_policy_policy_value(
+                    on_policy_policy_value=input_dict[eval_policy][
+                        "on_policy_policy_value"
+                    ],
+                    delta=delta,
+                )
+            else:
+                worst_case_policy_value_dict[eval_policy]["on_policy"] = None
+
+            for estimator_name, estimator in self.ope_estimators_.items():
+                worst_case_policy_value_dict[eval_policy][
+                    estimator_name
+                ] = estimator.estimate_worst_case_policy_value(
+                    **input_dict[eval_policy],
+                    **self.input_dict_,
+                    step_per_episode=self.step_per_episode,
+                    gamma=gamma,
+                    delta=delta,
+                    alpha_prior=self.alpha_prior,
+                    max_steps=self.max_steps,
+                    epsilon=self.epsilon,
+                )
+
+        return defaultdict_to_dict(worst_case_policy_value_dict)
 
 
 @dataclass

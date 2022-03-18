@@ -235,7 +235,7 @@ def check_logged_dataset(logged_dataset: LoggedDataset):
         "action_dim",
         "state_dim",
         "step_per_episode",
-        "action",
+        "state" "action",
         "reward",
         "pscore",
         "done",
