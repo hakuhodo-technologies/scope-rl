@@ -33,23 +33,6 @@ class DiscreteCumulativeDistributionalDirectMethod(
 
     Parameters
     -------
-    r_min: float, default=None
-        Minimum reward in CDF.
-        When `use_observations_as_reward_scale == False`, a value must be given.
-
-    r_max: float, default=None
-        Maximum reward in CDF.
-        When `use_observations_as_reward_scale == False`, a value must be given.
-
-    n_partitiion: int, default=None
-        Number of partition in reward scale (x-axis of CDF).
-        When `use_observations_as_reward_scale == False`, a value must be given.
-
-    use_observations_as_reward_scale: bool, default=False
-        Whether to use the reward observed by the behavior policy as the reward scale.
-        If True, the reward scale follows the one defined in Chundak et al. (2021).
-        If False, the reward scale is uniform, following Huang et al. (2021).
-
     estimator_name: str, default="cdf_dm"
         Name of the estimator.
 
@@ -69,54 +52,17 @@ class DiscreteCumulativeDistributionalDirectMethod(
 
     """
 
-    r_min: Optional[float] = None
-    r_max: Optional[float] = None
-    n_partition: Optional[int] = None
-    use_observations_as_reward_scale: bool = False
     estimator_name: str = "cdf_dm"
 
     def __post_init__(self):
         self.action_type = "discrete"
-
-        if not self.use_observations_as_reward_scale:
-            if self.r_min is None:
-                raise ValueError(
-                    "r_min must be given when `use_observations_as_reward_scale == False`"
-                )
-            if self.r_max is None:
-                raise ValueError(
-                    "r_max must be given when `use_observations_as_reward_scale == False`"
-                )
-            if self.n_partition is None:
-                raise ValueError(
-                    "r_min must be given when `use_observations_as_reward_scale == False`"
-                )
-            check_scalar(
-                self.r_min,
-                name="r_min",
-                target_type=float,
-            )
-            check_scalar(
-                self.r_max,
-                name="r_max",
-                target_type=float,
-            )
-            check_scalar(
-                self.n_partition,
-                name="n_partition",
-                target_type=int,
-                min_val=1,
-            )
-
-    @property
-    def uniform_reward_scale(self) -> np.ndarray:
-        return np.linspace(self.r_min, self.r_max, num=self.n_partition)
 
     def estimate_cumulative_distribution_function(
         self,
         step_per_episode: int,
         reward: np.ndarray,
         initial_state_value_prediction: np.ndarray,
+        reward_scale: np.ndarray,
         gamma: float = 1.0,
         **kwargs,
     ) -> Tuple[np.ndarray]:
@@ -132,6 +78,9 @@ class DiscreteCumulativeDistributionalDirectMethod(
 
         initial_state_value_prediction: NDArray, shape (n_episodes, )
             Estimated initial state value.
+
+        reward_scale: NDArray, shape (n_partition, )
+            Scale of the trajectory wise reward used for x-axis of CDF curve.
 
         gamma: float, default=1.0 (0, 1]
             Discount factor.
@@ -150,6 +99,11 @@ class DiscreteCumulativeDistributionalDirectMethod(
             name="initial_state_value_prediction",
             expected_dim=1,
         )
+        check_array(
+            reward_scale,
+            name="reward_scale",
+            expected_dim=1,
+        )
         if reward.shape[0] % step_per_episode:
             raise ValueError(
                 "Expected `reward.shape[0] \\% step_per_episode == 0`, but found False"
@@ -159,31 +113,18 @@ class DiscreteCumulativeDistributionalDirectMethod(
                 "Expected `reward.shape[0] // step_per_episode == initial_state_value_prediction`, but found False"
             )
 
-        (
-            trajectory_wise_reward,
-            trajectory_wise_importance_weight,
-            initial_state_value_prediction,
-        ) = self._aggregate_trajectory_wise_statistics_discrete(
-            step_per_episode=step_per_episode,
-            reward=reward,
-            initial_state_value_prediction=initial_state_value_prediction,
-            gamma=gamma,
-        )
-        if self.use_observations_as_reward_scale:
-            reward_scale = np.sort(np.unique(trajectory_wise_reward))
-        else:
-            reward_scale = self.uniform_reward_scale()
-
         density = np.histgram(
             initial_state_value_prediction, bins=reward_scale, density=True
         )[0]
-        return np.insert(density, 0, 0).cumsum(), reward_scale
+
+        return np.insert(density, 0, 0).cumsum()
 
     def estimate_mean(
         self,
         step_per_episode: int,
         reward: np.ndarray,
         initial_state_value_prediction: np.ndarray,
+        reward_scale: np.ndarray,
         gamma: float = 1.0,
         **kwargs,
     ) -> float:
@@ -200,6 +141,9 @@ class DiscreteCumulativeDistributionalDirectMethod(
         initial_state_value_prediction: NDArray, shape (n_episodes, )
             Estimated initial state value.
 
+        reward_scale: NDArray, shape (n_partition, )
+            Scale of the trajectory wise reward used for x-axis of CDF curve.
+
         gamma: float, default=1.0 (0, 1]
             Discount factor.
 
@@ -209,15 +153,14 @@ class DiscreteCumulativeDistributionalDirectMethod(
             Estimated mean of the policy value.
 
         """
-        (
-            cumulative_density,
-            reward_scale,
-        ) = self.estimate_cumulative_distribution_function(
+        cumulative_density = self.estimate_cumulative_distribution_function(
             step_per_episode=step_per_episode,
             reward=reward,
             initial_state_value_prediction=initial_state_value_prediction,
+            reward_scale=reward_scale,
             gamma=gamma,
         )
+
         return (np.diff(cumulative_density) * reward_scale[1:]).sum()
 
     def estimate_variance(
@@ -225,6 +168,7 @@ class DiscreteCumulativeDistributionalDirectMethod(
         step_per_episode: int,
         reward: np.ndarray,
         initial_state_value_prediction: np.ndarray,
+        reward_scale: np.ndarray,
         gamma: float = 1.0,
         **kwargs,
     ) -> float:
@@ -241,6 +185,9 @@ class DiscreteCumulativeDistributionalDirectMethod(
         initial_state_value_prediction: NDArray, shape (n_episodes, )
             Estimated initial state value.
 
+        reward_scale: NDArray, shape (n_partition, )
+            Scale of the trajectory wise reward used for x-axis of CDF curve.
+
         gamma: float, default=1.0 (0, 1]
             Discount factor.
 
@@ -250,21 +197,15 @@ class DiscreteCumulativeDistributionalDirectMethod(
             Estimated variance of the policy value.
 
         """
-        (
-            cumulative_density,
-            reward_scale,
-        ) = self.estimate_cumulative_distribution_function(
+        cumulative_density = self.estimate_cumulative_distribution_function(
             step_per_episode=step_per_episode,
             reward=reward,
             initial_state_value_prediction=initial_state_value_prediction,
+            reward_scale=reward_scale,
             gamma=gamma,
         )
-        mean = self.estimate_mean(
-            step_per_episode=step_per_episode,
-            reward=reward,
-            initial_state_value_prediction=initial_state_value_prediction,
-            gamma=gamma,
-        )
+        mean = (np.diff(cumulative_density) * reward_scale[1:]).sum()
+
         return (np.diff(cumulative_density) * (reward_scale[1:] - mean) ** 2).sum()
 
     def estimate_conditional_value_at_risk(
@@ -272,6 +213,7 @@ class DiscreteCumulativeDistributionalDirectMethod(
         step_per_episode: int,
         reward: np.ndarray,
         initial_state_value_prediction: np.ndarray,
+        reward_scale: np.ndarray,
         gamma: float = 1.0,
         alpha: float = 0.05,
         **kwargs,
@@ -289,6 +231,9 @@ class DiscreteCumulativeDistributionalDirectMethod(
         initial_state_value_prediction: NDArray, shape (n_episodes, )
             Estimated initial state value.
 
+        reward_scale: NDArray, shape (n_partition, )
+            Scale of the trajectory wise reward used for x-axis of CDF curve.
+
         gamma: float, default=1.0 (0, 1]
             Discount factor.
 
@@ -302,16 +247,16 @@ class DiscreteCumulativeDistributionalDirectMethod(
 
         """
         check_scalar(alpha, name="alpha", target_type=float, min_val=0.0, max_val=1.0)
-        (
-            cumulative_density,
-            reward_scale,
-        ) = self.estimate_cumulative_distribution_function(
+
+        cumulative_density = self.estimate_cumulative_distribution_function(
             step_per_episode=step_per_episode,
             reward=reward,
             initial_state_value_prediction=initial_state_value_prediction,
+            reward_scale=reward_scale,
             gamma=gamma,
         )
         lower_idx = np.argmin(cumulative_density > alpha)
+
         return (np.diff(cumulative_density) * reward_scale[1:])[: lower_idx + 1].sum()
 
     def estimate_interquartile_range(
@@ -319,6 +264,7 @@ class DiscreteCumulativeDistributionalDirectMethod(
         step_per_episode: int,
         reward: np.ndarray,
         initial_state_value_prediction: np.ndarray,
+        reward_scale: np.ndarray,
         gamma: float = 1.0,
         alpha: float = 0.05,
         **kwargs,
@@ -336,6 +282,9 @@ class DiscreteCumulativeDistributionalDirectMethod(
         initial_state_value_prediction: NDArray, shape (n_episodes, )
             Estimated initial state value.
 
+        reward_scale: NDArray, shape (n_partition, )
+            Scale of the trajectory wise reward used for x-axis of CDF curve.
+
         gamma: float, default=1.0 (0, 1]
             Discount factor.
 
@@ -349,24 +298,19 @@ class DiscreteCumulativeDistributionalDirectMethod(
 
         """
         check_scalar(alpha, name="alpha", target_type=float, min_val=0.0, max_val=1.0)
-        (
-            cumulative_density,
-            reward_scale,
-        ) = self.estimate_cumulative_distribution_function(
+
+        cumulative_density = self.estimate_cumulative_distribution_function(
             step_per_episode=step_per_episode,
             reward=reward,
             initial_state_value_prediction=initial_state_value_prediction,
+            reward_scale=reward_scale,
             gamma=gamma,
         )
-        mean = self.estimate_mean(
-            step_per_episode=step_per_episode,
-            reward=reward,
-            initial_state_value_prediction=initial_state_value_prediction,
-            gamma=gamma,
-        )
+        mean = (np.diff(cumulative_density) * reward_scale[1:]).sum()
         lower_idx = np.argmin(cumulative_density > alpha)
         upper_idx = np.argmin(cumulative_density > 1 - alpha)
-        return {
+
+        estimated_interquartile_range = {
             "mean": mean,
             f"{100 * (1. - alpha)}% quartile (lower)": (
                 reward_scale[lower_idx] + reward_scale[lower_idx + 1]
@@ -377,6 +321,8 @@ class DiscreteCumulativeDistributionalDirectMethod(
             )
             / 2,
         }
+
+        return estimated_interquartile_range
 
 
 @dataclass
@@ -397,23 +343,6 @@ class DiscreteCumulativeDistributionalImportanceSampling(
 
     Parameters
     -------
-    r_min: float, default=None
-        Minimum reward in CDF.
-        When `use_observations_as_reward_scale == False`, a value must be given.
-
-    r_max: float, default=None
-        Maximum reward in CDF.
-        When `use_observations_as_reward_scale == False`, a value must be given.
-
-    n_partitiion: int, default=None
-        Number of partition in reward scale (x-axis of CDF).
-        When `use_observations_as_reward_scale == False`, a value must be given.
-
-    use_observations_as_reward_scale: bool, default=False
-        Whether to use the reward observed by the behavior policy as the reward scale.
-        If True, the reward scale follows the one defined in Chundak et al. (2021).
-        If False, the reward scale is uniform, following Huang et al. (2021).
-
     estimator_name: str, default="cdf_is"
         Name of the estimator.
 
@@ -433,48 +362,10 @@ class DiscreteCumulativeDistributionalImportanceSampling(
 
     """
 
-    r_min: float = None
-    r_max: float = None
-    n_partition: int = 100
-    use_observations_as_reward_scale: bool = False
     estimator_name: str = "cdf_is"
 
     def __post_init__(self):
         self.action_type = "discrete"
-
-        if not self.use_observations_as_reward_scale:
-            if self.r_min is None:
-                raise ValueError(
-                    "r_min must be given when `use_observations_as_reward_scale == False`."
-                )
-            if self.r_max is None:
-                raise ValueError(
-                    "r_max must be given when `use_observations_as_reward_scale == False`."
-                )
-            if self.n_partition is None:
-                raise ValueError(
-                    "r_min must be given when `use_observations_as_reward_scale == False`."
-                )
-            check_scalar(
-                self.r_min,
-                name="r_min",
-                target_type=float,
-            )
-            check_scalar(
-                self.r_max,
-                name="r_max",
-                target_type=float,
-            )
-            check_scalar(
-                self.n_partition,
-                name="n_partition",
-                target_type=int,
-                min_val=1,
-            )
-
-    @property
-    def uniform_reward_scale(self) -> np.ndarray:
-        return np.linspace(self.r_min, self.r_max, num=self.n_partition)
 
     def estimate_cumulative_distribution_function(
         self,
@@ -482,6 +373,7 @@ class DiscreteCumulativeDistributionalImportanceSampling(
         reward: np.ndarray,
         behavior_policy_trajectory_wise_pscore: np.ndarray,
         evaluation_policy_trajectory_wise_pscore: np.ndarray,
+        reward_scale: np.ndarray,
         gamma: float = 1.0,
         **kwargs,
     ) -> Tuple[np.ndarray]:
@@ -502,6 +394,9 @@ class DiscreteCumulativeDistributionalImportanceSampling(
         evaluation_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
             Trajectory-wise action choice probability of evaluation policy,
             i.e., :math:`\\prod_{t=0}^T \\pi_e(a_t \\mid s_t)`
+
+        reward_scale: NDArray, shape (n_partition, )
+            Scale of the trajectory wise reward used for x-axis of CDF curve.
 
         gamma: float, default=1.0 (0, 1]
             Discount factor.
@@ -528,6 +423,11 @@ class DiscreteCumulativeDistributionalImportanceSampling(
             expected_dim=1,
             min_val=0.0,
             max_val=1.0,
+        )
+        check_array(
+            reward_scale,
+            name="reward_scale",
+            expected_dim=1,
         )
         if reward.shape[0] % step_per_episode:
             raise ValueError(
@@ -563,11 +463,6 @@ class DiscreteCumulativeDistributionalImportanceSampling(
 
         n = len(trajectory_wise_reward)
 
-        if self.use_observations_as_reward_scale:
-            reward_scale = np.sort(np.unique(trajectory_wise_reward))
-        else:
-            reward_scale = self.uniform_reward_scale()
-
         sort_idxes = trajectory_wise_reward.argsort()
         sorted_importance_weight = trajectory_wise_importance_weight[sort_idxes]
         cumulative_density = np.clip(sorted_importance_weight.cumsum() / n, 0, 1)
@@ -576,7 +471,8 @@ class DiscreteCumulativeDistributionalImportanceSampling(
             trajectory_wise_reward, bins=reward_scale, density=True
         )[0]
         cumulative_density = cumulative_density[histogram.cumsum()]
-        return np.insert(cumulative_density, 0, 0), reward_scale
+
+        return np.insert(cumulative_density, 0, 0)
 
     def estimate_mean(
         self,
@@ -584,6 +480,7 @@ class DiscreteCumulativeDistributionalImportanceSampling(
         reward: np.ndarray,
         behavior_policy_trajectory_wise_pscore: np.ndarray,
         evaluation_policy_trajectory_wise_pscore: np.ndarray,
+        reward_scale: np.ndarray,
         gamma: float = 1.0,
         **kwargs,
     ) -> float:
@@ -605,6 +502,9 @@ class DiscreteCumulativeDistributionalImportanceSampling(
             Trajectory-wise action choice probability of evaluation policy,
             i.e., :math:`\\prod_{t=0}^T \\pi_e(a_t \\mid s_t)`
 
+        reward_scale: NDArray, shape (n_partition, )
+            Scale of the trajectory wise reward used for x-axis of CDF curve.
+
         gamma: float, default=1.0 (0, 1]
             Discount factor.
 
@@ -614,16 +514,15 @@ class DiscreteCumulativeDistributionalImportanceSampling(
             Estimated mean of the policy value.
 
         """
-        (
-            cumulative_density,
-            reward_scale,
-        ) = self.estimate_cumulative_distribution_function(
+        cumulative_density = self.estimate_cumulative_distribution_function(
             step_per_episode=step_per_episode,
             reward=reward,
             behavior_policy_trajectory_wise_pscore=behavior_policy_trajectory_wise_pscore,
             evaluation_policy_trajectory_wise_pscore=evaluation_policy_trajectory_wise_pscore,
+            reward_scale=reward_scale,
             gamma=gamma,
         )
+
         return (np.diff(cumulative_density) * reward_scale[1:]).sum()
 
     def estimate_variance(
@@ -632,6 +531,7 @@ class DiscreteCumulativeDistributionalImportanceSampling(
         reward: np.ndarray,
         behavior_policy_trajectory_wise_pscore: np.ndarray,
         evaluation_policy_trajectory_wise_pscore: np.ndarray,
+        reward_scale: np.ndarray,
         gamma: float = 1.0,
         **kwargs,
     ) -> float:
@@ -653,6 +553,9 @@ class DiscreteCumulativeDistributionalImportanceSampling(
             Trajectory-wise action choice probability of evaluation policy,
             i.e., :math:`\\prod_{t=0}^T \\pi_e(a_t \\mid s_t)`
 
+        reward_scale: NDArray, shape (n_partition, )
+            Scale of the trajectory wise reward used for x-axis of CDF curve.
+
         gamma: float, default=1.0 (0, 1]
             Discount factor.
 
@@ -662,23 +565,16 @@ class DiscreteCumulativeDistributionalImportanceSampling(
             Estimated variance of the policy value.
 
         """
-        (
-            cumulative_density,
-            reward_scale,
-        ) = self.estimate_cumulative_distribution_function(
+        cumulative_density = self.estimate_cumulative_distribution_function(
             step_per_episode=step_per_episode,
             reward=reward,
             behavior_policy_trajectory_wise_pscore=behavior_policy_trajectory_wise_pscore,
             evaluation_policy_trajectory_wise_pscore=evaluation_policy_trajectory_wise_pscore,
+            reward_scale=reward_scale,
             gamma=gamma,
         )
-        mean = self.estimate_mean(
-            step_per_episode=step_per_episode,
-            reward=reward,
-            behavior_policy_trajectory_wise_pscore=behavior_policy_trajectory_wise_pscore,
-            evaluation_policy_trajectory_wise_pscore=evaluation_policy_trajectory_wise_pscore,
-            gamma=gamma,
-        )
+        mean = (np.diff(cumulative_density) * reward_scale[1:]).sum()
+
         return (np.diff(cumulative_density) * (reward_scale[1:] - mean) ** 2).sum()
 
     def estimate_conditional_value_at_risk(
@@ -687,6 +583,7 @@ class DiscreteCumulativeDistributionalImportanceSampling(
         reward: np.ndarray,
         behavior_policy_trajectory_wise_pscore: np.ndarray,
         evaluation_policy_trajectory_wise_pscore: np.ndarray,
+        reward_scale: np.ndarray,
         gamma: float = 1.0,
         alpha: float = 0.05,
         **kwargs,
@@ -709,6 +606,9 @@ class DiscreteCumulativeDistributionalImportanceSampling(
             Trajectory-wise action choice probability of evaluation policy,
             i.e., :math:`\\prod_{t=0}^T \\pi_e(a_t \\mid s_t)`
 
+        reward_scale: NDArray, shape (n_partition, )
+            Scale of the trajectory wise reward used for x-axis of CDF curve.
+
         gamma: float, default=1.0 (0, 1]
             Discount factor.
 
@@ -722,17 +622,17 @@ class DiscreteCumulativeDistributionalImportanceSampling(
 
         """
         check_scalar(alpha, name="alpha", target_type=float, min_val=0.0, max_val=1.0)
-        (
-            cumulative_density,
-            reward_scale,
-        ) = self.estimate_cumulative_distribution_function(
+
+        cumulative_density = self.estimate_cumulative_distribution_function(
             step_per_episode=step_per_episode,
             reward=reward,
             behavior_policy_trajectory_wise_pscore=behavior_policy_trajectory_wise_pscore,
             evaluation_policy_trajectory_wise_pscore=evaluation_policy_trajectory_wise_pscore,
+            reward_scale=reward_scale,
             gamma=gamma,
         )
         lower_idx = np.argmin(cumulative_density > alpha)
+
         return (np.diff(cumulative_density) * reward_scale[1:])[: lower_idx + 1].sum()
 
     def estimate_interquartile_range(
@@ -741,6 +641,7 @@ class DiscreteCumulativeDistributionalImportanceSampling(
         reward: np.ndarray,
         behavior_policy_trajectory_wise_pscore: np.ndarray,
         evaluation_policy_trajectory_wise_pscore: np.ndarray,
+        reward_scale: np.ndarray,
         gamma: float = 1.0,
         alpha: float = 0.05,
         **kwargs,
@@ -763,6 +664,9 @@ class DiscreteCumulativeDistributionalImportanceSampling(
             Trajectory-wise action choice probability of evaluation policy,
             i.e., :math:`\\prod_{t=0}^T \\pi_e(a_t \\mid s_t)`
 
+        reward_scale: NDArray, shape (n_partition, )
+            Scale of the trajectory wise reward used for x-axis of CDF curve.
+
         gamma: float, default=1.0 (0, 1]
             Discount factor.
 
@@ -776,26 +680,20 @@ class DiscreteCumulativeDistributionalImportanceSampling(
 
         """
         check_scalar(alpha, name="alpha", target_type=float, min_val=0.0, max_val=1.0)
-        (
-            cumulative_density,
-            reward_scale,
-        ) = self.estimate_cumulative_distribution_function(
+
+        cumulative_density = self.estimate_cumulative_distribution_function(
             step_per_episode=step_per_episode,
             reward=reward,
             behavior_policy_trajectory_wise_pscore=behavior_policy_trajectory_wise_pscore,
             evaluation_policy_trajectory_wise_pscore=evaluation_policy_trajectory_wise_pscore,
+            reward_scale=reward_scale,
             gamma=gamma,
         )
-        mean = self.estimate_mean(
-            step_per_episode=step_per_episode,
-            reward=reward,
-            behavior_policy_trajectory_wise_pscore=behavior_policy_trajectory_wise_pscore,
-            evaluation_policy_trajectory_wise_pscore=evaluation_policy_trajectory_wise_pscore,
-            gamma=gamma,
-        )
+        mean = (np.diff(cumulative_density) * reward_scale[1:]).sum()
         lower_idx = np.argmin(cumulative_density > alpha)
         upper_idx = np.argmin(cumulative_density > 1 - alpha)
-        return {
+
+        estimated_interquartile_range = {
             "mean": mean,
             f"{100 * (1. - alpha)}% quartile (lower)": (
                 reward_scale[lower_idx] + reward_scale[lower_idx + 1]
@@ -806,6 +704,8 @@ class DiscreteCumulativeDistributionalImportanceSampling(
             )
             / 2,
         }
+
+        return estimated_interquartile_range
 
 
 @dataclass
@@ -826,23 +726,6 @@ class DiscreteCumulativeDistributionalDoublyRobust(
 
     Parameters
     -------
-    r_min: float, default=None
-        Minimum reward in CDF.
-        When `use_observations_as_reward_scale == False`, a value must be given.
-
-    r_max: float, default=None
-        Maximum reward in CDF.
-        When `use_observations_as_reward_scale == False`, a value must be given.
-
-    n_partitiion: int, default=None
-        Number of partition in reward scale (x-axis of CDF).
-        When `use_observations_as_reward_scale == False`, a value must be given.
-
-    use_observations_as_reward_scale: bool, default=False
-        Whether to use the reward observed by the behavior policy as the reward scale.
-        If True, the reward scale follows the one defined in Chundak et al. (2021).
-        If False, the reward scale is uniform, following Huang et al. (2021).
-
     estimator_name: str, default="cdf_dr"
         Name of the estimator.
 
@@ -868,48 +751,11 @@ class DiscreteCumulativeDistributionalDoublyRobust(
 
     """
 
-    r_min: float = None
-    r_max: float = None
-    n_partition: int = 100
     use_observations_as_reward_scale: bool = False
     estimator_name: str = "cdf_dr"
 
     def __post_init__(self):
         self.action_type = "discrete"
-
-        if not self.use_observations_as_reward_scale:
-            if self.r_min is None:
-                raise ValueError(
-                    "r_min must be given when `use_observations_as_reward_scale == False`."
-                )
-            if self.r_max is None:
-                raise ValueError(
-                    "r_max must be given when `use_observations_as_reward_scale == False`."
-                )
-            if self.n_partition is None:
-                raise ValueError(
-                    "r_min must be given when `use_observations_as_reward_scale == False`."
-                )
-            check_scalar(
-                self.r_min,
-                name="r_min",
-                target_type=float,
-            )
-            check_scalar(
-                self.r_max,
-                name="r_max",
-                target_type=float,
-            )
-            check_scalar(
-                self.n_partition,
-                name="n_partition",
-                target_type=int,
-                min_val=1,
-            )
-
-    @property
-    def uniform_reward_scale(self) -> np.ndarray:
-        return np.linspace(self.r_min, self.r_max, num=self.n_partition)
 
     def estimate_cumulative_distribution_function(
         self,
@@ -918,6 +764,7 @@ class DiscreteCumulativeDistributionalDoublyRobust(
         behavior_policy_trajectory_wise_pscore: np.ndarray,
         evaluation_policy_trajectory_wise_pscore: np.ndarray,
         initial_state_value_prediction: np.ndarray,
+        reward_scale: np.ndarray,
         gamma: float = 1.0,
         **kwargs,
     ) -> Tuple[np.ndarray]:
@@ -941,6 +788,9 @@ class DiscreteCumulativeDistributionalDoublyRobust(
 
         initial_state_value_prediction: NDArray, shape (n_episodes, )
             Estimated initial state value.
+
+        reward_scale: NDArray, shape (n_partition, )
+            Scale of the trajectory wise reward used for x-axis of CDF curve.
 
         gamma: float, default=1.0 (0, 1]
             Discount factor.
@@ -971,6 +821,11 @@ class DiscreteCumulativeDistributionalDoublyRobust(
         check_array(
             initial_state_value_prediction,
             name="initial_state_value_prediction",
+            expected_dim=1,
+        )
+        check_array(
+            reward_scale,
+            name="reward_scale",
             expected_dim=1,
         )
         if reward.shape[0] % step_per_episode:
@@ -1008,13 +863,6 @@ class DiscreteCumulativeDistributionalDoublyRobust(
             gamma=gamma,
         )
 
-        n = len(trajectory_wise_reward)
-
-        if self.use_observations_as_reward_scale:
-            reward_scale = np.sort(np.unique(trajectory_wise_reward))
-        else:
-            reward_scale = self.uniform_reward_scale()
-
         weighted_residual = np.zeros_like(reward_scale)
         for threshold in reward_scale:
             observation = trajectory_wise_reward <= threshold
@@ -1029,7 +877,8 @@ class DiscreteCumulativeDistributionalDoublyRobust(
         histogram_baseline = np.insert(histogram_baseline, 0, 0)
 
         cumulative_density = weighted_residual + histogram_baseline
-        return np.clip(np.maximum.accumulate(cumulative_density), 0, 1), reward_scale
+
+        return np.clip(np.maximum.accumulate(cumulative_density), 0, 1)
 
     def estimate_mean(
         self,
@@ -1038,6 +887,7 @@ class DiscreteCumulativeDistributionalDoublyRobust(
         behavior_policy_trajectory_wise_pscore: np.ndarray,
         evaluation_policy_trajectory_wise_pscore: np.ndarray,
         initial_state_value_prediction: np.ndarray,
+        reward_scale: np.ndarray,
         gamma: float = 1.0,
         **kwargs,
     ) -> float:
@@ -1062,6 +912,9 @@ class DiscreteCumulativeDistributionalDoublyRobust(
         initial_state_value_prediction: NDArray, shape (n_episodes, )
             Estimated initial state value.
 
+        reward_scale: NDArray, shape (n_partition, )
+            Scale of the trajectory wise reward used for x-axis of CDF curve.
+
         gamma: float, default=1.0 (0, 1]
             Discount factor.
 
@@ -1071,17 +924,16 @@ class DiscreteCumulativeDistributionalDoublyRobust(
             Estimated mean of the policy value.
 
         """
-        (
-            cumulative_density,
-            reward_scale,
-        ) = self.estimate_cumulative_distribution_function(
+        cumulative_density = self.estimate_cumulative_distribution_function(
             step_per_episode=step_per_episode,
             reward=reward,
             behavior_policy_trajectory_wise_pscore=behavior_policy_trajectory_wise_pscore,
             evaluation_policy_trajectory_wise_pscore=evaluation_policy_trajectory_wise_pscore,
             initial_state_value_prediction=initial_state_value_prediction,
+            reward_scale=reward_scale,
             gamma=gamma,
         )
+
         return (np.diff(cumulative_density) * reward_scale[1:]).sum()
 
     def estimate_variance(
@@ -1091,6 +943,7 @@ class DiscreteCumulativeDistributionalDoublyRobust(
         behavior_policy_trajectory_wise_pscore: np.ndarray,
         evaluation_policy_trajectory_wise_pscore: np.ndarray,
         initial_state_value_prediction: np.ndarray,
+        reward_scale: np.ndarray,
         gamma: float = 1.0,
         **kwargs,
     ) -> float:
@@ -1115,6 +968,9 @@ class DiscreteCumulativeDistributionalDoublyRobust(
         initial_state_value_prediction: NDArray, shape (n_episodes, )
             Estimated initial state value.
 
+        reward_scale: NDArray, shape (n_partition, )
+            Scale of the trajectory wise reward used for x-axis of CDF curve.
+
         gamma: float, default=1.0 (0, 1]
             Discount factor.
 
@@ -1124,25 +980,17 @@ class DiscreteCumulativeDistributionalDoublyRobust(
             Estimated variance of the policy value.
 
         """
-        (
-            cumulative_density,
-            reward_scale,
-        ) = self.estimate_cumulative_distribution_function(
+        cumulative_density = self.estimate_cumulative_distribution_function(
             step_per_episode=step_per_episode,
             reward=reward,
             behavior_policy_trajectory_wise_pscore=behavior_policy_trajectory_wise_pscore,
             evaluation_policy_trajectory_wise_pscore=evaluation_policy_trajectory_wise_pscore,
             initial_state_value_prediction=initial_state_value_prediction,
+            reward_scale=reward_scale,
             gamma=gamma,
         )
-        mean = self.estimate_mean(
-            step_per_episode=step_per_episode,
-            reward=reward,
-            behavior_policy_trajectory_wise_pscore=behavior_policy_trajectory_wise_pscore,
-            evaluation_policy_trajectory_wise_pscore=evaluation_policy_trajectory_wise_pscore,
-            initial_state_value_prediction=initial_state_value_prediction,
-            gamma=gamma,
-        )
+        mean = (np.diff(cumulative_density) * reward_scale[1:]).sum()
+
         return (np.diff(cumulative_density) * (reward_scale[1:] - mean) ** 2).sum()
 
     def estimate_conditional_value_at_risk(
@@ -1152,6 +1000,7 @@ class DiscreteCumulativeDistributionalDoublyRobust(
         behavior_policy_trajectory_wise_pscore: np.ndarray,
         evaluation_policy_trajectory_wise_pscore: np.ndarray,
         initial_state_value_prediction: np.ndarray,
+        reward_scale: np.ndarray,
         gamma: float = 1.0,
         alpha: float = 0.05,
         **kwargs,
@@ -1177,6 +1026,9 @@ class DiscreteCumulativeDistributionalDoublyRobust(
         initial_state_value_prediction: NDArray, shape (n_episodes, )
             Estimated initial state value.
 
+        reward_scale: NDArray, shape (n_partition, )
+            Scale of the trajectory wise reward used for x-axis of CDF curve.
+
         gamma: float, default=1.0 (0, 1]
             Discount factor.
 
@@ -1190,18 +1042,18 @@ class DiscreteCumulativeDistributionalDoublyRobust(
 
         """
         check_scalar(alpha, name="alpha", target_type=float, min_val=0.0, max_val=1.0)
-        (
-            cumulative_density,
-            reward_scale,
-        ) = self.estimate_cumulative_distribution_function(
+
+        cumulative_density = self.estimate_cumulative_distribution_function(
             step_per_episode=step_per_episode,
             reward=reward,
             behavior_policy_trajectory_wise_pscore=behavior_policy_trajectory_wise_pscore,
             evaluation_policy_trajectory_wise_pscore=evaluation_policy_trajectory_wise_pscore,
             initial_state_value_prediction=initial_state_value_prediction,
+            reward_scale=reward_scale,
             gamma=gamma,
         )
         lower_idx = np.argmin(cumulative_density > alpha)
+
         return (np.diff(cumulative_density) * reward_scale[1:])[: lower_idx + 1].sum()
 
     def estimate_interquartile_range(
@@ -1211,6 +1063,7 @@ class DiscreteCumulativeDistributionalDoublyRobust(
         behavior_policy_trajectory_wise_pscore: np.ndarray,
         evaluation_policy_trajectory_wise_pscore: np.ndarray,
         initial_state_value_prediction: np.ndarray,
+        reward_scale: np.ndarray,
         gamma: float = 1.0,
         alpha: float = 0.05,
         **kwargs,
@@ -1236,6 +1089,9 @@ class DiscreteCumulativeDistributionalDoublyRobust(
         initial_state_value_prediction: NDArray, shape (n_episodes, )
             Estimated initial state value.
 
+        reward_scale: NDArray, shape (n_partition, )
+            Scale of the trajectory wise reward used for x-axis of CDF curve.
+
         gamma: float, default=1.0 (0, 1]
             Discount factor.
 
@@ -1249,28 +1105,21 @@ class DiscreteCumulativeDistributionalDoublyRobust(
 
         """
         check_scalar(alpha, name="alpha", target_type=float, min_val=0.0, max_val=1.0)
-        (
-            cumulative_density,
-            reward_scale,
-        ) = self.estimate_cumulative_distribution_function(
+
+        cumulative_density = self.estimate_cumulative_distribution_function(
             step_per_episode=step_per_episode,
             reward=reward,
             behavior_policy_trajectory_wise_pscore=behavior_policy_trajectory_wise_pscore,
             evaluation_policy_trajectory_wise_pscore=evaluation_policy_trajectory_wise_pscore,
             initial_state_value_prediction=initial_state_value_prediction,
+            reward_scale=reward_scale,
             gamma=gamma,
         )
-        mean = self.estimate_mean(
-            step_per_episode=step_per_episode,
-            reward=reward,
-            behavior_policy_trajectory_wise_pscore=behavior_policy_trajectory_wise_pscore,
-            evaluation_policy_trajectory_wise_pscore=evaluation_policy_trajectory_wise_pscore,
-            initial_state_value_prediction=initial_state_value_prediction,
-            gamma=gamma,
-        )
+        mean = (np.diff(cumulative_density) * reward_scale[1:]).sum()
         lower_idx = np.argmin(cumulative_density > alpha)
         upper_idx = np.argmin(cumulative_density > 1 - alpha)
-        return {
+
+        estimated_interquartile_range = {
             "mean": mean,
             f"{100 * (1. - alpha)}% quartile (lower)": (
                 reward_scale[lower_idx] + reward_scale[lower_idx + 1]
@@ -1281,6 +1130,8 @@ class DiscreteCumulativeDistributionalDoublyRobust(
             )
             / 2,
         }
+
+        return estimated_interquartile_range
 
 
 @dataclass
@@ -1301,23 +1152,6 @@ class DiscreteCumulativeDistributionalSelfNormalizedImportanceSampling(
 
     Parameters
     -------
-    r_min: float, default=None
-        Minimum reward in CDF.
-        When `use_observations_as_reward_scale == False`, a value must be given.
-
-    r_max: float, default=None
-        Maximum reward in CDF.
-        When `use_observations_as_reward_scale == False`, a value must be given.
-
-    n_partitiion: int, default=None
-        Number of partition in reward scale (x-axis of CDF).
-        When `use_observations_as_reward_scale == False`, a value must be given.
-
-    use_observations_as_reward_scale: bool, default=False
-        Whether to use the reward observed by the behavior policy as the reward scale.
-        If True, the reward scale follows the one defined in Chundak et al. (2021).
-        If False, the reward scale is uniform, following Huang et al. (2021).
-
     estimator_name: str, default="cdf_is"
         Name of the estimator.
 
@@ -1343,44 +1177,10 @@ class DiscreteCumulativeDistributionalSelfNormalizedImportanceSampling(
 
     """
 
-    r_min: float = None
-    r_max: float = None
-    n_partition: int = 100
-    use_observations_as_reward_scale: bool = False
     estimator_name: str = "cdf_is"
 
     def __post_init__(self):
         self.action_type = "discrete"
-
-        if not self.use_observations_as_reward_scale:
-            if self.r_min is None:
-                raise ValueError(
-                    "r_min must be given when `use_observations_as_reward_scale == False`."
-                )
-            if self.r_max is None:
-                raise ValueError(
-                    "r_max must be given when `use_observations_as_reward_scale == False`."
-                )
-            if self.n_partition is None:
-                raise ValueError(
-                    "r_min must be given when `use_observations_as_reward_scale == False`."
-                )
-            check_scalar(
-                self.r_min,
-                name="r_min",
-                target_type=float,
-            )
-            check_scalar(
-                self.r_max,
-                name="r_max",
-                target_type=float,
-            )
-            check_scalar(
-                self.n_partition,
-                name="n_partition",
-                target_type=int,
-                min_val=1,
-            )
 
     def estimate_cumulative_distribution_function(
         self,
@@ -1388,6 +1188,7 @@ class DiscreteCumulativeDistributionalSelfNormalizedImportanceSampling(
         reward: np.ndarray,
         behavior_policy_trajectory_wise_pscore: np.ndarray,
         evaluation_policy_trajectory_wise_pscore: np.ndarray,
+        reward_scale: np.ndarray,
         gamma: float = 1.0,
         **kwargs,
     ) -> Tuple[np.ndarray]:
@@ -1408,6 +1209,9 @@ class DiscreteCumulativeDistributionalSelfNormalizedImportanceSampling(
         evaluation_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
             Trajectory-wise action choice probability of evaluation policy,
             i.e., :math:`\\prod_{t=0}^T \\pi_e(a_t \\mid s_t)`
+
+        reward_scale: NDArray, shape (n_partition, )
+            Scale of the trajectory wise reward used for x-axis of CDF curve.
 
         gamma: float, default=1.0 (0, 1]
             Discount factor.
@@ -1434,6 +1238,11 @@ class DiscreteCumulativeDistributionalSelfNormalizedImportanceSampling(
             expected_dim=1,
             min_val=0.0,
             max_val=1.0,
+        )
+        check_array(
+            reward_scale,
+            name="reward_scale",
+            expected_dim=1,
         )
         if reward.shape[0] % step_per_episode:
             raise ValueError(
@@ -1469,11 +1278,6 @@ class DiscreteCumulativeDistributionalSelfNormalizedImportanceSampling(
 
         weight_sum = trajectory_wise_importance_weight.sum()
 
-        if self.use_observations_as_reward_scale:
-            reward_scale = np.sort(np.unique(trajectory_wise_reward))
-        else:
-            reward_scale = self.uniform_reward_scale()
-
         sort_idxes = trajectory_wise_reward.argsort()
         sorted_importance_weight = trajectory_wise_importance_weight[sort_idxes]
         cumulative_density = np.clip(
@@ -1484,7 +1288,8 @@ class DiscreteCumulativeDistributionalSelfNormalizedImportanceSampling(
             trajectory_wise_reward, bins=reward_scale, density=True
         )[0]
         cumulative_density = cumulative_density[histogram.cumsum()]
-        return np.insert(cumulative_density, 0, 0), reward_scale
+
+        return np.insert(cumulative_density, 0, 0)
 
 
 @dataclass
@@ -1505,23 +1310,6 @@ class DiscreteCumulativeDistributionalSelfNormalizedDoublyRobust(
 
     Parameters
     -------
-    r_min: float, default=None
-        Minimum reward in CDF.
-        When `use_observations_as_reward_scale == False`, a value must be given.
-
-    r_max: float, default=None
-        Maximum reward in CDF.
-        When `use_observations_as_reward_scale == False`, a value must be given.
-
-    n_partitiion: int, default=None
-        Number of partition in reward scale (x-axis of CDF).
-        When `use_observations_as_reward_scale == False`, a value must be given.
-
-    use_observations_as_reward_scale: bool, default=False
-        Whether to use the reward observed by the behavior policy as the reward scale.
-        If True, the reward scale follows the one defined in Chundak et al. (2021).
-        If False, the reward scale is uniform, following Huang et al. (2021).
-
     estimator_name: str, default="cdf_dr"
         Name of the estimator.
 
@@ -1547,44 +1335,10 @@ class DiscreteCumulativeDistributionalSelfNormalizedDoublyRobust(
 
     """
 
-    r_min: float = None
-    r_max: float = None
-    n_partition: int = 100
-    use_observations_as_reward_scale: bool = False
     estimator_name: str = "cdf_dr"
 
     def __post_init__(self):
         self.action_type = "discrete"
-
-        if not self.use_observations_as_reward_scale:
-            if self.r_min is None:
-                raise ValueError(
-                    "r_min must be given when `use_observations_as_reward_scale == False`."
-                )
-            if self.r_max is None:
-                raise ValueError(
-                    "r_max must be given when `use_observations_as_reward_scale == False`."
-                )
-            if self.n_partition is None:
-                raise ValueError(
-                    "r_min must be given when `use_observations_as_reward_scale == False`."
-                )
-            check_scalar(
-                self.r_min,
-                name="r_min",
-                target_type=float,
-            )
-            check_scalar(
-                self.r_max,
-                name="r_max",
-                target_type=float,
-            )
-            check_scalar(
-                self.n_partition,
-                name="n_partition",
-                target_type=int,
-                min_val=1,
-            )
 
     def estimate_cumulative_distribution_function(
         self,
@@ -1593,6 +1347,7 @@ class DiscreteCumulativeDistributionalSelfNormalizedDoublyRobust(
         behavior_policy_trajectory_wise_pscore: np.ndarray,
         evaluation_policy_trajectory_wise_pscore: np.ndarray,
         initial_state_value_prediction: np.ndarray,
+        reward_scale: np.ndarray,
         gamma: float = 1.0,
         **kwargs,
     ) -> Tuple[np.ndarray]:
@@ -1616,6 +1371,9 @@ class DiscreteCumulativeDistributionalSelfNormalizedDoublyRobust(
 
         initial_state_value_prediction: NDArray, shape (n_episodes, )
             Estimated initial state value.
+
+        reward_scale: NDArray, shape (n_partition, )
+            Scale of the trajectory wise reward used for x-axis of CDF curve.
 
         gamma: float, default=1.0 (0, 1]
             Discount factor.
@@ -1646,6 +1404,11 @@ class DiscreteCumulativeDistributionalSelfNormalizedDoublyRobust(
         check_array(
             initial_state_value_prediction,
             name="initial_state_value_prediction",
+            expected_dim=1,
+        )
+        check_array(
+            reward_scale,
+            name="reward_scale",
             expected_dim=1,
         )
         if reward.shape[0] % step_per_episode:
@@ -1683,13 +1446,6 @@ class DiscreteCumulativeDistributionalSelfNormalizedDoublyRobust(
             gamma=gamma,
         )
 
-        n = len(trajectory_wise_reward)
-
-        if self.use_observations_as_reward_scale:
-            reward_scale = np.sort(np.unique(trajectory_wise_reward))
-        else:
-            reward_scale = self.uniform_reward_scale()
-
         weighted_residual = np.zeros_like(reward_scale)
         for threshold in reward_scale:
             observation = trajectory_wise_reward <= threshold
@@ -1704,7 +1460,8 @@ class DiscreteCumulativeDistributionalSelfNormalizedDoublyRobust(
         histogram_baseline = np.insert(histogram_baseline, 0, 0)
 
         cumulative_density = weighted_residual + histogram_baseline
-        return np.clip(np.maximum.accumulate(cumulative_density), 0, 1), reward_scale
+
+        return np.clip(np.maximum.accumulate(cumulative_density), 0, 1)
 
 
 @dataclass
@@ -1725,18 +1482,6 @@ class DiscreteDistributionallyRobustImportanceSampling(
 
     Parameters
     -------
-    alpha_prior: float, default=1.0 (> 0)
-        Initial temperature parameter of the exponential function.
-
-    max_steps: int, default=100 (> 0)
-        Maximum steps in turning alpha.
-
-    epsilon: float, default=0.01
-        Convergence criterion of alpha.
-
-    delta: float, default=0.1 (> 0)
-        Allowance of the distributional shift.
-
     estimator_name: str, default="dr_is"
         Name of the estimator.
 
@@ -1756,19 +1501,10 @@ class DiscreteDistributionallyRobustImportanceSampling(
 
     """
 
-    alpha_prior: float = 1.0
-    max_steps: int = 100
-    epsilon: float = 0.01
-    delta: float = 0.05
     estimator_name: str = "dr_is"
 
     def __post_init__(self):
         self.action_type = "discrete"
-
-        check_scalar(self.alpha_prior, name="alpha_prior", type=float, min_val=0.0)
-        check_scalar(self.max_steps, name="max_steps", type=int, min_val=1)
-        check_scalar(self.epsilon, name="epsilon", type=float, min_val=0.0)
-        check_scalar(self.delta, name="delta", type=float, min_val=0.0)
 
     def _estimate_policy_value_momentum_given_alpha(
         self,
@@ -1814,6 +1550,10 @@ class DiscreteDistributionallyRobustImportanceSampling(
         behavior_policy_trajectory_wise_pscore: np.ndarray,
         evaluation_policy_trajectory_wise_pscore: np.ndarray,
         gamma: float = 1.0,
+        delta: float = 0.05,
+        alpha_prior: float = 1.0,
+        max_steps: int = 100,
+        epsilon: float = 0.01,
         **kwargs,
     ) -> float:
         """Estimate the worst case policy value in a distributionally robust manner.
@@ -1837,6 +1577,18 @@ class DiscreteDistributionallyRobustImportanceSampling(
         gamma: float, default=1.0 (0, 1]
             Discount factor.
 
+        delta: float, default=0.05 (> 0)
+            Allowance of the distributional shift.
+
+        alpha_prior: float, default=1.0 (> 0)
+            Initial temperature parameter of the exponential function.
+
+        max_steps: int, default=100 (> 0)
+            Maximum steps in turning alpha.
+
+        epsilon: float, default=0.01
+            Convergence criterion of alpha.
+
         Return
         -------
         estimated_distributionally_robust_worst_case_policy_value: float
@@ -1845,6 +1597,10 @@ class DiscreteDistributionallyRobustImportanceSampling(
         """
         check_scalar(step_per_episode, name="step_per_episode", type=int, min_val=1)
         check_scalar(gamma, name="gamma", type=float, min_val=0.0, max_val=1.0)
+        check_scalar(delta, name="delta", type=float, min_val=0.0)
+        check_scalar(alpha_prior, name="alpha_prior", type=float, min_val=0.0)
+        check_scalar(max_steps, name="max_steps", type=int, min_val=1)
+        check_scalar(epsilon, name="epsilon", type=float, min_val=0.0)
         check_array(reward, name="reward", expected_dim=1)
         check_array(
             behavior_policy_trajectory_wise_pscore,
@@ -1893,8 +1649,8 @@ class DiscreteDistributionallyRobustImportanceSampling(
 
         n = trajectory_wise_reward.shape[0]
 
-        alpha = self.alpha_prior
-        for _ in range(self.max_steps):
+        alpha = alpha_prior
+        for _ in range(max_steps):
             W_0 = self._estimate_policy_value_momentum_given_alpha(
                 trajectory_wise_reward=trajectory_wise_reward,
                 trajectory_wise_importance_weight=trajectory_wise_importance_weight,
@@ -1913,8 +1669,8 @@ class DiscreteDistributionallyRobustImportanceSampling(
                 alpha=alpha,
                 momentum=2,
             )
-            objective = -alpha * (np.log(W_0) + self.delta)
-            first_order_derivative = -W_1 / (alpha * n * W_0) - np.log(W_0) - self.delta
+            objective = -alpha * (np.log(W_0) + delta)
+            first_order_derivative = -W_1 / (alpha * n * W_0) - np.log(W_0) - delta
             second_order_derivative = W_1 ** 2 / (
                 alpha ** 3 * n ** 2 * W_0 ** 2
             ) - W_2 / (alpha ** 3 * n * W_0)
@@ -1923,10 +1679,10 @@ class DiscreteDistributionallyRobustImportanceSampling(
             alpha = np.clip(
                 alpha_prior - first_order_derivative / second_order_derivative,
                 0,
-                1 / self.delta,
+                1 / delta,
             )
 
-            if np.abs(alpha - alpha_prior) < self.epsilon:
+            if np.abs(alpha - alpha_prior) < epsilon:
                 break
 
         return objective
@@ -1950,18 +1706,6 @@ class DiscreteDistributionallyRobustSelfNormalizedImportanceSampling(
 
     Parameters
     -------
-    alpha_prior: float, default=1.0 (> 0)
-        Initial temperature parameter of the exponential function.
-
-    max_steps: int, default=100 (> 0)
-        Maximum steps in turning alpha.
-
-    epsilon: float, default=0.01
-        Convergence criterion of alpha.
-
-    delta: float, default=0.1 (> 0)
-        Allowance of the distributional shift.
-
     estimator_name: str, default="dr_snis"
         Name of the estimator.
 
@@ -1981,19 +1725,10 @@ class DiscreteDistributionallyRobustSelfNormalizedImportanceSampling(
 
     """
 
-    alpha_prior: float = 1.0
-    max_steps: int = 100
-    epsilon: float = 0.01
-    delta: float = 0.05
     estimator_name: str = "dr_snis"
 
     def __post_init__(self):
         self.action_type = "discrete"
-
-        check_scalar(self.alpha_prior, name="alpha_prior", type=float, min_val=0.0)
-        check_scalar(self.max_steps, name="max_steps", type=int, min_val=1)
-        check_scalar(self.epsilon, name="epsilon", type=float, min_val=0.0)
-        check_scalar(self.delta, name="delta", type=float, min_val=0.0)
 
     def _estimate_policy_value_momentum_given_alpha(
         self,
@@ -2039,6 +1774,10 @@ class DiscreteDistributionallyRobustSelfNormalizedImportanceSampling(
         behavior_policy_trajectory_wise_pscore: np.ndarray,
         evaluation_policy_trajectory_wise_pscore: np.ndarray,
         gamma: float = 1.0,
+        delta: float = 0.05,
+        alpha_prior: float = 1.0,
+        max_steps: int = 100,
+        epsilon: float = 0.01,
         **kwargs,
     ) -> float:
         """Estimate the worst case policy value in a distributionally robust manner.
@@ -2062,6 +1801,18 @@ class DiscreteDistributionallyRobustSelfNormalizedImportanceSampling(
         gamma: float, default=1.0 (0, 1]
             Discount factor.
 
+        delta: float, default=0.05 (> 0)
+            Allowance of the distributional shift.
+
+        alpha_prior: float, default=1.0 (> 0)
+            Initial temperature parameter of the exponential function.
+
+        max_steps: int, default=100 (> 0)
+            Maximum steps in turning alpha.
+
+        epsilon: float, default=0.01
+            Convergence criterion of alpha.
+
         Return
         -------
         estimated_distributionally_robust_worst_case_policy_value: float
@@ -2070,6 +1821,10 @@ class DiscreteDistributionallyRobustSelfNormalizedImportanceSampling(
         """
         check_scalar(step_per_episode, name="step_per_episode", type=int, min_val=1)
         check_scalar(gamma, name="gamma", type=float, min_val=0.0, max_val=1.0)
+        check_scalar(delta, name="delta", type=float, min_val=0.0)
+        check_scalar(alpha_prior, name="alpha_prior", type=float, min_val=0.0)
+        check_scalar(max_steps, name="max_steps", type=int, min_val=1)
+        check_scalar(epsilon, name="epsilon", type=float, min_val=0.0)
         check_array(reward, name="reward", expected_dim=1)
         check_array(
             behavior_policy_trajectory_wise_pscore,
@@ -2118,8 +1873,8 @@ class DiscreteDistributionallyRobustSelfNormalizedImportanceSampling(
 
         weight_sum = trajectory_wise_importance_weight.sum()
 
-        alpha = self.alpha_prior
-        for _ in range(self.max_steps):
+        alpha = alpha_prior
+        for _ in range(max_steps):
             W_0 = self._estimate_policy_value_momentum_given_alpha(
                 trajectory_wise_reward=trajectory_wise_reward,
                 trajectory_wise_importance_weight=trajectory_wise_importance_weight,
@@ -2138,9 +1893,9 @@ class DiscreteDistributionallyRobustSelfNormalizedImportanceSampling(
                 alpha=alpha,
                 momentum=2,
             )
-            objective = -alpha * (np.log(W_0) + self.delta)
+            objective = -alpha * (np.log(W_0) + delta)
             first_order_derivative = (
-                -W_1 / (alpha * weight_sum * W_0) - np.log(W_0) - self.delta
+                -W_1 / (alpha * weight_sum * W_0) - np.log(W_0) - delta
             )
             second_order_derivative = W_1 ** 2 / (
                 alpha ** 3 * weight_sum ** 2 * W_0 ** 2
@@ -2150,10 +1905,10 @@ class DiscreteDistributionallyRobustSelfNormalizedImportanceSampling(
             alpha = np.clip(
                 alpha_prior - first_order_derivative / second_order_derivative,
                 0,
-                1 / self.delta,
+                1 / delta,
             )
 
-            if np.abs(alpha - alpha_prior) < self.epsilon:
+            if np.abs(alpha - alpha_prior) < epsilon:
                 break
 
         return objective
@@ -2189,9 +1944,6 @@ class DiscreteDistributionallyRobustDoublyRobust(
     epsilon: float, default=0.01
         Convergence criterion of alpha.
 
-    delta: float, default=0.1 (> 0)
-        Allowance of the distributional shift.
-
     n_folds: int, default=3
         Number of folds in cross-fitting.
 
@@ -2218,20 +1970,11 @@ class DiscreteDistributionallyRobustDoublyRobust(
     """
 
     baseline_estimator: BaseEstimator
-    alpha_prior: float = 1.0
-    max_steps: int = 100
-    epsilon: float = 0.01
-    delta: float = 0.05
     n_folds: int = 3
     estimator_name: str = "dr_dr"
 
     def __post_init__(self):
         self.action_type = "discrete"
-
-        check_scalar(self.alpha_prior, name="alpha_prior", type=float, min_val=0.0)
-        check_scalar(self.max_steps, name="max_steps", type=int, min_val=1)
-        check_scalar(self.epsilon, name="epsilon", type=float, min_val=0.0)
-        check_scalar(self.delta, name="delta", type=float, min_val=0.0)
         check_scalar(self.n_folds, name="n_folds", type=int, min_val=1)
 
     def _estimate_policy_value_momentum_by_snis(
@@ -2276,6 +2019,10 @@ class DiscreteDistributionallyRobustDoublyRobust(
         trajectory_wise_reward: np.ndarray,
         trajectory_wise_importance_weight: np.ndarray,
         fit_episodes: np.ndarray,
+        delta: float = 0.05,
+        alpha_prior: float = 1.0,
+        max_steps: int = 100,
+        epsilon: float = 0.01,
     ):
         """Initialize alpha for each fold.
 
@@ -2290,6 +2037,18 @@ class DiscreteDistributionallyRobustDoublyRobust(
         fit_episodes: NDArray, shape (n_folds, n_episodes // 2)
             Episodes used for fitting alpha.
 
+        delta: float, default=0.05 (> 0)
+            Allowance of the distributional shift.
+
+        alpha_prior: float, default=1.0 (> 0)
+            Initial temperature parameter of the exponential function.
+
+        max_steps: int, default=100 (> 0)
+            Maximum steps in turning alpha.
+
+        epsilon: float, default=0.01
+            Convergence criterion of alpha.
+
         Return
         -------
         Initial_alpha: NDArray, shape (n_folds, )
@@ -2300,8 +2059,8 @@ class DiscreteDistributionallyRobustDoublyRobust(
         for k in self.n_folds:
             weight_sum_ = trajectory_wise_importance_weight[fit_episodes[k]].sum()
 
-            alpha_ = self.alpha_prior
-            for _ in range(self.max_steps):
+            alpha_ = alpha_prior
+            for _ in range(max_steps):
                 W_0 = self._estimate_policy_value_momentum_by_snis(
                     trajectory_wise_reward=trajectory_wise_reward[fit_episodes[k]],
                     trajectory_wise_importance_weight=trajectory_wise_importance_weight[
@@ -2327,7 +2086,7 @@ class DiscreteDistributionallyRobustDoublyRobust(
                     momentum=2,
                 )
                 first_order_derivative_ = (
-                    -W_1 / (alpha * weight_sum_ * W_0) - np.log(W_0) - self.delta
+                    -W_1 / (alpha * weight_sum_ * W_0) - np.log(W_0) - delta
                 )
                 second_order_derivative_ = W_1 ** 2 / (
                     alpha ** 3 * weight_sum_ ** 2 * W_0 ** 2
@@ -2337,10 +2096,10 @@ class DiscreteDistributionallyRobustDoublyRobust(
                 alpha_ = np.clip(
                     alpha_prior_ - first_order_derivative_ / second_order_derivative_,
                     0,
-                    1 / self.delta,
+                    1 / delta,
                 )
 
-                if np.abs(alpha_ - alpha_prior_) < self.epsilon:
+                if np.abs(alpha_ - alpha_prior_) < epsilon:
                     break
 
             alpha[k] = alpha_
@@ -2537,6 +2296,10 @@ class DiscreteDistributionallyRobustDoublyRobust(
         initial_state_action: np.ndarray,
         initial_state_action_distribution: np.ndarray,
         gamma: float = 1.0,
+        delta: float = 0.05,
+        alpha_prior: float = 1.0,
+        max_steps: int = 100,
+        epsilon: float = 0.01,
         random_state: Optional[int] = None,
         **kwargs,
     ) -> float:
@@ -2570,6 +2333,18 @@ class DiscreteDistributionallyRobustDoublyRobust(
         gamma: float, default=1.0 (0, 1]
             Discount factor.
 
+        delta: float, default=0.05 (> 0)
+            Allowance of the distributional shift.
+
+        alpha_prior: float, default=1.0 (> 0)
+            Initial temperature parameter of the exponential function.
+
+        max_steps: int, default=100 (> 0)
+            Maximum steps in turning alpha.
+
+        epsilon: float, default=0.01
+            Convergence criterion of alpha.
+
         random_state: int, default=None (>= 0)
             Random state.
 
@@ -2581,6 +2356,10 @@ class DiscreteDistributionallyRobustDoublyRobust(
         """
         check_scalar(step_per_episode, name="step_per_episode", type=int, min_val=1)
         check_scalar(gamma, name="gamma", type=float, min_val=0.0, max_val=1.0)
+        check_scalar(delta, name="delta", type=float, min_val=0.0)
+        check_scalar(alpha_prior, name="alpha_prior", type=float, min_val=0.0)
+        check_scalar(max_steps, name="max_steps", type=int, min_val=1)
+        check_scalar(epsilon, name="epsilon", type=float, min_val=0.0)
         check_array(reward, name="reward", expected_dim=1)
         check_array(
             behavior_policy_trajectory_wise_pscore,
@@ -2665,6 +2444,10 @@ class DiscreteDistributionallyRobustDoublyRobust(
             trajectory_wise_reward=trajectory_wise_reward,
             trajectory_wise_importance_weight=trajectory_wise_importance_weight,
             fit_episodes=fit_episodes,
+            delta=delta,
+            alpha_prior=alpha_prior,
+            max_steps=max_steps,
+            epsilon=epsilon,
         )
         f_0 = self._predict_trajectory_wise_reward_momentum_given_initial_alpha(
             n_actions=initial_state_action_distribution.shape[1],
@@ -2686,7 +2469,7 @@ class DiscreteDistributionallyRobustDoublyRobust(
         )
 
         alpha = initial_alpha.mean()
-        for _ in range(self.max_steps):
+        for _ in range(max_steps):
             W_0 = self._estimate_policy_value_momentum_given_alpha(
                 trajectory_wise_reward=trajectory_wise_reward,
                 trajectory_wise_importance_weight=trajectory_wise_importance_weight,
@@ -2721,8 +2504,8 @@ class DiscreteDistributionallyRobustDoublyRobust(
                     momentum=1,
                 )
             )
-            objective = -alpha * (np.log(W_0) + self.delta)
-            momentum = -W_1 / (alpha * W_0) - np.log(W_0) - self.delta
+            objective = -alpha * (np.log(W_0) + delta)
+            momentum = -W_1 / (alpha * W_0) - np.log(W_0) - delta
             momentum_derivative = (
                 -W_0_derivative / W_0
                 - (alpha * W_1_derivative * W_0 - W_1 * (W_0 + alpha * W_0_derivative))
@@ -2730,11 +2513,9 @@ class DiscreteDistributionallyRobustDoublyRobust(
             )
 
             alpha_prior = alpha
-            alpha = np.clip(
-                alpha_prior - momentum / momentum_derivative, 0, 1 / self.delta
-            )
+            alpha = np.clip(alpha_prior - momentum / momentum_derivative, 0, 1 / delta)
 
-            if np.abs(alpha - alpha_prior) < self.epsilon:
+            if np.abs(alpha - alpha_prior) < epsilon:
                 break
 
         return objective
