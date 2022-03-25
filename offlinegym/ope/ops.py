@@ -827,7 +827,7 @@ class OffPolicySelection:
                     "safety_threshold": safety_criteria * self.behavior_policy_value,
                 }
 
-        return ops_dict
+        return defaultdict_to_dict(ops_dict)
 
     def select_by_lower_quartile(
         self,
