@@ -302,9 +302,9 @@ class DiscreteOffPolicyEvaluation:
             Significant level.
 
         ci: str, default="bootstrap"
-            Estimation method for confidence interval.
+            Estimation method for confidence intervals.
 
-        n_bootstrap_samples: int, default=10000 (> 0)
+        n_bootstrap_samples: int, default=100 (> 0)
             Number of resampling performed in the bootstrap procedure.
 
         random_state: int, default=None (>= 0)
@@ -385,7 +385,7 @@ class DiscreteOffPolicyEvaluation:
             Number of resampling performed in the bootstrap procedure.
 
         ci: str, default="bootstrap"
-            Estimation method for confidence interval.
+            Estimation method for confidence intervals.
 
         random_state: int, default=None (>= 0)
             Random state.
@@ -473,7 +473,7 @@ class DiscreteOffPolicyEvaluation:
             Significant level.
 
         ci: str, default="bootstrap"
-            Estimation method for confidence interval.
+            Estimation method for confidence intervals.
 
         n_bootstrap_samples: int, default=10000 (> 0)
             Number of resampling performed in the bootstrap procedure.
@@ -1022,7 +1022,7 @@ class ContinuousOffPolicyEvaluation:
             Significant level.
 
         ci: str, default="bootstrap"
-            Estimation method for confidence interval.
+            Estimation method for confidence intervals.
 
         n_bootstrap_samples: int, default=10000 (> 0)
             Number of resampling performed in the bootstrap procedure.
@@ -1113,7 +1113,7 @@ class ContinuousOffPolicyEvaluation:
             Number of resampling performed in the bootstrap procedure.
 
         ci: str, default="bootstrap"
-            Estimation method for confidence interval.
+            Estimation method for confidence intervals.
 
         random_state: int, default=None (>= 0)
             Random state.
@@ -1201,7 +1201,7 @@ class ContinuousOffPolicyEvaluation:
             Significant level.
 
         ci: str, default="bootstrap"
-            Estimation method for confidence interval.
+            Estimation method for confidence intervals.
 
         n_bootstrap_samples: int, default=10000 (> 0)
             Number of resampling performed in the bootstrap procedure.
@@ -2348,7 +2348,7 @@ class DiscreteDistributionallyRobustOffPolicyEvaluation:
             .reshape((-1, self.step_per_episode))[:, 0],
         }
 
-    def _estimate_worst_case_on_policy_policy_value(
+    def estimate_worst_case_on_policy_policy_value(
         self, on_policy_policy_value: np.ndarray, delta: float = 0.05
     ):
         """Estimate the worst case policy value of evaluation policy.
@@ -2444,7 +2444,7 @@ class DiscreteDistributionallyRobustOffPolicyEvaluation:
             if input_dict[eval_policy]["on_policy_policy_value"] is not None:
                 worst_case_policy_value_dict[eval_policy][
                     "on_policy"
-                ] = self._estimate_worst_case_on_policy_policy_value(
+                ] = self.estimate_worst_case_on_policy_policy_value(
                     on_policy_policy_value=input_dict[eval_policy][
                         "on_policy_policy_value"
                     ],

@@ -1,3 +1,4 @@
+from offlinegym.ope.ops import OffPolicySelection
 from offlinegym.ope.ope import (
     DiscreteOffPolicyEvaluation,
     ContinuousOffPolicyEvaluation,
@@ -42,6 +43,7 @@ __all__ = [
     "BaseOffPolicyEstimator",
     "BaseCumulativeDistributionalOffPolicyEstimator",
     "BaseDistributionallyRobustOffPolicyEstimator",
+    "OffPolicySelection",
     "DiscreteOffPolicyEvaluation",
     "ContinuousOffPolicyEvaluation",
     "DiscreteCumulativeDistributionalOffPolicyEvaluation",
