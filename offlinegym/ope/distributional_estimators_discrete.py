@@ -3,7 +3,6 @@ from dataclasses import dataclass
 from typing import Tuple, Optional
 
 import numpy as np
-
 from sklearn.base import BaseEstimator
 from sklearn.model_selection import train_test_split
 from sklearn.utils import check_scalar
@@ -1324,11 +1323,17 @@ class DiscreteCumulativeDistributionalSelfNormalizedDoublyRobust(
     Hoang Le, Cameron Voloshin, and Yisong Yue.
     "Batch Policy Learning under Constraints.", 2019.
 
+    Nathan Kallus and Masatoshi Uehara.
+    "Intrinsically Efficient, Stable, and Bounded Off-Policy Evaluation for Reinforcement Learning.", 2019.
+
     Nan Jiang and Lihong Li.
     "Doubly Robust Off-policy Value Evaluation for Reinforcement Learning.", 2016.
 
     Philip S. Thomas and Emma Brunskill.
     "Data-Efficient Off-Policy Policy Evaluation for Reinforcement Learning.", 2016.
+
+    Adith Swaminathan and Thorsten Joachims.
+    "The Self-Normalized Estimator for Counterfactual Learning.", 2015.
 
     Miroslav Dudík, Dumitru Erhan, John Langford, and Lihong Li.
     "Doubly Robust Policy Evaluation and Optimization.", 2014.
@@ -1717,6 +1722,12 @@ class DiscreteDistributionallyRobustSelfNormalizedImportanceSampling(
     Nian Si, Fan Zhang, Zhengyuan Zhou, and Jose Blanchet.
     "Distributional Robust Batch Contextual Bandits.", 2020.
 
+    Nathan Kallus and Masatoshi Uehara.
+    "Intrinsically Efficient, Stable, and Bounded Off-Policy Evaluation for Reinforcement Learning.", 2019.
+
+    Adith Swaminathan and Thorsten Joachims.
+    "The Self-Normalized Estimator for Counterfactual Learning.", 2015.
+
     Alex Strehl, John Langford, Sham Kakade, and Lihong Li.
     "Learning from Logged Implicit Exploration Data.", 2010.
 
@@ -1960,6 +1971,12 @@ class DiscreteDistributionallyRobustDoublyRobust(
 
     Nathan Kallus, Xiaojie Mao, Masatoshi Uehara.
     "Localized Debiased Machine Learning: Efficient Inference on Quantile Treatment Effects and Beyond.", 2019.
+
+    Nathan Kallus and Masatoshi Uehara.
+    "Intrinsically Efficient, Stable, and Bounded Off-Policy Evaluation for Reinforcement Learning.", 2019.
+
+    Adith Swaminathan and Thorsten Joachims.
+    "The Self-Normalized Estimator for Counterfactual Learning.", 2015.
 
     Alex Strehl, John Langford, Sham Kakade, and Lihong Li.
     "Learning from Logged Implicit Exploration Data.", 2010.

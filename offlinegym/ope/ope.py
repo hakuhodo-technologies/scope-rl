@@ -41,6 +41,638 @@ from offlinegym.utils import (
 
 
 @dataclass
+class CreateOPEInput:
+    """Class to prepare OPE inputs.
+
+    Parameters
+    -------
+    logged_dataset: LoggedDataset
+        Logged dataset used to conduct OPE.
+
+    base_model_args: Optional[Dict[str, Any]], default=None
+        Arguments of baseline Fitted Q Evaluation (FQE) model.
+
+    use_base_model: bool, default=False
+        Whether to use FQE and obtain :math:`\\hat{Q}`.
+
+    References
+    -------
+    Yuta Saito, Shunsuke Aihara, Megumi Matsutani, and Yusuke Narita.
+    "Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation.", 2021.
+
+    Takuma Seno and Michita Imai.
+    "d3rlpy: An Offline Deep Reinforcement Library.", 2021.
+
+    Hoang Le, Cameron Voloshin, and Yisong Yue.
+    "Batch Policy Learning under Constraints.", 2019.
+
+    """
+
+    logged_dataset: LoggedDataset
+    base_model_args: Optional[Dict[str, Any]] = None
+    use_base_model: bool = False
+
+    def __post_init__(self) -> None:
+        "Initialize class."
+        check_logged_dataset(self.logged_dataset)
+        self.n_episodes = self.logged_dataset["n_episodes"]
+        self.action_type = self.logged_dataset["action_type"]
+        self.n_actions = self.logged_dataset["n_actions"]
+        self.action_dim = self.logged_dataset["action_dim"]
+        self.state_dim = self.logged_dataset["state_dim"]
+        self.step_per_episode = self.logged_dataset["step_per_episode"]
+
+        if self.logged_dataset["action_type"] == "discrete":
+            self.mdp_dataset = MDPDataset(
+                observations=self.logged_dataset["state"],
+                actions=self.logged_dataset["action"],
+                rewards=self.logged_dataset["reward"],
+                terminals=self.logged_dataset["done"],
+                episode_terminals=self.logged_dataset["terminal"],
+                discrete_action=True,
+            )
+        else:
+            self.mdp_dataset = MDPDataset(
+                observations=self.logged_dataset["state"],
+                actions=self.logged_dataset["action"],
+                rewards=self.logged_dataset["reward"],
+                terminals=self.logged_dataset["done"],
+                episode_terminals=self.logged_dataset["terminal"],
+            )
+
+        if self.use_base_model:
+            self.fqe = {}
+            if self.base_model_args is None:
+                self.base_model_args = {
+                    "encoder_factory": VectorEncoderFactory(hidden_units=[30, 30]),
+                    "q_func_factory": MeanQFunctionFactory(),
+                    "learning_rate": 1e-4,
+                    "use_gpu": torch.cuda.is_available(),
+                }
+
+    def build_and_fit_FQE(
+        self,
+        evaluation_policy: BaseHead,
+        n_epochs: Optional[int] = None,
+        n_steps: Optional[int] = None,  # should be more than n_steps_per_epoch
+        n_steps_per_epoch: int = 10000,
+    ) -> None:
+        """Fit Fitted Q Evaluation (FQE).
+
+        Parameters
+        -------
+        evaluation_policy: BaseHead
+            Evaluation policy.
+
+        n_epochs: Optional[int], default=None (> 0)
+            Number of epochs to fit FQE.
+
+        n_steps: Optional[int], default=None (> 0)
+            Total number pf steps to fit FQE.
+
+        n_steps_per_epoch: int, default=10000 (> 0)
+            Number of steps in an epoch.
+
+        """
+        if not isinstance(evaluation_policy, BaseHead):
+            raise ValueError("evaluation_policy must be a child class of BaseHead")
+
+        if n_epochs is not None:
+            check_scalar(n_epochs, name="n_epochs", target_type=int, min_val=1)
+        if n_steps is not None:
+            check_scalar(n_steps, name="n_steps", target_type=int, min_val=1)
+        check_scalar(
+            n_steps_per_epoch, name="n_steps_per_epoch", target_type=int, min_val=1
+        )
+
+        if n_epochs is None and n_steps is None:
+            n_steps = n_steps_per_epoch
+
+        if evaluation_policy.name in self.fqe:
+            pass
+
+        else:
+            if self.action_type == "discrete":
+                self.fqe[evaluation_policy.name] = DiscreteFQE(
+                    algo=evaluation_policy, **self.base_model_args
+                )
+            else:
+                self.fqe[evaluation_policy.name] = ContinuousFQE(
+                    algo=evaluation_policy, **self.base_model_args
+                )
+
+            self.fqe[evaluation_policy.name].fit(
+                self.mdp_dataset.episodes,
+                eval_episodes=self.mdp_dataset.episodes,
+                n_epochs=n_epochs,
+                n_steps=n_steps,
+                n_steps_per_epoch=n_steps_per_epoch,
+                scorers={},
+            )
+
+    def predict_state_action_value(
+        self,
+        evaluation_policy: BaseHead,
+    ) -> np.ndarray:
+        """Predict state action value for all actions.
+
+        Parameters
+        -------
+        evaluation_policy: BaseHead
+            Evaluation policy.
+
+        Return
+        -------
+        state_action_value_prediction: NDArray, shape (n_samples, n_actions)
+            State action value for observed state and all actions,
+            i.e., math`\\hat{Q}(s, a) \\forall a \\in \\mathcal{A}`.
+
+        """
+        x = self.logged_dataset["state"]
+        x_ = []
+        for i in range(x.shape[0]):
+            x_.append(np.tile(x[i], (self.n_actions, 1)))
+        x_ = np.array(x_).reshape((-1, x.shape[1]))
+        a_ = np.tile(np.arange(self.n_actions), x.shape[0])
+        return self.fqe[evaluation_policy.name].predict_value(
+            x_, a_
+        )  # (n_samples, n_actions)
+
+    def obtain_evaluation_policy_action(
+        self,
+        evaluation_policy: BaseHead,
+    ) -> np.ndarray:
+        """Obtain evaluation policy action.
+
+        Parameters
+        -------
+        evaluation_policy: BaseHead
+            Evaluation policy.
+
+        Return
+        -------
+        evaluation_policy_action: NDArray
+            Evaluation policy action :math:`a_t \\sim \\pi_e(a_t \\mid s_t)`.
+
+        """
+        if not isinstance(evaluation_policy, BaseHead):
+            raise ValueError("evaluation_policy must be a child class of BaseHead")
+        return evaluation_policy.predict(x=self.logged_dataset["state"])
+
+    def obtain_pscore_for_observed_state_action(
+        self,
+        evaluation_policy: BaseHead,
+    ) -> np.ndarray:
+        """Obtain pscore for observed state action pair.
+
+        Parameters
+        -------
+        evaluation_policy: BaseHead
+            Evaluation policy.
+
+        Return
+        -------
+        evaluation_policy_pscore: NDArray
+            Evaluation policy pscore :math:`\\pi_e(a_t \\mid s_t)`.
+
+        """
+        if not isinstance(evaluation_policy, BaseHead):
+            raise ValueError("evaluation_policy must be a child class of BaseHead")
+        return evaluation_policy.calc_pscore_given_action(
+            x=self.logged_dataset["state"],
+            action=self.logged_dataset["action"],
+        )
+
+    def obtain_step_wise_pscore(
+        self,
+        evaluation_policy: BaseHead,
+    ) -> np.ndarray:
+        """Obtain step-wise pscore for the observed state action pair.
+
+        Parameters
+        -------
+        evaluation_policy: BaseHead
+            Evaluation policy.
+
+        Return
+        -------
+        evaluation_policy_step_wise_pscore: NDArray
+            Evaluation policy's step-wise pscore :math:`\\prod_{t'=1}^t \\pi_e(a_{t'} \\mid s_{t'})`.
+
+        """
+        if not isinstance(evaluation_policy, BaseHead):
+            raise ValueError("evaluation_policy must be a child class of BaseHead")
+        base_pscore = self.obtain_pscore_for_observed_state_action(
+            evaluation_policy
+        ).reshape((-1, self.step_per_episode))
+        return np.cumprod(base_pscore, axis=1).flatten()
+
+    def obtain_trajectory_wise_pscore(
+        self,
+        evaluation_policy: BaseHead,
+    ) -> np.ndarray:
+        """Obtain trajectory-wise pscore for the observed state action pair.
+
+        Parameters
+        -------
+        evaluation_policy: BaseHead
+            Evaluation policy.
+
+        Return
+        -------
+        evaluation_policy_trajectory_wise_pscore: NDArray
+            Evaluation policy's trajectory-wise pscore :math:`\\prod_{t=1}^T \\pi_e(a_t \\mid s_t)`.
+
+        """
+        if not isinstance(evaluation_policy, BaseHead):
+            raise ValueError("evaluation_policy must be a child class of BaseHead")
+        base_pscore = self.obtain_step_wise_pscore(evaluation_policy).reshape(
+            (-1, self.step_per_episode)
+        )[:, -1]
+        return np.tile(base_pscore, (self.step_per_episode, 1)).T.flatten()
+
+    def obtain_action_dist_with_state_action_value_prediction_discrete(
+        self,
+        evaluation_policy: BaseHead,
+    ) -> np.ndarray:
+        """Obtain action choice probability of the discrete evaluation policy and its Q hat for the observed state.
+
+        Parameters
+        -------
+        evaluation_policy: BaseHead
+            Evaluation policy.
+
+        Return
+        -------
+        evaluation_policy_action_dist: NDArray, shape (n_samples, n_actions)
+            Evaluation policy pscore :math:`\\pi_e(a_t \\mid s_t)`.
+
+        state_action_value_prediction: NDArray, shape (n_samples, n_actions)
+            State action value for all observed state and possible action.
+
+        """
+        if not isinstance(evaluation_policy, BaseHead):
+            raise ValueError("evaluation_policy must be a child class of BaseHead")
+        action_dist = evaluation_policy.calc_action_choice_probability(
+            self.logged_dataset["state"]
+        )
+        state_action_value_prediction = (
+            self.predict_state_action_value(evaluation_policy)
+        ).reshape((-1, self.n_actions))
+        return action_dist, state_action_value_prediction  # (n_samples, n_actions)
+
+    def obtain_state_action_value_prediction_continuous(
+        self,
+        evaluation_policy: BaseHead,
+    ) -> np.ndarray:
+        """Obtain Q hat for the continuous (deterministic) evaluation policy.
+
+        Parameters
+        -------
+        evaluation_policy: BaseHead
+            Evaluation policy.
+
+        Return
+        -------
+        state_action_value_prediction: NDArray, shape (n_samples, )
+            State action value for the observed state and action chosen by evaluation policy.
+
+        """
+        if not isinstance(evaluation_policy, BaseHead):
+            raise ValueError("evaluation_policy must be a child class of BaseHead")
+        state = self.logged_dataset["state"]
+        action = evaluation_policy.predict(state)
+        return self.fqe[evaluation_policy.name].predict_value(state, action)
+
+    def obtain_initial_state_value_prediction_discrete(
+        self,
+        evaluation_policy: BaseHead,
+    ) -> np.ndarray:
+        """Obtain initial state value for the discrete evaluation policy.
+
+        Parameters
+        -------
+        evaluation_policy: BaseHead
+            Evaluation policy.
+
+        Return
+        -------
+        initial_state_value_prediction: NDArray, shape (n_samples, n_actions)
+            State action value for the observed state and action chosen by evaluation policy.
+
+        """
+        if not isinstance(evaluation_policy, BaseHead):
+            raise ValueError("evaluation_policy must be a child class of BaseHead")
+        (
+            state_action_value,
+            pscore,
+        ) = self.obtain_action_dist_with_state_action_value_prediction_discrete(
+            evaluation_policy
+        )
+        state_action_value = state_action_value.reshape((-1, self.n_actions))
+        state_value = np.sum(state_action_value * pscore, axis=1)
+        return state_value.reshape((-1, self.step_per_episode))[:, 0]  # (n_samples, )
+
+    def obtain_initial_state_value_prediction_continuous(
+        self,
+        evaluation_policy: BaseHead,
+    ) -> np.ndarray:
+        """Obtain initial state value for the continuous evaluation policy.
+
+        Parameters
+        -------
+        evaluation_policy: BaseHead
+            Evaluation policy.
+
+        Return
+        -------
+        initial_state_value_prediction: NDArray, shape (n_samples, n_actions)
+            State action value for the observed state and action chosen by evaluation policy.
+
+        """
+        if not isinstance(evaluation_policy, BaseHead):
+            raise ValueError("evaluation_policy must be a child class of BaseHead")
+        state_value = self.obtain_state_action_value_prediction_continuous(
+            evaluation_policy
+        )
+        return state_value.reshape((-1, self.step_per_episode))[:, 0]
+
+    def obtain_initial_state_action_distribution(
+        self,
+        evaluation_policy: BaseHead,
+    ) -> np.ndarray:
+        """Obtain Evaluation policy pscore of discrete actions at the initial state of each episode.
+
+        Parameters
+        -------
+        evaluation_policy: BaseHead
+            Evaluation policy.
+
+        Return
+        -------
+        initial_state_action_distribution: NDArray, shape (n_episodes, n_actions)
+            Evaluation policy pscore at the initial state of each episode.
+
+        """
+        if not isinstance(evaluation_policy, BaseHead):
+            raise ValueError("evaluation_policy must be a child class of BaseHead")
+        state = self.logged_dataset["state"].reshape(
+            (-1, self.step_per_episode, self.state_dim)
+        )
+        action_dist = evaluation_policy.calc_action_choice_probability(state[:, 0, :])
+        return action_dist
+
+    def obtain_whole_inputs(
+        self,
+        evaluation_policies: List[BaseHead],
+        env: Optional[gym.Env] = None,
+        n_epochs: Optional[int] = None,
+        n_steps: Optional[int] = None,  # should be more than n_steps_per_epoch
+        n_steps_per_epoch: Optional[int] = None,
+        n_episodes_on_policy_evaluation: Optional[int] = None,
+        random_state: Optional[int] = None,
+    ) -> OPEInputDict:
+        """Obtain input as a dictionary.
+
+        Parameters
+        -------
+        evaluation_policies: List[BaseHead]
+            Evaluation policies.
+
+        env: gym.Env
+            Reinforcement learning (RL) environment.
+
+        n_epochs: Optional[int], default=None (> 0)
+            Number of epochs to fit FQE.
+
+        n_steps: Optional[int], default=None (> 0)
+            Total number pf steps to fit FQE.
+
+        n_steps_per_epoch: int, default=None (> 0)
+            Number of steps in an epoch.
+
+        n_episodes_on_policy_evaluation: Optional[int], default=None (> 0)
+            Number of episodes to perform on-policy evaluation.
+
+        random_state: int, default=None (>= 0)
+            Random state.
+
+        Return
+        -------
+        input_dict: OPEInputDict
+            Dictionary of the OPE inputs for each evaluation policy.
+            key: [evaluation_policy_name][
+                evaluation_policy_step_wise_pscore,
+                evaluation_policy_trajectory_wise_pscore,
+                evaluation_policy_action,
+                evaluation_policy_action_dist,
+                state_action_value_prediction,
+                initial_state_value_prediction,
+                on_policy_policy_value,
+                initial_state,
+                initial_state_action,
+                initial_state_action_distribution,
+            ]
+
+            evaluation_policy_step_wise_pscore: Optional[NDArray], shape (n_episodes * step_per_episodes, )
+                Step-wise action choice probability of evaluation policy,
+                i.e., :math:`\\prod_{t'=0}^t \\pi_e(a_{t'} \\mid s_{t'})`
+                If action_type == "continuous", `None` is recorded.
+
+            evaluation_policy_trajectory_wise_pscore: Optional[NDArray], shape (n_episodes * step_per_episodes, )
+                Trajectory-wise action choice probability of evaluation policy,
+                i.e., :math:`\\prod_{t=0}^T \\pi_e(a_t \\mid s_t)`
+                If action_type == "continuous", `None` is recorded.
+
+            evaluation_policy_action: Optional[NDArray], shape (n_episodes * step_per_episodes, action_dim)
+                Action chosen by the deterministic evaluation policy.
+                If action_type == "discrete", `None` is recorded.
+
+            evaluation_policy_action_dist: Optional[NDArray], shape (n_episodes * step_per_episode, n_actions)
+                Action choice probability of evaluation policy for all actions,
+                i.e., :math:`\\pi_e(a \\mid s_t) \\forall a \\in \\mathcal{A}`
+                If action_type == "continuous", `None` is recorded.
+
+            state_action_value_prediction: Optional[NDArray]
+                If action_type == "discrete", :math:`\\hat{Q}` for all actions,
+                i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
+                shape (n_episodes * step_per_episode, n_actions)
+
+                If action_type == "continuous", :math:`\\hat{Q}` for the action chosen by evaluation policy,
+                i.e., :math:`\\hat{Q}(s_t, \\pi_e(a \\mid s_t))`.
+                shape (n_episodes * step_per_episode, )
+
+                If use_base_model == False, `None` is recorded.
+
+            initial_state_value_prediction: Optional[NDArray], shape (n_episodes, )
+                Estimated initial state value.
+                If use_base_model == False, `None` is recorded.
+
+            on_policy_policy_value: Optional[NDArray], shape (n_episodes_on_policy_evaluation, )
+                On-policy policy value.
+                If env is None, `None` is recorded.
+
+            initial_state_action_distribution: NDArray, shape (n_episodes, n_actions)
+                Evaluation policy pscore at the initial state of each episode.
+                If action_type == "continuous", `None` is recorded.
+
+        """
+        if env is not None:
+            if isinstance(env.action_space, Box) and self.action_type == "discrete":
+                raise RuntimeError(
+                    "Found mismatch in action_type between env and logged_dataset"
+                )
+            elif (
+                isinstance(env.action_space, Discrete)
+                and self.action_type == "continuous"
+            ):
+                raise RuntimeError(
+                    "Found mismatch in action_type between env and logged_dataset"
+                )
+
+        for eval_policy in evaluation_policies:
+            if eval_policy.action_type != self.action_type:
+                raise RuntimeError(
+                    f"One of the evaluation_policies, {eval_policy.name} does not match action_type in logged_dataset."
+                    " Please use {self.action_type} action type instead."
+                )
+
+        if n_episodes_on_policy_evaluation is not None:
+            check_scalar(
+                n_episodes_on_policy_evaluation,
+                name="n_episodes_on_policy_evaluation",
+                target_type=int,
+                min_val=1,
+            )
+
+        if self.use_base_model:
+            if n_steps_per_epoch is None:
+                n_steps_per_epoch = 10000
+
+            for i in tqdm(
+                range(len(evaluation_policies)),
+                desc="[fit FQE model]",
+                total=len(evaluation_policies),
+            ):
+                self.build_and_fit_FQE(
+                    evaluation_policies[i],
+                    n_epochs=n_epochs,
+                    n_steps=n_steps,
+                    n_steps_per_epoch=n_steps_per_epoch,
+                )
+
+        input_dict = defaultdict(dict)
+
+        for i in tqdm(
+            range(len(evaluation_policies)),
+            desc="[collect input data]",
+            total=len(evaluation_policies),
+        ):
+            # input for IPW, DR
+            if self.action_type == "discrete":
+                input_dict[evaluation_policies[i].name][
+                    "evaluation_policy_step_wise_pscore"
+                ] = self.obtain_step_wise_pscore(evaluation_policies[i])
+                input_dict[evaluation_policies[i].name][
+                    "evaluation_policy_trajectory_wise_pscore"
+                ] = self.obtain_trajectory_wise_pscore(evaluation_policies[i])
+                input_dict[evaluation_policies[i].name][
+                    "evaluation_policy_action"
+                ] = None
+            else:
+                input_dict[evaluation_policies[i].name][
+                    "evaluation_policy_step_wise_pscore"
+                ] = None
+                input_dict[evaluation_policies[i].name][
+                    "evaluation_policy_trajectory_wise_pscore"
+                ] = None
+                input_dict[evaluation_policies[i].name][
+                    "evaluation_policy_action"
+                ] = self.obtain_evaluation_policy_action(evaluation_policies[i])
+
+            # input for DM, DR
+            if self.action_type == "discrete":
+                if self.use_base_model:
+                    (
+                        action_dist,
+                        state_action_value_prediction,
+                    ) = self.obtain_action_dist_with_state_action_value_prediction_discrete(
+                        evaluation_policies[i]
+                    )
+                    input_dict[evaluation_policies[i].name][
+                        "evaluation_policy_action_dist"
+                    ] = action_dist
+                    input_dict[evaluation_policies[i].name][
+                        "state_action_value_prediction"
+                    ] = state_action_value_prediction
+                    input_dict[evaluation_policies[i].name][
+                        "initial_state_value_prediction"
+                    ] = self.obtain_initial_state_value_prediction_discrete(
+                        evaluation_policies[i]
+                    )
+                else:
+                    input_dict[evaluation_policies[i].name][
+                        "evaluation_policy_action_dist"
+                    ] = None
+                    input_dict[evaluation_policies[i].name][
+                        "state_action_value_prediction"
+                    ] = None
+                    input_dict[evaluation_policies[i].name][
+                        "initial_state_value_prediction"
+                    ] = None
+            else:
+                if self.use_base_model:
+                    input_dict[evaluation_policies[i].name][
+                        "state_action_value_prediction"
+                    ] = self.obtain_state_action_value_prediction_continuous(
+                        evaluation_policies[i]
+                    )
+                    input_dict[evaluation_policies[i].name][
+                        "initial_state_value_prediction"
+                    ] = self.obtain_initial_state_value_prediction_continuous(
+                        evaluation_policies[i]
+                    )
+                else:
+                    input_dict[evaluation_policies[i].name][
+                        "state_action_value_prediction"
+                    ] = None
+                    input_dict[evaluation_policies[i].name][
+                        "initial_state_value_prediction"
+                    ] = None
+
+            # input for the distributionally robust OPE estimators
+            if self.action_type == "discrete":
+                input_dict[evaluation_policies[i].name][
+                    "initial_state_action_distribution"
+                ] = self.obtain_initial_state_action_distribution(
+                    evaluation_policies[i]
+                )
+            else:
+                input_dict[evaluation_policies[i].name][
+                    "initial_state_action_distribution"
+                ] = None
+
+            # input for the evaluation of OPE estimators
+            if env is not None:
+                if n_episodes_on_policy_evaluation is None:
+                    n_episodes_on_policy_evaluation = self.n_episodes
+
+                input_dict[evaluation_policies[i].name][
+                    "on_policy_policy_value"
+                ] = rollout_policy_online(
+                    env,
+                    evaluation_policies[i],
+                    n_episodes=n_episodes_on_policy_evaluation,
+                    random_state=random_state,
+                )
+
+            else:
+                input_dict[evaluation_policies[i].name]["on_policy_policy_value"] = None
+
+        return defaultdict_to_dict(input_dict)
+
+
+@dataclass
 class DiscreteOffPolicyEvaluation:
     """Class to conduct OPE by multiple estimators simultaneously for discrete action space.
 
@@ -1460,7 +2092,7 @@ class ContinuousOffPolicyEvaluation:
 
 @dataclass
 class DiscreteCumulativeDistributionalOffPolicyEvaluation:
-    """Class to conduct cumulative distributional OPE by multiple estimators simultaneously.
+    """Class to conduct cumulative distributional OPE by multiple estimators simultaneously in discrete action space.
 
     Parameters
     -----------
@@ -2159,8 +2791,758 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
 
 
 @dataclass
+class ContinuousCumulativeDistributionalOffPolicyEvaluation:
+    """Class to conduct cumulative distributional OPE by multiple estimators simultaneously in continuous action space.
+
+    Parameters
+    -----------
+    logged_dataset: LoggedDataset
+        Logged dataset used to conduct OPE.
+
+    ope_estimators: List[BaseOffPolicyEstimator]
+        List of OPE estimators used to evaluate the policy value of evaluation policy.
+        Estimators must follow the interface of `offlinegym.ope.BaseCumulativeDistributionalOffPolicyEstimator`.
+
+    scale_min: float, default=None
+        Minimum value of the reward scale in CDF.
+        When `use_observations_as_reward_scale == False`, a value must be given.
+
+    scale_max: float, default=None
+        Maximum value of the reward scale in CDF.
+        When `use_observations_as_reward_scale == False`, a value must be given.
+
+    n_partitiion: int, default=None
+        Number of partition in reward scale (x-axis of CDF).
+        When `use_observations_as_reward_scale == False`, a value must be given.
+
+    use_observations_as_reward_scale: bool, default=False
+        Whether to use the reward observed by the behavior policy as the reward scale.
+        If True, the reward scale follows the one defined in Chundak et al. (2021).
+        If False, the reward scale is uniform, following Huang et al. (2021).
+
+    sigma: Optional[NDArray], shape (action_dim, ), default=None
+        Standard deviation of Gaussian distribution (i.e., band_width hyperparameter of gaussian kernel).
+        If `None`, sigma is set to 1 for all dimensions.
+
+    use_truncated_kernel: bool, default=False
+        Whether to use Truncated Gaussian kernel or not.
+        If `False`, (normal) Gaussian kernel is used.
+
+    action_min: Optional[NDArray], shape (action_dim, ), default=None
+        Minimum value of action vector.
+        When use_truncated_kernel == True, action_min must be given.
+
+    action_max: Optional[NDArray], shape (action_dim, ), default=None
+        Maximum value of action vector.
+        When use_truncated_kernel == True, action_max must be given.
+
+    Examples
+    ----------
+    .. ::code-block:: python
+
+        # import necessary module from offlinegym
+        >>> from offlinegym.dataset import SyntheticDataset
+        >>> from offlinegym.policy import DiscreteEpsilonGreedyHead
+        >>> from offlinegym.ope import CreateOPEInput
+        >>> from offlinegym.ope import CumulativeDistributionalOffPolicyEvaluation
+        >>> from offlinegym.ope import DiscreteCumulativeDistributionalImportanceSampling as CDIS
+        >>> from offlinegym.ope import DiscreteCumulativeDistributionalSelfNormalizedImportanceSampling as CDSNIS
+
+        # import necessary module from other libraries
+        >>> from rtbgym import RTBEnv, CustomizedRTBEnv
+        >>> from sklearn.linear_model import LogisticRegression
+        >>> from d3rlpy.algos import DoubleDQN
+        >>> from d3rlpy.online.buffers import ReplayBuffer
+        >>> from d3rlpy.online.explorers import ConstantEpsilonGreedy
+
+        # initialize environment
+        >>> env = RTBEnv(random_state=12345)
+
+        # customize environment from the decision makers' perspective
+        >>> env = CustomizedRTBEnv(
+                original_env=env,
+                reward_predictor=LogisticRegression(),
+                action_type="discrete",
+            )
+
+        # define (RL) agent (i.e., policy) and train on the environment
+        >>> ddqn = DoubleDQN()
+        >>> buffer = ReplayBuffer(
+                maxlen=10000,
+                env=env,
+            )
+        >>> explorer = ConstantEpsilonGreedy(
+                epsilon=0.3,
+            )
+        >>> ddqn.fit_online(
+                env=env,
+                buffer=buffer,
+                explorer=explorer,
+            )
+
+        # convert ddqn policy to stochastic data collection policy
+        >>> behavior_policy = DiscreteEpsilonGreedyHead(
+                ddqn,
+                n_actions=env.action_space.n,
+                epsilon=0.3,
+                name="ddqn_epsilon_0.3",
+                random_state=12345,
+            )
+
+        # initialize dataset class
+        >>> dataset = SyntheticDataset(
+                env=env,
+                behavior_policy=behavior_policy,
+                random_state=12345,
+            )
+
+        # data collection
+        >>> logged_dataset = dataset.obtain_trajectories(n_episodes=100, obtain_info=True)
+
+        # evaluation policy
+        >>> ddqn_ = DiscreteEpsilonGreedyHead(
+            base_policy=ddqn,
+            n_actions=env.action_space.n,
+            name="ddqn",
+            epsilon=0.0,
+            random_state=12345
+        )
+        >>> random_ = DiscreteEpsilonGreedyHead(
+            base_policy=ddqn,
+            n_actions=env.action_space.n,
+            name="random",
+            epsilon=1.0,
+            random_state=12345
+        )
+
+        # create input for off-policy evaluation (OPE)
+        >>> prep = CreateOPEInput(
+            logged_dataset=logged_dataset,
+        )
+        >>> input_dict = prep.obtain_whole_inputs(
+            evaluation_policies=[ddqn_, random_],
+            env=env,
+            n_episodes_on_policy_evaluation=100,
+            random_state=12345,
+        )
+
+        # OPE
+        >>> ope = OffPolicyEvaluation(
+            logged_dataset=logged_dataset,
+            ope_estimators=[TIS(), SIS()],
+        )
+        >>> policy_value_dict = ope.estimate_policy_value(
+            input_dict=input_dict,
+        )
+        >>> policy_value_dict
+        {'ddqn': {'on_policy': 15.5, 'tis': 22.901319216705502, 'sis': 17.970922685707617},
+        'random': {'on_policy': 15.5, 'tis': 0.555637908601827, 'sis': 6.108053435521632}}
+
+
+    References
+    -------
+    Yash Chandak, Scott Niekum, Bruno Castro da Silva, Erik Learned-Miller, Emma Brunskill, and Philip S. Thomas.
+    "Universal Off-Policy Evaluation.", 2021.
+
+    Audrey Huang, Liu Leqi, Zachary C. Lipton, and Kamyar Azizzadenesheli.
+    "Off-Policy Risk Assessment in Contextual Bandits.", 2021.
+
+    Nathan Kallus and Angela Zhou.
+    "Policy Evaluation and Optimization with Continuous Treatments.", 2019.
+
+    """
+
+    logged_dataset: LoggedDataset
+    ope_estimators: List[BaseOffPolicyEstimator]
+    scale_min: Optional[float] = None
+    scale_max: Optional[float] = None
+    n_partition: Optional[int] = None
+    use_observations_as_reward_scale: bool = False
+    sigma: Optional[np.ndarray] = None
+    use_truncated_kernel: bool = False
+    action_min: Optional[np.ndarray] = None
+    action_max: Optional[np.ndarray] = None
+
+    def __post_init__(self) -> None:
+        "Initialize class."
+        check_logged_dataset(self.logged_dataset)
+        self.step_per_episode = self.logged_dataset["step_per_episode"]
+
+        if self.logged_dataset["action_type"] != "continuous":
+            raise ValueError("logged_dataset does not `continuous` action_type")
+
+        self.ope_estimators_ = dict()
+        for estimator in self.ope_estimators:
+            self.ope_estimators_[estimator.estimator_name] = estimator
+
+            if estimator.action_type != "continuous":
+                raise RuntimeError(
+                    f"One of the ope_estimators, {estimator.estimator_name} does not match `continuous` action_type"
+                )
+
+            if not isinstance(
+                estimator, BaseCumulativeDistributionalOffPolicyEstimator
+            ):
+                raise RuntimeError(
+                    f"ope_estimators must be child classes of BaseCumulativeDistributionalOffPolicyEstimator, but one of them, {estimator.estimator_name} is not"
+                )
+
+        if not self.use_observations_as_reward_scale:
+            if self.scale_min is None:
+                raise ValueError(
+                    "scale_min must be given when `use_observations_as_reward_scale == False`"
+                )
+            if self.scale_max is None:
+                raise ValueError(
+                    "scale_max must be given when `use_observations_as_reward_scale == False`"
+                )
+            if self.n_partition is None:
+                raise ValueError(
+                    "n_partition must be given when `use_observations_as_reward_scale == False`"
+                )
+            check_scalar(
+                self.scale_min,
+                name="scale_min",
+                target_type=float,
+            )
+            check_scalar(
+                self.scale_max,
+                name="scale_max",
+                target_type=float,
+            )
+            check_scalar(
+                self.n_partition,
+                name="n_partition",
+                target_type=int,
+                min_val=1,
+            )
+
+        if self.sigma is not None:
+            check_array(self.sigma, name="sigma", expected_dim=1, min_val=0.0)
+
+        if self.use_truncated_kernel:
+            check_array(self.action_min, name="action_min", expected_dim=1)
+            check_array(self.action_max, name="action_max", expected_dim=1)
+
+        behavior_policy_pscore = self.logged_dataset["pscore"].reshape(
+            (-1, self.step_per_episode)
+        )
+        behavior_policy_step_wise_pscore = np.cumprod(behavior_policy_pscore, axis=1)
+        behavior_policy_trajectory_wise_pscore = np.tile(
+            behavior_policy_step_wise_pscore[:, -1], (self.step_per_episode, 1)
+        ).T
+
+        self.input_dict_ = {
+            "step_per_episode": self.step_per_episode,
+            "action": self.logged_dataset["action"].astype(int),
+            "reward": self.logged_dataset["reward"],
+            "behavior_policy_step_wise_pscore": behavior_policy_step_wise_pscore.flatten(),
+            "behavior_policy_trajectory_wise_pscore": behavior_policy_trajectory_wise_pscore.flatten(),
+        }
+
+    def obtain_reward_scale(self, gamma: float = 1.0) -> np.ndarray:
+        """Obtain reward scale of the cumulative distribution function.
+
+        Parameters
+        -------
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
+
+        Return
+        -------
+        reward_scale: NDArray, shape (n_partition, )
+            Reward scale of the cumulative distribution function.
+
+        """
+        check_scalar(gamma, name="gamma", type=float, min_val=0.0, max_val=1.0)
+
+        if self.use_observations_as_reward_scale:
+            behavior_policy_reward = self.input_dict_["reward"].reshape(
+                (-1, self.step_per_episode)
+            )
+            discount = np.full(behavior_policy_reward.shape[1], gamma).cumprod()
+            behavior_policy_trajectory_wise_reward = (
+                behavior_policy_reward * discount
+            ).sum(axis=1)
+            reward_scale = np.sort(np.unique(behavior_policy_trajectory_wise_reward))
+        else:
+            reward_scale = np.linspace(
+                self.scale_min, self.scale_max, num=self.n_partition
+            )
+
+        return reward_scale
+
+    def estimate_cumulative_distribution_function(
+        self,
+        input_dict: OPEInputDict,
+        gamma: float = 1.0,
+    ):
+        """Estimate the cumulative distribution of the trajectory wise reward of evaluation policy.
+
+        Parameters
+        -------
+        input_dict: OPEInputDict
+            Dictionary of the OPE inputs for each evaluation policy.
+            Please refer to `CreateOPEInput` class for the detail.
+            key: [evaluation_policy_name][
+                evaluation_policy_step_wise_pscore,
+                evaluation_policy_trajectory_wise_pscore,
+                evaluation_policy_action,
+                evaluation_policy_action_dist,
+                state_action_value_prediction,
+                initial_state_value_prediction,
+                on_policy_policy_value,
+            ]
+
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
+
+        Return
+        -------
+        cumulative_distribution_dict: Dict[str, Dict[str, np.ndarray]]
+            Dictionary containing estimated cumulative distribution of each evaluation policy by OPE estimators.
+            key: [evaluation_policy_name][OPE_estimator_name]
+
+        """
+        cumulative_distribution_dict = defaultdict(dict)
+        reward_scale = self.obtain_reward_scale(gamma=gamma)
+
+        for eval_policy in input_dict.keys():
+            if input_dict[eval_policy]["on_policy_policy_value"] is not None:
+                cumulative_distribution_dict[eval_policy]["on_policy"] = np.histgram(
+                    input_dict[eval_policy]["on_policy_policy_value"],
+                    bins=reward_scale,
+                    density=True,
+                )[0]
+            else:
+                cumulative_distribution_dict[eval_policy]["on_policy"] = None
+
+            for estimator_name, estimator in self.ope_estimators_.items():
+                cumulative_distribution_dict[eval_policy][
+                    estimator_name
+                ] = estimator.estimate_cumulative_distribution_function(
+                    **input_dict[eval_policy],
+                    **self.input_dict_,
+                    step_per_episode=self.step_per_episode,
+                    reward_scale=reward_scale,
+                    gamma=gamma,
+                    sigma=self.sigma,
+                    use_truncated_kernel=self.use_truncated_kernel,
+                    action_min=self.action_min,
+                    action_max=self.action_max,
+                )
+
+        return defaultdict_to_dict(cumulative_distribution_dict)
+
+    def estimate_mean(
+        self,
+        input_dict: OPEInputDict,
+        gamma: float = 1.0,
+    ):
+        """Estimate the mean of the trajectory wise reward (i.e., policy value) of evaluation policy.
+
+        Parameters
+        -------
+        input_dict: OPEInputDict
+            Dictionary of the OPE inputs for each evaluation policy.
+            Please refer to `CreateOPEInput` class for the detail.
+            key: [evaluation_policy_name][
+                evaluation_policy_step_wise_pscore,
+                evaluation_policy_trajectory_wise_pscore,
+                evaluation_policy_action,
+                evaluation_policy_action_dist,
+                state_action_value_prediction,
+                initial_state_value_prediction,
+                on_policy_policy_value,
+            ]
+
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
+
+        Return
+        -------
+        mean_dict: Dict[str, Dict[str, float]]
+            Dictionary containing estimated mean trajectory wise reward of each evaluation policy by OPE estimators.
+            key: [evaluation_policy_name][OPE_estimator_name]
+
+        """
+        mean_dict = defaultdict(dict)
+        reward_scale = self.obtain_reward_scale(gamma=gamma)
+
+        for eval_policy in input_dict.keys():
+            if input_dict[eval_policy]["on_policy_policy_value"] is not None:
+                cumulative_density = np.histgram(
+                    input_dict[eval_policy]["on_policy_policy_value"],
+                    bins=reward_scale,
+                    density=True,
+                )[0]
+                mean_dict[eval_policy]["on_policy"] = (
+                    np.diff(cumulative_density) * reward_scale[1:]
+                ).sum()
+            else:
+                mean_dict[eval_policy]["on_policy"] = None
+
+            for estimator_name, estimator in self.ope_estimators_.items():
+                mean_dict[eval_policy][estimator_name] = estimator.estimate_mean(
+                    **input_dict[eval_policy],
+                    **self.input_dict_,
+                    step_per_episode=self.step_per_episode,
+                    reward_scale=reward_scale,
+                    gamma=gamma,
+                    sigma=self.sigma,
+                    use_truncated_kernel=self.use_truncated_kernel,
+                    action_min=self.action_min,
+                    action_max=self.action_max,
+                )
+
+        return defaultdict_to_dict(mean_dict)
+
+    def estimate_variance(
+        self,
+        input_dict: OPEInputDict,
+        gamma: float = 1.0,
+    ):
+        """Estimate the variance of the trajectory wise reward of evaluation policy.
+
+        Parameters
+        -------
+        input_dict: OPEInputDict
+            Dictionary of the OPE inputs for each evaluation policy.
+            Please refer to `CreateOPEInput` class for the detail.
+            key: [evaluation_policy_name][
+                evaluation_policy_step_wise_pscore,
+                evaluation_policy_trajectory_wise_pscore,
+                evaluation_policy_action,
+                evaluation_policy_action_dist,
+                state_action_value_prediction,
+                initial_state_value_prediction,
+                on_policy_policy_value,
+            ]
+
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
+
+        Return
+        -------
+        variance_dict: Dict[str, Dict[str, float]]
+            Dictionary containing estimated variance of trajectory wise reward of each evaluation policy by OPE estimators.
+            key: [evaluation_policy_name][OPE_estimator_name]
+
+        """
+        variance_dict = defaultdict(dict)
+        reward_scale = self.obtain_reward_scale(gamma=gamma)
+
+        for eval_policy in input_dict.keys():
+            if input_dict[eval_policy]["on_policy_policy_value"] is not None:
+                cumulative_density = np.histgram(
+                    input_dict[eval_policy]["on_policy_policy_value"],
+                    bins=reward_scale,
+                    density=True,
+                )[0]
+                mean = (np.diff(cumulative_density) * reward_scale[1:]).sum()
+                variance_dict[eval_policy]["on_policy"] = (
+                    np.diff(cumulative_density) * (reward_scale[1:] - mean) ** 2
+                ).sum()
+            else:
+                variance_dict[eval_policy]["on_policy"] = None
+
+            for estimator_name, estimator in self.ope_estimators_.items():
+                variance_dict[eval_policy][
+                    estimator_name
+                ] = estimator.estimate_variance(
+                    **input_dict[eval_policy],
+                    **self.input_dict_,
+                    step_per_episode=self.step_per_episode,
+                    reward_scale=reward_scale,
+                    gamma=gamma,
+                    sigma=self.sigma,
+                    use_truncated_kernel=self.use_truncated_kernel,
+                    action_min=self.action_min,
+                    action_max=self.action_max,
+                )
+
+        return defaultdict_to_dict(variance_dict)
+
+    def estimate_conditional_value_at_risk(
+        self,
+        input_dict: OPEInputDict,
+        gamma: float = 1.0,
+        alpha: float = 0.05,
+    ):
+        """Estimate the conditional value at risk of the trajectory wise reward of evaluation policy.
+
+        Parameters
+        -------
+        input_dict: OPEInputDict
+            Dictionary of the OPE inputs for each evaluation policy.
+            Please refer to `CreateOPEInput` class for the detail.
+            key: [evaluation_policy_name][
+                evaluation_policy_step_wise_pscore,
+                evaluation_policy_trajectory_wise_pscore,
+                evaluation_policy_action,
+                evaluation_policy_action_dist,
+                state_action_value_prediction,
+                initial_state_value_prediction,
+                on_policy_policy_value,
+            ]
+
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
+
+        alpha: float, default=0.05
+            Proportion of the sided region.
+
+        Return
+        -------
+        conditional_value_at_risk_dict: Dict[str, Dict[str, float]]
+            Dictionary containing estimated conditional value at risk of trajectory wise reward of each evaluation policy by OPE estimators.
+            key: [evaluation_policy_name][OPE_estimator_name]
+
+        """
+        conditional_value_at_risk_dict = defaultdict(dict)
+        reward_scale = self.obtain_reward_scale(gamma=gamma)
+
+        for eval_policy in input_dict.keys():
+            if input_dict[eval_policy]["on_policy_policy_value"] is not None:
+                cumulative_density = np.histgram(
+                    input_dict[eval_policy]["on_policy_policy_value"],
+                    bins=reward_scale,
+                    density=True,
+                )[0]
+                lower_idx = np.argmin(cumulative_density > alpha)
+                conditional_value_at_risk_dict[eval_policy]["on_policy"] = (
+                    np.diff(cumulative_density) * reward_scale[1:]
+                )[: lower_idx + 1].sum()
+            else:
+                conditional_value_at_risk_dict[eval_policy]["on_policy"] = None
+
+            for estimator_name, estimator in self.ope_estimators_.items():
+                conditional_value_at_risk_dict[eval_policy][
+                    estimator_name
+                ] = estimator.estimate_conditional_value_at_risk(
+                    **input_dict[eval_policy],
+                    **self.input_dict_,
+                    step_per_episode=self.step_per_episode,
+                    reward_scale=reward_scale,
+                    gamma=gamma,
+                    alpha=alpha,
+                    sigma=self.sigma,
+                    use_truncated_kernel=self.use_truncated_kernel,
+                    action_min=self.action_min,
+                    action_max=self.action_max,
+                )
+
+        return defaultdict_to_dict(conditional_value_at_risk_dict)
+
+    def estimate_interquartile_range(
+        self,
+        input_dict: OPEInputDict,
+        gamma: float = 1.0,
+        alpha: float = 0.05,
+    ):
+        """Estimate the interquartile range of the trajectory wise reward of evaluation policy.
+
+        Parameters
+        -------
+        input_dict: OPEInputDict
+            Dictionary of the OPE inputs for each evaluation policy.
+            Please refer to `CreateOPEInput` class for the detail.
+            key: [evaluation_policy_name][
+                evaluation_policy_step_wise_pscore,
+                evaluation_policy_trajectory_wise_pscore,
+                evaluation_policy_action,
+                evaluation_policy_action_dist,
+                state_action_value_prediction,
+                initial_state_value_prediction,
+                on_policy_policy_value,
+            ]
+
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
+
+        alpha: float, default=0.05
+            Proportion of the sided region.
+
+        Return
+        -------
+        interquartile_range_dict: Dict[str, Dict[str, Dict[str, float]]]
+            Dictionary containing estimated interquartile range at risk of trajectory wise reward of each evaluation policy by OPE estimators.
+            key: [evaluation_policy_name][OPE_estimator_name][quartile_name]
+
+        """
+        interquartile_range_dict = defaultdict(dict)
+        reward_scale = self.obtain_reward_scale(gamma=gamma)
+
+        for eval_policy in input_dict.keys():
+            if input_dict[eval_policy]["on_policy_policy_value"] is not None:
+                cumulative_density = np.histgram(
+                    input_dict[eval_policy]["on_policy_policy_value"],
+                    bins=reward_scale,
+                    density=True,
+                )[0]
+                mean = (np.diff(cumulative_density) * reward_scale[1:]).sum()
+                lower_idx = np.argmin(cumulative_density > alpha)
+                upper_idx = np.argmin(cumulative_density > 1 - alpha)
+
+                interquartile_range_dict[eval_policy]["on_policy"] = {
+                    "mean": mean,
+                    f"{100 * (1. - alpha)}% quartile (lower)": (
+                        reward_scale[lower_idx] + reward_scale[lower_idx + 1]
+                    )
+                    / 2,
+                    f"{100 * (1. - alpha)}% quartile (upper)": (
+                        reward_scale[upper_idx] + reward_scale[upper_idx + 1]
+                    )
+                    / 2,
+                }
+            else:
+                interquartile_range_dict[eval_policy]["on_policy"] = None
+
+            for estimator_name, estimator in self.ope_estimators_.items():
+                interquartile_range_dict[eval_policy][
+                    estimator_name
+                ] = estimator.estimate_interquartile_range(
+                    **input_dict[eval_policy],
+                    **self.input_dict_,
+                    step_per_episode=self.step_per_episode,
+                    reward_scale=reward_scale,
+                    gamma=gamma,
+                    alpha=alpha,
+                    sigma=self.sigma,
+                    use_truncated_kernel=self.use_truncated_kernel,
+                    action_min=self.action_min,
+                    action_max=self.action_max,
+                )
+
+        return defaultdict_to_dict(interquartile_range_dict)
+
+    def visualize_cumulative_distribution_function(
+        self,
+        input_dict: OPEInputDict,
+        gamma: float = 1.0,
+        hue: str = "estimator",
+        fig_dir: Optional[Path] = None,
+        fig_name: str = "estimated_cumulative_distribution_function.png",
+    ) -> None:
+        """Visualize policy value estimated by OPE estimators.
+
+        Parameters
+        -------
+        input_dict: OPEInputDict
+            Dictionary of the OPE inputs for each evaluation policy.
+            Please refer to `CreateOPEInput` class for the detail.
+            key: [evaluation_policy_name][
+                evaluation_policy_step_wise_pscore,
+                evaluation_policy_trajectory_wise_pscore,
+                evaluation_policy_action,
+                evaluation_policy_action_dist,
+                state_action_value_prediction,
+                initial_state_value_prediction,
+                on_policy_policy_value,
+            ]
+
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
+
+        hue: str, default="estimator"
+            Hue of the plot.
+            Choose either from "estimator" or "policy".
+
+        fig_dir: Path, default=None
+            Path to store the bar figure.
+            If `None` is given, the figure will not be saved.
+
+        fig_name: str, default="estimated_cumulative_distribution_function.png"
+            Name of the bar figure.
+
+        """
+        if hue not in ["estimator", "policy"]:
+            raise ValueError(
+                f"hue must be either `estimator` or `policy`, but {hue} is given"
+            )
+        if fig_dir is not None and not isinstance(fig_dir, Path):
+            raise ValueError(f"fig_dir must be a Path, but {type(fig_dir)} is given")
+        if fig_name is not None and not isinstance(fig_name, str):
+            raise ValueError(f"fig_dir must be a string, but {type(fig_dir)} is given")
+
+        reward_scale = self.obtain_reward_scale(gamma=gamma)
+        cumulative_distribution_function_dict = (
+            self.estimate_cumulative_distribution_function(
+                input_dict=input_dict,
+                gamma=gamma,
+            )
+        )
+
+        if hue == "estimator":
+            n_figs = len(self.ope_estimators_ + 1)
+        else:
+            n_figs = len(input_dict)
+
+        plt.style.use("ggplot")
+        fig, axes = plt.subplots(nrows=n_figs // 3, ncols=min(3, n_figs))
+
+        if hue == "estimator":
+            for i, eval_policy in enumerate(input_dict.keys()):
+                for j, ope_estimator in enumerate(self.ope_estimators_):
+                    axes[i // 3, i % 3].plot(
+                        reward_scale,
+                        cumulative_distribution_function_dict[eval_policy][
+                            ope_estimator
+                        ],
+                        label=ope_estimator,
+                    )
+
+                if input_dict[eval_policy]["on_policy"] is not None:
+                    axes[i // 3, i % 3].plot(
+                        reward_scale,
+                        cumulative_distribution_function_dict[eval_policy]["on_policy"],
+                        label="on_policy",
+                    )
+
+                axes[i // 3, i % 3].title(eval_policy)
+                axes[i // 3, i % 3].xlabel("trajectory wise reward")
+                axes[i // 3, i % 3].ylabel("cumulative probability")
+                axes[i // 3, i % 3].legend()
+
+        else:
+            for i, ope_estimator in enumerate(self.ope_estimators_):
+                for j, eval_policy in enumerate(input_dict.keys()):
+                    axes[i // 3, i % 3].plot(
+                        reward_scale,
+                        cumulative_distribution_function_dict[eval_policy][
+                            ope_estimator
+                        ],
+                        label=eval_policy,
+                    )
+
+                axes[i // 3, i % 3].title(ope_estimator)
+                axes[i // 3, i % 3].xlabel("trajectory wise reward")
+                axes[i // 3, i % 3].ylabel("cumulative probability")
+                axes[i // 3, i % 3].legend()
+
+            if input_dict[eval_policy]["on_policy"] is not None:
+                for j, eval_policy in enumerate(input_dict.keys()):
+                    axes[i // 3, i % 3].plot(
+                        reward_scale,
+                        cumulative_distribution_function_dict[eval_policy]["on_policy"],
+                        label=eval_policy,
+                    )
+
+                axes[(i + 1) // 3, (i + 1) % 3].title("on_policy")
+                axes[(i + 1) // 3, (i + 1) % 3].xlabel("trajectory wise reward")
+                axes[(i + 1) // 3, (i + 1) % 3].ylabel("cumulative probability")
+                axes[(i + 1) // 3, (i + 1) % 3].legend()
+
+        fig.tight_layout()
+        plt.show()
+
+        if fig_dir:
+            fig.savefig(str(fig_dir / fig_name))
+
+
+@dataclass
 class DiscreteDistributionallyRobustOffPolicyEvaluation:
-    """Class to conduct distributionally robust OPE by multiple estimators simultaneously.
+    """Class to conduct distributionally robust OPE by multiple estimators simultaneously in discrete action space.
 
     Parameters
     -----------
@@ -2472,426 +3854,289 @@ class DiscreteDistributionallyRobustOffPolicyEvaluation:
 
 
 @dataclass
-class CreateOPEInput:
-    """Class to prepare OPE inputs.
+class ContinuousDistributionallyRobustOffPolicyEvaluation:
+    """Class to conduct distributionally robust OPE by multiple estimators simultaneously in continunous action space.
 
     Parameters
-    -------
+    -----------
     logged_dataset: LoggedDataset
         Logged dataset used to conduct OPE.
 
-    base_model_args: Optional[Dict[str, Any]], default=None
-        Arguments of baseline Fitted Q Evaluation (FQE) model.
+    ope_estimators: List[BaseOffPolicyEstimator]
+        List of OPE estimators used to evaluate the policy value of evaluation policy.
+        Estimators must follow the interface of `offlinegym.ope.BaseDistributionallyRobustOffPolicyEstimator`.
 
-    use_base_model: bool, default=False
-        Whether to use FQE and obtain :math:`\\hat{Q}`.
+    alpha_prior: float, default=1.0 (> 0)
+        Initial temperature parameter of the exponential function.
+
+    max_steps: int, default=100 (> 0)
+        Maximum steps in turning alpha.
+
+    epsilon: float, default=0.01
+        Convergence criterion of alpha.
+
+    sigma: Optional[NDArray], shape (action_dim, ), default=None
+        Standard deviation of Gaussian distribution (i.e., band_width hyperparameter of gaussian kernel).
+        If `None`, sigma is set to 1 for all dimensions.
+
+    use_truncated_kernel: bool, default=False
+        Whether to use Truncated Gaussian kernel or not.
+        If `False`, (normal) Gaussian kernel is used.
+
+    action_min: Optional[NDArray], shape (action_dim, ), default=None
+        Minimum value of action vector.
+        When use_truncated_kernel == True, action_min must be given.
+
+    action_max: Optional[NDArray], shape (action_dim, ), default=None
+        Maximum value of action vector.
+        When use_truncated_kernel == True, action_max must be given.
+
+    Examples
+    ----------
+    # TODO
+    .. ::code-block:: python
+
+        # import necessary module from offlinegym
+        >>> from offlinegym.dataset import SyntheticDataset
+        >>> from offlinegym.policy import DiscreteEpsilonGreedyHead
+        >>> from offlinegym.ope import CreateOPEInput
+        >>> from offlinegym.ope import OffPolicyEvaluation
+        >>> from offlinegym.ope import DiscreteTrajectoryWiseImportanceSampling as TIS
+        >>> from offlinegym.ope import DiscreteStepWiseImportanceSampling as SIS
+
+        # import necessary module from other libraries
+        >>> from rtbgym import RTBEnv, CustomizedRTBEnv
+        >>> from sklearn.linear_model import LogisticRegression
+        >>> from d3rlpy.algos import DoubleDQN
+        >>> from d3rlpy.online.buffers import ReplayBuffer
+        >>> from d3rlpy.online.explorers import ConstantEpsilonGreedy
+
+        # initialize environment
+        >>> env = RTBEnv(random_state=12345)
+
+        # customize environment from the decision makers' perspective
+        >>> env = CustomizedRTBEnv(
+                original_env=env,
+                reward_predictor=LogisticRegression(),
+                action_type="discrete",
+            )
+
+        # define (RL) agent (i.e., policy) and train on the environment
+        >>> ddqn = DoubleDQN()
+        >>> buffer = ReplayBuffer(
+                maxlen=10000,
+                env=env,
+            )
+        >>> explorer = ConstantEpsilonGreedy(
+                epsilon=0.3,
+            )
+        >>> ddqn.fit_online(
+                env=env,
+                buffer=buffer,
+                explorer=explorer,
+            )
+
+        # convert ddqn policy to stochastic data collection policy
+        >>> behavior_policy = DiscreteEpsilonGreedyHead(
+                ddqn,
+                n_actions=env.action_space.n,
+                epsilon=0.3,
+                name="ddqn_epsilon_0.3",
+                random_state=12345,
+            )
+
+        # initialize dataset class
+        >>> dataset = SyntheticDataset(
+                env=env,
+                behavior_policy=behavior_policy,
+                random_state=12345,
+            )
+
+        # data collection
+        >>> logged_dataset = dataset.obtain_trajectories(n_episodes=100, obtain_info=True)
+
+        # evaluation policy
+        >>> ddqn_ = DiscreteEpsilonGreedyHead(
+            base_policy=ddqn,
+            n_actions=env.action_space.n,
+            name="ddqn",
+            epsilon=0.0,
+            random_state=12345
+        )
+        >>> random_ = DiscreteEpsilonGreedyHead(
+            base_policy=ddqn,
+            n_actions=env.action_space.n,
+            name="random",
+            epsilon=1.0,
+            random_state=12345
+        )
+
+        # create input for off-policy evaluation (OPE)
+        >>> prep = CreateOPEInput(
+            logged_dataset=logged_dataset,
+        )
+        >>> input_dict = prep.obtain_whole_inputs(
+            evaluation_policies=[ddqn_, random_],
+            env=env,
+            n_episodes_on_policy_evaluation=100,
+            random_state=12345,
+        )
+
+        # OPE
+        >>> ope = OffPolicyEvaluation(
+            logged_dataset=logged_dataset,
+            ope_estimators=[TIS(), SIS()],
+        )
+        >>> policy_value_dict = ope.estimate_policy_value(
+            input_dict=input_dict,
+        )
+        >>> policy_value_dict
+        {'ddqn': {'on_policy': 15.5, 'tis': 22.901319216705502, 'sis': 17.970922685707617},
+        'random': {'on_policy': 15.5, 'tis': 0.555637908601827, 'sis': 6.108053435521632}}
+
 
     References
     -------
-    Yuta Saito, Shunsuke Aihara, Megumi Matsutani, and Yusuke Narita.
-    "Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation.", 2021.
+    Nathan Kallus, Xiaojie Mao, Kaiwen Wang, and Zhengyuan Zhou.
+    "Doubly Robust Distributionally Robust Off-Policy Evaluation and Learning.", 2022.
 
-    Takuma Seno and Michita Imai.
-    "d3rlpy: An Offline Deep Reinforcement Library.", 2021.
+    Nian Si, Fan Zhang, Zhengyuan Zhou, and Jose Blanchet.
+    "Distributional Robust Batch Contextual Bandits.", 2020.
 
-    Hoang Le, Cameron Voloshin, and Yisong Yue.
-    "Batch Policy Learning under Constraints.", 2019.
+    Nathan Kallus and Angela Zhou.
+    "Policy Evaluation and Optimization with Continuous Treatments.", 2019.
 
     """
 
     logged_dataset: LoggedDataset
-    base_model_args: Optional[Dict[str, Any]] = None
-    use_base_model: bool = False
+    ope_estimators: List[BaseOffPolicyEstimator]
+    alpha_prior: float = 1.0
+    max_steps: int = 100
+    epsilon: float = 0.01
+    sigma: Optional[np.ndarray] = None
+    use_truncated_kernel: bool = False
+    action_min: Optional[np.ndarray] = None
+    action_max: Optional[np.ndarray] = None
 
     def __post_init__(self) -> None:
         "Initialize class."
         check_logged_dataset(self.logged_dataset)
-        self.n_episodes = self.logged_dataset["n_episodes"]
-        self.action_type = self.logged_dataset["action_type"]
-        self.n_actions = self.logged_dataset["n_actions"]
-        self.action_dim = self.logged_dataset["action_dim"]
-        self.state_dim = self.logged_dataset["state_dim"]
         self.step_per_episode = self.logged_dataset["step_per_episode"]
 
-        if self.logged_dataset["action_type"] == "discrete":
-            self.mdp_dataset = MDPDataset(
-                observations=self.logged_dataset["state"],
-                actions=self.logged_dataset["action"],
-                rewards=self.logged_dataset["reward"],
-                terminals=self.logged_dataset["done"],
-                episode_terminals=self.logged_dataset["terminal"],
-                discrete_action=True,
-            )
-        else:
-            self.mdp_dataset = MDPDataset(
-                observations=self.logged_dataset["state"],
-                actions=self.logged_dataset["action"],
-                rewards=self.logged_dataset["reward"],
-                terminals=self.logged_dataset["done"],
-                episode_terminals=self.logged_dataset["terminal"],
-            )
+        if self.logged_dataset["action_type"] != "continuous":
+            raise ValueError("logged_dataset does not `continuous` action_type")
 
-        if self.use_base_model:
-            self.fqe = {}
-            if self.base_model_args is None:
-                self.base_model_args = {
-                    "encoder_factory": VectorEncoderFactory(hidden_units=[30, 30]),
-                    "q_func_factory": MeanQFunctionFactory(),
-                    "learning_rate": 1e-4,
-                    "use_gpu": torch.cuda.is_available(),
-                }
+        self.ope_estimators_ = dict()
+        for estimator in self.ope_estimators:
+            self.ope_estimators_[estimator.estimator_name] = estimator
 
-    def build_and_fit_FQE(
-        self,
-        evaluation_policy: BaseHead,
-        n_epochs: Optional[int] = None,
-        n_steps: Optional[int] = None,  # should be more than n_steps_per_epoch
-        n_steps_per_epoch: int = 10000,
-    ) -> None:
-        """Fit Fitted Q Evaluation (FQE).
-
-        Parameters
-        -------
-        evaluation_policy: BaseHead
-            Evaluation policy.
-
-        n_epochs: Optional[int], default=None (> 0)
-            Number of epochs to fit FQE.
-
-        n_steps: Optional[int], default=None (> 0)
-            Total number pf steps to fit FQE.
-
-        n_steps_per_epoch: int, default=10000 (> 0)
-            Number of steps in an epoch.
-
-        """
-        if not isinstance(evaluation_policy, BaseHead):
-            raise ValueError("evaluation_policy must be a child class of BaseHead")
-
-        if n_epochs is not None:
-            check_scalar(n_epochs, name="n_epochs", target_type=int, min_val=1)
-        if n_steps is not None:
-            check_scalar(n_steps, name="n_steps", target_type=int, min_val=1)
-        check_scalar(
-            n_steps_per_epoch, name="n_steps_per_epoch", target_type=int, min_val=1
-        )
-
-        if n_epochs is None and n_steps is None:
-            n_steps = n_steps_per_epoch
-
-        if evaluation_policy.name in self.fqe:
-            pass
-
-        else:
-            if self.action_type == "discrete":
-                self.fqe[evaluation_policy.name] = DiscreteFQE(
-                    algo=evaluation_policy, **self.base_model_args
-                )
-            else:
-                self.fqe[evaluation_policy.name] = ContinuousFQE(
-                    algo=evaluation_policy, **self.base_model_args
+            if estimator.action_type != "continuous":
+                raise RuntimeError(
+                    f"One of the ope_estimators, {estimator.estimator_name} does not match `continuous` action_type"
                 )
 
-            self.fqe[evaluation_policy.name].fit(
-                self.mdp_dataset.episodes,
-                eval_episodes=self.mdp_dataset.episodes,
-                n_epochs=n_epochs,
-                n_steps=n_steps,
-                n_steps_per_epoch=n_steps_per_epoch,
-                scorers={},
-            )
+            if not isinstance(estimator, BaseDistributionallyRobustOffPolicyEstimator):
+                raise RuntimeError(
+                    f"ope_estimators must be child classes of BaseDistributionallyRobustOffPolicyEstimator, but one of them, {estimator.estimator_name} is not"
+                )
 
-    def predict_state_action_value(
-        self,
-        evaluation_policy: BaseHead,
-    ) -> np.ndarray:
-        """Predict state action value for all actions.
+        check_scalar(self.alpha_prior, name="alpha_prior", type=float, min_val=0.0)
+        check_scalar(self.max_steps, name="max_steps", type=int, min_val=1)
+        check_scalar(self.epsilon, name="epsilon", type=float, min_val=0.0)
 
-        Parameters
-        -------
-        evaluation_policy: BaseHead
-            Evaluation policy.
+        if self.sigma is not None:
+            check_array(self.sigma, name="sigma", expected_dim=1, min_val=0.0)
 
-        Return
-        -------
-        state_action_value_prediction: NDArray, shape (n_samples, n_actions)
-            State action value for observed state and all actions,
-            i.e., math`\\hat{Q}(s, a) \\forall a \\in \\mathcal{A}`.
+        if self.use_truncated_kernel:
+            check_array(self.action_min, name="action_min", expected_dim=1)
+            check_array(self.action_max, name="action_max", expected_dim=1)
 
-        """
-        x = self.logged_dataset["state"]
-        x_ = []
-        for i in range(x.shape[0]):
-            x_.append(np.tile(x[i], (self.n_actions, 1)))
-        x_ = np.array(x_).reshape((-1, x.shape[1]))
-        a_ = np.tile(np.arange(self.n_actions), x.shape[0])
-        return self.fqe[evaluation_policy.name].predict_value(
-            x_, a_
-        )  # (n_samples, n_actions)
-
-    def obtain_evaluation_policy_action(
-        self,
-        evaluation_policy: BaseHead,
-    ) -> np.ndarray:
-        """Obtain evaluation policy action.
-
-        Parameters
-        -------
-        evaluation_policy: BaseHead
-            Evaluation policy.
-
-        Return
-        -------
-        evaluation_policy_action: NDArray
-            Evaluation policy action :math:`a_t \\sim \\pi_e(a_t \\mid s_t)`.
-
-        """
-        if not isinstance(evaluation_policy, BaseHead):
-            raise ValueError("evaluation_policy must be a child class of BaseHead")
-        return evaluation_policy.predict(x=self.logged_dataset["state"])
-
-    def obtain_pscore_for_observed_state_action(
-        self,
-        evaluation_policy: BaseHead,
-    ) -> np.ndarray:
-        """Obtain pscore for observed state action pair.
-
-        Parameters
-        -------
-        evaluation_policy: BaseHead
-            Evaluation policy.
-
-        Return
-        -------
-        evaluation_policy_pscore: NDArray
-            Evaluation policy pscore :math:`\\pi_e(a_t \\mid s_t)`.
-
-        """
-        if not isinstance(evaluation_policy, BaseHead):
-            raise ValueError("evaluation_policy must be a child class of BaseHead")
-        return evaluation_policy.calc_pscore_given_action(
-            x=self.logged_dataset["state"],
-            action=self.logged_dataset["action"],
-        )
-
-    def obtain_step_wise_pscore(
-        self,
-        evaluation_policy: BaseHead,
-    ) -> np.ndarray:
-        """Obtain step-wise pscore for the observed state action pair.
-
-        Parameters
-        -------
-        evaluation_policy: BaseHead
-            Evaluation policy.
-
-        Return
-        -------
-        evaluation_policy_step_wise_pscore: NDArray
-            Evaluation policy's step-wise pscore :math:`\\prod_{t'=1}^t \\pi_e(a_{t'} \\mid s_{t'})`.
-
-        """
-        if not isinstance(evaluation_policy, BaseHead):
-            raise ValueError("evaluation_policy must be a child class of BaseHead")
-        base_pscore = self.obtain_pscore_for_observed_state_action(
-            evaluation_policy
-        ).reshape((-1, self.step_per_episode))
-        return np.cumprod(base_pscore, axis=1).flatten()
-
-    def obtain_trajectory_wise_pscore(
-        self,
-        evaluation_policy: BaseHead,
-    ) -> np.ndarray:
-        """Obtain trajectory-wise pscore for the observed state action pair.
-
-        Parameters
-        -------
-        evaluation_policy: BaseHead
-            Evaluation policy.
-
-        Return
-        -------
-        evaluation_policy_trajectory_wise_pscore: NDArray
-            Evaluation policy's trajectory-wise pscore :math:`\\prod_{t=1}^T \\pi_e(a_t \\mid s_t)`.
-
-        """
-        if not isinstance(evaluation_policy, BaseHead):
-            raise ValueError("evaluation_policy must be a child class of BaseHead")
-        base_pscore = self.obtain_step_wise_pscore(evaluation_policy).reshape(
+        behavior_policy_pscore = self.logged_dataset["pscore"].reshape(
             (-1, self.step_per_episode)
-        )[:, -1]
-        return np.tile(base_pscore, (self.step_per_episode, 1)).T.flatten()
-
-    def obtain_action_dist_with_state_action_value_prediction_discrete(
-        self,
-        evaluation_policy: BaseHead,
-    ) -> np.ndarray:
-        """Obtain action choice probability of the discrete evaluation policy and its Q hat for the observed state.
-
-        Parameters
-        -------
-        evaluation_policy: BaseHead
-            Evaluation policy.
-
-        Return
-        -------
-        evaluation_policy_action_dist: NDArray, shape (n_samples, n_actions)
-            Evaluation policy pscore :math:`\\pi_e(a_t \\mid s_t)`.
-
-        state_action_value_prediction: NDArray, shape (n_samples, n_actions)
-            State action value for all observed state and possible action.
-
-        """
-        if not isinstance(evaluation_policy, BaseHead):
-            raise ValueError("evaluation_policy must be a child class of BaseHead")
-        action_dist = evaluation_policy.calc_action_choice_probability(
-            self.logged_dataset["state"]
         )
-        state_action_value_prediction = (
-            self.predict_state_action_value(evaluation_policy)
-        ).reshape((-1, self.n_actions))
-        return action_dist, state_action_value_prediction  # (n_samples, n_actions)
+        behavior_policy_step_wise_pscore = np.cumprod(behavior_policy_pscore, axis=1)
+        behavior_policy_trajectory_wise_pscore = np.tile(
+            behavior_policy_step_wise_pscore[:, -1], (self.step_per_episode, 1)
+        ).T
 
-    def obtain_state_action_value_prediction_continuous(
-        self,
-        evaluation_policy: BaseHead,
-    ) -> np.ndarray:
-        """Obtain Q hat for the continuous (deterministic) evaluation policy.
+        self.input_dict_ = {
+            "step_per_episode": self.step_per_episode,
+            "action": self.logged_dataset["action"].astype(int),
+            "reward": self.logged_dataset["reward"],
+            "behavior_policy_step_wise_pscore": behavior_policy_step_wise_pscore.flatten(),
+            "behavior_policy_trajectory_wise_pscore": behavior_policy_trajectory_wise_pscore.flatten(),
+            "initial_state": self.logged_dataset["state"].reshape(
+                (-1, self.step_per_episode)
+            )[:, 0],
+            "initial_state_action": self.logged_dataset["action"]
+            .astype(int)
+            .reshape((-1, self.step_per_episode))[:, 0],
+        }
 
-        Parameters
-        -------
-        evaluation_policy: BaseHead
-            Evaluation policy.
-
-        Return
-        -------
-        state_action_value_prediction: NDArray, shape (n_samples, )
-            State action value for the observed state and action chosen by evaluation policy.
-
-        """
-        if not isinstance(evaluation_policy, BaseHead):
-            raise ValueError("evaluation_policy must be a child class of BaseHead")
-        state = self.logged_dataset["state"]
-        action = evaluation_policy.predict(state)
-        return self.fqe[evaluation_policy.name].predict_value(state, action)
-
-    def obtain_initial_state_value_prediction_discrete(
-        self,
-        evaluation_policy: BaseHead,
-    ) -> np.ndarray:
-        """Obtain initial state value for the discrete evaluation policy.
+    def estimate_worst_case_on_policy_policy_value(
+        self, on_policy_policy_value: np.ndarray, delta: float = 0.05
+    ):
+        """Estimate the worst case policy value of evaluation policy.
 
         Parameters
         -------
-        evaluation_policy: BaseHead
-            Evaluation policy.
+        on_policy_policy_value: NDArray, shape(n_episodes, )
+            On policy policy value.
+
+        delta: float, default=0.05 (> 0)
+            Allowance of the distributional shift.
 
         Return
         -------
-        initial_state_value_prediction: NDArray, shape (n_samples, n_actions)
-            State action value for the observed state and action chosen by evaluation policy.
+        estimated_distributionally_robust_worst_case_policy_value: float
+            Estimated worst case objective.
 
         """
-        if not isinstance(evaluation_policy, BaseHead):
-            raise ValueError("evaluation_policy must be a child class of BaseHead")
-        (
-            state_action_value,
-            pscore,
-        ) = self.obtain_action_dist_with_state_action_value_prediction_discrete(
-            evaluation_policy
-        )
-        state_action_value = state_action_value.reshape((-1, self.n_actions))
-        state_value = np.sum(state_action_value * pscore, axis=1)
-        return state_value.reshape((-1, self.step_per_episode))[:, 0]  # (n_samples, )
+        n = on_policy_policy_value.shape[0]
 
-    def obtain_initial_state_value_prediction_continuous(
+        alpha = self.alpha_prior
+        for _ in range(self.max_steps):
+            W_0 = (
+                on_policy_policy_value ** 0 * np.exp(-on_policy_policy_value / alpha)
+            ).mean()
+            W_1 = (
+                on_policy_policy_value ** 1 * np.exp(-on_policy_policy_value / alpha)
+            ).mean()
+            W_2 = (
+                on_policy_policy_value ** 2 * np.exp(-on_policy_policy_value / alpha)
+            ).mean()
+            objective = -alpha * (np.log(W_0) + delta)
+            first_order_derivative = -W_1 / (alpha * n * W_0) - np.log(W_0) - delta
+            second_order_derivative = W_1 ** 2 / (
+                alpha ** 3 * n ** 2 * W_0 ** 2
+            ) - W_2 / (alpha ** 3 * n * W_0)
+
+            alpha_prior = alpha
+            alpha = np.clip(
+                alpha_prior - first_order_derivative / second_order_derivative,
+                0,
+                1 / delta,
+            )
+
+            if np.abs(alpha - alpha_prior) < self.epsilon:
+                break
+
+        return objective
+
+    def estimate_worst_case_policy_value(
         self,
-        evaluation_policy: BaseHead,
-    ) -> np.ndarray:
-        """Obtain initial state value for the continuous evaluation policy.
-
-        Parameters
-        -------
-        evaluation_policy: BaseHead
-            Evaluation policy.
-
-        Return
-        -------
-        initial_state_value_prediction: NDArray, shape (n_samples, n_actions)
-            State action value for the observed state and action chosen by evaluation policy.
-
-        """
-        if not isinstance(evaluation_policy, BaseHead):
-            raise ValueError("evaluation_policy must be a child class of BaseHead")
-        state_value = self.obtain_state_action_value_prediction_continuous(
-            evaluation_policy
-        )
-        return state_value.reshape((-1, self.step_per_episode))[:, 0]
-
-    def obtain_initial_state_action_distribution(
-        self,
-        evaluation_policy: BaseHead,
-    ) -> np.ndarray:
-        """Obtain Evaluation policy pscore of discrete actions at the initial state of each episode.
-
-        Parameters
-        -------
-        evaluation_policy: BaseHead
-            Evaluation policy.
-
-        Return
-        -------
-        initial_state_action_distribution: NDArray, shape (n_episodes, n_actions)
-            Evaluation policy pscore at the initial state of each episode.
-
-        """
-        if not isinstance(evaluation_policy, BaseHead):
-            raise ValueError("evaluation_policy must be a child class of BaseHead")
-        state = self.logged_dataset["state"].reshape(
-            (-1, self.step_per_episode, self.state_dim)
-        )
-        action_dist = evaluation_policy.calc_action_choice_probability(state[:, 0, :])
-        return action_dist
-
-    def obtain_whole_inputs(
-        self,
-        evaluation_policies: List[BaseHead],
-        env: Optional[gym.Env] = None,
-        n_epochs: Optional[int] = None,
-        n_steps: Optional[int] = None,  # should be more than n_steps_per_epoch
-        n_steps_per_epoch: Optional[int] = None,
-        n_episodes_on_policy_evaluation: Optional[int] = None,
+        input_dict: OPEInputDict,
+        gamma: float = 1.0,
+        delta: float = 0.05,
         random_state: Optional[int] = None,
-    ) -> OPEInputDict:
-        """Obtain input as a dictionary.
+    ) -> Dict[str, float]:
+        """Estimate the worst case policy value of evaluation policy.
 
         Parameters
-        -------
-        evaluation_policies: List[BaseHead]
-            Evaluation policies.
-
-        env: gym.Env
-            Reinforcement learning (RL) environment.
-
-        n_epochs: Optional[int], default=None (> 0)
-            Number of epochs to fit FQE.
-
-        n_steps: Optional[int], default=None (> 0)
-            Total number pf steps to fit FQE.
-
-        n_steps_per_epoch: int, default=None (> 0)
-            Number of steps in an epoch.
-
-        n_episodes_on_policy_evaluation: Optional[int], default=None (> 0)
-            Number of episodes to perform on-policy evaluation.
-
-        random_state: int, default=None (>= 0)
-            Random state.
-
-        Return
         -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
+            Please refer to `CreateOPEInput` class for the detail.
             key: [evaluation_policy_name][
                 evaluation_policy_step_wise_pscore,
                 evaluation_policy_trajectory_wise_pscore,
@@ -2900,204 +4145,56 @@ class CreateOPEInput:
                 state_action_value_prediction,
                 initial_state_value_prediction,
                 on_policy_policy_value,
-                initial_state,
-                initial_state_action,
-                initial_state_action_distribution,
             ]
 
-            evaluation_policy_step_wise_pscore: Optional[NDArray], shape (n_episodes * step_per_episodes, )
-                Step-wise action choice probability of evaluation policy,
-                i.e., :math:`\\prod_{t'=0}^t \\pi_e(a_{t'} \\mid s_{t'})`
-                If action_type == "continuous", `None` is recorded.
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
 
-            evaluation_policy_trajectory_wise_pscore: Optional[NDArray], shape (n_episodes * step_per_episodes, )
-                Trajectory-wise action choice probability of evaluation policy,
-                i.e., :math:`\\prod_{t=0}^T \\pi_e(a_t \\mid s_t)`
-                If action_type == "continuous", `None` is recorded.
+        delta: float, default=0.05 (> 0)
+            Allowance of the distributional shift.
 
-            evaluation_policy_action: Optional[NDArray], shape (n_episodes * step_per_episodes, action_dim)
-                Action chosen by the deterministic evaluation policy.
-                If action_type == "discrete", `None` is recorded.
+        random_state: int, default=None (>= 0)
+            Random state.
 
-            evaluation_policy_action_dist: Optional[NDArray], shape (n_episodes * step_per_episode, n_actions)
-                Action choice probability of evaluation policy for all actions,
-                i.e., :math:`\\pi_e(a \\mid s_t) \\forall a \\in \\mathcal{A}`
-                If action_type == "continuous", `None` is recorded.
-
-            state_action_value_prediction: Optional[NDArray]
-                If action_type == "discrete", :math:`\\hat{Q}` for all actions,
-                i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
-                shape (n_episodes * step_per_episode, n_actions)
-
-                If action_type == "continuous", :math:`\\hat{Q}` for the action chosen by evaluation policy,
-                i.e., :math:`\\hat{Q}(s_t, \\pi_e(a \\mid s_t))`.
-                shape (n_episodes * step_per_episode, )
-
-                If use_base_model == False, `None` is recorded.
-
-            initial_state_value_prediction: Optional[NDArray], shape (n_episodes, )
-                Estimated initial state value.
-                If use_base_model == False, `None` is recorded.
-
-            on_policy_policy_value: Optional[NDArray], shape (n_episodes_on_policy_evaluation, )
-                On-policy policy value.
-                If env is None, `None` is recorded.
-
-            initial_state_action_distribution: NDArray, shape (n_episodes, n_actions)
-                Evaluation policy pscore at the initial state of each episode.
-                If action_type == "continuous", `None` is recorded.
+        Return
+        -------
+        worst_case_policy_value_dict: Dict[str, Dict[str, float]]
+            Dictionary containing estimated policy value of each evaluation policy by OPE estimators.
+            key: [evaluation_policy_name][OPE_estimator_name]
 
         """
-        if env is not None:
-            if isinstance(env.action_space, Box) and self.action_type == "discrete":
-                raise RuntimeError(
-                    "Found mismatch in action_type between env and logged_dataset"
-                )
-            elif (
-                isinstance(env.action_space, Discrete)
-                and self.action_type == "continuous"
-            ):
-                raise RuntimeError(
-                    "Found mismatch in action_type between env and logged_dataset"
-                )
+        worst_case_policy_value_dict = defaultdict(dict)
 
-        for eval_policy in evaluation_policies:
-            if eval_policy.action_type != self.action_type:
-                raise RuntimeError(
-                    f"One of the evaluation_policies, {eval_policy.name} does not match action_type in logged_dataset."
-                    " Please use {self.action_type} action type instead."
-                )
-
-        if n_episodes_on_policy_evaluation is not None:
-            check_scalar(
-                n_episodes_on_policy_evaluation,
-                name="n_episodes_on_policy_evaluation",
-                target_type=int,
-                min_val=1,
-            )
-
-        if self.use_base_model:
-            if n_steps_per_epoch is None:
-                n_steps_per_epoch = 10000
-
-            for i in tqdm(
-                range(len(evaluation_policies)),
-                desc="[fit FQE model]",
-                total=len(evaluation_policies),
-            ):
-                self.build_and_fit_FQE(
-                    evaluation_policies[i],
-                    n_epochs=n_epochs,
-                    n_steps=n_steps,
-                    n_steps_per_epoch=n_steps_per_epoch,
-                )
-
-        input_dict = defaultdict(dict)
-
-        for i in tqdm(
-            range(len(evaluation_policies)),
-            desc="[collect input data]",
-            total=len(evaluation_policies),
-        ):
-            # input for IPW, DR
-            if self.action_type == "discrete":
-                input_dict[evaluation_policies[i].name][
-                    "evaluation_policy_step_wise_pscore"
-                ] = self.obtain_step_wise_pscore(evaluation_policies[i])
-                input_dict[evaluation_policies[i].name][
-                    "evaluation_policy_trajectory_wise_pscore"
-                ] = self.obtain_trajectory_wise_pscore(evaluation_policies[i])
-                input_dict[evaluation_policies[i].name][
-                    "evaluation_policy_action"
-                ] = None
-            else:
-                input_dict[evaluation_policies[i].name][
-                    "evaluation_policy_step_wise_pscore"
-                ] = None
-                input_dict[evaluation_policies[i].name][
-                    "evaluation_policy_trajectory_wise_pscore"
-                ] = None
-                input_dict[evaluation_policies[i].name][
-                    "evaluation_policy_action"
-                ] = self.obtain_evaluation_policy_action(evaluation_policies[i])
-
-            # input for DM, DR
-            if self.action_type == "discrete":
-                if self.use_base_model:
-                    (
-                        action_dist,
-                        state_action_value_prediction,
-                    ) = self.obtain_action_dist_with_state_action_value_prediction_discrete(
-                        evaluation_policies[i]
-                    )
-                    input_dict[evaluation_policies[i].name][
-                        "evaluation_policy_action_dist"
-                    ] = action_dist
-                    input_dict[evaluation_policies[i].name][
-                        "state_action_value_prediction"
-                    ] = state_action_value_prediction
-                    input_dict[evaluation_policies[i].name][
-                        "initial_state_value_prediction"
-                    ] = self.obtain_initial_state_value_prediction_discrete(
-                        evaluation_policies[i]
-                    )
-                else:
-                    input_dict[evaluation_policies[i].name][
-                        "evaluation_policy_action_dist"
-                    ] = None
-                    input_dict[evaluation_policies[i].name][
-                        "state_action_value_prediction"
-                    ] = None
-                    input_dict[evaluation_policies[i].name][
-                        "initial_state_value_prediction"
-                    ] = None
-            else:
-                if self.use_base_model:
-                    input_dict[evaluation_policies[i].name][
-                        "state_action_value_prediction"
-                    ] = self.obtain_state_action_value_prediction_continuous(
-                        evaluation_policies[i]
-                    )
-                    input_dict[evaluation_policies[i].name][
-                        "initial_state_value_prediction"
-                    ] = self.obtain_initial_state_value_prediction_continuous(
-                        evaluation_policies[i]
-                    )
-                else:
-                    input_dict[evaluation_policies[i].name][
-                        "state_action_value_prediction"
-                    ] = None
-                    input_dict[evaluation_policies[i].name][
-                        "initial_state_value_prediction"
-                    ] = None
-
-            # input for the distributionally robust OPE estimators
-            if self.action_type == "discrete":
-                input_dict[evaluation_policies[i].name][
-                    "initial_state_action_distribution"
-                ] = self.obtain_initial_state_action_distribution(
-                    evaluation_policies[i]
+        for eval_policy in input_dict.keys():
+            if input_dict[eval_policy]["on_policy_policy_value"] is not None:
+                worst_case_policy_value_dict[eval_policy][
+                    "on_policy"
+                ] = self.estimate_worst_case_on_policy_policy_value(
+                    on_policy_policy_value=input_dict[eval_policy][
+                        "on_policy_policy_value"
+                    ],
+                    delta=delta,
                 )
             else:
-                input_dict[evaluation_policies[i].name][
-                    "initial_state_action_distribution"
-                ] = None
+                worst_case_policy_value_dict[eval_policy]["on_policy"] = None
 
-            # input for the evaluation of OPE estimators
-            if env is not None:
-                if n_episodes_on_policy_evaluation is None:
-                    n_episodes_on_policy_evaluation = self.n_episodes
-
-                input_dict[evaluation_policies[i].name][
-                    "on_policy_policy_value"
-                ] = rollout_policy_online(
-                    env,
-                    evaluation_policies[i],
-                    n_episodes=n_episodes_on_policy_evaluation,
+            for estimator_name, estimator in self.ope_estimators_.items():
+                worst_case_policy_value_dict[eval_policy][
+                    estimator_name
+                ] = estimator.estimate_worst_case_policy_value(
+                    **input_dict[eval_policy],
+                    **self.input_dict_,
+                    step_per_episode=self.step_per_episode,
+                    gamma=gamma,
+                    delta=delta,
+                    alpha_prior=self.alpha_prior,
+                    max_steps=self.max_steps,
+                    epsilon=self.epsilon,
                     random_state=random_state,
+                    sigma=self.sigma,
+                    use_truncated_kernel=self.use_truncated_kernel,
+                    action_min=self.action_min,
+                    action_max=self.action_max,
                 )
 
-            else:
-                input_dict[evaluation_policies[i].name]["on_policy_policy_value"] = None
-
-        return defaultdict_to_dict(input_dict)
+        return defaultdict_to_dict(worst_case_policy_value_dict)

@@ -1535,6 +1535,87 @@ class OffPolicySelection:
         if fig_dir:
             fig.savefig(str(fig_dir / fig_name))
 
+    def visualize_variance(
+        self,
+        input_dict: OPEInputDict,
+        gamma: float = 1.0,
+        fig_dir: Optional[Path] = None,
+        fig_name: str = "scatter_variance.png",
+    ):
+        """Visualize true variance and its estimate.
+
+        input_dict: OPEInputDict
+            Dictionary of the OPE inputs for each evaluation policy.
+            Please refer to `CreateOPEInput` class for the detail.
+            key: [evaluation_policy_name][
+                evaluation_policy_step_wise_pscore,
+                evaluation_policy_trajectory_wise_pscore,
+                evaluation_policy_action,
+                evaluation_policy_action_dist,
+                state_action_value_prediction,
+                initial_state_value_prediction,
+                on_policy_policy_value,
+            ]
+
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
+
+        fig_dir: Path, default=None
+            Path to store the bar figure.
+            If `None` is given, the figure will not be saved.
+
+        fig_name: str, default="scatter_variance.png"
+            Name of the bar figure.
+
+        """
+        ground_truth_policy_value_dict = self.obtain_oracle_selection_result(
+            input_dict=input_dict,
+            gamma=gamma,
+        )
+        candidate_policy_names = ground_truth_policy_value_dict["ranking"]
+        true_variance = ground_truth_policy_value_dict["variance"]
+
+        estimated_variance_dict = self.cumulative_distributional_ope.estimate_variance(
+            input_dict=input_dict,
+            gamma=gamma,
+        )
+
+        plt.style.use("ggplot")
+        n_estimators = len(self.cumulative_distributional_ope.ope_estimators_)
+        fig, axes = plt.subplots(nrows=n_estimators // 5, ncols=min(5, n_estimators))
+
+        for i, estimator in enumerate(
+            self.cumulative_distributional_ope.ope_estimators_
+        ):
+
+            estimated_variance = np.zeros(len(candidate_policy_names))
+            for j, eval_policy in enumerate(candidate_policy_names):
+                estimated_variance[j] = estimated_variance_dict[eval_policy][estimator]
+
+            guide = np.linspace(
+                np.minimum(true_variance.min(), estimated_variance.min()),
+                np.maximum(true_variance.max(), estimated_variance.max()),
+            )
+
+            axes[i // 5, i % 5].scatter(
+                true_variance,
+                estimated_variance,
+            )
+            axes[i // 5, i % 5].plot(
+                guide,
+                color="black",
+                linewidth=1.0,
+            )
+            axes[i // 3, i % 3].title(estimator)
+            axes[i // 3, i % 3].xlabel("true variance")
+            axes[i // 3, i % 3].ylabel("estimated variance")
+
+        fig.tight_layout()
+        plt.show()
+
+        if fig_dir:
+            fig.savefig(str(fig_dir / fig_name))
+
     def visualize_lower_quartile(
         self,
         input_dict: OPEInputDict,
