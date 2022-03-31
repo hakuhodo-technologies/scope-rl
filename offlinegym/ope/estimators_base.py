@@ -5,6 +5,7 @@ from typing import Dict, Optional, Tuple
 
 import numpy as np
 from scipy.stats import norm, truncnorm
+from sklearn.utils import check_scalar
 
 
 @dataclass
@@ -55,6 +56,38 @@ class BaseCumulativeDistributionalOffPolicyEstimator(metaclass=ABCMeta):
     def estimate_interquartile_range(self) -> Dict[str, float]:
         """Estimate interquartile range of the policy value."""
         raise NotImplementedError
+
+    def obtain_reward_scale(self, gamma: float = 1.0) -> np.ndarray:
+        """Obtain reward scale of the cumulative distribution function.
+
+        Parameters
+        -------
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
+
+        Return
+        -------
+        reward_scale: NDArray, shape (n_partition, )
+            Reward scale of the cumulative distribution function.
+
+        """
+        check_scalar(gamma, name="gamma", type=float, min_val=0.0, max_val=1.0)
+
+        if self.use_observations_as_reward_scale:
+            behavior_policy_reward = self.input_dict_["reward"].reshape(
+                (-1, self.step_per_episode)
+            )
+            discount = np.full(behavior_policy_reward.shape[1], gamma).cumprod()
+            behavior_policy_trajectory_wise_reward = (
+                behavior_policy_reward * discount
+            ).sum(axis=1)
+            reward_scale = np.sort(np.unique(behavior_policy_trajectory_wise_reward))
+        else:
+            reward_scale = np.linspace(
+                self.scale_min, self.scale_max, num=self.n_partition
+            )
+
+        return reward_scale
 
     def _aggregate_trajectory_wise_statistics_discrete(
         self,
@@ -224,7 +257,10 @@ class BaseCumulativeDistributionalOffPolicyEstimator(metaclass=ABCMeta):
                 behavior_policy_trajectory_wise_pscore.reshape((-1, step_per_episode))
             )
 
-            if self.use_truncated_kernel:
+            if sigma is None:
+                sigma = np.ones(action.shape[1])
+
+            if use_truncated_kernel:
                 similarity_weight = truncnorm.pdf(
                     evaluation_policy_action,
                     a=(action_min - action) / sigma,
@@ -258,6 +294,56 @@ class BaseDistributionallyRobustOffPolicyEstimator(metaclass=ABCMeta):
     def estimate_worst_case_policy_value(self) -> float:
         """Estimate the worst case policy value of evaluation policy."""
         raise NotImplementedError
+
+    def estimate_worst_case_on_policy_policy_value(
+        self, on_policy_policy_value: np.ndarray, delta: float = 0.05
+    ):
+        """Estimate the worst case policy value of evaluation policy.
+
+        Parameters
+        -------
+        on_policy_policy_value: NDArray, shape(n_episodes, )
+            On policy policy value.
+
+        delta: float, default=0.05 (> 0)
+            Allowance of the distributional shift.
+
+        Return
+        -------
+        estimated_distributionally_robust_worst_case_policy_value: float
+            Estimated worst case objective.
+
+        """
+        n = on_policy_policy_value.shape[0]
+
+        alpha = self.alpha_prior
+        for _ in range(self.max_steps):
+            W_0 = (
+                on_policy_policy_value ** 0 * np.exp(-on_policy_policy_value / alpha)
+            ).mean()
+            W_1 = (
+                on_policy_policy_value ** 1 * np.exp(-on_policy_policy_value / alpha)
+            ).mean()
+            W_2 = (
+                on_policy_policy_value ** 2 * np.exp(-on_policy_policy_value / alpha)
+            ).mean()
+            objective = -alpha * (np.log(W_0) + delta)
+            first_order_derivative = -W_1 / (alpha * n * W_0) - np.log(W_0) - delta
+            second_order_derivative = W_1 ** 2 / (
+                alpha ** 3 * n ** 2 * W_0 ** 2
+            ) - W_2 / (alpha ** 3 * n * W_0)
+
+            alpha_prior = alpha
+            alpha = np.clip(
+                alpha_prior - first_order_derivative / second_order_derivative,
+                0,
+                1 / delta,
+            )
+
+            if np.abs(alpha - alpha_prior) < self.epsilon:
+                break
+
+        return objective
 
     def _aggregate_trajectory_wise_statistics_discrete(
         self,
@@ -412,7 +498,10 @@ class BaseDistributionallyRobustOffPolicyEstimator(metaclass=ABCMeta):
                 behavior_policy_trajectory_wise_pscore.reshape((-1, step_per_episode))
             )
 
-            if self.use_truncated_kernel:
+            if sigma is None:
+                sigma = np.ones(action.shape[1])
+
+            if use_truncated_kernel:
                 similarity_weight = truncnorm.pdf(
                     evaluation_policy_action,
                     a=(action_min - action) / sigma,

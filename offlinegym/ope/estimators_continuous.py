@@ -281,7 +281,10 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         )
         discount = np.full(reward.shape[1], gamma).cumprod()
 
-        if self.use_truncated_kernel:
+        if sigma is None:
+            sigma = np.ones(action.shape[1])
+
+        if use_truncated_kernel:
             similarity_weight = truncnorm.pdf(
                 evaluation_policy_action,
                 a=(action_min - action) / sigma,
@@ -722,7 +725,10 @@ class ContinuousStepWiseImportanceSampling(BaseOffPolicyEstimator):
         )
         discount = np.full(reward.shape[1], gamma).cumprod()
 
-        if self.use_truncated_kernel:
+        if sigma is None:
+            sigma = np.ones(action.shape[1])
+
+        if use_truncated_kernel:
             similarity_weight = truncnorm.pdf(
                 evaluation_policy_action,
                 a=(action_min - action) / sigma,
@@ -1175,7 +1181,10 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
 
         discount = np.full(reward.shape[1], gamma).cumprod()
 
-        if self.use_truncated_kernel:
+        if sigma is None:
+            sigma = np.ones(action.shape[1])
+
+        if use_truncated_kernel:
             similarity_weight = truncnorm.pdf(
                 evaluation_policy_action,
                 a=(action_min - action) / sigma,
@@ -1637,7 +1646,10 @@ class ContinuousSelfNormalizedTrajectoryWiseImportanceSampling(
         )
         discount = np.full(reward.shape[1], gamma).cumprod()
 
-        if self.use_truncated_kernel:
+        if sigma is None:
+            sigma = np.ones(action.shape[1])
+
+        if use_truncated_kernel:
             similarity_weight = truncnorm.pdf(
                 evaluation_policy_action,
                 a=(action_min - action) / sigma,
@@ -1796,7 +1808,10 @@ class ContinuousSelfNormalizedStepWiseImportanceSampling(
         )
         discount = np.full(reward.shape[1], gamma).cumprod()
 
-        if self.use_truncated_kernel:
+        if sigma is None:
+            sigma = np.ones(action.shape[1])
+
+        if use_truncated_kernel:
             similarity_weight = truncnorm.pdf(
                 evaluation_policy_action,
                 a=(action_min - action) / sigma,
@@ -1966,7 +1981,10 @@ class ContinuousSelfNormalizedDoublyRobust(ContinuousDoublyRobust):
 
         discount = np.full(reward.shape[1], gamma).cumprod()
 
-        if self.use_truncated_kernel:
+        if sigma is None:
+            sigma = np.ones(action.shape[1])
+
+        if use_truncated_kernel:
             similarity_weight = truncnorm.pdf(
                 evaluation_policy_action,
                 a=(action_min - action) / sigma,
