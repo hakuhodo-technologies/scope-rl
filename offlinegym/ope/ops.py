@@ -1,11 +1,13 @@
 from collections import defaultdict
 from dataclasses import dataclass
 from typing import Optional, Union, List
+from pathlib import Path
 
 import numpy as np
 from scipy.stats import spearmanr
 from sklearn.metrics import mean_squared_error
 from sklearn.utils import check_scalar
+import matplotlib.pyplot as plt
 
 from offlinegym.ope.ope import (
     DiscreteOffPolicyEvaluation,
@@ -585,7 +587,7 @@ class OffPolicySelection:
         n_policies = len(candidate_policy_names)
 
         ops_dict = {}
-        for estimator in enumerate(self.ope.ope_estimators_):
+        for estimator in enumerate(self.cumulative_distributional_ope.ope_estimators_):
 
             estimated_policy_value_ = np.zeros(n_policies)
             for j, eval_policy in enumerate(candidate_policy_names):
@@ -929,7 +931,7 @@ class OffPolicySelection:
         n_policies = len(candidate_policy_names)
 
         ops_dict = {}
-        for estimator in enumerate(self.ope.ope_estimators_):
+        for estimator in enumerate(self.cumulative_distributional_ope.ope_estimators_):
 
             estimated_lower_quartile_ = np.zeros(n_policies)
             for j, eval_policy in enumerate(candidate_policy_names):
@@ -1068,7 +1070,7 @@ class OffPolicySelection:
         n_policies = len(candidate_policy_names)
 
         ops_dict = {}
-        for estimator in enumerate(self.ope.ope_estimators_):
+        for estimator in enumerate(self.cumulative_distributional_ope.ope_estimators_):
 
             estimated_cvar_ = np.zeros(n_policies)
             for j, eval_policy in enumerate(candidate_policy_names):
@@ -1209,7 +1211,7 @@ class OffPolicySelection:
         n_policies = len(candidate_policy_names)
 
         ops_dict = {}
-        for estimator in enumerate(self.ope.ope_estimators_):
+        for estimator in enumerate(self.distributionally_robust_ope.ope_estimators_):
 
             estimated_worst_case_policy_value_ = np.zeros(n_policies)
             for j, eval_policy in enumerate(candidate_policy_names):
@@ -1255,3 +1257,563 @@ class OffPolicySelection:
                 "type_ii_error_rate": type_ii_error_rate if return_metrics else None,
                 "safety_threshold": safety_threshold,
             }
+
+    def visualize_policy_value(
+        self,
+        input_dict: OPEInputDict,
+        gamma: float = 1.0,
+        fig_dir: Optional[Path] = None,
+        fig_name: str = "scatter_policy_value.png",
+    ):
+        """Visualize true policy value and its estimate.
+
+        input_dict: OPEInputDict
+            Dictionary of the OPE inputs for each evaluation policy.
+            Please refer to `CreateOPEInput` class for the detail.
+            key: [evaluation_policy_name][
+                evaluation_policy_step_wise_pscore,
+                evaluation_policy_trajectory_wise_pscore,
+                evaluation_policy_action,
+                evaluation_policy_action_dist,
+                state_action_value_prediction,
+                initial_state_value_prediction,
+                on_policy_policy_value,
+            ]
+
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
+
+        fig_dir: Path, default=None
+            Path to store the bar figure.
+            If `None` is given, the figure will not be saved.
+
+        fig_name: str, default="scatter_policy_value.png"
+            Name of the bar figure.
+
+        """
+        ground_truth_policy_value_dict = self.obtain_oracle_selection_result(
+            input_dict=input_dict,
+            gamma=gamma,
+        )
+        true_ranking = ground_truth_policy_value_dict["ranking"]
+        true_policy_value = ground_truth_policy_value_dict["policy_value"]
+
+        estimated_policy_value_dict = self.select_by_policy_value(
+            input_dict=input_dict,
+            gamma=gamma,
+        )
+
+        plt.style.use("ggplot")
+        n_estimators = len(self.ope.ope_estimators_)
+        fig, axes = plt.subplots(nrows=n_estimators // 5, ncols=min(5, n_estimators))
+
+        for i, estimator in enumerate(self.ope.ope_estimators_):
+            estimated_ranking_ = estimated_policy_value_dict[estimator][
+                "estimated_ranking"
+            ]
+            estimated_policy_value_ = estimated_policy_value_dict[estimator][
+                "estimated_policy_value"
+            ]
+
+            estimated_ranking_dict = {
+                estimated_ranking_[i]: i for i in range(len(estimated_ranking_))
+            }
+            estimated_policy_value = [
+                estimated_policy_value_[estimated_ranking_dict[true_ranking[i]]]
+                for i in range(len(true_ranking))
+            ]
+
+            guide = np.linspace(
+                np.minimum(true_policy_value.min(), estimated_policy_value.min()),
+                np.maximum(true_policy_value.max(), estimated_policy_value.max()),
+            )
+
+            axes[i // 5, i % 5].scatter(
+                true_policy_value,
+                estimated_policy_value,
+            )
+            axes[i // 5, i % 5].plot(
+                guide,
+                color="black",
+                linewidth=1.0,
+            )
+            axes[i // 3, i % 3].title(estimator)
+            axes[i // 3, i % 3].xlabel("true policy value")
+            axes[i // 3, i % 3].ylabel("estimated policy value")
+
+        fig.tight_layout()
+        plt.show()
+
+        if fig_dir:
+            fig.savefig(str(fig_dir / fig_name))
+
+    def visualize_policy_value_of_cumulative_distributional_OPE(
+        self,
+        input_dict: OPEInputDict,
+        gamma: float = 1.0,
+        fig_dir: Optional[Path] = None,
+        fig_name: str = "scatter_policy_value_of_cumulative_distributional_ope.png",
+    ):
+        """Visualize true policy value and its estimate obtained by cumulative distributional OPE.
+
+        input_dict: OPEInputDict
+            Dictionary of the OPE inputs for each evaluation policy.
+            Please refer to `CreateOPEInput` class for the detail.
+            key: [evaluation_policy_name][
+                evaluation_policy_step_wise_pscore,
+                evaluation_policy_trajectory_wise_pscore,
+                evaluation_policy_action,
+                evaluation_policy_action_dist,
+                state_action_value_prediction,
+                initial_state_value_prediction,
+                on_policy_policy_value,
+            ]
+
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
+
+        fig_dir: Path, default=None
+            Path to store the bar figure.
+            If `None` is given, the figure will not be saved.
+
+        fig_name: str, default="scatter_policy_value_of_cumulative_distributional_ope.png"
+            Name of the bar figure.
+
+        """
+        ground_truth_policy_value_dict = self.obtain_oracle_selection_result(
+            input_dict=input_dict,
+            gamma=gamma,
+        )
+        true_ranking = ground_truth_policy_value_dict["ranking"]
+        true_policy_value = ground_truth_policy_value_dict["policy_value"]
+
+        estimated_policy_value_dict = (
+            self.select_by_policy_value_via_cumulative_distributional_ope(
+                input_dict=input_dict,
+                gamma=gamma,
+            )
+        )
+
+        plt.style.use("ggplot")
+        n_estimators = len(self.cumulative_distributional_ope.ope_estimators_)
+        fig, axes = plt.subplots(nrows=n_estimators // 5, ncols=min(5, n_estimators))
+
+        for i, estimator in enumerate(
+            self.cumulative_distributional_ope.ope_estimators_
+        ):
+            estimated_ranking_ = estimated_policy_value_dict[estimator][
+                "estimated_ranking"
+            ]
+            estimated_policy_value_ = estimated_policy_value_dict[estimator][
+                "estimated_policy_value"
+            ]
+
+            estimated_ranking_dict = {
+                estimated_ranking_[i]: i for i in range(len(estimated_ranking_))
+            }
+            estimated_policy_value = [
+                estimated_policy_value_[estimated_ranking_dict[true_ranking[i]]]
+                for i in range(len(true_ranking))
+            ]
+
+            guide = np.linspace(
+                np.minimum(true_policy_value.min(), estimated_policy_value.min()),
+                np.maximum(true_policy_value.max(), estimated_policy_value.max()),
+            )
+
+            axes[i // 5, i % 5].scatter(
+                true_policy_value,
+                estimated_policy_value,
+            )
+            axes[i // 5, i % 5].plot(
+                guide,
+                color="black",
+                linewidth=1.0,
+            )
+            axes[i // 3, i % 3].title(estimator)
+            axes[i // 3, i % 3].xlabel("true policy value")
+            axes[i // 3, i % 3].ylabel("estimated policy value")
+
+        fig.tight_layout()
+        plt.show()
+
+        if fig_dir:
+            fig.savefig(str(fig_dir / fig_name))
+
+    def visualize_policy_value_lower_bound(
+        self,
+        input_dict: OPEInputDict,
+        gamma: float = 1.0,
+        fig_dir: Optional[Path] = None,
+        fig_name: str = "scatter_policy_value_lower_bound.png",
+    ):
+        """Visualize true policy value and its estimate lower bound.
+
+        input_dict: OPEInputDict
+            Dictionary of the OPE inputs for each evaluation policy.
+            Please refer to `CreateOPEInput` class for the detail.
+            key: [evaluation_policy_name][
+                evaluation_policy_step_wise_pscore,
+                evaluation_policy_trajectory_wise_pscore,
+                evaluation_policy_action,
+                evaluation_policy_action_dist,
+                state_action_value_prediction,
+                initial_state_value_prediction,
+                on_policy_policy_value,
+            ]
+
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
+
+        fig_dir: Path, default=None
+            Path to store the bar figure.
+            If `None` is given, the figure will not be saved.
+
+        fig_name: str, default="scatter_policy_value_lower_bound.png"
+            Name of the bar figure.
+
+        """
+        ground_truth_policy_value_dict = self.obtain_oracle_selection_result(
+            input_dict=input_dict,
+            gamma=gamma,
+        )
+        true_ranking = ground_truth_policy_value_dict["ranking"]
+        true_policy_value = ground_truth_policy_value_dict["policy_value"]
+
+        estimated_policy_value_dict = self.select_by_policy_value_lower_bound(
+            input_dict=input_dict,
+            gamma=gamma,
+        )
+
+        plt.style.use("ggplot")
+        n_estimators = len(self.ope.ope_estimators_)
+        fig, axes = plt.subplots(nrows=n_estimators // 5, ncols=min(5, n_estimators))
+
+        for i, estimator in enumerate(self.ope.ope_estimators_):
+            estimated_ranking_ = estimated_policy_value_dict[estimator][
+                "estimated_ranking"
+            ]
+            estimated_policy_value_lower_bound_ = estimated_policy_value_dict[
+                estimator
+            ]["estimated_policy_value_lower_bound"]
+
+            estimated_ranking_dict = {
+                estimated_ranking_[i]: i for i in range(len(estimated_ranking_))
+            }
+            estimated_policy_value_lower_bound = [
+                estimated_policy_value_lower_bound_[
+                    estimated_ranking_dict[true_ranking[i]]
+                ]
+                for i in range(len(true_ranking))
+            ]
+
+            guide = np.linspace(
+                np.minimum(
+                    true_policy_value.min(), estimated_policy_value_lower_bound.min()
+                ),
+                np.maximum(
+                    true_policy_value.max(), estimated_policy_value_lower_bound.max()
+                ),
+            )
+
+            axes[i // 5, i % 5].scatter(
+                true_policy_value,
+                estimated_policy_value_lower_bound,
+            )
+            axes[i // 5, i % 5].plot(
+                guide,
+                color="black",
+                linewidth=1.0,
+            )
+            axes[i // 3, i % 3].title(estimator)
+            axes[i // 3, i % 3].xlabel("true policy value")
+            axes[i // 3, i % 3].ylabel("estimated policy value lower bound")
+
+        fig.tight_layout()
+        plt.show()
+
+        if fig_dir:
+            fig.savefig(str(fig_dir / fig_name))
+
+    def visualize_lower_quartile(
+        self,
+        input_dict: OPEInputDict,
+        gamma: float = 1.0,
+        fig_dir: Optional[Path] = None,
+        fig_name: str = "scatter_lower_quartile.png",
+    ):
+        """Visualize true lower quartile and its estimate.
+
+        input_dict: OPEInputDict
+            Dictionary of the OPE inputs for each evaluation policy.
+            Please refer to `CreateOPEInput` class for the detail.
+            key: [evaluation_policy_name][
+                evaluation_policy_step_wise_pscore,
+                evaluation_policy_trajectory_wise_pscore,
+                evaluation_policy_action,
+                evaluation_policy_action_dist,
+                state_action_value_prediction,
+                initial_state_value_prediction,
+                on_policy_policy_value,
+            ]
+
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
+
+        fig_dir: Path, default=None
+            Path to store the bar figure.
+            If `None` is given, the figure will not be saved.
+
+        fig_name: str, default="scatter_lower_quartile.png"
+            Name of the bar figure.
+
+        """
+        ground_truth_policy_value_dict = self.obtain_oracle_selection_result(
+            input_dict=input_dict,
+            gamma=gamma,
+        )
+        true_ranking = ground_truth_policy_value_dict["ranking_by_lower_quartile"]
+        true_lower_quartile = ground_truth_policy_value_dict["lower_quartile"]
+
+        estimated_policy_value_dict = self.select_by_lower_quartile(
+            input_dict=input_dict,
+            gamma=gamma,
+        )
+
+        plt.style.use("ggplot")
+        n_estimators = len(self.cumulative_distributional_ope.ope_estimators_)
+        fig, axes = plt.subplots(nrows=n_estimators // 5, ncols=min(5, n_estimators))
+
+        for i, estimator in enumerate(
+            self.cumulative_distributional_ope.ope_estimators_
+        ):
+            estimated_ranking_ = estimated_policy_value_dict[estimator][
+                "estimated_ranking"
+            ]
+            estimated_lower_quartile_ = estimated_policy_value_dict[estimator][
+                "estimated_lower_quartile"
+            ]
+
+            estimated_ranking_dict = {
+                estimated_ranking_[i]: i for i in range(len(estimated_ranking_))
+            }
+            estimated_lower_quartile = [
+                estimated_lower_quartile_[estimated_ranking_dict[true_ranking[i]]]
+                for i in range(len(true_ranking))
+            ]
+
+            guide = np.linspace(
+                np.minimum(true_lower_quartile.min(), estimated_lower_quartile.min()),
+                np.maximum(true_lower_quartile.max(), estimated_lower_quartile.max()),
+            )
+
+            axes[i // 5, i % 5].scatter(
+                true_lower_quartile,
+                estimated_lower_quartile,
+            )
+            axes[i // 5, i % 5].plot(
+                guide,
+                color="black",
+                linewidth=1.0,
+            )
+            axes[i // 3, i % 3].title(estimator)
+            axes[i // 3, i % 3].xlabel("true lower quartile")
+            axes[i // 3, i % 3].ylabel("estimated lower quartile")
+
+        fig.tight_layout()
+        plt.show()
+
+        if fig_dir:
+            fig.savefig(str(fig_dir / fig_name))
+
+    def visualize_conditional_value_at_risk(
+        self,
+        input_dict: OPEInputDict,
+        gamma: float = 1.0,
+        fig_dir: Optional[Path] = None,
+        fig_name: str = "scatter_conditional_value_at_risk.png",
+    ):
+        """Visualize true conditional value at risk and its estimate.
+
+        input_dict: OPEInputDict
+            Dictionary of the OPE inputs for each evaluation policy.
+            Please refer to `CreateOPEInput` class for the detail.
+            key: [evaluation_policy_name][
+                evaluation_policy_step_wise_pscore,
+                evaluation_policy_trajectory_wise_pscore,
+                evaluation_policy_action,
+                evaluation_policy_action_dist,
+                state_action_value_prediction,
+                initial_state_value_prediction,
+                on_policy_policy_value,
+            ]
+
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
+
+        fig_dir: Path, default=None
+            Path to store the bar figure.
+            If `None` is given, the figure will not be saved.
+
+        fig_name: str, default="scatter_conditional_value_at_risk.png"
+            Name of the bar figure.
+
+        """
+        ground_truth_policy_value_dict = self.obtain_oracle_selection_result(
+            input_dict=input_dict,
+            gamma=gamma,
+        )
+        true_ranking = ground_truth_policy_value_dict[
+            "ranking_by_conditional_value_at_risk"
+        ]
+        true_cvar = ground_truth_policy_value_dict["conditional_value_at_risk"]
+
+        estimated_policy_value_dict = self.select_by_conditional_value_at_risk(
+            input_dict=input_dict,
+            gamma=gamma,
+        )
+
+        plt.style.use("ggplot")
+        n_estimators = len(self.cumulative_distributional_ope.ope_estimators_)
+        fig, axes = plt.subplots(nrows=n_estimators // 5, ncols=min(5, n_estimators))
+
+        for i, estimator in enumerate(
+            self.cumulative_distributional_ope.ope_estimators_
+        ):
+            estimated_ranking_ = estimated_policy_value_dict[estimator][
+                "estimated_ranking"
+            ]
+            estimated_cvar_ = estimated_policy_value_dict[estimator][
+                "estimated_conditional_value_at_risk"
+            ]
+
+            estimated_ranking_dict = {
+                estimated_ranking_[i]: i for i in range(len(estimated_ranking_))
+            }
+            estimated_cvar = [
+                estimated_cvar_[estimated_ranking_dict[true_ranking[i]]]
+                for i in range(len(true_ranking))
+            ]
+
+            guide = np.linspace(
+                np.minimum(true_cvar.min(), estimated_cvar.min()),
+                np.maximum(true_cvar.max(), estimated_cvar.max()),
+            )
+
+            axes[i // 5, i % 5].scatter(
+                true_cvar,
+                estimated_cvar,
+            )
+            axes[i // 5, i % 5].plot(
+                guide,
+                color="black",
+                linewidth=1.0,
+            )
+            axes[i // 3, i % 3].title(estimator)
+            axes[i // 3, i % 3].xlabel("true CVaR")
+            axes[i // 3, i % 3].ylabel("estimated CVaR")
+
+        fig.tight_layout()
+        plt.show()
+
+        if fig_dir:
+            fig.savefig(str(fig_dir / fig_name))
+
+    def visualize_distributionally_robust_worst_case_policy_value(
+        self,
+        input_dict: OPEInputDict,
+        gamma: float = 1.0,
+        fig_dir: Optional[Path] = None,
+        fig_name: str = "scatter_distributionally_robust_worst_case.png",
+    ):
+        """Visualize true distributionally robust worst case policy value and its estimate.
+
+        input_dict: OPEInputDict
+            Dictionary of the OPE inputs for each evaluation policy.
+            Please refer to `CreateOPEInput` class for the detail.
+            key: [evaluation_policy_name][
+                evaluation_policy_step_wise_pscore,
+                evaluation_policy_trajectory_wise_pscore,
+                evaluation_policy_action,
+                evaluation_policy_action_dist,
+                state_action_value_prediction,
+                initial_state_value_prediction,
+                on_policy_policy_value,
+            ]
+
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
+
+        fig_dir: Path, default=None
+            Path to store the bar figure.
+            If `None` is given, the figure will not be saved.
+
+        fig_name: str, default="scatter_distributionally_robust_worst_case.png"
+            Name of the bar figure.
+
+        """
+        ground_truth_policy_value_dict = self.obtain_oracle_selection_result(
+            input_dict=input_dict,
+            gamma=gamma,
+        )
+        true_ranking = ground_truth_policy_value_dict[
+            "ranking_by_distributionally_robust_worst_case"
+        ]
+        true_worst_case = ground_truth_policy_value_dict[
+            "distributionally_robust_worst_case"
+        ]
+
+        estimated_policy_value_dict = (
+            self.select_by_distributionally_robust_worst_case_policy_value(
+                input_dict=input_dict,
+                gamma=gamma,
+            )
+        )
+
+        plt.style.use("ggplot")
+        n_estimators = len(self.distributionally_robust_ope.ope_estimators_)
+        fig, axes = plt.subplots(nrows=n_estimators // 5, ncols=min(5, n_estimators))
+
+        for i, estimator in enumerate(self.distributionally_robust_ope.ope_estimators_):
+            estimated_ranking_ = estimated_policy_value_dict[estimator][
+                "estimated_ranking_by_distributionally_robust_worst_case"
+            ]
+            estimated_worst_case_ = estimated_policy_value_dict[estimator][
+                "estimated_distributionally_robust_worst_case"
+            ]
+
+            estimated_ranking_dict = {
+                estimated_ranking_[i]: i for i in range(len(estimated_ranking_))
+            }
+            estimated_worst_case = [
+                estimated_worst_case_[estimated_ranking_dict[true_ranking[i]]]
+                for i in range(len(true_ranking))
+            ]
+
+            guide = np.linspace(
+                np.minimum(true_worst_case.min(), estimated_worst_case.min()),
+                np.maximum(true_worst_case.max(), estimated_worst_case.max()),
+            )
+
+            axes[i // 5, i % 5].scatter(
+                true_worst_case,
+                estimated_worst_case,
+            )
+            axes[i // 5, i % 5].plot(
+                guide,
+                color="black",
+                linewidth=1.0,
+            )
+            axes[i // 3, i % 3].title(estimator)
+            axes[i // 3, i % 3].xlabel(
+                "true distributionally robust worst case policy value"
+            )
+            axes[i // 3, i % 3].ylabel(
+                "estimated distributionally robust worst case policy value"
+            )
+
+        fig.tight_layout()
+        plt.show()
+
+        if fig_dir:
+            fig.savefig(str(fig_dir / fig_name))

@@ -2070,7 +2070,7 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
             Path to store the bar figure.
             If `None` is given, the figure will not be saved.
 
-        fig_name: str, default="estimated_policy_value.png"
+        fig_name: str, default="estimated_cumulative_distribution_function.png"
             Name of the bar figure.
 
         """
