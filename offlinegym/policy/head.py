@@ -408,8 +408,8 @@ class DiscreteSoftmaxHead(BaseHead):
 
     def _softmax(self, x: np.ndarray):
         """Softmax function."""
-        return np.exp(x / self.tau) / np.sum(
-            np.exp(x / self.tau), axis=1, keepdims=True
+        return np.exp(x / self.tau) / (
+            np.sum(np.exp(x / self.tau), axis=1, keepdims=True) + 1e-10
         )
 
     def _gumble_max_trick(self, x: np.ndarray):
@@ -427,7 +427,7 @@ class DiscreteSoftmaxHead(BaseHead):
 
         """
         gumble_variable = -np.log(-np.log(self.random_.rand(len(x), self.n_actions)))
-        return np.argmax(x / self.tau + gumble_variable, axis=1)
+        return np.argmax(x / self.tau + gumble_variable, axis=1).astype(int)
 
     def _predict_value(self, x: np.ndarray):
         """Predict state action value for all possible actions.
@@ -473,9 +473,11 @@ class DiscreteSoftmaxHead(BaseHead):
         prob = self._softmax(predicted_value)
         action = self._gumble_max_trick(predicted_value)
 
-        action_id = np.array(
-            [action[i] + i * self.n_actions for i in range(len(action))]
-        ).flatten()
+        action_id = (
+            np.array([action[i] + i * self.n_actions for i in range(len(action))])
+            .flatten()
+            .astype(int)
+        )
         pscore = prob.flatten()[action_id]
 
         return action, pscore
@@ -494,7 +496,7 @@ class DiscreteSoftmaxHead(BaseHead):
             Pscore of the sample action.
 
         """
-        predicted_value = self._predict_counterfactual_state_action_value(x)
+        predicted_value = self._predict_value(x)
         return self._softmax(predicted_value)  # (n_samples, n_actions)
 
     def calc_pscore_given_action(self, x: np.ndarray, action: np.ndarray):
@@ -514,11 +516,13 @@ class DiscreteSoftmaxHead(BaseHead):
             Pscore of the given state and action.
 
         """
-        prob = self.calc_pscore(x)
-        actions_id = np.array(
-            [action[i] + i * self.n_actions for i in range(len(action))]
-        ).flatten()
-        return prob.flatten()[actions_id]
+        prob = self.calc_action_choice_probability(x)
+        action_id = (
+            np.array([action[i] + i * self.n_actions for i in range(len(action))])
+            .flatten()
+            .astype(int)
+        )
+        return prob.flatten()[action_id]
 
     def sample_action(self, x: np.ndarray):
         """Sample action.

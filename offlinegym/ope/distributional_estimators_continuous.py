@@ -90,8 +90,10 @@ class ContinuousCumulativeDistributionalDirectMethod(
             Estimated cumulative distribution function for the pre-defined reward scale.
 
         """
-        check_scalar(step_per_episode, name="step_per_episode", type=int, min_val=1)
-        check_scalar(gamma, name="gamma", type=float, min_val=0.0, max_val=1.0)
+        check_scalar(
+            step_per_episode, name="step_per_episode", target_type=int, min_val=1
+        )
+        check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
         check_array(reward, name="reward", expected_dim=1)
         check_array(
             initial_state_value_prediction,
@@ -432,8 +434,10 @@ class ContinuousCumulativeDistributionalImportanceSampling(
             Estimated cumulative distribution function for the pre-defined reward scale.
 
         """
-        check_scalar(step_per_episode, name="step_per_episode", type=int, min_val=1)
-        check_scalar(gamma, name="gamma", type=float, min_val=0.0, max_val=1.0)
+        check_scalar(
+            step_per_episode, name="step_per_episode", target_type=int, min_val=1
+        )
+        check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
         check_array(
             action,
             name="action",
@@ -998,8 +1002,10 @@ class ContinuousCumulativeDistributionalDoublyRobust(
             Estimated cumulative distribution function for the pre-defined reward scale.
 
         """
-        check_scalar(step_per_episode, name="step_per_episode", type=int, min_val=1)
-        check_scalar(gamma, name="gamma", type=float, min_val=0.0, max_val=1.0)
+        check_scalar(
+            step_per_episode, name="step_per_episode", target_type=int, min_val=1
+        )
+        check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
         check_array(
             action,
             name="action",
@@ -1584,8 +1590,10 @@ class ContinuousCumulativeDistributionalSelfNormalizedImportanceSampling(
             Estimated cumulative distribution function for the pre-defined reward scale.
 
         """
-        check_scalar(step_per_episode, name="step_per_episode", type=int, min_val=1)
-        check_scalar(gamma, name="gamma", type=float, min_val=0.0, max_val=1.0)
+        check_scalar(
+            step_per_episode, name="step_per_episode", target_type=int, min_val=1
+        )
+        check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
         check_array(
             action,
             name="action",
@@ -1812,8 +1820,10 @@ class ContinuousCumulativeDistributionalSelfNormalizedDoublyRobust(
             Estimated cumulative distribution function for the pre-defined reward scale.
 
         """
-        check_scalar(step_per_episode, name="step_per_episode", type=int, min_val=1)
-        check_scalar(gamma, name="gamma", type=float, min_val=0.0, max_val=1.0)
+        check_scalar(
+            step_per_episode, name="step_per_episode", target_type=int, min_val=1
+        )
+        check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
         check_array(
             action,
             name="action",
@@ -2076,12 +2086,14 @@ class ContinuousDistributionallyRobustImportanceSampling(
             Estimated worst case objective.
 
         """
-        check_scalar(step_per_episode, name="step_per_episode", type=int, min_val=1)
-        check_scalar(gamma, name="gamma", type=float, min_val=0.0, max_val=1.0)
-        check_scalar(delta, name="delta", type=float, min_val=0.0)
-        check_scalar(alpha_prior, name="alpha_prior", type=float, min_val=0.0)
-        check_scalar(max_steps, name="max_steps", type=int, min_val=1)
-        check_scalar(epsilon, name="epsilon", type=float, min_val=0.0)
+        check_scalar(
+            step_per_episode, name="step_per_episode", target_type=int, min_val=1
+        )
+        check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
+        check_scalar(delta, name="delta", target_type=float, min_val=0.0)
+        check_scalar(alpha_prior, name="alpha_prior", target_type=float, min_val=0.0)
+        check_scalar(max_steps, name="max_steps", target_type=int, min_val=1)
+        check_scalar(epsilon, name="epsilon", target_type=float, min_val=0.0)
         check_array(
             action,
             name="action",
@@ -2367,12 +2379,14 @@ class ContinuousDistributionallyRobustSelfNormalizedImportanceSampling(
             Estimated worst case objective.
 
         """
-        check_scalar(step_per_episode, name="step_per_episode", type=int, min_val=1)
-        check_scalar(gamma, name="gamma", type=float, min_val=0.0, max_val=1.0)
-        check_scalar(delta, name="delta", type=float, min_val=0.0)
-        check_scalar(alpha_prior, name="alpha_prior", type=float, min_val=0.0)
-        check_scalar(max_steps, name="max_steps", type=int, min_val=1)
-        check_scalar(epsilon, name="epsilon", type=float, min_val=0.0)
+        check_scalar(
+            step_per_episode, name="step_per_episode", target_type=int, min_val=1
+        )
+        check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
+        check_scalar(delta, name="delta", target_type=float, min_val=0.0)
+        check_scalar(alpha_prior, name="alpha_prior", target_type=float, min_val=0.0)
+        check_scalar(max_steps, name="max_steps", target_type=int, min_val=1)
+        check_scalar(epsilon, name="epsilon", target_type=float, min_val=0.0)
         check_array(
             action,
             name="action",
@@ -2567,7 +2581,7 @@ class ContinuousDistributionallyRobustDoublyRobust(
 
     def __post_init__(self):
         self.action_type = "continuous"
-        check_scalar(self.n_folds, name="n_folds", type=int, min_val=1)
+        check_scalar(self.n_folds, name="n_folds", target_type=int, min_val=1)
 
         if not isinstance(self.baseline_estimator, BaseEstimator):
             raise ValueError(
@@ -2974,14 +2988,18 @@ class ContinuousDistributionallyRobustDoublyRobust(
             Estimated worst case objective.
 
         """
-        check_scalar(step_per_episode, name="step_per_episode", type=int, min_val=1)
-        check_scalar(gamma, name="gamma", type=float, min_val=0.0, max_val=1.0)
-        check_scalar(delta, name="delta", type=float, min_val=0.0)
-        check_scalar(alpha_prior, name="alpha_prior", type=float, min_val=0.0)
-        check_scalar(max_steps, name="max_steps", type=int, min_val=1)
-        check_scalar(epsilon, name="epsilon", type=float, min_val=0.0)
-        check_scalar(step_per_episode, name="step_per_episode", type=int, min_val=1)
-        check_scalar(gamma, name="gamma", type=float, min_val=0.0, max_val=1.0)
+        check_scalar(
+            step_per_episode, name="step_per_episode", target_type=int, min_val=1
+        )
+        check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
+        check_scalar(delta, name="delta", target_type=float, min_val=0.0)
+        check_scalar(alpha_prior, name="alpha_prior", target_type=float, min_val=0.0)
+        check_scalar(max_steps, name="max_steps", target_type=int, min_val=1)
+        check_scalar(epsilon, name="epsilon", target_type=float, min_val=0.0)
+        check_scalar(
+            step_per_episode, name="step_per_episode", target_type=int, min_val=1
+        )
+        check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
         check_array(
             action,
             name="action",

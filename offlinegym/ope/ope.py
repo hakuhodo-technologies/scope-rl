@@ -1,4 +1,5 @@
 """Off-Policy Evaluation Class to Streamline OPE."""
+import copy
 from dataclasses import dataclass
 from typing import Dict, List, Tuple, Optional, Any
 from pathlib import Path
@@ -958,7 +959,6 @@ class DiscreteOffPolicyEvaluation:
                     "on_policy"
                 ] = self._estimate_confidence_interval[ci](
                     input_dict[eval_policy]["on_policy_policy_value"],
-                    gamma=gamma,
                     alpha=alpha,
                     n_bootstrap_samples=n_bootstrap_samples,
                     random_state=random_state,
@@ -1166,15 +1166,15 @@ class DiscreteOffPolicyEvaluation:
             ] = estimated_trajectory_value_df_
 
         plt.style.use("ggplot")
-        fig = plt.figure(figsize=(2 * len(self.ope_estimators_), 12 * len(input_dict)))
+        fig = plt.figure(figsize=(2 * len(self.ope_estimators_), 4 * len(input_dict)))
 
         for i, eval_policy in enumerate(input_dict.keys()):
             if i == 0:
-                ax = ax0 = fig.add_subplot(len(self.ope_estimators_), 1, i + 1)
+                ax = ax0 = fig.add_subplot(len(input_dict), 1, i + 1)
             elif sharey:
-                ax = fig.add_subplot(len(self.ope_estimators_), 1, i + 1, sharey=ax0)
+                ax = fig.add_subplot(len(input_dict), 1, i + 1, sharey=ax0)
             else:
-                ax = fig.add_subplot(len(self.ope_estimators_), 1, i + 1)
+                ax = fig.add_subplot(len(input_dict), 1, i + 1)
 
             sns.barplot(
                 data=estimated_trajectory_value_df_dict[eval_policy],
@@ -1521,6 +1521,8 @@ class ContinuousOffPolicyEvaluation:
         if self.logged_dataset["action_type"] != "continuous":
             raise ValueError("logged_dataset does not `continuous` action_type")
 
+        self.action_dim = self.logged_dataset["action_dim"]
+
         self.ope_estimators_ = dict()
         for estimator in self.ope_estimators:
             self.ope_estimators_[estimator.estimator_name] = estimator
@@ -1538,9 +1540,21 @@ class ContinuousOffPolicyEvaluation:
         if self.sigma is not None:
             check_array(self.sigma, name="sigma", expected_dim=1, min_val=0.0)
 
+            if self.sigma.shape[0] != self.action_dim:
+                raise ValueError(
+                    "the length of sigma must be the same with logged_dataset['action_dim'], but found False"
+                )
+
         if self.use_truncated_kernel:
             check_array(self.action_min, name="action_min", expected_dim=1)
             check_array(self.action_max, name="action_max", expected_dim=1)
+
+        if not (
+            self.action_dim == self.action_min.shape[0] == self.action_max.shape[0]
+        ):
+            raise ValueError(
+                "expected `logged_dataset['action_dim'] == action_min.shape[0] == action_max.shape[0]`, but found False"
+            )
 
         behavior_policy_pscore = self.logged_dataset["pscore"].reshape(
             (-1, self.step_per_episode)
@@ -1678,11 +1692,6 @@ class ContinuousOffPolicyEvaluation:
                     "on_policy"
                 ] = self._estimate_confidence_interval[ci](
                     input_dict[eval_policy]["on_policy_policy_value"],
-                    gamma=gamma,
-                    sigma=self.sigma,
-                    use_truncated_kernel=self.use_truncated_kernel,
-                    action_min=self.action_min,
-                    action_max=self.action_max,
                     alpha=alpha,
                     n_bootstrap_samples=n_bootstrap_samples,
                     random_state=random_state,
@@ -2310,6 +2319,50 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
             "behavior_policy_trajectory_wise_pscore": behavior_policy_trajectory_wise_pscore.flatten(),
         }
 
+    def obtain_reward_scale(
+        self,
+        input_dict: OPEInputDict,
+        gamma: float = 1.0,
+    ):
+        """Obtain reward scale (x-axis) for the cumulative distribution function.
+
+        Parameters
+        -------
+        input_dict: OPEInputDict
+            Dictionary of the OPE inputs for each evaluation policy.
+            Please refer to `CreateOPEInput` class for the detail.
+            key: [evaluation_policy_name][
+                evaluation_policy_step_wise_pscore,
+                evaluation_policy_trajectory_wise_pscore,
+                evaluation_policy_action,
+                evaluation_policy_action_dist,
+                state_action_value_prediction,
+                initial_state_value_prediction,
+                on_policy_policy_value,
+            ]
+
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
+
+        Return
+        -------
+        reward_scale: np.ndarray
+            Reward Scale (x-axis of the cumulative distribution function).
+
+        """
+        if self.use_observations_as_reward_scale:
+            reward = (
+                self.logged_dataset["reward"]
+                .reshape((-1, self.step_per_episode))
+                .sum(axis=1)
+            )
+            reward_scale = np.sort(np.unique(reward))
+        else:
+            reward_scale = np.linspace(
+                self.scale_min, self.scale_max, num=self.n_partition
+            )
+        return reward_scale
+
     def estimate_cumulative_distribution_function(
         self,
         input_dict: OPEInputDict,
@@ -2343,15 +2396,18 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
 
         """
         cumulative_distribution_dict = defaultdict(dict)
-        reward_scale = self.obtain_reward_scale(gamma=gamma)
+        reward_scale = self.obtain_reward_scale(input_dict=input_dict, gamma=gamma)
 
         for eval_policy in input_dict.keys():
             if input_dict[eval_policy]["on_policy_policy_value"] is not None:
-                cumulative_distribution_dict[eval_policy]["on_policy"] = np.histgram(
+                on_policy_density = np.histogram(
                     input_dict[eval_policy]["on_policy_policy_value"],
                     bins=reward_scale,
                     density=True,
                 )[0]
+                cumulative_distribution_dict[eval_policy]["on_policy"] = np.insert(
+                    on_policy_density, 0, 0
+                ).cumsum()
             else:
                 cumulative_distribution_dict[eval_policy]["on_policy"] = None
 
@@ -2361,7 +2417,6 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
                 ] = estimator.estimate_cumulative_distribution_function(
                     **input_dict[eval_policy],
                     **self.input_dict_,
-                    step_per_episode=self.step_per_episode,
                     reward_scale=reward_scale,
                     gamma=gamma,
                 )
@@ -2401,17 +2456,17 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
 
         """
         mean_dict = defaultdict(dict)
-        reward_scale = self.obtain_reward_scale(gamma=gamma)
+        reward_scale = self.obtain_reward_scale(input_dict=input_dict, gamma=gamma)
 
         for eval_policy in input_dict.keys():
             if input_dict[eval_policy]["on_policy_policy_value"] is not None:
-                cumulative_density = np.histgram(
+                cumulative_density = np.histogram(
                     input_dict[eval_policy]["on_policy_policy_value"],
                     bins=reward_scale,
                     density=True,
                 )[0]
                 mean_dict[eval_policy]["on_policy"] = (
-                    np.diff(cumulative_density) * reward_scale[1:]
+                    np.diff(np.insert(cumulative_density, 0, 0)) * reward_scale[1:]
                 ).sum()
             else:
                 mean_dict[eval_policy]["on_policy"] = None
@@ -2420,7 +2475,6 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
                 mean_dict[eval_policy][estimator_name] = estimator.estimate_mean(
                     **input_dict[eval_policy],
                     **self.input_dict_,
-                    step_per_episode=self.step_per_episode,
                     reward_scale=reward_scale,
                     gamma=gamma,
                 )
@@ -2460,18 +2514,21 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
 
         """
         variance_dict = defaultdict(dict)
-        reward_scale = self.obtain_reward_scale(gamma=gamma)
+        reward_scale = self.obtain_reward_scale(input_dict=input_dict, gamma=gamma)
 
         for eval_policy in input_dict.keys():
             if input_dict[eval_policy]["on_policy_policy_value"] is not None:
-                cumulative_density = np.histgram(
+                cumulative_density = np.histogram(
                     input_dict[eval_policy]["on_policy_policy_value"],
                     bins=reward_scale,
                     density=True,
                 )[0]
-                mean = (np.diff(cumulative_density) * reward_scale[1:]).sum()
+                mean = (
+                    np.diff(np.insert(cumulative_density, 0, 0)) * reward_scale[1:]
+                ).sum()
                 variance_dict[eval_policy]["on_policy"] = (
-                    np.diff(cumulative_density) * (reward_scale[1:] - mean) ** 2
+                    np.diff(np.insert(cumulative_density, 0, 0))
+                    * (reward_scale[1:] - mean) ** 2
                 ).sum()
             else:
                 variance_dict[eval_policy]["on_policy"] = None
@@ -2482,7 +2539,6 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
                 ] = estimator.estimate_variance(
                     **input_dict[eval_policy],
                     **self.input_dict_,
-                    step_per_episode=self.step_per_episode,
                     reward_scale=reward_scale,
                     gamma=gamma,
                 )
@@ -2526,18 +2582,18 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
 
         """
         conditional_value_at_risk_dict = defaultdict(dict)
-        reward_scale = self.obtain_reward_scale(gamma=gamma)
+        reward_scale = self.obtain_reward_scale(input_dict=input_dict, gamma=gamma)
 
         for eval_policy in input_dict.keys():
             if input_dict[eval_policy]["on_policy_policy_value"] is not None:
-                cumulative_density = np.histgram(
+                cumulative_density = np.histogram(
                     input_dict[eval_policy]["on_policy_policy_value"],
                     bins=reward_scale,
                     density=True,
                 )[0]
                 lower_idx = np.argmin(cumulative_density > alpha)
                 conditional_value_at_risk_dict[eval_policy]["on_policy"] = (
-                    np.diff(cumulative_density) * reward_scale[1:]
+                    np.diff(np.insert(cumulative_density, 0, 0)) * reward_scale[1:]
                 )[: lower_idx + 1].sum()
             else:
                 conditional_value_at_risk_dict[eval_policy]["on_policy"] = None
@@ -2548,7 +2604,6 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
                 ] = estimator.estimate_conditional_value_at_risk(
                     **input_dict[eval_policy],
                     **self.input_dict_,
-                    step_per_episode=self.step_per_episode,
                     reward_scale=reward_scale,
                     gamma=gamma,
                     alpha=alpha,
@@ -2593,16 +2648,18 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
 
         """
         interquartile_range_dict = defaultdict(dict)
-        reward_scale = self.obtain_reward_scale(gamma=gamma)
+        reward_scale = self.obtain_reward_scale(input_dict=input_dict, gamma=gamma)
 
         for eval_policy in input_dict.keys():
             if input_dict[eval_policy]["on_policy_policy_value"] is not None:
-                cumulative_density = np.histgram(
+                cumulative_density = np.histogram(
                     input_dict[eval_policy]["on_policy_policy_value"],
                     bins=reward_scale,
                     density=True,
                 )[0]
-                mean = (np.diff(cumulative_density) * reward_scale[1:]).sum()
+                mean = (
+                    np.diff(np.insert(cumulative_density, 0, 0)) * reward_scale[1:]
+                ).sum()
                 lower_idx = np.argmin(cumulative_density > alpha)
                 upper_idx = np.argmin(cumulative_density > 1 - alpha)
 
@@ -2626,7 +2683,6 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
                 ] = estimator.estimate_interquartile_range(
                     **input_dict[eval_policy],
                     **self.input_dict_,
-                    step_per_episode=self.step_per_episode,
                     reward_scale=reward_scale,
                     gamma=gamma,
                     alpha=alpha,
@@ -2683,7 +2739,7 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
         if fig_name is not None and not isinstance(fig_name, str):
             raise ValueError(f"fig_dir must be a string, but {type(fig_dir)} is given")
 
-        reward_scale = self.obtain_reward_scale(gamma=gamma)
+        reward_scale = self.obtain_reward_scale(input_dict=input_dict, gamma=gamma)
         cumulative_distribution_function_dict = (
             self.estimate_cumulative_distribution_function(
                 input_dict=input_dict,
@@ -2691,15 +2747,15 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
             )
         )
 
-        if hue == "estimator":
-            n_figs = len(self.ope_estimators_ + 1)
-        else:
-            n_figs = len(input_dict)
-
         plt.style.use("ggplot")
-        fig, axes = plt.subplots(nrows=n_figs // 3, ncols=min(3, n_figs))
 
         if hue == "estimator":
+            n_figs = len(self.ope_estimators_) + 1
+            n_rows, n_cols = n_figs // 3 + 2, min(3, n_figs)
+            fig, axes = plt.subplots(
+                nrows=n_rows, ncols=n_cols, figsize=(4 * n_cols, 3 * n_rows)
+            )
+
             for i, eval_policy in enumerate(input_dict.keys()):
                 for j, ope_estimator in enumerate(self.ope_estimators_):
                     axes[i // 3, i % 3].plot(
@@ -2710,19 +2766,25 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
                         label=ope_estimator,
                     )
 
-                if input_dict[eval_policy]["on_policy"] is not None:
+                if input_dict[eval_policy]["on_policy_policy_value"] is not None:
                     axes[i // 3, i % 3].plot(
                         reward_scale,
                         cumulative_distribution_function_dict[eval_policy]["on_policy"],
                         label="on_policy",
                     )
 
-                axes[i // 3, i % 3].title(eval_policy)
-                axes[i // 3, i % 3].xlabel("trajectory wise reward")
-                axes[i // 3, i % 3].ylabel("cumulative probability")
+                axes[i // 3, i % 3].set_title(eval_policy)
+                axes[i // 3, i % 3].set_xlabel("trajectory wise reward")
+                axes[i // 3, i % 3].set_ylabel("cumulative probability")
                 axes[i // 3, i % 3].legend()
 
         else:
+            n_figs = len(input_dict)
+            n_rows, n_cols = n_figs // 3 + 2, min(3, n_figs)
+            fig, axes = plt.subplots(
+                nrows=n_rows, ncols=n_cols, figsize=(4 * n_cols, 3 * n_rows)
+            )
+
             for i, ope_estimator in enumerate(self.ope_estimators_):
                 for j, eval_policy in enumerate(input_dict.keys()):
                     axes[i // 3, i % 3].plot(
@@ -2738,7 +2800,7 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
                 axes[i // 3, i % 3].ylabel("cumulative probability")
                 axes[i // 3, i % 3].legend()
 
-            if input_dict[eval_policy]["on_policy"] is not None:
+            if input_dict[eval_policy]["on_policy_policy_value"] is not None:
                 for j, eval_policy in enumerate(input_dict.keys()):
                     axes[i // 3, i % 3].plot(
                         reward_scale,
@@ -3041,15 +3103,18 @@ class ContinuousCumulativeDistributionalOffPolicyEvaluation:
 
         """
         cumulative_distribution_dict = defaultdict(dict)
-        reward_scale = self.obtain_reward_scale(gamma=gamma)
+        reward_scale = self.obtain_reward_scale(input_dict=input_dict, gamma=gamma)
 
         for eval_policy in input_dict.keys():
             if input_dict[eval_policy]["on_policy_policy_value"] is not None:
-                cumulative_distribution_dict[eval_policy]["on_policy"] = np.histgram(
+                on_policy_density = np.histogram(
                     input_dict[eval_policy]["on_policy_policy_value"],
                     bins=reward_scale,
                     density=True,
                 )[0]
+                cumulative_distribution_dict[eval_policy]["on_policy"] = np.insert(
+                    on_policy_density, 0, 0
+                ).cumsum()
             else:
                 cumulative_distribution_dict[eval_policy]["on_policy"] = None
 
@@ -3059,7 +3124,6 @@ class ContinuousCumulativeDistributionalOffPolicyEvaluation:
                 ] = estimator.estimate_cumulative_distribution_function(
                     **input_dict[eval_policy],
                     **self.input_dict_,
-                    step_per_episode=self.step_per_episode,
                     reward_scale=reward_scale,
                     gamma=gamma,
                     sigma=self.sigma,
@@ -3103,17 +3167,17 @@ class ContinuousCumulativeDistributionalOffPolicyEvaluation:
 
         """
         mean_dict = defaultdict(dict)
-        reward_scale = self.obtain_reward_scale(gamma=gamma)
+        reward_scale = self.obtain_reward_scale(input_dict=input_dict, gamma=gamma)
 
         for eval_policy in input_dict.keys():
             if input_dict[eval_policy]["on_policy_policy_value"] is not None:
-                cumulative_density = np.histgram(
+                cumulative_density = np.histogram(
                     input_dict[eval_policy]["on_policy_policy_value"],
                     bins=reward_scale,
                     density=True,
                 )[0]
                 mean_dict[eval_policy]["on_policy"] = (
-                    np.diff(cumulative_density) * reward_scale[1:]
+                    np.diff(np.insert(cumulative_density, 0, 0)) * reward_scale[1:]
                 ).sum()
             else:
                 mean_dict[eval_policy]["on_policy"] = None
@@ -3122,7 +3186,6 @@ class ContinuousCumulativeDistributionalOffPolicyEvaluation:
                 mean_dict[eval_policy][estimator_name] = estimator.estimate_mean(
                     **input_dict[eval_policy],
                     **self.input_dict_,
-                    step_per_episode=self.step_per_episode,
                     reward_scale=reward_scale,
                     gamma=gamma,
                     sigma=self.sigma,
@@ -3166,18 +3229,21 @@ class ContinuousCumulativeDistributionalOffPolicyEvaluation:
 
         """
         variance_dict = defaultdict(dict)
-        reward_scale = self.obtain_reward_scale(gamma=gamma)
+        reward_scale = self.obtain_reward_scale(input_dict=input_dict, gamma=gamma)
 
         for eval_policy in input_dict.keys():
             if input_dict[eval_policy]["on_policy_policy_value"] is not None:
-                cumulative_density = np.histgram(
+                cumulative_density = np.histogram(
                     input_dict[eval_policy]["on_policy_policy_value"],
                     bins=reward_scale,
                     density=True,
                 )[0]
-                mean = (np.diff(cumulative_density) * reward_scale[1:]).sum()
+                mean = (
+                    np.diff(np.insert(cumulative_density, 0, 0)) * reward_scale[1:]
+                ).sum()
                 variance_dict[eval_policy]["on_policy"] = (
-                    np.diff(cumulative_density) * (reward_scale[1:] - mean) ** 2
+                    np.diff(np.insert(cumulative_density, 0, 0))
+                    * (reward_scale[1:] - mean) ** 2
                 ).sum()
             else:
                 variance_dict[eval_policy]["on_policy"] = None
@@ -3188,7 +3254,6 @@ class ContinuousCumulativeDistributionalOffPolicyEvaluation:
                 ] = estimator.estimate_variance(
                     **input_dict[eval_policy],
                     **self.input_dict_,
-                    step_per_episode=self.step_per_episode,
                     reward_scale=reward_scale,
                     gamma=gamma,
                     sigma=self.sigma,
@@ -3236,18 +3301,18 @@ class ContinuousCumulativeDistributionalOffPolicyEvaluation:
 
         """
         conditional_value_at_risk_dict = defaultdict(dict)
-        reward_scale = self.obtain_reward_scale(gamma=gamma)
+        reward_scale = self.obtain_reward_scale(input_dict=input_dict, gamma=gamma)
 
         for eval_policy in input_dict.keys():
             if input_dict[eval_policy]["on_policy_policy_value"] is not None:
-                cumulative_density = np.histgram(
+                cumulative_density = np.histogram(
                     input_dict[eval_policy]["on_policy_policy_value"],
                     bins=reward_scale,
                     density=True,
                 )[0]
                 lower_idx = np.argmin(cumulative_density > alpha)
                 conditional_value_at_risk_dict[eval_policy]["on_policy"] = (
-                    np.diff(cumulative_density) * reward_scale[1:]
+                    np.diff(np.insert(cumulative_density, 0, 0)) * reward_scale[1:]
                 )[: lower_idx + 1].sum()
             else:
                 conditional_value_at_risk_dict[eval_policy]["on_policy"] = None
@@ -3258,7 +3323,6 @@ class ContinuousCumulativeDistributionalOffPolicyEvaluation:
                 ] = estimator.estimate_conditional_value_at_risk(
                     **input_dict[eval_policy],
                     **self.input_dict_,
-                    step_per_episode=self.step_per_episode,
                     reward_scale=reward_scale,
                     gamma=gamma,
                     alpha=alpha,
@@ -3307,16 +3371,18 @@ class ContinuousCumulativeDistributionalOffPolicyEvaluation:
 
         """
         interquartile_range_dict = defaultdict(dict)
-        reward_scale = self.obtain_reward_scale(gamma=gamma)
+        reward_scale = self.obtain_reward_scale(input_dict=input_dict, gamma=gamma)
 
         for eval_policy in input_dict.keys():
             if input_dict[eval_policy]["on_policy_policy_value"] is not None:
-                cumulative_density = np.histgram(
+                cumulative_density = np.histogram(
                     input_dict[eval_policy]["on_policy_policy_value"],
                     bins=reward_scale,
                     density=True,
                 )[0]
-                mean = (np.diff(cumulative_density) * reward_scale[1:]).sum()
+                mean = (
+                    np.diff(np.insert(cumulative_density, 0, 0)) * reward_scale[1:]
+                ).sum()
                 lower_idx = np.argmin(cumulative_density > alpha)
                 upper_idx = np.argmin(cumulative_density > 1 - alpha)
 
@@ -3340,7 +3406,6 @@ class ContinuousCumulativeDistributionalOffPolicyEvaluation:
                 ] = estimator.estimate_interquartile_range(
                     **input_dict[eval_policy],
                     **self.input_dict_,
-                    step_per_episode=self.step_per_episode,
                     reward_scale=reward_scale,
                     gamma=gamma,
                     alpha=alpha,
@@ -3401,7 +3466,7 @@ class ContinuousCumulativeDistributionalOffPolicyEvaluation:
         if fig_name is not None and not isinstance(fig_name, str):
             raise ValueError(f"fig_dir must be a string, but {type(fig_dir)} is given")
 
-        reward_scale = self.obtain_reward_scale(gamma=gamma)
+        reward_scale = self.obtain_reward_scale(input_dict=input_dict, gamma=gamma)
         cumulative_distribution_function_dict = (
             self.estimate_cumulative_distribution_function(
                 input_dict=input_dict,
@@ -3409,15 +3474,14 @@ class ContinuousCumulativeDistributionalOffPolicyEvaluation:
             )
         )
 
+        plt.style.use("ggplot")
+
         if hue == "estimator":
             n_figs = len(self.ope_estimators_ + 1)
-        else:
-            n_figs = len(input_dict)
-
-        plt.style.use("ggplot")
-        fig, axes = plt.subplots(nrows=n_figs // 3, ncols=min(3, n_figs))
-
-        if hue == "estimator":
+            n_rows, n_cols = n_figs // 3 + 2, min(3, n_figs)
+            fig, axes = plt.subplots(
+                nrows=n_rows, ncols=n_cols, figsize=(4 * n_cols, 3 * n_rows)
+            )
             for i, eval_policy in enumerate(input_dict.keys()):
                 for j, ope_estimator in enumerate(self.ope_estimators_):
                     axes[i // 3, i % 3].plot(
@@ -3441,6 +3505,11 @@ class ContinuousCumulativeDistributionalOffPolicyEvaluation:
                 axes[i // 3, i % 3].legend()
 
         else:
+            n_figs = len(input_dict)
+            n_rows, n_cols = n_figs // 3 + 2, min(3, n_figs)
+            fig, axes = plt.subplots(
+                nrows=n_rows, ncols=n_cols, figsize=(4 * n_cols, 3 * n_rows)
+            )
             for i, ope_estimator in enumerate(self.ope_estimators_):
                 for j, eval_policy in enumerate(input_dict.keys()):
                     axes[i // 3, i % 3].plot(
@@ -3640,9 +3709,11 @@ class DiscreteDistributionallyRobustOffPolicyEvaluation:
                     f"ope_estimators must be child classes of BaseDistributionallyRobustOffPolicyEstimator, but one of them, {estimator.estimator_name} is not"
                 )
 
-        check_scalar(self.alpha_prior, name="alpha_prior", type=float, min_val=0.0)
-        check_scalar(self.max_steps, name="max_steps", type=int, min_val=1)
-        check_scalar(self.epsilon, name="epsilon", type=float, min_val=0.0)
+        check_scalar(
+            self.alpha_prior, name="alpha_prior", target_type=float, min_val=0.0
+        )
+        check_scalar(self.max_steps, name="max_steps", target_type=int, min_val=1)
+        check_scalar(self.epsilon, name="epsilon", target_type=float, min_val=0.0)
 
         behavior_policy_pscore = self.logged_dataset["pscore"].reshape(
             (-1, self.step_per_episode)
@@ -3926,9 +3997,11 @@ class ContinuousDistributionallyRobustOffPolicyEvaluation:
                     f"ope_estimators must be child classes of BaseDistributionallyRobustOffPolicyEstimator, but one of them, {estimator.estimator_name} is not"
                 )
 
-        check_scalar(self.alpha_prior, name="alpha_prior", type=float, min_val=0.0)
-        check_scalar(self.max_steps, name="max_steps", type=int, min_val=1)
-        check_scalar(self.epsilon, name="epsilon", type=float, min_val=0.0)
+        check_scalar(
+            self.alpha_prior, name="alpha_prior", target_type=float, min_val=0.0
+        )
+        check_scalar(self.max_steps, name="max_steps", target_type=int, min_val=1)
+        check_scalar(self.epsilon, name="epsilon", target_type=float, min_val=0.0)
 
         if self.sigma is not None:
             check_array(self.sigma, name="sigma", expected_dim=1, min_val=0.0)

@@ -90,8 +90,10 @@ class DiscreteCumulativeDistributionalDirectMethod(
             Estimated cumulative distribution function for the pre-defined reward scale.
 
         """
-        check_scalar(step_per_episode, name="step_per_episode", type=int, min_val=1)
-        check_scalar(gamma, name="gamma", type=float, min_val=0.0, max_val=1.0)
+        check_scalar(
+            step_per_episode, name="step_per_episode", target_type=int, min_val=1
+        )
+        check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
         check_array(reward, name="reward", expected_dim=1)
         check_array(
             initial_state_value_prediction,
@@ -107,12 +109,15 @@ class DiscreteCumulativeDistributionalDirectMethod(
             raise ValueError(
                 "Expected `reward.shape[0] \\% step_per_episode == 0`, but found False"
             )
-        if reward.shape[0] // step_per_episode != initial_state_value_prediction:
+        if (
+            reward.shape[0] // step_per_episode
+            != initial_state_value_prediction.shape[0]
+        ):
             raise ValueError(
                 "Expected `reward.shape[0] // step_per_episode == initial_state_value_prediction`, but found False"
             )
 
-        density = np.histgram(
+        density = np.histogram(
             initial_state_value_prediction, bins=reward_scale, density=True
         )[0]
 
@@ -406,8 +411,10 @@ class DiscreteCumulativeDistributionalImportanceSampling(
             Estimated cumulative distribution function for the pre-defined reward scale.
 
         """
-        check_scalar(step_per_episode, name="step_per_episode", type=int, min_val=1)
-        check_scalar(gamma, name="gamma", type=float, min_val=0.0, max_val=1.0)
+        check_scalar(
+            step_per_episode, name="step_per_episode", target_type=int, min_val=1
+        )
+        check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
         check_array(reward, name="reward", expected_dim=1)
         check_array(
             behavior_policy_trajectory_wise_pscore,
@@ -466,7 +473,7 @@ class DiscreteCumulativeDistributionalImportanceSampling(
         sorted_importance_weight = trajectory_wise_importance_weight[sort_idxes]
         cumulative_density = np.clip(sorted_importance_weight.cumsum() / n, 0, 1)
 
-        histogram = np.histgram(
+        histogram = np.histogram(
             trajectory_wise_reward, bins=reward_scale, density=True
         )[0]
         cumulative_density = cumulative_density[histogram.cumsum()]
@@ -800,8 +807,10 @@ class DiscreteCumulativeDistributionalDoublyRobust(
             Estimated cumulative distribution function for the pre-defined reward scale.
 
         """
-        check_scalar(step_per_episode, name="step_per_episode", type=int, min_val=1)
-        check_scalar(gamma, name="gamma", type=float, min_val=0.0, max_val=1.0)
+        check_scalar(
+            step_per_episode, name="step_per_episode", target_type=int, min_val=1
+        )
+        check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
         check_array(reward, name="reward", expected_dim=1)
         check_array(
             behavior_policy_trajectory_wise_pscore,
@@ -870,7 +879,7 @@ class DiscreteCumulativeDistributionalDoublyRobust(
                 trajectory_wise_importance_weight * (observation - prediction)
             ).mean()
 
-        histogram_baseline = np.histgram(
+        histogram_baseline = np.histogram(
             initial_state_value_prediction, bins=reward_scale, density=True
         )[0].cumsum()
         histogram_baseline = np.insert(histogram_baseline, 0, 0)
@@ -1221,8 +1230,10 @@ class DiscreteCumulativeDistributionalSelfNormalizedImportanceSampling(
             Estimated cumulative distribution function for the pre-defined reward scale.
 
         """
-        check_scalar(step_per_episode, name="step_per_episode", type=int, min_val=1)
-        check_scalar(gamma, name="gamma", type=float, min_val=0.0, max_val=1.0)
+        check_scalar(
+            step_per_episode, name="step_per_episode", target_type=int, min_val=1
+        )
+        check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
         check_array(reward, name="reward", expected_dim=1)
         check_array(
             behavior_policy_trajectory_wise_pscore,
@@ -1283,10 +1294,10 @@ class DiscreteCumulativeDistributionalSelfNormalizedImportanceSampling(
             sorted_importance_weight.cumsum() / weight_sum, 0, 1
         )
 
-        histogram = np.histgram(
+        histogram = np.histogram(
             trajectory_wise_reward, bins=reward_scale, density=True
         )[0]
-        cumulative_density = cumulative_density[histogram.cumsum()]
+        cumulative_density = cumulative_density[histogram.cumsum().astype(int)]
 
         return np.insert(cumulative_density, 0, 0)
 
@@ -1389,8 +1400,10 @@ class DiscreteCumulativeDistributionalSelfNormalizedDoublyRobust(
             Estimated cumulative distribution function for the pre-defined reward scale.
 
         """
-        check_scalar(step_per_episode, name="step_per_episode", type=int, min_val=1)
-        check_scalar(gamma, name="gamma", type=float, min_val=0.0, max_val=1.0)
+        check_scalar(
+            step_per_episode, name="step_per_episode", target_type=int, min_val=1
+        )
+        check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
         check_array(reward, name="reward", expected_dim=1)
         check_array(
             behavior_policy_trajectory_wise_pscore,
@@ -1432,7 +1445,7 @@ class DiscreteCumulativeDistributionalSelfNormalizedDoublyRobust(
             reward.shape[0] // step_per_episode
             == behavior_policy_trajectory_wise_pscore.shape[0] // step_per_episode
             == evaluation_policy_trajectory_wise_pscore.shape[0] // step_per_episode
-            == initial_state_value_prediction
+            == initial_state_value_prediction.shape[0]
         ):
             raise ValueError(
                 "Expected `reward.shape[0] // step_per_episode == behavior_policy_trajectory_wise_pscore.shape[0] // step_per_episode "
@@ -1452,14 +1465,14 @@ class DiscreteCumulativeDistributionalSelfNormalizedDoublyRobust(
         )
 
         weighted_residual = np.zeros_like(reward_scale)
-        for threshold in reward_scale:
-            observation = trajectory_wise_reward <= threshold
-            prediction = initial_state_value_prediction <= threshold
-            weighted_residual[threshold] = (
+        for i, threshold in enumerate(reward_scale):
+            observation = (trajectory_wise_reward <= threshold).astype(int)
+            prediction = (initial_state_value_prediction <= threshold).astype(int)
+            weighted_residual[i] = (
                 trajectory_wise_importance_weight * (observation - prediction)
             ).sum() / trajectory_wise_importance_weight.sum()
 
-        histogram_baseline = np.histgram(
+        histogram_baseline = np.histogram(
             initial_state_value_prediction, bins=reward_scale, density=True
         )[0].cumsum()
         histogram_baseline = np.insert(histogram_baseline, 0, 0)
@@ -1600,12 +1613,14 @@ class DiscreteDistributionallyRobustImportanceSampling(
             Estimated worst case objective.
 
         """
-        check_scalar(step_per_episode, name="step_per_episode", type=int, min_val=1)
-        check_scalar(gamma, name="gamma", type=float, min_val=0.0, max_val=1.0)
-        check_scalar(delta, name="delta", type=float, min_val=0.0)
-        check_scalar(alpha_prior, name="alpha_prior", type=float, min_val=0.0)
-        check_scalar(max_steps, name="max_steps", type=int, min_val=1)
-        check_scalar(epsilon, name="epsilon", type=float, min_val=0.0)
+        check_scalar(
+            step_per_episode, name="step_per_episode", target_type=int, min_val=1
+        )
+        check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
+        check_scalar(delta, name="delta", target_type=float, min_val=0.0)
+        check_scalar(alpha_prior, name="alpha_prior", target_type=float, min_val=0.0)
+        check_scalar(max_steps, name="max_steps", target_type=int, min_val=1)
+        check_scalar(epsilon, name="epsilon", target_type=float, min_val=0.0)
         check_array(reward, name="reward", expected_dim=1)
         check_array(
             behavior_policy_trajectory_wise_pscore,
@@ -1830,12 +1845,14 @@ class DiscreteDistributionallyRobustSelfNormalizedImportanceSampling(
             Estimated worst case objective.
 
         """
-        check_scalar(step_per_episode, name="step_per_episode", type=int, min_val=1)
-        check_scalar(gamma, name="gamma", type=float, min_val=0.0, max_val=1.0)
-        check_scalar(delta, name="delta", type=float, min_val=0.0)
-        check_scalar(alpha_prior, name="alpha_prior", type=float, min_val=0.0)
-        check_scalar(max_steps, name="max_steps", type=int, min_val=1)
-        check_scalar(epsilon, name="epsilon", type=float, min_val=0.0)
+        check_scalar(
+            step_per_episode, name="step_per_episode", target_type=int, min_val=1
+        )
+        check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
+        check_scalar(delta, name="delta", target_type=float, min_val=0.0)
+        check_scalar(alpha_prior, name="alpha_prior", target_type=float, min_val=0.0)
+        check_scalar(max_steps, name="max_steps", target_type=int, min_val=1)
+        check_scalar(epsilon, name="epsilon", target_type=float, min_val=0.0)
         check_array(reward, name="reward", expected_dim=1)
         check_array(
             behavior_policy_trajectory_wise_pscore,
@@ -1992,7 +2009,7 @@ class DiscreteDistributionallyRobustDoublyRobust(
 
     def __post_init__(self):
         self.action_type = "discrete"
-        check_scalar(self.n_folds, name="n_folds", type=int, min_val=1)
+        check_scalar(self.n_folds, name="n_folds", target_type=int, min_val=1)
 
         if not isinstance(self.baseline_estimator, BaseEstimator):
             raise ValueError(
@@ -2376,12 +2393,14 @@ class DiscreteDistributionallyRobustDoublyRobust(
             Estimated worst case objective.
 
         """
-        check_scalar(step_per_episode, name="step_per_episode", type=int, min_val=1)
-        check_scalar(gamma, name="gamma", type=float, min_val=0.0, max_val=1.0)
-        check_scalar(delta, name="delta", type=float, min_val=0.0)
-        check_scalar(alpha_prior, name="alpha_prior", type=float, min_val=0.0)
-        check_scalar(max_steps, name="max_steps", type=int, min_val=1)
-        check_scalar(epsilon, name="epsilon", type=float, min_val=0.0)
+        check_scalar(
+            step_per_episode, name="step_per_episode", target_type=int, min_val=1
+        )
+        check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
+        check_scalar(delta, name="delta", target_type=float, min_val=0.0)
+        check_scalar(alpha_prior, name="alpha_prior", target_type=float, min_val=0.0)
+        check_scalar(max_steps, name="max_steps", target_type=int, min_val=1)
+        check_scalar(epsilon, name="epsilon", target_type=float, min_val=0.0)
         check_array(reward, name="reward", expected_dim=1)
         check_array(
             behavior_policy_trajectory_wise_pscore,
