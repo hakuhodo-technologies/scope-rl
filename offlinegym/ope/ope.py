@@ -9,6 +9,7 @@ from tqdm.autonotebook import tqdm
 
 import torch
 import numpy as np
+from scipy.stats import norm
 from sklearn.utils import check_scalar
 from pandas import DataFrame
 import matplotlib.pyplot as plt
@@ -2460,14 +2461,12 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
 
         for eval_policy in input_dict.keys():
             if input_dict[eval_policy]["on_policy_policy_value"] is not None:
-                cumulative_density = np.histogram(
+                density = np.histogram(
                     input_dict[eval_policy]["on_policy_policy_value"],
                     bins=reward_scale,
                     density=True,
                 )[0]
-                mean_dict[eval_policy]["on_policy"] = (
-                    np.diff(np.insert(cumulative_density, 0, 0)) * reward_scale[1:]
-                ).sum()
+                mean_dict[eval_policy]["on_policy"] = (density * reward_scale[1:]).sum()
             else:
                 mean_dict[eval_policy]["on_policy"] = None
 
@@ -2518,17 +2517,14 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
 
         for eval_policy in input_dict.keys():
             if input_dict[eval_policy]["on_policy_policy_value"] is not None:
-                cumulative_density = np.histogram(
+                density = np.histogram(
                     input_dict[eval_policy]["on_policy_policy_value"],
                     bins=reward_scale,
                     density=True,
                 )[0]
-                mean = (
-                    np.diff(np.insert(cumulative_density, 0, 0)) * reward_scale[1:]
-                ).sum()
+                mean = (density * reward_scale[1:]).sum()
                 variance_dict[eval_policy]["on_policy"] = (
-                    np.diff(np.insert(cumulative_density, 0, 0))
-                    * (reward_scale[1:] - mean) ** 2
+                    density * (reward_scale[1:] - mean) ** 2
                 ).sum()
             else:
                 variance_dict[eval_policy]["on_policy"] = None
@@ -2581,20 +2577,25 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
             key: [evaluation_policy_name][OPE_estimator_name]
 
         """
+        check_scalar(alpha, "alpha", target_type=float, min_val=0.0, max_val=1.0)
         conditional_value_at_risk_dict = defaultdict(dict)
         reward_scale = self.obtain_reward_scale(input_dict=input_dict, gamma=gamma)
 
         for eval_policy in input_dict.keys():
             if input_dict[eval_policy]["on_policy_policy_value"] is not None:
-                cumulative_density = np.histogram(
+                density = np.histogram(
                     input_dict[eval_policy]["on_policy_policy_value"],
                     bins=reward_scale,
                     density=True,
                 )[0]
-                lower_idx = np.argmin(cumulative_density > alpha)
+
+                idx_ = np.nonzero(density.cumsum() > alpha)[0]
+                lower_idx = idx_[0] if len(idx_) else -1
+
                 conditional_value_at_risk_dict[eval_policy]["on_policy"] = (
-                    np.diff(np.insert(cumulative_density, 0, 0)) * reward_scale[1:]
-                )[: lower_idx + 1].sum()
+                    density * reward_scale[1:]
+                )[:lower_idx].sum()
+
             else:
                 conditional_value_at_risk_dict[eval_policy]["on_policy"] = None
 
@@ -2647,24 +2648,30 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
             key: [evaluation_policy_name][OPE_estimator_name][quartile_name]
 
         """
+        check_scalar(alpha, name="alpha", target_type=float, min_val=0.0, max_val=0.5)
         interquartile_range_dict = defaultdict(dict)
         reward_scale = self.obtain_reward_scale(input_dict=input_dict, gamma=gamma)
 
         for eval_policy in input_dict.keys():
             if input_dict[eval_policy]["on_policy_policy_value"] is not None:
-                cumulative_density = np.histogram(
+                density = np.histogram(
                     input_dict[eval_policy]["on_policy_policy_value"],
                     bins=reward_scale,
                     density=True,
                 )[0]
-                mean = (
-                    np.diff(np.insert(cumulative_density, 0, 0)) * reward_scale[1:]
-                ).sum()
-                lower_idx = np.argmin(cumulative_density > alpha)
-                upper_idx = np.argmin(cumulative_density > 1 - alpha)
+
+                idx_ = np.nonzero(density.cumsum() > alpha)[0]
+                lower_idx = idx_[0] if len(idx_) else -1
+
+                idx_ = np.nonzero(density.cumsum() > 0.5)[0]
+                median_idx = idx_[0] if len(idx_) else -1
+
+                idx_ = np.nonzero(density.cumsum() > 1 - alpha)[0]
+                upper_idx = idx_[0] if len(idx_) else -1
 
                 interquartile_range_dict[eval_policy]["on_policy"] = {
-                    "mean": mean,
+                    "median": (reward_scale[median_idx] + reward_scale[median_idx + 1])
+                    / 2,
                     f"{100 * (1. - alpha)}% quartile (lower)": (
                         reward_scale[lower_idx] + reward_scale[lower_idx + 1]
                     )
@@ -2695,6 +2702,7 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
         input_dict: OPEInputDict,
         gamma: float = 1.0,
         hue: str = "estimator",
+        n_cols: Optional[int] = None,
         fig_dir: Optional[Path] = None,
         fig_name: str = "estimated_cumulative_distribution_function.png",
     ) -> None:
@@ -2734,6 +2742,8 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
             raise ValueError(
                 f"hue must be either `estimator` or `policy`, but {hue} is given"
             )
+        if n_cols is not None:
+            check_scalar(n_cols, name="n_cols", target_type=int, min_val=1)
         if fig_dir is not None and not isinstance(fig_dir, Path):
             raise ValueError(f"fig_dir must be a Path, but {type(fig_dir)} is given")
         if fig_name is not None and not isinstance(fig_name, str):
@@ -2750,15 +2760,17 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
         plt.style.use("ggplot")
 
         if hue == "estimator":
-            n_figs = len(self.ope_estimators_) + 1
-            n_rows, n_cols = n_figs // 3 + 2, min(3, n_figs)
+            n_figs = len(input_dict)
+            n_cols = min(3, n_figs) if n_cols is None else n_cols
+            n_rows = n_figs // n_cols
+
             fig, axes = plt.subplots(
                 nrows=n_rows, ncols=n_cols, figsize=(4 * n_cols, 3 * n_rows)
             )
 
             for i, eval_policy in enumerate(input_dict.keys()):
                 for j, ope_estimator in enumerate(self.ope_estimators_):
-                    axes[i // 3, i % 3].plot(
+                    axes[i // n_cols, i % n_cols].plot(
                         reward_scale,
                         cumulative_distribution_function_dict[eval_policy][
                             ope_estimator
@@ -2767,27 +2779,29 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
                     )
 
                 if input_dict[eval_policy]["on_policy_policy_value"] is not None:
-                    axes[i // 3, i % 3].plot(
+                    axes[i // n_cols, i % n_cols].plot(
                         reward_scale,
                         cumulative_distribution_function_dict[eval_policy]["on_policy"],
                         label="on_policy",
                     )
 
-                axes[i // 3, i % 3].set_title(eval_policy)
-                axes[i // 3, i % 3].set_xlabel("trajectory wise reward")
-                axes[i // 3, i % 3].set_ylabel("cumulative probability")
-                axes[i // 3, i % 3].legend()
+                axes[i // n_cols, i % n_cols].set_title(eval_policy)
+                axes[i // n_cols, i % n_cols].set_xlabel("trajectory wise reward")
+                axes[i // n_cols, i % n_cols].set_ylabel("cumulative probability")
+                axes[i // n_cols, i % n_cols].legend()
 
         else:
-            n_figs = len(input_dict)
-            n_rows, n_cols = n_figs // 3 + 2, min(3, n_figs)
+            n_figs = len(self.ope_estimators_) + 1
+            n_cols = min(3, n_figs) if n_cols is None else n_cols
+            n_rows = n_figs // n_cols
+
             fig, axes = plt.subplots(
                 nrows=n_rows, ncols=n_cols, figsize=(4 * n_cols, 3 * n_rows)
             )
 
             for i, ope_estimator in enumerate(self.ope_estimators_):
                 for j, eval_policy in enumerate(input_dict.keys()):
-                    axes[i // 3, i % 3].plot(
+                    axes[i // n_cols, i % n_cols].plot(
                         reward_scale,
                         cumulative_distribution_function_dict[eval_policy][
                             ope_estimator
@@ -2795,26 +2809,344 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
                         label=eval_policy,
                     )
 
-                axes[i // 3, i % 3].title(ope_estimator)
-                axes[i // 3, i % 3].xlabel("trajectory wise reward")
-                axes[i // 3, i % 3].ylabel("cumulative probability")
-                axes[i // 3, i % 3].legend()
+                axes[i // n_cols, i % n_cols].title(ope_estimator)
+                axes[i // n_cols, i % n_cols].xlabel("trajectory wise reward")
+                axes[i // n_cols, i % n_cols].ylabel("cumulative probability")
+                axes[i // n_cols, i % n_cols].legend()
 
             if input_dict[eval_policy]["on_policy_policy_value"] is not None:
                 for j, eval_policy in enumerate(input_dict.keys()):
-                    axes[i // 3, i % 3].plot(
+                    axes[i // n_cols, i % n_cols].plot(
                         reward_scale,
                         cumulative_distribution_function_dict[eval_policy]["on_policy"],
                         label=eval_policy,
                     )
 
-                axes[(i + 1) // 3, (i + 1) % 3].title("on_policy")
-                axes[(i + 1) // 3, (i + 1) % 3].xlabel("trajectory wise reward")
-                axes[(i + 1) // 3, (i + 1) % 3].ylabel("cumulative probability")
-                axes[(i + 1) // 3, (i + 1) % 3].legend()
+                axes[(i + 1) // n_cols, (i + 1) % n_cols].title("on_policy")
+                axes[(i + 1) // n_cols, (i + 1) % n_cols].xlabel(
+                    "trajectory wise reward"
+                )
+                axes[(i + 1) // n_cols, (i + 1) % n_cols].ylabel(
+                    "cumulative probability"
+                )
+                axes[(i + 1) // n_cols, (i + 1) % n_cols].legend()
 
         fig.tight_layout()
         plt.show()
+
+        if fig_dir:
+            fig.savefig(str(fig_dir / fig_name))
+
+    def visualize_policy_value(
+        self,
+        input_dict: OPEInputDict,
+        gamma: float = 1.0,
+        alpha: float = 0.05,
+        is_relative: bool = False,
+        sharey: bool = False,
+        fig_dir: Optional[Path] = None,
+        fig_name: str = "estimated_policy_value.png",
+    ) -> None:
+        """Visualize policy value estimated by OPE estimators.
+
+        Parameters
+        -------
+        input_dict: OPEInputDict
+            Dictionary of the OPE inputs for each evaluation policy.
+            Please refer to `CreateOPEInput` class for the detail.
+            key: [evaluation_policy_name][
+                evaluation_policy_step_wise_pscore,
+                evaluation_policy_trajectory_wise_pscore,
+                evaluation_policy_action,
+                evaluation_policy_action_dist,
+                state_action_value_prediction,
+                initial_state_value_prediction,
+                on_policy_policy_value,
+            ]
+
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
+
+        alpha: float, default=0.05 (0, 1)
+            Significant level.
+
+        is_relative: bool, default=False
+            If `True`, the method visualizes the estimated policy value of evaluation policy
+            relative to the ground-truth policy value of behavior policy.
+
+        sharey: bool, default=False
+            If `True`, the y-axis will be shared among different evaluation policies.
+
+        fig_dir: Path, default=None
+            Path to store the bar figure.
+            If `None` is given, the figure will not be saved.
+
+        fig_name: str, default="estimated_policy_value.png"
+            Name of the bar figure.
+
+        """
+        if fig_dir is not None and not isinstance(fig_dir, Path):
+            raise ValueError(f"fig_dir must be a Path, but {type(fig_dir)} is given")
+        if fig_name is not None and not isinstance(fig_name, str):
+            raise ValueError(f"fig_dir must be a string, but {type(fig_dir)} is given")
+
+        mean_dict = self.estimate_mean(
+            input_dict=input_dict,
+            gamma=gamma,
+        )
+        variance_dict = self.estimate_variance(
+            input_dict=input_dict,
+            gamma=gamma,
+        )
+
+        plt.style.use("ggplot")
+        color = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+        fig = plt.figure(figsize=(2 * len(self.ope_estimators_), 4 * len(input_dict)))
+
+        for i, eval_policy in enumerate(input_dict.keys()):
+            if i == 0:
+                n = len(input_dict[eval_policy]["on_policy_policy_value"])
+                ax = ax0 = fig.add_subplot(len(input_dict), 1, i + 1)
+            elif sharey:
+                ax = fig.add_subplot(len(input_dict), 1, i + 1, sharey=ax0)
+            else:
+                ax = fig.add_subplot(len(input_dict), 1, i + 1)
+
+            on_policy_mean = mean_dict[eval_policy].pop("on_policy")
+            on_policy_variance = variance_dict[eval_policy].pop("on_policy")
+            on_policy_upper, on_policy_lower = norm.interval(
+                1 - alpha, loc=on_policy_mean, scale=np.sqrt(on_policy_variance)
+            )
+
+            mean = np.array(list(mean_dict[eval_policy].values()), dtype=float)
+            variance = np.array(list(variance_dict[eval_policy].values()), dtype=float)
+            upper, lower = norm.interval(1 - alpha, loc=mean, scale=np.sqrt(variance))
+
+            if is_relative:
+                on_policy_mean = on_policy_mean / (on_policy_mean + 1e-10)
+                on_policy_upper = on_policy_upper / (on_policy_mean + 1e-10)
+                on_policy_lower = on_policy_lower / (on_policy_mean + 1e-10)
+
+                mean = mean / (on_policy_mean + 1e-10)
+                upper = upper / (on_policy_mean + 1e-10)
+                lower = lower / (on_policy_mean + 1e-10)
+
+            ax.bar(
+                np.arange(len(self.ope_estimators_)),
+                np.ones_like(mean) * mean.max() * 0.1,
+                yerr=[mean - lower, upper - mean],
+                bottom=mean - mean.max() * 0.05,
+                color=color,
+                tick_label=list(self.ope_estimators_.keys()),
+            )
+            ax.axhline(on_policy_mean)
+            ax.axhspan(
+                ymin=on_policy_lower,
+                ymax=on_policy_upper,
+                alpha=0.3,
+            )
+            ax.set_title(eval_policy, fontsize=16)
+            ax.set_ylabel(
+                f"Estimated Policy Value (± {np.int(100*(1 - alpha))}% CI)", fontsize=12
+            )
+            plt.yticks(fontsize=12)
+            plt.xticks(fontsize=12)
+            plt.xlim(-0.5, len(self.ope_estimators_) - 0.5)
+
+        if fig_dir:
+            fig.savefig(str(fig_dir / fig_name))
+
+    def visualize_conditional_value_at_risk(
+        self,
+        input_dict: OPEInputDict,
+        gamma: float = 1.0,
+        alpha: float = 0.05,
+        sharey: bool = False,
+        fig_dir: Optional[Path] = None,
+        fig_name: str = "estimated_policy_value.png",
+    ) -> None:
+        """Visualize policy value estimated by OPE estimators.
+
+        Parameters
+        -------
+        input_dict: OPEInputDict
+            Dictionary of the OPE inputs for each evaluation policy.
+            Please refer to `CreateOPEInput` class for the detail.
+            key: [evaluation_policy_name][
+                evaluation_policy_step_wise_pscore,
+                evaluation_policy_trajectory_wise_pscore,
+                evaluation_policy_action,
+                evaluation_policy_action_dist,
+                state_action_value_prediction,
+                initial_state_value_prediction,
+                on_policy_policy_value,
+            ]
+
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
+
+        alpha: float, default=0.05 (0, 1)
+            Significant level.
+
+        sharey: bool, default=False
+            If `True`, the y-axis will be shared among different evaluation policies.
+
+        fig_dir: Path, default=None
+            Path to store the bar figure.
+            If `None` is given, the figure will not be saved.
+
+        fig_name: str, default="estimated_policy_value.png"
+            Name of the bar figure.
+
+        """
+        if fig_dir is not None and not isinstance(fig_dir, Path):
+            raise ValueError(f"fig_dir must be a Path, but {type(fig_dir)} is given")
+        if fig_name is not None and not isinstance(fig_name, str):
+            raise ValueError(f"fig_dir must be a string, but {type(fig_dir)} is given")
+
+        cvar_dict = self.estimate_conditional_value_at_risk(
+            input_dict=input_dict,
+            gamma=gamma,
+            alpha=alpha,
+        )
+
+        plt.style.use("ggplot")
+        color = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+        fig = plt.figure(figsize=(2 * len(self.ope_estimators_), 4 * len(input_dict)))
+
+        for i, eval_policy in enumerate(input_dict.keys()):
+            if i == 0:
+                ax = ax0 = fig.add_subplot(len(input_dict), 1, i + 1)
+            elif sharey:
+                ax = fig.add_subplot(len(input_dict), 1, i + 1, sharey=ax0)
+            else:
+                ax = fig.add_subplot(len(input_dict), 1, i + 1)
+
+            on_policy_cvar = cvar_dict[eval_policy].pop("on_policy")
+            cvar = np.array(list(cvar_dict[eval_policy].values()), dtype=float)
+
+            ax.bar(
+                np.arange(len(self.ope_estimators_)),
+                np.ones_like(cvar) * 0.3,
+                bottom=cvar,
+                color=color,
+                tick_label=list(self.ope_estimators_.keys()),
+            )
+            ax.axhline(on_policy_cvar)
+            ax.set_title(eval_policy, fontsize=16)
+            ax.set_ylabel(f"Estimated Conditional Value at Risk", fontsize=12)
+            plt.yticks(fontsize=12)
+            plt.xticks(fontsize=12)
+            plt.xlim(-0.5, len(self.ope_estimators_) - 0.5)
+
+        if fig_dir:
+            fig.savefig(str(fig_dir / fig_name))
+
+    def visualize_interquartile_range(
+        self,
+        input_dict: OPEInputDict,
+        gamma: float = 1.0,
+        alpha: float = 0.05,
+        sharey: bool = False,
+        fig_dir: Optional[Path] = None,
+        fig_name: str = "estimated_policy_value.png",
+    ) -> None:
+        """Visualize policy value estimated by OPE estimators.
+
+        Parameters
+        -------
+        input_dict: OPEInputDict
+            Dictionary of the OPE inputs for each evaluation policy.
+            Please refer to `CreateOPEInput` class for the detail.
+            key: [evaluation_policy_name][
+                evaluation_policy_step_wise_pscore,
+                evaluation_policy_trajectory_wise_pscore,
+                evaluation_policy_action,
+                evaluation_policy_action_dist,
+                state_action_value_prediction,
+                initial_state_value_prediction,
+                on_policy_policy_value,
+            ]
+
+        gamma: float, default=1.0 (0, 1]
+            Discount factor.
+
+        alpha: float, default=0.05 (0, 1)
+            Significant level.
+
+        sharey: bool, default=False
+            If `True`, the y-axis will be shared among different evaluation policies.
+
+        fig_dir: Path, default=None
+            Path to store the bar figure.
+            If `None` is given, the figure will not be saved.
+
+        fig_name: str, default="estimated_policy_value.png"
+            Name of the bar figure.
+
+        """
+        if fig_dir is not None and not isinstance(fig_dir, Path):
+            raise ValueError(f"fig_dir must be a Path, but {type(fig_dir)} is given")
+        if fig_name is not None and not isinstance(fig_name, str):
+            raise ValueError(f"fig_dir must be a string, but {type(fig_dir)} is given")
+
+        interquartile_dict = self.estimate_interquartile_range(
+            input_dict=input_dict,
+            gamma=gamma,
+            alpha=alpha,
+        )
+
+        plt.style.use("ggplot")
+        color = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+        fig = plt.figure(figsize=(2 * len(self.ope_estimators_), 4 * len(input_dict)))
+
+        for i, eval_policy in enumerate(input_dict.keys()):
+            if i == 0:
+                ax = ax0 = fig.add_subplot(len(input_dict), 1, i + 1)
+            elif sharey:
+                ax = fig.add_subplot(len(input_dict), 1, i + 1, sharey=ax0)
+            else:
+                ax = fig.add_subplot(len(input_dict), 1, i + 1)
+
+            estimators = list(interquartile_dict[eval_policy].keys())
+            median = np.zeros(len(estimators))
+            upper = np.zeros(len(estimators))
+            lower = np.zeros(len(estimators))
+
+            for i, estimator in enumerate(estimators):
+                interquartile_dict_ = interquartile_dict[eval_policy][estimator]
+                median[i] = interquartile_dict_["median"]
+                upper[i] = interquartile_dict_[
+                    f"{100 * (1. - alpha)}% quartile (upper)"
+                ]
+                lower[i] = interquartile_dict_[
+                    f"{100 * (1. - alpha)}% quartile (lower)"
+                ]
+
+            ax.bar(
+                np.arange(len(estimators)),
+                upper - lower,
+                bottom=lower,
+                color=color,
+                edgecolor="black",
+                linewidth=median.max() * 0.1,
+                tick_label=estimators,
+            )
+            ax.bar(
+                np.arange(len(estimators)),
+                median - lower,
+                bottom=lower,
+                color=color,
+                edgecolor="black",
+                linewidth=median.max() * 0.1,
+                tick_label=estimators,
+            )
+            # ax.set_linewidth(3.0)
+            ax.set_title(eval_policy, fontsize=16)
+            ax.set_ylabel(f"Estimated {np.int(100*(1 - alpha))}% Interquartile Range and Median)", fontsize=12)
+            plt.yticks(fontsize=12)
+            plt.xticks(fontsize=12)
+            plt.xlim(-0.5, len(self.ope_estimators_) + 0.5)
 
         if fig_dir:
             fig.savefig(str(fig_dir / fig_name))
@@ -3305,15 +3637,19 @@ class ContinuousCumulativeDistributionalOffPolicyEvaluation:
 
         for eval_policy in input_dict.keys():
             if input_dict[eval_policy]["on_policy_policy_value"] is not None:
-                cumulative_density = np.histogram(
+                density = np.histogram(
                     input_dict[eval_policy]["on_policy_policy_value"],
                     bins=reward_scale,
                     density=True,
                 )[0]
-                lower_idx = np.argmin(cumulative_density > alpha)
+
+                idx_ = np.nonzero(density.cumsum() > alpha)[0]
+                lower_idx = idx_[0] if len(idx_) else -1
+
                 conditional_value_at_risk_dict[eval_policy]["on_policy"] = (
-                    np.diff(np.insert(cumulative_density, 0, 0)) * reward_scale[1:]
-                )[: lower_idx + 1].sum()
+                    density * reward_scale[1:]
+                )[:lower_idx].sum()
+
             else:
                 conditional_value_at_risk_dict[eval_policy]["on_policy"] = None
 
@@ -3380,11 +3716,13 @@ class ContinuousCumulativeDistributionalOffPolicyEvaluation:
                     bins=reward_scale,
                     density=True,
                 )[0]
-                mean = (
-                    np.diff(np.insert(cumulative_density, 0, 0)) * reward_scale[1:]
-                ).sum()
-                lower_idx = np.argmin(cumulative_density > alpha)
-                upper_idx = np.argmin(cumulative_density > 1 - alpha)
+                mean = (cumulative_density * reward_scale[1:]).sum()
+
+                idx_ = np.nonzero(cumulative_density > alpha)[0]
+                lower_idx = idx_[0] if len(idx_) else -1
+
+                idx_ = np.nonzero(cumulative_density > 1 - alpha)[0]
+                upper_idx = idx_[0] if len(idx_) else -1
 
                 interquartile_range_dict[eval_policy]["on_policy"] = {
                     "mean": mean,

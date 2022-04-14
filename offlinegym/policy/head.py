@@ -408,8 +408,9 @@ class DiscreteSoftmaxHead(BaseHead):
 
     def _softmax(self, x: np.ndarray):
         """Softmax function."""
+        x = x - np.tile(np.max(x, axis=1), (x.shape[1], 1)).T  # to avoid overflow
         return np.exp(x / self.tau) / (
-            np.sum(np.exp(x / self.tau), axis=1, keepdims=True) + 1e-10
+            np.sum(np.exp(x / self.tau), axis=1, keepdims=True)
         )
 
     def _gumble_max_trick(self, x: np.ndarray):

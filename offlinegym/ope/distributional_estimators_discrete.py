@@ -1,5 +1,6 @@
 """Distributional Off-Policy Estimators for Discrete action."""
 from dataclasses import dataclass
+from re import L
 from typing import Tuple, Optional
 
 import numpy as np
@@ -259,7 +260,8 @@ class DiscreteCumulativeDistributionalDirectMethod(
             reward_scale=reward_scale,
             gamma=gamma,
         )
-        lower_idx = np.argmin(cumulative_density > alpha)
+        idx_ = np.nonzero(cumulative_density > alpha)[0]
+        lower_idx = idx_[0] if len(idx_) else -1
 
         return (np.diff(cumulative_density) * reward_scale[1:])[: lower_idx + 1].sum()
 
@@ -301,7 +303,7 @@ class DiscreteCumulativeDistributionalDirectMethod(
             Estimated interquartile range of the policy value.
 
         """
-        check_scalar(alpha, name="alpha", target_type=float, min_val=0.0, max_val=1.0)
+        check_scalar(alpha, name="alpha", target_type=float, min_val=0.0, max_val=0.5)
 
         cumulative_density = self.estimate_cumulative_distribution_function(
             step_per_episode=step_per_episode,
@@ -310,12 +312,18 @@ class DiscreteCumulativeDistributionalDirectMethod(
             reward_scale=reward_scale,
             gamma=gamma,
         )
-        mean = (np.diff(cumulative_density) * reward_scale[1:]).sum()
-        lower_idx = np.argmin(cumulative_density > alpha)
-        upper_idx = np.argmin(cumulative_density > 1 - alpha)
+
+        idx_ = np.nonzero(cumulative_density > alpha)[0]
+        lower_idx = idx_[0] if len(idx_) else -1
+
+        idx_ = np.nonzero(cumulative_density > 0.5)[0]
+        median_idx = idx_[0] if len(idx_) else -1
+
+        idx_ = np.nonzero(cumulative_density > 1 - alpha)[0]
+        upper_idx = idx_[0] if len(idx_) else -1
 
         estimated_interquartile_range = {
-            "mean": mean,
+            "median": (reward_scale[median_idx] + reward_scale[median_idx + 1]) / 2,
             f"{100 * (1. - alpha)}% quartile (lower)": (
                 reward_scale[lower_idx] + reward_scale[lower_idx + 1]
             )
@@ -474,9 +482,9 @@ class DiscreteCumulativeDistributionalImportanceSampling(
         cumulative_density = np.clip(sorted_importance_weight.cumsum() / n, 0, 1)
 
         histogram = np.histogram(
-            trajectory_wise_reward, bins=reward_scale, density=True
+            trajectory_wise_reward, bins=reward_scale, density=False
         )[0]
-        cumulative_density = cumulative_density[histogram.cumsum()]
+        cumulative_density = cumulative_density[histogram.cumsum().astype(int) - 1]
 
         return np.insert(cumulative_density, 0, 0)
 
@@ -637,7 +645,9 @@ class DiscreteCumulativeDistributionalImportanceSampling(
             reward_scale=reward_scale,
             gamma=gamma,
         )
-        lower_idx = np.argmin(cumulative_density > alpha)
+
+        idx_ = np.nonzero(cumulative_density > alpha)[0]
+        lower_idx = idx_[0] if len(idx_) else -1
 
         return (np.diff(cumulative_density) * reward_scale[1:])[: lower_idx + 1].sum()
 
@@ -685,7 +695,7 @@ class DiscreteCumulativeDistributionalImportanceSampling(
             Estimated interquartile range of the policy value.
 
         """
-        check_scalar(alpha, name="alpha", target_type=float, min_val=0.0, max_val=1.0)
+        check_scalar(alpha, name="alpha", target_type=float, min_val=0.0, max_val=0.5)
 
         cumulative_density = self.estimate_cumulative_distribution_function(
             step_per_episode=step_per_episode,
@@ -695,12 +705,18 @@ class DiscreteCumulativeDistributionalImportanceSampling(
             reward_scale=reward_scale,
             gamma=gamma,
         )
-        mean = (np.diff(cumulative_density) * reward_scale[1:]).sum()
-        lower_idx = np.argmin(cumulative_density > alpha)
-        upper_idx = np.argmin(cumulative_density > 1 - alpha)
+
+        idx_ = np.nonzero(cumulative_density > alpha)[0]
+        lower_idx = idx_[0] if len(idx_) else -1
+
+        idx_ = np.nonzero(cumulative_density > 0.5)[0]
+        median_idx = idx_[0] if len(idx_) else -1
+
+        idx_ = np.nonzero(cumulative_density > 1 - alpha)[0]
+        upper_idx = idx_[0] if len(idx_) else -1
 
         estimated_interquartile_range = {
-            "mean": mean,
+            "median": (reward_scale[median_idx] + reward_scale[median_idx + 1]) / 2,
             f"{100 * (1. - alpha)}% quartile (lower)": (
                 reward_scale[lower_idx] + reward_scale[lower_idx + 1]
             )
@@ -852,7 +868,7 @@ class DiscreteCumulativeDistributionalDoublyRobust(
             reward.shape[0] // step_per_episode
             == behavior_policy_trajectory_wise_pscore.shape[0] // step_per_episode
             == evaluation_policy_trajectory_wise_pscore.shape[0] // step_per_episode
-            == initial_state_value_prediction
+            == initial_state_value_prediction.shape[0]
         ):
             raise ValueError(
                 "Expected `reward.shape[0] // step_per_episode == behavior_policy_trajectory_wise_pscore.shape[0] // step_per_episode "
@@ -872,10 +888,10 @@ class DiscreteCumulativeDistributionalDoublyRobust(
         )
 
         weighted_residual = np.zeros_like(reward_scale)
-        for threshold in reward_scale:
-            observation = trajectory_wise_reward <= threshold
-            prediction = initial_state_value_prediction <= threshold
-            weighted_residual[threshold] = (
+        for i, threshold in enumerate(reward_scale):
+            observation = (trajectory_wise_reward <= threshold).astype(int)
+            prediction = (initial_state_value_prediction <= threshold).astype(int)
+            weighted_residual[i] = (
                 trajectory_wise_importance_weight * (observation - prediction)
             ).mean()
 
@@ -1060,7 +1076,9 @@ class DiscreteCumulativeDistributionalDoublyRobust(
             reward_scale=reward_scale,
             gamma=gamma,
         )
-        lower_idx = np.argmin(cumulative_density > alpha)
+
+        idx_ = np.nonzero(cumulative_density > alpha)[0]
+        lower_idx = idx_[0] if len(idx_) else -1
 
         return (np.diff(cumulative_density) * reward_scale[1:])[: lower_idx + 1].sum()
 
@@ -1112,7 +1130,7 @@ class DiscreteCumulativeDistributionalDoublyRobust(
             Estimated interquartile range of the policy value.
 
         """
-        check_scalar(alpha, name="alpha", target_type=float, min_val=0.0, max_val=1.0)
+        check_scalar(alpha, name="alpha", target_type=float, min_val=0.0, max_val=0.5)
 
         cumulative_density = self.estimate_cumulative_distribution_function(
             step_per_episode=step_per_episode,
@@ -1123,12 +1141,18 @@ class DiscreteCumulativeDistributionalDoublyRobust(
             reward_scale=reward_scale,
             gamma=gamma,
         )
-        mean = (np.diff(cumulative_density) * reward_scale[1:]).sum()
-        lower_idx = np.argmin(cumulative_density > alpha)
-        upper_idx = np.argmin(cumulative_density > 1 - alpha)
+
+        idx_ = np.nonzero(cumulative_density > alpha)[0]
+        lower_idx = idx_[0] if len(idx_) else -1
+
+        idx_ = np.nonzero(cumulative_density > 0.5)[0]
+        median_idx = idx_[0] if len(idx_) else -1
+
+        idx_ = np.nonzero(cumulative_density > 1 - alpha)[0]
+        upper_idx = idx_[0] if len(idx_) else -1
 
         estimated_interquartile_range = {
-            "mean": mean,
+            "median": (reward_scale[median_idx] + reward_scale[median_idx + 1]) / 2,
             f"{100 * (1. - alpha)}% quartile (lower)": (
                 reward_scale[lower_idx] + reward_scale[lower_idx + 1]
             )
@@ -1160,7 +1184,7 @@ class DiscreteCumulativeDistributionalSelfNormalizedImportanceSampling(
 
     Parameters
     -------
-    estimator_name: str, default="cdf_is"
+    estimator_name: str, default="cdf_snis"
         Name of the estimator.
 
     References
@@ -1185,7 +1209,7 @@ class DiscreteCumulativeDistributionalSelfNormalizedImportanceSampling(
 
     """
 
-    estimator_name: str = "cdf_is"
+    estimator_name: str = "cdf_snis"
 
     def __post_init__(self):
         self.action_type = "discrete"
@@ -1295,9 +1319,9 @@ class DiscreteCumulativeDistributionalSelfNormalizedImportanceSampling(
         )
 
         histogram = np.histogram(
-            trajectory_wise_reward, bins=reward_scale, density=True
+            trajectory_wise_reward, bins=reward_scale, density=False
         )[0]
-        cumulative_density = cumulative_density[histogram.cumsum().astype(int)]
+        cumulative_density = cumulative_density[histogram.cumsum().astype(int) - 1]
 
         return np.insert(cumulative_density, 0, 0)
 
@@ -1320,7 +1344,7 @@ class DiscreteCumulativeDistributionalSelfNormalizedDoublyRobust(
 
     Parameters
     -------
-    estimator_name: str, default="cdf_dr"
+    estimator_name: str, default="cdf_sndr"
         Name of the estimator.
 
     References
@@ -1351,7 +1375,7 @@ class DiscreteCumulativeDistributionalSelfNormalizedDoublyRobust(
 
     """
 
-    estimator_name: str = "cdf_dr"
+    estimator_name: str = "cdf_sndr"
 
     def __post_init__(self):
         self.action_type = "discrete"
