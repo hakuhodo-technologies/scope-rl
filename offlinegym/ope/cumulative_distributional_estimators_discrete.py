@@ -216,7 +216,7 @@ class DiscreteCumulativeDistributionalDirectMethod(
         initial_state_value_prediction: np.ndarray,
         reward_scale: np.ndarray,
         gamma: float = 1.0,
-        alpha: float = 0.05,
+        alphas: np.ndarray = np.linspace(0, 1, 20),
         **kwargs,
     ):
         """Estimate conditional value at risk.
@@ -238,16 +238,17 @@ class DiscreteCumulativeDistributionalDirectMethod(
         gamma: float, default=1.0 (0, 1]
             Discount factor.
 
-        alpha: float, default=0.05
-            Proportion of the sided region.
+        alphas: NDArray, default=np.linspace(0, 1, 20)
+            Set of proportions of the sided region.
 
         Return
         -------
-        estimated_conditional_value_at_risk: float
+        estimated_conditional_value_at_risk: NDArray
             Estimated conditional value at risk (CVaR) of the policy value.
 
         """
-        check_scalar(alpha, name="alpha", target_type=float, min_val=0.0, max_val=1.0)
+        check_array(alphas, name="alphas", expected_dim=1, min_val=0.0, max_val=1.0)
+        alphas = np.sort(alphas)
 
         cumulative_density = self.estimate_cumulative_distribution_function(
             step_per_episode=step_per_episode,
@@ -256,10 +257,16 @@ class DiscreteCumulativeDistributionalDirectMethod(
             reward_scale=reward_scale,
             gamma=gamma,
         )
-        idx_ = np.nonzero(cumulative_density > alpha)[0]
-        lower_idx = idx_[0] if len(idx_) else -1
 
-        return (np.diff(cumulative_density) * reward_scale[1:])[: lower_idx + 1].sum()
+        cvar = np.zeros_like(alphas)
+        for i, alpha in enumerate(alphas):
+            idx_ = np.nonzero(cumulative_density > alpha)[0]
+            lower_idx_ = idx_[0] if len(idx_) else -2
+            cvar[i] = (np.diff(cumulative_density) * reward_scale[1:])[
+                : lower_idx_ + 1
+            ].sum()
+
+        return cvar
 
     def estimate_interquartile_range(
         self,
@@ -598,7 +605,7 @@ class DiscreteCumulativeDistributionalImportanceSampling(
         evaluation_policy_trajectory_wise_pscore: np.ndarray,
         reward_scale: np.ndarray,
         gamma: float = 1.0,
-        alpha: float = 0.05,
+        alphas: np.ndarray = np.linspace(0, 1, 20),
         **kwargs,
     ):
         """Estimate conditional value at risk.
@@ -625,16 +632,17 @@ class DiscreteCumulativeDistributionalImportanceSampling(
         gamma: float, default=1.0 (0, 1]
             Discount factor.
 
-        alpha: float, default=0.05
-            Proportion of the sided region.
+        alphas: NDArray, default=np.linspace(0, 1, 20)
+            Set of proportions of the sided region.
 
         Return
         -------
-        estimated_conditional_value_at_risk: float
+        estimated_conditional_value_at_risk: NDArray
             Estimated conditional value at risk (CVaR) of the policy value.
 
         """
-        check_scalar(alpha, name="alpha", target_type=float, min_val=0.0, max_val=1.0)
+        check_array(alphas, name="alphas", expected_dim=1, min_val=0.0, max_val=1.0)
+        alphas = np.sort(alphas)
 
         cumulative_density = self.estimate_cumulative_distribution_function(
             step_per_episode=step_per_episode,
@@ -645,10 +653,15 @@ class DiscreteCumulativeDistributionalImportanceSampling(
             gamma=gamma,
         )
 
-        idx_ = np.nonzero(cumulative_density > alpha)[0]
-        lower_idx = idx_[0] if len(idx_) else -1
+        cvar = np.zeros_like(alphas)
+        for i, alpha in enumerate(alphas):
+            idx_ = np.nonzero(cumulative_density > alpha)[0]
+            lower_idx_ = idx_[0] if len(idx_) else -2
+            cvar[i] = (np.diff(cumulative_density) * reward_scale[1:])[
+                : lower_idx_ + 1
+            ].sum()
 
-        return (np.diff(cumulative_density) * reward_scale[1:])[: lower_idx + 1].sum()
+        return cvar
 
     def estimate_interquartile_range(
         self,
@@ -1028,7 +1041,7 @@ class DiscreteCumulativeDistributionalDoublyRobust(
         initial_state_value_prediction: np.ndarray,
         reward_scale: np.ndarray,
         gamma: float = 1.0,
-        alpha: float = 0.05,
+        alphas: np.ndarray = np.linspace(0, 1, 20),
         **kwargs,
     ):
         """Estimate conditional value at risk.
@@ -1058,16 +1071,17 @@ class DiscreteCumulativeDistributionalDoublyRobust(
         gamma: float, default=1.0 (0, 1]
             Discount factor.
 
-        alpha: float, default=0.05
-            Proportion of the sided region.
+        alphas: NDArray, default=np.linspace(0, 1, 20)
+            Set of proportions of the sided region.
 
         Return
         -------
-        estimated_conditional_value_at_risk: float
+        estimated_conditional_value_at_risk: NDArray
             Estimated conditional value at risk (CVaR) of the policy value.
 
         """
-        check_scalar(alpha, name="alpha", target_type=float, min_val=0.0, max_val=1.0)
+        check_array(alphas, name="alphas", expected_dim=1, min_val=0.0, max_val=1.0)
+        alphas = np.sort(alphas)
 
         cumulative_density = self.estimate_cumulative_distribution_function(
             step_per_episode=step_per_episode,
@@ -1079,10 +1093,15 @@ class DiscreteCumulativeDistributionalDoublyRobust(
             gamma=gamma,
         )
 
-        idx_ = np.nonzero(cumulative_density > alpha)[0]
-        lower_idx = idx_[0] if len(idx_) else -1
+        cvar = np.zeros_like(alphas)
+        for i, alpha in enumerate(alphas):
+            idx_ = np.nonzero(cumulative_density > alpha)[0]
+            lower_idx_ = idx_[0] if len(idx_) else -2
+            cvar[i] = (np.diff(cumulative_density) * reward_scale[1:])[
+                : lower_idx_ + 1
+            ].sum()
 
-        return (np.diff(cumulative_density) * reward_scale[1:])[: lower_idx + 1].sum()
+        return cvar
 
     def estimate_interquartile_range(
         self,
