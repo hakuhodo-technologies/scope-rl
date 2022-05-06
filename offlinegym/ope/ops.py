@@ -4,15 +4,18 @@ from typing import Optional, Union, List
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 from scipy.stats import spearmanr
 from sklearn.metrics import mean_squared_error
 from sklearn.utils import check_scalar
 import matplotlib.pyplot as plt
 
-from offlinegym.ope.ope import (
+from offlinegym.ope.ope_discrete import (
     DiscreteOffPolicyEvaluation,
     DiscreteCumulativeDistributionalOffPolicyEvaluation,
     DiscreteDistributionallyRobustOffPolicyEvaluation,
+)
+from offlinegym.ope.ope_continuous import (
     ContinuousOffPolicyEvaluation,
     ContinuousCumulativeDistributionalOffPolicyEvaluation,
     ContinuousDistributionallyRobustOffPolicyEvaluation,
@@ -79,40 +82,40 @@ class OffPolicySelection:
             raise RuntimeError(
                 "one of ope, cumulative_distributional_ope, or distributionally_robust_ope must be given"
             )
-        if not isinstance(
-            self.ope, (DiscreteOffPolicyEvaluation, ContinuousOffPolicyEvaluation)
-        ):
-            raise RuntimeError(
-                "ope must be the instance of either DiscreteOffPolicyEvaluation or ContinuousOffPolicyEvaluation"
-            )
-        if not isinstance(
-            self.cumulative_distributional_ope,
-            (
-                DiscreteCumulativeDistributionalOffPolicyEvaluation,
-                ContinuousCumulativeDistributionalOffPolicyEvaluation,
-            ),
-        ):
-            raise RuntimeError(
-                "cumulative_distributional_ope must be the instance of either "
-                "DiscreteCumulativeDistributionalOffPolicyEvaluation or ContinuousCumulativeDistributionalOffPolicyEvaluation"
-            )
-        if not isinstance(
-            self.cumulative_distributional_ope,
-            (
-                DiscreteDistributionallyRobustOffPolicyEvaluation,
-                ContinuousDistributionallyRobustOffPolicyEvaluation,
-            ),
-        ):
-            raise RuntimeError(
-                "distributionally_robust_ope must be the instance of either "
-                "DiscreteDistributionallyRobustOffPolicyEvaluation or ContinuousDistributionallyRobustOffPolicyEvaluation"
-            )
+        # if not isinstance(
+        #     self.ope, (DiscreteOffPolicyEvaluation, ContinuousOffPolicyEvaluation)
+        # ):
+        #     raise RuntimeError(
+        #         "ope must be the instance of either DiscreteOffPolicyEvaluation or ContinuousOffPolicyEvaluation"
+        #     )
+        # if not isinstance(
+        #     self.cumulative_distributional_ope,
+        #     (
+        #         DiscreteCumulativeDistributionalOffPolicyEvaluation,
+        #         ContinuousCumulativeDistributionalOffPolicyEvaluation,
+        #     ),
+        # ):
+        #     raise RuntimeError(
+        #         "cumulative_distributional_ope must be the instance of either "
+        #         "DiscreteCumulativeDistributionalOffPolicyEvaluation or ContinuousCumulativeDistributionalOffPolicyEvaluation"
+        #     )
+        # if not isinstance(
+        #     self.cumulative_distributional_ope,
+        #     (
+        #         DiscreteDistributionallyRobustOffPolicyEvaluation,
+        #         ContinuousDistributionallyRobustOffPolicyEvaluation,
+        #     ),
+        # ):
+        #     raise RuntimeError(
+        #         "distributionally_robust_ope must be the instance of either "
+        #         "DiscreteDistributionallyRobustOffPolicyEvaluation or ContinuousDistributionallyRobustOffPolicyEvaluation"
+        #     )
 
         step_per_episode = self.ope.logged_dataset["step_per_episode"]
         check_scalar(
             step_per_episode,
             name="ope.logged_dataset['step_per_episode']",
-            type=int,
+            target_type=int,
             min_val=1,
         )
 
@@ -132,6 +135,7 @@ class OffPolicySelection:
         return_lower_quartile: bool = False,
         return_conditional_value_at_risk: bool = False,
         return_distributionally_robust_worst_case: bool = False,
+        return_by_dataframe: bool = False,
         quartile_alpha: float = 0.05,
         cvar_alpha: float = 0.05,
         distributionally_robust_delta: float = 0.05,
@@ -156,17 +160,20 @@ class OffPolicySelection:
         gamma: float, default=1.0 (0, 1]
             Discount factor.
 
-        return_variance: bool = False
+        return_variance: bool, default=False
             Whether to return variance.
 
-        return_lower_quartile: bool = False
+        return_lower_quartile: bool. default=False
             Whether to return lower interquartile.
 
-        return_conditional_value_at_risk: bool = False
+        return_conditional_value_at_risk: bool, default=False
             Whether to return conditional value at risk.
 
-        return_distributionally_robust_worst_case: bool = False
+        return_distributionally_robust_worst_case: bool, default=False
             Whether to return distributionally robust worst case policy value.
+
+        return_by_dataframe: bool, default=False
+            Whether to return the result in a dataframe format.
 
         quartile_alpha: float, default=0.05
             Proportion of the sided region of the interquartile range.
@@ -179,8 +186,8 @@ class OffPolicySelection:
 
         Return
         -------
-        ground_truth_dict: Optional[str, Any]
-            Dictionary containing the following ground-truth (on-policy) metrics.
+        ground_truth_dict/ground_truth_df: Union[Dict[str, Any], pd.DataFrame]
+            Dictionary/dataframe containing the following ground-truth (on-policy) metrics.
 
             ranking: List[str]
                 Name of the candidate policies sorted by the ground-truth policy value.
@@ -216,7 +223,7 @@ class OffPolicySelection:
                 Dictionary containing quartile_alpha, cvar_alpha, and distributionally_robust_alpha.
 
         """
-        candidate_policy_names = input_dict.keys()
+        candidate_policy_names = list(input_dict.keys())
         for eval_policy in candidate_policy_names:
             if input_dict[eval_policy]["on_policy_policy_value"] is None:
                 raise ValueError(
@@ -262,7 +269,7 @@ class OffPolicySelection:
             cvar = np.zeros(n_policies)
             for i, eval_policy in enumerate(candidate_policy_names):
                 cvar[i] = np.sort(input_dict[eval_policy]["on_policy_policy_value"])[
-                    : n_samples * cvar_alpha
+                    : int(n_samples * cvar_alpha)
                 ].mean()
 
             cvar_ranking_index = np.argsort(cvar)[::-1]
@@ -313,20 +320,30 @@ class OffPolicySelection:
             if return_distributionally_robust_worst_case
             else None,
             "parameters": {
-                quartile_alpha: quartile_alpha if return_lower_quartile else None,
-                cvar_alpha: cvar_alpha if return_conditional_value_at_risk else None,
-                distributionally_robust_delta: distributionally_robust_delta
+                "quartile_alpha": quartile_alpha if return_lower_quartile else None,
+                "cvar_alpha": cvar_alpha if return_conditional_value_at_risk else None,
+                "distributionally_robust_delta": distributionally_robust_delta
                 if return_distributionally_robust_worst_case
                 else None,
             },
         }
-        return ground_truth_dict
+
+        if return_by_dataframe:
+            ground_truth_df = pd.DataFrame()
+            for key in ground_truth_dict.keys():
+                if ground_truth_dict[key] is None or key == "parameters":
+                    continue
+
+                ground_truth_df[key] = ground_truth_dict[key]
+
+        return ground_truth_df if return_by_dataframe else ground_truth_dict
 
     def select_by_policy_value(
         self,
         input_dict: OPEInputDict,
         gamma: float = 1.0,
         return_metrics: bool = False,
+        return_by_dataframe: bool = False,
         top_k_in_eval_metrics: int = 1,
         safety_criteria: float = 0.0,
     ):
@@ -354,6 +371,9 @@ class OffPolicySelection:
             Whether to return evaluation metrics including:
             mean-squared-error, rank-correlation, regret@k, and Type I and Type II error rate.
 
+        return_by_dataframe: bool, default=False
+            Whether to return the result in a dataframe format.
+
         top_k_in_eval_metrics: int, default=1
             How many candidate policies are included in regret@k.
 
@@ -363,7 +383,7 @@ class OffPolicySelection:
 
         Return
         -------
-        ops_dict: Dict[str, Dict[str, Any]]
+        ops_dict/(ranking_df_dict, metric_df): Union[Dict[str, Dict[str, Any]], Tuple(Dict[str, pd.DataFrame], pd.DataFrame)]
             Dictionary containing the result of OPS conducted by OPE estimators.
             key: [estimator_name][
                 estimated_ranking,
@@ -422,11 +442,13 @@ class OffPolicySelection:
             true_ranking = ground_truth_policy_value_dict["ranking"]
             true_policy_value = ground_truth_policy_value_dict["policy_value"]
 
-        candidate_policy_names = true_ranking if return_metrics else input_dict.keys()
+        candidate_policy_names = (
+            true_ranking if return_metrics else list(input_dict.keys())
+        )
         n_policies = len(candidate_policy_names)
 
         ops_dict = {}
-        for estimator in enumerate(self.ope.ope_estimators_):
+        for i, estimator in enumerate(self.ope.ope_estimators_):
 
             estimated_policy_value_ = np.zeros(n_policies)
             for j, eval_policy in enumerate(candidate_policy_names):
@@ -481,13 +503,56 @@ class OffPolicySelection:
                 "safety_threshold": safety_criteria * self.behavior_policy_value,
             }
 
-        return ops_dict
+        if return_by_dataframe:
+            metric_df = pd.DataFrame()
+            mse, rankcorr, pvalue, regret, type_i, type_ii, = (
+                [],
+                [],
+                [],
+                [],
+                [],
+                [],
+            )
+
+            ranking_df_dict = defaultdict(pd.DataFrame)
+            for i, estimator in enumerate(self.ope.ope_estimators_):
+                ranking_df_ = pd.DataFrame()
+                ranking_df_["estimated_ranking"] = ops_dict[estimator][
+                    "estimated_ranking"
+                ]
+                ranking_df_["estimated_policy_value"] = ops_dict[estimator][
+                    "estimated_policy_value"
+                ]
+                ranking_df_["estimated_relative_policy_value"] = ops_dict[estimator][
+                    "estimated_relative_policy_value"
+                ]
+                ranking_df_dict[estimator] = ranking_df_
+
+                mse.append(ops_dict[estimator]["mean_squared_error"])
+                rankcorr.append(ops_dict[estimator]["rank_correlation"][0])
+                pvalue.append(ops_dict[estimator]["rank_correlation"][1])
+                regret.append(ops_dict[estimator]["regret"][0])
+                type_i.append(ops_dict[estimator]["type_i_error_rate"])
+                type_ii.append(ops_dict[estimator]["type_ii_error_rate"])
+
+            metric_df["estimator"] = self.ope.ope_estimators_
+            metric_df["mean_squared_error"] = mse
+            metric_df["rank_correlation"] = rankcorr
+            metric_df["pvalue"] = pvalue
+            metric_df[f"regret@{top_k_in_eval_metrics}"] = regret
+            metric_df["type_i_error_rate"] = type_i
+            metric_df["type_ii_error_rate"] = type_ii
+
+            ranking_df_dict = defaultdict_to_dict(ranking_df_dict)
+
+        return (ranking_df_dict, metric_df) if return_by_dataframe else ops_dict
 
     def select_by_policy_value_via_cumulative_distributional_ope(
         self,
         input_dict: OPEInputDict,
         gamma: float = 1.0,
         return_metrics: bool = False,
+        return_by_dataframe: bool = False,
         top_k_in_eval_metrics: int = 1,
         safety_criteria: float = 0.0,
     ):
@@ -514,6 +579,9 @@ class OffPolicySelection:
         return_metrics: bool, default=False
             Whether to return evaluation metrics including:
             mean-squared-error, rank-correlation, regret@k, and Type I and Type II error rate.
+
+        return_by_dataframe: bool, default=False
+            Whether to return the result in a dataframe format.
 
         top_k_in_eval_metrics: int, default=1
             How many candidate policies are included in regret@k.
@@ -583,11 +651,15 @@ class OffPolicySelection:
             true_ranking = ground_truth_policy_value_dict["ranking"]
             true_policy_value = ground_truth_policy_value_dict["policy_value"]
 
-        candidate_policy_names = true_ranking if return_metrics else input_dict.keys()
+        candidate_policy_names = (
+            true_ranking if return_metrics else list(input_dict.keys())
+        )
         n_policies = len(candidate_policy_names)
 
         ops_dict = {}
-        for estimator in enumerate(self.cumulative_distributional_ope.ope_estimators_):
+        for i, estimator in enumerate(
+            self.cumulative_distributional_ope.ope_estimators_
+        ):
 
             estimated_policy_value_ = np.zeros(n_policies)
             for j, eval_policy in enumerate(candidate_policy_names):
@@ -606,7 +678,9 @@ class OffPolicySelection:
             )
 
             if return_metrics:
-                mse = mean_squared_error(true_policy_value, estimated_policy_value_)
+                mse = mean_squared_error(
+                    true_policy_value, np.nan_to_num(estimated_policy_value_)
+                )
                 rankcorr = spearmanr(np.arange(n_policies), estimated_ranking_index_)
                 regret = (
                     true_policy_value[:top_k_in_eval_metrics].sum()
@@ -642,11 +716,58 @@ class OffPolicySelection:
                 "safety_threshold": safety_criteria * self.behavior_policy_value,
             }
 
+        if return_by_dataframe:
+            metric_df = pd.DataFrame()
+            mse, rankcorr, pvalue, regret, type_i, type_ii, = (
+                [],
+                [],
+                [],
+                [],
+                [],
+                [],
+            )
+
+            ranking_df_dict = defaultdict(pd.DataFrame)
+            for i, estimator in enumerate(
+                self.cumulative_distributional_ope.ope_estimators_
+            ):
+                ranking_df_ = pd.DataFrame()
+                ranking_df_["estimated_ranking"] = ops_dict[estimator][
+                    "estimated_ranking"
+                ]
+                ranking_df_["estimated_policy_value"] = ops_dict[estimator][
+                    "estimated_policy_value"
+                ]
+                ranking_df_["estimated_relative_policy_value"] = ops_dict[estimator][
+                    "estimated_relative_policy_value"
+                ]
+                ranking_df_dict[estimator] = ranking_df_
+
+                mse.append(ops_dict[estimator]["mean_squared_error"])
+                rankcorr.append(ops_dict[estimator]["rank_correlation"][0])
+                pvalue.append(ops_dict[estimator]["rank_correlation"][1])
+                regret.append(ops_dict[estimator]["regret"][0])
+                type_i.append(ops_dict[estimator]["type_i_error_rate"])
+                type_ii.append(ops_dict[estimator]["type_ii_error_rate"])
+
+            metric_df["estimator"] = self.cumulative_distributional_ope.ope_estimators_
+            metric_df["mean_squared_error"] = mse
+            metric_df["rank_correlation"] = rankcorr
+            metric_df["pvalue"] = pvalue
+            metric_df[f"regret@{top_k_in_eval_metrics}"] = regret
+            metric_df["type_i_error_rate"] = type_i
+            metric_df["type_ii_error_rate"] = type_ii
+
+            ranking_df_dict = defaultdict_to_dict(ranking_df_dict)
+
+        return (ranking_df_dict, metric_df) if return_by_dataframe else ops_dict
+
     def select_by_policy_value_lower_bound(
         self,
         input_dict: OPEInputDict,
         gamma: float = 1.0,
         return_metrics: bool = False,
+        return_by_dataframe: bool = False,
         top_k_in_eval_metrics: int = 1,
         safety_criteria: float = 0.0,
         cis: List[str] = ["bootstrap"],
@@ -677,6 +798,9 @@ class OffPolicySelection:
         return_metrics: bool, default=False
             Whether to return evaluation metrics including:
             rank-correlation, regret@k, and Type I and Type II error rate.
+
+        return_by_dataframe: bool, default=False
+            Whether to return the result in a dataframe format.
 
         top_k_in_eval_metrics: int, default=1
             How many candidate policies are included in regret@k.
@@ -749,7 +873,9 @@ class OffPolicySelection:
             true_ranking = ground_truth_policy_value_dict["ranking"]
             true_policy_value = ground_truth_policy_value_dict["policy_value"]
 
-        candidate_policy_names = true_ranking if return_metrics else input_dict.keys()
+        candidate_policy_names = (
+            true_ranking if return_metrics else list(input_dict.keys())
+        )
         n_policies = len(candidate_policy_names)
 
         ops_dict = defaultdict(dict)
@@ -757,13 +883,13 @@ class OffPolicySelection:
             estimated_policy_value_interval_dict = self.ope.estimate_intervals(
                 input_dict=input_dict,
                 gamma=gamma,
-                alpga=alpha,
+                alpha=alpha,
                 ci=ci,
                 n_bootstrap_samples=n_bootstrap_samples,
                 random_state=random_state,
             )
 
-            for estimator in enumerate(self.ope.ope_estimators_):
+            for i, estimator in enumerate(self.ope.ope_estimators_):
 
                 estimated_policy_value_lower_bound_ = np.zeros(n_policies)
                 for j, eval_policy in enumerate(candidate_policy_names):
@@ -829,7 +955,56 @@ class OffPolicySelection:
                     "safety_threshold": safety_criteria * self.behavior_policy_value,
                 }
 
-        return defaultdict_to_dict(ops_dict)
+        ops_dict = defaultdict_to_dict(ops_dict)
+
+        if return_by_dataframe:
+            metric_df = pd.DataFrame()
+            ci_, estimator_, rankcorr, pvalue, regret, type_i, type_ii, = (
+                [],
+                [],
+                [],
+                [],
+                [],
+                [],
+                [],
+            )
+
+            ranking_df_dict = defaultdict(lambda: defaultdict(pd.DataFrame))
+            for ci in cis:
+                for i, estimator in enumerate(self.ope.ope_estimators_):
+                    ranking_df_ = pd.DataFrame()
+                    ranking_df_["estimated_ranking"] = ops_dict[ci][estimator][
+                        "estimated_ranking"
+                    ]
+                    ranking_df_["estimated_policy_value_lower_bound"] = ops_dict[ci][
+                        estimator
+                    ]["estimated_policy_value_lower_bound"]
+                    ranking_df_[
+                        "estimated_relative_policy_value_lower_bound"
+                    ] = ops_dict[ci][estimator][
+                        "estimated_relative_policy_value_lower_bound"
+                    ]
+                    ranking_df_dict[ci][estimator] = ranking_df_
+
+                    ci_.append(ci)
+                    estimator_.append(estimator)
+                    rankcorr.append(ops_dict[ci][estimator]["rank_correlation"][0])
+                    pvalue.append(ops_dict[ci][estimator]["rank_correlation"][1])
+                    regret.append(ops_dict[ci][estimator]["regret"][0])
+                    type_i.append(ops_dict[ci][estimator]["type_i_error_rate"])
+                    type_ii.append(ops_dict[ci][estimator]["type_ii_error_rate"])
+
+            metric_df["ci"] = ci_
+            metric_df["estimator"] = estimator_
+            metric_df["rank_correlation"] = rankcorr
+            metric_df["pvalue"] = pvalue
+            metric_df[f"regret@{top_k_in_eval_metrics}"] = regret
+            metric_df["type_i_error_rate"] = type_i
+            metric_df["type_ii_error_rate"] = type_ii
+
+            ranking_df_dict = defaultdict_to_dict(ranking_df_dict)
+
+        return (ranking_df_dict, metric_df) if return_by_dataframe else ops_dict
 
     def select_by_lower_quartile(
         self,
@@ -837,6 +1012,7 @@ class OffPolicySelection:
         gamma: float = 1.0,
         alpha: float = 0.05,
         return_metrics: bool = False,
+        return_by_dataframe: bool = False,
         safety_threshold: float = 0.0,
     ):
         """Rank candidate policies by the estimated lower quartile of the trajectory wise reward.
@@ -865,6 +1041,9 @@ class OffPolicySelection:
         return_metrics: bool, default=False
             Whether to return evaluation metrics including:
             mean-squared-error, rank-correlation, and Type I and Type II error rate.
+
+        return_by_dataframe: bool, default=False
+            Whether to return the result in a dataframe format.
 
         safety_threshold: float, default=None (>= 0)
             The lower quartile required for being "safe" candidate policy.
@@ -927,11 +1106,15 @@ class OffPolicySelection:
             true_ranking = ground_truth_dict["ranking_by_lower_quartile"]
             true_lower_quartile = ground_truth_dict["lower_quartile"]
 
-        candidate_policy_names = true_ranking if return_metrics else input_dict.keys()
+        candidate_policy_names = (
+            true_ranking if return_metrics else list(input_dict.keys())
+        )
         n_policies = len(candidate_policy_names)
 
         ops_dict = {}
-        for estimator in enumerate(self.cumulative_distributional_ope.ope_estimators_):
+        for i, estimator in enumerate(
+            self.cumulative_distributional_ope.ope_estimators_
+        ):
 
             estimated_lower_quartile_ = np.zeros(n_policies)
             for j, eval_policy in enumerate(candidate_policy_names):
@@ -970,12 +1153,53 @@ class OffPolicySelection:
                 "safety_threshold": safety_threshold,
             }
 
+        if return_by_dataframe:
+            metric_df = pd.DataFrame()
+            mse, rankcorr, pvalue, type_i, type_ii, = (
+                [],
+                [],
+                [],
+                [],
+                [],
+            )
+
+            ranking_df_dict = defaultdict(pd.DataFrame)
+            for i, estimator in enumerate(
+                self.cumulative_distributional_ope.ope_estimators_
+            ):
+                ranking_df_ = pd.DataFrame()
+                ranking_df_["estimated_ranking"] = ops_dict[estimator][
+                    "estimated_ranking"
+                ]
+                ranking_df_["estimated_lower_quartile"] = ops_dict[estimator][
+                    "estimated_lower_quartile"
+                ]
+                ranking_df_dict[estimator] = ranking_df_
+
+                mse.append(ops_dict[estimator]["mean_squared_error"])
+                rankcorr.append(ops_dict[estimator]["rank_correlation"][0])
+                pvalue.append(ops_dict[estimator]["rank_correlation"][1])
+                type_i.append(ops_dict[estimator]["type_i_error_rate"])
+                type_ii.append(ops_dict[estimator]["type_ii_error_rate"])
+
+            metric_df["estimator"] = self.cumulative_distributional_ope.ope_estimators_
+            metric_df["mean_squared_error"] = mse
+            metric_df["rank_correlation"] = rankcorr
+            metric_df["pvalue"] = pvalue
+            metric_df["type_i_error_rate"] = type_i
+            metric_df["type_ii_error_rate"] = type_ii
+
+            ranking_df_dict = defaultdict_to_dict(ranking_df_dict)
+
+        return (ranking_df_dict, metric_df) if return_by_dataframe else ops_dict
+
     def select_by_conditional_value_at_risk(
         self,
         input_dict: OPEInputDict,
         gamma: float = 1.0,
         alpha: float = 0.05,
         return_metrics: bool = False,
+        return_by_dataframe: bool = False,
         safety_threshold: float = 0.0,
     ):
         """Rank candidate policies by the estimated conditional value at risk.
@@ -1004,6 +1228,9 @@ class OffPolicySelection:
         return_metrics: bool, default=False
             Whether to return evaluation metrics including:
             mean-squared-error, rank-correlation, and Type I and Type II error rate.
+
+        return_by_dataframe: bool, default=False
+            Whether to return the result in a dataframe format.
 
         safety_threshold: float, default=None (>= 0)
             The lower quartile required for being "safe" candidate policy.
@@ -1052,7 +1279,7 @@ class OffPolicySelection:
             self.cumulative_distributional_ope.estimate_conditional_value_at_risk(
                 input_dict=input_dict,
                 gamma=gamma,
-                alpha=alpha,
+                alphas=alpha,
             )
         )
 
@@ -1066,11 +1293,15 @@ class OffPolicySelection:
             true_ranking = ground_truth_dict["ranking_by_conditional_value_at_risk"]
             true_cvar = ground_truth_dict["conditional_value_at_risk"]
 
-        candidate_policy_names = true_ranking if return_metrics else input_dict.keys()
+        candidate_policy_names = (
+            true_ranking if return_metrics else list(input_dict.keys())
+        )
         n_policies = len(candidate_policy_names)
 
         ops_dict = {}
-        for estimator in enumerate(self.cumulative_distributional_ope.ope_estimators_):
+        for i, estimator in enumerate(
+            self.cumulative_distributional_ope.ope_estimators_
+        ):
 
             estimated_cvar_ = np.zeros(n_policies)
             for j, eval_policy in enumerate(candidate_policy_names):
@@ -1084,7 +1315,7 @@ class OffPolicySelection:
             estimated_cvar = np.sort(estimated_cvar_)[::-1]
 
             if return_metrics:
-                mse = mean_squared_error(true_cvar, estimated_cvar_)
+                mse = mean_squared_error(true_cvar, np.nan_to_num(estimated_cvar_))
                 rankcorr = spearmanr(np.arange(n_policies), estimated_ranking_index_)
 
                 true_safety = true_cvar >= safety_threshold
@@ -1107,12 +1338,53 @@ class OffPolicySelection:
                 "safety_threshold": safety_threshold,
             }
 
+        if return_by_dataframe:
+            metric_df = pd.DataFrame()
+            mse, rankcorr, pvalue, type_i, type_ii, = (
+                [],
+                [],
+                [],
+                [],
+                [],
+            )
+
+            ranking_df_dict = defaultdict(pd.DataFrame)
+            for i, estimator in enumerate(
+                self.cumulative_distributional_ope.ope_estimators_
+            ):
+                ranking_df_ = pd.DataFrame()
+                ranking_df_["estimated_ranking"] = ops_dict[estimator][
+                    "estimated_ranking"
+                ]
+                ranking_df_["estimated_conditional_value_at_risk"] = ops_dict[
+                    estimator
+                ]["estimated_conditional_value_at_risk"]
+                ranking_df_dict[estimator] = ranking_df_
+
+                mse.append(ops_dict[estimator]["mean_squared_error"])
+                rankcorr.append(ops_dict[estimator]["rank_correlation"][0])
+                pvalue.append(ops_dict[estimator]["rank_correlation"][1])
+                type_i.append(ops_dict[estimator]["type_i_error_rate"])
+                type_ii.append(ops_dict[estimator]["type_ii_error_rate"])
+
+            metric_df["estimator"] = self.cumulative_distributional_ope.ope_estimators_
+            metric_df["mean_squared_error"] = mse
+            metric_df["rank_correlation"] = rankcorr
+            metric_df["pvalue"] = pvalue
+            metric_df["type_i_error_rate"] = type_i
+            metric_df["type_ii_error_rate"] = type_ii
+
+            ranking_df_dict = defaultdict_to_dict(ranking_df_dict)
+
+        return (ranking_df_dict, metric_df) if return_by_dataframe else ops_dict
+
     def select_by_distributionally_robust_worst_case_policy_value(
         self,
         input_dict: OPEInputDict,
         gamma: float = 1.0,
         delta: float = 0.05,
         return_metrics: bool = False,
+        return_by_dataframe: bool = False,
         safety_threshold: float = 0.0,
     ):
         """Rank candidate policies by the estimated distributionally robust worst case policy value.
@@ -1262,6 +1534,8 @@ class OffPolicySelection:
         self,
         input_dict: OPEInputDict,
         gamma: float = 1.0,
+        n_cols: Optional[int] = None,
+        share_axes: bool = False,
         fig_dir: Optional[Path] = None,
         fig_name: str = "scatter_policy_value.png",
     ):
@@ -1283,6 +1557,12 @@ class OffPolicySelection:
         gamma: float, default=1.0 (0, 1]
             Discount factor.
 
+        n_cols: int, default=None
+            Number of columns in the figure.
+
+        share_axes: bool, default=False
+            Whether to share x- and y-axes or not.
+
         fig_dir: Path, default=None
             Path to store the bar figure.
             If `None` is given, the figure will not be saved.
@@ -1291,12 +1571,19 @@ class OffPolicySelection:
             Name of the bar figure.
 
         """
+        if n_cols is not None:
+            check_scalar(n_cols, name="n_cols", target_type=int, min_val=1)
+        if fig_dir is not None and not isinstance(fig_dir, Path):
+            raise ValueError(f"fig_dir must be a Path, but {type(fig_dir)} is given")
+        if fig_name is not None and not isinstance(fig_name, str):
+            raise ValueError(f"fig_dir must be a string, but {type(fig_dir)} is given")
+
         ground_truth_policy_value_dict = self.obtain_oracle_selection_result(
             input_dict=input_dict,
             gamma=gamma,
         )
         true_ranking = ground_truth_policy_value_dict["ranking"]
-        true_policy_value = ground_truth_policy_value_dict["policy_value"]
+        true_policy_value = np.array(ground_truth_policy_value_dict["policy_value"])
 
         estimated_policy_value_dict = self.select_by_policy_value(
             input_dict=input_dict,
@@ -1304,42 +1591,126 @@ class OffPolicySelection:
         )
 
         plt.style.use("ggplot")
-        n_estimators = len(self.ope.ope_estimators_)
-        fig, axes = plt.subplots(nrows=n_estimators // 5, ncols=min(5, n_estimators))
+        n_figs = len(self.ope.ope_estimators_)
+        n_cols = min(5, n_figs) if n_cols is None else n_cols
+        n_rows = (n_figs - 1) // n_cols + 1
 
-        for i, estimator in enumerate(self.ope.ope_estimators_):
-            estimated_ranking_ = estimated_policy_value_dict[estimator][
-                "estimated_ranking"
-            ]
-            estimated_policy_value_ = estimated_policy_value_dict[estimator][
-                "estimated_policy_value"
-            ]
+        fig, axes = plt.subplots(
+            nrows=n_rows,
+            ncols=n_cols,
+            figsize=(4 * n_cols, 3 * n_rows),
+            sharex=share_axes,
+            sharey=share_axes,
+        )
 
-            estimated_ranking_dict = {
-                estimated_ranking_[i]: i for i in range(len(estimated_ranking_))
-            }
-            estimated_policy_value = [
-                estimated_policy_value_[estimated_ranking_dict[true_ranking[i]]]
-                for i in range(len(true_ranking))
-            ]
+        guide_min, guide_max = 1e5, -1e5
+        if n_rows == 1:
+            for i, estimator in enumerate(self.ope.ope_estimators_):
+                estimated_ranking_ = estimated_policy_value_dict[estimator][
+                    "estimated_ranking"
+                ]
+                estimated_policy_value_ = estimated_policy_value_dict[estimator][
+                    "estimated_policy_value"
+                ]
 
-            guide = np.linspace(
-                np.minimum(true_policy_value.min(), estimated_policy_value.min()),
-                np.maximum(true_policy_value.max(), estimated_policy_value.max()),
-            )
+                estimated_ranking_dict = {
+                    estimated_ranking_[i]: i for i in range(len(estimated_ranking_))
+                }
+                estimated_policy_value = [
+                    estimated_policy_value_[estimated_ranking_dict[true_ranking[i]]]
+                    for i in range(len(true_ranking))
+                ]
+                estimated_policy_value = np.array(estimated_policy_value)
 
-            axes[i // 5, i % 5].scatter(
-                true_policy_value,
-                estimated_policy_value,
-            )
-            axes[i // 5, i % 5].plot(
-                guide,
-                color="black",
-                linewidth=1.0,
-            )
-            axes[i // 3, i % 3].title(estimator)
-            axes[i // 3, i % 3].xlabel("true policy value")
-            axes[i // 3, i % 3].ylabel("estimated policy value")
+                min_val = np.minimum(
+                    np.nanmin(true_policy_value), np.nanmin(estimated_policy_value)
+                )
+                max_val = np.maximum(
+                    np.nanmax(true_policy_value), np.nanmax(estimated_policy_value)
+                )
+                guide_min = min_val if guide_min > min_val else guide_min
+                guide_max = max_val if guide_max < max_val else guide_max
+
+                if not share_axes:
+                    guide = np.linspace(guide_min, guide_max)
+                    axes[i // n_cols, i % n_cols].plot(
+                        guide,
+                        guide,
+                        color="black",
+                        linewidth=1.0,
+                    )
+
+                axes[i].scatter(
+                    true_policy_value,
+                    estimated_policy_value,
+                )
+                axes[i].set_title(estimator)
+                axes[i].set_xlabel("true policy value")
+                axes[i].set_ylabel("estimated policy value")
+
+            if share_axes:
+                guide = np.linspace(guide_min, guide_max)
+                for i, estimator in enumerate(self.ope.ope_estimators_):
+                    axes[i].plot(
+                        guide,
+                        guide,
+                        color="black",
+                        linewidth=1.0,
+                    )
+
+        else:
+            for i, estimator in enumerate(self.ope.ope_estimators_):
+                estimated_ranking_ = estimated_policy_value_dict[estimator][
+                    "estimated_ranking"
+                ]
+                estimated_policy_value_ = estimated_policy_value_dict[estimator][
+                    "estimated_policy_value"
+                ]
+
+                estimated_ranking_dict = {
+                    estimated_ranking_[i]: i for i in range(len(estimated_ranking_))
+                }
+                estimated_policy_value = [
+                    estimated_policy_value_[estimated_ranking_dict[true_ranking[i]]]
+                    for i in range(len(true_ranking))
+                ]
+                estimated_policy_value = np.array(estimated_policy_value)
+
+                min_val = np.minimum(
+                    np.nanmin(true_policy_value), np.nanmin(estimated_policy_value)
+                )
+                max_val = np.maximum(
+                    np.nanmax(true_policy_value), np.nanmax(estimated_policy_value)
+                )
+                guide_min = min_val if guide_min > min_val else guide_min
+                guide_max = max_val if guide_max < max_val else guide_max
+
+                if not share_axes:
+                    guide = np.linspace(guide_min, guide_max)
+                    axes[i // n_cols, i % n_cols].plot(
+                        guide,
+                        guide,
+                        color="black",
+                        linewidth=1.0,
+                    )
+
+                axes[i // n_cols, i % n_cols].scatter(
+                    true_policy_value,
+                    estimated_policy_value,
+                )
+                axes[i // n_cols, i % n_cols].set_title(estimator)
+                axes[i // n_cols, i % n_cols].set_xlabel("true policy value")
+                axes[i // n_cols, i % n_cols].set_ylabel("estimated policy value")
+
+            if share_axes:
+                guide = np.linspace(guide_min, guide_max)
+                for i, estimator in enumerate(self.ope.ope_estimators_):
+                    axes[i // n_cols, i % n_cols].plot(
+                        guide,
+                        guide,
+                        color="black",
+                        linewidth=1.0,
+                    )
 
         fig.tight_layout()
         plt.show()
@@ -1351,6 +1722,8 @@ class OffPolicySelection:
         self,
         input_dict: OPEInputDict,
         gamma: float = 1.0,
+        n_cols: Optional[int] = None,
+        share_axes: bool = False,
         fig_dir: Optional[Path] = None,
         fig_name: str = "scatter_policy_value_of_cumulative_distributional_ope.png",
     ):
@@ -1372,6 +1745,12 @@ class OffPolicySelection:
         gamma: float, default=1.0 (0, 1]
             Discount factor.
 
+        n_cols: int, default=None
+            Number of columns in the figure.
+
+        share_axes: bool, default=False
+            Whether to share x- and y-axes or not.
+
         fig_dir: Path, default=None
             Path to store the bar figure.
             If `None` is given, the figure will not be saved.
@@ -1385,7 +1764,7 @@ class OffPolicySelection:
             gamma=gamma,
         )
         true_ranking = ground_truth_policy_value_dict["ranking"]
-        true_policy_value = ground_truth_policy_value_dict["policy_value"]
+        true_policy_value = np.array(ground_truth_policy_value_dict["policy_value"])
 
         estimated_policy_value_dict = (
             self.select_by_policy_value_via_cumulative_distributional_ope(
@@ -1395,44 +1774,132 @@ class OffPolicySelection:
         )
 
         plt.style.use("ggplot")
-        n_estimators = len(self.cumulative_distributional_ope.ope_estimators_)
-        fig, axes = plt.subplots(nrows=n_estimators // 5, ncols=min(5, n_estimators))
+        n_figs = len(self.cumulative_distributional_ope.ope_estimators_)
+        n_cols = min(5, n_figs) if n_cols is None else n_cols
+        n_rows = (n_figs - 1) // n_cols + 1
 
-        for i, estimator in enumerate(
-            self.cumulative_distributional_ope.ope_estimators_
-        ):
-            estimated_ranking_ = estimated_policy_value_dict[estimator][
-                "estimated_ranking"
-            ]
-            estimated_policy_value_ = estimated_policy_value_dict[estimator][
-                "estimated_policy_value"
-            ]
+        fig, axes = plt.subplots(
+            nrows=n_rows,
+            ncols=n_cols,
+            figsize=(4 * n_cols, 3 * n_rows),
+            sharex=share_axes,
+            sharey=share_axes,
+        )
 
-            estimated_ranking_dict = {
-                estimated_ranking_[i]: i for i in range(len(estimated_ranking_))
-            }
-            estimated_policy_value = [
-                estimated_policy_value_[estimated_ranking_dict[true_ranking[i]]]
-                for i in range(len(true_ranking))
-            ]
+        guide_min, guide_max = 1e5, -1e5
+        if n_rows == 1:
+            for i, estimator in enumerate(
+                self.cumulative_distributional_ope.ope_estimators_
+            ):
+                estimated_ranking_ = estimated_policy_value_dict[estimator][
+                    "estimated_ranking"
+                ]
+                estimated_policy_value_ = estimated_policy_value_dict[estimator][
+                    "estimated_policy_value"
+                ]
 
-            guide = np.linspace(
-                np.minimum(true_policy_value.min(), estimated_policy_value.min()),
-                np.maximum(true_policy_value.max(), estimated_policy_value.max()),
-            )
+                estimated_ranking_dict = {
+                    estimated_ranking_[i]: i for i in range(len(estimated_ranking_))
+                }
+                estimated_policy_value = [
+                    estimated_policy_value_[estimated_ranking_dict[true_ranking[i]]]
+                    for i in range(len(true_ranking))
+                ]
+                estimated_policy_value = np.array(estimated_policy_value)
 
-            axes[i // 5, i % 5].scatter(
-                true_policy_value,
-                estimated_policy_value,
-            )
-            axes[i // 5, i % 5].plot(
-                guide,
-                color="black",
-                linewidth=1.0,
-            )
-            axes[i // 3, i % 3].title(estimator)
-            axes[i // 3, i % 3].xlabel("true policy value")
-            axes[i // 3, i % 3].ylabel("estimated policy value")
+                min_val = np.minimum(
+                    np.nanmin(true_policy_value), np.nanmin(estimated_policy_value)
+                )
+                max_val = np.maximum(
+                    np.nanmax(true_policy_value), np.nanmax(estimated_policy_value)
+                )
+                guide_min = min_val if guide_min > min_val else guide_min
+                guide_max = max_val if guide_max < max_val else guide_max
+
+                if not share_axes:
+                    guide = np.linspace(guide_min, guide_max)
+                    axes[i].plot(
+                        guide,
+                        guide,
+                        color="black",
+                        linewidth=1.0,
+                    )
+
+                axes[i].scatter(
+                    true_policy_value,
+                    estimated_policy_value,
+                )
+                axes[i].set_title(estimator)
+                axes[i].set_xlabel("true policy value")
+                axes[i].set_ylabel("estimated policy value")
+
+            if share_axes:
+                guide = np.linspace(guide_min, guide_max)
+                for i, estimator in enumerate(
+                    self.cumulative_distributional_ope.ope_estimators_
+                ):
+                    axes[i].plot(
+                        guide,
+                        guide,
+                        color="black",
+                        linewidth=1.0,
+                    )
+
+        else:
+            for i, estimator in enumerate(
+                self.cumulative_distributional_ope.ope_estimators_
+            ):
+                estimated_ranking_ = estimated_policy_value_dict[estimator][
+                    "estimated_ranking"
+                ]
+                estimated_policy_value_ = estimated_policy_value_dict[estimator][
+                    "estimated_policy_value"
+                ]
+
+                estimated_ranking_dict = {
+                    estimated_ranking_[i]: i for i in range(len(estimated_ranking_))
+                }
+                estimated_policy_value = [
+                    estimated_policy_value_[estimated_ranking_dict[true_ranking[i]]]
+                    for i in range(len(true_ranking))
+                ]
+                estimated_policy_value = np.array(estimated_policy_value)
+
+                min_val = np.minimum(
+                    np.nanmin(true_policy_value), np.nanmin(estimated_policy_value)
+                )
+                max_val = np.maximum(
+                    np.nanmax(true_policy_value), np.nanmax(estimated_policy_value)
+                )
+                guide_min = min_val if guide_min > min_val else guide_min
+                guide_max = max_val if guide_max < max_val else guide_max
+
+                if not share_axes:
+                    guide = np.linspace(guide_min, guide_max)
+                    axes[i // n_cols, i % n_cols].plot(
+                        guide,
+                        guide,
+                        color="black",
+                        linewidth=1.0,
+                    )
+
+                axes[i // n_cols, i % n_cols].scatter(
+                    true_policy_value,
+                    estimated_policy_value,
+                )
+                axes[i // n_cols, i % n_cols].set_title(estimator)
+                axes[i // n_cols, i % n_cols].set_xlabel("true policy value")
+                axes[i // n_cols, i % n_cols].set_ylabel("estimated policy value")
+
+            if share_axes:
+                guide = np.linspace(guide_min, guide_max)
+                for i, estimator in enumerate(self.ope.ope_estimators_):
+                    axes[i // n_cols, i % n_cols].plot(
+                        guide,
+                        guide,
+                        color="black",
+                        linewidth=1.0,
+                    )
 
         fig.tight_layout()
         plt.show()
@@ -1443,7 +1910,13 @@ class OffPolicySelection:
     def visualize_policy_value_lower_bound(
         self,
         input_dict: OPEInputDict,
+        cis: List[str] = ["bootstrap"],
         gamma: float = 1.0,
+        alpha: float = 0.05,
+        n_bootstrap_samples: int = 100,
+        random_state: Optional[int] = 12345,
+        n_cols: Optional[int] = None,
+        share_axes: bool = False,
         fig_dir: Optional[Path] = None,
         fig_name: str = "scatter_policy_value_lower_bound.png",
     ):
@@ -1462,8 +1935,26 @@ class OffPolicySelection:
                 on_policy_policy_value,
             ]
 
+        cis: List[str], default=["bootstrap"]
+            Estimation methods for confidence intervals.
+
         gamma: float, default=1.0 (0, 1]
             Discount factor.
+
+        alpha: float, default=0.05 (0, 1)
+            Significant level.
+
+        n_bootstrap_samples: int, default=100 (> 0)
+            Number of resampling performed in the bootstrap procedure.
+
+        random_state: int, default=None (>= 0)
+            Random state.
+
+        n_cols: int, default=None
+            Number of columns in the figure.
+
+        share_axes: bool, default=False
+            Whether to share x- and y-axes or not.
 
         fig_dir: Path, default=None
             Path to store the bar figure.
@@ -1482,52 +1973,278 @@ class OffPolicySelection:
 
         estimated_policy_value_dict = self.select_by_policy_value_lower_bound(
             input_dict=input_dict,
+            cis=cis,
             gamma=gamma,
+            alpha=alpha,
+            n_bootstrap_samples=n_bootstrap_samples,
+            random_state=random_state,
         )
 
         plt.style.use("ggplot")
-        n_estimators = len(self.ope.ope_estimators_)
-        fig, axes = plt.subplots(nrows=n_estimators // 5, ncols=min(5, n_estimators))
+        n_figs = len(self.ope.ope_estimators_) * len(cis)
+        if len(cis) == 1:
+            n_cols = min(5, n_figs) if n_cols is None else n_cols
+        else:
+            n_cols = len(cis)
+        n_rows = (n_figs - 1) // n_cols + 1
 
-        for i, estimator in enumerate(self.ope.ope_estimators_):
-            estimated_ranking_ = estimated_policy_value_dict[estimator][
-                "estimated_ranking"
-            ]
-            estimated_policy_value_lower_bound_ = estimated_policy_value_dict[
-                estimator
-            ]["estimated_policy_value_lower_bound"]
+        fig, axes = plt.subplots(
+            nrows=n_rows,
+            ncols=n_cols,
+            figsize=(4 * n_cols, 3 * n_rows),
+            sharex=share_axes,
+            sharey=share_axes,
+        )
 
-            estimated_ranking_dict = {
-                estimated_ranking_[i]: i for i in range(len(estimated_ranking_))
-            }
-            estimated_policy_value_lower_bound = [
-                estimated_policy_value_lower_bound_[
-                    estimated_ranking_dict[true_ranking[i]]
-                ]
-                for i in range(len(true_ranking))
-            ]
+        guide_min, guide_max = 1e5, -1e5
+        if len(cis) == 1:
+            if n_cols == 1:
+                for ci in cis:
+                    for i, estimator in enumerate(self.ope.ope_estimators_):
+                        estimated_ranking_ = estimated_policy_value_dict[ci][estimator][
+                            "estimated_ranking"
+                        ]
+                        estimated_policy_value_lower_bound_ = (
+                            estimated_policy_value_dict[ci][estimator][
+                                "estimated_policy_value_lower_bound"
+                            ]
+                        )
 
-            guide = np.linspace(
-                np.minimum(
-                    true_policy_value.min(), estimated_policy_value_lower_bound.min()
-                ),
-                np.maximum(
-                    true_policy_value.max(), estimated_policy_value_lower_bound.max()
-                ),
-            )
+                        estimated_ranking_dict = {
+                            estimated_ranking_[i]: i
+                            for i in range(len(estimated_ranking_))
+                        }
+                        estimated_policy_value_lower_bound = [
+                            estimated_policy_value_lower_bound_[
+                                estimated_ranking_dict[true_ranking[i]]
+                            ]
+                            for i in range(len(true_ranking))
+                        ]
 
-            axes[i // 5, i % 5].scatter(
-                true_policy_value,
-                estimated_policy_value_lower_bound,
-            )
-            axes[i // 5, i % 5].plot(
-                guide,
-                color="black",
-                linewidth=1.0,
-            )
-            axes[i // 3, i % 3].title(estimator)
-            axes[i // 3, i % 3].xlabel("true policy value")
-            axes[i // 3, i % 3].ylabel("estimated policy value lower bound")
+                        min_val = np.minimum(
+                            np.nanmin(true_policy_value),
+                            np.nanmin(estimated_policy_value_lower_bound),
+                        )
+                        max_val = np.maximum(
+                            np.nanmax(true_policy_value),
+                            np.nanmax(estimated_policy_value_lower_bound),
+                        )
+                        guide_min = min_val if guide_min > min_val else guide_min
+                        guide_max = max_val if guide_max < max_val else guide_max
+
+                        if not share_axes:
+                            guide = np.linspace(guide_min, guide_max)
+                            axes[i].plot(
+                                guide,
+                                guide,
+                                color="black",
+                                linewidth=1.0,
+                            )
+
+                        axes[i].scatter(
+                            true_policy_value,
+                            estimated_policy_value_lower_bound,
+                        )
+                        axes[i].set_title(f"({ci}, {estimator})")
+                        axes[i].set_xlabel("true policy value")
+                        axes[i].set_ylabel("estimated policy value lower bound")
+
+                if share_axes:
+                    guide = np.linspace(guide_min, guide_max)
+                    for i, estimator in enumerate(self.ope.ope_estimators_):
+                        axes[i].plot(
+                            guide,
+                            guide,
+                            color="black",
+                            linewidth=1.0,
+                        )
+
+            else:
+                for ci in cis:
+                    for i, estimator in enumerate(self.ope.ope_estimators_):
+                        estimated_ranking_ = estimated_policy_value_dict[ci][estimator][
+                            "estimated_ranking"
+                        ]
+                        estimated_policy_value_lower_bound_ = (
+                            estimated_policy_value_dict[ci][estimator][
+                                "estimated_policy_value_lower_bound"
+                            ]
+                        )
+
+                        estimated_ranking_dict = {
+                            estimated_ranking_[i]: i
+                            for i in range(len(estimated_ranking_))
+                        }
+                        estimated_policy_value_lower_bound = [
+                            estimated_policy_value_lower_bound_[
+                                estimated_ranking_dict[true_ranking[i]]
+                            ]
+                            for i in range(len(true_ranking))
+                        ]
+
+                        min_val = np.minimum(
+                            np.nanmin(true_policy_value),
+                            np.nanmin(estimated_policy_value_lower_bound),
+                        )
+                        max_val = np.maximum(
+                            np.nanmax(true_policy_value),
+                            np.nanmax(estimated_policy_value_lower_bound),
+                        )
+                        guide_min = min_val if guide_min > min_val else guide_min
+                        guide_max = max_val if guide_max < max_val else guide_max
+
+                        if not share_axes:
+                            guide = np.linspace(guide_min, guide_max)
+                            axes[i // n_cols, i % n_cols].plot(
+                                guide,
+                                guide,
+                                color="black",
+                                linewidth=1.0,
+                            )
+
+                        axes[i // n_cols, i % n_cols].scatter(
+                            true_policy_value,
+                            estimated_policy_value_lower_bound,
+                        )
+                        axes[i // n_cols, i % n_cols].set_title(f"({ci}, {estimator})")
+                        axes[i // n_cols, i % n_cols].set_xlabel("true policy value")
+                        axes[i // n_cols, i % n_cols].set_ylabel(
+                            "estimated policy value"
+                        )
+
+                if share_axes:
+                    guide = np.linspace(guide_min, guide_max)
+                    for i, estimator in enumerate(self.ope.ope_estimators_):
+                        axes[i // n_cols, i % n_cols].plot(
+                            guide,
+                            guide,
+                            color="black",
+                            linewidth=1.0,
+                        )
+
+        else:
+            if n_cols == 1:
+                for j, ci in enumerate(cis):
+                    for estimator in enumerate(self.ope.ope_estimators_):
+                        estimated_ranking_ = estimated_policy_value_dict[ci][estimator][
+                            "estimated_ranking"
+                        ]
+                        estimated_policy_value_lower_bound_ = (
+                            estimated_policy_value_dict[ci][estimator][
+                                "estimated_policy_value_lower_bound"
+                            ]
+                        )
+
+                        estimated_ranking_dict = {
+                            estimated_ranking_[i]: i
+                            for i in range(len(estimated_ranking_))
+                        }
+                        estimated_policy_value_lower_bound = [
+                            estimated_policy_value_lower_bound_[
+                                estimated_ranking_dict[true_ranking[i]]
+                            ]
+                            for i in range(len(true_ranking))
+                        ]
+
+                        min_val = np.minimum(
+                            np.nanmin(true_policy_value),
+                            np.nanmin(estimated_policy_value_lower_bound),
+                        )
+                        max_val = np.maximum(
+                            np.nanmax(true_policy_value),
+                            np.nanmax(estimated_policy_value_lower_bound),
+                        )
+                        guide_min = min_val if guide_min > min_val else guide_min
+                        guide_max = max_val if guide_max < max_val else guide_max
+
+                        if not share_axes:
+                            guide = np.linspace(guide_min, guide_max)
+                            axes[j].plot(
+                                guide,
+                                guide,
+                                color="black",
+                                linewidth=1.0,
+                            )
+
+                        axes[j].scatter(
+                            true_policy_value,
+                            estimated_policy_value_lower_bound,
+                        )
+                        axes[j].set_title(f"({ci}, {estimator})")
+                        axes[j].set_xlabel("true policy value")
+                        axes[j].set_ylabel("estimated policy value lower bound")
+
+                if share_axes:
+                    guide = np.linspace(guide_min, guide_max)
+                    for j, ci in enumerate(cis):
+                        axes[j].plot(
+                            guide,
+                            guide,
+                            color="black",
+                            linewidth=1.0,
+                        )
+
+            else:
+                for j, ci in enumerate(cis):
+                    for i, estimator in enumerate(self.ope.ope_estimators_):
+                        estimated_ranking_ = estimated_policy_value_dict[ci][estimator][
+                            "estimated_ranking"
+                        ]
+                        estimated_policy_value_lower_bound_ = (
+                            estimated_policy_value_dict[ci][estimator][
+                                "estimated_policy_value_lower_bound"
+                            ]
+                        )
+
+                        estimated_ranking_dict = {
+                            estimated_ranking_[i]: i
+                            for i in range(len(estimated_ranking_))
+                        }
+                        estimated_policy_value_lower_bound = [
+                            estimated_policy_value_lower_bound_[
+                                estimated_ranking_dict[true_ranking[i]]
+                            ]
+                            for i in range(len(true_ranking))
+                        ]
+
+                        min_val = np.minimum(
+                            np.nanmin(true_policy_value),
+                            np.nanmin(estimated_policy_value_lower_bound),
+                        )
+                        max_val = np.maximum(
+                            np.nanmax(true_policy_value),
+                            np.nanmax(estimated_policy_value_lower_bound),
+                        )
+                        guide_min = min_val if guide_min > min_val else guide_min
+                        guide_max = max_val if guide_max < max_val else guide_max
+
+                        if not share_axes:
+                            guide = np.linspace(guide_min, guide_max)
+                            axes[i, j].plot(
+                                guide,
+                                guide,
+                                color="black",
+                                linewidth=1.0,
+                            )
+
+                        axes[i, j].scatter(
+                            true_policy_value,
+                            estimated_policy_value_lower_bound,
+                        )
+                        axes[i, j].set_title(f"({ci}, {estimator})")
+                        axes[i, j].set_xlabel("true policy value")
+                        axes[i, j].set_ylabel("estimated policy value")
+
+            if share_axes:
+                guide = np.linspace(guide_min, guide_max)
+                for j, ci in enumerate(cis):
+                    for i, estimator in enumerate(self.ope.ope_estimators_):
+                        axes[i, j].plot(
+                            guide,
+                            guide,
+                            color="black",
+                            linewidth=1.0,
+                        )
 
         fig.tight_layout()
         plt.show()
@@ -1539,6 +2256,8 @@ class OffPolicySelection:
         self,
         input_dict: OPEInputDict,
         gamma: float = 1.0,
+        n_cols: Optional[int] = None,
+        share_axes: bool = False,
         fig_dir: Optional[Path] = None,
         fig_name: str = "scatter_variance.png",
     ):
@@ -1560,6 +2279,12 @@ class OffPolicySelection:
         gamma: float, default=1.0 (0, 1]
             Discount factor.
 
+        n_cols: int, default=None
+            Number of columns in the figure.
+
+        share_axes: bool, default=False
+            Whether to share x- and y-axes or not.
+
         fig_dir: Path, default=None
             Path to store the bar figure.
             If `None` is given, the figure will not be saved.
@@ -1571,6 +2296,7 @@ class OffPolicySelection:
         ground_truth_policy_value_dict = self.obtain_oracle_selection_result(
             input_dict=input_dict,
             gamma=gamma,
+            return_variance=True,
         )
         candidate_policy_names = ground_truth_policy_value_dict["ranking"]
         true_variance = ground_truth_policy_value_dict["variance"]
@@ -1581,34 +2307,112 @@ class OffPolicySelection:
         )
 
         plt.style.use("ggplot")
-        n_estimators = len(self.cumulative_distributional_ope.ope_estimators_)
-        fig, axes = plt.subplots(nrows=n_estimators // 5, ncols=min(5, n_estimators))
+        n_figs = len(self.cumulative_distributional_ope.ope_estimators_)
+        n_cols = min(5, n_figs) if n_cols is None else n_cols
+        n_rows = (n_figs - 1) // n_cols + 1
 
-        for i, estimator in enumerate(
-            self.cumulative_distributional_ope.ope_estimators_
-        ):
+        fig, axes = plt.subplots(
+            nrows=n_rows,
+            ncols=n_cols,
+            figsize=(4 * n_cols, 3 * n_rows),
+            sharex=share_axes,
+            sharey=share_axes,
+        )
 
-            estimated_variance = np.zeros(len(candidate_policy_names))
-            for j, eval_policy in enumerate(candidate_policy_names):
-                estimated_variance[j] = estimated_variance_dict[eval_policy][estimator]
+        guide_min, guide_max = 1e5, -1e5
+        if n_rows == 1:
+            for i, estimator in enumerate(
+                self.cumulative_distributional_ope.ope_estimators_
+            ):
+                estimated_variance = np.zeros(len(candidate_policy_names))
+                for j, eval_policy in enumerate(candidate_policy_names):
+                    estimated_variance[j] = estimated_variance_dict[eval_policy][
+                        estimator
+                    ]
 
-            guide = np.linspace(
-                np.minimum(true_variance.min(), estimated_variance.min()),
-                np.maximum(true_variance.max(), estimated_variance.max()),
-            )
+                min_val = np.minimum(
+                    np.nanmin(true_variance), np.nanmin(estimated_variance)
+                )
+                max_val = np.maximum(
+                    np.nanmax(true_variance), np.nanmax(estimated_variance)
+                )
+                guide_min = min_val if guide_min > min_val else guide_min
+                guide_max = max_val if guide_max < max_val else guide_max
 
-            axes[i // 5, i % 5].scatter(
-                true_variance,
-                estimated_variance,
-            )
-            axes[i // 5, i % 5].plot(
-                guide,
-                color="black",
-                linewidth=1.0,
-            )
-            axes[i // 3, i % 3].title(estimator)
-            axes[i // 3, i % 3].xlabel("true variance")
-            axes[i // 3, i % 3].ylabel("estimated variance")
+                if not share_axes:
+                    guide = np.linspace(guide_min, guide_max)
+                    axes[i].plot(
+                        guide,
+                        guide,
+                        color="black",
+                        linewidth=1.0,
+                    )
+
+                axes[i].scatter(
+                    true_variance,
+                    estimated_variance,
+                )
+                axes[i].set_title(estimator)
+                axes[i].set_xlabel("true variance")
+                axes[i].set_ylabel("estimated variance")
+
+            if share_axes:
+                guide = np.linspace(guide_min, guide_max)
+                for i, estimator in enumerate(
+                    self.cumulative_distributional_ope.ope_estimators_
+                ):
+                    axes[i].plot(
+                        guide,
+                        guide,
+                        color="black",
+                        linewidth=1.0,
+                    )
+
+        else:
+            for i, estimator in enumerate(
+                self.cumulative_distributional_ope.ope_estimators_
+            ):
+                estimated_variance = np.zeros(len(candidate_policy_names))
+                for j, eval_policy in enumerate(candidate_policy_names):
+                    estimated_variance[j] = estimated_variance_dict[eval_policy][
+                        estimator
+                    ]
+
+                min_val = np.minimum(
+                    np.nanmin(true_variance), np.nanmin(estimated_variance)
+                )
+                max_val = np.maximum(
+                    np.nanmax(true_variance), np.nanmax(estimated_variance)
+                )
+                guide_min = min_val if guide_min > min_val else guide_min
+                guide_max = max_val if guide_max < max_val else guide_max
+
+                if not share_axes:
+                    guide = np.linspace(guide_min, guide_max)
+                    axes[i // n_cols, i % n_cols].plot(
+                        guide,
+                        guide,
+                        color="black",
+                        linewidth=1.0,
+                    )
+
+                axes[i // n_cols, i % n_cols].scatter(
+                    true_variance,
+                    estimated_variance,
+                )
+                axes[i // n_cols, i % n_cols].title(estimator)
+                axes[i // n_cols, i % n_cols].xlabel("true variance")
+                axes[i // n_cols, i % n_cols].ylabel("estimated variance")
+
+            for i, estimator in enumerate(
+                self.cumulative_distributional_ope.ope_estimators_
+            ):
+                axes[i // n_cols, i % n_cols].plot(
+                    guide,
+                    guide,
+                    color="black",
+                    linewidth=1.0,
+                )
 
         fig.tight_layout()
         plt.show()
@@ -1620,6 +2424,8 @@ class OffPolicySelection:
         self,
         input_dict: OPEInputDict,
         gamma: float = 1.0,
+        n_cols: Optional[int] = None,
+        share_axes: bool = False,
         fig_dir: Optional[Path] = None,
         fig_name: str = "scatter_lower_quartile.png",
     ):
@@ -1641,6 +2447,12 @@ class OffPolicySelection:
         gamma: float, default=1.0 (0, 1]
             Discount factor.
 
+        n_cols: int, default=None
+            Number of columns in the figure.
+
+        share_axes: bool, default=False
+            Whether to share x- and y-axes or not.
+
         fig_dir: Path, default=None
             Path to store the bar figure.
             If `None` is given, the figure will not be saved.
@@ -1652,6 +2464,7 @@ class OffPolicySelection:
         ground_truth_policy_value_dict = self.obtain_oracle_selection_result(
             input_dict=input_dict,
             gamma=gamma,
+            return_lower_quartile=True,
         )
         true_ranking = ground_truth_policy_value_dict["ranking_by_lower_quartile"]
         true_lower_quartile = ground_truth_policy_value_dict["lower_quartile"]
@@ -1662,44 +2475,132 @@ class OffPolicySelection:
         )
 
         plt.style.use("ggplot")
-        n_estimators = len(self.cumulative_distributional_ope.ope_estimators_)
-        fig, axes = plt.subplots(nrows=n_estimators // 5, ncols=min(5, n_estimators))
+        n_figs = len(self.cumulative_distributional_ope.ope_estimators_)
+        n_cols = min(5, n_figs) if n_cols is None else n_cols
+        n_rows = (n_figs - 1) // n_cols + 1
 
-        for i, estimator in enumerate(
-            self.cumulative_distributional_ope.ope_estimators_
-        ):
-            estimated_ranking_ = estimated_policy_value_dict[estimator][
-                "estimated_ranking"
-            ]
-            estimated_lower_quartile_ = estimated_policy_value_dict[estimator][
-                "estimated_lower_quartile"
-            ]
+        fig, axes = plt.subplots(
+            nrows=n_rows,
+            ncols=n_cols,
+            figsize=(4 * n_cols, 3 * n_rows),
+            sharex=share_axes,
+            sharey=share_axes,
+        )
 
-            estimated_ranking_dict = {
-                estimated_ranking_[i]: i for i in range(len(estimated_ranking_))
-            }
-            estimated_lower_quartile = [
-                estimated_lower_quartile_[estimated_ranking_dict[true_ranking[i]]]
-                for i in range(len(true_ranking))
-            ]
+        guide_min, guide_max = 1e5, -1e5
+        if n_rows == 1:
+            for i, estimator in enumerate(
+                self.cumulative_distributional_ope.ope_estimators_
+            ):
+                estimated_ranking_ = estimated_policy_value_dict[estimator][
+                    "estimated_ranking"
+                ]
+                estimated_lower_quartile_ = estimated_policy_value_dict[estimator][
+                    "estimated_lower_quartile"
+                ]
 
-            guide = np.linspace(
-                np.minimum(true_lower_quartile.min(), estimated_lower_quartile.min()),
-                np.maximum(true_lower_quartile.max(), estimated_lower_quartile.max()),
-            )
+                estimated_ranking_dict = {
+                    estimated_ranking_[i]: i for i in range(len(estimated_ranking_))
+                }
+                estimated_lower_quartile = [
+                    estimated_lower_quartile_[estimated_ranking_dict[true_ranking[i]]]
+                    for i in range(len(true_ranking))
+                ]
 
-            axes[i // 5, i % 5].scatter(
-                true_lower_quartile,
-                estimated_lower_quartile,
-            )
-            axes[i // 5, i % 5].plot(
-                guide,
-                color="black",
-                linewidth=1.0,
-            )
-            axes[i // 3, i % 3].title(estimator)
-            axes[i // 3, i % 3].xlabel("true lower quartile")
-            axes[i // 3, i % 3].ylabel("estimated lower quartile")
+                min_val = np.minimum(
+                    np.nanmin(true_lower_quartile), np.nanmin(estimated_lower_quartile)
+                )
+                max_val = np.maximum(
+                    np.nanmax(true_lower_quartile), np.nanmax(estimated_lower_quartile)
+                )
+                guide_min = min_val if guide_min > min_val else guide_min
+                guide_max = max_val if guide_max < max_val else guide_max
+
+                if not share_axes:
+                    guide = np.linspace(guide_min, guide_max)
+                    axes[i].plot(
+                        guide,
+                        guide,
+                        color="black",
+                        linewidth=1.0,
+                    )
+
+                axes[i].scatter(
+                    true_lower_quartile,
+                    estimated_lower_quartile,
+                )
+                axes[i].set_title(estimator)
+                axes[i].set_xlabel("true lower quartile")
+                axes[i].set_ylabel("estimated lower quartile")
+
+            if share_axes:
+                guide = np.linspace(guide_min, guide_max)
+                for i, estimator in enumerate(
+                    self.cumulative_distributional_ope.ope_estimators_
+                ):
+                    axes[i].plot(
+                        guide,
+                        guide,
+                        color="black",
+                        linewidth=1.0,
+                    )
+
+        else:
+            for i, estimator in enumerate(
+                self.cumulative_distributional_ope.ope_estimators_
+            ):
+                estimated_ranking_ = estimated_policy_value_dict[estimator][
+                    "estimated_ranking"
+                ]
+                estimated_lower_quartile_ = estimated_policy_value_dict[estimator][
+                    "estimated_lower_quartile"
+                ]
+
+                estimated_ranking_dict = {
+                    estimated_ranking_[i]: i for i in range(len(estimated_ranking_))
+                }
+                estimated_lower_quartile = [
+                    estimated_lower_quartile_[estimated_ranking_dict[true_ranking[i]]]
+                    for i in range(len(true_ranking))
+                ]
+
+                min_val = np.minimum(
+                    np.nanmin(true_lower_quartile), np.nanmin(estimated_lower_quartile)
+                )
+                max_val = np.maximum(
+                    np.nanmax(true_lower_quartile), np.nanmax(estimated_lower_quartile)
+                )
+                guide_min = min_val if guide_min > min_val else guide_min
+                guide_max = max_val if guide_max < max_val else guide_max
+
+                if not share_axes:
+                    guide = np.linspace(guide_min, guide_max)
+                    axes[i // n_cols, i % n_cols].plot(
+                        guide,
+                        guide,
+                        color="black",
+                        linewidth=1.0,
+                    )
+
+                axes[i // n_cols, i % n_cols].scatter(
+                    true_lower_quartile,
+                    estimated_lower_quartile,
+                )
+                axes[i // n_cols, i % n_cols].set_title(estimator)
+                axes[i // n_cols, i % n_cols].set_xlabel("true lower quartile")
+                axes[i // n_cols, i % n_cols].set_ylabel("estimated lower quartile")
+
+            if share_axes:
+                guide = np.linspace(guide_min, guide_max)
+                for i, estimator in enumerate(
+                    self.cumulative_distributional_ope.ope_estimators_
+                ):
+                    axes[i // n_cols, i % n_cols].plot(
+                        guide,
+                        guide,
+                        color="black",
+                        linewidth=1.0,
+                    )
 
         fig.tight_layout()
         plt.show()
@@ -1711,6 +2612,8 @@ class OffPolicySelection:
         self,
         input_dict: OPEInputDict,
         gamma: float = 1.0,
+        n_cols: Optional[int] = None,
+        share_axes: bool = False,
         fig_dir: Optional[Path] = None,
         fig_name: str = "scatter_conditional_value_at_risk.png",
     ):
@@ -1732,6 +2635,12 @@ class OffPolicySelection:
         gamma: float, default=1.0 (0, 1]
             Discount factor.
 
+        n_cols: int, default=None
+            Number of columns in the figure.
+
+        share_axes: bool, default=False
+            Whether to share x- and y-axes or not.
+
         fig_dir: Path, default=None
             Path to store the bar figure.
             If `None` is given, the figure will not be saved.
@@ -1743,6 +2652,7 @@ class OffPolicySelection:
         ground_truth_policy_value_dict = self.obtain_oracle_selection_result(
             input_dict=input_dict,
             gamma=gamma,
+            return_conditional_value_at_risk=True,
         )
         true_ranking = ground_truth_policy_value_dict[
             "ranking_by_conditional_value_at_risk"
@@ -1755,44 +2665,130 @@ class OffPolicySelection:
         )
 
         plt.style.use("ggplot")
-        n_estimators = len(self.cumulative_distributional_ope.ope_estimators_)
-        fig, axes = plt.subplots(nrows=n_estimators // 5, ncols=min(5, n_estimators))
+        n_figs = len(self.cumulative_distributional_ope.ope_estimators_)
+        n_cols = min(5, n_figs) if n_cols is None else n_cols
+        n_rows = (n_figs - 1) // n_cols + 1
 
-        for i, estimator in enumerate(
-            self.cumulative_distributional_ope.ope_estimators_
-        ):
-            estimated_ranking_ = estimated_policy_value_dict[estimator][
-                "estimated_ranking"
-            ]
-            estimated_cvar_ = estimated_policy_value_dict[estimator][
-                "estimated_conditional_value_at_risk"
-            ]
+        fig, axes = plt.subplots(
+            nrows=n_rows,
+            ncols=n_cols,
+            figsize=(4 * n_cols, 3 * n_rows),
+            sharex=share_axes,
+            sharey=share_axes,
+        )
 
-            estimated_ranking_dict = {
-                estimated_ranking_[i]: i for i in range(len(estimated_ranking_))
-            }
-            estimated_cvar = [
-                estimated_cvar_[estimated_ranking_dict[true_ranking[i]]]
-                for i in range(len(true_ranking))
-            ]
+        guide_min, guide_max = 1e5, -1e5
+        if n_rows == 1:
+            for i, estimator in enumerate(
+                self.cumulative_distributional_ope.ope_estimators_
+            ):
+                estimated_ranking_ = estimated_policy_value_dict[estimator][
+                    "estimated_ranking"
+                ]
+                estimated_cvar_ = estimated_policy_value_dict[estimator][
+                    "estimated_conditional_value_at_risk"
+                ]
 
-            guide = np.linspace(
-                np.minimum(true_cvar.min(), estimated_cvar.min()),
-                np.maximum(true_cvar.max(), estimated_cvar.max()),
-            )
+                estimated_ranking_dict = {
+                    estimated_ranking_[i]: i for i in range(len(estimated_ranking_))
+                }
+                estimated_cvar = [
+                    estimated_cvar_[estimated_ranking_dict[true_ranking[i]]]
+                    for i in range(len(true_ranking))
+                ]
 
-            axes[i // 5, i % 5].scatter(
-                true_cvar,
-                estimated_cvar,
-            )
-            axes[i // 5, i % 5].plot(
-                guide,
-                color="black",
-                linewidth=1.0,
-            )
-            axes[i // 3, i % 3].title(estimator)
-            axes[i // 3, i % 3].xlabel("true CVaR")
-            axes[i // 3, i % 3].ylabel("estimated CVaR")
+                min_val = np.minimum(np.nanmin(true_cvar), np.nanmin(estimated_cvar))
+                max_val = np.maximum(np.nanmax(true_cvar), np.nanmax(estimated_cvar))
+                guide_min = min_val if guide_min > min_val else guide_min
+                guide_max = max_val if guide_max < max_val else guide_max
+
+                if not share_axes:
+                    guide = np.linspace(guide_min, guide_max)
+                    axes[i].plot(
+                        guide,
+                        guide,
+                        color="black",
+                        linewidth=1.0,
+                    )
+
+                axes[i].scatter(
+                    true_cvar,
+                    estimated_cvar,
+                )
+                axes[i].set_title(estimator)
+                axes[i].set_xlabel("true CVaR")
+                axes[i].set_ylabel("estimated CVaR")
+
+            if share_axes:
+                guide = np.linspace(guide_min, guide_max)
+                for i, estimator in enumerate(
+                    self.cumulative_distributional_ope.ope_estimators_
+                ):
+                    axes[i].plot(
+                        guide,
+                        guide,
+                        color="black",
+                        linewidth=1.0,
+                    )
+
+        else:
+            for i, estimator in enumerate(
+                self.cumulative_distributional_ope.ope_estimators_
+            ):
+                estimated_ranking_ = estimated_policy_value_dict[estimator][
+                    "estimated_ranking"
+                ]
+                estimated_cvar_ = estimated_policy_value_dict[estimator][
+                    "estimated_conditional_value_at_risk"
+                ]
+
+                estimated_ranking_dict = {
+                    estimated_ranking_[i]: i for i in range(len(estimated_ranking_))
+                }
+                estimated_cvar = [
+                    estimated_cvar_[estimated_ranking_dict[true_ranking[i]]]
+                    for i in range(len(true_ranking))
+                ]
+
+                min_val = np.minimum(np.nanmin(true_cvar), np.nanmin(estimated_cvar))
+                max_val = np.maximum(np.nanmax(true_cvar), np.nanmax(estimated_cvar))
+                guide_min = min_val if guide_min > min_val else guide_min
+                guide_max = max_val if guide_max < max_val else guide_max
+
+                if not share_axes:
+                    guide = np.linspace(guide_min, guide_max)
+                    axes[i // n_cols, i % n_cols].plot(
+                        guide,
+                        guide,
+                        color="black",
+                        linewidth=1.0,
+                    )
+
+                axes[i // n_cols, i % n_cols].scatter(
+                    true_cvar,
+                    estimated_cvar,
+                )
+                axes[i // n_cols, i % n_cols].plot(
+                    guide,
+                    guide,
+                    color="black",
+                    linewidth=1.0,
+                )
+                axes[i // n_cols, i % n_cols].set_title(estimator)
+                axes[i // n_cols, i % n_cols].set_xlabel("true CVaR")
+                axes[i // n_cols, i % n_cols].set_ylabel("estimated CVaR")
+
+            if share_axes:
+                guide = np.linspace(guide_min, guide_max)
+                for i, estimator in enumerate(
+                    self.cumulative_distributional_ope.ope_estimators_
+                ):
+                    axes[i // n_cols, i % n_cols].plot(
+                        guide,
+                        guide,
+                        color="black",
+                        linewidth=1.0,
+                    )
 
         fig.tight_layout()
         plt.show()
@@ -1872,8 +2868,8 @@ class OffPolicySelection:
             ]
 
             guide = np.linspace(
-                np.minimum(true_worst_case.min(), estimated_worst_case.min()),
-                np.maximum(true_worst_case.max(), estimated_worst_case.max()),
+                np.minimum(np.nanmin(true_worst_case), np.nanmin(estimated_worst_case)),
+                np.maximum(np.nanmax(true_worst_case), np.nanmax(estimated_worst_case)),
             )
 
             axes[i // 5, i % 5].scatter(
@@ -1881,6 +2877,7 @@ class OffPolicySelection:
                 estimated_worst_case,
             )
             axes[i // 5, i % 5].plot(
+                guide,
                 guide,
                 color="black",
                 linewidth=1.0,

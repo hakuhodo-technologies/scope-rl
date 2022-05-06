@@ -229,7 +229,7 @@ class DiscreteDistributionallyRobustImportanceSampling(
             alpha_prior = alpha
             alpha = np.clip(
                 alpha_prior - first_order_derivative / second_order_derivative,
-                0,
+                0.1,
                 1 / delta,
             )
 
@@ -578,8 +578,8 @@ class DiscreteDistributionallyRobustDoublyRobust(
 
         """
         trajectory_wise_reward_momentum = trajectory_wise_reward ** momentum * np.exp(
-            -trajectory_wise_reward / alpha
-        )
+            -np.nan_to_num(trajectory_wise_reward / alpha, nan=-1e10)
+        ).astype(int)
         return (
             trajectory_wise_importance_weight * trajectory_wise_reward_momentum
         ).sum() / trajectory_wise_importance_weight.sum()
@@ -625,8 +625,8 @@ class DiscreteDistributionallyRobustDoublyRobust(
             Initial alpha for each fold.
 
         """
-        alpha = np.zeros(self.n_folds)
-        for k in self.n_folds:
+        alphas = np.zeros(self.n_folds)
+        for k in range(self.n_folds):
             weight_sum_ = trajectory_wise_importance_weight[fit_episodes[k]].sum()
 
             alpha_ = alpha_prior
@@ -656,25 +656,25 @@ class DiscreteDistributionallyRobustDoublyRobust(
                     momentum=2,
                 )
                 first_order_derivative_ = (
-                    -W_1 / (alpha * weight_sum_ * W_0) - np.log(W_0) - delta
+                    -W_1 / (alpha_ * weight_sum_ * W_0) - np.log(W_0) - delta
                 )
                 second_order_derivative_ = W_1 ** 2 / (
-                    alpha ** 3 * weight_sum_ ** 2 * W_0 ** 2
-                ) - W_2 / (alpha ** 3 * weight_sum_ * W_0)
+                    alpha_ ** 3 * weight_sum_ ** 2 * W_0 ** 2
+                ) - W_2 / (alpha_ ** 3 * weight_sum_ * W_0)
 
                 alpha_prior_ = alpha_
                 alpha_ = np.clip(
                     alpha_prior_ - first_order_derivative_ / second_order_derivative_,
-                    0,
+                    0.1,
                     1 / delta,
                 )
 
                 if np.abs(alpha_ - alpha_prior_) < epsilon:
                     break
 
-            alpha[k] = alpha_
+            alphas[k] = alpha_
 
-        return alpha
+        return alphas
 
     def _predict_trajectory_wise_reward_momentum_given_initial_alpha(
         self,
@@ -721,7 +721,7 @@ class DiscreteDistributionallyRobustDoublyRobust(
         n_episodes, state_dim = initial_state.shape
 
         # prediction set
-        X_ = np.zeros(n_episodes * n_actions, state_dim + 1)
+        X_ = np.zeros((n_episodes * n_actions, state_dim + 1))
         X_[:, -1] = np.tile(np.arange(n_actions), n_episodes)
         for i in range(n_episodes):
             X_[n_actions * i : n_actions * (i + 1), :-1] = np.tile(
@@ -741,7 +741,7 @@ class DiscreteDistributionallyRobustDoublyRobust(
                 axis=1,
             )
             y = trajectory_wise_reward[train_episodes[k]] ** momentum * np.exp(
-                -trajectory_wise_reward[train_episodes[k]] / initial_alpha
+                -trajectory_wise_reward[train_episodes[k]] / initial_alpha[k]
             )
             self.baseline_estimator.fit(X, y)
 
@@ -797,7 +797,7 @@ class DiscreteDistributionallyRobustDoublyRobust(
         n_episodes = trajectory_wise_reward.shape[0]
 
         estimated_policy_value_momentum = np.zeros(self.n_folds)
-        for k in self.n_folds:
+        for k in range(self.n_folds):
             predicted_reward_for_the_taken_action_ = trajectory_wise_reward_prediction[
                 k, np.arange(n_episodes), initial_state_action
             ]
@@ -968,25 +968,23 @@ class DiscreteDistributionallyRobustDoublyRobust(
             raise ValueError(
                 "Expected `reward.shape[0] \\% step_per_episode == 0`, but found False"
             )
-        if behavior_policy_trajectory_wise_pscore.shape[0] % step_per_episode:
-            raise ValueError(
-                "Expected `behavior_policy_trajectory_wise_pscore.shape[0] \\% step_per_episode == 0`, but found False"
-            )
-        if evaluation_policy_trajectory_wise_pscore.shape[0] % step_per_episode:
-            raise ValueError(
-                "Expected `evaluation_policy_trajectory_wise_pscore.shape[0] \\% step_per_episode == 0`, but found False"
-            )
         if not (
             reward.shape[0]
             == behavior_policy_trajectory_wise_pscore.shape[0]
             == evaluation_policy_trajectory_wise_pscore.shape[0]
-            == initial_state.shape[0]
-            == initial_state_action.shape[0]
-            == initial_state_action_distribution[0]
         ):
             raise ValueError(
                 "Expected `action.shape[0] == reward.shape[0] == behavior_policy_trajectory_wise_pscore.shape[0] == evaluation_policy_trajectory_wise_pscore.shape[0]"
-                "== initial_state.shape[0] == initial_state_action.shape[0] == initial_state_action_distribution.shape[0]`, but found False"
+                ", but found False"
+            )
+        if not (
+            reward.shape[0] // step_per_episode
+            == initial_state.shape[0]
+            == initial_state_action.shape[0]
+            == initial_state_action_distribution.shape[0]
+        ):
+            raise ValueError(
+                "Expected reward.shape[0] // step_per_episode == initial_state.shape[0] == initial_state_action.shape[0] == initial_state_action_distribution.shape[0]`, but found False"
             )
         if random_state is None:
             raise ValueError("random_state must be given")
@@ -1002,8 +1000,8 @@ class DiscreteDistributionallyRobustDoublyRobust(
         )
         n_episodes = trajectory_wise_importance_weight.shape[0]
 
-        fit_episodes = np.zeros((self.n_fold, n_episodes // 2))
-        train_episodes = np.zeros((self.n_fold, n_episodes // 2))
+        fit_episodes = np.zeros((self.n_folds, n_episodes // 2), dtype=int)
+        train_episodes = np.zeros((self.n_folds, n_episodes // 2), dtype=int)
         for k in range(self.n_folds):
             fit_episodes[k], train_episodes[k] = train_test_split(
                 np.arange(n_episodes),
@@ -1085,7 +1083,9 @@ class DiscreteDistributionallyRobustDoublyRobust(
             )
 
             alpha_prior = alpha
-            alpha = np.clip(alpha_prior - momentum / momentum_derivative, 0, 1 / delta)
+            alpha = np.clip(
+                alpha_prior - momentum / momentum_derivative, 0.1, 1 / delta
+            )
 
             if np.abs(alpha - alpha_prior) < epsilon:
                 break

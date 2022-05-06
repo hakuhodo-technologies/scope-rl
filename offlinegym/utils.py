@@ -199,7 +199,7 @@ def check_array(
         raise ValueError(f"{name} must be {expected_dim}D array, but got {type(array)}")
     if array.ndim != expected_dim:
         raise ValueError(
-            f"{name} must be {expected_dim}D array, but got {expected_dim}D array"
+            f"{name} must be {expected_dim}D array, but got {array.ndim}D array"
         )
     if expected_dtype is not None:
         if not np.issubsctype(array, expected_dtype):

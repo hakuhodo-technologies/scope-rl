@@ -2518,12 +2518,42 @@ class DiscreteDistributionallyRobustOffPolicyEvaluation:
             "behavior_policy_step_wise_pscore": behavior_policy_step_wise_pscore.flatten(),
             "behavior_policy_trajectory_wise_pscore": behavior_policy_trajectory_wise_pscore.flatten(),
             "initial_state": self.logged_dataset["state"].reshape(
-                (-1, self.step_per_episode)
-            )[:, 0],
+                (-1, self.step_per_episode, self.logged_dataset["state_dim"])
+            )[:, 0, :],
             "initial_state_action": self.logged_dataset["action"]
             .astype(int)
             .reshape((-1, self.step_per_episode))[:, 0],
         }
+
+    def estimate_worst_case_on_policy_policy_value(
+        self,
+        on_policy_policy_value: np.ndarray,
+        delta: float = 0.05,
+    ) -> float:
+        n = on_policy_policy_value.shape[0]
+
+        alpha = self.alpha_prior
+        for _ in range(self.max_steps):
+            W_0 = np.exp(-on_policy_policy_value / alpha)
+            W_1 = on_policy_policy_value * np.exp(-on_policy_policy_value / alpha)
+            W_2 = on_policy_policy_value ** 2 * np.exp(-on_policy_policy_value / alpha)
+            objective = -alpha * (np.log(W_0) + delta)
+            first_order_derivative = -W_1 / (alpha * n * W_0) - np.log(W_0) - delta
+            second_order_derivative = W_1 ** 2 / (
+                alpha ** 3 * n ** 2 * W_0 ** 2
+            ) - W_2 / (alpha ** 3 * n * W_0)
+
+            alpha_prior = alpha
+            alpha = np.clip(
+                alpha_prior - first_order_derivative / second_order_derivative,
+                0,
+                1 / delta,
+            )
+
+            if np.abs(alpha - alpha_prior)[0] < self.epsilon:
+                break
+
+        return objective
 
     def estimate_worst_case_policy_value(
         self,
@@ -2586,7 +2616,6 @@ class DiscreteDistributionallyRobustOffPolicyEvaluation:
                 ] = estimator.estimate_worst_case_policy_value(
                     **input_dict[eval_policy],
                     **self.input_dict_,
-                    step_per_episode=self.step_per_episode,
                     gamma=gamma,
                     delta=delta,
                     alpha_prior=self.alpha_prior,
