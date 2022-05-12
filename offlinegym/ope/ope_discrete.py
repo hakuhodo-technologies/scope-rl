@@ -582,7 +582,7 @@ class DiscreteOffPolicyEvaluation:
 
         else:
             visualize_on_policy = True
-            for eval_policy in input_dict:
+            for eval_policy in input_dict.keys():
                 if input_dict[eval_policy]["on_policy_policy_value"] is None:
                     visualize_on_policy = False
 
@@ -606,7 +606,7 @@ class DiscreteOffPolicyEvaluation:
                 lower = np.zeros(len(input_dict))
                 upper = np.zeros(len(input_dict))
 
-                for j, eval_policy in enumerate(input_dict):
+                for j, eval_policy in enumerate(input_dict.keys()):
                     mean[j] = policy_value_interval_dict[eval_policy][estimator]["mean"]
                     lower[j] = policy_value_interval_dict[eval_policy][estimator][
                         f"{100 * (1. - alpha)}% CI (lower)"
@@ -646,7 +646,7 @@ class DiscreteOffPolicyEvaluation:
                 lower = np.zeros(len(input_dict))
                 upper = np.zeros(len(input_dict))
 
-                for j, eval_policy in enumerate(input_dict):
+                for j, eval_policy in enumerate(input_dict.keys()):
                     mean[j] = policy_value_interval_dict[eval_policy]["on_policy"][
                         "mean"
                     ]
@@ -1689,7 +1689,7 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
                 figsize=(2 * len(self.ope_estimators_), 4 * len(input_dict))
             )
 
-            for i, eval_policy in enumerate(input_dict):
+            for i, eval_policy in enumerate(input_dict.keys()):
                 if i == 0:
                     ax = ax0 = fig.add_subplot(len(input_dict), 1, i + 1)
                 elif sharey:
@@ -1761,7 +1761,7 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
 
         else:
             visualize_on_policy = True
-            for eval_policy in input_dict:
+            for eval_policy in input_dict.keys():
                 if input_dict[eval_policy]["on_policy_policy_value"] is None:
                     visualize_on_policy = False
 
@@ -1783,7 +1783,7 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
 
                 mean = np.zeros(len(input_dict))
                 variance = np.zeros(len(input_dict))
-                for j, eval_policy in enumerate(input_dict):
+                for j, eval_policy in enumerate(input_dict.keys()):
                     mean[j] = mean_dict[eval_policy][estimator]
                     variance[j] = variance_dict[eval_policy][estimator]
 
@@ -1936,7 +1936,7 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
             raise ValueError(f"fig_dir must be a string, but {type(fig_dir)} is given")
 
         visualize_on_policy = True
-        for eval_policy in input_dict:
+        for eval_policy in input_dict.keys():
             if input_dict[eval_policy]["on_policy_policy_value"] is None:
                 visualize_on_policy = False
 
@@ -1961,7 +1961,7 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
             )
 
             if n_rows == 1:
-                for i, eval_policy in enumerate(input_dict):
+                for i, eval_policy in enumerate(input_dict.keys()):
                     for j, estimator in enumerate(estimator_names):
                         axes[i].plot(
                             alphas,
@@ -1976,7 +1976,7 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
                         axes[i].legend()
 
             else:
-                for i, eval_policy in enumerate(input_dict):
+                for i, eval_policy in enumerate(input_dict.keys()):
                     for j, estimator in enumerate(estimator_names):
                         axes[i // n_cols, i % n_cols].plot(
                             alphas,
@@ -2001,7 +2001,7 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
 
             if n_rows == 1:
                 for i, estimator in enumerate(estimator_names):
-                    for j, eval_policy in enumerate(input_dict):
+                    for j, eval_policy in enumerate(input_dict.keys()):
                         axes[i].plot(
                             alphas,
                             cvar_dict[eval_policy][estimator],
@@ -2016,7 +2016,7 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
 
             else:
                 for i, estimator in enumerate(estimator_names):
-                    for j, eval_policy in enumerate(input_dict):
+                    for j, eval_policy in enumerate(input_dict.keys()):
                         axes[i // n_cols, i % n_cols].plot(
                             alphas,
                             cvar_dict[eval_policy][estimator],
@@ -2101,7 +2101,7 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
         n_colors = len(color)
 
         visualize_on_policy = True
-        for eval_policy in input_dict:
+        for eval_policy in input_dict.keys():
             if input_dict[eval_policy]["on_policy_policy_value"] is None:
                 visualize_on_policy = False
 
@@ -2119,7 +2119,7 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
         if hue == "estimator":
             fig = plt.figure(figsize=(2 * n_estimators, 4 * n_policies))
 
-            for i, eval_policy in enumerate(input_dict):
+            for i, eval_policy in enumerate(input_dict.keys()):
                 if i == 0:
                     ax = ax0 = fig.add_subplot(n_policies, 1, i + 1)
                 elif sharey:
@@ -2197,7 +2197,7 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
                 upper = np.zeros(n_policies)
                 lower = np.zeros(n_policies)
 
-                for j, eval_policy in enumerate(input_dict):
+                for j, eval_policy in enumerate(input_dict.keys()):
                     interquartile_dict_ = interquartile_dict[eval_policy][estimator]
                     mean[j] = mean_dict[eval_policy][estimator]
                     median[j] = interquartile_dict_["median"]

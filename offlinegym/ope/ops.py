@@ -481,12 +481,19 @@ class OffPolicySelection:
                     >= safety_criteria * self.behavior_policy_value
                 )
 
-                type_i_error_rate = (true_safety > estimated_safety).sum() / (
-                    true_safety.sum() + 1e-10
-                )
-                type_ii_error_rate = (true_safety < estimated_safety).sum() / (
-                    1 - true_safety.sum() + 1e-10
-                )
+                if true_safety.sum() > 0:
+                    type_i_error_rate = (
+                        true_safety > estimated_safety
+                    ).sum() / true_safety.sum()
+                else:
+                    type_i_error_rate = 0.0
+
+                if (1 - true_safety).sum() > 0:
+                    type_ii_error_rate = (true_safety < estimated_safety).sum() / (
+                        1 - true_safety
+                    ).sum()
+                else:
+                    type_ii_error_rate = 0.0
 
             ops_dict[estimator] = {
                 "estimated_ranking": estimated_ranking,
@@ -688,12 +695,19 @@ class OffPolicySelection:
                     >= safety_criteria * self.behavior_policy_value
                 )
 
-                type_i_error_rate = (true_safety > estimated_safety).sum() / (
-                    true_safety.sum() + 1e-10
-                )
-                type_ii_error_rate = (true_safety < estimated_safety).sum() / (
-                    1 - true_safety.sum() + 1e-10
-                )
+                if true_safety.sum() > 0:
+                    type_i_error_rate = (
+                        true_safety > estimated_safety
+                    ).sum() / true_safety.sum()
+                else:
+                    type_i_error_rate = 0.0
+
+                if (1 - true_safety).sum() > 0:
+                    type_ii_error_rate = (true_safety < estimated_safety).sum() / (
+                        1 - true_safety
+                    ).sum()
+                else:
+                    type_ii_error_rate = 0.0
 
             ops_dict[estimator] = {
                 "estimated_ranking": estimated_ranking,
@@ -918,12 +932,19 @@ class OffPolicySelection:
                         >= safety_criteria * self.behavior_policy_value
                     )
 
-                    type_i_error_rate = (
-                        true_safety > estimated_safety
-                    ).sum() / true_safety.sum()
-                    type_ii_error_rate = (true_safety < estimated_safety).sum() / (
-                        1 - true_safety
-                    ).sum()
+                    if true_safety.sum() > 0:
+                        type_i_error_rate = (
+                            true_safety > estimated_safety
+                        ).sum() / true_safety.sum()
+                    else:
+                        type_i_error_rate = 0.0
+
+                    if (1 - true_safety).sum() > 0:
+                        type_ii_error_rate = (true_safety < estimated_safety).sum() / (
+                            1 - true_safety
+                        ).sum()
+                    else:
+                        type_ii_error_rate = 0.0
 
                 ops_dict[ci][estimator] = {
                     "estimated_ranking": estimated_ranking,
@@ -1115,12 +1136,19 @@ class OffPolicySelection:
                 true_safety = true_lower_quartile >= safety_threshold
                 estimated_safety = estimated_lower_quartile_ >= safety_threshold
 
-                type_i_error_rate = (true_safety > estimated_safety).sum() / (
-                    true_safety.sum() + 1e-10
-                )
-                type_ii_error_rate = (true_safety < estimated_safety).sum() / (
-                    1 - true_safety.sum() + 1e-10
-                )
+                if true_safety.sum() > 0:
+                    type_i_error_rate = (
+                        true_safety > estimated_safety
+                    ).sum() / true_safety.sum()
+                else:
+                    type_i_error_rate = 0.0
+
+                if (1 - true_safety).sum() > 0:
+                    type_ii_error_rate = (true_safety < estimated_safety).sum() / (
+                        1 - true_safety
+                    ).sum()
+                else:
+                    type_ii_error_rate = 0.0
 
             ops_dict[estimator] = {
                 "estimated_ranking": estimated_ranking,
@@ -1294,12 +1322,19 @@ class OffPolicySelection:
                 true_safety = true_cvar >= safety_threshold
                 estimated_safety = estimated_cvar_ >= safety_threshold
 
-                type_i_error_rate = (true_safety > estimated_safety).sum() / (
-                    true_safety.sum() + 1e-10
-                )
-                type_ii_error_rate = (true_safety < estimated_safety).sum() / (
-                    1 - true_safety.sum() + 1e-10
-                )
+                if true_safety.sum() > 0:
+                    type_i_error_rate = (
+                        true_safety > estimated_safety
+                    ).sum() / true_safety.sum()
+                else:
+                    type_i_error_rate = 0.0
+
+                if (1 - true_safety).sum() > 0:
+                    type_ii_error_rate = (true_safety < estimated_safety).sum() / (
+                        1 - true_safety
+                    ).sum()
+                else:
+                    type_ii_error_rate = 0.0
 
             ops_dict[estimator] = {
                 "estimated_ranking": estimated_ranking,
@@ -1483,12 +1518,19 @@ class OffPolicySelection:
                     estimated_worst_case_policy_value_ >= safety_threshold
                 )
 
-                type_i_error_rate = (true_safety > estimated_safety).sum() / (
-                    true_safety.sum() + 1e-10
-                )
-                type_ii_error_rate = (true_safety < estimated_safety).sum() / (
-                    1 - true_safety.sum() + 1e-10
-                )
+                if true_safety.sum() > 0:
+                    type_i_error_rate = (
+                        true_safety > estimated_safety
+                    ).sum() / true_safety.sum()
+                else:
+                    type_i_error_rate = 0.0
+
+                if (1 - true_safety).sum() > 0:
+                    type_ii_error_rate = (true_safety < estimated_safety).sum() / (
+                        1 - true_safety
+                    ).sum()
+                else:
+                    type_ii_error_rate = 0.0
 
             ops_dict[estimator] = {
                 "estimated_ranking": estimated_ranking,
