@@ -17,10 +17,10 @@ from d3rlpy.ope import FQE as ContinuousFQE
 from d3rlpy.models.encoders import VectorEncoderFactory
 from d3rlpy.models.q_functions import MeanQFunctionFactory
 
-from offlinegym.ope.online import rollout_policy_online
-from offlinegym.policy.head import BaseHead
-from offlinegym.types import LoggedDataset, OPEInputDict
-from offlinegym.utils import (
+from .online import rollout_policy_online
+from ..policy.head import BaseHead
+from ..types import LoggedDataset, OPEInputDict
+from ..utils import (
     defaultdict_to_dict,
     check_logged_dataset,
 )

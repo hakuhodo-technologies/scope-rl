@@ -12,8 +12,8 @@ import gym
 from d3rlpy.algos import AlgoBase
 from sklearn.utils import check_scalar, check_random_state
 
-from offlinegym.policy.head import BaseHead, OnlineHead
-from offlinegym.utils import (
+from ..policy.head import BaseHead, OnlineHead
+from ..utils import (
     estimate_confidence_interval_by_bootstrap,
 )
 
@@ -251,7 +251,7 @@ def rollout_policy_online(
     on_policy_policy_values = np.zeros(n_episodes)
     env.seed(random_state)
 
-    if isinstance(policy, AlgoBase):
+    if not isinstance(policy, BaseHead):
         policy = OnlineHead(policy)
 
         for i in tqdm(

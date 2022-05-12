@@ -2,6 +2,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from typing import Optional, Union, List
 from pathlib import Path
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -10,18 +11,18 @@ from sklearn.metrics import mean_squared_error
 from sklearn.utils import check_scalar
 import matplotlib.pyplot as plt
 
-from offlinegym.ope.ope_discrete import (
+from .ope_discrete import (
     DiscreteOffPolicyEvaluation,
     DiscreteCumulativeDistributionalOffPolicyEvaluation,
     DiscreteDistributionallyRobustOffPolicyEvaluation,
 )
-from offlinegym.ope.ope_continuous import (
+from .ope_continuous import (
     ContinuousOffPolicyEvaluation,
     ContinuousCumulativeDistributionalOffPolicyEvaluation,
     ContinuousDistributionallyRobustOffPolicyEvaluation,
 )
-from offlinegym.types import OPEInputDict
-from offlinegym.utils import check_array, defaultdict_to_dict
+from ..types import OPEInputDict
+from ..utils import check_array, defaultdict_to_dict
 
 
 @dataclass
@@ -82,34 +83,40 @@ class OffPolicySelection:
             raise RuntimeError(
                 "one of ope, cumulative_distributional_ope, or distributionally_robust_ope must be given"
             )
-        # if not isinstance(
-        #     self.ope, (DiscreteOffPolicyEvaluation, ContinuousOffPolicyEvaluation)
-        # ):
-        #     raise RuntimeError(
-        #         "ope must be the instance of either DiscreteOffPolicyEvaluation or ContinuousOffPolicyEvaluation"
-        #     )
-        # if not isinstance(
-        #     self.cumulative_distributional_ope,
-        #     (
-        #         DiscreteCumulativeDistributionalOffPolicyEvaluation,
-        #         ContinuousCumulativeDistributionalOffPolicyEvaluation,
-        #     ),
-        # ):
-        #     raise RuntimeError(
-        #         "cumulative_distributional_ope must be the instance of either "
-        #         "DiscreteCumulativeDistributionalOffPolicyEvaluation or ContinuousCumulativeDistributionalOffPolicyEvaluation"
-        #     )
-        # if not isinstance(
-        #     self.cumulative_distributional_ope,
-        #     (
-        #         DiscreteDistributionallyRobustOffPolicyEvaluation,
-        #         ContinuousDistributionallyRobustOffPolicyEvaluation,
-        #     ),
-        # ):
-        #     raise RuntimeError(
-        #         "distributionally_robust_ope must be the instance of either "
-        #         "DiscreteDistributionallyRobustOffPolicyEvaluation or ContinuousDistributionallyRobustOffPolicyEvaluation"
-        #     )
+
+        if self.ope is not None and not isinstance(
+            self.ope, (DiscreteOffPolicyEvaluation, ContinuousOffPolicyEvaluation)
+        ):
+            raise RuntimeError(
+                "ope must be the instance of either DiscreteOffPolicyEvaluation or ContinuousOffPolicyEvaluation"
+            )
+        if self.cumulative_distributional_ope is not None and not isinstance(
+            self.cumulative_distributional_ope,
+            (
+                DiscreteCumulativeDistributionalOffPolicyEvaluation,
+                ContinuousCumulativeDistributionalOffPolicyEvaluation,
+            ),
+        ):
+            raise RuntimeError(
+                "cumulative_distributional_ope must be the instance of either "
+                "DiscreteCumulativeDistributionalOffPolicyEvaluation or ContinuousCumulativeDistributionalOffPolicyEvaluation"
+            )
+        if self.distributionally_robust_ope is not None and not isinstance(
+            self.cumulative_distributional_ope,
+            (
+                DiscreteDistributionallyRobustOffPolicyEvaluation,
+                ContinuousDistributionallyRobustOffPolicyEvaluation,
+            ),
+        ):
+            raise RuntimeError(
+                "distributionally_robust_ope must be the instance of either "
+                "DiscreteDistributionallyRobustOffPolicyEvaluation or ContinuousDistributionallyRobustOffPolicyEvaluation"
+            )
+
+        if self.distributionally_robust_ope is not None:
+            warnings.warn(
+                "Currently, distributionally_robust_ope is under construction. It's performance is not stable."
+            )
 
         step_per_episode = self.ope.logged_dataset["step_per_episode"]
         check_scalar(
@@ -130,7 +137,6 @@ class OffPolicySelection:
     def obtain_oracle_selection_result(
         self,
         input_dict: OPEInputDict,
-        gamma: float = 1.0,
         return_variance: bool = False,
         return_lower_quartile: bool = False,
         return_conditional_value_at_risk: bool = False,
@@ -156,9 +162,6 @@ class OffPolicySelection:
                 initial_state_value_prediction,
                 on_policy_policy_value,
             ]
-
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
 
         return_variance: bool, default=False
             Whether to return variance.
@@ -341,7 +344,6 @@ class OffPolicySelection:
     def select_by_policy_value(
         self,
         input_dict: OPEInputDict,
-        gamma: float = 1.0,
         return_metrics: bool = False,
         return_by_dataframe: bool = False,
         top_k_in_eval_metrics: int = 1,
@@ -363,9 +365,6 @@ class OffPolicySelection:
                 initial_state_value_prediction,
                 on_policy_policy_value,
             ]
-
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
 
         return_metrics: bool, default=False
             Whether to return evaluation metrics including:
@@ -431,13 +430,11 @@ class OffPolicySelection:
 
         estimated_policy_value_dict = self.ope.estimate_policy_value(
             input_dict=input_dict,
-            gamma=gamma,
         )
 
         if return_metrics:
             ground_truth_policy_value_dict = self.obtain_oracle_selection_result(
                 input_dict=input_dict,
-                gamma=gamma,
             )
             true_ranking = ground_truth_policy_value_dict["ranking"]
             true_policy_value = ground_truth_policy_value_dict["policy_value"]
@@ -550,7 +547,6 @@ class OffPolicySelection:
     def select_by_policy_value_via_cumulative_distributional_ope(
         self,
         input_dict: OPEInputDict,
-        gamma: float = 1.0,
         return_metrics: bool = False,
         return_by_dataframe: bool = False,
         top_k_in_eval_metrics: int = 1,
@@ -572,9 +568,6 @@ class OffPolicySelection:
                 initial_state_value_prediction,
                 on_policy_policy_value,
             ]
-
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
 
         return_metrics: bool, default=False
             Whether to return evaluation metrics including:
@@ -640,13 +633,11 @@ class OffPolicySelection:
 
         estimated_policy_value_dict = self.cumulative_distributional_ope.estimate_mean(
             input_dict=input_dict,
-            gamma=gamma,
         )
 
         if return_metrics:
             ground_truth_policy_value_dict = self.obtain_oracle_selection_result(
                 input_dict=input_dict,
-                gamma=gamma,
             )
             true_ranking = ground_truth_policy_value_dict["ranking"]
             true_policy_value = ground_truth_policy_value_dict["policy_value"]
@@ -765,7 +756,6 @@ class OffPolicySelection:
     def select_by_policy_value_lower_bound(
         self,
         input_dict: OPEInputDict,
-        gamma: float = 1.0,
         return_metrics: bool = False,
         return_by_dataframe: bool = False,
         top_k_in_eval_metrics: int = 1,
@@ -791,9 +781,6 @@ class OffPolicySelection:
                 initial_state_value_prediction,
                 on_policy_policy_value,
             ]
-
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
 
         return_metrics: bool, default=False
             Whether to return evaluation metrics including:
@@ -868,7 +855,6 @@ class OffPolicySelection:
         if return_metrics:
             ground_truth_policy_value_dict = self.obtain_oracle_selection_result(
                 input_dict=input_dict,
-                gamma=gamma,
             )
             true_ranking = ground_truth_policy_value_dict["ranking"]
             true_policy_value = ground_truth_policy_value_dict["policy_value"]
@@ -882,7 +868,6 @@ class OffPolicySelection:
         for ci in cis:
             estimated_policy_value_interval_dict = self.ope.estimate_intervals(
                 input_dict=input_dict,
-                gamma=gamma,
                 alpha=alpha,
                 ci=ci,
                 n_bootstrap_samples=n_bootstrap_samples,
@@ -1009,7 +994,6 @@ class OffPolicySelection:
     def select_by_lower_quartile(
         self,
         input_dict: OPEInputDict,
-        gamma: float = 1.0,
         alpha: float = 0.05,
         return_metrics: bool = False,
         return_by_dataframe: bool = False,
@@ -1031,9 +1015,6 @@ class OffPolicySelection:
                 initial_state_value_prediction,
                 on_policy_policy_value,
             ]
-
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
 
         alpha: float, default=0.05
             Proportion of the sided region.
@@ -1091,7 +1072,6 @@ class OffPolicySelection:
         estimated_interquartile_range_dict = (
             self.cumulative_distributional_ope.estimate_interquartile_range(
                 input_dict=input_dict,
-                gamma=gamma,
                 alpha=alpha,
             )
         )
@@ -1099,7 +1079,6 @@ class OffPolicySelection:
         if return_metrics:
             ground_truth_dict = self.obtain_oracle_selection_result(
                 input_dict=input_dict,
-                gamma=gamma,
                 return_lower_quartile=True,
                 quartile_alpha=alpha,
             )
@@ -1196,7 +1175,6 @@ class OffPolicySelection:
     def select_by_conditional_value_at_risk(
         self,
         input_dict: OPEInputDict,
-        gamma: float = 1.0,
         alpha: float = 0.05,
         return_metrics: bool = False,
         return_by_dataframe: bool = False,
@@ -1218,9 +1196,6 @@ class OffPolicySelection:
                 initial_state_value_prediction,
                 on_policy_policy_value,
             ]
-
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
 
         alpha: float, default=0.05
             Proportion of the sided region.
@@ -1278,7 +1253,6 @@ class OffPolicySelection:
         estimated_cvar_dict = (
             self.cumulative_distributional_ope.estimate_conditional_value_at_risk(
                 input_dict=input_dict,
-                gamma=gamma,
                 alphas=alpha,
             )
         )
@@ -1286,7 +1260,6 @@ class OffPolicySelection:
         if return_metrics:
             ground_truth_dict = self.obtain_oracle_selection_result(
                 input_dict=input_dict,
-                gamma=gamma,
                 return_conditional_value_at_risk=True,
                 cvar_alpha=alpha,
             )
@@ -1381,7 +1354,6 @@ class OffPolicySelection:
     def select_by_distributionally_robust_worst_case_policy_value(
         self,
         input_dict: OPEInputDict,
-        gamma: float = 1.0,
         delta: float = 0.05,
         return_metrics: bool = False,
         return_by_dataframe: bool = False,
@@ -1404,15 +1376,15 @@ class OffPolicySelection:
                 on_policy_policy_value,
             ]
 
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
-
         delta: float, default=0.05
             Allowance of the distributional shift.
 
         return_metrics: bool, default=False
             Whether to return evaluation metrics including:
             mean-squared-error, rank-correlation, and Type I and Type II error rate.
+
+        return_by_dataframe: bool, default=False
+            Whether to return the result in a dataframe format.
 
         safety_threshold: float, default=None (>= 0)
             The lower quartile required for being "safe" candidate policy.
@@ -1460,7 +1432,6 @@ class OffPolicySelection:
         estimated_worst_case_policy_value_dict = (
             self.distributionally_robust_ope.estimate_worst_case_policy_value(
                 input_dict=input_dict,
-                gamma=gamma,
                 delta=delta,
             )
         )
@@ -1468,7 +1439,6 @@ class OffPolicySelection:
         if return_metrics:
             ground_truth_dict = self.obtain_oracle_selection_result(
                 input_dict=input_dict,
-                gamma=gamma,
                 return_distributionally_robust_worst_case=True,
                 distributionally_robust_delta=delta,
             )
@@ -1530,17 +1500,23 @@ class OffPolicySelection:
                 "safety_threshold": safety_threshold,
             }
 
-    def visualize_policy_value(
+    def visualize_policy_value_for_selection(
         self,
         input_dict: OPEInputDict,
-        gamma: float = 1.0,
-        n_cols: Optional[int] = None,
-        share_axes: bool = False,
+        alpha: float = 0.05,
+        ci: str = "bootstrap",
+        n_bootstrap_samples: int = 100,
+        random_state: Optional[int] = None,
+        is_relative: bool = False,
+        hue: str = "estimator",
+        sharey: bool = False,
         fig_dir: Optional[Path] = None,
-        fig_name: str = "scatter_policy_value.png",
+        fig_name: str = "estimated_policy_value.png",
     ):
-        """Visualize true policy value and its estimate.
+        """Visualize policy value estimated by OPE estimators (box plot).
 
+        Parameters
+        -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
             Please refer to `CreateOPEInput` class for the detail.
@@ -1554,8 +1530,301 @@ class OffPolicySelection:
                 on_policy_policy_value,
             ]
 
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
+        alpha: float, default=0.05 (0, 1)
+            Significant level.
+
+        ci: str, default="bootstrap"
+            Estimation method for confidence intervals.
+
+        n_bootstrap_samples: int, default=10000 (> 0)
+            Number of resampling performed in the bootstrap procedure.
+
+        random_state: int, default=None (>= 0)
+            Random state.
+
+        is_relative: bool, default=False
+            If `True`, the method visualizes the estimated policy value of evaluation policy
+            relative to the on-policy policy value of the behavior policy.
+
+        hue: str, default="estimator"
+            Hue of the plot.
+            Choose either from "estimator" or "policy".
+
+        sharey: bool, default=False
+            If `True`, the y-axis will be shared among different estimators or evaluation policies.
+
+        fig_dir: Path, default=None
+            Path to store the bar figure.
+            If `None` is given, the figure will not be saved.
+
+        fig_name: str, default="estimated_policy_value.png"
+            Name of the bar figure.
+
+
+        """
+        return self.ope.visualize_off_policy_estimates(
+            input_dict=input_dict,
+            alpha=alpha,
+            ci=ci,
+            n_bootstrap_samples=n_bootstrap_samples,
+            random_state=random_state,
+            is_relative=is_relative,
+            hue=hue,
+            sharey=sharey,
+            fig_dir=fig_dir,
+            fig_name=fig_name,
+        )
+
+    def visualize_cumulative_distribution_function_for_selection(
+        self,
+        input_dict: OPEInputDict,
+        hue: str = "estimator",
+        legend: bool = True,
+        n_cols: Optional[int] = None,
+        fig_dir: Optional[Path] = None,
+        fig_name: str = "estimated_cumulative_distribution_function.png",
+    ) -> None:
+        """Visualize cumulative distribution function (cdf plot).
+
+        Parameters
+        -------
+        input_dict: OPEInputDict
+            Dictionary of the OPE inputs for each evaluation policy.
+            Please refer to `CreateOPEInput` class for the detail.
+            key: [evaluation_policy_name][
+                evaluation_policy_step_wise_pscore,
+                evaluation_policy_trajectory_wise_pscore,
+                evaluation_policy_action,
+                evaluation_policy_action_dist,
+                state_action_value_prediction,
+                initial_state_value_prediction,
+                on_policy_policy_value,
+            ]
+
+        hue: str, default="estimator"
+            Hue of the plot.
+            Choose either from "estimator" or "policy".
+
+        legend: bool, default=True
+            Whether to include legend in the figure.
+
+        n_cols: int, default=None
+            Number of columns in the figure.
+
+        fig_dir: Path, default=None
+            Path to store the bar figure.
+            If `None` is given, the figure will not be saved.
+
+        fig_name: str, default="estimated_cumulative_distribution_function.png"
+            Name of the bar figure.
+
+        """
+        return self.cumulative_distributional_ope.visualize_cumulative_distribution_function(
+            input_dict=input_dict,
+            hue=hue,
+            legend=legend,
+            n_cols=n_cols,
+            fig_dir=fig_dir,
+            fig_name=fig_name,
+        )
+
+    def visualize_policy_value_of_cumulative_distributional_OPE_for_selection(
+        self,
+        input_dict: OPEInputDict,
+        alpha: float = 0.05,
+        is_relative: bool = False,
+        hue: str = "estimator",
+        sharey: bool = False,
+        fig_dir: Optional[Path] = None,
+        fig_name: str = "estimated_policy_value.png",
+    ) -> None:
+        """Visualize policy value estimated by cumulative distributional OPE estimators (box plot).
+
+        Parameters
+        -------
+        input_dict: OPEInputDict
+            Dictionary of the OPE inputs for each evaluation policy.
+            Please refer to `CreateOPEInput` class for the detail.
+            key: [evaluation_policy_name][
+                evaluation_policy_step_wise_pscore,
+                evaluation_policy_trajectory_wise_pscore,
+                evaluation_policy_action,
+                evaluation_policy_action_dist,
+                state_action_value_prediction,
+                initial_state_value_prediction,
+                on_policy_policy_value,
+            ]
+
+        alpha: float, default=0.05 (0, 1)
+            Significant level.
+
+        is_relative: bool, default=False
+            If `True`, the method visualizes the estimated policy value of evaluation policy
+            relative to the ground-truth policy value of behavior policy.
+
+        hue: str, default="estimator"
+            Hue of the plot.
+            Choose either from "estimator" or "policy".
+
+        sharey: bool, default=False
+            If `True`, the y-axis will be shared among different evaluation policies.
+
+        fig_dir: Path, default=None
+            Path to store the bar figure.
+            If `None` is given, the figure will not be saved.
+
+        fig_name: str, default="estimated_policy_value.png"
+            Name of the bar figure.
+
+        """
+        return self.cumulative_distributional_ope.visualize_policy_value(
+            input_dict=input_dict,
+            alpha=alpha,
+            is_relative=is_relative,
+            hue=hue,
+            sharey=sharey,
+            fig_dir=fig_dir,
+            fig_name=fig_name,
+        )
+
+    def visualize_conditional_value_at_risk_for_selection(
+        self,
+        input_dict: OPEInputDict,
+        alphas: np.ndarray = np.linspace(0, 1, 20),
+        hue: str = "estimator",
+        legend: bool = True,
+        n_cols: Optional[int] = None,
+        sharey: bool = False,
+        fig_dir: Optional[Path] = None,
+        fig_name: str = "estimated_policy_value.png",
+    ) -> None:
+        """Visualize conditional value at risk estimated by cumulative distributional OPE estimators (cdf plot).
+
+        Parameters
+        -------
+        input_dict: OPEInputDict
+            Dictionary of the OPE inputs for each evaluation policy.
+            Please refer to `CreateOPEInput` class for the detail.
+            key: [evaluation_policy_name][
+                evaluation_policy_step_wise_pscore,
+                evaluation_policy_trajectory_wise_pscore,
+                evaluation_policy_action,
+                evaluation_policy_action_dist,
+                state_action_value_prediction,
+                initial_state_value_prediction,
+                on_policy_policy_value,
+            ]
+
+        alphas: NDArray, default=nnp.linspace(0, 1, 20)
+            Set of proportions of the sided region.
+
+        hue: str, default="estimator"
+            Hue of the plot.
+            Choose either from "estimator" or "policy".
+
+        legend: bool, default=True
+            Whether to include legend in the figure.
+
+        n_cols: int, default=None
+            Number of columns in the figure.
+
+        sharey: bool, default=False
+            If `True`, the y-axis will be shared among different evaluation policies.
+
+        fig_dir: Path, default=None
+            Path to store the bar figure.
+            If `None` is given, the figure will not be saved.
+
+        fig_name: str, default="estimated_policy_value.png"
+            Name of the bar figure.
+
+        """
+        return self.cumulative_distributional_ope.visualize_conditional_value_at_risk(
+            input_dict=input_dict,
+            alphas=alphas,
+            hue=hue,
+            legend=legend,
+            n_cols=n_cols,
+            sharey=sharey,
+            fig_dir=fig_dir,
+            fig_name=fig_name,
+        )
+
+    def visualize_interquartile_range_for_selection(
+        self,
+        input_dict: OPEInputDict,
+        alpha: float = 0.05,
+        hue: str = "estimator",
+        sharey: bool = False,
+        fig_dir: Optional[Path] = None,
+        fig_name: str = "estimated_policy_value.png",
+    ) -> None:
+        """Visualize interquartile range estimated by cumulative distributional OPE estimators (box plot).
+
+        Parameters
+        -------
+        input_dict: OPEInputDict
+            Dictionary of the OPE inputs for each evaluation policy.
+            Please refer to `CreateOPEInput` class for the detail.
+            key: [evaluation_policy_name][
+                evaluation_policy_step_wise_pscore,
+                evaluation_policy_trajectory_wise_pscore,
+                evaluation_policy_action,
+                evaluation_policy_action_dist,
+                state_action_value_prediction,
+                initial_state_value_prediction,
+                on_policy_policy_value,
+            ]
+
+        alpha: float, default=0.05 (0, 1)
+            Significant level.
+
+        hue: str, default="estimator"
+            Hue of the plot.
+            Choose either from "estimator" or "policy".
+
+        sharey: bool, default=False
+            If `True`, the y-axis will be shared among different evaluation policies.
+
+        fig_dir: Path, default=None
+            Path to store the bar figure.
+            If `None` is given, the figure will not be saved.
+
+        fig_name: str, default="estimated_policy_value.png"
+            Name of the bar figure.
+
+        """
+        return self.cumulative_distributional_ope.visualize_interquartile_range(
+            input_dict=input_dict,
+            alpha=alpha,
+            hue=hue,
+            sharey=sharey,
+            fig_dir=fig_dir,
+            fig_name=fig_name,
+        )
+
+    def visualize_policy_value_for_validation(
+        self,
+        input_dict: OPEInputDict,
+        n_cols: Optional[int] = None,
+        share_axes: bool = False,
+        fig_dir: Optional[Path] = None,
+        fig_name: str = "scatter_policy_value.png",
+    ):
+        """Visualize true policy value and its estimate (scatter plot).
+
+        input_dict: OPEInputDict
+            Dictionary of the OPE inputs for each evaluation policy.
+            Please refer to `CreateOPEInput` class for the detail.
+            key: [evaluation_policy_name][
+                evaluation_policy_step_wise_pscore,
+                evaluation_policy_trajectory_wise_pscore,
+                evaluation_policy_action,
+                evaluation_policy_action_dist,
+                state_action_value_prediction,
+                initial_state_value_prediction,
+                on_policy_policy_value,
+            ]
 
         n_cols: int, default=None
             Number of columns in the figure.
@@ -1580,14 +1849,12 @@ class OffPolicySelection:
 
         ground_truth_policy_value_dict = self.obtain_oracle_selection_result(
             input_dict=input_dict,
-            gamma=gamma,
         )
         true_ranking = ground_truth_policy_value_dict["ranking"]
         true_policy_value = np.array(ground_truth_policy_value_dict["policy_value"])
 
         estimated_policy_value_dict = self.select_by_policy_value(
             input_dict=input_dict,
-            gamma=gamma,
         )
 
         plt.style.use("ggplot")
@@ -1718,16 +1985,15 @@ class OffPolicySelection:
         if fig_dir:
             fig.savefig(str(fig_dir / fig_name))
 
-    def visualize_policy_value_of_cumulative_distributional_OPE(
+    def visualize_policy_value_of_cumulative_distributional_OPE_for_validation(
         self,
         input_dict: OPEInputDict,
-        gamma: float = 1.0,
         n_cols: Optional[int] = None,
         share_axes: bool = False,
         fig_dir: Optional[Path] = None,
         fig_name: str = "scatter_policy_value_of_cumulative_distributional_ope.png",
     ):
-        """Visualize true policy value and its estimate obtained by cumulative distributional OPE.
+        """Visualize true policy value and its estimate obtained by cumulative distributional OPE (scatter plot).
 
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
@@ -1741,9 +2007,6 @@ class OffPolicySelection:
                 initial_state_value_prediction,
                 on_policy_policy_value,
             ]
-
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
 
         n_cols: int, default=None
             Number of columns in the figure.
@@ -1761,7 +2024,6 @@ class OffPolicySelection:
         """
         ground_truth_policy_value_dict = self.obtain_oracle_selection_result(
             input_dict=input_dict,
-            gamma=gamma,
         )
         true_ranking = ground_truth_policy_value_dict["ranking"]
         true_policy_value = np.array(ground_truth_policy_value_dict["policy_value"])
@@ -1769,7 +2031,6 @@ class OffPolicySelection:
         estimated_policy_value_dict = (
             self.select_by_policy_value_via_cumulative_distributional_ope(
                 input_dict=input_dict,
-                gamma=gamma,
             )
         )
 
@@ -1907,11 +2168,10 @@ class OffPolicySelection:
         if fig_dir:
             fig.savefig(str(fig_dir / fig_name))
 
-    def visualize_policy_value_lower_bound(
+    def visualize_policy_value_lower_bound_for_validation(
         self,
         input_dict: OPEInputDict,
         cis: List[str] = ["bootstrap"],
-        gamma: float = 1.0,
         alpha: float = 0.05,
         n_bootstrap_samples: int = 100,
         random_state: Optional[int] = 12345,
@@ -1920,7 +2180,7 @@ class OffPolicySelection:
         fig_dir: Optional[Path] = None,
         fig_name: str = "scatter_policy_value_lower_bound.png",
     ):
-        """Visualize true policy value and its estimate lower bound.
+        """Visualize true policy value and its estimate lower bound (scatter plot).
 
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
@@ -1937,9 +2197,6 @@ class OffPolicySelection:
 
         cis: List[str], default=["bootstrap"]
             Estimation methods for confidence intervals.
-
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
 
         alpha: float, default=0.05 (0, 1)
             Significant level.
@@ -1966,7 +2223,6 @@ class OffPolicySelection:
         """
         ground_truth_policy_value_dict = self.obtain_oracle_selection_result(
             input_dict=input_dict,
-            gamma=gamma,
         )
         true_ranking = ground_truth_policy_value_dict["ranking"]
         true_policy_value = ground_truth_policy_value_dict["policy_value"]
@@ -1974,7 +2230,6 @@ class OffPolicySelection:
         estimated_policy_value_dict = self.select_by_policy_value_lower_bound(
             input_dict=input_dict,
             cis=cis,
-            gamma=gamma,
             alpha=alpha,
             n_bootstrap_samples=n_bootstrap_samples,
             random_state=random_state,
@@ -2252,16 +2507,15 @@ class OffPolicySelection:
         if fig_dir:
             fig.savefig(str(fig_dir / fig_name))
 
-    def visualize_variance(
+    def visualize_variance_for_validation(
         self,
         input_dict: OPEInputDict,
-        gamma: float = 1.0,
         n_cols: Optional[int] = None,
         share_axes: bool = False,
         fig_dir: Optional[Path] = None,
         fig_name: str = "scatter_variance.png",
     ):
-        """Visualize true variance and its estimate.
+        """Visualize true variance and its estimate (scatter plot).
 
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
@@ -2275,9 +2529,6 @@ class OffPolicySelection:
                 initial_state_value_prediction,
                 on_policy_policy_value,
             ]
-
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
 
         n_cols: int, default=None
             Number of columns in the figure.
@@ -2295,7 +2546,6 @@ class OffPolicySelection:
         """
         ground_truth_policy_value_dict = self.obtain_oracle_selection_result(
             input_dict=input_dict,
-            gamma=gamma,
             return_variance=True,
         )
         candidate_policy_names = ground_truth_policy_value_dict["ranking"]
@@ -2303,7 +2553,6 @@ class OffPolicySelection:
 
         estimated_variance_dict = self.cumulative_distributional_ope.estimate_variance(
             input_dict=input_dict,
-            gamma=gamma,
         )
 
         plt.style.use("ggplot")
@@ -2420,16 +2669,15 @@ class OffPolicySelection:
         if fig_dir:
             fig.savefig(str(fig_dir / fig_name))
 
-    def visualize_lower_quartile(
+    def visualize_lower_quartile_for_validation(
         self,
         input_dict: OPEInputDict,
-        gamma: float = 1.0,
         n_cols: Optional[int] = None,
         share_axes: bool = False,
         fig_dir: Optional[Path] = None,
         fig_name: str = "scatter_lower_quartile.png",
     ):
-        """Visualize true lower quartile and its estimate.
+        """Visualize true lower quartile and its estimate (scatter plot).
 
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
@@ -2443,9 +2691,6 @@ class OffPolicySelection:
                 initial_state_value_prediction,
                 on_policy_policy_value,
             ]
-
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
 
         n_cols: int, default=None
             Number of columns in the figure.
@@ -2463,7 +2708,6 @@ class OffPolicySelection:
         """
         ground_truth_policy_value_dict = self.obtain_oracle_selection_result(
             input_dict=input_dict,
-            gamma=gamma,
             return_lower_quartile=True,
         )
         true_ranking = ground_truth_policy_value_dict["ranking_by_lower_quartile"]
@@ -2471,7 +2715,6 @@ class OffPolicySelection:
 
         estimated_policy_value_dict = self.select_by_lower_quartile(
             input_dict=input_dict,
-            gamma=gamma,
         )
 
         plt.style.use("ggplot")
@@ -2608,16 +2851,15 @@ class OffPolicySelection:
         if fig_dir:
             fig.savefig(str(fig_dir / fig_name))
 
-    def visualize_conditional_value_at_risk(
+    def visualize_conditional_value_at_risk_for_validation(
         self,
         input_dict: OPEInputDict,
-        gamma: float = 1.0,
         n_cols: Optional[int] = None,
         share_axes: bool = False,
         fig_dir: Optional[Path] = None,
         fig_name: str = "scatter_conditional_value_at_risk.png",
     ):
-        """Visualize true conditional value at risk and its estimate.
+        """Visualize true conditional value at risk and its estimate (scatter plot).
 
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
@@ -2631,9 +2873,6 @@ class OffPolicySelection:
                 initial_state_value_prediction,
                 on_policy_policy_value,
             ]
-
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
 
         n_cols: int, default=None
             Number of columns in the figure.
@@ -2651,7 +2890,6 @@ class OffPolicySelection:
         """
         ground_truth_policy_value_dict = self.obtain_oracle_selection_result(
             input_dict=input_dict,
-            gamma=gamma,
             return_conditional_value_at_risk=True,
         )
         true_ranking = ground_truth_policy_value_dict[
@@ -2661,7 +2899,6 @@ class OffPolicySelection:
 
         estimated_policy_value_dict = self.select_by_conditional_value_at_risk(
             input_dict=input_dict,
-            gamma=gamma,
         )
 
         plt.style.use("ggplot")
@@ -2796,14 +3033,13 @@ class OffPolicySelection:
         if fig_dir:
             fig.savefig(str(fig_dir / fig_name))
 
-    def visualize_distributionally_robust_worst_case_policy_value(
+    def visualize_distributionally_robust_worst_case_policy_value_for_validation(
         self,
         input_dict: OPEInputDict,
-        gamma: float = 1.0,
         fig_dir: Optional[Path] = None,
         fig_name: str = "scatter_distributionally_robust_worst_case.png",
     ):
-        """Visualize true distributionally robust worst case policy value and its estimate.
+        """Visualize true distributionally robust worst case policy value and its estimate (scatter plot).
 
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
@@ -2818,9 +3054,6 @@ class OffPolicySelection:
                 on_policy_policy_value,
             ]
 
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
-
         fig_dir: Path, default=None
             Path to store the bar figure.
             If `None` is given, the figure will not be saved.
@@ -2831,7 +3064,6 @@ class OffPolicySelection:
         """
         ground_truth_policy_value_dict = self.obtain_oracle_selection_result(
             input_dict=input_dict,
-            gamma=gamma,
         )
         true_ranking = ground_truth_policy_value_dict[
             "ranking_by_distributionally_robust_worst_case"
@@ -2843,7 +3075,6 @@ class OffPolicySelection:
         estimated_policy_value_dict = (
             self.select_by_distributionally_robust_worst_case_policy_value(
                 input_dict=input_dict,
-                gamma=gamma,
             )
         )
 

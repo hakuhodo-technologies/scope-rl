@@ -5,7 +5,7 @@ from typing import Union, Optional
 import numpy as np
 from sklearn.utils import check_scalar, check_random_state
 
-from rtbgym.types import Numeric
+from .types import Numeric
 
 
 @dataclass

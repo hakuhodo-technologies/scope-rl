@@ -1,6 +1,5 @@
 """Off-Policy Evaluation Class to Streamline OPE."""
 from dataclasses import dataclass
-from random import random
 from typing import Dict, List, Tuple, Optional, Union
 from pathlib import Path
 
@@ -11,15 +10,14 @@ from scipy.stats import norm
 from sklearn.utils import check_scalar
 from pandas import DataFrame
 import matplotlib.pyplot as plt
-import seaborn as sns
 
-from offlinegym.ope.estimators_base import (
+from .estimators_base import (
     BaseOffPolicyEstimator,
     BaseCumulativeDistributionalOffPolicyEstimator,
     BaseDistributionallyRobustOffPolicyEstimator,
 )
-from offlinegym.types import LoggedDataset, OPEInputDict
-from offlinegym.utils import (
+from ..types import LoggedDataset, OPEInputDict
+from ..utils import (
     estimate_confidence_interval_by_bootstrap,
     estimate_confidence_interval_by_hoeffding,
     estimate_confidence_interval_by_empirical_bernstein,
@@ -42,6 +40,9 @@ class DiscreteOffPolicyEvaluation:
     ope_estimators: List[BaseOffPolicyEstimator]
         List of OPE estimators used to evaluate the policy value of evaluation policy.
         Estimators must follow the interface of `offlinegym.ope.BaseOffPolicyEstimator`.
+
+    gamma: float, default=1.0 (0, 1]
+        Discount factor.
 
     Examples
     ----------
@@ -161,6 +162,7 @@ class DiscreteOffPolicyEvaluation:
 
     logged_dataset: LoggedDataset
     ope_estimators: List[BaseOffPolicyEstimator]
+    gamma: float = 1.0
 
     def __post_init__(self) -> None:
         "Initialize class."
@@ -216,7 +218,6 @@ class DiscreteOffPolicyEvaluation:
     def estimate_policy_value(
         self,
         input_dict: OPEInputDict,
-        gamma: float = 1.0,
     ) -> Dict[str, float]:
         """Estimate the policy value of evaluation policy.
 
@@ -234,9 +235,6 @@ class DiscreteOffPolicyEvaluation:
                 initial_state_value_prediction,
                 on_policy_policy_value,
             ]
-
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
 
         Return
         -------
@@ -261,14 +259,13 @@ class DiscreteOffPolicyEvaluation:
                 ] = estimator.estimate_policy_value(
                     **input_dict[eval_policy],
                     **self.input_dict_,
-                    gamma=gamma,
+                    gamma=self.gamma,
                 )
         return defaultdict_to_dict(policy_value_dict)
 
     def estimate_intervals(
         self,
         input_dict: OPEInputDict,
-        gamma: float = 1.0,
         alpha: float = 0.05,
         ci: str = "bootstrap",
         n_bootstrap_samples: int = 100,
@@ -290,9 +287,6 @@ class DiscreteOffPolicyEvaluation:
                 initial_state_value_prediction,
                 on_policy_policy_value,
             ]
-
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
 
         alpha: float, default=0.05 (0, 1)
             Significant level.
@@ -335,7 +329,7 @@ class DiscreteOffPolicyEvaluation:
                 ] = estimator.estimate_interval(
                     **input_dict[eval_policy],
                     **self.input_dict_,
-                    gamma=gamma,
+                    gamma=self.gamma,
                     alpha=alpha,
                     ci=ci,
                     n_bootstrap_samples=n_bootstrap_samples,
@@ -347,7 +341,6 @@ class DiscreteOffPolicyEvaluation:
     def summarize_off_policy_estimates(
         self,
         input_dict: OPEInputDict,
-        gamma: float = 1.0,
         alpha: float = 0.05,
         ci: str = "bootstrap",
         n_bootstrap_samples: int = 100,
@@ -369,9 +362,6 @@ class DiscreteOffPolicyEvaluation:
                 initial_state_value_prediction,
                 on_policy_policy_value,
             ]
-
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
 
         alpha: float, default=0.05 (0, 1)
             Significant level.
@@ -395,7 +385,6 @@ class DiscreteOffPolicyEvaluation:
         policy_value_dict = self.estimate_policy_value(input_dict)
         policy_value_interval_dict = self.estimate_intervals(
             input_dict,
-            gamma=gamma,
             alpha=alpha,
             ci=ci,
             n_bootstrap_samples=n_bootstrap_samples,
@@ -434,7 +423,6 @@ class DiscreteOffPolicyEvaluation:
     def visualize_off_policy_estimates(
         self,
         input_dict: OPEInputDict,
-        gamma: float = 1.0,
         alpha: float = 0.05,
         ci: str = "bootstrap",
         n_bootstrap_samples: int = 100,
@@ -461,9 +449,6 @@ class DiscreteOffPolicyEvaluation:
                 initial_state_value_prediction,
                 on_policy_policy_value,
             ]
-
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
 
         alpha: float, default=0.05 (0, 1)
             Significant level.
@@ -511,7 +496,6 @@ class DiscreteOffPolicyEvaluation:
 
         policy_value_interval_dict = self.estimate_intervals(
             input_dict=input_dict,
-            gamma=gamma,
             alpha=alpha,
             ci=ci,
             n_bootstrap_samples=n_bootstrap_samples,
@@ -700,7 +684,6 @@ class DiscreteOffPolicyEvaluation:
     def evaluate_performance_of_estimators(
         self,
         input_dict: OPEInputDict,
-        gamma: float = 1.0,
         metric: str = "relative-ee",
     ) -> Dict[str, Dict[str, float]]:
         """Evaluate estimation performance of OPE estimators.
@@ -736,9 +719,6 @@ class DiscreteOffPolicyEvaluation:
                 on_policy_policy_value,
             ]
 
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
-
         metric: str, default="relative-ee"
             Evaluation metric used to evaluate and compare the estimation performance of OPE estimators.
             Either "relative-ee" or "se".
@@ -755,7 +735,7 @@ class DiscreteOffPolicyEvaluation:
                 f"metric must be either 'relative-ee' or 'se', but {metric} is given"
             )
         eval_metric_ope_dict = defaultdict(dict)
-        policy_value_dict = self.estimate_policy_value(input_dict, gamma=gamma)
+        policy_value_dict = self.estimate_policy_value(input_dict)
 
         if metric == "relative-ee":
             for eval_policy in input_dict.keys():
@@ -788,7 +768,6 @@ class DiscreteOffPolicyEvaluation:
     def summarize_estimators_comparison(
         self,
         input_dict: OPEInputDict,
-        gamma: float = 1.0,
         metric: str = "relative-ee",
     ) -> DataFrame:
         """Summarize performance comparison of OPE estimators.
@@ -808,9 +787,6 @@ class DiscreteOffPolicyEvaluation:
                 on_policy_policy_value,
             ]
 
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
-
         metric: str, default="relative-ee"
             Evaluation metric used to evaluate and compare the estimation performance of OPE estimators.
             Either "relative-ee" or "se".
@@ -828,7 +804,6 @@ class DiscreteOffPolicyEvaluation:
         eval_metric_ope_df = DataFrame()
         eval_metric_ope_dict = self.evaluate_performance_of_estimators(
             input_dict,
-            gamma=gamma,
             metric=metric,
         )
         for eval_policy in input_dict.keys():
@@ -850,6 +825,9 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
     ope_estimators: List[BaseOffPolicyEstimator]
         List of OPE estimators used to evaluate the policy value of evaluation policy.
         Estimators must follow the interface of `offlinegym.ope.BaseCumulativeDistributionalOffPolicyEstimator`.
+
+    gamma: float, default=1.0 (0, 1]
+            Discount factor.
 
     scale_min: float, default=None
         Minimum value of the reward scale in CDF.
@@ -983,6 +961,7 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
 
     logged_dataset: LoggedDataset
     ope_estimators: List[BaseOffPolicyEstimator]
+    gamma: float = 1.0
     scale_min: Optional[float] = None
     scale_max: Optional[float] = None
     n_partition: Optional[int] = None
@@ -1066,28 +1045,8 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
 
     def obtain_reward_scale(
         self,
-        input_dict: OPEInputDict,
-        gamma: float = 1.0,
     ):
         """Obtain reward scale (x-axis) for the cumulative distribution function.
-
-        Parameters
-        -------
-        input_dict: OPEInputDict
-            Dictionary of the OPE inputs for each evaluation policy.
-            Please refer to `CreateOPEInput` class for the detail.
-            key: [evaluation_policy_name][
-                evaluation_policy_step_wise_pscore,
-                evaluation_policy_trajectory_wise_pscore,
-                evaluation_policy_action,
-                evaluation_policy_action_dist,
-                state_action_value_prediction,
-                initial_state_value_prediction,
-                on_policy_policy_value,
-            ]
-
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
 
         Return
         -------
@@ -1111,7 +1070,6 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
     def estimate_cumulative_distribution_function(
         self,
         input_dict: OPEInputDict,
-        gamma: float = 1.0,
     ):
         """Estimate the cumulative distribution of the trajectory wise reward of evaluation policy.
 
@@ -1130,9 +1088,6 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
                 on_policy_policy_value,
             ]
 
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
-
         Return
         -------
         cumulative_distribution_dict: Dict[str, Dict[str, np.ndarray]]
@@ -1141,7 +1096,7 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
 
         """
         cumulative_distribution_dict = defaultdict(dict)
-        reward_scale = self.obtain_reward_scale(input_dict=input_dict, gamma=gamma)
+        reward_scale = self.obtain_reward_scale()
 
         for eval_policy in input_dict.keys():
             if input_dict[eval_policy]["on_policy_policy_value"] is not None:
@@ -1162,8 +1117,8 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
                 ] = estimator.estimate_cumulative_distribution_function(
                     **input_dict[eval_policy],
                     **self.input_dict_,
+                    gamma=self.gamma,
                     reward_scale=reward_scale,
-                    gamma=gamma,
                 )
 
         return defaultdict_to_dict(cumulative_distribution_dict)
@@ -1171,7 +1126,6 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
     def estimate_mean(
         self,
         input_dict: OPEInputDict,
-        gamma: float = 1.0,
     ):
         """Estimate the mean of the trajectory wise reward (i.e., policy value) of evaluation policy.
 
@@ -1190,9 +1144,6 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
                 on_policy_policy_value,
             ]
 
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
-
         Return
         -------
         mean_dict: Dict[str, Dict[str, float]]
@@ -1201,7 +1152,7 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
 
         """
         mean_dict = defaultdict(dict)
-        reward_scale = self.obtain_reward_scale(input_dict=input_dict, gamma=gamma)
+        reward_scale = self.obtain_reward_scale()
 
         for eval_policy in input_dict.keys():
             if input_dict[eval_policy]["on_policy_policy_value"] is not None:
@@ -1219,7 +1170,7 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
                     **input_dict[eval_policy],
                     **self.input_dict_,
                     reward_scale=reward_scale,
-                    gamma=gamma,
+                    gamma=self.gamma,
                 )
 
         return defaultdict_to_dict(mean_dict)
@@ -1227,7 +1178,6 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
     def estimate_variance(
         self,
         input_dict: OPEInputDict,
-        gamma: float = 1.0,
     ):
         """Estimate the variance of the trajectory wise reward of evaluation policy.
 
@@ -1246,9 +1196,6 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
                 on_policy_policy_value,
             ]
 
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
-
         Return
         -------
         variance_dict: Dict[str, Dict[str, float]]
@@ -1257,7 +1204,7 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
 
         """
         variance_dict = defaultdict(dict)
-        reward_scale = self.obtain_reward_scale(input_dict=input_dict, gamma=gamma)
+        reward_scale = self.obtain_reward_scale()
 
         for eval_policy in input_dict.keys():
             if input_dict[eval_policy]["on_policy_policy_value"] is not None:
@@ -1280,7 +1227,7 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
                     **input_dict[eval_policy],
                     **self.input_dict_,
                     reward_scale=reward_scale,
-                    gamma=gamma,
+                    gamma=self.gamma,
                 )
 
         return defaultdict_to_dict(variance_dict)
@@ -1288,7 +1235,6 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
     def estimate_conditional_value_at_risk(
         self,
         input_dict: OPEInputDict,
-        gamma: float = 1.0,
         alphas: Union[np.ndarray, float] = np.linspace(0, 1, 20),
     ):
         """Estimate the conditional value at risk of the trajectory wise reward of evaluation policy.
@@ -1307,9 +1253,6 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
                 initial_state_value_prediction,
                 on_policy_policy_value,
             ]
-
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
 
         alphas: Union[NDArray, float], default=np.linspace(0, 1, 20)
             Set of proportions of the sided region.
@@ -1335,7 +1278,7 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
 
         alphas = np.sort(alphas)
         conditional_value_at_risk_dict = defaultdict(dict)
-        reward_scale = self.obtain_reward_scale(input_dict=input_dict, gamma=gamma)
+        reward_scale = self.obtain_reward_scale()
 
         for eval_policy in input_dict.keys():
             if input_dict[eval_policy]["on_policy_policy_value"] is not None:
@@ -1363,7 +1306,7 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
                     **input_dict[eval_policy],
                     **self.input_dict_,
                     reward_scale=reward_scale,
-                    gamma=gamma,
+                    gamma=self.gamma,
                     alphas=alphas,
                 )
 
@@ -1372,7 +1315,6 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
     def estimate_interquartile_range(
         self,
         input_dict: OPEInputDict,
-        gamma: float = 1.0,
         alpha: float = 0.05,
     ):
         """Estimate the interquartile range of the trajectory wise reward of evaluation policy.
@@ -1392,9 +1334,6 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
                 on_policy_policy_value,
             ]
 
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
-
         alpha: float, default=0.05
             Proportion of the sided region.
 
@@ -1407,7 +1346,7 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
         """
         check_scalar(alpha, name="alpha", target_type=float, min_val=0.0, max_val=0.5)
         interquartile_range_dict = defaultdict(dict)
-        reward_scale = self.obtain_reward_scale(input_dict=input_dict, gamma=gamma)
+        reward_scale = self.obtain_reward_scale()
 
         def target_value_given_idx(idx_):
             if len(idx_):
@@ -1451,7 +1390,7 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
                     **input_dict[eval_policy],
                     **self.input_dict_,
                     reward_scale=reward_scale,
-                    gamma=gamma,
+                    gamma=self.gamma,
                     alpha=alpha,
                 )
 
@@ -1460,14 +1399,13 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
     def visualize_cumulative_distribution_function(
         self,
         input_dict: OPEInputDict,
-        gamma: float = 1.0,
         hue: str = "estimator",
         legend: bool = True,
         n_cols: Optional[int] = None,
         fig_dir: Optional[Path] = None,
         fig_name: str = "estimated_cumulative_distribution_function.png",
     ) -> None:
-        """Visualize policy value estimated by OPE estimators.
+        """Visualize cumulative distribution function estimated by OPE estimators.
 
         Parameters
         -------
@@ -1483,9 +1421,6 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
                 initial_state_value_prediction,
                 on_policy_policy_value,
             ]
-
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
 
         hue: str, default="estimator"
             Hue of the plot.
@@ -1516,11 +1451,10 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
         if fig_name is not None and not isinstance(fig_name, str):
             raise ValueError(f"fig_dir must be a string, but {type(fig_dir)} is given")
 
-        reward_scale = self.obtain_reward_scale(input_dict=input_dict, gamma=gamma)
+        reward_scale = self.obtain_reward_scale()
         cumulative_distribution_function_dict = (
             self.estimate_cumulative_distribution_function(
                 input_dict=input_dict,
-                gamma=gamma,
             )
         )
 
@@ -1684,7 +1618,6 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
     def visualize_policy_value(
         self,
         input_dict: OPEInputDict,
-        gamma: float = 1.0,
         alpha: float = 0.05,
         is_relative: bool = False,
         hue: str = "estimator",
@@ -1708,9 +1641,6 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
                 initial_state_value_prediction,
                 on_policy_policy_value,
             ]
-
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
 
         alpha: float, default=0.05 (0, 1)
             Significant level.
@@ -1745,11 +1675,9 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
 
         mean_dict = self.estimate_mean(
             input_dict=input_dict,
-            gamma=gamma,
         )
         variance_dict = self.estimate_variance(
             input_dict=input_dict,
-            gamma=gamma,
         )
 
         plt.style.use("ggplot")
@@ -1949,7 +1877,6 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
     def visualize_conditional_value_at_risk(
         self,
         input_dict: OPEInputDict,
-        gamma: float = 1.0,
         alphas: np.ndarray = np.linspace(0, 1, 20),
         hue: str = "estimator",
         legend: bool = True,
@@ -1958,7 +1885,7 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
         fig_dir: Optional[Path] = None,
         fig_name: str = "estimated_policy_value.png",
     ) -> None:
-        """Visualize policy value estimated by OPE estimators.
+        """Visualize conditional value at risk estimated by OPE estimators.
 
         Parameters
         -------
@@ -1974,9 +1901,6 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
                 initial_state_value_prediction,
                 on_policy_policy_value,
             ]
-
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
 
         alphas: NDArray, default=nnp.linspace(0, 1, 20)
             Set of proportions of the sided region.
@@ -2022,7 +1946,6 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
 
         cvar_dict = self.estimate_conditional_value_at_risk(
             input_dict=input_dict,
-            gamma=gamma,
             alphas=alphas,
         )
 
@@ -2115,7 +2038,6 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
     def visualize_interquartile_range(
         self,
         input_dict: OPEInputDict,
-        gamma: float = 1.0,
         alpha: float = 0.05,
         hue: str = "estimator",
         sharey: bool = False,
@@ -2138,9 +2060,6 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
                 initial_state_value_prediction,
                 on_policy_policy_value,
             ]
-
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
 
         alpha: float, default=0.05 (0, 1)
             Significant level.
@@ -2171,11 +2090,9 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
 
         mean_dict = self.estimate_mean(
             input_dict=input_dict,
-            gamma=gamma,
         )
         interquartile_dict = self.estimate_interquartile_range(
             input_dict=input_dict,
-            gamma=gamma,
             alpha=alpha,
         )
 
@@ -2346,6 +2263,9 @@ class DiscreteDistributionallyRobustOffPolicyEvaluation:
         List of OPE estimators used to evaluate the policy value of evaluation policy.
         Estimators must follow the interface of `offlinegym.ope.BaseDistributionallyRobustOffPolicyEstimator`.
 
+    gamma: float, default=1.0 (0, 1]
+        Discount factor.
+
     alpha_prior: float, default=1.0 (> 0)
         Initial temperature parameter of the exponential function.
 
@@ -2471,6 +2391,7 @@ class DiscreteDistributionallyRobustOffPolicyEvaluation:
 
     logged_dataset: LoggedDataset
     ope_estimators: List[BaseOffPolicyEstimator]
+    gamma: float = 1.0
     alpha_prior: float = 1.0
     max_steps: int = 100
     epsilon: float = 0.01
@@ -2558,7 +2479,6 @@ class DiscreteDistributionallyRobustOffPolicyEvaluation:
     def estimate_worst_case_policy_value(
         self,
         input_dict: OPEInputDict,
-        gamma: float = 1.0,
         delta: float = 0.05,
         random_state: Optional[int] = None,
     ) -> Dict[str, float]:
@@ -2578,9 +2498,6 @@ class DiscreteDistributionallyRobustOffPolicyEvaluation:
                 initial_state_value_prediction,
                 on_policy_policy_value,
             ]
-
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
 
         delta: float, default=0.05 (> 0)
             Allowance of the distributional shift.
@@ -2616,7 +2533,7 @@ class DiscreteDistributionallyRobustOffPolicyEvaluation:
                 ] = estimator.estimate_worst_case_policy_value(
                     **input_dict[eval_policy],
                     **self.input_dict_,
-                    gamma=gamma,
+                    gamma=self.gamma,
                     delta=delta,
                     alpha_prior=self.alpha_prior,
                     max_steps=self.max_steps,

@@ -5,10 +5,10 @@ from typing import Tuple
 import numpy as np
 from sklearn.utils import check_scalar
 
-from offlinegym.ope.estimators_base import (
+from .estimators_base import (
     BaseCumulativeDistributionalOffPolicyEstimator,
 )
-from offlinegym.utils import check_array
+from ..utils import check_array
 
 
 @dataclass

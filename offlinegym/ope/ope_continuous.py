@@ -11,13 +11,13 @@ from pandas import DataFrame
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-from offlinegym.ope.estimators_base import (
+from .estimators_base import (
     BaseOffPolicyEstimator,
     BaseCumulativeDistributionalOffPolicyEstimator,
     BaseDistributionallyRobustOffPolicyEstimator,
 )
-from offlinegym.types import LoggedDataset, OPEInputDict
-from offlinegym.utils import (
+from ..types import LoggedDataset, OPEInputDict
+from ..utils import (
     estimate_confidence_interval_by_bootstrap,
     estimate_confidence_interval_by_hoeffding,
     estimate_confidence_interval_by_empirical_bernstein,

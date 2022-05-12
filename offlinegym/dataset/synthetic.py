@@ -10,9 +10,10 @@ from sklearn.utils import check_scalar, check_random_state
 
 from rtbgym.env.rtb import RTBEnv
 from rtbgym.env.wrapper_rtb import CustomizedRTBEnv
-from offlinegym.dataset.base import BaseDataset
-from offlinegym.policy.head import BaseHead
-from offlinegym.types import LoggedDataset
+
+from .base import BaseDataset
+from ..policy.head import BaseHead
+from ..types import LoggedDataset
 
 
 @dataclass
@@ -21,8 +22,7 @@ class SyntheticDataset(BaseDataset):
 
     Note
     -------
-    Generate dataset for Offline reinforcement learning (RL) and off-policy evaluation (OPE).
-
+    Generate dataset for Offline reinforcement learning (RL) and off-policy evaluation and selection (OPE/OPS).
 
     Parameters
     -------

@@ -12,7 +12,7 @@ from d3rlpy.algos import AlgoBase
 from d3rlpy.dataset import MDPDataset, Transition, TransitionMiniBatch
 from d3rlpy.logger import D3RLPyLogger
 
-from offlinegym.utils import check_array
+from ..utils import check_array
 
 
 @dataclass

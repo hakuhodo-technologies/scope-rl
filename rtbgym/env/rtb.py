@@ -6,20 +6,19 @@ from gym.spaces import Box
 import numpy as np
 from sklearn.utils import check_scalar, check_random_state
 
-from rtbgym.utils import NormalDistribution
-from rtbgym.types import Action, Numeric
-
-from rtbgym.env.simulator.bidder import Bidder
-from rtbgym.env.simulator.rtb_synthetic import RTBSyntheticSimulator
-from rtbgym.env.simulator.base import (
+from .simulator.bidder import Bidder
+from .simulator.rtb_synthetic import RTBSyntheticSimulator
+from .simulator.base import (
     BaseWinningPriceDistribution,
     BaseClickAndConversionRate,
 )
-from rtbgym.env.simulator.function import (
+from .simulator.function import (
     WinningPriceDistribution,
     ClickThroughRate,
     ConversionRate,
 )
+from ..utils import NormalDistribution
+from ..types import Action, Numeric
 
 
 class RTBEnv(gym.Env):

@@ -6,9 +6,9 @@ import numpy as np
 from sklearn.base import BaseEstimator, is_classifier
 from sklearn.utils import check_scalar, check_random_state, check_X_y
 
-from rtbgym.env.simulator.base import BaseSimulator
-from rtbgym.utils import check_array
-from rtbgym.types import Numeric
+from .base import BaseSimulator
+from ...utils import check_array
+from ...types import Numeric
 
 
 @dataclass

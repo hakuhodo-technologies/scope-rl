@@ -5,8 +5,8 @@ from typing import Dict, Optional
 import numpy as np
 from sklearn.utils import check_scalar
 
-from offlinegym.ope.estimators_base import BaseOffPolicyEstimator
-from offlinegym.utils import (
+from .estimators_base import BaseOffPolicyEstimator
+from ..utils import (
     estimate_confidence_interval_by_bootstrap,
     estimate_confidence_interval_by_hoeffding,
     estimate_confidence_interval_by_empirical_bernstein,
