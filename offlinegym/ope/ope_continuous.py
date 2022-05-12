@@ -67,7 +67,7 @@ class ContinuousOffPolicyEvaluation:
         >>> from offlinegym.ope import CreateOPEInput
         >>> from offlinegym.ope import OffPolicyEvaluation
         >>> from offlinegym.ope import DiscreteTrajectoryWiseImportanceSampling as TIS
-        >>> from offlinegym.ope import DiscreteStepWiseImportanceSampling as SIS
+        >>> from offlinegym.ope import DiscretePerDecisionImportanceSampling as SIS
 
         # import necessary module from other libraries
         >>> from rtbgym import RTBEnv, CustomizedRTBEnv
@@ -1672,7 +1672,7 @@ class ContinuousDistributionallyRobustOffPolicyEvaluation:
         >>> from offlinegym.ope import CreateOPEInput
         >>> from offlinegym.ope import OffPolicyEvaluation
         >>> from offlinegym.ope import DiscreteTrajectoryWiseImportanceSampling as TIS
-        >>> from offlinegym.ope import DiscreteStepWiseImportanceSampling as SIS
+        >>> from offlinegym.ope import DiscretePerDecisionImportanceSampling as SIS
 
         # import necessary module from other libraries
         >>> from rtbgym import RTBEnv, CustomizedRTBEnv

@@ -441,22 +441,22 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 
 
 @dataclass
-class DiscreteStepWiseImportanceSampling(BaseOffPolicyEstimator):
-    """Step-wise Importance Sampling (SIS) for discrete OPE.
+class DiscretePerDecisionImportanceSampling(BaseOffPolicyEstimator):
+    """Per-Decision Importance Sampling (PDIS) for discrete OPE.
 
     Note
     -------
-    SIS estimates policy value using step-wise importance weight as follows.
+    PDIS estimates policy value using step-wise importance weight as follows.
 
     .. math::
 
-        \\hat{V}_{\\mathrm{SIS}} (\\pi_e; \\mathcal{D}) := \\mathbb{E}_{n} [\\sum_{t=0}^T \\gamma^t w_{0:t} r_t],
+        \\hat{V}_{\\mathrm{PDIS}} (\\pi_e; \\mathcal{D}) := \\mathbb{E}_{n} [\\sum_{t=0}^T \\gamma^t w_{0:t} r_t],
 
     where :math:`w_{0:t} := \\prod_{t'=0}^t \\frac{\\pi_e(a_{t'} \\mid s_{t'})}{\\pi_b(a_{t'} \\mid s_{t'})}`
 
     Parameters
     -------
-    estimator_name: str, default="sis"
+    estimator_name: str, default="pdis"
         Name of the estimator.
 
     References
@@ -472,7 +472,7 @@ class DiscreteStepWiseImportanceSampling(BaseOffPolicyEstimator):
 
     """
 
-    estimator_name = "sis"
+    estimator_name = "pdis"
 
     def __post_init__(self):
         self.action_type = "discrete"
@@ -1246,25 +1246,25 @@ class DiscreteSelfNormalizedTrajectoryWiseImportanceSampling(
 
 
 @dataclass
-class DiscreteSelfNormalizedStepWiseImportanceSampling(
-    DiscreteStepWiseImportanceSampling
+class DiscreteSelfNormalizedPerDecisionImportanceSampling(
+    DiscretePerDecisionImportanceSampling
 ):
-    """Self-Normalized Step-wise Importance Sampling (SNSIS) for discrete OPE.
+    """Self-Normalized Per-Decision Importance Sampling (SNPDIS) for discrete OPE.
 
     Note
     -------
-    SNSIS estimates policy value using self-normalized step-wise importance weight as follows.
+    SNPDIS estimates policy value using self-normalized step-wise importance weight as follows.
 
     .. math::
 
-        \\hat{V}_{\\mathrm{SNSIS}} (\\pi_e; \\mathcal{D})
+        \\hat{V}_{\\mathrm{SNPDIS}} (\\pi_e; \\mathcal{D})
         := \\mathbb{E}_{n} [\\sum_{t=0}^T \\gamma^t \\frac{w_{1:t}}{\\mathbb{E}_n [w_{1:t}]} r_t],
 
     where :math:`w_{0:t} := \\prod_{t'=1}^t \\frac{\\pi_e(a_{t'} \\mid s_{t'})}{\\pi_b(a_{t'} \\mid s_{t'})}`
 
     Parameters
     -------
-    estimator_name: str, default="snsis"
+    estimator_name: str, default="snpdis"
         Name of the estimator.
 
     References
@@ -1286,7 +1286,7 @@ class DiscreteSelfNormalizedStepWiseImportanceSampling(
 
     """
 
-    estimator_name = "snsis"
+    estimator_name = "snpdis"
 
     def __post_init__(self):
         self.action_type = "discrete"

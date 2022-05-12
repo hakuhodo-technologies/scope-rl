@@ -13,10 +13,10 @@ from offlinegym.ope.ope_discrete import (
 from offlinegym.ope.estimators_discrete import (
     DiscreteDirectMethod,
     DiscreteTrajectoryWiseImportanceSampling,
-    DiscreteStepWiseImportanceSampling,
+    DiscretePerDecisionImportanceSampling,
     DiscreteDoublyRobust,
     DiscreteSelfNormalizedTrajectoryWiseImportanceSampling,
-    DiscreteSelfNormalizedStepWiseImportanceSampling,
+    DiscreteSelfNormalizedPerDecisionImportanceSampling,
     DiscreteSelfNormalizedDoublyRobust,
 )
 from offlinegym.ope.cumulative_distributional_estimators_discrete import (
@@ -39,10 +39,10 @@ from offlinegym.ope.ope_continuous import (
 from offlinegym.ope.estimators_continuous import (
     ContinuousDirectMethod,
     ContinuousTrajectoryWiseImportanceSampling,
-    ContinuousStepWiseImportanceSampling,
+    ContinuousPerDecisionImportanceSampling,
     ContinuousDoublyRobust,
     ContinuousSelfNormalizedTrajectoryWiseImportanceSampling,
-    ContinuousSelfNormalizedStepWiseImportanceSampling,
+    ContinuousSelfNormalizedPerDecisionImportanceSampling,
     ContinuousSelfNormalizedDoublyRobust,
 )
 from offlinegym.ope.cumulative_distributional_estimators_continuous import (
@@ -70,10 +70,10 @@ __all__ = [
     "DiscreteDistributionallyRobustOffPolicyEvaluation",
     "DiscreteDirectMethod",
     "DiscreteTrajectoryWiseImportanceSampling",
-    "DiscreteStepWiseImportanceSampling",
+    "DiscretePerDecisionImportanceSampling",
     "DiscreteDoublyRobust",
     "DiscreteSelfNormalizedTrajectoryWiseImportanceSampling",
-    "DiscreteSelfNormalizedStepWiseImportanceSampling",
+    "DiscreteSelfNormalizedPerDecisionImportanceSampling",
     "DiscreteSelfNormalizedDoublyRobust",
     "DiscreteCumulativeDistributionalDirectMethod",
     "DiscreteCumulativeDistributionalImportanceSampling",
@@ -88,10 +88,10 @@ __all__ = [
     "ContinuousDistributionallyRobustOffPolicyEvaluation",
     "ContinuousDirectMethod",
     "ContinuousTrajectoryWiseImportanceSampling",
-    "ContinuousStepWiseImportanceSampling",
+    "ContinuousPerDecisionImportanceSampling",
     "ContinuousDoublyRobust",
     "ContinuousSelfNormalizedTrajectoryWiseImportanceSampling",
-    "ContinuousSelfNormalizedStepWiseImportanceSampling",
+    "ContinuousSelfNormalizedPerDecisionImportanceSampling",
     "ContinuousSelfNormalizedDoublyRobust",
     "ContinuousCumulativeDistributionalDirectMethod",
     "ContinuousCumulativeDistributionalImportanceSampling",

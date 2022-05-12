@@ -607,16 +607,16 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 
 
 @dataclass
-class ContinuousStepWiseImportanceSampling(BaseOffPolicyEstimator):
-    """Step-wise Importance Sampling (SIS) for continuous OPE (assume deterministic policies).
+class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
+    """Per-Decision Importance Sampling (PDIS) for continuous OPE (assume deterministic policies).
 
     Note
     -------
-    SIS estimates policy value using step-wise importance weight as follows.
+    PDIS estimates policy value using step-wise importance weight as follows.
 
     .. math::
 
-        \\hat{V}_{\\mathrm{SIS}} (\\pi_e; \\mathcal{D}) := \\mathbb{E}_{n} [\\sum_{t=0}^T \\gamma^t w_{0:t} \\delta(\\pi_e, a_{0:t}) r_t],
+        \\hat{V}_{\\mathrm{PDIS}} (\\pi_e; \\mathcal{D}) := \\mathbb{E}_{n} [\\sum_{t=0}^T \\gamma^t w_{0:t} \\delta(\\pi_e, a_{0:t}) r_t],
 
     where :math:`w_{0:t} := \\prod_{t'=0}^t \\frac{1}{\\pi_b(a_{t'} \\mid s_{t'})}`
     and :math:`\\delta(\\pi_e, a_{0:t}) = \\prod_{t'=1}^t K(\\pi_e(s_{t'}), a_{t'})` indicates similarity between action in dataset and that of evaluation policy.
@@ -624,7 +624,7 @@ class ContinuousStepWiseImportanceSampling(BaseOffPolicyEstimator):
 
     Parameters
     -------
-    estimator_name: str, default="sis"
+    estimator_name: str, default="pdis"
         Name of the estimator.
 
     References
@@ -643,7 +643,7 @@ class ContinuousStepWiseImportanceSampling(BaseOffPolicyEstimator):
 
     """
 
-    estimator_name: str = "sis"
+    estimator_name: str = "pdis"
 
     def __post_init__(self):
         self.action_type = "continuous"
@@ -1681,18 +1681,18 @@ class ContinuousSelfNormalizedTrajectoryWiseImportanceSampling(
 
 
 @dataclass
-class ContinuousSelfNormalizedStepWiseImportanceSampling(
-    ContinuousStepWiseImportanceSampling
+class ContinuousSelfNormalizedPerDecisionImportanceSampling(
+    ContinuousPerDecisionImportanceSampling
 ):
-    """Self-Normalized Step-wise Importance Sampling (SNSIS) for continuous OPE (assume deterministic policies).
+    """Self-Normalized Per-Decision Importance Sampling (SNPDIS) for continuous OPE (assume deterministic policies).
 
     Note
     -------
-    SNSIS estimates policy value using self-normalized step-wise importance weight as follows.
+    SNPDIS estimates policy value using self-normalized step-wise importance weight as follows.
 
     .. math::
 
-        \\hat{V}_{\\mathrm{SNSIS}} (\\pi_e; \\mathcal{D})
+        \\hat{V}_{\\mathrm{SNPDIS}} (\\pi_e; \\mathcal{D})
         := \\mathbb{E}_{n} [\\sum_{t=0}^T \\gamma^t \\frac{w_{1:t} \\delta(\\pi_e, a_{0:t})}{\\mathbb{E}_n [w_{1:t} \\delta(\\pi_e, a_{0:t})]} r_t],
 
     where :math:`w_{0:t} := \\prod_{t'=1}^t \\frac{1}{\\pi_b(a_{t'} \\mid s_{t'})}`
@@ -1701,7 +1701,7 @@ class ContinuousSelfNormalizedStepWiseImportanceSampling(
 
     Parameters
     -------
-    estimator_name: str, default="snsis"
+    estimator_name: str, default="snpdis"
         Name of the estimator.
 
     References
@@ -1726,7 +1726,7 @@ class ContinuousSelfNormalizedStepWiseImportanceSampling(
 
     """
 
-    estimator_name: str = "snsis"
+    estimator_name: str = "snpdis"
 
     def __post_init__(self):
         self.action_type = "continuous"
