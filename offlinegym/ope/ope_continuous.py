@@ -25,6 +25,7 @@ from ..utils import (
     defaultdict_to_dict,
     check_array,
     check_logged_dataset,
+    check_input_dict,
 )
 
 
@@ -37,25 +38,25 @@ class ContinuousOffPolicyEvaluation:
     logged_dataset: LoggedDataset
         Logged dataset used to conduct OPE.
 
-    ope_estimators: List[BaseOffPolicyEstimator]
-        List of OPE estimators used to evaluate the policy value of evaluation policy.
+    ope_estimators: list of BaseOffPolicyEstimator
+        List of OPE estimators used to evaluate the policy value of the evaluation policies.
         Estimators must follow the interface of `offlinegym.ope.BaseOffPolicyEstimator`.
 
-    sigma: Optional[NDArray], shape (action_dim, ), default=None
-        Standard deviation of Gaussian distribution (i.e., band_width hyperparameter of gaussian kernel).
+    sigma: array-like of shape (action_dim, ), default=None
+        Standard deviation of Gaussian distribution (i.e., `band_width` hyperparameter of gaussian kernel).
         If `None`, sigma is set to 1 for all dimensions.
 
     use_truncated_kernel: bool, default=False
         Whether to use Truncated Gaussian kernel or not.
-        If `False`, (normal) Gaussian kernel is used.
+        If False, (normal) Gaussian kernel is used.
 
-    action_min: Optional[NDArray], shape (action_dim, ), default=None
+    action_min: array-like of shape (action_dim, ), default=None
         Minimum value of action vector.
-        When use_truncated_kernel == True, action_min must be given.
+        When `use_truncated_kernel == True`, action_min must be given.
 
-    action_max: Optional[NDArray], shape (action_dim, ), default=None
+    action_max: array-like of shape (action_dim, ), default=None
         Maximum value of action vector.
-        When use_truncated_kernel == True, action_max must be given.
+        When `use_truncated_kernel == True`, action_max must be given.
 
     Examples
     ----------
@@ -171,6 +172,9 @@ class ContinuousOffPolicyEvaluation:
     Josiah P. Hanna, Peter Stone, and Scott Niekum.
     "Bootstrapping with Models: Confidence Intervals for Off-Policy Evaluation.", 2017.
 
+    Philip Thomas, Georgios Theocharous, and Mohammad Ghavamzadeh.
+    "High Confidence Policy Improvement.", 2015.
+
     Philip S. Thomas, Georgios Theocharous, and Mohammad Ghavamzadeh.
     "High Confidence Off-Policy Evaluation.", 2015.
 
@@ -252,9 +256,8 @@ class ContinuousOffPolicyEvaluation:
     def estimate_policy_value(
         self,
         input_dict: OPEInputDict,
-        gamma: float = 1.0,
     ) -> Dict[str, float]:
-        """Estimate the policy value of evaluation policy.
+        """Estimate the policy value of the evaluation policies.
 
         Parameters
         -------
@@ -268,19 +271,19 @@ class ContinuousOffPolicyEvaluation:
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
+                initial_state_action_distribution,
                 on_policy_policy_value,
+                gamma,
             ]
-
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
 
         Return
         -------
-        policy_value_dict: Dict[str, Dict[str, float]]
-            Dictionary containing estimated policy value of each evaluation policy by OPE estimators.
+        policy_value_dict: dict
+            Dictionary containing the policy value of each evaluation policy estimated by OPE estimators.
             key: [evaluation_policy_name][OPE_estimator_name]
 
         """
+        check_input_dict(input_dict)
         policy_value_dict = defaultdict(dict)
 
         for eval_policy in input_dict.keys():
@@ -297,7 +300,6 @@ class ContinuousOffPolicyEvaluation:
                 ] = estimator.estimate_policy_value(
                     **input_dict[eval_policy],
                     **self.input_dict_,
-                    gamma=gamma,
                     sigma=self.sigma,
                     use_truncated_kernel=self.use_truncated_kernel,
                     action_min=self.action_min,
@@ -308,7 +310,6 @@ class ContinuousOffPolicyEvaluation:
     def estimate_intervals(
         self,
         input_dict: OPEInputDict,
-        gamma: float = 1.0,
         alpha: float = 0.05,
         ci: str = "bootstrap",
         n_bootstrap_samples: int = 100,
@@ -328,11 +329,10 @@ class ContinuousOffPolicyEvaluation:
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
+                initial_state_action_distribution,
                 on_policy_policy_value,
+                gamma,
             ]
-
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
 
         alpha: float, default=0.05 (0, 1)
             Significant level.
@@ -348,12 +348,12 @@ class ContinuousOffPolicyEvaluation:
 
         Return
         -------
-        policy_value_interval_dict: Dict[str, Dict[str, Dict[str, float]]]
-            Dictionary containing estimated confidence intervals estimated
-            using nonparametric bootstrap procedure.
+        policy_value_interval_dict: dict
+            Dictionary containing the confidence intervals estimated using nonparametric bootstrap procedure.
             key: [evaluation_policy_name][OPE_estimator_name]
 
         """
+        check_input_dict(input_dict)
         policy_value_interval_dict = defaultdict(dict)
 
         for eval_policy in input_dict.keys():
@@ -375,7 +375,6 @@ class ContinuousOffPolicyEvaluation:
                 ] = estimator.estimate_interval(
                     **input_dict[eval_policy],
                     **self.input_dict_,
-                    gamma=gamma,
                     sigma=self.sigma,
                     use_truncated_kernel=self.use_truncated_kernel,
                     action_min=self.action_min,
@@ -391,13 +390,12 @@ class ContinuousOffPolicyEvaluation:
     def summarize_off_policy_estimates(
         self,
         input_dict: OPEInputDict,
-        gamma: float = 1.0,
         alpha: float = 0.05,
         ci: str = "bootstrap",
         n_bootstrap_samples: int = 100,
         random_state: Optional[int] = None,
     ) -> Tuple[Dict[str, DataFrame], Dict[str, DataFrame]]:
-        """Summarize policy value and their confidence intervals estimated by OPE estimators.
+        """Summarize the policy value and their confidence intervals estimated by OPE estimators.
 
         Parameters
         -------
@@ -411,19 +409,18 @@ class ContinuousOffPolicyEvaluation:
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
+                initial_state_action_distribution,
                 on_policy_policy_value,
+                gamma,
             ]
 
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
-
-        alpha: float, default=0.05 (0, 1)
-            Significant level.
+        alpha: float, default=0.05
+            Significant level. The value should be within `[0, 1)`.
 
         n_bootstrap_samples: int, default=10000 (> 0)
             Number of resampling performed in the bootstrap procedure.
 
-        ci: str, default="bootstrap"
+        ci: {"bootstrap", "hoeffding", "bernstein", "ttest"}, default="bootstrap"
             Estimation method for confidence intervals.
 
         random_state: int, default=None (>= 0)
@@ -431,15 +428,19 @@ class ContinuousOffPolicyEvaluation:
 
         Return
         -------
-        (policy_value_df_dict, policy_value_interval_df_dict): Tuple[Dict[str, DataFrame], Dict[str, DataFrame]]
-            Dictionary containing policy value and their confidence intervals.
-            key: [evaluation_policy_name]
+        policy_value_dict: dict
+            Dictionary containing the policy value of each evaluation policy estimated by OPE estimators.
+            key: [evaluation_policy_name][OPE_estimator_name]
+
+        policy_value_interval_dict: dict
+            Dictionary containing the confidence intervals estimated using nonparametric bootstrap procedure.
+            key: [evaluation_policy_name][OPE_estimator_name]
 
         """
+        check_input_dict(input_dict)
         policy_value_dict = self.estimate_policy_value(input_dict)
         policy_value_interval_dict = self.estimate_intervals(
             input_dict,
-            gamma=gamma,
             alpha=alpha,
             ci=ci,
             n_bootstrap_samples=n_bootstrap_samples,
@@ -478,7 +479,6 @@ class ContinuousOffPolicyEvaluation:
     def visualize_off_policy_estimates(
         self,
         input_dict: OPEInputDict,
-        gamma: float = 1.0,
         alpha: float = 0.05,
         ci: str = "bootstrap",
         n_bootstrap_samples: int = 100,
@@ -489,7 +489,7 @@ class ContinuousOffPolicyEvaluation:
         fig_dir: Optional[Path] = None,
         fig_name: str = "estimated_policy_value.png",
     ) -> None:
-        """Visualize policy value estimated by OPE estimators.
+        """Visualize the policy value estimated by OPE estimators.
 
         Parameters
         -------
@@ -503,16 +503,15 @@ class ContinuousOffPolicyEvaluation:
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
+                initial_state_action_distribution,
                 on_policy_policy_value,
+                gamma,
             ]
 
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
+        alpha: float, default=0.05
+            Significant level. The value should be within `[0, 1)`.
 
-        alpha: float, default=0.05 (0, 1)
-            Significant level.
-
-        ci: str, default="bootstrap"
+        ci: {"bootstrap", "hoeffding", "bernstein", "ttest"}, default="bootstrap"
             Estimation method for confidence intervals.
 
         n_bootstrap_samples: int, default=10000 (> 0)
@@ -522,15 +521,14 @@ class ContinuousOffPolicyEvaluation:
             Random state.
 
         is_relative: bool, default=False
-            If `True`, the method visualizes the estimated policy value of evaluation policy
+            If True, the method visualizes the estimated policy value of the evaluation policies
             relative to the ground-truth policy value of behavior policy.
 
-        hue: str, default="estimator"
+        hue: {"estimator", "policy"}, default="estimator"
             Hue of the plot.
-            Choose either from "estimator" or "policy".
 
         sharey: bool, default=False
-            If `True`, the y-axis will be shared among different estimators or evaluation policies.
+            If True, the y-axis will be shared among different estimators or evaluation policies.
 
         fig_dir: Path, default=None
             Path to store the bar figure.
@@ -540,6 +538,7 @@ class ContinuousOffPolicyEvaluation:
             Name of the bar figure.
 
         """
+        check_input_dict(input_dict)
         if ci not in self._estimate_confidence_interval.keys():
             raise ValueError(
                 f"ci must be one of 'bootstrap', 'hoeffding', 'bernstein', or 'ttest', but {ci} is given"
@@ -563,7 +562,6 @@ class ContinuousOffPolicyEvaluation:
                     ] = estimator._estimate_trajectory_value(
                         **input_dict[eval_policy],
                         **self.input_dict_,
-                        gamma=gamma,
                         sigma=self.sigma,
                         use_truncated_kernel=self.use_truncated_kernel,
                         action_min=self.action_min,
@@ -605,7 +603,6 @@ class ContinuousOffPolicyEvaluation:
                     ] = estimator._estimate_trajectory_value(
                         **input_dict[estimator_name],
                         **self.input_dict_,
-                        gamma=gamma,
                         sigma=self.sigma,
                         use_truncated_kernel=self.use_truncated_kernel,
                         action_min=self.action_min,
@@ -754,10 +751,9 @@ class ContinuousOffPolicyEvaluation:
     def evaluate_performance_of_estimators(
         self,
         input_dict: OPEInputDict,
-        gamma: float = 1.0,
         metric: str = "relative-ee",
     ) -> Dict[str, Dict[str, float]]:
-        """Evaluate estimation performance of OPE estimators.
+        """Evaluate the estimation performance of OPE estimators.
 
         Note
         -------
@@ -773,7 +769,7 @@ class ContinuousOffPolicyEvaluation:
             \\mathrm{SE}(\\hat{V}; \\mathcal{D}) := \\left( \\hat{V}(\\pi_e; \\mathcal{D}) - V_{\\mathrm{on} \\right)^2,
 
         where :math:`V_{\\mathrm{on}}(\\pi_e)` is the on-policy policy value of the evaluation policy :math:`\\pi_e`.
-        :math:`\\hat{V}(\\pi_e; \\mathcal{D})` is the estimated policy value by an OPE estimator :math:`\\hat{V}` and logged dataset :math:`\\mathcal{D}`.
+        :math:`\\hat{V}(\\pi_e; \\mathcal{D})` is the policy value estimated by the OPE estimator :math:`\\hat{V}` and logged dataset :math:`\\mathcal{D}`.
 
         Parameters
         -------
@@ -787,29 +783,28 @@ class ContinuousOffPolicyEvaluation:
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
+                initial_state_action_distribution,
                 on_policy_policy_value,
+                gamma,
             ]
 
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
-
-        metric: str, default="relative-ee"
+        metric: {"relative-ee", "se"}, default="relative-ee"
             Evaluation metric used to evaluate and compare the estimation performance of OPE estimators.
-            Either "relative-ee" or "se".
 
         Return
         -------
-        eval_metric_ope_dict: Dict[str, DIct[str, float]]
+        eval_metric_ope_dict: dict
             Dictionary containing evaluation metric for evaluating the estimation performance of OPE estimators.
             key: [evaluation_policy_name][OPE_estimator_name]
 
         """
+        check_input_dict(input_dict)
         if metric not in ["relative-ee", "se"]:
             raise ValueError(
                 f"metric must be either 'relative-ee' or 'se', but {metric} is given"
             )
         eval_metric_ope_dict = defaultdict(dict)
-        policy_value_dict = self.estimate_policy_value(input_dict, gamma=gamma)
+        policy_value_dict = self.estimate_policy_value(input_dict)
 
         if metric == "relative-ee":
             for eval_policy in input_dict.keys():
@@ -842,7 +837,6 @@ class ContinuousOffPolicyEvaluation:
     def summarize_estimators_comparison(
         self,
         input_dict: OPEInputDict,
-        gamma: float = 1.0,
         metric: str = "relative-ee",
     ) -> DataFrame:
         """Summarize performance comparison of OPE estimators.
@@ -859,22 +853,21 @@ class ContinuousOffPolicyEvaluation:
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
+                initial_state_action_distribution,
                 on_policy_policy_value,
+                gamma,
             ]
 
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
-
-        metric: str, default="relative-ee"
+        metric: {"relative-ee", "se"}, default="relative-ee"
             Evaluation metric used to evaluate and compare the estimation performance of OPE estimators.
-            Either "relative-ee" or "se".
 
         Return
         -------
-        eval_metric_ope_df: DataFrame
+        eval_metric_ope_df: dataframe
             Dictionary containing evaluation metric for evaluating the estimation performance of OPE estimators.
 
         """
+        check_input_dict(input_dict)
         if metric not in ["relative-ee", "se"]:
             raise ValueError(
                 f"metric must be either 'relative-ee' or 'se', but {metric} is given"
@@ -882,7 +875,6 @@ class ContinuousOffPolicyEvaluation:
         eval_metric_ope_df = DataFrame()
         eval_metric_ope_dict = self.evaluate_performance_of_estimators(
             input_dict,
-            gamma=gamma,
             metric=metric,
         )
         for eval_policy in input_dict.keys():
@@ -901,8 +893,8 @@ class ContinuousCumulativeDistributionalOffPolicyEvaluation:
     logged_dataset: LoggedDataset
         Logged dataset used to conduct OPE.
 
-    ope_estimators: List[BaseOffPolicyEstimator]
-        List of OPE estimators used to evaluate the policy value of evaluation policy.
+    ope_estimators: List of BaseOffPolicyEstimator
+        List of OPE estimators used to evaluate the policy value of the evaluation policies.
         Estimators must follow the interface of `offlinegym.ope.BaseCumulativeDistributionalOffPolicyEstimator`.
 
     scale_min: float, default=None
@@ -922,21 +914,21 @@ class ContinuousCumulativeDistributionalOffPolicyEvaluation:
         If True, the reward scale follows the one defined in Chundak et al. (2021).
         If False, the reward scale is uniform, following Huang et al. (2021).
 
-    sigma: Optional[NDArray], shape (action_dim, ), default=None
-        Standard deviation of Gaussian distribution (i.e., band_width hyperparameter of gaussian kernel).
+    sigma: array-like of shape (action_dim, ), default=None
+        Standard deviation of Gaussian distribution (i.e., `band_width` hyperparameter of gaussian kernel).
         If `None`, sigma is set to 1 for all dimensions.
 
     use_truncated_kernel: bool, default=False
         Whether to use Truncated Gaussian kernel or not.
-        If `False`, (normal) Gaussian kernel is used.
+        If False, (normal) Gaussian kernel is used.
 
-    action_min: Optional[NDArray], shape (action_dim, ), default=None
+    action_min: array-like of shape (action_dim, ), default=None
         Minimum value of action vector.
-        When use_truncated_kernel == True, action_min must be given.
+        When `use_truncated_kernel == True`, action_min must be given.
 
-    action_max: Optional[NDArray], shape (action_dim, ), default=None
+    action_max: array-like of shape (action_dim, ), default=None
         Maximum value of action vector.
-        When use_truncated_kernel == True, action_max must be given.
+        When `use_truncated_kernel == True`, action_max must be given.
 
     Examples
     ----------
@@ -1043,11 +1035,14 @@ class ContinuousCumulativeDistributionalOffPolicyEvaluation:
 
     References
     -------
-    Yash Chandak, Scott Niekum, Bruno Castro da Silva, Erik Learned-Miller, Emma Brunskill, and Philip S. Thomas.
-    "Universal Off-Policy Evaluation.", 2021.
+    Audrey Huang, Liu Leqi, Zachary C. Lipton, and Kamyar Azizzadenesheli.
+    "Off-Policy Risk Assessment for Markov Decision Processes.", 2022.
 
     Audrey Huang, Liu Leqi, Zachary C. Lipton, and Kamyar Azizzadenesheli.
     "Off-Policy Risk Assessment in Contextual Bandits.", 2021.
+
+    Yash Chandak, Scott Niekum, Bruno Castro da Silva, Erik Learned-Miller, Emma Brunskill, and Philip S. Thomas.
+    "Universal Off-Policy Evaluation.", 2021.
 
     Nathan Kallus and Angela Zhou.
     "Policy Evaluation and Optimization with Continuous Treatments.", 2019.
@@ -1145,9 +1140,8 @@ class ContinuousCumulativeDistributionalOffPolicyEvaluation:
     def estimate_cumulative_distribution_function(
         self,
         input_dict: OPEInputDict,
-        gamma: float = 1.0,
     ):
-        """Estimate the cumulative distribution of the trajectory wise reward of evaluation policy.
+        """Estimate the cumulative distribution of the trajectory wise reward of the evaluation policies.
 
         Parameters
         -------
@@ -1161,20 +1155,21 @@ class ContinuousCumulativeDistributionalOffPolicyEvaluation:
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
+                initial_state_action_distribution,
                 on_policy_policy_value,
+                gamma,
             ]
-
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
 
         Return
         -------
-        cumulative_distribution_dict: Dict[str, Dict[str, np.ndarray]]
-            Dictionary containing estimated cumulative distribution of each evaluation policy by OPE estimators.
+        cumulative_distribution_dict: dict
+            Dictionary containing the cumulative distribution of each evaluation policy estimated by OPE estimators.
             key: [evaluation_policy_name][OPE_estimator_name]
 
         """
+        check_input_dict(input_dict)
         cumulative_distribution_dict = defaultdict(dict)
+        gamma = input_dict[input_dict.keys()[0]]["gamma"]
         reward_scale = self.obtain_reward_scale(input_dict=input_dict, gamma=gamma)
 
         for eval_policy in input_dict.keys():
@@ -1197,7 +1192,6 @@ class ContinuousCumulativeDistributionalOffPolicyEvaluation:
                     **input_dict[eval_policy],
                     **self.input_dict_,
                     reward_scale=reward_scale,
-                    gamma=gamma,
                     sigma=self.sigma,
                     use_truncated_kernel=self.use_truncated_kernel,
                     action_min=self.action_min,
@@ -1209,9 +1203,8 @@ class ContinuousCumulativeDistributionalOffPolicyEvaluation:
     def estimate_mean(
         self,
         input_dict: OPEInputDict,
-        gamma: float = 1.0,
     ):
-        """Estimate the mean of the trajectory wise reward (i.e., policy value) of evaluation policy.
+        """Estimate the mean of the trajectory wise reward (i.e., policy value) of the evaluation policies.
 
         Parameters
         -------
@@ -1225,20 +1218,21 @@ class ContinuousCumulativeDistributionalOffPolicyEvaluation:
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
+                initial_state_action_distribution,
                 on_policy_policy_value,
+                gamma,
             ]
-
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
 
         Return
         -------
-        mean_dict: Dict[str, Dict[str, float]]
-            Dictionary containing estimated mean trajectory wise reward of each evaluation policy by OPE estimators.
+        mean_dict: dict
+            Dictionary containing the mean trajectory wise reward of each evaluation policy estimated by OPE estimators.
             key: [evaluation_policy_name][OPE_estimator_name]
 
         """
+        check_input_dict(input_dict)
         mean_dict = defaultdict(dict)
+        gamma = input_dict[input_dict.keys()[0]]["gamma"]
         reward_scale = self.obtain_reward_scale(input_dict=input_dict, gamma=gamma)
 
         for eval_policy in input_dict.keys():
@@ -1259,7 +1253,6 @@ class ContinuousCumulativeDistributionalOffPolicyEvaluation:
                     **input_dict[eval_policy],
                     **self.input_dict_,
                     reward_scale=reward_scale,
-                    gamma=gamma,
                     sigma=self.sigma,
                     use_truncated_kernel=self.use_truncated_kernel,
                     action_min=self.action_min,
@@ -1271,9 +1264,8 @@ class ContinuousCumulativeDistributionalOffPolicyEvaluation:
     def estimate_variance(
         self,
         input_dict: OPEInputDict,
-        gamma: float = 1.0,
     ):
-        """Estimate the variance of the trajectory wise reward of evaluation policy.
+        """Estimate the variance of the trajectory wise reward of the evaluation policies.
 
         Parameters
         -------
@@ -1287,20 +1279,21 @@ class ContinuousCumulativeDistributionalOffPolicyEvaluation:
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
+                initial_state_action_distribution,
                 on_policy_policy_value,
+                gamma,
             ]
-
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
 
         Return
         -------
-        variance_dict: Dict[str, Dict[str, float]]
-            Dictionary containing estimated variance of trajectory wise reward of each evaluation policy by OPE estimators.
+        variance_dict: dict
+            Dictionary containing the variance of trajectory wise reward of each evaluation policy estimated by OPE estimators.
             key: [evaluation_policy_name][OPE_estimator_name]
 
         """
+        check_input_dict(input_dict)
         variance_dict = defaultdict(dict)
+        gamma = input_dict[input_dict.keys()[0]]["gamma"]
         reward_scale = self.obtain_reward_scale(input_dict=input_dict, gamma=gamma)
 
         for eval_policy in input_dict.keys():
@@ -1327,7 +1320,6 @@ class ContinuousCumulativeDistributionalOffPolicyEvaluation:
                     **input_dict[eval_policy],
                     **self.input_dict_,
                     reward_scale=reward_scale,
-                    gamma=gamma,
                     sigma=self.sigma,
                     use_truncated_kernel=self.use_truncated_kernel,
                     action_min=self.action_min,
@@ -1339,10 +1331,9 @@ class ContinuousCumulativeDistributionalOffPolicyEvaluation:
     def estimate_conditional_value_at_risk(
         self,
         input_dict: OPEInputDict,
-        gamma: float = 1.0,
         alpha: float = 0.05,
     ):
-        """Estimate the conditional value at risk of the trajectory wise reward of evaluation policy.
+        """Estimate the conditional value at risk of the trajectory wise reward of the evaluation policies.
 
         Parameters
         -------
@@ -1356,23 +1347,24 @@ class ContinuousCumulativeDistributionalOffPolicyEvaluation:
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
+                initial_state_action_distribution,
                 on_policy_policy_value,
+                gamma,
             ]
 
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
-
         alpha: float, default=0.05
-            Proportion of the sided region.
+            Proportion of the sided region. The value should be within `[0, 1]`.
 
         Return
         -------
-        conditional_value_at_risk_dict: Dict[str, Dict[str, float]]
-            Dictionary containing estimated conditional value at risk of trajectory wise reward of each evaluation policy by OPE estimators.
+        conditional_value_at_risk_dict: dict
+            Dictionary containing the conditional value at risk of trajectory wise reward of each evaluation policy estimated by OPE estimators.
             key: [evaluation_policy_name][OPE_estimator_name]
 
         """
+        check_input_dict(input_dict)
         conditional_value_at_risk_dict = defaultdict(dict)
+        gamma = input_dict[input_dict.keys()[0]]["gamma"]
         reward_scale = self.obtain_reward_scale(input_dict=input_dict, gamma=gamma)
 
         for eval_policy in input_dict.keys():
@@ -1400,7 +1392,6 @@ class ContinuousCumulativeDistributionalOffPolicyEvaluation:
                     **input_dict[eval_policy],
                     **self.input_dict_,
                     reward_scale=reward_scale,
-                    gamma=gamma,
                     alpha=alpha,
                     sigma=self.sigma,
                     use_truncated_kernel=self.use_truncated_kernel,
@@ -1413,10 +1404,9 @@ class ContinuousCumulativeDistributionalOffPolicyEvaluation:
     def estimate_interquartile_range(
         self,
         input_dict: OPEInputDict,
-        gamma: float = 1.0,
         alpha: float = 0.05,
     ):
-        """Estimate the interquartile range of the trajectory wise reward of evaluation policy.
+        """Estimate the interquartile range of the trajectory wise reward of the evaluation policies.
 
         Parameters
         -------
@@ -1430,23 +1420,24 @@ class ContinuousCumulativeDistributionalOffPolicyEvaluation:
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
+                initial_state_action_distribution,
                 on_policy_policy_value,
+                gamma,
             ]
 
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
-
         alpha: float, default=0.05
-            Proportion of the sided region.
+            Proportion of the sided region. The value should be within `[0, 0.5]`.
 
         Return
         -------
-        interquartile_range_dict: Dict[str, Dict[str, Dict[str, float]]]
-            Dictionary containing estimated interquartile range at risk of trajectory wise reward of each evaluation policy by OPE estimators.
+        interquartile_range_dict: dict
+            Dictionary containing the interquartile range at risk of trajectory wise reward of each evaluation policy estimated by OPE estimators.
             key: [evaluation_policy_name][OPE_estimator_name][quartile_name]
 
         """
+        check_input_dict(input_dict)
         interquartile_range_dict = defaultdict(dict)
+        gamma = input_dict[input_dict.keys()[0]]["gamma"]
         reward_scale = self.obtain_reward_scale(input_dict=input_dict, gamma=gamma)
 
         for eval_policy in input_dict.keys():
@@ -1485,7 +1476,6 @@ class ContinuousCumulativeDistributionalOffPolicyEvaluation:
                     **input_dict[eval_policy],
                     **self.input_dict_,
                     reward_scale=reward_scale,
-                    gamma=gamma,
                     alpha=alpha,
                     sigma=self.sigma,
                     use_truncated_kernel=self.use_truncated_kernel,
@@ -1498,12 +1488,11 @@ class ContinuousCumulativeDistributionalOffPolicyEvaluation:
     def visualize_cumulative_distribution_function(
         self,
         input_dict: OPEInputDict,
-        gamma: float = 1.0,
         hue: str = "estimator",
         fig_dir: Optional[Path] = None,
         fig_name: str = "estimated_cumulative_distribution_function.png",
     ) -> None:
-        """Visualize policy value estimated by OPE estimators.
+        """Visualize the cumulative distribution function estimated by OPE estimators.
 
         Parameters
         -------
@@ -1517,15 +1506,13 @@ class ContinuousCumulativeDistributionalOffPolicyEvaluation:
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
+                initial_state_action_distribution,
                 on_policy_policy_value,
+                gamma,
             ]
 
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
-
-        hue: str, default="estimator"
+        hue: {"estimator", "policy"}, default="estimator"
             Hue of the plot.
-            Choose either from "estimator" or "policy".
 
         fig_dir: Path, default=None
             Path to store the bar figure.
@@ -1535,6 +1522,7 @@ class ContinuousCumulativeDistributionalOffPolicyEvaluation:
             Name of the bar figure.
 
         """
+        check_input_dict(input_dict)
         if hue not in ["estimator", "policy"]:
             raise ValueError(
                 f"hue must be either `estimator` or `policy`, but {hue} is given"
@@ -1544,11 +1532,11 @@ class ContinuousCumulativeDistributionalOffPolicyEvaluation:
         if fig_name is not None and not isinstance(fig_name, str):
             raise ValueError(f"fig_dir must be a string, but {type(fig_dir)} is given")
 
+        gamma = input_dict[input_dict.keys()[0]]["gamma"]
         reward_scale = self.obtain_reward_scale(input_dict=input_dict, gamma=gamma)
         cumulative_distribution_function_dict = (
             self.estimate_cumulative_distribution_function(
                 input_dict=input_dict,
-                gamma=gamma,
             )
         )
 
@@ -1632,8 +1620,8 @@ class ContinuousDistributionallyRobustOffPolicyEvaluation:
     logged_dataset: LoggedDataset
         Logged dataset used to conduct OPE.
 
-    ope_estimators: List[BaseOffPolicyEstimator]
-        List of OPE estimators used to evaluate the policy value of evaluation policy.
+    ope_estimators: list of BaseOffPolicyEstimator
+        List of OPE estimators used to evaluate the policy value of the evaluation policies.
         Estimators must follow the interface of `offlinegym.ope.BaseDistributionallyRobustOffPolicyEstimator`.
 
     alpha_prior: float, default=1.0 (> 0)
@@ -1645,21 +1633,21 @@ class ContinuousDistributionallyRobustOffPolicyEvaluation:
     epsilon: float, default=0.01
         Convergence criterion of alpha.
 
-    sigma: Optional[NDArray], shape (action_dim, ), default=None
-        Standard deviation of Gaussian distribution (i.e., band_width hyperparameter of gaussian kernel).
+    sigma: array-like of shape (action_dim, ), default=None
+        Standard deviation of Gaussian distribution (i.e., `band_width` hyperparameter of gaussian kernel).
         If `None`, sigma is set to 1 for all dimensions.
 
     use_truncated_kernel: bool, default=False
         Whether to use Truncated Gaussian kernel or not.
-        If `False`, (normal) Gaussian kernel is used.
+        If False, (normal) Gaussian kernel is used.
 
-    action_min: Optional[NDArray], shape (action_dim, ), default=None
+    action_min: array-like of shape (action_dim, ), default=None
         Minimum value of action vector.
-        When use_truncated_kernel == True, action_min must be given.
+        When `use_truncated_kernel == True`, action_min must be given.
 
-    action_max: Optional[NDArray], shape (action_dim, ), default=None
+    action_max: array-like of shape (action_dim, ), default=None
         Maximum value of action vector.
-        When use_truncated_kernel == True, action_max must be given.
+        When `use_truncated_kernel == True`, action_max must be given.
 
     Examples
     ----------
@@ -1848,11 +1836,10 @@ class ContinuousDistributionallyRobustOffPolicyEvaluation:
     def estimate_worst_case_policy_value(
         self,
         input_dict: OPEInputDict,
-        gamma: float = 1.0,
         delta: float = 0.05,
         random_state: Optional[int] = None,
     ) -> Dict[str, float]:
-        """Estimate the worst case policy value of evaluation policy.
+        """Estimate the worst case policy value of the evaluation policies.
 
         Parameters
         -------
@@ -1866,11 +1853,10 @@ class ContinuousDistributionallyRobustOffPolicyEvaluation:
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
+                initial_state_action_distribution,
                 on_policy_policy_value,
+                gamma,
             ]
-
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
 
         delta: float, default=0.05 (> 0)
             Allowance of the distributional shift.
@@ -1880,11 +1866,12 @@ class ContinuousDistributionallyRobustOffPolicyEvaluation:
 
         Return
         -------
-        worst_case_policy_value_dict: Dict[str, Dict[str, float]]
-            Dictionary containing estimated policy value of each evaluation policy by OPE estimators.
+        worst_case_policy_value_dict: dict
+            Dictionary containing the policy value of each evaluation policy estimated by OPE estimators.
             key: [evaluation_policy_name][OPE_estimator_name]
 
         """
+        check_input_dict(input_dict)
         worst_case_policy_value_dict = defaultdict(dict)
 
         for eval_policy in input_dict.keys():
@@ -1907,7 +1894,6 @@ class ContinuousDistributionallyRobustOffPolicyEvaluation:
                     **input_dict[eval_policy],
                     **self.input_dict_,
                     step_per_episode=self.step_per_episode,
-                    gamma=gamma,
                     delta=delta,
                     alpha_prior=self.alpha_prior,
                     max_steps=self.max_steps,

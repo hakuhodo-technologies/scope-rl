@@ -35,7 +35,7 @@ class CreateOPEInput:
     logged_dataset: LoggedDataset
         Logged dataset used to conduct OPE.
 
-    base_model_args: Optional[Dict[str, Any]], default=None
+    base_model_args: dict, default=None
         Arguments of baseline Fitted Q Evaluation (FQE) model.
 
     use_base_model: bool, default=False
@@ -110,10 +110,10 @@ class CreateOPEInput:
         evaluation_policy: BaseHead
             Evaluation policy.
 
-        n_epochs: Optional[int], default=None (> 0)
+        n_epochs: int, default=None (> 0)
             Number of epochs to fit FQE.
 
-        n_steps: Optional[int], default=None (> 0)
+        n_steps: int, default=None (> 0)
             Total number pf steps to fit FQE.
 
         n_steps_per_epoch: int, default=10000 (> 0)
@@ -169,7 +169,7 @@ class CreateOPEInput:
 
         Return
         -------
-        state_action_value_prediction: NDArray, shape (n_samples, n_actions)
+        state_action_value_prediction: ndarray of shape (n_episodes * step_per_episode, n_actions)
             State action value for observed state and all actions,
             i.e., math`\\hat{Q}(s, a) \\forall a \\in \\mathcal{A}`.
 
@@ -197,7 +197,7 @@ class CreateOPEInput:
 
         Return
         -------
-        evaluation_policy_action: NDArray
+        evaluation_policy_action: ndarray of shape (n_episodes * step_per_episode, )
             Evaluation policy action :math:`a_t \\sim \\pi_e(a_t \\mid s_t)`.
 
         """
@@ -218,7 +218,7 @@ class CreateOPEInput:
 
         Return
         -------
-        evaluation_policy_pscore: NDArray
+        evaluation_policy_pscore: ndarray of shape (n_episodes * step_per_episode, )
             Evaluation policy pscore :math:`\\pi_e(a_t \\mid s_t)`.
 
         """
@@ -242,7 +242,7 @@ class CreateOPEInput:
 
         Return
         -------
-        evaluation_policy_step_wise_pscore: NDArray
+        evaluation_policy_step_wise_pscore: ndarray of shape (n_episodes * step_per_episode, )
             Evaluation policy's step-wise pscore :math:`\\prod_{t'=1}^t \\pi_e(a_{t'} \\mid s_{t'})`.
 
         """
@@ -266,7 +266,7 @@ class CreateOPEInput:
 
         Return
         -------
-        evaluation_policy_trajectory_wise_pscore: NDArray
+        evaluation_policy_trajectory_wise_pscore: ndarray of shape (n_episodes * step_per_episode, )
             Evaluation policy's trajectory-wise pscore :math:`\\prod_{t=1}^T \\pi_e(a_t \\mid s_t)`.
 
         """
@@ -290,10 +290,10 @@ class CreateOPEInput:
 
         Return
         -------
-        evaluation_policy_action_dist: NDArray, shape (n_samples, n_actions)
+        evaluation_policy_action_dist: ndarray of shape (n_episodes * step_per_episode, n_actions)
             Evaluation policy pscore :math:`\\pi_e(a_t \\mid s_t)`.
 
-        state_action_value_prediction: NDArray, shape (n_samples, n_actions)
+        state_action_value_prediction: ndarray of shape (n_episodes * step_per_episode, n_actions)
             State action value for all observed state and possible action.
 
         """
@@ -320,7 +320,7 @@ class CreateOPEInput:
 
         Return
         -------
-        state_action_value_prediction: NDArray, shape (n_samples, )
+        state_action_value_prediction: ndarray of shape (n_episodes * step_per_episode, )
             State action value for the observed state and action chosen by evaluation policy.
 
         """
@@ -343,7 +343,7 @@ class CreateOPEInput:
 
         Return
         -------
-        initial_state_value_prediction: NDArray, shape (n_samples, n_actions)
+        initial_state_value_prediction: ndarray of shape (n_episodes, n_actions)
             State action value for the observed state and action chosen by evaluation policy.
 
         """
@@ -372,7 +372,7 @@ class CreateOPEInput:
 
         Return
         -------
-        initial_state_value_prediction: NDArray, shape (n_samples, n_actions)
+        initial_state_value_prediction: ndarray of shape (n_episodes, )
             State action value for the observed state and action chosen by evaluation policy.
 
         """
@@ -396,7 +396,7 @@ class CreateOPEInput:
 
         Return
         -------
-        initial_state_action_distribution: NDArray, shape (n_episodes, n_actions)
+        initial_state_action_distribution: ndarray of shape (n_episodes, n_actions)
             Evaluation policy pscore at the initial state of each episode.
 
         """
@@ -416,29 +416,33 @@ class CreateOPEInput:
         n_steps: Optional[int] = None,  # should be more than n_steps_per_epoch
         n_steps_per_epoch: Optional[int] = None,
         n_episodes_on_policy_evaluation: Optional[int] = None,
+        gamma: float = 1.0,
         random_state: Optional[int] = None,
     ) -> OPEInputDict:
         """Obtain input as a dictionary.
 
         Parameters
         -------
-        evaluation_policies: List[BaseHead]
+        evaluation_policies: list of BaseHead
             Evaluation policies.
 
         env: gym.Env
             Reinforcement learning (RL) environment.
 
-        n_epochs: Optional[int], default=None (> 0)
+        n_epochs: int, default=None (> 0)
             Number of epochs to fit FQE.
 
-        n_steps: Optional[int], default=None (> 0)
+        n_steps: int, default=None (> 0)
             Total number pf steps to fit FQE.
 
         n_steps_per_epoch: int, default=None (> 0)
             Number of steps in an epoch.
 
-        n_episodes_on_policy_evaluation: Optional[int], default=None (> 0)
+        n_episodes_on_policy_evaluation: int, default=None (> 0)
             Number of episodes to perform on-policy evaluation.
+
+        gamma: float, default=1.0
+            Discount factor. The value should be within `(0, 1]`.
 
         random_state: int, default=None (>= 0)
             Random state.
@@ -454,53 +458,55 @@ class CreateOPEInput:
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
-                on_policy_policy_value,
-                initial_state,
-                initial_state_action,
                 initial_state_action_distribution,
+                on_policy_policy_value,
+                gamma,
             ]
 
-            evaluation_policy_step_wise_pscore: Optional[NDArray], shape (n_episodes * step_per_episodes, )
+            evaluation_policy_step_wise_pscore: ndarray of shape (n_episodes * step_per_episodes, )
                 Step-wise action choice probability of evaluation policy,
                 i.e., :math:`\\prod_{t'=0}^t \\pi_e(a_{t'} \\mid s_{t'})`
-                If action_type == "continuous", `None` is recorded.
+                If `action_type == "continuous"`, `None` is recorded.
 
-            evaluation_policy_trajectory_wise_pscore: Optional[NDArray], shape (n_episodes * step_per_episodes, )
+            evaluation_policy_trajectory_wise_pscore: ndarray of shape (n_episodes * step_per_episodes, )
                 Trajectory-wise action choice probability of evaluation policy,
                 i.e., :math:`\\prod_{t=0}^T \\pi_e(a_t \\mid s_t)`
-                If action_type == "continuous", `None` is recorded.
+                If `action_type == "continuous"`, `None` is recorded.
 
-            evaluation_policy_action: Optional[NDArray], shape (n_episodes * step_per_episodes, action_dim)
+            evaluation_policy_action: ndarray of shape (n_episodes * step_per_episodes, action_dim)
                 Action chosen by the deterministic evaluation policy.
-                If action_type == "discrete", `None` is recorded.
+                If `action_type == "discrete"`, `None` is recorded.
 
-            evaluation_policy_action_dist: Optional[NDArray], shape (n_episodes * step_per_episode, n_actions)
+            evaluation_policy_action_dist: ndarray of shape (n_episodes * step_per_episode, n_actions)
                 Action choice probability of evaluation policy for all actions,
                 i.e., :math:`\\pi_e(a \\mid s_t) \\forall a \\in \\mathcal{A}`
-                If action_type == "continuous", `None` is recorded.
+                If `action_type == "continuous"`, `None` is recorded.
 
-            state_action_value_prediction: Optional[NDArray]
-                If action_type == "discrete", :math:`\\hat{Q}` for all actions,
+            state_action_value_prediction: ndarray of shape (n_episodes * step_per_episode, n_actions) or (n_episodes * step_per_episode, )
+                If `action_type == "discrete"`, :math:`\\hat{Q}` for all actions,
                 i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
                 shape (n_episodes * step_per_episode, n_actions)
 
-                If action_type == "continuous", :math:`\\hat{Q}` for the action chosen by evaluation policy,
+                If `action_type == "continuous"`, :math:`\\hat{Q}` for the action chosen by evaluation policy,
                 i.e., :math:`\\hat{Q}(s_t, \\pi_e(a \\mid s_t))`.
                 shape (n_episodes * step_per_episode, )
 
-                If use_base_model == False, `None` is recorded.
+                If `use_base_model == False`, `None` is recorded.
 
-            initial_state_value_prediction: Optional[NDArray], shape (n_episodes, )
+            initial_state_value_prediction: ndarray of shape (n_episodes, )
                 Estimated initial state value.
-                If use_base_model == False, `None` is recorded.
+                If `use_base_model == False`, `None` is recorded.
 
-            on_policy_policy_value: Optional[NDArray], shape (n_episodes_on_policy_evaluation, )
-                On-policy policy value.
-                If env is None, `None` is recorded.
-
-            initial_state_action_distribution: NDArray, shape (n_episodes, n_actions)
+            initial_state_action_distribution: ndarray of shape (n_episodes, n_actions)
                 Evaluation policy pscore at the initial state of each episode.
-                If action_type == "continuous", `None` is recorded.
+                If `action_type == "continuous"`, `None` is recorded.
+
+            on_policy_policy_value: ndarray of shape (n_episodes_on_policy_evaluation, )
+                On-policy policy value.
+                If `env is None`, `None` is recorded.
+
+            gamma: float
+                Discount factor.
 
         """
         if env is not None:
@@ -649,6 +655,7 @@ class CreateOPEInput:
                     env,
                     evaluation_policies[i],
                     n_episodes=n_episodes_on_policy_evaluation,
+                    gamma=gamma,
                     random_state=random_state,
                 )
 
