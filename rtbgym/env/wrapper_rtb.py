@@ -22,7 +22,7 @@ class CustomizedRTBEnv(gym.Env):
             We use predicted rewards to calculate bid price as follows.
                 :math:`bid_price_{t, i} = adjust_rate_{t} \\times predicted_reward_{t,i} ( \\times const.)`
 
-            If None, we use ground-truth reward instead of predicted reward.
+            If `None`, we use ground-truth reward instead of predicted reward.
 
         - scaler in Bidder class
             Scaler defines const.in the bid price calculation as follows.
@@ -44,7 +44,7 @@ class CustomizedRTBEnv(gym.Env):
             We have (search volume, ) auctions during a timestep.
             Note that each single auction do NOT correspond to the timestep.
 
-        state: NDArray[float], shape (7, )
+        state: array-like of shape (7, )
             Statistical feedbacks of auctions during the timestep, including following values.
                 - timestep
                 - remaining budget
@@ -52,7 +52,7 @@ class CustomizedRTBEnv(gym.Env):
                   (budget consumption rate, cost per mille of impressions, auction winning rate, and reward)
                 - adjust rate (i.e., RL agent action) at previous timestep
 
-        action: Union[int, float, NDArray] (> 0)
+        action: {int, float, array-like of shape (1, )} (>= 0)
             Adjust rate parameter used for the bid price calculation as follows.
             Note that the following bid price is individually determined for each auction.
 
@@ -77,13 +77,13 @@ class CustomizedRTBEnv(gym.Env):
     original_env: RTBEnv
         Original RTB environment.
 
-    reward_predictor: Optional[BaseEstimator], default=None
+    reward_predictor: BaseEstimator, default=None
         A machine learning model to predict the reward to determine the bidding price.
-        If None, the ground-truth (expected) reward is used instead of the predicted one.
+        If `None`, the ground-truth (expected) reward is used instead of the predicted one.
 
-    scaler: Optional[Union[int, float]], default=None (> 0)
+    scaler: {int, float}, default=None (> 0)
         Scaling factor (constant value) used for bid price determination.
-        If None, scaler is autofitted by bidder.auto_fit_scaler().
+        If `None`, scaler is autofitted by `bidder.auto_fit_scaler()`.
 
     action_min: float, default=0.1 (> 0)
         Minimum value of action.
@@ -91,20 +91,18 @@ class CustomizedRTBEnv(gym.Env):
     action_max: float, default=10.0 (> 0)
         Maximum value of action.
 
-    action_type: str, default="discrete"
+    action_type: {"discrete", "continuous"}, default="discrete"
         Action type of the RL agent.
-        Choose either from "discrete" or "continuous".
 
     n_actions: int, default=10 (> 0)
         Number of the discrete actions.
-        Used only when action_type="discrete" option.
+        Used only when `action_type="discrete"`.
 
-    action_meaning: Optional[NDArray[float]], default=None
+    action_meaning: ndarray of shape (n_actions, ), default=None
         Dictionary which maps discrete action index into specific actions.
-        Used when only when using action_type="discrete" option.
+        Used only when `action_type == "discrete"`.
 
-        If None, the values are automatically set to [action_min, action_max] as follows.
-            np.logspace(-1, 1, n_actions)
+        If `None`, the values are automatically set to `[action_min, action_max]` as `np.logspace(-1, 1, n_actions)`.
 
     Examples
     -------
@@ -281,31 +279,30 @@ class CustomizedRTBEnv(gym.Env):
 
         Parameters
         -------
-        action: Action (Union[int, float, np.integer, np.float, np.ndarray])
+        action: {int, float, array-like of shape (1, )} (>= 0)
             RL agent action which indicates adjust rate parameter used for bid price determination.
             Both discrete and continuos actions are acceptable.
 
         Returns
         -------
-        feedbacks: Tuple
-            obs: NDArray[float], shape (7, )
-                Statistical feedbacks of auctions during the timestep.
-                Corresponds to RL state, which include following components.
-                    - timestep
-                    - remaining budget
-                    - impression level features at the previous timestep
-                    (budget consumption rate, cost per mille of impressions, auction winning rate, and reward)
-                    - adjust rate (i.e., agent action) at previous timestep
+        obs: ndarray of shape (7, )
+            Statistical feedbacks of auctions during the timestep.
+            Corresponds to RL state, which include following components.
+                - timestep
+                - remaining budget
+                - impression level features at the previous timestep
+                (budget consumption rate, cost per mille of impressions, auction winning rate, and reward)
+                - adjust rate (i.e., agent action) at previous timestep
 
-            reward: int (>= 0)
-                Total clicks/conversions gained during the timestep.
+        reward: int (>= 0)
+            Total clicks/conversions gained during the timestep.
 
-            done: bool
-                Wether the episode end or not.
+        done: bool
+            Wether the episode end or not.
 
-            info: Dict[str, int]
-                Additional feedbacks (total impressions, clicks, and conversions) for analysts.
-                Note that those feedbacks are intended to be unobservable for the RL agent.
+        info: dict
+            Additional feedbacks (total impressions, clicks, and conversions) for analysts.
+            Note that those feedbacks are intended to be unobservable for the RL agent.
 
         """
         if self.action_type == "discrete":
@@ -340,7 +337,7 @@ class CustomizedRTBEnv(gym.Env):
 
         Returns
         -------
-        obs: NDArray[float], shape (7, )
+        obs: ndarray of shape (7, )
             Statistical feedbacks of auctions during the timestep.
             Corresponds to RL state, which include following components.
                 - timestep
