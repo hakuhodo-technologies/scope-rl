@@ -1,4 +1,4 @@
-"""Abstract Base class for Off-Policy Estimator."""
+"""Abstract Base Class for Off-Policy Estimator."""
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
 from typing import Dict, Optional, Tuple
@@ -62,12 +62,12 @@ class BaseCumulativeDistributionalOffPolicyEstimator(metaclass=ABCMeta):
 
         Parameters
         -------
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
+        gamma: float, default=1.0
+            Discount factor. The value should be within `(0, 1]`.
 
         Return
         -------
-        reward_scale: NDArray, shape (n_partition, )
+        reward_scale: ndarray of shape (n_partition, )
             Reward scale of the cumulative distribution function.
 
         """
@@ -105,32 +105,32 @@ class BaseCumulativeDistributionalOffPolicyEstimator(metaclass=ABCMeta):
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
-        reward: NDArray, shape (n_episodes * step_per_episode, )
+        reward: ndarray of shape (n_episodes * step_per_episode, )
             Reward observation.
 
-        behavior_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+        behavior_policy_trajectory_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Trajectory-wise action choice probability of behavior policy,
             i.e., :math:`\\prod_{t=0}^T \\pi_b(a_t \\mid s_t)`
 
-        evaluation_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+        evaluation_policy_trajectory_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Trajectory-wise action choice probability of evaluation policy,
             i.e., :math:`\\prod_{t=0}^T \\pi_e(a_t \\mid s_t)`
 
-        initial_state_value_prediction: NDArray, shape (n_episodes, )
+        initial_state_value_prediction: array-like of shape (n_episodes, )
             Estimated initial state value.
 
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
+        gamma: float, default=1.0
+            Discount factor. The value should be within `(0, 1]`.
 
         Return
         -------
-        trajectory_wise_reward: NDArray, shape (n_episodes, )
+        trajectory_wise_reward: ndarray of shape (n_episodes, )
             Trajectory wise reward observed by the behavior policy.
 
-        trajectory_wise_importance_weight: NDArray, shape (n_episodes, )
+        trajectory_wise_importance_weight: ndarray of shape (n_episodes, )
             Trajectory wise importance weight.
 
-        initial_state_value_prediction: NDArray, shape (n_episodes, )
+        initial_state_value_prediction: ndarray of shape (n_episodes, )
             Estimated initial state value.
 
         """
@@ -188,50 +188,50 @@ class BaseCumulativeDistributionalOffPolicyEstimator(metaclass=ABCMeta):
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
-        action: NDArray, shape (n_episodes * step_per_episode, action_dim)
+        action: ndarray of shape (n_episodes * step_per_episode, action_dim)
             Action chosen by behavior policy.
 
-        reward: NDArray, shape (n_episodes * step_per_episode, )
+        reward: ndarray of shape (n_episodes * step_per_episode, )
             Reward observation.
 
-        behavior_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+        behavior_policy_trajectory_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Trajectory-wise action choice probability of behavior policy,
             i.e., :math:`\\prod_{t=0}^T \\pi_b(a_t \\mid s_t)`
 
-        evaluation_policy_action: NDArray, shape (n_episodes * step_per_episode, action_dim)
+        evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
             Action chosen by evaluation policy.
 
-        initial_state_value_prediction: NDArray, shape (n_episodes, )
+        initial_state_value_prediction: array-like of shape (n_episodes, )
             Estimated initial state value.
 
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
+        gamma: float, default=1.0
+            Discount factor. The value should be within `(0, 1]`.
 
-        sigma: Optional[NDArray], shape (action_dim, ), default=None
+        sigma: array-like of shape (action_dim, ), default=None
             Standard deviation of Gaussian distribution (i.e., band_width hyperparameter of gaussian kernel).
             If `None`, sigma is set to 1 for all dimensions.
 
         use_truncated_kernel: bool, default=False
             Whether to use Truncated Gaussian kernel or not.
-            If `False`, (normal) Gaussian kernel is used.
+            If False, (normal) Gaussian kernel is used.
 
-        action_min: Optional[NDArray], shape (action_dim, ), default=None
+        action_min: array-like of shape (action_dim, ), default=None
             Minimum value of action vector.
-            When use_truncated_kernel == True, action_min must be given.
+            When `use_truncated_kernel == True`, action_min must be given.
 
-        action_max: Optional[NDArray], shape (action_dim, ), default=None
+        action_max: array-like of shape (action_dim, ), default=None
             Maximum value of action vector.
-            When use_truncated_kernel == True, action_max must be given.
+            When `use_truncated_kernel == True`, action_max must be given.
 
         Return
         -------
-        trajectory_wise_reward: NDArray, shape (n_episodes, )
+        trajectory_wise_reward: ndarray of shape (n_episodes, )
             Trajectory wise reward observed by the behavior policy.
 
-        trajectory_wise_importance_weight: NDArray, shape (n_episodes, )
+        trajectory_wise_importance_weight: ndarray of shape (n_episodes, )
             Trajectory wise importance weight.
 
-        initial_state_value_prediction: NDArray, shape (n_episodes, )
+        initial_state_value_prediction: ndarray of shape (n_episodes, )
             Estimated initial state value.
 
         """
@@ -302,7 +302,7 @@ class BaseDistributionallyRobustOffPolicyEstimator(metaclass=ABCMeta):
 
         Parameters
         -------
-        on_policy_policy_value: NDArray, shape(n_episodes, )
+        on_policy_policy_value: array-like of shape(n_episodes, )
             On policy policy value.
 
         delta: float, default=0.05 (> 0)
@@ -360,29 +360,29 @@ class BaseDistributionallyRobustOffPolicyEstimator(metaclass=ABCMeta):
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
-        reward: NDArray, shape (n_episodes * step_per_episode, )
+        reward: array-like of shape (n_episodes * step_per_episode, )
             Reward observation.
 
-        behavior_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+        behavior_policy_trajectory_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Trajectory-wise action choice probability of behavior policy,
             i.e., :math:`\\prod_{t=0}^T \\pi_b(a_t \\mid s_t)`
 
-        evaluation_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+        evaluation_policy_trajectory_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Trajectory-wise action choice probability of evaluation policy,
             i.e., :math:`\\prod_{t=0}^T \\pi_e(a_t \\mid s_t)`
 
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
+        gamma: float, default=1.0
+            Discount factor. The value should be within `(0, 1]`.
 
         Return
         -------
-        trajectory_wise_reward: NDArray, shape (n_episodes, )
+        trajectory_wise_reward: ndarray of shape (n_episodes, )
             Trajectory wise reward observed by the behavior policy.
 
-        trajectory_wise_importance_weight: NDArray, shape (n_episodes, )
+        trajectory_wise_importance_weight: ndarray of shape (n_episodes, )
             Trajectory wise importance weight.
 
-        initial_state_value_prediction: NDArray, shape (n_episodes, )
+        initial_state_value_prediction: ndarray of shape (n_episodes, )
             Estimated initial state value.
 
         """
@@ -429,50 +429,50 @@ class BaseDistributionallyRobustOffPolicyEstimator(metaclass=ABCMeta):
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
-        action: NDArray, shape (n_episodes * step_per_episode, action_dim)
+        action: array-like of shape (n_episodes * step_per_episode, action_dim)
             Action chosen by behavior policy.
 
-        reward: NDArray, shape (n_episodes * step_per_episode, )
+        reward: array-like of shape (n_episodes * step_per_episode, )
             Reward observation.
 
-        behavior_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+        behavior_policy_trajectory_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Trajectory-wise action choice probability of behavior policy,
             i.e., :math:`\\prod_{t=0}^T \\pi_b(a_t \\mid s_t)`
 
-        evaluation_policy_action: NDArray, shape (n_episodes * step_per_episode, action_dim)
+        evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
             Action chosen by evaluation policy.
 
-        initial_state_value_prediction: NDArray, shape (n_episodes, )
+        initial_state_value_prediction: array-like of shape (n_episodes, )
             Estimated initial state value.
 
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
+        gamma: float, default=1.0
+            Discount factor. The value should be within `(0, 1]`.
 
-        sigma: Optional[NDArray], shape (action_dim, ), default=None
+        sigma: array-like of shape (action_dim, ), default=None
             Standard deviation of Gaussian distribution (i.e., band_width hyperparameter of gaussian kernel).
             If `None`, sigma is set to 1 for all dimensions.
 
         use_truncated_kernel: bool, default=False
             Whether to use Truncated Gaussian kernel or not.
-            If `False`, (normal) Gaussian kernel is used.
+            If False, (normal) Gaussian kernel is used.
 
-        action_min: Optional[NDArray], shape (action_dim, ), default=None
+        action_min: array-like of shape (action_dim, ), default=None
             Minimum value of action vector.
-            When use_truncated_kernel == True, action_min must be given.
+            When `use_truncated_kernel == True`, action_min must be given.
 
-        action_max: Optional[NDArray], shape (action_dim, ), default=None
+        action_max: array-like of shape (action_dim, ), default=None
             Maximum value of action vector.
-            When use_truncated_kernel == True, action_max must be given.
+            When `use_truncated_kernel == True`, action_max must be given.
 
         Return
         -------
-        trajectory_wise_reward: NDArray, shape (n_episodes, )
+        trajectory_wise_reward: ndarray of shape (n_episodes, )
             Trajectory wise reward observed by the behavior policy.
 
-        trajectory_wise_importance_weight: NDArray, shape (n_episodes, )
+        trajectory_wise_importance_weight: ndarray of shape (n_episodes, )
             Trajectory wise importance weight.
 
-        initial_state_value_prediction: NDArray, shape (n_episodes, )
+        initial_state_value_prediction: ndarray of shape (n_episodes, )
             Estimated initial state value.
 
         """

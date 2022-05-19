@@ -31,13 +31,13 @@ class OffPolicySelection:
 
     Parameters
     -----------
-    ope: Union[DiscreteOffPolicyEvaluation, ContinuousOffPolicyEvaluation], default=None
+    ope: {DiscreteOffPolicyEvaluation, ContinuousOffPolicyEvaluation}, default=None
         Instance of the (standard) OPE class.
 
-    cumulative_distributional_ope: Union[DiscreteCumulativeDistributionalOffPolicyEvaluation, ContinuousCumulativeDistributionalOffPolicyEvaluation], default=None
+    cumulative_distributional_ope: {DiscreteCumulativeDistributionalOffPolicyEvaluation, ContinuousCumulativeDistributionalOffPolicyEvaluation}, default=None
         Instance of the cumulative distributional OPE class.
 
-    distributionally_robust_ope: Union[DiscreteDistributionallyRobustOffPolicyEvaluation, ContinuousDistributionallyRobustOffPolicyEvaluation], default=None
+    distributionally_robust_ope: {DiscreteDistributionallyRobustOffPolicyEvaluation, ContinuousDistributionallyRobustOffPolicyEvaluation}, default=None
         Instance of the distributionally robust OPE class.
 
     Examples
@@ -146,7 +146,7 @@ class OffPolicySelection:
         cvar_alpha: float = 0.05,
         distributionally_robust_delta: float = 0.05,
     ):
-        """Obtain oracle selection result using ground-truth policy value.
+        """Obtain the oracle selection result using the ground-truth policy value.
 
         Parameters
         -------
@@ -160,20 +160,22 @@ class OffPolicySelection:
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
+                initial_state_action_distribution,
                 on_policy_policy_value,
+                gamma,
             ]
 
         return_variance: bool, default=False
-            Whether to return variance.
+            Whether to return the variance or not.
 
         return_lower_quartile: bool. default=False
-            Whether to return lower interquartile.
+            Whether to return the lower interquartile or not.
 
         return_conditional_value_at_risk: bool, default=False
-            Whether to return conditional value at risk.
+            Whether to return the conditional value at risk or not.
 
         return_distributionally_robust_worst_case: bool, default=False
-            Whether to return distributionally robust worst case policy value.
+            Whether to return the distributionally robust worst case policy value or not.
 
         return_by_dataframe: bool, default=False
             Whether to return the result in a dataframe format.
@@ -189,40 +191,47 @@ class OffPolicySelection:
 
         Return
         -------
-        ground_truth_dict/ground_truth_df: Union[Dict[str, Any], pd.DataFrame]
+        ground_truth_dict/ground_truth_df: dict or dataframe
             Dictionary/dataframe containing the following ground-truth (on-policy) metrics.
 
-            ranking: List[str]
+            ranking: list of str
                 Name of the candidate policies sorted by the ground-truth policy value.
 
-            policy_value: List[float]
+            policy_value: list of float
                 Ground-truth policy value of the candidate policies (sorted by ranking).
 
-            relative_policy_value: List[float]
+            relative_policy_value: list of float
                 Ground-truth relative policy value of the candidate policies compared to the behavior policy (sorted by ranking).
 
-            variance: Optional[List[float]]
+            variance: list of float
                 Ground-truth variance of the trajectory wise reward of the candidate policies (sorted by ranking).
+                If `return_variance == False`, `None` is recorded.
 
-            ranking_by_lower_quartile: Optional[List[str]]
+            ranking_by_lower_quartile: list of str
                 Name of the candidate policies sorted by the ground-truth lower quartile of the trajectory wise reward.
+                If `return_lower_quartile == False`, `None` is recorded.
 
-            lower_quartile: Optional[List[float]]
+            lower_quartile: list of float
                 Ground-truth lower quartile of the candidate policies (sorted by ranking_by_lower_quartile).
+                If `return_lower_quartile == False`, `None` is recorded.
 
-            ranking_by_conditional_value_at_risk: Optional[List[str]]
+            ranking_by_conditional_value_at_risk: list of str
                 Name of the candidate policies sorted by the ground-truth conditional value at risk.
+                If `return_conditional_value_at_risk == False`, `None` is recorded.
 
-            conditional_value_at_risk: Optional[List[float]]
+            conditional_value_at_risk: list of float
                 Ground-truth conditional value at risk of the candidate policies (sorted by ranking_by_conditional_value_at_risk).
+                If `return_conditional_value_at_risk == False`, `None` is recorded.
 
-            ranking_by_distributionally_robust_worst_case: Optional[List[str]]
+            ranking_by_distributionally_robust_worst_case: list of str
                 Name of the candidate policies sorted by the ground-truth distributionally robust worst case policy value.
+                If `return_distributionally_robust_worst_case == False`, `None` is recorded.
 
-            distributionally_robust_worst_case: Optional[List[float]]
+            distributionally_robust_worst_case: list of float
                 Ground-truth distributionally robust worst case policy value of the candidate policies (sorted by ranking_by_distributionally_robust_worst_case).
+                If `return_distributionally_robust_worst_case == False`, `None` is recorded.
 
-            parameters: Dict[str, float]
+            parameters: dict
                 Dictionary containing quartile_alpha, cvar_alpha, and distributionally_robust_alpha.
 
         """
@@ -363,7 +372,9 @@ class OffPolicySelection:
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
+                initial_state_action_distribution,
                 on_policy_policy_value,
+                gamma,
             ]
 
         return_metrics: bool, default=False
@@ -376,14 +387,14 @@ class OffPolicySelection:
         top_k_in_eval_metrics: int, default=1
             How many candidate policies are included in regret@k.
 
-        safety_criteria: float, default=None [0, 1]
-            The relative policy value required for being "safe" candidate policy.
+        safety_criteria: float, default=0.0 (>= 0)
+            The relative policy value required to be a safe policy.
             For example, when 0.9 is given, candidate policy must exceed 90\\% of the behavior policy performance.
 
         Return
         -------
-        ops_dict/(ranking_df_dict, metric_df): Union[Dict[str, Dict[str, Any]], Tuple(Dict[str, pd.DataFrame], pd.DataFrame)]
-            Dictionary containing the result of OPS conducted by OPE estimators.
+        ops_dict/(ranking_df_dict, metric_df): dict or dataframe
+            Dictionary/dataframe containing the result of OPS conducted by OPE estimators.
             key: [estimator_name][
                 estimated_ranking,
                 estimated_policy_value,
@@ -395,32 +406,45 @@ class OffPolicySelection:
                 type_ii_error_rate,
             ]
 
-            estimated_ranking: List[str]
+            estimated_ranking: list of str
                 Name of the candidate policies sorted by the estimated policy value.
+                Recorded in `ranking_df_dict` when `return_by_dataframe == True`.
 
-            estimated_policy_value: List[float]
+            estimated_policy_value: list of float
                 Estimated policy value of the candidate policies (sorted by estimated_ranking).
+                Recorded in `ranking_df_dict` when `return_by_dataframe == True`.
 
-            estimated_relative_policy_value: List[float]
+            estimated_relative_policy_value: list of float
                 Estimated relative policy value of the candidate policies compared to the behavior policy (sorted by estimated_ranking).
+                Recorded in `ranking_df_dict` when `return_by_dataframe == True`.
 
-            mean_squared_error: Optional[float]
+            mean_squared_error: float
                 Mean-squared-error of the estimated policy value.
+                If `return_metric == False`, `None` is recorded.
+                Recorded in `metric_df` when `return_by_dataframe == True`.
 
-            rank_correlation: Optional[Tuple[float, float]]
+            rank_correlation: tuple of float
                 Rank correlation coefficient and its pvalue between the true ranking and the estimated ranking.
+                If `return_metric == False`, `None` is recorded.
+                Recorded in `metric_df` when `return_by_dataframe == True`.
 
-            regret: Optional[float]
+            regret: tuple of float and int
                 Regret@k and k.
+                If `return_metric == False`, `None` is recorded.
+                Recorded in `metric_df` when `return_by_dataframe == True`.
 
-            type_i_error_rate: Optional[float]
+            type_i_error_rate: float
                 Type I error rate of the hypothetical test. True Negative when the policy is safe but estimated as unsafe.
+                If `return_metric == False`, `None` is recorded.
+                Recorded in `metric_df` when `return_by_dataframe == True`.
 
-            type_ii_error_rate: Optional[float]
+            type_ii_error_rate: float
                 Type II error rate of the hypothetical test. False Positive when the policy is unsafe but undetected.
+                If `return_metric == False`, `None` is recorded.
+                Recorded in `metric_df` when `return_by_dataframe == True`.
 
             safety_threshold: float
-                The required policy value for a safe policy.
+                The relative policy value required to be a safe policy.
 
         """
         if self.ope is None:
@@ -573,7 +597,9 @@ class OffPolicySelection:
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
+                initial_state_action_distribution,
                 on_policy_policy_value,
+                gamma,
             ]
 
         return_metrics: bool, default=False
@@ -586,14 +612,14 @@ class OffPolicySelection:
         top_k_in_eval_metrics: int, default=1
             How many candidate policies are included in regret@k.
 
-        safety_criteria: float, default=None [0, 1]
-            The relative policy value required for being "safe" candidate policy.
+        safety_criteria: float, default=0.0 (>= 0)
+            The relative policy value required to be a safe policy.
             For example, when 0.9 is given, candidate policy must exceed 90\\% of the behavior policy performance.
 
         Return
         -------
-        ops_dict: Dict[str, Dict[str, Any]]
-            Dictionary containing the result of OPS conducted by OPE estimators.
+        ops_dict/(ranking_df_dict, metric_df): dict or dataframe
+            Dictionary/dataframe containing the result of OPS conducted by OPE estimators.
             key: [estimator_name][
                 estimated_ranking,
                 estimated_policy_value,
@@ -605,32 +631,45 @@ class OffPolicySelection:
                 type_ii_error_rate,
             ]
 
-            estimated_ranking: List[str]
+            estimated_ranking: list of str
                 Name of the candidate policies sorted by the estimated policy value.
+                Recorded in `ranking_df_dict` when `return_by_dataframe == True`.
 
-            estimated_policy_value: List[float]
+            estimated_policy_value: list of float
                 Estimated policy value of the candidate policies (sorted by estimated_ranking).
+                Recorded in `ranking_df_dict` when `return_by_dataframe == True`.
 
-            estimated_relative_policy_value: List[float]
+            estimated_relative_policy_value: list of float
                 Estimated relative policy value of the candidate policies compared to the behavior policy (sorted by estimated_ranking).
+                Recorded in `ranking_df_dict` when `return_by_dataframe == True`.
 
-            mean_squared_error: Optional[float]
+            mean_squared_error: float
                 Mean-squared-error of the estimated policy value.
+                If `return_metric == False`, `None` is recorded.
+                Recorded in `metric_df` when `return_by_dataframe == True`.
 
-            rank_correlation: Optional[Tuple[float, float]]
+            rank_correlation: tuple of float
                 Rank correlation coefficient and its pvalue between the true ranking and the estimated ranking.
+                If `return_metric == False`, `None` is recorded.
+                Recorded in `metric_df` when `return_by_dataframe == True`.
 
-            regret: Optional[float]
+            regret: tuple of float and int
                 Regret@k and k.
+                If `return_metric == False`, `None` is recorded.
+                Recorded in `metric_df` when `return_by_dataframe == True`.
 
-            type_i_error_rate: Optional[float]
+            type_i_error_rate: float
                 Type I error rate of the hypothetical test. True Negative when the policy is safe but estimated as unsafe.
+                If `return_metric == False`, `None` is recorded.
+                Recorded in `metric_df` when `return_by_dataframe == True`.
 
-            type_ii_error_rate: Optional[float]
+            type_ii_error_rate: float
                 Type II error rate of the hypothetical test. False Positive when the policy is unsafe but undetected.
+                If `return_metric == False`, `None` is recorded.
+                Recorded in `metric_df` when `return_by_dataframe == True`.
 
             safety_threshold: float
-                The required policy value for a safe policy.
+                The relative policy value required to be a safe policy.
 
         """
         if self.cumulative_distributional_ope is None:
@@ -793,7 +832,9 @@ class OffPolicySelection:
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
+                initial_state_action_distribution,
                 on_policy_policy_value,
+                gamma,
             ]
 
         return_metrics: bool, default=False
@@ -806,15 +847,15 @@ class OffPolicySelection:
         top_k_in_eval_metrics: int, default=1
             How many candidate policies are included in regret@k.
 
-        safety_criteria: float, default=None [0, 1]
-            The relative policy value required for being "safe" candidate policy.
+        safety_criteria: float, default=0.0 (>= 0)
+            The relative policy value required to be a safe policy.
             For example, when 0.9 is given, candidate policy must exceed 90\\% of the behavior policy performance.
 
-        cis: List[str], default=["bootstrap"]
+        cis: list of {"bootstrap", "hoeffding", "bernstein", "ttest"}, default=["bootstrap"]
             Estimation methods for confidence intervals.
 
-        alpha: float, default=0.05 (0, 1)
-            Significant level.
+        alpha: float, default=0.05
+            Significant level. The value should be within `[0, 1)`.
 
         n_bootstrap_samples: int, default=100 (> 0)
             Number of resampling performed in the bootstrap procedure.
@@ -824,41 +865,57 @@ class OffPolicySelection:
 
         Return
         -------
-        ops_dict: Dict[str, Dict[str, Dict[str, Any]]]
-            Dictionary containing the result of OPS conducted by OPE estimators.
+        ops_dict/(ranking_df_dict, metric_df): dict or dataframe
+            Dictionary/dataframe containing the result of OPS conducted by OPE estimators.
             key: [ci][estimator_name][
                 estimated_ranking,
                 estimated_policy_value_lower_bound,
                 estimated_relative_policy_value_lower_bound,
+                mean_squared_error,
                 rank_correlation,
                 regret,
                 type_i_error_rate,
                 type_ii_error_rate,
             ]
 
-            estimated_ranking: List[str]
+            estimated_ranking: list of str
                 Name of the candidate policies sorted by the estimated policy value lower bound.
+                Recorded in `ranking_df_dict` when `return_by_dataframe == True`.
 
-            estimated_policy_value_lower_bound: List[float]
+            estimated_policy_value_lower_bound: list of float
                 Estimated policy value lower bound of the candidate policies (sorted by estimated_ranking).
+                Recorded in `ranking_df_dict` when `return_by_dataframe == True`.
 
-            estimated_relative_policy_value_lower_bound: List[float]
+            estimated_relative_policy_value_lower_bound: list of float
                 Estimated relative policy value lower bound of the candidate policies compared to the behavior policy (sorted by estimated_ranking).
+                Recorded in `ranking_df_dict` when `return_by_dataframe == True`.
 
-            rank_correlation: Optional[Tuple[float, float]]
+            mean_squared_error: None
+                This is for API consistency.
+                Recorded in `metric_df` when `return_by_dataframe == True`.
+
+            rank_correlation: tuple of float
                 Rank correlation coefficient and its pvalue between the true ranking and the estimated ranking.
+                If `return_metric == False`, `None` is recorded.
+                Recorded in `metric_df` when `return_by_dataframe == True`.
 
-            regret: Optional[Tuple[float, int]]
+            regret: tuple of float and int
                 Regret@k and k.
+                If `return_metric == False`, `None` is recorded.
+                Recorded in `metric_df` when `return_by_dataframe == True`.
 
-            type_i_error_rate: Optional[float]
+            type_i_error_rate: float
                 Type I error rate of the hypothetical test. True Negative when the policy is safe but estimated as unsafe.
+                If `return_metric == False`, `None` is recorded.
+                Recorded in `metric_df` when `return_by_dataframe == True`.
 
-            type_ii_error_rate: Optional[float]
+            type_ii_error_rate: float
                 Type II error rate of the hypothetical test. False Positive when the policy is unsafe but undetected.
+                If `return_metric == False`, `None` is recorded.
+                Recorded in `metric_df` when `return_by_dataframe == True`.
 
             safety_threshold: float
-                The required policy value for a safe policy.
+                The relative policy value required to be a safe policy.
 
         """
         if self.ope is None:
@@ -951,6 +1008,7 @@ class OffPolicySelection:
                     "estimated_policy_value_lower_bound": estimated_policy_value_lower_bound,
                     "estimated_relative_policy_value_lower_bound": estimated_relative_policy_value_lower_bound,
                     "rank_correlation": rankcorr if return_metrics else None,
+                    "mean_squared_error": None,
                     "regret": (regret, top_k_in_eval_metrics)
                     if return_metrics
                     else None,
@@ -1002,6 +1060,7 @@ class OffPolicySelection:
 
             metric_df["ci"] = ci_
             metric_df["estimator"] = estimator_
+            metric_df["mean_squared_error"] = np.nan
             metric_df["rank_correlation"] = rankcorr
             metric_df["pvalue"] = pvalue
             metric_df[f"regret@{top_k_in_eval_metrics}"] = regret
@@ -1038,7 +1097,7 @@ class OffPolicySelection:
             ]
 
         alpha: float, default=0.05
-            Proportion of the sided region.
+            Proportion of the sided region. The value should be within `[0, 0.5]`.
 
         return_metrics: bool, default=False
             Whether to return evaluation metrics including:
@@ -1047,42 +1106,57 @@ class OffPolicySelection:
         return_by_dataframe: bool, default=False
             Whether to return the result in a dataframe format.
 
-        safety_threshold: float, default=None (>= 0)
-            The lower quartile required for being "safe" candidate policy.
+        safety_threshold: float, default=0.0 (>= 0)
+            The lower quartile required to be a safe policy.
 
         Return
         -------
-        ops_dict: Dict[str, Dict[str, Any]]
-            Dictionary containing the result of OPS conducted by OPE estimators.
+        ops_dict/(ranking_df_dict, metric_df): dict or dataframe
+            Dictionary/dataframe containing the result of OPS conducted by OPE estimators.
             key: [estimator_name][
                 estimated_ranking,
                 estimated_lower_quartile,
                 mean_squared_error,
                 rank_correlation,
+                regret,
                 type_i_error_rate,
                 type_ii_error_rate,
             ]
 
-            estimated_ranking: List[str]
+            estimated_ranking: list of str
                 Name of the candidate policies sorted by the estimated lower quartile of the trajectory wise reward.
+                Recorded in `ranking_df_dict` when `return_by_dataframe == True`.
 
-            estimated_lower_quartile: List[float]
+            estimated_lower_quartile: list of float
                 Estimated lower quartile of the trajectory wise reward of the candidate policies (sorted by estimated_ranking).
+                Recorded in `ranking_df_dict` when `return_by_dataframe == True`.
 
-            mean_squared_error: Optional[float]
+            mean_squared_error: float
                 Mean-squared-error of the estimated lower quartile of the trajectory wise reward.
+                If `return_metric == False`, `None` is recorded.
+                Recorded in `metric_df` when `return_by_dataframe == True`.
 
-            rank_correlation: Optional[Tuple[float, float]]
+            rank_correlation: tuple of float
                 Rank correlation coefficient and its pvalue between the true ranking and the estimated ranking.
+                If `return_metric == False`, `None` is recorded.
+                Recorded in `metric_df` when `return_by_dataframe == True`.
 
-            type_i_error_rate: Optional[float]
+            regret: None
+                This is for API consistency.
+                Recorded in `metric_df` when `return_by_dataframe == True`.
+
+            type_i_error_rate: float
                 Type I error rate of the hypothetical test. True Negative when the policy is safe but estimated as unsafe.
+                If `return_metric == False`, `None` is recorded.
+                Recorded in `metric_df` when `return_by_dataframe == True`.
 
-            type_ii_error_rate: Optional[float]
+            type_ii_error_rate: float
                 Type II error rate of the hypothetical test. False Positive when the policy is unsafe but undetected.
+                If `return_metric == False`, `None` is recorded.
+                Recorded in `metric_df` when `return_by_dataframe == True`.
 
             safety_threshold: float
-                The required lower quartile for a safe policy.
+                The lower quartile required to be a safe policy.
 
         """
         if self.cumulative_distributional_ope is None:
@@ -1155,6 +1229,7 @@ class OffPolicySelection:
                 "estimated_lower_quartile": estimated_lower_quartile,
                 "mean_squared_error": mse if return_metrics else None,
                 "rank_correlation": rankcorr if return_metrics else None,
+                "regret": None,
                 "type_i_error_rate": type_i_error_rate if return_metrics else None,
                 "type_ii_error_rate": type_ii_error_rate if return_metrics else None,
                 "safety_threshold": safety_threshold,
@@ -1193,6 +1268,7 @@ class OffPolicySelection:
             metric_df["mean_squared_error"] = mse
             metric_df["rank_correlation"] = rankcorr
             metric_df["pvalue"] = pvalue
+            metric_df["regret"] = np.nan
             metric_df["type_i_error_rate"] = type_i
             metric_df["type_ii_error_rate"] = type_ii
 
@@ -1222,11 +1298,13 @@ class OffPolicySelection:
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
+                initial_state_action_distribution,
                 on_policy_policy_value,
+                gamma,
             ]
 
         alpha: float, default=0.05
-            Proportion of the sided region.
+            Proportion of the sided region. The value should be within `[0, 1]`.
 
         return_metrics: bool, default=False
             Whether to return evaluation metrics including:
@@ -1235,42 +1313,57 @@ class OffPolicySelection:
         return_by_dataframe: bool, default=False
             Whether to return the result in a dataframe format.
 
-        safety_threshold: float, default=None (>= 0)
-            The lower quartile required for being "safe" candidate policy.
+        safety_threshold: float, default=0.0 (>= 0)
+            The conditional value at risk required to be a safe policy.
 
         Return
         -------
-        ops_dict: Dict[str, Dict[str, Any]]
-            Dictionary containing the result of OPS conducted by OPE estimators.
+        ops_dict/(ranking_df_dict, metric_df): dict or dataframe
+            Dictionary/dataframe containing the result of OPS conducted by OPE estimators.
             key: [estimator_name][
                 estimated_ranking,
                 estimated_lower_quartile,
                 mean_squared_error,
                 rank_correlation,
+                regret,
                 type_i_error_rate,
                 type_ii_error_rate,
             ]
 
-            estimated_ranking: List[str]
+            estimated_ranking: list of str
                 Name of the candidate policies sorted by the estimated conditional value at risk.
+                Recorded in `ranking_df_dict` when `return_by_dataframe == True`.
 
-            estimated_conditional_value_at_risk: List[float]
+            estimated_conditional_value_at_risk: list of float
                 Estimated conditional value at risk of the candidate policies (sorted by estimated_ranking).
+                Recorded in `ranking_df_dict` when `return_by_dataframe == True`.
 
-            mean_squared_error: Optional[float]
+            mean_squared_error: float
                 Mean-squared-error of the estimated conditional value at risk.
+                If `return_metric == False`, `None` is recorded.
+                Recorded in `metric_df` when `return_by_dataframe == True`.
 
-            rank_correlation: Optional[Tuple[float, float]]
+            rank_correlation: tuple or float
                 Rank correlation coefficient and its pvalue between the true ranking and the estimated ranking.
+                If `return_metric == False`, `None` is recorded.
+                Recorded in `metric_df` when `return_by_dataframe == True`.
 
-            type_i_error_rate: Optional[float]
+            regret: None
+                This is for API consistency.
+                Recorded in `metric_df` when `return_by_dataframe == True`.
+
+            type_i_error_rate: float
                 Type I error rate of the hypothetical test. True Negative when the policy is safe but estimated as unsafe.
+                If `return_metric == False`, `None` is recorded.
+                Recorded in `metric_df` when `return_by_dataframe == True`.
 
-            type_ii_error_rate: Optional[float]
+            type_ii_error_rate: float
                 Type II error rate of the hypothetical test. False Positive when the policy is unsafe but undetected.
+                If `return_metric == False`, `None` is recorded.
+                Recorded in `metric_df` when `return_by_dataframe == True`.
 
             safety_threshold: float
-                The required lower quartile for a safe policy.
+                The conditional value at risk required to be a safe policy.
 
         """
         if self.cumulative_distributional_ope is None:
@@ -1341,6 +1434,7 @@ class OffPolicySelection:
                 "estimated_conditional_value_at_risk": estimated_cvar,
                 "mean_squared_error": mse if return_metrics else None,
                 "rank_correlation": rankcorr if return_metrics else None,
+                "regret": None,
                 "type_i_error_rate": type_i_error_rate if return_metrics else None,
                 "type_ii_error_rate": type_ii_error_rate if return_metrics else None,
                 "safety_threshold": safety_threshold,
@@ -1379,6 +1473,7 @@ class OffPolicySelection:
             metric_df["mean_squared_error"] = mse
             metric_df["rank_correlation"] = rankcorr
             metric_df["pvalue"] = pvalue
+            metric_df["regret"] = np.nan
             metric_df["type_i_error_rate"] = type_i
             metric_df["type_ii_error_rate"] = type_ii
 
@@ -1408,7 +1503,9 @@ class OffPolicySelection:
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
+                initial_state_action_distribution,
                 on_policy_policy_value,
+                gamma,
             ]
 
         delta: float, default=0.05
@@ -1422,41 +1519,56 @@ class OffPolicySelection:
             Whether to return the result in a dataframe format.
 
         safety_threshold: float, default=None (>= 0)
-            The lower quartile required for being "safe" candidate policy.
+            The distributionally robust worst case policy value required to be a safe policy.
 
         Return
         -------
-        ops_dict: Dict[str, Dict[str, Any]]
-            Dictionary containing the result of OPS conducted by OPE estimators.
+        ops_dict/(ranking_df_dict, metric_df): dict or dataframe
+            Dictionary/dataframe containing the result of OPS conducted by OPE estimators.
             key: [estimator_name][
                 estimated_ranking,
                 estimated_lower_quartile,
                 mean_squared_error,
                 rank_correlation,
+                regret,
                 type_i_error_rate,
                 type_ii_error_rate,
             ]
 
-            estimated_ranking: List[str]
-                Name of the candidate policies sorted by the estimated conditional value at risk.
+            estimated_ranking: list of str
+                Name of the candidate policies sorted by the estimated distributionally robust worst case policy value.
+                Recorded in `ranking_df_dict` when `return_by_dataframe == True`.
 
-            estimated_distributionally_robust_worst_case: List[float]
+            estimated_distributionally_robust_worst_case: list of float
                 Estimated distributionally robust worst case policy value of the candidate policies (sorted by estimated_ranking).
+                Recorded in `ranking_df_dict` when `return_by_dataframe == True`.
 
-            mean_squared_error: Optional[float]
+            mean_squared_error: float
                 Mean-squared-error of the estimated distributionally robust worst case policy value.
+                If `return_metric == False`, `None` is recorded.
+                Recorded in `metric_df` when `return_by_dataframe == True`.
 
-            rank_correlation: Optional[Tuple[float, float]]
+            rank_correlation: tuple of float
                 Rank correlation coefficient and its pvalue between the true ranking and the estimated ranking.
+                If `return_metric == False`, `None` is recorded.
+                Recorded in `metric_df` when `return_by_dataframe == True`.
 
-            type_i_error_rate: Optional[float]
+            regret: None
+                This is for API consistency.
+                Recorded in `metric_df` when `return_by_dataframe == True`.
+
+            type_i_error_rate: float
                 Type I error rate of the hypothetical test. True Negative when the policy is safe but estimated as unsafe.
+                If `return_metric == False`, `None` is recorded.
+                Recorded in `metric_df` when `return_by_dataframe == True`.
 
-            type_ii_error_rate: Optional[float]
+            type_ii_error_rate: float
                 Type II error rate of the hypothetical test. False Positive when the policy is unsafe but undetected.
+                If `return_metric == False`, `None` is recorded.
+                Recorded in `metric_df` when `return_by_dataframe == True`.
 
             safety_threshold: float
-                The required lower quartile for a safe policy.
+                The required distributionally robust worst case policy value to be a safe policy.
 
         """
         if self.distributionally_robust_ope is None:
@@ -1537,6 +1649,7 @@ class OffPolicySelection:
                 "estimated_distributionally_robust_worst_case": estimated_worst_case_policy_value,
                 "mean_squared_error": mse if return_metrics else None,
                 "rank_correlation": rankcorr if return_metrics else None,
+                "regret": None,
                 "type_i_error_rate": type_i_error_rate if return_metrics else None,
                 "type_ii_error_rate": type_ii_error_rate if return_metrics else None,
                 "safety_threshold": safety_threshold,
@@ -1555,7 +1668,7 @@ class OffPolicySelection:
         fig_dir: Optional[Path] = None,
         fig_name: str = "estimated_policy_value.png",
     ):
-        """Visualize policy value estimated by OPE estimators (box plot).
+        """Visualize the policy value estimated by OPE estimators (box plot).
 
         Parameters
         -------
@@ -1569,13 +1682,15 @@ class OffPolicySelection:
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
+                initial_state_action_distribution,
                 on_policy_policy_value,
+                gamma,
             ]
 
-        alpha: float, default=0.05 (0, 1)
-            Significant level.
+        alpha: float, default=0.05
+            Significant level. The value should be within `[0, 1)`.
 
-        ci: str, default="bootstrap"
+        ci: {"bootstrap", "hoeffding", "bernstein", "ttest"}, default="bootstrap"
             Estimation method for confidence intervals.
 
         n_bootstrap_samples: int, default=10000 (> 0)
@@ -1585,15 +1700,14 @@ class OffPolicySelection:
             Random state.
 
         is_relative: bool, default=False
-            If `True`, the method visualizes the estimated policy value of evaluation policy
+            If True, the method visualizes the estimated policy value of evaluation policy
             relative to the on-policy policy value of the behavior policy.
 
-        hue: str, default="estimator"
+        hue: {"estimator", "policy"}, default="estimator"
             Hue of the plot.
-            Choose either from "estimator" or "policy".
 
         sharey: bool, default=False
-            If `True`, the y-axis will be shared among different estimators or evaluation policies.
+            If True, the y-axis will be shared among different estimators or evaluation policies.
 
         fig_dir: Path, default=None
             Path to store the bar figure.
@@ -1601,7 +1715,6 @@ class OffPolicySelection:
 
         fig_name: str, default="estimated_policy_value.png"
             Name of the bar figure.
-
 
         """
         return self.ope.visualize_off_policy_estimates(
@@ -1626,7 +1739,7 @@ class OffPolicySelection:
         fig_dir: Optional[Path] = None,
         fig_name: str = "estimated_cumulative_distribution_function.png",
     ) -> None:
-        """Visualize cumulative distribution function (cdf plot).
+        """Visualize the cumulative distribution function (cdf plot).
 
         Parameters
         -------
@@ -1640,12 +1753,13 @@ class OffPolicySelection:
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
+                initial_state_action_distribution,
                 on_policy_policy_value,
+                gamma,
             ]
 
-        hue: str, default="estimator"
+        hue: {"estimator", "policy"}, default="estimator"
             Hue of the plot.
-            Choose either from "estimator" or "policy".
 
         legend: bool, default=True
             Whether to include legend in the figure.
@@ -1680,7 +1794,7 @@ class OffPolicySelection:
         fig_dir: Optional[Path] = None,
         fig_name: str = "estimated_policy_value.png",
     ) -> None:
-        """Visualize policy value estimated by cumulative distributional OPE estimators (box plot).
+        """Visualize the policy value estimated by cumulative distributional OPE estimators (box plot).
 
         Parameters
         -------
@@ -1694,22 +1808,23 @@ class OffPolicySelection:
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
+                initial_state_action_distribution,
                 on_policy_policy_value,
+                gamma,
             ]
 
-        alpha: float, default=0.05 (0, 1)
-            Significant level.
+        alpha: float, default=0.05
+            Significant level. The value should bw within `[0, 1)`.
 
         is_relative: bool, default=False
-            If `True`, the method visualizes the estimated policy value of evaluation policy
+            If True, the method visualizes the estimated policy value of evaluation policy
             relative to the ground-truth policy value of behavior policy.
 
-        hue: str, default="estimator"
+        hue: {"estimator", "policy"}, default="estimator"
             Hue of the plot.
-            Choose either from "estimator" or "policy".
 
         sharey: bool, default=False
-            If `True`, the y-axis will be shared among different evaluation policies.
+            If True, the y-axis will be shared among different evaluation policies.
 
         fig_dir: Path, default=None
             Path to store the bar figure.
@@ -1740,7 +1855,7 @@ class OffPolicySelection:
         fig_dir: Optional[Path] = None,
         fig_name: str = "estimated_policy_value.png",
     ) -> None:
-        """Visualize conditional value at risk estimated by cumulative distributional OPE estimators (cdf plot).
+        """Visualize the conditional value at risk estimated by cumulative distributional OPE estimators (cdf plot).
 
         Parameters
         -------
@@ -1754,15 +1869,16 @@ class OffPolicySelection:
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
+                initial_state_action_distribution,
                 on_policy_policy_value,
+                gamma,
             ]
 
-        alphas: NDArray, default=nnp.linspace(0, 1, 20)
+        alphas: array-like of shape (n_alpha, ), default=np.linspace(0, 1, 20)
             Set of proportions of the sided region.
 
-        hue: str, default="estimator"
+        hue: {"estimator", "policy"}, default="estimator"
             Hue of the plot.
-            Choose either from "estimator" or "policy".
 
         legend: bool, default=True
             Whether to include legend in the figure.
@@ -1771,7 +1887,7 @@ class OffPolicySelection:
             Number of columns in the figure.
 
         sharey: bool, default=False
-            If `True`, the y-axis will be shared among different evaluation policies.
+            If True, the y-axis will be shared among different evaluation policies.
 
         fig_dir: Path, default=None
             Path to store the bar figure.
@@ -1801,7 +1917,7 @@ class OffPolicySelection:
         fig_dir: Optional[Path] = None,
         fig_name: str = "estimated_policy_value.png",
     ) -> None:
-        """Visualize interquartile range estimated by cumulative distributional OPE estimators (box plot).
+        """Visualize the interquartile range estimated by cumulative distributional OPE estimators (box plot).
 
         Parameters
         -------
@@ -1815,18 +1931,19 @@ class OffPolicySelection:
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
+                initial_state_action_distribution,
                 on_policy_policy_value,
+                gamma,
             ]
 
-        alpha: float, default=0.05 (0, 1)
-            Significant level.
+        alpha: float, default=0.05
+            Significant level. The value should be within `[0, 1)`.
 
-        hue: str, default="estimator"
+        hue: {"estimator", "policy"}, default="estimator"
             Hue of the plot.
-            Choose either from "estimator" or "policy".
 
         sharey: bool, default=False
-            If `True`, the y-axis will be shared among different evaluation policies.
+            If True, the y-axis will be shared among different evaluation policies.
 
         fig_dir: Path, default=None
             Path to store the bar figure.
@@ -1853,7 +1970,7 @@ class OffPolicySelection:
         fig_dir: Optional[Path] = None,
         fig_name: str = "scatter_policy_value.png",
     ):
-        """Visualize true policy value and its estimate (scatter plot).
+        """Visualize the true policy value and its estimate (scatter plot).
 
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
@@ -1865,7 +1982,9 @@ class OffPolicySelection:
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
+                initial_state_action_distribution,
                 on_policy_policy_value,
+                gamma,
             ]
 
         n_cols: int, default=None
@@ -2035,7 +2154,7 @@ class OffPolicySelection:
         fig_dir: Optional[Path] = None,
         fig_name: str = "scatter_policy_value_of_cumulative_distributional_ope.png",
     ):
-        """Visualize true policy value and its estimate obtained by cumulative distributional OPE (scatter plot).
+        """Visualize the true policy value and its estimate obtained by cumulative distributional OPE (scatter plot).
 
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
@@ -2047,7 +2166,9 @@ class OffPolicySelection:
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
+                initial_state_action_distribution,
                 on_policy_policy_value,
+                gamma,
             ]
 
         n_cols: int, default=None
@@ -2222,7 +2343,7 @@ class OffPolicySelection:
         fig_dir: Optional[Path] = None,
         fig_name: str = "scatter_policy_value_lower_bound.png",
     ):
-        """Visualize true policy value and its estimate lower bound (scatter plot).
+        """Visualize the true policy value and its estimate lower bound (scatter plot).
 
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
@@ -2234,14 +2355,16 @@ class OffPolicySelection:
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
+                initial_state_action_distribution,
                 on_policy_policy_value,
+                gamma,
             ]
 
-        cis: List[str], default=["bootstrap"]
+        cis: list of {"bootstrap", "hoeffding", "bernstein", "ttest"}, default=["bootstrap"]
             Estimation methods for confidence intervals.
 
-        alpha: float, default=0.05 (0, 1)
-            Significant level.
+        alpha: float, default=0.05
+            Significant level. The value should be within `[0, 1)`.
 
         n_bootstrap_samples: int, default=100 (> 0)
             Number of resampling performed in the bootstrap procedure.
@@ -2557,7 +2680,7 @@ class OffPolicySelection:
         fig_dir: Optional[Path] = None,
         fig_name: str = "scatter_variance.png",
     ):
-        """Visualize true variance and its estimate (scatter plot).
+        """Visualize the true variance and its estimate (scatter plot).
 
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
@@ -2569,7 +2692,9 @@ class OffPolicySelection:
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
+                initial_state_action_distribution,
                 on_policy_policy_value,
+                gamma,
             ]
 
         n_cols: int, default=None
@@ -2719,7 +2844,7 @@ class OffPolicySelection:
         fig_dir: Optional[Path] = None,
         fig_name: str = "scatter_lower_quartile.png",
     ):
-        """Visualize true lower quartile and its estimate (scatter plot).
+        """Visualize the true lower quartile and its estimate (scatter plot).
 
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
@@ -2731,7 +2856,9 @@ class OffPolicySelection:
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
+                initial_state_action_distribution,
                 on_policy_policy_value,
+                gamma,
             ]
 
         n_cols: int, default=None
@@ -2901,7 +3028,7 @@ class OffPolicySelection:
         fig_dir: Optional[Path] = None,
         fig_name: str = "scatter_conditional_value_at_risk.png",
     ):
-        """Visualize true conditional value at risk and its estimate (scatter plot).
+        """Visualize the true conditional value at risk and its estimate (scatter plot).
 
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
@@ -2913,7 +3040,9 @@ class OffPolicySelection:
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
+                initial_state_action_distribution,
                 on_policy_policy_value,
+                gamma,
             ]
 
         n_cols: int, default=None
@@ -3081,7 +3210,7 @@ class OffPolicySelection:
         fig_dir: Optional[Path] = None,
         fig_name: str = "scatter_distributionally_robust_worst_case.png",
     ):
-        """Visualize true distributionally robust worst case policy value and its estimate (scatter plot).
+        """Visualize the true distributionally robust worst case policy value and its estimate (scatter plot).
 
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
@@ -3093,7 +3222,9 @@ class OffPolicySelection:
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
+                initial_state_action_distribution,
                 on_policy_policy_value,
+                gamma,
             ]
 
         fig_dir: Path, default=None

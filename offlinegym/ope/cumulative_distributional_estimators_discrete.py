@@ -1,4 +1,4 @@
-"""Distributional Off-Policy Estimators for Discrete action."""
+"""Cumulative Distributional Off-Policy Estimators for Discrete action."""
 from dataclasses import dataclass
 from typing import Tuple
 

@@ -1,4 +1,4 @@
-"""Off-Policy Estimators for Discrete action."""
+"""Off-Policy Estimators for Discrete Action."""
 from dataclasses import dataclass
 from typing import Dict, Optional
 
@@ -69,12 +69,12 @@ class DiscreteDirectMethod(BaseOffPolicyEstimator):
 
         Parameters
         -------
-        initial_state_value_prediction: NDArray, shape (n_episodes, )
+        initial_state_value_prediction: array-like of shape (n_episodes, )
             Estimated initial state value.
 
         Return
         -------
-        estimated_trajectory_wise_policy_value: NDArray, shape (n_episodes, )
+        estimated_trajectory_wise_policy_value: ndarray of shape (n_episodes, )
             Estimated policy value for each trajectory.
             (Equivalent to initial_state_value_prediction.)
 
@@ -88,12 +88,12 @@ class DiscreteDirectMethod(BaseOffPolicyEstimator):
 
         Parameters
         -------
-        initial_state_value_prediction: NDArray, shape (n_episodes, )
+        initial_state_value_prediction: array-like of shape (n_episodes, )
             Estimated initial state value.
 
         Return
         -------
-        V_hat: NDArray, shape (n_episodes, )
+        V_hat: ndarray of shape (n_episodes, )
             Estimated policy value.
 
         """
@@ -120,13 +120,13 @@ class DiscreteDirectMethod(BaseOffPolicyEstimator):
 
         Parameters
         -------
-        initial_state_value_prediction: NDArray, shape (n_episodes, )
+        initial_state_value_prediction: array-like of shape (n_episodes, )
             Estimated initial state value.
 
-        alpha: float, default=0.05 (0, 1)
-            Significant level.
+        alpha: float, default=0.05
+            Significant level. The value should be within `[0, 1)`.
 
-        ci: str, default="bootstrap"
+        ci: {"bootstrap", "hoeffding", "bernstein", "ttest"}, default="bootstrap"
             Estimation method for confidence interval.
 
         n_bootstrap_samples: int, default=10000 (> 0)
@@ -137,7 +137,7 @@ class DiscreteDirectMethod(BaseOffPolicyEstimator):
 
         Return
         -------
-        estimated_confidence_interval: Dict[str, float]
+        estimated_confidence_interval: dict
             Dictionary storing the estimated mean and upper-lower confidence bounds.
 
         """
@@ -222,23 +222,23 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
-        reward: NDArray, shape (n_episodes * step_per_episode, )
+        reward: array-like of shape (n_episodes * step_per_episode, )
             Reward observation.
 
-        behavior_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+        behavior_policy_trajectory_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Trajectory-wise action choice probability of behavior policy,
             i.e., :math:`\\prod_{t=0}^T \\pi_b(a_t \\mid s_t)`
 
-        evaluation_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+        evaluation_policy_trajectory_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Trajectory-wise action choice probability of evaluation policy,
             i.e., :math:`\\prod_{t=0}^T \\pi_e(a_t \\mid s_t)`
 
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
+        gamma: float, default=1.0
+            Discount factor. The value should be within `(0, 1]`.
 
         Return
         -------
-        estimated_trajectory_wise_policy_value: NDArray, shape (n_episodes, )
+        estimated_trajectory_wise_policy_value: ndarray of shape (n_episodes, )
             Estimated policy value for each trajectory.
 
         """
@@ -267,23 +267,23 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
-        reward: NDArray, shape (n_episodes * step_per_episode, )
+        reward: array-like of shape (n_episodes * step_per_episode, )
             Reward observation.
 
-        behavior_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+        behavior_policy_trajectory_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Trajectory-wise action choice probability of behavior policy,
             i.e., :math:`\\prod_{t=0}^T \\pi_b(a_t \\mid s_t)`
 
-        evaluation_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+        evaluation_policy_trajectory_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Trajectory-wise action choice probability of evaluation policy,
             i.e., :math:`\\prod_{t=0}^T \\pi_e(a_t \\mid s_t)`
 
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
+        gamma: float, default=1.0
+            Discount factor. The value should be within `(0, 1]`.
 
         Return
         -------
-        V_hat: NDArray, shape (n_episodes, )
+        V_hat: ndarray of shape (n_episodes, )
             Estimated policy value.
 
         """
@@ -352,24 +352,24 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
-        reward: NDArray, shape (n_episodes * step_per_episode, )
+        reward: array-like of shape (n_episodes * step_per_episode, )
             Reward observation.
 
-        behavior_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+        behavior_policy_trajectory_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Trajectory-wise action choice probability of behavior policy,
             i.e., :math:`\\prod_{t=0}^T \\pi_b(a_t \\mid s_t)`
 
-        evaluation_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+        evaluation_policy_trajectory_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Trajectory-wise action choice probability of evaluation policy,
             i.e., :math:`\\prod_{t=0}^T \\pi_e(a_t \\mid s_t)`
 
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
+        gamma: float, default=1.0
+            Discount factor. The value should be within `(0, 1]`.
 
-        alpha: float, default=0.05 (0, 1)
-            Significant level.
+        alpha: float, default=0.05
+            Significant level. The value should be within `[0, 1)`.
 
-        ci: str, default="bootstrap"
+        ci: {"bootstrap", "hoeffding", "bernstein", "ttest"}, default="bootstrap"
             Estimation method for confidence interval.
 
         n_bootstrap_samples: int, default=10000 (> 0)
@@ -380,7 +380,7 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 
         Return
         -------
-        estimated_confidence_interval: Dict[str, float]
+        estimated_confidence_interval: dict
             Dictionary storing the estimated mean and upper-lower confidence bounds.
 
         """
@@ -500,23 +500,23 @@ class DiscretePerDecisionImportanceSampling(BaseOffPolicyEstimator):
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
-        reward: NDArray, shape (n_episodes * step_per_episode, )
+        reward: array-like of shape (n_episodes * step_per_episode, )
             Reward observation.
 
-        behavior_policy_step_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+        behavior_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Step-wise action choice probability of behavior policy,
             i.e., :math:`\\prod_{t'=0}^t \\pi_b(a_{t'} \\mid s_{t'})`
 
-        evaluation_policy_step_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+        evaluation_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Step-wise action choice probability of evaluation policy,
             i.e., :math:`\\prod_{t'=0}^t \\pi_e(a_{t'} \\mid s_{t'})`
 
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
+        gamma: float, default=1.0
+            Discount factor. The value should be within `(0, 1]`.
 
         Return
         -------
-        estimated_trajectory_wise_policy_value: NDArray, shape (n_episodes, )
+        estimated_trajectory_wise_policy_value: ndarray of shape (n_episodes, )
             Estimated policy value for each trajectory.
 
         """
@@ -542,23 +542,23 @@ class DiscretePerDecisionImportanceSampling(BaseOffPolicyEstimator):
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
-        reward: NDArray, shape (n_episodes * step_per_episode, )
+        reward: array-like of shape (n_episodes * step_per_episode, )
             Reward observation.
 
-        behavior_policy_step_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+        behavior_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Step-wise action choice probability of behavior policy,
             i.e., :math:`\\prod_{t'=0}^t \\pi_b(a_{t'} \\mid s_{t'})`
 
-        evaluation_policy_step_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+        evaluation_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Step-wise action choice probability of evaluation policy,
             i.e., :math:`\\prod_{t'=0}^t \\pi_e(a_{t'} \\mid s_{t'})`
 
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
+        gamma: float, default=1.0
+            Discount factor. The value should be within `(0, 1]`.
 
         Return
         -------
-        V_hat: NDArray, shape (n_episodes, )
+        V_hat: ndarray of shape (n_episodes, )
             Estimated policy value.
 
         """
@@ -626,24 +626,24 @@ class DiscretePerDecisionImportanceSampling(BaseOffPolicyEstimator):
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
-        reward: NDArray, shape (n_episodes * step_per_episode, )
+        reward: array-like of shape (n_episodes * step_per_episode, )
             Reward observation.
 
-        behavior_policy_step_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+        behavior_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Step-wise action choice probability of behavior policy,
             i.e., :math:`\\prod_{t'=0}^t \\pi_b(a_{t'} \\mid s_{t'})`
 
-        evaluation_policy_step_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+        evaluation_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Step-wise action choice probability of evaluation policy,
             i.e., :math:`\\prod_{t'=0}^t \\pi_e(a_{t'} \\mid s_{t'})`
 
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
+        gamma: float, default=1.0
+            Discount factor. The value should be within `(0, 1]`.
 
-        alpha: float, default=0.05 (0, 1)
-            Significant level.
+        alpha: float, default=0.05
+            Significant level. The value should be within `[0, 1)`.
 
-        ci: str, default="bootstrap"
+        ci: {"bootstrap", "hoeffding", "bernstein", "ttest"}, default="bootstrap"
             Estimation method for confidence interval.
 
         n_bootstrap_samples: int, default=10000 (> 0)
@@ -654,7 +654,7 @@ class DiscretePerDecisionImportanceSampling(BaseOffPolicyEstimator):
 
         Return
         -------
-        estimated_confidence_interval: Dict[str, float]
+        estimated_confidence_interval: dict
             Dictionary storing the estimated mean and upper-lower confidence bounds.
 
         """
@@ -784,34 +784,34 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
-        action: NDArray, shape (n_episodes * step_per_episode, )
+        action: array-like of shape (n_episodes * step_per_episode, )
             Action chosen by behavior policy.
 
-        reward: NDArray, shape (n_episodes * step_per_episode, )
+        reward: array-like of shape (n_episodes * step_per_episode, )
             Reward observation.
 
-        behavior_policy_step_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+        behavior_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Step-wise action choice probability of behavior policy,
             i.e., :math:`\\prod_{t'=0}^t \\pi_b(a_{t'} \\mid s_{t'})`
 
-        evaluation_policy_step_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+        evaluation_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Step-wise action choice probability of evaluation policy,
             i.e., :math:`\\prod_{t'=0}^t \\pi_b(a_{t'} \\mid s_{t'})`
 
-        evaluation_policy_action_dist: NDArray, shape (n_episodes * step_per_episode, n_action)
+        evaluation_policy_action_dist: array-like of shape (n_episodes * step_per_episode, n_action)
             Action choice probability of evaluation policy for all action,
             i.e., :math:`\\pi_e(a \\mid s_t) \\forall a \\in \\mathcal{A}`
 
-        state_action_value_prediction: NDArray, shape (n_episodes * step_per_episode, n_action)
+        state_action_value_prediction: array-like of shape (n_episodes * step_per_episode, n_action)
             :math:`\\hat{Q}` for all action,
             i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
 
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
+        gamma: float, default=1.0
+            Discount factor. The value should be within `(0, 1]`.
 
         Return
         -------
-        estimated_trajectory_wise_policy_value: NDArray, shape (n_episodes, )
+        estimated_trajectory_wise_policy_value: ndarray of shape (n_episodes, )
             Estimated policy value for each trajectory.
 
         """
@@ -858,34 +858,34 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
-        action: NDArray, shape (n_episodes * step_per_episode, )
+        action: array-like of shape (n_episodes * step_per_episode, )
             Action chosen by behavior policy.
 
-        reward: NDArray, shape (n_episodes * step_per_episode, )
+        reward: array-like of shape (n_episodes * step_per_episode, )
             Reward observation.
 
-        behavior_policy_step_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+        behavior_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Step-wise action choice probability of behavior policy,
             i.e., :math:`\\prod_{t'=0}^t \\pi_b(a_{t'} \\mid s_{t'})`
 
-        evaluation_policy_step_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+        evaluation_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Step-wise action choice probability of evaluation policy,
             i.e., :math:`\\prod_{t'=0}^t \\pi_b(a_{t'} \\mid s_{t'})`
 
-        evaluation_policy_action_dist: NDArray, shape (n_episodes * step_per_episode, n_action)
+        evaluation_policy_action_dist: array-like of shape (n_episodes * step_per_episode, n_action)
             Action choice probability of evaluation policy for all action,
             i.e., :math:`\\pi_e(a \\mid s_t) \\forall a \\in \\mathcal{A}`
 
-        state_action_value_prediction: NDArray, shape (n_episodes * step_per_episode, n_action)
+        state_action_value_prediction: array-like of shape (n_episodes * step_per_episode, n_action)
             :math:`\\hat{Q}` for all action,
             i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
 
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
+        gamma: float, default=1.0
+            Discount factor. The value should be within `(0, 1]`.
 
         Return
         -------
-        V_hat: NDArray, shape (n_episodes, )
+        V_hat: ndarray of shape (n_episodes, )
             Estimated policy value.
 
         """
@@ -998,35 +998,35 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
-        action: NDArray, shape (n_episodes * step_per_episode, )
+        action: array-like of shape (n_episodes * step_per_episode, )
             Action chosen by behavior policy.
 
-        reward: NDArray, shape (n_episodes * step_per_episode, )
+        reward: array-like of shape (n_episodes * step_per_episode, )
             Reward observation.
 
-        behavior_policy_step_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+        behavior_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Step-wise action choice probability of behavior policy,
             i.e., :math:`\\prod_{t'=0}^t \\pi_b(a_{t'} \\mid s_{t'})`
 
-        evaluation_policy_step_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+        evaluation_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Step-wise action choice probability of evaluation policy,
             i.e., :math:`\\prod_{t'=0}^t \\pi_b(a_{t'} \\mid s_{t'})`
 
-        evaluation_policy_action_dist: NDArray, shape (n_episodes * step_per_episode, n_action)
+        evaluation_policy_action_dist: array-like of shape (n_episodes * step_per_episode, n_action)
             Action choice probability of evaluation policy for all action,
             i.e., :math:`\\pi_e(a \\mid s_t) \\forall a \\in \\mathcal{A}`
 
-        state_action_value_prediction: NDArray, shape (n_episodes * step_per_episode, n_action)
+        state_action_value_prediction: array-like of shape (n_episodes * step_per_episode, n_action)
             :math:`\\hat{Q}` for all action,
             i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
 
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
+        gamma: float, default=1.0
+            Discount factor. The value should be within `(0, 1]`.
 
-        alpha: float, default=0.05 (0, 1)
-            Significant level.
+        alpha: float, default=0.05
+            Significant level. The value should be within `[0, 1)`.
 
-        ci: str, default="bootstrap"
+        ci: {"bootstrap", "hoeffding", "bernstein", "ttest"}, default="bootstrap"
             Estimation method for confidence interval.
 
         n_bootstrap_samples: int, default=10000 (> 0)
@@ -1037,7 +1037,7 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
 
         Return
         -------
-        estimated_confidence_interval: Dict[str, float]
+        estimated_confidence_interval: dict
             Dictionary storing the estimated mean and upper-lower confidence bounds.
 
         """
@@ -1208,23 +1208,23 @@ class DiscreteSelfNormalizedTrajectoryWiseImportanceSampling(
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
-        reward: NDArray, shape (n_episodes * step_per_episode, )
+        reward: array-like of shape (n_episodes * step_per_episode, )
             Reward observation.
 
-        behavior_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+        behavior_policy_trajectory_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Trajectory-wise action choice probability of behavior policy,
             i.e., :math:`\\prod_{t=0}^T \\pi_b(a_t \\mid s_t)`
 
-        evaluation_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+        evaluation_policy_trajectory_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Trajectory-wise action choice probability of evaluation policy,
             i.e., :math:`\\prod_{t=0}^T \\pi_e(a_t \\mid s_t)`
 
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
+        gamma: float, default=1.0
+            Discount factor. The value should be within `(0, 1]`.
 
         Return
         -------
-        estimated_trajectory_wise_policy_value: NDArray, shape (n_episodes, )
+        estimated_trajectory_wise_policy_value: ndarray of shape (n_episodes, )
             Estimated policy value for each trajectory.
 
         """
@@ -1314,23 +1314,23 @@ class DiscreteSelfNormalizedPerDecisionImportanceSampling(
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
-        reward: NDArray, shape (n_episodes * step_per_episode, )
+        reward: array-like of shape (n_episodes * step_per_episode, )
             Reward observation.
 
-        behavior_policy_step_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+        behavior_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Step-wise action choice probability of behavior policy,
             i.e., :math:`\\prod_{t'=0}^t \\pi_b(a_{t'} \\mid s_{t'})`
 
-        evaluation_policy_step_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+        evaluation_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Step-wise action choice probability of evaluation policy,
             i.e., :math:`\\prod_{t'=0}^t \\pi_b(a_{t'} \\mid s_{t'})`
 
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
+        gamma: float, default=1.0
+            Discount factor. The value should be within `(0, 1]`.
 
         Return
         -------
-        estimated_trajectory_wise_policy_value: NDArray, shape (n_episodes, )
+        estimated_trajectory_wise_policy_value: ndarray of shape (n_episodes, )
             Estimated policy value for each trajectory.
 
         """
@@ -1423,34 +1423,34 @@ class DiscreteSelfNormalizedDoublyRobust(DiscreteDoublyRobust):
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
-        action: NDArray, shape (n_episodes * step_per_episode, )
+        action: array-like of shape (n_episodes * step_per_episode, )
             Action chosen by behavior policy.
 
-        reward: NDArray, shape (n_episodes * step_per_episode, )
+        reward: array-like of shape (n_episodes * step_per_episode, )
             Reward observation.
 
-        behavior_policy_step_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+        behavior_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Step-wise action choice probability of behavior policy,
             i.e., :math:`\\prod_{t'=0}^t \\pi_b(a_{t'} \\mid s_{t'})`
 
-        evaluation_policy_step_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+        evaluation_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Step-wise action choice probability of evaluation policy,
             i.e., :math:`\\prod_{t'=0}^t \\pi_b(a_{t'} \\mid s_{t'})`
 
-        evaluation_policy_action_dist: NDArray, shape (n_episodes * step_per_episode, n_action)
+        evaluation_policy_action_dist: array-like of shape (n_episodes * step_per_episode, n_action)
             Action choice probability of evaluation policy for all action,
             i.e., :math:`\\pi_e(a \\mid s_t) \\forall a \\in \\mathcal{A}`
 
-        state_action_value_prediction: NDArray, shape (n_episodes * step_per_episode, n_action)
+        state_action_value_prediction: array-like of shape (n_episodes * step_per_episode, n_action)
             :math:`\\hat{Q}` for all action,
             i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
 
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
+        gamma: float, default=1.0
+            Discount factor. The value should be within `(0, 1]`.
 
         Return
         -------
-        estimated_trajectory_wise_policy_value: NDArray, shape (n_episodes, )
+        estimated_trajectory_wise_policy_value: ndarray of shape (n_episodes, )
             Estimated policy value for each trajectory.
 
         """

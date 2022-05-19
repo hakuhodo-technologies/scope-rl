@@ -1,4 +1,4 @@
-"""Distributional Off-Policy Estimators for Discrete action."""
+"""Distributionally Robust Off-Policy Estimators for Discrete action."""
 from dataclasses import dataclass
 from typing import Optional
 

@@ -32,10 +32,10 @@ class SyntheticDataset(BaseDataset):
     behavior_policy: AlgoBase
         RL policy that collects data.
 
-    step_per_episode: Optional[int], default=None (> 0)
+    step_per_episode: int, default=None (> 0)
         Number of timesteps in an episode.
 
-    random_state: Optional[int], default=None (>= 0)
+    random_state: int, default=None (>= 0)
         Random state.
 
     Examples
@@ -219,7 +219,7 @@ class SyntheticDataset(BaseDataset):
 
         Returns
         -------
-        logged_dataset: Dict
+        logged_dataset: dict
             size: int (> 0)
                 Number of steps the dataset records.
 
@@ -233,43 +233,43 @@ class SyntheticDataset(BaseDataset):
                 Action type of the RL agent.
                 Either "discrete" or "continuous".
 
-            n_actions: Optional[int] (> 0)
+            n_actions: int (> 0)
                 Number of discrete actions.
                 If action_type is "continuous", `None` is recorded.
 
-            action_dim: Optional[int] (> 0)
+            action_dim: int (> 0)
                 Dimensions of actions.
                 If action_type is "discrete", `None` is recorded.
 
-            action_meaning: Optional[Dict[int, Any]]
+            action_meaning: dict
                 Dictionary which maps discrete action index into specific actions.
                 If action_type is "continuous", `None` is recorded.
 
             state_dim: int (> 0)
                 Dimensions of states.
 
-            state_keys: Optional[List[str]]
+            state_keys: list of str
                 Name of the state variable at each dimension.
 
-            state: NDArray[float], shape (size, state_dim)
+            state: ndarray of shape (size, state_dim)
                 State observed in the environment.
 
-            action: Union[NDArray[int], NDArray[float]], shape (size, ) or (size, action_dim)
+            action: ndarray of shape (size, ) or (size, action_dim)
                 Action chosen by the behavior policy.
 
-            reward: NDArray[int], shape (size, )
+            reward: ndarray of shape (size, )
                 Reward observed for each (state, action) pair.
 
-            done: NDArray[int], shape (size, )
+            done: ndarray of shape (size, )
                 Whether an episode ends or not.
 
-            terminal: NDArray[int], shape (size, )
+            terminal: ndarray of shape (size, )
                 Whether an episode reaches pre-defined maximum steps.
 
-            info: Dict[str, Unioun[NDArray, List]], shape (size, ) or (size, action_dim)
+            info: dict
                 Additional feedbacks from the environment.
 
-            pscore: NDArray[float], shape (size, )
+            pscore: ndarray of shape (size, )
                 Action choice probability of the behavior policy for the chosen action.
 
         """
@@ -384,7 +384,7 @@ class SyntheticDataset(BaseDataset):
 
         Returns
         -------
-        logged_dataset: Dict
+        logged_dataset: dict
             size: int (> 0)
                 Number of steps the dataset records.
 
@@ -398,43 +398,43 @@ class SyntheticDataset(BaseDataset):
                 Action type of the RL agent.
                 Either "discrete" or "continuous".
 
-            n_actions: Optional[int] (> 0)
+            n_actions: int (> 0)
                 Number of discrete actions.
                 If action_type is "continuous", `None` is recorded.
 
-            action_dim: Optional[int] (> 0)
+            action_dim: int (> 0)
                 Dimensions of actions.
                 If action_type is "discrete", `None` is recorded.
 
-            action_meaning: Optional[Dict[int, Any]]
+            action_meaning: dict
                 Dictionary which maps discrete action index into specific actions.
                 If action_type is "continuous", `None` is recorded.
 
             state_dim: int (> 0)
                 Dimensions of states.
 
-            state_keys: Optional[List[str]]
+            state_keys: list of str
                 Name of the state variable at each dimension.
 
-            state: NDArray[float], shape (size, state_dim)
+            state: ndarray of shape (size, state_dim)
                 State observed in the environment.
 
-            action: Union[NDArray[int], NDArray[float]], shape (size, ) or (size, action_dim)
+            action: ndarray of shape (size, ) or (size, action_dim)
                 Action chosen by the behavior policy.
 
-            reward: NDArray[int], shape (size, )
+            reward: ndarray of shape (size, )
                 Reward observed for each (state, action) pair.
 
-            done: NDArray[int], shape (size, )
+            done: ndarray of shape (size, )
                 Whether an episode ends or not.
 
-            terminal: NDArray[int], shape (size, )
+            terminal: ndarray of shape (size, )
                 Whether an episode reaches pre-defined maximum steps.
 
-            info: Dict[str, Unioun[NDArray, List]], shape (size, ) or (size, action_dim)
+            info: dict
                 Additional feedbacks from the environment.
 
-            pscore: NDArray[float], shape (size, )
+            pscore: ndarray of shape (size, )
                 Action choice probability of the behavior policy for the chosen action.
 
         """
