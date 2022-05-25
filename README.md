@@ -42,8 +42,8 @@ This software is intended for the episodic RL setup. For those aimed for context
 
 *OfflineGym* mainly consists of the following three modules.
 - [**dataset module**](./_gym/dataset): This module provides tools to generate synthetic data from any environment with [OpenAI Gym](http://gym.openai.com/)-like interface. It also provides preprocessing tools for the logged data.
-- [**policy module**](./_gym/policy) This module provides a wrapper class for [d3rlpy](https://github.com/takuseno/d3rlpy) to enable a flexible data collection.
-- [**ope module**](./_gym/ope) This module provides a generic abstract class to implement an OPE estimator and some dominant OPE estimators. It also provides some tools useful for OPS.
+- [**policy module**](./_gym/policy): This module provides a wrapper class for [d3rlpy](https://github.com/takuseno/d3rlpy) to enable a flexible data collection.
+- [**ope module**](./_gym/ope): This module provides a generic abstract class to implement an OPE estimator and some dominant OPE estimators. It also provides some tools useful for OPS.
 
 <details>
 <summary><strong>Behavior Policy </strong>(click to expand)</summary>
@@ -278,6 +278,12 @@ ope.visualize_off_policy_estimates(
     sharey=True,
 )
 ```
+<div align="center"><img src="https://raw.githubusercontent.com/negocia/offlinegym/master/images/ope_policy_value_basic.png" width="60%"/></div>
+<figcaption>
+<p align="center">
+  Policy Value Estimated by OPE Estimators
+</p>
+</figcaption>
 
 A formal quickstart example with RTBGym is available at [quickstart/rtb_synthetic_discrete_basic.ipynb](./examples/quickstart/rtb_synthetic_discrete_basic.ipynb) (discrete action space) and [quickstart/rtb_synthetic_continuous_basic.ipynb](./examples/quickstart/rtb_synthetic_continuous_basic.ipynb) (continuous action space).
 
@@ -311,6 +317,12 @@ cvar_dict = cd_ope.estimate_conditional_value_at_risk(input_dict, alphas=0.3)
 # estimate and visualize cumulative distribution function
 cd_ope.visualize_cumulative_distribution_function(input_dict, n_cols=4)
 ```
+<div align="center"><img src="https://raw.githubusercontent.com/negocia/offlinegym/master/images/ope_cumulative_distribution_function.png" width="60%"/></div>
+<figcaption>
+<p align="center">
+  Cumulative Distribution Function Estimated by OPE Estimators
+</p>
+</figcaption>
 
 For more examples, please refer to [quickstart/rtb_synthetic_discrete_advanced.ipynb](./examples/quickstart/rtb_synthetic_discrete_advanced.ipynb).
 
@@ -340,15 +352,23 @@ ranking_dict_ = ops.select_by_policy_value_via_cumulative_distributional_ope(inp
 # rank candidate policy by estimated lower quartile and evaluate the selection results
 ranking_df, metric_df = ops.select_by_lower_quartile(
     input_dict,
+    alpha=0.3,
     return_metrics=True,
     return_by_dataframe=True,
 )
 # visualize the OPS results with the ground-truth metrics
-ops.visualize_conditional_value_at_risk_for_validation(
+ops.visualize_lower_quartile_for_validation(
     input_dict,
+    alpha=0.3,
     share_axes=True,
 )
 ```
+<div align="center"><img src="https://raw.githubusercontent.com/negocia/offlinegym/master/images/ops_cvar_validation.png" width="60%"/></div>
+<figcaption>
+<p align="center">
+  Comparison of Estimated and Ground-truth Lower Quartile of Policy Value
+</p>
+</figcaption>
 
 For more examples, please refer to [quickstart/rtb_synthetic_discrete_advanced.ipynb](./examples/quickstart/rtb_synthetic_discrete_advanced.ipynb).
 
@@ -364,21 +384,14 @@ Bibtex:
 ```
 ```
 
+### Additional Relevant Papers
+
 For your information, our previous workshop paper may also be helpful.
 
 Haruka Kiyohara, Kosuke Kawakami, Yuta Saito.<br>
 **Accelerating Offline Reinforcement Learning Application in Real-Time Bidding and Recommendation: Potential Use of Simulation**<br>
-[arXiv link](https://arxiv.org/abs/2109.08331)
-
-Bibtex:
-```
-@article{kiyohara2021accelerating,
-  title={Accelerating Offline Reinforcement Learning Application in Real-Time Bidding and Recommendation: Potential Use of Simulation},
-  author={Kiyohara, Haruka and Kawakami, Kosuke and Saito, Yuta},
-  journal={arXiv preprint arXiv:2109.08331},
-  year={2021}
-}
-```
+[https://arxiv.org/abs/2109.08331](https://arxiv.org/abs/2109.08331)
+(appeared in RecSys'21 SimuRec workshop)
 
 ## Contribution
 Any contributions to OfflineGym are more than welcome!
@@ -392,7 +405,7 @@ This project is licensed under Apache 2.0 license - see [LICENSE](LICENSE) file 
 
 - [Haruka Kiyohara](https://sites.google.com/view/harukakiyohara) (**Main Contributor**; Tokyo Institute of Technology)
 - Kosuke Kawakami (negocia Inc.)
-- [Yuta Saito](https://usaito.github.io/) (Cornell University)
+- [Yuta Saito](https://usait0.com/en/) (Cornell University)
 
 ## Contact
 
