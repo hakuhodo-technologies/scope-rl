@@ -8,7 +8,11 @@
 - [Usage](#usage)
   - [Synthetic Dataset Generation and Data Preprocessing](#synthetic-dataset-generation-and-data-preprocessing)
   - [Offline Reinforcement Learning](#offline-reinforcement-learning)
-  - [Off-Policy Evaluation and Selection](#off-policy-evaluation-and-selection)
+  - [Basic Off-Policy Evaluation](#basic-off-policy-evaluation)
+  - [Advanced Off-Policy Evaluation](#advanced-off-policy-evaluation)
+    - [Cumulative Distribution and Statistics Estimation](#cumulative-distribution-and-statistics-estimation)
+    - [Distributionally Robust Metrics Estimation](#distributionally-robust-metrics-estimation)
+  - [Off-Policy Selection](#off-policy-selection)
 - [Citation](#citation)
 - [Contribution](#contribution)
 - [License](#license)
@@ -20,7 +24,7 @@
 
 ## Overview
 
-*OfflineGym* is an open-source Python Software for implementing the whole procedure of offline Reinforcement Learning (offline RL), from data collection to offline policy learning, evaluation, and selection. Our software includes a series of modules to implement synthetic dataset generation and dataset preprocessing, Off-Policy Evaluation (OPE) estimators, and Off-Policy Selection (OPS) methods. 
+*OfflineGym* is an open-source Python Software for implementing the whole procedure of offline Reinforcement Learning (offline RL), from data collection to offline policy learning, evaluation, and selection. Our software includes a series of modules to implement synthetic dataset generation and dataset preprocessing, estimators for Off-Policy Evaluation (OPE), and Off-Policy Selection (OPS) methods. 
 
 This software is also compatible with [d3rlpy](https://github.com/takuseno/d3rlpy), which provides the algorithm implementation of both online and offline RL methods, to streamline the implementation from learning and evaluation in an unified interface. OfflineGym enables an easy, flexible and reliable experiment in offline RL research on any environment with [OpenAI Gym](https://gym.openai.com)-like interface (from basic one to practical setup) and also simplify the practical implementation on a variety of customized dataset.
 
@@ -28,7 +32,7 @@ Our software facilitate evaluation and algorithm comparison related to the follo
 
 - **Offline Reinforcement Learning**: Offline RL aims to learn a new policy from only offline logged data collected by a behavior policy. OfflineGym enables flexible experiment using customized dataset on a variety of environment collected by various behavior policies.
 
-- **Off-Policy Evaluation**: OPE aims to evaluate the performance of a counterfactual policy using only offline logged data. OfflineGym supports basic implementation of OPE estimators and streamline the experimental procedure to evaluate OPE estimators.
+- **Off-Policy Evaluation**: OPE aims to evaluate the performance of a counterfactual policy using only offline logged data. OfflineGym supports basic implementation of OPE estimators and streamline the experimental procedure to evaluate OPE estimators. Moreover, we also implement advanced OPE, such as cumulative distribution estimators.
 
 - **Off-Policy Selection**: OPS aims to select the best policy from several candidate policies using offline logged data. OfflineGym supports basic implementation of OPS methods and provide some metrics to evaluate OPS result.
 
@@ -43,7 +47,6 @@ This software is intended for the episodic RL setup. For those aimed for context
 
 <details>
 <summary><strong>Behavior Policy </strong>(click to expand)</summary>
-<br>
 
 - Discrete
   - Epsilon Greedy
@@ -56,35 +59,51 @@ This software is intended for the episodic RL setup. For those aimed for context
 
 <details>
 <summary><strong>OPE Estimators </strong>(click to expand)</summary>
-<br>
+
 - Expected Reward Estimation
   - Direct Method (Fitted Q Evaluation)
   - Trajectory-wise Importance Sampling
-  - Step-wise Importance Sampling
+  - Per-Decision Importance Sampling
   - Doubly Robust
   - Self-Normalized Trajectory-wise Importance Sampling
-  - Self-Normalized Step-wise Importance Sampling
+  - Self-Normalized Per-Decision Importance Sampling
   - Self-Normalized Doubly Robust
+- Confidence Interval Estimation
+  - Bootstrap
+  - Hoeffding
+  - (Empirical) Bernstein
+  - Student T-test
+- Cumulative Distribution Function and Statistics Estimation
+  - Direct Method (Fitted Q Evaluation)
+  - Importance Sampling
+  - Doubly Robust
+  - Self-Normalized Importance Sampling
+  - Self-Normalized Doubly Robust
+- Distributionally Robust Metric Estimation (work in progress)
+  - Importance Sampling
+  - Self-Normalized Importance Sampling
+  - Doubly Robust
 
 </details>
 
 <details>
-<summary><strong>OPS Methods </strong>(click to expand)</summary>
-<br>
-- Bootstrap
-- Hoeffding
-- Empirical Bernstein
-- T-test
+<summary><strong>OPS Criterion </strong>(click to expand)</summary>
+
+- Policy value
+- Policy value lower bound
+- Lower quartile
+- Conditional value at risk (CVaR)
+- Distributionally robust worst case policy value
 
 </details>
 
 <details>
 <summary><strong>Evaluation Metrics of OPS </strong>(click to expand)</summary>
-<br>
-- Mean Absolute Error
+
 - Mean Squared Error
 - Rank Correlation
 - Regret
+- Type I and Type II Errors 
 
 </details>
 
