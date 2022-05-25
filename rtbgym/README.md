@@ -26,10 +26,11 @@ Note that, RTBGym is publicized under [OfflineGym](../) repository, which facili
 ### Basic Setting
 
 In RTB, the objective of the RL agent is to maximize some KPIs (such as numbers of click or conversion) within a episode under the given budget constraints. \
-We often aim to achieve this goal by adjusting bidding price function parameter $\alpha$. Specifically, we adjust bid price using $\alpha$ as follows. \
+We often aim to achieve this goal by adjusting bidding price function parameter $\alpha$. Specifically, we adjust bid price using $\alpha$ as follows. 
 <p align="center">
 $bid_{t,i} = \alpha \cdot r^{\ast}$,
 </p>
+
 where $r^{\ast}$ denotes predicted or expected reward (KPIs).
 
 We often formulate this RTB problem as the following Constrained Markov Decision Process (CMDP):
