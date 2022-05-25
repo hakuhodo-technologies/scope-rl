@@ -1,4 +1,4 @@
-# RTBGym: A reinforcement learning environment for real-time bidding research
+# RTBGym: A configurative reinforcement learning environment for real-time bidding research
 <details>
 <summary><strong>Table of Contents </strong>(click to expand)</summary>
 
@@ -19,11 +19,27 @@
 
 ## Overview
 
-*RTBGym* is an open-source simulation platform for Real-Time Bidding (RTB) for Display Advertising. The simulator is particularly intended for reinforcement learning algorithms and follows [OpenAI Gym](https://gym.openai.com) interface. We design RTBGym as a configurative environment so that researchers and practitioner can customize the environment including WinningPriceDistribution, ClickThroughRate, ConversionRate. RTBGym is a Python software.
+*RTBGym* is an open-source simulation platform for Real-Time Bidding (RTB) of Display Advertising, which is written in Python. The simulator is particularly intended for reinforcement learning algorithms and follows [OpenAI Gym](https://gym.openai.com) interface. We design RTBGym as a configurative environment so that researchers and practitioner can customize the environmental modules including WinningPriceDistribution, ClickThroughRate, and ConversionRate. 
 
 Note that, RTBGym is publicized under [OfflineGym](../) repository, which facilitates the implementation of offline reinforcement learning procedure.
 
 ### Basic Setting
+
+In RTB, the objective of the RL agent is to maximize some KPIs (such as numbers of click or conversion) within a episode under the given budget constraints.  
+We often try to achieve this by adjusting bidding price function parameter $\alpha$. By using $\alpha$, we adjust bid price as follows.  
+$bid_{t,i} = \alpha \cdot r^{\ast}$, 
+where $r^{\ast}$ denotes predicted or expected reward (KPIs).
+
+We often formulate this RTB problem as the following Constrained Markov Decision Process (CMDP):
+- `timestep`: One episode (a day or a week) consists of several timesteps (24 hours or seven days, for instance).
+- `state`: We observe statistical feedback from environment at each timestep, which include following informations.
+  - timestep
+  - remaining budget
+  - impression level features (budget comsuption rate, cost per mille of impressions, auction winning rate, reward) at previous timestep
+  - adjust rate (RL agent's decision making) at previous timestep
+- `action`: Agent chooses adjust rate parameter $\alpha$ to maximize KPIs.
+- `reward`: Total number of clicks or conversions obtained during the timestep.
+- `constraints`: The pre-determined episodic budget should not be exceeded.
 
 ### Implementation
 
@@ -58,7 +74,7 @@ python setup.py install
 
 ## Usage
 
-We provide an example usage of the standard and customized environment. 
+We provide an example usage of the standard and customized environment. \
 The online/offlline RL and Off-Policy Evaluation examples are provides in [OfflineGym's README](../README.md).
 
 ### Standard RTBEnv
