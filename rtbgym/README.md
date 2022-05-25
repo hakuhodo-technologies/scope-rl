@@ -52,8 +52,8 @@ python setup.py install
 
 ## Usage
 
-We first provide an example usage of the standard and customized environment.
-Then, we also describe an example workflow of online RL. The offline RL examples are provided in [OfflineGym's README](../README.md). 
+We provide an example usage of the standard and customized environment. 
+The online/offlline RL and Off-Policy Evaluation examples are provides in [OfflineGym's README](../README.md).
 
 ### Standard RTBEnv
 
@@ -80,8 +80,7 @@ while not done:
     obs, reward, done, info = env.step(action)
 ```
 
-Let's visualize case with uniform random policy (in continuous action case). \
-The discrete case also works in a similar manner.
+Let's visualize case with uniform random policy (in continuous action case). The discrete case also works in a similar manner.
 
 ```Python
 # import from other libraries
@@ -135,7 +134,7 @@ plt.show()
 </p>
 </figcaption>
 
-Note that, while we use [OfflineGym](../README.md) and [d3rlpy](https://github.com/takuseno/d3rlpy) here, RTB is compatible with any other libraries working on the [OpenAI Gym](https://gym.openai.com) interface.
+Note that, while we use [OfflineGym](../README.md) and [d3rlpy](https://github.com/takuseno/d3rlpy) here, RTBGym is compatible with any other libraries working on the [OpenAI Gym](https://gym.openai.com) interface.
 
 ### Customized RTGEnv
 
@@ -145,9 +144,8 @@ Next, we describe how to customize the environment by instantiating the environm
 ```Python
 ```
 
-### Discrete Control
-
-### Continuos Control
+More examples are available at [quickstart/rtb_synthetic_customize_env.ipynb](./examples/quickstart/rtb_synthetic_customize_env.ipynb). \
+The statistics of the environment is also visualized at [quickstart/rtb_synthetic_data_collection.ipynb](./examples/quickstart/rtb_synthetic_data_collection.ipynb).
 
 ## Citation
 
@@ -194,11 +192,13 @@ For any question about the paper and software, feel free to contact: kiyohara.h.
 
 1. Greg Brockman, Vicki Cheung, Ludwig Pettersson, Jonas Schneider, John Schulman, Jie Tang, and Wojciech Zaremba. [OpenAI Gym](https://arxiv.org/abs/1606.01540). *arXiv preprint arXiv:1606.01540*, 2016.
 
-2. Di Wu, Xiujun Chen, Xun Yang, Hao Wang, Qing Tan, Xiaoxun Zhang, Jian Xu, and Kun Gai. [Budget Constrained Bidding by Model-free Reinforcement Learning in Display Advertising](https://arxiv.org/abs/1802.08365). In *Proceedings of the 27th ACM International Conference on Information and Knowledge Management*, 1443-1451, 2018.
+2. Takuma Seno and Michita Imai. [d3rlpy: An Offline Deep Reinforcement Library](https://arxiv.org/abs/2111.03788), *arXiv preprint arXiv:2111.03788*, 2021.
 
-3. Jun Zhao, Guang Qiu, Ziyu Guan, Wei Zhao, and Xiaofei He. [Deep Reinforcement Learning for Sponsored Search Real-time Bidding](https://arxiv.org/abs/1803.00259). In *Proceedings of the 24th ACM SIGKDD International Conference on Knowledge Discovery and Data Mining*, 1021-1030, 2018.
+3. Di Wu, Xiujun Chen, Xun Yang, Hao Wang, Qing Tan, Xiaoxun Zhang, Jian Xu, and Kun Gai. [Budget Constrained Bidding by Model-free Reinforcement Learning in Display Advertising](https://arxiv.org/abs/1802.08365). In *Proceedings of the 27th ACM International Conference on Information and Knowledge Management*, 1443-1451, 2018.
 
-4. Wen-Yuan Zhu, Wen-Yueh Shih, Ying-Hsuan Lee, Wen-Chih Peng, and Jiun-Long Huang. [A Gamma-based Regression for Winning Price Estimation in Real-Time Bidding Advertising](https://ieeexplore.ieee.org/document/8258095). In *IEEE International Conference on Big Data*, 1610-1619, 2017.
+4. Jun Zhao, Guang Qiu, Ziyu Guan, Wei Zhao, and Xiaofei He. [Deep Reinforcement Learning for Sponsored Search Real-time Bidding](https://arxiv.org/abs/1803.00259). In *Proceedings of the 24th ACM SIGKDD International Conference on Knowledge Discovery and Data Mining*, 1021-1030, 2018.
+
+5. Wen-Yuan Zhu, Wen-Yueh Shih, Ying-Hsuan Lee, Wen-Chih Peng, and Jiun-Long Huang. [A Gamma-based Regression for Winning Price Estimation in Real-Time Bidding Advertising](https://ieeexplore.ieee.org/document/8258095). In *IEEE International Conference on Big Data*, 1610-1619, 2017.
 
 </details>
 
