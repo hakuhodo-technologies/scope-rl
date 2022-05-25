@@ -2,7 +2,7 @@
 <details>
 <summary><strong>Table of Contents </strong>(click to expand)</summary>
 
-- [RTBGym: A reinforcement learning environment for real-time bidding research]()
+- [RTBGym: A reinforcement learning environment for real-time bidding research](#rtbgym-a-reinforcement-learning-environment-for-real-time-bidding-research)
 - [Overview](#overview)
 - [Installation](#installation)
 - [Usage](#usage)
@@ -55,8 +55,6 @@ python setup.py install
 We first provide an example usage of the standard and customized environment.
 Then, we also describe an example workflow of online RL. The offline RL examples are provided in [OfflineGym's README](../README.md). 
 
-Note that, while we describe the usage with [OfflineGym](../README.md) and [d3rlpy](https://github.com/takuseno/d3rlpy), RTBGym is also compatible with many other libraries working under the [OpenAI Gym](https://gym.openai.com) interface.
-
 ### Standard RTBEnv
 
 Our standard RTBEnv is available from `gym.make()`, following the [OpenAI Gym](https://gym.openai.com) interface.
@@ -73,7 +71,17 @@ env = gym.make('RTBEnv-discrete-v0')
 env_ = gym.make('RTBEnv-continuous-v0')
 ```
 
-The basic interaction is performed as follows.
+The basic interaction is performed using only four lines of code as follows.
+
+```Python
+obs, done = env.reset(), False
+while not done:
+    action = agent.act(obs)
+    obs, reward, done, info = env.step(action)
+```
+
+Let's visualize case with uniform random policy (in continuous action case). \
+The discrete case also works in a similar manner.
 
 ```Python
 # import from other libraries
@@ -93,7 +101,6 @@ agent = OnlineHead(
 )
 
 # (3) basic interaction for continuous action case
-# discrete action case also works in a similar manner
 obs = env.reset()
 done = False
 # logs
@@ -101,7 +108,6 @@ remaining_budget = [obs[1]]
 cumulative_reward = [0]
 
 while not done:
-    # basically requires two lines of code for interaction
     action = agent.predict_online(obs)
     obs, reward, done, info = env.step(action)
     # logs
@@ -128,6 +134,8 @@ plt.show()
   Transition of the Remaining Budget and Cumulative Reward during a Single Episode
 </p>
 </figcaption>
+
+Note that, while we use [OfflineGym](../README.md) and [d3rlpy](https://github.com/takuseno/d3rlpy) here, RTB is compatible with any other libraries working on the [OpenAI Gym](https://gym.openai.com) interface.
 
 ### Customized RTGEnv
 
