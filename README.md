@@ -89,11 +89,11 @@ This software is intended for the episodic RL setup. For those aimed for context
 <details>
 <summary><strong>OPS Criterion </strong>(click to expand)</summary>
 
-- Policy value
-- Policy value lower bound
-- Lower quartile
-- Conditional value at risk (CVaR)
-- Distributionally robust worst case policy value
+- Policy Value
+- Policy Value Lower Bound
+- Lower Quartile
+- Conditional Value at Risk (CVaR)
+- Distributionally Robust Worst Case Policy Value
 
 </details>
 
@@ -101,9 +101,9 @@ This software is intended for the episodic RL setup. For those aimed for context
 <summary><strong>Evaluation Metrics of OPS </strong>(click to expand)</summary>
 
 - Mean Squared Error
-- Rank Correlation
+- Spearman's Rank Correlation Coefficient
 - Regret
-- Type I and Type II Errors 
+- Type I and Type II Error Rates
 
 </details>
 
@@ -216,19 +216,19 @@ cql.fit(
 )
 ```
 
-### Off-Policy Evaluation and Selection
+### Basic Off-Policy Evaluation
 
-Finally, we evaluate the performance of the learned policy using offline logged data. We also compare the estimation results from various OPE estimators, Direct Method (DM), Trajectory-wise Importance Sampling (TIS), Step-wise Importance Sampling (SIS), and Doubly Robust (DR).
+Then, we evaluate the performance of the learned policy using offline logged data. We also compare the estimation results from various OPE estimators, Direct Method (DM), Trajectory-wise Importance Sampling (TIS), Per-Decision Importance Sampling (PDIS), and Doubly Robust (DR).
 
 ```Python
-# implement OPE procedure using OfflineGym
+# implement basic OPE procedure using OfflineGym
 
 # import offlinegym modules
 from _gym.ope import CreateOPEInput
 from _gym.ope import OffPolicyEvaluation as OPE
 from _gym.ope import DiscreteDirectMethod as DM
 from _gym.ope import DiscreteTrajectoryWiseImportanceSampling as TIS
-from _gym.ope import DiscreteStepWiseImportanceSampling as SIS
+from _gym.ope import DiscretePerDecisionImportanceSampling as PDIS
 from _gym.ope import DiscreteDoublyRobust as DR
 
 # (4) Evaluate the learned policy in an offline manner
@@ -269,7 +269,7 @@ input_dict = prep.obtain_whole_inputs(
 # initialize OPE class
 ope = OPE(
     logged_dataset=logged_dataset,
-    ope_estimators=[DM(), TIS(), SIS(), DR()],
+    ope_estimators=[DM(), TIS(), PDIS(), DR()],
 )
 # conduct OPE and visualize the result
 ope.visualize_off_policy_estimates(
@@ -279,7 +279,78 @@ ope.visualize_off_policy_estimates(
 )
 ```
 
-A formal quickstart example with RTBGym is available at `[quickstart]`(./examples/quickstart/rtb_synthetic_discrete.ipynb) (discrete action space) and [quickstart/rtb_synthetic_continuous.ipynb](./examples/quickstart/rtb_synthetic_continuous.ipynb) (continuous action space).
+A formal quickstart example with RTBGym is available at [quickstart/rtb_synthetic_discrete_basic.ipynb](./examples/quickstart/rtb_synthetic_discrete_basic.ipynb) (discrete action space) and [quickstart/rtb_synthetic_continuous_basic.ipynb](./examples/quickstart/rtb_synthetic_continuous_basic.ipynb) (continuous action space).
+
+### Advanced Off-Policy Evaluation
+
+We can also estimate various performance statics including variance and conditional value at risk (CVaR) by using cumulative distributional OPE estimators.
+
+```Python
+# implement advanced OPE procedure (i.e., cumulative distribution estimation) using OfflineGym
+
+# import offlinegym modules
+from offlinegym.ope import DiscreteCumulativeDistributionalOffPolicyEvaluation as CumulativeDistributionalOPE
+from offlinegym.ope import DiscreteCumulativeDistributionalDirectMethod as CD_DM
+from offlinegym.ope import DiscreteCumulativeDistributionalImportanceSampling as CD_IS
+from offlinegym.ope import DiscreteCumulativeDistributionalDoublyRobust as CD_DR
+from offlinegym.ope import DiscreteCumulativeDistributionalSelfNormalizedImportanceSampling as CD_SNIS
+from offlinegym.ope import DiscreteCumulativeDistributionalSelfNormalizedDoublyRobust as CD_SNDR
+
+# (4) Evaluate the learned policy using cumulative distribution function (in an offline manner)
+# we compare ddqn, cql, and random policy defined in the previous section (i.e., (3) of basic OPE procedure)
+# initialize OPE class
+cd_ope = CumulativeDistributionalOPE(
+    logged_dataset=logged_dataset,
+    ope_estimators=[CD_DM(), CD_IS(), CD_DR(), CD_SNIS(), CD_SNDR()],
+    use_observations_as_reward_scale=True,
+)
+# estimate variance
+variance_dict = cd_ope.estimate_variance(input_dict)
+# estimate CVaR
+cvar_dict = cd_ope.estimate_conditional_value_at_risk(input_dict, alphas=0.3)
+# estimate and visualize cumulative distribution function
+cd_ope.visualize_cumulative_distribution_function(input_dict, n_cols=4)
+```
+
+For more examples, please refer to [quickstart/rtb_synthetic_discrete_advanced.ipynb](./examples/quickstart/rtb_synthetic_discrete_advanced.ipynb).
+
+### Off-Policy Selection and Evaluation of OPE/OPS
+
+Finally, we select policy based on the OPE result using OPS class. We also evaluate the reliability of OPE/OPS using various metrics
+including mean-squared-error, rank correlation, regret, and type I and type II error rates.
+
+```Python
+# conduct off-policy selection based on the OPE results
+
+# import offlinegym modules
+from offlinegym.ope import OffPolicySelection
+
+# (5) Conduct Off-Policy Selection
+# Initialize OPS class
+ops = OffPolicySelection(
+    ope=ope,
+    cumulative_distributional_ope=cd_ope,
+)
+# rank candidate policy by policy value estimated by (basic) OPE
+ranking_dict = ops.select_by_policy_value(input_dict)
+# rank candidate policy by policy value estimated by cumulative distributional OPE
+ranking_dict_ = ops.select_by_policy_value_via_cumulative_distributional_ope(input_dict)
+
+# (6) Evaluate OPS/OPE results
+# rank candidate policy by estimated lower quartile and evaluate the selection results
+ranking_df, metric_df = ops.select_by_lower_quartile(
+    input_dict,
+    return_metrics=True,
+    return_by_dataframe=True,
+)
+# visualize the OPS results with the ground-truth metrics
+ops.visualize_conditional_value_at_risk_for_validation(
+    input_dict,
+    share_axes=True,
+)
+```
+
+For more examples, please refer to [quickstart/rtb_synthetic_discrete_advanced.ipynb](./examples/quickstart/rtb_synthetic_discrete_advanced.ipynb).
 
 ## Citation
 
@@ -293,13 +364,29 @@ Bibtex:
 ```
 ```
 
+For your information, our previous workshop paper may also be helpful.
+
+Haruka Kiyohara, Kosuke Kawakami, Yuta Saito.<br>
+**Accelerating Offline Reinforcement Learning Application in Real-Time Bidding and Recommendation: Potential Use of Simulation**<br>
+[arXiv link](https://arxiv.org/abs/2109.08331)
+
+Bibtex:
+```
+@article{kiyohara2021accelerating,
+  title={Accelerating Offline Reinforcement Learning Application in Real-Time Bidding and Recommendation: Potential Use of Simulation},
+  author={Kiyohara, Haruka and Kawakami, Kosuke and Saito, Yuta},
+  journal={arXiv preprint arXiv:2109.08331},
+  year={2021}
+}
+```
+
 ## Contribution
 Any contributions to OfflineGym are more than welcome!
 Please refer to [CONTRIBUTING.md](./CONTRIBUTING.md) for general guidelines how to contribute the project.
 
 ## License
 
-This project is licensed under - see [LICENSE](LICENSE) file for details.
+This project is licensed under Apache 2.0 license - see [LICENSE](LICENSE) file for details.
 
 ## Project Team
 
@@ -309,7 +396,7 @@ This project is licensed under - see [LICENSE](LICENSE) file for details.
 
 ## Contact
 
-For any question about the paper and software, feel free to contact: kiyohara.h.aa@m.titech.ac.jp
+For any question about the paper and software, feel free to contact: kiyohara.h.aa@m.titech.ac.jp.
 
 ## References
 
