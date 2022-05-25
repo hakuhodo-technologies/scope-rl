@@ -19,11 +19,23 @@
 
 ## Overview
 
-*RTBGym* is an open-source .
+*RTBGym* is an open-source simulation platform for Real-Time Bidding (RTB) for Display Advertising. The simulator is particularly intended for reinforcement learning algorithms and follows [OpenAI Gym](https://gym.openai.com) interface. We design RTBGym as a configurative environment so that researchers and practitioner can customize the environment including WinningPriceDistribution, ClickThroughRate, ConversionRate. RTBGym is a Python software.
 
 Note that, RTBGym is publicized under [OfflineGym](../) repository, which facilitates the implementation of offline reinforcement learning procedure.
 
 ### Implementation
+
+RTBGym consists of the following two environments.
+- [RTBEnv](./env/rtb.py#L24): The basic environment with continuous action space.
+- [CustomizedRTBEnv](./env/wrapper_rtb.py#L15): The customized environment given action space and reward predictor.
+
+RTBGym is configurative about the following three modules.
+- [WinningPriceDistribution](./env/simulator/function.py#L18): Class to define the winning price distribution of the auction bidding.
+- [ClickThroughRate](./env/simulator/function.py#L183): Class to define the click through rate of users.
+- [ConversionRate](./env/simulator/function.py#L393): Class to define the conversion rate of users.
+
+Note that, users can customize the above modules by following the [abstract class](./env/simulator/base.py). \
+We also define the bidding function in the [Bidder](./env/simulator/bidder.py#15) class and the auction simulation in the [Simulator](./env/simulator/rtb_synthetic.py#23) class, respectively.
 
 ## Installation
 RTBGym can be installed as a part of [OfflineGym](../) using Python's package manager `pip`.
@@ -39,6 +51,91 @@ python setup.py install
 ```
 
 ## Usage
+
+We first provide an example usage of the standard and customized environment.
+Then, we also describe an example workflow of online RL. The offline RL examples are provided in [OfflineGym's README](../README.md). 
+
+Note that, while we describe the usage with [OfflineGym](../README.md) and [d3rlpy](https://github.com/takuseno/d3rlpy), RTBGym is also compatible with many other libraries working under the [OpenAI Gym](https://gym.openai.com) interface.
+
+### Standard RTBEnv
+
+Our standard RTBEnv is available from `gym.make()`, following the [OpenAI Gym](https://gym.openai.com) interface.
+
+```Python
+# import rtbgym and gym
+import rtbgym
+import gym
+
+# (1) standard environment for discrete action space
+env = gym.make('RTBEnv-discrete-v0')
+
+# (2) standard environment for continuous action space
+env_ = gym.make('RTBEnv-continuous-v0')
+```
+
+The basic interaction is performed as follows.
+
+```Python
+# import from other libraries
+from offlinegym.policy import OnlineHead
+from d3rlpy.algos import RandomPolicy as ContinuousRandomPolicy
+from d3rlpy.preprocessing import MinMaxActionScaler
+import matplotlib.pyplot as plt
+
+# define random agent (for continuous action)
+agent = OnlineHead(
+    ContinuousRandomPolicy(
+        action_scaler=MinMaxActionScaler(
+            minimum=0.1,  # minimum value that policy can take
+            maximum=10,  # maximum value that policy can take
+        )
+    )
+)
+
+# (3) basic interaction for continuous action case
+# discrete action case also works in a similar manner
+obs = env.reset()
+done = False
+# logs
+remaining_budget = [obs[1]]
+cumulative_reward = [0]
+
+while not done:
+    # basically requires two lines of code for interaction
+    action = agent.predict_online(obs)
+    obs, reward, done, info = env.step(action)
+    # logs
+    remaining_budget.append(obs[1])
+    cumulative_reward.append(cumulative_reward[-1] + reward)
+
+# visualize the result
+fig = plt.figure()
+ax1 = fig.add_subplot(111)
+ax1.plot(remaining_budget[:-1], label='remaining budget')
+ax2 = ax1.twinx()
+ax2.plot(cumulative_reward[:-1], label='cumulative reward', color='tab:orange')
+ax1.set_xlabel('timestep')
+ax1.set_ylabel('remainig budget')
+ax1.set_ylim(0, env.initial_budget + 100)
+ax2.set_ylabel('reward (coversion)')
+ax1.legend(loc='upper left')
+ax2.legend(loc='upper right')
+plt.show()
+```
+<div align="center"><img src="https://raw.githubusercontent.com/negocia/offlinegym/master/images/basic_interaction.png" width="60%"/></div>
+<figcaption>
+<p align="center">
+  Transition of the Remaining Budget and Cumulative Reward during a Single Episode
+</p>
+</figcaption>
+
+### Customized RTGEnv
+
+Next, we describe how to customize the environment by instantiating the environment.
+
+
+```Python
+```
 
 ### Discrete Control
 
@@ -56,19 +153,27 @@ Bibtex:
 ```
 ```
 
+### Additional Relevant Papers
+
+For your information, our previous workshop paper (which has been appeared in RecSys'21 SimuRec workshop) may also be helpful.
+
+Haruka Kiyohara, Kosuke Kawakami, Yuta Saito.<br>
+**Accelerating Offline Reinforcement Learning Application in Real-Time Bidding and Recommendation: Potential Use of Simulation**<br>
+[https://arxiv.org/abs/2109.08331](https://arxiv.org/abs/2109.08331)
+
 ## Contribution
 Any contributions to RTBGym are more than welcome!
 Please refer to [CONTRIBUTING.md](../CONTRIBUTING.md) for general guidelines how to contribute the project.
 
 ## License
 
-This project is licensed under - see [LICENSE](../LICENSE) file for details.
+This project is licensed under Apache 2.0 license - see [LICENSE](../LICENSE) file for details.
 
 ## Project Team
 
 - [Haruka Kiyohara](https://sites.google.com/view/harukakiyohara) (**Main Contributor**; Tokyo Institute of Technology)
 - Kosuke Kawakami (negocia Inc.)
-- [Yuta Saito](https://usaito.github.io/) (Cornell University)
+- [Yuta Saito](https://usait0.com/en/) (Cornell University)
 
 ## Contact
 
@@ -79,13 +184,13 @@ For any question about the paper and software, feel free to contact: kiyohara.h.
 <details>
 <summary><strong>Papers </strong>(click to expand)</summary>
 
-Greg Brockman, Vicki Cheung, Ludwig Pettersson, Jonas Schneider, John Schulman, Jie Tang, and Wojciech Zaremba. [OpenAI Gym](https://arxiv.org/abs/1606.01540). *arXiv preprint arXiv:1606.01540*, 2016.
+1. Greg Brockman, Vicki Cheung, Ludwig Pettersson, Jonas Schneider, John Schulman, Jie Tang, and Wojciech Zaremba. [OpenAI Gym](https://arxiv.org/abs/1606.01540). *arXiv preprint arXiv:1606.01540*, 2016.
 
-Di Wu, Xiujun Chen, Xun Yang, Hao Wang, Qing Tan, Xiaoxun Zhang, Jian Xu, and Kun Gai. [Budget Constrained Bidding by Model-free Reinforcement Learning in Display Advertising](https://arxiv.org/abs/1802.08365). In *Proceedings of the 27th ACM International Conference on Information and Knowledge Management*, 1443-1451, 2018.
+2. Di Wu, Xiujun Chen, Xun Yang, Hao Wang, Qing Tan, Xiaoxun Zhang, Jian Xu, and Kun Gai. [Budget Constrained Bidding by Model-free Reinforcement Learning in Display Advertising](https://arxiv.org/abs/1802.08365). In *Proceedings of the 27th ACM International Conference on Information and Knowledge Management*, 1443-1451, 2018.
 
-Jun Zhao, Guang Qiu, Ziyu Guan, Wei Zhao, and Xiaofei He. [Deep Reinforcement Learning for Sponsored Search Real-time Bidding](https://arxiv.org/abs/1803.00259). In *Proceedings of the 24th ACM SIGKDD International Conference on Knowledge Discovery and Data Mining*, 1021-1030, 2018.
+3. Jun Zhao, Guang Qiu, Ziyu Guan, Wei Zhao, and Xiaofei He. [Deep Reinforcement Learning for Sponsored Search Real-time Bidding](https://arxiv.org/abs/1803.00259). In *Proceedings of the 24th ACM SIGKDD International Conference on Knowledge Discovery and Data Mining*, 1021-1030, 2018.
 
-Wen-Yuan Zhu, Wen-Yueh Shih, Ying-Hsuan Lee, Wen-Chih Peng, and Jiun-Long Huang. [A Gamma-based Regression for Winning Price Estimation in Real-Time Bidding Advertising](https://ieeexplore.ieee.org/document/8258095). In *IEEE International Conference on Big Data*, 1610-1619, 2017.
+4. Wen-Yuan Zhu, Wen-Yueh Shih, Ying-Hsuan Lee, Wen-Chih Peng, and Jiun-Long Huang. [A Gamma-based Regression for Winning Price Estimation in Real-Time Bidding Advertising](https://ieeexplore.ieee.org/document/8258095). In *IEEE International Conference on Big Data*, 1610-1619, 2017.
 
 </details>
 

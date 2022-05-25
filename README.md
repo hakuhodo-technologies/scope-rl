@@ -10,9 +10,7 @@
   - [Offline Reinforcement Learning](#offline-reinforcement-learning)
   - [Basic Off-Policy Evaluation](#basic-off-policy-evaluation)
   - [Advanced Off-Policy Evaluation](#advanced-off-policy-evaluation)
-    - [Cumulative Distribution and Statistics Estimation](#cumulative-distribution-and-statistics-estimation)
-    - [Distributionally Robust Metrics Estimation](#distributionally-robust-metrics-estimation)
-  - [Off-Policy Selection](#off-policy-selection)
+  - [Off-Policy Selection and Evaluation of OPE/OPS](#off-policy-selection-and-evaluation-of-opeops)
 - [Citation](#citation)
 - [Contribution](#contribution)
 - [License](#license)
@@ -146,14 +144,12 @@ from offlinegym.policy import DiscreteEpsilonGreedyHead
 from d3rlpy.algos import DoubleDQN
 from d3rlpy.online.buffers import ReplayBuffer
 from d3rlpy.online.explorers import ConstantEpsilonGreedy
-# import rtbgym
-from rtbgym import RTBEnv, CustomizedRTBEnv
+# import rtbgym and gym
+import rtbgym
+import gym
 
 # (0) Setup environment
-env = CustomizedRTBEnv(
-    original_env=RTBEnv(random_state=random_state),
-    action_type="discrete",
-)
+env = gym.make("RTBEnv-discrete-v0")
 
 # (1) Learn a baseline online policy (using d3rlpy)
 # initialize algorithm
@@ -408,7 +404,7 @@ This project is licensed under Apache 2.0 license - see [LICENSE](LICENSE) file 
 
 ## Contact
 
-For any question about the paper and software, feel free to contact: kiyohara.h.aa@m.titech.ac.jp.
+For any question about the paper and software, feel free to contact: kiyohara.h.aa@m.titech.ac.jp
 
 ## References
 
