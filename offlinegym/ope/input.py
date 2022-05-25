@@ -613,6 +613,10 @@ class CreateOPEInput:
                         "initial_state_value_prediction"
                     ] = None
             else:
+                input_dict[evaluation_policies[i].name][
+                    "evaluation_policy_action_dist"
+                ] = None
+
                 if self.use_base_model:
                     input_dict[evaluation_policies[i].name][
                         "state_action_value_prediction"
@@ -661,5 +665,7 @@ class CreateOPEInput:
 
             else:
                 input_dict[evaluation_policies[i].name]["on_policy_policy_value"] = None
+
+            input_dict[evaluation_policies[i].name]["gamma"] = gamma
 
         return defaultdict_to_dict(input_dict)

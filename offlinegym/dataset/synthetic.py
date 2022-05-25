@@ -8,8 +8,8 @@ from gym.spaces import Discrete
 import numpy as np
 from sklearn.utils import check_scalar, check_random_state
 
-from rtbgym.env.rtb import RTBEnv
-from rtbgym.env.wrapper_rtb import CustomizedRTBEnv
+from rtbgym.envs.rtb import RTBEnv
+from rtbgym.envs.wrapper_rtb import CustomizedRTBEnv
 
 from .base import BaseDataset
 from ..policy.head import BaseHead

@@ -153,7 +153,7 @@ class DiscreteOffPolicyEvaluation:
     Josiah P. Hanna, Peter Stone, and Scott Niekum.
     "Bootstrapping with Models: Confidence Intervals for Off-Policy Evaluation.", 2017.
 
-    Philip Thomas, Georgios Theocharous, and Mohammad Ghavamzadeh.
+    Philip S. Thomas, Georgios Theocharous, and Mohammad Ghavamzadeh.
     "High Confidence Policy Improvement.", 2015.
 
     Philip S. Thomas, Georgios Theocharous, and Mohammad Ghavamzadeh.
@@ -1134,7 +1134,6 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
                 ] = estimator.estimate_cumulative_distribution_function(
                     **input_dict[eval_policy],
                     **self.input_dict_,
-                    gamma=self.gamma,
                     reward_scale=reward_scale,
                 )
 
@@ -1190,7 +1189,6 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
                     **input_dict[eval_policy],
                     **self.input_dict_,
                     reward_scale=reward_scale,
-                    gamma=self.gamma,
                 )
 
         return defaultdict_to_dict(mean_dict)
@@ -1250,7 +1248,6 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
                     **input_dict[eval_policy],
                     **self.input_dict_,
                     reward_scale=reward_scale,
-                    gamma=self.gamma,
                 )
 
         return defaultdict_to_dict(variance_dict)
@@ -1332,7 +1329,6 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
                     **input_dict[eval_policy],
                     **self.input_dict_,
                     reward_scale=reward_scale,
-                    gamma=self.gamma,
                     alphas=alphas,
                 )
 
@@ -1419,7 +1415,6 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
                     **input_dict[eval_policy],
                     **self.input_dict_,
                     reward_scale=reward_scale,
-                    gamma=self.gamma,
                     alpha=alpha,
                 )
 

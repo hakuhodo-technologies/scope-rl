@@ -517,9 +517,6 @@ class DiscreteDistributionallyRobustDoublyRobust(
     Nian Si, Fan Zhang, Zhengyuan Zhou, and Jose Blanchet.
     "Distributional Robust Batch Contextual Bandits.", 2020.
 
-    Nathan Kallus, Xiaojie Mao, Masatoshi Uehara.
-    "Localized Debiased Machine Learning: Efficient Inference on Quantile Treatment Effects and Beyond.", 2019.
-
     Nathan Kallus and Masatoshi Uehara.
     "Intrinsically Efficient, Stable, and Bounded Off-Policy Evaluation for Reinforcement Learning.", 2019.
 

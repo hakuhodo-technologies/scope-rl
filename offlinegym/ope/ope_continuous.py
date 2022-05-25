@@ -172,7 +172,7 @@ class ContinuousOffPolicyEvaluation:
     Josiah P. Hanna, Peter Stone, and Scott Niekum.
     "Bootstrapping with Models: Confidence Intervals for Off-Policy Evaluation.", 2017.
 
-    Philip Thomas, Georgios Theocharous, and Mohammad Ghavamzadeh.
+    Philip S. Thomas, Georgios Theocharous, and Mohammad Ghavamzadeh.
     "High Confidence Policy Improvement.", 2015.
 
     Philip S. Thomas, Georgios Theocharous, and Mohammad Ghavamzadeh.
