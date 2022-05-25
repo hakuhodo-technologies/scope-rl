@@ -23,10 +23,16 @@
 
 Note that, RTBGym is publicized under [OfflineGym](../) repository, which facilitates the implementation of offline reinforcement learning procedure.
 
+### Basic Setting
+
 ### Implementation
 
+RTBGym provides two standardized RTB environment.
+- `"RTBEnv-discrete-v0"`: Standard RTB environment with discrete action space.
+- `"RTBEnv-continuous-v0"`: Standard RTB environment with continuous action space.
+
 RTBGym consists of the following two environments.
-- [RTBEnv](./env/rtb.py#L24): The basic environment with continuous action space.
+- [RTBEnv](./env/rtb.py#L24): The basic configurative environment with continuous action space.
 - [CustomizedRTBEnv](./env/wrapper_rtb.py#L15): The customized environment given action space and reward predictor.
 
 RTBGym is configurative about the following three modules.
