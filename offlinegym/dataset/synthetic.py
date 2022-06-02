@@ -48,21 +48,14 @@ class SyntheticDataset(BaseDataset):
         >>> from offlinegym.policy import DiscreteEpsilonGreedyHead
 
         # import necessary module from other libraries
-        >>> from rtbgym import RTBEnv, CustomizedRTBEnv
-        >>> from sklearn.linear_model import LogisticRegression
+        >>> import gym
+        >>> import rtbgym
         >>> from d3rlpy.algos import DoubleDQN
         >>> from d3rlpy.online.buffers import ReplayBuffer
         >>> from d3rlpy.online.explorers import ConstantEpsilonGreedy
 
         # initialize environment
-        >>> env = RTBEnv(random_state=12345)
-
-        # customize environment from the decision makers' perspective
-        >>> env = CustomizedRTBEnv(
-                original_env=env,
-                reward_predictor=LogisticRegression(),
-                action_type="discrete",
-            )
+        >>> env = gym.make("RTBEnv-discrete-v0")
 
         # define (RL) agent (i.e., policy) and train on the environment
         >>> ddqn = DoubleDQN()
@@ -77,6 +70,8 @@ class SyntheticDataset(BaseDataset):
                 env=env,
                 buffer=buffer,
                 explorer=explorer,
+                n_steps=10000,
+                n_steps_per_epoch=1000,
             )
 
         # convert ddqn policy to stochastic data collection policy
@@ -92,6 +87,7 @@ class SyntheticDataset(BaseDataset):
         >>> dataset = SyntheticDataset(
                 env=env,
                 behavior_policy=behavior_policy,
+                is_rtb_env=True,
                 random_state=12345,
             )
 
@@ -112,28 +108,29 @@ class SyntheticDataset(BaseDataset):
         'winning_rate',
         'reward',
         'adjust_rate'],
-        'state': array([[0.00000000e+00, 3.00000000e+03, 9.29616093e-01,, ...,
-                1.83918812e-01, 2.00000000e+00, 3.88548181e-01],
-                [1.00000000e+00, 1.91000000e+03, 3.63333333e-01, ...,
-                1.00000000e+00, 6.00000000e+00, 3.59381366e+00],
-                [2.00000000e+00, 1.91000000e+03, 0.00000000e+00, ...,
-                0.00000000e+00, 0.00000000e+00, 1.66810054e-01],
-                ...,
-                [4.00000000e+00, 1.57700000e+03, 2.83507497e-01, ...,
-                1.00000000e+00, 4.00000000e+00, 3.59381366e+00],
-                [5.00000000e+00, 8.50000000e+02, 4.61001902e-01, ...,
-                1.00000000e+00, 4.00000000e+00, 3.59381366e+00],
-                [6.00000000e+00, 8.50000000e+02, 0.00000000e+00, ...,
-                0.00000000e+00, 0.00000000e+00, 1.00000000e-01]]),
-        'action': array([7., 1., 4., ..., 7., 0., 8.]),
-        'reward': array([ 6.,  0.,  0., ..., 4.,  0.,  4.]),
+        'state': array([[0.00000000e+00, 3.00000000e+03, 9.29616093e-01, ...,
+             1.83918812e-01, 2.00000000e+00, 4.71334329e-01],
+            [1.00000000e+00, 1.91000000e+03, 3.63333333e-01, ...,
+            1.00000000e+00, 6.00000000e+00, 1.00000000e+01],
+            [2.00000000e+00, 1.91000000e+03, 0.00000000e+00, ...,
+            0.00000000e+00, 0.00000000e+00, 1.66810054e-01],
+            ...,
+            [4.00000000e+00, 9.54000000e+02, 5.40904716e-01, ...,
+            1.00000000e+00, 2.00000000e+00, 3.59381366e+00],
+            [5.00000000e+00, 6.10000000e+01, 9.36058700e-01, ...,
+            9.90049751e-01, 7.00000000e+00, 3.59381366e+00],
+            [6.00000000e+00, 6.10000000e+01, 0.00000000e+00, ...,
+            0.00000000e+00, 0.00000000e+00, 1.00000000e-01]]),
+        'action': array([9., 1., 9., ..., 7., 0., 9.]),
+        'reward': array([ 6.,  0.,  1., ..., 7.,  0.,  0.]),
         'done': array([0., 0., 0., ..., 0., 0., 1.]),
         'terminal': array([0., 0., 0., ..., 0., 0., 1.]),
-        'info': {'impression': array([201.,   0.,  64., ..., 199.,   0., 162.]),
-        'click': array([21.,  0.,  7., ...,  16.,  0., 18.]),
-        'conversion': array([ 6.,  0.,  0., ..., 4.,  0.,  4.]),
-        'average_bid_price': array([195.39800995,   8.24102564,  39.63157895, ..., 172.16080402,
-                   4.21126761, 280.82222222])},
+        'info': {'search_volume': array([201.,   205.,  217., ..., 201.,   191., 186.]),
+        'impression': array([201.,   0.,  217., ..., 199.,   0.,   8.]),
+        'click': array([21.,  0.,  24., ...,  18.,  0.,  0.]),
+        'conversion': array([ 6.,  0.,  1., ..., 7.,  0.,  0.]),
+        'average_bid_price': array([544.55223881,   8.24390244, 523.24423963, ..., 172.58706468,
+                   4.2565445 , 458.76344086])},
         'pscore': array([0.73, 0.73, 0.73, ..., 0.73, 0.03, 0.73])}
 
     References

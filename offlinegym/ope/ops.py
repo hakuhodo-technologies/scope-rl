@@ -42,7 +42,132 @@ class OffPolicySelection:
 
     Examples
     ----------
+    .. ::code-block:: python
 
+        # import necessary module from offlinegym
+        >>> from offlinegym.dataset import SyntheticDataset
+        >>> from offlinegym.policy import DiscreteEpsilonGreedyHead
+        >>> from offlinegym.ope import CreateOPEInput
+        >>> from offlinegym.ope import OffPolicySelection
+        >>> from offlinegym.ope import DiscreteOffPolicyEvaluation as OPE
+        >>> from offlinegym.ope import DiscreteTrajectoryWiseImportanceSampling as TIS
+        >>> from offlinegym.ope import DiscretePerDecisionImportanceSampling as PDIS
+        >>> from offlinegym.ope import DiscreteCumulativeDistributionalOffPolicyEvaluation as CumulativeDistributionalOPE
+        >>> from offlinegym.ope import DiscreteCumulativeDistributionalImportanceSampling as CDIS
+        >>> from offlinegym.ope import DiscreteCumulativeDistributionalSelfNormalizedImportanceSampling as CDSIS
+
+        # import necessary module from other libraries
+        >>> import gym
+        >>> import rtbgym
+        >>> from d3rlpy.algos import DoubleDQN
+        >>> from d3rlpy.online.buffers import ReplayBuffer
+        >>> from d3rlpy.online.explorers import ConstantEpsilonGreedy
+
+        # initialize environment
+        >>> env = gym.make("RTBEnv-discrete-v0")
+
+        # define (RL) agent (i.e., policy) and train on the environment
+        >>> ddqn = DoubleDQN()
+        >>> buffer = ReplayBuffer(
+                maxlen=10000,
+                env=env,
+            )
+        >>> explorer = ConstantEpsilonGreedy(
+                epsilon=0.3,
+            )
+        >>> ddqn.fit_online(
+                env=env,
+                buffer=buffer,
+                explorer=explorer,
+                n_steps=10000,
+                n_steps_per_epoch=1000,
+            )
+
+        # convert ddqn policy to stochastic data collection policy
+        >>> behavior_policy = DiscreteEpsilonGreedyHead(
+                ddqn,
+                n_actions=env.action_space.n,
+                epsilon=0.3,
+                name="ddqn_epsilon_0.3",
+                random_state=12345,
+            )
+
+        # initialize dataset class
+        >>> dataset = SyntheticDataset(
+                env=env,
+                behavior_policy=behavior_policy,
+                is_rtb_env=True,
+                random_state=12345,
+            )
+
+        # data collection
+        >>> logged_dataset = dataset.obtain_trajectories(n_episodes=100, obtain_info=True)
+
+        # evaluation policy
+        >>> ddqn_ = DiscreteEpsilonGreedyHead(
+                base_policy=ddqn,
+                n_actions=env.action_space.n,
+                name="ddqn",
+                epsilon=0.0,
+                random_state=12345
+            )
+        >>> random_ = DiscreteEpsilonGreedyHead(
+                base_policy=ddqn,
+                n_actions=env.action_space.n,
+                name="random",
+                epsilon=1.0,
+                random_state=12345
+            )
+
+        # create input for off-policy evaluation (OPE)
+        >>> prep = CreateOPEInput(
+                logged_dataset=logged_dataset,
+            )
+        >>> input_dict = prep.obtain_whole_inputs(
+                evaluation_policies=[ddqn_, random_],
+                env=env,
+                n_episodes_on_policy_evaluation=100,
+                random_state=12345,
+            )
+
+        # OPS
+        >>> ope = OPE(
+                logged_dataset=logged_dataset,
+                ope_estimators=[TIS(), PDIS()],
+            )
+        >>> cd_ope = CumulativeDistributionalOPE(
+                logged_dataset=logged_dataset,
+                ope_estimators=[CDIS(), CDSIS()],
+                use_observations_as_reward_scale=True,
+            )
+        >>> ops = OffPolicySelection(
+                ope=ope,
+                cumulative_distributional_ope=cd_ope,
+            )
+        >>> ops_dict = ops.select_by_policy_value(
+                input_dict=input_dict,
+                return_metrics=True,
+            )
+        >>> ops_dict
+        {'tis': {'estimated_ranking': ['ddqn', 'random'],
+                'estimated_policy_value': array([21.3624954,  0.3827044]),
+                'estimated_relative_policy_value': array([1.44732354, 0.02592848]),
+                'mean_squared_error': 94.79587393975419,
+                'rank_correlation': SpearmanrResult(correlation=0.9999999999999999, pvalue=nan),
+                'regret': (0.0, 1),
+                'type_i_error_rate': 0.0,
+                'type_ii_error_rate': 0.0,
+                'safety_threshold': 13.284},
+        'pdis': {'estimated_ranking': ['ddqn', 'random'],
+                'estimated_policy_value': array([18.02806424,  7.13847486]),
+                'estimated_relative_policy_value': array([1.22141357, 0.48363651]),
+                'mean_squared_error': 19.45349619733373,
+                'rank_correlation': SpearmanrResult(correlation=0.9999999999999999, pvalue=nan),
+                'regret': (0.0, 1),
+                'type_i_error_rate': 0.0,
+                'type_ii_error_rate': 0.0,
+                'safety_threshold': 13.284}}
+        
 
     References
     -------
