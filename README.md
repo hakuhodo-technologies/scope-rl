@@ -180,6 +180,7 @@ behavior_policy = DiscreteEpsilonGreedyHead(
 dataset = SyntheticDataset(
     env=env,
     behavior_policy=behavior_policy,
+    is_rtb_env=True,
     random_state=random_state,
 )
 # collect logged data using behavior policy
@@ -224,12 +225,12 @@ Then, we evaluate the performance of the learned policy using offline logged dat
 # implement basic OPE procedure using OfflineGym
 
 # import offlinegym modules
-from _gym.ope import CreateOPEInput
-from _gym.ope import OffPolicyEvaluation as OPE
-from _gym.ope import DiscreteDirectMethod as DM
-from _gym.ope import DiscreteTrajectoryWiseImportanceSampling as TIS
-from _gym.ope import DiscretePerDecisionImportanceSampling as PDIS
-from _gym.ope import DiscreteDoublyRobust as DR
+from offlinegym.ope import CreateOPEInput
+from offlinegym.ope import DiscreteOffPolicyEvaluation as OPE
+from offlinegym.ope import DiscreteDirectMethod as DM
+from offlinegym.ope import DiscreteTrajectoryWiseImportanceSampling as TIS
+from offlinegym.ope import DiscretePerDecisionImportanceSampling as PDIS
+from offlinegym.ope import DiscreteDoublyRobust as DR
 
 # (4) Evaluate the learned policy in an offline manner
 # we compare ddqn, cql, and random policy

@@ -192,12 +192,13 @@ Next, we describe how to customize the environment by instantiating the environm
 </details>
 
 ```Python
+from rtbgym import RTBEnv
 env = RTBEnv(
     objective="click",  # maximize the number of total impressions
     cost_indicator="click",  # cost arises every time click occurs
     step_per_episode=14,  # 14 days as an episode
     initial_budget=5000,  # budget available for 14 dayas is 5000
-    random_state=random_state,
+    random_state=12345,
 )
 ```
 
@@ -205,7 +206,13 @@ Specifically, users can define their own `WinningPriceDistribution`, `ClickThrou
 
 #### Example of Custom Winning Price Distribution
 ```Python
+# import RTBGym modules
 from rtbgym import BaseWinningPriceDistribution
+from rtbgym.utils import NormalDistribution
+# import other necessary stuffs
+from dataclasses import dataclass
+from typing import Optional, Union, Tuple
+import numpy as np
 
 @dataclass
 class CustomizedWinningPriceDistribution(BaseWinningPriceDistribution):
@@ -330,6 +337,7 @@ In addition, users can set their own `reward_predictor`.
 </details>
 
 ```Python
+from rtbgym import CustomizedRTBEnv
 custom_env = CustomizedRTBEnv(
     original_env=env,
     reward_predictor=None,  # use ground-truth (expected) reward as a reward predictor (oracle)
@@ -347,20 +355,19 @@ Finally, example usages for online/offline RL and OPE/OPS studies are available 
 If you use our software in your work, please cite our paper:
 
 Haruka Kiyohara, Kosuke Kawakami, Yuta Saito.<br>
-**Title**<br>
-[link]()
+**Accelerating Offline Reinforcement Learning Application in Real-Time Bidding and Recommendation: Potential Use of Simulation**<br>
+(RecSys'21 SimuRec workshop)<br>
+[https://arxiv.org/abs/2109.08331](https://arxiv.org/abs/2109.08331)
 
 Bibtex:
 ```
+@article{kiyohara2021accelerating,
+  title={Accelerating Offline Reinforcement Learning Application in Real-Time Bidding and Recommendation: Potential Use of Simulation},
+  author={Kiyohara, Haruka and Kawakami, Kosuke and Saito, Yuta},
+  journal={arXiv preprint arXiv:2109.08331},
+  year={2021}
+}
 ```
-
-### Additional Relevant Papers
-
-For your information, our previous workshop paper (which has been appeared in RecSys'21 SimuRec workshop) may also be helpful.
-
-Haruka Kiyohara, Kosuke Kawakami, Yuta Saito.<br>
-**Accelerating Offline Reinforcement Learning Application in Real-Time Bidding and Recommendation: Potential Use of Simulation**<br>
-[https://arxiv.org/abs/2109.08331](https://arxiv.org/abs/2109.08331)
 
 ## Contribution
 Any contributions to RTBGym are more than welcome!
