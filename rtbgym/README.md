@@ -165,7 +165,8 @@ Note that, while we use [OfflineGym](../README.md) and [d3rlpy](https://github.c
 
 Next, we describe how to customize the environment by instantiating the environment.  
 
-We have following environmental configurations:
+<details>
+<summary>List of environmental configurations: (click to expand)</summary>
 - `objective`: Objective KPIs of RTB, which is either "click" or "conversion".
 - `cost_indicator`: Timing of arising costs, which is any of "impression", "click", and "conversion".
 - `step_per_episode`: Number of timesteps in an episode.
@@ -186,6 +187,8 @@ We have following environmental configurations:
 - `search_volume_distribution`: Search volume distribution for each timestep.
 - `minimum_search_volume`: Minimum search volume at each timestep.
 - `random_state`: Random state.
+</details>
+
 ```Python
 env = RTBEnv(
     objective="click",  # maximize the number of total impressions
@@ -304,13 +307,14 @@ class CustomizedClickThroughRate(BaseClickAndConversionRate):
 ```
 Note that, custom conversion rate can be defined in a simmilar manner.
 
-## Wrapper class for custom bidding setup
+### Wrapper class for custom bidding setup
 To customize the bidding setup, we also provide `CustomizedRTBEnv`.
 
 `CustomizedRTBEnv` enables discretization or re-definition of the action space.
 In addition, users can set their own `reward_predictor`.
 
-The arguments are given as follows:
+<details>
+<summary>List of arguments: (click to expand)</summary>
 - original_env: Original RTB Environment.
 - reward_predictor: A machine learning model to predict the reward to determine the bidding price.
 - scaler: Scaling factor (constant value) used for bid price determination. (None for the auto-fitting)
@@ -319,6 +323,7 @@ The arguments are given as follows:
 - action_type: Action type of the RL agent, which is either "discrete" or "continuous".
 - n_actions: Number of "discrete" actions.
 - action_meaning: Mapping function of agent action index to the actual "discrete" action to take.
+</details>
 
 ```Python
 custom_env = CustomizedRTBEnv(
