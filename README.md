@@ -147,6 +147,8 @@ from d3rlpy.online.explorers import ConstantEpsilonGreedy
 # import rtbgym and gym
 import rtbgym
 import gym
+# random state
+random_state = 12345
 
 # (0) Setup environment
 env = gym.make("RTBEnv-discrete-v0")
@@ -155,12 +157,14 @@ env = gym.make("RTBEnv-discrete-v0")
 # initialize algorithm
 ddqn = DoubleDQN()
 # train an online policy
+# this takes about 5min to compute
 ddqn.fit_online(
     env,
     buffer=ReplayBuffer(maxlen=10000, env=env),
     explorer=ConstantEpsilonGreedy(epsilon=0.3),
     n_steps=100000,
     n_steps_per_epoch=1000,
+    update_start_step=1000,
 )
 
 # (2) Generate logged dataset

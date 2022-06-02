@@ -163,14 +163,174 @@ Note that, while we use [OfflineGym](../README.md) and [d3rlpy](https://github.c
 
 ### Customized RTGEnv
 
-Next, we describe how to customize the environment by instantiating the environment.
+Next, we describe how to customize the environment by instantiating the environment.  
 
+We have following environmental configurations:
+- `objective`: Objective KPIs of RTB, which is either "click" or "conversion".
+- `cost_indicator`: Timing of arising costs, which is any of "impression", "click", and "conversion".
+- `step_per_episode`: Number of timesteps in an episode.
+- `initial_budget`: Initial budget (i.e., constraint) for an episode.
+- `n_ads`: Number of ads used for auction bidding.
+- `n_users`: Number of users used for auction bidding.
+- `ad_feature_dim`: Dimensions of the ad feature vectors.
+- `user_feature_dim`: Dimensions of the user feature vectors.
+- `ad_feature_vector`: Feature vectors that characterizes each ad.
+- `user_feature_vector`: Feature vectors that characterizes each user.
+- `ad_sampling_rate`: Sampling probalities to determine which ad (id) is used in each auction.
+- `user_sampling_rate`: Sampling probalities to determine which user (id) is used in each auction.
+- `WinningPriceDistribution`: Winning price distribution of auctions.
+- `ClickTroughRate`: Click through rate (i.e., click / impression).
+- `ConversionRate`: Conversion rate (i.e., conversion / click).
+- `standard_bid_price_distribution`: Distribution of the bid price whose average impression probability is expected to be 0.5.
+- `minimum_standard_bid_price`: Minimum value for standard bid price.
+- `search_volume_distribution`: Search volume distribution for each timestep.
+- `minimum_search_volume`: Minimum search volume at each timestep.
+- `random_state`: Random state.
+```Python
+env = RTBEnv(
+    objective="click",  # maximize the number of total impressions
+    cost_indicator="click",  # cost arises every time click occurs
+    step_per_episode=14,  # 14 days as an episode
+    initial_budget=5000,  # budget available for 14 dayas is 5000
+    random_state=random_state,
+)
+```
+
+Specifically, users can define their own `WinningPriceDistribution`, `ClickThroughRate`, and `ConversionRate` as follows.
+
+#### Example of Custom Winning Price Distribution
+```Python
+from rtbgym import BaseWinningPriceDistribution
+
+@dataclass
+class CustomizedWinningPriceDistribution(BaseWinningPriceDistribution):
+    """Initialization."""
+    n_ads: int
+    n_users: int
+    ad_feature_dim: int
+    user_feature_dim: int
+    step_per_episode: int
+    standard_bid_price_distribution: NormalDistribution = NormalDistribution(
+        mean=50,
+        std=5,
+        random_state=12345,
+    )
+    minimum_standard_bid_price: Optional[Union[int, float]] = None
+    random_state: Optional[int] = None
+    
+    def __post_init__(self):
+        self.random_ = check_random_state(self.random_state)
+    
+    def sample_outcome(
+        self,
+        bid_prices: np.ndarray,
+        **kwargs,
+    ) -> Tuple[np.ndarray]:
+        """Stochastically determine impression and second price for each auction."""
+        # sample winning price from simple normal distribution
+        winning_prices = self.random_.normal(
+            loc=self.standard_bid_price,
+            scale=self.standard_bid_price / 5,
+            size=bid_prices.shape,
+        )
+        impressions = winning_prices < bid_prices
+        return impressions.astype(int), winning_prices.astype(int)
+    
+    @property
+    def standard_bid_price(self):
+        return self.standard_bid_price_distribution.mean
+```
+
+#### Example of Custom ClickThroughRate (and Conversion Rate)
+```Python
+from rtbgym import BaseClickAndConversionRate
+from rtbgym.utils import sigmoid
+
+@dataclass
+class CustomizedClickThroughRate(BaseClickAndConversionRate):
+    """Initialization."""
+    n_ads: int
+    n_users: int
+    ad_feature_dim: int
+    user_feature_dim: int
+    step_per_episode: int
+    random_state: Optional[int] = None
+    
+    def __post_init__(self):
+        self.random_ = check_random_state(self.random_state)
+        self.ad_coef = self.random_.normal(
+            loc=0.0, 
+            scale=0.5, 
+            size=(self.ad_feature_dim, 10),
+        )
+        self.user_coef = self.random_.normal(
+            loc=0.0, 
+            scale=0.5, 
+            size=(self.user_feature_dim, 10),
+        )
+    
+    def calc_prob(
+        self,
+        ad_ids: np.ndarray,
+        user_ids: np.ndarray,
+        ad_feature_vector: np.ndarray,
+        user_feature_vector: np.ndarray,
+        timestep: Union[int, np.ndarray],
+    ) -> np.ndarray:
+        """Calculate CTR (i.e., click per impression)."""
+        ad_latent = ad_feature_vector @ self.ad_coef
+        user_latent = user_feature_vector @ self.user_coef
+        ctrs = sigmoid((ad_latent * user_latent).mean(axis=1))
+        return ctrs
+    
+    def sample_outcome(
+        self,
+        ad_ids: np.ndarray,
+        user_ids: np.ndarray,
+        ad_feature_vector: np.ndarray,
+        user_feature_vector: np.ndarray,
+        timestep: Union[int, np.ndarray],
+    ) -> np.ndarray:
+        """Stochastically determine whether click occurs in impression=True case."""
+        ctrs = self.calc_prob(
+            timestep=timestep,
+            ad_ids=ad_ids,
+            user_ids=user_ids,
+            ad_feature_vector=ad_feature_vector,
+            user_feature_vector=user_feature_vector,
+        )
+        clicks = self.random_.rand(len(ad_ids)) < ctrs
+        return clicks.astype(int)
+```
+Note that, custom conversion rate can be defined in a simmilar manner.
+
+## Wrapper class for custom bidding setup
+To customize the bidding setup, we also provide `CustomizedRTBEnv`.
+
+`CustomizedRTBEnv` enables discretization or re-definition of the action space.
+In addition, users can set their own `reward_predictor`.
+
+The arguments are given as follows:
+- original_env: Original RTB Environment.
+- reward_predictor: A machine learning model to predict the reward to determine the bidding price.
+- scaler: Scaling factor (constant value) used for bid price determination. (None for the auto-fitting)
+- action_min: Minimum value of adjust rate.
+- action_max: Maximum value of adjust rate.
+- action_type: Action type of the RL agent, which is either "discrete" or "continuous".
+- n_actions: Number of "discrete" actions.
+- action_meaning: Mapping function of agent action index to the actual "discrete" action to take.
 
 ```Python
+custom_env = CustomizedRTBEnv(
+    original_env=env,
+    reward_predictor=None,  # use ground-truth (expected) reward as a reward predictor (oracle)
+    action_type="discrete",
+)
 ```
 
 More examples are available at [quickstart/rtb_synthetic_customize_env.ipynb](./examples/quickstart/rtb_synthetic_customize_env.ipynb). \
-The statistics of the environment is also visualized at [quickstart/rtb_synthetic_data_collection.ipynb](./examples/quickstart/rtb_synthetic_data_collection.ipynb).
+The statistics of the environment is also visualized at [quickstart/rtb_synthetic_data_collection.ipynb](./examples/quickstart/rtb_synthetic_data_collection.ipynb). \
+Finally, example usages for online/offline RL and OPE/OPS studies are available at [quickstart/rtb_synthetic_discrete_basic.ipynb](./examples/quickstart/rtb_synthetic_discrete_basic.ipynb) (discrete action space) and [quickstart/rtb_synthetic_continuous_basic.ipynb](./examples/quickstart/rtb_synthetic_continuous_basic.ipynb) (continuous action space).
 
 ## Citation
 
