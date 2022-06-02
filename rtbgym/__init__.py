@@ -1,4 +1,5 @@
 import gym
+from sklearn.linear_model import LogisticRegression
 
 from rtbgym.envs.rtb import RTBEnv
 from rtbgym.envs.wrapper_rtb import CustomizedRTBEnv
@@ -22,13 +23,19 @@ env = RTBEnv(random_state=12345)
 gym.envs.register(
     id="RTBEnv-discrete-v0",
     entry_point="rtbgym.envs.wrapper_rtb:CustomizedRTBEnv",
-    max_episode_steps=7,
-    kwargs={"original_env": env, "action_type": "discrete"},
+    kwargs={
+        "original_env": env,
+        "reward_predictor": LogisticRegression(),
+        "action_type": "discrete",
+    },
 )
 # continuous environment
 gym.envs.register(
     id="RTBEnv-continuous-v0",
     entry_point="rtbgym.envs.wrapper_rtb:CustomizedRTBEnv",
-    max_episode_steps=7,
-    kwargs={"original_env": env, "action_type": "continuous"},
+    kwargs={
+        "original_env": env,
+        "reward_predictor": LogisticRegression(),
+        "action_type": "continuous",
+    },
 )

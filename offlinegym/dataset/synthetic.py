@@ -152,6 +152,7 @@ class SyntheticDataset(BaseDataset):
     env: gym.Env
     behavior_policy: BaseHead
     step_per_episode: Optional[int] = None
+    is_rtb_env: bool = False
     random_state: Optional[int] = None
 
     def __post_init__(self):
@@ -173,15 +174,13 @@ class SyntheticDataset(BaseDataset):
             self.n_actions = None
             self.action_dim = self.env.action_space.shape[0]
 
-        if isinstance(self.env, (RTBEnv, CustomizedRTBEnv)):
-            self.is_rtb_env = True
+        if self.is_rtb_env:
             self.step_per_episode = self.env.step_per_episode
             self.action_meaning = (
                 self.env.action_meaning if self.action_type == "discrete" else None
             )
             self.state_keys = self.env.obs_keys
         else:
-            self.is_rtb_env = False
             self.action_meaning = None
             self.state_keys = None
 
