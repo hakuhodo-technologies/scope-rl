@@ -2839,6 +2839,7 @@ class OffPolicySelection:
     def visualize_lower_quartile_for_validation(
         self,
         input_dict: OPEInputDict,
+        alpha: float = 0.05,
         n_cols: Optional[int] = None,
         share_axes: bool = False,
         fig_dir: Optional[Path] = None,
@@ -2861,6 +2862,9 @@ class OffPolicySelection:
                 gamma,
             ]
 
+        alpha: float, default=0.05
+            Proportion of the sided region. The value should be within `[0, 0.5]`.
+
         n_cols: int, default=None
             Number of columns in the figure.
 
@@ -2877,6 +2881,7 @@ class OffPolicySelection:
         """
         ground_truth_policy_value_dict = self.obtain_oracle_selection_result(
             input_dict=input_dict,
+            quartile_alpha=alpha,
             return_lower_quartile=True,
         )
         true_ranking = ground_truth_policy_value_dict["ranking_by_lower_quartile"]
@@ -2884,6 +2889,7 @@ class OffPolicySelection:
 
         estimated_policy_value_dict = self.select_by_lower_quartile(
             input_dict=input_dict,
+            alpha=alpha,
         )
 
         plt.style.use("ggplot")
@@ -3023,6 +3029,7 @@ class OffPolicySelection:
     def visualize_conditional_value_at_risk_for_validation(
         self,
         input_dict: OPEInputDict,
+        alpha: float = 0.05,
         n_cols: Optional[int] = None,
         share_axes: bool = False,
         fig_dir: Optional[Path] = None,
@@ -3045,6 +3052,9 @@ class OffPolicySelection:
                 gamma,
             ]
 
+        alpha: float, default=0.05
+            Proportion of the sided region. The value should be within `[0, 1]`.
+
         n_cols: int, default=None
             Number of columns in the figure.
 
@@ -3061,6 +3071,7 @@ class OffPolicySelection:
         """
         ground_truth_policy_value_dict = self.obtain_oracle_selection_result(
             input_dict=input_dict,
+            cvar_alpha=alpha,
             return_conditional_value_at_risk=True,
         )
         true_ranking = ground_truth_policy_value_dict[
@@ -3070,6 +3081,7 @@ class OffPolicySelection:
 
         estimated_policy_value_dict = self.select_by_conditional_value_at_risk(
             input_dict=input_dict,
+            alpha=alpha,
         )
 
         plt.style.use("ggplot")
