@@ -167,6 +167,7 @@ Next, we describe how to customize the environment by instantiating the environm
 
 <details>
 <summary>List of environmental configurations: (click to expand)</summary>
+
 - `objective`: Objective KPIs of RTB, which is either "click" or "conversion".
 - `cost_indicator`: Timing of arising costs, which is any of "impression", "click", and "conversion".
 - `step_per_episode`: Number of timesteps in an episode.
@@ -187,6 +188,7 @@ Next, we describe how to customize the environment by instantiating the environm
 - `search_volume_distribution`: Search volume distribution for each timestep.
 - `minimum_search_volume`: Minimum search volume at each timestep.
 - `random_state`: Random state.
+
 </details>
 
 ```Python
@@ -315,14 +317,16 @@ In addition, users can set their own `reward_predictor`.
 
 <details>
 <summary>List of arguments: (click to expand)</summary>
-- original_env: Original RTB Environment.
-- reward_predictor: A machine learning model to predict the reward to determine the bidding price.
-- scaler: Scaling factor (constant value) used for bid price determination. (None for the auto-fitting)
-- action_min: Minimum value of adjust rate.
-- action_max: Maximum value of adjust rate.
-- action_type: Action type of the RL agent, which is either "discrete" or "continuous".
-- n_actions: Number of "discrete" actions.
-- action_meaning: Mapping function of agent action index to the actual "discrete" action to take.
+
+- `original_env`: Original RTB Environment.
+- `reward_predictor`: A machine learning model to predict the reward to determine the bidding price.
+- `scaler`: Scaling factor (constant value) used for bid price determination. (None for the auto-fitting)
+- `action_min`: Minimum value of adjust rate.
+- `action_max`: Maximum value of adjust rate.
+- `action_type`: Action type of the RL agent, which is either "discrete" or "continuous".
+- `n_actions`: Number of "discrete" actions.
+- `action_meaning`: Mapping function of agent action index to the actual "discrete" action to take.
+
 </details>
 
 ```Python
@@ -334,7 +338,8 @@ custom_env = CustomizedRTBEnv(
 ```
 
 More examples are available at [quickstart/rtb_synthetic_customize_env.ipynb](./examples/quickstart/rtb_synthetic_customize_env.ipynb). \
-The statistics of the environment is also visualized at [quickstart/rtb_synthetic_data_collection.ipynb](./examples/quickstart/rtb_synthetic_data_collection.ipynb). \
+The statistics of the environment is also visualized at [quickstart/rtb_synthetic_data_collection.ipynb](./examples/quickstart/rtb_synthetic_data_collection.ipynb).
+
 Finally, example usages for online/offline RL and OPE/OPS studies are available at [quickstart/rtb_synthetic_discrete_basic.ipynb](./examples/quickstart/rtb_synthetic_discrete_basic.ipynb) (discrete action space) and [quickstart/rtb_synthetic_continuous_basic.ipynb](./examples/quickstart/rtb_synthetic_continuous_basic.ipynb) (continuous action space).
 
 ## Citation
