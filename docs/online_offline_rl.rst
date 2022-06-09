@@ -20,8 +20,8 @@ The goal of RL is to maximize the following expected cumulative reward (i.e., po
 
     \max_{\pi \in \Pi} J(\pi) := \mathbb{E}_{\tau \sim p_{\pi}(\tau)} \left [ \displaystyle \sum_{t=0}^{T-1} \gamma^t r_t | \pi \right ]
 
-    where :math:`\gamma` is a discount rate and :math:`\tau := (s_t, a_t, s_{t+1}, r_t)_{t=0}^{T-1}` is the trajectory of the policy which is sampled from 
-    :math:`p_{\pi}(\tau) := d_0(s_0) \prod_{t=0}^{T-1} \pi(a_t | s_t) \mathcal{T}(s_{t+1} | s_t, a_t) P_r(r_t | s_t, a_t)`.
+where :math:`\gamma` is a discount rate and :math:`\tau := (s_t, a_t, s_{t+1}, r_t)_{t=0}^{T-1}` is the trajectory of the policy which is sampled from 
+:math:`p_{\pi}(\tau) := d_0(s_0) \prod_{t=0}^{T-1} \pi(a_t | s_t) \mathcal{T}(s_{t+1} | s_t, a_t) P_r(r_t | s_t, a_t)`.
 
 There are several approaches to maximize the policy value. Below, we review three basic methods, On-Policy Policy Gradient, Q-Learning, and Actor-Critic.
 
@@ -53,9 +53,11 @@ Specifically, it aims to learn the following state value :math:`V(s_t)` and stat
 
 .. math::
 
-    V(s_t) := \mathbb{E}_{\tau_{t:T-1} \sim p_{\pi}(\tau_{t:T-1} | s_t)} \left[ sum_{t'=t}^{T-1} \gamma^{t'-t} r_{t'} \right]
+    V(s_t) := \mathbb{E}_{\tau_{t:T-1} \sim p_{\pi}(\tau_{t:T-1} | s_t)} \left[ \sum_{t'=t}^{T-1} \gamma^{t'-t} r_{t'} \right]
 
-    Q(s_t, a_t) := \mathbb{E}_{\tau_{t:T-1} \sim p_{\pi}(\tau_{t:T-1} | s_t, a_t)} \left[ sum_{t'=t}^{T-1} \gamma^{t'-t} r_{t'} \right]
+.. math::
+
+    Q(s_t, a_t) := \mathbb{E}_{\tau_{t:T-1} \sim p_{\pi}(\tau_{t:T-1} | s_t, a_t)} \left[ \sum_{t'=t}^{T-1} \gamma^{t'-t} r_{t'} \right]
 
 where :math:`\tau_{t:T-1}` is the trajectory from timestep :math:`t` to :math:`T-1`.
 
@@ -69,16 +71,16 @@ For example, when we use a greedy policy, Q-Learning learns Q-Function and updat
 
 .. math::
 
-    \hat{Q}_{k+1} \leftarrow \argmin_{Q_{k+1}} \mathbb{E}_n [ \left( Q_{k+1}(s_t, a_t) - (r_t + \hat{Q}_k(s_{t+1}, \pi_k(s_{t+1}))) \right)^2 ]
+    \hat{Q}_{k+1} \leftarrow {\arg \min}_{Q_{k+1}} \mathbb{E}_n [ \left( Q_{k+1}(s_t, a_t) - (r_t + \hat{Q}_k(s_{t+1}, \pi_k(s_{t+1}))) \right)^2 ]
 
 where :math:`n` state-action pairs are randomly sampled from the replay buffer, which stores the past observations :math:`(s_t, a_t, s_{t+1}, r_t)`.
-:math:`\pi_k` chooses actions as :math:`\pi_k(a_t \mid s_t) := \mathbb{I} \{ \argmax_{a_t \in \calA}  \hat{Q}_k(s_t, a_t) }`, where :math:`I \{\cdot\}` is the indicator function.
+:math:`\pi_k` chooses actions as :math:`\pi_k(a_t \mid s_t) := \mathbb{I} \{ {\arg \max}_{a_t \in \mathcal{A}}  \hat{Q}_k(s_t, a_t) \}`, where :math:`I \{ \cdot \}` is the indicator function.
 
 Though this strategy enhances sample efficiency compared to On-Policy Policy Gradient, this method can suffer from bias in estimation.
 That is, when :math:`\hat{Q}(\cdot)` fails estimate the true state-action value, the action choice easily becomes sub-optimal.
 
 To alleviate the estimation error of :math:`\hat{Q}(\cdot)`, we often use epsilon-greedy policy, which chooses random actions with probability :math:`\epsilon`.
-Such *exploration* helps improve the quality of \hat{Q}(\cdot) by alleviating the estimation error on unseen state-action pairs. 
+Such *exploration* helps improve the quality of :math:`\hat{Q}(\cdot)` by alleviating the estimation error on unseen state-action pairs. 
 
 Actor-Critic
 ----------
@@ -87,9 +89,11 @@ It first estimate Q-function and then calculate the advantage of choosing action
 
 .. math::
 
-    \hat{Q}_{k+1} \leftarrow \argmin_{Q_{k+1}} \mathbb{E}_n [ \left( Q_{k+1}(s_t, a_t) - (r_t + \hat{Q}_k(s_{t+1}, \pi_k(s_{t+1}))) \right)^2 ]
+    \hat{Q}_{k+1} \leftarrow {\arg min}_{Q_{k+1}} \mathbb{E}_n \left[ \left( Q_{k+1}(s_t, a_t) - (r_t + \hat{Q}_k(s_{t+1}, \pi_k(s_{t+1}))) \right)^2 \right]
 
-    \theta_{k+1} \leftarrow \theta_{k} + \nabla \matnbb{E}_n \left[ \sum_{t=0}^{T-1} \nabla \log \pi(a_t | s_t) \gamma^t \hat{A}(s_t, a_t) \right \right]
+.. math::
+
+    \theta_{k+1} \leftarrow \theta_{k} + \nabla \mathbb{E}_n \left[ \sum_{t=0}^{T-1} \nabla \log \pi(a_t | s_t) \gamma^t \hat{A}(s_t, a_t) \right]
 
 where :math:`\hat{A}(s_t, a_t) := \hat{Q}(s_t, a_t) - \mathbb{E}_{a \sim \pi(a_t \mid s_t)} \left[ \hat{Q}(s_t, a) \right]`.
 
