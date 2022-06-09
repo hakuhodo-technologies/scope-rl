@@ -25,7 +25,6 @@ where :math:`\gamma` is a discount rate and :math:`\tau := (s_t, a_t, s_{t+1}, r
 
 There are several approaches to maximize the policy value. Below, we review three basic methods, On-Policy Policy Gradient, Q-Learning, and Actor-Critic.
 
-
 On-Policy Policy Gradient
 ----------
 One of the most naive approach to maximize the policy value is to directly learn a policy through gradient ascent as follows.
@@ -47,7 +46,6 @@ where :math:`\mathbb{E}_n [\cdot]` takes empirical average over :math:`n` trajec
 The benefit of On-Policy Policy Gradient is that it enables an unbiased estimation of the policy value as :math:`n` grows. 
 However, as the algorithm needs :math:`n` trajectories collected by :math:`\pi_{k-1}` every time the policy is updated to :math:`\pi_{k}`, the algorithm is known to suffer from *sample inefficiency* and instability.
 
-
 Q-Learning
 ----------
 To pursue the sample efficiency, Q-Learning instead takes Off-Policy approach.
@@ -56,6 +54,8 @@ Specifically, it aims to learn the following state value :math:`V(s_t)` and stat
 .. math::
 
     V(s_t) := \mathbb{E}_{\tau_{t:T-1} \sim p_{\pi}(\tau_{t:T-1} | s_t)} \left[ \sum_{t'=t}^{T-1} \gamma^{t'-t} r_{t'} \right]
+
+.. math::
 
     Q(s_t, a_t) := \mathbb{E}_{\tau_{t:T-1} \sim p_{\pi}(\tau_{t:T-1} | s_t, a_t)} \left[ \sum_{t'=t}^{T-1} \gamma^{t'-t} r_{t'} \right]
 
@@ -74,14 +74,13 @@ For example, when we use a greedy policy, Q-Learning learns Q-Function and updat
     \hat{Q}_{k+1} \leftarrow {\arg \min}_{Q_{k+1}} \mathbb{E}_n [ \left( Q_{k+1}(s_t, a_t) - (r_t + \hat{Q}_k(s_{t+1}, \pi_k(s_{t+1}))) \right)^2 ]
 
 where :math:`n` state-action pairs are randomly sampled from the replay buffer, which stores the past observations :math:`(s_t, a_t, s_{t+1}, r_t)`.
-:math:`\pi_k` chooses actions as :math:`\pi_k(a_t | s_t) := \mathbb{I} \{ {\arg \max}_{a_t \in \mathcal{A}}  \hat{Q}_k(s_t, a_t) \}`, where :math:`I \{\cdot\}` is the indicator function.
+:math:`\pi_k` chooses actions as :math:`\pi_k(a_t \mid s_t) := \mathbb{I} \{ {\arg \max}_{a_t \in \mathcal{A}}  \hat{Q}_k(s_t, a_t) \}`, where :math:`I \{ \cdot \}` is the indicator function.
 
 Though this strategy enhances sample efficiency compared to On-Policy Policy Gradient, this method can suffer from bias in estimation.
 That is, when :math:`\hat{Q}(\cdot)` fails estimate the true state-action value, the action choice easily becomes sub-optimal.
 
 To alleviate the estimation error of :math:`\hat{Q}(\cdot)`, we often use epsilon-greedy policy, which chooses random actions with probability :math:`\epsilon`.
-Such *exploration* helps improve the quality of \hat{Q}(\cdot) by alleviating the estimation error on unseen state-action pairs. 
-
+Such *exploration* helps improve the quality of :math:`\hat{Q}(\cdot)` by alleviating the estimation error on unseen state-action pairs. 
 
 Actor-Critic
 ----------
@@ -90,26 +89,23 @@ It first estimate Q-function and then calculate the advantage of choosing action
 
 .. math::
 
-    \hat{Q}_{k+1} \leftarrow {\arg \min}_{Q_{k+1}} \mathbb{E}_n \left [ \left( Q_{k+1}(s_t, a_t) - (r_t + \hat{Q}_k(s_{t+1}, \pi_k(s_{t+1}))) \right)^2 \right ]
+    \hat{Q}_{k+1} \leftarrow {\arg min}_{Q_{k+1}} \mathbb{E}_n \left[ \left( Q_{k+1}(s_t, a_t) - (r_t + \hat{Q}_k(s_{t+1}, \pi_k(s_{t+1}))) \right)^2 \right]
 
-    \theta_{k+1} \leftarrow \theta_{k} + \nabla \mathbb{E}_n \left [ \sum_{t=0}^{T-1} \nabla \log \pi(a_t | s_t) \gamma^t \hat{A}(s_t, a_t) \right ]
+.. math::
 
-where :math:`\hat{A}(s_t, a_t) := \hat{Q}(s_t, a_t) - \mathbb{E}_{a \sim \pi(a_t | s_t)} \left[ \hat{Q}(s_t, a) \right]`.
+    \theta_{k+1} \leftarrow \theta_{k} + \nabla \mathbb{E}_n \left[ \sum_{t=0}^{T-1} \nabla \log \pi(a_t | s_t) \gamma^t \hat{A}(s_t, a_t) \right]
+
+where :math:`\hat{A}(s_t, a_t) := \hat{Q}(s_t, a_t) - \mathbb{E}_{a \sim \pi(a_t \mid s_t)} \left[ \hat{Q}(s_t, a) \right]`.
 
 Compared to the (vanilla) On-policy Policy Gradient, Actor-Critic stabilizes the policy gradient and enhances sample efficiency by the use of :math:`\hat{Q}`.
 Note that, compared to Q-learning, Actor-Critic is more suitable in continuous action space because we do not have to discretize the action space to choose actions.
 
-
-Case Study: Does Online Learning almost always works well?
-----------
-TODO: Example of running online policies in RTBGym.
-
-Online learning can still be unsafe in the initial learning phase due to sub-optimal actions choice.
-Moreover, frequent online policy update is often costly in many practical systems.
-Those factors often makes practical application of reinforcement learning challenging particularly in the initial trial, despite its potential benefit after a successful deployment.
+Example of 
 
 
 Offline Reinforcement Learning
 ~~~~~~~~~~
-So far, we have seen that learning a policy in an online environment is demanding in many practical systems.
-Then, the next question should be: *Aren't their any ways to tackle the risks and costs of online learning?* To answer, we now introduce offline RL.
+Online learning can still be unsafe in the initial learning phase due to sub-optimal actions choice.
+Moreover, 
+
+So far, we have seen that

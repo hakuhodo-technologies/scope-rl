@@ -5,18 +5,18 @@ from typing import Tuple, Union, Optional
 import numpy as np
 from sklearn.utils import check_scalar, check_random_state
 
-from rtbgym.env.simulator.base import (
+from .base import (
     BaseSimulator,
     BaseWinningPriceDistribution,
     BaseClickAndConversionRate,
 )
-from rtbgym.env.simulator.function import (  # noqa: F401
+from .function import (  # noqa: F401
     WinningPriceDistribution,
     ClickThroughRate,
     ConversionRate,
 )
-from rtbgym.utils import NormalDistribution, check_array
-from rtbgym.types import Numeric
+from ...utils import NormalDistribution, check_array
+from ...types import Numeric
 
 
 @dataclass
@@ -26,9 +26,8 @@ class RTBSyntheticSimulator(BaseSimulator):
 
     Parameters
     -------
-    cost_indicator: str, default="click"
+    cost_indicator: {"impression", "click", "conversion"}, default="click"
         Defines when the cost arises.
-        Choose either from "impression", "click" or "conversion".
 
     step_per_episode: int, default=7 (> 0)
         Number of timesteps in an episode.
@@ -39,16 +38,16 @@ class RTBSyntheticSimulator(BaseSimulator):
     n_users: int, default=100 (> 0)
         Number of (candidate) users used for auction bidding.
 
-    ad_feature_vector: Optional[NDArray], shape (n_ads, ad_feature_dim), default=None
+    ad_feature_vector: array-like of shape (n_ads, ad_feature_dim), default=None
         Feature vectors that characterizes each ad.
 
-    user_feature_vector: Optional[NDArray], shape (n_users, user_feature_dim), default=None
+    user_feature_vector: array-like of shape (n_users, user_feature_dim), default=None
         Feature vectors that characterizes each user.
 
-    ad_sampling_rate: Optional[NDArray], shape (step_per_episode, n_ads) or (n_ads, ), default=None
+    ad_sampling_rate: array-like of shape (step_per_episode, n_ads) or (n_ads, ), default=None
         Sampling probalities to determine which ad (id) is used in each auction.
 
-    user_sampling_rate: Optional[NDArray], shape (step_per_episode, n_users) or (n_uses, ), default=None
+    user_sampling_rate: array-like of shape (step_per_episode, n_users) or (n_uses, ), default=None
         Sampling probalities to determine which user (id) is used in each auction.
 
     WinningPriceDistribution: BaseWinningPriceDistribution
@@ -66,9 +65,9 @@ class RTBSyntheticSimulator(BaseSimulator):
     standard_bid_price_distribution: NormalDistribution, default=NormalDistribution(mean=50, std=5, random_state=12345)
         Distribution of the bid price whose average impression probability is expected to be 0.5.
 
-    minimum_standard_bid_price: Optional[int], default=None (> 0)
+    minimum_standard_bid_price: int, default=None (> 0)
         Minimum value for standard bid price.
-        If None, minimum_standard_bid_price is set to standard_bid_price_distribution.mean / 2.
+        If `None`, minimum_standard_bid_price is set to `standard_bid_price_distribution.mean / 2`.
 
     search_volume_distribution: NormalDistribution, default=NormalDistribution(mean=200, std=20, random_state=12345)
         Search volume distribution for each timestep.
@@ -76,7 +75,7 @@ class RTBSyntheticSimulator(BaseSimulator):
     minimum_search_volume: int, default = 10 (> 0)
         Minimum search volume at each timestep.
 
-    random_state: Optional[int], default=None (>= 0)
+    random_state: int, default=None (>= 0)
         Random state.
 
     References
@@ -363,18 +362,18 @@ class RTBSyntheticSimulator(BaseSimulator):
 
         Parameters
         -------
-        volume: Optional[int], default=None (> 0)
+        volume: int, default=None (> 0)
             Total numbers of the auctions to generate.
 
-        timestep: Optional[int], default=None (> 0)
+        timestep: int, default=None (> 0)
             Timestep in the RL environment.
 
         Returns
         -------
-        ad_ids: NDArray[int], shape (volume, )
+        ad_ids: ndarray of shape (volume, )
             IDs of the ads.
 
-        user_ids: NDArray[int], shape (volume, )
+        user_ids: ndarray of shape (volume, )
             IDs of the users.
 
         """
@@ -434,20 +433,20 @@ class RTBSyntheticSimulator(BaseSimulator):
 
         Parameters
         -------
-        ad_ids: NDArray[int], shape (search_volume, )
+        ad_ids: ndarray of shape (search_volume, )
             IDs of the ads.
             (search_volume is determined in RL environment.)
 
-        user_ids: NDArray[int], shape (search_volume, )
+        user_ids: ndarray of shape (search_volume, )
             IDs of the users.
             (search_volume is determined in RL environment.)
 
         Returns
         -------
-        ad_feature_vector: Union[NDArray[int], NDArray[float]], shape (search_volume/n_samples, ad_feature_dim)
+        ad_feature_vector: ndarray of shape (search_volume/n_samples, ad_feature_dim)
             Ad feature vector for each auction.
 
-        user_feature_vector: Union[NDArray[int], NDArray[float]], shape (search_volume/n_samples, user_feature_dim)
+        user_feature_vector: ndarray of shape (search_volume/n_samples, user_feature_dim)
             User feature vector for each auction.
 
         """
@@ -489,30 +488,29 @@ class RTBSyntheticSimulator(BaseSimulator):
         timestep: int (> 0)
             Timestep in the RL environment.
 
-        ad_ids: NDArray[int], shape (search_volume, )
+        ad_ids: array-like of shape (search_volume, )
             IDs of the ads.
 
-        user_ids: NDArray[int], shape (search_volume, )
+        user_ids: array-like of shape (search_volume, )
             IDs of the users.
 
-        bid_prices: NDArray[int], shape(search_volume, )
+        bid_prices: array-like of shape(search_volume, )
             Bid price for each action.
             (search_volume is determined in RL environment.)
 
         Returns
         -------
-        auction_results: Tuple
-            costs: NDArray[int], shape (search_volume, )
-                Cost raised (i.e., second price) for each auction.
+        costs: ndarray of shape (search_volume, )
+            Cost raised (i.e., second price) for each auction.
 
-            impressions: NDArray[int], shape (search_volume, )
-                Binary indicator of whether impression occurred or not for each auction.
+        impressions: ndarray of shape (search_volume, )
+            Binary indicator of whether impression occurred or not for each auction.
 
-            clicks: NDArray[int], shape (search_volume, )
-                Binary indicator of whether click occurred or not for each auction.
+        clicks: ndarray of shape (search_volume, )
+            Binary indicator of whether click occurred or not for each auction.
 
-            conversions: NDArray[int], shape (search_volume, )
-                Binary indicator of whether conversion occurred or not for each auction.
+        conversions: ndarray of shape (search_volume, )
+            Binary indicator of whether conversion occurred or not for each auction.
 
         """
         check_scalar(

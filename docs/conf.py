@@ -18,7 +18,7 @@
 # -- Project information -----------------------------------------------------
 
 project = "OfflineGym"
-copyright = "2022, Haruka Kiyohara, Kosuke Kawakami, Yuta Saito"
+copyright = "2022, Haruka Kiyohara, Kosuke Kawakami, Yuta Saito, negocia, Inc."
 author = "Haruka Kiyohara, Kosuke Kawakami, Yuta Saito"
 
 # The full version, including alpha/beta/rc tags

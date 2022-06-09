@@ -12,7 +12,7 @@ from d3rlpy.algos import AlgoBase
 from d3rlpy.dataset import MDPDataset, Transition, TransitionMiniBatch
 from d3rlpy.logger import D3RLPyLogger
 
-from offlinegym.utils import check_array
+from ..utils import check_array
 
 
 @dataclass
@@ -35,6 +35,7 @@ class BaseHead(AlgoBase):
         raise NotImplementedError()
 
     def predict_online(self, x: np.ndarray):
+        """Predict the best action during the online interaction."""
         return self.predict(x.reshape((1, -1)))[0]
 
     def predict_value_online(
@@ -43,6 +44,7 @@ class BaseHead(AlgoBase):
         action: Union[np.ndarray, int, float],
         with_std: bool = False,
     ):
+        """Predict state action value during the online interaction."""
         if isinstance(action, (int, float)):
             action = np.array([[action]])
         else:
@@ -50,9 +52,11 @@ class BaseHead(AlgoBase):
         return self.predict_value(x.reshape((1, -1)), action, with_std=with_std)[0]
 
     def sample_action_online(self, x: np.ndarray):
+        """Sample action during the online interaction."""
         return self.sample_action(x.reshape(1, -1))[0]
 
     def stochastic_action_with_pscore_online(self, x: np.ndarray):
+        """Sample action and calculate its pscore during the online interaction."""
         action, pscore = self.stochastic_action_with_pscore(x.reshape(1, -1))
         return action[0], pscore[0]
 
@@ -229,10 +233,10 @@ class DiscreteEpsilonGreedyHead(BaseHead):
     n_actions: int (> 0)
         Numbers of actions.
 
-    epsilon: float [0, 1]
-        Probability of exploration.
+    epsilon: float
+        Probability of exploration. The value should be within `[0, 1]`.
 
-    random_state: Optional[int], default=None (>= 0)
+    random_state: int, default=None (>= 0)
         Random state.
 
     """
@@ -266,15 +270,15 @@ class DiscreteEpsilonGreedyHead(BaseHead):
 
         Parameters
         -------
-        x: NDArray, shape (n_samples, state_dim)
+        x: array-like of shape (n_samples, state_dim)
             State.
 
         Return
         -------
-        action: NDArray, shape (n_samples, )
+        action: ndarray of shape (n_samples, )
             Sampled action.
 
-        pscore: NDArray, shape (n_samples, )
+        pscore: ndarray of shape (n_samples, )
             Pscore of the sampled action.
 
         """
@@ -283,16 +287,16 @@ class DiscreteEpsilonGreedyHead(BaseHead):
         return action, pscore
 
     def calc_action_choice_probability(self, x: np.ndarray):
-        """Calcullate action choice probabilities.
+        """Calculate action choice probabilities.
 
         Parameters
         -------
-        x: NDArray, shape (n_samples, state_dim)
+        x: array-like of shape (n_samples, state_dim)
             State.
 
         Return
         -------
-        pscore: NDArray, shape (n_samples, n_actions)
+        pscore: ndarray of shape (n_samples, n_actions)
             Pscore of the sample action.
 
         """
@@ -309,15 +313,15 @@ class DiscreteEpsilonGreedyHead(BaseHead):
 
         Parameters
         -------
-        x: NDArray, shape (n_samples, state_dim)
+        x: array-like of shape (n_samples, state_dim)
             State.
 
-        action: NDArray, shape (n_samples, )
+        action: array-like of shape (n_samples, )
             Action.
 
         Return
         -------
-        pscore: NDArray, shape (n_samples, )
+        pscore: ndarray of shape (n_samples, )
             Pscore of the given state and action.
 
         """
@@ -333,12 +337,12 @@ class DiscreteEpsilonGreedyHead(BaseHead):
 
         Parameters
         -------
-        x: NDArray, shape (n_samples, state_dim)
+        x: array-like of shape (n_samples, state_dim)
             State.
 
         Return
         -------
-        action: NDArray, shape (n_samples, )
+        action: ndarray of shape (n_samples, )
             Sampled action for each state.
 
         """
@@ -375,11 +379,11 @@ class DiscreteSoftmaxHead(BaseHead):
     n_actions: int (> 0)
         Numbers of actions.
 
-    tau: float, default=1.0 (:math:`\\in (- \\infty, \\infty)`)
-        Temperature parameter.
+    tau: float, default=1.0
+        Temperature parameter. The value should be within `(-infty, infty)`.
         A negative value leads to a sub-optimal policy.
 
-    random_state: Optional[int], default=None (>= 0)
+    random_state: int, default=None (>= 0)
         Random state.
 
     """
@@ -408,8 +412,9 @@ class DiscreteSoftmaxHead(BaseHead):
 
     def _softmax(self, x: np.ndarray):
         """Softmax function."""
-        return np.exp(x / self.tau) / np.sum(
-            np.exp(x / self.tau), axis=1, keepdims=True
+        x = x - np.tile(np.max(x, axis=1), (x.shape[1], 1)).T  # to avoid overflow
+        return np.exp(x / self.tau) / (
+            np.sum(np.exp(x / self.tau), axis=1, keepdims=True)
         )
 
     def _gumble_max_trick(self, x: np.ndarray):
@@ -417,29 +422,29 @@ class DiscreteSoftmaxHead(BaseHead):
 
         Parameters
         -------
-        x: NDArray, shape (n_samples, state_dim)
+        x: array-like of shape (n_samples, state_dim)
             State.
 
         Return
         -------
-        action: NDArray, shape (n_samples, )
+        action: ndarray of shape (n_samples, )
             Sampled action.
 
         """
         gumble_variable = -np.log(-np.log(self.random_.rand(len(x), self.n_actions)))
-        return np.argmax(x / self.tau + gumble_variable, axis=1)
+        return np.argmax(x / self.tau + gumble_variable, axis=1).astype(int)
 
     def _predict_value(self, x: np.ndarray):
         """Predict state action value for all possible actions.
 
         Parameters
         -------
-        x: NDArray, shape (n_samples, state_dim)
+        x: array-like of shape (n_samples, state_dim)
             State.
 
         Return
         -------
-        counterfactual_state_action_value: NDArray, shape (n_samples, n_actions)
+        state_action_value: ndarray of shape (n_samples, n_actions)
             State action values for all observed state and possible action.
 
         """
@@ -457,15 +462,15 @@ class DiscreteSoftmaxHead(BaseHead):
 
         Parameters
         -------
-        x: NDArray, shape (n_samples, state_dim)
+        x: array-like of shape (n_samples, state_dim)
             State.
 
         Return
         -------
-        action: NDArray, shape (n_samples, )
+        action: ndarray of shape (n_samples, )
             Sampled action.
 
-        pscore: NDArray, shape (n_samples, )
+        pscore: ndarray of shape (n_samples, )
             Pscore of the sampled action.
 
         """
@@ -473,28 +478,30 @@ class DiscreteSoftmaxHead(BaseHead):
         prob = self._softmax(predicted_value)
         action = self._gumble_max_trick(predicted_value)
 
-        action_id = np.array(
-            [action[i] + i * self.n_actions for i in range(len(action))]
-        ).flatten()
+        action_id = (
+            np.array([action[i] + i * self.n_actions for i in range(len(action))])
+            .flatten()
+            .astype(int)
+        )
         pscore = prob.flatten()[action_id]
 
         return action, pscore
 
     def calc_action_choice_probability(self, x: np.ndarray):
-        """Calcullate action choice probabilities.
+        """Calculate action choice probabilities.
 
         Parameters
         -------
-        x: NDArray, shape (n_samples, state_dim)
+        x: array-like of shape (n_samples, state_dim)
             State.
 
         Return
         -------
-        pscore: NDArray, shape (n_samples, n_actions)
+        pscore: ndarray of shape (n_samples, n_actions)
             Pscore of the sample action.
 
         """
-        predicted_value = self._predict_counterfactual_state_action_value(x)
+        predicted_value = self._predict_value(x)
         return self._softmax(predicted_value)  # (n_samples, n_actions)
 
     def calc_pscore_given_action(self, x: np.ndarray, action: np.ndarray):
@@ -502,35 +509,37 @@ class DiscreteSoftmaxHead(BaseHead):
 
         Parameters
         -------
-        x: NDArray, shape (n_samples, state_dim)
+        x: array-like of shape (n_samples, state_dim)
             State.
 
-        action: NDArray, shape (n_samples, )
+        action: array-like of shape (n_samples, )
             Action.
 
         Return
         -------
-        pscore: NDArray, shape (n_samples, )
+        pscore: ndarray of shape (n_samples, )
             Pscore of the given state and action.
 
         """
-        prob = self.calc_pscore(x)
-        actions_id = np.array(
-            [action[i] + i * self.n_actions for i in range(len(action))]
-        ).flatten()
-        return prob.flatten()[actions_id]
+        prob = self.calc_action_choice_probability(x)
+        action_id = (
+            np.array([action[i] + i * self.n_actions for i in range(len(action))])
+            .flatten()
+            .astype(int)
+        )
+        return prob.flatten()[action_id]
 
     def sample_action(self, x: np.ndarray):
         """Sample action.
 
         Parameters
         -------
-        x: NDArray, shape (n_samples, state_dim)
+        x: array-like of shape (n_samples, state_dim)
             State.
 
         Return
         -------
-        action: NDArray, shape (n_samples, )
+        action: ndarray of shape (n_samples, )
             Sampled action for each state.
 
         """
@@ -564,10 +573,10 @@ class ContinuousGaussianHead(BaseHead):
     name: str
         Name of the policy.
 
-    sigma: NDArray, shape (action_dim, )
+    sigma: array-like of shape (action_dim, )
         Standard deviation of Gaussian distribution.
 
-    random_state: Optional[int], default=None (>= 0)
+    random_state: int, default=None (>= 0)
         Random state.
 
     """
@@ -595,15 +604,15 @@ class ContinuousGaussianHead(BaseHead):
 
         Parameters
         -------
-        greedy_action: NDArray, (n_samples, action_dim)
+        greedy_action: array-like of shape (n_samples, action_dim)
             Greedy action.
 
-        action: NDArray, (n_samples, action_dim)
+        action: array-like of shape (n_samples, action_dim)
             Sampled Action.
 
         Return
         -------
-        pscore: NDArray, (n_samples, )
+        pscore: ndarray of shape (n_samples, )
             Pscore of the sampled action.
 
         """
@@ -619,15 +628,15 @@ class ContinuousGaussianHead(BaseHead):
 
         Parameters
         -------
-        x: NDArray, shape (n_samples, state_dim)
+        x: array-like of shape (n_samples, state_dim)
             State.
 
         Return
         -------
-        action: NDArray, shape (n_samples, action_dim)
+        action: ndarray of shape (n_samples, action_dim)
             Sampled action.
 
-        pscore: NDArray, shape (n_samples, )
+        pscore: ndarray of shape (n_samples, )
             Pscore of the sampled action.
 
         """
@@ -641,15 +650,15 @@ class ContinuousGaussianHead(BaseHead):
 
         Parameters
         -------
-        x: NDArray, shape (n_samples, state_dim)
+        x: array-like of shape (n_samples, state_dim)
             State.
 
-        action: NDArray, shape (n_samples, action_dim)
+        action: array-like of shape (n_samples, action_dim)
             Action.
 
         Return
         -------
-        pscore: NDArray, shape (n_samples, )
+        pscore: ndarray of shape (n_samples, )
             Pscore of the given state and action.
 
         """
@@ -661,12 +670,12 @@ class ContinuousGaussianHead(BaseHead):
 
         Parameters
         -------
-        x: NDArray, shape (n_samples, state_dim)
+        x: array-like of shape (n_samples, state_dim)
             State.
 
         Return
         -------
-        action: NDArray, shape (n_samples, action_dim)
+        action: ndarray of shape (n_samples, action_dim)
             Sampled action for each state.
 
         """
@@ -687,7 +696,7 @@ class ContinuousTruncatedGaussianHead(BaseHead):
     Given a deterministic policy, truncated gaussian policy samples action :math:`a \\in \\mathcal{A}` given state :math:`s` as follows.
 
     .. math::
-    
+
         a \\sim TruncNorm(\\pi(s), \\sigma)
 
     where :math:`\\sigma` is the standard deviation of the truncated normal distribution.
@@ -701,16 +710,16 @@ class ContinuousTruncatedGaussianHead(BaseHead):
     name: str
         Name of the policy.
 
-    sigma: NDArray, shape (action_dim, )
+    sigma: array-like of shape (action_dim, )
         Standard deviation of Gaussian distribution.
 
-    minimum: NDArray, shape (action_dim, )
+    minimum: array-like of shape (action_dim, )
         Minimum value of action vector.
 
-    maximum: NDArray, shape (action_dim, )
+    maximum: array-like of shape (action_dim, )
         Maximum value of action vector.
 
-    random_state: Optional[int], default=None (>= 0)
+    random_state: int, default=None (>= 0)
         Random state.
 
     """
@@ -746,15 +755,15 @@ class ContinuousTruncatedGaussianHead(BaseHead):
 
         Parameters
         -------
-        greedy_action: NDArray, (n_samples, action_dim)
+        greedy_action: array-like of shape (n_samples, action_dim)
             Greedy action.
 
-        action: NDArray, (n_samples, action_dim)
+        action: array-like of shape (n_samples, action_dim)
             Sampled Action.
 
         Return
         -------
-        pscore: NDArray, (n_samples, )
+        pscore: ndarray of shape (n_samples, )
             Pscore of the sampled action.
 
         """
@@ -772,15 +781,15 @@ class ContinuousTruncatedGaussianHead(BaseHead):
 
         Parameters
         -------
-        x: NDArray, shape (n_samples, state_dim)
+        x: array-like of shape (n_samples, state_dim)
             State.
 
         Return
         -------
-        action: NDArray, shape (n_samples, action_dim)
+        action: ndarray of shape (n_samples, action_dim)
             Sampled action.
 
-        pscore: NDArray, shape (n_samples, )
+        pscore: ndarray of shape (n_samples, )
             Pscore of the sampled action.
 
         """
@@ -794,15 +803,15 @@ class ContinuousTruncatedGaussianHead(BaseHead):
 
         Parameters
         -------
-        x: NDArray, shape (n_samples, state_dim)
+        x: array-like of shape (n_samples, state_dim)
             State.
 
-        action: NDArray, shape (n_samples, action_dim)
+        action: array-like of shape (n_samples, action_dim)
             Action.
 
         Return
         -------
-        pscore: NDArray, shape (n_samples, )
+        pscore: ndarray of shape (n_samples, )
             Pscore of the given state and action.
 
         """
@@ -814,12 +823,12 @@ class ContinuousTruncatedGaussianHead(BaseHead):
 
         Parameters
         -------
-        x: NDArray, shape (n_samples, state_dim)
+        x: array-like of shape (n_samples, state_dim)
             State.
 
         Return
         -------
-        action: NDArray, shape (n_samples, action_dim)
+        action: ndarray of shape (n_samples, action_dim)
             Sampled action for each state.
 
         """
@@ -835,7 +844,7 @@ class ContinuousTruncatedGaussianHead(BaseHead):
 
 @dataclass
 class ContinuousEvalHead(BaseHead):
-    """Class to transform into a deterministic evaluation policy.
+    """Class to transform the base policy into a deterministic evaluation policy.
 
     Parameters
     -------
@@ -861,12 +870,12 @@ class ContinuousEvalHead(BaseHead):
 
         Parameters
         -------
-        x: NDArray, shape (n_samples, state_dim)
+        x: array-like of shape (n_samples, state_dim)
             State.
 
         Return
         -------
-        action: NDArray, shape (n_samples, action_dim)
+        action: ndarray of shape (n_samples, action_dim)
             Sampled action for each state.
 
         """

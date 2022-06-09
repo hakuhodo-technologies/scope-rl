@@ -5,13 +5,13 @@ from typing import Tuple, Union, Optional
 import numpy as np
 from sklearn.utils import check_scalar, check_random_state
 
-from rtbgym.env.simulator.base import (
+from .base import (
     BaseWinningPriceDistribution,
     BaseClickAndConversionRate,
 )
-from rtbgym.utils import NormalDistribution
-from rtbgym.utils import sigmoid
-from rtbgym.utils import check_array
+from ...utils import NormalDistribution
+from ...utils import sigmoid
+from ...utils import check_array
 
 
 @dataclass
@@ -35,25 +35,25 @@ class WinningPriceDistribution(BaseWinningPriceDistribution):
         Number of ads.
 
     n_users: int (> 0)
-        Number of users. (not used, but for API consistency)
+        Number of users. (This is for API consistency)
 
     ad_feature_dim: int (> 0)
-        Dimensions of the ad feature vectors. (not used, but for API consistency)
+        Dimensions of the ad feature vectors. (This is for API consistency)
 
     user_feature_dim: int (> 0)
-        Dimensions of the user feature vectors. (not used, but for API consistency)
+        Dimensions of the user feature vectors. (This is for API consistency)
 
     step_per_episode: int (> 0)
-        Length of the CTR trend cycle. (not used, but for API consistency)
+        Length of the CTR trend cycle. (This is for API consistency)
 
     standard_bid_price_distribution: NormalDistribution, default=NormalDistribution(mean=100, std=20)
         Distribution of the bid price whose average impression probability is expected to be 0.5.
 
-    minimum_standard_bid_price: Optional[Union[int, float]], default=None (> 0)
+    minimum_standard_bid_price: {int, float}, default=None (> 0)
         Minimum value for standard bid price.
         If None, minimum_standard_bid_price is set to standard_bid_price_distribution.mean / 2.
 
-    random_state: Optional[int], default=None (>= 0)
+    random_state: int, default=None (>= 0)
         Random state.
 
     References
@@ -129,30 +129,30 @@ class WinningPriceDistribution(BaseWinningPriceDistribution):
 
         Parameters
         -------
-        bid_prices: NDArray[int], shape (search_volume, )
+        bid_prices: array-like of shape (search_volume, )
             Bid price for each auction.
 
-        ad_ids: NDArray[int], shape (search_volume/n_samples, )
-            Ad ids used for each auction. (not used, but for API consistency)
+        ad_ids: array-like of shape (search_volume/n_samples, )
+            Ad ids used for each auction. (This is for API consistency)
 
-        user_ids: NDArray[int], shape (search_volume/n_samples, )
-            User ids used for each auction. (not used, but for API consistency)
+        user_ids: array-like of shape (search_volume/n_samples, )
+            User ids used for each auction. (This is for API consistency)
 
-        ad_feature_vector: Union[NDArray[int], NDArray[float]], shape (search_volume/n_samples, ad_feature_dim)
+        ad_feature_vector: array-like of shape (search_volume/n_samples, ad_feature_dim)
             Ad feature vector for each auction.
 
-        user_feature_vector: Union[NDArray[int], NDArray[float]], shape (search_volume/n_samples, user_feature_dim)
+        user_feature_vector: array-like of shape (search_volume/n_samples, user_feature_dim)
             User feature vector for each auction.
 
-        timestep: Union[int, NDArray[int]], shape None/(n_samples, )
+        timestep: {int, array-like of shape (n_samples, )}
             Timestep in the RL environment.
 
         Returns
         -------
-        impressions: NDArray[int], shape (search_volume, )
+        impressions: ndarray of shape (search_volume, )
             Whether impression occurred for each auction.
 
-        winning_prices: NDArray[int], shape (search_volume, )
+        winning_prices: ndarray of shape (search_volume, )
             Sampled winning price for each auction.
 
         """
@@ -185,9 +185,9 @@ class ClickThroughRate(BaseClickAndConversionRate):
 
     Note
     -------
-    We define two coefficient, context coefficient (coef) and time coefficient (time_coef).
+    We define two coefficient, context coefficient (`coef`) and time coefficient (`time_coef`).
     First, the value is calculated linearly from context vector and coef by inner product.
-    Then, we multiply the value with time_coef and gain (ground-truth) CTR.
+    Then, we multiply the value with `time_coef` and gain (ground-truth) CTR.
 
     In short, CTR is calculated as follows.
         CTR = (context @ coef) * time_coef, where @ denotes inner product.
@@ -197,10 +197,10 @@ class ClickThroughRate(BaseClickAndConversionRate):
     Parameters
     -------
     n_ads: int (> 0)
-        Number of ads. (not used, but for API consistency)
+        Number of ads. (This is for API consistency)
 
     n_users: int (> 0)
-        Number of users. (not used, but for API consistency)
+        Number of users. (This is for API consistency)
 
     ad_feature_dim: int (> 0)
         Dimensions of the ad feature vectors.
@@ -211,7 +211,7 @@ class ClickThroughRate(BaseClickAndConversionRate):
     step_per_episode: int (> 0)
         Length of the CTR trend cycle.
 
-    random_state: Optional[int], default=None (>= 0)
+    random_state: int, default=None (>= 0)
         Random state.
 
     """
@@ -284,29 +284,29 @@ class ClickThroughRate(BaseClickAndConversionRate):
 
         Note
         -------
-        CTR is calculated using both context coefficient (coef) and time coefficient (time_coef).
+        CTR is calculated using both context coefficient (`coef`) and time coefficient (`time_coef`).
             CTR = (context @ coef) * time_coef, where @ denotes inner product.
 
         Parameters
         -------
-        ad_ids: NDArray[int], shape (search_volume/n_samples, )
+        ad_ids: array-like of shape (search_volume/n_samples, )
             Ad ids used for each auction. (not used, but for API consistency)
 
-        user_ids: NDArray[int], shape (search_volume/n_samples, )
+        user_ids: array-like of shape (search_volume/n_samples, )
             User ids used for each auction. (not used, but for API consistency)
 
-        ad_feature_vector: Union[NDArray[int], NDArray[float]], shape (search_volume/n_samples, ad_feature_dim)
+        ad_feature_vector: array-like of shape (search_volume/n_samples, ad_feature_dim)
             Ad feature vector for each auction.
 
-        user_feature_vector: Union[NDArray[int], NDArray[float]], shape (search_volume/n_samples, user_feature_dim)
+        user_feature_vector: array-like of shape (search_volume/n_samples, user_feature_dim)
             User feature vector for each auction.
 
-        timestep: Union[int, NDArray[int]], shape None/(n_samples, )
+        timestep: {int, array-like of shape (n_samples, )}
             Timestep in the RL environment.
 
         Returns
         -------
-        ctrs: NDArray[float], shape (search_volume/n_samples, )
+        ctrs: ndarray of shape (search_volume/n_samples, )
             Ground-truth CTR (i.e., click per impression) for each auction.
 
         """
@@ -357,24 +357,24 @@ class ClickThroughRate(BaseClickAndConversionRate):
 
         Parameters
         -------
-        ad_ids: NDArray[int], shape (search_volume/n_samples, )
+        ad_ids: array-like of shape (search_volume/n_samples, )
             Ad ids used for each auction. (not used, but for API consistency)
 
-        user_ids: NDArray[int], shape (search_volume/n_samples, )
+        user_ids: array-like of shape (search_volume/n_samples, )
             User ids used for each auction. (not used, but for API consistency)
 
-        ad_feature_vector: Union[NDArray[int], NDArray[float]], shape (search_volume/n_samples, ad_feature_dim)
+        ad_feature_vector: array-like of shape (search_volume/n_samples, ad_feature_dim)
             Ad feature vector for each auction.
 
-        user_feature_vector: Union[NDArray[int], NDArray[float]], shape (search_volume/n_samples, user_feature_dim)
+        user_feature_vector: array-like of shape (search_volume/n_samples, user_feature_dim)
             User feature vector for each auction.
 
-        timestep: Union[int, NDArray[int]], shape None/(n_samples, )
+        timestep: {int, array-like of shape (n_samples, )}
             Timestep in the RL environment.
 
         Returns
         -------
-        clicks: NDArray[int], shape (search_volume/n_samples, )
+        clicks: array-like of shape (search_volume/n_samples, )
             Whether click occurs in impression=True case.
 
         """
@@ -395,9 +395,9 @@ class ConversionRate(BaseClickAndConversionRate):
 
     Note
     -------
-    We define two coefficient, context coefficient (coef) and time coefficient (time_coef).
+    We define two coefficient, context coefficient (`coef`) and time coefficient (`time_coef`).
     First, the value is calculated linearly from context vector and coef by inner product.
-    Then, we multiply the value with time_coef and gain (ground-truth) CVR.
+    Then, we multiply the value with `time_coef` and gain (ground-truth) CVR.
 
     In short, CVR is calculated as follows.
         CVR = (context @ coef) * time_coef, where @ denotes inner product.
@@ -407,10 +407,10 @@ class ConversionRate(BaseClickAndConversionRate):
     Parameters
     -------
     n_ads: int (> 0)
-        Number of ads. (not used, but for API consistency)
+        Number of ads. (This is for API consistency)
 
     n_users: int (> 0)
-        Number of users. (not used, but for API consistency)
+        Number of users. (This is for API consistency)
 
     ad_feature_dim: int (> 0)
         Dimensions of the ad feature vectors.
@@ -421,7 +421,7 @@ class ConversionRate(BaseClickAndConversionRate):
     step_per_episode: int (> 0)
         Length of the CVR trend cycle.
 
-    random_state: Optional[int], default=None (>= 0)
+    random_state: int, default=None (>= 0)
         Random state.
 
     """
@@ -494,30 +494,30 @@ class ConversionRate(BaseClickAndConversionRate):
 
         Note
         -------
-        CVR is calculated using both context coefficient (coef) and time coefficient (time_coef).
+        CVR is calculated using both context coefficient (`coef`) and time coefficient (`time_coef`).
             CVR = (context @ coef) * time_coef, where @ denotes inner product.
 
 
         Parameters
         -------
-        ad_ids: NDArray[int], shape (search_volume/n_samples, )
+        ad_ids: array-like of shape (search_volume/n_samples, )
             Ad ids used for each auction. (not used, but for API consistency)
 
-        user_ids: NDArray[int], shape (search_volume/n_samples, )
+        user_ids: array-like of shape (search_volume/n_samples, )
             User ids used for each auction. (not used, but for API consistency)
 
-        ad_feature_vector: Union[NDArray[int], NDArray[float]], shape (search_volume/n_samples, ad_feature_dim)
+        ad_feature_vector: array-like of shape (search_volume/n_samples, ad_feature_dim)
             Ad feature vector for each auction.
 
-        user_feature_vector: Union[NDArray[int], NDArray[float]], shape (search_volume/n_samples, user_feature_dim)
+        user_feature_vector: array-like of shape (search_volume/n_samples, user_feature_dim)
             User feature vector for each auction.
 
-        timestep: Union[int, NDArray[int]], shape None/(n_samples, )
+        timestep: {int, array-like of shape (n_samples, )}
             Timestep in the RL environment.
 
         Returns
         -------
-        cvrs: NDArray[float], shape (search_volume/n_samples, )
+        cvrs: ndarray of shape (search_volume/n_samples, )
             Ground-truth CVR (i.e., conversion per click) for each auction.
 
         """
@@ -568,24 +568,24 @@ class ConversionRate(BaseClickAndConversionRate):
 
         Parameters
         -------
-        ad_ids: NDArray[int], shape (search_volume/n_samples, )
+        ad_ids: array-like of shape (search_volume/n_samples, )
             Ad ids used for each auction. (not used, but for API consistency)
 
-        user_ids: NDArray[int], shape (search_volume/n_samples, )
+        user_ids: array-like of shape (search_volume/n_samples, )
             User ids used for each auction. (not used, but for API consistency)
 
-        ad_feature_vector: Union[NDArray[int], NDArray[float]], shape (search_volume/n_samples, ad_feature_dim)
+        ad_feature_vector: array-like of shape (search_volume/n_samples, ad_feature_dim)
             Ad feature vector for each auction.
 
-        user_feature_vector: Union[NDArray[int], NDArray[float]], shape (search_volume/n_samples, user_feature_dim)
+        user_feature_vector: array-like of shape (search_volume/n_samples, user_feature_dim)
             User feature vector for each auction.
 
-        timestep: Union[int, NDArray[int]], shape None/(n_samples, )
+        timestep: {int, array-like of shape (n_samples, )}
             Timestep in the RL environment.
 
         Returns
         -------
-        conversions: NDArray[int], shape (search_volume/n_samples, )
+        conversions: ndarray of shape (search_volume/n_samples, )
             Whether conversion occurs in click=True case.
 
         """

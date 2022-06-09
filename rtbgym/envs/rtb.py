@@ -6,20 +6,19 @@ from gym.spaces import Box
 import numpy as np
 from sklearn.utils import check_scalar, check_random_state
 
-from rtbgym.utils import NormalDistribution
-from rtbgym.types import Action, Numeric
-
-from rtbgym.env.simulator.bidder import Bidder
-from rtbgym.env.simulator.rtb_synthetic import RTBSyntheticSimulator
-from rtbgym.env.simulator.base import (
+from .simulator.bidder import Bidder
+from .simulator.rtb_synthetic import RTBSyntheticSimulator
+from .simulator.base import (
     BaseWinningPriceDistribution,
     BaseClickAndConversionRate,
 )
-from rtbgym.env.simulator.function import (
+from .simulator.function import (
     WinningPriceDistribution,
     ClickThroughRate,
     ConversionRate,
 )
+from ..utils import NormalDistribution
+from ..types import Action, Numeric
 
 
 class RTBEnv(gym.Env):
@@ -36,7 +35,7 @@ class RTBEnv(gym.Env):
             We have (search volume, ) auctions during a timestep.
             Note that each single auction do NOT correspond to the timestep.
 
-        state: NDArray[float], shape (7, )
+        state: array-like of shape (7, )
             Statistical feedbacks of auctions during the timestep, including following values.
                 - timestep
                 - remaining budget
@@ -44,12 +43,12 @@ class RTBEnv(gym.Env):
                   (budget consumption rate, cost per mille of impressions, auction winning rate, and reward)
                 - adjust rate (i.e., RL agent action) at previous timestep
 
-        action: Union[int, float, NDArray] (:math:`\\in [0, \\infty)`) (>= 0)
+        action: {int, float, array-like of shape (1, )} (>= 0)
             Adjust rate parameter used for determining the bid price as follows.
             (Bid price is individually determined for each auction.)
 
             .. math::
-            
+
                 {bid price}_{t, i} = {adjust rate}_{t} \\times {predicted reward}_{t,i} ( \\times {const.})
 
             Note that, you can also use predicted reward instead of ground-truth reward in the above equation.
@@ -67,13 +66,11 @@ class RTBEnv(gym.Env):
     Parameters
     -------
 
-    objective: str, default="conversion"
+    objective: {"click", "conversion"}, default="conversion"
         Objective outcome (i.e., reward) of the auctions.
-        Choose either from "click" or "conversion".
 
-    cost_indicator: str, default="click"
+    cost_indicator: {"click", "conversion"}, default="click"
         Defines when the cost arises.
-        Choose either from "impression", "click" or "conversion".
 
     step_per_episode: int, default=7 (> 0)
         Number of timesteps in an episode.
@@ -93,16 +90,16 @@ class RTBEnv(gym.Env):
     user_feature_dim: int, default=5 (> 0)
         Dimensions of the user feature vectors.
 
-    ad_feature_vector: Optional[NDArray], shape (n_ads, ad_feature_dim), default=None
+    ad_feature_vector: ndarray of shape (n_ads, ad_feature_dim), default=None
         Feature vectors that characterizes each ad.
 
-    user_feature_vector: Optional[NDArray], shape (n_users, user_feature_dim), default=None
+    user_feature_vector: ndarray of shape (n_users, user_feature_dim), default=None
         Feature vectors that characterizes each user.
 
-    ad_sampling_rate: Optional[NDArray], shape (step_per_episode, n_ads), default=None
+    ad_sampling_rate: ndarray of shape (step_per_episode, n_ads), default=None
         Sampling probalities to determine which ad (id) is used in each auction.
 
-    user_sampling_rate: Optional[NDArray], shape (step_per_episode, n_users), default=None
+    user_sampling_rate: ndarray of shape (step_per_episode, n_users), default=None
         Sampling probalities to determine which user (id) is used in each auction.
 
     WinningPriceDistribution: BaseWinningPriceDistribution
@@ -120,9 +117,9 @@ class RTBEnv(gym.Env):
     standard_bid_price_distribution: NormalDistribution, default=NormalDistribution(mean=100, std=20)
         Distribution of the bid price whose average impression probability is expected to be 0.5.
 
-    minimum_standard_bid_price: Optional[int], default=None (> 0)
+    minimum_standard_bid_price: int, default=None (> 0)
         Minimum value for standard bid price.
-        If None, minimum_standard_bid_price is set to standard_bid_price_distribution.mean / 2.
+        If `None`, minimum_standard_bid_price is set to `standard_bid_price_distribution.mean / 2`.
 
     search_volume_distribution: NormalDistribution, default=NormalDistribution(mean=30, std=10)
         Search volume distribution for each timestep.
@@ -130,7 +127,7 @@ class RTBEnv(gym.Env):
     minimum_search_volume: int, default = 10 (> 0)
         Minimum search volume at each timestep.
 
-    random_state: Optional[int], default=None (>= 0)
+    random_state: int, default=None (>= 0)
         Random state.
 
     Examples
@@ -323,13 +320,13 @@ class RTBEnv(gym.Env):
 
         Parameters
         -------
-        action: Action (Union[int, float, NDArray]) (>= 0)
+        action: {int, float, array-like of shape (1, )} (>= 0)
             RL agent action which corresponds to the adjust rate parameter used for bid price calculation.
 
         Returns
         -------
         feedbacks: Tuple
-            obs: NDArray[float], shape (7, )
+            obs: ndarray of shape (7, )
                 Statistical feedbacks of auctions during the timestep.
                 Corresponds to RL state, which include following components.
                     - timestep
@@ -344,7 +341,7 @@ class RTBEnv(gym.Env):
             done: bool
                 Wether the episode end or not.
 
-            info: Dict[str, int]
+            info: dict
                 Additional feedbacks (total impressions, clicks, and conversions) for analysts.
                 Note that those feedbacks are unobservable to the agent.
 
@@ -451,7 +448,7 @@ class RTBEnv(gym.Env):
 
         Returns
         -------
-        obs: NDArray[float], shape (7, )
+        obs: ndarray of shape (7, )
             Statistical feedbacks of auctions during the timestep.
             Corresponds to RL state, which include following components.
                 - timestep

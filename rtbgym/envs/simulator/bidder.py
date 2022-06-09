@@ -6,9 +6,9 @@ import numpy as np
 from sklearn.base import BaseEstimator, is_classifier
 from sklearn.utils import check_scalar, check_random_state, check_X_y
 
-from rtbgym.env.simulator.base import BaseSimulator
-from rtbgym.utils import check_array
-from rtbgym.types import Numeric
+from .base import BaseSimulator
+from ...utils import check_array
+from ...types import Numeric
 
 
 @dataclass
@@ -30,19 +30,18 @@ class Bidder:
     simulator: BaseSimulator
         Auction simulator.
 
-    objective: str, default="conversion"
+    objective: {"click", "conversion"}, default="conversion"
         Objective outcome (i.e., reward) of the auction.
-        Choose either from "click" or "conversion".
 
-    reward_predictor: Optional[BaseEstimator], default=None
+    reward_predictor: BaseEstimator, default=None
         A machine learning model to predict the reward to determine the bidding price.
-        If None, the ground-truth (expected) reward is used instead of the predicted one.
+        If `None`, the ground-truth (expected) reward is used instead of the predicted one.
 
-    scaler: Optional[Union[int, float]], default=None (> 0)
+    scaler: {int, float}, default=None (> 0)
         Scaling factor (constant value) used for bid price determination.
-        If None, one should call auto_fit_scaler().
+        If `None`, one should call auto_fit_scaler().
 
-    random_state: Optional[int], default=None (>= 0)
+    random_state: int, default=None (>= 0)
         Random state.
 
     References
@@ -105,7 +104,7 @@ class Bidder:
         Determine bid price as follows.
 
         .. math::
-        
+
             {bid price}_{t, i} = {adjust rate}_{t} \\times {predicted reward}_{t,i} ( \\times {const.})
 
         Parameters
@@ -116,15 +115,15 @@ class Bidder:
         adjust_rate: float (>= 0)
             Adjust rate parameter for the bidding price.
 
-        ad_ids: NDArray[int], shape (search_volume, )
+        ad_ids: array-like of shape (search_volume, )
             IDs of the ads.
 
-        user_ids: NDArray[int], shape (search_volume, )
+        user_ids: array-like of shape (search_volume, )
             IDs of the users.
 
         Returns
         -------
-        bid_prices: NDArray[int], shape(search_volume, )
+        bid_prices: ndarray of shape(search_volume, )
             Bid price for each auction.
 
         """
@@ -185,7 +184,7 @@ class Bidder:
 
         Parameters
         -------
-        scaler: Union[int, float] (> 0)
+        scaler: {int, float} (> 0)
             Scaling factor (constant value) used in bid price calculation.
 
         """
@@ -259,7 +258,7 @@ class Bidder:
 
         Parameters
         -------
-        reward_predictor: Optional[BaseEstimator], default=None
+        reward_predictor: BaseEstimator, default=None
             A machine learning model to predict the reward to determine the bidding price.
             If None, the ground-truth (expected) reward is used instead of the predicted one.
 
@@ -281,10 +280,10 @@ class Bidder:
         Intended only used when use_reward_predictor=True option.
 
         X and y of the prediction model is given as follows.
-            X: NDArray[float], shape (search_volume, ad_feature_dim + user_feature_dim + 1)
+            X: array-like of shape (search_volume, ad_feature_dim + user_feature_dim + 1)
                 Concatenated vector of contexts (ad_feature_vector + user_feature_vector) and timestep.
 
-            y: NDArrray[int], shape (search_volume, )
+            y: array-like of shape (search_volume, )
                 Reward (i.e., auction outcome) obtained in each auction.
 
         Parameters
@@ -362,32 +361,32 @@ class Bidder:
         Intended only used when use_reward_predictor=True option.
 
         X and y of the prediction model is given as follows.
-            X: NDArray[float], shape (search_volume, ad_feature_dim + user_feature_dim + 1)
+            X: array-like of shape (search_volume, ad_feature_dim + user_feature_dim + 1)
                 Concatenated vector of contexts (ad_feature_vector + user_feature_vector) and timestep.
 
-            y: NDArrray[int], shape (search_volume, )
+            y: array-like of shape (search_volume, )
                 Reward (i.e., auction outcome) obtained in each auction.
 
         Parameters
         -------
-        ad_ids: NDArray[int], shape (search_volume, )
+        ad_ids: array-like of shape (search_volume, )
             IDs of the ads.
 
-        user_ids: NDArray[int], shape (search_volume, )
+        user_ids: array-like of shape (search_volume, )
             IDs of the users.
 
-        ad_feature_vector: NDArray[float], shape (search_volume, ad_feature_dim)
+        ad_feature_vector: array-like of shape (search_volume, ad_feature_dim)
             Feature vector of the ads.
 
-        user_feature_vector: NDArray[float], shape (search_volume, user_feature_dim)
+        user_feature_vector: array-like of shape (search_volume, user_feature_dim)
             Feature vector of the users.
 
-        timestep: Union[int, NDArray[int]] (> 0)
+        timestep: {int, array-like of shape (search_volume, )} (> 0)
             Timestep in the RL environment.
 
         Returns
         -------
-        predicted_rewards: NDArray[float], shape (search_volume, )
+        predicted_rewards: ndarray of shape (search_volume, )
             Predicted reward for each auction.
 
         """
@@ -433,24 +432,24 @@ class Bidder:
 
         Parameters
         -------
-        ad_ids: NDArray[int], shape (search_volume, )
+        ad_ids: array-like of shape (search_volume, )
             IDs of the ads.
 
-        user_ids: NDArray[int], shape (search_volume, )
+        user_ids: array-like of shape (search_volume, )
             IDs of the users.
 
-        ad_feature_vector: NDArray[float], shape (search_volume, ad_feature_dim)
+        ad_feature_vector: array-like of shape (search_volume, ad_feature_dim)
             Feature vector of the ads.
 
-        user_feature_vector: NDArray[float], shape (search_volume, user_feature_dim)
+        user_feature_vector: array-like of shape (search_volume, user_feature_dim)
             Feature vector of the users.
 
-        timestep: Union[int, np.ndarray]
+        timestep: {int, array-like of shape (search_volume, )}
             Timestep in the RL environment.
 
         Returns
         -------
-        expected_rewards: NDArray[float], shape(search_volume, )
+        expected_rewards: array-like of shape(search_volume, )
             Ground-truth (expected) reward for each auction when impression occurs.
 
         """

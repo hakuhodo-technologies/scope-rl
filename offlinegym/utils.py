@@ -2,10 +2,11 @@
 from collections import defaultdict
 from typing import DefaultDict, Dict, Union, Optional, Any
 
+import scipy
 import numpy as np
 from sklearn.utils import check_scalar, check_random_state
 
-from offlinegym.types import LoggedDataset
+from .types import LoggedDataset, OPEInputDict
 
 
 def estimate_confidence_interval_by_bootstrap(
@@ -14,32 +15,31 @@ def estimate_confidence_interval_by_bootstrap(
     n_bootstrap_samples: int = 100,
     random_state: Optional[int] = None,
 ) -> Dict[str, float]:
-    """Estimate confidence interval by nonparametric bootstrap-like procedure.
+    """Estimate the confidence interval by nonparametric bootstrap-like procedure.
 
     Parameters
     -------
-    samples: NDArray
+    samples: array-like
         Samples.
 
-    alpha: float, default=0.05 (0, 1)
-        Significant level.
+    alpha: float, default=0.05
+        Significant level. The value should be within `[0, 1)`.
 
     n_bootstrap_samples: int, default=10000 (> 0)
         Number of resampling performed in the bootstrap procedure.
 
-    random_state: Optional[int], default=None (>= 0)
+    random_state: int, default=None (>= 0)
         Random state.
 
     Returns
     -------
-    estimated_confidence_interval: Dict[str, float]
+    estimated_confidence_interval: dict
         Dictionary storing the estimated mean and upper-lower confidence bounds.
 
     """
-    check_confidence_interval_argument(
-        alpha=alpha,
-        n_bootstrap_samples=n_bootstrap_samples,
-        random_state=random_state,
+    check_scalar(alpha, name="alpha", target_type=float, min_val=0.0, max_val=1.0)
+    check_scalar(
+        n_bootstrap_samples, name="n_bootstrap_samples", target_type=int, min_val=1
     )
     if random_state is None:
         raise ValueError("random_state must be given")
@@ -58,8 +58,106 @@ def estimate_confidence_interval_by_bootstrap(
     }
 
 
+def estimate_confidence_interval_by_hoeffding(
+    samples: np.ndarray,
+    alpha: float = 0.05,
+    **kwargs,
+) -> Dict[str, float]:
+    """Estimate the confidence interval by nonparametric bootstrap-like procedure.
+
+    Parameters
+    -------
+    samples: array-like
+        Samples.
+
+    alpha: float, default=0.05
+        Significant level. The value should be within `[0, 1)`.
+
+    Returns
+    -------
+    estimated_confidence_interval: dict
+        Dictionary storing the estimated mean and upper-lower confidence bounds.
+
+    """
+    check_scalar(alpha, name="alpha", target_type=float, min_val=0.0, max_val=1.0)
+    mean = samples.mean()
+    ci = samples.max() * np.sqrt(np.log(2 / alpha) / 2 * len(samples))
+    return {
+        "mean": mean,
+        f"{100 * (1. - alpha)}% CI (lower)": mean - ci,
+        f"{100 * (1. - alpha)}% CI (upper)": mean + ci,
+    }
+
+
+def estimate_confidence_interval_by_empirical_bernstein(
+    samples: np.ndarray,
+    alpha: float = 0.05,
+    **kwargs,
+) -> Dict[str, float]:
+    """Estimate the confidence interval by nonparametric bootstrap-like procedure.
+
+    Parameters
+    -------
+    samples: array-like
+        Samples.
+
+    alpha: float, default=0.05
+        Significant level. The value should be within `[0, 1)`.
+
+    Returns
+    -------
+    estimated_confidence_interval: dict
+        Dictionary storing the estimated mean and upper-lower confidence bounds.
+
+    """
+    check_scalar(alpha, name="alpha", target_type=float, min_val=0.0, max_val=1.0)
+    n = len(samples)
+    mean = samples.mean()
+    ci = 7 * samples.max() * np.log(2 / alpha) / (3 * (n - 1)) + np.sqrt(
+        2 * np.log(2 / alpha) * samples.var() / (n - 1)
+    )
+    return {
+        "mean": mean,
+        f"{100 * (1. - alpha)}% CI (lower)": mean - ci,
+        f"{100 * (1. - alpha)}% CI (upper)": mean + ci,
+    }
+
+
+def estimate_confidence_interval_by_t_test(
+    samples: np.ndarray,
+    alpha: float = 0.05,
+    **kwargs,
+) -> Dict[str, float]:
+    """Estimate the confidence interval by nonparametric bootstrap-like procedure.
+
+    Parameters
+    -------
+    samples: NDArray
+        Samples.
+
+    alpha: float, default=0.05
+        Significant level. The value should be within `[0, 1)`.
+
+    Returns
+    -------
+    estimated_confidence_interval: dict
+        Dictionary storing the estimated mean and upper-lower confidence bounds.
+
+    """
+    check_scalar(alpha, name="alpha", target_type=float, min_val=0.0, max_val=1.0)
+    n = len(samples)
+    t = scipy.stats.t.ppf(1 - alpha, n - 1)
+    mean = samples.mean()
+    ci = t * samples.std(ddof=1) / np.sqrt(n)
+    return {
+        "mean": mean,
+        f"{100 * (1. - alpha)}% CI (lower)": mean - ci,
+        f"{100 * (1. - alpha)}% CI (upper)": mean + ci,
+    }
+
+
 def defaultdict_to_dict(dict_: Union[Dict[Any, Any], DefaultDict[Any, Any]]):
-    """Class to transform defaultdict into dict."""
+    """Transform a defaultdict into the dict."""
     if isinstance(dict_, defaultdict):
         dict_ = {key: defaultdict_to_dict(value) for key, value in dict_.items()}
     return dict_
@@ -77,7 +175,7 @@ def check_array(
 
     Parameters
     -------
-    array: NDArray
+    array: object
         Input array to check.
 
     name: str
@@ -86,13 +184,13 @@ def check_array(
     expected_dim: int, default=1
         Excpected dimension of the input array.
 
-    expected_dtype: Optional[type], default=None
+    expected_dtype: {type, tuple of type}, default=None
         Excpected dtype of the input array.
 
-    min_val: Optional[float], default=None
+    min_val: float, default=None
         Minimum number allowed in the input array.
 
-    max_val: Optional[float], default=None
+    max_val: float, default=None
         Maximum number allowed in the input array.
 
     """
@@ -100,7 +198,7 @@ def check_array(
         raise ValueError(f"{name} must be {expected_dim}D array, but got {type(array)}")
     if array.ndim != expected_dim:
         raise ValueError(
-            f"{name} must be {expected_dim}D array, but got {expected_dim}D array"
+            f"{name} must be {expected_dim}D array, but got {array.ndim}D array"
         )
     if expected_dtype is not None:
         if not np.issubsctype(array, expected_dtype):
@@ -136,6 +234,7 @@ def check_logged_dataset(logged_dataset: LoggedDataset):
         "action_dim",
         "state_dim",
         "step_per_episode",
+        "state",
         "action",
         "reward",
         "pscore",
@@ -146,29 +245,29 @@ def check_logged_dataset(logged_dataset: LoggedDataset):
             raise RuntimeError(f"{expected_key} does not exist in logged_dataset")
 
 
-def check_confidence_interval_argument(
-    alpha: float,
-    n_bootstrap_samples: int,
-    random_state: Optional[int] = None,
-):
-    """Check confidence interval arguments.
+def check_input_dict(input_dict: OPEInputDict):
+    """Check input dict keys.
 
     Parameters
     -------
-    alpha: float, default=0.05 (0, 1)
-        Significant level.
-
-    n_bootstrap_samples: int, default=10000 (> 0)
-        Number of resampling performed in the bootstrap procedure.
-
-    random_state: Optional[int], default=None (>= 0)
-        Random state.
+    input_dict: OPEInputDict
+        Input Dict.
 
     """
-    check_scalar(alpha, name="alpha", target_type=float, min_val=0.0, max_val=1.0)
-    check_scalar(
-        n_bootstrap_samples, name="n_bootstrap_samples", target_type=int, min_val=1
-    )
-    if random_state is None:
-        raise ValueError("random_state must be given")
-    check_random_state(random_state)
+    for eval_policy in input_dict.keys():
+        input_dict_keys = input_dict[eval_policy].keys()
+        for expected_key in [
+            "evaluation_policy_step_wise_pscore",
+            "evaluation_policy_trajectory_wise_pscore",
+            "evaluation_policy_action",
+            "evaluation_policy_action_dist",
+            "state_action_value_prediction",
+            "initial_state_value_prediction",
+            "initial_state_action_distribution",
+            "on_policy_policy_value",
+            "gamma",
+        ]:
+            if expected_key not in input_dict_keys:
+                raise RuntimeError(
+                    f"{expected_key} does not exist in input_dict['{eval_policy}']"
+                )

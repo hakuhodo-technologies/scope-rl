@@ -5,7 +5,7 @@ from typing import Union, Optional
 import numpy as np
 from sklearn.utils import check_scalar, check_random_state
 
-from rtbgym.types import Numeric
+from .types import Numeric
 
 
 @dataclass
@@ -14,10 +14,10 @@ class NormalDistribution:
 
     Parameters
     -------
-    mean: Union[int, float, NDArray[int], NDArray[float]]
+    mean: {int, float, array-like}
         Mean value of the normal distribution.
 
-    std: Union[int, float, NDArray[int], NDArray[float]]
+    std: {int, float, array-like}
         Standard deviation of the normal distribution.
 
     random_state: int, default=None (>= 0)
@@ -70,7 +70,7 @@ class NormalDistribution:
 
         Returns
         -------
-        random_variables: NDArray[float], shape (size, )
+        random_variables: ndarray of shape (size, )
             Random variables sampled from the normal distribution.
 
         """
@@ -103,7 +103,7 @@ def check_array(
 
     Parameters
     -------
-    array: NDArray
+    array: object
         Input array to check.
 
     name: str
@@ -112,13 +112,13 @@ def check_array(
     expected_dim: int, default=1
         Excpected dimension of the input array.
 
-    expected_dtype: Optional[type], default=None
+    expected_dtype: {type, tuple of type}, default=None
         Excpected dtype of the input array.
 
-    min_val: Optional[float], default=None
+    min_val: float, default=None
         Minimum number allowed in the input array.
 
-    max_val: Optional[float], default=None
+    max_val: float, default=None
         Maximum number allowed in the input array.
 
     """

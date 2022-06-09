@@ -1,32 +1,18 @@
-"""Off-Policy Estimators for Discrete action."""
-from abc import ABCMeta, abstractmethod
+"""Off-Policy Estimators for Discrete Action."""
 from dataclasses import dataclass
-from typing import Dict
+from typing import Dict, Optional
 
 import numpy as np
 from sklearn.utils import check_scalar
 
-from offlinegym.utils import estimate_confidence_interval_by_bootstrap, check_array
-
-
-@dataclass
-class BaseOffPolicyEstimator(metaclass=ABCMeta):
-    """Base class for OPE estimators for discrete action."""
-
-    @abstractmethod
-    def _estimate_trajectory_value(self) -> np.ndarray:
-        """Estimate trajectory-wise reward."""
-        raise NotImplementedError
-
-    @abstractmethod
-    def estimate_policy_value(self) -> float:
-        """Estimate the policy value of evaluation policy."""
-        raise NotImplementedError
-
-    @abstractmethod
-    def estimate_interval(self) -> Dict[str, float]:
-        """Estimate confidence interval of policy value by nonparametric bootstrap procedure."""
-        raise NotImplementedError
+from .estimators_base import BaseOffPolicyEstimator
+from ..utils import (
+    estimate_confidence_interval_by_bootstrap,
+    estimate_confidence_interval_by_hoeffding,
+    estimate_confidence_interval_by_empirical_bernstein,
+    estimate_confidence_interval_by_t_test,
+    check_array,
+)
 
 
 @dataclass
@@ -67,6 +53,13 @@ class DiscreteDirectMethod(BaseOffPolicyEstimator):
     def __post_init__(self):
         self.action_type = "discrete"
 
+        self._estimate_confidence_interval = {
+            "bootstrap": estimate_confidence_interval_by_bootstrap,
+            "hoeffding": estimate_confidence_interval_by_hoeffding,
+            "bernstein": estimate_confidence_interval_by_empirical_bernstein,
+            "ttest": estimate_confidence_interval_by_t_test,
+        }
+
     def _estimate_trajectory_value(
         self,
         initial_state_value_prediction,
@@ -76,12 +69,12 @@ class DiscreteDirectMethod(BaseOffPolicyEstimator):
 
         Parameters
         -------
-        initial_state_value_prediction: NDArray, shape (n_episodes, )
+        initial_state_value_prediction: array-like of shape (n_episodes, )
             Estimated initial state value.
 
         Return
         -------
-        estimated_trajectory_wise_policy_value: NDArray, shape (n_episodes, )
+        estimated_trajectory_wise_policy_value: ndarray of shape (n_episodes, )
             Estimated policy value for each trajectory.
             (Equivalent to initial_state_value_prediction.)
 
@@ -95,12 +88,12 @@ class DiscreteDirectMethod(BaseOffPolicyEstimator):
 
         Parameters
         -------
-        initial_state_value_prediction: NDArray, shape (n_episodes, )
+        initial_state_value_prediction: array-like of shape (n_episodes, )
             Estimated initial state value.
 
         Return
         -------
-        V_hat: NDArray, shape (n_episodes, )
+        V_hat: ndarray of shape (n_episodes, )
             Estimated policy value.
 
         """
@@ -118,19 +111,23 @@ class DiscreteDirectMethod(BaseOffPolicyEstimator):
         self,
         initial_state_value_prediction: np.ndarray,
         alpha: float = 0.05,
+        ci: str = "bootstrap",
         n_bootstrap_samples: int = 10000,
-        random_state: int = 12345,
+        random_state: Optional[int] = None,
         **kwargs,
     ) -> Dict[str, float]:
         """Estimate confidence interval of policy value by nonparametric bootstrap procedure.
 
         Parameters
         -------
-        initial_state_value_prediction: NDArray, shape (n_episodes, )
+        initial_state_value_prediction: array-like of shape (n_episodes, )
             Estimated initial state value.
 
-        alpha: float, default=0.05 (0, 1)
-            Significant level.
+        alpha: float, default=0.05
+            Significant level. The value should be within `[0, 1)`.
+
+        ci: {"bootstrap", "hoeffding", "bernstein", "ttest"}, default="bootstrap"
+            Estimation method for confidence interval.
 
         n_bootstrap_samples: int, default=10000 (> 0)
             Number of resampling performed in the bootstrap procedure.
@@ -140,7 +137,7 @@ class DiscreteDirectMethod(BaseOffPolicyEstimator):
 
         Return
         -------
-        estimated_confidence_interval: Dict[str, float]
+        estimated_confidence_interval: dict
             Dictionary storing the estimated mean and upper-lower confidence bounds.
 
         """
@@ -149,10 +146,15 @@ class DiscreteDirectMethod(BaseOffPolicyEstimator):
             name="initial_state_value_prediction",
             expected_dim=1,
         )
+        if ci not in self._estimate_confidence_interval.keys():
+            raise ValueError(
+                f"ci must be one of 'bootstrap', 'hoeffding', 'bernstein', or 'ttest', but {ci} is given"
+            )
+
         estimated_trajectory_value = self._estimate_trajectory_value(
             initial_state_value_prediction
         )
-        return estimate_confidence_interval_by_bootstrap(
+        return self._estimate_confidence_interval[ci](
             samples=estimated_trajectory_value,
             alpha=alpha,
             n_bootstrap_samples=n_bootstrap_samples,
@@ -172,7 +174,7 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 
         \\hat{V}_{\\mathrm{TIS}} (\\pi_e; \\mathcal{D}) := \\mathbb{E}_{n} [\\sum_{t=0}^T \\gamma^t w_{1:T} r_t],
 
-    where :math:`w_{0:T} := \\prod_{t=1}^T \\frac{\\pi_e(a_t \\mid s_t)}{\\pi_b(a_t \\mid s_t)}`
+    where :math:`w_{0:T} := \\prod_{t=1}^T \\frac{\\pi_e(a_t \\mid s_t)}{\\pi_b(a_t \\mid s_t)}` is the importance weight.
 
     Parameters
     -------
@@ -197,6 +199,13 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
     def __post_init__(self):
         self.action_type = "discrete"
 
+        self._estimate_confidence_interval = {
+            "bootstrap": estimate_confidence_interval_by_bootstrap,
+            "hoeffding": estimate_confidence_interval_by_hoeffding,
+            "bernstein": estimate_confidence_interval_by_empirical_bernstein,
+            "ttest": estimate_confidence_interval_by_t_test,
+        }
+
     def _estimate_trajectory_value(
         self,
         step_per_episode: int,
@@ -213,23 +222,23 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
-        reward: NDArray, shape (n_episodes * step_per_episode, )
+        reward: array-like of shape (n_episodes * step_per_episode, )
             Reward observation.
 
-        behavior_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+        behavior_policy_trajectory_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Trajectory-wise action choice probability of behavior policy,
             i.e., :math:`\\prod_{t=0}^T \\pi_b(a_t \\mid s_t)`
 
-        evaluation_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+        evaluation_policy_trajectory_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Trajectory-wise action choice probability of evaluation policy,
             i.e., :math:`\\prod_{t=0}^T \\pi_e(a_t \\mid s_t)`
 
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
+        gamma: float, default=1.0
+            Discount factor. The value should be within `(0, 1]`.
 
         Return
         -------
-        estimated_trajectory_wise_policy_value: NDArray, shape (n_episodes, )
+        estimated_trajectory_wise_policy_value: ndarray of shape (n_episodes, )
             Estimated policy value for each trajectory.
 
         """
@@ -258,23 +267,23 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
-        reward: NDArray, shape (n_episodes * step_per_episode, )
+        reward: array-like of shape (n_episodes * step_per_episode, )
             Reward observation.
 
-        behavior_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+        behavior_policy_trajectory_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Trajectory-wise action choice probability of behavior policy,
             i.e., :math:`\\prod_{t=0}^T \\pi_b(a_t \\mid s_t)`
 
-        evaluation_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+        evaluation_policy_trajectory_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Trajectory-wise action choice probability of evaluation policy,
             i.e., :math:`\\prod_{t=0}^T \\pi_e(a_t \\mid s_t)`
 
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
+        gamma: float, default=1.0
+            Discount factor. The value should be within `(0, 1]`.
 
         Return
         -------
-        V_hat: NDArray, shape (n_episodes, )
+        V_hat: ndarray of shape (n_episodes, )
             Estimated policy value.
 
         """
@@ -331,8 +340,9 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         evaluation_policy_trajectory_wise_pscore: np.ndarray,
         gamma: float = 1.0,
         alpha: float = 0.05,
+        ci: str = "bootstrap",
         n_bootstrap_samples: int = 10000,
-        random_state: int = 12345,
+        random_state: Optional[int] = None,
         **kwargs,
     ) -> Dict[str, float]:
         """Estimate confidence interval of policy value by nonparametric bootstrap procedure.
@@ -342,22 +352,25 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
-        reward: NDArray, shape (n_episodes * step_per_episode, )
+        reward: array-like of shape (n_episodes * step_per_episode, )
             Reward observation.
 
-        behavior_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+        behavior_policy_trajectory_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Trajectory-wise action choice probability of behavior policy,
             i.e., :math:`\\prod_{t=0}^T \\pi_b(a_t \\mid s_t)`
 
-        evaluation_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+        evaluation_policy_trajectory_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Trajectory-wise action choice probability of evaluation policy,
             i.e., :math:`\\prod_{t=0}^T \\pi_e(a_t \\mid s_t)`
 
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
+        gamma: float, default=1.0
+            Discount factor. The value should be within `(0, 1]`.
 
-        alpha: float, default=0.05 (0, 1)
-            Significant level.
+        alpha: float, default=0.05
+            Significant level. The value should be within `[0, 1)`.
+
+        ci: {"bootstrap", "hoeffding", "bernstein", "ttest"}, default="bootstrap"
+            Estimation method for confidence interval.
 
         n_bootstrap_samples: int, default=10000 (> 0)
             Number of resampling performed in the bootstrap procedure.
@@ -367,7 +380,7 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 
         Return
         -------
-        estimated_confidence_interval: Dict[str, float]
+        estimated_confidence_interval: dict
             Dictionary storing the estimated mean and upper-lower confidence bounds.
 
         """
@@ -407,6 +420,11 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
             )
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
 
+        if ci not in self._estimate_confidence_interval.keys():
+            raise ValueError(
+                f"ci must be one of 'bootstrap', 'hoeffding', 'bernstein', or 'ttest', but {ci} is given"
+            )
+
         estimated_trajectory_value = self._estimate_trajectory_value(
             step_per_episode=step_per_episode,
             reward=reward,
@@ -414,7 +432,7 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
             evaluation_policy_trajectory_wise_pscore=evaluation_policy_trajectory_wise_pscore,
             gamma=gamma,
         )
-        return estimate_confidence_interval_by_bootstrap(
+        return self._estimate_confidence_interval[ci](
             samples=estimated_trajectory_value,
             alpha=alpha,
             n_bootstrap_samples=n_bootstrap_samples,
@@ -423,22 +441,22 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 
 
 @dataclass
-class DiscreteStepWiseImportanceSampling(BaseOffPolicyEstimator):
-    """Step-wise Importance Sampling (SIS) for discrete OPE.
+class DiscretePerDecisionImportanceSampling(BaseOffPolicyEstimator):
+    """Per-Decision Importance Sampling (PDIS) for discrete OPE.
 
     Note
     -------
-    SIS estimates policy value using step-wise importance weight as follows.
+    PDIS estimates policy value using step-wise importance weight as follows.
 
     .. math::
 
-        \\hat{V}_{\\mathrm{SIS}} (\\pi_e; \\mathcal{D}) := \\mathbb{E}_{n} [\\sum_{t=0}^T \\gamma^t w_{0:t} r_t],
+        \\hat{V}_{\\mathrm{PDIS}} (\\pi_e; \\mathcal{D}) := \\mathbb{E}_{n} [\\sum_{t=0}^T \\gamma^t w_{0:t} r_t],
 
     where :math:`w_{0:t} := \\prod_{t'=0}^t \\frac{\\pi_e(a_{t'} \\mid s_{t'})}{\\pi_b(a_{t'} \\mid s_{t'})}`
 
     Parameters
     -------
-    estimator_name: str, default="sis"
+    estimator_name: str, default="pdis"
         Name of the estimator.
 
     References
@@ -454,10 +472,17 @@ class DiscreteStepWiseImportanceSampling(BaseOffPolicyEstimator):
 
     """
 
-    estimator_name = "sis"
+    estimator_name = "pdis"
 
     def __post_init__(self):
         self.action_type = "discrete"
+
+        self._estimate_confidence_interval = {
+            "bootstrap": estimate_confidence_interval_by_bootstrap,
+            "hoeffding": estimate_confidence_interval_by_hoeffding,
+            "bernstein": estimate_confidence_interval_by_empirical_bernstein,
+            "ttest": estimate_confidence_interval_by_t_test,
+        }
 
     def _estimate_trajectory_value(
         self,
@@ -475,23 +500,23 @@ class DiscreteStepWiseImportanceSampling(BaseOffPolicyEstimator):
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
-        reward: NDArray, shape (n_episodes * step_per_episode, )
+        reward: array-like of shape (n_episodes * step_per_episode, )
             Reward observation.
 
-        behavior_policy_step_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+        behavior_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Step-wise action choice probability of behavior policy,
             i.e., :math:`\\prod_{t'=0}^t \\pi_b(a_{t'} \\mid s_{t'})`
 
-        evaluation_policy_step_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+        evaluation_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Step-wise action choice probability of evaluation policy,
             i.e., :math:`\\prod_{t'=0}^t \\pi_e(a_{t'} \\mid s_{t'})`
 
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
+        gamma: float, default=1.0
+            Discount factor. The value should be within `(0, 1]`.
 
         Return
         -------
-        estimated_trajectory_wise_policy_value: NDArray, shape (n_episodes, )
+        estimated_trajectory_wise_policy_value: ndarray of shape (n_episodes, )
             Estimated policy value for each trajectory.
 
         """
@@ -517,23 +542,23 @@ class DiscreteStepWiseImportanceSampling(BaseOffPolicyEstimator):
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
-        reward: NDArray, shape (n_episodes * step_per_episode, )
+        reward: array-like of shape (n_episodes * step_per_episode, )
             Reward observation.
 
-        behavior_policy_step_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+        behavior_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Step-wise action choice probability of behavior policy,
             i.e., :math:`\\prod_{t'=0}^t \\pi_b(a_{t'} \\mid s_{t'})`
 
-        evaluation_policy_step_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+        evaluation_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Step-wise action choice probability of evaluation policy,
             i.e., :math:`\\prod_{t'=0}^t \\pi_e(a_{t'} \\mid s_{t'})`
 
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
+        gamma: float, default=1.0
+            Discount factor. The value should be within `(0, 1]`.
 
         Return
         -------
-        V_hat: NDArray, shape (n_episodes, )
+        V_hat: ndarray of shape (n_episodes, )
             Estimated policy value.
 
         """
@@ -589,8 +614,9 @@ class DiscreteStepWiseImportanceSampling(BaseOffPolicyEstimator):
         evaluation_policy_step_wise_pscore: np.ndarray,
         gamma: float = 1.0,
         alpha: float = 0.05,
+        ci: str = "bootstrap",
         n_bootstrap_samples: int = 10000,
-        random_state: int = 12345,
+        random_state: Optional[int] = None,
         **kwargs,
     ) -> Dict[str, float]:
         """Estimate confidence interval of policy value by nonparametric bootstrap procedure.
@@ -600,22 +626,25 @@ class DiscreteStepWiseImportanceSampling(BaseOffPolicyEstimator):
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
-        reward: NDArray, shape (n_episodes * step_per_episode, )
+        reward: array-like of shape (n_episodes * step_per_episode, )
             Reward observation.
 
-        behavior_policy_step_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+        behavior_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Step-wise action choice probability of behavior policy,
             i.e., :math:`\\prod_{t'=0}^t \\pi_b(a_{t'} \\mid s_{t'})`
 
-        evaluation_policy_step_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+        evaluation_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Step-wise action choice probability of evaluation policy,
             i.e., :math:`\\prod_{t'=0}^t \\pi_e(a_{t'} \\mid s_{t'})`
 
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
+        gamma: float, default=1.0
+            Discount factor. The value should be within `(0, 1]`.
 
-        alpha: float, default=0.05 (0, 1)
-            Significant level.
+        alpha: float, default=0.05
+            Significant level. The value should be within `[0, 1)`.
+
+        ci: {"bootstrap", "hoeffding", "bernstein", "ttest"}, default="bootstrap"
+            Estimation method for confidence interval.
 
         n_bootstrap_samples: int, default=10000 (> 0)
             Number of resampling performed in the bootstrap procedure.
@@ -625,7 +654,7 @@ class DiscreteStepWiseImportanceSampling(BaseOffPolicyEstimator):
 
         Return
         -------
-        estimated_confidence_interval: Dict[str, float]
+        estimated_confidence_interval: dict
             Dictionary storing the estimated mean and upper-lower confidence bounds.
 
         """
@@ -665,6 +694,11 @@ class DiscreteStepWiseImportanceSampling(BaseOffPolicyEstimator):
             )
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
 
+        if ci not in self._estimate_confidence_interval.keys():
+            raise ValueError(
+                f"ci must be one of 'bootstrap', 'hoeffding', 'bernstein', or 'ttest', but {ci} is given"
+            )
+
         estimated_trajectory_value = self._estimate_trajectory_value(
             step_per_episode=step_per_episode,
             reward=reward,
@@ -672,7 +706,7 @@ class DiscreteStepWiseImportanceSampling(BaseOffPolicyEstimator):
             evaluation_policy_step_wise_pscore=evaluation_policy_step_wise_pscore,
             gamma=gamma,
         )
-        return estimate_confidence_interval_by_bootstrap(
+        return self._estimate_confidence_interval[ci](
             samples=estimated_trajectory_value,
             alpha=alpha,
             n_bootstrap_samples=n_bootstrap_samples,
@@ -724,6 +758,13 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
     def __post_init__(self):
         self.action_type = "discrete"
 
+        self._estimate_confidence_interval = {
+            "bootstrap": estimate_confidence_interval_by_bootstrap,
+            "hoeffding": estimate_confidence_interval_by_hoeffding,
+            "bernstein": estimate_confidence_interval_by_empirical_bernstein,
+            "ttest": estimate_confidence_interval_by_t_test,
+        }
+
     def _estimate_trajectory_value(
         self,
         step_per_episode: int,
@@ -743,34 +784,34 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
-        action: NDArray, shape (n_episodes * step_per_episode, )
+        action: array-like of shape (n_episodes * step_per_episode, )
             Action chosen by behavior policy.
 
-        reward: NDArray, shape (n_episodes * step_per_episode, )
+        reward: array-like of shape (n_episodes * step_per_episode, )
             Reward observation.
 
-        behavior_policy_step_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+        behavior_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Step-wise action choice probability of behavior policy,
             i.e., :math:`\\prod_{t'=0}^t \\pi_b(a_{t'} \\mid s_{t'})`
 
-        evaluation_policy_step_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+        evaluation_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Step-wise action choice probability of evaluation policy,
             i.e., :math:`\\prod_{t'=0}^t \\pi_b(a_{t'} \\mid s_{t'})`
 
-        evaluation_policy_action_dist: NDArray, shape (n_episodes * step_per_episode, n_action)
+        evaluation_policy_action_dist: array-like of shape (n_episodes * step_per_episode, n_action)
             Action choice probability of evaluation policy for all action,
             i.e., :math:`\\pi_e(a \\mid s_t) \\forall a \\in \\mathcal{A}`
 
-        state_action_value_prediction: NDArray, shape (n_episodes * step_per_episode, n_action)
+        state_action_value_prediction: array-like of shape (n_episodes * step_per_episode, n_action)
             :math:`\\hat{Q}` for all action,
             i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
 
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
+        gamma: float, default=1.0
+            Discount factor. The value should be within `(0, 1]`.
 
         Return
         -------
-        estimated_trajectory_wise_policy_value: NDArray, shape (n_episodes, )
+        estimated_trajectory_wise_policy_value: ndarray of shape (n_episodes, )
             Estimated policy value for each trajectory.
 
         """
@@ -817,34 +858,34 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
-        action: NDArray, shape (n_episodes * step_per_episode, )
+        action: array-like of shape (n_episodes * step_per_episode, )
             Action chosen by behavior policy.
 
-        reward: NDArray, shape (n_episodes * step_per_episode, )
+        reward: array-like of shape (n_episodes * step_per_episode, )
             Reward observation.
 
-        behavior_policy_step_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+        behavior_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Step-wise action choice probability of behavior policy,
             i.e., :math:`\\prod_{t'=0}^t \\pi_b(a_{t'} \\mid s_{t'})`
 
-        evaluation_policy_step_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+        evaluation_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Step-wise action choice probability of evaluation policy,
             i.e., :math:`\\prod_{t'=0}^t \\pi_b(a_{t'} \\mid s_{t'})`
 
-        evaluation_policy_action_dist: NDArray, shape (n_episodes * step_per_episode, n_action)
+        evaluation_policy_action_dist: array-like of shape (n_episodes * step_per_episode, n_action)
             Action choice probability of evaluation policy for all action,
             i.e., :math:`\\pi_e(a \\mid s_t) \\forall a \\in \\mathcal{A}`
 
-        state_action_value_prediction: NDArray, shape (n_episodes * step_per_episode, n_action)
+        state_action_value_prediction: array-like of shape (n_episodes * step_per_episode, n_action)
             :math:`\\hat{Q}` for all action,
             i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
 
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
+        gamma: float, default=1.0
+            Discount factor. The value should be within `(0, 1]`.
 
         Return
         -------
-        V_hat: NDArray, shape (n_episodes, )
+        V_hat: ndarray of shape (n_episodes, )
             Estimated policy value.
 
         """
@@ -945,8 +986,9 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
         state_action_value_prediction: np.ndarray,
         gamma: float = 1.0,
         alpha: float = 0.05,
+        ci: str = "bootstrap",
         n_bootstrap_samples: int = 10000,
-        random_state: int = 12345,
+        random_state: Optional[int] = None,
         **kwargs,
     ) -> Dict[str, float]:
         """Estimate confidence interval of policy value by nonparametric bootstrap procedure.
@@ -956,33 +998,36 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
-        action: NDArray, shape (n_episodes * step_per_episode, )
+        action: array-like of shape (n_episodes * step_per_episode, )
             Action chosen by behavior policy.
 
-        reward: NDArray, shape (n_episodes * step_per_episode, )
+        reward: array-like of shape (n_episodes * step_per_episode, )
             Reward observation.
 
-        behavior_policy_step_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+        behavior_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Step-wise action choice probability of behavior policy,
             i.e., :math:`\\prod_{t'=0}^t \\pi_b(a_{t'} \\mid s_{t'})`
 
-        evaluation_policy_step_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+        evaluation_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Step-wise action choice probability of evaluation policy,
             i.e., :math:`\\prod_{t'=0}^t \\pi_b(a_{t'} \\mid s_{t'})`
 
-        evaluation_policy_action_dist: NDArray, shape (n_episodes * step_per_episode, n_action)
+        evaluation_policy_action_dist: array-like of shape (n_episodes * step_per_episode, n_action)
             Action choice probability of evaluation policy for all action,
             i.e., :math:`\\pi_e(a \\mid s_t) \\forall a \\in \\mathcal{A}`
 
-        state_action_value_prediction: NDArray, shape (n_episodes * step_per_episode, n_action)
+        state_action_value_prediction: array-like of shape (n_episodes * step_per_episode, n_action)
             :math:`\\hat{Q}` for all action,
             i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
 
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
+        gamma: float, default=1.0
+            Discount factor. The value should be within `(0, 1]`.
 
-        alpha: float, default=0.05 (0, 1)
-            Significant level.
+        alpha: float, default=0.05
+            Significant level. The value should be within `[0, 1)`.
+
+        ci: {"bootstrap", "hoeffding", "bernstein", "ttest"}, default="bootstrap"
+            Estimation method for confidence interval.
 
         n_bootstrap_samples: int, default=10000 (> 0)
             Number of resampling performed in the bootstrap procedure.
@@ -992,7 +1037,7 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
 
         Return
         -------
-        estimated_confidence_interval: Dict[str, float]
+        estimated_confidence_interval: dict
             Dictionary storing the estimated mean and upper-lower confidence bounds.
 
         """
@@ -1071,6 +1116,11 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
             )
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
 
+        if ci not in self._estimate_confidence_interval.keys():
+            raise ValueError(
+                f"ci must be one of 'bootstrap', 'hoeffding', 'bernstein', or 'ttest', but {ci} is given"
+            )
+
         estimated_trajectory_value = self._estimate_trajectory_value(
             step_per_episode=step_per_episode,
             action=action,
@@ -1081,7 +1131,7 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
             state_action_value_prediction=state_action_value_prediction,
             gamma=gamma,
         )
-        return estimate_confidence_interval_by_bootstrap(
+        return self._estimate_confidence_interval[ci](
             samples=estimated_trajectory_value,
             alpha=alpha,
             n_bootstrap_samples=n_bootstrap_samples,
@@ -1135,6 +1185,13 @@ class DiscreteSelfNormalizedTrajectoryWiseImportanceSampling(
     def __post_init__(self):
         self.action_type = "discrete"
 
+        self._estimate_confidence_interval = {
+            "bootstrap": estimate_confidence_interval_by_bootstrap,
+            "hoeffding": estimate_confidence_interval_by_hoeffding,
+            "bernstein": estimate_confidence_interval_by_empirical_bernstein,
+            "ttest": estimate_confidence_interval_by_t_test,
+        }
+
     def _estimate_trajectory_value(
         self,
         step_per_episode: int,
@@ -1151,23 +1208,23 @@ class DiscreteSelfNormalizedTrajectoryWiseImportanceSampling(
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
-        reward: NDArray, shape (n_episodes * step_per_episode, )
+        reward: array-like of shape (n_episodes * step_per_episode, )
             Reward observation.
 
-        behavior_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+        behavior_policy_trajectory_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Trajectory-wise action choice probability of behavior policy,
             i.e., :math:`\\prod_{t=0}^T \\pi_b(a_t \\mid s_t)`
 
-        evaluation_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+        evaluation_policy_trajectory_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Trajectory-wise action choice probability of evaluation policy,
             i.e., :math:`\\prod_{t=0}^T \\pi_e(a_t \\mid s_t)`
 
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
+        gamma: float, default=1.0
+            Discount factor. The value should be within `(0, 1]`.
 
         Return
         -------
-        estimated_trajectory_wise_policy_value: NDArray, shape (n_episodes, )
+        estimated_trajectory_wise_policy_value: ndarray of shape (n_episodes, )
             Estimated policy value for each trajectory.
 
         """
@@ -1189,25 +1246,25 @@ class DiscreteSelfNormalizedTrajectoryWiseImportanceSampling(
 
 
 @dataclass
-class DiscreteSelfNormalizedStepWiseImportanceSampling(
-    DiscreteStepWiseImportanceSampling
+class DiscreteSelfNormalizedPerDecisionImportanceSampling(
+    DiscretePerDecisionImportanceSampling
 ):
-    """Self-Normalized Step-wise Importance Sampling (SNSIS) for discrete OPE.
+    """Self-Normalized Per-Decision Importance Sampling (SNPDIS) for discrete OPE.
 
     Note
     -------
-    SNSIS estimates policy value using self-normalized step-wise importance weight as follows.
+    SNPDIS estimates policy value using self-normalized step-wise importance weight as follows.
 
     .. math::
 
-        \\hat{V}_{\\mathrm{SNSIS}} (\\pi_e; \\mathcal{D})
+        \\hat{V}_{\\mathrm{SNPDIS}} (\\pi_e; \\mathcal{D})
         := \\mathbb{E}_{n} [\\sum_{t=0}^T \\gamma^t \\frac{w_{1:t}}{\\mathbb{E}_n [w_{1:t}]} r_t],
 
     where :math:`w_{0:t} := \\prod_{t'=1}^t \\frac{\\pi_e(a_{t'} \\mid s_{t'})}{\\pi_b(a_{t'} \\mid s_{t'})}`
 
     Parameters
     -------
-    estimator_name: str, default="snsis"
+    estimator_name: str, default="snpdis"
         Name of the estimator.
 
     References
@@ -1229,10 +1286,17 @@ class DiscreteSelfNormalizedStepWiseImportanceSampling(
 
     """
 
-    estimator_name = "snsis"
+    estimator_name = "snpdis"
 
     def __post_init__(self):
         self.action_type = "discrete"
+
+        self._estimate_confidence_interval = {
+            "bootstrap": estimate_confidence_interval_by_bootstrap,
+            "hoeffding": estimate_confidence_interval_by_hoeffding,
+            "bernstein": estimate_confidence_interval_by_empirical_bernstein,
+            "ttest": estimate_confidence_interval_by_t_test,
+        }
 
     def _estimate_trajectory_value(
         self,
@@ -1250,23 +1314,23 @@ class DiscreteSelfNormalizedStepWiseImportanceSampling(
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
-        reward: NDArray, shape (n_episodes * step_per_episode, )
+        reward: array-like of shape (n_episodes * step_per_episode, )
             Reward observation.
 
-        behavior_policy_step_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+        behavior_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Step-wise action choice probability of behavior policy,
             i.e., :math:`\\prod_{t'=0}^t \\pi_b(a_{t'} \\mid s_{t'})`
 
-        evaluation_policy_step_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+        evaluation_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Step-wise action choice probability of evaluation policy,
             i.e., :math:`\\prod_{t'=0}^t \\pi_b(a_{t'} \\mid s_{t'})`
 
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
+        gamma: float, default=1.0
+            Discount factor. The value should be within `(0, 1]`.
 
         Return
         -------
-        estimated_trajectory_wise_policy_value: NDArray, shape (n_episodes, )
+        estimated_trajectory_wise_policy_value: ndarray of shape (n_episodes, )
             Estimated policy value for each trajectory.
 
         """
@@ -1333,6 +1397,13 @@ class DiscreteSelfNormalizedDoublyRobust(DiscreteDoublyRobust):
     def __post_init__(self):
         self.action_type = "discrete"
 
+        self._estimate_confidence_interval = {
+            "bootstrap": estimate_confidence_interval_by_bootstrap,
+            "hoeffding": estimate_confidence_interval_by_hoeffding,
+            "bernstein": estimate_confidence_interval_by_empirical_bernstein,
+            "ttest": estimate_confidence_interval_by_t_test,
+        }
+
     def _estimate_trajectory_value(
         self,
         step_per_episode: int,
@@ -1352,34 +1423,34 @@ class DiscreteSelfNormalizedDoublyRobust(DiscreteDoublyRobust):
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
-        action: NDArray, shape (n_episodes * step_per_episode, )
+        action: array-like of shape (n_episodes * step_per_episode, )
             Action chosen by behavior policy.
 
-        reward: NDArray, shape (n_episodes * step_per_episode, )
+        reward: array-like of shape (n_episodes * step_per_episode, )
             Reward observation.
 
-        behavior_policy_step_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+        behavior_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Step-wise action choice probability of behavior policy,
             i.e., :math:`\\prod_{t'=0}^t \\pi_b(a_{t'} \\mid s_{t'})`
 
-        evaluation_policy_step_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
+        evaluation_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Step-wise action choice probability of evaluation policy,
             i.e., :math:`\\prod_{t'=0}^t \\pi_b(a_{t'} \\mid s_{t'})`
 
-        evaluation_policy_action_dist: NDArray, shape (n_episodes * step_per_episode, n_action)
+        evaluation_policy_action_dist: array-like of shape (n_episodes * step_per_episode, n_action)
             Action choice probability of evaluation policy for all action,
             i.e., :math:`\\pi_e(a \\mid s_t) \\forall a \\in \\mathcal{A}`
 
-        state_action_value_prediction: NDArray, shape (n_episodes * step_per_episode, n_action)
+        state_action_value_prediction: array-like of shape (n_episodes * step_per_episode, n_action)
             :math:`\\hat{Q}` for all action,
             i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
 
-        gamma: float, default=1.0 (0, 1]
-            Discount factor.
+        gamma: float, default=1.0
+            Discount factor. The value should be within `(0, 1]`.
 
         Return
         -------
-        estimated_trajectory_wise_policy_value: NDArray, shape (n_episodes, )
+        estimated_trajectory_wise_policy_value: ndarray of shape (n_episodes, )
             Estimated policy value for each trajectory.
 
         """

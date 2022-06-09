@@ -9,21 +9,21 @@ OfflineGym; a Python library for offline reinforcement learning, off-policy eval
 Overview
 ~~~~~~~~~~
 *OfflineGym* is an open-source Python library for offline Reinforcement Learning (RL) and Off-Policy Evaluation (OPE).
-This library aims to facilitate the an easy, flexible and reliable experiment in offline RL research and to provide a streamlined implementation also for practitioners.
+This library aims to facilitate the an easy, flexible and reliable experiment in offline RL research to , as well as to provide a streamlined implementation also for practitioners.
 OfflineGym includes a series of modules to implement synthetic dataset generation and dataset preprocessing, a variety of OPE estimators, and also Off-Policy Selection (OPS) methods. 
 
-OfflineGym is applicable to any RL environment with `[OpenAI Gym] <https://gym.openai.com>'_-like interface.
-The library is also compatible with `[d3rlpy] <https://github.com/takuseno/d3rlpy>`_, which provides the algorithm implementation of both online and offline RL methods.
+OfflineGym is applicable to any RL environment with `OpenAI Gym <https://gym.openai.com>'_-like interface.
+The library is also compatible with `d3rlpy <https://github.com/takuseno/d3rlpy>`_, which provides the algorithm implementation of both online and offline RL methods.
 
 Our software facilitate implementation, evaluation and algorithm comparison related to the following research topics:
 
-* **Offline Reinforcement Learning**: Offline RL aims to learn a new policy from only offline logged data collected by a behavior policy. 
+* **Offline Reinforcement Learning**: Offline RL aims to learn a new policy from only offline logged data collected by a behavior policy.
 OfflineGym enables flexible experiment using customized dataset on diverse environments collected by various behavior policies.
 
-* **Off-Policy Evaluation**: OPE aims to evaluate the performance of a counterfactual policy using only offline logged data. 
+* **Off-Policy Evaluation**: OPE aims to evaluate the performance of a counterfactual policy using only offline logged data.
 OfflineGym supports basic implementation of OPE estimators and streamline the experimental procedure to evaluate OPE estimators.
 
-* **Off-Policy Selection**: OPS aims to select the best policy from several candidate policies using offline logged data. 
+* **Off-Policy Selection**: OPS aims to select the best policy from several candidate policies using offline logged data.
 OfflineGym supports basic implementation of OPS methods and provide some metrics to evaluate OPS result.
 
 This website contains pages with example implementations that demonstrates the usage of this library.
@@ -42,22 +42,41 @@ We provide a wrapper class for transforming the policy into a stochastic policy 
    * Truncated Gaussian (continuous)
 
 
-Discrete / Continuous OPE
+Basic OPE (discrete / continuous)
 ----------
    * Direct Method (DM) :cite:`beygelzimer2009offset`
    * Trajectory-wise Importance Sampling (TIS) :cite:`precup2000eligibility`
-   * Step-wise Importance Sampling (SIS) :cite:`precup2000eligibility`
+   * Per-Decision Importance Sampling (PDIS) :cite:`precup2000eligibility`
    * Doubly Robust (DR) :cite:`jiang2016doubly` :cite:`thomas2016data`
    * Self-Normalized Trajectory-wise Importance Sampling (SNTIS) :cite:`precup2000eligibility` :cite:`kallus2020optimal`
-   * Self-Normalized Step-wise Importance Sampling (SNSIS) :cite:`precup2000eligibility` :cite:`kallus2020optimal`
+   * Self-Normalized Per-Decision Importance Sampling (SNPDIS) :cite:`precup2000eligibility` :cite:`kallus2020optimal`
    * Self-Normalized Doubly Robust (SNDR) :cite:`jiang2016doubly` :cite:`thomas2016data` :cite:`kallus2020optimal`
 
-Off-Policy Selection
+High Confidence OPE (discrete / continuous)
 ----------
+   * Bootstrap :citep:`thomas2015improve` :cite:`hanna2017bootstrapping`
+   * Hoeffding :citep:`thomas2015evaluation`
+   * (Empirical) Bernstein :citep:`thomas2015evaluation` :citep:`thomas2015improve`
+   * Student T-test :citep:`thomas2015improve`
+
+Cumulative Distributional OPE (discrete)
+----------
+   * Direct Method (DM) :cite:`beygelzimer2009offset` :cite:`huang2021off`
+   * Trajectory-wise Importance Sampling (TIS) :cite:`precup2000eligibility` :cite:`huang2021off` :cite:`chundak2021universal`
+   * Trajectory-wise Doubly Robust (TDR) :cite:`jiang2016doubly` :cite:`thomas2016data` :cite:`huang2021off`
+   * Self-Normalized Trajectory-wise Importance Sampling (SNTIS) :cite:`precup2000eligibility` :cite:`kallus2020optimal` :cite:`huang2021off` :cite:`chundak2021universal`
+   * Self-Normalized Trajectory-wise Doubly Robust (SNDR) :cite:`jiang2016doubly` :cite:`thomas2016data` :cite:`kallus2020optimal` :cite:`huang2021off`
+
+Off-Policy Selection Metrics
+----------
+   * Mean Squared Error :cite:`paine2020hyperparameter` :cite:`voloshin2021empirical` :cite:`fu2021benchmarks`
+   * Spearman's Rank Correlation Coefficient :cite:`paine2020hyperparameter` :cite:`fu2021benchmarks`
+   * Regret :cite:`paine2020hyperparameter` :cite:`fu2021benchmarks`
+   * Type I and Type II Error Rates
 
 
 In addition to the offline RL/OPE related resources, we provide a configurative RL environment for Real-Time Bidding (RTB) as a sub-package of this library.
-Please refer to `[RTBGym's documentation] <>`_ for the details.
+Please refer to `RTBGym's documentation <>`_ for the details.
 
 Citation
 ~~~~~~~~~~
@@ -86,10 +105,10 @@ Table of Contents
 
 .. toctree::
    :maxdepth: 3
-   :caption: Introduction:
+   :caption: Getting Started:
 
-   about
-   related
+   installation
+   quickstart
 
 .. toctree::
    :maxdepth: 3
@@ -106,13 +125,6 @@ Table of Contents
    ope_ops
    ope_estimators
    evaluation_of_ope_ops
-
-.. toctree::
-   :maxdepth: 3
-   :caption: Getting Started:
-
-   installation
-   quickstart
 
 .. toctree::
    :maxdepth: 3
@@ -133,7 +145,7 @@ Table of Contents
    :caption: Others:
 
    Github <https://github.com/negocia-inc/offlinegym>
-   LISENSE <https://github.com/negocia-inc/offlinegym/blob/main/LICENSE>
+   LICENSE <https://github.com/negocia-inc/offlinegym/blob/main/LICENSE>
    references
 
 Indices and tables

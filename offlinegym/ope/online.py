@@ -10,12 +10,11 @@ import seaborn as sns
 
 import gym
 from d3rlpy.algos import AlgoBase
-from sklearn.utils import check_scalar
+from sklearn.utils import check_scalar, check_random_state
 
-from offlinegym.policy.head import BaseHead, OnlineHead
-from offlinegym.utils import (
+from ..policy.head import BaseHead, OnlineHead
+from ..utils import (
     estimate_confidence_interval_by_bootstrap,
-    check_confidence_interval_argument,
 )
 
 
@@ -24,6 +23,7 @@ def visualize_on_policy_policy_value(
     policies: List[Union[AlgoBase, BaseHead]],
     policy_names: List[str],
     n_episodes: int = 100,
+    gamma: float = 1.0,
     alpha: float = 0.05,
     n_bootstrap_samples: int = 100,
     random_state: Optional[int] = None,
@@ -37,17 +37,20 @@ def visualize_on_policy_policy_value(
     env: gym.Env
         Reinforcement learning (RL) environment.
 
-    policies: List[Union[AlgoBase, BaseHead]]
+    policies: list of {AlgoBase, BaseHead}
         List of policies to be evaluated.
 
-    policy_names: List[str]
+    policy_names: list of str
         Name of policies.
 
     n_episodes: int, default=100 (> 0)
         Number of trajectories to rollout.
 
-    alpha: float, default=0.05 (0, 1)
-        Significant level.
+    gamma: float, default=1.0
+        Discount factor. The value should be within `(0, 1]`.
+
+    alpha: float, default=0.05
+        Significant level. The value should be within `[0, 1)`.
 
     n_bootstrap_samples: int, default=10000 (> 0)
         Number of resampling performed in the bootstrap procedure.
@@ -63,11 +66,14 @@ def visualize_on_policy_policy_value(
         Name of the bar figure.
 
     """
-    check_confidence_interval_argument(
-        alpha=alpha,
-        n_bootstrap_samples=n_bootstrap_samples,
-        random_state=random_state,
+    check_scalar(alpha, name="alpha", target_type=float, min_val=0.0, max_val=1.0)
+    check_scalar(
+        n_bootstrap_samples, name="n_bootstrap_samples", target_type=int, min_val=1
     )
+    if random_state is None:
+        raise ValueError("random_state must be given")
+    check_random_state(random_state)
+
     if fig_dir is not None and not isinstance(fig_dir, Path):
         raise ValueError(f"fig_dir must be a Path, but {type(fig_dir)} is given")
     if fig_name is not None and not isinstance(fig_name, str):
@@ -79,6 +85,7 @@ def visualize_on_policy_policy_value(
             env=env,
             policy=policy,
             n_episodes=n_episodes,
+            gamma=gamma,
             random_state=random_state,
         )
     plt.style.use("ggplot")
@@ -100,6 +107,7 @@ def calc_on_policy_policy_value(
     env: gym.Env,
     policy: Union[AlgoBase, BaseHead],
     n_episodes: int = 100,
+    gamma: float = 1.0,
     use_bootstrap: bool = False,
     alpha: float = 0.05,
     n_bootstrap_samples: int = 100,
@@ -112,11 +120,14 @@ def calc_on_policy_policy_value(
     env: gym.Env
         Reinforcement learning (RL) environment.
 
-    policy: Union[AlgoBase, BaseHead]
+    policy: {AlgoBase, BaseHead}
         A policy to be evaluated.
 
     use_bootstrap: bool, default=False
         Whether to use bootstrap sampling or not.
+
+    gamma: float, default=1.0
+        Discount factor. The value should be within `(0, 1]`.
 
     n_episodes: int, default=100 (> 0)
         Number of trajectories to rollout.
@@ -141,6 +152,7 @@ def calc_on_policy_policy_value(
             env=env,
             policy=policy,
             n_episodes=n_episodes,
+            gamma=gamma,
             alpha=alpha,
             n_bootstrap_samples=n_bootstrap_samples,
             random_state=random_state,
@@ -150,6 +162,7 @@ def calc_on_policy_policy_value(
             env=env,
             policy=policy,
             n_episodes=n_episodes,
+            gamma=gamma,
             random_state=random_state,
         ).mean()
     return on_policy_policy_value
@@ -159,6 +172,7 @@ def calc_on_policy_policy_value_interval(
     env: gym.Env,
     policy: Union[AlgoBase, BaseHead],
     n_episodes: int = 100,
+    gamma: float = 1.0,
     alpha: float = 0.05,
     n_bootstrap_samples: int = 100,
     random_state: Optional[int] = None,
@@ -170,14 +184,17 @@ def calc_on_policy_policy_value_interval(
     env: gym.Env
         Reinforcement learning (RL) environment.
 
-    policy: Union[AlgoBase, BaseHead]
+    policy: {AlgoBase, BaseHead}
         A policy to be evaluated.
 
     n_episodes: int, default=100 (> 0)
         Number of trajectories to rollout.
 
-    alpha: float, default=0.05 (0, 1)
-        Significant level.
+    gamma: float, default=1.0
+        Discount factor. The value should be within `(0, 1]`.
+
+    alpha: float, default=0.05
+        Significant level. The value should be within `[0, 1)`.
 
     n_bootstrap_samples: int, default=10000 (> 0)
         Number of resampling performed in the bootstrap procedure.
@@ -187,7 +204,7 @@ def calc_on_policy_policy_value_interval(
 
     Return
     -------
-    on_policy_confidence_interval: Dict[str, float]
+    on_policy_confidence_interval: dict
         Dictionary storing the calculated mean and upper-lower confidence bounds.
 
     """
@@ -195,6 +212,7 @@ def calc_on_policy_policy_value_interval(
         env=env,
         policy=policy,
         n_episodes=n_episodes,
+        gamma=gamma,
         random_state=random_state,
     )
     return estimate_confidence_interval_by_bootstrap(
@@ -209,6 +227,7 @@ def rollout_policy_online(
     env: gym.Env,
     policy: Union[AlgoBase, BaseHead],
     n_episodes: int = 100,
+    gamma: float = 1.0,
     random_state: Optional[int] = None,
 ):
     """Rollout policy on the environment and collect trajectory-wise on-policy policy value.
@@ -218,18 +237,21 @@ def rollout_policy_online(
     env: gym.Env
         Reinforcement learning (RL) environment.
 
-    policy: Union[AlgoBase, BaseHead]
+    policy: {AlgoBase, BaseHead}
         A policy to be evaluated.
 
     n_episodes: int, default=100 (> 0)
         Number of trajectories to rollout.
+
+    gamma: float, default=1.0
+        Discount factor. The value should be within `(0, 1]`.
 
     random_state: int, default=None (>= 0)
         Random state.
 
     Return
     -------
-    on_policy_policy_values: NDArray
+    on_policy_policy_values: ndarray of shape (n_episodes, )
         Trajectory-wise on-policy policy values.
 
     """
@@ -245,11 +267,18 @@ def rollout_policy_online(
         target_type=int,
         min_val=1,
     )
+    check_scalar(
+        gamma,
+        name="gamma",
+        target_type=float,
+        min_val=0.0,
+        max_val=1.0,
+    )
 
     on_policy_policy_values = np.zeros(n_episodes)
     env.seed(random_state)
 
-    if isinstance(policy, AlgoBase):
+    if not isinstance(policy, BaseHead):
         policy = OnlineHead(policy)
 
         for i in tqdm(
@@ -278,10 +307,12 @@ def rollout_policy_online(
             done = False
             episode_reward = 0
 
+            t = 0
             while not done:
                 action = policy.sample_action_online(state)
                 state, reward, done, _ = env.step(action)
-                episode_reward += reward
+                episode_reward += gamma ** t * reward
+                t += 1
 
             on_policy_policy_values[i] = episode_reward
 
