@@ -23,9 +23,9 @@ class DiscreteCumulativeDistributionalDirectMethod(
 
     .. math::
 
-        aaa
+        \\hat{F}_{\\mathrm{DM}}(t, \\pi_e; \\mathcal{D})) := \\mathbb{E}_{n} \\left[ \\mathbb{E}_{a_0 \\sim \\pi_e(a_0 \\mid s_0)} \\hat{G}(t; s_0, a_0) \\right]
 
-    where
+    where :math:`\\hat{F}(\\cdot)` is the estimated cumulative distribution function and :math:`\\hat{G}(\\cdot)` is the estimated conditional distribution.
 
     Parameters
     -------
@@ -344,24 +344,26 @@ class DiscreteCumulativeDistributionalDirectMethod(
 
 
 @dataclass
-class DiscreteCumulativeDistributionalImportanceSampling(
+class DiscreteCumulativeDistributionalTrajectoryWiseImportanceSampling(
     BaseCumulativeDistributionalOffPolicyEstimator,
 ):
-    """Importance Sampling (IS) for estimating cumulative distribution function (CDF) in discrete OPE.
+    """Trajectory-wise Importance Sampling (TIS) for estimating cumulative distribution function (CDF) in discrete OPE.
 
     Note
     -------
-    IS estimates CDF using importance sampling techniques as follows.
+    TIS estimates CDF using importance sampling techniques as follows.
 
     .. math::
 
-        aaa
+        \\hat{F}_{\\mathrm{TIS}}(t, \\pi_e; \\mathcal{D})) := \\mathbb{E}_{n} \\left[ w_{1:T} \\mathbb{I} \\left \\{\\sum_{t=0}^T \\gamma^t r_t \\leq t \\right \\} \\right]
 
-    where
+    where :math:`\\hat{F}(\\cdot)` is the estimated cumulative distribution function,
+    :math:`w_{0:T} := \\prod_{t=1}^T \\frac{\\pi_e(a_t \\mid s_t)}{\\pi_b(a_t \\mid s_t)}` is the trajectory-wise importance weight,
+    and :math:`\\mathbb{I} \\{ \\cdot \\}` is the indicator function.
 
     Parameters
     -------
-    estimator_name: str, default="cdf_is"
+    estimator_name: str, default="cdf_tis"
         Name of the estimator.
 
     References
@@ -380,7 +382,7 @@ class DiscreteCumulativeDistributionalImportanceSampling(
 
     """
 
-    estimator_name: str = "cdf_is"
+    estimator_name: str = "cdf_tis"
 
     def __post_init__(self):
         self.action_type = "discrete"
@@ -746,24 +748,28 @@ class DiscreteCumulativeDistributionalImportanceSampling(
 
 
 @dataclass
-class DiscreteCumulativeDistributionalDoublyRobust(
+class DiscreteCumulativeDistributionalTrajectoryWiseDoublyRobust(
     BaseCumulativeDistributionalOffPolicyEstimator,
 ):
-    """Doubly Robust (DR) for estimating cumulative distribution function (CDF) in discrete OPE.
+    """Trajectory-wise Doubly Robust (TDR) for estimating cumulative distribution function (CDF) in discrete OPE.
 
     Note
     -------
-    DR estimates CDF using importance sampling techniques as follows.
+    TDR estimates CDF using importance sampling techniques as follows.
 
     .. math::
 
-        aaa
+        \\hat{F}_{\\mathrm{TDR}}(t, \\pi_e; \\mathcal{D}))
+        := \\mathbb{E}_{n} \\left[ w_{1:T} \\left( \\mathbb{I} \\left \\{\\sum_{t=0}^T \\gamma^t r_t \\leq t \\right \\} - \\hat{G}(t; s_0, a_0) \\right) \\right]
+        + \\hat{F}_{\\mathrm{DM}}(t, \\pi_e; \\mathcal{D}))
 
-    where
+    where :math:`\\hat{F}(\\cdot)` is the estimated cumulative distribution function,
+    :math:`w_{0:T} := \\prod_{t=1}^T \\frac{\\pi_e(a_t \\mid s_t)}{\\pi_b(a_t \\mid s_t)}` is the trajectory-wise importance weight,
+    and :math:`\\mathbb{I} \\{ \\cdot \\}` is the indicator function.
 
     Parameters
     -------
-    estimator_name: str, default="cdf_dr"
+    estimator_name: str, default="cdf_tdr"
         Name of the estimator.
 
     References
@@ -789,7 +795,7 @@ class DiscreteCumulativeDistributionalDoublyRobust(
     """
 
     use_observations_as_reward_scale: bool = False
-    estimator_name: str = "cdf_dr"
+    estimator_name: str = "cdf_tdr"
 
     def __post_init__(self):
         self.action_type = "discrete"
@@ -1191,24 +1197,27 @@ class DiscreteCumulativeDistributionalDoublyRobust(
 
 
 @dataclass
-class DiscreteCumulativeDistributionalSelfNormalizedImportanceSampling(
-    DiscreteCumulativeDistributionalImportanceSampling,
+class DiscreteCumulativeDistributionalSelfNormalizedTrajectoryWiseImportanceSampling(
+    DiscreteCumulativeDistributionalTrajectoryWiseImportanceSampling,
 ):
-    """Self Normalized Importance Sampling (SNIS) for estimating cumulative distribution function (CDF) in discrete OPE.
+    """Self Normalized Trajectory-wise Importance Sampling (SNTIS) for estimating cumulative distribution function (CDF) in discrete OPE.
 
     Note
     -------
-    SNIS estimates CDF using importance sampling techniques as follows.
+    SNTIS estimates CDF using importance sampling techniques as follows.
 
     .. math::
 
-        aaa
+        \\hat{F}_{\\mathrm{SNTIS}}(t, \\pi_e; \\mathcal{D}))
+        := \\mathbb{E}_{n} \\left[ \\frac{w_{1:T}}{\\mathbb{E}_{n}[w_{1:T}]} \\mathbb{I} \\left \\{\\sum_{t=0}^T \\gamma^t r_t \\leq t \\right \\} \\right]
 
-    where
+    where :math:`\\hat{F}(\\cdot)` is the estimated cumulative distribution function,
+    :math:`w_{0:T} := \\prod_{t=1}^T \\frac{\\pi_e(a_t \\mid s_t)}{\\pi_b(a_t \\mid s_t)}` is the trajectory-wise importance weight,
+    and :math:`\\mathbb{I} \\{ \\cdot \\}` is the indicator function.
 
     Parameters
     -------
-    estimator_name: str, default="cdf_snis"
+    estimator_name: str, default="cdf_sntis"
         Name of the estimator.
 
     References
@@ -1233,7 +1242,7 @@ class DiscreteCumulativeDistributionalSelfNormalizedImportanceSampling(
 
     """
 
-    estimator_name: str = "cdf_snis"
+    estimator_name: str = "cdf_sntis"
 
     def __post_init__(self):
         self.action_type = "discrete"
@@ -1351,24 +1360,28 @@ class DiscreteCumulativeDistributionalSelfNormalizedImportanceSampling(
 
 
 @dataclass
-class DiscreteCumulativeDistributionalSelfNormalizedDoublyRobust(
-    DiscreteCumulativeDistributionalDoublyRobust,
+class DiscreteCumulativeDistributionalSelfNormalizedTrajectoryWiseDoublyRobust(
+    DiscreteCumulativeDistributionalTrajectoryWiseDoublyRobust,
 ):
-    """Self Normalized Doubly Robust (SNDR) for estimating cumulative distribution function (CDF) in discrete OPE.
+    """Self Normalized Trajectory-wise Doubly Robust (SNTDR) for estimating cumulative distribution function (CDF) in discrete OPE.
 
     Note
     -------
-    SNDR estimates CDF using importance sampling techniques as follows.
+    SNTDR estimates CDF using importance sampling techniques as follows.
 
     .. math::
 
-        aaa
+        \\hat{F}_{\\mathrm{SNTDR}}(t, \\pi_e; \\mathcal{D}))
+        := \\mathbb{E}_{n} \\left[ \\frac{w_{1:T}}{\\mathbb{E}_{n}[w_{1:T}]} \\left( \\mathbb{I} \\left \\{\\sum_{t=0}^T \\gamma^t r_t \\leq t \\right \\} - \\hat{G}(t; s_0, a_0) \\right) \\right]
+        + \\hat{F}_{\\mathrm{DM}}(t, \\pi_e; \\mathcal{D}))
 
-    where
+    where :math:`\\hat{F}(\\cdot)` is the estimated cumulative distribution function,
+    :math:`w_{0:T} := \\prod_{t=1}^T \\frac{\\pi_e(a_t \\mid s_t)}{\\pi_b(a_t \\mid s_t)}` is the trajectory-wise importance weight,
+    and :math:`\\mathbb{I} \\{ \\cdot \\}` is the indicator function.
 
     Parameters
     -------
-    estimator_name: str, default="cdf_sndr"
+    estimator_name: str, default="cdf_sntdr"
         Name of the estimator.
 
     References
@@ -1399,7 +1412,7 @@ class DiscreteCumulativeDistributionalSelfNormalizedDoublyRobust(
 
     """
 
-    estimator_name: str = "cdf_sndr"
+    estimator_name: str = "cdf_sntdr"
 
     def __post_init__(self):
         self.action_type = "discrete"

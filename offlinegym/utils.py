@@ -157,7 +157,7 @@ def estimate_confidence_interval_by_t_test(
 
 
 def defaultdict_to_dict(dict_: Union[Dict[Any, Any], DefaultDict[Any, Any]]):
-    """Class to transform defaultdict into dict."""
+    """Transform a defaultdict into the dict."""
     if isinstance(dict_, defaultdict):
         dict_ = {key: defaultdict_to_dict(value) for key, value in dict_.items()}
     return dict_

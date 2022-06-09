@@ -185,9 +185,9 @@ class ClickThroughRate(BaseClickAndConversionRate):
 
     Note
     -------
-    We define two coefficient, context coefficient (coef) and time coefficient (time_coef).
+    We define two coefficient, context coefficient (`coef`) and time coefficient (`time_coef`).
     First, the value is calculated linearly from context vector and coef by inner product.
-    Then, we multiply the value with time_coef and gain (ground-truth) CTR.
+    Then, we multiply the value with `time_coef` and gain (ground-truth) CTR.
 
     In short, CTR is calculated as follows.
         CTR = (context @ coef) * time_coef, where @ denotes inner product.
@@ -284,7 +284,7 @@ class ClickThroughRate(BaseClickAndConversionRate):
 
         Note
         -------
-        CTR is calculated using both context coefficient (coef) and time coefficient (time_coef).
+        CTR is calculated using both context coefficient (`coef`) and time coefficient (`time_coef`).
             CTR = (context @ coef) * time_coef, where @ denotes inner product.
 
         Parameters
@@ -395,9 +395,9 @@ class ConversionRate(BaseClickAndConversionRate):
 
     Note
     -------
-    We define two coefficient, context coefficient (coef) and time coefficient (time_coef).
+    We define two coefficient, context coefficient (`coef`) and time coefficient (`time_coef`).
     First, the value is calculated linearly from context vector and coef by inner product.
-    Then, we multiply the value with time_coef and gain (ground-truth) CVR.
+    Then, we multiply the value with `time_coef` and gain (ground-truth) CVR.
 
     In short, CVR is calculated as follows.
         CVR = (context @ coef) * time_coef, where @ denotes inner product.
@@ -494,7 +494,7 @@ class ConversionRate(BaseClickAndConversionRate):
 
         Note
         -------
-        CVR is calculated using both context coefficient (coef) and time coefficient (time_coef).
+        CVR is calculated using both context coefficient (`coef`) and time coefficient (`time_coef`).
             CVR = (context @ coef) * time_coef, where @ denotes inner product.
 
 

@@ -71,16 +71,12 @@ This software is intended for the episodic RL setup. For those aimed for context
   - Hoeffding
   - (Empirical) Bernstein
   - Student T-test
-- Cumulative Distribution Function and Statistics Estimation
+- Cumulative Distribution Function and Statistics Estimation (Discrete only)
   - Direct Method (Fitted Q Evaluation)
-  - Importance Sampling
-  - Doubly Robust
-  - Self-Normalized Importance Sampling
-  - Self-Normalized Doubly Robust
-- Distributionally Robust Metric Estimation (work in progress)
-  - Importance Sampling
-  - Self-Normalized Importance Sampling
-  - Doubly Robust
+  - Trajectory-wise Importance Sampling
+  - Trajectory-wise Doubly Robust
+  - Self-Normalized Trajectory-wise Importance Sampling
+  - Self-Normalized Trajectory-wise Doubly Robust
 
 </details>
 
@@ -91,7 +87,6 @@ This software is intended for the episodic RL setup. For those aimed for context
 - Policy Value Lower Bound
 - Lower Quartile
 - Conditional Value at Risk (CVaR)
-- Distributionally Robust Worst Case Policy Value
 
 </details>
 
@@ -298,17 +293,23 @@ We can also estimate various performance statics including variance and conditio
 # import offlinegym modules
 from offlinegym.ope import DiscreteCumulativeDistributionalOffPolicyEvaluation as CumulativeDistributionalOPE
 from offlinegym.ope import DiscreteCumulativeDistributionalDirectMethod as CD_DM
-from offlinegym.ope import DiscreteCumulativeDistributionalImportanceSampling as CD_IS
-from offlinegym.ope import DiscreteCumulativeDistributionalDoublyRobust as CD_DR
-from offlinegym.ope import DiscreteCumulativeDistributionalSelfNormalizedImportanceSampling as CD_SNIS
-from offlinegym.ope import DiscreteCumulativeDistributionalSelfNormalizedDoublyRobust as CD_SNDR
+from offlinegym.ope import DiscreteCumulativeDistributionalTrajectoryWiseImportanceSampling as CD_IS
+from offlinegym.ope import DiscreteCumulativeDistributionalTrajectoryWiseDoublyRobust as CD_DR
+from offlinegym.ope import DiscreteCumulativeDistributionalSelfNormalizedTrajectoryWiseImportanceSampling as CD_SNIS
+from offlinegym.ope import DiscreteCumulativeDistributionalSelfNormalizedTrajectoryWiseDoublyRobust as CD_SNDR
 
 # (4) Evaluate the learned policy using cumulative distribution function (in an offline manner)
 # we compare ddqn, cql, and random policy defined in the previous section (i.e., (3) of basic OPE procedure)
 # initialize OPE class
 cd_ope = CumulativeDistributionalOPE(
     logged_dataset=logged_dataset,
-    ope_estimators=[CD_DM(), CD_IS(), CD_DR(), CD_SNIS(), CD_SNDR()],
+    ope_estimators=[
+      CD_DM(estimator_name="cdf_dm"), 
+      CD_IS(estimator_name="cdf_is"), 
+      CD_DR(estimator_name="cdf_dr"), 
+      CD_SNIS(estimator_name="cdf_snis"), 
+      CD_SNDR(estimator_name="cdf_sndr"),
+    ],
     use_observations_as_reward_scale=True,
 )
 # estimate variance

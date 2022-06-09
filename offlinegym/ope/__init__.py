@@ -3,12 +3,10 @@ from offlinegym.ope.input import CreateOPEInput
 from offlinegym.ope.estimators_base import (
     BaseOffPolicyEstimator,
     BaseCumulativeDistributionalOffPolicyEstimator,
-    BaseDistributionallyRobustOffPolicyEstimator,
 )
 from offlinegym.ope.ope_discrete import (
     DiscreteOffPolicyEvaluation,
     DiscreteCumulativeDistributionalOffPolicyEvaluation,
-    DiscreteDistributionallyRobustOffPolicyEvaluation,
 )
 from offlinegym.ope.estimators_discrete import (
     DiscreteDirectMethod,
@@ -21,21 +19,12 @@ from offlinegym.ope.estimators_discrete import (
 )
 from offlinegym.ope.cumulative_distributional_estimators_discrete import (
     DiscreteCumulativeDistributionalDirectMethod,
-    DiscreteCumulativeDistributionalImportanceSampling,
-    DiscreteCumulativeDistributionalDoublyRobust,
-    DiscreteCumulativeDistributionalSelfNormalizedImportanceSampling,
-    DiscreteCumulativeDistributionalSelfNormalizedDoublyRobust,
+    DiscreteCumulativeDistributionalTrajectoryWiseImportanceSampling,
+    DiscreteCumulativeDistributionalTrajectoryWiseDoublyRobust,
+    DiscreteCumulativeDistributionalSelfNormalizedTrajectoryWiseImportanceSampling,
+    DiscreteCumulativeDistributionalSelfNormalizedTrajectoryWiseDoublyRobust,
 )
-from offlinegym.ope.distributionally_robust_estimators_discrete import (
-    DiscreteDistributionallyRobustImportanceSampling,
-    DiscreteDistributionallyRobustSelfNormalizedImportanceSampling,
-    DiscreteDistributionallyRobustDoublyRobust,
-)
-from offlinegym.ope.ope_continuous import (
-    ContinuousOffPolicyEvaluation,
-    ContinuousCumulativeDistributionalOffPolicyEvaluation,
-    ContinuousDistributionallyRobustOffPolicyEvaluation,
-)
+from offlinegym.ope.ope_continuous import ContinuousOffPolicyEvaluation
 from offlinegym.ope.estimators_continuous import (
     ContinuousDirectMethod,
     ContinuousTrajectoryWiseImportanceSampling,
@@ -45,29 +34,15 @@ from offlinegym.ope.estimators_continuous import (
     ContinuousSelfNormalizedPerDecisionImportanceSampling,
     ContinuousSelfNormalizedDoublyRobust,
 )
-from offlinegym.ope.cumulative_distributional_estimators_continuous import (
-    ContinuousCumulativeDistributionalDirectMethod,
-    ContinuousCumulativeDistributionalImportanceSampling,
-    ContinuousCumulativeDistributionalDoublyRobust,
-    ContinuousCumulativeDistributionalSelfNormalizedImportanceSampling,
-    ContinuousCumulativeDistributionalSelfNormalizedDoublyRobust,
-)
-from offlinegym.ope.distributionally_robust_estimators_continuous import (
-    ContinuousDistributionallyRobustImportanceSampling,
-    ContinuousDistributionallyRobustSelfNormalizedImportanceSampling,
-    ContinuousDistributionallyRobustDoublyRobust,
-)
 
 
 __all__ = [
     "BaseOffPolicyEstimator",
     "BaseCumulativeDistributionalOffPolicyEstimator",
-    "BaseDistributionallyRobustOffPolicyEstimator",
     "OffPolicySelection",
     "CreateOPEInput",
     "DiscreteOffPolicyEvaluation",
     "DiscreteCumulativeDistributionalOffPolicyEvaluation",
-    "DiscreteDistributionallyRobustOffPolicyEvaluation",
     "DiscreteDirectMethod",
     "DiscreteTrajectoryWiseImportanceSampling",
     "DiscretePerDecisionImportanceSampling",
@@ -76,16 +51,11 @@ __all__ = [
     "DiscreteSelfNormalizedPerDecisionImportanceSampling",
     "DiscreteSelfNormalizedDoublyRobust",
     "DiscreteCumulativeDistributionalDirectMethod",
-    "DiscreteCumulativeDistributionalImportanceSampling",
-    "DiscreteCumulativeDistributionalDoublyRobust",
-    "DiscreteCumulativeDistributionalSelfNormalizedImportanceSampling",
-    "DiscreteCumulativeDistributionalSelfNormalizedDoublyRobust",
-    "DiscreteDistributionallyRobustImportanceSampling",
-    "DiscreteDistributionallyRobustSelfNormalizedImportanceSampling",
-    "DiscreteDistributionallyRobustDoublyRobust",
+    "DiscreteCumulativeDistributionalTrajectoryWiseImportanceSampling",
+    "DiscreteCumulativeDistributionalTrajectoryWiseDoublyRobust",
+    "DiscreteCumulativeDistributionalSelfNormalizedTrajectoryWiseImportanceSampling",
+    "DiscreteCumulativeDistributionalSelfNormalizedTrajectoryWiseDoublyRobust",
     "ContinuousOffPolicyEvaluation",
-    "ContinuousCumulativeDistributionalOffPolicyEvaluation",
-    "ContinuousDistributionallyRobustOffPolicyEvaluation",
     "ContinuousDirectMethod",
     "ContinuousTrajectoryWiseImportanceSampling",
     "ContinuousPerDecisionImportanceSampling",
@@ -93,21 +63,12 @@ __all__ = [
     "ContinuousSelfNormalizedTrajectoryWiseImportanceSampling",
     "ContinuousSelfNormalizedPerDecisionImportanceSampling",
     "ContinuousSelfNormalizedDoublyRobust",
-    "ContinuousCumulativeDistributionalDirectMethod",
-    "ContinuousCumulativeDistributionalImportanceSampling",
-    "ContinuousCumulativeDistributionalDoublyRobust",
-    "ContinuousCumulativeDistributionalSelfNormalizedImportanceSampling",
-    "ContinuousCumulativeDistributionalSelfNormalizedDoublyRobust",
-    "ContinuousDistributionallyRobustImportanceSampling",
-    "ContinuousDistributionallyRobustSelfNormalizedImportanceSampling",
-    "ContinuousDistributionallyRobustDoublyRobust",
 ]
 
 
 __base__ = [
     "BaseOffPolicyEstimator",
     "BaseCumulativeDistributionalOffPolicyEstimator",
-    "BaseDistributionallyRobustOffPolicyEstimator",
 ]
 
 
@@ -116,10 +77,7 @@ __meta__ = [
     "CreateOPEInput",
     "DiscreteOffPolicyEvaluation",
     "DiscreteCumulativeDistributionalOffPolicyEvaluation",
-    "DiscreteDistributionallyRobustOffPolicyEvaluation",
     "ContinuousOffPolicyEvaluation",
-    "ContinuousCumulativeDistributionalOffPolicyEvaluation",
-    "ContinuousDistributionallyRobustOffPolicyEvaluation",
 ]
 
 
@@ -141,36 +99,16 @@ __basic__ = [
     "ContinuousSelfNormalizedTrajectoryWiseImportanceSampling",
     "ContinuousSelfNormalizedStepWiseImportanceSampling",
     "ContinuousSelfNormalizedDoublyRobust",
-    "ContinuousCumulativeDistributionalDirectMethod",
 ]
 
 
 __cumulative__ = [
     "BaseCumulativeDistributionalOffPolicyEstimator",
     "DiscreteCumulativeDistributionalDirectMethod",
-    "DiscreteCumulativeDistributionalImportanceSampling",
-    "DiscreteCumulativeDistributionalDoublyRobust",
-    "DiscreteCumulativeDistributionalSelfNormalizedImportanceSampling",
-    "DiscreteCumulativeDistributionalSelfNormalizedDoublyRobust",
-    "ContinuousCumulativeDistributionalOffPolicyEvaluation",
-    "ContinuousCumulativeDistributionalDirectMethod",
-    "ContinuousCumulativeDistributionalImportanceSampling",
-    "ContinuousCumulativeDistributionalDoublyRobust",
-    "ContinuousCumulativeDistributionalSelfNormalizedImportanceSampling",
-    "ContinuousCumulativeDistributionalSelfNormalizedDoublyRobust",
-]
-
-
-__distributionally_robust__ = [
-    "BaseDistributionallyRobustOffPolicyEstimator",
-    "DiscreteDistributionallyRobustOffPolicyEvaluation",
-    "DiscreteDistributionallyRobustImportanceSampling",
-    "DiscreteDistributionallyRobustSelfNormalizedImportanceSampling",
-    "DiscreteDistributionallyRobustDoublyRobust",
-    "ContinuousDistributionallyRobustOffPolicyEvaluation",
-    "ContinuousDistributionallyRobustImportanceSampling",
-    "ContinuousDistributionallyRobustSelfNormalizedImportanceSampling",
-    "ContinuousDistributionallyRobustDoublyRobust",
+    "DiscreteCumulativeDistributionalTrajectoryWiseImportanceSampling",
+    "DiscreteCumulativeDistributionalTrajectoryWiseDoublyRobust",
+    "DiscreteCumulativeDistributionalSelfNormalizedTrajectoryWiseImportanceSampling",
+    "DiscreteCumulativeDistributionalSelfNormalizedTrajectoryWiseDoublyRobust",
 ]
 
 
@@ -186,13 +124,10 @@ __discrete__ = [
     "DiscreteSelfNormalizedStepWiseImportanceSampling",
     "DiscreteSelfNormalizedDoublyRobust",
     "DiscreteCumulativeDistributionalDirectMethod",
-    "DiscreteCumulativeDistributionalImportanceSampling",
-    "DiscreteCumulativeDistributionalDoublyRobust",
-    "DiscreteCumulativeDistributionalSelfNormalizedImportanceSampling",
-    "DiscreteCumulativeDistributionalSelfNormalizedDoublyRobust",
-    "DiscreteDistributionallyRobustImportanceSampling",
-    "DiscreteDistributionallyRobustSelfNormalizedImportanceSampling",
-    "DiscreteDistributionallyRobustDoublyRobust",
+    "DiscreteCumulativeDistributionalTrajectoryWiseImportanceSampling",
+    "DiscreteCumulativeDistributionalTrajectoryWiseDoublyRobust",
+    "DiscreteCumulativeDistributionalSelfNormalizedTrajectoryWiseImportanceSampling",
+    "DiscreteCumulativeDistributionalSelfNormalizedTrajectoryWiseDoublyRobust",
 ]
 
 
@@ -207,12 +142,4 @@ __continuous__ = [
     "ContinuousSelfNormalizedTrajectoryWiseImportanceSampling",
     "ContinuousSelfNormalizedStepWiseImportanceSampling",
     "ContinuousSelfNormalizedDoublyRobust",
-    "ContinuousCumulativeDistributionalDirectMethod",
-    "ContinuousCumulativeDistributionalImportanceSampling",
-    "ContinuousCumulativeDistributionalDoublyRobust",
-    "ContinuousCumulativeDistributionalSelfNormalizedImportanceSampling",
-    "ContinuousCumulativeDistributionalSelfNormalizedDoublyRobust",
-    "ContinuousDistributionallyRobustImportanceSampling",
-    "ContinuousDistributionallyRobustSelfNormalizedImportanceSampling",
-    "ContinuousDistributionallyRobustDoublyRobust",
 ]

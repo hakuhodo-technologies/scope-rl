@@ -14,7 +14,6 @@ import matplotlib.pyplot as plt
 from .estimators_base import (
     BaseOffPolicyEstimator,
     BaseCumulativeDistributionalOffPolicyEstimator,
-    BaseDistributionallyRobustOffPolicyEstimator,
 )
 from ..types import LoggedDataset, OPEInputDict
 from ..utils import (
@@ -32,6 +31,14 @@ from ..utils import (
 @dataclass
 class DiscreteOffPolicyEvaluation:
     """Class to conduct OPE by multiple estimators simultaneously for discrete action space.
+
+    Note
+    -----------
+    OPE estimates the expected policy performance called policy value.
+
+    .. math::
+
+        V(\\pi) := \\mathbb{E} \\left[ \\sum_{t=1}^T \\gamma^{t-1} r_t \\mid \\pi \\right]
 
     Parameters
     -----------
@@ -828,6 +835,14 @@ class DiscreteOffPolicyEvaluation:
 class DiscreteCumulativeDistributionalOffPolicyEvaluation:
     """Class to conduct cumulative distributional OPE by multiple estimators simultaneously in discrete action space.
 
+    Note
+    -----------
+    CumulativeDIstributionalOPE first estimates the following cumulative distribution function, and then estimates some statistics.
+
+    .. math::
+
+        F(t, \\pi) := \\mathbb{E} \\left[ \\mathbb{I} \\left \\{ \\sum_{t=1}^T \\gamma^{t-1} r_t \\leq t \\right \\} \\mid \\pi \\right]
+
     Parameters
     -----------
     logged_dataset: LoggedDataset
@@ -863,8 +878,8 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
         >>> from offlinegym.policy import DiscreteEpsilonGreedyHead
         >>> from offlinegym.ope import CreateOPEInput
         >>> from offlinegym.ope import DiscreteCumulativeDistributionalOffPolicyEvaluation as CumulativeDistributionalOPE
-        >>> from offlinegym.ope import DiscreteCumulativeDistributionalImportanceSampling as CDIS
-        >>> from offlinegym.ope import DiscreteCumulativeDistributionalSelfNormalizedImportanceSampling as CDSIS
+        >>> from offlinegym.ope import DiscreteCumulativeDistributionalTrajectoryWiseImportanceSampling as CDIS
+        >>> from offlinegym.ope import DiscreteCumulativeDistributionalSelfNormalizedTrajectoryWiseImportanceSampling as CDSIS
 
         # import necessary module from other libraries
         >>> import gym
@@ -943,7 +958,10 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
         # OPE
         >>> cd_ope = CumulativeDistributionalOPE(
                 logged_dataset=logged_dataset,
-                ope_estimators=[CDIS(), CDSIS()],
+                ope_estimators=[
+                    CDIS(estimator_name="cdf_is"),
+                    CDSIS(estimator_name="cdf_sis"),
+                ],
                 use_observations_as_reward_scale=True,
             )
         >>> variance_dict = cd_ope.estimate_variance(
@@ -2271,216 +2289,3 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
 
         if fig_dir:
             fig.savefig(str(fig_dir / fig_name))
-
-
-@dataclass
-class DiscreteDistributionallyRobustOffPolicyEvaluation:
-    """Class to conduct distributionally robust OPE by multiple estimators simultaneously in discrete action space.
-
-    Note
-    -----------
-    Currently, DistributionallyRobustOPE methods are not officially supported.
-
-    Parameters
-    -----------
-    logged_dataset: LoggedDataset
-        Logged dataset used to conduct OPE.
-
-    ope_estimators: list of BaseOffPolicyEstimator
-        List of OPE estimators used to evaluate the policy value of the evaluation policies.
-        Estimators must follow the interface of `offlinegym.ope.BaseDistributionallyRobustOffPolicyEstimator`.
-
-    alpha_prior: float, default=1.0 (> 0)
-        Initial temperature parameter of the exponential function.
-
-    max_steps: int, default=100 (> 0)
-        Maximum steps in turning alpha.
-
-    epsilon: float, default=0.01
-        Convergence criterion of alpha.
-
-    Examples
-    ----------
-    .. ::code-block:: python
-
-    References
-    -------
-    Nathan Kallus, Xiaojie Mao, Kaiwen Wang, and Zhengyuan Zhou.
-    "Doubly Robust Distributionally Robust Off-Policy Evaluation and Learning.", 2022.
-
-    Nian Si, Fan Zhang, Zhengyuan Zhou, and Jose Blanchet.
-    "Distributional Robust Batch Contextual Bandits.", 2020.
-
-    """
-
-    logged_dataset: LoggedDataset
-    ope_estimators: List[BaseOffPolicyEstimator]
-    gamma: float = 1.0
-    alpha_prior: float = 1.0
-    max_steps: int = 100
-    epsilon: float = 0.01
-
-    def __post_init__(self) -> None:
-        "Initialize class."
-        check_logged_dataset(self.logged_dataset)
-        self.step_per_episode = self.logged_dataset["step_per_episode"]
-
-        if self.logged_dataset["action_type"] != "discrete":
-            raise ValueError("logged_dataset does not `discrete` action_type")
-
-        self.ope_estimators_ = dict()
-        for estimator in self.ope_estimators:
-            self.ope_estimators_[estimator.estimator_name] = estimator
-
-            if estimator.action_type != "discrete":
-                raise RuntimeError(
-                    f"One of the ope_estimators, {estimator.estimator_name} does not match `discrete` action_type"
-                )
-
-            if not isinstance(estimator, BaseDistributionallyRobustOffPolicyEstimator):
-                raise RuntimeError(
-                    f"ope_estimators must be child classes of BaseDistributionallyRobustOffPolicyEstimator, but one of them, {estimator.estimator_name} is not"
-                )
-
-        check_scalar(
-            self.alpha_prior, name="alpha_prior", target_type=float, min_val=0.0
-        )
-        check_scalar(self.max_steps, name="max_steps", target_type=int, min_val=1)
-        check_scalar(self.epsilon, name="epsilon", target_type=float, min_val=0.0)
-
-        behavior_policy_pscore = self.logged_dataset["pscore"].reshape(
-            (-1, self.step_per_episode)
-        )
-        behavior_policy_step_wise_pscore = np.cumprod(behavior_policy_pscore, axis=1)
-        behavior_policy_trajectory_wise_pscore = np.tile(
-            behavior_policy_step_wise_pscore[:, -1], (self.step_per_episode, 1)
-        ).T
-
-        self.input_dict_ = {
-            "step_per_episode": self.step_per_episode,
-            "action": self.logged_dataset["action"].astype(int),
-            "reward": self.logged_dataset["reward"],
-            "behavior_policy_step_wise_pscore": behavior_policy_step_wise_pscore.flatten(),
-            "behavior_policy_trajectory_wise_pscore": behavior_policy_trajectory_wise_pscore.flatten(),
-            "initial_state": self.logged_dataset["state"].reshape(
-                (-1, self.step_per_episode, self.logged_dataset["state_dim"])
-            )[:, 0, :],
-            "initial_state_action": self.logged_dataset["action"]
-            .astype(int)
-            .reshape((-1, self.step_per_episode))[:, 0],
-        }
-
-    def _estimate_worst_case_on_policy_policy_value(
-        self,
-        on_policy_policy_value: np.ndarray,
-        delta: float = 0.05,
-    ) -> float:
-        """Estimate the worst case on-policy policy value of the evaluation policy.
-
-        Parameters
-        -------
-        on_policy_policy_value: ndarray of shape (n_episodes, )
-            On-policy policy value of the evaluation policy.
-
-        delta: float, default=0.05 (> 0)
-            Allowance of the distributional shift.
-
-        Return
-        -------
-        worst_case_on_policy_policy_value: float
-            Worst case policy value estimated by on-policy estimate.
-
-        """
-        n = on_policy_policy_value.shape[0]
-
-        alpha = self.alpha_prior
-        for _ in range(self.max_steps):
-            W_0 = np.exp(-on_policy_policy_value / alpha)
-            W_1 = on_policy_policy_value * np.exp(-on_policy_policy_value / alpha)
-            W_2 = on_policy_policy_value ** 2 * np.exp(-on_policy_policy_value / alpha)
-            objective = -alpha * (np.log(W_0) + delta)
-            first_order_derivative = -W_1 / (alpha * n * W_0) - np.log(W_0) - delta
-            second_order_derivative = W_1 ** 2 / (
-                alpha ** 3 * n ** 2 * W_0 ** 2
-            ) - W_2 / (alpha ** 3 * n * W_0)
-
-            alpha_prior = alpha
-            alpha = np.clip(
-                alpha_prior - first_order_derivative / second_order_derivative,
-                0,
-                1 / delta,
-            )
-
-            if np.abs(alpha - alpha_prior)[0] < self.epsilon:
-                break
-
-        return objective
-
-    def estimate_worst_case_policy_value(
-        self,
-        input_dict: OPEInputDict,
-        delta: float = 0.05,
-        random_state: Optional[int] = None,
-    ) -> Dict[str, float]:
-        """Estimate the worst case policy value of the evaluation policies.
-
-        Parameters
-        -------
-        input_dict: OPEInputDict
-            Dictionary of the OPE inputs for each evaluation policy.
-            Please refer to `CreateOPEInput` class for the detail.
-            key: [evaluation_policy_name][
-                evaluation_policy_step_wise_pscore,
-                evaluation_policy_trajectory_wise_pscore,
-                evaluation_policy_action,
-                evaluation_policy_action_dist,
-                state_action_value_prediction,
-                initial_state_value_prediction,
-                initial_state_action_distribution,
-                on_policy_policy_value,
-                gamma,
-            ]
-
-        delta: float, default=0.05 (> 0)
-            Allowance of the distributional shift.
-
-        random_state: int, default=None (>= 0)
-            Random state.
-
-        Return
-        -------
-        worst_case_policy_value_dict: dict
-            Dictionary containing the worst case policy value of each evaluation policy estimated by OPE estimators.
-            key: [evaluation_policy_name][OPE_estimator_name]
-
-        """
-        check_input_dict(input_dict)
-        worst_case_policy_value_dict = defaultdict(dict)
-
-        for eval_policy in input_dict.keys():
-            if input_dict[eval_policy]["on_policy_policy_value"] is not None:
-                worst_case_policy_value_dict[eval_policy][
-                    "on_policy"
-                ] = self._estimate_worst_case_on_policy_policy_value(
-                    on_policy_policy_value=input_dict[eval_policy][
-                        "on_policy_policy_value"
-                    ],
-                    delta=delta,
-                )
-            else:
-                worst_case_policy_value_dict[eval_policy]["on_policy"] = None
-
-            for estimator_name, estimator in self.ope_estimators_.items():
-                worst_case_policy_value_dict[eval_policy][
-                    estimator_name
-                ] = estimator.estimate_worst_case_policy_value(
-                    **input_dict[eval_policy],
-                    **self.input_dict_,
-                    delta=delta,
-                    alpha_prior=self.alpha_prior,
-                    max_steps=self.max_steps,
-                    epsilon=self.epsilon,
-                    random_state=random_state,
-                )
-
-        return defaultdict_to_dict(worst_case_policy_value_dict)

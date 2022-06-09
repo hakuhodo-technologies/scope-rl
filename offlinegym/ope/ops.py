@@ -2,7 +2,6 @@ from collections import defaultdict
 from dataclasses import dataclass
 from typing import Optional, Union, List
 from pathlib import Path
-import warnings
 
 import numpy as np
 import pandas as pd
@@ -14,13 +13,8 @@ import matplotlib.pyplot as plt
 from .ope_discrete import (
     DiscreteOffPolicyEvaluation,
     DiscreteCumulativeDistributionalOffPolicyEvaluation,
-    DiscreteDistributionallyRobustOffPolicyEvaluation,
 )
-from .ope_continuous import (
-    ContinuousOffPolicyEvaluation,
-    ContinuousCumulativeDistributionalOffPolicyEvaluation,
-    ContinuousDistributionallyRobustOffPolicyEvaluation,
-)
+from .ope_continuous import ContinuousOffPolicyEvaluation
 from ..types import OPEInputDict
 from ..utils import check_array, defaultdict_to_dict
 
@@ -29,16 +23,30 @@ from ..utils import check_array, defaultdict_to_dict
 class OffPolicySelection:
     """Class to conduct OPS by multiple estimators simultaneously.
 
+    Note
+    -----------
+    OPS selects the "best" policy among several candidates based on the policy value or other statistics estimates by OPE.
+
+    (Basic) OPE estimates the expected policy performance called policy value.
+
+    .. math::
+
+        V(\\pi) := \\mathbb{E} \\left[ \\sum_{t=1}^T \\gamma^{t-1} r_t \\mid \\pi \\right]
+
+    CumulativeDistributionalOPE first estimates the following cumulative distribution function,
+    and then estimates some statistics including variance, conditional value at risk, and interquartile range.
+
+    .. math::
+
+        F(t, \\pi) := \\mathbb{E} \\left[ \\mathbb{I} \\left \\{ \\sum_{t=1}^T \\gamma^{t-1} r_t \\leq t \\right \\} \\mid \\pi \\right]
+
     Parameters
     -----------
     ope: {DiscreteOffPolicyEvaluation, ContinuousOffPolicyEvaluation}, default=None
         Instance of the (standard) OPE class.
 
-    cumulative_distributional_ope: {DiscreteCumulativeDistributionalOffPolicyEvaluation, ContinuousCumulativeDistributionalOffPolicyEvaluation}, default=None
+    cumulative_distributional_ope: DiscreteCumulativeDistributionalOffPolicyEvaluation, default=None
         Instance of the cumulative distributional OPE class.
-
-    distributionally_robust_ope: {DiscreteDistributionallyRobustOffPolicyEvaluation, ContinuousDistributionallyRobustOffPolicyEvaluation}, default=None
-        Instance of the distributionally robust OPE class.
 
     Examples
     ----------
@@ -53,8 +61,8 @@ class OffPolicySelection:
         >>> from offlinegym.ope import DiscreteTrajectoryWiseImportanceSampling as TIS
         >>> from offlinegym.ope import DiscretePerDecisionImportanceSampling as PDIS
         >>> from offlinegym.ope import DiscreteCumulativeDistributionalOffPolicyEvaluation as CumulativeDistributionalOPE
-        >>> from offlinegym.ope import DiscreteCumulativeDistributionalImportanceSampling as CDIS
-        >>> from offlinegym.ope import DiscreteCumulativeDistributionalSelfNormalizedImportanceSampling as CDSIS
+        >>> from offlinegym.ope import DiscreteCumulativeDistributionalTrajectoryWiseImportanceSampling as CDIS
+        >>> from offlinegym.ope import DiscreteCumulativeDistributionalTrajectoryWiseSelfNormalizedImportanceSampling as CDSIS
 
         # import necessary module from other libraries
         >>> import gym
@@ -137,7 +145,10 @@ class OffPolicySelection:
             )
         >>> cd_ope = CumulativeDistributionalOPE(
                 logged_dataset=logged_dataset,
-                ope_estimators=[CDIS(), CDSIS()],
+                ope_estimators=[
+                    CDIS(estimator_name="cdf_is"),
+                    CDSIS(estimator_name="cdf_sis"),
+                ],
                 use_observations_as_reward_scale=True,
             )
         >>> ops = OffPolicySelection(
@@ -167,7 +178,7 @@ class OffPolicySelection:
                 'type_i_error_rate': 0.0,
                 'type_ii_error_rate': 0.0,
                 'safety_threshold': 13.284}}
-        
+
 
     References
     -------
@@ -187,26 +198,13 @@ class OffPolicySelection:
         Union[DiscreteOffPolicyEvaluation, ContinuousOffPolicyEvaluation]
     ] = None
     cumulative_distributional_ope: Optional[
-        Union[
-            DiscreteCumulativeDistributionalOffPolicyEvaluation,
-            ContinuousCumulativeDistributionalOffPolicyEvaluation,
-        ]
-    ] = None
-    distributionally_robust_ope: Optional[
-        Union[
-            DiscreteDistributionallyRobustOffPolicyEvaluation,
-            ContinuousDistributionallyRobustOffPolicyEvaluation,
-        ]
+        DiscreteCumulativeDistributionalOffPolicyEvaluation
     ] = None
 
     def __post_init__(self):
-        if (
-            self.ope is None
-            and self.cumulative_distributional_ope is None
-            and self.distributionally_robust_ope is None
-        ):
+        if self.ope is None and self.cumulative_distributional_ope is None:
             raise RuntimeError(
-                "one of ope, cumulative_distributional_ope, or distributionally_robust_ope must be given"
+                "one of `ope` or `cumulative_distributional_ope` must be given"
             )
 
         if self.ope is not None and not isinstance(
@@ -217,30 +215,10 @@ class OffPolicySelection:
             )
         if self.cumulative_distributional_ope is not None and not isinstance(
             self.cumulative_distributional_ope,
-            (
-                DiscreteCumulativeDistributionalOffPolicyEvaluation,
-                ContinuousCumulativeDistributionalOffPolicyEvaluation,
-            ),
+            DiscreteCumulativeDistributionalOffPolicyEvaluation,
         ):
             raise RuntimeError(
-                "cumulative_distributional_ope must be the instance of either "
-                "DiscreteCumulativeDistributionalOffPolicyEvaluation or ContinuousCumulativeDistributionalOffPolicyEvaluation"
-            )
-        if self.distributionally_robust_ope is not None and not isinstance(
-            self.cumulative_distributional_ope,
-            (
-                DiscreteDistributionallyRobustOffPolicyEvaluation,
-                ContinuousDistributionallyRobustOffPolicyEvaluation,
-            ),
-        ):
-            raise RuntimeError(
-                "distributionally_robust_ope must be the instance of either "
-                "DiscreteDistributionallyRobustOffPolicyEvaluation or ContinuousDistributionallyRobustOffPolicyEvaluation"
-            )
-
-        if self.distributionally_robust_ope is not None:
-            warnings.warn(
-                "Currently, distributionally_robust_ope is under construction. It's performance is not stable."
+                "cumulative_distributional_ope must be the instance of DiscreteCumulativeDistributionalOffPolicyEvaluation"
             )
 
         step_per_episode = self.ope.logged_dataset["step_per_episode"]
@@ -265,11 +243,9 @@ class OffPolicySelection:
         return_variance: bool = False,
         return_lower_quartile: bool = False,
         return_conditional_value_at_risk: bool = False,
-        return_distributionally_robust_worst_case: bool = False,
         return_by_dataframe: bool = False,
         quartile_alpha: float = 0.05,
         cvar_alpha: float = 0.05,
-        distributionally_robust_delta: float = 0.05,
     ):
         """Obtain the oracle selection result using the ground-truth policy value.
 
@@ -299,9 +275,6 @@ class OffPolicySelection:
         return_conditional_value_at_risk: bool, default=False
             Whether to return the conditional value at risk or not.
 
-        return_distributionally_robust_worst_case: bool, default=False
-            Whether to return the distributionally robust worst case policy value or not.
-
         return_by_dataframe: bool, default=False
             Whether to return the result in a dataframe format.
 
@@ -310,9 +283,6 @@ class OffPolicySelection:
 
         cvar_alpha: float, default=0.05
             Proportion of the sided region of the conditional value at risk.
-
-        distributionally_robust_delta: float, default=0.05
-            Allowance of the distributional shift of the distributionally robust worst case policy value.
 
         Return
         -------
@@ -348,16 +318,8 @@ class OffPolicySelection:
                 Ground-truth conditional value at risk of the candidate policies (sorted by ranking_by_conditional_value_at_risk).
                 If `return_conditional_value_at_risk == False`, `None` is recorded.
 
-            ranking_by_distributionally_robust_worst_case: list of str
-                Name of the candidate policies sorted by the ground-truth distributionally robust worst case policy value.
-                If `return_distributionally_robust_worst_case == False`, `None` is recorded.
-
-            distributionally_robust_worst_case: list of float
-                Ground-truth distributionally robust worst case policy value of the candidate policies (sorted by ranking_by_distributionally_robust_worst_case).
-                If `return_distributionally_robust_worst_case == False`, `None` is recorded.
-
             parameters: dict
-                Dictionary containing quartile_alpha, cvar_alpha, and distributionally_robust_alpha.
+                Dictionary containing quartile_alpha, and cvar_alpha.
 
         """
         candidate_policy_names = list(input_dict.keys())
@@ -415,26 +377,6 @@ class OffPolicySelection:
             ]
             cvar = np.sort(cvar)[::-1]
 
-        if return_distributionally_robust_worst_case:
-            if self.distributionally_robust_ope is None:
-                raise RuntimeError(
-                    "When using distributionally robust methods, initialize class with distributionally_robust_ope attribute"
-                )
-            worst_case = np.zeros(n_policies)
-            for i, eval_policy in enumerate(candidate_policy_names):
-                worst_case[
-                    i
-                ] = self.distributionally_robust_ope.estimate_worst_case_on_policy_policy_value(
-                    input_dict[eval_policy]["on_policy_policy_value"]
-                )
-
-            worst_case_ranking_index = np.argsort(worst_case)[::-1]
-            ranking_by_worst_case = [
-                candidate_policy_names[worst_case_ranking_index[i]]
-                for i in range(n_policies)
-            ]
-            worst_case = np.sort(worst_case)[::-1]
-
         ground_truth_dict = {
             "ranking": ranking,
             "policy_value": policy_value,
@@ -450,18 +392,9 @@ class OffPolicySelection:
             "conditional_value_at_risk": cvar
             if return_conditional_value_at_risk
             else None,
-            "ranking_by_distributionally_robust_worst_case": ranking_by_worst_case
-            if return_distributionally_robust_worst_case
-            else None,
-            "distributionally_robust_worst_case": worst_case
-            if return_distributionally_robust_worst_case
-            else None,
             "parameters": {
                 "quartile_alpha": quartile_alpha if return_lower_quartile else None,
                 "cvar_alpha": cvar_alpha if return_conditional_value_at_risk else None,
-                "distributionally_robust_delta": distributionally_robust_delta
-                if return_distributionally_robust_worst_case
-                else None,
             },
         }
 
@@ -1605,180 +1538,6 @@ class OffPolicySelection:
             ranking_df_dict = defaultdict_to_dict(ranking_df_dict)
 
         return (ranking_df_dict, metric_df) if return_by_dataframe else ops_dict
-
-    def select_by_distributionally_robust_worst_case_policy_value(
-        self,
-        input_dict: OPEInputDict,
-        delta: float = 0.05,
-        return_metrics: bool = False,
-        return_by_dataframe: bool = False,
-        safety_threshold: float = 0.0,
-    ):
-        """Rank candidate policies by the estimated distributionally robust worst case policy value.
-
-        Parameters
-        -------
-        input_dict: OPEInputDict
-            Dictionary of the OPE inputs for each evaluation policy.
-            Please refer to `CreateOPEInput` class for the detail.
-            key: [evaluation_policy_name][
-                evaluation_policy_step_wise_pscore,
-                evaluation_policy_trajectory_wise_pscore,
-                evaluation_policy_action,
-                evaluation_policy_action_dist,
-                state_action_value_prediction,
-                initial_state_value_prediction,
-                initial_state_action_distribution,
-                on_policy_policy_value,
-                gamma,
-            ]
-
-        delta: float, default=0.05
-            Allowance of the distributional shift.
-
-        return_metrics: bool, default=False
-            Whether to return evaluation metrics including:
-            mean-squared-error, rank-correlation, and Type I and Type II error rate.
-
-        return_by_dataframe: bool, default=False
-            Whether to return the result in a dataframe format.
-
-        safety_threshold: float, default=None (>= 0)
-            The distributionally robust worst case policy value required to be a safe policy.
-
-        Return
-        -------
-        ops_dict/(ranking_df_dict, metric_df): dict or dataframe
-            Dictionary/dataframe containing the result of OPS conducted by OPE estimators.
-            key: [estimator_name][
-                estimated_ranking,
-                estimated_lower_quartile,
-                mean_squared_error,
-                rank_correlation,
-                regret,
-                type_i_error_rate,
-                type_ii_error_rate,
-            ]
-
-            estimated_ranking: list of str
-                Name of the candidate policies sorted by the estimated distributionally robust worst case policy value.
-                Recorded in `ranking_df_dict` when `return_by_dataframe == True`.
-
-            estimated_distributionally_robust_worst_case: list of float
-                Estimated distributionally robust worst case policy value of the candidate policies (sorted by estimated_ranking).
-                Recorded in `ranking_df_dict` when `return_by_dataframe == True`.
-
-            mean_squared_error: float
-                Mean-squared-error of the estimated distributionally robust worst case policy value.
-                If `return_metric == False`, `None` is recorded.
-                Recorded in `metric_df` when `return_by_dataframe == True`.
-
-            rank_correlation: tuple of float
-                Rank correlation coefficient and its pvalue between the true ranking and the estimated ranking.
-                If `return_metric == False`, `None` is recorded.
-                Recorded in `metric_df` when `return_by_dataframe == True`.
-
-            regret: None
-                This is for API consistency.
-                Recorded in `metric_df` when `return_by_dataframe == True`.
-
-            type_i_error_rate: float
-                Type I error rate of the hypothetical test. True Negative when the policy is safe but estimated as unsafe.
-                If `return_metric == False`, `None` is recorded.
-                Recorded in `metric_df` when `return_by_dataframe == True`.
-
-            type_ii_error_rate: float
-                Type II error rate of the hypothetical test. False Positive when the policy is unsafe but undetected.
-                If `return_metric == False`, `None` is recorded.
-                Recorded in `metric_df` when `return_by_dataframe == True`.
-
-            safety_threshold: float
-                The required distributionally robust worst case policy value to be a safe policy.
-
-        """
-        if self.distributionally_robust_ope is None:
-            raise RuntimeError(
-                "distributionally_robust_ope is not given. Please initialize the class with distributionally_robust_ope attribute"
-            )
-
-        estimated_worst_case_policy_value_dict = (
-            self.distributionally_robust_ope.estimate_worst_case_policy_value(
-                input_dict=input_dict,
-                delta=delta,
-            )
-        )
-
-        if return_metrics:
-            ground_truth_dict = self.obtain_oracle_selection_result(
-                input_dict=input_dict,
-                return_distributionally_robust_worst_case=True,
-                distributionally_robust_delta=delta,
-            )
-            true_ranking = ground_truth_dict[
-                "ranking_by_distributionally_robust_worst_case"
-            ]
-            true_worst_case_policy_value = ground_truth_dict[
-                "distributionally_robust_worst_case"
-            ]
-
-        candidate_policy_names = true_ranking if return_metrics else input_dict.keys()
-        n_policies = len(candidate_policy_names)
-
-        ops_dict = {}
-        for estimator in enumerate(self.distributionally_robust_ope.ope_estimators_):
-
-            estimated_worst_case_policy_value_ = np.zeros(n_policies)
-            for j, eval_policy in enumerate(candidate_policy_names):
-                estimated_worst_case_policy_value_[
-                    j
-                ] = estimated_worst_case_policy_value_dict[eval_policy][estimator]
-
-            estimated_ranking_index_ = np.argsort(estimated_worst_case_policy_value_)[
-                ::-1
-            ]
-            estimated_ranking = [
-                candidate_policy_names[estimated_ranking_index_[i]]
-                for i in range(n_policies)
-            ]
-            estimated_worst_case_policy_value = np.sort(
-                estimated_worst_case_policy_value_
-            )[::-1]
-
-            if return_metrics:
-                mse = mean_squared_error(
-                    true_worst_case_policy_value, estimated_worst_case_policy_value_
-                )
-                rankcorr = spearmanr(np.arange(n_policies), estimated_ranking_index_)
-
-                true_safety = true_worst_case_policy_value >= safety_threshold
-                estimated_safety = (
-                    estimated_worst_case_policy_value_ >= safety_threshold
-                )
-
-                if true_safety.sum() > 0:
-                    type_i_error_rate = (
-                        true_safety > estimated_safety
-                    ).sum() / true_safety.sum()
-                else:
-                    type_i_error_rate = 0.0
-
-                if (1 - true_safety).sum() > 0:
-                    type_ii_error_rate = (true_safety < estimated_safety).sum() / (
-                        1 - true_safety
-                    ).sum()
-                else:
-                    type_ii_error_rate = 0.0
-
-            ops_dict[estimator] = {
-                "estimated_ranking": estimated_ranking,
-                "estimated_distributionally_robust_worst_case": estimated_worst_case_policy_value,
-                "mean_squared_error": mse if return_metrics else None,
-                "rank_correlation": rankcorr if return_metrics else None,
-                "regret": None,
-                "type_i_error_rate": type_i_error_rate if return_metrics else None,
-                "type_ii_error_rate": type_ii_error_rate if return_metrics else None,
-                "safety_threshold": safety_threshold,
-            }
 
     def visualize_policy_value_for_selection(
         self,
@@ -3334,102 +3093,6 @@ class OffPolicySelection:
                         color="black",
                         linewidth=1.0,
                     )
-
-        fig.tight_layout()
-        plt.show()
-
-        if fig_dir:
-            fig.savefig(str(fig_dir / fig_name))
-
-    def visualize_distributionally_robust_worst_case_policy_value_for_validation(
-        self,
-        input_dict: OPEInputDict,
-        fig_dir: Optional[Path] = None,
-        fig_name: str = "scatter_distributionally_robust_worst_case.png",
-    ):
-        """Visualize the true distributionally robust worst case policy value and its estimate (scatter plot).
-
-        input_dict: OPEInputDict
-            Dictionary of the OPE inputs for each evaluation policy.
-            Please refer to `CreateOPEInput` class for the detail.
-            key: [evaluation_policy_name][
-                evaluation_policy_step_wise_pscore,
-                evaluation_policy_trajectory_wise_pscore,
-                evaluation_policy_action,
-                evaluation_policy_action_dist,
-                state_action_value_prediction,
-                initial_state_value_prediction,
-                initial_state_action_distribution,
-                on_policy_policy_value,
-                gamma,
-            ]
-
-        fig_dir: Path, default=None
-            Path to store the bar figure.
-            If `None` is given, the figure will not be saved.
-
-        fig_name: str, default="scatter_distributionally_robust_worst_case.png"
-            Name of the bar figure.
-
-        """
-        ground_truth_policy_value_dict = self.obtain_oracle_selection_result(
-            input_dict=input_dict,
-        )
-        true_ranking = ground_truth_policy_value_dict[
-            "ranking_by_distributionally_robust_worst_case"
-        ]
-        true_worst_case = ground_truth_policy_value_dict[
-            "distributionally_robust_worst_case"
-        ]
-
-        estimated_policy_value_dict = (
-            self.select_by_distributionally_robust_worst_case_policy_value(
-                input_dict=input_dict,
-            )
-        )
-
-        plt.style.use("ggplot")
-        n_estimators = len(self.distributionally_robust_ope.ope_estimators_)
-        fig, axes = plt.subplots(nrows=n_estimators // 5, ncols=min(5, n_estimators))
-
-        for i, estimator in enumerate(self.distributionally_robust_ope.ope_estimators_):
-            estimated_ranking_ = estimated_policy_value_dict[estimator][
-                "estimated_ranking_by_distributionally_robust_worst_case"
-            ]
-            estimated_worst_case_ = estimated_policy_value_dict[estimator][
-                "estimated_distributionally_robust_worst_case"
-            ]
-
-            estimated_ranking_dict = {
-                estimated_ranking_[i]: i for i in range(len(estimated_ranking_))
-            }
-            estimated_worst_case = [
-                estimated_worst_case_[estimated_ranking_dict[true_ranking[i]]]
-                for i in range(len(true_ranking))
-            ]
-
-            guide = np.linspace(
-                np.minimum(np.nanmin(true_worst_case), np.nanmin(estimated_worst_case)),
-                np.maximum(np.nanmax(true_worst_case), np.nanmax(estimated_worst_case)),
-            )
-
-            axes[i // 5, i % 5].scatter(
-                true_worst_case,
-                estimated_worst_case,
-            )
-            axes[i // 5, i % 5].plot(
-                guide,
-                guide,
-                color="black",
-                linewidth=1.0,
-            )
-            axes[i // 3, i % 3].title(estimator)
-            axes[i // 3, i % 3].xlabel(
-                "true distributionally robust worst case policy value"
-            )
-            axes[i // 3, i % 3].ylabel(
-                "estimated distributionally robust worst case policy value"
-            )
 
         fig.tight_layout()
         plt.show()
