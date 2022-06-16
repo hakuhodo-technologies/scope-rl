@@ -12,7 +12,7 @@ Overview
 This library aims to facilitate the an easy, flexible and reliable experiment in offline RL research to , as well as to provide a streamlined implementation also for practitioners.
 OfflineGym includes a series of modules to implement synthetic dataset generation and dataset preprocessing, a variety of OPE estimators, and also Off-Policy Selection (OPS) methods. 
 
-OfflineGym is applicable to any RL environment with `OpenAI Gym <https://gym.openai.com>'_-like interface.
+OfflineGym is applicable to any RL environment with `OpenAI Gym <https://gym.openai.com>`_-like interface.
 The library is also compatible with `d3rlpy <https://github.com/takuseno/d3rlpy>`_, which provides the algorithm implementation of both online and offline RL methods.
 
 Our software facilitate implementation, evaluation and algorithm comparison related to the following research topics:
@@ -115,16 +115,14 @@ Table of Contents
    :caption: Online and Offline Reinforcement Learning (online/offline RL):
 
    online_offline_rl
-   wrapper
-   online_evaluation
+   learning_implementation
 
 .. toctree::
    :maxdepth: 3
    :caption: Off-Policy Evaluation and Selection (OPE/OPS):
 
    ope_ops
-   ope_estimators
-   evaluation_of_ope_ops
+   evaluation_implementation
 
 .. toctree::
    :maxdepth: 3

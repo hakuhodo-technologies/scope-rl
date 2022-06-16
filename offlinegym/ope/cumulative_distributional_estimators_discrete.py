@@ -23,7 +23,7 @@ class DiscreteCumulativeDistributionalDirectMethod(
 
     .. math::
 
-        \\hat{F}_{\\mathrm{DM}}(t, \\pi_e; \\mathcal{D})) := \\mathbb{E}_{n} \\left[ \\mathbb{E}_{a_0 \\sim \\pi_e(a_0 \\mid s_0)} \\hat{G}(t; s_0, a_0) \\right]
+        \\hat{F}_{\\mathrm{DM}}(m, \\pi_e; \\mathcal{D}) := \\mathbb{E}_{n} \\left[ \\mathbb{E}_{a_0 \\sim \\pi_e(a_0 \\mid s_0)} \\hat{G}(m; s_0, a_0) \\right]
 
     where :math:`\\hat{F}(\\cdot)` is the estimated cumulative distribution function and :math:`\\hat{G}(\\cdot)` is the estimated conditional distribution.
 
@@ -355,7 +355,7 @@ class DiscreteCumulativeDistributionalTrajectoryWiseImportanceSampling(
 
     .. math::
 
-        \\hat{F}_{\\mathrm{TIS}}(t, \\pi_e; \\mathcal{D})) := \\mathbb{E}_{n} \\left[ w_{1:T} \\mathbb{I} \\left \\{\\sum_{t=0}^T \\gamma^t r_t \\leq t \\right \\} \\right]
+        \\hat{F}_{\\mathrm{TIS}}(m, \\pi_e; \\mathcal{D}) := \\mathbb{E}_{n} \\left[ w_{1:T} \\mathbb{I} \\left \\{\\sum_{t=0}^T \\gamma^t r_t \\leq m \\right \\} \\right]
 
     where :math:`\\hat{F}(\\cdot)` is the estimated cumulative distribution function,
     :math:`w_{0:T} := \\prod_{t=1}^T \\frac{\\pi_e(a_t \\mid s_t)}{\\pi_b(a_t \\mid s_t)}` is the trajectory-wise importance weight,
@@ -759,9 +759,9 @@ class DiscreteCumulativeDistributionalTrajectoryWiseDoublyRobust(
 
     .. math::
 
-        \\hat{F}_{\\mathrm{TDR}}(t, \\pi_e; \\mathcal{D}))
-        := \\mathbb{E}_{n} \\left[ w_{1:T} \\left( \\mathbb{I} \\left \\{\\sum_{t=0}^T \\gamma^t r_t \\leq t \\right \\} - \\hat{G}(t; s_0, a_0) \\right) \\right]
-        + \\hat{F}_{\\mathrm{DM}}(t, \\pi_e; \\mathcal{D}))
+        \\hat{F}_{\\mathrm{TDR}}(m, \\pi_e; \\mathcal{D})
+        := \\mathbb{E}_{n} \\left[ w_{1:T} \\left( \\mathbb{I} \\left \\{\\sum_{t=0}^T \\gamma^t r_t \\leq m \\right \\} - \\hat{G}(m; s_0, a_0) \\right) \\right]
+        + \\hat{F}_{\\mathrm{DM}}(m, \\pi_e; \\mathcal{D})
 
     where :math:`\\hat{F}(\\cdot)` is the estimated cumulative distribution function,
     :math:`w_{0:T} := \\prod_{t=1}^T \\frac{\\pi_e(a_t \\mid s_t)}{\\pi_b(a_t \\mid s_t)}` is the trajectory-wise importance weight,
@@ -1208,8 +1208,8 @@ class DiscreteCumulativeDistributionalSelfNormalizedTrajectoryWiseImportanceSamp
 
     .. math::
 
-        \\hat{F}_{\\mathrm{SNTIS}}(t, \\pi_e; \\mathcal{D}))
-        := \\mathbb{E}_{n} \\left[ \\frac{w_{1:T}}{\\mathbb{E}_{n}[w_{1:T}]} \\mathbb{I} \\left \\{\\sum_{t=0}^T \\gamma^t r_t \\leq t \\right \\} \\right]
+        \\hat{F}_{\\mathrm{SNTIS}}(m, \\pi_e; \\mathcal{D}))
+        := \\mathbb{E}_{n} \\left[ \\frac{w_{1:T}}{\\mathbb{E}_{n}[w_{1:T}]} \\mathbb{I} \\left \\{\\sum_{t=0}^T \\gamma^t r_t \\leq m \\right \\} \\right]
 
     where :math:`\\hat{F}(\\cdot)` is the estimated cumulative distribution function,
     :math:`w_{0:T} := \\prod_{t=1}^T \\frac{\\pi_e(a_t \\mid s_t)}{\\pi_b(a_t \\mid s_t)}` is the trajectory-wise importance weight,
@@ -1371,9 +1371,9 @@ class DiscreteCumulativeDistributionalSelfNormalizedTrajectoryWiseDoublyRobust(
 
     .. math::
 
-        \\hat{F}_{\\mathrm{SNTDR}}(t, \\pi_e; \\mathcal{D}))
-        := \\mathbb{E}_{n} \\left[ \\frac{w_{1:T}}{\\mathbb{E}_{n}[w_{1:T}]} \\left( \\mathbb{I} \\left \\{\\sum_{t=0}^T \\gamma^t r_t \\leq t \\right \\} - \\hat{G}(t; s_0, a_0) \\right) \\right]
-        + \\hat{F}_{\\mathrm{DM}}(t, \\pi_e; \\mathcal{D}))
+        \\hat{F}_{\\mathrm{SNTDR}}(,m \\pi_e; \\mathcal{D}))
+        := \\mathbb{E}_{n} \\left[ \\frac{w_{1:T}}{\\mathbb{E}_{n}[w_{1:T}]} \\left( \\mathbb{I} \\left \\{\\sum_{t=0}^T \\gamma^t r_t \\leq t \\right \\} - \\hat{G}(m; s_0, a_0) \\right) \\right]
+        + \\hat{F}_{\\mathrm{DM}}(m, \\pi_e; \\mathcal{D}))
 
     where :math:`\\hat{F}(\\cdot)` is the estimated cumulative distribution function,
     :math:`w_{0:T} := \\prod_{t=1}^T \\frac{\\pi_e(a_t \\mid s_t)}{\\pi_b(a_t \\mid s_t)}` is the trajectory-wise importance weight,

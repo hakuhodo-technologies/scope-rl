@@ -18,7 +18,7 @@ The goal of RL is to maximize the following expected cumulative reward (i.e., po
 
 .. math::
 
-    \max_{\pi \in \Pi} J(\pi) := \mathbb{E}_{\tau \sim p_{\pi}(\tau)} \left [ \displaystyle \sum_{t=0}^{T-1} \gamma^t r_t | \pi \right ]
+    \max_{\pi \in \Pi} J(\pi) := \mathbb{E}_{\tau \sim p_{\pi}(\tau)} \left [ \sum_{t=0}^{T-1} \gamma^t r_t | \pi \right ]
 
 where :math:`\gamma` is a discount rate and :math:`\tau := (s_t, a_t, s_{t+1}, r_t)_{t=0}^{T-1}` is the trajectory of the policy which is sampled from 
 :math:`p_{\pi}(\tau) := d_0(s_0) \prod_{t=0}^{T-1} \pi(a_t | s_t) \mathcal{T}(s_{t+1} | s_t, a_t) P_r(r_t | s_t, a_t)`.
@@ -61,26 +61,35 @@ Specifically, it aims to learn the following state value :math:`V(s_t)` and stat
 
 where :math:`\tau_{t:T-1}` is the trajectory from timestep :math:`t` to :math:`T-1`.
 
-Using the recursive connection between :math:`V(\cdot)` and :math:`Q(\cdot)`, we can derive the following Bellman equation to learn Q-function (i.e., :math:`Q`).
+Using the recursive connection between :math:`V(\cdot)` and :math:`Q(\cdot)`, we can derive the following Bellman equation.
 
 .. math::
 
     Q(s_t, a_t) = r_t + \mathbb{E}_{(s_{t+1}, a_{t+1}) \sim \mathcal{T}(s_{t+1} | s_t, a_t) \pi(a_{t+1} | s_{t+1})} [ Q(s_t+1, a_{t+1}) ]
 
-For example, when we use a greedy policy, Q-Learning learns Q-Function and update policy alternately as follows.
+Temporal Difference (TD) learning leverages this recursive formula to learn Q-function (i.e., :math:`Q`). 
+In particular, when we use a greedy policy, Q-Function is reduces to as follows.
 
 .. math::
 
-    \hat{Q}_{k+1} \leftarrow {\arg \min}_{Q_{k+1}} \mathbb{E}_n [ \left( Q_{k+1}(s_t, a_t) - (r_t + \hat{Q}_k(s_{t+1}, \pi_k(s_{t+1}))) \right)^2 ]
+    \hat{Q}_{k+1} \leftarrow {\arg \min}_{Q_{k+1}} \mathbb{E}_n \left[ \left( Q_{k+1}(s_t, a_t) - (r_t + \hat{Q}_k(s_{t+1}, \pi_k(s_{t+1}))) \right)^2 \right]
 
 where :math:`n` state-action pairs are randomly sampled from the replay buffer, which stores the past observations :math:`(s_t, a_t, s_{t+1}, r_t)`.
-:math:`\pi_k` chooses actions as :math:`\pi_k(a_t \mid s_t) := \mathbb{I} \{ {\arg \max}_{a_t \in \mathcal{A}}  \hat{Q}_k(s_t, a_t) \}`, where :math:`I \{ \cdot \}` is the indicator function.
+Based on this Q-function, the greedy policy :math:`\pi_k` chooses actions as follows.
 
-Though this strategy enhances sample efficiency compared to On-Policy Policy Gradient, this method can suffer from bias in estimation.
-That is, when :math:`\hat{Q}(\cdot)` fails estimate the true state-action value, the action choice easily becomes sub-optimal.
+.. math::
 
-To alleviate the estimation error of :math:`\hat{Q}(\cdot)`, we often use epsilon-greedy policy, which chooses random actions with probability :math:`\epsilon`.
-Such *exploration* helps improve the quality of :math:`\hat{Q}(\cdot)` by alleviating the estimation error on unseen state-action pairs. 
+    \pi_k(a_t | s_t) := \mathbb{I} \{ {\arg \max}_{a_t \in \mathcal{A}}  \hat{Q}_k(s_t, a_t) \}, 
+
+where :math:`\mathbb{I} \{ \cdot \}` is the indicator function. 
+
+Though this strategy enhances sample efficiency compared to On-Policy Policy Gradient, 
+Q-learning is known to suffer from approximation error when the *deadly triad* conditions -- bootstrapping (i.e., TD learning), function approximation, and off-policy -- are simultaneously satisfied. 
+
+As a result, :math:`\hat{Q}(\cdot)` can fail to estimate the true state-action value, which may lead to a sub-optimal policy.
+
+To alleviate the estimation error of :math:`\hat{Q}(\cdot)`, we often use epsilon-greedy policy, which chooses actions randomly with probability :math:`\epsilon`.
+Such *exploration* helps improve the quality of :math:`\hat{Q}(\cdot)` by collecting additional data to fit Q-function to the state-action pairs that have not seen in the replay buffer. 
 
 Actor-Critic
 ----------
@@ -89,23 +98,36 @@ It first estimate Q-function and then calculate the advantage of choosing action
 
 .. math::
 
-    \hat{Q}_{k+1} \leftarrow {\arg min}_{Q_{k+1}} \mathbb{E}_n \left[ \left( Q_{k+1}(s_t, a_t) - (r_t + \hat{Q}_k(s_{t+1}, \pi_k(s_{t+1}))) \right)^2 \right]
+    \hat{Q}_{k+1} \leftarrow {\arg \min}_{Q_{k+1}} \mathbb{E}_n \left[ \left( Q_{k+1}(s_t, a_t) - (r_t + \hat{Q}_k(s_{t+1}, \pi_{\theta_k}(s_{t+1}))) \right)^2 \right]
 
 .. math::
 
-    \theta_{k+1} \leftarrow \theta_{k} + \nabla \mathbb{E}_n \left[ \sum_{t=0}^{T-1} \nabla \log \pi(a_t | s_t) \gamma^t \hat{A}(s_t, a_t) \right]
+    \theta_{k+1} \leftarrow \theta_{k} + \mathbb{E}_n \left[ \sum_{t=0}^{T-1} \nabla \log \pi_{\theta_k}(a_t | s_t) \gamma^t \hat{A}(s_t, a_t) \right]
 
-where :math:`\hat{A}(s_t, a_t) := \hat{Q}(s_t, a_t) - \mathbb{E}_{a \sim \pi(a_t \mid s_t)} \left[ \hat{Q}(s_t, a) \right]`.
+where :math:`\hat{A}(s_t, a_t) := \hat{Q}(s_t, a_t) - \mathbb{E}_{a \sim \pi_{\theta_k}(a_t | s_t)} \left[ \hat{Q}(s_t, a) \right]` 
+and :math:`\pi_{\theta_k}(s_{t+1})` is an action sampled from :math:`\pi_{\theta_k}(\cdot)`.
 
 Compared to the (vanilla) On-policy Policy Gradient, Actor-Critic stabilizes the policy gradient and enhances sample efficiency by the use of :math:`\hat{Q}`.
-Note that, compared to Q-learning, Actor-Critic is more suitable in continuous action space because we do not have to discretize the action space to choose actions.
-
-Example of 
-
+In addition, compared to Q-learning, Actor-Critic is more suitable in continuous action space because we do not have to discretize the action space to choose actions.
 
 Offline Reinforcement Learning
 ~~~~~~~~~~
-Online learning can still be unsafe in the initial learning phase due to sub-optimal actions choice.
-Moreover, 
+While online learning is a powerful framework to learn a (near) optimal policy through interaction, 
 
-So far, we have seen that
+In offline RL, we are given a logged dataset :math:`\mathcal{D}` consisting of :math:`n` trajectories, each of which is generated by a behavior policy :math:`\pi_0` as follows.
+
+.. math::
+
+    \tau := \{ (s_t, a_t, s_{t+1}, r_t) \}_{t=0}^{T} \sim p(s_0) \prod_{t=0}^{T} \pi_0(a_t | s_t) \mathcal{T}(s_{t+1} | s_t, a_t) P_r (r_t | s_t, a_t)
+
+KL divergence regularization and Behavior Cloning
+----------
+
+Uncertainty Estimation
+----------
+
+Conservative Q-Learning
+----------
+
+For further taxonomies and descriptions, we refer readers to the survey papers :cite:`levine2020offline` and :cite:``. 
+`awesome-offline-rl <https://github.com/hanjuku-kaso/awesome-offline-rl>`_ also provides a comprehensive list of literatures.

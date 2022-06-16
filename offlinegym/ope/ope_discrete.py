@@ -841,7 +841,7 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
 
     .. math::
 
-        F(t, \\pi) := \\mathbb{E} \\left[ \\mathbb{I} \\left \\{ \\sum_{t=1}^T \\gamma^{t-1} r_t \\leq t \\right \\} \\mid \\pi \\right]
+        F(m, \\pi) := \\mathbb{E} \\left[ \\mathbb{I} \\left \\{ \\sum_{t=1}^T \\gamma^{t-1} r_t \\leq m \\right \\} \\mid \\pi \\right]
 
     Parameters
     -----------
