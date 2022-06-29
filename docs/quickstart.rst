@@ -5,9 +5,7 @@ Quickstart
 We show an example workflow of synthetic dataset collection, offline Reinforcement Learning (RL) to Off-Policy Evaluation (OPE).
 The workflow mainly consists of following three steps:
 
-* **Synthetic Dataset Generation and Data Preprocessing**: The initial step is to collect logged data using a behavior policy. 
-In synthetic setup, we first train the behavior policy through online interaction and then generate dataset with the behavior policy.
-In practical situation, we can also utilize the preprocessed logged data from real-world applications.
+* **Synthetic Dataset Generation and Data Preprocessing**: The initial step is to collect logged data using a behavior policy. In synthetic setup, we first train the behavior policy through online interaction and then generate dataset with the behavior policy. In practical situation, we can also utilize the preprocessed logged data from real-world applications.
 
 * **Offline Reinforcement Learning**: Next, we now learn a new (and better) policy from only offline logged data, without any online interactions.
 
@@ -75,7 +73,7 @@ We start by collecting the logged data useful for offline RL with a behavior pol
     >>> logged_dataset = dataset.obtain_trajectories(n_episodes=10000)
     >>> print(logged_dataset.keys())
 
-Users can collect logged data from any environment with `OpenAI Gym <https://gym.openai.com>'_-like interface using a variety of behavior policies.
+Users can collect logged data from any environment with `OpenAI Gym <https://gym.openai.com>`_-like interface using a variety of behavior policies.
 Moreover, by preprocessing the logged data, one can also handle their own logged data from real-world applications.
 
 

@@ -26,7 +26,7 @@ class ContinuousDirectMethod(BaseOffPolicyEstimator):
 
     .. math::
 
-        \\hat{V}_{\\mathrm{DM}} (\\pi_e; \\mathcal{D}) := \\mathbb{E}_n [\\mathbb{E}_{a_0 \\sim \\pi_e(a_0 \\mid s_0)} [\\hat{Q}(x_0, a_0)] ],
+        \\hat{J}_{\\mathrm{DM}} (\\pi; \\mathcal{D}) := \\mathbb{E}_n [\\mathbb{E}_{a_0 \\sim \\pi(a_0 \\mid s_0)} [\\hat{Q}(x_0, a_0)] ],
 
     where :math:`\\mathcal{D}=\\{\\{(s_t, a_t, r_t)\\}_{t=0}^T\\}_{i=1}^n` is logged dataset with :math:`n` trajectories of data.
     :math:`T` indicates step per episode. :math:`\\hat{Q}(x_t, a_t)` is estimated Q value given state-action pair.
@@ -172,10 +172,10 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 
     .. math::
 
-        \\hat{V}_{\\mathrm{TIS}} (\\pi_e; \\mathcal{D}) := \\mathbb{E}_{n} [\\sum_{t=0}^T \\gamma^t w_{0:T} \\delta(\\pi_e, a_{0:t}) r_t],
+        \\hat{J}_{\\mathrm{TIS}} (\\pi; \\mathcal{D}) := \\mathbb{E}_{n} [\\sum_{t=0}^T \\gamma^t w_{0:T} \\delta(\\pi, a_{0:t}) r_t],
 
-    where :math:`w_{0:T} := \\prod_{t=1}^T \\frac{1}{\\pi_b(a_t \\mid s_t)}` is the inverse propensity weight
-    and :math:`\\delta(\\pi_e, a_{0:T}) = \\prod_{t=1}^T K(\\pi_e(s_t), a_t)` indicates similarity between action in dataset and that of evaluation policy.
+    where :math:`w_{0:T} := \\prod_{t=1}^T \\frac{1}{\\pi_0(a_t \\mid s_t)}` is the inverse propensity weight
+    and :math:`\\delta(\\pi, a_{0:T}) = \\prod_{t=1}^T K(\\pi(s_t), a_t)` indicates similarity between action in dataset and that of evaluation policy.
     Note that :math:`K(\\cdot)` is a kernel function.
 
     Parameters
@@ -240,7 +240,7 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 
         behavior_policy_trajectory_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Trajectory-wise action choice probability of behavior policy,
-            i.e., :math:`\\prod_{t=0}^T \\pi_b(a_t \\mid s_t)`
+            i.e., :math:`\\prod_{t=0}^T \\pi_0(a_t \\mid s_t)`
 
         evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
             Action chosen by evaluation policy.
@@ -341,7 +341,7 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 
         behavior_policy_trajectory_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Trajectory-wise action choice probability of behavior policy,
-            i.e., :math:`\\prod_{t=0}^T \\pi_b(a_t \\mid s_t)`
+            i.e., :math:`\\prod_{t=0}^T \\pi_0(a_t \\mid s_t)`
 
         evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
             Action chosen by evaluation policy.
@@ -478,7 +478,7 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 
         behavior_policy_trajectory_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Trajectory-wise action choice probability of behavior policy,
-            i.e., :math:`\\prod_{t=0}^T \\pi_b(a_t \\mid s_t)`
+            i.e., :math:`\\prod_{t=0}^T \\pi_0(a_t \\mid s_t)`
 
         evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
             Action chosen by evaluation policy.
@@ -616,10 +616,10 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
 
     .. math::
 
-        \\hat{V}_{\\mathrm{PDIS}} (\\pi_e; \\mathcal{D}) := \\mathbb{E}_{n} [\\sum_{t=0}^T \\gamma^t w_{0:t} \\delta(\\pi_e, a_{0:t}) r_t],
+        \\hat{J}_{\\mathrm{PDIS}} (\\pi; \\mathcal{D}) := \\mathbb{E}_{n} [\\sum_{t=0}^T \\gamma^t w_{0:t} \\delta(\\pi, a_{0:t}) r_t],
 
-    where :math:`w_{0:t} := \\prod_{t'=0}^t \\frac{1}{\\pi_b(a_{t'} \\mid s_{t'})}`
-    and :math:`\\delta(\\pi_e, a_{0:t}) = \\prod_{t'=1}^t K(\\pi_e(s_{t'}), a_{t'})` indicates similarity between action in dataset and that of evaluation policy.
+    where :math:`w_{0:t} := \\prod_{t'=0}^t \\frac{1}{\\pi_0(a_{t'} \\mid s_{t'})}`
+    and :math:`\\delta(\\pi, a_{0:t}) = \\prod_{t'=1}^t K(\\pi(s_{t'}), a_{t'})` indicates similarity between action in dataset and that of evaluation policy.
     Note that :math:`K(\\cdot)` is a kernel function.
 
     Parameters
@@ -684,7 +684,7 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
 
         behavior_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Step-wise action choice probability of behavior policy,
-            i.e., :math:`\\prod_{t'=0}^t \\pi_b(a_{t'} \\mid s_{t'})`
+            i.e., :math:`\\prod_{t'=0}^t \\pi_0(a_{t'} \\mid s_{t'})`
 
         evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
             Action chosen by evaluation policy.
@@ -778,7 +778,7 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
 
         behavior_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Step-wise action choice probability of behavior policy,
-            i.e., :math:`\\prod_{t'=0}^t \\pi_b(a_{t'} \\mid s_{t'})`
+            i.e., :math:`\\prod_{t'=0}^t \\pi_0(a_{t'} \\mid s_{t'})`
 
         evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
             Action chosen by evaluation policy.
@@ -915,7 +915,7 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
 
         behavior_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Step-wise action choice probability of behavior policy,
-            i.e., :math:`\\prod_{t'=0}^t \\pi_b(a_{t'} \\mid s_{t'})`
+            i.e., :math:`\\prod_{t'=0}^t \\pi_0(a_{t'} \\mid s_{t'})`
 
         evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
             Action chosen by evaluation policy.
@@ -1053,12 +1053,12 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
 
     .. math::
 
-        \\hat{V}_{\\mathrm{DR}} (\\pi_e; \\mathcal{D})
-        := \\mathbb{E}_{n} [\\sum_{t=0}^T \\gamma^t (w_{0:t} \\delta(\\pi_e, a_{0:t}) (r_t - \\hat{Q}(s_t, a_t))
-            + w_{0:t-1} \\delta(\\pi_e, a_{0:t-1}) \\mathbb{E}_{a \\sim \\pi_e(a \\mid s_t)}[\\hat{Q}(s_t, a)])],
+        \\hat{J}_{\\mathrm{DR}} (\\pi; \\mathcal{D})
+        := \\mathbb{E}_{n} [\\sum_{t=0}^T \\gamma^t (w_{0:t} \\delta(\\pi, a_{0:t}) (r_t - \\hat{Q}(s_t, a_t))
+            + w_{0:t-1} \\delta(\\pi, a_{0:t-1}) \\mathbb{E}_{a \\sim \\pi(a \\mid s_t)}[\\hat{Q}(s_t, a)])],
 
-    where :math:`w_{0:t} := \\prod_{t'=0}^t \\frac{1}{\\pi_b(a_{t'} \\mid s_{t'})}`
-    and :math:`\\delta(\\pi_e, a_{0:t}) = \\prod_{t'=1}^t K(\\pi_e(s_{t'}), a_{t'})` indicates similarity between action in dataset and that of evaluation policy.
+    where :math:`w_{0:t} := \\prod_{t'=0}^t \\frac{1}{\\pi_0(a_{t'} \\mid s_{t'})}`
+    and :math:`\\delta(\\pi, a_{0:t}) = \\prod_{t'=1}^t K(\\pi(s_{t'}), a_{t'})` indicates similarity between action in dataset and that of evaluation policy.
     Note that :math:`K(\\cdot)` is a kernel function.
 
     Parameters
@@ -1130,14 +1130,14 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
 
         behavior_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Step-wise action choice probability of behavior policy,
-            i.e., :math:`\\prod_{t'=0}^t \\pi_b(a_{t'} \\mid s_{t'})`
+            i.e., :math:`\\prod_{t'=0}^t \\pi_0(a_{t'} \\mid s_{t'})`
 
         evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
             Action chosen by evaluation policy.
 
         state_action_value_prediction: array-like of shape (n_episodes * step_per_episode, )
             :math:`\\hat{Q}` for the action chosen by evaluation policy,
-            i.e., :math:`\\hat{Q}(s_t, \\pi_e(a \\mid s_t))`.
+            i.e., :math:`\\hat{Q}(s_t, \\pi(a \\mid s_t))`.
 
         gamma: float, default=1.0
             Discount factor. The value should be within `(0, 1]`.
@@ -1242,14 +1242,14 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
 
         behavior_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Step-wise action choice probability of behavior policy,
-            i.e., :math:`\\prod_{t'=0}^t \\pi_b(a_{t'} \\mid s_{t'})`
+            i.e., :math:`\\prod_{t'=0}^t \\pi_0(a_{t'} \\mid s_{t'})`
 
         evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
             Action chosen by evaluation policy.
 
         state_action_value_prediction: array-like of shape (n_episodes * step_per_episode, )
             :math:`\\hat{Q}` for the action chosen by evaluation policy,
-            i.e., :math:`\\hat{Q}(s_t, \\pi_e(a \\mid s_t))`.
+            i.e., :math:`\\hat{Q}(s_t, \\pi(a \\mid s_t))`.
 
         gamma: float, default=1.0
             Discount factor. The value should be within `(0, 1]`.
@@ -1385,14 +1385,14 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
 
         behavior_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Step-wise action choice probability of behavior policy,
-            i.e., :math:`\\prod_{t'=0}^t \\pi_b(a_{t'} \\mid s_{t'})`
+            i.e., :math:`\\prod_{t'=0}^t \\pi_0(a_{t'} \\mid s_{t'})`
 
         evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
             Action chosen by evaluation policy.
 
         state_action_value_prediction: array-like of shape (n_episodes * step_per_episode, )
             :math:`\\hat{Q}` for the action chosen by evaluation policy,
-            i.e., :math:`\\hat{Q}(s_t, \\pi_e(a \\mid s_t))`.
+            i.e., :math:`\\hat{Q}(s_t, \\pi(a \\mid s_t))`.
 
         ggamma: float, default=1.0
             Discount factor. The value should be within `(0, 1]`.
@@ -1530,11 +1530,11 @@ class ContinuousSelfNormalizedTrajectoryWiseImportanceSampling(
 
     .. math::
 
-        \\hat{V}_{\\mathrm{SNTIS}} (\\pi_e; \\mathcal{D})
-        := \\mathbb{E}_{n} [\\sum_{t=0}^T \\gamma^t \\frac{w_{1:T} \\delta(\\pi_e, a_{0:T})}{\\mathbb{E}_n [w_{1:T} \\delta(\\pi_e, a_{0:T})]} r_t],
+        \\hat{J}_{\\mathrm{SNTIS}} (\\pi; \\mathcal{D})
+        := \\mathbb{E}_{n} [\\sum_{t=0}^T \\gamma^t \\frac{w_{1:T} \\delta(\\pi, a_{0:T})}{\\mathbb{E}_n [w_{1:T} \\delta(\\pi, a_{0:T})]} r_t],
 
-    where :math:`w_{0:T} := \\prod_{t=1}^T \\frac{1}{\\pi_b(a_t \\mid s_t)}`
-    and :math:`\\delta(\\pi_e, a_{0:T}) = \\prod_{t=1}^T K(\\pi_e(s_t), a_t)` indicates similarity between action in dataset and that of evaluation policy.
+    where :math:`w_{0:T} := \\prod_{t=1}^T \\frac{1}{\\pi_0(a_t \\mid s_t)}`
+    and :math:`\\delta(\\pi, a_{0:T}) = \\prod_{t=1}^T K(\\pi(s_t), a_t)` indicates similarity between action in dataset and that of evaluation policy.
     Note that :math:`K(\\cdot)` is a kernel function.
 
     Parameters
@@ -1605,7 +1605,7 @@ class ContinuousSelfNormalizedTrajectoryWiseImportanceSampling(
 
         behavior_policy_trajectory_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Trajectory-wise action choice probability of behavior policy,
-            i.e., :math:`\\prod_{t=0}^T \\pi_b(a_t \\mid s_t)`
+            i.e., :math:`\\prod_{t=0}^T \\pi_0(a_t \\mid s_t)`
 
         evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
             Action chosen by evaluation policy.
@@ -1692,11 +1692,11 @@ class ContinuousSelfNormalizedPerDecisionImportanceSampling(
 
     .. math::
 
-        \\hat{V}_{\\mathrm{SNPDIS}} (\\pi_e; \\mathcal{D})
-        := \\mathbb{E}_{n} [\\sum_{t=0}^T \\gamma^t \\frac{w_{1:t} \\delta(\\pi_e, a_{0:t})}{\\mathbb{E}_n [w_{1:t} \\delta(\\pi_e, a_{0:t})]} r_t],
+        \\hat{J}_{\\mathrm{SNPDIS}} (\\pi; \\mathcal{D})
+        := \\mathbb{E}_{n} [\\sum_{t=0}^T \\gamma^t \\frac{w_{1:t} \\delta(\\pi, a_{0:t})}{\\mathbb{E}_n [w_{1:t} \\delta(\\pi, a_{0:t})]} r_t],
 
-    where :math:`w_{0:t} := \\prod_{t'=1}^t \\frac{1}{\\pi_b(a_{t'} \\mid s_{t'})}`
-    and :math:`\\delta(\\pi_e, a_{0:t}) = \\prod_{t'=1}^t K(\\pi_e(s_{t'}), a_{t'})` indicates similarity between action in dataset and that of evaluation policy.
+    where :math:`w_{0:t} := \\prod_{t'=1}^t \\frac{1}{\\pi_0(a_{t'} \\mid s_{t'})}`
+    and :math:`\\delta(\\pi, a_{0:t}) = \\prod_{t'=1}^t K(\\pi(s_{t'}), a_{t'})` indicates similarity between action in dataset and that of evaluation policy.
     Note that :math:`K(\\cdot)` is a kernel function.
 
     Parameters
@@ -1767,7 +1767,7 @@ class ContinuousSelfNormalizedPerDecisionImportanceSampling(
 
         behavior_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Step-wise action choice probability of behavior policy,
-            i.e., :math:`\\prod_{t'=0}^t \\pi_b(a_{t'} \\mid s_{t'})`
+            i.e., :math:`\\prod_{t'=0}^t \\pi_0(a_{t'} \\mid s_{t'})`
 
         evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
             Action chosen by evaluation policy.
@@ -1848,12 +1848,12 @@ class ContinuousSelfNormalizedDoublyRobust(ContinuousDoublyRobust):
 
     .. math::
 
-        \\hat{V}_{\\mathrm{DR}} (\\pi_e; \\mathcal{D})
-        := \\mathbb{E}_{n} [\\sum_{t=0}^T \\gamma^t ( \\frac{w_{0:t} \\delta(\\pi_e, a_{0:t})}{\\mathbb{E}_n[w_{0:t} \\delta(\\pi_e, a_{0:t})]} (r_t - \\hat{Q}(s_t, a_t))
-            + \\frac{w_{0:t-1} \\delta(\\pi_e, a_{0:t-1})}{\\mathbb{E}_n[w_{0:t-1} \\delta(\\pi_e, a_{0:t-1})]} \\mathbb{E}_{a \\sim \\pi_e(a \\mid s_t)}[\\hat{Q}(s_t, a)])],
+        \\hat{J}_{\\mathrm{DR}} (\\pi; \\mathcal{D})
+        := \\mathbb{E}_{n} [\\sum_{t=0}^T \\gamma^t ( \\frac{w_{0:t} \\delta(\\pi, a_{0:t})}{\\mathbb{E}_n[w_{0:t} \\delta(\\pi, a_{0:t})]} (r_t - \\hat{Q}(s_t, a_t))
+            + \\frac{w_{0:t-1} \\delta(\\pi, a_{0:t-1})}{\\mathbb{E}_n[w_{0:t-1} \\delta(\\pi, a_{0:t-1})]} \\mathbb{E}_{a \\sim \\pi(a \\mid s_t)}[\\hat{Q}(s_t, a)])],
 
-    where :math:`w_{0:t} := \\prod_{t'=0}^t \\frac{1}{\\pi_b(a_{t'} \\mid s_{t'})}`
-    and :math:`\\delta(\\pi_e, a_{0:t}) = \\prod_{t'=1}^t K(\\pi_e(s_{t'}), a_{t'})` indicates similarity between action in dataset and that of evaluation policy.
+    where :math:`w_{0:t} := \\prod_{t'=0}^t \\frac{1}{\\pi_0(a_{t'} \\mid s_{t'})}`
+    and :math:`\\delta(\\pi, a_{0:t}) = \\prod_{t'=1}^t K(\\pi(s_{t'}), a_{t'})` indicates similarity between action in dataset and that of evaluation policy.
     Note that :math:`K(\\cdot)` is a kernel function.
 
     Parameters
@@ -1927,14 +1927,14 @@ class ContinuousSelfNormalizedDoublyRobust(ContinuousDoublyRobust):
 
         behavior_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Step-wise action choice probability of behavior policy,
-            i.e., :math:`\\prod_{t'=0}^t \\pi_b(a_{t'} \\mid s_{t'})`
+            i.e., :math:`\\prod_{t'=0}^t \\pi_0(a_{t'} \\mid s_{t'})`
 
         evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
             Action chosen by evaluation policy.
 
         state_action_value_prediction: array-like of shape (n_episodes * step_per_episode, )
             :math:`\\hat{Q}` for the action chosen by evaluation policy,
-            i.e., :math:`\\hat{Q}(s_t, \\pi_e(a \\mid s_t))`.
+            i.e., :math:`\\hat{Q}(s_t, \\pi(a \\mid s_t))`.
 
         gamma: float, default=1.0
             Discount factor. The value should be within `(0, 1]`.

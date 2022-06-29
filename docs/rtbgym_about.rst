@@ -52,19 +52,19 @@ Supported Implementation
 
 Standard Environment
 ----------
-    * *"RTBEnv-discrete-v0"*: Standard RTB environment with discrete action space.
-    * *"RTBEnv-continuous-v0"*: Standard RTB environment with continuous action space.
+    * :class:`RTBEnv-discrete-v0`: Standard RTB environment with discrete action space.
+    * :class:`RTBEnv-continuous-v0`: Standard RTB environment with continuous action space.
 
 Custom Environment
 ----------
-    * RTBEnv: The basic configurative environment with continuous action space.
-    * CustomizedRTBEnv: The customized environment given action space and reward predictor.
+    * :class:`RTBEnv`: The basic configurative environment with continuous action space.
+    * :class:`CustomizedRTBEnv`: The customized environment given action space and reward predictor.
 
 Configurative Modules
 ----------
-    * WinningPriceDistribution: Class to define the winning price distribution of the auction bidding.
-    * ClickThroughRate: Class to define the click through rate of users.
-    * ConversionRate: Class to define the conversion rate of users.
+    * :class:`WinningPriceDistribution`: Class to define the winning price distribution of the auction bidding.
+    * :class:`ClickThroughRate`: Class to define the click through rate of users.
+    * :class:`ConversionRate`: Class to define the conversion rate of users.
 
 Note that, users can customize the above modules by following the abstract class. 
 We also define the bidding function in the Bidder class and the auction simulation in the Simulator class, respectively.
@@ -139,26 +139,26 @@ Next, we describe how to customize the environment by instantiating the environm
 
 The list of arguments are given as follows.
 
-* `objective`: Objective KPIs of RTB, which is either "click" or "conversion".
-* `cost_indicator`: Timing of arising costs, which is any of "impression", "click", and "conversion".
-* `step_per_episode`: Number of timesteps in an episode.
-* `initial_budget`: Initial budget (i.e., constraint) for an episode.
-* `n_ads`: Number of ads used for auction bidding.
-* `n_users`: Number of users used for auction bidding.
-* `ad_feature_dim`: Dimensions of the ad feature vectors.
-* `user_feature_dim`: Dimensions of the user feature vectors.
-* `ad_feature_vector`: Feature vectors that characterizes each ad.
-* `user_feature_vector`: Feature vectors that characterizes each user.
-* `ad_sampling_rate`: Sampling probalities to determine which ad (id) is used in each auction.
-* `user_sampling_rate`: Sampling probalities to determine which user (id) is used in each auction.
-* `WinningPriceDistribution`: Winning price distribution of auctions.
-* `ClickTroughRate`: Click through rate (i.e., click / impression).
-* `ConversionRate`: Conversion rate (i.e., conversion / click).
-* `standard_bid_price_distribution`: Distribution of the bid price whose average impression probability is expected to be 0.5.
-* `minimum_standard_bid_price`: Minimum value for standard bid price.
-* `search_volume_distribution`: Search volume distribution for each timestep.
-* `minimum_search_volume`: Minimum search volume at each timestep.
-* `random_state`: Random state.
+* :class:`objective`: Objective KPIs of RTB, which is either "click" or "conversion".
+* :class:`cost_indicator`: Timing of arising costs, which is any of "impression", "click", and "conversion".
+* :class:`step_per_episode`: Number of timesteps in an episode.
+* :class:`initial_budget`: Initial budget (i.e., constraint) for an episode.
+* :class:`n_ads`: Number of ads used for auction bidding.
+* :class:`n_users`: Number of users used for auction bidding.
+* :class:`ad_feature_dim`: Dimensions of the ad feature vectors.
+* :class:`user_feature_dim`: Dimensions of the user feature vectors.
+* :class:`ad_feature_vector`: Feature vectors that characterizes each ad.
+* :class:`user_feature_vector`: Feature vectors that characterizes each user.
+* :class:`ad_sampling_rate`: Sampling probalities to determine which ad (id) is used in each auction.
+* :class:`user_sampling_rate`: Sampling probalities to determine which user (id) is used in each auction.
+* :class:`WinningPriceDistribution`: Winning price distribution of auctions.
+* :class:`ClickTroughRate`: Click through rate (i.e., click / impression).
+* :class:`ConversionRate`: Conversion rate (i.e., conversion / click).
+* :class:`standard_bid_price_distribution`: Distribution of the bid price whose average impression probability is expected to be 0.5.
+* :class:`minimum_standard_bid_price`: Minimum value for standard bid price.
+* :class:`search_volume_distribution`: Search volume distribution for each timestep.
+* :class:`minimum_search_volume`: Minimum search volume at each timestep.
+* :class:`random_state`: Random state.
 
 Example:
 
@@ -173,7 +173,7 @@ Example:
             random_state=12345,
         )
 
-Specifically, users can define their own `WinningPriceDistribution`, `ClickThroughRate`, and `ConversionRate` as follows.
+Specifically, users can define their own :class:`WinningPriceDistribution`, :class:`ClickThroughRate`, and :class:`ConversionRate` as follows.
 
 Example of Custom Winning Price Distribution:
 
@@ -298,14 +298,14 @@ In addition, users can set their own `reward_predictor`.
 
 The list of arguments are given as follows.
 
-* `original_env`: Original RTB Environment.
-* `reward_predictor`: A machine learning model to predict the reward to determine the bidding price.
-* `scaler`: Scaling factor (constant value) used for bid price determination. (None for the auto-fitting)
-* `action_min`: Minimum value of adjust rate.
-* `action_max`: Maximum value of adjust rate.
-* `action_type`: Action type of the RL agent, which is either "discrete" or "continuous".
-* `n_actions`: Number of "discrete" actions.
-* `action_meaning`: Mapping function of agent action index to the actual "discrete" action to take.
+* :class:`original_env`: Original RTB Environment.
+* :class:`reward_predictor`: A machine learning model to predict the reward to determine the bidding price.
+* :class:`scaler`: Scaling factor (constant value) used for bid price determination. (None for the auto-fitting)
+* :class:`action_min`: Minimum value of adjust rate.
+* :class:`action_max`: Maximum value of adjust rate.
+* :class:`action_type`: Action type of the RL agent, which is either "discrete" or "continuous".
+* :class:`n_actions`: Number of "discrete" actions.
+* :class:`action_meaning`: Mapping function of agent action index to the actual "discrete" action to take.
 
 Example:
 

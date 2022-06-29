@@ -63,7 +63,17 @@ def estimate_confidence_interval_by_hoeffding(
     alpha: float = 0.05,
     **kwargs,
 ) -> Dict[str, float]:
-    """Estimate the confidence interval by nonparametric bootstrap-like procedure.
+    """Estimate the confidence interval by the hoeffding' inequality.
+
+    Note
+    -------
+    The hoeffding's inequality derives the confidence intervals of :math:`\\mu := \\mathbb{E}[X], X \\sim p(X)` with probability :math:`1 - \\alpha` as follows.
+
+    .. math::
+
+        |\\hat{\\mu} - \\mu]| \\leq X_{\\max} \\sqrt{\\frac{\\log(1 / \\alpha)}{2 n}}`
+
+    where :math:`n` is the data size.
 
     Parameters
     -------
@@ -94,7 +104,17 @@ def estimate_confidence_interval_by_empirical_bernstein(
     alpha: float = 0.05,
     **kwargs,
 ) -> Dict[str, float]:
-    """Estimate the confidence interval by nonparametric bootstrap-like procedure.
+    """Estimate the confidence interval by the empirical bernstein inequality.
+
+    Note
+    -------
+    The empirical bernstein inequality derives the confidence intervals of :math:`\\mu := \\mathbb{E}[X], X \\sim p(X)` with probability :math:`1 - \\alpha` as follows.
+
+    .. math::
+
+        |\\hat{\\mu} - \\mu]| \\leq \\frac{7 X_{\\max} \\log(2 / \\alpha)}{3 (n - 1)} + \\sqrt{\\frac{2 \hat{\mathbb{V}}(X) \log(2 / \\alpha)}{n(n - 1)}}`
+
+    where :math:`n` is the data size and :math:`\\hat{\\mathbb{V}}` is the sample variance.
 
     Parameters
     -------
@@ -128,7 +148,18 @@ def estimate_confidence_interval_by_t_test(
     alpha: float = 0.05,
     **kwargs,
 ) -> Dict[str, float]:
-    """Estimate the confidence interval by nonparametric bootstrap-like procedure.
+    """Estimate the confidence interval by Student T-test.
+
+    Note
+    -------
+    Student T-test assumes that :math:`X \\sim p(X)` follows a normal distribution.
+    Based on this assumption, the confidence intervals of :math:`\\mu := \\mathbb{E}[X]` with probability :math:`1 - \\alpha` is derived as follows.
+
+    .. math::
+
+        |\\hat{\\mu} - \\mu]| \\leq \\frac{T_{\\mathrm{test}}(1 - \\alpha, n-1)}{\\sqrt{n} / \hat{\\sigma}}``
+
+    where :math:`n` is the data size, :math:`T_{\\mathrm{test}}(\\cdot,\\cdot)` is the T-value, and :math:`\\sigma` is the standard deviation, respectively.
 
     Parameters
     -------

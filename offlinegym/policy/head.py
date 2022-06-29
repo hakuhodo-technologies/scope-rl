@@ -220,7 +220,7 @@ class DiscreteEpsilonGreedyHead(BaseHead):
         \\pi(a \\mid s) := (1 - \\epsilon) * \\mathbb{I}(a = a*)) + \\epsilon / |\\mathcal{A}|
 
     where :math:`\\epsilon` is the probability of taking random actions and :math:`a*` is the greedy action.
-    :math:`\\mathbb{I}(\\cdot)` denotes indicator function.
+    :math:`\\mathbb{I}(\\cdot)` denotes the indicator function.
 
     Parameters
     -------
@@ -363,7 +363,7 @@ class DiscreteSoftmaxHead(BaseHead):
 
     .. math::
 
-        \\pi(a \\mid s) := \\frac{\\exp(Q(s, a) / \\tau)}{\\sum_{a' \\in A} \\exp(Q(s, a') / \\tau)}
+        \\pi(a \\mid s) := \\frac{\\exp(Q(s, a) / \\tau)}{\\sum_{a' \\in \\mathcal{A}} \\exp(Q(s, a') / \\tau)}
 
     where :math:`\\tau` is the temperature parameter of the softmax function.
     :math:`Q(s, a)` is the predicted value for the given :math:`(s, a)` pair.

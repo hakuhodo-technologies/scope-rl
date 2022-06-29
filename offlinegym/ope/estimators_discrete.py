@@ -25,7 +25,7 @@ class DiscreteDirectMethod(BaseOffPolicyEstimator):
 
     .. math::
 
-        \\hat{V}_{\\mathrm{DM}} (\\pi_e; \\mathcal{D}) := \\mathbb{E}_n [\\mathbb{E}_{a_0 \\sim \\pi_e(a_0 \\mid s_0)} [\\hat{Q}(s_0, a_0)] ],
+        \\hat{J}_{\\mathrm{DM}} (\\pi; \\mathcal{D}) := \\mathbb{E}_n [\\mathbb{E}_{a_0 \\sim \\pi(a_0 \\mid s_0)} [\\hat{Q}(s_0, a_0)] ],
 
     where :math:`\\mathcal{D}=\\{\\{(s_t, a_t, r_t)\\}_{t=0}^T\\}_{i=1}^n` is logged dataset with :math:`n` trajectories of data.
     :math:`T` indicates step per episode. :math:`\\hat{Q}(s_t, a_t)` is estimated Q value given state-action pair.
@@ -172,9 +172,9 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 
     .. math::
 
-        \\hat{V}_{\\mathrm{TIS}} (\\pi_e; \\mathcal{D}) := \\mathbb{E}_{n} [\\sum_{t=0}^T \\gamma^t w_{1:T} r_t],
+        \\hat{J}_{\\mathrm{TIS}} (\\pi; \\mathcal{D}) := \\mathbb{E}_{n} [\\sum_{t=0}^T \\gamma^t w_{1:T} r_t],
 
-    where :math:`w_{0:T} := \\prod_{t=1}^T \\frac{\\pi_e(a_t \\mid s_t)}{\\pi_b(a_t \\mid s_t)}` is the importance weight.
+    where :math:`w_{0:T} := \\prod_{t=1}^T \\frac{\\pi(a_t \\mid s_t)}{\\pi_0(a_t \\mid s_t)}` is the importance weight.
 
     Parameters
     -------
@@ -227,11 +227,11 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 
         behavior_policy_trajectory_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Trajectory-wise action choice probability of behavior policy,
-            i.e., :math:`\\prod_{t=0}^T \\pi_b(a_t \\mid s_t)`
+            i.e., :math:`\\prod_{t=0}^T \\pi_0(a_t \\mid s_t)`
 
         evaluation_policy_trajectory_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Trajectory-wise action choice probability of evaluation policy,
-            i.e., :math:`\\prod_{t=0}^T \\pi_e(a_t \\mid s_t)`
+            i.e., :math:`\\prod_{t=0}^T \\pi(a_t \\mid s_t)`
 
         gamma: float, default=1.0
             Discount factor. The value should be within `(0, 1]`.
@@ -272,11 +272,11 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 
         behavior_policy_trajectory_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Trajectory-wise action choice probability of behavior policy,
-            i.e., :math:`\\prod_{t=0}^T \\pi_b(a_t \\mid s_t)`
+            i.e., :math:`\\prod_{t=0}^T \\pi_0(a_t \\mid s_t)`
 
         evaluation_policy_trajectory_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Trajectory-wise action choice probability of evaluation policy,
-            i.e., :math:`\\prod_{t=0}^T \\pi_e(a_t \\mid s_t)`
+            i.e., :math:`\\prod_{t=0}^T \\pi(a_t \\mid s_t)`
 
         gamma: float, default=1.0
             Discount factor. The value should be within `(0, 1]`.
@@ -357,11 +357,11 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 
         behavior_policy_trajectory_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Trajectory-wise action choice probability of behavior policy,
-            i.e., :math:`\\prod_{t=0}^T \\pi_b(a_t \\mid s_t)`
+            i.e., :math:`\\prod_{t=0}^T \\pi_0(a_t \\mid s_t)`
 
         evaluation_policy_trajectory_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Trajectory-wise action choice probability of evaluation policy,
-            i.e., :math:`\\prod_{t=0}^T \\pi_e(a_t \\mid s_t)`
+            i.e., :math:`\\prod_{t=0}^T \\pi(a_t \\mid s_t)`
 
         gamma: float, default=1.0
             Discount factor. The value should be within `(0, 1]`.
@@ -450,9 +450,9 @@ class DiscretePerDecisionImportanceSampling(BaseOffPolicyEstimator):
 
     .. math::
 
-        \\hat{V}_{\\mathrm{PDIS}} (\\pi_e; \\mathcal{D}) := \\mathbb{E}_{n} [\\sum_{t=0}^T \\gamma^t w_{0:t} r_t],
+        \\hat{J}_{\\mathrm{PDIS}} (\\pi; \\mathcal{D}) := \\mathbb{E}_{n} [\\sum_{t=0}^T \\gamma^t w_{0:t} r_t],
 
-    where :math:`w_{0:t} := \\prod_{t'=0}^t \\frac{\\pi_e(a_{t'} \\mid s_{t'})}{\\pi_b(a_{t'} \\mid s_{t'})}`
+    where :math:`w_{0:t} := \\prod_{t'=0}^t \\frac{\\pi(a_{t'} \\mid s_{t'})}{\\pi_0(a_{t'} \\mid s_{t'})}`
 
     Parameters
     -------
@@ -505,11 +505,11 @@ class DiscretePerDecisionImportanceSampling(BaseOffPolicyEstimator):
 
         behavior_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Step-wise action choice probability of behavior policy,
-            i.e., :math:`\\prod_{t'=0}^t \\pi_b(a_{t'} \\mid s_{t'})`
+            i.e., :math:`\\prod_{t'=0}^t \\pi_0(a_{t'} \\mid s_{t'})`
 
         evaluation_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Step-wise action choice probability of evaluation policy,
-            i.e., :math:`\\prod_{t'=0}^t \\pi_e(a_{t'} \\mid s_{t'})`
+            i.e., :math:`\\prod_{t'=0}^t \\pi(a_{t'} \\mid s_{t'})`
 
         gamma: float, default=1.0
             Discount factor. The value should be within `(0, 1]`.
@@ -547,11 +547,11 @@ class DiscretePerDecisionImportanceSampling(BaseOffPolicyEstimator):
 
         behavior_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Step-wise action choice probability of behavior policy,
-            i.e., :math:`\\prod_{t'=0}^t \\pi_b(a_{t'} \\mid s_{t'})`
+            i.e., :math:`\\prod_{t'=0}^t \\pi_0(a_{t'} \\mid s_{t'})`
 
         evaluation_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Step-wise action choice probability of evaluation policy,
-            i.e., :math:`\\prod_{t'=0}^t \\pi_e(a_{t'} \\mid s_{t'})`
+            i.e., :math:`\\prod_{t'=0}^t \\pi(a_{t'} \\mid s_{t'})`
 
         gamma: float, default=1.0
             Discount factor. The value should be within `(0, 1]`.
@@ -631,11 +631,11 @@ class DiscretePerDecisionImportanceSampling(BaseOffPolicyEstimator):
 
         behavior_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Step-wise action choice probability of behavior policy,
-            i.e., :math:`\\prod_{t'=0}^t \\pi_b(a_{t'} \\mid s_{t'})`
+            i.e., :math:`\\prod_{t'=0}^t \\pi_0(a_{t'} \\mid s_{t'})`
 
         evaluation_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Step-wise action choice probability of evaluation policy,
-            i.e., :math:`\\prod_{t'=0}^t \\pi_e(a_{t'} \\mid s_{t'})`
+            i.e., :math:`\\prod_{t'=0}^t \\pi(a_{t'} \\mid s_{t'})`
 
         gamma: float, default=1.0
             Discount factor. The value should be within `(0, 1]`.
@@ -724,10 +724,10 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
 
     .. math::
 
-        \\hat{V}_{\\mathrm{DR}} (\\pi_e; \\mathcal{D})
-        := \\mathbb{E}_{n} [\\sum_{t=0}^T \\gamma^t (w_{0:t} (r_t - \\hat{Q}(s_t, a_t)) + w_{0:t-1} \\mathbb{E}_{a \\sim \\pi_e(a \\mid s_t)}[\\hat{Q}(s_t, a)])],
+        \\hat{J}_{\\mathrm{DR}} (\\pi; \\mathcal{D})
+        := \\mathbb{E}_{n} [\\sum_{t=0}^T \\gamma^t (w_{0:t} (r_t - \\hat{Q}(s_t, a_t)) + w_{0:t-1} \\mathbb{E}_{a \\sim \\pi(a \\mid s_t)}[\\hat{Q}(s_t, a)])],
 
-    where :math:`w_{0:t} := \\prod_{t'=0}^t \\frac{\\pi_e(a_{t'} \\mid s_{t'})}{\\pi_b(a_{t'} \\mid s_{t'})}`
+    where :math:`w_{0:t} := \\prod_{t'=0}^t \\frac{\\pi(a_{t'} \\mid s_{t'})}{\\pi_0(a_{t'} \\mid s_{t'})}`
 
     Parameters
     -------
@@ -792,15 +792,15 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
 
         behavior_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Step-wise action choice probability of behavior policy,
-            i.e., :math:`\\prod_{t'=0}^t \\pi_b(a_{t'} \\mid s_{t'})`
+            i.e., :math:`\\prod_{t'=0}^t \\pi_0(a_{t'} \\mid s_{t'})`
 
         evaluation_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Step-wise action choice probability of evaluation policy,
-            i.e., :math:`\\prod_{t'=0}^t \\pi_b(a_{t'} \\mid s_{t'})`
+            i.e., :math:`\\prod_{t'=0}^t \\pi_0(a_{t'} \\mid s_{t'})`
 
         evaluation_policy_action_dist: array-like of shape (n_episodes * step_per_episode, n_action)
             Action choice probability of evaluation policy for all action,
-            i.e., :math:`\\pi_e(a \\mid s_t) \\forall a \\in \\mathcal{A}`
+            i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
 
         state_action_value_prediction: array-like of shape (n_episodes * step_per_episode, n_action)
             :math:`\\hat{Q}` for all action,
@@ -866,15 +866,15 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
 
         behavior_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Step-wise action choice probability of behavior policy,
-            i.e., :math:`\\prod_{t'=0}^t \\pi_b(a_{t'} \\mid s_{t'})`
+            i.e., :math:`\\prod_{t'=0}^t \\pi_0(a_{t'} \\mid s_{t'})`
 
         evaluation_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Step-wise action choice probability of evaluation policy,
-            i.e., :math:`\\prod_{t'=0}^t \\pi_b(a_{t'} \\mid s_{t'})`
+            i.e., :math:`\\prod_{t'=0}^t \\pi_0(a_{t'} \\mid s_{t'})`
 
         evaluation_policy_action_dist: array-like of shape (n_episodes * step_per_episode, n_action)
             Action choice probability of evaluation policy for all action,
-            i.e., :math:`\\pi_e(a \\mid s_t) \\forall a \\in \\mathcal{A}`
+            i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
 
         state_action_value_prediction: array-like of shape (n_episodes * step_per_episode, n_action)
             :math:`\\hat{Q}` for all action,
@@ -1006,15 +1006,15 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
 
         behavior_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Step-wise action choice probability of behavior policy,
-            i.e., :math:`\\prod_{t'=0}^t \\pi_b(a_{t'} \\mid s_{t'})`
+            i.e., :math:`\\prod_{t'=0}^t \\pi_0(a_{t'} \\mid s_{t'})`
 
         evaluation_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Step-wise action choice probability of evaluation policy,
-            i.e., :math:`\\prod_{t'=0}^t \\pi_b(a_{t'} \\mid s_{t'})`
+            i.e., :math:`\\prod_{t'=0}^t \\pi_0(a_{t'} \\mid s_{t'})`
 
         evaluation_policy_action_dist: array-like of shape (n_episodes * step_per_episode, n_action)
             Action choice probability of evaluation policy for all action,
-            i.e., :math:`\\pi_e(a \\mid s_t) \\forall a \\in \\mathcal{A}`
+            i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
 
         state_action_value_prediction: array-like of shape (n_episodes * step_per_episode, n_action)
             :math:`\\hat{Q}` for all action,
@@ -1151,10 +1151,10 @@ class DiscreteSelfNormalizedTrajectoryWiseImportanceSampling(
 
     .. math::
 
-        \\hat{V}_{\\mathrm{SNTIS}} (\\pi_e; \\mathcal{D})
+        \\hat{J}_{\\mathrm{SNTIS}} (\\pi; \\mathcal{D})
         := \\mathbb{E}_{n} [\\sum_{t=0}^T \\gamma^t \\frac{w_{1:T}}{\\mathbb{E}_n [w_{1:T}]} r_t],
 
-    where :math:`w_{0:T} := \\prod_{t=1}^T \\frac{\\pi_e(a_t \\mid s_t)}{\\pi_b(a_t \\mid s_t)}`
+    where :math:`w_{0:T} := \\prod_{t=1}^T \\frac{\\pi(a_t \\mid s_t)}{\\pi_0(a_t \\mid s_t)}`
 
     Parameters
     -------
@@ -1213,11 +1213,11 @@ class DiscreteSelfNormalizedTrajectoryWiseImportanceSampling(
 
         behavior_policy_trajectory_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Trajectory-wise action choice probability of behavior policy,
-            i.e., :math:`\\prod_{t=0}^T \\pi_b(a_t \\mid s_t)`
+            i.e., :math:`\\prod_{t=0}^T \\pi_0(a_t \\mid s_t)`
 
         evaluation_policy_trajectory_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Trajectory-wise action choice probability of evaluation policy,
-            i.e., :math:`\\prod_{t=0}^T \\pi_e(a_t \\mid s_t)`
+            i.e., :math:`\\prod_{t=0}^T \\pi(a_t \\mid s_t)`
 
         gamma: float, default=1.0
             Discount factor. The value should be within `(0, 1]`.
@@ -1257,10 +1257,10 @@ class DiscreteSelfNormalizedPerDecisionImportanceSampling(
 
     .. math::
 
-        \\hat{V}_{\\mathrm{SNPDIS}} (\\pi_e; \\mathcal{D})
+        \\hat{J}_{\\mathrm{SNPDIS}} (\\pi; \\mathcal{D})
         := \\mathbb{E}_{n} [\\sum_{t=0}^T \\gamma^t \\frac{w_{1:t}}{\\mathbb{E}_n [w_{1:t}]} r_t],
 
-    where :math:`w_{0:t} := \\prod_{t'=1}^t \\frac{\\pi_e(a_{t'} \\mid s_{t'})}{\\pi_b(a_{t'} \\mid s_{t'})}`
+    where :math:`w_{0:t} := \\prod_{t'=1}^t \\frac{\\pi(a_{t'} \\mid s_{t'})}{\\pi_0(a_{t'} \\mid s_{t'})}`
 
     Parameters
     -------
@@ -1319,11 +1319,11 @@ class DiscreteSelfNormalizedPerDecisionImportanceSampling(
 
         behavior_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Step-wise action choice probability of behavior policy,
-            i.e., :math:`\\prod_{t'=0}^t \\pi_b(a_{t'} \\mid s_{t'})`
+            i.e., :math:`\\prod_{t'=0}^t \\pi_0(a_{t'} \\mid s_{t'})`
 
         evaluation_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Step-wise action choice probability of evaluation policy,
-            i.e., :math:`\\prod_{t'=0}^t \\pi_b(a_{t'} \\mid s_{t'})`
+            i.e., :math:`\\prod_{t'=0}^t \\pi_0(a_{t'} \\mid s_{t'})`
 
         gamma: float, default=1.0
             Discount factor. The value should be within `(0, 1]`.
@@ -1358,12 +1358,12 @@ class DiscreteSelfNormalizedDoublyRobust(DiscreteDoublyRobust):
 
     .. math::
 
-        \\hat{V}_{\\mathrm{DR}} (\\pi_e; \\mathcal{D})
+        \\hat{J}_{\\mathrm{DR}} (\\pi; \\mathcal{D})
         := \\mathbb{E}_{n} [\\sum_{t=0}^T \\gamma^t \\frac{w_{0:t-1}}{\\mathbb{E}_n [w_{0:t-1}]}
-                (w_t (r_t - \\hat{Q}(s_t, a_t)) + \\mathbb{E}_{a \\sim \\pi_e(a \\mid s_t)}[\\hat{Q}(s_t, a)])],
+                (w_t (r_t - \\hat{Q}(s_t, a_t)) + \\mathbb{E}_{a \\sim \\pi(a \\mid s_t)}[\\hat{Q}(s_t, a)])],
 
-    where :math:`w_{0:t} := \\prod_{t'=0}^t \\frac{\\pi_e(a_{t'} \\mid s_{t'})}{\\pi_b(a_{t'} \\mid s_{t'})}`
-    and :math:`w_{t}} := \\frac{\\pi_e(a_t \\mid s_t)}{\\pi_b(a_t \\mid s_t)}`
+    where :math:`w_{0:t} := \\prod_{t'=0}^t \\frac{\\pi(a_{t'} \\mid s_{t'})}{\\pi_0(a_{t'} \\mid s_{t'})}`
+    and :math:`w_{t}} := \\frac{\\pi(a_t \\mid s_t)}{\\pi_0(a_t \\mid s_t)}`
 
     Parameters
     -------
@@ -1431,15 +1431,15 @@ class DiscreteSelfNormalizedDoublyRobust(DiscreteDoublyRobust):
 
         behavior_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Step-wise action choice probability of behavior policy,
-            i.e., :math:`\\prod_{t'=0}^t \\pi_b(a_{t'} \\mid s_{t'})`
+            i.e., :math:`\\prod_{t'=0}^t \\pi_0(a_{t'} \\mid s_{t'})`
 
         evaluation_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Step-wise action choice probability of evaluation policy,
-            i.e., :math:`\\prod_{t'=0}^t \\pi_b(a_{t'} \\mid s_{t'})`
+            i.e., :math:`\\prod_{t'=0}^t \\pi_0(a_{t'} \\mid s_{t'})`
 
         evaluation_policy_action_dist: array-like of shape (n_episodes * step_per_episode, n_action)
             Action choice probability of evaluation policy for all action,
-            i.e., :math:`\\pi_e(a \\mid s_t) \\forall a \\in \\mathcal{A}`
+            i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
 
         state_action_value_prediction: array-like of shape (n_episodes * step_per_episode, n_action)
             :math:`\\hat{Q}` for all action,

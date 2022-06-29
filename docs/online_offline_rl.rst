@@ -129,5 +129,5 @@ Uncertainty Estimation
 Conservative Q-Learning
 ----------
 
-For further taxonomies and descriptions, we refer readers to the survey papers :cite:`levine2020offline` and :cite:``. 
+For further taxonomies and descriptions, we refer readers to the survey papers :cite:`levine2020offline` and :cite:`prudencio2022survey`. 
 `awesome-offline-rl <https://github.com/hanjuku-kaso/awesome-offline-rl>`_ also provides a comprehensive list of literatures.
