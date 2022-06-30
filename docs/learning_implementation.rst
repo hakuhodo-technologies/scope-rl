@@ -74,7 +74,7 @@ Online Evaluation
 ~~~~~~~~~~
 Finally, we provide the series of functions to be used for online performance evaluation in `ope/online.py <>`_.
 
-Evaluation
+Statistics
 ----------
 This function estimates the performance of the given policy.
 

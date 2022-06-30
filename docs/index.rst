@@ -17,14 +17,11 @@ The library is also compatible with `d3rlpy <https://github.com/takuseno/d3rlpy>
 
 Our software facilitate implementation, evaluation and algorithm comparison related to the following research topics:
 
-* **Offline Reinforcement Learning**: Offline RL aims to learn a new policy from only offline logged data collected by a behavior policy.
-OfflineGym enables flexible experiment using customized dataset on diverse environments collected by various behavior policies.
+* **Offline Reinforcement Learning**: Offline RL aims to learn a new policy from only offline logged data collected by a behavior policy. OfflineGym enables flexible experiment using customized dataset on diverse environments collected by various behavior policies.
 
-* **Off-Policy Evaluation**: OPE aims to evaluate the performance of a counterfactual policy using only offline logged data.
-OfflineGym supports basic implementation of OPE estimators and streamline the experimental procedure to evaluate OPE estimators.
+* **Off-Policy Evaluation**: OPE aims to evaluate the performance of a counterfactual policy using only offline logged data. OfflineGym supports basic implementation of OPE estimators and streamline the experimental procedure to evaluate OPE estimators.
 
-* **Off-Policy Selection**: OPS aims to select the best policy from several candidate policies using offline logged data.
-OfflineGym supports basic implementation of OPS methods and provide some metrics to evaluate OPS result.
+* **Off-Policy Selection**: OPS aims to select the best policy from several candidate policies using offline logged data. OfflineGym supports basic implementation of OPS methods and provide some metrics to evaluate OPS result.
 
 This website contains pages with example implementations that demonstrates the usage of this library.
 The package reference page contains the full reference documentation for the currently implemented modules.
