@@ -1668,7 +1668,7 @@ class OffPolicySelection:
             fig_name=fig_name,
         )
 
-    def visualize_policy_value_of_cumulative_distributional_OPE_for_selection(
+    def visualize_policy_value_of_cumulative_distributional_ope_for_selection(
         self,
         input_dict: OPEInputDict,
         alpha: float = 0.05,
@@ -2030,7 +2030,7 @@ class OffPolicySelection:
         if fig_dir:
             fig.savefig(str(fig_dir / fig_name))
 
-    def visualize_policy_value_of_cumulative_distributional_OPE_for_validation(
+    def visualize_policy_value_of_cumulative_distributional_ope_for_validation(
         self,
         input_dict: OPEInputDict,
         n_cols: Optional[int] = None,
