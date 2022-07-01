@@ -136,9 +136,9 @@ The problem of Extrapolation Error
 
 Below, we describe several approaches that addresses the aforementioned issue.
 
-KL divergence regularization and Behavior Cloning
+Behavior Regularization and Behavior Cloning
 ----------
-One way to mitigate the distribution shift and out-of-distribution is to directly restrict the action space of the new policy.
+One way to mitigate the distribution shift and the out-of-distribution state-action pairs is to directly restrict the action space of the new policy.
 
 Uncertainty Estimation
 ----------
@@ -149,5 +149,8 @@ Conservative Q-Learning
 Implicit Q-Learning
 ----------
 
+After learning a new policy, we are often interested in the performance validation. We describe the problem formulation of Off-Policy Evaluation (OPE) and Selection (OPS) `here <>`_.
+The supported implementation of learning and evaluation are described `here <>`_ and `here <>`_, respectively. 
+
 For further taxonomies and descriptions, we refer readers to the survey papers :cite:`levine2020offline` and :cite:`prudencio2022survey`. 
-`awesome-offline-rl <https://github.com/hanjuku-kaso/awesome-offline-rl>`_ also provides a comprehensive list of literatures.
+`awesome-offline-rl <https://github.com/hanjuku-kaso/awesome-offline-rl>`_ also provides a comprehensive list of literature.

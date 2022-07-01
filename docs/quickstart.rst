@@ -40,7 +40,7 @@ We start by collecting the logged data useful for offline RL with a behavior pol
     >>> env = gym.make("RTBEnv-discrete-v0")
 
     # (1) Learn a baseline online policy (using d3rlpy)
-    # initialize algorithm
+    # initialize the algorithm
     >>> ddqn = DoubleDQN()
     # train an online policy
     # this takes about 5min to compute
@@ -62,7 +62,7 @@ We start by collecting the logged data useful for offline RL with a behavior pol
             name="ddqn_epsilon_0.3",
             random_state=random_state,
         )
-    # initialize dataset class
+    # initialize the dataset class
     >>> dataset = SyntheticDataset(
             env=env,
             behavior_policy=behavior_policy,
@@ -101,7 +101,7 @@ Note that, we use `d3rlpy <https://github.com/takuseno/d3rlpy>`_ for offline RL.
             episode_terminals=logged_dataset["done"],
             discrete_action=True,
         )
-    # initialize algorithm
+    # initialize the algorithm
     >>> cql = DiscreteCQL()
     # train an offline policy
     >>> cql.fit(
@@ -168,7 +168,7 @@ We compare the estimation results from various OPE estimators, Direct Method (DM
             n_episodes_on_policy_evaluation=100,
             random_state=random_state,
         )
-    # initialize OPE class
+    # initialize the OPE class
     >>> ope = OPE(
             logged_dataset=logged_dataset,
             ope_estimators=[DM(), TIS(), PDIS(), DR()],
@@ -199,7 +199,7 @@ The following shows the example of estimating cumulative distribution function o
 
     # (4) Evaluate the learned policy using cumulative distribution function (in an offline manner)
     # we compare ddqn, cql, and random policy defined in the previous section (i.e., (3) of basic OPE procedure)
-    # initialize OPE class
+    # initialize the OPE class
     >>> cd_ope = CumulativeDistributionalOPE(
             logged_dataset=logged_dataset,
             ope_estimators=[
@@ -232,7 +232,7 @@ Finally, we provide the code to conduct OPS, which selects the "best" performing
     >>> from offlinegym.ope import OffPolicySelection
 
     # (5) Conduct Off-Policy Selection
-    # Initialize OPS class
+    # Initialize the OPS class
     >>> ops = OffPolicySelection(
             ope=ope,
             cumulative_distributional_ope=cd_ope,

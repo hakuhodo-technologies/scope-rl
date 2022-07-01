@@ -15,7 +15,7 @@ It takes an RL environment and the behavior policy (i.e., data collection policy
 
 .. code-block:: python
 
-    # initialize dataset class
+    # initialize the dataset class
     >>> from offlinegym.dataset import SyntheticDataset
     >>> dataset = SyntheticDataset(
             env=env,
@@ -74,21 +74,17 @@ Online Evaluation
 ~~~~~~~~~~
 Finally, we provide the series of functions to be used for online performance evaluation in `ope/online.py <>`_.
 
-Statistics
-----------
-This function estimates the performance of the given policy.
+(Rollout)
+
+* :class:`rollout_policy_online`
+
+(Statistics)
 
 * :class:`calc_on_policy_policy_value`
 * :class:`calc_on_policy_policy_value_interval`
 
-Cumulative Distribution
-----------
-This function returns the trajectory wise reward at each episode.
-
-* :class:`rollout_policy_online`
-
-Visualization
-----------
-This function visualizes the on-policy policy performance of multiple candidate policies.
+(Visualization)
 
 * :class:`visualize_on_policy_policy_value`
+
+For further descriptions, please also refer to `package reference <>`_.

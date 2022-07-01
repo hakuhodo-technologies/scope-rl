@@ -132,7 +132,7 @@ Let's interact uniform random policy with a continuous action RTB environment. T
 Note that, while we use `OfflineGym <>`_ and `d3rlpy <https://github.com/takuseno/d3rlpy>`_ here, 
 RTBGym is compatible with any other libraries working on the `OpenAI Gym <https://gym.openai.com>`_ interface.
 
-Customized RTGEnv
+Customized RTBEnv
 ----------
 
 Next, we describe how to customize the environment by instantiating the environment.  
