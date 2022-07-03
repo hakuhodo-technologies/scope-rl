@@ -1,9 +1,10 @@
 "On-Policy Performance Comparison."
-from tqdm.autonotebook import tqdm
+from tqdm.auto import tqdm
 from typing import List, Union, Optional
 from pathlib import Path
 
 import numpy as np
+from scipy.stats import norm
 
 from pandas import DataFrame
 import matplotlib.pyplot as plt
@@ -24,7 +25,6 @@ def visualize_on_policy_policy_value(
     env: gym.Env,
     policies: List[Union[AlgoBase, BaseHead]],
     policy_names: List[str],
-    use_bootstrap: bool = False,
     n_episodes: int = 100,
     gamma: float = 1.0,
     alpha: float = 0.05,
@@ -45,9 +45,6 @@ def visualize_on_policy_policy_value(
 
     policy_names: list of str
         Name of policies.
-
-    use_bootstrap: bool, default=False
-        Whether to use bootstrap sampling or not.
 
     n_episodes: int, default=100 (> 0)
         Number of trajectories to rollout.
@@ -94,23 +91,16 @@ def visualize_on_policy_policy_value(
             gamma=gamma,
             random_state=random_state,
         )
+
     plt.style.use("ggplot")
     plt.figure(figsize=(2 * len(policies), 4))
 
-    if use_bootstrap:
-        sns.barplot(
-            data=DataFrame(on_policy_Policy_value_dict),
-            ci=100 * (1 - alpha),
-            n_boot=n_bootstrap_samples,
-            seed=random_state,
-        )
-    else:
-        sns.barplot(
-            data=DataFrame(on_policy_Policy_value_dict),
-            ci="sd",
-            n_boot=n_bootstrap_samples,
-            seed=random_state,
-        )
+    sns.barplot(
+        data=DataFrame(on_policy_Policy_value_dict),
+        ci=100 * (1 - alpha),
+        n_boot=n_bootstrap_samples,
+        seed=random_state,
+    )
 
     plt.ylabel(f"On-Policy Policy Value (± {np.int(100*(1 - alpha))}% CI)", fontsize=12)
     plt.xticks(fontsize=12)
@@ -119,16 +109,121 @@ def visualize_on_policy_policy_value(
         plt.savefig(str(fig_dir / fig_name))
 
 
+def visualize_on_policy_policy_value_with_variance(
+    env: gym.Env,
+    policies: List[Union[AlgoBase, BaseHead]],
+    policy_names: List[str],
+    n_episodes: int = 100,
+    gamma: float = 1.0,
+    alpha: float = 0.05,
+    random_state: Optional[int] = None,
+    fig_dir: Optional[Path] = None,
+    fig_name: str = "estimated_policy_value.png",
+) -> None:
+    """Visualize the policy value estimated by OPE estimators.
+
+    Parameters
+    -------
+    env: gym.Env
+        Reinforcement learning (RL) environment.
+
+    policies: list of {AlgoBase, BaseHead}
+        List of policies to be evaluated.
+
+    policy_names: list of str
+        Name of policies.
+
+    n_episodes: int, default=100 (> 0)
+        Number of trajectories to rollout.
+
+    gamma: float, default=1.0
+        Discount factor. The value should be within `(0, 1]`.
+
+    alpha: float, default=0.05
+        Significant level. The value should be within `[0, 1)`.
+
+    random_state: int, default=None (>= 0)
+        Random state.
+
+    fig_dir: Path, default=None
+        Path to store the bar figure.
+        If `None` is given, the figure will not be saved.
+
+    fig_name: str, default="estimated_policy_value.png"
+        Name of the bar figure.
+
+    """
+    check_scalar(alpha, name="alpha", target_type=float, min_val=0.0, max_val=1.0)
+    if fig_dir is not None and not isinstance(fig_dir, Path):
+        raise ValueError(f"fig_dir must be a Path, but {type(fig_dir)} is given")
+    if fig_name is not None and not isinstance(fig_name, str):
+        raise ValueError(f"fig_dir must be a string, but {type(fig_dir)} is given")
+
+    plt.style.use("ggplot")
+    fig, ax = plt.subplots()
+    color = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+    n_colors = len(color)
+
+    n_policies = len(policies)
+    mean = np.zeros(n_policies)
+    variance = np.zeros(n_policies)
+
+    for i, policy in enumerate(policies):
+        statistics_dict = calc_on_policy_statistics(
+            env=env,
+            policy=policy,
+            n_episodes=n_episodes,
+            gamma=gamma,
+            quartile_alpha=alpha,
+            random_state=random_state,
+        )
+        mean[i] = statistics_dict["mean"]
+        variance[i] = statistics_dict["variance"]
+
+    upper, lower = norm.interval(1 - alpha, loc=mean, scale=np.sqrt(variance))
+
+    for i in range(n_policies):
+        ax.errorbar(
+            np.arange(i, i + 1),
+            mean[i],
+            xerr=[0.4],
+            yerr=[
+                np.array([mean[i] - lower[i]]),
+                np.array([upper[i] - mean[i]]),
+            ],
+            color=color[i % n_colors],
+            elinewidth=5.0,
+        )
+
+    elines = ax.get_children()
+    for i in range(n_policies):
+        elines[2 * i + 1].set_color("black")
+        elines[2 * i + 1].set_linewidth(2.0)
+
+    ax.set_xticks(np.arange(n_policies))
+    ax.set_xticklabels(policy_names)
+    ax.set_ylabel(
+        f"On-Policy Policy Value (± {np.int(100*(1 - alpha))}% CI)",
+        fontsize=12,
+    )
+    plt.yticks(fontsize=12)
+    plt.xticks(fontsize=12)
+    plt.xlim(-0.5, n_policies - 0.5)
+
+    if fig_dir:
+        fig.savefig(str(fig_dir / fig_name))
+
+
 def visualize_on_policy_cumulative_distribution_function(
     env: gym.Env,
     policies: List[Union[AlgoBase, BaseHead]],
     policy_names: List[str],
     n_episodes: int = 100,
     gamma: float = 1.0,
+    use_custom_reward_scale: bool = False,
     scale_min: Optional[float] = None,
     scale_max: Optional[float] = None,
     n_partition: Optional[int] = None,
-    use_observations_as_reward_scale: bool = False,
     random_state: Optional[int] = None,
     legend: bool = True,
     fig_dir: Optional[Path] = None,
@@ -150,22 +245,22 @@ def visualize_on_policy_cumulative_distribution_function(
     gamma: float, default=1.0
         Discount factor. The value should be within `(0, 1]`.
 
+    use_custom_reward_scale: bool, default=False
+        Whether to use the custom reward scale or the reward observed by the behavior policy.
+        If True, the reward scale is uniform, following Huang et al. (2021).
+        If False, the reward scale follows the one defined in Chundak et al. (2021).
+
     scale_min: float, default=None
         Minimum value of the reward scale in CDF.
-        When `use_observations_as_reward_scale == False`, a value must be given.
+        When `use_custom_reward_scale == True`, a value must be given.
 
     scale_max: float, default=None
         Maximum value of the reward scale in CDF.
-        When `use_observations_as_reward_scale == False`, a value must be given.
+        When `use_custom_reward_scale == True`, a value must be given.
 
     n_partitiion: int, default=None
         Number of partition in reward scale (x-axis of CDF).
-        When `use_observations_as_reward_scale == False`, a value must be given.
-
-    use_observations_as_reward_scale: bool, default=False
-        Whether to use the reward observed by the behavior policy as the reward scale.
-        If True, the reward scale follows the one defined in Chundak et al. (2021).
-        If False, the reward scale is uniform, following Huang et al. (2021).
+        When `use_custom_reward_scale == True`, a value must be given.
 
     random_state: int, default=None (>= 0)
         Random state.
@@ -198,7 +293,7 @@ def visualize_on_policy_cumulative_distribution_function(
             scale_min=scale_min,
             scale_max=scale_max,
             n_partition=n_partition,
-            use_observations_as_reward_scale=use_observations_as_reward_scale,
+            use_custom_reward_scale=use_custom_reward_scale,
             random_state=random_state,
         )
         ax.plot(reward_scale, cdf, label=policy_name)
@@ -223,10 +318,10 @@ def visualize_on_policy_conditional_value_at_risk(
     n_episodes: int = 100,
     gamma: float = 1.0,
     alphas: np.ndarray = np.linspace(0, 1, 20),
+    use_custom_reward_scale: bool = False,
     scale_min: Optional[float] = None,
     scale_max: Optional[float] = None,
     n_partition: Optional[int] = None,
-    use_observations_as_reward_scale: bool = False,
     random_state: Optional[int] = None,
     legend: bool = True,
     fig_dir: Optional[Path] = None,
@@ -251,22 +346,22 @@ def visualize_on_policy_conditional_value_at_risk(
     alphas: array-like of shape (n_alpha, ) default=np.linspace(0, 1, 20)
         Set of proportions of the sided region. The value should be within `(0, 1]`.
 
+    use_custom_reward_scale: bool, default=False
+        Whether to use the custom reward scale or the reward observed by the behavior policy.
+        If True, the reward scale is uniform, following Huang et al. (2021).
+        If False, the reward scale follows the one defined in Chundak et al. (2021).
+
     scale_min: float, default=None
         Minimum value of the reward scale in CDF.
-        When `use_observations_as_reward_scale == False`, a value must be given.
+        When `use_custom_reward_scale == True`, a value must be given.
 
     scale_max: float, default=None
         Maximum value of the reward scale in CDF.
-        When `use_observations_as_reward_scale == False`, a value must be given.
+        When `use_custom_reward_scale == True`, a value must be given.
 
     n_partitiion: int, default=None
         Number of partition in reward scale (x-axis of CDF).
-        When `use_observations_as_reward_scale == False`, a value must be given.
-
-    use_observations_as_reward_scale: bool, default=False
-        Whether to use the reward observed by the behavior policy as the reward scale.
-        If True, the reward scale follows the one defined in Chundak et al. (2021).
-        If False, the reward scale is uniform, following Huang et al. (2021).
+        When `use_custom_reward_scale == True`, a value must be given.
 
     random_state: int, default=None (>= 0)
         Random state.
@@ -300,7 +395,7 @@ def visualize_on_policy_conditional_value_at_risk(
             scale_min=scale_min,
             scale_max=scale_max,
             n_partition=n_partition,
-            use_observations_as_reward_scale=use_observations_as_reward_scale,
+            use_custom_reward_scale=use_custom_reward_scale,
             random_state=random_state,
         )
         ax.plot(alphas, cvar, label=policy_name)
@@ -325,10 +420,10 @@ def visualize_on_policy_interquartile_range(
     n_episodes: int = 100,
     gamma: float = 1.0,
     alpha: float = 0.05,
+    use_custom_reward_scale: bool = False,
     scale_min: Optional[float] = None,
     scale_max: Optional[float] = None,
     n_partition: Optional[int] = None,
-    use_observations_as_reward_scale: bool = False,
     random_state: Optional[int] = None,
     fig_dir: Optional[Path] = None,
     fig_name: str = "on_policy_interquartile_range.png",
@@ -352,22 +447,22 @@ def visualize_on_policy_interquartile_range(
     alpha: float, default=0.05
         Significant level. The value should be within `[0, 1)`.
 
+    use_custom_reward_scale: bool, default=False
+        Whether to use the custom reward scale or the reward observed by the behavior policy.
+        If True, the reward scale is uniform, following Huang et al. (2021).
+        If False, the reward scale follows the one defined in Chundak et al. (2021).
+
     scale_min: float, default=None
         Minimum value of the reward scale in CDF.
-        When `use_observations_as_reward_scale == False`, a value must be given.
+        When `use_custom_reward_scale == True`, a value must be given.
 
     scale_max: float, default=None
         Maximum value of the reward scale in CDF.
-        When `use_observations_as_reward_scale == False`, a value must be given.
+        When `use_custom_reward_scale == True`, a value must be given.
 
     n_partitiion: int, default=None
         Number of partition in reward scale (x-axis of CDF).
-        When `use_observations_as_reward_scale == False`, a value must be given.
-
-    use_observations_as_reward_scale: bool, default=False
-        Whether to use the reward observed by the behavior policy as the reward scale.
-        If True, the reward scale follows the one defined in Chundak et al. (2021).
-        If False, the reward scale is uniform, following Huang et al. (2021).
+        When `use_custom_reward_scale == True`, a value must be given.
 
     random_state: int, default=None (>= 0)
         Random state.
@@ -406,7 +501,7 @@ def visualize_on_policy_interquartile_range(
             scale_min=scale_min,
             scale_max=scale_max,
             n_partition=n_partition,
-            use_observations_as_reward_scale=use_observations_as_reward_scale,
+            use_custom_reward_scale=use_custom_reward_scale,
             random_state=random_state,
         )
         mean[i] = statistics_dict["mean"]
@@ -467,10 +562,10 @@ def calc_on_policy_statistics(
     gamma: float = 1.0,
     quartile_alpha: float = 0.05,
     cvar_alpha: float = 0.05,
+    use_custom_reward_scale: bool = False,
     scale_min: Optional[float] = None,
     scale_max: Optional[float] = None,
     n_partition: Optional[int] = None,
-    use_observations_as_reward_scale: bool = False,
     random_state: Optional[int] = None,
 ):
     """Calculate the statistics including mean, variance, conditional value at risk, interquartile range of on-policy policy value.
@@ -495,22 +590,22 @@ def calc_on_policy_statistics(
     cvar_alpha: float, default=0.05
         Proportion of the sided region. The value should be within `(0, 1]`.
 
+    use_custom_reward_scale: bool, default=False
+        Whether to use the custom reward scale or the reward observed by the behavior policy.
+        If True, the reward scale is uniform, following Huang et al. (2021).
+        If False, the reward scale follows the one defined in Chundak et al. (2021).
+
     scale_min: float, default=None
         Minimum value of the reward scale in CDF.
-        When `use_observations_as_reward_scale == False`, a value must be given.
+        When `use_custom_reward_scale == True`, a value must be given.
 
     scale_max: float, default=None
         Maximum value of the reward scale in CDF.
-        When `use_observations_as_reward_scale == False`, a value must be given.
+        When `use_custom_reward_scale == True`, a value must be given.
 
     n_partitiion: int, default=None
         Number of partition in reward scale (x-axis of CDF).
-        When `use_observations_as_reward_scale == False`, a value must be given.
-
-    use_observations_as_reward_scale: bool, default=False
-        Whether to use the reward observed by the behavior policy as the reward scale.
-        If True, the reward scale follows the one defined in Chundak et al. (2021).
-        If False, the reward scale is uniform, following Huang et al. (2021).
+        When `use_custom_reward_scale == True`, a value must be given.
 
     random_state: int, default=None (>= 0)
         Random state.
@@ -531,18 +626,18 @@ def calc_on_policy_statistics(
     check_scalar(
         cvar_alpha, name="cvar_alpha", target_type=float, min_val=0.0, max_val=1.0
     )
-    if not use_observations_as_reward_scale:
+    if use_custom_reward_scale:
         if scale_min is None:
             raise ValueError(
-                "scale_min must be given when `use_observations_as_reward_scale == False`"
+                "scale_min must be given when `use_custom_reward_scale == True`"
             )
         if scale_max is None:
             raise ValueError(
-                "scale_max must be given when `use_observations_as_reward_scale == False`"
+                "scale_max must be given when `use_custom_reward_scale == True`"
             )
         if n_partition is None:
             raise ValueError(
-                "n_partition must be given when `use_observations_as_reward_scale == False`"
+                "n_partition must be given when `use_custom_reward_scale == True`"
             )
         check_scalar(
             scale_min,
@@ -572,10 +667,10 @@ def calc_on_policy_statistics(
     mean = on_policy_policy_values.mean()
     variance = on_policy_policy_values.var(ddof=1)
 
-    if use_observations_as_reward_scale:
-        reward_scale = np.sort(np.unique(on_policy_policy_values))
-    else:
+    if use_custom_reward_scale:
         reward_scale = np.linspace(scale_min, scale_max, num=n_partition)
+    else:
+        reward_scale = np.sort(np.unique(on_policy_policy_values))
 
     density = np.histogram(
         on_policy_policy_values,
@@ -778,7 +873,7 @@ def calc_on_policy_variance(
         gamma=gamma,
         random_state=random_state,
     )
-    return on_policy_policy_values.var(dd0f=1)
+    return on_policy_policy_values.var(ddof=1)
 
 
 def calc_on_policy_conditional_value_at_risk(
@@ -787,10 +882,10 @@ def calc_on_policy_conditional_value_at_risk(
     n_episodes: int = 100,
     gamma: float = 1.0,
     alphas: Union[np.ndarray, float] = np.linspace(0, 1, 20),
+    use_custom_reward_scale: bool = False,
     scale_min: Optional[float] = None,
     scale_max: Optional[float] = None,
     n_partition: Optional[int] = None,
-    use_observations_as_reward_scale: bool = False,
     random_state: Optional[int] = None,
 ):
     """Calculate the conditional value at risk (CVaR) of on-policy policy value.
@@ -812,22 +907,22 @@ def calc_on_policy_conditional_value_at_risk(
     alphas: {float, array-like of shape (n_alpha, )}, default=np.linspace(0, 1, 20)
         Set of proportions of the sided region. The value(s) should be within `[0, 1)`.
 
+    use_custom_reward_scale: bool, default=False
+        Whether to use the custom reward scale or the reward observed by the behavior policy.
+        If True, the reward scale is uniform, following Huang et al. (2021).
+        If False, the reward scale follows the one defined in Chundak et al. (2021).
+
     scale_min: float, default=None
         Minimum value of the reward scale in CDF.
-        When `use_observations_as_reward_scale == False`, a value must be given.
+        When `use_custom_reward_scale == True`, a value must be given.
 
     scale_max: float, default=None
         Maximum value of the reward scale in CDF.
-        When `use_observations_as_reward_scale == False`, a value must be given.
+        When `use_custom_reward_scale == True`, a value must be given.
 
     n_partitiion: int, default=None
         Number of partition in reward scale (x-axis of CDF).
-        When `use_observations_as_reward_scale == False`, a value must be given.
-
-    use_observations_as_reward_scale: bool, default=False
-        Whether to use the reward observed by the behavior policy as the reward scale.
-        If True, the reward scale follows the one defined in Chundak et al. (2021).
-        If False, the reward scale is uniform, following Huang et al. (2021).
+        When `use_custom_reward_scale == True`, a value must be given.
 
     random_state: int, default=None (>= 0)
         Random state.
@@ -847,18 +942,18 @@ def calc_on_policy_conditional_value_at_risk(
         raise ValueError(
             f"alphas must be float or np.ndarray, but {type(alphas)} is given"
         )
-    if not use_observations_as_reward_scale:
+    if use_custom_reward_scale:
         if scale_min is None:
             raise ValueError(
-                "scale_min must be given when `use_observations_as_reward_scale == False`"
+                "scale_min must be given when `use_custom_reward_scale == True`"
             )
         if scale_max is None:
             raise ValueError(
-                "scale_max must be given when `use_observations_as_reward_scale == False`"
+                "scale_max must be given when `use_custom_reward_scale == True`"
             )
         if n_partition is None:
             raise ValueError(
-                "n_partition must be given when `use_observations_as_reward_scale == False`"
+                "n_partition must be given when `use_custom_reward_scale == True`"
             )
         check_scalar(
             scale_min,
@@ -885,10 +980,10 @@ def calc_on_policy_conditional_value_at_risk(
         random_state=random_state,
     )
 
-    if use_observations_as_reward_scale:
-        reward_scale = np.sort(np.unique(on_policy_policy_values))
-    else:
+    if use_custom_reward_scale:
         reward_scale = np.linspace(scale_min, scale_max, num=n_partition)
+    else:
+        reward_scale = np.sort(np.unique(on_policy_policy_values))
 
     density = np.histogram(
         on_policy_policy_values,
@@ -911,10 +1006,10 @@ def calc_on_policy_interquartile_range(
     n_episodes: int = 100,
     gamma: float = 1.0,
     alpha: float = 0.05,
+    use_custom_reward_scale: bool = False,
     scale_min: Optional[float] = None,
     scale_max: Optional[float] = None,
     n_partition: Optional[int] = None,
-    use_observations_as_reward_scale: bool = False,
     random_state: Optional[int] = None,
 ):
     """Calculate the interquartile range of on-policy policy value.
@@ -934,22 +1029,22 @@ def calc_on_policy_interquartile_range(
     alpha: float, default=0.05
         Proportion of the sided region. The value should be within `(0, 1]`.
 
+    use_custom_reward_scale: bool, default=False
+        Whether to use the custom reward scale or the reward observed by the behavior policy.
+        If True, the reward scale is uniform, following Huang et al. (2021).
+        If False, the reward scale follows the one defined in Chundak et al. (2021).
+
     scale_min: float, default=None
         Minimum value of the reward scale in CDF.
-        When `use_observations_as_reward_scale == False`, a value must be given.
+        When `use_custom_reward_scale == True`, a value must be given.
 
     scale_max: float, default=None
         Maximum value of the reward scale in CDF.
-        When `use_observations_as_reward_scale == False`, a value must be given.
+        When `use_custom_reward_scale == True`, a value must be given.
 
     n_partitiion: int, default=None
         Number of partition in reward scale (x-axis of CDF).
-        When `use_observations_as_reward_scale == False`, a value must be given.
-
-    use_observations_as_reward_scale: bool, default=False
-        Whether to use the reward observed by the behavior policy as the reward scale.
-        If True, the reward scale follows the one defined in Chundak et al. (2021).
-        If False, the reward scale is uniform, following Huang et al. (2021).
+        When `use_custom_reward_scale == True`, a value must be given.
 
     random_state: int, default=None (>= 0)
         Random state.
@@ -961,18 +1056,18 @@ def calc_on_policy_interquartile_range(
 
     """
     check_scalar(alpha, name="alpha", target_type=float, min_val=0.0, max_val=0.5)
-    if not use_observations_as_reward_scale:
+    if use_custom_reward_scale:
         if scale_min is None:
             raise ValueError(
-                "scale_min must be given when `use_observations_as_reward_scale == False`"
+                "scale_min must be given when `use_custom_reward_scale == True`"
             )
         if scale_max is None:
             raise ValueError(
-                "scale_max must be given when `use_observations_as_reward_scale == False`"
+                "scale_max must be given when `use_custom_reward_scale == True`"
             )
         if n_partition is None:
             raise ValueError(
-                "n_partition must be given when `use_observations_as_reward_scale == False`"
+                "n_partition must be given when `use_custom_reward_scale == True`"
             )
         check_scalar(
             scale_min,
@@ -999,10 +1094,10 @@ def calc_on_policy_interquartile_range(
         random_state=random_state,
     )
 
-    if use_observations_as_reward_scale:
-        reward_scale = np.sort(np.unique(on_policy_policy_values))
-    else:
+    if use_custom_reward_scale:
         reward_scale = np.linspace(scale_min, scale_max, num=n_partition)
+    else:
+        reward_scale = np.sort(np.unique(on_policy_policy_values))
 
     def target_value_given_idx(idx):
         if len(idx):
@@ -1036,10 +1131,10 @@ def calc_on_policy_cumulative_distribution_function(
     policy: Union[AlgoBase, BaseHead],
     n_episodes: int = 100,
     gamma: float = 1.0,
+    use_custom_reward_scale: bool = False,
     scale_min: Optional[float] = None,
     scale_max: Optional[float] = None,
     n_partition: Optional[int] = None,
-    use_observations_as_reward_scale: bool = False,
     random_state: Optional[int] = None,
 ):
     """Calculate the cumulative distribution of on-policy policy value.
@@ -1058,22 +1153,22 @@ def calc_on_policy_cumulative_distribution_function(
     gamma: float, default=1.0
         Discount factor. The value should be within `(0, 1]`.
 
+    use_custom_reward_scale: bool, default=False
+        Whether to use the custom reward scale or the reward observed by the behavior policy.
+        If True, the reward scale is uniform, following Huang et al. (2021).
+        If False, the reward scale follows the one defined in Chundak et al. (2021).
+
     scale_min: float, default=None
         Minimum value of the reward scale in CDF.
-        When `use_observations_as_reward_scale == False`, a value must be given.
+        When `use_custom_reward_scale == True`, a value must be given.
 
     scale_max: float, default=None
         Maximum value of the reward scale in CDF.
-        When `use_observations_as_reward_scale == False`, a value must be given.
+        When `use_custom_reward_scale == True`, a value must be given.
 
     n_partitiion: int, default=None
         Number of partition in reward scale (x-axis of CDF).
-        When `use_observations_as_reward_scale == False`, a value must be given.
-
-    use_observations_as_reward_scale: bool, default=False
-        Whether to use the reward observed by the behavior policy as the reward scale.
-        If True, the reward scale follows the one defined in Chundak et al. (2021).
-        If False, the reward scale is uniform, following Huang et al. (2021).
+        When `use_custom_reward_scale == True`, a value must be given.
 
     random_state: int, default=None (>= 0)
         Random state.
@@ -1087,18 +1182,18 @@ def calc_on_policy_cumulative_distribution_function(
         Reward Scale (x-axis of the cumulative distribution function).
 
     """
-    if not use_observations_as_reward_scale:
+    if use_custom_reward_scale:
         if scale_min is None:
             raise ValueError(
-                "scale_min must be given when `use_observations_as_reward_scale == False`"
+                "scale_min must be given when `use_custom_reward_scale == True`"
             )
         if scale_max is None:
             raise ValueError(
-                "scale_max must be given when `use_observations_as_reward_scale == False`"
+                "scale_max must be given when `use_custom_reward_scale == True`"
             )
         if n_partition is None:
             raise ValueError(
-                "n_partition must be given when `use_observations_as_reward_scale == False`"
+                "n_partition must be given when `use_custom_reward_scale == True`"
             )
         check_scalar(
             scale_min,
@@ -1125,10 +1220,10 @@ def calc_on_policy_cumulative_distribution_function(
         random_state=random_state,
     )
 
-    if use_observations_as_reward_scale:
-        reward_scale = np.sort(np.unique(on_policy_policy_values))
-    else:
+    if use_custom_reward_scale:
         reward_scale = np.linspace(scale_min, scale_max, num=n_partition)
+    else:
+        reward_scale = np.sort(np.unique(on_policy_policy_values))
 
     density = np.histogram(
         on_policy_policy_values,

@@ -794,7 +794,6 @@ class DiscreteCumulativeDistributionalTrajectoryWiseDoublyRobust(
 
     """
 
-    use_observations_as_reward_scale: bool = False
     estimator_name: str = "cdf_tdr"
 
     def __post_init__(self):

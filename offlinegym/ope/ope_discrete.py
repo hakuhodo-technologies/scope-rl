@@ -852,22 +852,22 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
         List of OPE estimators used to evaluate the policy value of the evaluation policies.
         Estimators must follow the interface of `offlinegym.ope.BaseCumulativeDistributionalOffPolicyEstimator`.
 
+    use_custom_reward_scale: bool, default=False
+        Whether to use the custom reward scale or the reward observed by the behavior policy.
+        If True, the reward scale is uniform, following Huang et al. (2021).
+        If False, the reward scale follows the one defined in Chundak et al. (2021).
+
     scale_min: float, default=None
         Minimum value of the reward scale in CDF.
-        When `use_observations_as_reward_scale == False`, a value must be given.
+        When `use_custom_reward_scale == True`, a value must be given.
 
     scale_max: float, default=None
         Maximum value of the reward scale in CDF.
-        When `use_observations_as_reward_scale == False`, a value must be given.
+        When `use_custom_reward_scale == True`, a value must be given.
 
     n_partitiion: int, default=None
         Number of partition in reward scale (x-axis of CDF).
-        When `use_observations_as_reward_scale == False`, a value must be given.
-
-    use_observations_as_reward_scale: bool, default=False
-        Whether to use the reward observed by the behavior policy as the reward scale.
-        If True, the reward scale follows the one defined in Chundak et al. (2021).
-        If False, the reward scale is uniform, following Huang et al. (2021).
+        When `use_custom_reward_scale == True`, a value must be given.
 
     Examples
     ----------
@@ -962,7 +962,6 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
                     CDIS(estimator_name="cdf_is"),
                     CDSIS(estimator_name="cdf_sis"),
                 ],
-                use_observations_as_reward_scale=True,
             )
         >>> variance_dict = cd_ope.estimate_variance(
                 input_dict=input_dict,
@@ -986,10 +985,10 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
 
     logged_dataset: LoggedDataset
     ope_estimators: List[BaseOffPolicyEstimator]
+    use_custom_reward_scale: bool = False
     scale_min: Optional[float] = None
     scale_max: Optional[float] = None
     n_partition: Optional[int] = None
-    use_observations_as_reward_scale: bool = False
 
     def __post_init__(self) -> None:
         "Initialize class."
@@ -1015,18 +1014,18 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
                     f"ope_estimators must be child classes of BaseCumulativeDistributionalOffPolicyEstimator, but one of them, {estimator.estimator_name} is not"
                 )
 
-        if not self.use_observations_as_reward_scale:
+        if self.use_custom_reward_scale:
             if self.scale_min is None:
                 raise ValueError(
-                    "scale_min must be given when `use_observations_as_reward_scale == False`"
+                    "scale_min must be given when `use_custom_reward_scale == True`"
                 )
             if self.scale_max is None:
                 raise ValueError(
-                    "scale_max must be given when `use_observations_as_reward_scale == False`"
+                    "scale_max must be given when `use_custom_reward_scale == True`"
                 )
             if self.n_partition is None:
                 raise ValueError(
-                    "n_partition must be given when `use_observations_as_reward_scale == False`"
+                    "n_partition must be given when `use_custom_reward_scale == True`"
                 )
             check_scalar(
                 self.scale_min,
@@ -1078,17 +1077,17 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
             Reward Scale (x-axis of the cumulative distribution function).
 
         """
-        if self.use_observations_as_reward_scale:
+        if self.use_custom_reward_scale:
+            reward_scale = np.linspace(
+                self.scale_min, self.scale_max, num=self.n_partition
+            )
+        else:
             reward = (
                 self.logged_dataset["reward"]
                 .reshape((-1, self.step_per_episode))
                 .sum(axis=1)
             )
             reward_scale = np.sort(np.unique(reward))
-        else:
-            reward_scale = np.linspace(
-                self.scale_min, self.scale_max, num=self.n_partition
-            )
         return reward_scale
 
     def estimate_cumulative_distribution_function(
@@ -1700,6 +1699,7 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
             Name of the bar figure.
 
         """
+        check_scalar(alpha, name="alpha", target_type=float, min_val=0.0, max_val=1.0)
         check_input_dict(input_dict)
         if hue not in ["estimator", "policy"]:
             raise ValueError(

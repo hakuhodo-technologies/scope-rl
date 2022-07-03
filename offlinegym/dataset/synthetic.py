@@ -1,7 +1,7 @@
 """Synthetic Dataset Generation."""
 from dataclasses import dataclass
 from typing import Optional
-from tqdm.autonotebook import tqdm
+from tqdm.auto import tqdm
 
 import gym
 from gym.spaces import Discrete

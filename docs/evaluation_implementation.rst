@@ -220,10 +220,11 @@ The cumulative distributional OPE class implements the following functions.
 
 (Visualization)
 
-* :class:`visualize_cumulative_distribution_function`
 * :class:`visualize_policy_value`
+* :class:`visualize_policy_value_with_variance`
 * :class:`visualize_conditional_value_at_risk`
 * :class:`visualize_interquartile_range`
+* :class:`visualize_cumulative_distribution_function`
 
 (Others)
 

@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import Dict, List, Optional, Any
 
 from collections import defaultdict
-from tqdm.autonotebook import tqdm
+from tqdm.auto import tqdm
 
 import torch
 import numpy as np

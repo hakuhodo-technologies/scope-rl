@@ -149,7 +149,6 @@ class OffPolicySelection:
                     CDIS(estimator_name="cdf_is"),
                     CDSIS(estimator_name="cdf_sis"),
                 ],
-                use_observations_as_reward_scale=True,
             )
         >>> ops = OffPolicySelection(
                 ope=ope,
