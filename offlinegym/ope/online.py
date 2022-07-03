@@ -542,7 +542,7 @@ def visualize_on_policy_interquartile_range(
             markersize=10.0,
         )
 
-        ax.set_title("interquaetile range")
+        ax.set_title("interquartile range")
         ax.set_ylabel(
             f"{np.int(100*(1 - alpha))}% range",
             fontsize=12,

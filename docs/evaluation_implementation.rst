@@ -195,7 +195,6 @@ For this purpose, we provide the following :class:`DiscreteCumulativeDistributio
     >>> cd_ope = CumulativeDistributionalOPE(
             logged_dataset=logged_dataset,
             ope_estimators=[CD_DM(), CD_IS(), CD_DR()],
-            use_observations_as_reward_scale=True,
         )
 
 It estimates the cumulative distribution of the trajectory wise reward and various risk functions as follows.

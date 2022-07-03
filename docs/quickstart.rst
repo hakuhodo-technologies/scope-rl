@@ -209,7 +209,6 @@ The following shows the example of estimating cumulative distribution function o
             CD_SNIS(estimator_name="cdf_snis"), 
             CD_SNDR(estimator_name="cdf_sndr"),
             ],
-            use_observations_as_reward_scale=True,
         )
     # estimate variance
     >>> variance_dict = cd_ope.estimate_variance(input_dict)
