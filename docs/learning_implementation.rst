@@ -82,9 +82,16 @@ Finally, we provide the series of functions to be used for online performance ev
 
 * :class:`calc_on_policy_policy_value`
 * :class:`calc_on_policy_policy_value_interval`
+* :class:`calc_on_policy_variance`
+* :class:`calc_on_policy_conditional_value_at_risk`
+* :class:`calc_on_policy_policy_interquartile_range`
+* :class:`calc_on_policy_cumulative_distribution_function`
 
 (Visualization)
 
 * :class:`visualize_on_policy_policy_value`
+* :class:`visualize_on_policy_cumulative_distribution_function`
+* :class:`visualize_on_policy_conditional_value_at_risk`
+* :class:`visualize_on_policy_interquartile_range`
 
 For further descriptions, please also refer to `package reference <>`_.

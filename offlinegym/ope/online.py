@@ -4,6 +4,7 @@ from typing import List, Union, Optional
 from pathlib import Path
 
 import numpy as np
+
 from pandas import DataFrame
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -15,6 +16,7 @@ from sklearn.utils import check_scalar, check_random_state
 from ..policy.head import BaseHead, OnlineHead
 from ..utils import (
     estimate_confidence_interval_by_bootstrap,
+    check_array,
 )
 
 
@@ -22,6 +24,7 @@ def visualize_on_policy_policy_value(
     env: gym.Env,
     policies: List[Union[AlgoBase, BaseHead]],
     policy_names: List[str],
+    use_bootstrap: bool = False,
     n_episodes: int = 100,
     gamma: float = 1.0,
     alpha: float = 0.05,
@@ -42,6 +45,9 @@ def visualize_on_policy_policy_value(
 
     policy_names: list of str
         Name of policies.
+
+    use_bootstrap: bool, default=False
+        Whether to use bootstrap sampling or not.
 
     n_episodes: int, default=100 (> 0)
         Number of trajectories to rollout.
@@ -90,12 +96,22 @@ def visualize_on_policy_policy_value(
         )
     plt.style.use("ggplot")
     plt.figure(figsize=(2 * len(policies), 4))
-    sns.barplot(
-        data=DataFrame(on_policy_Policy_value_dict),
-        ci=100 * (1 - alpha),
-        n_boot=n_bootstrap_samples,
-        seed=random_state,
-    )
+
+    if use_bootstrap:
+        sns.barplot(
+            data=DataFrame(on_policy_Policy_value_dict),
+            ci=100 * (1 - alpha),
+            n_boot=n_bootstrap_samples,
+            seed=random_state,
+        )
+    else:
+        sns.barplot(
+            data=DataFrame(on_policy_Policy_value_dict),
+            ci="sd",
+            n_boot=n_bootstrap_samples,
+            seed=random_state,
+        )
+
     plt.ylabel(f"On-Policy Policy Value (± {np.int(100*(1 - alpha))}% CI)", fontsize=12)
     plt.xticks(fontsize=12)
     plt.yticks(fontsize=12)
@@ -103,12 +119,512 @@ def visualize_on_policy_policy_value(
         plt.savefig(str(fig_dir / fig_name))
 
 
-def calc_on_policy_policy_value(
+def visualize_on_policy_cumulative_distribution_function(
+    env: gym.Env,
+    policies: List[Union[AlgoBase, BaseHead]],
+    policy_names: List[str],
+    n_episodes: int = 100,
+    gamma: float = 1.0,
+    scale_min: Optional[float] = None,
+    scale_max: Optional[float] = None,
+    n_partition: Optional[int] = None,
+    use_observations_as_reward_scale: bool = False,
+    random_state: Optional[int] = None,
+    legend: bool = True,
+    fig_dir: Optional[Path] = None,
+    fig_name: str = "on_policy_cumulative_distribution_function.png",
+) -> None:
+    """Visualize the cumulative distribution function of on-policy policy value.
+
+    Parameters
+    -------
+    env: gym.Env
+        Reinforcement learning (RL) environment.
+
+    policy: {AlgoBase, BaseHead}
+        A policy to be evaluated.
+
+    n_episodes: int, default=100 (> 0)
+        Number of trajectories to rollout.
+
+    gamma: float, default=1.0
+        Discount factor. The value should be within `(0, 1]`.
+
+    scale_min: float, default=None
+        Minimum value of the reward scale in CDF.
+        When `use_observations_as_reward_scale == False`, a value must be given.
+
+    scale_max: float, default=None
+        Maximum value of the reward scale in CDF.
+        When `use_observations_as_reward_scale == False`, a value must be given.
+
+    n_partitiion: int, default=None
+        Number of partition in reward scale (x-axis of CDF).
+        When `use_observations_as_reward_scale == False`, a value must be given.
+
+    use_observations_as_reward_scale: bool, default=False
+        Whether to use the reward observed by the behavior policy as the reward scale.
+        If True, the reward scale follows the one defined in Chundak et al. (2021).
+        If False, the reward scale is uniform, following Huang et al. (2021).
+
+    random_state: int, default=None (>= 0)
+        Random state.
+
+    legend: bool, default=True
+        Whether to include legend in the figure.
+
+    fig_dir: Path, default=None
+        Path to store the bar figure.
+        If `None` is given, the figure will not be saved.
+
+    fig_name: str, default="on_policy_cumulative_distribution_function.png"
+        Name of the bar figure.
+
+    """
+    if fig_dir is not None and not isinstance(fig_dir, Path):
+        raise ValueError(f"fig_dir must be a Path, but {type(fig_dir)} is given")
+    if fig_name is not None and not isinstance(fig_name, str):
+        raise ValueError(f"fig_dir must be a string, but {type(fig_dir)} is given")
+
+    plt.style.use("ggplot")
+    fig, ax = plt.subplots()
+
+    for policy, policy_name in zip(policies, policy_names):
+        cdf, reward_scale = calc_on_policy_cumulative_distribution_function(
+            env=env,
+            policy=policy,
+            n_episodes=n_episodes,
+            gamma=gamma,
+            scale_min=scale_min,
+            scale_max=scale_max,
+            n_partition=n_partition,
+            use_observations_as_reward_scale=use_observations_as_reward_scale,
+            random_state=random_state,
+        )
+        ax.plot(reward_scale, cdf, label=policy_name)
+
+    ax.set_title("cumulative distribution function")
+    ax.set_xlabel("trajectory wise reward")
+    ax.set_ylabel("cumulative probability")
+    if legend:
+        ax.legend()
+
+    fig.tight_layout()
+    plt.show()
+
+    if fig_dir:
+        fig.savefig(str(fig_dir / fig_name))
+
+
+def visualize_on_policy_conditional_value_at_risk(
+    env: gym.Env,
+    policies: List[Union[AlgoBase, BaseHead]],
+    policy_names: List[str],
+    n_episodes: int = 100,
+    gamma: float = 1.0,
+    alphas: np.ndarray = np.linspace(0, 1, 20),
+    scale_min: Optional[float] = None,
+    scale_max: Optional[float] = None,
+    n_partition: Optional[int] = None,
+    use_observations_as_reward_scale: bool = False,
+    random_state: Optional[int] = None,
+    legend: bool = True,
+    fig_dir: Optional[Path] = None,
+    fig_name: str = "on_policy_conditional_value_at_risk.png",
+) -> None:
+    """Visualize the conditional value at risk of on-policy policy value.
+
+    Parameters
+    -------
+    env: gym.Env
+        Reinforcement learning (RL) environment.
+
+    policy: {AlgoBase, BaseHead}
+        A policy to be evaluated.
+
+    n_episodes: int, default=100 (> 0)
+        Number of trajectories to rollout.
+
+    gamma: float, default=1.0
+        Discount factor. The value should be within `(0, 1]`.
+
+    alphas: array-like of shape (n_alpha, ) default=np.linspace(0, 1, 20)
+        Set of proportions of the sided region. The value should be within `(0, 1]`.
+
+    scale_min: float, default=None
+        Minimum value of the reward scale in CDF.
+        When `use_observations_as_reward_scale == False`, a value must be given.
+
+    scale_max: float, default=None
+        Maximum value of the reward scale in CDF.
+        When `use_observations_as_reward_scale == False`, a value must be given.
+
+    n_partitiion: int, default=None
+        Number of partition in reward scale (x-axis of CDF).
+        When `use_observations_as_reward_scale == False`, a value must be given.
+
+    use_observations_as_reward_scale: bool, default=False
+        Whether to use the reward observed by the behavior policy as the reward scale.
+        If True, the reward scale follows the one defined in Chundak et al. (2021).
+        If False, the reward scale is uniform, following Huang et al. (2021).
+
+    random_state: int, default=None (>= 0)
+        Random state.
+
+    legend: bool, default=True
+        Whether to include legend in the figure.
+
+    fig_dir: Path, default=None
+        Path to store the bar figure.
+        If `None` is given, the figure will not be saved.
+
+    fig_name: str, default="on_policy_conditional_value_at_risk.png"
+        Name of the bar figure.
+
+    """
+    if fig_dir is not None and not isinstance(fig_dir, Path):
+        raise ValueError(f"fig_dir must be a Path, but {type(fig_dir)} is given")
+    if fig_name is not None and not isinstance(fig_name, str):
+        raise ValueError(f"fig_dir must be a string, but {type(fig_dir)} is given")
+
+    plt.style.use("ggplot")
+    fig, ax = plt.subplots()
+
+    for policy, policy_name in zip(policies, policy_names):
+        cvar = calc_on_policy_conditional_value_at_risk(
+            env=env,
+            policy=policy,
+            n_episodes=n_episodes,
+            gamma=gamma,
+            alphas=alphas,
+            scale_min=scale_min,
+            scale_max=scale_max,
+            n_partition=n_partition,
+            use_observations_as_reward_scale=use_observations_as_reward_scale,
+            random_state=random_state,
+        )
+        ax.plot(alphas, cvar, label=policy_name)
+
+    ax.set_title("conditional value at risk (CVaR)")
+    ax.set_xlabel("alpha")
+    ax.set_ylabel("CVaR")
+    if legend:
+        ax.legend()
+
+    fig.tight_layout()
+    plt.show()
+
+    if fig_dir:
+        fig.savefig(str(fig_dir / fig_name))
+
+
+def visualize_on_policy_interquartile_range(
+    env: gym.Env,
+    policies: List[Union[AlgoBase, BaseHead]],
+    policy_names: List[str],
+    n_episodes: int = 100,
+    gamma: float = 1.0,
+    alpha: float = 0.05,
+    scale_min: Optional[float] = None,
+    scale_max: Optional[float] = None,
+    n_partition: Optional[int] = None,
+    use_observations_as_reward_scale: bool = False,
+    random_state: Optional[int] = None,
+    fig_dir: Optional[Path] = None,
+    fig_name: str = "on_policy_interquartile_range.png",
+) -> None:
+    """Visualize the interquartile range of on-policy policy value.
+
+    Parameters
+    -------
+    env: gym.Env
+        Reinforcement learning (RL) environment.
+
+    policy: {AlgoBase, BaseHead}
+        A policy to be evaluated.
+
+    n_episodes: int, default=100 (> 0)
+        Number of trajectories to rollout.
+
+    gamma: float, default=1.0
+        Discount factor. The value should be within `(0, 1]`.
+
+    alpha: float, default=0.05
+        Significant level. The value should be within `[0, 1)`.
+
+    scale_min: float, default=None
+        Minimum value of the reward scale in CDF.
+        When `use_observations_as_reward_scale == False`, a value must be given.
+
+    scale_max: float, default=None
+        Maximum value of the reward scale in CDF.
+        When `use_observations_as_reward_scale == False`, a value must be given.
+
+    n_partitiion: int, default=None
+        Number of partition in reward scale (x-axis of CDF).
+        When `use_observations_as_reward_scale == False`, a value must be given.
+
+    use_observations_as_reward_scale: bool, default=False
+        Whether to use the reward observed by the behavior policy as the reward scale.
+        If True, the reward scale follows the one defined in Chundak et al. (2021).
+        If False, the reward scale is uniform, following Huang et al. (2021).
+
+    random_state: int, default=None (>= 0)
+        Random state.
+
+    fig_dir: Path, default=None
+        Path to store the bar figure.
+        If `None` is given, the figure will not be saved.
+
+    fig_name: str, default="on_policy_conditional_value_at_risk.png"
+        Name of the bar figure.
+
+    """
+    if fig_dir is not None and not isinstance(fig_dir, Path):
+        raise ValueError(f"fig_dir must be a Path, but {type(fig_dir)} is given")
+    if fig_name is not None and not isinstance(fig_name, str):
+        raise ValueError(f"fig_dir must be a string, but {type(fig_dir)} is given")
+
+    plt.style.use("ggplot")
+    fig, ax = plt.subplots()
+    color = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+    n_colors = len(color)
+
+    n_policies = len(policies)
+    mean = np.zeros(n_policies)
+    median = np.zeros(n_policies)
+    upper = np.zeros(n_policies)
+    lower = np.zeros(n_policies)
+
+    for i, policy in enumerate(policies):
+        statistics_dict = calc_on_policy_statistics(
+            env=env,
+            policy=policy,
+            n_episodes=n_episodes,
+            gamma=gamma,
+            quartile_alpha=alpha,
+            scale_min=scale_min,
+            scale_max=scale_max,
+            n_partition=n_partition,
+            use_observations_as_reward_scale=use_observations_as_reward_scale,
+            random_state=random_state,
+        )
+        mean[i] = statistics_dict["mean"]
+        median[i] = statistics_dict["interquartile_range"]["median"]
+        upper[i] = statistics_dict["interquartile_range"][
+            f"{100 * (1. - alpha)}% quartile (upper)"
+        ]
+        lower[i] = statistics_dict["interquartile_range"][
+            f"{100 * (1. - alpha)}% quartile (lower)"
+        ]
+
+    ax.bar(
+        np.arange(n_policies),
+        upper - lower,
+        bottom=lower,
+        color=color,
+        edgecolor="black",
+        linewidth=0.3,
+        tick_label=policy_names,
+        alpha=0.3,
+    )
+
+    for i in range(n_policies):
+        ax.errorbar(
+            np.arange(i, i + 1),
+            median[i],
+            xerr=[0.4],
+            color=color[i % n_colors],
+            elinewidth=5.0,
+            fmt="o",
+            markersize=0.1,
+        )
+        ax.errorbar(
+            np.arange(i, i + 1),
+            mean[i],
+            color=color[i % n_colors],
+            fmt="o",
+            markersize=10.0,
+        )
+
+        ax.set_title("interquaetile range")
+        ax.set_ylabel(
+            f"{np.int(100*(1 - alpha))}% range",
+            fontsize=12,
+        )
+        plt.yticks(fontsize=12)
+        plt.xticks(fontsize=12)
+        plt.xlim(-0.5, n_policies - 0.5)
+
+    if fig_dir:
+        fig.savefig(str(fig_dir / fig_name))
+
+
+def calc_on_policy_statistics(
     env: gym.Env,
     policy: Union[AlgoBase, BaseHead],
     n_episodes: int = 100,
     gamma: float = 1.0,
+    quartile_alpha: float = 0.05,
+    cvar_alpha: float = 0.05,
+    scale_min: Optional[float] = None,
+    scale_max: Optional[float] = None,
+    n_partition: Optional[int] = None,
+    use_observations_as_reward_scale: bool = False,
+    random_state: Optional[int] = None,
+):
+    """Calculate the statistics including mean, variance, conditional value at risk, interquartile range of on-policy policy value.
+
+    Parameters
+    -------
+    env: gym.Env
+        Reinforcement learning (RL) environment.
+
+    policy: {AlgoBase, BaseHead}
+        A policy to be evaluated.
+
+    n_episodes: int, default=100 (> 0)
+        Number of trajectories to rollout.
+
+    gamma: float, default=1.0
+        Discount factor. The value should be within `(0, 1]`.
+
+    quartile_alpha: float, default=0.05
+        Proportion of the sided region. The value should be within `(0, 1]`.
+
+    cvar_alpha: float, default=0.05
+        Proportion of the sided region. The value should be within `(0, 1]`.
+
+    scale_min: float, default=None
+        Minimum value of the reward scale in CDF.
+        When `use_observations_as_reward_scale == False`, a value must be given.
+
+    scale_max: float, default=None
+        Maximum value of the reward scale in CDF.
+        When `use_observations_as_reward_scale == False`, a value must be given.
+
+    n_partitiion: int, default=None
+        Number of partition in reward scale (x-axis of CDF).
+        When `use_observations_as_reward_scale == False`, a value must be given.
+
+    use_observations_as_reward_scale: bool, default=False
+        Whether to use the reward observed by the behavior policy as the reward scale.
+        If True, the reward scale follows the one defined in Chundak et al. (2021).
+        If False, the reward scale is uniform, following Huang et al. (2021).
+
+    random_state: int, default=None (>= 0)
+        Random state.
+
+    Return
+    -------
+    statistics_dict: dict
+        Dictionary containing the following on-policy metrics including mean, variance, CVaR, and interquartile range.
+
+    """
+    check_scalar(
+        quartile_alpha,
+        name="quartile_alpha",
+        target_type=float,
+        min_val=0.0,
+        max_val=0.5,
+    )
+    check_scalar(
+        cvar_alpha, name="cvar_alpha", target_type=float, min_val=0.0, max_val=1.0
+    )
+    if not use_observations_as_reward_scale:
+        if scale_min is None:
+            raise ValueError(
+                "scale_min must be given when `use_observations_as_reward_scale == False`"
+            )
+        if scale_max is None:
+            raise ValueError(
+                "scale_max must be given when `use_observations_as_reward_scale == False`"
+            )
+        if n_partition is None:
+            raise ValueError(
+                "n_partition must be given when `use_observations_as_reward_scale == False`"
+            )
+        check_scalar(
+            scale_min,
+            name="scale_min",
+            target_type=float,
+        )
+        check_scalar(
+            scale_max,
+            name="scale_max",
+            target_type=float,
+        )
+        check_scalar(
+            n_partition,
+            name="n_partition",
+            target_type=int,
+            min_val=1,
+        )
+
+    on_policy_policy_values = rollout_policy_online(
+        env=env,
+        policy=policy,
+        n_episodes=n_episodes,
+        gamma=gamma,
+        random_state=random_state,
+    )
+
+    mean = on_policy_policy_values.mean()
+    variance = on_policy_policy_values.var(ddof=1)
+
+    if use_observations_as_reward_scale:
+        reward_scale = np.sort(np.unique(on_policy_policy_values))
+    else:
+        reward_scale = np.linspace(scale_min, scale_max, num=n_partition)
+
+    density = np.histogram(
+        on_policy_policy_values,
+        bins=reward_scale,
+        density=True,
+    )[0]
+
+    idx = np.nonzero(density.cumsum() > cvar_alpha)[0]
+    lower_idx = idx[0] if len(idx) else -2
+    cvar = (density * reward_scale[1:])[:lower_idx].sum()
+
+    def target_value_given_idx(idx):
+        if len(idx):
+            target_idx = idx[0]
+            target_value = (reward_scale[target_idx] + reward_scale[target_idx + 1]) / 2
+        else:
+            target_value = reward_scale[-1]
+        return target_value
+
+    lower_idx = np.nonzero(density.cumsum() > quartile_alpha)[0]
+    median_idx = np.nonzero(density.cumsum() > 0.5)[0]
+    upper_idx = np.nonzero(density.cumsum() > 1 - quartile_alpha)[0]
+
+    interquartile_range_dict = {
+        "median": target_value_given_idx(median_idx),
+        f"{100 * (1. - quartile_alpha)}% quartile (lower)": target_value_given_idx(
+            lower_idx
+        ),
+        f"{100 * (1. - quartile_alpha)}% quartile (upper)": target_value_given_idx(
+            upper_idx
+        ),
+    }
+
+    statistics_dict = {
+        "mean": mean,
+        "variance": variance,
+        "conditional_value_at_risk": cvar,
+        "interquartile_range": interquartile_range_dict,
+    }
+
+    return statistics_dict
+
+
+def calc_on_policy_policy_value(
+    env: gym.Env,
+    policy: Union[AlgoBase, BaseHead],
     use_bootstrap: bool = False,
+    n_episodes: int = 100,
+    gamma: float = 1.0,
     alpha: float = 0.05,
     n_bootstrap_samples: int = 100,
     random_state: Optional[int] = None,
@@ -132,8 +648,8 @@ def calc_on_policy_policy_value(
     n_episodes: int, default=100 (> 0)
         Number of trajectories to rollout.
 
-    alpha: float, default=0.05 (0, 1)
-        Significant level.
+    alpha: float, default=0.05
+        Significant level. The value should be within `(0, 1]`.
 
     n_bootstrap_samples: int, default=10000 (> 0)
         Number of resampling performed in the bootstrap procedure.
@@ -221,6 +737,408 @@ def calc_on_policy_policy_value_interval(
         n_bootstrap_samples=n_bootstrap_samples,
         random_state=random_state,
     )
+
+
+def calc_on_policy_variance(
+    env: gym.Env,
+    policy: Union[AlgoBase, BaseHead],
+    n_episodes: int = 100,
+    gamma: float = 1.0,
+    random_state: Optional[int] = None,
+):
+    """Calculate the variance of on-policy policy value.
+
+    Parameters
+    -------
+    env: gym.Env
+        Reinforcement learning (RL) environment.
+
+    policy: {AlgoBase, BaseHead}
+        A policy to be evaluated.
+
+    n_episodes: int, default=100 (> 0)
+        Number of trajectories to rollout.
+
+    gamma: float, default=1.0
+        Discount factor. The value should be within `(0, 1]`.
+
+    random_state: int, default=None (>= 0)
+        Random state.
+
+    Return
+    -------
+    on_policy_variance: float
+        Variance of the on-policy policy value.
+
+    """
+    on_policy_policy_values = rollout_policy_online(
+        env=env,
+        policy=policy,
+        n_episodes=n_episodes,
+        gamma=gamma,
+        random_state=random_state,
+    )
+    return on_policy_policy_values.var(dd0f=1)
+
+
+def calc_on_policy_conditional_value_at_risk(
+    env: gym.Env,
+    policy: Union[AlgoBase, BaseHead],
+    n_episodes: int = 100,
+    gamma: float = 1.0,
+    alphas: Union[np.ndarray, float] = np.linspace(0, 1, 20),
+    scale_min: Optional[float] = None,
+    scale_max: Optional[float] = None,
+    n_partition: Optional[int] = None,
+    use_observations_as_reward_scale: bool = False,
+    random_state: Optional[int] = None,
+):
+    """Calculate the conditional value at risk (CVaR) of on-policy policy value.
+
+    Parameters
+    -------
+    env: gym.Env
+        Reinforcement learning (RL) environment.
+
+    policy: {AlgoBase, BaseHead}
+        A policy to be evaluated.
+
+    n_episodes: int, default=100 (> 0)
+        Number of trajectories to rollout.
+
+    gamma: float, default=1.0
+        Discount factor. The value should be within `(0, 1]`.
+
+    alphas: {float, array-like of shape (n_alpha, )}, default=np.linspace(0, 1, 20)
+        Set of proportions of the sided region. The value(s) should be within `[0, 1)`.
+
+    scale_min: float, default=None
+        Minimum value of the reward scale in CDF.
+        When `use_observations_as_reward_scale == False`, a value must be given.
+
+    scale_max: float, default=None
+        Maximum value of the reward scale in CDF.
+        When `use_observations_as_reward_scale == False`, a value must be given.
+
+    n_partitiion: int, default=None
+        Number of partition in reward scale (x-axis of CDF).
+        When `use_observations_as_reward_scale == False`, a value must be given.
+
+    use_observations_as_reward_scale: bool, default=False
+        Whether to use the reward observed by the behavior policy as the reward scale.
+        If True, the reward scale follows the one defined in Chundak et al. (2021).
+        If False, the reward scale is uniform, following Huang et al. (2021).
+
+    random_state: int, default=None (>= 0)
+        Random state.
+
+    Return
+    -------
+    on_policy_conditional_value_at_risk: np.ndarray
+        CVaR of the on-policy policy value.
+
+    """
+    if isinstance(alphas, float):
+        check_scalar(alphas, name="alphas", target_type=float, min_val=0.0, max_val=1.0)
+        alphas = np.array([alphas], dtype=float)
+    elif isinstance(alphas, np.ndarray):
+        check_array(alphas, name="alphas", expected_dim=1, min_val=0.0, max_val=1.0)
+    else:
+        raise ValueError(
+            f"alphas must be float or np.ndarray, but {type(alphas)} is given"
+        )
+    if not use_observations_as_reward_scale:
+        if scale_min is None:
+            raise ValueError(
+                "scale_min must be given when `use_observations_as_reward_scale == False`"
+            )
+        if scale_max is None:
+            raise ValueError(
+                "scale_max must be given when `use_observations_as_reward_scale == False`"
+            )
+        if n_partition is None:
+            raise ValueError(
+                "n_partition must be given when `use_observations_as_reward_scale == False`"
+            )
+        check_scalar(
+            scale_min,
+            name="scale_min",
+            target_type=float,
+        )
+        check_scalar(
+            scale_max,
+            name="scale_max",
+            target_type=float,
+        )
+        check_scalar(
+            n_partition,
+            name="n_partition",
+            target_type=int,
+            min_val=1,
+        )
+
+    on_policy_policy_values = rollout_policy_online(
+        env=env,
+        policy=policy,
+        n_episodes=n_episodes,
+        gamma=gamma,
+        random_state=random_state,
+    )
+
+    if use_observations_as_reward_scale:
+        reward_scale = np.sort(np.unique(on_policy_policy_values))
+    else:
+        reward_scale = np.linspace(scale_min, scale_max, num=n_partition)
+
+    density = np.histogram(
+        on_policy_policy_values,
+        bins=reward_scale,
+        density=True,
+    )[0]
+
+    cvar = np.zeros_like(alphas)
+    for i, alpha in enumerate(alphas):
+        idx_ = np.nonzero(density.cumsum() > alpha)[0]
+        lower_idx_ = idx_[0] if len(idx_) else -2
+        cvar[i] = (density * reward_scale[1:])[:lower_idx_].sum()
+
+    return cvar
+
+
+def calc_on_policy_interquartile_range(
+    env: gym.Env,
+    policy: Union[AlgoBase, BaseHead],
+    n_episodes: int = 100,
+    gamma: float = 1.0,
+    alpha: float = 0.05,
+    scale_min: Optional[float] = None,
+    scale_max: Optional[float] = None,
+    n_partition: Optional[int] = None,
+    use_observations_as_reward_scale: bool = False,
+    random_state: Optional[int] = None,
+):
+    """Calculate the interquartile range of on-policy policy value.
+
+    env: gym.Env
+        Reinforcement learning (RL) environment.
+
+    policy: {AlgoBase, BaseHead}
+        A policy to be evaluated.
+
+    n_episodes: int, default=100 (> 0)
+        Number of trajectories to rollout.
+
+    gamma: float, default=1.0
+        Discount factor. The value should be within `(0, 1]`.
+
+    alpha: float, default=0.05
+        Proportion of the sided region. The value should be within `(0, 1]`.
+
+    scale_min: float, default=None
+        Minimum value of the reward scale in CDF.
+        When `use_observations_as_reward_scale == False`, a value must be given.
+
+    scale_max: float, default=None
+        Maximum value of the reward scale in CDF.
+        When `use_observations_as_reward_scale == False`, a value must be given.
+
+    n_partitiion: int, default=None
+        Number of partition in reward scale (x-axis of CDF).
+        When `use_observations_as_reward_scale == False`, a value must be given.
+
+    use_observations_as_reward_scale: bool, default=False
+        Whether to use the reward observed by the behavior policy as the reward scale.
+        If True, the reward scale follows the one defined in Chundak et al. (2021).
+        If False, the reward scale is uniform, following Huang et al. (2021).
+
+    random_state: int, default=None (>= 0)
+        Random state.
+
+    Return
+    -------
+    interquartile_range_dict: dict
+        Dictionary containing the interquartile range of the on-policy policy value.
+
+    """
+    check_scalar(alpha, name="alpha", target_type=float, min_val=0.0, max_val=0.5)
+    if not use_observations_as_reward_scale:
+        if scale_min is None:
+            raise ValueError(
+                "scale_min must be given when `use_observations_as_reward_scale == False`"
+            )
+        if scale_max is None:
+            raise ValueError(
+                "scale_max must be given when `use_observations_as_reward_scale == False`"
+            )
+        if n_partition is None:
+            raise ValueError(
+                "n_partition must be given when `use_observations_as_reward_scale == False`"
+            )
+        check_scalar(
+            scale_min,
+            name="scale_min",
+            target_type=float,
+        )
+        check_scalar(
+            scale_max,
+            name="scale_max",
+            target_type=float,
+        )
+        check_scalar(
+            n_partition,
+            name="n_partition",
+            target_type=int,
+            min_val=1,
+        )
+
+    on_policy_policy_values = rollout_policy_online(
+        env=env,
+        policy=policy,
+        n_episodes=n_episodes,
+        gamma=gamma,
+        random_state=random_state,
+    )
+
+    if use_observations_as_reward_scale:
+        reward_scale = np.sort(np.unique(on_policy_policy_values))
+    else:
+        reward_scale = np.linspace(scale_min, scale_max, num=n_partition)
+
+    def target_value_given_idx(idx):
+        if len(idx):
+            target_idx = idx[0]
+            target_value = (reward_scale[target_idx] + reward_scale[target_idx + 1]) / 2
+        else:
+            target_value = reward_scale[-1]
+        return target_value
+
+    density = np.histogram(
+        on_policy_policy_values,
+        bins=reward_scale,
+        density=True,
+    )[0]
+
+    lower_idx = np.nonzero(density.cumsum() > alpha)[0]
+    median_idx = np.nonzero(density.cumsum() > 0.5)[0]
+    upper_idx = np.nonzero(density.cumsum() > 1 - alpha)[0]
+
+    interquartile_range_dict = {
+        "median": target_value_given_idx(median_idx),
+        f"{100 * (1. - alpha)}% quartile (lower)": target_value_given_idx(lower_idx),
+        f"{100 * (1. - alpha)}% quartile (upper)": target_value_given_idx(upper_idx),
+    }
+
+    return interquartile_range_dict
+
+
+def calc_on_policy_cumulative_distribution_function(
+    env: gym.Env,
+    policy: Union[AlgoBase, BaseHead],
+    n_episodes: int = 100,
+    gamma: float = 1.0,
+    scale_min: Optional[float] = None,
+    scale_max: Optional[float] = None,
+    n_partition: Optional[int] = None,
+    use_observations_as_reward_scale: bool = False,
+    random_state: Optional[int] = None,
+):
+    """Calculate the cumulative distribution of on-policy policy value.
+
+    Parameters
+    -------
+    env: gym.Env
+        Reinforcement learning (RL) environment.
+
+    policy: {AlgoBase, BaseHead}
+        A policy to be evaluated.
+
+    n_episodes: int, default=100 (> 0)
+        Number of trajectories to rollout.
+
+    gamma: float, default=1.0
+        Discount factor. The value should be within `(0, 1]`.
+
+    scale_min: float, default=None
+        Minimum value of the reward scale in CDF.
+        When `use_observations_as_reward_scale == False`, a value must be given.
+
+    scale_max: float, default=None
+        Maximum value of the reward scale in CDF.
+        When `use_observations_as_reward_scale == False`, a value must be given.
+
+    n_partitiion: int, default=None
+        Number of partition in reward scale (x-axis of CDF).
+        When `use_observations_as_reward_scale == False`, a value must be given.
+
+    use_observations_as_reward_scale: bool, default=False
+        Whether to use the reward observed by the behavior policy as the reward scale.
+        If True, the reward scale follows the one defined in Chundak et al. (2021).
+        If False, the reward scale is uniform, following Huang et al. (2021).
+
+    random_state: int, default=None (>= 0)
+        Random state.
+
+    Return
+    -------
+    cumulative_distribution_function: np.ndarray
+        Cumulative distribution function of the on-policy policy value.
+
+    reward_scale: ndarray of shape (n_unique_reward, ) or (n_partition, )
+        Reward Scale (x-axis of the cumulative distribution function).
+
+    """
+    if not use_observations_as_reward_scale:
+        if scale_min is None:
+            raise ValueError(
+                "scale_min must be given when `use_observations_as_reward_scale == False`"
+            )
+        if scale_max is None:
+            raise ValueError(
+                "scale_max must be given when `use_observations_as_reward_scale == False`"
+            )
+        if n_partition is None:
+            raise ValueError(
+                "n_partition must be given when `use_observations_as_reward_scale == False`"
+            )
+        check_scalar(
+            scale_min,
+            name="scale_min",
+            target_type=float,
+        )
+        check_scalar(
+            scale_max,
+            name="scale_max",
+            target_type=float,
+        )
+        check_scalar(
+            n_partition,
+            name="n_partition",
+            target_type=int,
+            min_val=1,
+        )
+
+    on_policy_policy_values = rollout_policy_online(
+        env=env,
+        policy=policy,
+        n_episodes=n_episodes,
+        gamma=gamma,
+        random_state=random_state,
+    )
+
+    if use_observations_as_reward_scale:
+        reward_scale = np.sort(np.unique(on_policy_policy_values))
+    else:
+        reward_scale = np.linspace(scale_min, scale_max, num=n_partition)
+
+    density = np.histogram(
+        on_policy_policy_values,
+        bins=reward_scale,
+        density=True,
+    )[0]
+
+    cumulative_distribution_function = np.insert(density, 0, 0).cumsum()
+
+    return cumulative_distribution_function, reward_scale
 
 
 def rollout_policy_online(

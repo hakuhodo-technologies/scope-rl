@@ -464,8 +464,8 @@ class DiscreteOffPolicyEvaluation:
                 gamma,
             ]
 
-        alpha: float, default=0.05 (0, 1)
-            Significant level.
+        alpha: float, default=0.05
+            Significant level. The value should be within `(0, 1]`.
 
         ci: {"bootstrap", "hoeffding", "bernstein", "ttest"}, default="bootstrap"
             Estimation method for confidence intervals.
@@ -1285,8 +1285,8 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
                 gamma,
             ]
 
-        alphas: array-like of shape (n_alpha, ), default=np.linspace(0, 1, 20)
-            Set of proportions of the sided region.
+        alphas: {float, array-like of shape (n_alpha, )}, default=np.linspace(0, 1, 20)
+            Set of proportions of the sided region. The value(s) should be within `[0, 1)`.
 
         Return
         -------
@@ -1368,12 +1368,12 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
             ]
 
         alpha: float, default=0.05
-            Proportion of the sided region.
+            Proportion of the sided region. The value should be within `(0, 1]`.
 
         Return
         -------
         interquartile_range_dict: dict
-            Dictionary containing the interquartile range at risk of trajectory wise reward of each evaluation policy estimated by OPE estimators.
+            Dictionary containing the interquartile range of trajectory wise reward of each evaluation policy estimated by OPE estimators.
             key: [evaluation_policy_name][OPE_estimator_name][quartile_name]
 
         """
@@ -1942,7 +1942,7 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
             ]
 
         alphas: array-like of shape (n_alpha, ) default=np.linspace(0, 1, 20)
-            Set of proportions of the sided region.
+            Set of proportions of the sided region. The value should be within `(0, 1]`.
 
         hue: {"estimator", "policy"}, default="estimator"
             Hue of the plot.
