@@ -9,19 +9,19 @@ OfflineGym; a Python library for offline reinforcement learning, off-policy eval
 Overview
 ~~~~~~~~~~
 *OfflineGym* is an open-source Python library for offline Reinforcement Learning (RL) and Off-Policy Evaluation (OPE).
-This library aims to facilitate the an easy, flexible and reliable experiment in offline RL research to , as well as to provide a streamlined implementation also for practitioners.
+This library aims to facilitate an easy, flexible and reliable experiment in offline RL research, as well as to provide a streamlined implementation also for practitioners.
 OfflineGym includes a series of modules to implement synthetic dataset generation and dataset preprocessing, a variety of OPE estimators, and also Off-Policy Selection (OPS) methods. 
 
 OfflineGym is applicable to any RL environment with `OpenAI Gym <https://gym.openai.com>`_-like interface.
 The library is also compatible with `d3rlpy <https://github.com/takuseno/d3rlpy>`_, which provides the algorithm implementation of both online and offline RL methods.
 
-Our software facilitate implementation, evaluation and algorithm comparison related to the following research topics:
+Our software facilitates implementation, evaluation and algorithm comparison related to the following research topics:
 
-* **Offline Reinforcement Learning**: Offline RL aims to learn a new policy from only offline logged data collected by a behavior policy. OfflineGym enables flexible experiment using customized dataset on diverse environments collected by various behavior policies.
+* **Offline Reinforcement Learning**: Offline RL aims to learn a new policy from only offline logged data collected by a behavior policy. OfflineGym enables an flexible experiment using customized dataset on diverse environments collected by various behavior policies.
 
-* **Off-Policy Evaluation**: OPE aims to evaluate the performance of a counterfactual policy using only offline logged data. OfflineGym supports basic implementation of OPE estimators and streamline the experimental procedure to evaluate OPE estimators.
+* **Off-Policy Evaluation**: OPE aims to evaluate the performance of a counterfactual policy using only offline logged data. OfflineGym supports the basic implementations of OPE estimators and streamline the experimental procedure to evaluate OPE estimators.
 
-* **Off-Policy Selection**: OPS aims to select the best policy from several candidate policies using offline logged data. OfflineGym supports basic implementation of OPS methods and provide some metrics to evaluate OPS result.
+* **Off-Policy Selection**: OPS aims to select the best policy from several candidate policies using offline logged data. OfflineGym supports the basic implementations of OPS methods and provide some metrics to evaluate OPS result.
 
 This website contains pages with example implementations that demonstrates the usage of this library.
 The package reference page contains the full reference documentation for the currently implemented modules.
