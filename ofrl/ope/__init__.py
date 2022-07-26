@@ -1,14 +1,14 @@
-from offlinegym.ope.ops import OffPolicySelection
-from offlinegym.ope.input import CreateOPEInput
-from offlinegym.ope.estimators_base import (
+from ofrl.ope.ops import OffPolicySelection
+from ofrl.ope.input import CreateOPEInput
+from ofrl.ope.estimators_base import (
     BaseOffPolicyEstimator,
     BaseCumulativeDistributionalOffPolicyEstimator,
 )
-from offlinegym.ope.ope_discrete import (
+from ofrl.ope.ope_discrete import (
     DiscreteOffPolicyEvaluation,
     DiscreteCumulativeDistributionalOffPolicyEvaluation,
 )
-from offlinegym.ope.estimators_discrete import (
+from ofrl.ope.estimators_discrete import (
     DiscreteDirectMethod,
     DiscreteTrajectoryWiseImportanceSampling,
     DiscretePerDecisionImportanceSampling,
@@ -17,15 +17,15 @@ from offlinegym.ope.estimators_discrete import (
     DiscreteSelfNormalizedPerDecisionImportanceSampling,
     DiscreteSelfNormalizedDoublyRobust,
 )
-from offlinegym.ope.cumulative_distributional_estimators_discrete import (
+from ofrl.ope.cumulative_distributional_estimators_discrete import (
     DiscreteCumulativeDistributionalDirectMethod,
     DiscreteCumulativeDistributionalTrajectoryWiseImportanceSampling,
     DiscreteCumulativeDistributionalTrajectoryWiseDoublyRobust,
     DiscreteCumulativeDistributionalSelfNormalizedTrajectoryWiseImportanceSampling,
     DiscreteCumulativeDistributionalSelfNormalizedTrajectoryWiseDoublyRobust,
 )
-from offlinegym.ope.ope_continuous import ContinuousOffPolicyEvaluation
-from offlinegym.ope.estimators_continuous import (
+from ofrl.ope.ope_continuous import ContinuousOffPolicyEvaluation
+from ofrl.ope.estimators_continuous import (
     ContinuousDirectMethod,
     ContinuousTrajectoryWiseImportanceSampling,
     ContinuousPerDecisionImportanceSampling,

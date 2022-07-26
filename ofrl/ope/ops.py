@@ -52,17 +52,17 @@ class OffPolicySelection:
     ----------
     .. ::code-block:: python
 
-        # import necessary module from offlinegym
-        >>> from offlinegym.dataset import SyntheticDataset
-        >>> from offlinegym.policy import DiscreteEpsilonGreedyHead
-        >>> from offlinegym.ope import CreateOPEInput
-        >>> from offlinegym.ope import OffPolicySelection
-        >>> from offlinegym.ope import DiscreteOffPolicyEvaluation as OPE
-        >>> from offlinegym.ope import DiscreteTrajectoryWiseImportanceSampling as TIS
-        >>> from offlinegym.ope import DiscretePerDecisionImportanceSampling as PDIS
-        >>> from offlinegym.ope import DiscreteCumulativeDistributionalOffPolicyEvaluation as CumulativeDistributionalOPE
-        >>> from offlinegym.ope import DiscreteCumulativeDistributionalTrajectoryWiseImportanceSampling as CDIS
-        >>> from offlinegym.ope import DiscreteCumulativeDistributionalTrajectoryWiseSelfNormalizedImportanceSampling as CDSIS
+        # import necessary module from OFRL
+        >>> from ofrl.dataset import SyntheticDataset
+        >>> from ofrl.policy import DiscreteEpsilonGreedyHead
+        >>> from ofrl.ope import CreateOPEInput
+        >>> from ofrl.ope import OffPolicySelection
+        >>> from ofrl.ope import DiscreteOffPolicyEvaluation as OPE
+        >>> from ofrl.ope import DiscreteTrajectoryWiseImportanceSampling as TIS
+        >>> from ofrl.ope import DiscretePerDecisionImportanceSampling as PDIS
+        >>> from ofrl.ope import DiscreteCumulativeDistributionalOffPolicyEvaluation as CumulativeDistributionalOPE
+        >>> from ofrl.ope import DiscreteCumulativeDistributionalTrajectoryWiseImportanceSampling as CDIS
+        >>> from ofrl.ope import DiscreteCumulativeDistributionalTrajectoryWiseSelfNormalizedImportanceSampling as CDSIS
 
         # import necessary module from other libraries
         >>> import gym
@@ -149,7 +149,6 @@ class OffPolicySelection:
                     CDIS(estimator_name="cdf_is"),
                     CDSIS(estimator_name="cdf_sis"),
                 ],
-                use_observations_as_reward_scale=True,
             )
         >>> ops = OffPolicySelection(
                 ope=ope,
@@ -1668,7 +1667,7 @@ class OffPolicySelection:
             fig_name=fig_name,
         )
 
-    def visualize_policy_value_of_cumulative_distributional_OPE_for_selection(
+    def visualize_policy_value_of_cumulative_distributional_ope_for_selection(
         self,
         input_dict: OPEInputDict,
         alpha: float = 0.05,
@@ -2030,7 +2029,7 @@ class OffPolicySelection:
         if fig_dir:
             fig.savefig(str(fig_dir / fig_name))
 
-    def visualize_policy_value_of_cumulative_distributional_OPE_for_validation(
+    def visualize_policy_value_of_cumulative_distributional_ope_for_validation(
         self,
         input_dict: OPEInputDict,
         n_cols: Optional[int] = None,

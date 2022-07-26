@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import Dict, List, Optional, Any
 
 from collections import defaultdict
-from tqdm.autonotebook import tqdm
+from tqdm.auto import tqdm
 
 import torch
 import numpy as np
@@ -198,7 +198,7 @@ class CreateOPEInput:
         Return
         -------
         evaluation_policy_action: ndarray of shape (n_episodes * step_per_episode, )
-            Evaluation policy action :math:`a_t \\sim \\pi_e(a_t \\mid s_t)`.
+            Evaluation policy action :math:`a_t \\sim \\pi(a_t \\mid s_t)`.
 
         """
         if not isinstance(evaluation_policy, BaseHead):
@@ -219,7 +219,7 @@ class CreateOPEInput:
         Return
         -------
         evaluation_policy_pscore: ndarray of shape (n_episodes * step_per_episode, )
-            Evaluation policy pscore :math:`\\pi_e(a_t \\mid s_t)`.
+            Evaluation policy pscore :math:`\\pi(a_t \\mid s_t)`.
 
         """
         if not isinstance(evaluation_policy, BaseHead):
@@ -243,7 +243,7 @@ class CreateOPEInput:
         Return
         -------
         evaluation_policy_step_wise_pscore: ndarray of shape (n_episodes * step_per_episode, )
-            Evaluation policy's step-wise pscore :math:`\\prod_{t'=1}^t \\pi_e(a_{t'} \\mid s_{t'})`.
+            Evaluation policy's step-wise pscore :math:`\\prod_{t'=1}^t \\pi(a_{t'} \\mid s_{t'})`.
 
         """
         if not isinstance(evaluation_policy, BaseHead):
@@ -267,7 +267,7 @@ class CreateOPEInput:
         Return
         -------
         evaluation_policy_trajectory_wise_pscore: ndarray of shape (n_episodes * step_per_episode, )
-            Evaluation policy's trajectory-wise pscore :math:`\\prod_{t=1}^T \\pi_e(a_t \\mid s_t)`.
+            Evaluation policy's trajectory-wise pscore :math:`\\prod_{t=1}^T \\pi(a_t \\mid s_t)`.
 
         """
         if not isinstance(evaluation_policy, BaseHead):
@@ -291,7 +291,7 @@ class CreateOPEInput:
         Return
         -------
         evaluation_policy_action_dist: ndarray of shape (n_episodes * step_per_episode, n_actions)
-            Evaluation policy pscore :math:`\\pi_e(a_t \\mid s_t)`.
+            Evaluation policy pscore :math:`\\pi(a_t \\mid s_t)`.
 
         state_action_value_prediction: ndarray of shape (n_episodes * step_per_episode, n_actions)
             State action value for all observed state and possible action.
@@ -465,12 +465,12 @@ class CreateOPEInput:
 
             evaluation_policy_step_wise_pscore: ndarray of shape (n_episodes * step_per_episodes, )
                 Step-wise action choice probability of evaluation policy,
-                i.e., :math:`\\prod_{t'=0}^t \\pi_e(a_{t'} \\mid s_{t'})`
+                i.e., :math:`\\prod_{t'=0}^t \\pi(a_{t'} \\mid s_{t'})`
                 If `action_type == "continuous"`, `None` is recorded.
 
             evaluation_policy_trajectory_wise_pscore: ndarray of shape (n_episodes * step_per_episodes, )
                 Trajectory-wise action choice probability of evaluation policy,
-                i.e., :math:`\\prod_{t=0}^T \\pi_e(a_t \\mid s_t)`
+                i.e., :math:`\\prod_{t=0}^T \\pi(a_t \\mid s_t)`
                 If `action_type == "continuous"`, `None` is recorded.
 
             evaluation_policy_action: ndarray of shape (n_episodes * step_per_episodes, action_dim)
@@ -479,7 +479,7 @@ class CreateOPEInput:
 
             evaluation_policy_action_dist: ndarray of shape (n_episodes * step_per_episode, n_actions)
                 Action choice probability of evaluation policy for all actions,
-                i.e., :math:`\\pi_e(a \\mid s_t) \\forall a \\in \\mathcal{A}`
+                i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
                 If `action_type == "continuous"`, `None` is recorded.
 
             state_action_value_prediction: ndarray of shape (n_episodes * step_per_episode, n_actions) or (n_episodes * step_per_episode, )
@@ -488,7 +488,7 @@ class CreateOPEInput:
                 shape (n_episodes * step_per_episode, n_actions)
 
                 If `action_type == "continuous"`, :math:`\\hat{Q}` for the action chosen by evaluation policy,
-                i.e., :math:`\\hat{Q}(s_t, \\pi_e(a \\mid s_t))`.
+                i.e., :math:`\\hat{Q}(s_t, \\pi(a \\mid s_t))`.
                 shape (n_episodes * step_per_episode, )
 
                 If `use_base_model == False`, `None` is recorded.

@@ -34,7 +34,7 @@ class ContinuousOffPolicyEvaluation:
 
     .. math::
 
-        V(\\pi) := \\mathbb{E} \\left[ \\sum_{t=1}^T \\gamma^{t-1} r_t \\mid \\pi \\right]
+        V(\\pi) := \\mathbb{E} \\left[ \\sum_{t=0}^{T-1} \\gamma^t r_t \\mid \\pi \\right]
 
     Parameters
     -----------
@@ -43,7 +43,7 @@ class ContinuousOffPolicyEvaluation:
 
     ope_estimators: list of BaseOffPolicyEstimator
         List of OPE estimators used to evaluate the policy value of the evaluation policies.
-        Estimators must follow the interface of `offlinegym.ope.BaseOffPolicyEstimator`.
+        Estimators must follow the interface of `ofrl.ope.BaseOffPolicyEstimator`.
 
     sigma: array-like of shape (action_dim, ), default=None
         Standard deviation of Gaussian distribution (i.e., `band_width` hyperparameter of gaussian kernel).
@@ -65,13 +65,13 @@ class ContinuousOffPolicyEvaluation:
     ----------
     .. ::code-block:: python
 
-        # import necessary module from offlinegym
-        >>> from offlinegym.dataset import SyntheticDataset
-        >>> from offlinegym.policy import ContinuousTruncatedGaussianHead, ContinuousEvalHead
-        >>> from offlinegym.ope import CreateOPEInput
-        >>> from offlinegym.ope import ContinuousOffPolicyEvaluation as OPE
-        >>> from offlinegym.ope import ContinuousTrajectoryWiseImportanceSampling as TIS
-        >>> from offlinegym.ope import ContinuousPerDecisionImportanceSampling as PDIS
+        # import necessary module from OFRL
+        >>> from ofrl.dataset import SyntheticDataset
+        >>> from ofrl.policy import ContinuousTruncatedGaussianHead, ContinuousEvalHead
+        >>> from ofrl.ope import CreateOPEInput
+        >>> from ofrl.ope import ContinuousOffPolicyEvaluation as OPE
+        >>> from ofrl.ope import ContinuousTrajectoryWiseImportanceSampling as TIS
+        >>> from ofrl.ope import ContinuousPerDecisionImportanceSampling as PDIS
 
         # import necessary module from other libraries
         >>> import gym
@@ -765,14 +765,14 @@ class ContinuousOffPolicyEvaluation:
         .. math ::
 
             \\mathrm{Relative-EE}(\\hat{V}; \\mathcal{D})
-            := \\left| \\frac{\\hat{V}(\\pi_e; \\mathcal{D}) - V_{\\mathrm{on}}(\\pi_e)}{V_{\\mathrm{on}}(\\pi_e)} \\right|,
+            := \\left| \\frac{\\hat{V}(\\pi; \\mathcal{D}) - V_{\\mathrm{on}}(\\pi)}{V_{\\mathrm{on}}(\\pi)} \\right|,
 
         .. math ::
 
-            \\mathrm{SE}(\\hat{V}; \\mathcal{D}) := \\left( \\hat{V}(\\pi_e; \\mathcal{D}) - V_{\\mathrm{on} \\right)^2,
+            \\mathrm{SE}(\\hat{V}; \\mathcal{D}) := \\left( \\hat{V}(\\pi; \\mathcal{D}) - V_{\\mathrm{on} \\right)^2,
 
-        where :math:`V_{\\mathrm{on}}(\\pi_e)` is the on-policy policy value of the evaluation policy :math:`\\pi_e`.
-        :math:`\\hat{V}(\\pi_e; \\mathcal{D})` is the policy value estimated by the OPE estimator :math:`\\hat{V}` and logged dataset :math:`\\mathcal{D}`.
+        where :math:`V_{\\mathrm{on}}(\\pi)` is the on-policy policy value of the evaluation policy :math:`\\pi`.
+        :math:`\\hat{V}(\\pi; \\mathcal{D})` is the policy value estimated by the OPE estimator :math:`\\hat{V}` and logged dataset :math:`\\mathcal{D}`.
 
         Parameters
         -------

@@ -2,18 +2,18 @@
 installation
 ==========
 
-``offlinegym`` is available on PyPI, and can be installed from ``pip`` or source as follows.
+``ofrl`` is available on PyPI, and can be installed from ``pip`` or source as follows.
 
 From ``pip``:
 
 .. code-block:: bash
 
-    pip install offlinegym
+    pip install ofrl
 
 From source:
 
 .. code-block:: bash
 
-    git clone https://github.com/negocia-inc/offlinegym
-    cd offlinegym
+    git clone https://github.com/negocia-inc/ofrl
+    cd ofrl
     python setup.py install

@@ -5,15 +5,13 @@ Quickstart
 We show an example workflow of synthetic dataset collection, offline Reinforcement Learning (RL) to Off-Policy Evaluation (OPE).
 The workflow mainly consists of following three steps:
 
-* **Synthetic Dataset Generation and Data Preprocessing**: The initial step is to collect logged data using a behavior policy. 
-In synthetic setup, we first train the behavior policy through online interaction and then generate dataset with the behavior policy.
-In practical situation, we can also utilize the preprocessed logged data from real-world applications.
+* **Synthetic Dataset Generation and Data Preprocessing**: The initial step is to collect logged data using a behavior policy. In synthetic setup, we first train the behavior policy through online interaction and then generate dataset with the behavior policy. In practical situation, we can also utilize the preprocessed logged data from real-world applications.
 
 * **Offline Reinforcement Learning**: Next, we now learn a new (and better) policy from only offline logged data, without any online interactions.
 
 * **Off-Policy Evaluation and Selection**: After learning several candidate policies in an offline manner, we validate their performance in an offline manner and choose the best policy.
 
-In this example, we use `RTBGym <https://github.com/negocia-inc/offlinegym/blob/main/rtbgym>`_ (a sub-package of OfflineGym) and `d3rlpy <https://github.com/takuseno/d3rlpy>`_. Please satisfy the requirements in advance.
+In this example, we use `RTBGym <https://github.com/negocia-inc/ofrl/blob/main/rtbgym>`_ (a sub-package of OFRL) and `d3rlpy <https://github.com/takuseno/d3rlpy>`_. Please satisfy the requirements in advance.
 
 
 Synthetic Dataset Generation and Data Preprocessing
@@ -25,9 +23,9 @@ We start by collecting the logged data useful for offline RL with a behavior pol
 
     # implement data collection procedure on the RTBGym environment
 
-    # import offlinegym modules
-    >>> from offlinegym.dataset import SyntheticDataset
-    >>> from offlinegym.policy import DiscreteEpsilonGreedyHead
+    # import ofrl modules
+    >>> from ofrl.dataset import SyntheticDataset
+    >>> from ofrl.policy import DiscreteEpsilonGreedyHead
     # import d3rlpy algorithms
     >>> from d3rlpy.algos import DoubleDQN
     >>> from d3rlpy.online.buffers import ReplayBuffer
@@ -42,7 +40,7 @@ We start by collecting the logged data useful for offline RL with a behavior pol
     >>> env = gym.make("RTBEnv-discrete-v0")
 
     # (1) Learn a baseline online policy (using d3rlpy)
-    # initialize algorithm
+    # initialize the algorithm
     >>> ddqn = DoubleDQN()
     # train an online policy
     # this takes about 5min to compute
@@ -64,7 +62,7 @@ We start by collecting the logged data useful for offline RL with a behavior pol
             name="ddqn_epsilon_0.3",
             random_state=random_state,
         )
-    # initialize dataset class
+    # initialize the dataset class
     >>> dataset = SyntheticDataset(
             env=env,
             behavior_policy=behavior_policy,
@@ -75,7 +73,7 @@ We start by collecting the logged data useful for offline RL with a behavior pol
     >>> logged_dataset = dataset.obtain_trajectories(n_episodes=10000)
     >>> print(logged_dataset.keys())
 
-Users can collect logged data from any environment with `OpenAI Gym <https://gym.openai.com>'_-like interface using a variety of behavior policies.
+Users can collect logged data from any environment with `OpenAI Gym <https://gym.openai.com>`_-like interface using a variety of behavior policies.
 Moreover, by preprocessing the logged data, one can also handle their own logged data from real-world applications.
 
 
@@ -87,7 +85,7 @@ Note that, we use `d3rlpy <https://github.com/takuseno/d3rlpy>`_ for offline RL.
 
 .. code-block:: python
 
-    # implement offline RL procedure using OfflineGym and d3rlpy
+    # implement offline RL procedure using ofrl and d3rlpy
 
     # import d3rlpy algorithms
     >>> from d3rlpy.dataset import MDPDataset
@@ -103,7 +101,7 @@ Note that, we use `d3rlpy <https://github.com/takuseno/d3rlpy>`_ for offline RL.
             episode_terminals=logged_dataset["done"],
             discrete_action=True,
         )
-    # initialize algorithm
+    # initialize the algorithm
     >>> cql = DiscreteCQL()
     # train an offline policy
     >>> cql.fit(
@@ -125,15 +123,15 @@ We compare the estimation results from various OPE estimators, Direct Method (DM
 
 .. code-block:: python
 
-    # implement OPE procedure using OfflineGym
+    # implement OPE procedure using OFRL
 
-    # import offlinegym modules
-    >>> from offlinegym.ope import CreateOPEInput
-    >>> from offlinegym.ope import DiscreteOffPolicyEvaluation as OPE
-    >>> from offlinegym.ope import DiscreteDirectMethod as DM
-    >>> from offlinegym.ope import DiscreteTrajectoryWiseImportanceSampling as TIS
-    >>> from offlinegym.ope import DiscretePerDecisionImportanceSampling as PDIS
-    >>> from offlinegym.ope import DiscreteDoublyRobust as DR
+    # import OFRL modules
+    >>> from ofrl.ope import CreateOPEInput
+    >>> from ofrl.ope import DiscreteOffPolicyEvaluation as OPE
+    >>> from ofrl.ope import DiscreteDirectMethod as DM
+    >>> from ofrl.ope import DiscreteTrajectoryWiseImportanceSampling as TIS
+    >>> from ofrl.ope import DiscretePerDecisionImportanceSampling as PDIS
+    >>> from ofrl.ope import DiscreteDoublyRobust as DR
 
     # (4) Evaluate the learned policy in an offline manner
     # we compare ddqn, cql, and random policy
@@ -170,7 +168,7 @@ We compare the estimation results from various OPE estimators, Direct Method (DM
             n_episodes_on_policy_evaluation=100,
             random_state=random_state,
         )
-    # initialize OPE class
+    # initialize the OPE class
     >>> ope = OPE(
             logged_dataset=logged_dataset,
             ope_estimators=[DM(), TIS(), PDIS(), DR()],
@@ -191,17 +189,17 @@ The following shows the example of estimating cumulative distribution function o
 
 .. code-block:: python
 
-    # import offlinegym modules
-    >>> from offlinegym.ope import DiscreteCumulativeDistributionalOffPolicyEvaluation as CumulativeDistributionalOPE
-    >>> from offlinegym.ope import DiscreteCumulativeDistributionalDirectMethod as CD_DM
-    >>> from offlinegym.ope import DiscreteCumulativeDistributionalTrajectoryWiseImportanceSampling as CD_IS
-    >>> from offlinegym.ope import DiscreteCumulativeDistributionalTrajectoryWiseDoublyRobust as CD_DR
-    >>> from offlinegym.ope import DiscreteCumulativeDistributionalSelfNormalizedTrajectoryWiseImportanceSampling as CD_SNIS
-    >>> from offlinegym.ope import DiscreteCumulativeDistributionalSelfNormalizedTrajectoryWiseDoublyRobust as CD_SNDR
+    # import OFRL modules
+    >>> from ofrl.ope import DiscreteCumulativeDistributionalOffPolicyEvaluation as CumulativeDistributionalOPE
+    >>> from ofrl.ope import DiscreteCumulativeDistributionalDirectMethod as CD_DM
+    >>> from ofrl.ope import DiscreteCumulativeDistributionalTrajectoryWiseImportanceSampling as CD_IS
+    >>> from ofrl.ope import DiscreteCumulativeDistributionalTrajectoryWiseDoublyRobust as CD_DR
+    >>> from ofrl.ope import DiscreteCumulativeDistributionalSelfNormalizedTrajectoryWiseImportanceSampling as CD_SNIS
+    >>> from ofrl.ope import DiscreteCumulativeDistributionalSelfNormalizedTrajectoryWiseDoublyRobust as CD_SNDR
 
     # (4) Evaluate the learned policy using cumulative distribution function (in an offline manner)
     # we compare ddqn, cql, and random policy defined in the previous section (i.e., (3) of basic OPE procedure)
-    # initialize OPE class
+    # initialize the OPE class
     >>> cd_ope = CumulativeDistributionalOPE(
             logged_dataset=logged_dataset,
             ope_estimators=[
@@ -211,7 +209,6 @@ The following shows the example of estimating cumulative distribution function o
             CD_SNIS(estimator_name="cdf_snis"), 
             CD_SNDR(estimator_name="cdf_sndr"),
             ],
-            use_observations_as_reward_scale=True,
         )
     # estimate variance
     >>> variance_dict = cd_ope.estimate_variance(input_dict)
@@ -230,11 +227,11 @@ Finally, we provide the code to conduct OPS, which selects the "best" performing
 
 .. code-block:: python
 
-    # import offlinegym modules
-    >>> from offlinegym.ope import OffPolicySelection
+    # import OFRL modules
+    >>> from ofrl.ope import OffPolicySelection
 
     # (5) Conduct Off-Policy Selection
-    # Initialize OPS class
+    # Initialize the OPS class
     >>> ops = OffPolicySelection(
             ope=ope,
             cumulative_distributional_ope=cd_ope,
@@ -259,6 +256,6 @@ Finally, we provide the code to conduct OPS, which selects the "best" performing
             share_axes=True,
         )
 
-A formal quickstart examples with RTBGym are available `here <https://github.com/negocia-inc/offlinegym/blob/main/examples/quickstart>`_.
+A formal quickstart examples with RTBGym are available `here <https://github.com/negocia-inc/ofrl/blob/main/examples/quickstart>`_.
 
 

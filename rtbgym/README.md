@@ -44,6 +44,8 @@ We often formulate this RTB problem as the following Constrained Markov Decision
 - `reward`: Total number of clicks or conversions obtained during the timestep.
 - `constraints`: The pre-determined episodic budget should not be exceeded.
 
+The goal of RTB is to maximize the expected trajectory-wise reward under the budget constraint.
+
 ### Implementation
 
 RTBGym provides two standardized RTB environment.

@@ -38,7 +38,7 @@ class DiscreteOffPolicyEvaluation:
 
     .. math::
 
-        V(\\pi) := \\mathbb{E} \\left[ \\sum_{t=1}^T \\gamma^{t-1} r_t \\mid \\pi \\right]
+        V(\\pi) := \\mathbb{E} \\left[ \\sum_{t=0}^{T-1} \\gamma^t r_t \\mid \\pi \\right]
 
     Parameters
     -----------
@@ -47,19 +47,19 @@ class DiscreteOffPolicyEvaluation:
 
     ope_estimators: List[BaseOffPolicyEstimator]
         List of OPE estimators used to evaluate the policy value of the evaluation policies.
-        Estimators must follow the interface of `offlinegym.ope.BaseOffPolicyEstimator`.
+        Estimators must follow the interface of `ofrl.ope.BaseOffPolicyEstimator`.
 
     Examples
     ----------
     .. ::code-block:: python
 
-        # import necessary module from offlinegym
-        >>> from offlinegym.dataset import SyntheticDataset
-        >>> from offlinegym.policy import DiscreteEpsilonGreedyHead
-        >>> from offlinegym.ope import CreateOPEInput
-        >>> from offlinegym.ope import DiscreteOffPolicyEvaluation as OPE
-        >>> from offlinegym.ope import DiscreteTrajectoryWiseImportanceSampling as TIS
-        >>> from offlinegym.ope import DiscretePerDecisionImportanceSampling as PDIS
+        # import necessary module from OFRL
+        >>> from ofrl.dataset import SyntheticDataset
+        >>> from ofrl.policy import DiscreteEpsilonGreedyHead
+        >>> from ofrl.ope import CreateOPEInput
+        >>> from ofrl.ope import DiscreteOffPolicyEvaluation as OPE
+        >>> from ofrl.ope import DiscreteTrajectoryWiseImportanceSampling as TIS
+        >>> from ofrl.ope import DiscretePerDecisionImportanceSampling as PDIS
 
         # import necessary module from other libraries
         >>> import gym
@@ -464,8 +464,8 @@ class DiscreteOffPolicyEvaluation:
                 gamma,
             ]
 
-        alpha: float, default=0.05 (0, 1)
-            Significant level.
+        alpha: float, default=0.05
+            Significant level. The value should be within `(0, 1]`.
 
         ci: {"bootstrap", "hoeffding", "bernstein", "ttest"}, default="bootstrap"
             Estimation method for confidence intervals.
@@ -709,14 +709,14 @@ class DiscreteOffPolicyEvaluation:
         .. math ::
 
             \\mathrm{Relative-EE}(\\hat{V}; \\mathcal{D})
-            := \\left| \\frac{\\hat{V}(\\pi_e; \\mathcal{D}) - V_{\\mathrm{on}}(\\pi_e)}{V_{\\mathrm{on}}(\\pi_e)} \\right|,
+            := \\left| \\frac{\\hat{V}(\\pi; \\mathcal{D}) - V_{\\mathrm{on}}(\\pi)}{V_{\\mathrm{on}}(\\pi)} \\right|,
 
         .. math ::
 
-            \\mathrm{SE}(\\hat{V}; \\mathcal{D}) := \\left( \\hat{V}(\\pi_e; \\mathcal{D}) - V_{\\mathrm{on} \\right)^2,
+            \\mathrm{SE}(\\hat{V}; \\mathcal{D}) := \\left( \\hat{V}(\\pi; \\mathcal{D}) - V_{\\mathrm{on} \\right)^2,
 
-        where :math:`V_{\\mathrm{on}}(\\pi_e)` is the on-policy policy value of the evaluation policy :math:`\\pi_e`.
-        :math:`\\hat{V}(\\pi_e; \\mathcal{D})` is the policy value estimated by the OPE estimator :math:`\\hat{V}` and logged dataset :math:`\\mathcal{D}`.
+        where :math:`V_{\\mathrm{on}}(\\pi)` is the on-policy policy value of the evaluation policy :math:`\\pi`.
+        :math:`\\hat{V}(\\pi; \\mathcal{D})` is the policy value estimated by the OPE estimator :math:`\\hat{V}` and logged dataset :math:`\\mathcal{D}`.
 
         Parameters
         -------
@@ -841,7 +841,7 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
 
     .. math::
 
-        F(t, \\pi) := \\mathbb{E} \\left[ \\mathbb{I} \\left \\{ \\sum_{t=1}^T \\gamma^{t-1} r_t \\leq t \\right \\} \\mid \\pi \\right]
+        F(m, \\pi) := \\mathbb{E} \\left[ \\mathbb{I} \\left \\{ \\sum_{t=0}^{T-1} \\gamma^t r_t \\leq m \\right \\} \\mid \\pi \\right]
 
     Parameters
     -----------
@@ -850,36 +850,36 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
 
     ope_estimators: list of BaseOffPolicyEstimator
         List of OPE estimators used to evaluate the policy value of the evaluation policies.
-        Estimators must follow the interface of `offlinegym.ope.BaseCumulativeDistributionalOffPolicyEstimator`.
+        Estimators must follow the interface of `ofrl.ope.BaseCumulativeDistributionalOffPolicyEstimator`.
+
+    use_custom_reward_scale: bool, default=False
+        Whether to use the custom reward scale or the reward observed by the behavior policy.
+        If True, the reward scale is uniform, following Huang et al. (2021).
+        If False, the reward scale follows the one defined in Chundak et al. (2021).
 
     scale_min: float, default=None
         Minimum value of the reward scale in CDF.
-        When `use_observations_as_reward_scale == False`, a value must be given.
+        When `use_custom_reward_scale == True`, a value must be given.
 
     scale_max: float, default=None
         Maximum value of the reward scale in CDF.
-        When `use_observations_as_reward_scale == False`, a value must be given.
+        When `use_custom_reward_scale == True`, a value must be given.
 
     n_partitiion: int, default=None
         Number of partition in reward scale (x-axis of CDF).
-        When `use_observations_as_reward_scale == False`, a value must be given.
-
-    use_observations_as_reward_scale: bool, default=False
-        Whether to use the reward observed by the behavior policy as the reward scale.
-        If True, the reward scale follows the one defined in Chundak et al. (2021).
-        If False, the reward scale is uniform, following Huang et al. (2021).
+        When `use_custom_reward_scale == True`, a value must be given.
 
     Examples
     ----------
     .. ::code-block:: python
 
-        # import necessary module from offlinegym
-        >>> from offlinegym.dataset import SyntheticDataset
-        >>> from offlinegym.policy import DiscreteEpsilonGreedyHead
-        >>> from offlinegym.ope import CreateOPEInput
-        >>> from offlinegym.ope import DiscreteCumulativeDistributionalOffPolicyEvaluation as CumulativeDistributionalOPE
-        >>> from offlinegym.ope import DiscreteCumulativeDistributionalTrajectoryWiseImportanceSampling as CDIS
-        >>> from offlinegym.ope import DiscreteCumulativeDistributionalSelfNormalizedTrajectoryWiseImportanceSampling as CDSIS
+        # import necessary module from OFRL
+        >>> from ofrl.dataset import SyntheticDataset
+        >>> from ofrl.policy import DiscreteEpsilonGreedyHead
+        >>> from ofrl.ope import CreateOPEInput
+        >>> from ofrl.ope import DiscreteCumulativeDistributionalOffPolicyEvaluation as CumulativeDistributionalOPE
+        >>> from ofrl.ope import DiscreteCumulativeDistributionalTrajectoryWiseImportanceSampling as CDIS
+        >>> from ofrl.ope import DiscreteCumulativeDistributionalSelfNormalizedTrajectoryWiseImportanceSampling as CDSIS
 
         # import necessary module from other libraries
         >>> import gym
@@ -962,7 +962,6 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
                     CDIS(estimator_name="cdf_is"),
                     CDSIS(estimator_name="cdf_sis"),
                 ],
-                use_observations_as_reward_scale=True,
             )
         >>> variance_dict = cd_ope.estimate_variance(
                 input_dict=input_dict,
@@ -986,10 +985,10 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
 
     logged_dataset: LoggedDataset
     ope_estimators: List[BaseOffPolicyEstimator]
+    use_custom_reward_scale: bool = False
     scale_min: Optional[float] = None
     scale_max: Optional[float] = None
     n_partition: Optional[int] = None
-    use_observations_as_reward_scale: bool = False
 
     def __post_init__(self) -> None:
         "Initialize class."
@@ -1015,18 +1014,18 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
                     f"ope_estimators must be child classes of BaseCumulativeDistributionalOffPolicyEstimator, but one of them, {estimator.estimator_name} is not"
                 )
 
-        if not self.use_observations_as_reward_scale:
+        if self.use_custom_reward_scale:
             if self.scale_min is None:
                 raise ValueError(
-                    "scale_min must be given when `use_observations_as_reward_scale == False`"
+                    "scale_min must be given when `use_custom_reward_scale == True`"
                 )
             if self.scale_max is None:
                 raise ValueError(
-                    "scale_max must be given when `use_observations_as_reward_scale == False`"
+                    "scale_max must be given when `use_custom_reward_scale == True`"
                 )
             if self.n_partition is None:
                 raise ValueError(
-                    "n_partition must be given when `use_observations_as_reward_scale == False`"
+                    "n_partition must be given when `use_custom_reward_scale == True`"
                 )
             check_scalar(
                 self.scale_min,
@@ -1078,17 +1077,17 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
             Reward Scale (x-axis of the cumulative distribution function).
 
         """
-        if self.use_observations_as_reward_scale:
+        if self.use_custom_reward_scale:
+            reward_scale = np.linspace(
+                self.scale_min, self.scale_max, num=self.n_partition
+            )
+        else:
             reward = (
                 self.logged_dataset["reward"]
                 .reshape((-1, self.step_per_episode))
                 .sum(axis=1)
             )
             reward_scale = np.sort(np.unique(reward))
-        else:
-            reward_scale = np.linspace(
-                self.scale_min, self.scale_max, num=self.n_partition
-            )
         return reward_scale
 
     def estimate_cumulative_distribution_function(
@@ -1285,8 +1284,8 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
                 gamma,
             ]
 
-        alphas: array-like of shape (n_alpha, ), default=np.linspace(0, 1, 20)
-            Set of proportions of the sided region.
+        alphas: {float, array-like of shape (n_alpha, )}, default=np.linspace(0, 1, 20)
+            Set of proportions of the sided region. The value(s) should be within `[0, 1)`.
 
         Return
         -------
@@ -1368,12 +1367,12 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
             ]
 
         alpha: float, default=0.05
-            Proportion of the sided region.
+            Proportion of the sided region. The value should be within `(0, 1]`.
 
         Return
         -------
         interquartile_range_dict: dict
-            Dictionary containing the interquartile range at risk of trajectory wise reward of each evaluation policy estimated by OPE estimators.
+            Dictionary containing the interquartile range of trajectory wise reward of each evaluation policy estimated by OPE estimators.
             key: [evaluation_policy_name][OPE_estimator_name][quartile_name]
 
         """
@@ -1700,6 +1699,7 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
             Name of the bar figure.
 
         """
+        check_scalar(alpha, name="alpha", target_type=float, min_val=0.0, max_val=1.0)
         check_input_dict(input_dict)
         if hue not in ["estimator", "policy"]:
             raise ValueError(
@@ -1942,7 +1942,7 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
             ]
 
         alphas: array-like of shape (n_alpha, ) default=np.linspace(0, 1, 20)
-            Set of proportions of the sided region.
+            Set of proportions of the sided region. The value should be within `(0, 1]`.
 
         hue: {"estimator", "policy"}, default="estimator"
             Hue of the plot.

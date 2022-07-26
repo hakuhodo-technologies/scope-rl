@@ -110,11 +110,11 @@ class BaseCumulativeDistributionalOffPolicyEstimator(metaclass=ABCMeta):
 
         behavior_policy_trajectory_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Trajectory-wise action choice probability of behavior policy,
-            i.e., :math:`\\prod_{t=0}^T \\pi_b(a_t \\mid s_t)`
+            i.e., :math:`\\prod_{t=0}^T \\pi_0(a_t \\mid s_t)`
 
         evaluation_policy_trajectory_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Trajectory-wise action choice probability of evaluation policy,
-            i.e., :math:`\\prod_{t=0}^T \\pi_e(a_t \\mid s_t)`
+            i.e., :math:`\\prod_{t=0}^T \\pi(a_t \\mid s_t)`
 
         initial_state_value_prediction: array-like of shape (n_episodes, )
             Estimated initial state value.
@@ -196,7 +196,7 @@ class BaseCumulativeDistributionalOffPolicyEstimator(metaclass=ABCMeta):
 
         behavior_policy_trajectory_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
             Trajectory-wise action choice probability of behavior policy,
-            i.e., :math:`\\prod_{t=0}^T \\pi_b(a_t \\mid s_t)`
+            i.e., :math:`\\prod_{t=0}^T \\pi_0(a_t \\mid s_t)`
 
         evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
             Action chosen by evaluation policy.

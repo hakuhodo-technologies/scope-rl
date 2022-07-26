@@ -17,7 +17,7 @@
 
 # -- Project information -----------------------------------------------------
 
-project = "OfflineGym"
+project = "OFRL"
 copyright = "2022, Haruka Kiyohara, Kosuke Kawakami, Yuta Saito, negocia, Inc."
 author = "Haruka Kiyohara, Kosuke Kawakami, Yuta Saito"
 
