@@ -7,7 +7,7 @@ Overview
 The simulator is particularly intended for reinforcement learning algorithms and follows `OpenAI Gym <https://gym.openai.com>`_ interface. 
 We design RTBGym as a configurative environment so that researchers and practitioner can customize the environmental modules including WinningPriceDistribution, ClickThroughRate, and ConversionRate. 
 
-Note that, RTBGym is publicized as a sub-package of `OfflineGym <>`_, which facilitates the implementation of offline reinforcement learning procedure.
+Note that, RTBGym is publicized as a sub-package of `OFRL <>`_, which facilitates the implementation of offline reinforcement learning procedure.
 
 Basic Setting
 ~~~~~~~~~~
@@ -73,7 +73,7 @@ Quickstart and Configurations
 ~~~~~~~~~~
 
 We provide an example usage of the standard and customized environment. \
-The online/offlline RL and Off-Policy Evaluation examples are provides in `OfflineGym's README <>`_.
+The online/offlline RL and Off-Policy Evaluation examples are provides in `OFRL's README <>`_.
 
 Standard RTBEnv
 ----------
@@ -106,7 +106,7 @@ Let's interact uniform random policy with a continuous action RTB environment. T
 .. code-block:: python
 
     # import from other libraries
-    >>> from offlinegym.policy import OnlineHead
+    >>> from ofrl.policy import OnlineHead
     >>> from d3rlpy.algos import RandomPolicy as ContinuousRandomPolicy
     >>> from d3rlpy.preprocessing import MinMaxActionScaler
     >>> import matplotlib.pyplot as plt
@@ -129,7 +129,7 @@ Let's interact uniform random policy with a continuous action RTB environment. T
     >>>     action = agent.predict_online(obs)
     >>>     obs, reward, done, info = env.step(action)
 
-Note that, while we use `OfflineGym <>`_ and `d3rlpy <https://github.com/takuseno/d3rlpy>`_ here, 
+Note that, while we use `OFRL <>`_ and `d3rlpy <https://github.com/takuseno/d3rlpy>`_ here, 
 RTBGym is compatible with any other libraries working on the `OpenAI Gym <https://gym.openai.com>`_ interface.
 
 Customized RTBEnv
@@ -343,5 +343,5 @@ For any question about the paper and pipeline, feel free to contact: kiyohara.h.
 
 Contribution
 ~~~~~~~~~~
-Any contributions to OfflineGym are more than welcome!
+Any contributions to RTBGym are more than welcome!
 Please refer to `CONTRIBUTING.md <>`_ for general guidelines how to contribute to the project.

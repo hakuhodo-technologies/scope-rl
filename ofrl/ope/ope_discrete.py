@@ -38,7 +38,7 @@ class DiscreteOffPolicyEvaluation:
 
     .. math::
 
-        V(\\pi) := \\mathbb{E} \\left[ \\sum_{t=1}^T \\gamma^{t-1} r_t \\mid \\pi \\right]
+        V(\\pi) := \\mathbb{E} \\left[ \\sum_{t=0}^{T-1} \\gamma^t r_t \\mid \\pi \\right]
 
     Parameters
     -----------
@@ -47,19 +47,19 @@ class DiscreteOffPolicyEvaluation:
 
     ope_estimators: List[BaseOffPolicyEstimator]
         List of OPE estimators used to evaluate the policy value of the evaluation policies.
-        Estimators must follow the interface of `offlinegym.ope.BaseOffPolicyEstimator`.
+        Estimators must follow the interface of `ofrl.ope.BaseOffPolicyEstimator`.
 
     Examples
     ----------
     .. ::code-block:: python
 
-        # import necessary module from offlinegym
-        >>> from offlinegym.dataset import SyntheticDataset
-        >>> from offlinegym.policy import DiscreteEpsilonGreedyHead
-        >>> from offlinegym.ope import CreateOPEInput
-        >>> from offlinegym.ope import DiscreteOffPolicyEvaluation as OPE
-        >>> from offlinegym.ope import DiscreteTrajectoryWiseImportanceSampling as TIS
-        >>> from offlinegym.ope import DiscretePerDecisionImportanceSampling as PDIS
+        # import necessary module from OFRL
+        >>> from ofrl.dataset import SyntheticDataset
+        >>> from ofrl.policy import DiscreteEpsilonGreedyHead
+        >>> from ofrl.ope import CreateOPEInput
+        >>> from ofrl.ope import DiscreteOffPolicyEvaluation as OPE
+        >>> from ofrl.ope import DiscreteTrajectoryWiseImportanceSampling as TIS
+        >>> from ofrl.ope import DiscretePerDecisionImportanceSampling as PDIS
 
         # import necessary module from other libraries
         >>> import gym
@@ -841,7 +841,7 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
 
     .. math::
 
-        F(m, \\pi) := \\mathbb{E} \\left[ \\mathbb{I} \\left \\{ \\sum_{t=1}^T \\gamma^{t-1} r_t \\leq m \\right \\} \\mid \\pi \\right]
+        F(m, \\pi) := \\mathbb{E} \\left[ \\mathbb{I} \\left \\{ \\sum_{t=0}^{T-1} \\gamma^t r_t \\leq m \\right \\} \\mid \\pi \\right]
 
     Parameters
     -----------
@@ -850,7 +850,7 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
 
     ope_estimators: list of BaseOffPolicyEstimator
         List of OPE estimators used to evaluate the policy value of the evaluation policies.
-        Estimators must follow the interface of `offlinegym.ope.BaseCumulativeDistributionalOffPolicyEstimator`.
+        Estimators must follow the interface of `ofrl.ope.BaseCumulativeDistributionalOffPolicyEstimator`.
 
     use_custom_reward_scale: bool, default=False
         Whether to use the custom reward scale or the reward observed by the behavior policy.
@@ -873,13 +873,13 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
     ----------
     .. ::code-block:: python
 
-        # import necessary module from offlinegym
-        >>> from offlinegym.dataset import SyntheticDataset
-        >>> from offlinegym.policy import DiscreteEpsilonGreedyHead
-        >>> from offlinegym.ope import CreateOPEInput
-        >>> from offlinegym.ope import DiscreteCumulativeDistributionalOffPolicyEvaluation as CumulativeDistributionalOPE
-        >>> from offlinegym.ope import DiscreteCumulativeDistributionalTrajectoryWiseImportanceSampling as CDIS
-        >>> from offlinegym.ope import DiscreteCumulativeDistributionalSelfNormalizedTrajectoryWiseImportanceSampling as CDSIS
+        # import necessary module from OFRL
+        >>> from ofrl.dataset import SyntheticDataset
+        >>> from ofrl.policy import DiscreteEpsilonGreedyHead
+        >>> from ofrl.ope import CreateOPEInput
+        >>> from ofrl.ope import DiscreteCumulativeDistributionalOffPolicyEvaluation as CumulativeDistributionalOPE
+        >>> from ofrl.ope import DiscreteCumulativeDistributionalTrajectoryWiseImportanceSampling as CDIS
+        >>> from ofrl.ope import DiscreteCumulativeDistributionalSelfNormalizedTrajectoryWiseImportanceSampling as CDSIS
 
         # import necessary module from other libraries
         >>> import gym

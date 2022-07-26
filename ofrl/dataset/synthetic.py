@@ -40,9 +40,9 @@ class SyntheticDataset(BaseDataset):
 
     .. ::code-block:: python
 
-        # import necessary module from offlinegym
-        >>> from offlinegym.dataset import SyntheticDataset
-        >>> from offlinegym.policy import DiscreteEpsilonGreedyHead
+        # import necessary module from OFRL
+        >>> from ofrl.dataset import SyntheticDataset
+        >>> from ofrl.policy import DiscreteEpsilonGreedyHead
 
         # import necessary module from other libraries
         >>> import gym

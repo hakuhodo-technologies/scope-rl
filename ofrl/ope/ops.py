@@ -52,17 +52,17 @@ class OffPolicySelection:
     ----------
     .. ::code-block:: python
 
-        # import necessary module from offlinegym
-        >>> from offlinegym.dataset import SyntheticDataset
-        >>> from offlinegym.policy import DiscreteEpsilonGreedyHead
-        >>> from offlinegym.ope import CreateOPEInput
-        >>> from offlinegym.ope import OffPolicySelection
-        >>> from offlinegym.ope import DiscreteOffPolicyEvaluation as OPE
-        >>> from offlinegym.ope import DiscreteTrajectoryWiseImportanceSampling as TIS
-        >>> from offlinegym.ope import DiscretePerDecisionImportanceSampling as PDIS
-        >>> from offlinegym.ope import DiscreteCumulativeDistributionalOffPolicyEvaluation as CumulativeDistributionalOPE
-        >>> from offlinegym.ope import DiscreteCumulativeDistributionalTrajectoryWiseImportanceSampling as CDIS
-        >>> from offlinegym.ope import DiscreteCumulativeDistributionalTrajectoryWiseSelfNormalizedImportanceSampling as CDSIS
+        # import necessary module from OFRL
+        >>> from ofrl.dataset import SyntheticDataset
+        >>> from ofrl.policy import DiscreteEpsilonGreedyHead
+        >>> from ofrl.ope import CreateOPEInput
+        >>> from ofrl.ope import OffPolicySelection
+        >>> from ofrl.ope import DiscreteOffPolicyEvaluation as OPE
+        >>> from ofrl.ope import DiscreteTrajectoryWiseImportanceSampling as TIS
+        >>> from ofrl.ope import DiscretePerDecisionImportanceSampling as PDIS
+        >>> from ofrl.ope import DiscreteCumulativeDistributionalOffPolicyEvaluation as CumulativeDistributionalOPE
+        >>> from ofrl.ope import DiscreteCumulativeDistributionalTrajectoryWiseImportanceSampling as CDIS
+        >>> from ofrl.ope import DiscreteCumulativeDistributionalTrajectoryWiseSelfNormalizedImportanceSampling as CDSIS
 
         # import necessary module from other libraries
         >>> import gym

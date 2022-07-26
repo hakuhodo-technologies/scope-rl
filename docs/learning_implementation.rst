@@ -16,7 +16,7 @@ It takes an RL environment and the behavior policy (i.e., data collection policy
 .. code-block:: python
 
     # initialize the dataset class
-    >>> from offlinegym.dataset import SyntheticDataset
+    >>> from ofrl.dataset import SyntheticDataset
     >>> dataset = SyntheticDataset(
             env=env,
             behavior_policy=behavior_policy,

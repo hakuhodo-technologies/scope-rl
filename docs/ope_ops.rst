@@ -29,7 +29,7 @@ In the basic OPE, we aim to evaluate the *policy value* or the expected trajecto
 
 .. math::
 
-    J(\pi) := \mathbb{E}_{\tau} \left [ \sum_{t=0}^{T} \gamma^t r_{t} \mid \pi \right ],
+    J(\pi) := \mathbb{E}_{\tau} \left [ \sum_{t=0}^{T-1} \gamma^t r_{t} \mid \pi \right ],
 
 Estimating the policy value before deploying policy in online environment is beneficial, as we can reduce the deployment cost and risks in online evaluation.
 However, the challenge is that we need to answer a counterfactual question, *''What if a new policy chooses a different action from that of behavior policy?''* 
@@ -45,7 +45,7 @@ To derive these risk functions, we first estimate the following cumulative distr
 
 .. math::
 
-    F(m, \pi) := \mathbb{E} \left[ \mathbb{I} \left \{ \sum_{t=1}^T \gamma^{t-1} r_t \leq m \right \} \mid \pi \right]
+    F(m, \pi) := \mathbb{E} \left[ \mathbb{I} \left \{ \sum_{t=0}^{T-1} \gamma^t r_t \leq m \right \} \mid \pi \right]
 
 Then, we can derive various risk functions based on :math:`F(\cdot)` as follows.
 
@@ -54,7 +54,7 @@ Then, we can derive various risk functions based on :math:`F(\cdot)` as follows.
 * :math:`\alpha`-quartile: :math:`Q^{\alpha}(F) := \min \{ G \mid F(G) \leq \alpha \}`
 * Conditional Value at Risk (CVaR): :math:`\int_{G} G \, \mathbb{I}\{ G \leq Q^{\alpha}(F) \} \, \mathrm{d}F(G)`
 
-where we let :math:`G := \sum_{t=1}^T \gamma^{t-1} r_t` to represent the random variable of trajectory wise reward 
+where we let :math:`G := \sum_{t=0}^{T-1} \gamma^t r_t` to represent the random variable of trajectory wise reward 
 and :math:`dF(G) := \mathrm{lim}_{\Delta \rightarrow 0} F(G) - F(G- \Delta)`.
 
 We describe cumulative distributional OPE estimators `here <>`_.

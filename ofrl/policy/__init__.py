@@ -1,4 +1,4 @@
-from offlinegym.policy.head import (
+from ofrl.policy.head import (
     BaseHead,
     OnlineHead,
     DiscreteEpsilonGreedyHead,

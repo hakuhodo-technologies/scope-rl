@@ -27,7 +27,7 @@ class DiscreteDirectMethod(BaseOffPolicyEstimator):
 
         \\hat{J}_{\\mathrm{DM}} (\\pi; \\mathcal{D}) := \\mathbb{E}_n [\\mathbb{E}_{a_0 \\sim \\pi(a_0 \\mid s_0)} [\\hat{Q}(s_0, a_0)] ],
 
-    where :math:`\\mathcal{D}=\\{\\{(s_t, a_t, r_t)\\}_{t=0}^T\\}_{i=1}^n` is logged dataset with :math:`n` trajectories of data.
+    where :math:`\\mathcal{D}=\\{\\{(s_t, a_t, r_t)\\}_{t=0}^{T-1}\\}_{i=1}^n` is logged dataset with :math:`n` trajectories of data.
     :math:`T` indicates step per episode. :math:`\\hat{Q}(s_t, a_t)` is estimated Q value given state-action pair.
 
     Parameters
@@ -172,9 +172,9 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 
     .. math::
 
-        \\hat{J}_{\\mathrm{TIS}} (\\pi; \\mathcal{D}) := \\mathbb{E}_{n} [\\sum_{t=0}^T \\gamma^t w_{1:T} r_t],
+        \\hat{J}_{\\mathrm{TIS}} (\\pi; \\mathcal{D}) := \\mathbb{E}_{n} [\\sum_{t=0}^{T-1} \\gamma^t w_{0:T-1} r_t],
 
-    where :math:`w_{0:T} := \\prod_{t=1}^T \\frac{\\pi(a_t \\mid s_t)}{\\pi_0(a_t \\mid s_t)}` is the importance weight.
+    where :math:`w_{0:T-1} := \\prod_{t=0}^{T-1} \\frac{\\pi(a_t \\mid s_t)}{\\pi_0(a_t \\mid s_t)}` is the importance weight.
 
     Parameters
     -------
@@ -450,7 +450,7 @@ class DiscretePerDecisionImportanceSampling(BaseOffPolicyEstimator):
 
     .. math::
 
-        \\hat{J}_{\\mathrm{PDIS}} (\\pi; \\mathcal{D}) := \\mathbb{E}_{n} [\\sum_{t=0}^T \\gamma^t w_{0:t} r_t],
+        \\hat{J}_{\\mathrm{PDIS}} (\\pi; \\mathcal{D}) := \\mathbb{E}_{n} [\\sum_{t=0}^{T-1} \\gamma^t w_{0:t} r_t],
 
     where :math:`w_{0:t} := \\prod_{t'=0}^t \\frac{\\pi(a_{t'} \\mid s_{t'})}{\\pi_0(a_{t'} \\mid s_{t'})}`
 
@@ -725,7 +725,7 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
     .. math::
 
         \\hat{J}_{\\mathrm{DR}} (\\pi; \\mathcal{D})
-        := \\mathbb{E}_{n} [\\sum_{t=0}^T \\gamma^t (w_{0:t} (r_t - \\hat{Q}(s_t, a_t)) + w_{0:t-1} \\mathbb{E}_{a \\sim \\pi(a \\mid s_t)}[\\hat{Q}(s_t, a)])],
+        := \\mathbb{E}_{n} [\\sum_{t=0}^{T-1} \\gamma^t (w_{0:t} (r_t - \\hat{Q}(s_t, a_t)) + w_{0:t-1} \\mathbb{E}_{a \\sim \\pi(a \\mid s_t)}[\\hat{Q}(s_t, a)])],
 
     where :math:`w_{0:t} := \\prod_{t'=0}^t \\frac{\\pi(a_{t'} \\mid s_{t'})}{\\pi_0(a_{t'} \\mid s_{t'})}`
 
@@ -1152,9 +1152,9 @@ class DiscreteSelfNormalizedTrajectoryWiseImportanceSampling(
     .. math::
 
         \\hat{J}_{\\mathrm{SNTIS}} (\\pi; \\mathcal{D})
-        := \\mathbb{E}_{n} [\\sum_{t=0}^T \\gamma^t \\frac{w_{1:T}}{\\mathbb{E}_n [w_{1:T}]} r_t],
+        := \\mathbb{E}_{n} [\\sum_{t=0}^{T-1} \\gamma^t \\frac{w_{0:T-1}}{\\mathbb{E}_n [w_{0:T-1}]} r_t],
 
-    where :math:`w_{0:T} := \\prod_{t=1}^T \\frac{\\pi(a_t \\mid s_t)}{\\pi_0(a_t \\mid s_t)}`
+    where :math:`w_{0:T-1} := \\prod_{t=0}^{T-1} \\frac{\\pi(a_t \\mid s_t)}{\\pi_0(a_t \\mid s_t)}`
 
     Parameters
     -------
@@ -1258,7 +1258,7 @@ class DiscreteSelfNormalizedPerDecisionImportanceSampling(
     .. math::
 
         \\hat{J}_{\\mathrm{SNPDIS}} (\\pi; \\mathcal{D})
-        := \\mathbb{E}_{n} [\\sum_{t=0}^T \\gamma^t \\frac{w_{1:t}}{\\mathbb{E}_n [w_{1:t}]} r_t],
+        := \\mathbb{E}_{n} [\\sum_{t=0}^{T-1} \\gamma^t \\frac{w_{1:t}}{\\mathbb{E}_n [w_{1:t}]} r_t],
 
     where :math:`w_{0:t} := \\prod_{t'=1}^t \\frac{\\pi(a_{t'} \\mid s_{t'})}{\\pi_0(a_{t'} \\mid s_{t'})}`
 
@@ -1359,7 +1359,7 @@ class DiscreteSelfNormalizedDoublyRobust(DiscreteDoublyRobust):
     .. math::
 
         \\hat{J}_{\\mathrm{DR}} (\\pi; \\mathcal{D})
-        := \\mathbb{E}_{n} [\\sum_{t=0}^T \\gamma^t \\frac{w_{0:t-1}}{\\mathbb{E}_n [w_{0:t-1}]}
+        := \\mathbb{E}_{n} [\\sum_{t=0}^{T-1} \\gamma^t \\frac{w_{0:t-1}}{\\mathbb{E}_n [w_{0:t-1}]}
                 (w_t (r_t - \\hat{Q}(s_t, a_t)) + \\mathbb{E}_{a \\sim \\pi(a \\mid s_t)}[\\hat{Q}(s_t, a)])],
 
     where :math:`w_{0:t} := \\prod_{t'=0}^t \\frac{\\pi(a_{t'} \\mid s_{t'})}{\\pi_0(a_{t'} \\mid s_{t'})}`

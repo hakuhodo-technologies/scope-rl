@@ -34,7 +34,7 @@ class ContinuousOffPolicyEvaluation:
 
     .. math::
 
-        V(\\pi) := \\mathbb{E} \\left[ \\sum_{t=1}^T \\gamma^{t-1} r_t \\mid \\pi \\right]
+        V(\\pi) := \\mathbb{E} \\left[ \\sum_{t=0}^{T-1} \\gamma^t r_t \\mid \\pi \\right]
 
     Parameters
     -----------
@@ -43,7 +43,7 @@ class ContinuousOffPolicyEvaluation:
 
     ope_estimators: list of BaseOffPolicyEstimator
         List of OPE estimators used to evaluate the policy value of the evaluation policies.
-        Estimators must follow the interface of `offlinegym.ope.BaseOffPolicyEstimator`.
+        Estimators must follow the interface of `ofrl.ope.BaseOffPolicyEstimator`.
 
     sigma: array-like of shape (action_dim, ), default=None
         Standard deviation of Gaussian distribution (i.e., `band_width` hyperparameter of gaussian kernel).
@@ -65,13 +65,13 @@ class ContinuousOffPolicyEvaluation:
     ----------
     .. ::code-block:: python
 
-        # import necessary module from offlinegym
-        >>> from offlinegym.dataset import SyntheticDataset
-        >>> from offlinegym.policy import ContinuousTruncatedGaussianHead, ContinuousEvalHead
-        >>> from offlinegym.ope import CreateOPEInput
-        >>> from offlinegym.ope import ContinuousOffPolicyEvaluation as OPE
-        >>> from offlinegym.ope import ContinuousTrajectoryWiseImportanceSampling as TIS
-        >>> from offlinegym.ope import ContinuousPerDecisionImportanceSampling as PDIS
+        # import necessary module from OFRL
+        >>> from ofrl.dataset import SyntheticDataset
+        >>> from ofrl.policy import ContinuousTruncatedGaussianHead, ContinuousEvalHead
+        >>> from ofrl.ope import CreateOPEInput
+        >>> from ofrl.ope import ContinuousOffPolicyEvaluation as OPE
+        >>> from ofrl.ope import ContinuousTrajectoryWiseImportanceSampling as TIS
+        >>> from ofrl.ope import ContinuousPerDecisionImportanceSampling as PDIS
 
         # import necessary module from other libraries
         >>> import gym

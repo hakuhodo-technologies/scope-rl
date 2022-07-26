@@ -28,7 +28,7 @@ class ContinuousDirectMethod(BaseOffPolicyEstimator):
 
         \\hat{J}_{\\mathrm{DM}} (\\pi; \\mathcal{D}) := \\mathbb{E}_n [\\mathbb{E}_{a_0 \\sim \\pi(a_0 \\mid s_0)} [\\hat{Q}(x_0, a_0)] ],
 
-    where :math:`\\mathcal{D}=\\{\\{(s_t, a_t, r_t)\\}_{t=0}^T\\}_{i=1}^n` is logged dataset with :math:`n` trajectories of data.
+    where :math:`\\mathcal{D}=\\{\\{(s_t, a_t, r_t)\\}_{t=0}^{T-1}\\}_{i=1}^n` is logged dataset with :math:`n` trajectories of data.
     :math:`T` indicates step per episode. :math:`\\hat{Q}(x_t, a_t)` is estimated Q value given state-action pair.
 
     Parameters
@@ -172,10 +172,10 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 
     .. math::
 
-        \\hat{J}_{\\mathrm{TIS}} (\\pi; \\mathcal{D}) := \\mathbb{E}_{n} [\\sum_{t=0}^T \\gamma^t w_{0:T} \\delta(\\pi, a_{0:t}) r_t],
+        \\hat{J}_{\\mathrm{TIS}} (\\pi; \\mathcal{D}) := \\mathbb{E}_{n} [\\sum_{t=0}^{T-1} \\gamma^t w_{0:T-1} \\delta(\\pi, a_{0:T-1}) r_t],
 
-    where :math:`w_{0:T} := \\prod_{t=1}^T \\frac{1}{\\pi_0(a_t \\mid s_t)}` is the inverse propensity weight
-    and :math:`\\delta(\\pi, a_{0:T}) = \\prod_{t=1}^T K(\\pi(s_t), a_t)` indicates similarity between action in dataset and that of evaluation policy.
+    where :math:`w_{0:T-1} := \\prod_{t=0}^{T-1} \\frac{1}{\\pi_0(a_t \\mid s_t)}` is the inverse propensity weight
+    and :math:`\\delta(\\pi, a_{0:T-1}) = \\prod_{t=0}^{T-1} K(\\pi(s_t), a_t)` indicates similarity between action in dataset and that of evaluation policy.
     Note that :math:`K(\\cdot)` is a kernel function.
 
     Parameters
@@ -616,10 +616,10 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
 
     .. math::
 
-        \\hat{J}_{\\mathrm{PDIS}} (\\pi; \\mathcal{D}) := \\mathbb{E}_{n} [\\sum_{t=0}^T \\gamma^t w_{0:t} \\delta(\\pi, a_{0:t}) r_t],
+        \\hat{J}_{\\mathrm{PDIS}} (\\pi; \\mathcal{D}) := \\mathbb{E}_{n} [\\sum_{t=0}^{T-1} \\gamma^t w_{0:t} \\delta(\\pi, a_{0:t}) r_t],
 
     where :math:`w_{0:t} := \\prod_{t'=0}^t \\frac{1}{\\pi_0(a_{t'} \\mid s_{t'})}`
-    and :math:`\\delta(\\pi, a_{0:t}) = \\prod_{t'=1}^t K(\\pi(s_{t'}), a_{t'})` indicates similarity between action in dataset and that of evaluation policy.
+    and :math:`\\delta(\\pi, a_{0:t}) = \\prod_{t'=0}^t K(\\pi(s_{t'}), a_{t'})` indicates similarity between action in dataset and that of evaluation policy.
     Note that :math:`K(\\cdot)` is a kernel function.
 
     Parameters
@@ -1054,7 +1054,7 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
     .. math::
 
         \\hat{J}_{\\mathrm{DR}} (\\pi; \\mathcal{D})
-        := \\mathbb{E}_{n} [\\sum_{t=0}^T \\gamma^t (w_{0:t} \\delta(\\pi, a_{0:t}) (r_t - \\hat{Q}(s_t, a_t))
+        := \\mathbb{E}_{n} [\\sum_{t=0}^{T-1} \\gamma^t (w_{0:t} \\delta(\\pi, a_{0:t}) (r_t - \\hat{Q}(s_t, a_t))
             + w_{0:t-1} \\delta(\\pi, a_{0:t-1}) \\mathbb{E}_{a \\sim \\pi(a \\mid s_t)}[\\hat{Q}(s_t, a)])],
 
     where :math:`w_{0:t} := \\prod_{t'=0}^t \\frac{1}{\\pi_0(a_{t'} \\mid s_{t'})}`
@@ -1531,10 +1531,10 @@ class ContinuousSelfNormalizedTrajectoryWiseImportanceSampling(
     .. math::
 
         \\hat{J}_{\\mathrm{SNTIS}} (\\pi; \\mathcal{D})
-        := \\mathbb{E}_{n} [\\sum_{t=0}^T \\gamma^t \\frac{w_{1:T} \\delta(\\pi, a_{0:T})}{\\mathbb{E}_n [w_{1:T} \\delta(\\pi, a_{0:T})]} r_t],
+        := \\mathbb{E}_{n} [\\sum_{t=0}^{T-1} \\gamma^t \\frac{w_{0:T-1} \\delta(\\pi, a_{0:T-1})}{\\mathbb{E}_n [w_{1:T-1} \\delta(\\pi, a_{0:T-1})]} r_t],
 
-    where :math:`w_{0:T} := \\prod_{t=1}^T \\frac{1}{\\pi_0(a_t \\mid s_t)}`
-    and :math:`\\delta(\\pi, a_{0:T}) = \\prod_{t=1}^T K(\\pi(s_t), a_t)` indicates similarity between action in dataset and that of evaluation policy.
+    where :math:`w_{0:T-1} := \\prod_{t=0}^{T-1} \\frac{1}{\\pi_0(a_t \\mid s_t)}`
+    and :math:`\\delta(\\pi, a_{0:T}) = \\prod_{t=0}^{T-1} K(\\pi(s_t), a_t)` indicates similarity between action in dataset and that of evaluation policy.
     Note that :math:`K(\\cdot)` is a kernel function.
 
     Parameters
@@ -1693,7 +1693,7 @@ class ContinuousSelfNormalizedPerDecisionImportanceSampling(
     .. math::
 
         \\hat{J}_{\\mathrm{SNPDIS}} (\\pi; \\mathcal{D})
-        := \\mathbb{E}_{n} [\\sum_{t=0}^T \\gamma^t \\frac{w_{1:t} \\delta(\\pi, a_{0:t})}{\\mathbb{E}_n [w_{1:t} \\delta(\\pi, a_{0:t})]} r_t],
+        := \\mathbb{E}_{n} [\\sum_{t=0}^{T-1} \\gamma^t \\frac{w_{1:t} \\delta(\\pi, a_{0:t})}{\\mathbb{E}_n [w_{1:t} \\delta(\\pi, a_{0:t})]} r_t],
 
     where :math:`w_{0:t} := \\prod_{t'=1}^t \\frac{1}{\\pi_0(a_{t'} \\mid s_{t'})}`
     and :math:`\\delta(\\pi, a_{0:t}) = \\prod_{t'=1}^t K(\\pi(s_{t'}), a_{t'})` indicates similarity between action in dataset and that of evaluation policy.
@@ -1849,7 +1849,7 @@ class ContinuousSelfNormalizedDoublyRobust(ContinuousDoublyRobust):
     .. math::
 
         \\hat{J}_{\\mathrm{DR}} (\\pi; \\mathcal{D})
-        := \\mathbb{E}_{n} [\\sum_{t=0}^T \\gamma^t ( \\frac{w_{0:t} \\delta(\\pi, a_{0:t})}{\\mathbb{E}_n[w_{0:t} \\delta(\\pi, a_{0:t})]} (r_t - \\hat{Q}(s_t, a_t))
+        := \\mathbb{E}_{n} [\\sum_{t=0}^{T-1} \\gamma^t ( \\frac{w_{0:t} \\delta(\\pi, a_{0:t})}{\\mathbb{E}_n[w_{0:t} \\delta(\\pi, a_{0:t})]} (r_t - \\hat{Q}(s_t, a_t))
             + \\frac{w_{0:t-1} \\delta(\\pi, a_{0:t-1})}{\\mathbb{E}_n[w_{0:t-1} \\delta(\\pi, a_{0:t-1})]} \\mathbb{E}_{a \\sim \\pi(a \\mid s_t)}[\\hat{Q}(s_t, a)])],
 
     where :math:`w_{0:t} := \\prod_{t'=0}^t \\frac{1}{\\pi_0(a_{t'} \\mid s_{t'})}`

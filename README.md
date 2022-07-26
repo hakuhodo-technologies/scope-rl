@@ -1,8 +1,8 @@
-# OfflineGym: A pipeline for offline reinforcement learning research and applications
+# OFRL: A pipeline for offline reinforcement learning research and applications
 <details>
 <summary><strong>Table of Contents </strong>(click to expand)</summary>
 
-- [OfflineGym: A pipeline for offline reinforcement learning research and applications](#offlinegym-a-pipeline-for-offline-reinforcement-learning-research-and-applications)
+- [OFRL: A pipeline for offline reinforcement learning research and applications](#OFRL-a-pipeline-for-offline-reinforcement-learning-research-and-applications)
 - [Overview](#overview)
 - [Installation](#installation)
 - [Usage](#usage)
@@ -22,23 +22,23 @@
 
 ## Overview
 
-*OfflineGym* is an open-source Python Software for implementing the whole procedure of offline Reinforcement Learning (offline RL), from data collection to offline policy learning, evaluation, and selection. Our software includes a series of modules to implement synthetic dataset generation and dataset preprocessing, estimators for Off-Policy Evaluation (OPE), and Off-Policy Selection (OPS) methods. 
+*OFRL* is an open-source Python Software for implementing the whole procedure of offline Reinforcement Learning (offline RL), from data collection to offline policy learning, evaluation, and selection. Our software includes a series of modules to implement synthetic dataset generation and dataset preprocessing, estimators for Off-Policy Evaluation (OPE), and Off-Policy Selection (OPS) methods. 
 
-This software is also compatible with [d3rlpy](https://github.com/takuseno/d3rlpy), which provides the algorithm implementation of both online and offline RL methods, to streamline the implementation from learning and evaluation in an unified interface. OfflineGym enables an easy, flexible and reliable experiment in offline RL research on any environment with [OpenAI Gym](https://gym.openai.com)-like interface (from basic one to practical setup) and also simplify the practical implementation on a variety of customized dataset.
+This software is also compatible with [d3rlpy](https://github.com/takuseno/d3rlpy), which provides the algorithm implementation of both online and offline RL methods, to streamline the implementation from learning and evaluation in an unified interface. OFRL enables an easy, flexible and reliable experiment in offline RL research on any environment with [OpenAI Gym](https://gym.openai.com)-like interface (from basic one to practical setup) and also simplify the practical implementation on a variety of customized dataset.
 
 Our software facilitate evaluation and algorithm comparison related to the following research topics:
 
-- **Offline Reinforcement Learning**: Offline RL aims to learn a new policy from only offline logged data collected by a behavior policy. OfflineGym enables flexible experiment using customized dataset on a variety of environment collected by various behavior policies.
+- **Offline Reinforcement Learning**: Offline RL aims to learn a new policy from only offline logged data collected by a behavior policy. OFRL enables flexible experiment using customized dataset on a variety of environment collected by various behavior policies.
 
-- **Off-Policy Evaluation**: OPE aims to evaluate the performance of a counterfactual policy using only offline logged data. OfflineGym supports basic implementation of OPE estimators and streamline the experimental procedure to evaluate OPE estimators. Moreover, we also implement advanced OPE, such as cumulative distribution estimators.
+- **Off-Policy Evaluation**: OPE aims to evaluate the performance of a counterfactual policy using only offline logged data. OFRL supports basic implementation of OPE estimators and streamline the experimental procedure to evaluate OPE estimators. Moreover, we also implement advanced OPE, such as cumulative distribution estimators.
 
-- **Off-Policy Selection**: OPS aims to select the best policy from several candidate policies using offline logged data. OfflineGym supports basic implementation of OPS methods and provide some metrics to evaluate OPS result.
+- **Off-Policy Selection**: OPS aims to select the best policy from several candidate policies using offline logged data. OFRL supports basic implementation of OPS methods and provide some metrics to evaluate OPS result.
 
 This software is intended for the episodic RL setup. For those aimed for contextual bandits, please also refer to [Open Bandit Pipeline](https://github.com/st-tech/zr-obp).
 
 ### Implementations
 
-*OfflineGym* mainly consists of the following three modules.
+*OFRL* mainly consists of the following three modules.
 - [**dataset module**](./_gym/dataset): This module provides tools to generate synthetic data from any environment with [OpenAI Gym](http://gym.openai.com/)-like interface. It also provides preprocessing tools for the logged data.
 - [**policy module**](./_gym/policy): This module provides a wrapper class for [d3rlpy](https://github.com/takuseno/d3rlpy) to enable a flexible data collection.
 - [**ope module**](./_gym/ope): This module provides a generic abstract class to implement an OPE estimator and some dominant OPE estimators. It also provides some tools useful for OPS.
@@ -107,19 +107,19 @@ To provide an example of conducting customized experiment in a practical setup, 
 
 ## Installation
 
-You can install OfflineGym using Python's package manager `pip`.
+You can install OFRL using Python's package manager `pip`.
 ```
-pip install offlinegym
+pip install ofrl
 ```
 
-You can also install OfflineGym from source.
+You can also install OFRL from source.
 ```bash
-git clone https://github.com/negocia-inc/offlinegym
-cd offlinegym
+git clone https://github.com/negocia-inc/ofrl
+cd ofrl
 python setup.py install
 ```
 
-OfflineGym supports Python 3.7 or newer. See [pyproject.toml](./pyproject.toml) for other requirements.
+OFRL supports Python 3.7 or newer. See [pyproject.toml](./pyproject.toml) for other requirements.
 
 ## Usage
 
@@ -132,9 +132,9 @@ Let's start by collecting logged data useful for offline RL.
 ```Python
 # implement data collection procedure on the RTBGym environment
 
-# import offlinegym modules
-from offlinegym.dataset import SyntheticDataset
-from offlinegym.policy import DiscreteEpsilonGreedyHead
+# import OFRL modules
+from ofrl.dataset import SyntheticDataset
+from ofrl.policy import DiscreteEpsilonGreedyHead
 # import d3rlpy algorithms
 from d3rlpy.algos import DoubleDQN
 from d3rlpy.online.buffers import ReplayBuffer
@@ -186,7 +186,7 @@ logged_dataset = dataset.obtain_trajectories(n_episodes=10000)
 Now we are ready to learn a new policy only from logged data using [d3rlpy](https://github.com/takuseno/d3rlpy).
 
 ```Python
-# implement offline RL procedure using OfflineGym and d3rlpy
+# implement offline RL procedure using OFRL and d3rlpy
 
 # import d3rlpy algorithms
 from d3rlpy.dataset import MDPDataset
@@ -217,15 +217,15 @@ cql.fit(
 Then, we evaluate the performance of the learned policy using offline logged data. We also compare the estimation results from various OPE estimators, Direct Method (DM), Trajectory-wise Importance Sampling (TIS), Per-Decision Importance Sampling (PDIS), and Doubly Robust (DR).
 
 ```Python
-# implement basic OPE procedure using OfflineGym
+# implement basic OPE procedure using OFRL
 
-# import offlinegym modules
-from offlinegym.ope import CreateOPEInput
-from offlinegym.ope import DiscreteOffPolicyEvaluation as OPE
-from offlinegym.ope import DiscreteDirectMethod as DM
-from offlinegym.ope import DiscreteTrajectoryWiseImportanceSampling as TIS
-from offlinegym.ope import DiscretePerDecisionImportanceSampling as PDIS
-from offlinegym.ope import DiscreteDoublyRobust as DR
+# import OFRL modules
+from ofrl.ope import CreateOPEInput
+from ofrl.ope import DiscreteOffPolicyEvaluation as OPE
+from ofrl.ope import DiscreteDirectMethod as DM
+from ofrl.ope import DiscreteTrajectoryWiseImportanceSampling as TIS
+from ofrl.ope import DiscretePerDecisionImportanceSampling as PDIS
+from ofrl.ope import DiscreteDoublyRobust as DR
 
 # (4) Evaluate the learned policy in an offline manner
 # we compare ddqn, cql, and random policy
@@ -274,7 +274,7 @@ ope.visualize_off_policy_estimates(
     sharey=True,
 )
 ```
-<div align="center"><img src="https://raw.githubusercontent.com/negocia-inc/offlinegym/master/images/ope_policy_value_basic.png" width="60%"/></div>
+<div align="center"><img src="https://raw.githubusercontent.com/negocia-inc/ofrl/master/images/ope_policy_value_basic.png" width="60%"/></div>
 <figcaption>
 <p align="center">
   Policy Value Estimated by OPE Estimators
@@ -288,15 +288,15 @@ A formal quickstart example with RTBGym is available at [quickstart/rtb_syntheti
 We can also estimate various performance statics including variance and conditional value at risk (CVaR) by using cumulative distributional OPE estimators.
 
 ```Python
-# implement advanced OPE procedure (i.e., cumulative distribution estimation) using OfflineGym
+# implement advanced OPE procedure (i.e., cumulative distribution estimation) using OFRL
 
-# import offlinegym modules
-from offlinegym.ope import DiscreteCumulativeDistributionalOffPolicyEvaluation as CumulativeDistributionalOPE
-from offlinegym.ope import DiscreteCumulativeDistributionalDirectMethod as CD_DM
-from offlinegym.ope import DiscreteCumulativeDistributionalTrajectoryWiseImportanceSampling as CD_IS
-from offlinegym.ope import DiscreteCumulativeDistributionalTrajectoryWiseDoublyRobust as CD_DR
-from offlinegym.ope import DiscreteCumulativeDistributionalSelfNormalizedTrajectoryWiseImportanceSampling as CD_SNIS
-from offlinegym.ope import DiscreteCumulativeDistributionalSelfNormalizedTrajectoryWiseDoublyRobust as CD_SNDR
+# import OFRL modules
+from ofrl.ope import DiscreteCumulativeDistributionalOffPolicyEvaluation as CumulativeDistributionalOPE
+from ofrl.ope import DiscreteCumulativeDistributionalDirectMethod as CD_DM
+from ofrl.ope import DiscreteCumulativeDistributionalTrajectoryWiseImportanceSampling as CD_IS
+from ofrl.ope import DiscreteCumulativeDistributionalTrajectoryWiseDoublyRobust as CD_DR
+from ofrl.ope import DiscreteCumulativeDistributionalSelfNormalizedTrajectoryWiseImportanceSampling as CD_SNIS
+from ofrl.ope import DiscreteCumulativeDistributionalSelfNormalizedTrajectoryWiseDoublyRobust as CD_SNDR
 
 # (4) Evaluate the learned policy using cumulative distribution function (in an offline manner)
 # we compare ddqn, cql, and random policy defined in the previous section (i.e., (3) of basic OPE procedure)
@@ -318,7 +318,7 @@ cvar_dict = cd_ope.estimate_conditional_value_at_risk(input_dict, alphas=0.3)
 # estimate and visualize cumulative distribution function
 cd_ope.visualize_cumulative_distribution_function(input_dict, n_cols=4)
 ```
-<div align="center"><img src="https://raw.githubusercontent.com/negocia-inc/offlinegym/master/images/ope_cumulative_distribution_function.png" width="60%"/></div>
+<div align="center"><img src="https://raw.githubusercontent.com/negocia-inc/ofrl/master/images/ope_cumulative_distribution_function.png" width="60%"/></div>
 <figcaption>
 <p align="center">
   Cumulative Distribution Function Estimated by OPE Estimators
@@ -335,8 +335,8 @@ including mean-squared-error, rank correlation, regret, and type I and type II e
 ```Python
 # conduct off-policy selection based on the OPE results
 
-# import offlinegym modules
-from offlinegym.ope import OffPolicySelection
+# import OFRL modules
+from ofrl.ope import OffPolicySelection
 
 # (5) Conduct Off-Policy Selection
 # Initialize the OPS class
@@ -364,7 +364,7 @@ ops.visualize_lower_quartile_for_validation(
     share_axes=True,
 )
 ```
-<div align="center"><img src="https://raw.githubusercontent.com/negocia-inc/offlinegym/master/images/ops_cvar_validation.png" width="60%"/></div>
+<div align="center"><img src="https://raw.githubusercontent.com/negocia-inc/ofrl/master/images/ops_cvar_validation.png" width="60%"/></div>
 <figcaption>
 <p align="center">
   Comparison of Estimated and Ground-truth Lower Quartile of Policy Value
@@ -394,7 +394,7 @@ Haruka Kiyohara, Kosuke Kawakami, Yuta Saito.<br>
 [https://arxiv.org/abs/2109.08331](https://arxiv.org/abs/2109.08331)
 
 ## Contribution
-Any contributions to OfflineGym are more than welcome!
+Any contributions to OFRL are more than welcome!
 Please refer to [CONTRIBUTING.md](./CONTRIBUTING.md) for general guidelines how to contribute the project.
 
 ## License
