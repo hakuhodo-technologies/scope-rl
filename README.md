@@ -274,7 +274,7 @@ ope.visualize_off_policy_estimates(
     sharey=True,
 )
 ```
-<div align="center"><img src="https://raw.githubusercontent.com/negocia-inc/ofrl/master/images/ope_policy_value_basic.png" width="60%"/></div>
+<div align="center"><img src="https://raw.githubusercontent.com/negocia-inc/ofrl/main/images/ope_policy_value_basic.png" width="60%"/></div>
 <figcaption>
 <p align="center">
   Policy Value Estimated by OPE Estimators
@@ -318,7 +318,7 @@ cvar_dict = cd_ope.estimate_conditional_value_at_risk(input_dict, alphas=0.3)
 # estimate and visualize cumulative distribution function
 cd_ope.visualize_cumulative_distribution_function(input_dict, n_cols=4)
 ```
-<div align="center"><img src="https://raw.githubusercontent.com/negocia-inc/ofrl/master/images/ope_cumulative_distribution_function.png" width="60%"/></div>
+<div align="center"><img src="https://raw.githubusercontent.com/negocia-inc/ofrl/main/images/ope_cumulative_distribution_function.png" width="60%"/></div>
 <figcaption>
 <p align="center">
   Cumulative Distribution Function Estimated by OPE Estimators
@@ -364,7 +364,7 @@ ops.visualize_lower_quartile_for_validation(
     share_axes=True,
 )
 ```
-<div align="center"><img src="https://raw.githubusercontent.com/negocia-inc/ofrl/master/images/ops_cvar_validation.png" width="60%"/></div>
+<div align="center"><img src="https://raw.githubusercontent.com/negocia-inc/ofrl/main/images/ops_cvar_validation.png" width="60%"/></div>
 <figcaption>
 <p align="center">
   Comparison of Estimated and Ground-truth Lower Quartile of Policy Value

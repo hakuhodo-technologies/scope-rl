@@ -18,7 +18,7 @@
 # -- Project information -----------------------------------------------------
 
 project = "OFRL"
-copyright = "2022, Haruka Kiyohara, Kosuke Kawakami, Yuta Saito, negocia, Inc."
+copyright = "2022, Haruka Kiyohara, Yuta Saito, and negocia, Inc."
 author = "Haruka Kiyohara, Kosuke Kawakami, Yuta Saito"
 
 # The full version, including alpha/beta/rc tags
