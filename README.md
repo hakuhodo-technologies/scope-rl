@@ -358,7 +358,7 @@ ranking_df, metric_df = ops.select_by_lower_quartile(
     return_by_dataframe=True,
 )
 # visualize the OPS results with the ground-truth metrics
-ops.visualize_variance_for_validation(
+ops.visualize_cvar_for_validation(
     input_dict,
     alpha=0.3,
     share_axes=True,
@@ -367,7 +367,7 @@ ops.visualize_variance_for_validation(
 <div align="center"><img src="./images/ops_variance_validation.png" width="60%"/></div>
 <figcaption>
 <p align="center">
-  Comparison of Estimated and Ground-truth Lower Quartile of Policy Value
+  Comparison of Estimated and Ground-truth Variance of Policy Value
 </p>
 </figcaption>
 
