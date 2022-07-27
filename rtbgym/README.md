@@ -154,7 +154,7 @@ ax1.legend(loc='upper left')
 ax2.legend(loc='upper right')
 plt.show()
 ```
-<div align="center"><img src="https://raw.githubusercontent.com/negocia-inc/offlinegym/main/rtbgym/images/basic_interaction.png" width="60%"/></div>
+<div align="center"><img src="./images/basic_interaction.png" width="60%"/></div>
 <figcaption>
 <p align="center">
   Transition of the Remaining Budget and Cumulative Reward during a Single Episode
