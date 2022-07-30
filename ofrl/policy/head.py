@@ -17,21 +17,21 @@ from ..utils import check_array
 
 @dataclass
 class BaseHead(AlgoBase):
-    """Base class to convert greedy policy into stochastic."""
+    """Base class to convert a greedy policy into a stochastic policy."""
 
     @abstractmethod
     def stochastic_action_with_pscore(self, x: np.ndarray):
-        """Sample stochastic action with its pscore."""
+        """Sample an action stochastically with its pscore."""
         raise NotImplementedError()
 
     @abstractmethod
     def calc_action_choice_probability(self, x: np.ndarray):
-        """Calcullate action choice probabilities."""
+        """Calculate the action choice probabilities."""
         raise NotImplementedError()
 
     @abstractmethod
     def calc_pscore_given_action(self, x: np.ndarray, action: np.ndarray):
-        """Calculate pscore given action."""
+        """Calculate the pscore given action."""
         raise NotImplementedError()
 
     def predict_online(self, x: np.ndarray):
@@ -44,7 +44,7 @@ class BaseHead(AlgoBase):
         action: Union[np.ndarray, int, float],
         with_std: bool = False,
     ):
-        """Predict state action value during the online interaction."""
+        """Predict the state action value during the online interaction."""
         if isinstance(action, (int, float)):
             action = np.array([[action]])
         else:
@@ -52,11 +52,11 @@ class BaseHead(AlgoBase):
         return self.predict_value(x.reshape((1, -1)), action, with_std=with_std)[0]
 
     def sample_action_online(self, x: np.ndarray):
-        """Sample action during the online interaction."""
+        """Sample an action during the online interaction."""
         return self.sample_action(x.reshape(1, -1))[0]
 
     def stochastic_action_with_pscore_online(self, x: np.ndarray):
-        """Sample action and calculate its pscore during the online interaction."""
+        """Sample an action and calculate its pscore during the online interaction."""
         action, pscore = self.stochastic_action_with_pscore(x.reshape(1, -1))
         return action[0], pscore[0]
 
@@ -231,7 +231,7 @@ class DiscreteEpsilonGreedyHead(BaseHead):
         Name of the policy.
 
     n_actions: int (> 0)
-        Numbers of actions.
+        Number of actions.
 
     epsilon: float
         Probability of exploration. The value should be within `[0, 1]`.
@@ -266,7 +266,7 @@ class DiscreteEpsilonGreedyHead(BaseHead):
         self.random_ = check_random_state(self.random_state)
 
     def stochastic_action_with_pscore(self, x: np.ndarray):
-        """Sample stochastic action with its pscore.
+        """Sample an action stochastically based on the pscore.
 
         Parameters
         -------
@@ -377,7 +377,7 @@ class DiscreteSoftmaxHead(BaseHead):
         Name of the policy.
 
     n_actions: int (> 0)
-        Numbers of actions.
+        Number of actions.
 
     tau: float, default=1.0
         Temperature parameter. The value should be within `(-infty, infty)`.
@@ -556,7 +556,7 @@ class ContinuousGaussianHead(BaseHead):
     This class should be used when action_space is not clipped.
     Otherwise, please use ContinuousTruncatedGaussianHead instead.
 
-    Given a deterministic policy, gaussian policy samples action :math:`a \\in \\mathcal{A}` given state :math:`s` as follows.
+    Given a deterministic policy, a gaussian policy samples action :math:`a \\in \\mathcal{A}` given state :math:`s` as follows.
 
     .. math::
 
@@ -693,7 +693,7 @@ class ContinuousTruncatedGaussianHead(BaseHead):
 
     Note
     -------
-    Given a deterministic policy, truncated gaussian policy samples action :math:`a \\in \\mathcal{A}` given state :math:`s` as follows.
+    Given a deterministic policy, a truncated gaussian policy samples action :math:`a \\in \\mathcal{A}` given state :math:`s` as follows.
 
     .. math::
 

@@ -19,7 +19,7 @@ class SyntheticDataset(BaseDataset):
 
     Note
     -------
-    Generate dataset for Offline reinforcement learning (RL) and off-policy evaluation and selection (OPE/OPS).
+    Generate a logged dataset for Offline reinforcement learning (RL) and off-policy evaluation/selection (OPE/OPS).
 
     Parameters
     -------
@@ -27,7 +27,7 @@ class SyntheticDataset(BaseDataset):
         Reinforcement learning (RL) environment.
 
     behavior_policy: AlgoBase
-        RL policy that collects data.
+        RL policy that collects the logged data.
 
     step_per_episode: int, default=None (> 0)
         Number of timesteps in an episode.
@@ -199,16 +199,16 @@ class SyntheticDataset(BaseDataset):
         Note
         -------
         This function is intended to be used for the environment which has fixed length of episodes.
-        Please use `.obtain_steps` when using the environment which has varing length of episodes.
+        Please use `.obtain_steps` when using the environment which has varying length of episodes.
         Also, make sure you initialize the class with `step_per_episode` before calling this function.
 
         Parameters
         -------
         n_episodes: int, default=10000 (> 0)
-            Number of trajectories to rollout behavior policy and collect data.
+            Number of trajectories to rollout the behavior policy and collect data.
 
         obtain_info: bool, default=False
-            Whether to gain info from environment or not.
+            Whether to gain info from the environment or not.
 
         Returns
         -------
@@ -231,7 +231,7 @@ class SyntheticDataset(BaseDataset):
                 If action_type is "continuous", `None` is recorded.
 
             action_dim: int (> 0)
-                Dimensions of actions.
+                Dimensions of the actions.
                 If action_type is "discrete", `None` is recorded.
 
             action_meaning: dict
@@ -239,7 +239,7 @@ class SyntheticDataset(BaseDataset):
                 If action_type is "continuous", `None` is recorded.
 
             state_dim: int (> 0)
-                Dimensions of states.
+                Dimensions of the states.
 
             state_keys: list of str
                 Name of the state variable at each dimension.
@@ -257,7 +257,7 @@ class SyntheticDataset(BaseDataset):
                 Whether an episode ends or not.
 
             terminal: ndarray of shape (size, )
-                Whether an episode reaches pre-defined maximum steps.
+                Whether an episode reaches the pre-defined maximum steps.
 
             info: dict
                 Additional feedbacks from the environment.
@@ -370,10 +370,10 @@ class SyntheticDataset(BaseDataset):
         Parameters
         -------
         n_steps: int, default=100000 (> 0)
-            Number of steps to rollout behavior policy and collect data.
+            Number of steps to rollout the behavior policy and collect data.
 
         obtain_info: bool, default=False
-            Whether to gain info from environment or not.
+            Whether to gain info from the environment or not.
 
         Returns
         -------
@@ -396,7 +396,7 @@ class SyntheticDataset(BaseDataset):
                 If action_type is "continuous", `None` is recorded.
 
             action_dim: int (> 0)
-                Dimensions of actions.
+                Dimensions of the actions.
                 If action_type is "discrete", `None` is recorded.
 
             action_meaning: dict
@@ -404,7 +404,7 @@ class SyntheticDataset(BaseDataset):
                 If action_type is "continuous", `None` is recorded.
 
             state_dim: int (> 0)
-                Dimensions of states.
+                Dimensions of the states.
 
             state_keys: list of str
                 Name of the state variable at each dimension.
@@ -422,7 +422,7 @@ class SyntheticDataset(BaseDataset):
                 Whether an episode ends or not.
 
             terminal: ndarray of shape (size, )
-                Whether an episode reaches pre-defined maximum steps.
+                Whether an episode reaches the pre-defined maximum steps.
 
             info: dict
                 Additional feedbacks from the environment.

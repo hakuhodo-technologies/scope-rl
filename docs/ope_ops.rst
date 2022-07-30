@@ -20,7 +20,7 @@ In OPE/OPS, we are given a logged dataset :math:`\mathcal{D}` consisting of :mat
 
     \tau := \{ (s_t, a_t, s_{t+1}, r_t) \}_{t=0}^{T} \sim p(s_0) \prod_{t=0}^{T} \pi_0(a_t | s_t) \mathcal{T}(s_{t+1} | s_t, a_t) P_r (r_t | s_t, a_t)
 
-Our goal is to leverage this logged dataset to accurately evaluate the performance of evaluation policies (OPE) and to select the best candidate policies based on OPE result (OPS).
+Our goal is to leverage this the logged dataset to accurately evaluate the performance of evaluation policies (OPE) and to select the best candidate policies based on OPE result (OPS).
 
 Policy Value Estimation
 ----------

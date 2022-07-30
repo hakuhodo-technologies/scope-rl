@@ -18,18 +18,18 @@ from ..utils import (
 
 @dataclass
 class ContinuousDirectMethod(BaseOffPolicyEstimator):
-    """Direct Method (DM) for continuous OPE (designed for deterministic policies).
+    """Direct Method (DM) for continuous-action OPE (designed for deterministic policies).
 
     Note
     -------
-    DM estimates policy value using initial state value given by Fitted Q Evaluation (FQE) as follows.
+    DM estimates the policy value using the initial state value given by Fitted Q Evaluation (FQE) as follows.
 
     .. math::
 
         \\hat{J}_{\\mathrm{DM}} (\\pi; \\mathcal{D}) := \\mathbb{E}_n [\\mathbb{E}_{a_0 \\sim \\pi(a_0 \\mid s_0)} [\\hat{Q}(x_0, a_0)] ],
 
-    where :math:`\\mathcal{D}=\\{\\{(s_t, a_t, r_t)\\}_{t=0}^{T-1}\\}_{i=1}^n` is logged dataset with :math:`n` trajectories of data.
-    :math:`T` indicates step per episode. :math:`\\hat{Q}(x_t, a_t)` is estimated Q value given state-action pair.
+    where :math:`\\mathcal{D}=\\{\\{(s_t, a_t, r_t)\\}_{t=0}^{T-1}\\}_{i=1}^n` is the logged dataset with :math:`n` trajectories of data.
+    :math:`T` indicates step per episode. :math:`\\hat{Q}(x_t, a_t)` is an estimated Q value given a state-action pair.
 
     Parameters
     -------
@@ -66,7 +66,7 @@ class ContinuousDirectMethod(BaseOffPolicyEstimator):
         initial_state_value_prediction: np.ndarray,
         **kwargs,
     ) -> np.ndarray:
-        """Estimate trajectory-wise policy value.
+        """Estimate the trajectory-wise policy value.
 
         Parameters
         -------
@@ -76,7 +76,7 @@ class ContinuousDirectMethod(BaseOffPolicyEstimator):
         Return
         -------
         estimated_trajectory_wise_policy_value: NDArray, shape (n_episodes, )
-            Estimated policy value for each trajectory.
+            Policy value estimated for each trajectory.
             (Equivalent to initial_state_value_prediction.)
 
         """
@@ -87,7 +87,7 @@ class ContinuousDirectMethod(BaseOffPolicyEstimator):
         initial_state_value_prediction: np.ndarray,
         **kwargs,
     ) -> float:
-        """Estimate policy value of evaluation policy.
+        """Estimate the policy value of the evaluation policy.
 
         Parameters
         -------
@@ -119,7 +119,7 @@ class ContinuousDirectMethod(BaseOffPolicyEstimator):
         random_state: Optional[int] = None,
         **kwargs,
     ) -> Dict[str, float]:
-        """Estimate confidence interval of policy value by nonparametric bootstrap procedure.
+        """Estimate the confidence interval of the policy value by nonparametric bootstrap.
 
         Parameters
         -------
@@ -127,7 +127,7 @@ class ContinuousDirectMethod(BaseOffPolicyEstimator):
             Estimated initial state value.
 
         alpha: float, default=0.05
-            Significant level. The value should be within `[0, 1)`
+            Significance level. The value should be within `[0, 1)`
 
         n_bootstrap_samples: int, default=10000 (> 0)
             Number of resampling performed in the bootstrap procedure.
@@ -164,18 +164,18 @@ class ContinuousDirectMethod(BaseOffPolicyEstimator):
 
 @dataclass
 class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
-    """Trajectory-wise Importance Sampling (TIS) for continuous OPE (designed for deterministic policies).
+    """Trajectory-wise Importance Sampling (TIS) for continuous-action OPE (designed for deterministic policies).
 
     Note
     -------
-    TIS estimates policy value using trajectory-wise importance weight as follows.
+    TIS estimates the policy value via trajectory-wise importance weight as follows.
 
     .. math::
 
         \\hat{J}_{\\mathrm{TIS}} (\\pi; \\mathcal{D}) := \\mathbb{E}_{n} [\\sum_{t=0}^{T-1} \\gamma^t w_{0:T-1} \\delta(\\pi, a_{0:T-1}) r_t],
 
     where :math:`w_{0:T-1} := \\prod_{t=0}^{T-1} \\frac{1}{\\pi_0(a_t \\mid s_t)}` is the inverse propensity weight
-    and :math:`\\delta(\\pi, a_{0:T-1}) = \\prod_{t=0}^{T-1} K(\\pi(s_t), a_t)` indicates similarity between action in dataset and that of evaluation policy.
+    and :math:`\\delta(\\pi, a_{0:T-1}) = \\prod_{t=0}^{T-1} K(\\pi(s_t), a_t)` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy.
     Note that :math:`K(\\cdot)` is a kernel function.
 
     Parameters
@@ -225,7 +225,7 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         action_max: Optional[np.ndarray] = None,
         **kwargs,
     ) -> np.ndarray:
-        """Estimate trajectory-wise policy value.
+        """Estimate the trajectory-wise policy value.
 
         Parameters
         -------
@@ -233,17 +233,17 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
             Number of timesteps in an episode.
 
         action: array-like of shape (n_episodes * step_per_episode, action_dim)
-            Action chosen by behavior policy.
+            Action chosen by the behavior policy.
 
         reward: array-like of shape (n_episodes * step_per_episode, )
             Reward observation.
 
         behavior_policy_trajectory_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
-            Trajectory-wise action choice probability of behavior policy,
+            Trajectory-wise action choice probability of the behavior policy,
             i.e., :math:`\\prod_{t=0}^T \\pi_0(a_t \\mid s_t)`
 
         evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
-            Action chosen by evaluation policy.
+            Action chosen by the evaluation policy.
 
         gamma: float, default=1.0
             Discount factor. The value should be within `(0, 1]`.
@@ -253,7 +253,7 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
             If `None`, sigma is set to 1 for all dimensions.
 
         use_truncated_kernel: bool, default=False
-            Whether to use Truncated Gaussian kernel or not.
+            Whether to use the Truncated Gaussian kernel or not.
             If False, (normal) Gaussian kernel is used.
 
         action_min: array-like of shape (action_dim, ), default=None
@@ -267,7 +267,7 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         Return
         -------
         estimated_trajectory_wise_policy_value: ndarray of shape (n_episodes, )
-            Estimated policy value for each trajectory.
+            Policy value estimated for each trajectory.
 
         """
         action_dim = action.shape[1]
@@ -326,7 +326,7 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         action_max: Optional[np.ndarray] = None,
         **kwargs,
     ) -> float:
-        """Estimate policy value of evaluation policy.
+        """Estimate the policy value of the evaluation policy.
 
         Parameters
         -------
@@ -334,17 +334,17 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
             Number of timesteps in an episode.
 
         action: array-like of shape (n_episodes * step_per_episode, action_dim)
-            Action chosen by behavior policy.
+            Action chosen by the behavior policy.
 
         reward: array-like of shape (n_episodes * step_per_episode, )
             Reward observation.
 
         behavior_policy_trajectory_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
-            Trajectory-wise action choice probability of behavior policy,
+            Trajectory-wise action choice probability of the behavior policy,
             i.e., :math:`\\prod_{t=0}^T \\pi_0(a_t \\mid s_t)`
 
         evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
-            Action chosen by evaluation policy.
+            Action chosen by the evaluation policy.
 
         gamma: float, default=1.0
             Discount factor. The value should be within `(0, 1]`.
@@ -354,7 +354,7 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
             If `None`, sigma is set to 1 for all dimensions.
 
         use_truncated_kernel: bool, default=False
-            Whether to use Truncated Gaussian kernel or not.
+            Whether to use the Truncated Gaussian kernel or not.
             If False, (normal) Gaussian kernel is used.
 
         action_min: array-like of shape (action_dim, ), default=None
@@ -463,7 +463,7 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         random_state: int = 12345,
         **kwargs,
     ) -> Dict[str, float]:
-        """Estimate confidence interval of policy value by nonparametric bootstrap procedure.
+        """Estimate the confidence interval of the policy value by nonparametric bootstrap.
 
         Parameters
         -------
@@ -471,17 +471,17 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
             Number of timesteps in an episode.
 
         action: array-like of shape (n_episodes * step_per_episode, action_dim)
-            Action chosen by behavior policy.
+            Action chosen by the behavior policy.
 
         reward: array-like of shape (n_episodes * step_per_episode, )
             Reward observation.
 
         behavior_policy_trajectory_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
-            Trajectory-wise action choice probability of behavior policy,
+            Trajectory-wise action choice probability of the behavior policy,
             i.e., :math:`\\prod_{t=0}^T \\pi_0(a_t \\mid s_t)`
 
         evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
-            Action chosen by evaluation policy.
+            Action chosen by the evaluation policy.
 
         gamma: float, default=1.0
             Discount factor. The value should be within `(0, 1]`.
@@ -491,7 +491,7 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
             If `None`, sigma is set to 1 for all dimensions.
 
         use_truncated_kernel: bool, default=False
-            Whether to use Truncated Gaussian kernel or not.
+            Whether to use the Truncated Gaussian kernel or not.
             If False, (normal) Gaussian kernel is used.
 
         action_min: array-like of shape (action_dim, ), default=None
@@ -503,7 +503,7 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
             When `use_truncated_kernel == True`, action_max must be given.
 
         alpha: float, default=0.05
-            Significant level. The value should be within `[0, 1)`.
+            Significance level. The value should be within `[0, 1)`.
 
         ci: {"bootstrap", "hoeffding", "bernstein", "ttest"}, default="bootstrap"
             Estimation method for confidence interval.
@@ -608,18 +608,18 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 
 @dataclass
 class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
-    """Per-Decision Importance Sampling (PDIS) for continuous OPE (designed for deterministic policies).
+    """Per-Decision Importance Sampling (PDIS) for continuous-action OPE (designed for deterministic policies).
 
     Note
     -------
-    PDIS estimates policy value using step-wise importance weight as follows.
+    PDIS estimates the policy value via step-wise importance weighting as follows.
 
     .. math::
 
         \\hat{J}_{\\mathrm{PDIS}} (\\pi; \\mathcal{D}) := \\mathbb{E}_{n} [\\sum_{t=0}^{T-1} \\gamma^t w_{0:t} \\delta(\\pi, a_{0:t}) r_t],
 
     where :math:`w_{0:t} := \\prod_{t'=0}^t \\frac{1}{\\pi_0(a_{t'} \\mid s_{t'})}`
-    and :math:`\\delta(\\pi, a_{0:t}) = \\prod_{t'=0}^t K(\\pi(s_{t'}), a_{t'})` indicates similarity between action in dataset and that of evaluation policy.
+    and :math:`\\delta(\\pi, a_{0:t}) = \\prod_{t'=0}^t K(\\pi(s_{t'}), a_{t'})` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy.
     Note that :math:`K(\\cdot)` is a kernel function.
 
     Parameters
@@ -669,7 +669,7 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
         action_max: Optional[np.ndarray] = None,
         **kwargs,
     ) -> np.ndarray:
-        """Estimate trajectory-wise policy value.
+        """Estimate the trajectory-wise policy value.
 
         Parameters
         -------
@@ -677,17 +677,17 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
             Number of timesteps in an episode.
 
         action: array-like of shape (n_episodes * step_per_episode, action_dim)
-            Action chosen by behavior policy.
+            Action chosen by the behavior policy.
 
         reward: array-like of shape (n_episodes * step_per_episode, )
             Reward observation.
 
         behavior_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
-            Step-wise action choice probability of behavior policy,
+            Step-wise action choice probability of the behavior policy,
             i.e., :math:`\\prod_{t'=0}^t \\pi_0(a_{t'} \\mid s_{t'})`
 
         evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
-            Action chosen by evaluation policy.
+            Action chosen by the evaluation policy.
 
         gamma: float, default=1.0
             Discount factor. The value should be within `(0, 1]`.
@@ -697,7 +697,7 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
             If `None`, sigma is set to 1 for all dimensions.
 
         use_truncated_kernel: bool, default=False
-            Whether to use Truncated Gaussian kernel or not.
+            Whether to use the Truncated Gaussian kernel or not.
             If False, (normal) Gaussian kernel is used.
 
         action_min: array-like of shape (action_dim, ), default=None
@@ -711,7 +711,7 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
         Return
         -------
         estimated_trajectory_wise_policy_value: ndarray of shape (n_episodes, )
-            Estimated policy value for each trajectory.
+            Policy value estimated for each trajectory.
 
         """
         action_dim = action.shape[1]
@@ -763,7 +763,7 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
         action_max: Optional[np.ndarray] = None,
         **kwargs,
     ) -> float:
-        """Estimate policy value of evaluation policy.
+        """Estimate the policy value of the evaluation policy.
 
         Parameters
         -------
@@ -771,17 +771,17 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
             Number of timesteps in an episode.
 
         action: array-like of shape (n_episodes * step_per_episode, action_dim)
-            Action chosen by behavior policy.
+            Action chosen by the behavior policy.
 
         reward: array-like of shape (n_episodes * step_per_episode, )
             Reward observation.
 
         behavior_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
-            Step-wise action choice probability of behavior policy,
+            Step-wise action choice probability of the behavior policy,
             i.e., :math:`\\prod_{t'=0}^t \\pi_0(a_{t'} \\mid s_{t'})`
 
         evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
-            Action chosen by evaluation policy.
+            Action chosen by the evaluation policy.
 
         gamma: float, default=1.0
             Discount factor. The value should be within `(0, 1]`.
@@ -791,7 +791,7 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
             If `None`, sigma is set to 1 for all dimensions.
 
         use_truncated_kernel: bool, default=False
-            Whether to use Truncated Gaussian kernel or not.
+            Whether to use the Truncated Gaussian kernel or not.
             If False, (normal) Gaussian kernel is used.
 
         action_min: array-like of shape (action_dim, ), default=None
@@ -900,7 +900,7 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
         random_state: int = 12345,
         **kwargs,
     ) -> Dict[str, float]:
-        """Estimate confidence interval of policy value by nonparametric bootstrap procedure.
+        """Estimate the confidence interval of the policy value by nonparametric bootstrap.
 
         Parameters
         -------
@@ -908,17 +908,17 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
             Number of timesteps in an episode.
 
         action: array-like of shape (n_episodes * step_per_episode, action_dim)
-            Action chosen by behavior policy.
+            Action chosen by the behavior policy.
 
         reward: array-like of shape (n_episodes * step_per_episode, )
             Reward observation.
 
         behavior_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
-            Step-wise action choice probability of behavior policy,
+            Step-wise action choice probability of the behavior policy,
             i.e., :math:`\\prod_{t'=0}^t \\pi_0(a_{t'} \\mid s_{t'})`
 
         evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
-            Action chosen by evaluation policy.
+            Action chosen by the evaluation policy.
 
         gamma: float, default=1.0
             Discount factor. The value should be within `(0, 1]`.
@@ -928,7 +928,7 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
             If `None`, sigma is set to 1 for all dimensions.
 
         use_truncated_kernel: bool, default=False
-            Whether to use Truncated Gaussian kernel or not.
+            Whether to use the Truncated Gaussian kernel or not.
             If False, (normal) Gaussian kernel is used.
 
         action_min: array-like of shape (action_dim, ), default=None
@@ -940,7 +940,7 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
             When `use_truncated_kernel == True`, action_max must be given.
 
         alpha: float, default=0.05
-            Significant level. The value should be within `[0, 1)`.
+            Significance level. The value should be within `[0, 1)`.
 
         ci: {"bootstrap", "hoeffding", "bernstein", "ttest"}, default="bootstrap"
             Estimation method for confidence interval.
@@ -1045,11 +1045,11 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
 
 @dataclass
 class ContinuousDoublyRobust(BaseOffPolicyEstimator):
-    """Doubly Robust (DR) for continuous OPE (designed for deterministic policies).
+    """Doubly Robust (DR) for continuous-action OPE (designed for deterministic policies).
 
     Note
     -------
-    DR estimates policy value using step-wise importance weight and :math:`\\hat{Q}` as follows.
+    DR estimates the policy value via step-wise importance weighting and :math:`\\hat{Q}` as follows.
 
     .. math::
 
@@ -1058,7 +1058,7 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
             + w_{0:t-1} \\delta(\\pi, a_{0:t-1}) \\mathbb{E}_{a \\sim \\pi(a \\mid s_t)}[\\hat{Q}(s_t, a)])],
 
     where :math:`w_{0:t} := \\prod_{t'=0}^t \\frac{1}{\\pi_0(a_{t'} \\mid s_{t'})}`
-    and :math:`\\delta(\\pi, a_{0:t}) = \\prod_{t'=1}^t K(\\pi(s_{t'}), a_{t'})` indicates similarity between action in dataset and that of evaluation policy.
+    and :math:`\\delta(\\pi, a_{0:t}) = \\prod_{t'=1}^t K(\\pi(s_{t'}), a_{t'})` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy.
     Note that :math:`K(\\cdot)` is a kernel function.
 
     Parameters
@@ -1115,7 +1115,7 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
         action_max: Optional[np.ndarray] = None,
         **kwargs,
     ) -> np.ndarray:
-        """Estimate trajectory-wise policy value.
+        """Estimate the trajectory-wise policy value.
 
         Parameters
         -------
@@ -1123,20 +1123,20 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
             Number of timesteps in an episode.
 
         action: array-like of shape (n_episodes * step_per_episode, action_dim)
-            Action chosen by behavior policy.
+            Action chosen by the behavior policy.
 
         reward: array-like of shape (n_episodes * step_per_episode, )
             Reward observation.
 
         behavior_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
-            Step-wise action choice probability of behavior policy,
+            Step-wise action choice probability of the behavior policy,
             i.e., :math:`\\prod_{t'=0}^t \\pi_0(a_{t'} \\mid s_{t'})`
 
         evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
-            Action chosen by evaluation policy.
+            Action chosen by the evaluation policy.
 
         state_action_value_prediction: array-like of shape (n_episodes * step_per_episode, )
-            :math:`\\hat{Q}` for the action chosen by evaluation policy,
+            :math:`\\hat{Q}` for the action chosen by the evaluation policy,
             i.e., :math:`\\hat{Q}(s_t, \\pi(a \\mid s_t))`.
 
         gamma: float, default=1.0
@@ -1147,7 +1147,7 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
             If `None`, sigma is set to 1 for all dimensions.
 
         use_truncated_kernel: bool, default=False
-            Whether to use Truncated Gaussian kernel or not.
+            Whether to use the Truncated Gaussian kernel or not.
             If False, (normal) Gaussian kernel is used.
 
         action_min: array-like of shape (action_dim, ), default=None
@@ -1161,7 +1161,7 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
         Return
         -------
         estimated_trajectory_wise_policy_value: ndarray of shape (n_episodes, )
-            Estimated policy value for each trajectory.
+            Policy value estimated for each trajectory.
 
         """
         action_dim = action.shape[1]
@@ -1227,7 +1227,7 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
         action_max: Optional[np.ndarray] = None,
         **kwargs,
     ) -> float:
-        """Estimate policy value of evaluation policy.
+        """Estimate the policy value of the evaluation policy.
 
         Parameters
         -------
@@ -1235,20 +1235,20 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
             Number of timesteps in an episode.
 
         action: array-like of shape (n_episodes * step_per_episode, action_dim)
-            Action chosen by behavior policy.
+            Action chosen by the behavior policy.
 
         reward: array-like of shape (n_episodes * step_per_episode, )
             Reward observation.
 
         behavior_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
-            Step-wise action choice probability of behavior policy,
+            Step-wise action choice probability of the behavior policy,
             i.e., :math:`\\prod_{t'=0}^t \\pi_0(a_{t'} \\mid s_{t'})`
 
         evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
-            Action chosen by evaluation policy.
+            Action chosen by the evaluation policy.
 
         state_action_value_prediction: array-like of shape (n_episodes * step_per_episode, )
-            :math:`\\hat{Q}` for the action chosen by evaluation policy,
+            :math:`\\hat{Q}` for the action chosen by the evaluation policy,
             i.e., :math:`\\hat{Q}(s_t, \\pi(a \\mid s_t))`.
 
         gamma: float, default=1.0
@@ -1259,7 +1259,7 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
             If `None`, sigma is set to 1 for all dimensions.
 
         use_truncated_kernel: bool, default=False
-            Whether to use Truncated Gaussian kernel or not.
+            Whether to use the Truncated Gaussian kernel or not.
             If `False`, (normal) Gaussian kernel is used.
 
         action_min: array-like of shape (action_dim, ), default=None
@@ -1370,7 +1370,7 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
         random_state: int = 12345,
         **kwargs,
     ) -> Dict[str, float]:
-        """Estimate confidence interval of policy value by nonparametric bootstrap procedure.
+        """Estimate the confidence interval of the policy value by nonparametric bootstrap.
 
         Parameters
         -------
@@ -1378,20 +1378,20 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
             Number of timesteps in an episode.
 
         action: array-like of shape (n_episodes * step_per_episode, action_dim)
-            Action chosen by behavior policy.
+            Action chosen by the behavior policy.
 
         reward: array-like of shape (n_episodes * step_per_episode, )
             Reward observation.
 
         behavior_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
-            Step-wise action choice probability of behavior policy,
+            Step-wise action choice probability of the behavior policy,
             i.e., :math:`\\prod_{t'=0}^t \\pi_0(a_{t'} \\mid s_{t'})`
 
         evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
-            Action chosen by evaluation policy.
+            Action chosen by the evaluation policy.
 
         state_action_value_prediction: array-like of shape (n_episodes * step_per_episode, )
-            :math:`\\hat{Q}` for the action chosen by evaluation policy,
+            :math:`\\hat{Q}` for the action chosen by the evaluation policy,
             i.e., :math:`\\hat{Q}(s_t, \\pi(a \\mid s_t))`.
 
         ggamma: float, default=1.0
@@ -1402,7 +1402,7 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
             If `None`, sigma is set to 1 for all dimensions.
 
         use_truncated_kernel: bool, default=False
-            Whether to use Truncated Gaussian kernel or not.
+            Whether to use the Truncated Gaussian kernel or not.
             If False, (normal) Gaussian kernel is used.
 
         action_min: array-like of shape (action_dim, ), default=None
@@ -1414,7 +1414,7 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
             When `use_truncated_kernel == True`, action_max must be given.
 
         alpha: float, default=0.05
-            Significant level. The value should be within `[0, 1)`.
+            Significance level. The value should be within `[0, 1)`.
 
         ci: {"bootstrap", "hoeffding", "bernstein", "ttest"}, default="bootstrap"
             Estimation method for confidence interval.
@@ -1522,11 +1522,11 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
 class ContinuousSelfNormalizedTrajectoryWiseImportanceSampling(
     ContinuousTrajectoryWiseImportanceSampling
 ):
-    """Self-Normalized Trajectory-wise Importance Sampling (SNTIS) for continuous OPE (designed for deterministic policies).
+    """Self-Normalized Trajectory-wise Importance Sampling (SNTIS) for continuous-action OPE (designed for deterministic policies).
 
     Note
     -------
-    SNTIS estimates policy value using self-normalized trajectory-wise importance weight as follows.
+    SNTIS estimates the policy value via self-normalized trajectory-wise importance weight as follows.
 
     .. math::
 
@@ -1534,7 +1534,7 @@ class ContinuousSelfNormalizedTrajectoryWiseImportanceSampling(
         := \\mathbb{E}_{n} [\\sum_{t=0}^{T-1} \\gamma^t \\frac{w_{0:T-1} \\delta(\\pi, a_{0:T-1})}{\\mathbb{E}_n [w_{1:T-1} \\delta(\\pi, a_{0:T-1})]} r_t],
 
     where :math:`w_{0:T-1} := \\prod_{t=0}^{T-1} \\frac{1}{\\pi_0(a_t \\mid s_t)}`
-    and :math:`\\delta(\\pi, a_{0:T}) = \\prod_{t=0}^{T-1} K(\\pi(s_t), a_t)` indicates similarity between action in dataset and that of evaluation policy.
+    and :math:`\\delta(\\pi, a_{0:T}) = \\prod_{t=0}^{T-1} K(\\pi(s_t), a_t)` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy.
     Note that :math:`K(\\cdot)` is a kernel function.
 
     Parameters
@@ -1590,7 +1590,7 @@ class ContinuousSelfNormalizedTrajectoryWiseImportanceSampling(
         action_max: Optional[np.ndarray] = None,
         **kwargs,
     ) -> np.ndarray:
-        """Estimate trajectory-wise policy value.
+        """Estimate the trajectory-wise policy value.
 
         Parameters
         -------
@@ -1598,17 +1598,17 @@ class ContinuousSelfNormalizedTrajectoryWiseImportanceSampling(
             Number of timesteps in an episode.
 
         action: array-like of shape (n_episodes * step_per_episode, action_dim)
-            Action chosen by behavior policy.
+            Action chosen by the behavior policy.
 
         reward: array-like of shape (n_episodes * step_per_episode, )
             Reward observation.
 
         behavior_policy_trajectory_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
-            Trajectory-wise action choice probability of behavior policy,
+            Trajectory-wise action choice probability of the behavior policy,
             i.e., :math:`\\prod_{t=0}^T \\pi_0(a_t \\mid s_t)`
 
         evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
-            Action chosen by evaluation policy.
+            Action chosen by the evaluation policy.
 
         gamma: float, default=1.0
             Discount factor. The value should be within `(0, 1]`.
@@ -1618,7 +1618,7 @@ class ContinuousSelfNormalizedTrajectoryWiseImportanceSampling(
             If `None`, sigma is set to 1 for all dimensions.
 
         use_truncated_kernel: bool, default=False
-            Whether to use Truncated Gaussian kernel or not.
+            Whether to use the Truncated Gaussian kernel or not.
             If False, (normal) Gaussian kernel is used.
 
         action_min: array-like of shape (action_dim, ), default=None
@@ -1632,7 +1632,7 @@ class ContinuousSelfNormalizedTrajectoryWiseImportanceSampling(
         Return
         -------
         estimated_trajectory_wise_policy_value: ndarray of shape (n_episodes, )
-            Estimated policy value for each trajectory.
+            Policy value estimated for each trajectory.
 
         """
         action_dim = action.shape[1]
@@ -1684,11 +1684,11 @@ class ContinuousSelfNormalizedTrajectoryWiseImportanceSampling(
 class ContinuousSelfNormalizedPerDecisionImportanceSampling(
     ContinuousPerDecisionImportanceSampling
 ):
-    """Self-Normalized Per-Decision Importance Sampling (SNPDIS) for continuous OPE (assume deterministic policies).
+    """Self-Normalized Per-Decision Importance Sampling (SNPDIS) for continuous-action OPE (assume deterministic policies).
 
     Note
     -------
-    SNPDIS estimates policy value using self-normalized step-wise importance weight as follows.
+    SNPDIS estimates the policy value via self-normalized step-wise importance weighting as follows.
 
     .. math::
 
@@ -1696,7 +1696,7 @@ class ContinuousSelfNormalizedPerDecisionImportanceSampling(
         := \\mathbb{E}_{n} [\\sum_{t=0}^{T-1} \\gamma^t \\frac{w_{1:t} \\delta(\\pi, a_{0:t})}{\\mathbb{E}_n [w_{1:t} \\delta(\\pi, a_{0:t})]} r_t],
 
     where :math:`w_{0:t} := \\prod_{t'=1}^t \\frac{1}{\\pi_0(a_{t'} \\mid s_{t'})}`
-    and :math:`\\delta(\\pi, a_{0:t}) = \\prod_{t'=1}^t K(\\pi(s_{t'}), a_{t'})` indicates similarity between action in dataset and that of evaluation policy.
+    and :math:`\\delta(\\pi, a_{0:t}) = \\prod_{t'=1}^t K(\\pi(s_{t'}), a_{t'})` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy.
     Note that :math:`K(\\cdot)` is a kernel function.
 
     Parameters
@@ -1752,7 +1752,7 @@ class ContinuousSelfNormalizedPerDecisionImportanceSampling(
         action_max: Optional[np.ndarray] = None,
         **kwargs,
     ) -> np.ndarray:
-        """Estimate trajectory-wise policy value.
+        """Estimate the trajectory-wise policy value.
 
         Parameters
         -------
@@ -1760,17 +1760,17 @@ class ContinuousSelfNormalizedPerDecisionImportanceSampling(
             Number of timesteps in an episode.
 
         action: array-like of shape (n_episodes * step_per_episode, action_dim)
-            Action chosen by behavior policy.
+            Action chosen by the behavior policy.
 
         reward: array-like of shape (n_episodes * step_per_episode, )
             Reward observation.
 
         behavior_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
-            Step-wise action choice probability of behavior policy,
+            Step-wise action choice probability of the behavior policy,
             i.e., :math:`\\prod_{t'=0}^t \\pi_0(a_{t'} \\mid s_{t'})`
 
         evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
-            Action chosen by evaluation policy.
+            Action chosen by the evaluation policy.
 
         gamma: float, default=1.0
             Discount factor. The value should be within `(0, 1]`.
@@ -1780,7 +1780,7 @@ class ContinuousSelfNormalizedPerDecisionImportanceSampling(
             If `None`, sigma is set to 1 for all dimensions.
 
         use_truncated_kernel: bool, default=False
-            Whether to use Truncated Gaussian kernel or not.
+            Whether to use the Truncated Gaussian kernel or not.
             If False, (normal) Gaussian kernel is used.
 
         action_min: array-like of shape (action_dim, ), default=None
@@ -1794,7 +1794,7 @@ class ContinuousSelfNormalizedPerDecisionImportanceSampling(
         Return
         -------
         estimated_trajectory_wise_policy_value: ndarray of shape (n_episodes, )
-            Estimated policy value for each trajectory.
+            Policy value estimated for each trajectory.
 
         """
         action_dim = action.shape[1]
@@ -1840,11 +1840,11 @@ class ContinuousSelfNormalizedPerDecisionImportanceSampling(
 
 @dataclass
 class ContinuousSelfNormalizedDoublyRobust(ContinuousDoublyRobust):
-    """Self-Normalized Doubly Robust (SNDR) for continuous OPE (assume deterministic policies).
+    """Self-Normalized Doubly Robust (SNDR) for continuous-action OPE (assume deterministic policies).
 
     Note
     -------
-    SNDR estimates policy value using self-normalized step-wise importance weight and :math:`\\hat{Q}` as follows.
+    SNDR estimates the policy value via self-normalized step-wise importance weighting and :math:`\\hat{Q}` as follows.
 
     .. math::
 
@@ -1853,7 +1853,7 @@ class ContinuousSelfNormalizedDoublyRobust(ContinuousDoublyRobust):
             + \\frac{w_{0:t-1} \\delta(\\pi, a_{0:t-1})}{\\mathbb{E}_n[w_{0:t-1} \\delta(\\pi, a_{0:t-1})]} \\mathbb{E}_{a \\sim \\pi(a \\mid s_t)}[\\hat{Q}(s_t, a)])],
 
     where :math:`w_{0:t} := \\prod_{t'=0}^t \\frac{1}{\\pi_0(a_{t'} \\mid s_{t'})}`
-    and :math:`\\delta(\\pi, a_{0:t}) = \\prod_{t'=1}^t K(\\pi(s_{t'}), a_{t'})` indicates similarity between action in dataset and that of evaluation policy.
+    and :math:`\\delta(\\pi, a_{0:t}) = \\prod_{t'=1}^t K(\\pi(s_{t'}), a_{t'})` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy.
     Note that :math:`K(\\cdot)` is a kernel function.
 
     Parameters
@@ -1912,7 +1912,7 @@ class ContinuousSelfNormalizedDoublyRobust(ContinuousDoublyRobust):
         action_max: Optional[np.ndarray] = None,
         **kwargs,
     ) -> np.ndarray:
-        """Estimate trajectory-wise policy value.
+        """Estimate the trajectory-wise policy value.
 
         Parameters
         -------
@@ -1920,20 +1920,20 @@ class ContinuousSelfNormalizedDoublyRobust(ContinuousDoublyRobust):
             Number of timesteps in an episode.
 
         action: array-like of shape (n_episodes * step_per_episode, action_dim)
-            Action chosen by behavior policy.
+            Action chosen by the behavior policy.
 
         reward: array-like of shape (n_episodes * step_per_episode, )
             Reward observation.
 
         behavior_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
-            Step-wise action choice probability of behavior policy,
+            Step-wise action choice probability of the behavior policy,
             i.e., :math:`\\prod_{t'=0}^t \\pi_0(a_{t'} \\mid s_{t'})`
 
         evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
-            Action chosen by evaluation policy.
+            Action chosen by the evaluation policy.
 
         state_action_value_prediction: array-like of shape (n_episodes * step_per_episode, )
-            :math:`\\hat{Q}` for the action chosen by evaluation policy,
+            :math:`\\hat{Q}` for the action chosen by the evaluation policy,
             i.e., :math:`\\hat{Q}(s_t, \\pi(a \\mid s_t))`.
 
         gamma: float, default=1.0
@@ -1944,7 +1944,7 @@ class ContinuousSelfNormalizedDoublyRobust(ContinuousDoublyRobust):
             If `None`, sigma is set to 1 for all dimensions.
 
         use_truncated_kernel: bool, default=False
-            Whether to use Truncated Gaussian kernel or not.
+            Whether to use the Truncated Gaussian kernel or not.
             If False, (normal) Gaussian kernel is used.
 
         action_min: array-like of shape (action_dim, ), default=None
@@ -1958,7 +1958,7 @@ class ContinuousSelfNormalizedDoublyRobust(ContinuousDoublyRobust):
         Return
         -------
         estimated_trajectory_wise_policy_value: ndarray of shape (n_episodes, )
-            Estimated policy value for each trajectory.
+            Policy value estimated for each trajectory.
 
         """
         action_dim = action.shape[1]

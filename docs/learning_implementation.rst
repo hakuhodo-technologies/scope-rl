@@ -2,7 +2,7 @@
 Supported Implementation
 ==========
 
-Our implementation aims to streamline the data collection, (offline) policy learning, and off-policy evaluation and selection (OPE/OPS) procedure.
+Our implementation aims to streamline the data collection, (offline) policy learning, and off-policy evaluation/selection (OPE/OPS) procedure.
 We rely on `d3rlpy's implementation <>`_ of the learning algorithms and provide some useful tools to streamline the above offline RL procedure.
 
 Please also refer to `quickstart <>`_ for the example workflows.

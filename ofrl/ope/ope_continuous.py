@@ -26,11 +26,11 @@ from ..utils import (
 
 @dataclass
 class ContinuousOffPolicyEvaluation:
-    """Class to conduct OPE by multiple estimators simultaneously for continuous action space.
+    """Class to perform a continuous-action OPE by multiple estimators simultaneously.
 
     Note
     -----------
-    OPE estimates the expected policy performance called policy value.
+    OPE estimates the expected policy performance called the policy value.
 
     .. math::
 
@@ -50,7 +50,7 @@ class ContinuousOffPolicyEvaluation:
         If `None`, sigma is set to 1 for all dimensions.
 
     use_truncated_kernel: bool, default=False
-        Whether to use Truncated Gaussian kernel or not.
+        Whether to use the Truncated Gaussian kernel or not.
         If False, (normal) Gaussian kernel is used.
 
     action_min: array-like of shape (action_dim, ), default=None
@@ -318,7 +318,7 @@ class ContinuousOffPolicyEvaluation:
         n_bootstrap_samples: int = 100,
         random_state: Optional[int] = None,
     ) -> Dict[str, Dict[str, float]]:
-        """Estimate confidence intervals of policy value using nonparametric bootstrap procedure.
+        """Estimate the confidence intervals of the policy value by nonparametric bootstrap.
 
         Parameters
         -------
@@ -338,7 +338,7 @@ class ContinuousOffPolicyEvaluation:
             ]
 
         alpha: float, default=0.05 (0, 1)
-            Significant level.
+            Significance level.
 
         ci: str, default="bootstrap"
             Estimation method for confidence intervals.
@@ -352,7 +352,7 @@ class ContinuousOffPolicyEvaluation:
         Return
         -------
         policy_value_interval_dict: dict
-            Dictionary containing the confidence intervals estimated using nonparametric bootstrap procedure.
+            Dictionary containing the confidence intervals estimated by nonparametric bootstrap.
             key: [evaluation_policy_name][OPE_estimator_name]
 
         """
@@ -418,7 +418,7 @@ class ContinuousOffPolicyEvaluation:
             ]
 
         alpha: float, default=0.05
-            Significant level. The value should be within `[0, 1)`.
+            Significance level. The value should be within `[0, 1)`.
 
         n_bootstrap_samples: int, default=10000 (> 0)
             Number of resampling performed in the bootstrap procedure.
@@ -436,7 +436,7 @@ class ContinuousOffPolicyEvaluation:
             key: [evaluation_policy_name][OPE_estimator_name]
 
         policy_value_interval_dict: dict
-            Dictionary containing the confidence intervals estimated using nonparametric bootstrap procedure.
+            Dictionary containing the confidence intervals estimated by nonparametric bootstrap.
             key: [evaluation_policy_name][OPE_estimator_name]
 
         """
@@ -512,7 +512,7 @@ class ContinuousOffPolicyEvaluation:
             ]
 
         alpha: float, default=0.05
-            Significant level. The value should be within `[0, 1)`.
+            Significance level. The value should be within `[0, 1)`.
 
         ci: {"bootstrap", "hoeffding", "bernstein", "ttest"}, default="bootstrap"
             Estimation method for confidence intervals.
@@ -525,7 +525,7 @@ class ContinuousOffPolicyEvaluation:
 
         is_relative: bool, default=False
             If True, the method visualizes the estimated policy value of the evaluation policies
-            relative to the ground-truth policy value of behavior policy.
+            relative to the ground-truth policy value of the behavior policy.
 
         hue: {"estimator", "policy"}, default="estimator"
             Hue of the plot.
@@ -756,11 +756,11 @@ class ContinuousOffPolicyEvaluation:
         input_dict: OPEInputDict,
         metric: str = "relative-ee",
     ) -> Dict[str, Dict[str, float]]:
-        """Evaluate the estimation performance of OPE estimators.
+        """Evaluate the estimation performance/accuracy of OPE estimators.
 
         Note
         -------
-        Evaluate the estimation performance of OPE estimators by relative estimation error (relative-EE) or squared error (SE).
+        Evaluate the estimation performance/accuracy of OPE estimators by relative estimation error (relative-EE) or squared error (SE).
 
         .. math ::
 
@@ -792,12 +792,12 @@ class ContinuousOffPolicyEvaluation:
             ]
 
         metric: {"relative-ee", "se"}, default="relative-ee"
-            Evaluation metric used to evaluate and compare the estimation performance of OPE estimators.
+            Evaluation metric used to evaluate and compare the estimation performance/accuracy of OPE estimators.
 
         Return
         -------
         eval_metric_ope_dict: dict
-            Dictionary containing evaluation metric for evaluating the estimation performance of OPE estimators.
+            Dictionary containing evaluation metric for evaluating the estimation performance/accuracy of OPE estimators.
             key: [evaluation_policy_name][OPE_estimator_name]
 
         """
@@ -862,12 +862,12 @@ class ContinuousOffPolicyEvaluation:
             ]
 
         metric: {"relative-ee", "se"}, default="relative-ee"
-            Evaluation metric used to evaluate and compare the estimation performance of OPE estimators.
+            Evaluation metric used to evaluate and compare the estimation performance/accuracy of OPE estimators.
 
         Return
         -------
         eval_metric_ope_df: dataframe
-            Dictionary containing evaluation metric for evaluating the estimation performance of OPE estimators.
+            Dictionary containing evaluation metric for evaluating the estimation performance/accuracy of OPE estimators.
 
         """
         check_input_dict(input_dict)

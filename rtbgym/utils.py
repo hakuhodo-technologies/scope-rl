@@ -110,10 +110,10 @@ def check_array(
         Name of the input array.
 
     expected_dim: int, default=1
-        Excpected dimension of the input array.
+        Expected dimension of the input array.
 
     expected_dtype: {type, tuple of type}, default=None
-        Excpected dtype of the input array.
+        Expected dtype of the input array.
 
     min_val: float, default=None
         Minimum number allowed in the input array.

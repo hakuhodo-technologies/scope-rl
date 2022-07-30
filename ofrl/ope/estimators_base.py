@@ -14,17 +14,17 @@ class BaseOffPolicyEstimator(metaclass=ABCMeta):
 
     @abstractmethod
     def _estimate_trajectory_value(self) -> np.ndarray:
-        """Estimate trajectory-wise reward."""
+        """Estimate the trajectory-wise expected reward."""
         raise NotImplementedError
 
     @abstractmethod
     def estimate_policy_value(self) -> float:
-        """Estimate the policy value of evaluation policy."""
+        """Estimate the policy value of the evaluation policy."""
         raise NotImplementedError
 
     @abstractmethod
     def estimate_interval(self) -> Dict[str, float]:
-        """Estimate confidence interval of policy value."""
+        """Estimate the confidence intervals of the policy value."""
         raise NotImplementedError
 
 
@@ -34,31 +34,31 @@ class BaseCumulativeDistributionalOffPolicyEstimator(metaclass=ABCMeta):
 
     @abstractmethod
     def estimate_cumulative_distribution_function(self) -> Tuple[np.ndarray]:
-        """Estimate cumulative distribution function (cdf) of the policy value."""
+        """Estimate the cumulative distribution function (cdf) of the policy value."""
         raise NotImplementedError
 
     @abstractmethod
     def estimate_mean(self) -> float:
-        """Estimate mean of the policy value."""
+        """Estimate the mean of the policy value."""
         raise NotImplementedError
 
     @abstractmethod
     def estimate_variance(self) -> float:
-        """Estimate variance of the policy value."""
+        """Estimate the variance of the policy value."""
         raise NotImplementedError
 
     @abstractmethod
     def estimate_conditional_value_at_risk(self) -> float:
-        """Estimate conditional value at risk (cVaR) of the policy value."""
+        """Estimate the conditional value at risk (cVaR) of the policy value."""
         raise NotImplementedError
 
     @abstractmethod
     def estimate_interquartile_range(self) -> Dict[str, float]:
-        """Estimate interquartile range of the policy value."""
+        """Estimate the interquartile range of the policy value."""
         raise NotImplementedError
 
     def obtain_reward_scale(self, gamma: float = 1.0) -> np.ndarray:
-        """Obtain reward scale of the cumulative distribution function.
+        """Obtain the reward scale of the cumulative distribution function.
 
         Parameters
         -------
@@ -98,7 +98,7 @@ class BaseCumulativeDistributionalOffPolicyEstimator(metaclass=ABCMeta):
         initial_state_value_prediction: Optional[np.ndarray] = None,
         gamma: float = 1.0,
     ):
-        """Aggregate step-wise observation into trajectory wise statistics for the discrete action setup.
+        """Aggregate step-wise observations into trajectory wise statistics for the discrete action setup.
 
         Parameters
         -------
@@ -109,11 +109,11 @@ class BaseCumulativeDistributionalOffPolicyEstimator(metaclass=ABCMeta):
             Reward observation.
 
         behavior_policy_trajectory_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
-            Trajectory-wise action choice probability of behavior policy,
+            Trajectory-wise action choice probability of the behavior policy,
             i.e., :math:`\\prod_{t=0}^T \\pi_0(a_t \\mid s_t)`
 
         evaluation_policy_trajectory_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
-            Trajectory-wise action choice probability of evaluation policy,
+            Trajectory-wise action choice probability of the evaluation policy,
             i.e., :math:`\\prod_{t=0}^T \\pi(a_t \\mid s_t)`
 
         initial_state_value_prediction: array-like of shape (n_episodes, )
@@ -125,7 +125,7 @@ class BaseCumulativeDistributionalOffPolicyEstimator(metaclass=ABCMeta):
         Return
         -------
         trajectory_wise_reward: ndarray of shape (n_episodes, )
-            Trajectory wise reward observed by the behavior policy.
+            Trajectory wise reward observed under the behavior policy.
 
         trajectory_wise_importance_weight: ndarray of shape (n_episodes, )
             Trajectory wise importance weight.
@@ -181,7 +181,7 @@ class BaseCumulativeDistributionalOffPolicyEstimator(metaclass=ABCMeta):
         action_min: Optional[np.ndarray] = None,
         action_max: Optional[np.ndarray] = None,
     ):
-        """Aggregate step-wise observation into trajectory wise statistics for the continuous action setup.
+        """Aggregate step-wise observations into trajectory wise statistics for the continuous action setup.
 
         Parameters
         -------
@@ -189,17 +189,17 @@ class BaseCumulativeDistributionalOffPolicyEstimator(metaclass=ABCMeta):
             Number of timesteps in an episode.
 
         action: ndarray of shape (n_episodes * step_per_episode, action_dim)
-            Action chosen by behavior policy.
+            Action chosen by the behavior policy.
 
         reward: ndarray of shape (n_episodes * step_per_episode, )
             Reward observation.
 
         behavior_policy_trajectory_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
-            Trajectory-wise action choice probability of behavior policy,
+            Trajectory-wise action choice probability of the behavior policy,
             i.e., :math:`\\prod_{t=0}^T \\pi_0(a_t \\mid s_t)`
 
         evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
-            Action chosen by evaluation policy.
+            Action chosen by the evaluation policy.
 
         initial_state_value_prediction: array-like of shape (n_episodes, )
             Estimated initial state value.
@@ -212,7 +212,7 @@ class BaseCumulativeDistributionalOffPolicyEstimator(metaclass=ABCMeta):
             If `None`, sigma is set to 1 for all dimensions.
 
         use_truncated_kernel: bool, default=False
-            Whether to use Truncated Gaussian kernel or not.
+            Whether to use the Truncated Gaussian kernel or not.
             If False, (normal) Gaussian kernel is used.
 
         action_min: array-like of shape (action_dim, ), default=None
@@ -226,7 +226,7 @@ class BaseCumulativeDistributionalOffPolicyEstimator(metaclass=ABCMeta):
         Return
         -------
         trajectory_wise_reward: ndarray of shape (n_episodes, )
-            Trajectory wise reward observed by the behavior policy.
+            Trajectory wise reward observed under the behavior policy.
 
         trajectory_wise_importance_weight: ndarray of shape (n_episodes, )
             Trajectory wise importance weight.

@@ -33,7 +33,7 @@ def visualize_on_policy_policy_value(
     fig_dir: Optional[Path] = None,
     fig_name: str = "on_policy_policy_value.png",
 ):
-    """Visualize on-policy policy value of the given policies.
+    """Visualize on-policy policy value estimates of the given policies.
 
     Parameters
     -------
@@ -53,7 +53,7 @@ def visualize_on_policy_policy_value(
         Discount factor. The value should be within `(0, 1]`.
 
     alpha: float, default=0.05
-        Significant level. The value should be within `[0, 1)`.
+        Significance level. The value should be within `[0, 1)`.
 
     n_bootstrap_samples: int, default=10000 (> 0)
         Number of resampling performed in the bootstrap procedure.
@@ -140,7 +140,7 @@ def visualize_on_policy_policy_value_with_variance(
         Discount factor. The value should be within `(0, 1]`.
 
     alpha: float, default=0.05
-        Significant level. The value should be within `[0, 1)`.
+        Significance level. The value should be within `[0, 1)`.
 
     random_state: int, default=None (>= 0)
         Random state.
@@ -229,7 +229,7 @@ def visualize_on_policy_cumulative_distribution_function(
     fig_dir: Optional[Path] = None,
     fig_name: str = "on_policy_cumulative_distribution_function.png",
 ) -> None:
-    """Visualize the cumulative distribution function of on-policy policy value.
+    """Visualize the cumulative distribution function of the on-policy policy value.
 
     Parameters
     -------
@@ -258,15 +258,15 @@ def visualize_on_policy_cumulative_distribution_function(
         Maximum value of the reward scale in CDF.
         When `use_custom_reward_scale == True`, a value must be given.
 
-    n_partitiion: int, default=None
-        Number of partition in reward scale (x-axis of CDF).
+    n_partition: int, default=None
+        Number of partitions in the reward scale (x-axis of CDF).
         When `use_custom_reward_scale == True`, a value must be given.
 
     random_state: int, default=None (>= 0)
         Random state.
 
     legend: bool, default=True
-        Whether to include legend in the figure.
+        Whether to include a legend in the figure.
 
     fig_dir: Path, default=None
         Path to store the bar figure.
@@ -327,7 +327,7 @@ def visualize_on_policy_conditional_value_at_risk(
     fig_dir: Optional[Path] = None,
     fig_name: str = "on_policy_conditional_value_at_risk.png",
 ) -> None:
-    """Visualize the conditional value at risk of on-policy policy value.
+    """Visualize the conditional value at risk of the on-policy policy value.
 
     Parameters
     -------
@@ -359,15 +359,15 @@ def visualize_on_policy_conditional_value_at_risk(
         Maximum value of the reward scale in CDF.
         When `use_custom_reward_scale == True`, a value must be given.
 
-    n_partitiion: int, default=None
-        Number of partition in reward scale (x-axis of CDF).
+    n_partition: int, default=None
+        Number of partitions in the reward scale (x-axis of CDF).
         When `use_custom_reward_scale == True`, a value must be given.
 
     random_state: int, default=None (>= 0)
         Random state.
 
     legend: bool, default=True
-        Whether to include legend in the figure.
+        Whether to include a legend in the figure.
 
     fig_dir: Path, default=None
         Path to store the bar figure.
@@ -428,7 +428,7 @@ def visualize_on_policy_interquartile_range(
     fig_dir: Optional[Path] = None,
     fig_name: str = "on_policy_interquartile_range.png",
 ) -> None:
-    """Visualize the interquartile range of on-policy policy value.
+    """Visualize the interquartile range of the on-policy policy value.
 
     Parameters
     -------
@@ -445,7 +445,7 @@ def visualize_on_policy_interquartile_range(
         Discount factor. The value should be within `(0, 1]`.
 
     alpha: float, default=0.05
-        Significant level. The value should be within `[0, 1)`.
+        Significance level. The value should be within `[0, 1)`.
 
     use_custom_reward_scale: bool, default=False
         Whether to use the custom reward scale or the reward observed by the behavior policy.
@@ -460,8 +460,8 @@ def visualize_on_policy_interquartile_range(
         Maximum value of the reward scale in CDF.
         When `use_custom_reward_scale == True`, a value must be given.
 
-    n_partitiion: int, default=None
-        Number of partition in reward scale (x-axis of CDF).
+    n_partition: int, default=None
+        Number of partitions in the reward scale (x-axis of CDF).
         When `use_custom_reward_scale == True`, a value must be given.
 
     random_state: int, default=None (>= 0)
@@ -568,7 +568,7 @@ def calc_on_policy_statistics(
     n_partition: Optional[int] = None,
     random_state: Optional[int] = None,
 ):
-    """Calculate the statistics including mean, variance, conditional value at risk, interquartile range of on-policy policy value.
+    """Calculate the mean, variance, conditional value at risk, interquartile range of the on-policy policy value.
 
     Parameters
     -------
@@ -603,8 +603,8 @@ def calc_on_policy_statistics(
         Maximum value of the reward scale in CDF.
         When `use_custom_reward_scale == True`, a value must be given.
 
-    n_partitiion: int, default=None
-        Number of partition in reward scale (x-axis of CDF).
+    n_partition: int, default=None
+        Number of partitions in the reward scale (x-axis of CDF).
         When `use_custom_reward_scale == True`, a value must be given.
 
     random_state: int, default=None (>= 0)
@@ -613,7 +613,7 @@ def calc_on_policy_statistics(
     Return
     -------
     statistics_dict: dict
-        Dictionary containing the following on-policy metrics including mean, variance, CVaR, and interquartile range.
+        Dictionary containing the mean, variance, CVaR, and interquartile range of the on-policy policy value.
 
     """
     check_scalar(
@@ -724,7 +724,7 @@ def calc_on_policy_policy_value(
     n_bootstrap_samples: int = 100,
     random_state: Optional[int] = None,
 ):
-    """Calculate on-policy policy value of the given policy.
+    """Calculate an on-policy policy value of a given policy.
 
     Parameters
     -------
@@ -744,7 +744,7 @@ def calc_on_policy_policy_value(
         Number of trajectories to rollout.
 
     alpha: float, default=0.05
-        Significant level. The value should be within `(0, 1]`.
+        Significance level. The value should be within `(0, 1]`.
 
     n_bootstrap_samples: int, default=10000 (> 0)
         Number of resampling performed in the bootstrap procedure.
@@ -788,7 +788,7 @@ def calc_on_policy_policy_value_interval(
     n_bootstrap_samples: int = 100,
     random_state: Optional[int] = None,
 ):
-    """Calculate confidence interval of on-policy policy value by nonparametric bootstrap procedure.
+    """Calculate confidence interval of on-policy policy value by nonparametric bootstrap.
 
     Parameters
     -------
@@ -805,7 +805,7 @@ def calc_on_policy_policy_value_interval(
         Discount factor. The value should be within `(0, 1]`.
 
     alpha: float, default=0.05
-        Significant level. The value should be within `[0, 1)`.
+        Significance level. The value should be within `[0, 1)`.
 
     n_bootstrap_samples: int, default=10000 (> 0)
         Number of resampling performed in the bootstrap procedure.
@@ -841,7 +841,7 @@ def calc_on_policy_variance(
     gamma: float = 1.0,
     random_state: Optional[int] = None,
 ):
-    """Calculate the variance of on-policy policy value.
+    """Calculate the variance of the on-policy policy value.
 
     Parameters
     -------
@@ -888,7 +888,7 @@ def calc_on_policy_conditional_value_at_risk(
     n_partition: Optional[int] = None,
     random_state: Optional[int] = None,
 ):
-    """Calculate the conditional value at risk (CVaR) of on-policy policy value.
+    """Calculate the conditional value at risk (CVaR) of the on-policy policy value.
 
     Parameters
     -------
@@ -920,8 +920,8 @@ def calc_on_policy_conditional_value_at_risk(
         Maximum value of the reward scale in CDF.
         When `use_custom_reward_scale == True`, a value must be given.
 
-    n_partitiion: int, default=None
-        Number of partition in reward scale (x-axis of CDF).
+    n_partition: int, default=None
+        Number of partitions in the reward scale (x-axis of CDF).
         When `use_custom_reward_scale == True`, a value must be given.
 
     random_state: int, default=None (>= 0)
@@ -1012,7 +1012,7 @@ def calc_on_policy_interquartile_range(
     n_partition: Optional[int] = None,
     random_state: Optional[int] = None,
 ):
-    """Calculate the interquartile range of on-policy policy value.
+    """Calculate the interquartile range of the on-policy policy value.
 
     env: gym.Env
         Reinforcement learning (RL) environment.
@@ -1042,8 +1042,8 @@ def calc_on_policy_interquartile_range(
         Maximum value of the reward scale in CDF.
         When `use_custom_reward_scale == True`, a value must be given.
 
-    n_partitiion: int, default=None
-        Number of partition in reward scale (x-axis of CDF).
+    n_partition: int, default=None
+        Number of partitions in the reward scale (x-axis of CDF).
         When `use_custom_reward_scale == True`, a value must be given.
 
     random_state: int, default=None (>= 0)
@@ -1137,7 +1137,7 @@ def calc_on_policy_cumulative_distribution_function(
     n_partition: Optional[int] = None,
     random_state: Optional[int] = None,
 ):
-    """Calculate the cumulative distribution of on-policy policy value.
+    """Calculate the cumulative distribution of the on-policy policy value.
 
     Parameters
     -------
@@ -1166,8 +1166,8 @@ def calc_on_policy_cumulative_distribution_function(
         Maximum value of the reward scale in CDF.
         When `use_custom_reward_scale == True`, a value must be given.
 
-    n_partitiion: int, default=None
-        Number of partition in reward scale (x-axis of CDF).
+    n_partition: int, default=None
+        Number of partitions in the reward scale (x-axis of CDF).
         When `use_custom_reward_scale == True`, a value must be given.
 
     random_state: int, default=None (>= 0)
@@ -1243,7 +1243,7 @@ def rollout_policy_online(
     gamma: float = 1.0,
     random_state: Optional[int] = None,
 ):
-    """Rollout policy on the environment and collect trajectory-wise on-policy policy value.
+    """Rollout a given policy on the environment and collect the trajectory-wise on-policy policy value.
 
     Parameters
     -------

@@ -116,7 +116,7 @@ Table of Contents
 
 .. toctree::
    :maxdepth: 3
-   :caption: Off-Policy Evaluation and Selection (OPE/OPS):
+   :caption: Off-Policy evaluation/selection (OPE/OPS):
 
    ope_ops
    evaluation_implementation
