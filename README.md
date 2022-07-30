@@ -22,26 +22,26 @@
 
 ## Overview
 
-*OFRL* is an open-source Python Software for implementing the whole procedure of offline Reinforcement Learning (offline RL), from data collection to offline policy learning, evaluation, and selection. Our software includes a series of modules to implement synthetic dataset generation and dataset preprocessing, estimators for Off-Policy Evaluation (OPE), and Off-Policy Selection (OPS) methods. 
+*OFRL* is an open-source Python Software for implementing the end-to-end procedure regarding **offline Reinforcement Learning (offline RL)**, from data collection to offline policy learning, performance evaluation, and policy selection. Our software includes a series of modules to implement synthetic dataset generation, dataset preprocessing, estimators for Off-Policy Evaluation (OPE), and Off-Policy Selection (OPS) methods.
 
-This software is also compatible with [d3rlpy](https://github.com/takuseno/d3rlpy), which provides the algorithm implementation of both online and offline RL methods, to streamline the implementation from learning and evaluation in an unified interface. OFRL enables an easy, flexible and reliable experiment in offline RL research on any environment with [OpenAI Gym](https://gym.openai.com)-like interface (from basic one to practical setup) and also simplify the practical implementation on a variety of customized dataset.
+This software is also compatible with [d3rlpy](https://github.com/takuseno/d3rlpy), which implements a range of online and offline RL methods. OFRL enables an easy, transparent, and reliable experiment in offline RL research on any environment with [OpenAI Gym](https://gym.openai.com)-like interface and also facilitates implementation of offline RL in practice on a variety of customized datasets.
 
-Our software facilitate evaluation and algorithm comparison related to the following research topics:
+Our software enables evaluation and algorithm comparison related to the following research topics:
 
-- **Offline Reinforcement Learning**: Offline RL aims to learn a new policy from only offline logged data collected by a behavior policy. OFRL enables flexible experiment using customized dataset on a variety of environment collected by various behavior policies.
+- **Offline Reinforcement Learning**: Offline RL aims at learning a new policy from only offline logged data collected by a behavior policy. OFRL enables flexible experiment using customized dataset collected by various behavior policies and on a variety of environment.
 
-- **Off-Policy Evaluation**: OPE aims to evaluate the performance of a counterfactual policy using only offline logged data. OFRL supports basic implementation of OPE estimators and streamline the experimental procedure to evaluate OPE estimators. Moreover, we also implement advanced OPE, such as cumulative distribution estimators.
+- **Off-Policy Evaluation**: OPE aims at evaluating the performance of a counterfactual policy using only offline logged data. OFRL supports many OPE estimators and streamlines the experimental procedure to evaluate OPE estimators. Moreover, we also implement advanced OPE, such as cumulative distribution estimation.
 
-- **Off-Policy Selection**: OPS aims to select the best policy from several candidate policies using offline logged data. OFRL supports basic implementation of OPS methods and provide some metrics to evaluate OPS result.
+- **Off-Policy Selection**: OPS aims at identifying the best-performing policy from a pool of several candidate policies using offline logged data. OFRL supports some basic OPS methods and provides some metrics to evaluate the OPS accuracy.
 
-This software is intended for the episodic RL setup. For those aimed for contextual bandits, please also refer to [Open Bandit Pipeline](https://github.com/st-tech/zr-obp).
+This software is intended for the episodic RL setup. For those interested in the contextual bandit setup, we'd recommend [Open Bandit Pipeline](https://github.com/st-tech/zr-obp).
 
 ### Implementations
 
 *OFRL* mainly consists of the following three modules.
-- [**dataset module**](./_gym/dataset): This module provides tools to generate synthetic data from any environment with [OpenAI Gym](http://gym.openai.com/)-like interface. It also provides preprocessing tools for the logged data.
+- [**dataset module**](./_gym/dataset): This module provides tools to generate synthetic data from any environment on top of [OpenAI Gym](http://gym.openai.com/)-like interface. It also provides tools to preprocess the logged data.
 - [**policy module**](./_gym/policy): This module provides a wrapper class for [d3rlpy](https://github.com/takuseno/d3rlpy) to enable a flexible data collection.
-- [**ope module**](./_gym/ope): This module provides a generic abstract class to implement an OPE estimator and some dominant OPE estimators. It also provides some tools useful for OPS.
+- [**ope module**](./_gym/ope): This module provides a generic abstract class to implement an OPE estimator and some popular estimators. It also provides some tools useful for performing OPS.
 
 <details>
 <summary><strong>Behavior Policy </strong>(click to expand)</summary>
@@ -81,7 +81,7 @@ This software is intended for the episodic RL setup. For those aimed for context
 </details>
 
 <details>
-<summary><strong>OPS Criterion </strong>(click to expand)</summary>
+<summary><strong>OPS Criteria </strong>(click to expand)</summary>
 
 - Policy Value
 - Policy Value Lower Bound
@@ -100,10 +100,9 @@ This software is intended for the episodic RL setup. For those aimed for context
 
 </details>
 
-Note that, in addition to the above OPE and OPS methods, researcher can easily implement compare their own estimators using a generic abstract class.
-Practitioners can also use the above implementation with their real-world data to evaluate and choose counterfactual policies.
+Note that, in addition to the above OPE and OPS methods, researcher can easily implement and compare their own estimators through a generic abstract class. Moreover, Practitioners can apply the above implementation to their real-world data to evaluate and choose counterfactual policies.
 
-To provide an example of conducting customized experiment in a practical setup, we also provide [RTBGym](./rtbgym), an RL environment for Real-Time Bidding (RTB) under this repository.
+To provide an example of performing a customized experiment imitating a practical setup, we also provide [RTBGym](./rtbgym), an RL environment for Real-Time Bidding (RTB) under this repository.
 
 ## Installation
 
@@ -123,14 +122,14 @@ OFRL supports Python 3.7 or newer. See [pyproject.toml](./pyproject.toml) for ot
 
 ## Usage
 
-Here, we provide an example workflow from of offline RL, OPE, and OPS using [RTBGym](./rtbgym).
+Here, we provide an example workflow to perform offline RL, OPE, and OPS on [RTBGym](./rtbgym).
 
 ### Synthetic Dataset Generation and Data Preprocessing
 
-Let's start by collecting logged data useful for offline RL.
+Let's start by collecting some logged data useful for offline RL.
 
 ```Python
-# implement data collection procedure on the RTBGym environment
+# implement a data collection procedure on the RTBGym environment
 
 # import OFRL modules
 from ofrl.dataset import SyntheticDataset
@@ -162,10 +161,10 @@ ddqn.fit_online(
     update_start_step=1000,
 )
 
-# (2) Generate logged dataset
-# convert ddqn policy into a stochastic behavior policy
+# (2) Generate a logged dataset
+# convert the ddqn policy into a stochastic behavior policy
 behavior_policy = DiscreteEpsilonGreedyHead(
-    ddqn, 
+    ddqn,
     n_actions=env.action_space.n,
     epsilon=0.3,
     name="ddqn_epsilon_0.3",
@@ -178,22 +177,22 @@ dataset = SyntheticDataset(
     is_rtb_env=True,
     random_state=random_state,
 )
-# collect logged data using behavior policy
+# the behavior policy collects some logged data
 logged_dataset = dataset.obtain_trajectories(n_episodes=10000)
 ```
 
 ### Offline Reinforcement Learning
-Now we are ready to learn a new policy only from logged data using [d3rlpy](https://github.com/takuseno/d3rlpy).
+We are now ready to learn a new policy from the logged data using [d3rlpy](https://github.com/takuseno/d3rlpy).
 
 ```Python
-# implement offline RL procedure using OFRL and d3rlpy
+# implement an offline RL procedure using OFRL and d3rlpy
 
 # import d3rlpy algorithms
 from d3rlpy.dataset import MDPDataset
 from d3rlpy.algos import DiscreteCQL
 
 # (3) Learning a new policy from offline logged data (using d3rlpy)
-# convert dataset into d3rlpy's dataset
+# convert the logged dataset into d3rlpy's dataset format
 offlinerl_dataset = MDPDataset(
     observations=logged_dataset["state"],
     actions=logged_dataset["action"],
@@ -214,10 +213,10 @@ cql.fit(
 
 ### Basic Off-Policy Evaluation
 
-Then, we evaluate the performance of the learned policy using offline logged data. We also compare the estimation results from various OPE estimators, Direct Method (DM), Trajectory-wise Importance Sampling (TIS), Per-Decision Importance Sampling (PDIS), and Doubly Robust (DR).
+Then, we evaluate the performance of the learned policy using offline logged data. Specifically, we compare the estimation results of various OPE estimators, including Direct Method (DM), Trajectory-wise Importance Sampling (TIS), Per-Decision Importance Sampling (PDIS), and Doubly Robust (DR).
 
 ```Python
-# implement basic OPE procedure using OFRL
+# implement a basic OPE procedure using OFRL
 
 # import OFRL modules
 from ofrl.ope import CreateOPEInput
@@ -230,28 +229,28 @@ from ofrl.ope import DiscreteDoublyRobust as DR
 # (4) Evaluate the learned policy in an offline manner
 # we compare ddqn, cql, and random policy
 cql_ = DiscreteEpsilonGreedyHead(
-    base_policy=cql, 
-    n_actions=env.action_space.n, 
-    name="cql", 
-    epsilon=0.0, 
+    base_policy=cql,
+    n_actions=env.action_space.n,
+    name="cql",
+    epsilon=0.0,
     random_state=random_state,
 )
 ddqn_ = DiscreteEpsilonGreedyHead(
-    base_policy=ddqn, 
-    n_actions=env.action_space.n, 
-    name="ddqn", 
-    epsilon=0.0, 
+    base_policy=ddqn,
+    n_actions=env.action_space.n,
+    name="ddqn",
+    epsilon=0.0,
     random_state=random_state,
 )
 random_ = DiscreteEpsilonGreedyHead(
-    base_policy=ddqn, 
-    n_actions=env.action_space.n, 
-    name="random", 
-    epsilon=1.0, 
+    base_policy=ddqn,
+    n_actions=env.action_space.n,
+    name="random",
+    epsilon=1.0,
     random_state=random_state,
 )
 evaluation_policies = [cql_, ddqn_, random_]
-# create input for OPE class
+# create input for the OPE class
 prep = CreateOPEInput(
     logged_dataset=logged_dataset,
     use_base_model=True,  # use model-based prediction
@@ -267,10 +266,10 @@ ope = OPE(
     logged_dataset=logged_dataset,
     ope_estimators=[DM(), TIS(), PDIS(), DR()],
 )
-# conduct OPE and visualize the result
+# perform OPE and visualize the result
 ope.visualize_off_policy_estimates(
-    input_dict, 
-    random_state=random_state, 
+    input_dict,
+    random_state=random_state,
     sharey=True,
 )
 ```
@@ -285,10 +284,10 @@ A formal quickstart example with RTBGym is available at [quickstart/rtb_syntheti
 
 ### Advanced Off-Policy Evaluation
 
-We can also estimate various performance statics including variance and conditional value at risk (CVaR) by using cumulative distributional OPE estimators.
+We can also estimate various performance statics including variance and conditional value at risk (CVaR) by using estimators of cumulative distribution function.
 
 ```Python
-# implement advanced OPE procedure (i.e., cumulative distribution estimation) using OFRL
+# implement a cumulative distribution estimation procedure using OFRL
 
 # import OFRL modules
 from ofrl.ope import DiscreteCumulativeDistributionalOffPolicyEvaluation as CumulativeDistributionalOPE
@@ -298,24 +297,24 @@ from ofrl.ope import DiscreteCumulativeDistributionalTrajectoryWiseDoublyRobust 
 from ofrl.ope import DiscreteCumulativeDistributionalSelfNormalizedTrajectoryWiseImportanceSampling as CD_SNIS
 from ofrl.ope import DiscreteCumulativeDistributionalSelfNormalizedTrajectoryWiseDoublyRobust as CD_SNDR
 
-# (4) Evaluate the learned policy using cumulative distribution function (in an offline manner)
-# we compare ddqn, cql, and random policy defined in the previous section (i.e., (3) of basic OPE procedure)
+# (4) Evaluate the cumulative distribution function of the learned policy (in an offline manner)
+# we compare ddqn, cql, and random policy defined from the previous section (i.e., (3) of basic OPE procedure)
 # initialize the OPE class
 cd_ope = CumulativeDistributionalOPE(
     logged_dataset=logged_dataset,
     ope_estimators=[
-      CD_DM(estimator_name="cdf_dm"), 
-      CD_IS(estimator_name="cdf_is"), 
-      CD_DR(estimator_name="cdf_dr"), 
-      CD_SNIS(estimator_name="cdf_snis"), 
+      CD_DM(estimator_name="cdf_dm"),
+      CD_IS(estimator_name="cdf_is"),
+      CD_DR(estimator_name="cdf_dr"),
+      CD_SNIS(estimator_name="cdf_snis"),
       CD_SNDR(estimator_name="cdf_sndr"),
     ],
 )
-# estimate variance
+# estimate the variance
 variance_dict = cd_ope.estimate_variance(input_dict)
-# estimate CVaR
+# estimate the CVaR
 cvar_dict = cd_ope.estimate_conditional_value_at_risk(input_dict, alphas=0.3)
-# estimate and visualize cumulative distribution function
+# estimate and visualize the cumulative distribution function of the policy performance
 cd_ope.visualize_cumulative_distribution_function(input_dict, n_cols=4)
 ```
 <div align="center"><img src="./images/ope_cumulative_distribution_function.png" width="100%"/></div>
@@ -329,11 +328,10 @@ For more examples, please refer to [quickstart/rtb_synthetic_discrete_advanced.i
 
 ### Off-Policy Selection and Evaluation of OPE/OPS
 
-Finally, we select policy based on the OPE result using OPS class. We also evaluate the reliability of OPE/OPS using various metrics
-including mean-squared-error, rank correlation, regret, and type I and type II error rates.
+Finally, we select the best-performing policy based on the OPE results using the OPS class. We also evaluate the reliability of OPE/OPS using various metrics such as mean-squared-error, rank correlation, regret, and type I and type II error rates.
 
 ```Python
-# conduct off-policy selection based on the OPE results
+# perform off-policy selection based on the OPE results
 
 # import OFRL modules
 from ofrl.ope import OffPolicySelection
@@ -344,13 +342,13 @@ ops = OffPolicySelection(
     ope=ope,
     cumulative_distributional_ope=cd_ope,
 )
-# rank candidate policy by policy value estimated by (basic) OPE
+# rank the candidate policies by their policy value estimated by (basic) OPE
 ranking_dict = ops.select_by_policy_value(input_dict)
-# rank candidate policy by policy value estimated by cumulative distributional OPE
+# rank the candidate policies by their policy value estimated by cumulative distributional OPE
 ranking_dict_ = ops.select_by_policy_value_via_cumulative_distributional_ope(input_dict)
 
-# (6) Evaluate OPS/OPE results
-# rank candidate policy by estimated lower quartile and evaluate the selection results
+# (6) Evaluate the OPS/OPE results
+# rank the candidate policies by their estimated lower quartile and evaluate the selection results
 ranking_df, metric_df = ops.select_by_lower_quartile(
     input_dict,
     alpha=0.3,
@@ -385,13 +383,6 @@ Bibtex:
 ```
 ```
 
-### Additional Relevant Papers
-
-For your information, our previous workshop paper (which has been appeared in RecSys'21 SimuRec workshop) may also be helpful.
-
-Haruka Kiyohara, Kosuke Kawakami, Yuta Saito.<br>
-**Accelerating Offline Reinforcement Learning Application in Real-Time Bidding and Recommendation: Potential Use of Simulation**<br>
-[https://arxiv.org/abs/2109.08331](https://arxiv.org/abs/2109.08331)
 
 ## Contribution
 Any contributions to OFRL are more than welcome!
