@@ -27,7 +27,7 @@ class OffPolicySelection:
     -----------
     OPS selects the "best" policy among several candidates based on the policy value or other statistics estimates by OPE.
 
-    (Basic) OPE estimates the expected policy performance called policy value.
+    (Basic) OPE estimates the expected policy performance called the policy value.
 
     .. math::
 
@@ -415,7 +415,7 @@ class OffPolicySelection:
         top_k_in_eval_metrics: int = 1,
         safety_criteria: float = 0.0,
     ):
-        """Rank candidate policies by the estimated policy value.
+        """Rank the candidate policies by their estimated policy value.
 
         Parameters
         -------
@@ -435,7 +435,7 @@ class OffPolicySelection:
             ]
 
         return_metrics: bool, default=False
-            Whether to return evaluation metrics including:
+            Whether to return the following evaluation metrics:
             mean-squared-error, rank-correlation, regret@k, and Type I and Type II error rate.
 
         return_by_dataframe: bool, default=False
@@ -481,7 +481,7 @@ class OffPolicySelection:
                 Recorded in `metric_df` when `return_by_dataframe == True`.
 
             rank_correlation: tuple of float
-                Rank correlation coefficient and its pvalue between the true ranking and the estimated ranking.
+                Rank correlation coefficient between the true ranking and the estimated ranking, and its pvalue.
                 If `return_metric == False`, `None` is recorded.
                 Recorded in `metric_df` when `return_by_dataframe == True`.
 
@@ -640,7 +640,7 @@ class OffPolicySelection:
         top_k_in_eval_metrics: int = 1,
         safety_criteria: float = 0.0,
     ):
-        """Rank candidate policies by the estimated policy value via cumulative distributional methods.
+        """Rank the candidate policies by their estimated policy value via cumulative distributional methods.
 
         Parameters
         -------
@@ -660,7 +660,7 @@ class OffPolicySelection:
             ]
 
         return_metrics: bool, default=False
-            Whether to return evaluation metrics including:
+            Whether to return the following evaluation metrics:
             mean-squared-error, rank-correlation, regret@k, and Type I and Type II error rate.
 
         return_by_dataframe: bool, default=False
@@ -706,7 +706,7 @@ class OffPolicySelection:
                 Recorded in `metric_df` when `return_by_dataframe == True`.
 
             rank_correlation: tuple of float
-                Rank correlation coefficient and its pvalue between the true ranking and the estimated ranking.
+                Rank correlation coefficient between the true ranking and the estimated ranking, and its pvalue.
                 If `return_metric == False`, `None` is recorded.
                 Recorded in `metric_df` when `return_by_dataframe == True`.
 
@@ -875,7 +875,7 @@ class OffPolicySelection:
         n_bootstrap_samples: int = 100,
         random_state: Optional[int] = None,
     ):
-        """Rank candidate policies by the estimated policy value lower bound.
+        """Rank the candidate policies by their estimated policy value lower bound.
 
         Parameters
         -------
@@ -895,7 +895,7 @@ class OffPolicySelection:
             ]
 
         return_metrics: bool, default=False
-            Whether to return evaluation metrics including:
+            Whether to return the following evaluation metrics:
             rank-correlation, regret@k, and Type I and Type II error rate.
 
         return_by_dataframe: bool, default=False
@@ -912,7 +912,7 @@ class OffPolicySelection:
             Estimation methods for confidence intervals.
 
         alpha: float, default=0.05
-            Significant level. The value should be within `[0, 1)`.
+            Significance level. The value should be within `[0, 1)`.
 
         n_bootstrap_samples: int, default=100 (> 0)
             Number of resampling performed in the bootstrap procedure.
@@ -952,7 +952,7 @@ class OffPolicySelection:
                 Recorded in `metric_df` when `return_by_dataframe == True`.
 
             rank_correlation: tuple of float
-                Rank correlation coefficient and its pvalue between the true ranking and the estimated ranking.
+                Rank correlation coefficient between the true ranking and the estimated ranking, and its pvalue.
                 If `return_metric == False`, `None` is recorded.
                 Recorded in `metric_df` when `return_by_dataframe == True`.
 
@@ -1136,7 +1136,7 @@ class OffPolicySelection:
         return_by_dataframe: bool = False,
         safety_threshold: float = 0.0,
     ):
-        """Rank candidate policies by the estimated lower quartile of the trajectory wise reward.
+        """Rank the candidate policies by their estimated lower quartile of the trajectory wise reward.
 
         Parameters
         -------
@@ -1157,7 +1157,7 @@ class OffPolicySelection:
             Proportion of the sided region. The value should be within `[0, 0.5]`.
 
         return_metrics: bool, default=False
-            Whether to return evaluation metrics including:
+            Whether to return the following evaluation metrics:
             mean-squared-error, rank-correlation, and Type I and Type II error rate.
 
         return_by_dataframe: bool, default=False
@@ -1194,7 +1194,7 @@ class OffPolicySelection:
                 Recorded in `metric_df` when `return_by_dataframe == True`.
 
             rank_correlation: tuple of float
-                Rank correlation coefficient and its pvalue between the true ranking and the estimated ranking.
+                Rank correlation coefficient between the true ranking and the estimated ranking, and its pvalue.
                 If `return_metric == False`, `None` is recorded.
                 Recorded in `metric_df` when `return_by_dataframe == True`.
 
@@ -1341,7 +1341,7 @@ class OffPolicySelection:
         return_by_dataframe: bool = False,
         safety_threshold: float = 0.0,
     ):
-        """Rank candidate policies by the estimated conditional value at risk.
+        """Rank the candidate policies by their estimated conditional value at risk.
 
         Parameters
         -------
@@ -1364,7 +1364,7 @@ class OffPolicySelection:
             Proportion of the sided region. The value should be within `[0, 1]`.
 
         return_metrics: bool, default=False
-            Whether to return evaluation metrics including:
+            Whether to return the following evaluation metrics:
             mean-squared-error, rank-correlation, and Type I and Type II error rate.
 
         return_by_dataframe: bool, default=False
@@ -1401,7 +1401,7 @@ class OffPolicySelection:
                 Recorded in `metric_df` when `return_by_dataframe == True`.
 
             rank_correlation: tuple or float
-                Rank correlation coefficient and its pvalue between the true ranking and the estimated ranking.
+                Rank correlation coefficient between the true ranking and the estimated ranking, and its pvalue.
                 If `return_metric == False`, `None` is recorded.
                 Recorded in `metric_df` when `return_by_dataframe == True`.
 
@@ -1571,7 +1571,7 @@ class OffPolicySelection:
             ]
 
         alpha: float, default=0.05
-            Significant level. The value should be within `[0, 1)`.
+            Significance level. The value should be within `[0, 1)`.
 
         ci: {"bootstrap", "hoeffding", "bernstein", "ttest"}, default="bootstrap"
             Estimation method for confidence intervals.
@@ -1583,7 +1583,7 @@ class OffPolicySelection:
             Random state.
 
         is_relative: bool, default=False
-            If True, the method visualizes the estimated policy value of evaluation policy
+            If True, the method visualizes the estimated policy value of the evaluation policy
             relative to the on-policy policy value of the behavior policy.
 
         hue: {"estimator", "policy"}, default="estimator"
@@ -1645,7 +1645,7 @@ class OffPolicySelection:
             Hue of the plot.
 
         legend: bool, default=True
-            Whether to include legend in the figure.
+            Whether to include a legend in the figure.
 
         n_cols: int, default=None
             Number of columns in the figure.
@@ -1697,11 +1697,11 @@ class OffPolicySelection:
             ]
 
         alpha: float, default=0.05
-            Significant level. The value should bw within `[0, 1)`.
+            Significance level. The value should bw within `[0, 1)`.
 
         is_relative: bool, default=False
-            If True, the method visualizes the estimated policy value of evaluation policy
-            relative to the ground-truth policy value of behavior policy.
+            If True, the method visualizes the estimated policy value of the evaluation policy
+            relative to the ground-truth policy value of the behavior policy.
 
         hue: {"estimator", "policy"}, default="estimator"
             Hue of the plot.
@@ -1764,7 +1764,7 @@ class OffPolicySelection:
             Hue of the plot.
 
         legend: bool, default=True
-            Whether to include legend in the figure.
+            Whether to include a legend in the figure.
 
         n_cols: int, default=None
             Number of columns in the figure.
@@ -1820,7 +1820,7 @@ class OffPolicySelection:
             ]
 
         alpha: float, default=0.05
-            Significant level. The value should be within `[0, 1)`.
+            Significance level. The value should be within `[0, 1)`.
 
         hue: {"estimator", "policy"}, default="estimator"
             Hue of the plot.
@@ -2247,7 +2247,7 @@ class OffPolicySelection:
             Estimation methods for confidence intervals.
 
         alpha: float, default=0.05
-            Significant level. The value should be within `[0, 1)`.
+            Significance level. The value should be within `[0, 1)`.
 
         n_bootstrap_samples: int, default=100 (> 0)
             Number of resampling performed in the bootstrap procedure.

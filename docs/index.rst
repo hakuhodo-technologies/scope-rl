@@ -10,7 +10,7 @@ Overview
 ~~~~~~~~~~
 *OFRL* is an open-source Python library for offline Reinforcement Learning (RL) and Off-Policy Evaluation (OPE).
 This library aims to facilitate an easy, flexible and reliable experiment in offline RL research, as well as to provide a streamlined implementation also for practitioners.
-OFRL includes a series of modules to implement synthetic dataset generation and dataset preprocessing, a variety of OPE estimators, and also Off-Policy Selection (OPS) methods. 
+OFRL includes a series of modules to implement synthetic dataset generation and dataset preprocessing, a variety of OPE estimators, and also Off-Policy Selection (OPS) methods.
 
 OFRL is applicable to any RL environment with `OpenAI Gym <https://gym.openai.com>`_-like interface.
 The library is also compatible with `d3rlpy <https://github.com/takuseno/d3rlpy>`_, which provides the algorithm implementation of both online and offline RL methods.
@@ -24,14 +24,14 @@ Our software facilitates implementation, evaluation and algorithm comparison rel
 * **Off-Policy Selection**: OPS aims to select the best policy from several candidate policies using offline logged data. OFRL supports the basic implementations of OPS methods and provide some metrics to evaluate OPS result.
 
 This website contains pages with example implementations that demonstrates the usage of this library.
-The package reference page contains the full reference documentation for the currently implemented modules.
+The package reference page consists of the full reference documentation for the currently implemented modules.
 
 implementation
 ~~~~~~~~~~
 
 Data Collection Policy and Offline RL
 ----------
-OFRL override `d3rlpy <https://github.com/takuseno/d3rlpy>`_'s implementation for the base algorithm. 
+OFRL override `d3rlpy <https://github.com/takuseno/d3rlpy>`_'s implementation for the base algorithm.
 We provide a wrapper class for transforming the policy into a stochastic policy as follows.
    * Epsilon Greedy (discrete)
    * Softmax (discrete)
@@ -116,7 +116,7 @@ Table of Contents
 
 .. toctree::
    :maxdepth: 3
-   :caption: Off-Policy Evaluation and Selection (OPE/OPS):
+   :caption: Off-Policy evaluation/selection (OPE/OPS):
 
    ope_ops
    evaluation_implementation

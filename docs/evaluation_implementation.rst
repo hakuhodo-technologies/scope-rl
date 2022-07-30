@@ -74,7 +74,7 @@ It first learns the Q-function and then leverages the learned Q-function as foll
 
     \hat{J}_{\mathrm{DM}} (\pi; \mathcal{D}) := \mathbb{E}_n \left[ \mathbb{E}_{a_0 \sim \pi(a_0 | s_0)} [\hat{Q}(s_0, a_0)] \right],
 
-where :math:`\mathcal{D}=\{\{(s_t, a_t, r_t)\}_{t=0}^T\}_{i=1}^n` is logged dataset with :math:`n` trajectories of data.
+where :math:`\mathcal{D}=\{\{(s_t, a_t, r_t)\}_{t=0}^T\}_{i=1}^n` is the logged dataset with :math:`n` trajectories of data.
 :math:`T` indicates step per episode. :math:`\hat{Q}(s_t, a_t)` is estimated state-action value.
 
 DM has low variance, but can incur bias caused by approximation errors.
@@ -97,7 +97,7 @@ due to the product of importance weights.
 
 Per-Decision Importance Sampling (PDIS)
 ----------
-PDIS leverages the sequential nature of the MDP to reduce the variance of TIS. 
+PDIS leverages the sequential nature of the MDP to reduce the variance of TIS.
 Specifically, since :math:`s_t` only depends on :math:`s_0, \ldots, s_{t-1}` and :math:`a_0, \ldots, a_{t-1}` and is independent of :math:`s_{t+1}, \ldots, s_{T}` and :math:`a_{t+1}, \ldots, a_{T}`,
 PDIS only considers the importance weight of the past interactions when estimating :math:`r_t` as follows.
 
@@ -112,7 +112,7 @@ PDIS remains unbiased while reducing the variance of TIS. However, when :math:`t
 Doubly Robust (DR)
 ----------
 DR is a hybrid of model-based estimation and importance sampling.
-It introduces :math:`\hat{Q}` as a baseline estimation in the recursive form of PDIS and applies importance weighting only on its residual. 
+It introduces :math:`\hat{Q}` as a baseline estimation in the recursive form of PDIS and applies importance weighting only on its residual.
 
 .. math::
 
@@ -139,21 +139,21 @@ Extension to the continuous action space
 When the action space is continuous, the naive importance weight :math:`w_t = \pi(a_t|s_t) / \pi_0(a_t|s_t) = (\pi(a |s_t) / \pi_0(a_t|s_t)) \cdot \mathbb{I}(a = a_t)` rejects almost every actions,
 as :math:`\mathbb{I}(a = a_t)` filters only the action observed in the logged data.
 
-To address this issue, continuous OPE estimators apply kernel density estimation technique to smooth the importance weight.
+To address this issue, continuous-action OPE estimators apply kernel density estimation technique to smooth the importance weight.
 
 .. math::
 
-    \overline{w}_t = \int_{a \in \mathcal{A}} \frac{\pi(a \mid s_t)}{\pi_0(a_t | s_t)} \cdot \frac{1}{h} K \left( \frac{a - a_t}{h} \right) da, 
+    \overline{w}_t = \int_{a \in \mathcal{A}} \frac{\pi(a \mid s_t)}{\pi_0(a_t | s_t)} \cdot \frac{1}{h} K \left( \frac{a - a_t}{h} \right) da,
 
-where :math:`K(\cdot)` denotes a kernel function and :math:`h` is the bandwidth hyperparameter. 
-We can use any function as :math:`K(\cdot)` that meets the following qualities: 
+where :math:`K(\cdot)` denotes a kernel function and :math:`h` is the bandwidth hyperparameter.
+We can use any function as :math:`K(\cdot)` that meets the following qualities:
 
-* 1) :math:`\int xK(x) dx = 0`, 
-* 2) :math:`\int K(x) dx = 1`, 
-* 3) :math:`\lim _{x \rightarrow-\infty} K(x)=\lim _{x \rightarrow+\infty} K(x)=0`, 
-* 4) :math:`K(x) \geq 0, \forall x`. 
+* 1) :math:`\int xK(x) dx = 0`,
+* 2) :math:`\int K(x) dx = 1`,
+* 3) :math:`\lim _{x \rightarrow-\infty} K(x)=\lim _{x \rightarrow+\infty} K(x)=0`,
+* 4) :math:`K(x) \geq 0, \forall x`.
 
-In our implementation, we use the (truncated) Gaussian kernel :math:`K(x)=\frac{1}{\sqrt{2 \pi}} e^{-\frac{x^{2}}{2}}`. 
+In our implementation, we use the (truncated) Gaussian kernel :math:`K(x)=\frac{1}{\sqrt{2 \pi}} e^{-\frac{x^{2}}{2}}`.
 
 
 High Confidence Off-Policy Evaluation (HC-OPE)
@@ -169,9 +169,9 @@ We implement four methods to estimate the confidence intervals.
 
 * Bootstrapping: :math:`|\hat{J}(\pi; \mathcal{D}) - \mathbb{E}_{\mathcal{D}}[\hat{J}(\pi; \mathcal{D})]| \leq \mathrm{Bootstrap}(1 - \alpha)`.
 
-Note that, all the above bound holds with probability :math:`1 - \alpha`. 
-For notations, we denote :math:`\hat{\mathbb{V}}_{\mathcal{D}}(\cdot)` to be the sample variance, 
-:math:`T_{\mathrm{test}}(\cdot,\cdot)` to be T value, 
+Note that, all the above bound holds with probability :math:`1 - \alpha`.
+For notations, we denote :math:`\hat{\mathbb{V}}_{\mathcal{D}}(\cdot)` to be the sample variance,
+:math:`T_{\mathrm{test}}(\cdot,\cdot)` to be T value,
 and :math:`\sigma` to be the standard deviation.
 
 Among the above high confidence interval estimation, hoeffding and empirical bernstein derives lower bound without any distributional assumption of :math:`p(\hat{J})`, which sometimes leads to quite conservative estimation.
@@ -253,7 +253,7 @@ TIS corrects the distribution shift by applying importance sampling technique on
         \hat{F}_{\mathrm{TIS}}(m, \pi; \mathcal{D}) := \mathbb{E}_{n} \left[ w_{0:T-1} \mathbb{I} \left \{\sum_{t=0}^{T-1} \gamma^t r_t \leq m \right \} \right]
 
 TIS is unbiased but can suffer from high variance.
-In particular, :math:`\hat{F}_{\mathrm{TIS}}(\cdot)` sometimes becomes more than one when the variance is high. 
+In particular, :math:`\hat{F}_{\mathrm{TIS}}(\cdot)` sometimes becomes more than one when the variance is high.
 Therefore, we correct CDF as :math:`\hat{F}^{\ast}_{\mathrm{TIS}}(m, \pi; \mathcal{D}) := \min(\max_{m' \leq m} \hat{F}_{\mathrm{TIS}}(m', \pi; \mathcal{D}), 1)` :cite:`huang2021off`.
 
 
@@ -268,7 +268,7 @@ TDR combines TIS and DM to reduce the variance while being unbiased.
     := \mathbb{E}_{n} \left[ w_{0:T-1} \left( \mathbb{I} \left \{\sum_{t=0}^{T-1} \gamma^t r_t \leq m \right \} - \hat{G}(m; s_0, a_0) \right) \right]
     + \hat{F}_{\mathrm{DM}}(m, \pi; \mathcal{D})
 
-TDR reduces the variance of TIS while being unbiased, leveraging the model-based estimate (i.e., DM) as a control variate. 
+TDR reduces the variance of TIS while being unbiased, leveraging the model-based estimate (i.e., DM) as a control variate.
 Since :math:`\hat{F}_{\mathrm{TDR}}(\cdot)` may be less than zero or more than one, we should apply the following transformation to bound :math:`\hat{F}_{\mathrm{TDR}}(\cdot) \in [0, 1]` :cite:`huang2021off`.
 
 .. math::
@@ -277,7 +277,7 @@ Since :math:`\hat{F}_{\mathrm{TDR}}(\cdot)` may be less than zero or more than o
 
 Note that, this estimator is not equivalent to the (recursive) DR estimator defined by :cite:`huang2022off`. We are planning to implement the recursive version in a future update of the software.
 
-Finally, we also provide the self-normalized estimators for TIS and TDR. 
+Finally, we also provide the self-normalized estimators for TIS and TDR.
 They use the self-normalized importance weight :math:`\tilde{w}_{\ast} := w_{\ast} / \mathbb{E}_{n}[w_{\ast}]` for the variance reduction purpose.
 
 For further descriptions, please also refer to `package reference <>`_.

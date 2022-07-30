@@ -2,7 +2,7 @@
 Supported Implementation
 ==========
 
-Our implementation aims to streamline the data collection, (offline) policy learning, and off-policy evaluation and selection (OPE/OPS) procedure.
+Our implementation aims to streamline the data collection, (offline) policy learning, and off-policy evaluation/selection (OPE/OPS) procedure.
 We rely on `d3rlpy's implementation <>`_ of the learning algorithms and provide some useful tools to streamline the above offline RL procedure.
 
 Please also refer to `quickstart <>`_ for the example workflows.
@@ -27,11 +27,11 @@ Then, it collects logged data as follows.
 
 .. code-block:: python
 
-    # collect logged data using behavior policy
+    # collect logged data by a behavior policy
     >>> logged_dataset = dataset.obtain_trajectories(n_episodes=10000)
 
 
-The behavior policy can either be deterministic or stochastic when conducting offline policy learning. 
+The behavior policy can either be deterministic or stochastic when conducting offline policy learning.
 For OPE/OPS, the behavior policy should be a stochastic one.
 
 To convert the d3rlpy's deterministic policy to a stochastic one, we provide several wrapper classes to ease implementation as follows.

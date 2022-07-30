@@ -36,7 +36,7 @@ class CreateOPEInput:
         Logged dataset used to conduct OPE.
 
     base_model_args: dict, default=None
-        Arguments of baseline Fitted Q Evaluation (FQE) model.
+        Arguments of the baseline Fitted Q Evaluation (FQE) model.
 
     use_base_model: bool, default=False
         Whether to use FQE and obtain :math:`\\hat{Q}`.
@@ -209,7 +209,7 @@ class CreateOPEInput:
         self,
         evaluation_policy: BaseHead,
     ) -> np.ndarray:
-        """Obtain pscore for observed state action pair.
+        """Obtain the pscore of an observed state action pair.
 
         Parameters
         -------
@@ -281,7 +281,7 @@ class CreateOPEInput:
         self,
         evaluation_policy: BaseHead,
     ) -> np.ndarray:
-        """Obtain action choice probability of the discrete evaluation policy and its Q hat for the observed state.
+        """Obtain action choice probability of the discrete evaluation policy and its Q hat of the observed state.
 
         Parameters
         -------
@@ -321,7 +321,7 @@ class CreateOPEInput:
         Return
         -------
         state_action_value_prediction: ndarray of shape (n_episodes * step_per_episode, )
-            State action value for the observed state and action chosen by evaluation policy.
+            State action value of the observed state and Action chosen by the evaluation policy.
 
         """
         if not isinstance(evaluation_policy, BaseHead):
@@ -334,7 +334,7 @@ class CreateOPEInput:
         self,
         evaluation_policy: BaseHead,
     ) -> np.ndarray:
-        """Obtain initial state value for the discrete evaluation policy.
+        """Obtain the initial state value of the discrete evaluation policy.
 
         Parameters
         -------
@@ -344,7 +344,7 @@ class CreateOPEInput:
         Return
         -------
         initial_state_value_prediction: ndarray of shape (n_episodes, n_actions)
-            State action value for the observed state and action chosen by evaluation policy.
+            State action value of the observed state and Action chosen by the evaluation policy.
 
         """
         if not isinstance(evaluation_policy, BaseHead):
@@ -363,7 +363,7 @@ class CreateOPEInput:
         self,
         evaluation_policy: BaseHead,
     ) -> np.ndarray:
-        """Obtain initial state value for the continuous evaluation policy.
+        """Obtain the initial state value of the continuous evaluation policy.
 
         Parameters
         -------
@@ -373,7 +373,7 @@ class CreateOPEInput:
         Return
         -------
         initial_state_value_prediction: ndarray of shape (n_episodes, )
-            State action value for the observed state and action chosen by evaluation policy.
+            State action value of the observed state and Action chosen by the evaluation policy.
 
         """
         if not isinstance(evaluation_policy, BaseHead):
@@ -387,7 +387,7 @@ class CreateOPEInput:
         self,
         evaluation_policy: BaseHead,
     ) -> np.ndarray:
-        """Obtain Evaluation policy pscore of discrete actions at the initial state of each episode.
+        """Obtain the evaluation policy pscore of the discrete actions at the initial state of each episode.
 
         Parameters
         -------
@@ -464,12 +464,12 @@ class CreateOPEInput:
             ]
 
             evaluation_policy_step_wise_pscore: ndarray of shape (n_episodes * step_per_episodes, )
-                Step-wise action choice probability of evaluation policy,
+                Step-wise action choice probability of the evaluation policy,
                 i.e., :math:`\\prod_{t'=0}^t \\pi(a_{t'} \\mid s_{t'})`
                 If `action_type == "continuous"`, `None` is recorded.
 
             evaluation_policy_trajectory_wise_pscore: ndarray of shape (n_episodes * step_per_episodes, )
-                Trajectory-wise action choice probability of evaluation policy,
+                Trajectory-wise action choice probability of the evaluation policy,
                 i.e., :math:`\\prod_{t=0}^T \\pi(a_t \\mid s_t)`
                 If `action_type == "continuous"`, `None` is recorded.
 
@@ -478,7 +478,7 @@ class CreateOPEInput:
                 If `action_type == "discrete"`, `None` is recorded.
 
             evaluation_policy_action_dist: ndarray of shape (n_episodes * step_per_episode, n_actions)
-                Action choice probability of evaluation policy for all actions,
+                Conditional action distribution induced by the evaluation policys,
                 i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
                 If `action_type == "continuous"`, `None` is recorded.
 
@@ -487,7 +487,7 @@ class CreateOPEInput:
                 i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
                 shape (n_episodes * step_per_episode, n_actions)
 
-                If `action_type == "continuous"`, :math:`\\hat{Q}` for the action chosen by evaluation policy,
+                If `action_type == "continuous"`, :math:`\\hat{Q}` for the action chosen by the evaluation policy,
                 i.e., :math:`\\hat{Q}(s_t, \\pi(a \\mid s_t))`.
                 shape (n_episodes * step_per_episode, )
 

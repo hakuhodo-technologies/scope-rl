@@ -23,7 +23,7 @@ def estimate_confidence_interval_by_bootstrap(
         Samples.
 
     alpha: float, default=0.05
-        Significant level. The value should be within `[0, 1)`.
+        Significance level. The value should be within `[0, 1)`.
 
     n_bootstrap_samples: int, default=10000 (> 0)
         Number of resampling performed in the bootstrap procedure.
@@ -63,11 +63,11 @@ def estimate_confidence_interval_by_hoeffding(
     alpha: float = 0.05,
     **kwargs,
 ) -> Dict[str, float]:
-    """Estimate the confidence interval by the hoeffding' inequality.
+    """Estimate the confidence interval by the Hoeffding's inequality.
 
     Note
     -------
-    The hoeffding's inequality derives the confidence intervals of :math:`\\mu := \\mathbb{E}[X], X \\sim p(X)` with probability :math:`1 - \\alpha` as follows.
+    The Hoeffding's inequality derives the confidence intervals of :math:`\\mu := \\mathbb{E}[X], X \\sim p(X)` with probability :math:`1 - \\alpha` as follows.
 
     .. math::
 
@@ -81,7 +81,7 @@ def estimate_confidence_interval_by_hoeffding(
         Samples.
 
     alpha: float, default=0.05
-        Significant level. The value should be within `[0, 1)`.
+        Significance level. The value should be within `[0, 1)`.
 
     Returns
     -------
@@ -122,7 +122,7 @@ def estimate_confidence_interval_by_empirical_bernstein(
         Samples.
 
     alpha: float, default=0.05
-        Significant level. The value should be within `[0, 1)`.
+        Significance level. The value should be within `[0, 1)`.
 
     Returns
     -------
@@ -167,7 +167,7 @@ def estimate_confidence_interval_by_t_test(
         Samples.
 
     alpha: float, default=0.05
-        Significant level. The value should be within `[0, 1)`.
+        Significance level. The value should be within `[0, 1)`.
 
     Returns
     -------
@@ -213,10 +213,10 @@ def check_array(
         Name of the input array.
 
     expected_dim: int, default=1
-        Excpected dimension of the input array.
+        Expected dimension of the input array.
 
     expected_dtype: {type, tuple of type}, default=None
-        Excpected dtype of the input array.
+        Expected dtype of the input array.
 
     min_val: float, default=None
         Minimum number allowed in the input array.

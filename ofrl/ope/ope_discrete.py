@@ -30,11 +30,11 @@ from ..utils import (
 
 @dataclass
 class DiscreteOffPolicyEvaluation:
-    """Class to conduct OPE by multiple estimators simultaneously for discrete action space.
+    """Class to perform a discrete-action OPE by multiple estimators simultaneously.
 
     Note
     -----------
-    OPE estimates the expected policy performance called policy value.
+    OPE estimates the expected policy performance called the policy value.
 
     .. math::
 
@@ -275,7 +275,7 @@ class DiscreteOffPolicyEvaluation:
         n_bootstrap_samples: int = 100,
         random_state: Optional[int] = None,
     ) -> Dict[str, Dict[str, float]]:
-        """Estimate the confidence intervals of policy value using nonparametric bootstrap procedure.
+        """Estimate the confidence intervals of the policy value by nonparametric bootstrap.
 
         Parameters
         -------
@@ -295,7 +295,7 @@ class DiscreteOffPolicyEvaluation:
             ]
 
         alpha: float, default=0.05
-            Significant level. The value should be within `[0, 1)`.
+            Significance level. The value should be within `[0, 1)`.
 
         ci: {"bootstrap", "hoeffding", "bernstein", "ttest"}, default="bootstrap"
             Estimation method for confidence intervals.
@@ -309,7 +309,7 @@ class DiscreteOffPolicyEvaluation:
         Return
         -------
         policy_value_interval_dict: dict
-            Dictionary containing the confidence intervals estimated using nonparametric bootstrap procedure.
+            Dictionary containing the confidence intervals estimated by nonparametric bootstrap.
             key: [evaluation_policy_name][OPE_estimator_name]
 
         """
@@ -371,7 +371,7 @@ class DiscreteOffPolicyEvaluation:
             ]
 
         alpha: float, default=0.05
-            Significant level. The value should be within `[0, 1)`.
+            Significance level. The value should be within `[0, 1)`.
 
         n_bootstrap_samples: int, default=10000 (> 0)
             Number of resampling performed in the bootstrap procedure.
@@ -389,7 +389,7 @@ class DiscreteOffPolicyEvaluation:
             key: [evaluation_policy_name][OPE_estimator_name]
 
         policy_value_interval_dict: dict
-            Dictionary containing the confidence intervals estimated using nonparametric bootstrap procedure.
+            Dictionary containing the confidence intervals estimated by nonparametric bootstrap.
             key: [evaluation_policy_name][OPE_estimator_name]
 
         """
@@ -465,7 +465,7 @@ class DiscreteOffPolicyEvaluation:
             ]
 
         alpha: float, default=0.05
-            Significant level. The value should be within `(0, 1]`.
+            Significance level. The value should be within `(0, 1]`.
 
         ci: {"bootstrap", "hoeffding", "bernstein", "ttest"}, default="bootstrap"
             Estimation method for confidence intervals.
@@ -700,11 +700,11 @@ class DiscreteOffPolicyEvaluation:
         input_dict: OPEInputDict,
         metric: str = "relative-ee",
     ) -> Dict[str, Dict[str, float]]:
-        """Evaluate the estimation performance of OPE estimators.
+        """Evaluate the estimation performance/accuracy of OPE estimators.
 
         Note
         -------
-        Evaluate the estimation performance of OPE estimators by relative estimation error (relative-EE) or squared error (SE).
+        Evaluate the estimation performance/accuracy of OPE estimators by relative estimation error (relative-EE) or squared error (SE).
 
         .. math ::
 
@@ -736,12 +736,12 @@ class DiscreteOffPolicyEvaluation:
             ]
 
         metric: {"relative-ee", "se"}, default="relative-ee"
-            Evaluation metric used to evaluate and compare the estimation performance of OPE estimators.
+            Evaluation metric used to evaluate and compare the estimation performance/accuracy of OPE estimators.
 
         Return
         -------
         eval_metric_ope_dict: dict
-            Dictionary containing evaluation metric for evaluating the estimation performance of OPE estimators.
+            Dictionary containing evaluation metric for evaluating the estimation performance/accuracy of OPE estimators.
             key: [evaluation_policy_name][OPE_estimator_name]
 
         """
@@ -806,12 +806,12 @@ class DiscreteOffPolicyEvaluation:
             ]
 
         metric: {"relative-ee", "se"}, default="relative-ee"
-            Evaluation metric used to evaluate and compare the estimation performance of OPE estimators.
+            Evaluation metric used to evaluate and compare the estimation performance/accuracy of OPE estimators.
 
         Return
         -------
         eval_metric_ope_df: dataframe
-            Dictionary containing evaluation metric for evaluating the estimation performance of OPE estimators.
+            Dictionary containing evaluation metric for evaluating the estimation performance/accuracy of OPE estimators.
 
         """
         check_input_dict(input_dict)
@@ -865,8 +865,8 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
         Maximum value of the reward scale in CDF.
         When `use_custom_reward_scale == True`, a value must be given.
 
-    n_partitiion: int, default=None
-        Number of partition in reward scale (x-axis of CDF).
+    n_partition: int, default=None
+        Number of partitions in the reward scale (x-axis of CDF).
         When `use_custom_reward_scale == True`, a value must be given.
 
     Examples
@@ -1069,7 +1069,7 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
     def obtain_reward_scale(
         self,
     ):
-        """Obtain reward scale (x-axis) for the cumulative distribution function.
+        """Obtain the reward scale (x-axis) for the cumulative distribution function.
 
         Return
         -------
@@ -1460,7 +1460,7 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
             Hue of the plot.
 
         legend: bool, default=True
-            Whether to include legend in the figure.
+            Whether to include a legend in the figure.
 
         n_cols: int, default=None
             Number of columns in the figure.
@@ -1679,7 +1679,7 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
             ]
 
         alpha: float, default=0.05
-            Significant level. The value should be within `[0, 1)`.
+            Significance level. The value should be within `[0, 1)`.
 
         is_relative: bool, default=False
             If True, the method visualizes the estimated policy value of the evaluation policies
@@ -1948,7 +1948,7 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
             Hue of the plot.
 
         legend: bool, default=True
-            Whether to include legend in the figure.
+            Whether to include a legend in the figure.
 
         n_cols: int, default=None
             Number of columns in the figure.
@@ -2103,7 +2103,7 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
             ]
 
         alpha: float, default=0.05
-            Significant level. The value should be within `[0, 1)`.
+            Significance level. The value should be within `[0, 1)`.
 
         hue: {"estimator", "policy"}, default="estimator"
             Hue of the plot.

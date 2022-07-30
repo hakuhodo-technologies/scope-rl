@@ -15,11 +15,11 @@ from ..utils import check_array
 class DiscreteCumulativeDistributionalDirectMethod(
     BaseCumulativeDistributionalOffPolicyEstimator,
 ):
-    """Direct Method (DM) for estimating cumulative distribution function (CDF) in discrete OPE.
+    """Direct Method (DM) for estimating cumulative distribution function (CDF) in discrete-action OPE.
 
     Note
     -------
-    DM estimates CDF using initial state value given by Fitted Q Evaluation (FQE) as follows.
+    DM estimates CDF using the initial state value given by Fitted Q Evaluation (FQE) as follows.
 
     .. math::
 
@@ -347,7 +347,7 @@ class DiscreteCumulativeDistributionalDirectMethod(
 class DiscreteCumulativeDistributionalTrajectoryWiseImportanceSampling(
     BaseCumulativeDistributionalOffPolicyEstimator,
 ):
-    """Trajectory-wise Importance Sampling (TIS) for estimating cumulative distribution function (CDF) in discrete OPE.
+    """Trajectory-wise Importance Sampling (TIS) for estimating cumulative distribution function (CDF) in discrete-action OPE.
 
     Note
     -------
@@ -408,11 +408,11 @@ class DiscreteCumulativeDistributionalTrajectoryWiseImportanceSampling(
             Reward observation.
 
         behavior_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
-            Trajectory-wise action choice probability of behavior policy,
+            Trajectory-wise action choice probability of the behavior policy,
             i.e., :math:`\\prod_{t=0}^T \\pi_0(a_t \\mid s_t)`
 
         evaluation_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
-            Trajectory-wise action choice probability of evaluation policy,
+            Trajectory-wise action choice probability of the evaluation policy,
             i.e., :math:`\\prod_{t=0}^T \\pi(a_t \\mid s_t)`
 
         reward_scale: NDArray, shape (n_partition, )
@@ -517,11 +517,11 @@ class DiscreteCumulativeDistributionalTrajectoryWiseImportanceSampling(
             Reward observation.
 
         behavior_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
-            Trajectory-wise action choice probability of behavior policy,
+            Trajectory-wise action choice probability of the behavior policy,
             i.e., :math:`\\prod_{t=0}^T \\pi_0(a_t \\mid s_t)`
 
         evaluation_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
-            Trajectory-wise action choice probability of evaluation policy,
+            Trajectory-wise action choice probability of the evaluation policy,
             i.e., :math:`\\prod_{t=0}^T \\pi(a_t \\mid s_t)`
 
         reward_scale: NDArray, shape (n_partition, )
@@ -568,11 +568,11 @@ class DiscreteCumulativeDistributionalTrajectoryWiseImportanceSampling(
             Reward observation.
 
         behavior_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
-            Trajectory-wise action choice probability of behavior policy,
+            Trajectory-wise action choice probability of the behavior policy,
             i.e., :math:`\\prod_{t=0}^T \\pi_0(a_t \\mid s_t)`
 
         evaluation_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
-            Trajectory-wise action choice probability of evaluation policy,
+            Trajectory-wise action choice probability of the evaluation policy,
             i.e., :math:`\\prod_{t=0}^T \\pi(a_t \\mid s_t)`
 
         reward_scale: NDArray, shape (n_partition, )
@@ -621,11 +621,11 @@ class DiscreteCumulativeDistributionalTrajectoryWiseImportanceSampling(
             Reward observation.
 
         behavior_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
-            Trajectory-wise action choice probability of behavior policy,
+            Trajectory-wise action choice probability of the behavior policy,
             i.e., :math:`\\prod_{t=0}^T \\pi_0(a_t \\mid s_t)`
 
         evaluation_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
-            Trajectory-wise action choice probability of evaluation policy,
+            Trajectory-wise action choice probability of the evaluation policy,
             i.e., :math:`\\prod_{t=0}^T \\pi(a_t \\mid s_t)`
 
         reward_scale: NDArray, shape (n_partition, )
@@ -687,11 +687,11 @@ class DiscreteCumulativeDistributionalTrajectoryWiseImportanceSampling(
             Reward observation.
 
         behavior_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
-            Trajectory-wise action choice probability of behavior policy,
+            Trajectory-wise action choice probability of the behavior policy,
             i.e., :math:`\\prod_{t=0}^T \\pi_0(a_t \\mid s_t)`
 
         evaluation_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
-            Trajectory-wise action choice probability of evaluation policy,
+            Trajectory-wise action choice probability of the evaluation policy,
             i.e., :math:`\\prod_{t=0}^T \\pi(a_t \\mid s_t)`
 
         reward_scale: NDArray, shape (n_partition, )
@@ -751,7 +751,7 @@ class DiscreteCumulativeDistributionalTrajectoryWiseImportanceSampling(
 class DiscreteCumulativeDistributionalTrajectoryWiseDoublyRobust(
     BaseCumulativeDistributionalOffPolicyEstimator,
 ):
-    """Trajectory-wise Doubly Robust (TDR) for estimating cumulative distribution function (CDF) in discrete OPE.
+    """Trajectory-wise Doubly Robust (TDR) for estimating cumulative distribution function (CDF) in discrete-action OPE.
 
     Note
     -------
@@ -821,11 +821,11 @@ class DiscreteCumulativeDistributionalTrajectoryWiseDoublyRobust(
             Reward observation.
 
         behavior_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
-            Trajectory-wise action choice probability of behavior policy,
+            Trajectory-wise action choice probability of the behavior policy,
             i.e., :math:`\\prod_{t=0}^T \\pi_0(a_t \\mid s_t)`
 
         evaluation_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
-            Trajectory-wise action choice probability of evaluation policy,
+            Trajectory-wise action choice probability of the evaluation policy,
             i.e., :math:`\\prod_{t=0}^T \\pi(a_t \\mid s_t)`
 
         initial_state_value_prediction: NDArray, shape (n_episodes, )
@@ -946,11 +946,11 @@ class DiscreteCumulativeDistributionalTrajectoryWiseDoublyRobust(
             Reward observation.
 
         behavior_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
-            Trajectory-wise action choice probability of behavior policy,
+            Trajectory-wise action choice probability of the behavior policy,
             i.e., :math:`\\prod_{t=0}^T \\pi_0(a_t \\mid s_t)`
 
         evaluation_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
-            Trajectory-wise action choice probability of evaluation policy,
+            Trajectory-wise action choice probability of the evaluation policy,
             i.e., :math:`\\prod_{t=0}^T \\pi(a_t \\mid s_t)`
 
         initial_state_value_prediction: NDArray, shape (n_episodes, )
@@ -1002,11 +1002,11 @@ class DiscreteCumulativeDistributionalTrajectoryWiseDoublyRobust(
             Reward observation.
 
         behavior_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
-            Trajectory-wise action choice probability of behavior policy,
+            Trajectory-wise action choice probability of the behavior policy,
             i.e., :math:`\\prod_{t=0}^T \\pi_0(a_t \\mid s_t)`
 
         evaluation_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
-            Trajectory-wise action choice probability of evaluation policy,
+            Trajectory-wise action choice probability of the evaluation policy,
             i.e., :math:`\\prod_{t=0}^T \\pi(a_t \\mid s_t)`
 
         initial_state_value_prediction: NDArray, shape (n_episodes, )
@@ -1060,11 +1060,11 @@ class DiscreteCumulativeDistributionalTrajectoryWiseDoublyRobust(
             Reward observation.
 
         behavior_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
-            Trajectory-wise action choice probability of behavior policy,
+            Trajectory-wise action choice probability of the behavior policy,
             i.e., :math:`\\prod_{t=0}^T \\pi_0(a_t \\mid s_t)`
 
         evaluation_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
-            Trajectory-wise action choice probability of evaluation policy,
+            Trajectory-wise action choice probability of the evaluation policy,
             i.e., :math:`\\prod_{t=0}^T \\pi(a_t \\mid s_t)`
 
         initial_state_value_prediction: NDArray, shape (n_episodes, )
@@ -1131,11 +1131,11 @@ class DiscreteCumulativeDistributionalTrajectoryWiseDoublyRobust(
             Reward observation.
 
         behavior_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
-            Trajectory-wise action choice probability of behavior policy,
+            Trajectory-wise action choice probability of the behavior policy,
             i.e., :math:`\\prod_{t=0}^T \\pi_0(a_t \\mid s_t)`
 
         evaluation_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
-            Trajectory-wise action choice probability of evaluation policy,
+            Trajectory-wise action choice probability of the evaluation policy,
             i.e., :math:`\\prod_{t=0}^T \\pi(a_t \\mid s_t)`
 
         initial_state_value_prediction: NDArray, shape (n_episodes, )
@@ -1199,7 +1199,7 @@ class DiscreteCumulativeDistributionalTrajectoryWiseDoublyRobust(
 class DiscreteCumulativeDistributionalSelfNormalizedTrajectoryWiseImportanceSampling(
     DiscreteCumulativeDistributionalTrajectoryWiseImportanceSampling,
 ):
-    """Self Normalized Trajectory-wise Importance Sampling (SNTIS) for estimating cumulative distribution function (CDF) in discrete OPE.
+    """Self Normalized Trajectory-wise Importance Sampling (SNTIS) for estimating cumulative distribution function (CDF) in discrete-action OPE.
 
     Note
     -------
@@ -1267,11 +1267,11 @@ class DiscreteCumulativeDistributionalSelfNormalizedTrajectoryWiseImportanceSamp
             Reward observation.
 
         behavior_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
-            Trajectory-wise action choice probability of behavior policy,
+            Trajectory-wise action choice probability of the behavior policy,
             i.e., :math:`\\prod_{t=0}^T \\pi_0(a_t \\mid s_t)`
 
         evaluation_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
-            Trajectory-wise action choice probability of evaluation policy,
+            Trajectory-wise action choice probability of the evaluation policy,
             i.e., :math:`\\prod_{t=0}^T \\pi(a_t \\mid s_t)`
 
         reward_scale: NDArray, shape (n_partition, )
@@ -1362,7 +1362,7 @@ class DiscreteCumulativeDistributionalSelfNormalizedTrajectoryWiseImportanceSamp
 class DiscreteCumulativeDistributionalSelfNormalizedTrajectoryWiseDoublyRobust(
     DiscreteCumulativeDistributionalTrajectoryWiseDoublyRobust,
 ):
-    """Self Normalized Trajectory-wise Doubly Robust (SNTDR) for estimating cumulative distribution function (CDF) in discrete OPE.
+    """Self Normalized Trajectory-wise Doubly Robust (SNTDR) for estimating cumulative distribution function (CDF) in discrete-action OPE.
 
     Note
     -------
@@ -1438,11 +1438,11 @@ class DiscreteCumulativeDistributionalSelfNormalizedTrajectoryWiseDoublyRobust(
             Reward observation.
 
         behavior_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
-            Trajectory-wise action choice probability of behavior policy,
+            Trajectory-wise action choice probability of the behavior policy,
             i.e., :math:`\\prod_{t=0}^T \\pi_0(a_t \\mid s_t)`
 
         evaluation_policy_trajectory_wise_pscore: NDArray, shape (n_episodes * step_per_episode, )
-            Trajectory-wise action choice probability of evaluation policy,
+            Trajectory-wise action choice probability of the evaluation policy,
             i.e., :math:`\\prod_{t=0}^T \\pi(a_t \\mid s_t)`
 
         initial_state_value_prediction: NDArray, shape (n_episodes, )
