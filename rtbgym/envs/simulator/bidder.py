@@ -207,7 +207,7 @@ class Bidder:
         Parameters
         -------
         step_per_episode: int (> 0)
-            Number of timesteps in a episode.
+            Number of timesteps in an episode.
 
         n_samples: int, default=100000 (> 0)
             Number of samples to fit bid_scaler.
@@ -289,7 +289,7 @@ class Bidder:
         Parameters
         -------
         step_per_episode: int (> 0)
-            Number of timesteps in a episode.
+            Number of timesteps in an episode.
 
         n_samples: int, default=100000 (> 0)
             Number of samples to fit reward predictor.

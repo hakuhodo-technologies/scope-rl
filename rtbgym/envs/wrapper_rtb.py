@@ -50,7 +50,7 @@ class CustomizedRTBEnv(gym.Env):
                 - remaining budget
                 - impression level features at the previous timestep
                   (budget consumption rate, cost per mille of impressions, auction winning rate, and reward)
-                - adjust rate (i.e., RL agent action) at previous timestep
+                - adjust rate (i.e., RL agent action) at the previous timestep
 
         action: {int, float, array-like of shape (1, )} (>= 0)
             Adjust rate parameter used for the bid price calculation as follows.
@@ -292,7 +292,7 @@ class CustomizedRTBEnv(gym.Env):
                 - remaining budget
                 - impression level features at the previous timestep
                 (budget consumption rate, cost per mille of impressions, auction winning rate, and reward)
-                - adjust rate (i.e., agent action) at previous timestep
+                - adjust rate (i.e., agent action) at the previous timestep
 
         reward: int (>= 0)
             Total clicks/conversions gained during the timestep.
@@ -344,7 +344,7 @@ class CustomizedRTBEnv(gym.Env):
                 - remaining budget
                 - impression level features at the previous timestep
                 (budget consumption rate, cost per mille of impressions, auction winning rate, and reward)
-                - adjust rate (i.e., agent action) at previous timestep
+                - adjust rate (i.e., agent action) at the previous timestep
 
         """
         return self.env.reset()

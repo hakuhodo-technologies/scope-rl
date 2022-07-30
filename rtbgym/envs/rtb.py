@@ -41,7 +41,7 @@ class RTBEnv(gym.Env):
                 - remaining budget
                 - impression level features at the previous timestep
                   (budget consumption rate, cost per mille of impressions, auction winning rate, and reward)
-                - adjust rate (i.e., RL agent action) at previous timestep
+                - adjust rate (i.e., RL agent action) at the previous timestep
 
         action: {int, float, array-like of shape (1, )} (>= 0)
             Adjust rate parameter used for determining the bid price as follows.
@@ -97,10 +97,10 @@ class RTBEnv(gym.Env):
         Feature vectors that characterizes each user.
 
     ad_sampling_rate: ndarray of shape (step_per_episode, n_ads), default=None
-        Sampling probalities to determine which ad (id) is used in each auction.
+        Sampling probabilities to determine which ad (id) is used in each auction.
 
     user_sampling_rate: ndarray of shape (step_per_episode, n_users), default=None
-        Sampling probalities to determine which user (id) is used in each auction.
+        Sampling probabilities to determine which user (id) is used in each auction.
 
     WinningPriceDistribution: BaseWinningPriceDistribution
         Winning price distribution of auctions.
@@ -333,7 +333,7 @@ class RTBEnv(gym.Env):
                     - remaining budget
                     - impression level features at the previous timestep
                       (budget consumption rate, cost per mille of impressions, auction winning rate, and reward)
-                    - adjust rate (i.e., agent action) at previous timestep
+                    - adjust rate (i.e., agent action) at the previous timestep
 
             reward: int (>= 0)
                 Total clicks/conversions gained during the timestep.
@@ -373,7 +373,7 @@ class RTBEnv(gym.Env):
             timestep=self.t, adjust_rate=adjust_rate, ad_ids=ad_ids, user_ids=user_ids
         )
 
-        # 3. simulate auctions and gain results
+        # 3. simulate an auctions and gain results
         (
             costs,
             impressions,
@@ -455,7 +455,7 @@ class RTBEnv(gym.Env):
                 - remaining budget
                 - impression level features at the previous timestep
                   (budget consumption rate, cost per mille of impressions, auction winning rate, and reward)
-                - adjust rate (i.e., agent action) at previous timestep
+                - adjust rate (i.e., agent action) at the previous timestep
 
         """
         # initialize internal env state

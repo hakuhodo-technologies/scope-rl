@@ -19,27 +19,27 @@
 
 ## Overview
 
-*RTBGym* is an open-source simulation platform for Real-Time Bidding (RTB) of Display Advertising, which is written in Python. The simulator is particularly intended for reinforcement learning algorithms and follows [OpenAI Gym](https://gym.openai.com) interface. We design RTBGym as a configurative environment so that researchers and practitioner can customize the environmental modules including WinningPriceDistribution, ClickThroughRate, and ConversionRate. 
+*RTBGym* is an open-source simulation platform for Real-Time Bidding (RTB) of Display Advertising, which is written in Python. The simulator is particularly intended for reinforcement learning algorithms and follows [OpenAI Gym](https://gym.openai.com) interface. We design RTBGym as a configurative environment so that researchers and practitioner can customize the environmental modules including WinningPriceDistribution, ClickThroughRate, and ConversionRate.
 
 Note that, RTBGym is publicized under [OfflineGym](../) repository, which facilitates the implementation of offline reinforcement learning procedure.
 
 ### Basic Setting
 
-In RTB, the objective of the RL agent is to maximize some KPIs (such as numbers of click or conversion) within a episode under the given budget constraints. \
-We often aim to achieve this goal by adjusting bidding price function parameter $\alpha$. Specifically, we adjust bid price using $\alpha$ as follows. 
+In RTB, the objective of the RL agent is to maximize some KPIs (number of clicks or conversions) within an episode under given budget constraints. \
+We often aim to achieve this goal by adjusting bidding price function parameter $\alpha$. Specifically, we adjust bid price using $\alpha$ as follows.
 <p align="center">
 $bid_{t,i} = \alpha \cdot r^{\ast}$,
 </p>
 
-where $r^{\ast}$ denotes predicted or expected reward (KPIs).
+where $r^{\ast}$ denotes a predicted or expected reward (KPIs).
 
 We often formulate this RTB problem as the following Constrained Markov Decision Process (CMDP):
 - `timestep`: One episode (a day or a week) consists of several timesteps (24 hours or seven days, for instance).
-- `state`: We observe statistical feedback from environment at each timestep, which include following informations.
+- `state`: We observe some feedback from the environment at each timestep, which includes the following.
   - timestep
   - remaining budget
-  - impression level features (budget comsuption rate, cost per mille of impressions, auction winning rate, reward) at previous timestep
-  - adjust rate (RL agent's decision making) at previous timestep
+  - impression level features (budget consumption rate, cost per mille of impressions, auction winning rate, reward) at the previous timestep
+  - adjust rate (RL agent's decision making) at the previous timestep
 - `action`: Agent chooses adjust rate parameter $\alpha$ to maximize KPIs.
 - `reward`: Total number of clicks or conversions obtained during the timestep.
 - `constraints`: The pre-determined episodic budget should not be exceeded.
@@ -116,7 +116,7 @@ from d3rlpy.algos import RandomPolicy as ContinuousRandomPolicy
 from d3rlpy.preprocessing import MinMaxActionScaler
 import matplotlib.pyplot as plt
 
-# define random agent (for continuous action)
+# define a random agent (for continuous action)
 agent = OnlineHead(
     ContinuousRandomPolicy(
         action_scaler=MinMaxActionScaler(
@@ -165,7 +165,7 @@ Note that, while we use [OfflineGym](../README.md) and [d3rlpy](https://github.c
 
 ### Customized RTGEnv
 
-Next, we describe how to customize the environment by instantiating the environment.  
+Next, we describe how to customize the environment by instantiating the environment.
 
 <details>
 <summary>List of environmental configurations: (click to expand)</summary>
@@ -180,8 +180,8 @@ Next, we describe how to customize the environment by instantiating the environm
 - `user_feature_dim`: Dimensions of the user feature vectors.
 - `ad_feature_vector`: Feature vectors that characterizes each ad.
 - `user_feature_vector`: Feature vectors that characterizes each user.
-- `ad_sampling_rate`: Sampling probalities to determine which ad (id) is used in each auction.
-- `user_sampling_rate`: Sampling probalities to determine which user (id) is used in each auction.
+- `ad_sampling_rate`: Sampling probabilities to determine which ad (id) is used in each auction.
+- `user_sampling_rate`: Sampling probabilities to determine which user (id) is used in each auction.
 - `WinningPriceDistribution`: Winning price distribution of auctions.
 - `ClickTroughRate`: Click through rate (i.e., click / impression).
 - `ConversionRate`: Conversion rate (i.e., conversion / click).
@@ -231,10 +231,10 @@ class CustomizedWinningPriceDistribution(BaseWinningPriceDistribution):
     )
     minimum_standard_bid_price: Optional[Union[int, float]] = None
     random_state: Optional[int] = None
-    
+
     def __post_init__(self):
         self.random_ = check_random_state(self.random_state)
-    
+
     def sample_outcome(
         self,
         bid_prices: np.ndarray,
@@ -249,7 +249,7 @@ class CustomizedWinningPriceDistribution(BaseWinningPriceDistribution):
         )
         impressions = winning_prices < bid_prices
         return impressions.astype(int), winning_prices.astype(int)
-    
+
     @property
     def standard_bid_price(self):
         return self.standard_bid_price_distribution.mean
@@ -269,20 +269,20 @@ class CustomizedClickThroughRate(BaseClickAndConversionRate):
     user_feature_dim: int
     step_per_episode: int
     random_state: Optional[int] = None
-    
+
     def __post_init__(self):
         self.random_ = check_random_state(self.random_state)
         self.ad_coef = self.random_.normal(
-            loc=0.0, 
-            scale=0.5, 
+            loc=0.0,
+            scale=0.5,
             size=(self.ad_feature_dim, 10),
         )
         self.user_coef = self.random_.normal(
-            loc=0.0, 
-            scale=0.5, 
+            loc=0.0,
+            scale=0.5,
             size=(self.user_feature_dim, 10),
         )
-    
+
     def calc_prob(
         self,
         ad_ids: np.ndarray,
@@ -296,7 +296,7 @@ class CustomizedClickThroughRate(BaseClickAndConversionRate):
         user_latent = user_feature_vector @ self.user_coef
         ctrs = sigmoid((ad_latent * user_latent).mean(axis=1))
         return ctrs
-    
+
     def sample_outcome(
         self,
         ad_ids: np.ndarray,
@@ -410,7 +410,7 @@ For any question about the paper and software, feel free to contact: kiyohara.h.
 <summary><strong>Projects </strong>(click to expand)</summary>
 
 This project is inspired by the following three packages.
-- **RecoGym**  -- an RL environment for recommender systems: [[github](https://github.com/criteo-research/reco-gym)] [[paper](https://arxiv.org/abs/1808.00720)] 
+- **RecoGym**  -- an RL environment for recommender systems: [[github](https://github.com/criteo-research/reco-gym)] [[paper](https://arxiv.org/abs/1808.00720)]
 - **RecSim** -- a configurative RL environment for recommender systems: [[github](https://github.com/google-research/recsim)] [[paper](https://arxiv.org/abs/1909.04847)]
 - **FinRL** -- an RL environment for finance: [[github](https://github.com/AI4Finance-Foundation/FinRL)] [[paper](https://arxiv.org/abs/2011.09607)]
 
