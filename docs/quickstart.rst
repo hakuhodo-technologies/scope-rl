@@ -56,7 +56,7 @@ We start by collecting the logged data useful for offline RL with a behavior pol
     # (2) Generate logged dataset
     # convert ddqn policy into a stochastic behavior policy
     >>> behavior_policy = DiscreteEpsilonGreedyHead(
-            ddqn, 
+            ddqn,
             n_actions=env.action_space.n,
             epsilon=0.3,
             name="ddqn_epsilon_0.3",
@@ -69,7 +69,7 @@ We start by collecting the logged data useful for offline RL with a behavior pol
             is_rtb_env=True,
             random_state=random_state,
         )
-    # collect logged data using behavior policy
+    # collect logged data by a behavior policy
     >>> logged_dataset = dataset.obtain_trajectories(n_episodes=10000)
     >>> print(logged_dataset.keys())
 
@@ -115,7 +115,7 @@ For the details of algorithm implementation, please refer to `d3rlpy's documenta
 
 Off-Policy Evaluation (OPE) and Selection (OPS)
 ~~~~~~~~~~
-Finally, we evaluate the performance of the learned policy using offline logged data. 
+Finally, we evaluate the performance of the learned policy using offline logged data.
 
 Basic OPE
 ----------
@@ -136,24 +136,24 @@ We compare the estimation results from various OPE estimators, Direct Method (DM
     # (4) Evaluate the learned policy in an offline manner
     # we compare ddqn, cql, and random policy
     >>> cql_ = DiscreteEpsilonGreedyHead(
-            base_policy=cql, 
-            n_actions=env.action_space.n, 
-            name="cql", 
-            epsilon=0.0, 
+            base_policy=cql,
+            n_actions=env.action_space.n,
+            name="cql",
+            epsilon=0.0,
             random_state=random_state,
         )
     >>> ddqn_ = DiscreteEpsilonGreedyHead(
-            base_policy=ddqn, 
-            n_actions=env.action_space.n, 
-            name="ddqn", 
-            epsilon=0.0, 
+            base_policy=ddqn,
+            n_actions=env.action_space.n,
+            name="ddqn",
+            epsilon=0.0,
             random_state=random_state,
         )
     >>> random_ = DiscreteEpsilonGreedyHead(
-            base_policy=ddqn, 
-            n_actions=env.action_space.n, 
-            name="random", 
-            epsilon=1.0, 
+            base_policy=ddqn,
+            n_actions=env.action_space.n,
+            name="random",
+            epsilon=1.0,
             random_state=random_state,
         )
     >>> evaluation_policies = [cql_, ddqn_, random_]
@@ -175,8 +175,8 @@ We compare the estimation results from various OPE estimators, Direct Method (DM
         )
     # conduct OPE and visualize the result
     >>> ope.visualize_off_policy_estimates(
-            input_dict, 
-            random_state=random_state, 
+            input_dict,
+            random_state=random_state,
             sharey=True,
         )
 
@@ -203,10 +203,10 @@ The following shows the example of estimating cumulative distribution function o
     >>> cd_ope = CumulativeDistributionalOPE(
             logged_dataset=logged_dataset,
             ope_estimators=[
-            CD_DM(estimator_name="cdf_dm"), 
-            CD_IS(estimator_name="cdf_is"), 
-            CD_DR(estimator_name="cdf_dr"), 
-            CD_SNIS(estimator_name="cdf_snis"), 
+            CD_DM(estimator_name="cdf_dm"),
+            CD_IS(estimator_name="cdf_is"),
+            CD_DR(estimator_name="cdf_dr"),
+            CD_SNIS(estimator_name="cdf_snis"),
             CD_SNDR(estimator_name="cdf_sndr"),
             ],
         )
