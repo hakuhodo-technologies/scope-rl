@@ -100,7 +100,7 @@ This software is intended for the episodic RL setup. For those interested in the
 
 </details>
 
-Note that, in addition to the above OPE and OPS methods, researcher can easily implement and compare their own estimators through a generic abstract class. Moreover, Practitioners can apply the above implementation to their real-world data to evaluate and choose counterfactual policies.
+Note that, in addition to the above OPE and OPS methods, researcher can easily implement and compare their own estimators through a generic abstract class. Moreover, practitioners can apply the above implementation to their real-world data to evaluate and choose counterfactual policies.
 
 To provide an example of performing a customized experiment imitating a practical setup, we also provide [RTBGym](./rtbgym), an RL environment for Real-Time Bidding (RTB) under this repository.
 
