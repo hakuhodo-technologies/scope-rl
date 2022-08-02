@@ -1007,9 +1007,7 @@ class DiscreteCumulativeDistributionOffPolicyEvaluation:
                     f"One of the ope_estimators, {estimator.estimator_name} does not match `discrete` action_type"
                 )
 
-            if not isinstance(
-                estimator, BaseCumulativeDistributionOffPolicyEstimator
-            ):
+            if not isinstance(estimator, BaseCumulativeDistributionOffPolicyEstimator):
                 raise RuntimeError(
                     f"ope_estimators must be child classes of BaseCumulativeDistributionOffPolicyEstimator, but one of them, {estimator.estimator_name} is not"
                 )

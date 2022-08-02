@@ -751,9 +751,7 @@ class OffPolicySelection:
         n_policies = len(candidate_policy_names)
 
         ops_dict = {}
-        for i, estimator in enumerate(
-            self.cumulative_distribution_ope.ope_estimators_
-        ):
+        for i, estimator in enumerate(self.cumulative_distribution_ope.ope_estimators_):
 
             estimated_policy_value_ = np.zeros(n_policies)
             for j, eval_policy in enumerate(candidate_policy_names):
@@ -1243,9 +1241,7 @@ class OffPolicySelection:
         n_policies = len(candidate_policy_names)
 
         ops_dict = {}
-        for i, estimator in enumerate(
-            self.cumulative_distribution_ope.ope_estimators_
-        ):
+        for i, estimator in enumerate(self.cumulative_distribution_ope.ope_estimators_):
 
             estimated_lower_quartile_ = np.zeros(n_policies)
             for j, eval_policy in enumerate(candidate_policy_names):
@@ -1450,9 +1446,7 @@ class OffPolicySelection:
         n_policies = len(candidate_policy_names)
 
         ops_dict = {}
-        for i, estimator in enumerate(
-            self.cumulative_distribution_ope.ope_estimators_
-        ):
+        for i, estimator in enumerate(self.cumulative_distribution_ope.ope_estimators_):
 
             estimated_cvar_ = np.zeros(n_policies)
             for j, eval_policy in enumerate(candidate_policy_names):
@@ -1658,13 +1652,15 @@ class OffPolicySelection:
             Name of the bar figure.
 
         """
-        return self.cumulative_distribution_ope.visualize_cumulative_distribution_function(
-            input_dict=input_dict,
-            hue=hue,
-            legend=legend,
-            n_cols=n_cols,
-            fig_dir=fig_dir,
-            fig_name=fig_name,
+        return (
+            self.cumulative_distribution_ope.visualize_cumulative_distribution_function(
+                input_dict=input_dict,
+                hue=hue,
+                legend=legend,
+                n_cols=n_cols,
+                fig_dir=fig_dir,
+                fig_name=fig_name,
+            )
         )
 
     def visualize_policy_value_of_cumulative_distribution_ope_for_selection(
