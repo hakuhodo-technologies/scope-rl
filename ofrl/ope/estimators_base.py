@@ -29,8 +29,8 @@ class BaseOffPolicyEstimator(metaclass=ABCMeta):
 
 
 @dataclass
-class BaseCumulativeDistributionalOffPolicyEstimator(metaclass=ABCMeta):
-    """Base class for Cumulative Distributional OPE estimators."""
+class BaseCumulativeDistributionOffPolicyEstimator(metaclass=ABCMeta):
+    """Base class for Cumulative Distribution OPE estimators."""
 
     @abstractmethod
     def estimate_cumulative_distribution_function(self) -> Tuple[np.ndarray]:

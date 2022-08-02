@@ -183,24 +183,24 @@ We compare the estimation results from various OPE estimators, Direct Method (DM
 Users can implement their own OPE estimators by following the interface of :class:`obp.ope.BaseOffPolicyEstimator` class.
 :class:`obp.ope.OffPolicyEvaluation` class summarizes and compares the estimation results of various OPE estimators.
 
-Cumulative Distributional OPE
+Cumulative Distribution OPE
 ----------
 The following shows the example of estimating cumulative distribution function of the trajectory-wise rewards and its statistics.
 
 .. code-block:: python
 
     # import OFRL modules
-    >>> from ofrl.ope import DiscreteCumulativeDistributionalOffPolicyEvaluation as CumulativeDistributionalOPE
-    >>> from ofrl.ope import DiscreteCumulativeDistributionalDirectMethod as CD_DM
-    >>> from ofrl.ope import DiscreteCumulativeDistributionalTrajectoryWiseImportanceSampling as CD_IS
-    >>> from ofrl.ope import DiscreteCumulativeDistributionalTrajectoryWiseDoublyRobust as CD_DR
-    >>> from ofrl.ope import DiscreteCumulativeDistributionalSelfNormalizedTrajectoryWiseImportanceSampling as CD_SNIS
-    >>> from ofrl.ope import DiscreteCumulativeDistributionalSelfNormalizedTrajectoryWiseDoublyRobust as CD_SNDR
+    >>> from ofrl.ope import DiscreteCumulativeDistributionOffPolicyEvaluation as CumulativeDistributionOPE
+    >>> from ofrl.ope import DiscreteCumulativeDistributionDirectMethod as CD_DM
+    >>> from ofrl.ope import DiscreteCumulativeDistributionTrajectoryWiseImportanceSampling as CD_IS
+    >>> from ofrl.ope import DiscreteCumulativeDistributionTrajectoryWiseDoublyRobust as CD_DR
+    >>> from ofrl.ope import DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSampling as CD_SNIS
+    >>> from ofrl.ope import DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseDoublyRobust as CD_SNDR
 
     # (4) Evaluate the learned policy using cumulative distribution function (in an offline manner)
     # we compare ddqn, cql, and random policy defined in the previous section (i.e., (3) of basic OPE procedure)
     # initialize the OPE class
-    >>> cd_ope = CumulativeDistributionalOPE(
+    >>> cd_ope = CumulativeDistributionOPE(
             logged_dataset=logged_dataset,
             ope_estimators=[
             CD_DM(estimator_name="cdf_dm"),
@@ -217,8 +217,8 @@ The following shows the example of estimating cumulative distribution function o
     # estimate and visualize cumulative distribution function
     >>> cd_ope.visualize_cumulative_distribution_function(input_dict, n_cols=4)
 
-Users can implement their own OPE estimators by following the interface of :class:`obp.ope.BaseCumulativeDistributionalOffPolicyEstimator` class.
-:class:`obp.ope.DiscreteCumulativeDistributionalOffPolicyEvaluation` class summarizes and compares the estimation results of various OPE estimators.
+Users can implement their own OPE estimators by following the interface of :class:`obp.ope.BaseCumulativeDistributionOffPolicyEstimator` class.
+:class:`obp.ope.DiscreteCumulativeDistributionOffPolicyEvaluation` class summarizes and compares the estimation results of various OPE estimators.
 
 
 Off-Policy Selection and Evaluation of OPE/OPS
@@ -234,12 +234,12 @@ Finally, we provide the code to conduct OPS, which selects the "best" performing
     # Initialize the OPS class
     >>> ops = OffPolicySelection(
             ope=ope,
-            cumulative_distributional_ope=cd_ope,
+            cumulative_distribution_ope=cd_ope,
         )
     # rank candidate policy by policy value estimated by (basic) OPE
     >>> ranking_dict = ops.select_by_policy_value(input_dict)
-    # rank candidate policy by policy value estimated by cumulative distributional OPE
-    >>> ranking_dict_ = ops.select_by_policy_value_via_cumulative_distributional_ope(input_dict)
+    # rank candidate policy by policy value estimated by cumulative distribution OPE
+    >>> ranking_dict_ = ops.select_by_policy_value_via_cumulative_distribution_ope(input_dict)
 
     # (6) Evaluate OPS/OPE results
     # rank candidate policy by estimated lower quartile and evaluate the selection results

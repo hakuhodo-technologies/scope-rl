@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 
 from .estimators_base import (
     BaseOffPolicyEstimator,
-    BaseCumulativeDistributionalOffPolicyEstimator,
+    BaseCumulativeDistributionOffPolicyEstimator,
 )
 from ..types import LoggedDataset, OPEInputDict
 from ..utils import (
@@ -832,12 +832,12 @@ class DiscreteOffPolicyEvaluation:
 
 
 @dataclass
-class DiscreteCumulativeDistributionalOffPolicyEvaluation:
-    """Class to conduct cumulative distributional OPE by multiple estimators simultaneously in discrete action space.
+class DiscreteCumulativeDistributionOffPolicyEvaluation:
+    """Class to conduct cumulative distribution OPE by multiple estimators simultaneously in discrete action space.
 
     Note
     -----------
-    CumulativeDIstributionalOPE first estimates the following cumulative distribution function, and then estimates some statistics.
+    CumulativeDistributionOPE first estimates the following cumulative distribution function, and then estimates some statistics.
 
     .. math::
 
@@ -850,7 +850,7 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
 
     ope_estimators: list of BaseOffPolicyEstimator
         List of OPE estimators used to evaluate the policy value of the evaluation policies.
-        Estimators must follow the interface of `ofrl.ope.BaseCumulativeDistributionalOffPolicyEstimator`.
+        Estimators must follow the interface of `ofrl.ope.BaseCumulativeDistributionOffPolicyEstimator`.
 
     use_custom_reward_scale: bool, default=False
         Whether to use the custom reward scale or the reward observed by the behavior policy.
@@ -877,9 +877,9 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
         >>> from ofrl.dataset import SyntheticDataset
         >>> from ofrl.policy import DiscreteEpsilonGreedyHead
         >>> from ofrl.ope import CreateOPEInput
-        >>> from ofrl.ope import DiscreteCumulativeDistributionalOffPolicyEvaluation as CumulativeDistributionalOPE
-        >>> from ofrl.ope import DiscreteCumulativeDistributionalTrajectoryWiseImportanceSampling as CDIS
-        >>> from ofrl.ope import DiscreteCumulativeDistributionalSelfNormalizedTrajectoryWiseImportanceSampling as CDSIS
+        >>> from ofrl.ope import DiscreteCumulativeDistributionOffPolicyEvaluation as CumulativeDistributionOPE
+        >>> from ofrl.ope import DiscreteCumulativeDistributionTrajectoryWiseImportanceSampling as CDIS
+        >>> from ofrl.ope import DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSampling as CDSIS
 
         # import necessary module from other libraries
         >>> import gym
@@ -956,7 +956,7 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
             )
 
         # OPE
-        >>> cd_ope = CumulativeDistributionalOPE(
+        >>> cd_ope = CumulativeDistributionOPE(
                 logged_dataset=logged_dataset,
                 ope_estimators=[
                     CDIS(estimator_name="cdf_is"),
@@ -1008,10 +1008,10 @@ class DiscreteCumulativeDistributionalOffPolicyEvaluation:
                 )
 
             if not isinstance(
-                estimator, BaseCumulativeDistributionalOffPolicyEstimator
+                estimator, BaseCumulativeDistributionOffPolicyEstimator
             ):
                 raise RuntimeError(
-                    f"ope_estimators must be child classes of BaseCumulativeDistributionalOffPolicyEstimator, but one of them, {estimator.estimator_name} is not"
+                    f"ope_estimators must be child classes of BaseCumulativeDistributionOffPolicyEstimator, but one of them, {estimator.estimator_name} is not"
                 )
 
         if self.use_custom_reward_scale:

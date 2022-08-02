@@ -37,7 +37,7 @@ by dealing with the distribution shift between :math:`\pi_0` and :math:`\pi`.
 
 We describe basic OPE methods for estimating the policy value `here <>`_.
 
-Cumulative Distributional and Risk Function Estimation
+Cumulative Distribution and Risk Function Estimation
 ----------
 
 In practical situation, we are sometimes more interested in risk functions such as conditional value at risk and quartile range rather than the expectation of the trajectory-wise reward.
@@ -57,7 +57,7 @@ Then, we can derive various risk functions based on :math:`F(\cdot)` as follows.
 where we let :math:`G := \sum_{t=0}^{T-1} \gamma^t r_t` to represent the random variable of trajectory wise reward
 and :math:`dF(G) := \mathrm{lim}_{\Delta \rightarrow 0} F(G) - F(G- \Delta)`.
 
-We describe cumulative distributional OPE estimators `here <>`_.
+We describe cumulative distribution OPE estimators `here <>`_.
 
 Off-Policy Selection
 ~~~~~~~~~~
