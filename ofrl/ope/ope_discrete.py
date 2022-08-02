@@ -693,7 +693,7 @@ class DiscreteOffPolicyEvaluation:
                 plt.xticks(fontsize=12)
 
         if fig_dir:
-            fig.savefig(str(fig_dir / fig_name))
+            fig.savefig(str(fig_dir / fig_name), dpi=300, bbox_inches="tight")
 
     def evaluate_performance_of_estimators(
         self,
@@ -1647,7 +1647,7 @@ class DiscreteCumulativeDistributionOffPolicyEvaluation:
         plt.show()
 
         if fig_dir:
-            fig.savefig(str(fig_dir / fig_name))
+            fig.savefig(str(fig_dir / fig_name), dpi=300, bbox_inches="tight")
 
     def visualize_policy_value(
         self,
@@ -1909,7 +1909,7 @@ class DiscreteCumulativeDistributionOffPolicyEvaluation:
                 plt.xlim(-0.5, len(input_dict) - 0.5)
 
         if fig_dir:
-            fig.savefig(str(fig_dir / fig_name))
+            fig.savefig(str(fig_dir / fig_name), dpi=300, bbox_inches="tight")
 
     def visualize_conditional_value_at_risk(
         self,
@@ -2072,7 +2072,7 @@ class DiscreteCumulativeDistributionOffPolicyEvaluation:
         plt.show()
 
         if fig_dir:
-            fig.savefig(str(fig_dir / fig_name))
+            fig.savefig(str(fig_dir / fig_name), dpi=300, bbox_inches="tight")
 
     def visualize_interquartile_range(
         self,
@@ -2288,4 +2288,4 @@ class DiscreteCumulativeDistributionOffPolicyEvaluation:
                 plt.xlim(-0.5, n_policies - 0.5)
 
         if fig_dir:
-            fig.savefig(str(fig_dir / fig_name))
+            fig.savefig(str(fig_dir / fig_name), dpi=300, bbox_inches="tight")

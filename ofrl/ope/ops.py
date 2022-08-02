@@ -2027,7 +2027,7 @@ class OffPolicySelection:
         plt.show()
 
         if fig_dir:
-            fig.savefig(str(fig_dir / fig_name))
+            fig.savefig(str(fig_dir / fig_name), dpi=300, bbox_inches="tight")
 
     def visualize_policy_value_of_cumulative_distribution_ope_for_validation(
         self,
@@ -2212,7 +2212,7 @@ class OffPolicySelection:
         plt.show()
 
         if fig_dir:
-            fig.savefig(str(fig_dir / fig_name))
+            fig.savefig(str(fig_dir / fig_name), dpi=300, bbox_inches="tight")
 
     def visualize_policy_value_lower_bound_for_validation(
         self,
@@ -2553,7 +2553,7 @@ class OffPolicySelection:
         plt.show()
 
         if fig_dir:
-            fig.savefig(str(fig_dir / fig_name))
+            fig.savefig(str(fig_dir / fig_name), dpi=300, bbox_inches="tight")
 
     def visualize_variance_for_validation(
         self,
@@ -2717,7 +2717,7 @@ class OffPolicySelection:
         plt.show()
 
         if fig_dir:
-            fig.savefig(str(fig_dir / fig_name))
+            fig.savefig(str(fig_dir / fig_name), dpi=300, bbox_inches="tight")
 
     def visualize_lower_quartile_for_validation(
         self,
@@ -2907,7 +2907,7 @@ class OffPolicySelection:
         plt.show()
 
         if fig_dir:
-            fig.savefig(str(fig_dir / fig_name))
+            fig.savefig(str(fig_dir / fig_name), dpi=300, bbox_inches="tight")
 
     def visualize_conditional_value_at_risk_for_validation(
         self,
@@ -3097,4 +3097,4 @@ class OffPolicySelection:
         plt.show()
 
         if fig_dir:
-            fig.savefig(str(fig_dir / fig_name))
+            fig.savefig(str(fig_dir / fig_name), dpi=300, bbox_inches="tight")

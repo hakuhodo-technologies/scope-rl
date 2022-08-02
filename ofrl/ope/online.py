@@ -106,7 +106,7 @@ def visualize_on_policy_policy_value(
     plt.xticks(fontsize=12)
     plt.yticks(fontsize=12)
     if fig_dir:
-        plt.savefig(str(fig_dir / fig_name))
+        plt.savefig(str(fig_dir / fig_name), dpi=300, bbox_inches="tight")
 
 
 def visualize_on_policy_policy_value_with_variance(
@@ -160,7 +160,7 @@ def visualize_on_policy_policy_value_with_variance(
         raise ValueError(f"fig_dir must be a string, but {type(fig_dir)} is given")
 
     plt.style.use("ggplot")
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(2 * len(policies), 4))
     color = plt.rcParams["axes.prop_cycle"].by_key()["color"]
     n_colors = len(color)
 
@@ -211,7 +211,7 @@ def visualize_on_policy_policy_value_with_variance(
     plt.xlim(-0.5, n_policies - 0.5)
 
     if fig_dir:
-        fig.savefig(str(fig_dir / fig_name))
+        fig.savefig(str(fig_dir / fig_name), dpi=300, bbox_inches="tight")
 
 
 def visualize_on_policy_cumulative_distribution_function(
@@ -282,7 +282,7 @@ def visualize_on_policy_cumulative_distribution_function(
         raise ValueError(f"fig_dir must be a string, but {type(fig_dir)} is given")
 
     plt.style.use("ggplot")
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(4, 3))
 
     for policy, policy_name in zip(policies, policy_names):
         cdf, reward_scale = calc_on_policy_cumulative_distribution_function(
@@ -308,7 +308,7 @@ def visualize_on_policy_cumulative_distribution_function(
     plt.show()
 
     if fig_dir:
-        fig.savefig(str(fig_dir / fig_name))
+        fig.savefig(str(fig_dir / fig_name), dpi=300, bbox_inches="tight")
 
 
 def visualize_on_policy_conditional_value_at_risk(
@@ -383,7 +383,7 @@ def visualize_on_policy_conditional_value_at_risk(
         raise ValueError(f"fig_dir must be a string, but {type(fig_dir)} is given")
 
     plt.style.use("ggplot")
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots((2 * len(policies), 4))
 
     for policy, policy_name in zip(policies, policy_names):
         cvar = calc_on_policy_conditional_value_at_risk(
@@ -410,7 +410,7 @@ def visualize_on_policy_conditional_value_at_risk(
     plt.show()
 
     if fig_dir:
-        fig.savefig(str(fig_dir / fig_name))
+        fig.savefig(str(fig_dir / fig_name), dpi=300, bbox_inches="tight")
 
 
 def visualize_on_policy_interquartile_range(
@@ -481,7 +481,7 @@ def visualize_on_policy_interquartile_range(
         raise ValueError(f"fig_dir must be a string, but {type(fig_dir)} is given")
 
     plt.style.use("ggplot")
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots((2 * len(policies), 4))
     color = plt.rcParams["axes.prop_cycle"].by_key()["color"]
     n_colors = len(color)
 
@@ -552,7 +552,7 @@ def visualize_on_policy_interquartile_range(
         plt.xlim(-0.5, n_policies - 0.5)
 
     if fig_dir:
-        fig.savefig(str(fig_dir / fig_name))
+        fig.savefig(str(fig_dir / fig_name), dpi=300, bbox_inches="tight")
 
 
 def calc_on_policy_statistics(
