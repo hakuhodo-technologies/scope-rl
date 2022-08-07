@@ -254,13 +254,10 @@ class OffPolicySelection:
             Dictionary of the OPE inputs for each evaluation policy.
             Please refer to `CreateOPEInput` class for the detail.
             key: [evaluation_policy_name][
-                evaluation_policy_step_wise_pscore,
-                evaluation_policy_trajectory_wise_pscore,
                 evaluation_policy_action,
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
-                initial_state_action_distribution,
                 on_policy_policy_value,
                 gamma,
             ]
@@ -423,13 +420,10 @@ class OffPolicySelection:
             Dictionary of the OPE inputs for each evaluation policy.
             Please refer to `CreateOPEInput` class for the detail.
             key: [evaluation_policy_name][
-                evaluation_policy_step_wise_pscore,
-                evaluation_policy_trajectory_wise_pscore,
                 evaluation_policy_action,
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
-                initial_state_action_distribution,
                 on_policy_policy_value,
                 gamma,
             ]
@@ -648,13 +642,10 @@ class OffPolicySelection:
             Dictionary of the OPE inputs for each evaluation policy.
             Please refer to `CreateOPEInput` class for the detail.
             key: [evaluation_policy_name][
-                evaluation_policy_step_wise_pscore,
-                evaluation_policy_trajectory_wise_pscore,
                 evaluation_policy_action,
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
-                initial_state_action_distribution,
                 on_policy_policy_value,
                 gamma,
             ]
@@ -881,13 +872,10 @@ class OffPolicySelection:
             Dictionary of the OPE inputs for each evaluation policy.
             Please refer to `CreateOPEInput` class for the detail.
             key: [evaluation_policy_name][
-                evaluation_policy_step_wise_pscore,
-                evaluation_policy_trajectory_wise_pscore,
                 evaluation_policy_action,
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
-                initial_state_action_distribution,
                 on_policy_policy_value,
                 gamma,
             ]
@@ -1142,13 +1130,12 @@ class OffPolicySelection:
             Dictionary of the OPE inputs for each evaluation policy.
             Please refer to `CreateOPEInput` class for the detail.
             key: [evaluation_policy_name][
-                evaluation_policy_step_wise_pscore,
-                evaluation_policy_trajectory_wise_pscore,
                 evaluation_policy_action,
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
                 on_policy_policy_value,
+                gamma,
             ]
 
         alpha: float, default=0.05
@@ -1345,13 +1332,10 @@ class OffPolicySelection:
             Dictionary of the OPE inputs for each evaluation policy.
             Please refer to `CreateOPEInput` class for the detail.
             key: [evaluation_policy_name][
-                evaluation_policy_step_wise_pscore,
-                evaluation_policy_trajectory_wise_pscore,
                 evaluation_policy_action,
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
-                initial_state_action_distribution,
                 on_policy_policy_value,
                 gamma,
             ]
@@ -1553,13 +1537,10 @@ class OffPolicySelection:
             Dictionary of the OPE inputs for each evaluation policy.
             Please refer to `CreateOPEInput` class for the detail.
             key: [evaluation_policy_name][
-                evaluation_policy_step_wise_pscore,
-                evaluation_policy_trajectory_wise_pscore,
                 evaluation_policy_action,
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
-                initial_state_action_distribution,
                 on_policy_policy_value,
                 gamma,
             ]
@@ -1624,13 +1605,10 @@ class OffPolicySelection:
             Dictionary of the OPE inputs for each evaluation policy.
             Please refer to `CreateOPEInput` class for the detail.
             key: [evaluation_policy_name][
-                evaluation_policy_step_wise_pscore,
-                evaluation_policy_trajectory_wise_pscore,
                 evaluation_policy_action,
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
-                initial_state_action_distribution,
                 on_policy_policy_value,
                 gamma,
             ]
@@ -1681,13 +1659,10 @@ class OffPolicySelection:
             Dictionary of the OPE inputs for each evaluation policy.
             Please refer to `CreateOPEInput` class for the detail.
             key: [evaluation_policy_name][
-                evaluation_policy_step_wise_pscore,
-                evaluation_policy_trajectory_wise_pscore,
                 evaluation_policy_action,
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
-                initial_state_action_distribution,
                 on_policy_policy_value,
                 gamma,
             ]
@@ -1742,13 +1717,10 @@ class OffPolicySelection:
             Dictionary of the OPE inputs for each evaluation policy.
             Please refer to `CreateOPEInput` class for the detail.
             key: [evaluation_policy_name][
-                evaluation_policy_step_wise_pscore,
-                evaluation_policy_trajectory_wise_pscore,
                 evaluation_policy_action,
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
-                initial_state_action_distribution,
                 on_policy_policy_value,
                 gamma,
             ]
@@ -1804,13 +1776,10 @@ class OffPolicySelection:
             Dictionary of the OPE inputs for each evaluation policy.
             Please refer to `CreateOPEInput` class for the detail.
             key: [evaluation_policy_name][
-                evaluation_policy_step_wise_pscore,
-                evaluation_policy_trajectory_wise_pscore,
                 evaluation_policy_action,
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
-                initial_state_action_distribution,
                 on_policy_policy_value,
                 gamma,
             ]
@@ -1855,13 +1824,10 @@ class OffPolicySelection:
             Dictionary of the OPE inputs for each evaluation policy.
             Please refer to `CreateOPEInput` class for the detail.
             key: [evaluation_policy_name][
-                evaluation_policy_step_wise_pscore,
-                evaluation_policy_trajectory_wise_pscore,
                 evaluation_policy_action,
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
-                initial_state_action_distribution,
                 on_policy_policy_value,
                 gamma,
             ]
@@ -2039,13 +2005,10 @@ class OffPolicySelection:
             Dictionary of the OPE inputs for each evaluation policy.
             Please refer to `CreateOPEInput` class for the detail.
             key: [evaluation_policy_name][
-                evaluation_policy_step_wise_pscore,
-                evaluation_policy_trajectory_wise_pscore,
                 evaluation_policy_action,
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
-                initial_state_action_distribution,
                 on_policy_policy_value,
                 gamma,
             ]
@@ -2228,13 +2191,10 @@ class OffPolicySelection:
             Dictionary of the OPE inputs for each evaluation policy.
             Please refer to `CreateOPEInput` class for the detail.
             key: [evaluation_policy_name][
-                evaluation_policy_step_wise_pscore,
-                evaluation_policy_trajectory_wise_pscore,
                 evaluation_policy_action,
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
-                initial_state_action_distribution,
                 on_policy_policy_value,
                 gamma,
             ]
@@ -2565,13 +2525,10 @@ class OffPolicySelection:
             Dictionary of the OPE inputs for each evaluation policy.
             Please refer to `CreateOPEInput` class for the detail.
             key: [evaluation_policy_name][
-                evaluation_policy_step_wise_pscore,
-                evaluation_policy_trajectory_wise_pscore,
                 evaluation_policy_action,
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
-                initial_state_action_distribution,
                 on_policy_policy_value,
                 gamma,
             ]
@@ -2730,13 +2687,10 @@ class OffPolicySelection:
             Dictionary of the OPE inputs for each evaluation policy.
             Please refer to `CreateOPEInput` class for the detail.
             key: [evaluation_policy_name][
-                evaluation_policy_step_wise_pscore,
-                evaluation_policy_trajectory_wise_pscore,
                 evaluation_policy_action,
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
-                initial_state_action_distribution,
                 on_policy_policy_value,
                 gamma,
             ]
@@ -2920,13 +2874,10 @@ class OffPolicySelection:
             Dictionary of the OPE inputs for each evaluation policy.
             Please refer to `CreateOPEInput` class for the detail.
             key: [evaluation_policy_name][
-                evaluation_policy_step_wise_pscore,
-                evaluation_policy_trajectory_wise_pscore,
                 evaluation_policy_action,
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
-                initial_state_action_distribution,
                 on_policy_policy_value,
                 gamma,
             ]
