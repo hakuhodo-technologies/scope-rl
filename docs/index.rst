@@ -56,7 +56,7 @@ High Confidence OPE (discrete / continuous)
    * (Empirical) Bernstein :citep:`thomas2015evaluation` :citep:`thomas2015improve`
    * Student T-test :citep:`thomas2015improve`
 
-Cumulative Distributional OPE (discrete)
+Cumulative Distribution OPE (discrete)
 ----------
    * Direct Method (DM) :cite:`beygelzimer2009offset` :cite:`huang2021off`
    * Trajectory-wise Importance Sampling (TIS) :cite:`precup2000eligibility` :cite:`huang2021off` :cite:`chundak2021universal`

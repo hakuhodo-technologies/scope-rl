@@ -28,7 +28,7 @@ ope module
     ofrl.ope.estimators_base
     ofrl.ope.estimators_discrete
     ofrl.ope.estimators_continuous
-    ofrl.ope.cumulative_distributional_estimators_discrete
+    ofrl.ope.cumulative_distribution_estimators_discrete
     ofrl.ope.input
     ofrl.ope.online
 

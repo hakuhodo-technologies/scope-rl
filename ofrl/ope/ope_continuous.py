@@ -749,7 +749,7 @@ class ContinuousOffPolicyEvaluation:
                 plt.xticks(fontsize=12)
 
         if fig_dir:
-            fig.savefig(str(fig_dir / fig_name))
+            fig.savefig(str(fig_dir / fig_name), dpi=300, bbox_inches="tight")
 
     def evaluate_performance_of_estimators(
         self,

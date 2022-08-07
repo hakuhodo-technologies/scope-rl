@@ -2,11 +2,11 @@ from ofrl.ope.ops import OffPolicySelection
 from ofrl.ope.input import CreateOPEInput
 from ofrl.ope.estimators_base import (
     BaseOffPolicyEstimator,
-    BaseCumulativeDistributionalOffPolicyEstimator,
+    BaseCumulativeDistributionOffPolicyEstimator,
 )
 from ofrl.ope.ope_discrete import (
     DiscreteOffPolicyEvaluation,
-    DiscreteCumulativeDistributionalOffPolicyEvaluation,
+    DiscreteCumulativeDistributionOffPolicyEvaluation,
 )
 from ofrl.ope.estimators_discrete import (
     DiscreteDirectMethod,
@@ -17,12 +17,12 @@ from ofrl.ope.estimators_discrete import (
     DiscreteSelfNormalizedPerDecisionImportanceSampling,
     DiscreteSelfNormalizedDoublyRobust,
 )
-from ofrl.ope.cumulative_distributional_estimators_discrete import (
-    DiscreteCumulativeDistributionalDirectMethod,
-    DiscreteCumulativeDistributionalTrajectoryWiseImportanceSampling,
-    DiscreteCumulativeDistributionalTrajectoryWiseDoublyRobust,
-    DiscreteCumulativeDistributionalSelfNormalizedTrajectoryWiseImportanceSampling,
-    DiscreteCumulativeDistributionalSelfNormalizedTrajectoryWiseDoublyRobust,
+from ofrl.ope.cumulative_distribution_estimators_discrete import (
+    DiscreteCumulativeDistributionDirectMethod,
+    DiscreteCumulativeDistributionTrajectoryWiseImportanceSampling,
+    DiscreteCumulativeDistributionTrajectoryWiseDoublyRobust,
+    DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSampling,
+    DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseDoublyRobust,
 )
 from ofrl.ope.ope_continuous import ContinuousOffPolicyEvaluation
 from ofrl.ope.estimators_continuous import (
@@ -38,11 +38,11 @@ from ofrl.ope.estimators_continuous import (
 
 __all__ = [
     "BaseOffPolicyEstimator",
-    "BaseCumulativeDistributionalOffPolicyEstimator",
+    "BaseCumulativeDistributionOffPolicyEstimator",
     "OffPolicySelection",
     "CreateOPEInput",
     "DiscreteOffPolicyEvaluation",
-    "DiscreteCumulativeDistributionalOffPolicyEvaluation",
+    "DiscreteCumulativeDistributionOffPolicyEvaluation",
     "DiscreteDirectMethod",
     "DiscreteTrajectoryWiseImportanceSampling",
     "DiscretePerDecisionImportanceSampling",
@@ -50,11 +50,11 @@ __all__ = [
     "DiscreteSelfNormalizedTrajectoryWiseImportanceSampling",
     "DiscreteSelfNormalizedPerDecisionImportanceSampling",
     "DiscreteSelfNormalizedDoublyRobust",
-    "DiscreteCumulativeDistributionalDirectMethod",
-    "DiscreteCumulativeDistributionalTrajectoryWiseImportanceSampling",
-    "DiscreteCumulativeDistributionalTrajectoryWiseDoublyRobust",
-    "DiscreteCumulativeDistributionalSelfNormalizedTrajectoryWiseImportanceSampling",
-    "DiscreteCumulativeDistributionalSelfNormalizedTrajectoryWiseDoublyRobust",
+    "DiscreteCumulativeDistributionDirectMethod",
+    "DiscreteCumulativeDistributionTrajectoryWiseImportanceSampling",
+    "DiscreteCumulativeDistributionTrajectoryWiseDoublyRobust",
+    "DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSampling",
+    "DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseDoublyRobust",
     "ContinuousOffPolicyEvaluation",
     "ContinuousDirectMethod",
     "ContinuousTrajectoryWiseImportanceSampling",
@@ -68,7 +68,7 @@ __all__ = [
 
 __base__ = [
     "BaseOffPolicyEstimator",
-    "BaseCumulativeDistributionalOffPolicyEstimator",
+    "BaseCumulativeDistributionOffPolicyEstimator",
 ]
 
 
@@ -76,7 +76,7 @@ __meta__ = [
     "OffPolicySelection",
     "CreateOPEInput",
     "DiscreteOffPolicyEvaluation",
-    "DiscreteCumulativeDistributionalOffPolicyEvaluation",
+    "DiscreteCumulativeDistributionOffPolicyEvaluation",
     "ContinuousOffPolicyEvaluation",
 ]
 
@@ -103,19 +103,18 @@ __basic__ = [
 
 
 __cumulative__ = [
-    "BaseCumulativeDistributionalOffPolicyEstimator",
-    "DiscreteCumulativeDistributionalDirectMethod",
-    "DiscreteCumulativeDistributionalTrajectoryWiseImportanceSampling",
-    "DiscreteCumulativeDistributionalTrajectoryWiseDoublyRobust",
-    "DiscreteCumulativeDistributionalSelfNormalizedTrajectoryWiseImportanceSampling",
-    "DiscreteCumulativeDistributionalSelfNormalizedTrajectoryWiseDoublyRobust",
+    "BaseCumulativeDistributionOffPolicyEstimator",
+    "DiscreteCumulativeDistributionDirectMethod",
+    "DiscreteCumulativeDistributionTrajectoryWiseImportanceSampling",
+    "DiscreteCumulativeDistributionTrajectoryWiseDoublyRobust",
+    "DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSampling",
+    "DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseDoublyRobust",
 ]
 
 
 __discrete__ = [
     "DiscreteOffPolicyEvaluation",
-    "DiscreteCumulativeDistributionalOffPolicyEvaluation",
-    "DiscreteDistributionallyRobustOffPolicyEvaluation",
+    "DiscreteCumulativeDistributionOffPolicyEvaluation",
     "DiscreteDirectMethod",
     "DiscreteTrajectoryWiseImportanceSampling",
     "DiscreteStepWiseImportanceSampling",
@@ -123,18 +122,17 @@ __discrete__ = [
     "DiscreteSelfNormalizedTrajectoryWiseImportanceSampling",
     "DiscreteSelfNormalizedStepWiseImportanceSampling",
     "DiscreteSelfNormalizedDoublyRobust",
-    "DiscreteCumulativeDistributionalDirectMethod",
-    "DiscreteCumulativeDistributionalTrajectoryWiseImportanceSampling",
-    "DiscreteCumulativeDistributionalTrajectoryWiseDoublyRobust",
-    "DiscreteCumulativeDistributionalSelfNormalizedTrajectoryWiseImportanceSampling",
-    "DiscreteCumulativeDistributionalSelfNormalizedTrajectoryWiseDoublyRobust",
+    "DiscreteCumulativeDistributionDirectMethod",
+    "DiscreteCumulativeDistributionTrajectoryWiseImportanceSampling",
+    "DiscreteCumulativeDistributionTrajectoryWiseDoublyRobust",
+    "DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSampling",
+    "DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseDoublyRobust",
 ]
 
 
 __continuous__ = [
     "ContinuousOffPolicyEvaluation",
-    "ContinuousCumulativeDistributionalOffPolicyEvaluation",
-    "ContinuousDistributionallyRobustOffPolicyEvaluation",
+    "ContinuousCumulativeDistributionOffPolicyEvaluation",
     "ContinuousDirectMethod",
     "ContinuousTrajectoryWiseImportanceSampling",
     "ContinuousStepWiseImportanceSampling",

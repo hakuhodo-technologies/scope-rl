@@ -174,25 +174,25 @@ For notations, we denote :math:`\hat{\mathbb{V}}_{\mathcal{D}}(\cdot)` to be the
 :math:`T_{\mathrm{test}}(\cdot,\cdot)` to be T value,
 and :math:`\sigma` to be the standard deviation.
 
-Among the above high confidence interval estimation, hoeffding and empirical bernstein derives lower bound without any distributional assumption of :math:`p(\hat{J})`, which sometimes leads to quite conservative estimation.
+Among the above high confidence interval estimation, hoeffding and empirical bernstein derives lower bound without any distribution assumption of :math:`p(\hat{J})`, which sometimes leads to quite conservative estimation.
 On the other hand, T-test is based on the assumption that each sample of :math:`p(\hat{J})` follows the normal distribution.
 
 For further descriptions, please also refer to `package reference <>`_.
 The quickstart example is also available `here <>`_.
 
-Cumulative Distributional Off-Policy Evaluation (CD-OPE)
+Cumulative Distribution Off-Policy Evaluation (CD-OPE)
 ~~~~~~~~~~
 
 While the basic OPE aims to estimate the average policy performance, we are often also interested in the performance distribution of the evaluation policy.
-Cumulative distributional OPE enables flexible estimation of various risk functions such as variance and conditional value at risk (CVaR) using the cumulative distribution function (CDF).
+Cumulative distribution OPE enables flexible estimation of various risk functions such as variance and conditional value at risk (CVaR) using the cumulative distribution function (CDF).
 
-For this purpose, we provide the following :class:`DiscreteCumulativeDistributionalOffPolicyEvaluation` class.
+For this purpose, we provide the following :class:`DiscreteCumulativeDistributionOffPolicyEvaluation` class.
 
 .. code-block:: python
 
     # initialize the OPE class
-    >>> from ofrl.ope import DiscreteCumulativeDistributionalOffPolicyEvaluation as CumulativeDistributionalOPE
-    >>> cd_ope = CumulativeDistributionalOPE(
+    >>> from ofrl.ope import DiscreteCumulativeDistributionOffPolicyEvaluation as CumulativeDistributionOPE
+    >>> cd_ope = CumulativeDistributionOPE(
             logged_dataset=logged_dataset,
             ope_estimators=[CD_DM(), CD_IS(), CD_DR()],
         )
@@ -204,7 +204,7 @@ It estimates the cumulative distribution of the trajectory wise reward and vario
     >>> cdf_dict = cd_ope.estimate_cumulative_distribution_function(input_dict)
     >>> variance_dict = cd_ope.estimate_variance(input_dict)
 
-The cumulative distributional OPE class implements the following functions.
+The cumulative distribution OPE class implements the following functions.
 
 (Cumulative Distribution Function)
 
@@ -303,7 +303,7 @@ To ease the comparison of candidate (evaluation) policies and the OPE estimators
     >>> from ofrl.ope import OffPolicySelection
     >>> ops = OffPolicySelection(
             ope=ope,
-            cumulative_distributional_ope=cd_ope,
+            cumulative_distribution_ope=cd_ope,
         )
 
 The OPS class returns both the OPE results and the OPS metrics as follows.
@@ -322,7 +322,7 @@ The OPS class implements the following functions.
 
 * :class:`obtain_oracle_selection_result`
 * :class:`select_by_policy_value`
-* :class:`select_by_policy_value_via_cumulative_distributional_ope`
+* :class:`select_by_policy_value_via_cumulative_distribution_ope`
 * :class:`select_by_policy_value_lower_bound`
 * :class:`select_by_lower_quartile`
 * :class:`select_by_conditional_value_at_risk`
@@ -332,14 +332,14 @@ The OPS class implements the following functions.
 * :class:`visualize_policy_value_for_selection`
 * :class:`visualize_cumulative_distribution_function_for_selection`
 * :class:`visualize_policy_value_for_selection`
-* :class:`visualize_policy_value_of_cumulative_distributional_ope_for_selection`
+* :class:`visualize_policy_value_of_cumulative_distribution_ope_for_selection`
 * :class:`visualize_conditional_value_at_risk_for_selection`
 * :class:`visualize_interquartile_range_for_selection`
 
 (Validation Visualization)
 
 * :class:`visualize_policy_value_for_validation`
-* :class:`visualize_policy_value_of_cumulative_distributional_ope_for_validation`
+* :class:`visualize_policy_value_of_cumulative_distribution_ope_for_validation`
 * :class:`visualize_policy_value_lower_bound_for_validation`
 * :class:`visualize_variance_for_validation`
 * :class:`visualize_lower_quartile_for_validation`

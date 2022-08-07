@@ -1,4 +1,4 @@
-"""Cumulative Distributional Off-Policy Estimators for Discrete action."""
+"""Cumulative Distribution Off-Policy Estimators for Discrete action."""
 from dataclasses import dataclass
 from typing import Tuple
 
@@ -6,14 +6,14 @@ import numpy as np
 from sklearn.utils import check_scalar
 
 from .estimators_base import (
-    BaseCumulativeDistributionalOffPolicyEstimator,
+    BaseCumulativeDistributionOffPolicyEstimator,
 )
 from ..utils import check_array
 
 
 @dataclass
-class DiscreteCumulativeDistributionalDirectMethod(
-    BaseCumulativeDistributionalOffPolicyEstimator,
+class DiscreteCumulativeDistributionDirectMethod(
+    BaseCumulativeDistributionOffPolicyEstimator,
 ):
     """Direct Method (DM) for estimating cumulative distribution function (CDF) in discrete-action OPE.
 
@@ -344,8 +344,8 @@ class DiscreteCumulativeDistributionalDirectMethod(
 
 
 @dataclass
-class DiscreteCumulativeDistributionalTrajectoryWiseImportanceSampling(
-    BaseCumulativeDistributionalOffPolicyEstimator,
+class DiscreteCumulativeDistributionTrajectoryWiseImportanceSampling(
+    BaseCumulativeDistributionOffPolicyEstimator,
 ):
     """Trajectory-wise Importance Sampling (TIS) for estimating cumulative distribution function (CDF) in discrete-action OPE.
 
@@ -748,8 +748,8 @@ class DiscreteCumulativeDistributionalTrajectoryWiseImportanceSampling(
 
 
 @dataclass
-class DiscreteCumulativeDistributionalTrajectoryWiseDoublyRobust(
-    BaseCumulativeDistributionalOffPolicyEstimator,
+class DiscreteCumulativeDistributionTrajectoryWiseDoublyRobust(
+    BaseCumulativeDistributionOffPolicyEstimator,
 ):
     """Trajectory-wise Doubly Robust (TDR) for estimating cumulative distribution function (CDF) in discrete-action OPE.
 
@@ -1196,8 +1196,8 @@ class DiscreteCumulativeDistributionalTrajectoryWiseDoublyRobust(
 
 
 @dataclass
-class DiscreteCumulativeDistributionalSelfNormalizedTrajectoryWiseImportanceSampling(
-    DiscreteCumulativeDistributionalTrajectoryWiseImportanceSampling,
+class DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSampling(
+    DiscreteCumulativeDistributionTrajectoryWiseImportanceSampling,
 ):
     """Self Normalized Trajectory-wise Importance Sampling (SNTIS) for estimating cumulative distribution function (CDF) in discrete-action OPE.
 
@@ -1359,8 +1359,8 @@ class DiscreteCumulativeDistributionalSelfNormalizedTrajectoryWiseImportanceSamp
 
 
 @dataclass
-class DiscreteCumulativeDistributionalSelfNormalizedTrajectoryWiseDoublyRobust(
-    DiscreteCumulativeDistributionalTrajectoryWiseDoublyRobust,
+class DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseDoublyRobust(
+    DiscreteCumulativeDistributionTrajectoryWiseDoublyRobust,
 ):
     """Self Normalized Trajectory-wise Doubly Robust (SNTDR) for estimating cumulative distribution function (CDF) in discrete-action OPE.
 

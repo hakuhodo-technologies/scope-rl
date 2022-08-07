@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 
 from .ope_discrete import (
     DiscreteOffPolicyEvaluation,
-    DiscreteCumulativeDistributionalOffPolicyEvaluation,
+    DiscreteCumulativeDistributionOffPolicyEvaluation,
 )
 from .ope_continuous import ContinuousOffPolicyEvaluation
 from ..types import OPEInputDict
@@ -33,7 +33,7 @@ class OffPolicySelection:
 
         V(\\pi) := \\mathbb{E} \\left[ \\sum_{t=1}^T \\gamma^{t-1} r_t \\mid \\pi \\right]
 
-    CumulativeDistributionalOPE first estimates the following cumulative distribution function,
+    CumulativeDistributionOPE first estimates the following cumulative distribution function,
     and then estimates some statistics including variance, conditional value at risk, and interquartile range.
 
     .. math::
@@ -45,8 +45,8 @@ class OffPolicySelection:
     ope: {DiscreteOffPolicyEvaluation, ContinuousOffPolicyEvaluation}, default=None
         Instance of the (standard) OPE class.
 
-    cumulative_distributional_ope: DiscreteCumulativeDistributionalOffPolicyEvaluation, default=None
-        Instance of the cumulative distributional OPE class.
+    cumulative_distribution_ope: DiscreteCumulativeDistributionOffPolicyEvaluation, default=None
+        Instance of the cumulative distribution OPE class.
 
     Examples
     ----------
@@ -60,9 +60,9 @@ class OffPolicySelection:
         >>> from ofrl.ope import DiscreteOffPolicyEvaluation as OPE
         >>> from ofrl.ope import DiscreteTrajectoryWiseImportanceSampling as TIS
         >>> from ofrl.ope import DiscretePerDecisionImportanceSampling as PDIS
-        >>> from ofrl.ope import DiscreteCumulativeDistributionalOffPolicyEvaluation as CumulativeDistributionalOPE
-        >>> from ofrl.ope import DiscreteCumulativeDistributionalTrajectoryWiseImportanceSampling as CDIS
-        >>> from ofrl.ope import DiscreteCumulativeDistributionalTrajectoryWiseSelfNormalizedImportanceSampling as CDSIS
+        >>> from ofrl.ope import DiscreteCumulativeDistributionOffPolicyEvaluation as CumulativeDistributionOPE
+        >>> from ofrl.ope import DiscreteCumulativeDistributionTrajectoryWiseImportanceSampling as CDIS
+        >>> from ofrl.ope import DiscreteCumulativeDistributionTrajectoryWiseSelfNormalizedImportanceSampling as CDSIS
 
         # import necessary module from other libraries
         >>> import gym
@@ -143,7 +143,7 @@ class OffPolicySelection:
                 logged_dataset=logged_dataset,
                 ope_estimators=[TIS(), PDIS()],
             )
-        >>> cd_ope = CumulativeDistributionalOPE(
+        >>> cd_ope = CumulativeDistributionOPE(
                 logged_dataset=logged_dataset,
                 ope_estimators=[
                     CDIS(estimator_name="cdf_is"),
@@ -152,7 +152,7 @@ class OffPolicySelection:
             )
         >>> ops = OffPolicySelection(
                 ope=ope,
-                cumulative_distributional_ope=cd_ope,
+                cumulative_distribution_ope=cd_ope,
             )
         >>> ops_dict = ops.select_by_policy_value(
                 input_dict=input_dict,
@@ -196,14 +196,14 @@ class OffPolicySelection:
     ope: Optional[
         Union[DiscreteOffPolicyEvaluation, ContinuousOffPolicyEvaluation]
     ] = None
-    cumulative_distributional_ope: Optional[
-        DiscreteCumulativeDistributionalOffPolicyEvaluation
+    cumulative_distribution_ope: Optional[
+        DiscreteCumulativeDistributionOffPolicyEvaluation
     ] = None
 
     def __post_init__(self):
-        if self.ope is None and self.cumulative_distributional_ope is None:
+        if self.ope is None and self.cumulative_distribution_ope is None:
             raise RuntimeError(
-                "one of `ope` or `cumulative_distributional_ope` must be given"
+                "one of `ope` or `cumulative_distribution_ope` must be given"
             )
 
         if self.ope is not None and not isinstance(
@@ -212,12 +212,12 @@ class OffPolicySelection:
             raise RuntimeError(
                 "ope must be the instance of either DiscreteOffPolicyEvaluation or ContinuousOffPolicyEvaluation"
             )
-        if self.cumulative_distributional_ope is not None and not isinstance(
-            self.cumulative_distributional_ope,
-            DiscreteCumulativeDistributionalOffPolicyEvaluation,
+        if self.cumulative_distribution_ope is not None and not isinstance(
+            self.cumulative_distribution_ope,
+            DiscreteCumulativeDistributionOffPolicyEvaluation,
         ):
             raise RuntimeError(
-                "cumulative_distributional_ope must be the instance of DiscreteCumulativeDistributionalOffPolicyEvaluation"
+                "cumulative_distribution_ope must be the instance of DiscreteCumulativeDistributionOffPolicyEvaluation"
             )
 
         step_per_episode = self.ope.logged_dataset["step_per_episode"]
@@ -632,7 +632,7 @@ class OffPolicySelection:
 
         return (ranking_df_dict, metric_df) if return_by_dataframe else ops_dict
 
-    def select_by_policy_value_via_cumulative_distributional_ope(
+    def select_by_policy_value_via_cumulative_distribution_ope(
         self,
         input_dict: OPEInputDict,
         return_metrics: bool = False,
@@ -640,7 +640,7 @@ class OffPolicySelection:
         top_k_in_eval_metrics: int = 1,
         safety_criteria: float = 0.0,
     ):
-        """Rank the candidate policies by their estimated policy value via cumulative distributional methods.
+        """Rank the candidate policies by their estimated policy value via cumulative distribution methods.
 
         Parameters
         -------
@@ -729,12 +729,12 @@ class OffPolicySelection:
                 The relative policy value required to be a safe policy.
 
         """
-        if self.cumulative_distributional_ope is None:
+        if self.cumulative_distribution_ope is None:
             raise RuntimeError(
-                "cumulative_distributional_ope is not given. Please initialize the class with cumulative_distributional_ope attribute"
+                "cumulative_distribution_ope is not given. Please initialize the class with cumulative_distribution_ope attribute"
             )
 
-        estimated_policy_value_dict = self.cumulative_distributional_ope.estimate_mean(
+        estimated_policy_value_dict = self.cumulative_distribution_ope.estimate_mean(
             input_dict=input_dict,
         )
 
@@ -751,9 +751,7 @@ class OffPolicySelection:
         n_policies = len(candidate_policy_names)
 
         ops_dict = {}
-        for i, estimator in enumerate(
-            self.cumulative_distributional_ope.ope_estimators_
-        ):
+        for i, estimator in enumerate(self.cumulative_distribution_ope.ope_estimators_):
 
             estimated_policy_value_ = np.zeros(n_policies)
             for j, eval_policy in enumerate(candidate_policy_names):
@@ -830,7 +828,7 @@ class OffPolicySelection:
 
             ranking_df_dict = defaultdict(pd.DataFrame)
             for i, estimator in enumerate(
-                self.cumulative_distributional_ope.ope_estimators_
+                self.cumulative_distribution_ope.ope_estimators_
             ):
                 ranking_df_ = pd.DataFrame()
                 ranking_df_["estimated_ranking"] = ops_dict[estimator][
@@ -851,7 +849,7 @@ class OffPolicySelection:
                 type_i.append(ops_dict[estimator]["type_i_error_rate"])
                 type_ii.append(ops_dict[estimator]["type_ii_error_rate"])
 
-            metric_df["estimator"] = self.cumulative_distributional_ope.ope_estimators_
+            metric_df["estimator"] = self.cumulative_distribution_ope.ope_estimators_
             metric_df["mean_squared_error"] = mse
             metric_df["rank_correlation"] = rankcorr
             metric_df["pvalue"] = pvalue
@@ -1216,13 +1214,13 @@ class OffPolicySelection:
                 The lower quartile required to be a safe policy.
 
         """
-        if self.cumulative_distributional_ope is None:
+        if self.cumulative_distribution_ope is None:
             raise RuntimeError(
-                "cumulative_distributional_ope is not given. Please initialize the class with cumulative_distributional_ope attribute"
+                "cumulative_distribution_ope is not given. Please initialize the class with cumulative_distribution_ope attribute"
             )
 
         estimated_interquartile_range_dict = (
-            self.cumulative_distributional_ope.estimate_interquartile_range(
+            self.cumulative_distribution_ope.estimate_interquartile_range(
                 input_dict=input_dict,
                 alpha=alpha,
             )
@@ -1243,9 +1241,7 @@ class OffPolicySelection:
         n_policies = len(candidate_policy_names)
 
         ops_dict = {}
-        for i, estimator in enumerate(
-            self.cumulative_distributional_ope.ope_estimators_
-        ):
+        for i, estimator in enumerate(self.cumulative_distribution_ope.ope_estimators_):
 
             estimated_lower_quartile_ = np.zeros(n_policies)
             for j, eval_policy in enumerate(candidate_policy_names):
@@ -1304,7 +1300,7 @@ class OffPolicySelection:
 
             ranking_df_dict = defaultdict(pd.DataFrame)
             for i, estimator in enumerate(
-                self.cumulative_distributional_ope.ope_estimators_
+                self.cumulative_distribution_ope.ope_estimators_
             ):
                 ranking_df_ = pd.DataFrame()
                 ranking_df_["estimated_ranking"] = ops_dict[estimator][
@@ -1321,7 +1317,7 @@ class OffPolicySelection:
                 type_i.append(ops_dict[estimator]["type_i_error_rate"])
                 type_ii.append(ops_dict[estimator]["type_ii_error_rate"])
 
-            metric_df["estimator"] = self.cumulative_distributional_ope.ope_estimators_
+            metric_df["estimator"] = self.cumulative_distribution_ope.ope_estimators_
             metric_df["mean_squared_error"] = mse
             metric_df["rank_correlation"] = rankcorr
             metric_df["pvalue"] = pvalue
@@ -1423,13 +1419,13 @@ class OffPolicySelection:
                 The conditional value at risk required to be a safe policy.
 
         """
-        if self.cumulative_distributional_ope is None:
+        if self.cumulative_distribution_ope is None:
             raise RuntimeError(
-                "cumulative_distributional_ope is not given. Please initialize the class with cumulative_distributional_ope attribute"
+                "cumulative_distribution_ope is not given. Please initialize the class with cumulative_distribution_ope attribute"
             )
 
         estimated_cvar_dict = (
-            self.cumulative_distributional_ope.estimate_conditional_value_at_risk(
+            self.cumulative_distribution_ope.estimate_conditional_value_at_risk(
                 input_dict=input_dict,
                 alphas=alpha,
             )
@@ -1450,9 +1446,7 @@ class OffPolicySelection:
         n_policies = len(candidate_policy_names)
 
         ops_dict = {}
-        for i, estimator in enumerate(
-            self.cumulative_distributional_ope.ope_estimators_
-        ):
+        for i, estimator in enumerate(self.cumulative_distribution_ope.ope_estimators_):
 
             estimated_cvar_ = np.zeros(n_policies)
             for j, eval_policy in enumerate(candidate_policy_names):
@@ -1509,7 +1503,7 @@ class OffPolicySelection:
 
             ranking_df_dict = defaultdict(pd.DataFrame)
             for i, estimator in enumerate(
-                self.cumulative_distributional_ope.ope_estimators_
+                self.cumulative_distribution_ope.ope_estimators_
             ):
                 ranking_df_ = pd.DataFrame()
                 ranking_df_["estimated_ranking"] = ops_dict[estimator][
@@ -1526,7 +1520,7 @@ class OffPolicySelection:
                 type_i.append(ops_dict[estimator]["type_i_error_rate"])
                 type_ii.append(ops_dict[estimator]["type_ii_error_rate"])
 
-            metric_df["estimator"] = self.cumulative_distributional_ope.ope_estimators_
+            metric_df["estimator"] = self.cumulative_distribution_ope.ope_estimators_
             metric_df["mean_squared_error"] = mse
             metric_df["rank_correlation"] = rankcorr
             metric_df["pvalue"] = pvalue
@@ -1658,16 +1652,18 @@ class OffPolicySelection:
             Name of the bar figure.
 
         """
-        return self.cumulative_distributional_ope.visualize_cumulative_distribution_function(
-            input_dict=input_dict,
-            hue=hue,
-            legend=legend,
-            n_cols=n_cols,
-            fig_dir=fig_dir,
-            fig_name=fig_name,
+        return (
+            self.cumulative_distribution_ope.visualize_cumulative_distribution_function(
+                input_dict=input_dict,
+                hue=hue,
+                legend=legend,
+                n_cols=n_cols,
+                fig_dir=fig_dir,
+                fig_name=fig_name,
+            )
         )
 
-    def visualize_policy_value_of_cumulative_distributional_ope_for_selection(
+    def visualize_policy_value_of_cumulative_distribution_ope_for_selection(
         self,
         input_dict: OPEInputDict,
         alpha: float = 0.05,
@@ -1677,7 +1673,7 @@ class OffPolicySelection:
         fig_dir: Optional[Path] = None,
         fig_name: str = "estimated_policy_value.png",
     ) -> None:
-        """Visualize the policy value estimated by cumulative distributional OPE estimators (box plot).
+        """Visualize the policy value estimated by cumulative distribution OPE estimators (box plot).
 
         Parameters
         -------
@@ -1717,7 +1713,7 @@ class OffPolicySelection:
             Name of the bar figure.
 
         """
-        return self.cumulative_distributional_ope.visualize_policy_value(
+        return self.cumulative_distribution_ope.visualize_policy_value(
             input_dict=input_dict,
             alpha=alpha,
             is_relative=is_relative,
@@ -1738,7 +1734,7 @@ class OffPolicySelection:
         fig_dir: Optional[Path] = None,
         fig_name: str = "estimated_policy_value.png",
     ) -> None:
-        """Visualize the conditional value at risk estimated by cumulative distributional OPE estimators (cdf plot).
+        """Visualize the conditional value at risk estimated by cumulative distribution OPE estimators (cdf plot).
 
         Parameters
         -------
@@ -1780,7 +1776,7 @@ class OffPolicySelection:
             Name of the bar figure.
 
         """
-        return self.cumulative_distributional_ope.visualize_conditional_value_at_risk(
+        return self.cumulative_distribution_ope.visualize_conditional_value_at_risk(
             input_dict=input_dict,
             alphas=alphas,
             hue=hue,
@@ -1800,7 +1796,7 @@ class OffPolicySelection:
         fig_dir: Optional[Path] = None,
         fig_name: str = "estimated_policy_value.png",
     ) -> None:
-        """Visualize the interquartile range estimated by cumulative distributional OPE estimators (box plot).
+        """Visualize the interquartile range estimated by cumulative distribution OPE estimators (box plot).
 
         Parameters
         -------
@@ -1836,7 +1832,7 @@ class OffPolicySelection:
             Name of the bar figure.
 
         """
-        return self.cumulative_distributional_ope.visualize_interquartile_range(
+        return self.cumulative_distribution_ope.visualize_interquartile_range(
             input_dict=input_dict,
             alpha=alpha,
             hue=hue,
@@ -2027,17 +2023,17 @@ class OffPolicySelection:
         plt.show()
 
         if fig_dir:
-            fig.savefig(str(fig_dir / fig_name))
+            fig.savefig(str(fig_dir / fig_name), dpi=300, bbox_inches="tight")
 
-    def visualize_policy_value_of_cumulative_distributional_ope_for_validation(
+    def visualize_policy_value_of_cumulative_distribution_ope_for_validation(
         self,
         input_dict: OPEInputDict,
         n_cols: Optional[int] = None,
         share_axes: bool = False,
         fig_dir: Optional[Path] = None,
-        fig_name: str = "scatter_policy_value_of_cumulative_distributional_ope.png",
+        fig_name: str = "scatter_policy_value_of_cumulative_distribution_ope.png",
     ):
-        """Visualize the true policy value and its estimate obtained by cumulative distributional OPE (scatter plot).
+        """Visualize the true policy value and its estimate obtained by cumulative distribution OPE (scatter plot).
 
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
@@ -2064,7 +2060,7 @@ class OffPolicySelection:
             Path to store the bar figure.
             If `None` is given, the figure will not be saved.
 
-        fig_name: str, default="scatter_policy_value_of_cumulative_distributional_ope.png"
+        fig_name: str, default="scatter_policy_value_of_cumulative_distribution_ope.png"
             Name of the bar figure.
 
         """
@@ -2075,13 +2071,13 @@ class OffPolicySelection:
         true_policy_value = np.array(ground_truth_policy_value_dict["policy_value"])
 
         estimated_policy_value_dict = (
-            self.select_by_policy_value_via_cumulative_distributional_ope(
+            self.select_by_policy_value_via_cumulative_distribution_ope(
                 input_dict=input_dict,
             )
         )
 
         plt.style.use("ggplot")
-        n_figs = len(self.cumulative_distributional_ope.ope_estimators_)
+        n_figs = len(self.cumulative_distribution_ope.ope_estimators_)
         n_cols = min(5, n_figs) if n_cols is None else n_cols
         n_rows = (n_figs - 1) // n_cols + 1
 
@@ -2096,7 +2092,7 @@ class OffPolicySelection:
         guide_min, guide_max = 1e5, -1e5
         if n_rows == 1:
             for i, estimator in enumerate(
-                self.cumulative_distributional_ope.ope_estimators_
+                self.cumulative_distribution_ope.ope_estimators_
             ):
                 estimated_ranking_ = estimated_policy_value_dict[estimator][
                     "estimated_ranking"
@@ -2143,7 +2139,7 @@ class OffPolicySelection:
             if share_axes:
                 guide = np.linspace(guide_min, guide_max)
                 for i, estimator in enumerate(
-                    self.cumulative_distributional_ope.ope_estimators_
+                    self.cumulative_distribution_ope.ope_estimators_
                 ):
                     axes[i].plot(
                         guide,
@@ -2154,7 +2150,7 @@ class OffPolicySelection:
 
         else:
             for i, estimator in enumerate(
-                self.cumulative_distributional_ope.ope_estimators_
+                self.cumulative_distribution_ope.ope_estimators_
             ):
                 estimated_ranking_ = estimated_policy_value_dict[estimator][
                     "estimated_ranking"
@@ -2212,7 +2208,7 @@ class OffPolicySelection:
         plt.show()
 
         if fig_dir:
-            fig.savefig(str(fig_dir / fig_name))
+            fig.savefig(str(fig_dir / fig_name), dpi=300, bbox_inches="tight")
 
     def visualize_policy_value_lower_bound_for_validation(
         self,
@@ -2553,7 +2549,7 @@ class OffPolicySelection:
         plt.show()
 
         if fig_dir:
-            fig.savefig(str(fig_dir / fig_name))
+            fig.savefig(str(fig_dir / fig_name), dpi=300, bbox_inches="tight")
 
     def visualize_variance_for_validation(
         self,
@@ -2601,12 +2597,12 @@ class OffPolicySelection:
         candidate_policy_names = ground_truth_policy_value_dict["ranking"]
         true_variance = ground_truth_policy_value_dict["variance"]
 
-        estimated_variance_dict = self.cumulative_distributional_ope.estimate_variance(
+        estimated_variance_dict = self.cumulative_distribution_ope.estimate_variance(
             input_dict=input_dict,
         )
 
         plt.style.use("ggplot")
-        n_figs = len(self.cumulative_distributional_ope.ope_estimators_)
+        n_figs = len(self.cumulative_distribution_ope.ope_estimators_)
         n_cols = min(5, n_figs) if n_cols is None else n_cols
         n_rows = (n_figs - 1) // n_cols + 1
 
@@ -2621,7 +2617,7 @@ class OffPolicySelection:
         guide_min, guide_max = 1e5, -1e5
         if n_rows == 1:
             for i, estimator in enumerate(
-                self.cumulative_distributional_ope.ope_estimators_
+                self.cumulative_distribution_ope.ope_estimators_
             ):
                 estimated_variance = np.zeros(len(candidate_policy_names))
                 for j, eval_policy in enumerate(candidate_policy_names):
@@ -2658,7 +2654,7 @@ class OffPolicySelection:
             if share_axes:
                 guide = np.linspace(guide_min, guide_max)
                 for i, estimator in enumerate(
-                    self.cumulative_distributional_ope.ope_estimators_
+                    self.cumulative_distribution_ope.ope_estimators_
                 ):
                     axes[i].plot(
                         guide,
@@ -2669,7 +2665,7 @@ class OffPolicySelection:
 
         else:
             for i, estimator in enumerate(
-                self.cumulative_distributional_ope.ope_estimators_
+                self.cumulative_distribution_ope.ope_estimators_
             ):
                 estimated_variance = np.zeros(len(candidate_policy_names))
                 for j, eval_policy in enumerate(candidate_policy_names):
@@ -2704,7 +2700,7 @@ class OffPolicySelection:
                 axes[i // n_cols, i % n_cols].ylabel("estimated variance")
 
             for i, estimator in enumerate(
-                self.cumulative_distributional_ope.ope_estimators_
+                self.cumulative_distribution_ope.ope_estimators_
             ):
                 axes[i // n_cols, i % n_cols].plot(
                     guide,
@@ -2717,7 +2713,7 @@ class OffPolicySelection:
         plt.show()
 
         if fig_dir:
-            fig.savefig(str(fig_dir / fig_name))
+            fig.savefig(str(fig_dir / fig_name), dpi=300, bbox_inches="tight")
 
     def visualize_lower_quartile_for_validation(
         self,
@@ -2776,7 +2772,7 @@ class OffPolicySelection:
         )
 
         plt.style.use("ggplot")
-        n_figs = len(self.cumulative_distributional_ope.ope_estimators_)
+        n_figs = len(self.cumulative_distribution_ope.ope_estimators_)
         n_cols = min(5, n_figs) if n_cols is None else n_cols
         n_rows = (n_figs - 1) // n_cols + 1
 
@@ -2791,7 +2787,7 @@ class OffPolicySelection:
         guide_min, guide_max = 1e5, -1e5
         if n_rows == 1:
             for i, estimator in enumerate(
-                self.cumulative_distributional_ope.ope_estimators_
+                self.cumulative_distribution_ope.ope_estimators_
             ):
                 estimated_ranking_ = estimated_policy_value_dict[estimator][
                     "estimated_ranking"
@@ -2837,7 +2833,7 @@ class OffPolicySelection:
             if share_axes:
                 guide = np.linspace(guide_min, guide_max)
                 for i, estimator in enumerate(
-                    self.cumulative_distributional_ope.ope_estimators_
+                    self.cumulative_distribution_ope.ope_estimators_
                 ):
                     axes[i].plot(
                         guide,
@@ -2848,7 +2844,7 @@ class OffPolicySelection:
 
         else:
             for i, estimator in enumerate(
-                self.cumulative_distributional_ope.ope_estimators_
+                self.cumulative_distribution_ope.ope_estimators_
             ):
                 estimated_ranking_ = estimated_policy_value_dict[estimator][
                     "estimated_ranking"
@@ -2894,7 +2890,7 @@ class OffPolicySelection:
             if share_axes:
                 guide = np.linspace(guide_min, guide_max)
                 for i, estimator in enumerate(
-                    self.cumulative_distributional_ope.ope_estimators_
+                    self.cumulative_distribution_ope.ope_estimators_
                 ):
                     axes[i // n_cols, i % n_cols].plot(
                         guide,
@@ -2907,7 +2903,7 @@ class OffPolicySelection:
         plt.show()
 
         if fig_dir:
-            fig.savefig(str(fig_dir / fig_name))
+            fig.savefig(str(fig_dir / fig_name), dpi=300, bbox_inches="tight")
 
     def visualize_conditional_value_at_risk_for_validation(
         self,
@@ -2968,7 +2964,7 @@ class OffPolicySelection:
         )
 
         plt.style.use("ggplot")
-        n_figs = len(self.cumulative_distributional_ope.ope_estimators_)
+        n_figs = len(self.cumulative_distribution_ope.ope_estimators_)
         n_cols = min(5, n_figs) if n_cols is None else n_cols
         n_rows = (n_figs - 1) // n_cols + 1
 
@@ -2983,7 +2979,7 @@ class OffPolicySelection:
         guide_min, guide_max = 1e5, -1e5
         if n_rows == 1:
             for i, estimator in enumerate(
-                self.cumulative_distributional_ope.ope_estimators_
+                self.cumulative_distribution_ope.ope_estimators_
             ):
                 estimated_ranking_ = estimated_policy_value_dict[estimator][
                     "estimated_ranking"
@@ -3025,7 +3021,7 @@ class OffPolicySelection:
             if share_axes:
                 guide = np.linspace(guide_min, guide_max)
                 for i, estimator in enumerate(
-                    self.cumulative_distributional_ope.ope_estimators_
+                    self.cumulative_distribution_ope.ope_estimators_
                 ):
                     axes[i].plot(
                         guide,
@@ -3036,7 +3032,7 @@ class OffPolicySelection:
 
         else:
             for i, estimator in enumerate(
-                self.cumulative_distributional_ope.ope_estimators_
+                self.cumulative_distribution_ope.ope_estimators_
             ):
                 estimated_ranking_ = estimated_policy_value_dict[estimator][
                     "estimated_ranking"
@@ -3084,7 +3080,7 @@ class OffPolicySelection:
             if share_axes:
                 guide = np.linspace(guide_min, guide_max)
                 for i, estimator in enumerate(
-                    self.cumulative_distributional_ope.ope_estimators_
+                    self.cumulative_distribution_ope.ope_estimators_
                 ):
                     axes[i // n_cols, i % n_cols].plot(
                         guide,
@@ -3097,4 +3093,4 @@ class OffPolicySelection:
         plt.show()
 
         if fig_dir:
-            fig.savefig(str(fig_dir / fig_name))
+            fig.savefig(str(fig_dir / fig_name), dpi=300, bbox_inches="tight")
