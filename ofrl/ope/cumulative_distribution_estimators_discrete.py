@@ -917,6 +917,7 @@ class DiscreteCumulativeDistributionTrajectoryWiseDoublyRobust(
             reward=reward,
             behavior_policy_trajectory_wise_pscore=behavior_policy_trajectory_wise_pscore,
             evaluation_policy_action_dist=evaluation_policy_action_dist,
+            initial_state_value_prediction=initial_state_value_prediction,
             gamma=gamma,
         )
         check_array(

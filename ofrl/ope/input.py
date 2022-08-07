@@ -229,7 +229,7 @@ class CreateOPEInput:
             action=self.logged_dataset["action"],
         )
 
-    def obtain_action_dist_with_state_action_value_prediction_discrete(
+    def obtain_action_dist(
         self,
         evaluation_policy: BaseHead,
     ) -> np.ndarray:
@@ -323,14 +323,12 @@ class CreateOPEInput:
         """
         if not isinstance(evaluation_policy, BaseHead):
             raise ValueError("evaluation_policy must be a child class of BaseHead")
-        (
-            state_action_value,
-            pscore,
-        ) = self.obtain_action_dist_with_state_action_value_prediction_discrete(
+        action_dist = self.obtain_action_dist(evaluation_policy)
+        state_action_value = self.obtain_state_action_value_prediction_discrete(
             evaluation_policy
         )
         state_action_value = state_action_value.reshape((-1, self.n_actions))
-        state_value = np.sum(state_action_value * pscore, axis=1)
+        state_value = np.sum(state_action_value * action_dist, axis=1)
         return state_value.reshape((-1, self.step_per_episode))[:, 0]  # (n_samples, )
 
     def obtain_initial_state_value_prediction_continuous(
@@ -356,31 +354,6 @@ class CreateOPEInput:
             evaluation_policy
         )
         return state_value.reshape((-1, self.step_per_episode))[:, 0]
-
-    def obtain_initial_state_action_distribution(
-        self,
-        evaluation_policy: BaseHead,
-    ) -> np.ndarray:
-        """Obtain the evaluation policy pscore of the discrete actions at the initial state of each episode.
-
-        Parameters
-        -------
-        evaluation_policy: BaseHead
-            Evaluation policy.
-
-        Return
-        -------
-        initial_state_action_distribution: ndarray of shape (n_episodes, n_actions)
-            Evaluation policy pscore at the initial state of each episode.
-
-        """
-        if not isinstance(evaluation_policy, BaseHead):
-            raise ValueError("evaluation_policy must be a child class of BaseHead")
-        state = self.logged_dataset["state"].reshape(
-            (-1, self.step_per_episode, self.state_dim)
-        )
-        action_dist = evaluation_policy.calc_action_choice_probability(state[:, 0, :])
-        return action_dist
 
     def obtain_whole_inputs(
         self,
@@ -536,15 +509,11 @@ class CreateOPEInput:
             # input for DM, DR
             if self.action_type == "discrete":
                 if self.use_base_model:
-                    (
-                        action_dist,
-                        state_action_value_prediction,
-                    ) = self.obtain_state_action_value_prediction_discrete(
-                        evaluation_policies[i]
-                    )
                     input_dict[evaluation_policies[i].name][
                         "state_action_value_prediction"
-                    ] = state_action_value_prediction
+                    ] = self.obtain_state_action_value_prediction_discrete(
+                        evaluation_policies[i]
+                    )
                     input_dict[evaluation_policies[i].name][
                         "initial_state_value_prediction"
                     ] = self.obtain_initial_state_value_prediction_discrete(

@@ -247,7 +247,7 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 
         """
         evaluation_policy_trajectory_wise_pscore = self._calc_evaluation_policy_pscore(
-            step_per_espisode=step_per_episode,
+            step_per_episode=step_per_episode,
             action=action,
             evaluation_policy_action_dist=evaluation_policy_action_dist,
             pscore_type="trajectory_wise",
@@ -577,7 +577,7 @@ class DiscretePerDecisionImportanceSampling(BaseOffPolicyEstimator):
 
         """
         evaluation_policy_step_wise_pscore = self._calc_evaluation_policy_pscore(
-            step_per_espisode=step_per_episode,
+            step_per_episode=step_per_episode,
             action=action,
             evaluation_policy_action_dist=evaluation_policy_action_dist,
             pscore_type="step_wise",
@@ -922,7 +922,7 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
             estimated_value[i] = state_action_value_prediction[i, action[i]]
 
         evaluation_policy_step_wise_pscore = self._calc_evaluation_policy_pscore(
-            step_per_espisode=step_per_episode,
+            step_per_episode=step_per_episode,
             action=action,
             evaluation_policy_action_dist=evaluation_policy_action_dist,
             pscore_type="step_wise",
@@ -1311,7 +1311,7 @@ class DiscreteSelfNormalizedTrajectoryWiseImportanceSampling(
 
         """
         evaluation_policy_trajectory_wise_pscore = self._calc_evaluation_policy_pscore(
-            step_per_espisode=step_per_episode,
+            step_per_episode=step_per_episode,
             action=action,
             evaluation_policy_action_dist=evaluation_policy_action_dist,
             pscore_type="trajectory_wise",
@@ -1428,7 +1428,7 @@ class DiscreteSelfNormalizedPerDecisionImportanceSampling(
 
         """
         evaluation_policy_step_wise_pscore = self._calc_evaluation_policy_pscore(
-            step_per_espisode=step_per_episode,
+            step_per_episode=step_per_episode,
             action=action,
             evaluation_policy_action_dist=evaluation_policy_action_dist,
             pscore_type="step_wise",
@@ -1557,7 +1557,7 @@ class DiscreteSelfNormalizedDoublyRobust(DiscreteDoublyRobust):
             estimated_value[i] = state_action_value_prediction[i, action[i]]
 
         evaluation_policy_step_wise_pscore = self._calc_evaluation_policy_pscore(
-            step_per_espisode=step_per_episode,
+            step_per_episode=step_per_episode,
             action=action,
             evaluation_policy_action_dist=evaluation_policy_action_dist,
             pscore_type="step_wise",
