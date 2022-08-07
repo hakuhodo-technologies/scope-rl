@@ -57,7 +57,6 @@ The OPE class implements the following functions.
 (Evaluation of OPE estimators)
 
 * :class:`evaluate_performance_of_ope_estimators`
-* :class:`summarize_estimators_comparison`
 
 (Visualization)
 
