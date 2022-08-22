@@ -268,13 +268,10 @@ class ContinuousOffPolicyEvaluation:
             Dictionary of the OPE inputs for each evaluation policy.
             Please refer to `CreateOPEInput` class for the detail.
             key: [evaluation_policy_name][
-                evaluation_policy_step_wise_pscore,
-                evaluation_policy_trajectory_wise_pscore,
                 evaluation_policy_action,
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
-                initial_state_action_distribution,
                 on_policy_policy_value,
                 gamma,
             ]
@@ -326,13 +323,10 @@ class ContinuousOffPolicyEvaluation:
             Dictionary of the OPE inputs for each evaluation policy.
             Please refer to `CreateOPEInput` class for the detail.
             key: [evaluation_policy_name][
-                evaluation_policy_step_wise_pscore,
-                evaluation_policy_trajectory_wise_pscore,
                 evaluation_policy_action,
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
-                initial_state_action_distribution,
                 on_policy_policy_value,
                 gamma,
             ]
@@ -406,13 +400,10 @@ class ContinuousOffPolicyEvaluation:
             Dictionary of the OPE inputs for each evaluation policy.
             Please refer to `CreateOPEInput` class for the detail.
             key: [evaluation_policy_name][
-                evaluation_policy_step_wise_pscore,
-                evaluation_policy_trajectory_wise_pscore,
                 evaluation_policy_action,
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
-                initial_state_action_distribution,
                 on_policy_policy_value,
                 gamma,
             ]
@@ -500,13 +491,10 @@ class ContinuousOffPolicyEvaluation:
             Dictionary of the OPE inputs for each evaluation policy.
             Please refer to `CreateOPEInput` class for the detail.
             key: [evaluation_policy_name][
-                evaluation_policy_step_wise_pscore,
-                evaluation_policy_trajectory_wise_pscore,
                 evaluation_policy_action,
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
-                initial_state_action_distribution,
                 on_policy_policy_value,
                 gamma,
             ]
@@ -751,10 +739,11 @@ class ContinuousOffPolicyEvaluation:
         if fig_dir:
             fig.savefig(str(fig_dir / fig_name), dpi=300, bbox_inches="tight")
 
-    def evaluate_performance_of_estimators(
+    def evaluate_performance_of_ope_estimators(
         self,
         input_dict: OPEInputDict,
         metric: str = "relative-ee",
+        return_by_dataframe: bool = False,
     ) -> Dict[str, Dict[str, float]]:
         """Evaluate the estimation performance/accuracy of OPE estimators.
 
@@ -780,13 +769,10 @@ class ContinuousOffPolicyEvaluation:
             Dictionary of the OPE inputs for each evaluation policy.
             Please refer to `CreateOPEInput` class for the detail.
             key: [evaluation_policy_name][
-                evaluation_policy_step_wise_pscore,
-                evaluation_policy_trajectory_wise_pscore,
                 evaluation_policy_action,
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
-                initial_state_action_distribution,
                 on_policy_policy_value,
                 gamma,
             ]
@@ -794,10 +780,13 @@ class ContinuousOffPolicyEvaluation:
         metric: {"relative-ee", "se"}, default="relative-ee"
             Evaluation metric used to evaluate and compare the estimation performance/accuracy of OPE estimators.
 
+        return_by_dataframe: bool, default=False
+            Whether to return the result in a dataframe format.
+
         Return
         -------
-        eval_metric_ope_dict: dict
-            Dictionary containing evaluation metric for evaluating the estimation performance/accuracy of OPE estimators.
+        eval_metric_ope_dict/eval_metric_ope_df: dict or dataframe
+            Dictionary/dataframe containing evaluation metric for evaluating the estimation performance/accuracy of OPE estimators.
             key: [evaluation_policy_name][OPE_estimator_name]
 
         """
@@ -835,53 +824,13 @@ class ContinuousOffPolicyEvaluation:
                     ) ** 2
                     eval_metric_ope_dict[eval_policy][estimator] = se_
 
-        return defaultdict_to_dict(eval_metric_ope_dict)
+        eval_metric_ope_dict = defaultdict_to_dict(eval_metric_ope_dict)
 
-    def summarize_estimators_comparison(
-        self,
-        input_dict: OPEInputDict,
-        metric: str = "relative-ee",
-    ) -> DataFrame:
-        """Summarize performance comparison of OPE estimators.
+        if return_by_dataframe:
+            eval_metric_ope_df = DataFrame()
+            for eval_policy in input_dict.keys():
+                eval_metric_ope_df[eval_policy] = DataFrame(
+                    eval_metric_ope_dict[eval_policy], index=[eval_policy]
+                ).T
 
-        Parameters
-        -------
-        input_dict: OPEInputDict
-            Dictionary of the OPE inputs for each evaluation policy.
-            Please refer to `CreateOPEInput` class for the detail.
-            key: [evaluation_policy_name][
-                evaluation_policy_step_wise_pscore,
-                evaluation_policy_trajectory_wise_pscore,
-                evaluation_policy_action,
-                evaluation_policy_action_dist,
-                state_action_value_prediction,
-                initial_state_value_prediction,
-                initial_state_action_distribution,
-                on_policy_policy_value,
-                gamma,
-            ]
-
-        metric: {"relative-ee", "se"}, default="relative-ee"
-            Evaluation metric used to evaluate and compare the estimation performance/accuracy of OPE estimators.
-
-        Return
-        -------
-        eval_metric_ope_df: dataframe
-            Dictionary containing evaluation metric for evaluating the estimation performance/accuracy of OPE estimators.
-
-        """
-        check_input_dict(input_dict)
-        if metric not in ["relative-ee", "se"]:
-            raise ValueError(
-                f"metric must be either 'relative-ee' or 'se', but {metric} is given"
-            )
-        eval_metric_ope_df = DataFrame()
-        eval_metric_ope_dict = self.evaluate_performance_of_estimators(
-            input_dict,
-            metric=metric,
-        )
-        for eval_policy in input_dict.keys():
-            eval_metric_ope_df[eval_policy] = DataFrame(
-                eval_metric_ope_dict[eval_policy], index=[eval_policy]
-            ).T
-        return eval_metric_ope_df
+        return eval_metric_ope_df if return_by_dataframe else eval_metric_ope_dict

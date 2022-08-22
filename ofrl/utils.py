@@ -288,13 +288,10 @@ def check_input_dict(input_dict: OPEInputDict):
     for eval_policy in input_dict.keys():
         input_dict_keys = input_dict[eval_policy].keys()
         for expected_key in [
-            "evaluation_policy_step_wise_pscore",
-            "evaluation_policy_trajectory_wise_pscore",
             "evaluation_policy_action",
             "evaluation_policy_action_dist",
             "state_action_value_prediction",
             "initial_state_value_prediction",
-            "initial_state_action_distribution",
             "on_policy_policy_value",
             "gamma",
         ]:

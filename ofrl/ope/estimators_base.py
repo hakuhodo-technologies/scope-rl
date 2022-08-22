@@ -27,6 +27,55 @@ class BaseOffPolicyEstimator(metaclass=ABCMeta):
         """Estimate the confidence intervals of the policy value."""
         raise NotImplementedError
 
+    def _calc_evaluation_policy_pscore(
+        self,
+        step_per_episode: int,
+        action: np.ndarray,
+        evaluation_policy_action_dist: np.ndarray,
+        pscore_type: str,
+    ):
+        """Transform the evaluation policy action distribution into the evaluation policy pscore (action choice probability).
+
+        Parameters
+        -------
+        step_per_episode: int (> 0)
+            Number of timesteps in an episode.
+
+        action: array-like of shape (n_episodes * step_per_episode, )
+            Action chosen by the behavior policy.
+
+        evaluation_policy_action_dist: array-like of shape (n_episodes * step_per_episode, n_action)
+            Conditional action distribution induced by the evaluation policy,
+            i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
+
+        Return
+        -------
+        evaluation_policy_trajectory_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
+            Trajectory-wise action choice probability of the evaluation policy,
+            i.e., :math:`\\prod_{t=0}^T \\pi(a_t \\mid s_t)`
+
+        evaluation_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
+            Step-wise action choice probability of the evaluation policy,
+            i.e., :math:`\\prod_{t'=0}^t \\pi(a_{t'} \\mid s_{t'})`
+
+        """
+        n_samples = len(action)
+        evaluation_policy_base_pscore = evaluation_policy_action_dist[
+            np.arange(n_samples), action
+        ].reshape((-1, step_per_episode))
+
+        # step-wise pscore
+        evaluation_policy_pscore = np.cumprod(
+            evaluation_policy_base_pscore, axis=1
+        )
+
+        if pscore_type == "trajectory_wise":
+            evaluation_policy_pscore = np.tile(
+                evaluation_policy_pscore[:, -1], (step_per_episode, 1)
+            ).T
+
+        return evaluation_policy_pscore.flatten()
+
 
 @dataclass
 class BaseCumulativeDistributionOffPolicyEstimator(metaclass=ABCMeta):
@@ -92,9 +141,10 @@ class BaseCumulativeDistributionOffPolicyEstimator(metaclass=ABCMeta):
     def _aggregate_trajectory_wise_statistics_discrete(
         self,
         step_per_episode: int,
+        action: Optional[np.ndarray] = None,
         reward: Optional[np.ndarray] = None,
         behavior_policy_trajectory_wise_pscore: Optional[np.ndarray] = None,
-        evaluation_policy_trajectory_wise_pscore: Optional[np.ndarray] = None,
+        evaluation_policy_action_dist: Optional[np.ndarray] = None,
         initial_state_value_prediction: Optional[np.ndarray] = None,
         gamma: float = 1.0,
     ):
@@ -105,6 +155,9 @@ class BaseCumulativeDistributionOffPolicyEstimator(metaclass=ABCMeta):
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
+        action: array-like of shape (n_episodes * step_per_episode, )
+            Action chosen by the behavior policy.
+
         reward: ndarray of shape (n_episodes * step_per_episode, )
             Reward observation.
 
@@ -112,9 +165,9 @@ class BaseCumulativeDistributionOffPolicyEstimator(metaclass=ABCMeta):
             Trajectory-wise action choice probability of the behavior policy,
             i.e., :math:`\\prod_{t=0}^T \\pi_0(a_t \\mid s_t)`
 
-        evaluation_policy_trajectory_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
-            Trajectory-wise action choice probability of the evaluation policy,
-            i.e., :math:`\\prod_{t=0}^T \\pi(a_t \\mid s_t)`
+        evaluation_policy_action_dist: array-like of shape (n_episodes * step_per_episode, n_action)
+            Conditional action distribution induced by the evaluation policy,
+            i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
 
         initial_state_value_prediction: array-like of shape (n_episodes, )
             Estimated initial state value.
@@ -136,6 +189,7 @@ class BaseCumulativeDistributionOffPolicyEstimator(metaclass=ABCMeta):
         """
         trajectory_wise_importance_weight = None
         trajectory_wise_reward = None
+        n_samples = len(action)
 
         if reward is not None:
             reward = reward.reshape((-1, step_per_episode))
@@ -143,19 +197,24 @@ class BaseCumulativeDistributionOffPolicyEstimator(metaclass=ABCMeta):
             trajectory_wise_reward = (reward * discount).sum(axis=1)
 
         if (
-            behavior_policy_trajectory_wise_pscore is not None
-            and evaluation_policy_trajectory_wise_pscore is not None
+            action is not None
+            and behavior_policy_trajectory_wise_pscore is not None
+            and evaluation_policy_action_dist is not None
         ):
+            evaluation_policy_base_pscore = evaluation_policy_action_dist[
+                np.arange(n_samples), action
+            ].reshape((-1, step_per_episode))
+
+            evaluation_policy_trajectory_wise_pscore = np.cumprod(
+                evaluation_policy_base_pscore, axis=1
+            )[:, -1]
+
             behavior_policy_trajectory_wise_pscore = (
                 behavior_policy_trajectory_wise_pscore.reshape((-1, step_per_episode))[
                     :, 0
                 ]
             )
-            evaluation_policy_trajectory_wise_pscore = (
-                evaluation_policy_trajectory_wise_pscore.reshape(
-                    (-1, step_per_episode)
-                )[:, 0]
-            )
+
             trajectory_wise_importance_weight = (
                 evaluation_policy_trajectory_wise_pscore
                 / behavior_policy_trajectory_wise_pscore

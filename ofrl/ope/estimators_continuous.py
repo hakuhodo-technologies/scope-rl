@@ -70,12 +70,12 @@ class ContinuousDirectMethod(BaseOffPolicyEstimator):
 
         Parameters
         -------
-        initial_state_value_prediction: NDArray, shape (n_episodes, )
+        initial_state_value_prediction: array-like of shape (n_episodes, )
             Estimated initial state value.
 
         Return
         -------
-        estimated_trajectory_wise_policy_value: NDArray, shape (n_episodes, )
+        estimated_trajectory_wise_policy_value: array-like of shape (n_episodes, )
             Policy value estimated for each trajectory.
             (Equivalent to initial_state_value_prediction.)
 
