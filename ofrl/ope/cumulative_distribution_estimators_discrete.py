@@ -1288,7 +1288,7 @@ class DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSampli
     .. math::
 
         \\hat{F}_{\\mathrm{SNTIS}}(m, \\pi; \\mathcal{D}))
-        := \\mathbb{E}_{n} \\left[ \\frac{w_{1:T-1}}{\\mathbb{E}_{n}[w_{1:T-1}]} \\mathbb{I} \\left \\{\\sum_{t=0}^{T-1} \\gamma^t r_t \\leq m \\right \\} \\right]
+        := \\mathbb{E}_{n} \\left[ \\frac{w_{1:T-1}}{\\sum_{n} [w_{1:T-1}]} \\mathbb{I} \\left \\{\\sum_{t=0}^{T-1} \\gamma^t r_t \\leq m \\right \\} \\right]
 
     where :math:`\\hat{F}(\\cdot)` is the estimated cumulative distribution function,
     :math:`w_{0:T-1} := \\prod_{t=0}^{T-1} \\frac{\\pi(a_t \\mid s_t)}{\\pi_0(a_t \\mid s_t)}` is the trajectory-wise importance weight,
@@ -1469,7 +1469,7 @@ class DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseDoublyRobust(
     .. math::
 
         \\hat{F}_{\\mathrm{SNTDR}}(,m \\pi; \\mathcal{D}))
-        := \\mathbb{E}_{n} \\left[ \\frac{w_{1:T-1}}{\\mathbb{E}_{n}[w_{1:T-1}]} \\left( \\mathbb{I} \\left \\{\\sum_{t=0}^{T-1} \\gamma^t r_t \\leq t \\right \\} - \\hat{G}(m; s_0, a_0) \\right) \\right]
+        := \\mathbb{E}_{n} \\left[ \\frac{w_{1:T-1}}{\\sum_{n} [w_{1:T-1}]} \\left( \\mathbb{I} \\left \\{\\sum_{t=0}^{T-1} \\gamma^t r_t \\leq t \\right \\} - \\hat{G}(m; s_0, a_0) \\right) \\right]
         + \\hat{F}_{\\mathrm{DM}}(m, \\pi; \\mathcal{D}))
 
     where :math:`\\hat{F}(\\cdot)` is the estimated cumulative distribution function,

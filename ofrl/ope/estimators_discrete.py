@@ -6,13 +6,7 @@ import numpy as np
 from sklearn.utils import check_scalar
 
 from .estimators_base import BaseOffPolicyEstimator
-from ..utils import (
-    estimate_confidence_interval_by_bootstrap,
-    estimate_confidence_interval_by_hoeffding,
-    estimate_confidence_interval_by_empirical_bernstein,
-    estimate_confidence_interval_by_t_test,
-    check_array,
-)
+from ..utils import check_array
 
 
 @dataclass
@@ -21,14 +15,26 @@ class DiscreteDirectMethod(BaseOffPolicyEstimator):
 
     Note
     -------
-    DM estimates the policy value using the initial state value given by Fitted Q Evaluation (FQE) as follows.
+    DM estimates the policy value using the initial state value as follows.
 
     .. math::
 
         \\hat{J}_{\\mathrm{DM}} (\\pi; \\mathcal{D}) := \\mathbb{E}_n [\\mathbb{E}_{a_0 \\sim \\pi(a_0 \\mid s_0)} [\\hat{Q}(s_0, a_0)] ],
 
+    .. math::
+
+        \\hat{J}_{\\mathrm{DM}} (\\pi; \\mathcal{D}) := \\mathbb{E}_n [\\hat{V}(s_0)],
+
     where :math:`\\mathcal{D}=\\{\\{(s_t, a_t, r_t)\\}_{t=0}^{T-1}\\}_{i=1}^n` is the logged dataset with :math:`n` trajectories of data.
-    :math:`T` indicates step per episode. :math:`\\hat{Q}(s_t, a_t)` is an estimated Q value given a state-action pair.
+    :math:`T` indicates step per episode. :math:`\\hat{Q}(s_t, a_t)` is the estimated Q value given a state-action pair.
+    \\hat{V}(s_t) is the estimated value function given a state.
+
+    There are several ways to estimate :math:`\\hat{Q}(s, a)` such as Fitted Q Evaluation (FQE) (Le et al., 2019) and
+    Minimax Q-Function Learning (MQL) (Uehara et al., 2020). :math:`\\hat{V}(s)` is estimated in a similar manner using
+    Minimax Value Learning (MVL) (Uehara et al., 2020).
+
+    We use the implementation of FQE provided by d3rlpy (Seno et al., 2021).
+    The implementations of Minimax Learning is available in `ofrl/ope/minimax_estimators_discrete.py`.
 
     Parameters
     -------
@@ -39,6 +45,12 @@ class DiscreteDirectMethod(BaseOffPolicyEstimator):
     -------
     Yuta Saito, Shunsuke Aihara, Megumi Matsutani, and Yusuke Narita.
     "Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation.", 2021.
+
+    Takuma Seno and Michita Imai.
+    "d3rlpy: An Offline Deep Reinforcement Library.", 2021.
+
+    Masatoshi Uehara, Jiawei Huang, and Nan Jiang.
+    "Minimax Weight and Q-Function Learning for Off-Policy Evaluation.", 2020.
 
     Hoang Le, Cameron Voloshin, and Yisong Yue.
     "Batch Policy Learning under Constraints.", 2019.
@@ -52,13 +64,6 @@ class DiscreteDirectMethod(BaseOffPolicyEstimator):
 
     def __post_init__(self):
         self.action_type = "discrete"
-
-        self._estimate_confidence_interval = {
-            "bootstrap": estimate_confidence_interval_by_bootstrap,
-            "hoeffding": estimate_confidence_interval_by_hoeffding,
-            "bernstein": estimate_confidence_interval_by_empirical_bernstein,
-            "ttest": estimate_confidence_interval_by_t_test,
-        }
 
     def _estimate_trajectory_value(
         self,
@@ -198,13 +203,6 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 
     def __post_init__(self):
         self.action_type = "discrete"
-
-        self._estimate_confidence_interval = {
-            "bootstrap": estimate_confidence_interval_by_bootstrap,
-            "hoeffding": estimate_confidence_interval_by_hoeffding,
-            "bernstein": estimate_confidence_interval_by_empirical_bernstein,
-            "ttest": estimate_confidence_interval_by_t_test,
-        }
 
     def _estimate_trajectory_value(
         self,
@@ -528,13 +526,6 @@ class DiscretePerDecisionImportanceSampling(BaseOffPolicyEstimator):
 
     def __post_init__(self):
         self.action_type = "discrete"
-
-        self._estimate_confidence_interval = {
-            "bootstrap": estimate_confidence_interval_by_bootstrap,
-            "hoeffding": estimate_confidence_interval_by_hoeffding,
-            "bernstein": estimate_confidence_interval_by_empirical_bernstein,
-            "ttest": estimate_confidence_interval_by_t_test,
-        }
 
     def _estimate_trajectory_value(
         self,
@@ -862,13 +853,6 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
     def __post_init__(self):
         self.action_type = "discrete"
 
-        self._estimate_confidence_interval = {
-            "bootstrap": estimate_confidence_interval_by_bootstrap,
-            "hoeffding": estimate_confidence_interval_by_hoeffding,
-            "bernstein": estimate_confidence_interval_by_empirical_bernstein,
-            "ttest": estimate_confidence_interval_by_t_test,
-        }
-
     def _estimate_trajectory_value(
         self,
         step_per_episode: int,
@@ -917,9 +901,7 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
         baselines = (state_action_value_prediction * evaluation_policy_action_dist).sum(
             axis=1
         )
-        estimated_value = np.empty_like(reward, dtype=float)
-        for i in range(len(action)):
-            estimated_value[i] = state_action_value_prediction[i, action[i]]
+        estimated_value = state_action_value_prediction[np.arange(len(action)), action]
 
         evaluation_policy_step_wise_pscore = self._calc_evaluation_policy_pscore(
             step_per_episode=step_per_episode,
@@ -1230,7 +1212,7 @@ class DiscreteSelfNormalizedTrajectoryWiseImportanceSampling(
     .. math::
 
         \\hat{J}_{\\mathrm{SNTIS}} (\\pi; \\mathcal{D})
-        := \\mathbb{E}_{n} [\\sum_{t=0}^{T-1} \\gamma^t \\frac{w_{0:T-1}}{\\mathbb{E}_n [w_{0:T-1}]} r_t],
+        := \\mathbb{E}_{n} [\\sum_{t=0}^{T-1} \\gamma^t \\frac{w_{0:T-1}}{\\sum_{n} [w_{0:T-1}]} r_t],
 
     where :math:`w_{0:T-1} := \\prod_{t=0}^{T-1} \\frac{\\pi(a_t \\mid s_t)}{\\pi_0(a_t \\mid s_t)}`
 
@@ -1262,13 +1244,6 @@ class DiscreteSelfNormalizedTrajectoryWiseImportanceSampling(
 
     def __post_init__(self):
         self.action_type = "discrete"
-
-        self._estimate_confidence_interval = {
-            "bootstrap": estimate_confidence_interval_by_bootstrap,
-            "hoeffding": estimate_confidence_interval_by_hoeffding,
-            "bernstein": estimate_confidence_interval_by_empirical_bernstein,
-            "ttest": estimate_confidence_interval_by_t_test,
-        }
 
     def _estimate_trajectory_value(
         self,
@@ -1347,7 +1322,7 @@ class DiscreteSelfNormalizedPerDecisionImportanceSampling(
     .. math::
 
         \\hat{J}_{\\mathrm{SNPDIS}} (\\pi; \\mathcal{D})
-        := \\mathbb{E}_{n} [\\sum_{t=0}^{T-1} \\gamma^t \\frac{w_{1:t}}{\\mathbb{E}_n [w_{1:t}]} r_t],
+        := \\mathbb{E}_{n} [\\sum_{t=0}^{T-1} \\gamma^t \\frac{w_{1:t}}{\\sum_{n} [w_{1:t}]} r_t],
 
     where :math:`w_{0:t} := \\prod_{t'=1}^t \\frac{\\pi(a_{t'} \\mid s_{t'})}{\\pi_0(a_{t'} \\mid s_{t'})}`
 
@@ -1379,13 +1354,6 @@ class DiscreteSelfNormalizedPerDecisionImportanceSampling(
 
     def __post_init__(self):
         self.action_type = "discrete"
-
-        self._estimate_confidence_interval = {
-            "bootstrap": estimate_confidence_interval_by_bootstrap,
-            "hoeffding": estimate_confidence_interval_by_hoeffding,
-            "bernstein": estimate_confidence_interval_by_empirical_bernstein,
-            "ttest": estimate_confidence_interval_by_t_test,
-        }
 
     def _estimate_trajectory_value(
         self,
@@ -1459,7 +1427,7 @@ class DiscreteSelfNormalizedDoublyRobust(DiscreteDoublyRobust):
     .. math::
 
         \\hat{J}_{\\mathrm{DR}} (\\pi; \\mathcal{D})
-        := \\mathbb{E}_{n} [\\sum_{t=0}^{T-1} \\gamma^t \\frac{w_{0:t-1}}{\\mathbb{E}_n [w_{0:t-1}]}
+        := \\mathbb{E}_{n} [\\sum_{t=0}^{T-1} \\gamma^t \\frac{w_{0:t-1}}{\\sum_{n} [w_{0:t-1}]}
                 (w_t (r_t - \\hat{Q}(s_t, a_t)) + \\mathbb{E}_{a \\sim \\pi(a \\mid s_t)}[\\hat{Q}(s_t, a)])],
 
     where :math:`w_{0:t} := \\prod_{t'=0}^t \\frac{\\pi(a_{t'} \\mid s_{t'})}{\\pi_0(a_{t'} \\mid s_{t'})}`
@@ -1496,13 +1464,6 @@ class DiscreteSelfNormalizedDoublyRobust(DiscreteDoublyRobust):
 
     def __post_init__(self):
         self.action_type = "discrete"
-
-        self._estimate_confidence_interval = {
-            "bootstrap": estimate_confidence_interval_by_bootstrap,
-            "hoeffding": estimate_confidence_interval_by_hoeffding,
-            "bernstein": estimate_confidence_interval_by_empirical_bernstein,
-            "ttest": estimate_confidence_interval_by_t_test,
-        }
 
     def _estimate_trajectory_value(
         self,
@@ -1552,9 +1513,7 @@ class DiscreteSelfNormalizedDoublyRobust(DiscreteDoublyRobust):
         baselines = (state_action_value_prediction * evaluation_policy_action_dist).sum(
             axis=1
         )
-        estimated_value = np.empty_like(reward, dtype=float)
-        for i in range(len(action)):
-            estimated_value[i] = state_action_value_prediction[i, action[i]]
+        estimated_value = state_action_value_prediction[np.arange(len(action)), action]
 
         evaluation_policy_step_wise_pscore = self._calc_evaluation_policy_pscore(
             step_per_episode=step_per_episode,

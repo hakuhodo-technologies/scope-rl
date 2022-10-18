@@ -7,6 +7,10 @@ from ofrl.policy.head import (
     ContinuousTruncatedGaussianHead,
     ContinuousEvalHead,
 )
+from ofrl.policy.encoder import (
+    StateEncoder,
+    EmbeddingEncoderFactory,
+)
 
 
 __all__ = [
@@ -17,4 +21,23 @@ __all__ = [
     "ContinuousGaussianHead",
     "ContinuousTruncatedGaussianHead",
     "ContinuousEvalHead",
+    "StateEncoder",
+    "EmbeddingEncoderFactory",
+]
+
+
+__head__ = [
+    "BaseHead",
+    "OnlineHead",
+    "DiscreteEpsilonGreedyHead",
+    "DiscreteSoftmaxHead",
+    "ContinuousGaussianHead",
+    "ContinuousTruncatedGaussianHead",
+    "ContinuousEvalHead",
+]
+
+
+__encoder__ = [
+    "StateEncoder",
+    "EmbeddingEncoderFactory",
 ]

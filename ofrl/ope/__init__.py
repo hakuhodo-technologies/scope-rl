@@ -2,6 +2,8 @@ from ofrl.ope.ops import OffPolicySelection
 from ofrl.ope.input import CreateOPEInput
 from ofrl.ope.estimators_base import (
     BaseOffPolicyEstimator,
+    BaseStateMarginalOffPolicyEstimator,
+    BaseStateActionMarginalOffPolicyEstimator,
     BaseCumulativeDistributionOffPolicyEstimator,
 )
 from ofrl.ope.ope_discrete import (
@@ -16,6 +18,16 @@ from ofrl.ope.estimators_discrete import (
     DiscreteSelfNormalizedTrajectoryWiseImportanceSampling,
     DiscreteSelfNormalizedPerDecisionImportanceSampling,
     DiscreteSelfNormalizedDoublyRobust,
+)
+from ofrl.ope.marginal_estimators_discrete import (
+    DiscreteStateMarginalImportanceSampling,
+    DiscreteStateMarginalDoublyRobust,
+    DiscreteStateMarginalSelfNormalizedImportanceSampling,
+    DiscreteStateActionMarginalSelfNormalizedDoublyRobust,
+    DiscreteStateActionMarginalImportanceSampling,
+    DiscreteStateActionMarginalDoublyRobust,
+    DiscreteStateActionMarginalSelfNormalizedImportanceSampling,
+    DiscreteStateMarginalSelfNormalizedDoublyRobust,
 )
 from ofrl.ope.cumulative_distribution_estimators_discrete import (
     DiscreteCumulativeDistributionDirectMethod,
@@ -34,10 +46,22 @@ from ofrl.ope.estimators_continuous import (
     ContinuousSelfNormalizedPerDecisionImportanceSampling,
     ContinuousSelfNormalizedDoublyRobust,
 )
+from ofrl.ope.marginal_estimators_continuous import (
+    ContinuousStateMarginalImportanceSampling,
+    ContinuousStateMarginalDoublyRobust,
+    ContinuousStateMarginalSelfNormalizedImportanceSampling,
+    ContinuousStateActionMarginalSelfNormalizedDoublyRobust,
+    ContinuousStateActionMarginalImportanceSampling,
+    ContinuousStateActionMarginalDoublyRobust,
+    ContinuousStateActionMarginalSelfNormalizedImportanceSampling,
+    ContinuousStateMarginalSelfNormalizedDoublyRobust,
+)
 
 
 __all__ = [
     "BaseOffPolicyEstimator",
+    "BaseStateMarginalOffPolicyEstimator",
+    "BaseStateActionMarginalOffPolicyEstimator",
     "BaseCumulativeDistributionOffPolicyEstimator",
     "OffPolicySelection",
     "CreateOPEInput",
@@ -50,6 +74,14 @@ __all__ = [
     "DiscreteSelfNormalizedTrajectoryWiseImportanceSampling",
     "DiscreteSelfNormalizedPerDecisionImportanceSampling",
     "DiscreteSelfNormalizedDoublyRobust",
+    "DiscreteStateMarginalImportanceSampling",
+    "DiscreteStateMarginalDoublyRobust",
+    "DiscreteStateMarginalSelfNormalizedImportanceSampling",
+    "DiscreteStateMarginalSelfNormalizedDoublyRobust",
+    "DiscreteStateActionMarginalImportanceSampling",
+    "DiscreteStateActionMarginalDoublyRobust",
+    "DiscreteStateActionMarginalSelfNormalizedImportanceSampling",
+    "DiscreteStateActionMarginalSelfNormalizedDoublyRobust",
     "DiscreteCumulativeDistributionDirectMethod",
     "DiscreteCumulativeDistributionTrajectoryWiseImportanceSampling",
     "DiscreteCumulativeDistributionTrajectoryWiseDoublyRobust",
@@ -63,6 +95,14 @@ __all__ = [
     "ContinuousSelfNormalizedTrajectoryWiseImportanceSampling",
     "ContinuousSelfNormalizedPerDecisionImportanceSampling",
     "ContinuousSelfNormalizedDoublyRobust",
+    "ContinuousStateMarginalImportanceSampling",
+    "ContinuousStateMarginalDoublyRobust",
+    "ContinuousStateMarginalSelfNormalizedImportanceSampling",
+    "ContinuousStateMarginalSelfNormalizedDoublyRobust",
+    "ContinuousStateActionMarginalImportanceSampling",
+    "ContinuousStateActionMarginalDoublyRobust",
+    "ContinuousStateActionMarginalSelfNormalizedImportanceSampling",
+    "ContinuousStateActionMarginalSelfNormalizedDoublyRobust",
 ]
 
 
@@ -102,6 +142,26 @@ __basic__ = [
 ]
 
 
+__marginal__ = [
+    "DiscreteStateMarginalImportanceSampling",
+    "DiscreteStateMarginalDoublyRobust",
+    "DiscreteStateMarginalSelfNormalizedImportanceSampling",
+    "DiscreteStateMarginalSelfNormalizedDoublyRobust",
+    "DiscreteStateActionMarginalImportanceSampling",
+    "DiscreteStateActionMarginalDoublyRobust",
+    "DiscreteStateActionMarginalSelfNormalizedImportanceSampling",
+    "DiscreteStateActionMarginalSelfNormalizedDoublyRobust",
+    "ContinuousStateMarginalImportanceSampling",
+    "ContinuousStateMarginalDoublyRobust",
+    "ContinuousStateMarginalSelfNormalizedImportanceSampling",
+    "ContinuousStateMarginalSelfNormalizedDoublyRobust",
+    "ContinuousStateActionMarginalImportanceSampling",
+    "ContinuousStateActionMarginalDoublyRobust",
+    "ContinuousStateActionMarginalSelfNormalizedImportanceSampling",
+    "ContinuousStateActionMarginalSelfNormalizedDoublyRobust",
+]
+
+
 __cumulative__ = [
     "BaseCumulativeDistributionOffPolicyEstimator",
     "DiscreteCumulativeDistributionDirectMethod",
@@ -122,6 +182,14 @@ __discrete__ = [
     "DiscreteSelfNormalizedTrajectoryWiseImportanceSampling",
     "DiscreteSelfNormalizedStepWiseImportanceSampling",
     "DiscreteSelfNormalizedDoublyRobust",
+    "DiscreteStateMarginalImportanceSampling",
+    "DiscreteStateMarginalDoublyRobust",
+    "DiscreteStateMarginalSelfNormalizedImportanceSampling",
+    "DiscreteStateMarginalSelfNormalizedDoublyRobust",
+    "DiscreteStateActionMarginalImportanceSampling",
+    "DiscreteStateActionMarginalDoublyRobust",
+    "DiscreteStateActionMarginalSelfNormalizedImportanceSampling",
+    "DiscreteStateActionMarginalSelfNormalizedDoublyRobust",
     "DiscreteCumulativeDistributionDirectMethod",
     "DiscreteCumulativeDistributionTrajectoryWiseImportanceSampling",
     "DiscreteCumulativeDistributionTrajectoryWiseDoublyRobust",
@@ -140,4 +208,12 @@ __continuous__ = [
     "ContinuousSelfNormalizedTrajectoryWiseImportanceSampling",
     "ContinuousSelfNormalizedStepWiseImportanceSampling",
     "ContinuousSelfNormalizedDoublyRobust",
+    "ContinuousStateMarginalImportanceSampling",
+    "ContinuousStateMarginalDoublyRobust",
+    "ContinuousStateMarginalSelfNormalizedImportanceSampling",
+    "ContinuousStateMarginalSelfNormalizedDoublyRobust",
+    "ContinuousStateActionMarginalImportanceSampling",
+    "ContinuousStateActionMarginalDoublyRobust",
+    "ContinuousStateActionMarginalSelfNormalizedImportanceSampling",
+    "ContinuousStateActionMarginalSelfNormalizedDoublyRobust",
 ]

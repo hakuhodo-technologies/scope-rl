@@ -7,13 +7,7 @@ from scipy.stats import norm, truncnorm
 from sklearn.utils import check_scalar
 
 from .estimators_base import BaseOffPolicyEstimator
-from ..utils import (
-    estimate_confidence_interval_by_bootstrap,
-    estimate_confidence_interval_by_hoeffding,
-    estimate_confidence_interval_by_empirical_bernstein,
-    estimate_confidence_interval_by_t_test,
-    check_array,
-)
+from ..utils import check_array
 
 
 @dataclass
@@ -26,10 +20,22 @@ class ContinuousDirectMethod(BaseOffPolicyEstimator):
 
     .. math::
 
-        \\hat{J}_{\\mathrm{DM}} (\\pi; \\mathcal{D}) := \\mathbb{E}_n [\\mathbb{E}_{a_0 \\sim \\pi(a_0 \\mid s_0)} [\\hat{Q}(x_0, a_0)] ],
+        \\hat{J}_{\\mathrm{DM}} (\\pi; \\mathcal{D}) := \\mathbb{E}_n [\\mathbb{E}_{a_0 \\sim \\pi(a_0 \\mid s_0)} [\\hat{Q}(s_0, a_0)] ],
+
+    .. math::
+
+        \\hat{J}_{\\mathrm{DM}} (\\pi; \\mathcal{D}) := \\mathbb{E}_n [\\hat{V}(s_0)],
 
     where :math:`\\mathcal{D}=\\{\\{(s_t, a_t, r_t)\\}_{t=0}^{T-1}\\}_{i=1}^n` is the logged dataset with :math:`n` trajectories of data.
-    :math:`T` indicates step per episode. :math:`\\hat{Q}(x_t, a_t)` is an estimated Q value given a state-action pair.
+    :math:`T` indicates step per episode. :math:`\\hat{Q}(s_t, a_t)` is the estimated Q value given a state-action pair.
+    \\hat{V}(s_t) is the estimated value function given a state.
+
+    There are several ways to estimate :math:`\\hat{Q}(s, a)` such as Fitted Q Evaluation (FQE) (Le et al., 2019) and
+    Minimax Q-Function Learning (MQL) (Uehara et al., 2020). :math:`\\hat{V}(s)` is estimated in a similar manner using
+    Minimax Value Learning (MVL) (Uehara et al., 2020).
+
+    We use the implementation of FQE provided by d3rlpy (Seno et al., 2021).
+    The implementations of Minimax Learning is available in `ofrl/ope/minimax_estimators_continuous.py`.
 
     Parameters
     -------
@@ -40,6 +46,12 @@ class ContinuousDirectMethod(BaseOffPolicyEstimator):
     -------
     Yuta Saito, Shunsuke Aihara, Megumi Matsutani, and Yusuke Narita.
     "Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation.", 2021.
+
+    Takuma Seno and Michita Imai.
+    "d3rlpy: An Offline Deep Reinforcement Library.", 2021.
+
+    Masatoshi Uehara, Jiawei Huang, and Nan Jiang.
+    "Minimax Weight and Q-Function Learning for Off-Policy Evaluation.", 2020.
 
     Hoang Le, Cameron Voloshin, and Yisong Yue.
     "Batch Policy Learning under Constraints.", 2019.
@@ -53,13 +65,6 @@ class ContinuousDirectMethod(BaseOffPolicyEstimator):
 
     def __post_init__(self):
         self.action_type = "continuous"
-
-        self._estimate_confidence_interval = {
-            "bootstrap": estimate_confidence_interval_by_bootstrap,
-            "hoeffding": estimate_confidence_interval_by_hoeffding,
-            "bernstein": estimate_confidence_interval_by_empirical_bernstein,
-            "ttest": estimate_confidence_interval_by_t_test,
-        }
 
     def _estimate_trajectory_value(
         self,
@@ -203,13 +208,6 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 
     def __post_init__(self):
         self.action_type = "continuous"
-
-        self._estimate_confidence_interval = {
-            "bootstrap": estimate_confidence_interval_by_bootstrap,
-            "hoeffding": estimate_confidence_interval_by_hoeffding,
-            "bernstein": estimate_confidence_interval_by_empirical_bernstein,
-            "ttest": estimate_confidence_interval_by_t_test,
-        }
 
     def _estimate_trajectory_value(
         self,
@@ -647,13 +645,6 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
 
     def __post_init__(self):
         self.action_type = "continuous"
-
-        self._estimate_confidence_interval = {
-            "bootstrap": estimate_confidence_interval_by_bootstrap,
-            "hoeffding": estimate_confidence_interval_by_hoeffding,
-            "bernstein": estimate_confidence_interval_by_empirical_bernstein,
-            "ttest": estimate_confidence_interval_by_t_test,
-        }
 
     def _estimate_trajectory_value(
         self,
@@ -1093,13 +1084,6 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
     def __post_init__(self):
         self.action_type = "continuous"
 
-        self._estimate_confidence_interval = {
-            "bootstrap": estimate_confidence_interval_by_bootstrap,
-            "hoeffding": estimate_confidence_interval_by_hoeffding,
-            "bernstein": estimate_confidence_interval_by_empirical_bernstein,
-            "ttest": estimate_confidence_interval_by_t_test,
-        }
-
     def _estimate_trajectory_value(
         self,
         step_per_episode: int,
@@ -1531,7 +1515,7 @@ class ContinuousSelfNormalizedTrajectoryWiseImportanceSampling(
     .. math::
 
         \\hat{J}_{\\mathrm{SNTIS}} (\\pi; \\mathcal{D})
-        := \\mathbb{E}_{n} [\\sum_{t=0}^{T-1} \\gamma^t \\frac{w_{0:T-1} \\delta(\\pi, a_{0:T-1})}{\\mathbb{E}_n [w_{1:T-1} \\delta(\\pi, a_{0:T-1})]} r_t],
+        := \\mathbb{E}_{n} [\\sum_{t=0}^{T-1} \\gamma^t \\frac{w_{0:T-1} \\delta(\\pi, a_{0:T-1})}{\\sum_{n} [w_{1:T-1} \\delta(\\pi, a_{0:T-1})]} r_t],
 
     where :math:`w_{0:T-1} := \\prod_{t=0}^{T-1} \\frac{1}{\\pi_0(a_t \\mid s_t)}`
     and :math:`\\delta(\\pi, a_{0:T}) = \\prod_{t=0}^{T-1} K(\\pi(s_t), a_t)` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy.
@@ -1568,13 +1552,6 @@ class ContinuousSelfNormalizedTrajectoryWiseImportanceSampling(
 
     def __post_init__(self):
         self.action_type = "continuous"
-
-        self._estimate_confidence_interval = {
-            "bootstrap": estimate_confidence_interval_by_bootstrap,
-            "hoeffding": estimate_confidence_interval_by_hoeffding,
-            "bernstein": estimate_confidence_interval_by_empirical_bernstein,
-            "ttest": estimate_confidence_interval_by_t_test,
-        }
 
     def _estimate_trajectory_value(
         self,
@@ -1693,7 +1670,7 @@ class ContinuousSelfNormalizedPerDecisionImportanceSampling(
     .. math::
 
         \\hat{J}_{\\mathrm{SNPDIS}} (\\pi; \\mathcal{D})
-        := \\mathbb{E}_{n} [\\sum_{t=0}^{T-1} \\gamma^t \\frac{w_{1:t} \\delta(\\pi, a_{0:t})}{\\mathbb{E}_n [w_{1:t} \\delta(\\pi, a_{0:t})]} r_t],
+        := \\mathbb{E}_{n} [\\sum_{t=0}^{T-1} \\gamma^t \\frac{w_{1:t} \\delta(\\pi, a_{0:t})}{\\sum_{n} [w_{1:t} \\delta(\\pi, a_{0:t})]} r_t],
 
     where :math:`w_{0:t} := \\prod_{t'=1}^t \\frac{1}{\\pi_0(a_{t'} \\mid s_{t'})}`
     and :math:`\\delta(\\pi, a_{0:t}) = \\prod_{t'=1}^t K(\\pi(s_{t'}), a_{t'})` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy.
@@ -1730,13 +1707,6 @@ class ContinuousSelfNormalizedPerDecisionImportanceSampling(
 
     def __post_init__(self):
         self.action_type = "continuous"
-
-        self._estimate_confidence_interval = {
-            "bootstrap": estimate_confidence_interval_by_bootstrap,
-            "hoeffding": estimate_confidence_interval_by_hoeffding,
-            "bernstein": estimate_confidence_interval_by_empirical_bernstein,
-            "ttest": estimate_confidence_interval_by_t_test,
-        }
 
     def _estimate_trajectory_value(
         self,
@@ -1849,8 +1819,8 @@ class ContinuousSelfNormalizedDoublyRobust(ContinuousDoublyRobust):
     .. math::
 
         \\hat{J}_{\\mathrm{DR}} (\\pi; \\mathcal{D})
-        := \\mathbb{E}_{n} [\\sum_{t=0}^{T-1} \\gamma^t ( \\frac{w_{0:t} \\delta(\\pi, a_{0:t})}{\\mathbb{E}_n[w_{0:t} \\delta(\\pi, a_{0:t})]} (r_t - \\hat{Q}(s_t, a_t))
-            + \\frac{w_{0:t-1} \\delta(\\pi, a_{0:t-1})}{\\mathbb{E}_n[w_{0:t-1} \\delta(\\pi, a_{0:t-1})]} \\mathbb{E}_{a \\sim \\pi(a \\mid s_t)}[\\hat{Q}(s_t, a)])],
+        := \\mathbb{E}_{n} [\\sum_{t=0}^{T-1} \\gamma^t ( \\frac{w_{0:t} \\delta(\\pi, a_{0:t})}{\\sum_{n} [w_{0:t} \\delta(\\pi, a_{0:t})]} (r_t - \\hat{Q}(s_t, a_t))
+            + \\frac{w_{0:t-1} \\delta(\\pi, a_{0:t-1})}{\\sum_{n} [w_{0:t-1} \\delta(\\pi, a_{0:t-1})]} \\mathbb{E}_{a \\sim \\pi(a \\mid s_t)}[\\hat{Q}(s_t, a)])],
 
     where :math:`w_{0:t} := \\prod_{t'=0}^t \\frac{1}{\\pi_0(a_{t'} \\mid s_{t'})}`
     and :math:`\\delta(\\pi, a_{0:t}) = \\prod_{t'=1}^t K(\\pi(s_{t'}), a_{t'})` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy.
@@ -1889,13 +1859,6 @@ class ContinuousSelfNormalizedDoublyRobust(ContinuousDoublyRobust):
 
     def __post_init__(self):
         self.action_type = "continuous"
-
-        self._estimate_confidence_interval = {
-            "bootstrap": estimate_confidence_interval_by_bootstrap,
-            "hoeffding": estimate_confidence_interval_by_hoeffding,
-            "bernstein": estimate_confidence_interval_by_empirical_bernstein,
-            "ttest": estimate_confidence_interval_by_t_test,
-        }
 
     def _estimate_trajectory_value(
         self,

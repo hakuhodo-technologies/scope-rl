@@ -1,11 +1,18 @@
 """Abstract Base Class for Off-Policy Estimator."""
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
-from typing import Dict, Optional, Tuple
+from typing import Callable, Dict, Optional, Tuple
 
 import numpy as np
 from scipy.stats import norm, truncnorm
 from sklearn.utils import check_scalar
+
+from ..utils import (
+    estimate_confidence_interval_by_bootstrap,
+    estimate_confidence_interval_by_hoeffding,
+    estimate_confidence_interval_by_empirical_bernstein,
+    estimate_confidence_interval_by_t_test,
+)
 
 
 @dataclass
@@ -26,6 +33,15 @@ class BaseOffPolicyEstimator(metaclass=ABCMeta):
     def estimate_interval(self) -> Dict[str, float]:
         """Estimate the confidence intervals of the policy value."""
         raise NotImplementedError
+
+    @property
+    def _estimate_confidence_interval(self) -> Dict[str, Callable]:
+        return {
+            "bootstrap": estimate_confidence_interval_by_bootstrap,
+            "hoeffding": estimate_confidence_interval_by_hoeffding,
+            "bernstein": estimate_confidence_interval_by_empirical_bernstein,
+            "ttest": estimate_confidence_interval_by_t_test,
+        }
 
     def _calc_evaluation_policy_pscore(
         self,
@@ -48,6 +64,9 @@ class BaseOffPolicyEstimator(metaclass=ABCMeta):
             Conditional action distribution induced by the evaluation policy,
             i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
 
+        pscore_type: {"trajectory-wise", "step-wise"}
+            Indicates wether to return trajectory-wise pscore or step-wise pscore.
+
         Return
         -------
         evaluation_policy_trajectory_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
@@ -65,9 +84,7 @@ class BaseOffPolicyEstimator(metaclass=ABCMeta):
         ].reshape((-1, step_per_episode))
 
         # step-wise pscore
-        evaluation_policy_pscore = np.cumprod(
-            evaluation_policy_base_pscore, axis=1
-        )
+        evaluation_policy_pscore = np.cumprod(evaluation_policy_base_pscore, axis=1)
 
         if pscore_type == "trajectory_wise":
             evaluation_policy_pscore = np.tile(
@@ -75,6 +92,44 @@ class BaseOffPolicyEstimator(metaclass=ABCMeta):
             ).T
 
         return evaluation_policy_pscore.flatten()
+
+
+@dataclass
+class BaseStateMarginalOffPolicyEstimator(BaseOffPolicyEstimator):
+    def _calc_evaluation_policy_pscore(
+        self,
+        action: np.ndarray,
+        evaluation_policy_action_dist: np.ndarray,
+    ):
+        """Transform the evaluation policy action distribution into the evaluation policy pscore (action choice probability).
+
+        Parameters
+        -------
+        action: array-like of shape (n_episodes * step_per_episode, )
+            Action chosen by the behavior policy.
+
+        evaluation_policy_action_dist: array-like of shape (n_episodes * step_per_episode, n_action)
+            Conditional action distribution induced by the evaluation policy,
+            i.e., :math:`\\pi(a \\mid s) \\forall a \\in \\mathcal{A}`
+
+        Return
+        -------
+        evaluation_policy_base_pscore: array-like of shape (n_episodes * step_per_episode, )
+            Condition action choice probability of the evaluation policy,
+            i.e., :math:`\\pi(a \\mid s)`
+
+        """
+        n_samples = len(action)
+        evaluation_policy_base_pscore = evaluation_policy_action_dist[
+            np.arange(n_samples), action
+        ]
+        return evaluation_policy_base_pscore
+
+
+@dataclass
+class BaseStateActionMarginalOffPolicyEstimator(BaseStateMarginalOffPolicyEstimator):
+    def _calc_evaluation_policy_pscore(self):
+        raise NotImplementedError()
 
 
 @dataclass
