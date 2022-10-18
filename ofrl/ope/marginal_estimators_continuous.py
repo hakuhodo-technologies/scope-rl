@@ -2152,9 +2152,9 @@ class ContinuousStateActionMarginalSelfNormalizedDoublyRobust(
         evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
             Action chosen by the evaluation policy.
 
-        state_action_value_prediction: array-like of shape (n_episodes * step_per_episode, n_action)
-            :math:`\\hat{Q}` for all action,
-            i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
+        state_action_value_prediction: array-like of shape (n_episodes * step_per_episode, )
+            :math:`\\hat{Q}` for the action chosen by the evaluation policy,
+            i.e., :math:`\\hat{Q}(s_t, \\pi(a \\mid s_t))`.
 
         gamma: float, default=1.0
             Discount factor. The value should be within `(0, 1]`.
