@@ -101,7 +101,6 @@ class DiscreteOffPolicyEvaluation:
         >>> dataset = SyntheticDataset(
                 env=env,
                 behavior_policy=behavior_policy,
-                is_rtb_env=True,
                 random_state=12345,
             )
 
@@ -870,7 +869,6 @@ class DiscreteCumulativeDistributionOffPolicyEvaluation:
         >>> dataset = SyntheticDataset(
                 env=env,
                 behavior_policy=behavior_policy,
-                is_rtb_env=True,
                 random_state=12345,
             )
 

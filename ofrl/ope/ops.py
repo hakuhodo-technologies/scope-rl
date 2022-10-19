@@ -104,7 +104,6 @@ class OffPolicySelection:
         >>> dataset = SyntheticDataset(
                 env=env,
                 behavior_policy=behavior_policy,
-                is_rtb_env=True,
                 random_state=12345,
             )
 

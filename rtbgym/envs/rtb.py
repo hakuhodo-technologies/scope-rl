@@ -228,6 +228,7 @@ class RTBEnv(gym.Env):
             min_val=1,
         )
         self.step_per_episode = step_per_episode
+        self._max_episode_steps = step_per_episode
 
         check_scalar(
             initial_budget,

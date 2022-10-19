@@ -174,7 +174,6 @@ behavior_policy = DiscreteEpsilonGreedyHead(
 dataset = SyntheticDataset(
     env=env,
     behavior_policy=behavior_policy,
-    is_rtb_env=True,
     random_state=random_state,
 )
 # the behavior policy collects some logged data

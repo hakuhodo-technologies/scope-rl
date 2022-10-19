@@ -98,7 +98,15 @@ class SyntheticDataset(BaseDataset):
         >>> dataset = SyntheticDataset(
                 env=env,
                 behavior_policy=behavior_policy,
-                is_rtb_env=True,
+                action_meaning=env.action_meaning,
+                state_keys=env.obs_keys,
+                info_keys={
+                    "search_volume": int,
+                    "impression": int,
+                    "click": int,
+                    "conversion": int,
+                    "average_bid_price": float,
+                },
                 random_state=12345,
             )
 
@@ -110,6 +118,7 @@ class SyntheticDataset(BaseDataset):
         'step_per_episode': 7,
         'action_type': 'discrete',
         'action_dim': 10,
+        'action_keys': None,
         'action_meaning': array([ 0.1       ,  0.16681005,  0.27825594,  0.46415888,  0.77426368,
                 1.29154967,  2.15443469,  3.59381366,  5.9948425 , 10.        ]),
         'state_keys': ['timestep',
@@ -343,7 +352,7 @@ class SyntheticDataset(BaseDataset):
 
                 if obtain_info:
                     if idx == 0:
-                        for key, type_ in info_.items():
+                        for key, type_ in self.info_keys.items():
                             if type_ in [int, float]:
                                 info[key] = np.zeros(
                                     n_episodes * step_per_episode, dtype=type_
@@ -351,11 +360,11 @@ class SyntheticDataset(BaseDataset):
                             else:
                                 info[key] = []
 
-                    for key, value in info_.items():
+                    for key, type_ in self.info_keys.items():
                         if type_ in [int, float]:
-                            info[key][idx] = value
+                            info[key][idx] = info_[key]
                         else:
-                            info[key].append(value)
+                            info[key].append(info_[key])
 
                 state = next_state
                 idx += 1
@@ -507,17 +516,17 @@ class SyntheticDataset(BaseDataset):
 
             if obtain_info:
                 if idx == 0:
-                    for key, type_ in info_.items():
+                    for key, type_ in self.info_keys.items():
                         if type_ in [int, float]:
                             info[key] = np.zeros(n_steps, dtype=type_)
                         else:
                             info[key] = []
 
-                for key, value in info_.items():
+                for key, type_ in self.info_keys.items():
                     if type_ in [int, float]:
-                        info[key][idx] = value
+                        info[key][idx] = info_[key]
                     else:
-                        info[key].append(value)
+                        info[key].append(info_[key])
 
             states[idx] = state
             actions[idx] = action
