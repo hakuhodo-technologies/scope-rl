@@ -1,6 +1,6 @@
 """Synthetic Dataset Generation."""
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Any, Dict, List
 from tqdm.auto import tqdm
 
 import gym
@@ -29,8 +29,22 @@ class SyntheticDataset(BaseDataset):
     behavior_policy: AlgoBase
         RL policy that collects the logged data.
 
-    step_per_episode: int, default=None (> 0)
-        Number of timesteps in an episode.
+    maximum_step_per_episode: int, default=None (> 0)
+        Maximum number of timesteps in an episode.
+
+    action_meaning: dict
+        Dictionary which maps discrete action index into specific actions.
+        If action_type is "continuous", `None` is recorded.
+
+    action_keys: list of str
+        Name of the action variable at each dimension.
+        If action_type is "discrete", `None` is recorded.
+
+    state_keys: list of str
+        Name of the state variable at each dimension.
+
+    info_keys: Dict[str, type]
+        Dictionary containing of key and the type of info components.
 
     random_state: int, default=None (>= 0)
         Random state.
@@ -145,8 +159,11 @@ class SyntheticDataset(BaseDataset):
 
     env: gym.Env
     behavior_policy: BaseHead
-    step_per_episode: Optional[int] = None
-    is_rtb_env: bool = False
+    maximum_step_per_episode: Optional[int] = None
+    action_meaning: Optional[Dict[int, Any]] = None
+    action_keys: Optional[List[str]] = None
+    state_keys: Optional[List[str]] = None
+    info_keys: Optional[Dict[str, type]] = None
     random_state: Optional[int] = None
 
     def __post_init__(self):
@@ -168,22 +185,13 @@ class SyntheticDataset(BaseDataset):
             self.n_actions = None
             self.action_dim = self.env.action_space.shape[0]
 
-        if self.is_rtb_env:
-            self.step_per_episode = self.env.step_per_episode
-            self.action_meaning = (
-                self.env.action_meaning if self.action_type == "discrete" else None
-            )
-            self.state_keys = self.env.obs_keys
-        else:
-            self.action_meaning = None
-            self.state_keys = None
-
-        if self.step_per_episode is None:
-            self.max_episode_steps = self.env._max_episode_steps
-        else:
-            self.max_episode_steps = self.step_per_episode
+        if self.maximum_step_per_episode is None:
+            self.maximum_step_per_episode = self.env._max_episode_steps
         check_scalar(
-            self.step_per_episode, name="step_per_episode", target_type=int, min_val=1
+            self.maximum_step_per_episode,
+            name="maximum_step_per_episode",
+            target_type=int,
+            min_val=1,
         )
 
         if self.random_state is None:
@@ -192,7 +200,10 @@ class SyntheticDataset(BaseDataset):
         self.env.seed(self.random_state)
 
     def obtain_trajectories(
-        self, n_episodes: int = 10000, obtain_info: bool = False
+        self,
+        n_episodes: int = 10000,
+        step_per_episode: Optional[int] = None,
+        obtain_info: bool = False,
     ) -> LoggedDataset:
         """Rollout the behavior policy and obtain trajectories.
 
@@ -207,6 +218,9 @@ class SyntheticDataset(BaseDataset):
         n_episodes: int, default=10000 (> 0)
             Number of trajectories to rollout the behavior policy and collect data.
 
+        step_per_episode: int, default=None (> 0)
+            Number of timesteps in an episode.
+
         obtain_info: bool, default=False
             Whether to gain info from the environment or not.
 
@@ -232,6 +246,10 @@ class SyntheticDataset(BaseDataset):
 
             action_dim: int (> 0)
                 Dimensions of the actions.
+                If action_type is "discrete", `None` is recorded.
+
+            action_keys: list of str
+                Name of the action variable at each dimension.
                 If action_type is "discrete", `None` is recorded.
 
             action_meaning: dict
@@ -266,34 +284,35 @@ class SyntheticDataset(BaseDataset):
                 Action choice probability of the behavior policy for the chosen action.
 
         """
-        if self.step_per_episode is None:
-            raise RuntimeError(
-                "Please initialize SyntheticDataset class with step_per_episode to use .obtain_trajectories()"
-            )
+        if step_per_episode is None:
+            step_per_episode = self.maximum_step_per_episode
+
         check_scalar(
             n_episodes,
             name="n_espisodes",
             target_type=int,
             min_val=1,
         )
+        check_scalar(
+            step_per_episode,
+            name="step_per_episode",
+            target_type=int,
+            min_val=1,
+        )
 
         states = np.empty(
-            (
-                n_episodes * self.step_per_episode,
-                self.env.observation_space.shape[0],
-            )
+            (n_episodes * step_per_episode, self.env.observation_space.shape[0])
         )
         if self.action_type == "discrete":
-            actions = np.empty(n_episodes * self.step_per_episode)
-            action_probs = np.empty(n_episodes * self.step_per_episode)
+            actions = np.empty(n_episodes * step_per_episode)
+            action_probs = np.empty(n_episodes * step_per_episode)
         else:
-            actions = np.empty((n_episodes * self.step_per_episode, self.action_dim))
-            action_probs = np.empty(
-                (n_episodes * self.step_per_episode, self.action_dim)
-            )
+            actions = np.empty((n_episodes * step_per_episode, self.action_dim))
+            action_probs = np.empty((n_episodes * step_per_episode, self.action_dim))
 
-        rewards = np.empty(n_episodes * self.step_per_episode)
-        dones = np.empty(n_episodes * self.step_per_episode)
+        rewards = np.empty(n_episodes * step_per_episode)
+        dones = np.empty(n_episodes * step_per_episode)
+        terminals = np.empty(n_episodes * step_per_episode)
         info = {}
 
         idx = 0
@@ -303,67 +322,71 @@ class SyntheticDataset(BaseDataset):
             total=n_episodes,
         ):
             state = self.env.reset()
-            done = False
+            terminal = False
 
-            while not done:
+            for t in range(step_per_episode):
                 (
                     action,
                     action_prob,
                 ) = self.behavior_policy.stochastic_action_with_pscore_online(state)
                 next_state, reward, done, info_ = self.env.step(action)
 
+                if (idx + 1) % step_per_episode == 0:
+                    done = terminal = True
+
                 states[idx] = state
                 actions[idx] = action
                 action_probs[idx] = action_prob
                 rewards[idx] = reward
                 dones[idx] = done
+                terminals[idx] = terminal
 
                 if obtain_info:
                     if idx == 0:
-                        info_keys = info_.keys()
-
-                        if self.is_rtb_env:
-                            for key in info_keys:
-                                info[key] = np.empty(n_episodes * self.step_per_episode)
-                        else:
-                            for key in info_keys:
+                        for key, type_ in info_.items():
+                            if type_ in [int, float]:
+                                info[key] = np.zeros(
+                                    n_episodes * step_per_episode, dtype=type_
+                                )
+                            else:
                                 info[key] = []
 
-                    if self.is_rtb_env:
-                        for key, value in info_.items():
+                    for key, value in info_.items():
+                        if type_ in [int, float]:
                             info[key][idx] = value
-                    else:
-                        for key, value in info_.items():
+                        else:
                             info[key].append(value)
 
-                idx += 1
-                if idx % self.step_per_episode == 0:
-                    done = True
-
                 state = next_state
+                idx += 1
 
         logged_dataset = {
-            "size": n_episodes * self.step_per_episode,
+            "size": n_episodes * step_per_episode,
             "n_episodes": n_episodes,
-            "step_per_episode": self.step_per_episode,
+            "step_per_episode": step_per_episode,
+            "maximum_step_per_episode": step_per_episode,
             "action_type": self.action_type,
             "n_actions": self.n_actions,
             "action_dim": self.action_dim,
             "action_meaning": self.action_meaning,
+            "action_keys": self.action_keys,
             "state_dim": self.state_dim,
             "state_keys": self.state_keys,
             "state": states,
             "action": actions,
             "reward": rewards,
             "done": dones,
-            "terminal": dones,
+            "terminal": terminals,
             "info": info,
             "pscore": action_probs,
         }
         return logged_dataset
 
     def obtain_steps(
-        self, n_steps: int = 100000, obtain_info: bool = False
+        self,
+        n_steps: int = 100000,
+        maximum_step_per_episode: Optional[int] = None,
+        obtain_info: bool = False,
     ) -> LoggedDataset:
         """Rollout the behavior policy and obtain steps.
 
@@ -371,6 +394,9 @@ class SyntheticDataset(BaseDataset):
         -------
         n_steps: int, default=100000 (> 0)
             Number of steps to rollout the behavior policy and collect data.
+
+        maximum_step_per_episode: int, default=None (> 0)
+            Maximum number of timesteps in an episode.
 
         obtain_info: bool, default=False
             Whether to gain info from the environment or not.
@@ -397,6 +423,10 @@ class SyntheticDataset(BaseDataset):
 
             action_dim: int (> 0)
                 Dimensions of the actions.
+                If action_type is "discrete", `None` is recorded.
+
+            action_keys: list of str
+                Name of the action variable at each dimension.
                 If action_type is "discrete", `None` is recorded.
 
             action_meaning: dict
@@ -431,13 +461,18 @@ class SyntheticDataset(BaseDataset):
                 Action choice probability of the behavior policy for the chosen action.
 
         """
+        if maximum_step_per_episode is None:
+            maximum_step_per_episode = self.maximum_step_per_episode
+
         check_scalar(n_steps, name="n_steps", target_type=int, min_val=1)
-        states = np.empty(
-            (
-                n_steps,
-                self.env.observation_space.shape[0],
-            )
+        check_scalar(
+            maximum_step_per_episode,
+            name="maximum_step_per_episode",
+            target_type=int,
+            min_val=1,
         )
+
+        states = np.empty((n_steps, self.env.observation_space.shape[0]))
         if self.action_type == "discrete":
             actions = np.empty(n_steps)
             action_probs = np.empty(n_steps)
@@ -468,24 +503,20 @@ class SyntheticDataset(BaseDataset):
                 action_prob,
             ) = self.behavior_policy.stochastic_action_with_pscore_online(state)
             next_state, reward, done, info_ = self.env.step(action)
-            terminal = step == self.max_episode_steps - 1
+            terminal = step == maximum_step_per_episode - 1
 
             if obtain_info:
                 if idx == 0:
-                    info_keys = info_.keys()
-
-                    if self.is_rtb_env:
-                        for key in info_keys:
-                            info[key] = np.empty(n_episodes * self.step_per_episode)
-                    else:
-                        for key in info_keys:
+                    for key, type_ in info_.items():
+                        if type_ in [int, float]:
+                            info[key] = np.zeros(n_steps, dtype=type_)
+                        else:
                             info[key] = []
 
-                if self.is_rtb_env:
-                    for key, value in info_.items():
+                for key, value in info_.items():
+                    if type_ in [int, float]:
                         info[key][idx] = value
-                else:
-                    for key, value in info_.items():
+                    else:
                         info[key].append(value)
 
             states[idx] = state
@@ -504,7 +535,8 @@ class SyntheticDataset(BaseDataset):
         logged_dataset = {
             "size": n_steps,
             "n_episodes": n_episodes,
-            "step_per_episode": self.step_per_episode,
+            "step_per_episode": None,
+            "maximum_step_per_episode": maximum_step_per_episode,
             "action_type": self.action_type,
             "n_actions": self.n_actions,
             "action_dim": self.action_dim,

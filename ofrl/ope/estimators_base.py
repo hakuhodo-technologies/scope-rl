@@ -65,9 +65,7 @@ class BaseOffPolicyEstimator(metaclass=ABCMeta):
         ].reshape((-1, step_per_episode))
 
         # step-wise pscore
-        evaluation_policy_pscore = np.cumprod(
-            evaluation_policy_base_pscore, axis=1
-        )
+        evaluation_policy_pscore = np.cumprod(evaluation_policy_base_pscore, axis=1)
 
         if pscore_type == "trajectory_wise":
             evaluation_policy_pscore = np.tile(
