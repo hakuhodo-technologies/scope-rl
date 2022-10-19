@@ -112,7 +112,7 @@ def estimate_confidence_interval_by_empirical_bernstein(
 
     .. math::
 
-        |\\hat{\\mu} - \\mu]| \\leq \\frac{7 X_{\\max} \\log(2 / \\alpha)}{3 (n - 1)} + \\sqrt{\\frac{2 \hat{\mathbb{V}}(X) \log(2 / \\alpha)}{n(n - 1)}}`
+        |\\hat{\\mu} - \\mu]| \\leq \\frac{7 X_{\\max} \\log(2 / \\alpha)}{3 (n - 1)} + \\sqrt{\\frac{2 \\hat{\\mathbb{V}}(X) \\log(2 / \\alpha)}{n(n - 1)}}`
 
     where :math:`n` is the data size and :math:`\\hat{\\mathbb{V}}` is the sample variance.
 
@@ -157,7 +157,7 @@ def estimate_confidence_interval_by_t_test(
 
     .. math::
 
-        |\\hat{\\mu} - \\mu]| \\leq \\frac{T_{\\mathrm{test}}(1 - \\alpha, n-1)}{\\sqrt{n} / \hat{\\sigma}}``
+        |\\hat{\\mu} - \\mu]| \\leq \\frac{T_{\\mathrm{test}}(1 - \\alpha, n-1)}{\\sqrt{n} / \\hat{\\sigma}}``
 
     where :math:`n` is the data size, :math:`T_{\\mathrm{test}}(\\cdot,\\cdot)` is the T-value, and :math:`\\sigma` is the standard deviation, respectively.
 
