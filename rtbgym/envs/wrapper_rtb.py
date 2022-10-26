@@ -271,10 +271,6 @@ class CustomizedRTBEnv(gym.Env):
         return self.env.step_per_episode
 
     @property
-    def _max_episode_steps(self):
-        return self.env._max_episode_steps
-
-    @property
     def initial_budget(self):
         return self.env.initial_budget
 

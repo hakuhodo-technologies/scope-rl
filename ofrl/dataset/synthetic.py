@@ -195,7 +195,13 @@ class SyntheticDataset(BaseDataset):
             self.action_dim = self.env.action_space.shape[0]
 
         if self.maximum_step_per_episode is None:
-            self.maximum_step_per_episode = self.env._max_episode_steps
+            if self.env.spec.max_episode_steps is None:
+                raise ValueError(
+                    "when env.spec.max_episode_steps is None, maximum_step_per_episode must be given."
+                )
+            else:
+                self.maximum_step_per_episode = self.env.spec.max_episode_steps
+
         check_scalar(
             self.maximum_step_per_episode,
             name="maximum_step_per_episode",
