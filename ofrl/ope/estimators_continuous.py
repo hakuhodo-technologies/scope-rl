@@ -3,7 +3,6 @@ from dataclasses import dataclass
 from typing import Dict, Optional
 
 import numpy as np
-from scipy.stats import norm, truncnorm
 from sklearn.utils import check_scalar
 
 from .estimators_base import BaseOffPolicyEstimator
@@ -217,10 +216,7 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         behavior_policy_trajectory_wise_pscore: np.ndarray,
         evaluation_policy_action: np.ndarray,
         gamma: float = 1.0,
-        sigma: Optional[np.ndarray] = None,
-        use_truncated_kernel: bool = False,
-        action_min: Optional[np.ndarray] = None,
-        action_max: Optional[np.ndarray] = None,
+        sigma: float = 1.0,
         **kwargs,
     ) -> np.ndarray:
         """Estimate the trajectory-wise policy value.
@@ -246,21 +242,8 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         gamma: float, default=1.0
             Discount factor. The value should be within `(0, 1]`.
 
-        sigma: array-like of shape (action_dim, ), default=None
+        sigma: float, default=1.0
             Standard deviation of Gaussian distribution (i.e., `band_width` hyperparameter of gaussian kernel).
-            If `None`, sigma is set to 1 for all dimensions.
-
-        use_truncated_kernel: bool, default=False
-            Whether to use the Truncated Gaussian kernel or not.
-            If False, (normal) Gaussian kernel is used.
-
-        action_min: array-like of shape (action_dim, ), default=None
-            Minimum value of action vector.
-            When `use_truncated_kernel == True`, action_min must be given.
-
-        action_max: array-like of shape (action_dim, ), default=None
-            Maximum value of action vector.
-            When `use_truncated_kernel == True`, action_max must be given.
 
         Return
         -------
@@ -279,24 +262,16 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         )
         discount = np.full(reward.shape[1], gamma).cumprod()
 
-        if sigma is None:
-            sigma = np.ones(action.shape[1])
+        x = evaluation_policy_action
+        y = action
+        # (x - x') ** 2 = x ** 2 + x' ** 2 - 2 x x'
+        x_2 = (x ** 2).sum(axis=1)
+        y_2 = (y ** 2).sum(axis=1)
+        x_y = x @ y.T
+        distance = x_2 + y_2 - 2 * x_y
 
-        if use_truncated_kernel:
-            similarity_weight = truncnorm.pdf(
-                evaluation_policy_action,
-                a=(action_min - action) / sigma,
-                b=(action_max - action) / sigma,
-                loc=action,
-                scale=sigma,
-            ).cumprod(axis=1)[:, -1, 0]
-        else:
-            similarity_weight = norm.pdf(
-                evaluation_policy_action,
-                loc=action,
-                scale=sigma,
-            ).cumprod(axis=1)[:, -1, 0]
-
+        similarity_weight = np.exp(-distance / (2 * sigma ** 2))
+        similarity_weight = similarity_weight.cumprod(axis=1)[:, -1, 0]
         similarity_weight = np.tile(
             similarity_weight.reshape((-1, 1)), step_per_episode
         )
@@ -318,10 +293,7 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         behavior_policy_trajectory_wise_pscore: np.ndarray,
         evaluation_policy_action: np.ndarray,
         gamma: float = 1.0,
-        sigma: Optional[np.ndarray] = None,
-        use_truncated_kernel: bool = False,
-        action_min: Optional[np.ndarray] = None,
-        action_max: Optional[np.ndarray] = None,
+        sigma: float = 1.0,
         **kwargs,
     ) -> float:
         """Estimate the policy value of the evaluation policy.
@@ -347,21 +319,8 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         gamma: float, default=1.0
             Discount factor. The value should be within `(0, 1]`.
 
-        sigma: array-like of shape (action_dim, ), default=None
+        sigma: float, default=1.0
             Standard deviation of Gaussian distribution (i.e., `band_width` hyperparameter of gaussian kernel).
-            If `None`, sigma is set to 1 for all dimensions.
-
-        use_truncated_kernel: bool, default=False
-            Whether to use the Truncated Gaussian kernel or not.
-            If False, (normal) Gaussian kernel is used.
-
-        action_min: array-like of shape (action_dim, ), default=None
-            Minimum value of action vector.
-            When `use_truncated_kernel == True`, action_min must be given.
-
-        action_max: array-like of shape (action_dim, ), default=None
-            Maximum value of action vector.
-            When `use_truncated_kernel == True`, action_max must be given.
 
         Return
         -------
@@ -413,22 +372,7 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
             )
 
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
-
-        if sigma is not None:
-            check_array(sigma, name="sigma", expected_dim=1, min_val=0.0)
-            if not action.shape[1] == sigma.shape[0]:
-                raise ValueError(
-                    "Expected `action.shape[1] == sigma.shape[0]`, but found False"
-                )
-
-        if use_truncated_kernel:
-            check_array(action_min, name="action_min", expected_dim=1)
-            check_array(action_max, name="action_max", expected_dim=1)
-
-            if not action.shape[1] == action_min.shape[0] == action_max.shape[0]:
-                raise ValueError(
-                    "Expected `action.shape[1] == action_min.shape[0] == action_max.shape[0]`, but found False"
-                )
+        check_scalar(sigma, name="sigma", target_type=float, min_val=0.0)
 
         return self._estimate_trajectory_value(
             step_per_episode=step_per_episode,
@@ -438,9 +382,6 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
             evaluation_policy_action=evaluation_policy_action,
             gamma=gamma,
             sigma=sigma,
-            use_truncated_kernel=use_truncated_kernel,
-            action_min=action_min,
-            action_max=action_max,
         ).mean()
 
     def estimate_interval(
@@ -451,10 +392,7 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         behavior_policy_trajectory_wise_pscore: np.ndarray,
         evaluation_policy_action: np.ndarray,
         gamma: float = 1.0,
-        sigma: Optional[np.ndarray] = None,
-        use_truncated_kernel: bool = False,
-        action_min: Optional[np.ndarray] = None,
-        action_max: Optional[np.ndarray] = None,
+        sigma: float = 1.0,
         alpha: float = 0.05,
         ci: str = "bootstrap",
         n_bootstrap_samples: int = 10000,
@@ -484,21 +422,8 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         gamma: float, default=1.0
             Discount factor. The value should be within `(0, 1]`.
 
-        sigma: array-like of shape (action_dim, ), default=None
+        sigma: float, default=1.0
             Standard deviation of Gaussian distribution (i.e., `band_width` hyperparameter of gaussian kernel).
-            If `None`, sigma is set to 1 for all dimensions.
-
-        use_truncated_kernel: bool, default=False
-            Whether to use the Truncated Gaussian kernel or not.
-            If False, (normal) Gaussian kernel is used.
-
-        action_min: array-like of shape (action_dim, ), default=None
-            Minimum value of action vector.
-            When `use_truncated_kernel == True`, action_min must be given.
-
-        action_max: array-like of shape (action_dim, ), default=None
-            Maximum value of action vector.
-            When `use_truncated_kernel == True`, action_max must be given.
 
         alpha: float, default=0.05
             Significance level. The value should be within `[0, 1)`.
@@ -562,22 +487,7 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
             )
 
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
-
-        if sigma is not None:
-            check_array(sigma, name="sigma", expected_dim=1, min_val=0.0)
-            if not action.shape[1] == sigma.shape[0]:
-                raise ValueError(
-                    "Expected `action.shape[1] == sigma.shape[0]`, but found False"
-                )
-
-        if use_truncated_kernel:
-            check_array(action_min, name="action_min", expected_dim=1)
-            check_array(action_max, name="action_max", expected_dim=1)
-
-            if not action.shape[1] == action_min.shape[0] == action_max.shape[0]:
-                raise ValueError(
-                    "Expected `action.shape[1] == action_min.shape[0] == action_max.shape[0]`, but found False"
-                )
+        check_scalar(sigma, name="sigma", target_type=float, min_val=0.0)
 
         if ci not in self._estimate_confidence_interval.keys():
             raise ValueError(
@@ -592,9 +502,6 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
             evaluation_policy_action=evaluation_policy_action,
             gamma=gamma,
             sigma=sigma,
-            use_truncated_kernel=use_truncated_kernel,
-            action_min=action_min,
-            action_max=action_max,
         )
         return self._estimate_confidence_interval[ci](
             samples=estimated_trajectory_value,
@@ -654,10 +561,7 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
         behavior_policy_step_wise_pscore: np.ndarray,
         evaluation_policy_action: np.ndarray,
         gamma: float = 1.0,
-        sigma: Optional[np.ndarray] = None,
-        use_truncated_kernel: bool = False,
-        action_min: Optional[np.ndarray] = None,
-        action_max: Optional[np.ndarray] = None,
+        sigma: float = 1.0,
         **kwargs,
     ) -> np.ndarray:
         """Estimate the trajectory-wise policy value.
@@ -683,21 +587,8 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
         gamma: float, default=1.0
             Discount factor. The value should be within `(0, 1]`.
 
-        sigma: array-like of shape (action_dim, ), default=None
+        sigma: float, default=1.0
             Standard deviation of Gaussian distribution (i.e., `band_width` hyperparameter of gaussian kernel).
-            If `None`, sigma is set to 1 for all dimensions.
-
-        use_truncated_kernel: bool, default=False
-            Whether to use the Truncated Gaussian kernel or not.
-            If False, (normal) Gaussian kernel is used.
-
-        action_min: array-like of shape (action_dim, ), default=None
-            Minimum value of action vector.
-            When `use_truncated_kernel == True`, action_min must be given.
-
-        action_max: array-like of shape (action_dim, ), default=None
-            Maximum value of action vector.
-            When `use_truncated_kernel == True`, action_max must be given.
 
         Return
         -------
@@ -716,28 +607,20 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
         )
         discount = np.full(reward.shape[1], gamma).cumprod()
 
-        if sigma is None:
-            sigma = np.ones(action.shape[1])
+        x = evaluation_policy_action
+        y = action
+        # (x - x') ** 2 = x ** 2 + x' ** 2 - 2 x x'
+        x_2 = (x ** 2).sum(axis=1)
+        y_2 = (y ** 2).sum(axis=1)
+        x_y = x @ y.T
+        distance = x_2 + y_2 - 2 * x_y
 
-        if use_truncated_kernel:
-            similarity_weight = truncnorm.pdf(
-                evaluation_policy_action,
-                a=(action_min - action) / sigma,
-                b=(action_max - action) / sigma,
-                loc=action,
-                scale=sigma,
-            ).cumprod(axis=1)[:, :, 0]
-        else:
-            similarity_weight = norm.pdf(
-                evaluation_policy_action,
-                loc=action,
-                scale=sigma,
-            ).cumprod(axis=1)[:, :, 0]
+        similarity_weight = np.exp(-distance / (2 * sigma ** 2))
+        similarity_weight = similarity_weight.cumprod(axis=1)[:, :, 0]
 
         estimated_trajectory_value = (
             discount * reward * similarity_weight / behavior_policy_step_wise_pscore
         ).sum(axis=1)
-
         return estimated_trajectory_value
 
     def estimate_policy_value(
@@ -748,10 +631,7 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
         behavior_policy_step_wise_pscore: np.ndarray,
         evaluation_policy_action: np.ndarray,
         gamma: float = 1.0,
-        sigma: Optional[np.ndarray] = None,
-        use_truncated_kernel: bool = False,
-        action_min: Optional[np.ndarray] = None,
-        action_max: Optional[np.ndarray] = None,
+        sigma: float = 1.0,
         **kwargs,
     ) -> float:
         """Estimate the policy value of the evaluation policy.
@@ -777,21 +657,8 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
         gamma: float, default=1.0
             Discount factor. The value should be within `(0, 1]`.
 
-        sigma: array-like of shape (action_dim, ), default=None
+        sigma: float, default=1.0
             Standard deviation of Gaussian distribution (i.e., `band_width` hyperparameter of gaussian kernel).
-            If `None`, sigma is set to 1 for all dimensions.
-
-        use_truncated_kernel: bool, default=False
-            Whether to use the Truncated Gaussian kernel or not.
-            If False, (normal) Gaussian kernel is used.
-
-        action_min: array-like of shape (action_dim, ), default=None
-            Minimum value of action vector.
-            When `use_truncated_kernel == True`, action_min must be given.
-
-        action_max: array-like of shape (action_dim, ), default=None
-            Maximum value of action vector.
-            When `use_truncated_kernel == True`, action_max must be given.
 
         Return
         -------
@@ -843,22 +710,7 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
             )
 
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
-
-        if sigma is not None:
-            check_array(sigma, name="sigma", expected_dim=1, min_val=0.0)
-            if not action.shape[1] == sigma.shape[0]:
-                raise ValueError(
-                    "Expected `action.shape[1] == sigma.shape[0]`, but found False"
-                )
-
-        if use_truncated_kernel:
-            check_array(action_min, name="action_min", expected_dim=1)
-            check_array(action_max, name="action_max", expected_dim=1)
-
-            if not action.shape[1] == action_min.shape[0] == action_max.shape[0]:
-                raise ValueError(
-                    "Expected `action.shape[1] == action_min.shape[0] == action_max.shape[0]`, but found False"
-                )
+        check_scalar(sigma, name="sigma", target_type=float, min_val=0.0)
 
         return self._estimate_trajectory_value(
             step_per_episode=step_per_episode,
@@ -868,9 +720,6 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
             evaluation_policy_action=evaluation_policy_action,
             gamma=gamma,
             sigma=sigma,
-            use_truncated_kernel=use_truncated_kernel,
-            action_min=action_min,
-            action_max=action_max,
         ).mean()
 
     def estimate_interval(
@@ -881,10 +730,7 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
         behavior_policy_step_wise_pscore: np.ndarray,
         evaluation_policy_action: np.ndarray,
         gamma: float = 1.0,
-        sigma: Optional[np.ndarray] = None,
-        use_truncated_kernel: bool = False,
-        action_min: Optional[np.ndarray] = None,
-        action_max: Optional[np.ndarray] = None,
+        sigma: float = 1.0,
         alpha: float = 0.05,
         ci: str = "bootstrap",
         n_bootstrap_samples: int = 10000,
@@ -914,21 +760,8 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
         gamma: float, default=1.0
             Discount factor. The value should be within `(0, 1]`.
 
-        sigma: array-like of shape (action_dim, ), default=None
+        sigma: float, default=1.0
             Standard deviation of Gaussian distribution (i.e., `band_width` hyperparameter of gaussian kernel).
-            If `None`, sigma is set to 1 for all dimensions.
-
-        use_truncated_kernel: bool, default=False
-            Whether to use the Truncated Gaussian kernel or not.
-            If False, (normal) Gaussian kernel is used.
-
-        action_min: array-like of shape (action_dim, ), default=None
-            Minimum value of action vector.
-            When `use_truncated_kernel == True`, action_min must be given.
-
-        action_max: array-like of shape (action_dim, ), default=None
-            Maximum value of action vector.
-            When `use_truncated_kernel == True`, action_max must be given.
 
         alpha: float, default=0.05
             Significance level. The value should be within `[0, 1)`.
@@ -992,22 +825,7 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
             )
 
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
-
-        if sigma is not None:
-            check_array(sigma, name="sigma", expected_dim=1, min_val=0.0)
-            if not action.shape[1] == sigma.shape[0]:
-                raise ValueError(
-                    "Expected `action.shape[1] == sigma.shape[0]`, but found False"
-                )
-
-        if use_truncated_kernel:
-            check_array(action_min, name="action_min", expected_dim=1)
-            check_array(action_max, name="action_max", expected_dim=1)
-
-            if not action.shape[1] == action_min.shape[0] == action_max.shape[0]:
-                raise ValueError(
-                    "Expected `action.shape[1] == action_min.shape[0] == action_max.shape[0]`, but found False"
-                )
+        check_scalar(sigma, name="sigma", target_type=float, min_val=0.0)
 
         if ci not in self._estimate_confidence_interval.keys():
             raise ValueError(
@@ -1022,9 +840,6 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
             evaluation_policy_action=evaluation_policy_action,
             gamma=gamma,
             sigma=sigma,
-            use_truncated_kernel=use_truncated_kernel,
-            action_min=action_min,
-            action_max=action_max,
         )
         return self._estimate_confidence_interval[ci](
             samples=estimated_trajectory_value,
@@ -1093,10 +908,7 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
         evaluation_policy_action: np.ndarray,
         state_action_value_prediction: np.ndarray,
         gamma: float = 1.0,
-        sigma: Optional[np.ndarray] = None,
-        use_truncated_kernel: bool = False,
-        action_min: Optional[np.ndarray] = None,
-        action_max: Optional[np.ndarray] = None,
+        sigma: float = 1.0,
         **kwargs,
     ) -> np.ndarray:
         """Estimate the trajectory-wise policy value.
@@ -1126,21 +938,8 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
         gamma: float, default=1.0
             Discount factor. The value should be within `(0, 1]`.
 
-        sigma: array-like of shape (action_dim, ), default=None
+        sigma: float, default=1.0
             Standard deviation of Gaussian distribution (i.e., `band_width` hyperparameter of gaussian kernel).
-            If `None`, sigma is set to 1 for all dimensions.
-
-        use_truncated_kernel: bool, default=False
-            Whether to use the Truncated Gaussian kernel or not.
-            If False, (normal) Gaussian kernel is used.
-
-        action_min: array-like of shape (action_dim, ), default=None
-            Minimum value of action vector.
-            When `use_truncated_kernel == True`, action_min must be given.
-
-        action_max: array-like of shape (action_dim, ), default=None
-            Maximum value of action vector.
-            When `use_truncated_kernel == True`, action_max must be given.
 
         Return
         -------
@@ -1165,23 +964,16 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
 
         discount = np.full(reward.shape[1], gamma).cumprod()
 
-        if sigma is None:
-            sigma = np.ones(action.shape[1])
+        x = evaluation_policy_action
+        y = action
+        # (x - x') ** 2 = x ** 2 + x' ** 2 - 2 x x'
+        x_2 = (x ** 2).sum(axis=1)
+        y_2 = (y ** 2).sum(axis=1)
+        x_y = x @ y.T
+        distance = x_2 + y_2 - 2 * x_y
 
-        if use_truncated_kernel:
-            similarity_weight = truncnorm.pdf(
-                evaluation_policy_action,
-                a=(action_min - action) / sigma,
-                b=(action_max - action) / sigma,
-                loc=action,
-                scale=sigma,
-            ).cumprod(axis=1)[:, :, 0]
-        else:
-            similarity_weight = norm.pdf(
-                evaluation_policy_action,
-                loc=action,
-                scale=sigma,
-            ).cumprod(axis=1)[:, :, 0]
+        similarity_weight = np.exp(-distance / (2 * sigma ** 2))
+        similarity_weight = similarity_weight.cumprod(axis=1)[:, :, 0]
 
         similarity_weight_prev = np.roll(similarity_weight, 1, axis=1)
         similarity_weight_prev[:, 0] = 1
@@ -1193,7 +985,6 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
                 + state_action_value_prediction * similarity_weight_prev / pscore_prev
             )
         ).sum(axis=1)
-
         return estimated_trajectory_value
 
     def estimate_policy_value(
@@ -1238,21 +1029,8 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
         gamma: float, default=1.0
             Discount factor. The value should be within `(0, 1]`.
 
-        sigma: array-like of shape (action_dim, ), default=None
+        sigma: float, default=1.0
             Standard deviation of Gaussian distribution (i.e., `band_width` hyperparameter of gaussian kernel).
-            If `None`, sigma is set to 1 for all dimensions.
-
-        use_truncated_kernel: bool, default=False
-            Whether to use the Truncated Gaussian kernel or not.
-            If `False`, (normal) Gaussian kernel is used.
-
-        action_min: array-like of shape (action_dim, ), default=None
-            Minimum value of action vector.
-            When `use_truncated_kernel == True`, action_min must be given.
-
-        action_max: array-like of shape (action_dim, ), default=None
-            Maximum value of action vector.
-            When `use_truncated_kernel == True`, action_max must be given.
 
         Return
         -------
@@ -1304,22 +1082,7 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
             )
 
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
-
-        if sigma is not None:
-            check_array(sigma, name="sigma", expected_dim=1, min_val=0.0)
-            if not action.shape[1] == sigma.shape[0]:
-                raise ValueError(
-                    "Expected `action.shape[1] == sigma.shape[0]`, but found False"
-                )
-
-        if use_truncated_kernel:
-            check_array(action_min, name="action_min", expected_dim=1)
-            check_array(action_max, name="action_max", expected_dim=1)
-
-            if not action.shape[1] == action_min.shape[0] == action_max.shape[0]:
-                raise ValueError(
-                    "Expected `action.shape[1] == action_min.shape[0] == action_max.shape[0]`, but found False"
-                )
+        check_scalar(sigma, name="sigma", target_type=float, min_val=0.0)
 
         return self._estimate_trajectory_value(
             step_per_episode=step_per_episode,
@@ -1344,10 +1107,7 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
         evaluation_policy_action: np.ndarray,
         state_action_value_prediction: np.ndarray,
         gamma: float = 1.0,
-        sigma: Optional[np.ndarray] = None,
-        use_truncated_kernel: bool = False,
-        action_min: Optional[np.ndarray] = None,
-        action_max: Optional[np.ndarray] = None,
+        sigma: float = 1.0,
         alpha: float = 0.05,
         ci: str = "bootstrap",
         n_bootstrap_samples: int = 10000,
@@ -1381,21 +1141,8 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
         ggamma: float, default=1.0
             Discount factor. The value should be within `(0, 1]`.
 
-        sigma: array-like of shape (action_dim, ), default=None
+        sigma: float, default=1.0
             Standard deviation of Gaussian distribution (i.e., `band_width` hyperparameter of gaussian kernel).
-            If `None`, sigma is set to 1 for all dimensions.
-
-        use_truncated_kernel: bool, default=False
-            Whether to use the Truncated Gaussian kernel or not.
-            If False, (normal) Gaussian kernel is used.
-
-        action_min: array-like of shape (action_dim, ), default=None
-            Minimum value of action vector.
-            When `use_truncated_kernel == True`, action_min must be given.
-
-        action_max: array-like of shape (action_dim, ), default=None
-            Maximum value of action vector.
-            When `use_truncated_kernel == True`, action_max must be given.
 
         alpha: float, default=0.05
             Significance level. The value should be within `[0, 1)`.
@@ -1459,22 +1206,7 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
             )
 
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
-
-        if sigma is not None:
-            check_array(sigma, name="sigma", expected_dim=1, min_val=0.0)
-            if not action.shape[1] == sigma.shape[0]:
-                raise ValueError(
-                    "Expected `action.shape[1] == sigma.shape[0]`, but found False"
-                )
-
-        if use_truncated_kernel:
-            check_array(action_min, name="action_min", expected_dim=1)
-            check_array(action_max, name="action_max", expected_dim=1)
-
-            if not action.shape[1] == action_min.shape[0] == action_max.shape[0]:
-                raise ValueError(
-                    "Expected `action.shape[1] == action_min.shape[0] == action_max.shape[0]`, but found False"
-                )
+        check_scalar(sigma, name="sigma", target_type=float, min_val=0.0)
 
         if ci not in self._estimate_confidence_interval.keys():
             raise ValueError(
@@ -1490,9 +1222,6 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
             state_action_value_prediction=state_action_value_prediction,
             gamma=gamma,
             sigma=sigma,
-            use_truncated_kernel=use_truncated_kernel,
-            action_min=action_min,
-            action_max=action_max,
         )
         return self._estimate_confidence_interval[ci](
             samples=estimated_trajectory_value,
@@ -1561,10 +1290,7 @@ class ContinuousSelfNormalizedTrajectoryWiseImportanceSampling(
         behavior_policy_trajectory_wise_pscore: np.ndarray,
         evaluation_policy_action: np.ndarray,
         gamma: float = 1.0,
-        sigma: Optional[np.ndarray] = None,
-        use_truncated_kernel: bool = False,
-        action_min: Optional[np.ndarray] = None,
-        action_max: Optional[np.ndarray] = None,
+        sigma: float = 1.0,
         **kwargs,
     ) -> np.ndarray:
         """Estimate the trajectory-wise policy value.
@@ -1590,21 +1316,8 @@ class ContinuousSelfNormalizedTrajectoryWiseImportanceSampling(
         gamma: float, default=1.0
             Discount factor. The value should be within `(0, 1]`.
 
-        sigma: array-like of shape (action_dim, ), default=None
+        sigma: float, default=1.0
             Standard deviation of Gaussian distribution (i.e., `band_width` hyperparameter of gaussian kernel).
-            If `None`, sigma is set to 1 for all dimensions.
-
-        use_truncated_kernel: bool, default=False
-            Whether to use the Truncated Gaussian kernel or not.
-            If False, (normal) Gaussian kernel is used.
-
-        action_min: array-like of shape (action_dim, ), default=None
-            Minimum value of action vector.
-            When `use_truncated_kernel == True`, action_min must be given.
-
-        action_max: array-like of shape (action_dim, ), default=None
-            Maximum value of action vector.
-            When `use_truncated_kernel == True`, action_max must be given.
 
         Return
         -------
@@ -1623,24 +1336,16 @@ class ContinuousSelfNormalizedTrajectoryWiseImportanceSampling(
         )
         discount = np.full(reward.shape[1], gamma).cumprod()
 
-        if sigma is None:
-            sigma = np.ones(action.shape[1])
+        x = evaluation_policy_action
+        y = action
+        # (x - x') ** 2 = x ** 2 + x' ** 2 - 2 x x'
+        x_2 = (x ** 2).sum(axis=1)
+        y_2 = (y ** 2).sum(axis=1)
+        x_y = x @ y.T
+        distance = x_2 + y_2 - 2 * x_y
 
-        if use_truncated_kernel:
-            similarity_weight = truncnorm.pdf(
-                evaluation_policy_action,
-                a=(action_min - action) / sigma,
-                b=(action_max - action) / sigma,
-                loc=action,
-                scale=sigma,
-            ).cumprod(axis=1)[:, -1, 0]
-        else:
-            similarity_weight = norm.pdf(
-                evaluation_policy_action,
-                loc=action,
-                scale=sigma,
-            ).cumprod(axis=1)[:, -1, 0]
-
+        similarity_weight = np.exp(-distance / (2 * sigma ** 2))
+        similarity_weight = similarity_weight.cumprod(axis=1)[:, -1, 0]
         similarity_weight = np.tile(
             similarity_weight.reshape((-1, 1)), step_per_episode
         )
@@ -1653,7 +1358,6 @@ class ContinuousSelfNormalizedTrajectoryWiseImportanceSampling(
         estimated_trajectory_value = (discount * reward * self_normalized_weight).sum(
             axis=1
         )
-
         return estimated_trajectory_value
 
 
@@ -1716,10 +1420,7 @@ class ContinuousSelfNormalizedPerDecisionImportanceSampling(
         behavior_policy_step_wise_pscore: np.ndarray,
         evaluation_policy_action: np.ndarray,
         gamma: float = 1.0,
-        sigma: Optional[np.ndarray] = None,
-        use_truncated_kernel: bool = False,
-        action_min: Optional[np.ndarray] = None,
-        action_max: Optional[np.ndarray] = None,
+        sigma: float = 1.0,
         **kwargs,
     ) -> np.ndarray:
         """Estimate the trajectory-wise policy value.
@@ -1745,21 +1446,8 @@ class ContinuousSelfNormalizedPerDecisionImportanceSampling(
         gamma: float, default=1.0
             Discount factor. The value should be within `(0, 1]`.
 
-        sigma: array-like of shape (action_dim, ), default=None
+        sigma: float, default=1.0
             Standard deviation of Gaussian distribution (i.e., `band_width` hyperparameter of gaussian kernel).
-            If `None`, sigma is set to 1 for all dimensions.
-
-        use_truncated_kernel: bool, default=False
-            Whether to use the Truncated Gaussian kernel or not.
-            If False, (normal) Gaussian kernel is used.
-
-        action_min: array-like of shape (action_dim, ), default=None
-            Minimum value of action vector.
-            When `use_truncated_kernel == True`, action_min must be given.
-
-        action_max: array-like of shape (action_dim, ), default=None
-            Maximum value of action vector.
-            When `use_truncated_kernel == True`, action_max must be given.
 
         Return
         -------
@@ -1778,23 +1466,16 @@ class ContinuousSelfNormalizedPerDecisionImportanceSampling(
         )
         discount = np.full(reward.shape[1], gamma).cumprod()
 
-        if sigma is None:
-            sigma = np.ones(action.shape[1])
+        x = evaluation_policy_action
+        y = action
+        # (x - x') ** 2 = x ** 2 + x' ** 2 - 2 x x'
+        x_2 = (x ** 2).sum(axis=1)
+        y_2 = (y ** 2).sum(axis=1)
+        x_y = x @ y.T
+        distance = x_2 + y_2 - 2 * x_y
 
-        if use_truncated_kernel:
-            similarity_weight = truncnorm.pdf(
-                evaluation_policy_action,
-                a=(action_min - action) / sigma,
-                b=(action_max - action) / sigma,
-                loc=action,
-                scale=sigma,
-            ).cumprod(axis=1)[:, :, 0]
-        else:
-            similarity_weight = norm.pdf(
-                evaluation_policy_action,
-                loc=action,
-                scale=sigma,
-            ).cumprod(axis=1)[:, :, 0]
+        similarity_weight = np.exp(-distance / (2 * sigma ** 2))
+        similarity_weight = similarity_weight.cumprod(axis=1)[:, :, 0]
 
         weight = similarity_weight / importance_weight
         weight_mean = weight.mean(axis=0)
@@ -1804,7 +1485,6 @@ class ContinuousSelfNormalizedPerDecisionImportanceSampling(
         estimated_trajectory_value = (discount * reward * self_normalized_weight).sum(
             axis=1
         )
-
         return estimated_trajectory_value
 
 
@@ -1869,10 +1549,7 @@ class ContinuousSelfNormalizedDoublyRobust(ContinuousDoublyRobust):
         evaluation_policy_action: np.ndarray,
         state_action_value_prediction: np.ndarray,
         gamma: float = 1.0,
-        sigma: Optional[np.ndarray] = None,
-        use_truncated_kernel: bool = False,
-        action_min: Optional[np.ndarray] = None,
-        action_max: Optional[np.ndarray] = None,
+        sigma: float = 1.0,
         **kwargs,
     ) -> np.ndarray:
         """Estimate the trajectory-wise policy value.
@@ -1902,21 +1579,8 @@ class ContinuousSelfNormalizedDoublyRobust(ContinuousDoublyRobust):
         gamma: float, default=1.0
             Discount factor. The value should be within `(0, 1]`.
 
-        sigma: array-like of shape (action_dim, ), default=None
+        sigma: float, default=1.0
             Standard deviation of Gaussian distribution (i.e., `band_width` hyperparameter of gaussian kernel).
-            If `None`, sigma is set to 1 for all dimensions.
-
-        use_truncated_kernel: bool, default=False
-            Whether to use the Truncated Gaussian kernel or not.
-            If False, (normal) Gaussian kernel is used.
-
-        action_min: array-like of shape (action_dim, ), default=None
-            Minimum value of action vector.
-            When `use_truncated_kernel == True`, action_min must be given.
-
-        action_max: array-like of shape (action_dim, ), default=None
-            Maximum value of action vector.
-            When `use_truncated_kernel == True`, action_max must be given.
 
         Return
         -------
@@ -1944,23 +1608,16 @@ class ContinuousSelfNormalizedDoublyRobust(ContinuousDoublyRobust):
 
         discount = np.full(reward.shape[1], gamma).cumprod()
 
-        if sigma is None:
-            sigma = np.ones(action.shape[1])
+        x = evaluation_policy_action
+        y = action
+        # (x - x') ** 2 = x ** 2 + x' ** 2 - 2 x x'
+        x_2 = (x ** 2).sum(axis=1)
+        y_2 = (y ** 2).sum(axis=1)
+        x_y = x @ y.T
+        distance = x_2 + y_2 - 2 * x_y
 
-        if use_truncated_kernel:
-            similarity_weight = truncnorm.pdf(
-                evaluation_policy_action,
-                a=(action_min - action) / sigma,
-                b=(action_max - action) / sigma,
-                loc=action,
-                scale=sigma,
-            ).cumprod(axis=1)[:, :, 0]
-        else:
-            similarity_weight = norm.pdf(
-                evaluation_policy_action,
-                loc=action,
-                scale=sigma,
-            ).cumprod(axis=1)[:, :, 0]
+        similarity_weight = np.exp(-distance / (2 * sigma ** 2))
+        similarity_weight = similarity_weight.cumprod(axis=1)[:, :, 0]
 
         similarity_weight_prev = np.roll(similarity_weight, 1, axis=1)
         similarity_weight_prev[:, 0] = 1
@@ -1989,5 +1646,4 @@ class ContinuousSelfNormalizedDoublyRobust(ContinuousDoublyRobust):
                 + state_action_value_prediction * self_normalized_weight_prev
             )
         ).sum(axis=1)
-
         return estimated_trajectory_value
