@@ -46,7 +46,7 @@ class ContinuousOffPolicyEvaluation:
         Estimators must follow the interface of `ofrl.ope.BaseOffPolicyEstimator`.
 
     sigma: array-like of shape (action_dim, ), default=None
-        Standard deviation of Gaussian distribution (i.e., `band_width` hyperparameter of gaussian kernel).
+        Bandwidth hyperparameter of gaussian kernel.
         If `None`, sigma is set to 1 for all dimensions.
 
     use_truncated_kernel: bool, default=False

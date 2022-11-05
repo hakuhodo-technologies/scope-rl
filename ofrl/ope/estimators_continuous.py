@@ -6,7 +6,7 @@ import numpy as np
 from sklearn.utils import check_scalar
 
 from .estimators_base import BaseOffPolicyEstimator
-from ..utils import check_array
+from ..utils import check_array, gaussian_kernel
 
 
 @dataclass
@@ -262,15 +262,7 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         )
         discount = np.full(reward.shape[1], gamma).cumprod()
 
-        x = evaluation_policy_action
-        y = action
-        # (x - x') ** 2 = x ** 2 + x' ** 2 - 2 x x'
-        x_2 = (x ** 2).sum(axis=1)
-        y_2 = (y ** 2).sum(axis=1)
-        x_y = x @ y.T
-        distance = x_2 + y_2 - 2 * x_y
-
-        similarity_weight = np.exp(-distance / (2 * sigma ** 2))
+        similarity_weight = gaussian_kernel(evaluation_policy_action, action)
         similarity_weight = similarity_weight.cumprod(axis=1)[:, -1, 0]
         similarity_weight = np.tile(
             similarity_weight.reshape((-1, 1)), step_per_episode
@@ -607,15 +599,7 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
         )
         discount = np.full(reward.shape[1], gamma).cumprod()
 
-        x = evaluation_policy_action
-        y = action
-        # (x - x') ** 2 = x ** 2 + x' ** 2 - 2 x x'
-        x_2 = (x ** 2).sum(axis=1)
-        y_2 = (y ** 2).sum(axis=1)
-        x_y = x @ y.T
-        distance = x_2 + y_2 - 2 * x_y
-
-        similarity_weight = np.exp(-distance / (2 * sigma ** 2))
+        similarity_weight = gaussian_kernel(evaluation_policy_action, action)
         similarity_weight = similarity_weight.cumprod(axis=1)[:, :, 0]
 
         estimated_trajectory_value = (
@@ -964,15 +948,7 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
 
         discount = np.full(reward.shape[1], gamma).cumprod()
 
-        x = evaluation_policy_action
-        y = action
-        # (x - x') ** 2 = x ** 2 + x' ** 2 - 2 x x'
-        x_2 = (x ** 2).sum(axis=1)
-        y_2 = (y ** 2).sum(axis=1)
-        x_y = x @ y.T
-        distance = x_2 + y_2 - 2 * x_y
-
-        similarity_weight = np.exp(-distance / (2 * sigma ** 2))
+        similarity_weight = gaussian_kernel(evaluation_policy_action, action)
         similarity_weight = similarity_weight.cumprod(axis=1)[:, :, 0]
 
         similarity_weight_prev = np.roll(similarity_weight, 1, axis=1)
@@ -1336,15 +1312,7 @@ class ContinuousSelfNormalizedTrajectoryWiseImportanceSampling(
         )
         discount = np.full(reward.shape[1], gamma).cumprod()
 
-        x = evaluation_policy_action
-        y = action
-        # (x - x') ** 2 = x ** 2 + x' ** 2 - 2 x x'
-        x_2 = (x ** 2).sum(axis=1)
-        y_2 = (y ** 2).sum(axis=1)
-        x_y = x @ y.T
-        distance = x_2 + y_2 - 2 * x_y
-
-        similarity_weight = np.exp(-distance / (2 * sigma ** 2))
+        similarity_weight = gaussian_kernel(evaluation_policy_action, action)
         similarity_weight = similarity_weight.cumprod(axis=1)[:, -1, 0]
         similarity_weight = np.tile(
             similarity_weight.reshape((-1, 1)), step_per_episode
@@ -1466,15 +1434,7 @@ class ContinuousSelfNormalizedPerDecisionImportanceSampling(
         )
         discount = np.full(reward.shape[1], gamma).cumprod()
 
-        x = evaluation_policy_action
-        y = action
-        # (x - x') ** 2 = x ** 2 + x' ** 2 - 2 x x'
-        x_2 = (x ** 2).sum(axis=1)
-        y_2 = (y ** 2).sum(axis=1)
-        x_y = x @ y.T
-        distance = x_2 + y_2 - 2 * x_y
-
-        similarity_weight = np.exp(-distance / (2 * sigma ** 2))
+        similarity_weight = gaussian_kernel(evaluation_policy_action, action)
         similarity_weight = similarity_weight.cumprod(axis=1)[:, :, 0]
 
         weight = similarity_weight / importance_weight
@@ -1608,15 +1568,7 @@ class ContinuousSelfNormalizedDoublyRobust(ContinuousDoublyRobust):
 
         discount = np.full(reward.shape[1], gamma).cumprod()
 
-        x = evaluation_policy_action
-        y = action
-        # (x - x') ** 2 = x ** 2 + x' ** 2 - 2 x x'
-        x_2 = (x ** 2).sum(axis=1)
-        y_2 = (y ** 2).sum(axis=1)
-        x_y = x @ y.T
-        distance = x_2 + y_2 - 2 * x_y
-
-        similarity_weight = np.exp(-distance / (2 * sigma ** 2))
+        similarity_weight = gaussian_kernel(evaluation_policy_action, action)
         similarity_weight = similarity_weight.cumprod(axis=1)[:, :, 0]
 
         similarity_weight_prev = np.roll(similarity_weight, 1, axis=1)

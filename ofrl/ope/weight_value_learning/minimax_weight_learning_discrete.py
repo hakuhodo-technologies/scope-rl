@@ -1,0 +1,400 @@
+from dataclasses import dataclass
+from typing import Optional
+from tqdm import tqdm
+
+import torch
+from torch import optim
+from torch.nn import functional as F
+
+import numpy as np
+from sklearn.utils import check_scalar
+
+from .base import BaseWeightValueLearner
+from .function import (
+    DiscreteStateActionWeightFunction,
+    StateWeightFunction,
+)
+from ...utils import check_array
+
+
+@dataclass
+class DiscreteMinimaxStateActionWeightLearning(BaseWeightValueLearner):
+    """Minimax Weight Learning for marginal OPE estimators (for discrete action space).
+
+    Note
+    -------
+    Minimax Weight Learning uses that the following holds true about Q-function.
+
+    .. math::
+
+        \\mathbb{E}_{(s_t, a_t, r_t, s_{t+1}) \\sim d^{\\pi_0}, a_{t+1} \\sim \\pi(a_{t+1} | s_{t+1})} [w(s_t, a_t) (Q(s_t, a_t) - \\gamma Q(s_{t+1}, a_{t+1}))]
+        = \\mathbb{E}_{s_0 \\sim d^{\\pi_0}, a_0 \\sim \\pi(a_0 | s_0)} [Q(s_0, a_0)]
+
+    where :math:`Q(s_t, a_t)` is the Q-function, :math:`w(s_t, a_t) \\approx d^{\\pi}(s_t, a_t) / d^{\\pi_0}(s_t, a_t)` is the state-action marginal importance weight.
+
+    Then, it adversarially minimize the difference between RHS and LHS (which we denote :math:`L_w(w, Q)`) to the worst case in terms of :math:`Q(\\cdot)`
+    using a discriminator defined in reproducing kernel Hilbert space (RKHS) as follows.
+
+    .. math::
+
+        \\max_w L_w^2(w, Q) = \\mathbb{E}_{(s_t, a_t, s_{t+1}), (\\tilde{s}_t, \\tilde{a}_t, \\tilde{s}_{t+1}) \\sim d^{\\pi_0}, a_{t+1} \\sim \\pi(a_{t+1} | s_{t+1}), \\tilde{a}_{t+1} \\sim \\pi(\\tilde{a}_{t+1} | \\tilde{s}_{t+1})}[
+            w(s_t, a_t) w(\\tilde{s_t}, \\tilde{a}_t) ( K((s_t, a_t), (\\tilde{s}_t, \\tilde{a}_t)) + K((s_{t+1}, a_{t+1}), (\\tilde{s}_{t+1}, \\tilde{a}_{t+1})) - \\gamma ( K((s_t, a_t), (\\tilde{s}_{t+1}, \\tilde{a}_{t+1})) + K((s_{t+1}, a_{t+1}), (\\tilde{s}_t, \\tilde{a}_t)) ))
+        ] + \\gamma (1 - \\gamma) \\mathbb{E}_{(s_t, a_t, s_{t+1}), (\\tilde{s}_t, \\tilde{a}_t, \\tilde{s}_{t+1}) \\sim d^{\\pi_0}, a_{t+1} \\sim \\pi(a_{t+1} | s_{t+1}), \\tilde{a}_{t+1} \\sim \\pi(\\tilde{a}_{t+1} | \\tilde{s}_{t+1}), s_0 \\sim d(s_0), \\tilde{s}_0 \\sim d(\\tilde{s}_0), a_0 \\sim \\pi(a_0 | s_0), \\tilde{a}_0 \\sim \\pi(\\tilde{a}_0 | \\tilde{s}_0)}[
+            w(s_t, a_t) K((s_{t+1}, a_{t+1}), (\\tilde{s}_0, \\tilde{a}_0)) + w(\\tilde{s}_t, \\tilde{a}_t) K((\\tilde{s}_{t+1}, \\tilde{a}_{t+1}), (s_0, a_0))
+        ] - (1 - \\gamma) \\mathbb{E}_{(s_t, a_t), (\\tilde{s}_t, \\tilde{a}_t) \\sim d^{\\pi_0}, s_0 \\sim d(s_0), \\tilde{s}_0 \\sim d(\\tilde{s}_0), a_0 \\sim \\pi(a_0 | s_0), \\tilde{a}_0 \\sim \\pi(\\tilde{a}_0 | \\tilde{s}_0)}[
+            w(s_t, a_t) K((s_t, a_t), (\\tilde{s}_0, \\tilde{a}_0)) + w(\\tilde{s}_t, \\tilde{a}_t) K((\\tilde{s}_t, \\tilde{a}_t), (s_0, a_0))
+        ]
+
+    where :math:`K(\\cdot, \\cdot)` is a kernel function.
+
+    Parameters
+    -------
+    w_function: DiscreteStateActionWeightFunction
+        Q function model.
+
+    device: str, default="cuda:0"
+        Specifies device used for torch.
+
+    References
+    -------
+    Masatoshi Uehara, Jiawei Huang, and Nan Jiang.
+    "Minimax Weight and Q-Function Learning for Off-Policy Evaluation.", 2020.
+
+    """
+
+    w_function: DiscreteStateActionWeightFunction
+    device: str = "cuda:0"
+
+    def __post_init__(self):
+        self.w_function.to(self.device)
+
+    def _gaussian_kernel(
+        self,
+        state_1: torch.Tensor,
+        action_1: torch.Tensor,
+        state_2: torch.Tensor,
+        action_2: torch.Tensor,
+        sigma: float,
+    ):
+        """Gaussian kernel for all input pairs."""
+        with torch.no_grad():
+            # (x - x') ** 2 = x ** 2 + x' ** 2 - 2 x x'
+            x_2 = (state_1 ** 2).sum(dim=1)
+            y_2 = (state_2 ** 2).sum(dim=1)
+            x_y = state_1 @ state_2.T
+            distance = x_2[:, None] + y_2[None, :] - 2 * x_y
+
+            action_onehot_1 = F.one_hot(action_1)
+            action_onehot_2 = F.one_hot(action_2)
+            kernel = torch.exp(-distance / sigma) * (
+                action_onehot_1 @ action_onehot_2.T
+            )
+
+        return kernel  # shape (n_samples, n_samples)
+
+    def _first_term(
+        self,
+        state: torch.Tensor,
+        action: torch.Tensor,
+        next_state: torch.Tensor,
+        next_action: torch.Tensor,
+        importance_weight: torch.Tensor,
+        gamma: float,
+        sigma: float,
+    ):
+        importance_weight = importance_weight @ importance_weight.T
+        positive_term = self._gaussian_kernel(
+            state, action, state, action, sigma=sigma
+        ) + self._gaussian_kernel(
+            next_state, next_action, next_state, next_action, sigma=sigma
+        )
+        negative_term = self._gaussian_kernel(
+            state, action, next_state, next_action, sigma=sigma
+        ) + self._gaussian_kernel(next_state, next_action, state, action, sigma=sigma)
+        return (importance_weight * (positive_term - gamma * negative_term)).mean()
+
+    def _second_term(
+        self,
+        initial_state: torch.Tensor,
+        initial_action: torch.Tensor,
+        next_state: torch.Tensor,
+        next_action: torch.Tensor,
+        importance_weight: torch.Tensor,
+        gamma: float,
+        sigma: float,
+    ):
+        base_term = importance_weight[:, None] * self._gaussian_kernel(
+            next_state, next_action, initial_state, initial_action, sigma=sigma
+        )
+        return gamma * (1 - gamma) * (base_term @ base_term.T).mean()
+
+    def _third_term(
+        self,
+        initial_state: torch.Tensor,
+        initial_action: torch.Tensor,
+        state: torch.Tensor,
+        action: torch.Tensor,
+        importance_weight: torch.Tensor,
+        gamma: float,
+        sigma: float,
+    ):
+        base_term = importance_weight[:, None] * self._gaussian_kernel(
+            state, action, initial_state, initial_action, sigma=sigma
+        )
+        return gamma * (1 - gamma) * (base_term @ base_term.T).mean()
+
+    def _objective_function(
+        self,
+        initial_state: torch.Tensor,
+        initial_action: torch.Tensor,
+        state: torch.Tensor,
+        action: torch.Tensor,
+        next_state: torch.Tensor,
+        next_action: torch.Tensor,
+        importance_weight: torch.Tensor,
+        gamma: float,
+        sigma: float,
+    ):
+        """Objective function of Minimax Weight Learning.
+
+        Parameters
+        -------
+        initial_state: Tensor of shape (n_initial_samples, state_dim)
+            Initial state of a trajectory (or states sampled from a stationary distribution).
+
+        initial_action: Tensor of shape (n_initial_samples, )
+            Initial action chosen by the evaluation policy.
+
+        state: array-like of shape (n_samples, state_dim)
+            State observed by the behavior policy.
+
+        action: Tensor of shape (n_samples, )
+            Action chosen by the behavior policy.
+
+        next_state: Tensor of shape (n_samples, state_dim)
+            Next state observed for each (state, action) pair.
+
+        next_action: Tensor of shape (n_samples, )
+            Next action chosen by the evaluation policy.
+
+        importance_weight: Tensor of shape (n_samples, )
+            Immediate importance weight of the given (state, action) pair,
+            i.e., :math:`\\pi(a_t | s_t) / \\pi_0(a_t | s_t)`.
+
+        gamma: float
+            Discount factor. The value should be within `(0, 1]`.
+
+        sigma: float
+            Bandwidth hyperparameter of gaussian kernel.
+
+        Return
+        -------
+        objective_function: Tensor of shape (1, )
+            Objective function of MWL.
+
+        """
+        first_term = self._first_term(
+            state=state,
+            action=action,
+            next_state=next_state,
+            next_action=next_action,
+            importance_weight=importance_weight,
+            gamma=gamma,
+            sigma=sigma,
+        )
+        second_term = self._second_term(
+            initial_state=initial_state,
+            initial_action=initial_action,
+            next_state=next_state,
+            next_action=next_action,
+            importance_weight=importance_weight,
+            gamma=gamma,
+            sigma=sigma,
+        )
+        third_term = self._third_term(
+            initial_state=initial_state,
+            initial_action=initial_action,
+            state=state,
+            action=action,
+            importance_weight=importance_weight,
+            gamma=gamma,
+            sigma=sigma,
+        )
+        return first_term + second_term - third_term
+
+    def fit(
+        self,
+        initial_state: np.ndarray,
+        evaluation_policy_initial_action_dist: np.ndarray,
+        state: np.ndarray,
+        action: np.ndarray,
+        reward: np.ndarray,
+        next_state: np.ndarray,
+        evaluation_policy_next_action_dist: np.ndarray,
+        pscore: np.ndarray,
+        evaluation_policy_action_dist: np.ndarray,
+        n_epochs: int = 100,
+        n_steps_per_epoch: int = 100,
+        batch_size: int = 32,
+        gamma: float = 1.0,
+        sigma: float = 1.0,
+        lr: float = 1e-3,
+        random_state: Optional[int] = None,
+    ):
+        """Fit weight function.
+
+        Parameters
+        -------
+        initial_state: array-like of shape (n_initial_samples, state_dim)
+            Initial state of a trajectory (or states sampled from a stationary distribution).
+
+        evaluation_policy_initial_action_dist: array-like of shape (n_initial_samples, n_actions)
+            Conditional action distribution induced by the evaluation policy to the initial state,
+            i.e., :math:`\\pi(a \\mid s_0) \\forall a \\in \\mathcal{A}`
+
+        state: array-like of shape (n_transition_samples, state_dim)
+            State observed by the behavior policy.
+
+        action: array-like of shape (n_transition_samples, )
+            Action chosen by the behavior policy.
+
+        reward: array-like of shape (n_transition_samples, )
+            Reward observed for each (state, action) pair.
+
+        next_state: array-like of shape (n_transition_samples, state_dim)
+            Next state observed for each (state, action) pair.
+
+        evaluation_policy_next_action_dist: array-like of shape (n_transition_samples, n_actions)
+            Conditional action distribution induced by the evaluation policy to the next state,
+            i.e., :math:`\\pi(a \\mid s_{t+1}) \\forall a \\in \\mathcal{A}`
+
+        pscore: array-like of shape (n_samples, )
+            Action choice probability of the behavior policy for the chosen action.
+
+        evaluation_policy_action_dist: array-like of shape (n_samples, n_actions)
+            Conditional action distribution induced by the evaluation policy,
+            i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
+
+        n_epochs: int, default=100
+            Number of epochs to train.
+
+        n_steps_per_epoch: int, default=100
+            Number of gradient steps in a epoch.
+
+        batch_size: int, default=32
+            Batch size.
+
+        lr: float, default=1e-3
+            Learning rate.
+
+        random_state: int, default=None
+            Random state.
+
+        """
+        check_array(initial_state, name="initial_state", expected_dim=2)
+        check_array(
+            evaluation_policy_initial_action_dist,
+            name="evaluation_policy_initial_action_dist",
+            expected_dim=2,
+            min_val=0.0,
+            max_val=1.0,
+        )
+        check_array(state, name="state", expected_dim=2)
+        check_array(action, name="action", expected_dim=1)
+        check_array(reward, name="reward", expected_dim=1)
+        check_array(next_state, name="next_state", expected_dim=2)
+        check_array(
+            evaluation_policy_next_action_dist,
+            name="evaluation_policy_next_action_dist",
+            expected_dim=2,
+            min_val=0.0,
+            max_val=1.0,
+        )
+        check_array(pscore, name="pscore", expected_dim=1)
+        check_array(
+            evaluation_policy_action_dist,
+            name="evaluation_policy_action_dist",
+            expected_dim=2,
+            min_val=0.0,
+            max_val=1.0,
+        )
+        if initial_state.shape[0] != evaluation_policy_initial_action_dist.shape[0]:
+            raise ValueError(
+                "Expected `initial_state.shape[0] == evaluation_policy_initial_action_dist.shape[0], but found False`"
+            )
+        if not (
+            state.shape[0]
+            == action.shape[0]
+            == reward.shape[0]
+            == next_state.shape[0]
+            == evaluation_policy_next_action_dist.shape[0]
+            == pscore.shape[0]
+            == evaluation_policy_action_dist.shape[0]
+        ):
+            raise ValueError(
+                "Expected `state.shape[0] == action.shape[0] == reward.shape[0] == next_state.shape[0] == evaluation_policy_next_action_dist.shape[0] "
+                "== pscore.shape[0] == evaluation_policy_action_dist.shape[0]`, but found False"
+            )
+        if not (initial_state.shape[1] == state.shape[1] == next_state.shape[1]):
+            raise ValueError(
+                "Expected `initial_state.shape[1] == state.shape[1] == next_state.shape[1]`, but found False"
+            )
+        if not (
+            evaluation_policy_initial_action_dist.shape[1]
+            == evaluation_policy_next_action_dist.shape[1]
+            == evaluation_policy_action_dist.shape[1]
+        ):
+            raise ValueError(
+                "Expected `evaluation_policy_initial_action_dist.shape[1] == evaluation_policy_next_action_dist.shape[1] == evaluation_policy_action_dist.shape[1]`"
+                ", but found False"
+            )
+        if not np.allclose(
+            np.ones(evaluation_policy_initial_action_dist.shape[0]),
+            evaluation_policy_initial_action_dist.sum(axis=1),
+        ):
+            raise ValueError(
+                "evaluation_policy_initial_action_dist must sums up to one in axis=1, but found False"
+            )
+        if not np.allclose(
+            np.ones(evaluation_policy_next_action_dist.shape[0]),
+            evaluation_policy_next_action_dist.sum(axis=1),
+        ):
+            raise ValueError(
+                "evaluation_policy_next_action_dist must sums up to one in axis=1, but found False"
+            )
+        if not np.allclose(
+            np.ones(evaluation_policy_action_dist.shape[0]),
+            evaluation_policy_action_dist.sum(axis=1),
+        ):
+            raise ValueError(
+                "evaluation_policy_action_dist must sums up to one in axis=1, but found False"
+            )
+
+        check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
+        check_scalar(sigma, name="sigma", target_type=float, min_val=0.0)
+        check_scalar(n_epochs, name="n_epochs", target_type=int, min_val=1)
+        check_scalar(
+            n_steps_per_epoch, name="n_steps_per_epoch", target_type=int, min_val=1
+        )
+        check_scalar(batch_size, name="batch_size", target_type=int, min_val=1)
+        check_scalar(lr, name="lr", target_type=float, min_val=0.0)
+
+        if random_state is None:
+            raise ValueError("Random state mush be given.")
+        torch.manual_seed(random_state)
+
+        n_samples = len(state)
+        initial_state = torch.FloatTensor(initial_state, device=self.device)
+        evaluation_policy_initial_action_dist = torch.FloatTensor(
+            evaluation_policy_initial_action_dist, device=self.device
+        )
+        state = torch.FloatTensor(state, device=self.device)
+        action = torch.LongTensor(action, device=self.device)
+        reward = torch.FloatTensor(reward, device=self.device)
+        next_state = torch.FloatTensor(next_state, device=self.device)
+        evaluation_policy_next_action_dist = torch.FloatTensor(
+            evaluation_policy_next_action_dist, device=self.device
+        )
+        importance_weight = torch.FloatTensor(
+            evaluation_policy_action_dist[np.arange(n_samples), action] / pscore
+        )

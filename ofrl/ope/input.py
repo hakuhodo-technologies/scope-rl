@@ -412,7 +412,7 @@ class CreateOPEInput:
                 If `action_type == "discrete"`, `None` is recorded.
 
             evaluation_policy_action_dist: ndarray of shape (n_episodes * step_per_episode, n_actions)
-                Conditional action distribution induced by the evaluation policys,
+                Conditional action distribution induced by the evaluation policy,
                 i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
                 If `action_type == "continuous"`, `None` is recorded.
 

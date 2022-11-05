@@ -8,7 +8,7 @@ from .estimators_base import (
     BaseStateMarginalOffPolicyEstimator,
     BaseStateActionMarginalOffPolicyEstimator,
 )
-from ..utils import check_array
+from ..utils import check_array, gaussian_kernel
 
 
 @dataclass
@@ -98,7 +98,7 @@ class ContinuousStateMarginalImportanceSampling(BaseStateMarginalOffPolicyEstima
             Discount factor. The value should be within `(0, 1]`.
 
         sigma: float, default=1.0
-            Standard deviation of Gaussian distribution (i.e., `band_width` hyperparameter of gaussian kernel).
+            Bandwidth hyperparameter of gaussian kernel.
 
         Return
         -------
@@ -106,15 +106,7 @@ class ContinuousStateMarginalImportanceSampling(BaseStateMarginalOffPolicyEstima
             Policy value estimated for each trajectory.
 
         """
-        x = evaluation_policy_action
-        y = action
-        # (x - x') ** 2 = x ** 2 + x' ** 2 - 2 x x'
-        x_2 = (x ** 2).sum(axis=1)
-        y_2 = (y ** 2).sum(axis=1)
-        x_y = x @ y.T
-        distance = x_2 + y_2 - 2 * x_y
-        similarity_weight = np.exp(-distance / (2 * sigma ** 2))
-
+        similarity_weight = gaussian_kernel(evaluation_policy_action, action)
         weight = state_marginal_importance_weight * (
             similarity_weight / behavior_policy_base_pscore
         )
@@ -162,7 +154,7 @@ class ContinuousStateMarginalImportanceSampling(BaseStateMarginalOffPolicyEstima
             Discount factor. The value should be within `(0, 1]`.
 
         sigma: float, default=1.0
-            Standard deviation of Gaussian distribution (i.e., `band_width` hyperparameter of gaussian kernel).
+            Bandwidth hyperparameter of gaussian kernel.
 
         Return
         -------
@@ -286,7 +278,7 @@ class ContinuousStateMarginalImportanceSampling(BaseStateMarginalOffPolicyEstima
             Discount factor. The value should be within `(0, 1]`.
 
         sigma: float, default=1.0
-            Standard deviation of Gaussian distribution (i.e., `band_width` hyperparameter of gaussian kernel).
+            Bandwidth hyperparameter of gaussian kernel.
 
         alpha: float, default=0.05
             Significance level. The value should be within `[0, 1)`.
@@ -490,7 +482,7 @@ class ContinuousStateMarginalDoublyRobust(BaseStateMarginalOffPolicyEstimator):
             Discount factor. The value should be within `(0, 1]`.
 
         sigma: float, default=1.0
-            Standard deviation of Gaussian distribution (i.e., `band_width` hyperparameter of gaussian kernel).
+            Bandwidth hyperparameter of gaussian kernel.
 
         Return
         -------
@@ -498,15 +490,7 @@ class ContinuousStateMarginalDoublyRobust(BaseStateMarginalOffPolicyEstimator):
             Policy value estimated for each trajectory.
 
         """
-        x = evaluation_policy_action
-        y = action
-        # (x - x') ** 2 = x ** 2 + x' ** 2 - 2 x x'
-        x_2 = (x ** 2).sum(axis=1)
-        y_2 = (y ** 2).sum(axis=1)
-        x_y = x @ y.T
-        distance = x_2 + y_2 - 2 * x_y
-        similarity_weight = np.exp(-distance / (2 * sigma ** 2))
-
+        similarity_weight = gaussian_kernel(evaluation_policy_action, action)
         weight = state_marginal_importance_weight * (
             similarity_weight / behavior_policy_base_pscore
         ).reshape((-1, step_per_episode))
@@ -592,7 +576,7 @@ class ContinuousStateMarginalDoublyRobust(BaseStateMarginalOffPolicyEstimator):
             Discount factor. The value should be within `(0, 1]`.
 
         sigma: float, default=1.0
-            Standard deviation of Gaussian distribution (i.e., `band_width` hyperparameter of gaussian kernel).
+            Bandwidth hyperparameter of gaussian kernel.
 
         Return
         -------
@@ -731,7 +715,7 @@ class ContinuousStateMarginalDoublyRobust(BaseStateMarginalOffPolicyEstimator):
             Discount factor. The value should be within `(0, 1]`.
 
         sigma: float, default=1.0
-            Standard deviation of Gaussian distribution (i.e., `band_width` hyperparameter of gaussian kernel).
+            Bandwidth hyperparameter of gaussian kernel.
 
         alpha: float, default=0.05
             Significance level. The value should be within `[0, 1)`.
@@ -937,7 +921,7 @@ class ContinuousStateMarginalSelfNormalizedImportanceSampling(
             Discount factor. The value should be within `(0, 1]`.
 
         sigma: float, default=1.0
-            Standard deviation of Gaussian distribution (i.e., `band_width` hyperparameter of gaussian kernel).
+            Bandwidth hyperparameter of gaussian kernel.
 
         Return
         -------
@@ -945,15 +929,7 @@ class ContinuousStateMarginalSelfNormalizedImportanceSampling(
             Policy value estimated for each trajectory.
 
         """
-        x = evaluation_policy_action
-        y = action
-        # (x - x') ** 2 = x ** 2 + x' ** 2 - 2 x x'
-        x_2 = (x ** 2).sum(axis=1)
-        y_2 = (y ** 2).sum(axis=1)
-        x_y = x @ y.T
-        distance = x_2 + y_2 - 2 * x_y
-        similarity_weight = np.exp(-distance / (2 * sigma ** 2))
-
+        similarity_weight = gaussian_kernel(evaluation_policy_action, action)
         weight = state_marginal_importance_weight * (
             similarity_weight / behavior_policy_base_pscore
         )
@@ -1067,7 +1043,7 @@ class ContinuousStateMarginalSelfNormalizedDoublyRobust(
             Discount factor. The value should be within `(0, 1]`.
 
         sigma: float, default=1.0
-            Standard deviation of Gaussian distribution (i.e., `band_width` hyperparameter of gaussian kernel).
+            Bandwidth hyperparameter of gaussian kernel.
 
         Return
         -------
@@ -1075,15 +1051,7 @@ class ContinuousStateMarginalSelfNormalizedDoublyRobust(
             Policy value estimated for each trajectory.
 
         """
-        x = evaluation_policy_action
-        y = action
-        # (x - x') ** 2 = x ** 2 + x' ** 2 - 2 x x'
-        x_2 = (x ** 2).sum(axis=1)
-        y_2 = (y ** 2).sum(axis=1)
-        x_y = x @ y.T
-        distance = x_2 + y_2 - 2 * x_y
-        similarity_weight = np.exp(-distance / (2 * sigma ** 2))
-
+        similarity_weight = gaussian_kernel(evaluation_policy_action, action)
         weight = state_marginal_importance_weight * (
             similarity_weight / behavior_policy_base_pscore
         ).reshape((-1, step_per_episode))

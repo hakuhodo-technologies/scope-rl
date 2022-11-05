@@ -9,6 +9,35 @@ from sklearn.utils import check_scalar, check_random_state
 from .types import LoggedDataset, OPEInputDict
 
 
+def gaussian_kernel(
+    x: np.ndarray,
+    y: np.ndarray,
+    sigma: float = 1.0,
+):
+    """Gaussian kernel.
+
+    x: array-like of shape (n_samples, n_dim)
+        Input array 1.
+
+    y: array-like of shape (n_samples, n_dim)
+        Input array 2.
+
+    sigma: float, default=1.0
+        Bandwidth hyperparameter of gaussian kernel.
+
+    Returns
+    -------
+    kernel_density: ndarray of (n_samples, )
+        kernel density of x given y.
+
+    """
+    x_2 = (x ** 2).sum(axis=1)
+    y_2 = (y ** 2).sum(axis=1)
+    x_y = x @ y.T
+    distance = x_2 + y_2 - 2 * x_y
+    return np.exp(-distance / (2 * sigma ** 2))
+
+
 def estimate_confidence_interval_by_bootstrap(
     samples: np.ndarray,
     alpha: float = 0.05,

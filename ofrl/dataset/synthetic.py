@@ -245,7 +245,7 @@ class SyntheticDataset(BaseDataset):
                 Name of the state variable at each dimension.
 
             state: ndarray of shape (size, state_dim)
-                State observed in the environment.
+                State observed by the behavior policy.
 
             action: ndarray of shape (size, ) or (size, action_dim)
                 Action chosen by the behavior policy.
@@ -410,7 +410,7 @@ class SyntheticDataset(BaseDataset):
                 Name of the state variable at each dimension.
 
             state: ndarray of shape (size, state_dim)
-                State observed in the environment.
+                State observed by the behavior policy.
 
             action: ndarray of shape (size, ) or (size, action_dim)
                 Action chosen by the behavior policy.
