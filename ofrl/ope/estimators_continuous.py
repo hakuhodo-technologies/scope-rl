@@ -1,6 +1,6 @@
 """Off-Policy Estimators for Continuous Action (designed for deterministic policies)."""
 from dataclasses import dataclass
-from typing import Dict, Optional
+from typing import Dict, Union, Optional
 
 import numpy as np
 from sklearn.utils import check_scalar
@@ -215,6 +215,7 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         reward: np.ndarray,
         behavior_policy_trajectory_wise_pscore: np.ndarray,
         evaluation_policy_action: np.ndarray,
+        action_scaler: np.ndarray,
         gamma: float = 1.0,
         sigma: float = 1.0,
         **kwargs,
@@ -239,6 +240,9 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
             Action chosen by the evaluation policy.
 
+        action_scaler: array-like of shape (action_dim, )
+            Scaling factor of action.
+
         gamma: float, default=1.0
             Discount factor. The value should be within `(0, 1]`.
 
@@ -262,7 +266,11 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         )
         discount = np.full(reward.shape[1], gamma).cumprod()
 
-        similarity_weight = gaussian_kernel(evaluation_policy_action, action)
+        similarity_weight = gaussian_kernel(
+            evaluation_policy_action / action_scaler[np.newaxis, :],
+            action / action_scaler[np.newaxis, :],
+            sigma=sigma,
+        )
         similarity_weight = similarity_weight.cumprod(axis=1)[:, -1, 0]
         similarity_weight = np.tile(
             similarity_weight.reshape((-1, 1)), step_per_episode
@@ -286,6 +294,7 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         evaluation_policy_action: np.ndarray,
         gamma: float = 1.0,
         sigma: float = 1.0,
+        action_scaler: Optional[Union[float, np.ndarray]] = None,
         **kwargs,
     ) -> float:
         """Estimate the policy value of the evaluation policy.
@@ -313,6 +322,9 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 
         sigma: float, default=1.0
             Standard deviation of Gaussian distribution (i.e., `band_width` hyperparameter of gaussian kernel).
+
+        action_scaler: {float, array-like of shape (action_dim, )}, default=None
+            Scaling factor of action.
 
         Return
         -------
@@ -363,6 +375,18 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
                 ", but found False"
             )
 
+        action_dim = action.shape[1]
+        if action_scaler is None:
+            action_scaler = np.ones(action_dim)
+        elif isinstance(action_scaler, float):
+            action_scaler = np.full(action_dim, action_scaler)
+
+        check_array(action_scaler, name="action_scaler", expected_dim=1, min_val=0.0)
+        if action_scaler.shape[0] != action_dim:
+            raise ValueError(
+                "Expected `action_scaler.shape[0] == action.shape[1]`, but found False"
+            )
+
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
         check_scalar(sigma, name="sigma", target_type=float, min_val=0.0)
 
@@ -374,6 +398,7 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
             evaluation_policy_action=evaluation_policy_action,
             gamma=gamma,
             sigma=sigma,
+            action_scaler=action_scaler,
         ).mean()
 
     def estimate_interval(
@@ -385,6 +410,7 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         evaluation_policy_action: np.ndarray,
         gamma: float = 1.0,
         sigma: float = 1.0,
+        action_scaler: Optional[Union[float, np.ndarray]] = None,
         alpha: float = 0.05,
         ci: str = "bootstrap",
         n_bootstrap_samples: int = 10000,
@@ -416,6 +442,9 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 
         sigma: float, default=1.0
             Standard deviation of Gaussian distribution (i.e., `band_width` hyperparameter of gaussian kernel).
+
+        action_scaler: {float, array-like of shape (action_dim, )}, default=None
+            Scaling factor of action.
 
         alpha: float, default=0.05
             Significance level. The value should be within `[0, 1)`.
@@ -481,6 +510,18 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
         check_scalar(sigma, name="sigma", target_type=float, min_val=0.0)
 
+        action_dim = action.shape[1]
+        if action_scaler is None:
+            action_scaler = np.ones(action_dim)
+        elif isinstance(action_scaler, float):
+            action_scaler = np.full(action_dim, action_scaler)
+
+        check_array(action_scaler, name="action_scaler", expected_dim=1, min_val=0.0)
+        if action_scaler.shape[0] != action_dim:
+            raise ValueError(
+                "Expected `action_scaler.shape[0] == action.shape[1]`, but found False"
+            )
+
         if ci not in self._estimate_confidence_interval.keys():
             raise ValueError(
                 f"ci must be one of 'bootstrap', 'hoeffding', 'bernstein', or 'ttest', but {ci} is given"
@@ -494,6 +535,7 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
             evaluation_policy_action=evaluation_policy_action,
             gamma=gamma,
             sigma=sigma,
+            action_scaler=action_scaler,
         )
         return self._estimate_confidence_interval[ci](
             samples=estimated_trajectory_value,
@@ -552,6 +594,7 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
         reward: np.ndarray,
         behavior_policy_step_wise_pscore: np.ndarray,
         evaluation_policy_action: np.ndarray,
+        action_scaler: np.ndarray,
         gamma: float = 1.0,
         sigma: float = 1.0,
         **kwargs,
@@ -576,6 +619,9 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
         evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
             Action chosen by the evaluation policy.
 
+        action_scaler: array-like of shape (action_dim, )
+            Scaling factor of action.
+
         gamma: float, default=1.0
             Discount factor. The value should be within `(0, 1]`.
 
@@ -599,7 +645,11 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
         )
         discount = np.full(reward.shape[1], gamma).cumprod()
 
-        similarity_weight = gaussian_kernel(evaluation_policy_action, action)
+        similarity_weight = gaussian_kernel(
+            evaluation_policy_action / action_scaler[np.newaxis, :],
+            action / action_scaler[np.newaxis, :],
+            sigma=sigma,
+        )
         similarity_weight = similarity_weight.cumprod(axis=1)[:, :, 0]
 
         estimated_trajectory_value = (
@@ -616,6 +666,7 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
         evaluation_policy_action: np.ndarray,
         gamma: float = 1.0,
         sigma: float = 1.0,
+        action_scaler: Optional[Union[float, np.ndarray]] = None,
         **kwargs,
     ) -> float:
         """Estimate the policy value of the evaluation policy.
@@ -643,6 +694,9 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
 
         sigma: float, default=1.0
             Standard deviation of Gaussian distribution (i.e., `band_width` hyperparameter of gaussian kernel).
+
+        action_scaler: {float, array-like of shape (action_dim, )}, default=None
+            Scaling factor of action.
 
         Return
         -------
@@ -696,6 +750,18 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
         check_scalar(sigma, name="sigma", target_type=float, min_val=0.0)
 
+        action_dim = action.shape[1]
+        if action_scaler is None:
+            action_scaler = np.ones(action_dim)
+        elif isinstance(action_scaler, float):
+            action_scaler = np.full(action_dim, action_scaler)
+
+        check_array(action_scaler, name="action_scaler", expected_dim=1, min_val=0.0)
+        if action_scaler.shape[0] != action_dim:
+            raise ValueError(
+                "Expected `action_scaler.shape[0] == action.shape[1]`, but found False"
+            )
+
         return self._estimate_trajectory_value(
             step_per_episode=step_per_episode,
             action=action,
@@ -704,6 +770,7 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
             evaluation_policy_action=evaluation_policy_action,
             gamma=gamma,
             sigma=sigma,
+            action_scaler=action_scaler,
         ).mean()
 
     def estimate_interval(
@@ -715,6 +782,7 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
         evaluation_policy_action: np.ndarray,
         gamma: float = 1.0,
         sigma: float = 1.0,
+        action_scaler: Optional[Union[float, np.ndarray]] = None,
         alpha: float = 0.05,
         ci: str = "bootstrap",
         n_bootstrap_samples: int = 10000,
@@ -746,6 +814,9 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
 
         sigma: float, default=1.0
             Standard deviation of Gaussian distribution (i.e., `band_width` hyperparameter of gaussian kernel).
+
+        action_scaler: {float, array-like of shape (action_dim, )}, default=None
+            Scaling factor of action.
 
         alpha: float, default=0.05
             Significance level. The value should be within `[0, 1)`.
@@ -811,6 +882,18 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
         check_scalar(sigma, name="sigma", target_type=float, min_val=0.0)
 
+        action_dim = action.shape[1]
+        if action_scaler is None:
+            action_scaler = np.ones(action_dim)
+        elif isinstance(action_scaler, float):
+            action_scaler = np.full(action_dim, action_scaler)
+
+        check_array(action_scaler, name="action_scaler", expected_dim=1, min_val=0.0)
+        if action_scaler.shape[0] != action_dim:
+            raise ValueError(
+                "Expected `action_scaler.shape[0] == action.shape[1]`, but found False"
+            )
+
         if ci not in self._estimate_confidence_interval.keys():
             raise ValueError(
                 f"ci must be one of 'bootstrap', 'hoeffding', 'bernstein', or 'ttest', but {ci} is given"
@@ -824,6 +907,7 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
             evaluation_policy_action=evaluation_policy_action,
             gamma=gamma,
             sigma=sigma,
+            action_scaler=action_scaler,
         )
         return self._estimate_confidence_interval[ci](
             samples=estimated_trajectory_value,
@@ -891,6 +975,7 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
         behavior_policy_step_wise_pscore: np.ndarray,
         evaluation_policy_action: np.ndarray,
         state_action_value_prediction: np.ndarray,
+        action_scaler: np.ndarray,
         gamma: float = 1.0,
         sigma: float = 1.0,
         **kwargs,
@@ -918,6 +1003,9 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
         state_action_value_prediction: array-like of shape (n_episodes * step_per_episode, )
             :math:`\\hat{Q}` for the action chosen by the evaluation policy,
             i.e., :math:`\\hat{Q}(s_t, \\pi(a \\mid s_t))`.
+
+        action_scaler: array-like of shape (action_dim, )
+            Scaling factor of action.
 
         gamma: float, default=1.0
             Discount factor. The value should be within `(0, 1]`.
@@ -948,7 +1036,11 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
 
         discount = np.full(reward.shape[1], gamma).cumprod()
 
-        similarity_weight = gaussian_kernel(evaluation_policy_action, action)
+        similarity_weight = gaussian_kernel(
+            evaluation_policy_action / action_scaler[np.newaxis, :],
+            action / action_scaler[np.newaxis, :],
+            sigma=sigma,
+        )
         similarity_weight = similarity_weight.cumprod(axis=1)[:, :, 0]
 
         similarity_weight_prev = np.roll(similarity_weight, 1, axis=1)
@@ -973,9 +1065,7 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
         state_action_value_prediction: np.ndarray,
         gamma: float = 1.0,
         sigma: Optional[np.ndarray] = None,
-        use_truncated_kernel: bool = False,
-        action_min: Optional[np.ndarray] = None,
-        action_max: Optional[np.ndarray] = None,
+        action_scaler: Optional[Union[float, np.ndarray]] = None,
         **kwargs,
     ) -> float:
         """Estimate the policy value of the evaluation policy.
@@ -1007,6 +1097,9 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
 
         sigma: float, default=1.0
             Standard deviation of Gaussian distribution (i.e., `band_width` hyperparameter of gaussian kernel).
+
+        action_scaler: {float, array-like of shape (action_dim, )}, default=None
+            Scaling factor of action.
 
         Return
         -------
@@ -1060,6 +1153,18 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
         check_scalar(sigma, name="sigma", target_type=float, min_val=0.0)
 
+        action_dim = action.shape[1]
+        if action_scaler is None:
+            action_scaler = np.ones(action_dim)
+        elif isinstance(action_scaler, float):
+            action_scaler = np.full(action_dim, action_scaler)
+
+        check_array(action_scaler, name="action_scaler", expected_dim=1, min_val=0.0)
+        if action_scaler.shape[0] != action_dim:
+            raise ValueError(
+                "Expected `action_scaler.shape[0] == action.shape[1]`, but found False"
+            )
+
         return self._estimate_trajectory_value(
             step_per_episode=step_per_episode,
             action=action,
@@ -1069,9 +1174,7 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
             state_action_value_prediction=state_action_value_prediction,
             gamma=gamma,
             sigma=sigma,
-            use_truncated_kernel=use_truncated_kernel,
-            action_min=action_min,
-            action_max=action_max,
+            action_scaler=action_scaler,
         ).mean()
 
     def estimate_interval(
@@ -1084,6 +1187,7 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
         state_action_value_prediction: np.ndarray,
         gamma: float = 1.0,
         sigma: float = 1.0,
+        action_scaler: Optional[Union[float, np.ndarray]] = None,
         alpha: float = 0.05,
         ci: str = "bootstrap",
         n_bootstrap_samples: int = 10000,
@@ -1119,6 +1223,9 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
 
         sigma: float, default=1.0
             Standard deviation of Gaussian distribution (i.e., `band_width` hyperparameter of gaussian kernel).
+
+        action_scaler: {float, array-like of shape (action_dim, )}, default=None
+            Scaling factor of action.
 
         alpha: float, default=0.05
             Significance level. The value should be within `[0, 1)`.
@@ -1184,6 +1291,18 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
         check_scalar(sigma, name="sigma", target_type=float, min_val=0.0)
 
+        action_dim = action.shape[1]
+        if action_scaler is None:
+            action_scaler = np.ones(action_dim)
+        elif isinstance(action_scaler, float):
+            action_scaler = np.full(action_dim, action_scaler)
+
+        check_array(action_scaler, name="action_scaler", expected_dim=1, min_val=0.0)
+        if action_scaler.shape[0] != action_dim:
+            raise ValueError(
+                "Expected `action_scaler.shape[0] == action.shape[1]`, but found False"
+            )
+
         if ci not in self._estimate_confidence_interval.keys():
             raise ValueError(
                 f"ci must be one of 'bootstrap', 'hoeffding', 'bernstein', or 'ttest', but {ci} is given"
@@ -1198,6 +1317,7 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
             state_action_value_prediction=state_action_value_prediction,
             gamma=gamma,
             sigma=sigma,
+            action_scaler=action_scaler,
         )
         return self._estimate_confidence_interval[ci](
             samples=estimated_trajectory_value,
@@ -1265,6 +1385,7 @@ class ContinuousSelfNormalizedTrajectoryWiseImportanceSampling(
         reward: np.ndarray,
         behavior_policy_trajectory_wise_pscore: np.ndarray,
         evaluation_policy_action: np.ndarray,
+        action_scaler: np.ndarray,
         gamma: float = 1.0,
         sigma: float = 1.0,
         **kwargs,
@@ -1289,6 +1410,9 @@ class ContinuousSelfNormalizedTrajectoryWiseImportanceSampling(
         evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
             Action chosen by the evaluation policy.
 
+        action_scaler: array-like of shape (action_dim, )
+            Scaling factor of action.
+
         gamma: float, default=1.0
             Discount factor. The value should be within `(0, 1]`.
 
@@ -1312,7 +1436,11 @@ class ContinuousSelfNormalizedTrajectoryWiseImportanceSampling(
         )
         discount = np.full(reward.shape[1], gamma).cumprod()
 
-        similarity_weight = gaussian_kernel(evaluation_policy_action, action)
+        similarity_weight = gaussian_kernel(
+            evaluation_policy_action / action_scaler[np.newaxis, :],
+            action / action_scaler[np.newaxis, :],
+            sigma=sigma,
+        )
         similarity_weight = similarity_weight.cumprod(axis=1)[:, -1, 0]
         similarity_weight = np.tile(
             similarity_weight.reshape((-1, 1)), step_per_episode
@@ -1387,6 +1515,7 @@ class ContinuousSelfNormalizedPerDecisionImportanceSampling(
         reward: np.ndarray,
         behavior_policy_step_wise_pscore: np.ndarray,
         evaluation_policy_action: np.ndarray,
+        action_scaler: np.ndarray,
         gamma: float = 1.0,
         sigma: float = 1.0,
         **kwargs,
@@ -1411,6 +1540,9 @@ class ContinuousSelfNormalizedPerDecisionImportanceSampling(
         evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
             Action chosen by the evaluation policy.
 
+        action_scaler: array-like of shape (action_dim, )
+            Scaling factor of action.
+
         gamma: float, default=1.0
             Discount factor. The value should be within `(0, 1]`.
 
@@ -1434,7 +1566,11 @@ class ContinuousSelfNormalizedPerDecisionImportanceSampling(
         )
         discount = np.full(reward.shape[1], gamma).cumprod()
 
-        similarity_weight = gaussian_kernel(evaluation_policy_action, action)
+        similarity_weight = gaussian_kernel(
+            evaluation_policy_action / action_scaler[np.newaxis, :],
+            action / action_scaler[np.newaxis, :],
+            sigma=sigma,
+        )
         similarity_weight = similarity_weight.cumprod(axis=1)[:, :, 0]
 
         weight = similarity_weight / importance_weight
@@ -1508,6 +1644,7 @@ class ContinuousSelfNormalizedDoublyRobust(ContinuousDoublyRobust):
         behavior_policy_step_wise_pscore: np.ndarray,
         evaluation_policy_action: np.ndarray,
         state_action_value_prediction: np.ndarray,
+        action_scaler: np.ndarray,
         gamma: float = 1.0,
         sigma: float = 1.0,
         **kwargs,
@@ -1535,6 +1672,9 @@ class ContinuousSelfNormalizedDoublyRobust(ContinuousDoublyRobust):
         state_action_value_prediction: array-like of shape (n_episodes * step_per_episode, )
             :math:`\\hat{Q}` for the action chosen by the evaluation policy,
             i.e., :math:`\\hat{Q}(s_t, \\pi(a \\mid s_t))`.
+
+        action_scaler: array-like of shape (action_dim, )
+            Scaling factor of action.
 
         gamma: float, default=1.0
             Discount factor. The value should be within `(0, 1]`.
@@ -1568,7 +1708,11 @@ class ContinuousSelfNormalizedDoublyRobust(ContinuousDoublyRobust):
 
         discount = np.full(reward.shape[1], gamma).cumprod()
 
-        similarity_weight = gaussian_kernel(evaluation_policy_action, action)
+        similarity_weight = gaussian_kernel(
+            evaluation_policy_action / action_scaler[np.newaxis, :],
+            action / action_scaler[np.newaxis, :],
+            sigma=sigma,
+        )
         similarity_weight = similarity_weight.cumprod(axis=1)[:, :, 0]
 
         similarity_weight_prev = np.roll(similarity_weight, 1, axis=1)

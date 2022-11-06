@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Optional, Dict
+from typing import Optional, Union, Dict
 
 import numpy as np
 from sklearn.utils import check_scalar
@@ -67,6 +67,7 @@ class ContinuousStateMarginalImportanceSampling(BaseStateMarginalOffPolicyEstima
         state_marginal_importance_weight: np.ndarray,
         behavior_policy_base_pscore: np.ndarray,
         evaluation_policy_action: np.ndarray,
+        action_scaler: np.ndarray,
         gamma: float = 1.0,
         sigma: float = 1.0,
         **kwargs,
@@ -94,6 +95,9 @@ class ContinuousStateMarginalImportanceSampling(BaseStateMarginalOffPolicyEstima
         evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
             Action chosen by the evaluation policy.
 
+        action_scaler: array-like of shape (action_dim, )
+            Scaling factor of action.
+
         gamma: float, default=1.0
             Discount factor. The value should be within `(0, 1]`.
 
@@ -106,7 +110,11 @@ class ContinuousStateMarginalImportanceSampling(BaseStateMarginalOffPolicyEstima
             Policy value estimated for each trajectory.
 
         """
-        similarity_weight = gaussian_kernel(evaluation_policy_action, action)
+        similarity_weight = gaussian_kernel(
+            evaluation_policy_action / action_scaler[np.newaxis, :],
+            action / action_scaler[np.newaxis, :],
+            sigma=sigma,
+        )
         weight = state_marginal_importance_weight * (
             similarity_weight / behavior_policy_base_pscore
         )
@@ -125,6 +133,7 @@ class ContinuousStateMarginalImportanceSampling(BaseStateMarginalOffPolicyEstima
         evaluation_policy_action: np.ndarray,
         gamma: float = 1.0,
         sigma: float = 1.0,
+        action_scaler: Optional[Union[float, np.ndarray]] = None,
         **kwargs,
     ) -> float:
         """Estimate the policy value of the evaluation policy.
@@ -155,6 +164,9 @@ class ContinuousStateMarginalImportanceSampling(BaseStateMarginalOffPolicyEstima
 
         sigma: float, default=1.0
             Bandwidth hyperparameter of gaussian kernel.
+
+        action_scaler: {float, array-like of shape (action_dim, )}, default=None
+            Scaling factor of action.
 
         Return
         -------
@@ -223,6 +235,18 @@ class ContinuousStateMarginalImportanceSampling(BaseStateMarginalOffPolicyEstima
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
         check_scalar(sigma, name="sigma", target_type=float, min_val=0.0)
 
+        action_dim = action.shape[1]
+        if action_scaler is None:
+            action_scaler = np.ones(action_dim)
+        elif isinstance(action_scaler, float):
+            action_scaler = np.full(action_dim, action_scaler)
+
+        check_array(action_scaler, name="action_scaler", expected_dim=1, min_val=0.0)
+        if action_scaler.shape[0] != action_dim:
+            raise ValueError(
+                "Expected `action_scaler.shape[0] == action.shape[1]`, but found False"
+            )
+
         estimated_policy_value = self._estimate_trajectory_value(
             step_per_episode=step_per_episode,
             action=action,
@@ -245,6 +269,7 @@ class ContinuousStateMarginalImportanceSampling(BaseStateMarginalOffPolicyEstima
         evaluation_policy_action: np.ndarray,
         gamma: float = 1.0,
         sigma: float = 1.0,
+        action_scaler: Optional[Union[float, np.ndarray]] = None,
         alpha: float = 0.05,
         ci: str = "bootstrap",
         n_bootstrap_samples: int = 10000,
@@ -279,6 +304,9 @@ class ContinuousStateMarginalImportanceSampling(BaseStateMarginalOffPolicyEstima
 
         sigma: float, default=1.0
             Bandwidth hyperparameter of gaussian kernel.
+
+        action_scaler: {float, array-like of shape (action_dim, )}, default=None
+            Scaling factor of action.
 
         alpha: float, default=0.05
             Significance level. The value should be within `[0, 1)`.
@@ -358,6 +386,18 @@ class ContinuousStateMarginalImportanceSampling(BaseStateMarginalOffPolicyEstima
             )
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
         check_scalar(sigma, name="sigma", target_type=float, min_val=0.0)
+
+        action_dim = action.shape[1]
+        if action_scaler is None:
+            action_scaler = np.ones(action_dim)
+        elif isinstance(action_scaler, float):
+            action_scaler = np.full(action_dim, action_scaler)
+
+        check_array(action_scaler, name="action_scaler", expected_dim=1, min_val=0.0)
+        if action_scaler.shape[0] != action_dim:
+            raise ValueError(
+                "Expected `action_scaler.shape[0] == action.shape[1]`, but found False"
+            )
 
         if ci not in self._estimate_confidence_interval.keys():
             raise ValueError(
@@ -447,6 +487,7 @@ class ContinuousStateMarginalDoublyRobust(BaseStateMarginalOffPolicyEstimator):
         behavior_policy_base_pscore: np.ndarray,
         evaluation_policy_action: np.ndarray,
         state_action_value_prediction: np.ndarray,
+        action_scaler: np.ndarray,
         gamma: float = 1.0,
         sigma: float = 1.0,
         **kwargs,
@@ -478,6 +519,9 @@ class ContinuousStateMarginalDoublyRobust(BaseStateMarginalOffPolicyEstimator):
             :math:`\\hat{Q}` for all action,
             i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
 
+        action_scaler: array-like of shape (action_dim, )
+            Scaling factor of action.
+
         gamma: float, default=1.0
             Discount factor. The value should be within `(0, 1]`.
 
@@ -490,7 +534,11 @@ class ContinuousStateMarginalDoublyRobust(BaseStateMarginalOffPolicyEstimator):
             Policy value estimated for each trajectory.
 
         """
-        similarity_weight = gaussian_kernel(evaluation_policy_action, action)
+        similarity_weight = gaussian_kernel(
+            evaluation_policy_action / action_scaler[np.newaxis, :],
+            action / action_scaler[np.newaxis, :],
+            sigma=sigma,
+        )
         weight = state_marginal_importance_weight * (
             similarity_weight / behavior_policy_base_pscore
         ).reshape((-1, step_per_episode))
@@ -543,6 +591,7 @@ class ContinuousStateMarginalDoublyRobust(BaseStateMarginalOffPolicyEstimator):
         state_action_value_prediction: np.ndarray,
         gamma: float = 1.0,
         sigma: float = 1.0,
+        action_scaler: Optional[Union[float, np.ndarray]] = None,
         **kwargs,
     ) -> float:
         """Estimate the policy value of the evaluation policy.
@@ -577,6 +626,9 @@ class ContinuousStateMarginalDoublyRobust(BaseStateMarginalOffPolicyEstimator):
 
         sigma: float, default=1.0
             Bandwidth hyperparameter of gaussian kernel.
+
+        action_scaler: {float, array-like of shape (action_dim, )}, default=None
+            Scaling factor of action.
 
         Return
         -------
@@ -678,6 +730,7 @@ class ContinuousStateMarginalDoublyRobust(BaseStateMarginalOffPolicyEstimator):
         state_action_value_prediction: np.ndarray,
         gamma: float = 1.0,
         sigma: float = 1.0,
+        action_scaler: Optional[Union[float, np.ndarray]] = None,
         alpha: float = 0.05,
         ci: str = "bootstrap",
         n_bootstrap_samples: int = 10000,
@@ -716,6 +769,9 @@ class ContinuousStateMarginalDoublyRobust(BaseStateMarginalOffPolicyEstimator):
 
         sigma: float, default=1.0
             Bandwidth hyperparameter of gaussian kernel.
+
+        action_scaler: {float, array-like of shape (action_dim, )}, default=None
+            Scaling factor of action.
 
         alpha: float, default=0.05
             Significance level. The value should be within `[0, 1)`.
@@ -890,6 +946,7 @@ class ContinuousStateMarginalSelfNormalizedImportanceSampling(
         state_marginal_importance_weight: np.ndarray,
         behavior_policy_base_pscore: np.ndarray,
         evaluation_policy_action: np.ndarray,
+        action_scaler: np.ndarray,
         gamma: float = 1.0,
         sigma: float = 1.0,
         **kwargs,
@@ -923,13 +980,20 @@ class ContinuousStateMarginalSelfNormalizedImportanceSampling(
         sigma: float, default=1.0
             Bandwidth hyperparameter of gaussian kernel.
 
+        action_scaler: array-like of shape (action_dim, )
+            Scaling factor of action.
+
         Return
         -------
         estimated_trajectory_wise_policy_value: ndarray of shape (n_episodes, )
             Policy value estimated for each trajectory.
 
         """
-        similarity_weight = gaussian_kernel(evaluation_policy_action, action)
+        similarity_weight = gaussian_kernel(
+            evaluation_policy_action / action_scaler[np.newaxis, :],
+            action / action_scaler[np.newaxis, :],
+            sigma=sigma,
+        )
         weight = state_marginal_importance_weight * (
             similarity_weight / behavior_policy_base_pscore
         )
@@ -1008,6 +1072,7 @@ class ContinuousStateMarginalSelfNormalizedDoublyRobust(
         behavior_policy_base_pscore: np.ndarray,
         evaluation_policy_action: np.ndarray,
         state_action_value_prediction: np.ndarray,
+        action_scaler: np.ndarray,
         gamma: float = 1.0,
         sigma: float = 1.0,
         **kwargs,
@@ -1045,13 +1110,20 @@ class ContinuousStateMarginalSelfNormalizedDoublyRobust(
         sigma: float, default=1.0
             Bandwidth hyperparameter of gaussian kernel.
 
+        action_scaler: array-like of shape (action_dim, )
+            Scaling factor of action.
+
         Return
         -------
         estimated_trajectory_wise_policy_value: ndarray of shape (n_episodes, )
             Policy value estimated for each trajectory.
 
         """
-        similarity_weight = gaussian_kernel(evaluation_policy_action, action)
+        similarity_weight = gaussian_kernel(
+            evaluation_policy_action / action[np.newaxis, :],
+            action / action_scaler[np.newaxis, :],
+            sigma=sigma,
+        )
         weight = state_marginal_importance_weight * (
             similarity_weight / behavior_policy_base_pscore
         ).reshape((-1, step_per_episode))

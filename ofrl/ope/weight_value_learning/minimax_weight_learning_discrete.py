@@ -310,15 +310,17 @@ class DiscreteMinimaxStateActionWeightLearning(BaseWeightValueLearner):
                 "Expected `initial_state.shape[0] == evaluation_policy_initial_action_dist.shape[0], but found False`"
             )
         if not (
-            state.shape[0]
+            initial_state.shape[0]
+            == evaluation_policy_initial_action_dist.shape[0]
+            == state.shape[0]
             == action.shape[0]
             == reward.shape[0]
             == next_state.shape[0]
             == evaluation_policy_next_action_dist.shape[0]
         ):
             raise ValueError(
-                "Expected `state.shape[0] == action.shape[0] == reward.shape[0] == next_state.shape[0] == evaluation_policy_next_action_dist.shape[0]`, "
-                "but found False"
+                "Expected `initial_state.shape[0] == evaluation_policy_initial_action_dist.shape[0] == state.shape[0] == action.shape[0] == reward.shape[0] "
+                "== next_state.shape[0] == evaluation_policy_next_action_dist.shape[0]`, but found False"
             )
         if not (initial_state.shape[1] == state.shape[1] == next_state.shape[1]):
             raise ValueError(
@@ -837,7 +839,7 @@ class DiscreteMinimaxStateWeightLearning(BaseWeightValueLearner):
             min_val=0.0,
             max_val=1.0,
         )
-        check_array(pscore, name="pscore", expected_dim=1)
+        check_array(pscore, name="pscore", expected_dim=1, min_val=0.0, max_val=1.0)
         check_array(
             evaluation_policy_action_dist,
             name="evaluation_policy_action_dist",
@@ -850,7 +852,9 @@ class DiscreteMinimaxStateWeightLearning(BaseWeightValueLearner):
                 "Expected `initial_state.shape[0] == evaluation_policy_initial_action_dist.shape[0], but found False`"
             )
         if not (
-            state.shape[0]
+            initial_state.shape[0]
+            == evaluation_policy_initial_action_dist.shape[0]
+            == state.shape[0]
             == action.shape[0]
             == reward.shape[0]
             == next_state.shape[0]
@@ -859,8 +863,8 @@ class DiscreteMinimaxStateWeightLearning(BaseWeightValueLearner):
             == evaluation_policy_action_dist.shape[0]
         ):
             raise ValueError(
-                "Expected `state.shape[0] == action.shape[0] == reward.shape[0] == next_state.shape[0] == evaluation_policy_next_action_dist.shape[0] "
-                "== pscore.shape[0] == evaluation_policy_action_dist.shape[0]`, but found False"
+                "Expected `initial_state.shape[0] == evaluation_policy_initial_action_dist.shape[0] == state.shape[0] == action.shape[0] == reward.shape[0] "
+                "== next_state.shape[0] == evaluation_policy_next_action_dist.shape[0] == pscore.shape[0] == evaluation_policy_action_dist.shape[0]`, but found False"
             )
         if not (initial_state.shape[1] == state.shape[1] == next_state.shape[1]):
             raise ValueError(
@@ -1016,11 +1020,7 @@ class DiscreteMinimaxStateWeightLearning(BaseWeightValueLearner):
         """
         check_array(state, name="state", expected_dim=2)
         check_array(action, name="action", expected_dim=1)
-        check_array(pscore, name="pscore", expected_dim=1)
-        if state.shape[0] != action.shape[0]:
-            raise ValueError(
-                "Expected `state.shape[0] == action.shape[0]`, but found False"
-            )
+        check_array(pscore, name="pscore", expected_dim=1, min_val=0.0, max_val=1.0)
         check_array(
             evaluation_policy_action_dist,
             name="evaluation_policy_action_dist",
@@ -1028,6 +1028,16 @@ class DiscreteMinimaxStateWeightLearning(BaseWeightValueLearner):
             min_val=0.0,
             max_val=1.0,
         )
+        if not (
+            state.shape[0]
+            == action.shape[0]
+            == pscore.shape[0]
+            == evaluation_policy_action_dist.shape[0]
+        ):
+            raise ValueError(
+                "Expected `state.shape[0] == action.shape[0] == pscore.shape[0] == evaluation_policy_action_dist.shape[0]`"
+                ", but found False"
+            )
         if not np.allclose(
             np.ones(evaluation_policy_action_dist.shape[0]),
             evaluation_policy_action_dist.sum(axis=1),

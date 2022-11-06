@@ -259,7 +259,7 @@ class DiscreteMinimaxStateActionValueLearning(BaseWeightValueLearner):
         check_array(reward, name="reward", expected_dim=1)
         check_array(next_state, name="next_state", expected_dim=2)
         check_array(
-            evaluation_policy_next_action_dist,
+            evaluation_policy_next_action,
             name="evaluation_policy_next_action",
             expected_dim=2,
         )

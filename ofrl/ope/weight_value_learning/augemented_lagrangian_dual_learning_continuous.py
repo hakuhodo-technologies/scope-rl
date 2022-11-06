@@ -115,25 +115,25 @@ class ContinuousAugmentedLagrangianStateActionWightValueLearning(
 
         Parameters
         -------
-        initial_state: Tensor of shape (n_initial_samples, state_dim)
+        initial_state: Tensor of shape (n_samples, state_dim)
             Initial state of a trajectory (or states sampled from a stationary distribution).
 
-        initial_action: Tensor of shape (n_initial_samples, action_dim)
+        initial_action: Tensor of shape (n_samples, action_dim)
             Initial action chose by the evaluation policy.
 
-        state: Tensor of shape (n_transition_samples, state_dim)
+        state: Tensor of shape (n_samples, state_dim)
             State observed by the behavior policy.
 
-        action: Tensor of shape (n_transition_samples, action_dim)
+        action: Tensor of shape (n_samples, action_dim)
             Action chosen by the behavior policy.
 
-        reward: Tensor of shape (n_transition_samples, )
+        reward: Tensor of shape (n_samples, )
             Reward observed for each (state, action) pair.
 
-        next_state: Tensor of shape (n_transition_samples, state_dim)
+        next_state: Tensor of shape (n_samples, state_dim)
             Next state observed for each (state, action) pair.
 
-        next_action: Tensor of shape (n_transition_samples, action_dim)
+        next_action: Tensor of shape (n_samples, action_dim)
             Next action chosen by the evaluation policy.
 
         lambda_: Tensor of shape (1, )
@@ -203,25 +203,25 @@ class ContinuousAugmentedLagrangianStateActionWightValueLearning(
         method: {"dual_dice", "gen_dice", "algae_dice", "best_dice", "mql", "mwl", "custom"}, default="best_dice"
             Indicates which parameter set should be used. When, "custom" users can specify their own parameter.
 
-        initial_state: array-like of shape (n_initial_samples, state_dim)
+        initial_state: array-like of shape (n_samples, state_dim)
             Initial state of a trajectory (or states sampled from a stationary distribution).
 
-        evaluation_policy_initial_action: array-like of shape (n_initial_samples, action_dim)
+        evaluation_policy_initial_action: array-like of shape (n_samples, action_dim)
             Initial action chose by the evaluation policy.
 
-        state: array-like of shape (n_transition_samples, state_dim)
+        state: array-like of shape (n_samples, state_dim)
             State observed by the behavior policy.
 
-        action: array-like of shape (n_transition_samples, action_dim)
+        action: array-like of shape (n_samples, action_dim)
             Action chosen by the behavior policy.
 
-        reward: array-like of shape (n_transition_samples, )
+        reward: array-like of shape (n_samples, )
             Reward observed for each (state, action) pair.
 
-        next_state: array-like of shape (n_transition_samples, state_dim)
+        next_state: array-like of shape (n_samples, state_dim)
             Next state observed for each (state, action) pair.
 
-        evaluation_policy_next_action: array-like of shape (n_transition_samples, action_dim)
+        evaluation_policy_next_action: array-like of shape (n_samples, action_dim)
             Next action chose by the evaluation policy.
 
         n_epochs: int, default=100
@@ -270,8 +270,6 @@ class ContinuousAugmentedLagrangianStateActionWightValueLearning(
             evaluation_policy_initial_action,
             name="evaluation_policy_initial_action",
             expected_dim=2,
-            min_val=0.0,
-            max_val=1.0,
         )
         check_array(state, name="state", expected_dim=2)
         check_array(action, name="action", expected_dim=2)
@@ -281,23 +279,19 @@ class ContinuousAugmentedLagrangianStateActionWightValueLearning(
             evaluation_policy_next_action,
             name="evaluation_policy_next_action",
             expected_dim=2,
-            min_val=0.0,
-            max_val=1.0,
         )
-        if initial_state.shape[0] != evaluation_policy_initial_action.shape[0]:
-            raise ValueError(
-                "Expected `initial_state.shape[0] == evaluation_policy_initial_action.shape[0], but found False`"
-            )
         if not (
-            state.shape[0]
+            initial_state.shape[0]
+            == evaluation_policy_initial_action.shape[0]
+            == state.shape[0]
             == action.shape[0]
             == reward.shape[0]
             == next_state.shape[0]
             == evaluation_policy_next_action.shape[0]
         ):
             raise ValueError(
-                "Expected `state.shape[0] == action.shape[0] == reward.shape[0] == next_state.shape[0] == evaluation_policy_next_action.shape[0]`, "
-                "but found False"
+                "Expected `initial_state.shape[0] == evaluation_policy_initial_action.shape[0] ==  state.shape[0] == action.shape[0] == reward.shape[0] "
+                "== next_state.shape[0] == evaluation_policy_next_action.shape[0]`, but found False"
             )
         if not (initial_state.shape[1] == state.shape[1] == next_state.shape[1]):
             raise ValueError(
@@ -374,8 +368,7 @@ class ContinuousAugmentedLagrangianStateActionWightValueLearning(
             raise ValueError("Random state mush be given.")
         torch.manual_seed(random_state)
 
-        n_initial_samples = len(initial_state)
-        n_transition_samples = len(state)
+        n_samples = len(state)
         initial_state = torch.FloatTensor(initial_state, device=self.device)
         evaluation_policy_initial_action = torch.FloatTensor(
             evaluation_policy_initial_action, device=self.device
@@ -401,23 +394,22 @@ class ContinuousAugmentedLagrangianStateActionWightValueLearning(
             total=n_epochs,
         ):
             for grad_step in range(n_steps_per_epoch):
-                init_idx_ = torch.randint(n_initial_samples, size=(batch_size,))
-                trns_idx_ = torch.randint(n_transition_samples, size=(batch_size,))
+                idx_ = torch.randint(n_samples, size=(batch_size,))
 
                 initial_action = torch.multinomial(
-                    evaluation_policy_initial_action[init_idx_], num_samples=1
+                    evaluation_policy_initial_action[idx_], num_samples=1
                 ).flatten()
                 next_action = torch.multinomial(
-                    evaluation_policy_next_action[trns_idx_], num_samples=1
+                    evaluation_policy_next_action[idx_], num_samples=1
                 ).flatten()
 
                 objective_loss = self._objective_function(
-                    initial_state=initial_state[init_idx_],
+                    initial_state=initial_state[idx_],
                     initial_action=initial_action,
-                    state=state[trns_idx_],
-                    action=action[trns_idx_],
-                    reward=reward[trns_idx_],
-                    next_state=next_state[trns_idx_],
+                    state=state[idx_],
+                    action=action[idx_],
+                    reward=reward[idx_],
+                    next_state=next_state[idx_],
                     next_action=next_action,
                     lambda_=self.lambda_,
                     gamma=gamma,
@@ -589,25 +581,25 @@ class ContinuousAugmentedLagrangianStateActionWightValueLearning(
         method: {"dual_dice", "gen_dice", "algae_dice", "best_dice", "mql", "mwl", "custom"}, default="best_dice"
             Indicates which parameter set should be used. When, "custom" users can specify their own parameter.
 
-        initial_state: array-like of shape (n_initial_samples, state_dim)
+        initial_state: array-like of shape (n_samples, state_dim)
             Initial state of a trajectory (or states sampled from a stationary distribution).
 
-        evaluation_policy_initial_action: array-like of shape (n_initial_samples, action_dim)
+        evaluation_policy_initial_action: array-like of shape (n_samples, action_dim)
             Initial action chose by the evaluation policy.
 
-        state: array-like of shape (n_transition_samples, state_dim)
+        state: array-like of shape (n_samples, state_dim)
             State observed by the behavior policy.
 
-        action: array-like of shape (n_transition_samples, action_dim)
+        action: array-like of shape (n_samples, action_dim)
             Action chosen by the behavior policy.
 
-        reward: array-like of shape (n_transition_samples, )
+        reward: array-like of shape (n_samples, )
             Reward observed for each (state, action) pair.
 
-        next_state: array-like of shape (n_transition_samples, state_dim)
+        next_state: array-like of shape (n_samples, state_dim)
             Next state observed for each (state, action) pair.
 
-        evaluation_policy_next_action: array-like of shape (n_transition_samples, action_dim)
+        evaluation_policy_next_action: array-like of shape (n_samples, action_dim)
             Next action chose by the evaluation policy.
 
         n_epochs: int, default=100
@@ -652,10 +644,10 @@ class ContinuousAugmentedLagrangianStateActionWightValueLearning(
 
         Return
         -------
-        q_value: ndarray of shape (n_transition_samples, )
+        q_value: ndarray of shape (n_samples, )
             Q value of each (state, action) pair.
 
-        w_hat: ndarray of shape (n_transition_samples, )
+        w_hat: ndarray of shape (n_samples, )
             Estimated state-action marginal importance weight.
 
         """
@@ -779,19 +771,19 @@ class ContinuousAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearne
 
         Parameters
         -------
-        initial_state: Tensor of shape (n_initial_samples, state_dim)
+        initial_state: Tensor of shape (n_samples, state_dim)
             Initial state of a trajectory (or states sampled from a stationary distribution).
 
-        state: array-like of shape (n_transition_samples, state_dim)
+        state: array-like of shape (n_samples, state_dim)
             State observed by the behavior policy.
 
-        reward: Tensor of shape (n_transition_samples, )
+        reward: Tensor of shape (n_samples, )
             Reward observed for each (state, action) pair.
 
-        next_state: Tensor of shape (n_transition_samples, state_dim)
+        next_state: Tensor of shape (n_samples, state_dim)
             Next state observed for each (state, action) pair.
 
-        importance_weight: Tensor of shape (n_transition_samples, )
+        importance_weight: Tensor of shape (n_samples, )
             Immediate importance weight at each step, i.e., :math:`K(a_t, \\pi(s_t)) / \\pi_0(a_t | s_t)`,
             where :math:`K(\\cdot, \\cdot)` is a kernel function.
 
@@ -860,25 +852,25 @@ class ContinuousAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearne
         method: {"dual_dice", "gen_dice", "algae_dice", "best_dice", "mvl", "mwl", "custom"}, default="best_dice"
             Indicates which parameter set should be used. When, "custom" users can specify their own parameter.
 
-        initial_state: array-like of shape (n_initial_samples, state_dim)
+        initial_state: array-like of shape (n_samples, state_dim)
             Initial state of a trajectory (or states sampled from a stationary distribution).
 
-        state: array-like of shape (n_transition_samples, state_dim)
+        state: array-like of shape (n_samples, state_dim)
             State observed by the behavior policy.
 
-        action: array-like of shape (n_transition_samples, )
+        action: array-like of shape (n_samples, )
             Action chosen by the behavior policy.
 
-        reward: array-like of shape (n_transition_samples, )
+        reward: array-like of shape (n_samples, )
             Reward observed for each (state, action) pair.
 
-        next_state: array-like of shape (n_transition_samples, state_dim)
+        next_state: array-like of shape (n_samples, state_dim)
             Next state observed for each (state, action) pair.
 
-        pscore: array-like of shape (n_transition_samples, )
+        pscore: array-like of shape (n_samples, )
             Action choice probability of the behavior policy for the chosen action.
 
-        evaluation_policy_action: array-like of shape (n_transition_samples, n_actions)
+        evaluation_policy_action: array-like of shape (n_samples, n_actions)
             Action chosen by the evaluation policy.
 
         n_epochs: int, default=100
@@ -938,7 +930,8 @@ class ContinuousAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearne
             evaluation_policy_action, name="evaluation_policy_action", expected_dim=2
         )
         if not (
-            state.shape[0]
+            initial_state.shape[0]
+            == state.shape[0]
             == action.shape[0]
             == reward.shape[0]
             == next_state.shape[0]
@@ -946,7 +939,7 @@ class ContinuousAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearne
             == evaluation_policy_action.shape[0]
         ):
             raise ValueError(
-                "Expected `state.shape[0] == action.shape[0] == reward.shape[0] == next_state.shape[0] == pscore.shape[0] "
+                "Expected `initial_state.shape[0] == state.shape[0] == action.shape[0] == reward.shape[0] == next_state.shape[0] == pscore.shape[0] "
                 "== evaluation_policy_action.shape[0]`, but found False"
             )
         if not (initial_state.shape[1] == state.shape[1] == next_state.shape[1]):
@@ -1032,8 +1025,7 @@ class ContinuousAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearne
             raise ValueError("Random state mush be given.")
         torch.manual_seed(random_state)
 
-        n_initial_samples = len(initial_state)
-        n_transition_samples = len(state)
+        n_samples = len(state)
         initial_state = torch.FloatTensor(initial_state, device=self.device)
         state = torch.FloatTensor(state, device=self.device)
         reward = torch.FloatTensor(reward, device=self.device)
@@ -1059,15 +1051,14 @@ class ContinuousAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearne
             total=n_epochs,
         ):
             for grad_step in range(n_steps_per_epoch):
-                init_idx_ = torch.randint(n_initial_samples, size=(batch_size,))
-                trns_idx_ = torch.randint(n_transition_samples, size=(batch_size,))
+                idx_ = torch.randint(n_samples, size=(batch_size,))
 
                 objective_loss = self._objective_function(
-                    initial_state=initial_state[init_idx_],
-                    state=state[trns_idx_],
-                    reward=reward[trns_idx_],
-                    next_state=next_state[trns_idx_],
-                    importance_weight=importance_weight[trns_idx_],
+                    initial_state=initial_state[idx_],
+                    state=state[idx_],
+                    reward=reward[idx_],
+                    next_state=next_state[idx_],
+                    importance_weight=importance_weight[idx_],
                     lambda_=self.lambda_,
                     gamma=gamma,
                     alpha_v=alpha_v,
@@ -1189,25 +1180,25 @@ class ContinuousAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearne
         method: {"dual_dice", "gen_dice", "algae_dice", "best_dice", "mvl", "mwl", "custom"}, default="best_dice"
             Indicates which parameter set should be used. When, "custom" users can specify their own parameter.
 
-        initial_state: array-like of shape (n_initial_samples, state_dim)
+        initial_state: array-like of shape (n_samples, state_dim)
             Initial state of a trajectory (or states sampled from a stationary distribution).
 
-        state: array-like of shape (n_transition_samples, state_dim)
+        state: array-like of shape (n_samples, state_dim)
             State observed by the behavior policy.
 
-        action: array-like of shape (n_transition_samples, )
+        action: array-like of shape (n_samples, )
             Action chosen by the behavior policy.
 
-        reward: array-like of shape (n_transition_samples, )
+        reward: array-like of shape (n_samples, )
             Reward observed for each (state, action) pair.
 
-        next_state: array-like of shape (n_transition_samples, state_dim)
+        next_state: array-like of shape (n_samples, state_dim)
             Next state observed for each (state, action) pair.
 
-        pscore: array-like of shape (n_transition_samples, )
+        pscore: array-like of shape (n_samples, )
             Action choice probability of the behavior policy for the chosen action.
 
-        evaluation_policy_action: array-like of shape (n_transition_samples, n_actions)
+        evaluation_policy_action: array-like of shape (n_samples, n_actions)
             Action chosen by the evaluation policy.
 
         n_epochs: int, default=100
@@ -1258,10 +1249,10 @@ class ContinuousAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearne
 
         Return
         -------
-        q_value: ndarray of shape (n_transition_samples, )
+        q_value: ndarray of shape (n_samples, )
             Q value of each (state, action) pair.
 
-        w_hat: ndarray of shape (n_transition_samples, )
+        w_hat: ndarray of shape (n_samples, )
             Estimated state-action marginal importance weight.
 
         """

@@ -331,7 +331,7 @@ class ContinuousMinimaxStateActionWeightLearning(BaseWeightValueLearner):
             expected_dim=2,
         )
         check_array(state, name="state", expected_dim=2)
-        check_array(action, name="action", expected_dim=1)
+        check_array(action, name="action", expected_dim=2)
         check_array(reward, name="reward", expected_dim=1)
         check_array(next_state, name="next_state", expected_dim=2)
         check_array(
@@ -344,15 +344,17 @@ class ContinuousMinimaxStateActionWeightLearning(BaseWeightValueLearner):
                 "Expected `initial_state.shape[0] == evaluation_policy_initial_action_dist.shape[0], but found False`"
             )
         if not (
-            state.shape[0]
+            initial_state.shape[0]
+            == evaluation_policy_initial_action_dist.shape[0]
+            == state.shape[0]
             == action.shape[0]
             == reward.shape[0]
             == next_state.shape[0]
             == evaluation_policy_next_action_dist.shape[0]
         ):
             raise ValueError(
-                "Expected `state.shape[0] == action.shape[0] == reward.shape[0] == next_state.shape[0] == evaluation_policy_next_action_dist.shape[0]`, "
-                "but found False"
+                "Expected `initial_state.shape[0] == evaluation_policy_initial_action_dist.shape[0] == state.shape[0] == action.shape[0] == reward.shape[0] "
+                "== next_state.shape[0] == evaluation_policy_next_action_dist.shape[0]`, but found False"
             )
         if not (initial_state.shape[1] == state.shape[1] == next_state.shape[1]):
             raise ValueError(
@@ -907,7 +909,7 @@ class ContinuousMinimaxStateWeightLearning(BaseWeightValueLearner):
             name="evaluation_policy_next_action",
             expected_dim=2,
         )
-        check_array(pscore, name="pscore", expected_dim=1)
+        check_array(pscore, name="pscore", expected_dim=1, min_val=0.0, max_val=1.0)
         check_array(
             evaluation_policy_action,
             name="evaluation_policy_action",
@@ -926,7 +928,7 @@ class ContinuousMinimaxStateWeightLearning(BaseWeightValueLearner):
         ):
             raise ValueError(
                 "Expected `initial_state.shape[0] == evaluation_policy_initial_action.shape[0] == state.shape[0] == action.shape[0] == reward.shape[0] "
-                "== next_state.shape[0] == evaluation_policy_next_action_dist.shape[0] == pscore.shape[0] == evaluation_policy_action_dist.shape[0]`, but found False"
+                "== next_state.shape[0] == evaluation_policy_next_action.shape[0] == pscore.shape[0] == evaluation_policy_action.shape[0]`, but found False"
             )
         if not (initial_state.shape[1] == state.shape[1] == next_state.shape[1]):
             raise ValueError(
