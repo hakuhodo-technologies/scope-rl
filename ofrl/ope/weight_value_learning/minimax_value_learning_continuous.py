@@ -158,7 +158,7 @@ class DiscreteMinimaxStateActionValueLearning(BaseWeightValueLearner):
 
         lambda_: float
 
-        action_scaler: Tensor of shape (n_samples, action_dim)
+        action_scaler: Tensor of shape (action_dim, )
             Scaling factor of action.
 
         Return
@@ -702,7 +702,7 @@ class ContinuousMinimaxStateValueLearning(BaseWeightValueLearner):
 
         lambda_: float
 
-        action_scaler: Tensor of shape (n_samples, action_dim)
+        action_scaler: Tensor of shape (action_dim, )
             Scaling factor of action.
 
         Return
