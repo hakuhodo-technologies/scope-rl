@@ -36,6 +36,18 @@ from ofrl.ope.cumulative_distribution_estimators_discrete import (
     DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSampling,
     DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseDoublyRobust,
 )
+from ofrl.ope.weight_value_learning.augemented_lagrangian_dual_learning_discrete import (
+    DiscreteAugmentedLagrangianStateActionWightValueLearning,
+    DiscreteAugmentedLagrangianStateWightValueLearning,
+)
+from ofrl.ope.weight_value_learning.minimax_value_learning_discrete import (
+    DiscreteMinimaxStateActionValueLearning,
+    DiscreteMinimaxStateValueLearning,
+)
+from ofrl.ope.weight_value_learning.minimax_weight_learning_discrete import (
+    DiscreteMinimaxStateActionWeightLearning,
+    DiscreteMinimaxStateWeightLearning,
+)
 from ofrl.ope.ope_continuous import ContinuousOffPolicyEvaluation
 from ofrl.ope.estimators_continuous import (
     ContinuousDirectMethod,
@@ -55,6 +67,18 @@ from ofrl.ope.marginal_estimators_continuous import (
     ContinuousStateActionMarginalDoublyRobust,
     ContinuousStateActionMarginalSelfNormalizedImportanceSampling,
     ContinuousStateMarginalSelfNormalizedDoublyRobust,
+)
+from ofrl.ope.weight_value_learning.augemented_lagrangian_dual_learning_continuous import (
+    ContinuousAugmentedLagrangianStateActionWightValueLearning,
+    ContinuousAugmentedLagrangianStateWightValueLearning,
+)
+from ofrl.ope.weight_value_learning.minimax_value_learning_continuous import (
+    ContinuousMinimaxStateActionValueLearning,
+    ContinuousMinimaxStateValueLearning,
+)
+from ofrl.ope.weight_value_learning.minimax_weight_learning_contiuous import (
+    ContinuousMinimaxStateActionWeightLearning,
+    ContinuousMinimaxStateWeightLearning,
 )
 
 
@@ -87,6 +111,12 @@ __all__ = [
     "DiscreteCumulativeDistributionTrajectoryWiseDoublyRobust",
     "DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSampling",
     "DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseDoublyRobust",
+    "DiscreteAugmentedLagrangianStateActionWightValueLearning",
+    "DiscreteAugmentedLagrangianStateWightValueLearning",
+    "DiscreteMinimaxStateActionValueLearning",
+    "DiscreteMinimaxStateValueLearning",
+    "DiscreteMinimaxStateActionWeightLearning",
+    "DiscreteMinimaxStateWeightLearning",
     "ContinuousOffPolicyEvaluation",
     "ContinuousDirectMethod",
     "ContinuousTrajectoryWiseImportanceSampling",
@@ -103,6 +133,12 @@ __all__ = [
     "ContinuousStateActionMarginalDoublyRobust",
     "ContinuousStateActionMarginalSelfNormalizedImportanceSampling",
     "ContinuousStateActionMarginalSelfNormalizedDoublyRobust",
+    "ContinuousAugmentedLagrangianStateActionWightValueLearning",
+    "ContinuousAugmentedLagrangianStateWightValueLearning",
+    "ContinuousMinimaxStateActionValueLearning",
+    "ContinuousMinimaxStateValueLearning",
+    "ContinuousMinimaxStateActionWeightLearning",
+    "ContinuousMinimaxStateWeightLearning",
 ]
 
 
@@ -172,6 +208,22 @@ __cumulative__ = [
 ]
 
 
+__learning__ = [
+    "DiscreteAugmentedLagrangianStateActionWightValueLearning",
+    "DiscreteAugmentedLagrangianStateWightValueLearning",
+    "DiscreteMinimaxStateActionValueLearning",
+    "DiscreteMinimaxStateValueLearning",
+    "DiscreteMinimaxStateActionWeightLearning",
+    "DiscreteMinimaxStateWeightLearning",
+    "ContinuousAugmentedLagrangianStateActionWightValueLearning",
+    "ContinuousAugmentedLagrangianStateWightValueLearning",
+    "ContinuousMinimaxStateActionValueLearning",
+    "ContinuousMinimaxStateValueLearning",
+    "ContinuousMinimaxStateActionWeightLearning",
+    "ContinuousMinimaxStateWeightLearning",
+]
+
+
 __discrete__ = [
     "DiscreteOffPolicyEvaluation",
     "DiscreteCumulativeDistributionOffPolicyEvaluation",
@@ -195,6 +247,12 @@ __discrete__ = [
     "DiscreteCumulativeDistributionTrajectoryWiseDoublyRobust",
     "DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSampling",
     "DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseDoublyRobust",
+    "DiscreteAugmentedLagrangianStateActionWightValueLearning",
+    "DiscreteAugmentedLagrangianStateWightValueLearning",
+    "DiscreteMinimaxStateActionValueLearning",
+    "DiscreteMinimaxStateValueLearning",
+    "DiscreteMinimaxStateActionWeightLearning",
+    "DiscreteMinimaxStateWeightLearning",
 ]
 
 
@@ -216,4 +274,10 @@ __continuous__ = [
     "ContinuousStateActionMarginalDoublyRobust",
     "ContinuousStateActionMarginalSelfNormalizedImportanceSampling",
     "ContinuousStateActionMarginalSelfNormalizedDoublyRobust",
+    "ContinuousAugmentedLagrangianStateActionWightValueLearning",
+    "ContinuousAugmentedLagrangianStateWightValueLearning",
+    "ContinuousMinimaxStateActionValueLearning",
+    "ContinuousMinimaxStateValueLearning",
+    "ContinuousMinimaxStateActionWeightLearning",
+    "ContinuousMinimaxStateWeightLearning",
 ]
