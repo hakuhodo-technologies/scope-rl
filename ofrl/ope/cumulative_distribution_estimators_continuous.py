@@ -1,6 +1,6 @@
-"""Cumulative Distribution Off-Policy Estimators for Discrete action."""
+"""Cumulative Distribution Off-Policy Estimators for Continuous action."""
 from dataclasses import dataclass
-from typing import Tuple
+from typing import Optional, Union, Tuple
 
 import numpy as np
 from sklearn.utils import check_scalar
@@ -12,7 +12,7 @@ from ..utils import check_array
 
 
 @dataclass
-class DiscreteCumulativeDistributionDirectMethod(
+class ContinuousCumulativeDistributionDirectMethod(
     BaseCumulativeDistributionOffPolicyEstimator,
 ):
     """Direct Method (DM) for estimating cumulative distribution function (CDF) in discrete-action OPE.
@@ -23,7 +23,7 @@ class DiscreteCumulativeDistributionDirectMethod(
 
     .. math::
 
-        \\hat{F}_{\\mathrm{DM}}(m, \\pi; \\mathcal{D}) := \\mathbb{E}_{n} \\left[ \\mathbb{E}_{a_0 \\sim \\pi(a_0 \\mid s_0)} \\hat{G}(m; s_0, a_0) \\right]
+        \\hat{F}_{\\mathrm{DM}}(m, \\pi; \\mathcal{D}) := \\mathbb{E}_{n} \\left[ \\hat{G}(m; s_0, \\pi(a_0)) \\right]
 
     where :math:`\\hat{F}(\\cdot)` is the estimated cumulative distribution function and :math:`\\hat{G}(\\cdot)` is the estimated conditional distribution.
 
@@ -336,10 +336,10 @@ class DiscreteCumulativeDistributionDirectMethod(
 
 
 @dataclass
-class DiscreteCumulativeDistributionTrajectoryWiseImportanceSampling(
+class ContinuousCumulativeDistributionTrajectoryWiseImportanceSampling(
     BaseCumulativeDistributionOffPolicyEstimator,
 ):
-    """Trajectory-wise Importance Sampling (TIS) for estimating cumulative distribution function (CDF) in discrete-action OPE.
+    """Trajectory-wise Importance Sampling (TIS) for estimating cumulative distribution function (CDF) in continuous-action OPE.
 
     Note
     -------
@@ -347,11 +347,13 @@ class DiscreteCumulativeDistributionTrajectoryWiseImportanceSampling(
 
     .. math::
 
-        \\hat{F}_{\\mathrm{TIS}}(m, \\pi; \\mathcal{D}) := \\mathbb{E}_{n} \\left[ w_{0:T-1} \\mathbb{I} \\left \\{\\sum_{t=0}^{T-1} \\gamma^t r_t \\leq m \\right \\} \\right]
+        \\hat{F}_{\\mathrm{TIS}}(m, \\pi; \\mathcal{D})
+        := \\mathbb{E}_{n} \\left[ w_{1:T-1} \\delta(\\pi, a_{0:T-1}) \\mathbb{I} \\left \\{\\sum_{t=0}^{T-1} \\gamma^t r_t \\leq m \\right \\} \\right]
 
     where :math:`\\hat{F}(\\cdot)` is the estimated cumulative distribution function,
     :math:`w_{0:T-1} := \\prod_{t=0}^{T-1} \\frac{\\pi(a_t \\mid s_t)}{\\pi_0(a_t \\mid s_t)}` is the trajectory-wise importance weight,
     and :math:`\\mathbb{I} \\{ \\cdot \\}` is the indicator function.
+    :math:`\\delta(\\pi, a_{0:T-1}) = \\prod_{t=0}^{T-1} K(\\pi(s_t), a_t)` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy.
 
     Parameters
     -------
@@ -385,8 +387,10 @@ class DiscreteCumulativeDistributionTrajectoryWiseImportanceSampling(
         action: np.ndarray,
         reward: np.ndarray,
         pscore: np.ndarray,
-        evaluation_policy_action_dist: np.ndarray,
+        evaluation_policy_action: np.ndarray,
         reward_scale: np.ndarray,
+        action_scaler: Optional[Union[float, np.ndarray]] = None,
+        sigma: float = 1.0,
         gamma: float = 1.0,
         **kwargs,
     ) -> Tuple[np.ndarray]:
@@ -397,7 +401,7 @@ class DiscreteCumulativeDistributionTrajectoryWiseImportanceSampling(
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_episodes * step_per_episode, )
+        action: array-like of shape (n_episodes * step_per_episode, action_dim)
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_episodes * step_per_episode, )
@@ -407,12 +411,18 @@ class DiscreteCumulativeDistributionTrajectoryWiseImportanceSampling(
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_0(a \\mid s)`
 
-        evaluation_policy_action_dist: array-like of shape (n_episodes * step_per_episode, n_action)
+        evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
             Conditional action distribution induced by the evaluation policy,
             i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
 
         reward_scale: array-like of shape (n_partition, )
             Scale of the trajectory wise reward used for x-axis of CDF curve.
+
+        action_scaler: {float, array-like of shape (action_dim, )}, default=None
+            Scaling factor of action.
+
+        sigma: float, default=1.0
+            Bandwidth hyperparameter of gaussian kernel.
 
         gamma: float, default=1.0
             Discount factor. The value should be within `(0, 1]`.
@@ -436,18 +446,14 @@ class DiscreteCumulativeDistributionTrajectoryWiseImportanceSampling(
             max_val=1.0,
         )
         check_array(
-            evaluation_policy_action_dist,
-            name="evaluation_policy_action_dist",
+            evaluation_policy_action,
+            name="evaluation_policy_action",
             expected_dim=2,
-            min_val=0.0,
-            max_val=1.0,
         )
         check_array(
             action,
             name="action",
-            expected_dim=1,
-            min_val=0,
-            max_val=evaluation_policy_action_dist.shape[1] - 1,
+            expected_dim=2,
         )
         check_array(
             reward_scale,
@@ -458,7 +464,7 @@ class DiscreteCumulativeDistributionTrajectoryWiseImportanceSampling(
             action.shape[0]
             == reward.shape[0]
             == pscore.shape[0]
-            == evaluation_policy_action_dist.shape[0]
+            == evaluation_policy_action.shape[0]
         ):
             raise ValueError(
                 "Expected `action.shape[0] == reward.shape[0] == pscore.shape[0] == evaluation_policy_trajectory_wise_pscore.shape[0]`, "
@@ -468,25 +474,35 @@ class DiscreteCumulativeDistributionTrajectoryWiseImportanceSampling(
             raise ValueError(
                 "Expected `action.shape[0] \\% step_per_episode == 0`, but found False"
             )
-        if not np.allclose(
-            evaluation_policy_action_dist.sum(axis=1),
-            np.ones(evaluation_policy_action_dist.shape[0]),
-        ):
+        if action.shape[1] != evaluation_policy_action.shape[1]:
             raise ValueError(
-                "Expected `evaluation_policy_action_dist.sum(axis=1) == np.ones(evaluation_policy_action_dist.shape[0])`"
-                ", but found it False"
+                "Expected `action.shape[1] == evaluation_policy_action.shape[1]`, but found False"
+            )
+
+        action_dim = action.shape[1]
+        if action_scaler is None:
+            action_scaler = np.ones(action_dim)
+        elif isinstance(action_scaler, float):
+            action_scaler = np.full(action_dim, action_scaler)
+
+        check_array(action_scaler, name="action_scaler", expected_dim=1, min_val=0.0)
+        if action_scaler.shape[0] != action_dim:
+            raise ValueError(
+                "Expected `action_scaler.shape[0] == action.shape[1]`, but found False"
             )
 
         (
             trajectory_wise_reward,
             trajectory_wise_importance_weight,
             initial_state_value_prediction,
-        ) = self._aggregate_trajectory_wise_statistics_discrete(
+        ) = self._aggregate_trajectory_wise_statistics_continuous(
             step_per_episode=step_per_episode,
             action=action,
             reward=reward,
             pscore=pscore,
-            evaluation_policy_action_dist=evaluation_policy_action_dist,
+            evaluation_policy_action=evaluation_policy_action,
+            action_scaler=action_scaler,
+            sigma=sigma,
             gamma=gamma,
         )
 
@@ -509,8 +525,10 @@ class DiscreteCumulativeDistributionTrajectoryWiseImportanceSampling(
         action: np.ndarray,
         reward: np.ndarray,
         pscore: np.ndarray,
-        evaluation_policy_action_dist: np.ndarray,
+        evaluation_policy_action: np.ndarray,
         reward_scale: np.ndarray,
+        action_scaler: Optional[Union[float, np.ndarray]] = None,
+        sigma: float = 1.0,
         gamma: float = 1.0,
         **kwargs,
     ) -> float:
@@ -521,7 +539,7 @@ class DiscreteCumulativeDistributionTrajectoryWiseImportanceSampling(
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_episodes * step_per_episode, )
+        action: array-like of shape (n_episodes * step_per_episode, action_dim)
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_episodes * step_per_episode, )
@@ -531,12 +549,17 @@ class DiscreteCumulativeDistributionTrajectoryWiseImportanceSampling(
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_0(a \\mid s)`
 
-        evaluation_policy_action_dist: array-like of shape (n_episodes * step_per_episode, n_action)
-            Conditional action distribution induced by the evaluation policy,
-            i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
+        evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
+            Action chosen by the evaluation policy.
 
         reward_scale: array-like of shape (n_partition, )
             Scale of the trajectory wise reward used for x-axis of CDF curve.
+
+        action_scaler: {float, array-like of shape (action_dim, )}, default=None
+            Scaling factor of action.
+
+        sigma: float, default=1.0
+            Bandwidth hyperparameter of gaussian kernel.
 
         gamma: float, default=1.0
             Discount factor. The value should be within `(0, 1]`.
@@ -552,8 +575,10 @@ class DiscreteCumulativeDistributionTrajectoryWiseImportanceSampling(
             action=action,
             reward=reward,
             pscore=pscore,
-            evaluation_policy_action_dist=evaluation_policy_action_dist,
+            evaluation_policy_action=evaluation_policy_action,
             reward_scale=reward_scale,
+            action_scaler=action_scaler,
+            sigma=sigma,
             gamma=gamma,
         )
         return (np.diff(cumulative_density) * reward_scale[1:]).sum()
@@ -564,8 +589,10 @@ class DiscreteCumulativeDistributionTrajectoryWiseImportanceSampling(
         action: np.ndarray,
         reward: np.ndarray,
         pscore: np.ndarray,
-        evaluation_policy_action_dist: np.ndarray,
+        evaluation_policy_action: np.ndarray,
         reward_scale: np.ndarray,
+        action_scaler: Optional[Union[float, np.ndarray]] = None,
+        sigma: float = 1.0,
         gamma: float = 1.0,
         **kwargs,
     ) -> float:
@@ -576,7 +603,7 @@ class DiscreteCumulativeDistributionTrajectoryWiseImportanceSampling(
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_episodes * step_per_episode, )
+        action: array-like of shape (n_episodes * step_per_episode, action_dim)
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_episodes * step_per_episode, )
@@ -586,12 +613,17 @@ class DiscreteCumulativeDistributionTrajectoryWiseImportanceSampling(
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_0(a \\mid s)`
 
-        evaluation_policy_action_dist: array-like of shape (n_episodes * step_per_episode, n_action)
-            Conditional action distribution induced by the evaluation policy,
-            i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
+        evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
+            Action chosen by the evaluation policy.
 
         reward_scale: array-like of shape (n_partition, )
             Scale of the trajectory wise reward used for x-axis of CDF curve.
+
+        action_scaler: {float, array-like of shape (action_dim, )}, default=None
+            Scaling factor of action.
+
+        sigma: float, default=1.0
+            Bandwidth hyperparameter of gaussian kernel.
 
         gamma: float, default=1.0
             Discount factor. The value should be within `(0, 1]`.
@@ -607,8 +639,10 @@ class DiscreteCumulativeDistributionTrajectoryWiseImportanceSampling(
             action=action,
             reward=reward,
             pscore=pscore,
-            evaluation_policy_action_dist=evaluation_policy_action_dist,
+            evaluation_policy_action=evaluation_policy_action,
             reward_scale=reward_scale,
+            action_scaler=action_scaler,
+            sigma=sigma,
             gamma=gamma,
         )
         mean = (np.diff(cumulative_density) * reward_scale[1:]).sum()
@@ -620,8 +654,10 @@ class DiscreteCumulativeDistributionTrajectoryWiseImportanceSampling(
         action: np.ndarray,
         reward: np.ndarray,
         pscore: np.ndarray,
-        evaluation_policy_action_dist: np.ndarray,
+        evaluation_policy_action: np.ndarray,
         reward_scale: np.ndarray,
+        action_scaler: Optional[Union[float, np.ndarray]] = None,
+        sigma: float = 1.0,
         gamma: float = 1.0,
         alphas: np.ndarray = np.linspace(0, 1, 20),
         **kwargs,
@@ -633,7 +669,7 @@ class DiscreteCumulativeDistributionTrajectoryWiseImportanceSampling(
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_episodes * step_per_episode, )
+        action: array-like of shape (n_episodes * step_per_episode, action_dim)
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_episodes * step_per_episode, )
@@ -643,12 +679,17 @@ class DiscreteCumulativeDistributionTrajectoryWiseImportanceSampling(
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_0(a \\mid s)`
 
-        evaluation_policy_action_dist: array-like of shape (n_episodes * step_per_episode, n_action)
-            Conditional action distribution induced by the evaluation policy,
-            i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
+        evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
+            Action chosen by the evaluation policy.
 
         reward_scale: array-like of shape (n_partition, )
             Scale of the trajectory wise reward used for x-axis of CDF curve.
+
+        action_scaler: {float, array-like of shape (action_dim, )}, default=None
+            Scaling factor of action.
+
+        sigma: float, default=1.0
+            Bandwidth hyperparameter of gaussian kernel.
 
         gamma: float, default=1.0
             Discount factor. The value should be within `(0, 1]`.
@@ -670,8 +711,10 @@ class DiscreteCumulativeDistributionTrajectoryWiseImportanceSampling(
             action=action,
             reward=reward,
             pscore=pscore,
-            evaluation_policy_action_dist=evaluation_policy_action_dist,
+            evaluation_policy_action=evaluation_policy_action,
             reward_scale=reward_scale,
+            action_scaler=action_scaler,
+            sigma=sigma,
             gamma=gamma,
         )
 
@@ -691,8 +734,10 @@ class DiscreteCumulativeDistributionTrajectoryWiseImportanceSampling(
         action: np.ndarray,
         reward: np.ndarray,
         pscore: np.ndarray,
-        evaluation_policy_action_dist: np.ndarray,
+        evaluation_policy_action: np.ndarray,
         reward_scale: np.ndarray,
+        action_scaler: Optional[Union[float, np.ndarray]] = None,
+        sigma: float = 1.0,
         gamma: float = 1.0,
         alpha: float = 0.05,
         **kwargs,
@@ -704,7 +749,7 @@ class DiscreteCumulativeDistributionTrajectoryWiseImportanceSampling(
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_episodes * step_per_episode, )
+        action: array-like of shape (n_episodes * step_per_episode, action_dim)
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_episodes * step_per_episode, )
@@ -714,12 +759,17 @@ class DiscreteCumulativeDistributionTrajectoryWiseImportanceSampling(
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_0(a \\mid s)`
 
-        evaluation_policy_action_dist: array-like of shape (n_episodes * step_per_episode, n_action)
-            Conditional action distribution induced by the evaluation policy,
-            i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
+        evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
+            Action chosen by the evaluation policy.
 
         reward_scale: array-like of shape (n_partition, )
             Scale of the trajectory wise reward used for x-axis of CDF curve.
+
+        action_scaler: {float, array-like of shape (action_dim, )}, default=None
+            Scaling factor of action.
+
+        sigma: float, default=1.0
+            Bandwidth hyperparameter of gaussian kernel.
 
         gamma: float, default=1.0
             Discount factor. The value should be within `(0, 1]`.
@@ -740,8 +790,10 @@ class DiscreteCumulativeDistributionTrajectoryWiseImportanceSampling(
             action=action,
             reward=reward,
             pscore=pscore,
-            evaluation_policy_action_dist=evaluation_policy_action_dist,
+            evaluation_policy_action=evaluation_policy_action,
             reward_scale=reward_scale,
+            action_scaler=action_scaler,
+            sigma=sigma,
             gamma=gamma,
         )
 
@@ -767,7 +819,7 @@ class DiscreteCumulativeDistributionTrajectoryWiseImportanceSampling(
 
 
 @dataclass
-class DiscreteCumulativeDistributionTrajectoryWiseDoublyRobust(
+class ContinuousCumulativeDistributionTrajectoryWiseDoublyRobust(
     BaseCumulativeDistributionOffPolicyEstimator,
 ):
     """Trajectory-wise Doubly Robust (TDR) for estimating cumulative distribution function (CDF) in discrete-action OPE.
@@ -779,12 +831,13 @@ class DiscreteCumulativeDistributionTrajectoryWiseDoublyRobust(
     .. math::
 
         \\hat{F}_{\\mathrm{TDR}}(m, \\pi; \\mathcal{D})
-        := \\mathbb{E}_{n} \\left[ w_{0:T-1} \\left( \\mathbb{I} \\left \\{\\sum_{t=0}^{T-1} \\gamma^t r_t \\leq m \\right \\} - \\hat{G}(m; s_0, a_0) \\right) \\right]
+        := \\mathbb{E}_{n} \\left[ w_{0:T-1} \\delta(\\pi, a_{0:T-1}) \\left( \\mathbb{I} \\left \\{\\sum_{t=0}^{T-1} \\gamma^t r_t \\leq m \\right \\} - \\hat{G}(m; s_0, a_0) \\right) \\right]
         + \\hat{F}_{\\mathrm{DM}}(m, \\pi; \\mathcal{D})
 
     where :math:`\\hat{F}(\\cdot)` is the estimated cumulative distribution function,
     :math:`w_{0:T-1} := \\prod_{t=0}^{T-1} \\frac{\\pi(a_t \\mid s_t)}{\\pi_0(a_t \\mid s_t)}` is the trajectory-wise importance weight,
     and :math:`\\mathbb{I} \\{ \\cdot \\}` is the indicator function.
+    :math:`\\delta(\\pi, a_{0:T-1}) = \\prod_{t=0}^{T-1} K(\\pi(s_t), a_t)` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy.
 
     Parameters
     -------
@@ -824,9 +877,11 @@ class DiscreteCumulativeDistributionTrajectoryWiseDoublyRobust(
         action: np.ndarray,
         reward: np.ndarray,
         pscore: np.ndarray,
-        evaluation_policy_action_dist: np.ndarray,
+        evaluation_policy_action: np.ndarray,
         initial_state_value_prediction: np.ndarray,
         reward_scale: np.ndarray,
+        action_scaler: Optional[Union[float, np.ndarray]] = None,
+        sigma: float = 1.0,
         gamma: float = 1.0,
         **kwargs,
     ) -> Tuple[np.ndarray]:
@@ -837,7 +892,7 @@ class DiscreteCumulativeDistributionTrajectoryWiseDoublyRobust(
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_episodes * step_per_episode, )
+        action: array-like of shape (n_episodes * step_per_episode, action_dim)
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_episodes * step_per_episode, )
@@ -847,15 +902,20 @@ class DiscreteCumulativeDistributionTrajectoryWiseDoublyRobust(
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_0(a \\mid s)`
 
-        evaluation_policy_action_dist: array-like of shape (n_episodes * step_per_episode, n_action)
-            Conditional action distribution induced by the evaluation policy,
-            i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
+        evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
+            Action chosen by the evaluation policy.
 
-        initial_state_value_prediction: array-like of shape (n_episodes, )
+        initial_state_value_prediction: array-like of shape (n_episodes * step_per_episode, )
             Estimated initial state value.
 
         reward_scale: array-like of shape (n_partition, )
             Scale of the trajectory wise reward used for x-axis of CDF curve.
+
+        action_scaler: {float, array-like of shape (action_dim, )}, default=None
+            Scaling factor of action.
+
+        sigma: float, default=1.0
+            Bandwidth hyperparameter of gaussian kernel.
 
         gamma: float, default=1.0
             Discount factor. The value should be within `(0, 1]`.
@@ -879,18 +939,14 @@ class DiscreteCumulativeDistributionTrajectoryWiseDoublyRobust(
             max_val=1.0,
         )
         check_array(
-            evaluation_policy_action_dist,
-            name="evaluation_policy_action_dist",
+            evaluation_policy_action,
+            name="evaluation_policy_action",
             expected_dim=2,
-            min_val=0.0,
-            max_val=1.0,
         )
         check_array(
             action,
             name="action",
-            expected_dim=1,
-            min_val=0,
-            max_val=evaluation_policy_action_dist.shape[1] - 1,
+            expected_dim=2,
         )
         check_array(
             initial_state_value_prediction,
@@ -906,36 +962,47 @@ class DiscreteCumulativeDistributionTrajectoryWiseDoublyRobust(
             action.shape[0]
             == reward.shape[0]
             == pscore.shape[0]
-            == evaluation_policy_action_dist.shape[0]
+            == evaluation_policy_action.shape[0]
+            == initial_state_value_prediction.shape[0]
         ):
             raise ValueError(
-                "Expected `action.shape[0] == reward.shape[0] == pscore.shape[0] == evaluation_policy_trajectory_wise_pscore.shape[0]`, "
-                "but found False"
+                "Expected `action.shape[0] == reward.shape[0] == pscore.shape[0] == evaluation_policy_trajectory_wise_pscore.shape[0] "
+                "== initial_state_value_prediction.shape[0]`, but found False"
             )
         if action.shape[0] % step_per_episode:
             raise ValueError(
                 "Expected `action.shape[0] \\% step_per_episode == 0`, but found False"
             )
-        if not np.allclose(
-            evaluation_policy_action_dist.sum(axis=1),
-            np.ones(evaluation_policy_action_dist.shape[0]),
-        ):
+        if action.shape[1] != evaluation_policy_action.shape[1]:
             raise ValueError(
-                "Expected `evaluation_policy_action_dist.sum(axis=1) == np.ones(evaluation_policy_action_dist.shape[0])`"
-                ", but found it False"
+                "Expected `action.shape[1] == evaluation_policy_action.shape[1]`, but found False"
+            )
+
+        action_dim = action.shape[1]
+        if action_scaler is None:
+            action_scaler = np.ones(action_dim)
+        elif isinstance(action_scaler, float):
+            action_scaler = np.full(action_dim, action_scaler)
+
+        check_array(action_scaler, name="action_scaler", expected_dim=1, min_val=0.0)
+        if action_scaler.shape[0] != action_dim:
+            raise ValueError(
+                "Expected `action_scaler.shape[0] == action.shape[1]`, but found False"
             )
 
         (
             trajectory_wise_reward,
             trajectory_wise_importance_weight,
             initial_state_value_prediction,
-        ) = self._aggregate_trajectory_wise_statistics_discrete(
+        ) = self._aggregate_trajectory_wise_statistics_continuous(
             step_per_episode=step_per_episode,
             action=action,
             reward=reward,
             pscore=pscore,
-            evaluation_policy_action_dist=evaluation_policy_action_dist,
+            evaluation_policy_action=evaluation_policy_action,
             initial_state_value_prediction=initial_state_value_prediction,
+            action_scaler=action_scaler,
+            sigma=sigma,
             gamma=gamma,
         )
 
@@ -961,9 +1028,11 @@ class DiscreteCumulativeDistributionTrajectoryWiseDoublyRobust(
         action: np.ndarray,
         reward: np.ndarray,
         pscore: np.ndarray,
-        evaluation_policy_action_dist: np.ndarray,
+        evaluation_policy_action: np.ndarray,
         initial_state_value_prediction: np.ndarray,
         reward_scale: np.ndarray,
+        action_scaler: Optional[Union[float, np.ndarray]] = None,
+        sigma: float = 1.0,
         gamma: float = 1.0,
         **kwargs,
     ) -> float:
@@ -974,7 +1043,7 @@ class DiscreteCumulativeDistributionTrajectoryWiseDoublyRobust(
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_episodes * step_per_episode, )
+        action: array-like of shape (n_episodes * step_per_episode, action_dim)
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_episodes * step_per_episode, )
@@ -984,15 +1053,20 @@ class DiscreteCumulativeDistributionTrajectoryWiseDoublyRobust(
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_0(a \\mid s)`
 
-        evaluation_policy_action_dist: array-like of shape (n_episodes * step_per_episode, n_action)
-            Conditional action distribution induced by the evaluation policy,
-            i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
+        evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
+            Action chosen by the evaluation policy.
 
         initial_state_value_prediction: array-like of shape (n_episodes, )
             Estimated initial state value.
 
         reward_scale: array-like of shape (n_partition, )
             Scale of the trajectory wise reward used for x-axis of CDF curve.
+
+        action_scaler: {float, array-like of shape (action_dim, )}, default=None
+            Scaling factor of action.
+
+        sigma: float, default=1.0
+            Bandwidth hyperparameter of gaussian kernel.
 
         gamma: float, default=1.0
             Discount factor. The value should be within `(0, 1]`.
@@ -1008,9 +1082,11 @@ class DiscreteCumulativeDistributionTrajectoryWiseDoublyRobust(
             action=action,
             reward=reward,
             pscore=pscore,
-            evaluation_policy_action_dist=evaluation_policy_action_dist,
+            evaluation_policy_action=evaluation_policy_action,
             initial_state_value_prediction=initial_state_value_prediction,
             reward_scale=reward_scale,
+            action_scaler=action_scaler,
+            sigma=sigma,
             gamma=gamma,
         )
         return (np.diff(cumulative_density) * reward_scale[1:]).sum()
@@ -1021,9 +1097,11 @@ class DiscreteCumulativeDistributionTrajectoryWiseDoublyRobust(
         action: np.ndarray,
         reward: np.ndarray,
         pscore: np.ndarray,
-        evaluation_policy_action_dist: np.ndarray,
+        evaluation_policy_action: np.ndarray,
         initial_state_value_prediction: np.ndarray,
         reward_scale: np.ndarray,
+        action_scaler: Optional[Union[float, np.ndarray]] = None,
+        sigma: float = 1.0,
         gamma: float = 1.0,
         **kwargs,
     ) -> float:
@@ -1034,7 +1112,7 @@ class DiscreteCumulativeDistributionTrajectoryWiseDoublyRobust(
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_episodes * step_per_episode, )
+        action: array-like of shape (n_episodes * step_per_episode, action_dim)
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_episodes * step_per_episode, )
@@ -1044,15 +1122,20 @@ class DiscreteCumulativeDistributionTrajectoryWiseDoublyRobust(
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_0(a \\mid s)`
 
-        evaluation_policy_action_dist: array-like of shape (n_episodes * step_per_episode, n_action)
-            Conditional action distribution induced by the evaluation policy,
-            i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
+        evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
+            Action chosen by the evaluation policy.
 
         initial_state_value_prediction: array-like of shape (n_episodes, )
             Estimated initial state value.
 
         reward_scale: array-like of shape (n_partition, )
             Scale of the trajectory wise reward used for x-axis of CDF curve.
+
+        action_scaler: {float, array-like of shape (action_dim, )}, default=None
+            Scaling factor of action.
+
+        sigma: float, default=1.0
+            Bandwidth hyperparameter of gaussian kernel.
 
         gamma: float, default=1.0
             Discount factor. The value should be within `(0, 1]`.
@@ -1068,9 +1151,11 @@ class DiscreteCumulativeDistributionTrajectoryWiseDoublyRobust(
             action=action,
             reward=reward,
             pscore=pscore,
-            evaluation_policy_action_dist=evaluation_policy_action_dist,
+            evaluation_policy_action=evaluation_policy_action,
             initial_state_value_prediction=initial_state_value_prediction,
             reward_scale=reward_scale,
+            action_scaler=action_scaler,
+            sigma=sigma,
             gamma=gamma,
         )
         mean = (np.diff(cumulative_density) * reward_scale[1:]).sum()
@@ -1082,9 +1167,11 @@ class DiscreteCumulativeDistributionTrajectoryWiseDoublyRobust(
         action: np.ndarray,
         reward: np.ndarray,
         pscore: np.ndarray,
-        evaluation_policy_action_dist: np.ndarray,
+        evaluation_policy_action: np.ndarray,
         initial_state_value_prediction: np.ndarray,
         reward_scale: np.ndarray,
+        action_scaler: Optional[Union[float, np.ndarray]] = None,
+        sigma: float = 1.0,
         gamma: float = 1.0,
         alphas: np.ndarray = np.linspace(0, 1, 20),
         **kwargs,
@@ -1096,7 +1183,7 @@ class DiscreteCumulativeDistributionTrajectoryWiseDoublyRobust(
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_episodes * step_per_episode, )
+        action: array-like of shape (n_episodes * step_per_episode, action_dim)
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_episodes * step_per_episode, )
@@ -1106,15 +1193,20 @@ class DiscreteCumulativeDistributionTrajectoryWiseDoublyRobust(
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_0(a \\mid s)`
 
-        evaluation_policy_action_dist: array-like of shape (n_episodes * step_per_episode, n_action)
-            Conditional action distribution induced by the evaluation policy,
-            i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
+        evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
+            Action chosen by the evaluation policy.
 
         initial_state_value_prediction: array-like of shape (n_episodes, )
             Estimated initial state value.
 
         reward_scale: array-like of shape (n_partition, )
             Scale of the trajectory wise reward used for x-axis of CDF curve.
+
+        action_scaler: {float, array-like of shape (action_dim, )}, default=None
+            Scaling factor of action.
+
+        sigma: float, default=1.0
+            Bandwidth hyperparameter of gaussian kernel.
 
         gamma: float, default=1.0
             Discount factor. The value should be within `(0, 1]`.
@@ -1136,9 +1228,11 @@ class DiscreteCumulativeDistributionTrajectoryWiseDoublyRobust(
             action=action,
             reward=reward,
             pscore=pscore,
-            evaluation_policy_action_dist=evaluation_policy_action_dist,
+            evaluation_policy_action=evaluation_policy_action,
             initial_state_value_prediction=initial_state_value_prediction,
             reward_scale=reward_scale,
+            action_scaler=action_scaler,
+            sigma=sigma,
             gamma=gamma,
         )
 
@@ -1158,9 +1252,11 @@ class DiscreteCumulativeDistributionTrajectoryWiseDoublyRobust(
         action: np.ndarray,
         reward: np.ndarray,
         pscore: np.ndarray,
-        evaluation_policy_action_dist: np.ndarray,
+        evaluation_policy_action: np.ndarray,
         initial_state_value_prediction: np.ndarray,
         reward_scale: np.ndarray,
+        action_scaler: Optional[Union[float, np.ndarray]] = None,
+        sigma: float = 1.0,
         gamma: float = 1.0,
         alpha: float = 0.05,
         **kwargs,
@@ -1172,7 +1268,7 @@ class DiscreteCumulativeDistributionTrajectoryWiseDoublyRobust(
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_episodes * step_per_episode, )
+        action: array-like of shape (n_episodes * step_per_episode, action_dim)
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_episodes * step_per_episode, )
@@ -1182,15 +1278,20 @@ class DiscreteCumulativeDistributionTrajectoryWiseDoublyRobust(
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_0(a \\mid s)`
 
-        evaluation_policy_action_dist: array-like of shape (n_episodes * step_per_episode, n_action)
-            Conditional action distribution induced by the evaluation policy,
-            i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
+        evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
+            Action chosen by the evaluation policy.
 
         initial_state_value_prediction: array-like of shape (n_episodes, )
             Estimated initial state value.
 
         reward_scale: array-like of shape (n_partition, )
             Scale of the trajectory wise reward used for x-axis of CDF curve.
+
+        action_scaler: {float, array-like of shape (action_dim, )}, default=None
+            Scaling factor of action.
+
+        sigma: float, default=1.0
+            Bandwidth hyperparameter of gaussian kernel.
 
         gamma: float, default=1.0
             Discount factor. The value should be within `(0, 1]`.
@@ -1211,9 +1312,11 @@ class DiscreteCumulativeDistributionTrajectoryWiseDoublyRobust(
             action=action,
             reward=reward,
             pscore=pscore,
-            evaluation_policy_action_dist=evaluation_policy_action_dist,
+            evaluation_policy_action=evaluation_policy_action,
             initial_state_value_prediction=initial_state_value_prediction,
             reward_scale=reward_scale,
+            action_scaler=action_scaler,
+            sigma=sigma,
             gamma=gamma,
         )
 
@@ -1239,8 +1342,8 @@ class DiscreteCumulativeDistributionTrajectoryWiseDoublyRobust(
 
 
 @dataclass
-class DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSampling(
-    DiscreteCumulativeDistributionTrajectoryWiseImportanceSampling,
+class ContinuousCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSampling(
+    ContinuousCumulativeDistributionTrajectoryWiseImportanceSampling,
 ):
     """Self Normalized Trajectory-wise Importance Sampling (SNTIS) for estimating cumulative distribution function (CDF) in discrete-action OPE.
 
@@ -1251,11 +1354,12 @@ class DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSampli
     .. math::
 
         \\hat{F}_{\\mathrm{SNTIS}}(m, \\pi; \\mathcal{D}))
-        := \\mathbb{E}_{n} \\left[ \\frac{w_{0:T-1}}{\\sum_{n} [w_{0:T-1}]} \\mathbb{I} \\left \\{\\sum_{t=0}^{T-1} \\gamma^t r_t \\leq m \\right \\} \\right]
+        := \\mathbb{E}_{n} \\left[ \\frac{w_{0:T-1} \\delta(\\pi, a_{0:T-1})}{\\sum_{n} [w_{0:T-1} \\delta(\\pi, a_{0:T-1})]} \\mathbb{I} \\left \\{\\sum_{t=0}^{T-1} \\gamma^t r_t \\leq m \\right \\} \\right]
 
     where :math:`\\hat{F}(\\cdot)` is the estimated cumulative distribution function,
     :math:`w_{0:T-1} := \\prod_{t=0}^{T-1} \\frac{\\pi(a_t \\mid s_t)}{\\pi_0(a_t \\mid s_t)}` is the trajectory-wise importance weight,
     and :math:`\\mathbb{I} \\{ \\cdot \\}` is the indicator function.
+    :math:`\\delta(\\pi, a_{0:T-1}) = \\prod_{t=0}^{T-1} K(\\pi(s_t), a_t)` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy.
 
     Parameters
     -------
@@ -1295,8 +1399,10 @@ class DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSampli
         action: np.ndarray,
         reward: np.ndarray,
         pscore: np.ndarray,
-        evaluation_policy_action_dist: np.ndarray,
+        evaluation_policy_action: np.ndarray,
         reward_scale: np.ndarray,
+        action_scaler: Optional[Union[float, np.ndarray]] = None,
+        sigma: float = 1.0,
         gamma: float = 1.0,
         **kwargs,
     ) -> Tuple[np.ndarray]:
@@ -1307,7 +1413,7 @@ class DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSampli
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_episodes * step_per_episode, )
+        action: array-like of shape (n_episodes * step_per_episode, action_dim)
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_episodes * step_per_episode, )
@@ -1317,12 +1423,17 @@ class DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSampli
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_0(a \\mid s)`
 
-        evaluation_policy_action_dist: array-like of shape (n_episodes * step_per_episode, n_action)
-            Conditional action distribution induced by the evaluation policy,
-            i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
+        evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
+            Action chosen by the evaluation policy.
 
         reward_scale: array-like of shape (n_partition, )
             Scale of the trajectory wise reward used for x-axis of CDF curve.
+
+        action_scaler: {float, array-like of shape (action_dim, )}, default=None
+            Scaling factor of action.
+
+        sigma: float, default=1.0
+            Bandwidth hyperparameter of gaussian kernel.
 
         gamma: float, default=1.0
             Discount factor. The value should be within `(0, 1]`.
@@ -1346,18 +1457,14 @@ class DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSampli
             max_val=1.0,
         )
         check_array(
-            evaluation_policy_action_dist,
-            name="evaluation_policy_action_dist",
+            evaluation_policy_action,
+            name="evaluation_policy_action",
             expected_dim=2,
-            min_val=0.0,
-            max_val=1.0,
         )
         check_array(
             action,
             name="action",
             expected_dim=1,
-            min_val=0,
-            max_val=evaluation_policy_action_dist.shape[1] - 1,
         )
         check_array(
             reward_scale,
@@ -1368,35 +1475,45 @@ class DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSampli
             action.shape[0]
             == reward.shape[0]
             == pscore.shape[0]
-            == evaluation_policy_action_dist.shape[0]
+            == evaluation_policy_action.shape[0]
         ):
             raise ValueError(
-                "Expected `action.shape[0] == reward.shape[0] == pscore.shape[0] == evaluation_policy_trajectory_wise_pscore.shape[0]`, "
-                "but found False"
+                "Expected `action.shape[0] == reward.shape[0] == pscore.shape[0] == evaluation_policy_trajectory_wise_pscore.shape[0]`"
+                ", but found False"
             )
         if action.shape[0] % step_per_episode:
             raise ValueError(
                 "Expected `action.shape[0] \\% step_per_episode == 0`, but found False"
             )
-        if not np.allclose(
-            evaluation_policy_action_dist.sum(axis=1),
-            np.ones(evaluation_policy_action_dist.shape[0]),
-        ):
+        if action.shape[1] != evaluation_policy_action.shape[1]:
             raise ValueError(
-                "Expected `evaluation_policy_action_dist.sum(axis=1) == np.ones(evaluation_policy_action_dist.shape[0])`"
-                ", but found it False"
+                "Expected `action.shape[1] == evaluation_policy_action.shape[1]`, but found False"
+            )
+
+        action_dim = action.shape[1]
+        if action_scaler is None:
+            action_scaler = np.ones(action_dim)
+        elif isinstance(action_scaler, float):
+            action_scaler = np.full(action_dim, action_scaler)
+
+        check_array(action_scaler, name="action_scaler", expected_dim=1, min_val=0.0)
+        if action_scaler.shape[0] != action_dim:
+            raise ValueError(
+                "Expected `action_scaler.shape[0] == action.shape[1]`, but found False"
             )
 
         (
             trajectory_wise_reward,
             trajectory_wise_importance_weight,
             initial_state_value_prediction,
-        ) = self._aggregate_trajectory_wise_statistics_discrete(
+        ) = self._aggregate_trajectory_wise_statistics_continuous(
             step_per_episode=step_per_episode,
             action=action,
             reward=reward,
             pscore=pscore,
-            evaluation_policy_action_dist=evaluation_policy_action_dist,
+            evaluation_policy_action=evaluation_policy_action,
+            action_scaler=action_scaler,
+            sigma=sigma,
             gamma=gamma,
         )
 
@@ -1417,8 +1534,8 @@ class DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSampli
 
 
 @dataclass
-class DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseDoublyRobust(
-    DiscreteCumulativeDistributionTrajectoryWiseDoublyRobust,
+class ContinuousCumulativeDistributionSelfNormalizedTrajectoryWiseDoublyRobust(
+    ContinuousCumulativeDistributionTrajectoryWiseDoublyRobust,
 ):
     """Self Normalized Trajectory-wise Doubly Robust (SNTDR) for estimating cumulative distribution function (CDF) in discrete-action OPE.
 
@@ -1429,12 +1546,13 @@ class DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseDoublyRobust(
     .. math::
 
         \\hat{F}_{\\mathrm{SNTDR}}(,m \\pi; \\mathcal{D}))
-        := \\mathbb{E}_{n} \\left[ \\frac{w_{0:T-1}}{\\sum_{n} [w_{0:T-1}]} \\left( \\mathbb{I} \\left \\{\\sum_{t=0}^{T-1} \\gamma^t r_t \\leq t \\right \\} - \\hat{G}(m; s_0, a_0) \\right) \\right]
-        + \\hat{F}_{\\mathrm{DM}}(m, \\pi; \\mathcal{D}))
+        := \\mathbb{E}_{n} \\left[ \\frac{w_{0:T-1} \\delta(\\pi, a_{0:T-1})}{\\sum_{n} [w_{0:T-1} \\delta(\\pi, a_{0:T-1})]} \\left( \\mathbb{I} \\left \\{\\sum_{t=0}^{T-1} \\gamma^t r_t \\leq t \\right \\} - \\hat{G}(m; s_0, a_0) \\right) \\right]
+            + \\hat{F}_{\\mathrm{DM}}(m, \\pi; \\mathcal{D}))
 
     where :math:`\\hat{F}(\\cdot)` is the estimated cumulative distribution function,
     :math:`w_{0:T-1} := \\prod_{t=0}^{T-1} \\frac{\\pi(a_t \\mid s_t)}{\\pi_0(a_t \\mid s_t)}` is the trajectory-wise importance weight,
     and :math:`\\mathbb{I} \\{ \\cdot \\}` is the indicator function.
+    :math:`\\delta(\\pi, a_{0:T-1}) = \\prod_{t=0}^{T-1} K(\\pi(s_t), a_t)` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy.
 
     Parameters
     -------
@@ -1480,9 +1598,11 @@ class DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseDoublyRobust(
         action: np.ndarray,
         reward: np.ndarray,
         pscore: np.ndarray,
-        evaluation_policy_action_dist: np.ndarray,
+        evaluation_policy_action: np.ndarray,
         initial_state_value_prediction: np.ndarray,
         reward_scale: np.ndarray,
+        action_scaler: Optional[Union[float, np.ndarray]] = None,
+        sigma: float = 1.0,
         gamma: float = 1.0,
         **kwargs,
     ) -> Tuple[np.ndarray]:
@@ -1493,7 +1613,7 @@ class DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseDoublyRobust(
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_episodes * step_per_episode, )
+        action: array-like of shape (n_episodes * step_per_episode, action_dim)
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_episodes * step_per_episode, )
@@ -1503,15 +1623,20 @@ class DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseDoublyRobust(
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_0(a \\mid s)`
 
-        evaluation_policy_action_dist: array-like of shape (n_episodes * step_per_episode, n_action)
-            Conditional action distribution induced by the evaluation policy,
-            i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
+        evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
+            Action chosen by the evaluation policy.
 
         initial_state_value_prediction: array-like of shape (n_episodes, )
             Estimated initial state value.
 
         reward_scale: array-like of shape (n_partition, )
             Scale of the trajectory wise reward used for x-axis of CDF curve.
+
+        action_scaler: {float, array-like of shape (action_dim, )}, default=None
+            Scaling factor of action.
+
+        sigma: float, default=1.0
+            Bandwidth hyperparameter of gaussian kernel.
 
         gamma: float, default=1.0
             Discount factor. The value should be within `(0, 1]`.
@@ -1535,8 +1660,8 @@ class DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseDoublyRobust(
             max_val=1.0,
         )
         check_array(
-            evaluation_policy_action_dist,
-            name="evaluation_policy_action_dist",
+            evaluation_policy_action,
+            name="evaluation_policy_action",
             expected_dim=2,
             min_val=0.0,
             max_val=1.0,
@@ -1555,36 +1680,47 @@ class DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseDoublyRobust(
             action.shape[0]
             == reward.shape[0]
             == pscore.shape[0]
-            == evaluation_policy_action_dist.shape[0]
+            == evaluation_policy_action.shape[0]
+            == initial_state_value_prediction.shape[0]
         ):
             raise ValueError(
-                "Expected `action.shape[0] == reward.shape[0] == pscore.shape[0] == evaluation_policy_trajectory_wise_pscore.shape[0]`, "
-                "but found False"
+                "Expected `action.shape[0] == reward.shape[0] == pscore.shape[0] == evaluation_policy_trajectory_wise_pscore.shape[0] "
+                "== initial_state_value_prediction.shape[0]`, but found False"
             )
         if action.shape[0] % step_per_episode:
             raise ValueError(
                 "Expected `action.shape[0] \\% step_per_episode == 0`, but found False"
             )
-        if not np.allclose(
-            evaluation_policy_action_dist.sum(axis=1),
-            np.ones(evaluation_policy_action_dist.shape[0]),
-        ):
+        if action.shape[1] != evaluation_policy_action.shape[1]:
             raise ValueError(
-                "Expected `evaluation_policy_action_dist.sum(axis=1) == np.ones(evaluation_policy_action_dist.shape[0])`"
-                ", but found it False"
+                "Expected `action.shape[1] == evaluation_policy_action.shape[1]`, but found False"
+            )
+
+        action_dim = action.shape[1]
+        if action_scaler is None:
+            action_scaler = np.ones(action_dim)
+        elif isinstance(action_scaler, float):
+            action_scaler = np.full(action_dim, action_scaler)
+
+        check_array(action_scaler, name="action_scaler", expected_dim=1, min_val=0.0)
+        if action_scaler.shape[0] != action_dim:
+            raise ValueError(
+                "Expected `action_scaler.shape[0] == action.shape[1]`, but found False"
             )
 
         (
             trajectory_wise_reward,
             trajectory_wise_importance_weight,
             initial_state_value_prediction,
-        ) = self._aggregate_trajectory_wise_statistics_discrete(
+        ) = self._aggregate_trajectory_wise_statistics_continuous(
             step_per_episode=step_per_episode,
             action=action,
             reward=reward,
             pscore=pscore,
-            evaluation_policy_action_dist=evaluation_policy_action_dist,
+            evaluation_policy_action=evaluation_policy_action,
             initial_state_value_prediction=initial_state_value_prediction,
+            action_scaler=action_scaler,
+            sigma=sigma,
             gamma=gamma,
         )
 

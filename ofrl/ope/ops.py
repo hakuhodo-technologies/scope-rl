@@ -10,11 +10,10 @@ from sklearn.metrics import mean_squared_error
 from sklearn.utils import check_scalar
 import matplotlib.pyplot as plt
 
-from .ope_discrete import (
-    DiscreteOffPolicyEvaluation,
-    DiscreteCumulativeDistributionOffPolicyEvaluation,
+from .ope import (
+    OffPolicyEvaluation,
+    CumulativeDistributionOffPolicyEvaluation,
 )
-from .ope_continuous import ContinuousOffPolicyEvaluation
 from ..types import OPEInputDict
 from ..utils import check_array, defaultdict_to_dict
 
@@ -193,11 +192,9 @@ class OffPolicySelection:
 
     """
 
-    ope: Optional[
-        Union[DiscreteOffPolicyEvaluation, ContinuousOffPolicyEvaluation]
-    ] = None
+    ope: Optional[OffPolicyEvaluation] = None
     cumulative_distribution_ope: Optional[
-        DiscreteCumulativeDistributionOffPolicyEvaluation
+        CumulativeDistributionOffPolicyEvaluation
     ] = None
 
     def __post_init__(self):
@@ -206,18 +203,13 @@ class OffPolicySelection:
                 "one of `ope` or `cumulative_distribution_ope` must be given"
             )
 
-        if self.ope is not None and not isinstance(
-            self.ope, (DiscreteOffPolicyEvaluation, ContinuousOffPolicyEvaluation)
-        ):
-            raise RuntimeError(
-                "ope must be the instance of either DiscreteOffPolicyEvaluation or ContinuousOffPolicyEvaluation"
-            )
+        if self.ope is not None and not isinstance(self.ope, OffPolicyEvaluation):
+            raise RuntimeError("ope must be the instance of OffPolicyEvaluation")
         if self.cumulative_distribution_ope is not None and not isinstance(
-            self.cumulative_distribution_ope,
-            DiscreteCumulativeDistributionOffPolicyEvaluation,
+            self.cumulative_distribution_ope, CumulativeDistributionOffPolicyEvaluation
         ):
             raise RuntimeError(
-                "cumulative_distribution_ope must be the instance of DiscreteCumulativeDistributionOffPolicyEvaluation"
+                "cumulative_distribution_ope must be the instance of CumulativeDistributionOffPolicyEvaluation"
             )
 
         step_per_episode = self.ope.logged_dataset["step_per_episode"]

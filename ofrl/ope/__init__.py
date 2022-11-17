@@ -6,11 +6,11 @@ from ofrl.ope.estimators_base import (
     BaseStateActionMarginalOffPolicyEstimator,
     BaseCumulativeDistributionOffPolicyEstimator,
 )
-from ofrl.ope.ope_discrete import (
-    DiscreteOffPolicyEvaluation,
-    DiscreteCumulativeDistributionOffPolicyEvaluation,
+from ofrl.ope.ope import (
+    OffPolicyEvaluation,
+    CumulativeDistributionOffPolicyEvaluation,
 )
-from ofrl.ope.estimators_discrete import (
+from ofrl.ope.basic_estimators_discrete import (
     DiscreteDirectMethod,
     DiscreteTrajectoryWiseImportanceSampling,
     DiscretePerDecisionImportanceSampling,
@@ -48,8 +48,7 @@ from ofrl.ope.weight_value_learning.minimax_weight_learning_discrete import (
     DiscreteMinimaxStateActionWeightLearning,
     DiscreteMinimaxStateWeightLearning,
 )
-from ofrl.ope.ope_continuous import ContinuousOffPolicyEvaluation
-from ofrl.ope.estimators_continuous import (
+from ofrl.ope.basic_estimators_continuous import (
     ContinuousDirectMethod,
     ContinuousTrajectoryWiseImportanceSampling,
     ContinuousPerDecisionImportanceSampling,
@@ -67,6 +66,13 @@ from ofrl.ope.marginal_estimators_continuous import (
     ContinuousStateActionMarginalDoublyRobust,
     ContinuousStateActionMarginalSelfNormalizedImportanceSampling,
     ContinuousStateMarginalSelfNormalizedDoublyRobust,
+)
+from ofrl.ope.cumulative_distribution_estimators_continuous import (
+    ContinuousCumulativeDistributionDirectMethod,
+    ContinuousCumulativeDistributionTrajectoryWiseImportanceSampling,
+    ContinuousCumulativeDistributionTrajectoryWiseDoublyRobust,
+    ContinuousCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSampling,
+    ContinuousCumulativeDistributionSelfNormalizedTrajectoryWiseDoublyRobust,
 )
 from ofrl.ope.weight_value_learning.augemented_lagrangian_dual_learning_continuous import (
     ContinuousAugmentedLagrangianStateActionWightValueLearning,
@@ -87,10 +93,10 @@ __all__ = [
     "BaseStateMarginalOffPolicyEstimator",
     "BaseStateActionMarginalOffPolicyEstimator",
     "BaseCumulativeDistributionOffPolicyEstimator",
+    "OffPolicyEvaluation",
+    "CumulativeDistributionOffPolicyEvaluation",
     "OffPolicySelection",
     "CreateOPEInput",
-    "DiscreteOffPolicyEvaluation",
-    "DiscreteCumulativeDistributionOffPolicyEvaluation",
     "DiscreteDirectMethod",
     "DiscreteTrajectoryWiseImportanceSampling",
     "DiscretePerDecisionImportanceSampling",
@@ -117,7 +123,6 @@ __all__ = [
     "DiscreteMinimaxStateValueLearning",
     "DiscreteMinimaxStateActionWeightLearning",
     "DiscreteMinimaxStateWeightLearning",
-    "ContinuousOffPolicyEvaluation",
     "ContinuousDirectMethod",
     "ContinuousTrajectoryWiseImportanceSampling",
     "ContinuousPerDecisionImportanceSampling",
@@ -133,6 +138,11 @@ __all__ = [
     "ContinuousStateActionMarginalDoublyRobust",
     "ContinuousStateActionMarginalSelfNormalizedImportanceSampling",
     "ContinuousStateActionMarginalSelfNormalizedDoublyRobust",
+    "ContinuousCumulativeDistributionDirectMethod",
+    "ContinuousCumulativeDistributionTrajectoryWiseImportanceSampling",
+    "ContinuousCumulativeDistributionTrajectoryWiseDoublyRobust",
+    "ContinuousCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSampling",
+    "ContinuousCumulativeDistributionSelfNormalizedTrajectoryWiseDoublyRobust",
     "ContinuousAugmentedLagrangianStateActionWightValueLearning",
     "ContinuousAugmentedLagrangianStateWightValueLearning",
     "ContinuousMinimaxStateActionValueLearning",
@@ -149,11 +159,10 @@ __base__ = [
 
 
 __meta__ = [
+    "OffPolicyEvaluation",
+    "CumulativeDistributionOffPolicyEvaluation",
     "OffPolicySelection",
     "CreateOPEInput",
-    "DiscreteOffPolicyEvaluation",
-    "DiscreteCumulativeDistributionOffPolicyEvaluation",
-    "ContinuousOffPolicyEvaluation",
 ]
 
 
@@ -205,6 +214,11 @@ __cumulative__ = [
     "DiscreteCumulativeDistributionTrajectoryWiseDoublyRobust",
     "DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSampling",
     "DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseDoublyRobust",
+    "ContinuousCumulativeDistributionDirectMethod",
+    "ContinuousCumulativeDistributionTrajectoryWiseImportanceSampling",
+    "ContinuousCumulativeDistributionTrajectoryWiseDoublyRobust",
+    "ContinuousCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSampling",
+    "ContinuousCumulativeDistributionSelfNormalizedTrajectoryWiseDoublyRobust",
 ]
 
 
@@ -274,6 +288,11 @@ __continuous__ = [
     "ContinuousStateActionMarginalDoublyRobust",
     "ContinuousStateActionMarginalSelfNormalizedImportanceSampling",
     "ContinuousStateActionMarginalSelfNormalizedDoublyRobust",
+    "ContinuousCumulativeDistributionDirectMethod",
+    "ContinuousCumulativeDistributionTrajectoryWiseImportanceSampling",
+    "ContinuousCumulativeDistributionTrajectoryWiseDoublyRobust",
+    "ContinuousCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSampling",
+    "ContinuousCumulativeDistributionSelfNormalizedTrajectoryWiseDoublyRobust",
     "ContinuousAugmentedLagrangianStateActionWightValueLearning",
     "ContinuousAugmentedLagrangianStateWightValueLearning",
     "ContinuousMinimaxStateActionValueLearning",

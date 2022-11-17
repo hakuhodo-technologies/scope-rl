@@ -5,10 +5,339 @@ import numpy as np
 from sklearn.utils import check_scalar
 
 from .estimators_base import (
+    BaseOffPolicyEstimator,
     BaseStateMarginalOffPolicyEstimator,
     BaseStateActionMarginalOffPolicyEstimator,
 )
 from ..utils import check_array
+
+
+@dataclass
+class DiscreteDoubleReinforcementLearning(BaseOffPolicyEstimator):
+    """Double Reinforcement Learning (DRL) estimator for discrete action space.
+
+    Note
+    -------
+    DRL estimates the policy value using state-action marginal importance weight and Q function estimated by cross-fitting.
+
+    .. math::
+
+        \\hat{J}_{\\mathrm{DRL}} (\\pi; \\mathcal{D})
+        := \\frac{1}{n} \\sum{k=1}^K \\sum_{i=1}^{n_k} \\sum_{t=0}^{T-1} ( w^j(s_{i,t}, a_{i, t}) (r_{i, t} - Q^j(s_{i, t}, a_{i, t}))
+            + w^j(s_{i, t-1}, a_{i, t-1}) \\mathbb{E}_{a \\sim \\pi(a \\mid s_t)}[Q^j(s_{i, t}, a)] )
+
+    where :math:`w(s, a) \\approx d^{\\pi}(s, a) / d^{\\pi_0}(s, a)` is the state-action marginal importance weight and :math:`Q(s, a)` is the Q function.
+    :math:`K` is the number of folds and :math:`\\mathcal{D}_j` is the :math:`j`-th split of logged data consisting of :math:`n_k` samples.
+    :math:`w^j` and :math:`Q^j` are trained on the subset of data used for OPE, i.e., :math:`\\mathcal{D} \\setminus \\mathcal{D}_j`.
+
+    There are several ways to estimate state marginal importance weight including Augmented Lagrangian Method (ALM) (Yang et al., 2020) and Minimax Weight Learning (MWL) (Uehara et al., 2020).
+    The implementations of the estimation methods of state marginal importance weight is available at `ofrl/ope/weight_value_learning`.
+
+    Parameters
+    -------
+    estimator_name: str, default="drl"
+        Name of the estimator.
+
+    References
+    -------
+    Nathan Kallus and Masatoshi Uehara.
+    "Double Reinforcement Learning for Efficient Off-Policy Evaluation in Markov Decision Processes.", 2020.
+
+    Masatoshi Uehara, Jiawei Huang, and Nan Jiang.
+    "Minimax Weight and Q-Function Learning for Off-Policy Evaluation.", 2020.
+
+    Mengjiao Yang, Ofir Nachum, Bo Dai, Lihong Li, and Dale Schuurmans.
+    "Off-Policy Evaluation via the Regularized Lagrangian.", 2020.
+
+    """
+
+    estimator_name: str = "drl"
+
+    def _estimate_trajectory_value(
+        self,
+        step_per_episode: int,
+        action: np.ndarray,
+        reward: np.ndarray,
+        state_action_marginal_importance_weight: np.ndarray,
+        evaluation_policy_action_dist: np.ndarray,
+        state_action_value_prediction: np.ndarray,
+    ):
+        """Estimate the trajectory-wise policy value.
+
+        Parameters
+        -------
+        step_per_episode: int (> 0)
+            Number of timesteps in an episode.
+
+        action: array-like of shape (n_episodes * step_per_episode, )
+            Action chosen by the behavior policy.
+
+        reward: array-like of shape (n_episodes * step_per_episode, )
+            Reward observation.
+
+        state_action_marginal_importance_weight: array-like of shape (n_episodes * step_per_episode, )
+            Marginal importance weight of the state-action pair, i.e., :math:`d_{\\pi}(s, a) / d_{\\pi_0}(s, a)`
+
+        evaluation_policy_action_dist: array-like of shape (n_episodes * step_per_episode, n_action)
+            Conditional action distribution induced by the evaluation policy,
+            i.e., :math:`\\pi(a \\mid s) \\forall a \\in \\mathcal{A}`
+
+        state_action_value_prediction: array-like of shape (n_episodes * step_per_episode, n_action)
+            :math:`\\hat{Q}` for all action,
+            i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
+
+        Return
+        -------
+        estimated_trajectory_wise_policy_value: ndarray of shape (n_episodes, )
+            Policy value estimated for each trajectory.
+
+        """
+        state_value_prediction = (
+            (state_action_value_prediction * evaluation_policy_action_dist)
+            .sum(axis=1)
+            .reshape((-1, step_per_episode))
+        )
+        state_action_value_prediction = state_action_value_prediction[
+            np.arange(len(action)), action
+        ].reshape((-1, step_per_episode))
+
+        weight = state_action_marginal_importance_weight.reshape((-1, step_per_episode))
+        weight = np.insert(state_action_marginal_importance_weight, 0, 1, axis=1)
+
+        estimated_trajectory_value = (
+            weight[:, 1:] * (reward - state_action_value_prediction)
+            + weight[:, :-1] * state_value_prediction
+        ).sum(axis=1)
+
+        return estimated_trajectory_value
+
+    def estimate_policy_value(
+        self,
+        step_per_episode: int,
+        action: np.ndarray,
+        reward: np.ndarray,
+        state_action_marginal_importance_weight: np.ndarray,
+        evaluation_policy_action_dist: np.ndarray,
+        state_action_value_prediction: np.ndarray,
+        **kwargs,
+    ) -> float:
+        """Estimate the policy value of the evaluation policy.
+
+        Parameters
+        -------
+        step_per_episode: int (> 0)
+            Number of timesteps in an episode.
+
+        action: array-like of shape (n_episodes * step_per_episode, )
+            Action chosen by the behavior policy.
+
+        reward: array-like of shape (n_episodes * step_per_episode, )
+            Reward observation.
+
+        state_action_marginal_importance_weight: array-like of shape (n_episodes * step_per_episode, )
+            Marginal importance weight of the state-action pair, i.e., :math:`d_{\\pi}(s, a) / d_{\\pi_0}(s, a)`
+
+        evaluation_policy_action_dist: array-like of shape (n_episodes * step_per_episode, n_action)
+            Conditional action distribution induced by the evaluation policy,
+            i.e., :math:`\\pi(a \\mid s) \\forall a \\in \\mathcal{A}`
+
+        state_action_value_prediction: array-like of shape (n_episodes * step_per_episode, n_action)
+            :math:`\\hat{Q}` for all action,
+            i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
+
+        Return
+        -------
+        V_hat: ndarray of shape (n_episodes, )
+            Estimated policy value.
+
+        """
+        check_scalar(
+            step_per_episode,
+            name="step_per_episode",
+            target_type=int,
+            min_val=1,
+        )
+        check_array(
+            state_action_marginal_importance_weight,
+            name="state_action_marginal_importance_weight",
+            expected_dim=1,
+            min_val=0.0,
+        )
+        check_array(
+            evaluation_policy_action_dist,
+            name="evaluation_policy_action_dist",
+            expected_dim=2,
+            min_val=0.0,
+            max_val=1.0,
+        )
+        check_array(
+            action,
+            name="action",
+            expected_dim=1,
+            min_val=0,
+            max_val=evaluation_policy_action_dist.shape[1] - 1,
+        )
+        if not (
+            action.shape[0]
+            == reward.shape[0]
+            == state_action_marginal_importance_weight.shape[0]
+            == evaluation_policy_action_dist.shape[0]
+            == state_action_value_prediction.shape[0]
+        ):
+            raise ValueError(
+                "Expected `action.shape[0] == reward.shape[0] == state_action_marginal_importance_weight.shape[0] "
+                "== pscore.shape[0] == evaluation_policy_action_dist.shape[0] == state_action_value_prediction.shape[0]`"
+                ", but found False"
+            )
+        if evaluation_policy_action_dist.shape != state_action_value_prediction.shape:
+            raise ValueError(
+                "Expected `evaluation_policy_action_dist.shape == state_action_value_prediction.shape`, but found False"
+            )
+        if not np.allclose(
+            evaluation_policy_action_dist.sum(axis=1),
+            np.ones(evaluation_policy_action_dist.shape[0]),
+        ):
+            raise ValueError(
+                "Expected `evaluation_policy_action_dist.sum(axis=1) == np.ones(evaluation_policy_action_dist.shape[0])`"
+                ", but found it False"
+            )
+
+        estimated_policy_value = self._estimate_trajectory_value(
+            step_per_episode=step_per_episode,
+            action=action,
+            reward=reward,
+            state_action_marginal_importance_weight=state_action_marginal_importance_weight,
+            evaluation_policy_action_dist=evaluation_policy_action_dist,
+            state_action_value_prediction=state_action_value_prediction,
+        ).mean()
+        return estimated_policy_value
+
+    def estimate_interval(
+        self,
+        step_per_episode: int,
+        action: np.ndarray,
+        reward: np.ndarray,
+        state_action_marginal_importance_weight: np.ndarray,
+        evaluation_policy_action_dist: np.ndarray,
+        state_action_value_prediction: np.ndarray,
+        alpha: float = 0.05,
+        ci: str = "bootstrap",
+        n_bootstrap_samples: int = 10000,
+        random_state: Optional[int] = None,
+        **kwargs,
+    ) -> Dict[str, float]:
+        """Estimate the confidence interval of the policy value by nonparametric bootstrap.
+
+        Parameters
+        -------
+        step_per_episode: int (> 0)
+            Number of timesteps in an episode.
+
+        action: array-like of shape (n_episodes * step_per_episode, )
+            Action chosen by the behavior policy.
+
+        reward: array-like of shape (n_episodes * step_per_episode, )
+            Reward observation.
+
+        state_action_marginal_importance_weight: array-like of shape (n_episodes * step_per_episode, )
+            Marginal importance weight of the state-action pair, i.e., :math:`d_{\\pi}(s, a) / d_{\\pi_0}(s, a)`
+
+        evaluation_policy_action_dist: array-like of shape (n_episodes * step_per_episode, n_action)
+            Conditional action distribution induced by the evaluation policy,
+            i.e., :math:`\\pi(a \\mid s) \\forall a \\in \\mathcal{A}`
+
+        state_action_value_prediction: array-like of shape (n_episodes * step_per_episode, n_action)
+            :math:`\\hat{Q}` for all action,
+            i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
+
+        alpha: float, default=0.05
+            Significance level. The value should be within `[0, 1)`.
+
+        ci: {"bootstrap", "hoeffding", "bernstein", "ttest"}, default="bootstrap"
+            Estimation method for confidence interval.
+
+        n_bootstrap_samples: int, default=10000 (> 0)
+            Number of resampling performed in the bootstrap procedure.
+
+        random_state: int, default=None (>= 0)
+            Random state.
+
+        Return
+        -------
+        estimated_confidence_interval: dict
+            Dictionary storing the estimated mean and upper-lower confidence bounds.
+
+        """
+        check_scalar(
+            step_per_episode,
+            name="step_per_episode",
+            target_type=int,
+            min_val=1,
+        )
+        check_array(
+            state_action_marginal_importance_weight,
+            name="state_action_marginal_importance_weight",
+            expected_dim=1,
+            min_val=0.0,
+        )
+        check_array(
+            evaluation_policy_action_dist,
+            name="evaluation_policy_action_dist",
+            expected_dim=2,
+            min_val=0.0,
+            max_val=1.0,
+        )
+        check_array(
+            action,
+            name="action",
+            expected_dim=1,
+            min_val=0,
+            max_val=evaluation_policy_action_dist.shape[1] - 1,
+        )
+        if not (
+            action.shape[0]
+            == reward.shape[0]
+            == state_action_marginal_importance_weight.shape[0]
+            == evaluation_policy_action_dist.shape[0]
+            == state_action_value_prediction.shape[0]
+        ):
+            raise ValueError(
+                "Expected `action.shape[0] == reward.shape[0] == state_action_marginal_importance_weight.shape[0] "
+                "== pscore.shape[0] == evaluation_policy_action_dist.shape[0] == state_action_value_prediction.shape[0]`"
+                ", but found False"
+            )
+        if evaluation_policy_action_dist.shape != state_action_value_prediction.shape:
+            raise ValueError(
+                "Expected `evaluation_policy_action_dist.shape == state_action_value_prediction.shape`, but found False"
+            )
+        if not np.allclose(
+            evaluation_policy_action_dist.sum(axis=1),
+            np.ones(evaluation_policy_action_dist.shape[0]),
+        ):
+            raise ValueError(
+                "Expected `evaluation_policy_action_dist.sum(axis=1) == np.ones(evaluation_policy_action_dist.shape[0])`"
+                ", but found it False"
+            )
+
+        if ci not in self._estimate_confidence_interval.keys():
+            raise ValueError(
+                f"ci must be one of 'bootstrap', 'hoeffding', 'bernstein', or 'ttest', but {ci} is given"
+            )
+
+        estimated_trajectory_value = self._estimate_trajectory_value(
+            step_per_episode=step_per_episode,
+            action=action,
+            reward=reward,
+            state_action_marginal_importance_weight=state_action_marginal_importance_weight,
+            evaluation_policy_action_dist=evaluation_policy_action_dist,
+            state_action_value_prediction=state_action_value_prediction,
+        )
+        return self._estimate_confidence_interval[ci](
+            samples=estimated_trajectory_value,
+            alpha=alpha,
+            n_bootstrap_samples=n_bootstrap_samples,
+            random_state=random_state,
+        )
 
 
 @dataclass
@@ -17,17 +346,19 @@ class DiscreteStateMarginalImportanceSampling(BaseStateMarginalOffPolicyEstimato
 
     Note
     -------
-    SM-IS estimates the policy value via state marginal importance weighting as follows.
+    SM-IS estimates the policy value using state marginal importance weighting.
+    Following SOPE (Yuan et al., 2021), we consider the combination of marginalized OPE and :math:`k`-step PDIS as follows.
 
     .. math::
 
         \\hat{J}_{\\mathrm{SM-IS}} (\\pi; \\mathcal{D})
-        := \\mathbb{E}_{n} [\\sum_{t=0}^{T-1} \\gamma^t w_s(s_t) w_a(s_t, a_t) r_t],
+        := \\mathbb{E}_{n} [\\sum_{t=0}^{k-1} \\gamma^t w_{0:t} r_t ] + \\mathbb{E}_{n} [\\sum_{t=k}^{T-1} \\gamma^t w_s(s_{t-k}) w_{t-k:t} r_t],
 
-    where :math:`w_s(s) := d_{\\pi}(s) / d_{\\pi_0}(s)` and :math:`w_a(s, a) := \\pi(a \\mid s) / \\pi_0(a \\mid s)`.
+    where :math:`w_s(s) := \\frac{d_{\\pi}(s)}{d_{\\pi_0}(s)}` and :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} \\frac{\\pi(a_t \\mid s_t)}{\\pi_0(a_t \\mid s_t)}`.
+    Note that, when :math:`k=0`, this estimator is identical to the (pure) state marginal IS.
 
-    There are several ways to estimate state marginal importance weight including Minimax Weight Learning (MWL) (Uehara et al., 2020).
-    The implementations of Minimax Learning is available in `ofrl/ope/minimax_estimators_discrete.py`.
+    There are several ways to estimate state marginal importance weight including Augmented Lagrangian Method (ALM) (Yang et al., 2020) and Minimax Weight Learning (MWL) (Uehara et al., 2020).
+    The implementations of the estimation methods of state marginal importance weight is available at `ofrl/ope/weight_value_learning`.
 
     Parameters
     -------
@@ -41,6 +372,12 @@ class DiscreteStateMarginalImportanceSampling(BaseStateMarginalOffPolicyEstimato
 
     Masatoshi Uehara, Jiawei Huang, and Nan Jiang.
     "Minimax Weight and Q-Function Learning for Off-Policy Evaluation.", 2020.
+
+    Mengjiao Yang, Ofir Nachum, Bo Dai, Lihong Li, and Dale Schuurmans.
+    "Off-Policy Evaluation via the Regularized Lagrangian.", 2020.
+
+    Qiang Liu, Lihong Li, Ziyang Tang, and Dengyong Zhou.
+    "Breaking the Curse of Horizon: Infinite-Horizon Off-Policy Estimation.", 2018
 
     Alex Strehl, John Langford, Sham Kakade, and Lihong Li.
     "Learning from Logged Implicit Exploration Data.", 2010.
@@ -57,11 +394,12 @@ class DiscreteStateMarginalImportanceSampling(BaseStateMarginalOffPolicyEstimato
 
     def _estimate_trajectory_value(
         self,
+        n_step_pdis: int,
         step_per_episode: int,
         action: np.ndarray,
         reward: np.ndarray,
         state_marginal_importance_weight: np.ndarray,
-        behavior_policy_base_pscore: np.ndarray,
+        pscore: np.ndarray,
         evaluation_policy_action_dist: np.ndarray,
         gamma: float = 1.0,
         **kwargs,
@@ -70,6 +408,10 @@ class DiscreteStateMarginalImportanceSampling(BaseStateMarginalOffPolicyEstimato
 
         Parameters
         -------
+        n_step_pdis: int (> 0)
+            Number of previous steps to use per-decision importance weight.
+            When zero is given, the estimator corresponds to the pure state marginal IS.
+
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
@@ -82,7 +424,7 @@ class DiscreteStateMarginalImportanceSampling(BaseStateMarginalOffPolicyEstimato
         state_marginal_importance_weight: array-like of shape (n_episodes * step_per_episode, )
             Marginal importance weight of the state, i.e., :math:`d_{\\pi}(s) / d_{\\pi_0}(s)`
 
-        behavior_policy_base_pscore: array-like of shape (n_episodes * step_per_episode, )
+        pscore: array-like of shape (n_episodes * step_per_episode, )
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_0(a \\mid s)`
 
@@ -99,27 +441,43 @@ class DiscreteStateMarginalImportanceSampling(BaseStateMarginalOffPolicyEstimato
             Policy value estimated for each trajectory.
 
         """
-        evaluation_policy_base_pscore = self._calc_evaluation_policy_pscore(
+        behavior_policy_pscore = self._calc_behavior_policy_pscore(
+            n_step_pdis=n_step_pdis,
+            step_per_episode=step_per_episode,
+            pscore=pscore,
+        )
+        evaluation_policy_pscore = self._calc_evaluation_policy_pscore(
+            n_step_pdis=n_step_pdis,
+            step_per_episode=step_per_episode,
             action=action,
             evaluation_policy_action_dist=evaluation_policy_action_dist,
         )
-        base_importance_weight = (
-            evaluation_policy_base_pscore / behavior_policy_base_pscore
+        per_decision_importance_weight = (
+            evaluation_policy_pscore / behavior_policy_pscore
         )
-        weight = state_marginal_importance_weight * base_importance_weight
+        state_marginal_importance_weight = self._calc_marginal_importance_weight(
+            n_step_pdis=n_step_pdis,
+            step_per_episode=step_per_episode,
+            state_marginal_importance_weight=state_marginal_importance_weight,
+        )
+        weight = state_marginal_importance_weight * per_decision_importance_weight
 
-        undiscounted_value = (reward * weight).reshape((-1, step_per_episode))
-        discount = np.full(undiscounted_value.shape[1], gamma).cumprod()
-        estimated_trajectory_value = (undiscounted_value * discount).sum(axis=1)
+        reward = reward.reshape((-1, step_per_episode))
+        discount = np.full(step_per_episode, gamma).cumprod() / gamma
+        estimated_trajectory_value = (discount[np.newaxis, :] * weight * reward).sum(
+            axis=1
+        )
+
         return estimated_trajectory_value
 
     def estimate_policy_value(
         self,
+        n_step_pdis: int,
         step_per_episode: int,
         action: np.ndarray,
         reward: np.ndarray,
         state_marginal_importance_weight: np.ndarray,
-        behavior_policy_base_pscore: np.ndarray,
+        pscore: np.ndarray,
         evaluation_policy_action_dist: np.ndarray,
         gamma: float = 1.0,
         **kwargs,
@@ -128,6 +486,10 @@ class DiscreteStateMarginalImportanceSampling(BaseStateMarginalOffPolicyEstimato
 
         Parameters
         -------
+        n_step_pdis: int (>= 0)
+            Number of previous steps to use per-decision importance weight.
+            When zero is given, the estimator corresponds to the pure state marginal IS.
+
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
@@ -140,7 +502,7 @@ class DiscreteStateMarginalImportanceSampling(BaseStateMarginalOffPolicyEstimato
         state_marginal_importance_weight: array-like of shape (n_episodes * step_per_episode, )
             Marginal importance weight of the state, i.e., :math:`d_{\\pi}(s) / d_{\\pi_0}(s)`
 
-        behavior_policy_base_pscore: array-like of shape (n_episodes * step_per_episode, )
+        pscore: array-like of shape (n_episodes * step_per_episode, )
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_0(a \\mid s)`
 
@@ -157,6 +519,12 @@ class DiscreteStateMarginalImportanceSampling(BaseStateMarginalOffPolicyEstimato
             Estimated policy value.
 
         """
+        check_scalar(
+            n_step_pdis,
+            name="n_step_pdis",
+            target_type=int,
+            min_val=0,
+        )
         check_scalar(
             step_per_episode,
             name="step_per_episode",
@@ -175,8 +543,8 @@ class DiscreteStateMarginalImportanceSampling(BaseStateMarginalOffPolicyEstimato
             min_val=0.0,
         )
         check_array(
-            behavior_policy_base_pscore,
-            name="behavior_policy_trajectory_wise_pscore",
+            pscore,
+            name="pscore",
             expected_dim=1,
             min_val=0.0,
             max_val=1.0,
@@ -199,12 +567,12 @@ class DiscreteStateMarginalImportanceSampling(BaseStateMarginalOffPolicyEstimato
             action.shape[0]
             == reward.shape[0]
             == state_marginal_importance_weight.shape[0]
-            == behavior_policy_base_pscore.shape[0]
+            == pscore.shape[0]
             == evaluation_policy_action_dist.shape[0]
         ):
             raise ValueError(
                 "Expected `action.shape[0] == reward.shape[0] == state_marginal_importance_weight.shape[0] "
-                "== behavior_policy_base_pscore.shape[0] == evaluation_policy_action_dist.shape[0]`"
+                "== pscore.shape[0] == evaluation_policy_action_dist.shape[0]`"
                 ", but found False"
             )
         if not np.allclose(
@@ -218,11 +586,12 @@ class DiscreteStateMarginalImportanceSampling(BaseStateMarginalOffPolicyEstimato
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
 
         estimated_policy_value = self._estimate_trajectory_value(
+            n_step_pdis=n_step_pdis,
             step_per_episode=step_per_episode,
             action=action,
             reward=reward,
             state_marginal_importance_weight=state_marginal_importance_weight,
-            behavior_policy_base_pscore=behavior_policy_base_pscore,
+            pscore=pscore,
             evaluation_policy_action_dist=evaluation_policy_action_dist,
             gamma=gamma,
         ).mean()
@@ -230,11 +599,12 @@ class DiscreteStateMarginalImportanceSampling(BaseStateMarginalOffPolicyEstimato
 
     def estimate_interval(
         self,
+        n_step_pdis: int,
         step_per_episode: int,
         action: np.ndarray,
         reward: np.ndarray,
         state_marginal_importance_weight: np.ndarray,
-        behavior_policy_base_pscore: np.ndarray,
+        pscore: np.ndarray,
         evaluation_policy_action_dist: np.ndarray,
         gamma: float = 1.0,
         alpha: float = 0.05,
@@ -247,6 +617,10 @@ class DiscreteStateMarginalImportanceSampling(BaseStateMarginalOffPolicyEstimato
 
         Parameters
         -------
+        n_step_pdis: int (>= 0)
+            Number of previous steps to use per-decision importance weight.
+            When zero is given, the estimator corresponds to the pure state marginal IS.
+
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
@@ -259,7 +633,7 @@ class DiscreteStateMarginalImportanceSampling(BaseStateMarginalOffPolicyEstimato
         state_marginal_importance_weight: array-like of shape (n_episodes * step_per_episode, )
             Marginal importance weight of the state, i.e., :math:`d_{\\pi}(s) / d_{\\pi_0}(s)`
 
-        behavior_policy_base_pscore: array-like of shape (n_episodes * step_per_episode, )
+        pscore: array-like of shape (n_episodes * step_per_episode, )
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_0(a \\mid s)`
 
@@ -289,6 +663,12 @@ class DiscreteStateMarginalImportanceSampling(BaseStateMarginalOffPolicyEstimato
 
         """
         check_scalar(
+            n_step_pdis,
+            name="n_step_pdis",
+            target_type=int,
+            min_val=0,
+        )
+        check_scalar(
             step_per_episode,
             name="step_per_episode",
             target_type=int,
@@ -306,8 +686,8 @@ class DiscreteStateMarginalImportanceSampling(BaseStateMarginalOffPolicyEstimato
             min_val=0.0,
         )
         check_array(
-            behavior_policy_base_pscore,
-            name="behavior_policy_trajectory_wise_pscore",
+            pscore,
+            name="pscore",
             expected_dim=1,
             min_val=0.0,
             max_val=1.0,
@@ -330,12 +710,12 @@ class DiscreteStateMarginalImportanceSampling(BaseStateMarginalOffPolicyEstimato
             action.shape[0]
             == reward.shape[0]
             == state_marginal_importance_weight.shape[0]
-            == behavior_policy_base_pscore.shape[0]
+            == pscore.shape[0]
             == evaluation_policy_action_dist.shape[0]
         ):
             raise ValueError(
                 "Expected `action.shape[0] == reward.shape[0] == state_marginal_importance_weight.shape[0] "
-                "== behavior_policy_base_pscore.shape[0] == evaluation_policy_action_dist.shape[0]`"
+                "== pscore.shape[0] == evaluation_policy_action_dist.shape[0]`"
                 ", but found False"
             )
         if not np.allclose(
@@ -354,11 +734,12 @@ class DiscreteStateMarginalImportanceSampling(BaseStateMarginalOffPolicyEstimato
             )
 
         estimated_trajectory_value = self._estimate_trajectory_value(
+            n_step_pdis=n_step_pdis,
             step_per_episode=step_per_episode,
             action=action,
             reward=reward,
             state_marginal_importance_weight=state_marginal_importance_weight,
-            behavior_policy_base_pscore=behavior_policy_base_pscore,
+            pscore=pscore,
             evaluation_policy_action_dist=evaluation_policy_action_dist,
             gamma=gamma,
         )
@@ -376,22 +757,21 @@ class DiscreteStateMarginalDoublyRobust(BaseStateMarginalOffPolicyEstimator):
 
     Note
     -------
-    SM-DR estimates the policy value via state marginal importance weighting as follows.
+    SM-DR estimates the policy value using state marginal importance weighting.
+    Following SOPE (Yuan et al., 2021), we consider the combination of marginalized OPE and :math:`k`-step PDIS as follows.
 
     .. math::
 
         \\hat{J}_{\\mathrm{SM-DR}} (\\pi; \\mathcal{D})
         := \\mathbb{E}_{n} [\\hat{Q}(s_0, a_0)]
-            + \\mathbb{E}_{n} [\\sum_{t=0}^{T-1} \\gamma^t w_s(s_t) w_a(s_t, a_t)
-                (r_t + \\gamma \\mathbb{E}_{a \\sim \\pi(a \\mid s_t)}[\\hat{Q}(s_{t+1}, a)] - \\hat{Q}(s_t, a_t))],
+            + \\mathbb{E}_{n} [\\sum_{t=0}^{k-1} \\gamma^t w_{0:t} (r_t + \\gamma \\mathbb{E}_{a \\sim \\pi(a \\mid s_t)}[\\hat{Q}(s_{t+1}, a)] - \\hat{Q}(s_t, a_t))]
+            + \\mathbb{E}_{n} [\\sum_{t=k}^{T-1} \\gamma^t w_s(s_{t-k}) w_{t-k:t} (r_t + \\gamma \\mathbb{E}_{a \\sim \\pi(a \\mid s_t)}[\\hat{Q}(s_{t+1}, a)] - \\hat{Q}(s_t, a_t))],
 
-    where :math:`w_s(s) := d_{\\pi}(s) / d_{\\pi_0}(s)` and :math:`w_a(s, a) := \\pi(a \\mid s) / \\pi_0(a \\mid s)`.
+    where :math:`w_s(s) := \\frac{d_{\\pi}(s)}{d_{\\pi_0}(s)}` and :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} \\frac{\\pi(a_t \\mid s_t)}{\\pi_0(a_t \\mid s_t)}`. :math:`Q(s, a)` is the state-action value.
+    Note that, when :math:`k=0`, this estimator is identical to the (pure) state marginal DR.
 
-    There are several ways to estimate state marginal importance weight :math:`w_s(s)`
-    including Minimax Weight Learning (MWL) (Uehara et al., 2020).
-
-    In addition, :math:`\\hat{Q}` can also be estimated using Minimax Q-Function Learning (MQL) (Uehara et al., 2020).
-    The implementations of Minimax Learning is available in `ofrl/ope/minimax_estimators_discrete.py`.
+    There are several ways to estimate state marginal importance weight including Augmented Lagrangian Method (ALM) (Yang et al., 2020) and Minimax Weight Learning (MWL) (Uehara et al., 2020).
+    The implementations of the estimation methods of state marginal importance weight is available at `ofrl/ope/weight_value_learning`.
 
     Parameters
     -------
@@ -405,6 +785,12 @@ class DiscreteStateMarginalDoublyRobust(BaseStateMarginalOffPolicyEstimator):
 
     Masatoshi Uehara, Jiawei Huang, and Nan Jiang.
     "Minimax Weight and Q-Function Learning for Off-Policy Evaluation.", 2020.
+
+    Mengjiao Yang, Ofir Nachum, Bo Dai, Lihong Li, and Dale Schuurmans.
+    "Off-Policy Evaluation via the Regularized Lagrangian.", 2020.
+
+    Qiang Liu, Lihong Li, Ziyang Tang, and Dengyong Zhou.
+    "Breaking the Curse of Horizon: Infinite-Horizon Off-Policy Estimation.", 2018
 
     Nan Jiang and Lihong Li.
     "Doubly Robust Off-policy Value Evaluation for Reinforcement Learning.", 2016.
@@ -424,11 +810,12 @@ class DiscreteStateMarginalDoublyRobust(BaseStateMarginalOffPolicyEstimator):
 
     def _estimate_trajectory_value(
         self,
+        n_step_pdis: int,
         step_per_episode: int,
         action: np.ndarray,
         reward: np.ndarray,
         state_marginal_importance_weight: np.ndarray,
-        behavior_policy_base_pscore: np.ndarray,
+        pscore: np.ndarray,
         evaluation_policy_action_dist: np.ndarray,
         state_action_value_prediction: np.ndarray,
         gamma: float = 1.0,
@@ -438,6 +825,10 @@ class DiscreteStateMarginalDoublyRobust(BaseStateMarginalOffPolicyEstimator):
 
         Parameters
         -------
+        n_step_pdis: int (>= 0)
+            Number of previous steps to use per-decision importance weight.
+            When zero is given, the estimator corresponds to the pure state marginal IS.
+
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
@@ -450,7 +841,7 @@ class DiscreteStateMarginalDoublyRobust(BaseStateMarginalOffPolicyEstimator):
         state_marginal_importance_weight: array-like of shape (n_episodes * step_per_episode, )
             Marginal importance weight of the state, i.e., :math:`d_{\\pi}(s) / d_{\\pi_0}(s)`
 
-        behavior_policy_base_pscore: array-like of shape (n_episodes * step_per_episode, )
+        pscore: array-like of shape (n_episodes * step_per_episode, )
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_0(a \\mid s)`
 
@@ -480,52 +871,48 @@ class DiscreteStateMarginalDoublyRobust(BaseStateMarginalOffPolicyEstimator):
             np.arange(len(action)), action
         ].reshape((-1, step_per_episode))
 
-        evaluation_policy_base_pscore = self._calc_evaluation_policy_pscore(
+        behavior_policy_pscore = self._calc_behavior_policy_pscore(
+            n_step_pdis=n_step_pdis,
+            step_per_episode=step_per_episode,
+            pscore=pscore,
+        )
+        evaluation_policy_pscore = self._calc_evaluation_policy_pscore(
+            n_step_pdis=n_step_pdis,
+            step_per_episode=step_per_episode,
             action=action,
             evaluation_policy_action_dist=evaluation_policy_action_dist,
         )
-        base_importance_weight = (
-            evaluation_policy_base_pscore / behavior_policy_base_pscore
+        per_decision_importance_weight = (
+            evaluation_policy_pscore / behavior_policy_pscore
         )
-        weight = (state_marginal_importance_weight * base_importance_weight).reshape(
-            (-1, step_per_episode)
+        state_marginal_importance_weight = self._calc_marginal_importance_weight(
+            n_step_pdis=n_step_pdis,
+            step_per_episode=step_per_episode,
+            state_marginal_importance_weight=state_marginal_importance_weight,
         )
+        weight = state_marginal_importance_weight * per_decision_importance_weight
 
         reward = reward.reshape((-1, step_per_episode))
+        discount = np.full(step_per_episode, gamma).cumprod() / gamma
 
-        discount = np.full(step_per_episode, gamma).cumprod()
-        discount = np.roll(discount, 1)
-        discount[0] = 1
+        state_value_prediction = np.insert(state_value_prediction, -1, 0, axis=1)[:, 1:]
 
-        weight = weight[:, :-1]
-        discount = discount[:-1]
-        reward = reward[:, :-1]
-        state_value_prediction = state_action_value_prediction[:, 1:]
-        state_action_value_prediction = state_action_value_prediction[:, :-1]
+        estimated_trajectory_value = state_value_prediction[:, 0] + (
+            discount[np.newaxis, :]
+            * weight
+            * (reward + gamma * state_value_prediction - state_action_value_prediction)
+        ).sum(axis=1)
 
-        estimated_trajectory_value = state_value_prediction[:, 0].mean()
-        estimated_trajectory_value += (
-            (
-                weight
-                * discount[np.newaxis, :]
-                * (
-                    reward
-                    + gamma * state_value_prediction
-                    - state_action_value_prediction
-                )
-            )
-            .sum(axis=1)
-            .mean()
-        )
         return estimated_trajectory_value
 
     def estimate_policy_value(
         self,
+        n_step_pdis: int,
         step_per_episode: int,
         action: np.ndarray,
         reward: np.ndarray,
         state_marginal_importance_weight: np.ndarray,
-        behavior_policy_base_pscore: np.ndarray,
+        pscore: np.ndarray,
         evaluation_policy_action_dist: np.ndarray,
         state_action_value_prediction: np.ndarray,
         gamma: float = 1.0,
@@ -535,6 +922,10 @@ class DiscreteStateMarginalDoublyRobust(BaseStateMarginalOffPolicyEstimator):
 
         Parameters
         -------
+        n_step_pdis: int (>= 0)
+            Number of previous steps to use per-decision importance weight.
+            When zero is given, the estimator corresponds to the pure state marginal IS.
+
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
@@ -547,7 +938,7 @@ class DiscreteStateMarginalDoublyRobust(BaseStateMarginalOffPolicyEstimator):
         state_marginal_importance_weight: array-like of shape (n_episodes * step_per_episode, )
             Marginal importance weight of the state, i.e., :math:`d_{\\pi}(s) / d_{\\pi_0}(s)`
 
-        behavior_policy_base_pscore: array-like of shape (n_episodes * step_per_episode, )
+        pscore: array-like of shape (n_episodes * step_per_episode, )
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_0(a \\mid s)`
 
@@ -569,6 +960,12 @@ class DiscreteStateMarginalDoublyRobust(BaseStateMarginalOffPolicyEstimator):
 
         """
         check_scalar(
+            n_step_pdis,
+            name="n_step_pdis",
+            target_type=int,
+            min_val=0,
+        )
+        check_scalar(
             step_per_episode,
             name="step_per_episode",
             target_type=int,
@@ -586,8 +983,8 @@ class DiscreteStateMarginalDoublyRobust(BaseStateMarginalOffPolicyEstimator):
             min_val=0.0,
         )
         check_array(
-            behavior_policy_base_pscore,
-            name="behavior_policy_trajectory_wise_pscore",
+            pscore,
+            name="pscore",
             expected_dim=1,
             min_val=0.0,
             max_val=1.0,
@@ -600,11 +997,6 @@ class DiscreteStateMarginalDoublyRobust(BaseStateMarginalOffPolicyEstimator):
             max_val=1.0,
         )
         check_array(
-            state_action_value_prediction,
-            name="state_action_value_prediction",
-            expected_dim=2,
-        )
-        check_array(
             action,
             name="action",
             expected_dim=1,
@@ -615,12 +1007,13 @@ class DiscreteStateMarginalDoublyRobust(BaseStateMarginalOffPolicyEstimator):
             action.shape[0]
             == reward.shape[0]
             == state_marginal_importance_weight.shape[0]
-            == behavior_policy_base_pscore.shape[0]
+            == pscore.shape[0]
             == evaluation_policy_action_dist.shape[0]
+            == state_action_value_prediction.shape[0]
         ):
             raise ValueError(
                 "Expected `action.shape[0] == reward.shape[0] == state_marginal_importance_weight.shape[0] "
-                "== behavior_policy_base_pscore.shape[0] == evaluation_policy_action_dist.shape[0]`"
+                "== pscore.shape[0] == evaluation_policy_action_dist.shape[0] == state_action_value_prediction.shape[0]`"
                 ", but found False"
             )
         if evaluation_policy_action_dist.shape != state_action_value_prediction.shape:
@@ -638,11 +1031,12 @@ class DiscreteStateMarginalDoublyRobust(BaseStateMarginalOffPolicyEstimator):
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
 
         estimated_policy_value = self._estimate_trajectory_value(
+            n_step_pdis=n_step_pdis,
             step_per_episode=step_per_episode,
             action=action,
             reward=reward,
             state_marginal_importance_weight=state_marginal_importance_weight,
-            behavior_policy_base_pscore=behavior_policy_base_pscore,
+            pscore=pscore,
             evaluation_policy_action_dist=evaluation_policy_action_dist,
             state_action_value_prediction=state_action_value_prediction,
             gamma=gamma,
@@ -651,11 +1045,12 @@ class DiscreteStateMarginalDoublyRobust(BaseStateMarginalOffPolicyEstimator):
 
     def estimate_interval(
         self,
+        n_step_pdis: int,
         step_per_episode: int,
         action: np.ndarray,
         reward: np.ndarray,
         state_marginal_importance_weight: np.ndarray,
-        behavior_policy_base_pscore: np.ndarray,
+        pscore: np.ndarray,
         evaluation_policy_action_dist: np.ndarray,
         state_action_value_prediction: np.ndarray,
         gamma: float = 1.0,
@@ -669,6 +1064,10 @@ class DiscreteStateMarginalDoublyRobust(BaseStateMarginalOffPolicyEstimator):
 
         Parameters
         -------
+        n_step_pdis: int (>= 0)
+            Number of previous steps to use per-decision importance weight.
+            When zero is given, the estimator corresponds to the pure state marginal IS.
+
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
@@ -681,7 +1080,7 @@ class DiscreteStateMarginalDoublyRobust(BaseStateMarginalOffPolicyEstimator):
         state_marginal_importance_weight: array-like of shape (n_episodes * step_per_episode, )
             Marginal importance weight of the state, i.e., :math:`d_{\\pi}(s) / d_{\\pi_0}(s)`
 
-        behavior_policy_base_pscore: array-like of shape (n_episodes * step_per_episode, )
+        pscore: array-like of shape (n_episodes * step_per_episode, )
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_0(a \\mid s)`
 
@@ -715,6 +1114,12 @@ class DiscreteStateMarginalDoublyRobust(BaseStateMarginalOffPolicyEstimator):
 
         """
         check_scalar(
+            n_step_pdis,
+            name="n_step_pdis",
+            target_type=int,
+            min_val=0,
+        )
+        check_scalar(
             step_per_episode,
             name="step_per_episode",
             target_type=int,
@@ -732,8 +1137,8 @@ class DiscreteStateMarginalDoublyRobust(BaseStateMarginalOffPolicyEstimator):
             min_val=0.0,
         )
         check_array(
-            behavior_policy_base_pscore,
-            name="behavior_policy_trajectory_wise_pscore",
+            pscore,
+            name="pscore",
             expected_dim=1,
             min_val=0.0,
             max_val=1.0,
@@ -746,11 +1151,6 @@ class DiscreteStateMarginalDoublyRobust(BaseStateMarginalOffPolicyEstimator):
             max_val=1.0,
         )
         check_array(
-            state_action_value_prediction,
-            name="state_action_value_prediction",
-            expected_dim=2,
-        )
-        check_array(
             action,
             name="action",
             expected_dim=1,
@@ -761,12 +1161,13 @@ class DiscreteStateMarginalDoublyRobust(BaseStateMarginalOffPolicyEstimator):
             action.shape[0]
             == reward.shape[0]
             == state_marginal_importance_weight.shape[0]
-            == behavior_policy_base_pscore.shape[0]
+            == pscore.shape[0]
             == evaluation_policy_action_dist.shape[0]
+            == state_action_value_prediction.shape[0]
         ):
             raise ValueError(
                 "Expected `action.shape[0] == reward.shape[0] == state_marginal_importance_weight.shape[0] "
-                "== behavior_policy_base_pscore.shape[0] == evaluation_policy_action_dist.shape[0]`"
+                "== pscore.shape[0] == evaluation_policy_action_dist.shape[0] == state_action_value_prediction.shape[0]`"
                 ", but found False"
             )
         if evaluation_policy_action_dist.shape != state_action_value_prediction.shape:
@@ -789,11 +1190,12 @@ class DiscreteStateMarginalDoublyRobust(BaseStateMarginalOffPolicyEstimator):
             )
 
         estimated_trajectory_value = self._estimate_trajectory_value(
+            n_step_pdis=n_step_pdis,
             step_per_episode=step_per_episode,
             action=action,
             reward=reward,
             state_marginal_importance_weight=state_marginal_importance_weight,
-            behavior_policy_base_pscore=behavior_policy_base_pscore,
+            pscore=pscore,
             evaluation_policy_action_dist=evaluation_policy_action_dist,
             state_action_value_prediction=state_action_value_prediction,
             gamma=gamma,
@@ -814,17 +1216,19 @@ class DiscreteStateMarginalSelfNormalizedImportanceSampling(
 
     Note
     -------
-    SM-SNIS estimates the policy value via state marginal importance weighting as follows.
+    SM-SNIS estimates the policy value using state marginal importance weighting.
+    Following SOPE (Yuan et al., 2021), we consider the combination of marginalized OPE and :math:`k`-step PDIS as follows.
 
     .. math::
 
         \\hat{J}_{\\mathrm{SM-SNIS}} (\\pi; \\mathcal{D})
-        := \\mathbb{E}_{n} [\\sum_{t=0}^{T-1} \\gamma^t \\frac{w_s(s_t) w_a(s_t, a_t)}{\\sum_{n} [ w_s(s_t) w_a(s_t, a_t) ]} r_t],
+        := \\mathbb{E}_{n} [\\sum_{t=0}^{k-1} \\gamma^t \\frac{w_{0:t}}{\\sum_{n} w_{*}} r_t ] + \\mathbb{E}_{n} [\\sum_{t=k}^{T-1} \\gamma^t \\frac{w_s(s_{t-k}) w_{t-k:t}}{\\sum_n w_{*}} r_t],
 
-    where :math:`w_s(s) := d_{\\pi}(s) / d_{\\pi_0}(s)` and :math:`w_a(s, a) := \\pi(a \\mid s) / \\pi_0(a \\mid s)`.
+    where :math:`w_s(s) := \\frac{d_{\\pi}(s)}{d_{\\pi_0}(s)}` and :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} \\frac{\\pi(a_t \\mid s_t)}{\\pi_0(a_t \\mid s_t)}`. w_{*} is the abstruction of any weights.
+    Note that, when :math:`k=0`, this estimator is identical to the (pure) state marginal SNIS.
 
-    There are several ways to estimate state marginal importance weight including Minimax Weight Learning (MWL) (Uehara et al., 2020).
-    The implementations of Minimax Learning is available in `ofrl/ope/minimax_estimators_discrete.py`.
+    There are several ways to estimate state marginal importance weight including Augmented Lagrangian Method (ALM) (Yang et al., 2020) and Minimax Weight Learning (MWL) (Uehara et al., 2020).
+    The implementations of the estimation methods of state marginal importance weight is available at `ofrl/ope/weight_value_learning`.
 
     Parameters
     -------
@@ -838,6 +1242,12 @@ class DiscreteStateMarginalSelfNormalizedImportanceSampling(
 
     Masatoshi Uehara, Jiawei Huang, and Nan Jiang.
     "Minimax Weight and Q-Function Learning for Off-Policy Evaluation.", 2020.
+
+    Mengjiao Yang, Ofir Nachum, Bo Dai, Lihong Li, and Dale Schuurmans.
+    "Off-Policy Evaluation via the Regularized Lagrangian.", 2020.
+
+    Qiang Liu, Lihong Li, Ziyang Tang, and Dengyong Zhou.
+    "Breaking the Curse of Horizon: Infinite-Horizon Off-Policy Estimation.", 2018
 
     Adith Swaminathan and Thorsten Joachims.
     "The Self-Normalized Estimator for Counterfactual Learning.", 2015.
@@ -857,11 +1267,12 @@ class DiscreteStateMarginalSelfNormalizedImportanceSampling(
 
     def _estimate_trajectory_value(
         self,
+        n_step_pdis: int,
         step_per_episode: int,
         action: np.ndarray,
         reward: np.ndarray,
         state_marginal_importance_weight: np.ndarray,
-        behavior_policy_base_pscore: np.ndarray,
+        pscore: np.ndarray,
         evaluation_policy_action_dist: np.ndarray,
         gamma: float = 1.0,
         **kwargs,
@@ -870,6 +1281,10 @@ class DiscreteStateMarginalSelfNormalizedImportanceSampling(
 
         Parameters
         -------
+        n_step_pdis: int (>= 0)
+            Number of previous steps to use per-decision importance weight.
+            When zero is given, the estimator corresponds to the pure state marginal IS.
+
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
@@ -882,7 +1297,7 @@ class DiscreteStateMarginalSelfNormalizedImportanceSampling(
         state_marginal_importance_weight: array-like of shape (n_episodes * step_per_episode, )
             Marginal importance weight of the state, i.e., :math:`d_{\\pi}(s) / d_{\\pi_0}(s)`
 
-        behavior_policy_base_pscore: array-like of shape (n_episodes * step_per_episode, )
+        pscore: array-like of shape (n_episodes * step_per_episode, )
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_0(a \\mid s)`
 
@@ -899,19 +1314,34 @@ class DiscreteStateMarginalSelfNormalizedImportanceSampling(
             Policy value estimated for each trajectory.
 
         """
-        evaluation_policy_base_pscore = self._calc_evaluation_policy_pscore(
+        behavior_policy_pscore = self._calc_behavior_policy_pscore(
+            n_step_pdis=n_step_pdis,
+            step_per_episode=step_per_episode,
+            pscore=pscore,
+        )
+        evaluation_policy_pscore = self._calc_evaluation_policy_pscore(
+            n_step_pdis=n_step_pdis,
+            step_per_episode=step_per_episode,
             action=action,
             evaluation_policy_action_dist=evaluation_policy_action_dist,
         )
-        base_importance_weight = (
-            evaluation_policy_base_pscore / behavior_policy_base_pscore
+        per_decision_importance_weight = (
+            evaluation_policy_pscore / behavior_policy_pscore
         )
-        weight = state_marginal_importance_weight * base_importance_weight
-        weight = weight / weight.mean()
+        state_marginal_importance_weight = self._calc_marginal_importance_weight(
+            n_step_pdis=n_step_pdis,
+            step_per_episode=step_per_episode,
+            state_marginal_importance_weight=state_marginal_importance_weight,
+        )
+        weight = state_marginal_importance_weight * per_decision_importance_weight
+        self_normalized_weight = weight / (weight.mean(axis=0)[np.newaxis, :] + 1e-10)
 
-        undiscounted_value = (reward * weight).reshape((-1, step_per_episode))
-        discount = np.full(undiscounted_value.shape[1], gamma).cumprod()
-        estimated_trajectory_value = (undiscounted_value * discount).sum(axis=1)
+        reward = reward.reshape((-1, step_per_episode))
+        discount = np.full(step_per_episode, gamma).cumprod() / gamma
+        estimated_trajectory_value = (
+            discount[np.newaxis, :] * self_normalized_weight * reward
+        ).sum(axis=1)
+
         return estimated_trajectory_value
 
 
@@ -923,26 +1353,26 @@ class DiscreteStateMarginalSelfNormalizedDoublyRobust(
 
     Note
     -------
-    SM-SNDR estimates the policy value via state marginal importance weighting as follows.
+    SM-SNDR estimates the policy value using state marginal importance weighting.
+    Following SOPE (Yuan et al., 2021), we consider the combination of marginalized OPE and :math:`k`-step PDIS as follows.
 
     .. math::
 
-        \\hat{J}_{\\mathrm{SM-DR}} (\\pi; \\mathcal{D})
+        \\hat{J}_{\\mathrm{SM-SNDR}} (\\pi; \\mathcal{D})
         := \\mathbb{E}_{n} [\\hat{Q}(s_0, a_0)]
-            + \\mathbb{E}_{n} [\\sum_{t=0}^{T-1} \\gamma^t \\frac{w_s(s_t) w_a(s_t, a_t)}{\\sum_{n} [ w_s(s_t) w_a(s_t, a_t) ]}
-                (r_t + \\gamma \\mathbb{E}_{a \\sim \\pi(a \\mid s_t)}[\\hat{Q}(s_{t+1}, a)] - \\hat{Q}(s_t, a_t))],
+            + \\mathbb{E}_{n} [\\sum_{t=0}^{k-1} \\gamma^t \\frac{w_{0:t}}{\\sum_{n} w_{*}} (r_t + \\gamma \\mathbb{E}_{a \\sim \\pi(a \\mid s_t)}[\\hat{Q}(s_{t+1}, a)] - \\hat{Q}(s_t, a_t))]
+            + \\mathbb{E}_{n} [\\sum_{t=k}^{T-1} \\gamma^t \\frac{w_s(s_{t-k}) w_{t-k:t}}{\\sum_{n} w_{*}} (r_t + \\gamma \\mathbb{E}_{a \\sim \\pi(a \\mid s_t)}[\\hat{Q}(s_{t+1}, a)] - \\hat{Q}(s_t, a_t))],
 
-    where :math:`w_s(s) := d_{\\pi}(s) / d_{\\pi_0}(s)` and :math:`w_a(s, a) := \\pi(a \\mid s) / \\pi_0(a \\mid s)`.
+    where :math:`w_s(s) := \\frac{d_{\\pi}(s)}{d_{\\pi_0}(s)}` and :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} \\frac{\\pi(a_t \\mid s_t)}{\\pi_0(a_t \\mid s_t)}`.
+    :math:`w_{*}` is the abstruction of any weights and :math:`Q(s, a)` is the state-action value.
+    Note that, when :math:`k=0`, this estimator is identical to the (pure) state marginal SNDR.
 
-    There are several ways to estimate state marginal importance weight :math:`w_s(s)`
-    including Minimax Weight Learning (MWL) (Uehara et al., 2020).
-
-    In addition, :math:`\\hat{Q}` can also be estimated using Minimax Q-Function Learning (MQL) (Uehara et al., 2020).
-    The implementations of Minimax Learning is available in `ofrl/ope/minimax_estimators_discrete.py`.
+    There are several ways to estimate state marginal importance weight including Augmented Lagrangian Method (ALM) (Yang et al., 2020) and Minimax Weight Learning (MWL) (Uehara et al., 2020).
+    The implementations of the estimation methods of state marginal importance weight is available at `ofrl/ope/weight_value_learning`.
 
     Parameters
     -------
-    estimator_name: str, default="sm_dr"
+    estimator_name: str, default="sm_sndr"
         Name of the estimator.
 
     References
@@ -952,6 +1382,12 @@ class DiscreteStateMarginalSelfNormalizedDoublyRobust(
 
     Masatoshi Uehara, Jiawei Huang, and Nan Jiang.
     "Minimax Weight and Q-Function Learning for Off-Policy Evaluation.", 2020.
+
+    Mengjiao Yang, Ofir Nachum, Bo Dai, Lihong Li, and Dale Schuurmans.
+    "Off-Policy Evaluation via the Regularized Lagrangian.", 2020.
+
+    Qiang Liu, Lihong Li, Ziyang Tang, and Dengyong Zhou.
+    "Breaking the Curse of Horizon: Infinite-Horizon Off-Policy Estimation.", 2018
 
     Nan Jiang and Lihong Li.
     "Doubly Robust Off-policy Value Evaluation for Reinforcement Learning.", 2016.
@@ -964,18 +1400,19 @@ class DiscreteStateMarginalSelfNormalizedDoublyRobust(
 
     """
 
-    estimator_name: str = "sm_dr"
+    estimator_name: str = "sm_sndr"
 
     def __post_init__(self):
         self.action_type = "discrete"
 
     def _estimate_trajectory_value(
         self,
+        n_step_pdis: int,
         step_per_episode: int,
         action: np.ndarray,
         reward: np.ndarray,
         state_marginal_importance_weight: np.ndarray,
-        behavior_policy_base_pscore: np.ndarray,
+        pscore: np.ndarray,
         evaluation_policy_action_dist: np.ndarray,
         state_action_value_prediction: np.ndarray,
         gamma: float = 1.0,
@@ -985,6 +1422,10 @@ class DiscreteStateMarginalSelfNormalizedDoublyRobust(
 
         Parameters
         -------
+        n_step_pdis: int (>= 0)
+            Number of previous steps to use per-decision importance weight.
+            When zero is given, the estimator corresponds to the pure state marginal IS.
+
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
@@ -997,7 +1438,7 @@ class DiscreteStateMarginalSelfNormalizedDoublyRobust(
         state_marginal_importance_weight: array-like of shape (n_episodes * step_per_episode, )
             Marginal importance weight of the state, i.e., :math:`d_{\\pi}(s) / d_{\\pi_0}(s)`
 
-        behavior_policy_base_pscore: array-like of shape (n_episodes * step_per_episode, )
+        pscore: array-like of shape (n_episodes * step_per_episode, )
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_0(a \\mid s)`
 
@@ -1027,44 +1468,39 @@ class DiscreteStateMarginalSelfNormalizedDoublyRobust(
             np.arange(len(action)), action
         ].reshape((-1, step_per_episode))
 
-        evaluation_policy_base_pscore = self._calc_evaluation_policy_pscore(
+        behavior_policy_pscore = self._calc_behavior_policy_pscore(
+            n_step_pdis=n_step_pdis,
+            step_per_episode=step_per_episode,
+            pscore=pscore,
+        )
+        evaluation_policy_pscore = self._calc_evaluation_policy_pscore(
+            n_step_pdis=n_step_pdis,
+            step_per_episode=step_per_episode,
             action=action,
             evaluation_policy_action_dist=evaluation_policy_action_dist,
         )
-        base_importance_weight = (
-            evaluation_policy_base_pscore / behavior_policy_base_pscore
+        per_decision_importance_weight = (
+            evaluation_policy_pscore / behavior_policy_pscore
         )
-        weight = (state_marginal_importance_weight * base_importance_weight).reshape(
-            (-1, step_per_episode)
+        state_marginal_importance_weight = self._calc_marginal_importance_weight(
+            n_step_pdis=n_step_pdis,
+            step_per_episode=step_per_episode,
+            state_marginal_importance_weight=state_marginal_importance_weight,
         )
-        weight = weight / weight.mean()
+        weight = state_marginal_importance_weight * per_decision_importance_weight
+        weight = weight / (weight.mean(axis=0)[np.newaxis, :] + 1e-10)
 
         reward = reward.reshape((-1, step_per_episode))
+        discount = np.full(step_per_episode, gamma).cumprod() / gamma
 
-        discount = np.full(step_per_episode, gamma).cumprod()
-        discount = np.roll(discount, 1)
-        discount[0] = 1
+        state_value_prediction = np.insert(state_value_prediction, -1, 0, axis=1)[:, 1:]
 
-        weight = weight[:, :-1]
-        discount = discount[:-1]
-        reward = reward[:, :-1]
-        state_value_prediction = state_action_value_prediction[:, 1:]
-        state_action_value_prediction = state_action_value_prediction[:, :-1]
+        estimated_trajectory_value = state_value_prediction[:, 0] + (
+            discount[np.newaxis, :]
+            * weight
+            * (reward + gamma * state_value_prediction - state_action_value_prediction)
+        ).sum(axis=1)
 
-        estimated_trajectory_value = state_value_prediction[:, 0].mean()
-        estimated_trajectory_value += (
-            (
-                weight
-                * discount[np.newaxis, :]
-                * (
-                    reward
-                    + gamma * state_value_prediction
-                    - state_action_value_prediction
-                )
-            )
-            .sum(axis=1)
-            .mean()
-        )
         return estimated_trajectory_value
 
 
@@ -1076,17 +1512,19 @@ class DiscreteStateActionMarginalImportanceSampling(
 
     Note
     -------
-    SAM-IS estimates the policy value via state marginal importance weighting as follows.
+    SAM-IS estimates the policy value using state-action marginal importance weighting.
+    Following SOPE (Yuan et al., 2021), we consider the combination of marginalized OPE and :math:`k`-step PDIS as follows.
 
     .. math::
 
         \\hat{J}_{\\mathrm{SAM-IS}} (\\pi; \\mathcal{D})
-        := \\mathbb{E}_{n} [\\sum_{t=0}^{T-1} \\gamma^t w(s_t, a_t) r_t],
+        := \\mathbb{E}_{n} [\\sum_{t=0}^{k-1} \\gamma^t w_{0:t} r_t ] + \\mathbb{E}_{n} [\\sum_{t=k}^{T-1} \\gamma^t w(s_{t-k}, a_{t-k}) w_{t-k+1:t} r_t],
 
-    where :math:`w(s, a) := d_{\\pi}(s, a) / d_{\\pi_0}(s, a)`.
+    where :math:`w(s, a) := \\frac{d_{\\pi}(s, a)}{d_{\\pi_0}(s, a)}` and :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} \\frac{\\pi(a_t \\mid s_t)}{\\pi_0(a_t \\mid s_t)}`.
+    Note that, when :math:`k=0`, this estimator is identical to the (pure) state-action marginal IS.
 
-    There are several ways to estimate state-action marginal importance weight including Minimax Weight Learning (MWL) (Uehara et al., 2020).
-    The implementations of Minimax Learning is available in `ofrl/ope/minimax_estimators_discrete.py`.
+    There are several ways to estimate state-action marginal importance weight including Augmented Lagrangian Method (ALM) (Yang et al., 2020) and Minimax Weight Learning (MWL) (Uehara et al., 2020).
+    The implementations of the estimation methods of state-action marginal importance weight is available at `ofrl/ope/weight_value_learning`.
 
     Parameters
     -------
@@ -1100,6 +1538,12 @@ class DiscreteStateActionMarginalImportanceSampling(
 
     Masatoshi Uehara, Jiawei Huang, and Nan Jiang.
     "Minimax Weight and Q-Function Learning for Off-Policy Evaluation.", 2020.
+
+    Mengjiao Yang, Ofir Nachum, Bo Dai, Lihong Li, and Dale Schuurmans.
+    "Off-Policy Evaluation via the Regularized Lagrangian.", 2020.
+
+    Qiang Liu, Lihong Li, Ziyang Tang, and Dengyong Zhou.
+    "Breaking the Curse of Horizon: Infinite-Horizon Off-Policy Estimation.", 2018
 
     Alex Strehl, John Langford, Sham Kakade, and Lihong Li.
     "Learning from Logged Implicit Exploration Data.", 2010.
@@ -1116,9 +1560,13 @@ class DiscreteStateActionMarginalImportanceSampling(
 
     def _estimate_trajectory_value(
         self,
+        n_step_pdis: int,
         step_per_episode: int,
+        action: np.ndarray,
         reward: np.ndarray,
         state_action_marginal_importance_weight: np.ndarray,
+        pscore: np.ndarray,
+        evaluation_policy_action_dist: np.ndarray,
         gamma: float = 1.0,
         **kwargs,
     ) -> np.ndarray:
@@ -1126,14 +1574,29 @@ class DiscreteStateActionMarginalImportanceSampling(
 
         Parameters
         -------
+        n_step_pdis: int (>= 0)
+            Number of previous steps to use per-decision importance weight.
+            When zero is given, the estimator corresponds to the pure state marginal IS.
+
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
+
+        action: array-like of shape (n_episodes * step_per_episode, )
+            Action chosen by the behavior policy.
 
         reward: array-like of shape (n_episodes * step_per_episode, )
             Reward observation.
 
         state_action_marginal_importance_weight: array-like of shape (n_episodes * step_per_episode, )
             Marginal importance weight of the state-action pair, i.e., :math:`d_{\\pi}(s, a) / d_{\\pi_0}(s, a)`
+
+        pscore: array-like of shape (n_episodes * step_per_episode, )
+            Conditional action choice probability of the behavior policy,
+            i.e., :math:`\\pi_0(a \\mid s)`
+
+        evaluation_policy_action_dist: array-like of shape (n_episodes * step_per_episode, n_action)
+            Conditional action distribution induced by the evaluation policy,
+            i.e., :math:`\\pi(a \\mid s) \\forall a \\in \\mathcal{A}`
 
         gamma: float, default=1.0
             Discount factor. The value should be within `(0, 1]`.
@@ -1144,18 +1607,46 @@ class DiscreteStateActionMarginalImportanceSampling(
             Policy value estimated for each trajectory.
 
         """
-        undiscounted_value = (reward * state_action_marginal_importance_weight).reshape(
-            (-1, step_per_episode)
+        behavior_policy_pscore = self._calc_behavior_policy_pscore(
+            n_step_pdis=n_step_pdis,
+            step_per_episode=step_per_episode,
+            pscore=pscore,
         )
-        discount = np.full(undiscounted_value.shape[1], gamma).cumprod()
-        estimated_trajectory_value = (undiscounted_value * discount).sum(axis=1)
+        evaluation_policy_pscore = self._calc_evaluation_policy_pscore(
+            n_step_pdis=n_step_pdis,
+            step_per_episode=step_per_episode,
+            action=action,
+            evaluation_policy_action_dist=evaluation_policy_action_dist,
+        )
+        per_decision_importance_weight = (
+            evaluation_policy_pscore / behavior_policy_pscore
+        )
+        state_action_marginal_importance_weight = self._calc_marginal_importance_weight(
+            n_step_pdis=n_step_pdis,
+            step_per_episode=step_per_episode,
+            state_action_marginal_importance_weight=state_action_marginal_importance_weight,
+        )
+        weight = (
+            state_action_marginal_importance_weight * per_decision_importance_weight
+        )
+
+        reward = reward.reshape((-1, step_per_episode))
+        discount = np.full(step_per_episode, gamma).cumprod() / gamma
+        estimated_trajectory_value = (discount[np.newaxis, :] * weight * reward).sum(
+            axis=1
+        )
+
         return estimated_trajectory_value
 
     def estimate_policy_value(
         self,
+        n_step_pdis: int,
         step_per_episode: int,
+        action: np.ndarray,
         reward: np.ndarray,
         state_action_marginal_importance_weight: np.ndarray,
+        pscore: np.ndarray,
+        evaluation_policy_action_dist: np.ndarray,
         gamma: float = 1.0,
         **kwargs,
     ) -> float:
@@ -1163,14 +1654,29 @@ class DiscreteStateActionMarginalImportanceSampling(
 
         Parameters
         -------
+        n_step_pdis: int (>= 0)
+            Number of previous steps to use per-decision importance weight.
+            When zero is given, the estimator corresponds to the pure state marginal IS.
+
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
+
+        action: array-like of shape (n_episodes * step_per_episode, )
+            Action chosen by the behavior policy.
 
         reward: array-like of shape (n_episodes * step_per_episode, )
             Reward observation.
 
         state_action_marginal_importance_weight: array-like of shape (n_episodes * step_per_episode, )
             Marginal importance weight of the state-action pair, i.e., :math:`d_{\\pi}(s, a) / d_{\\pi_0}(s, a)`
+
+        pscore: array-like of shape (n_episodes * step_per_episode, )
+            Conditional action choice probability of the behavior policy,
+            i.e., :math:`\\pi_0(a \\mid s)`
+
+        evaluation_policy_action_dist: array-like of shape (n_episodes * step_per_episode, n_action)
+            Conditional action distribution induced by the evaluation policy,
+            i.e., :math:`\\pi(a \\mid s) \\forall a \\in \\mathcal{A}`
 
         gamma: float, default=1.0
             Discount factor. The value should be within `(0, 1]`.
@@ -1181,6 +1687,12 @@ class DiscreteStateActionMarginalImportanceSampling(
             Estimated policy value.
 
         """
+        check_scalar(
+            n_step_pdis,
+            name="n_step_pdis",
+            target_type=int,
+            min_val=0,
+        )
         check_scalar(
             step_per_episode,
             name="step_per_episode",
@@ -1198,25 +1710,70 @@ class DiscreteStateActionMarginalImportanceSampling(
             expected_dim=1,
             min_val=0.0,
         )
-        if reward.shape[0] != state_action_marginal_importance_weight.shape[0]:
+        check_array(
+            pscore,
+            name="pscore",
+            expected_dim=1,
+            min_val=0.0,
+            max_val=1.0,
+        )
+        check_array(
+            evaluation_policy_action_dist,
+            name="evaluation_policy_action_dist",
+            expected_dim=2,
+            min_val=0.0,
+            max_val=1.0,
+        )
+        check_array(
+            action,
+            name="action",
+            expected_dim=1,
+            min_val=0,
+            max_val=evaluation_policy_action_dist.shape[1] - 1,
+        )
+        if not (
+            action.shape[0]
+            == reward.shape[0]
+            == state_action_marginal_importance_weight.shape[0]
+            == pscore.shape[0]
+            == evaluation_policy_action_dist.shape[0]
+        ):
             raise ValueError(
-                "Expected `reward.shape[0] == state_action_marginal_importance_weight.shape[0], but found False"
+                "Expected `action.shape[0] == reward.shape[0] == state_action_marginal_importance_weight.shape[0] "
+                "== pscore.shape[0] == evaluation_policy_action_dist.shape[0]`"
+                ", but found False"
+            )
+        if not np.allclose(
+            evaluation_policy_action_dist.sum(axis=1),
+            np.ones(evaluation_policy_action_dist.shape[0]),
+        ):
+            raise ValueError(
+                "Expected `evaluation_policy_action_dist.sum(axis=1) == np.ones(evaluation_policy_action_dist.shape[0])`"
+                ", but found it False"
             )
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
 
         estimated_policy_value = self._estimate_trajectory_value(
+            n_step_pdis=n_step_pdis,
             step_per_episode=step_per_episode,
+            action=action,
             reward=reward,
             state_action_marginal_importance_weight=state_action_marginal_importance_weight,
+            pscore=pscore,
+            evaluation_policy_action_dist=evaluation_policy_action_dist,
             gamma=gamma,
         ).mean()
         return estimated_policy_value
 
     def estimate_interval(
         self,
+        n_step_pdis: int,
         step_per_episode: int,
+        action: np.ndarray,
         reward: np.ndarray,
         state_action_marginal_importance_weight: np.ndarray,
+        pscore: np.ndarray,
+        evaluation_policy_action_dist: np.ndarray,
         gamma: float = 1.0,
         alpha: float = 0.05,
         ci: str = "bootstrap",
@@ -1228,14 +1785,29 @@ class DiscreteStateActionMarginalImportanceSampling(
 
         Parameters
         -------
+        n_step_pdis: int (>= 0)
+            Number of previous steps to use per-decision importance weight.
+            When zero is given, the estimator corresponds to the pure state marginal IS.
+
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
+
+        action: array-like of shape (n_episodes * step_per_episode, )
+            Action chosen by the behavior policy.
 
         reward: array-like of shape (n_episodes * step_per_episode, )
             Reward observation.
 
         state_action_marginal_importance_weight: array-like of shape (n_episodes * step_per_episode, )
             Marginal importance weight of the state-action pair, i.e., :math:`d_{\\pi}(s, a) / d_{\\pi_0}(s, a)`
+
+        pscore: array-like of shape (n_episodes * step_per_episode, )
+            Conditional action choice probability of the behavior policy,
+            i.e., :math:`\\pi_0(a \\mid s)`
+
+        evaluation_policy_action_dist: array-like of shape (n_episodes * step_per_episode, n_action)
+            Conditional action distribution induced by the evaluation policy,
+            i.e., :math:`\\pi(a \\mid s) \\forall a \\in \\mathcal{A}`
 
         gamma: float, default=1.0
             Discount factor. The value should be within `(0, 1]`.
@@ -1259,15 +1831,16 @@ class DiscreteStateActionMarginalImportanceSampling(
 
         """
         check_scalar(
+            n_step_pdis,
+            name="n_step_pdis",
+            target_type=int,
+            min_val=0,
+        )
+        check_scalar(
             step_per_episode,
             name="step_per_episode",
             target_type=int,
             min_val=1,
-        )
-        check_array(
-            reward,
-            name="reward",
-            expected_dim=1,
         )
         check_array(
             state_action_marginal_importance_weight,
@@ -1275,9 +1848,46 @@ class DiscreteStateActionMarginalImportanceSampling(
             expected_dim=1,
             min_val=0.0,
         )
-        if reward.shape[0] != state_action_marginal_importance_weight.shape[0]:
+        check_array(
+            pscore,
+            name="pscore",
+            expected_dim=1,
+            min_val=0.0,
+            max_val=1.0,
+        )
+        check_array(
+            evaluation_policy_action_dist,
+            name="evaluation_policy_action_dist",
+            expected_dim=2,
+            min_val=0.0,
+            max_val=1.0,
+        )
+        check_array(
+            action,
+            name="action",
+            expected_dim=1,
+            min_val=0,
+            max_val=evaluation_policy_action_dist.shape[1] - 1,
+        )
+        if not (
+            action.shape[0]
+            == reward.shape[0]
+            == state_action_marginal_importance_weight.shape[0]
+            == pscore.shape[0]
+            == evaluation_policy_action_dist.shape[0]
+        ):
             raise ValueError(
-                "Expected `reward.shape[0] == state_action_marginal_importance_weight.shape[0], but found False"
+                "Expected `action.shape[0] == reward.shape[0] == state_action_marginal_importance_weight.shape[0] "
+                "== pscore.shape[0] == evaluation_policy_action_dist.shape[0]`"
+                ", but found False"
+            )
+        if not np.allclose(
+            evaluation_policy_action_dist.sum(axis=1),
+            np.ones(evaluation_policy_action_dist.shape[0]),
+        ):
+            raise ValueError(
+                "Expected `evaluation_policy_action_dist.sum(axis=1) == np.ones(evaluation_policy_action_dist.shape[0])`"
+                ", but found it False"
             )
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
 
@@ -1287,9 +1897,13 @@ class DiscreteStateActionMarginalImportanceSampling(
             )
 
         estimated_trajectory_value = self._estimate_trajectory_value(
+            n_step_pdis=n_step_pdis,
             step_per_episode=step_per_episode,
+            action=action,
             reward=reward,
             state_action_marginal_importance_weight=state_action_marginal_importance_weight,
+            pscore=pscore,
+            evaluation_policy_action_dist=evaluation_policy_action_dist,
             gamma=gamma,
         )
         return self._estimate_confidence_interval[ci](
@@ -1308,22 +1922,21 @@ class DiscreteStateActionMarginalDoublyRobust(
 
     Note
     -------
-    SAM-DR estimates the policy value via state marginal importance weighting as follows.
+    SAM-DR estimates the policy value using state-action marginal importance weighting.
+    Following SOPE (Yuan et al., 2021), we consider the combination of marginalized OPE and :math:`k`-step PDIS as follows.
 
     .. math::
 
         \\hat{J}_{\\mathrm{SAM-DR}} (\\pi; \\mathcal{D})
         := \\mathbb{E}_{n} [\\hat{Q}(s_0, a_0)]
-            + \\mathbb{E}_{n} [\\sum_{t=0}^{T-1} \\gamma^t w(s_t, a_t)
-                (r_t + \\gamma \\mathbb{E}_{a \\sim \\pi(a \\mid s_t)}[\\hat{Q}(s_{t+1}, a)] - \\hat{Q}(s_t, a_t))],
+            + \\mathbb{E}_{n} [\\sum_{t=0}^{k-1} \\gamma^t w_{0:t} (r_t + \\gamma \\mathbb{E}_{a \\sim \\pi(a \\mid s_t)}[\\hat{Q}(s_{t+1}, a)] - \\hat{Q}(s_t, a_t))]
+            + \\mathbb{E}_{n} [\\sum_{t=k}^{T-1} \\gamma^t w(s_{t-k}, a_{t-k}) w_{t-k+1:t} (r_t + \\gamma \\mathbb{E}_{a \\sim \\pi(a \\mid s_t)}[\\hat{Q}(s_{t+1}, a)] - \\hat{Q}(s_t, a_t))],
 
-    where :math:`w(s, a) := d_{\\pi}(s, a) / d_{\\pi_0}(s, a)`.
+    where :math:`w(s, a) := \\frac{d_{\\pi}(s, a)}{d_{\\pi_0}(s, a)}` and :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} \\frac{\\pi(a_t \\mid s_t)}{\\pi_0(a_t \\mid s_t)}`. :math:`Q(s, a)` is the state-action value.
+    Note that, when :math:`k=0`, this estimator is identical to the (pure) state-action marginal DR.
 
-    There are several ways to estimate state marginal importance weight :math:`w(s, a)`
-    including Minimax Weight Learning (MWL) (Uehara et al., 2020).
-
-    In addition, :math:`\\hat{Q}` can also be estimated using Minimax Q-Function Learning (MQL) (Uehara et al., 2020).
-    The implementations of Minimax Learning is available in `ofrl/ope/minimax_estimators_discrete.py`.
+    There are several ways to estimate state-action marginal importance weight including Augmented Lagrangian Method (ALM) (Yang et al., 2020) and Minimax Weight Learning (MWL) (Uehara et al., 2020).
+    The implementations of the estimation methods of state-action marginal importance weight is available at `ofrl/ope/weight_value_learning`.
 
     Parameters
     -------
@@ -1337,6 +1950,12 @@ class DiscreteStateActionMarginalDoublyRobust(
 
     Masatoshi Uehara, Jiawei Huang, and Nan Jiang.
     "Minimax Weight and Q-Function Learning for Off-Policy Evaluation.", 2020.
+
+    Mengjiao Yang, Ofir Nachum, Bo Dai, Lihong Li, and Dale Schuurmans.
+    "Off-Policy Evaluation via the Regularized Lagrangian.", 2020.
+
+    Qiang Liu, Lihong Li, Ziyang Tang, and Dengyong Zhou.
+    "Breaking the Curse of Horizon: Infinite-Horizon Off-Policy Estimation.", 2018
 
     Nan Jiang and Lihong Li.
     "Doubly Robust Off-policy Value Evaluation for Reinforcement Learning.", 2016.
@@ -1356,10 +1975,12 @@ class DiscreteStateActionMarginalDoublyRobust(
 
     def _estimate_trajectory_value(
         self,
+        n_step_pdis: int,
         step_per_episode: int,
         action: np.ndarray,
         reward: np.ndarray,
         state_action_marginal_importance_weight: np.ndarray,
+        pscore: np.ndarray,
         evaluation_policy_action_dist: np.ndarray,
         state_action_value_prediction: np.ndarray,
         gamma: float = 1.0,
@@ -1369,6 +1990,10 @@ class DiscreteStateActionMarginalDoublyRobust(
 
         Parameters
         -------
+        n_step_pdis: int (>= 0)
+            Number of previous steps to use per-decision importance weight.
+            When zero is given, the estimator corresponds to the pure state marginal IS.
+
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
@@ -1380,6 +2005,10 @@ class DiscreteStateActionMarginalDoublyRobust(
 
         state_action_marginal_importance_weight: array-like of shape (n_episodes * step_per_episode, )
             Marginal importance weight of the state-action pair, i.e., :math:`d_{\\pi}(s, a) / d_{\\pi_0}(s, a)`
+
+        pscore: array-like of shape (n_episodes * step_per_episode, )
+            Conditional action choice probability of the behavior policy,
+            i.e., :math:`\\pi_0(a \\mid s)`
 
         evaluation_policy_action_dist: array-like of shape (n_episodes * step_per_episode, n_action)
             Conditional action distribution induced by the evaluation policy,
@@ -1407,42 +2036,50 @@ class DiscreteStateActionMarginalDoublyRobust(
             np.arange(len(action)), action
         ].reshape((-1, step_per_episode))
 
-        weight = state_action_marginal_importance_weight.reshape((-1, step_per_episode))
+        behavior_policy_pscore = self._calc_behavior_policy_pscore(
+            n_step_pdis=n_step_pdis,
+            step_per_episode=step_per_episode,
+            pscore=pscore,
+        )
+        evaluation_policy_pscore = self._calc_evaluation_policy_pscore(
+            n_step_pdis=n_step_pdis,
+            step_per_episode=step_per_episode,
+            action=action,
+            evaluation_policy_action_dist=evaluation_policy_action_dist,
+        )
+        per_decision_importance_weight = (
+            evaluation_policy_pscore / behavior_policy_pscore
+        )
+        state_action_marginal_importance_weight = self._calc_marginal_importance_weight(
+            n_step_pdis=n_step_pdis,
+            step_per_episode=step_per_episode,
+            state_action_marginal_importance_weight=state_action_marginal_importance_weight,
+        )
+        weight = (
+            state_action_marginal_importance_weight * per_decision_importance_weight
+        )
 
         reward = reward.reshape((-1, step_per_episode))
+        discount = np.full(step_per_episode, gamma).cumprod() / gamma
 
-        discount = np.full(step_per_episode, gamma).cumprod()
-        discount = np.roll(discount, 1)
-        discount[0] = 1
+        state_value_prediction = np.insert(state_value_prediction, -1, 0, axis=1)[:, 1:]
 
-        weight = weight[:, :-1]
-        discount = discount[:-1]
-        reward = reward[:, :-1]
-        state_value_prediction = state_action_value_prediction[:, 1:]
-        state_action_value_prediction = state_action_value_prediction[:, :-1]
+        estimated_trajectory_value = state_value_prediction[:, 0] + (
+            discount[np.newaxis, :]
+            * weight
+            * (reward + gamma * state_value_prediction - state_action_value_prediction)
+        ).sum(axis=1)
 
-        estimated_trajectory_value = state_value_prediction[:, 0].mean()
-        estimated_trajectory_value += (
-            (
-                weight
-                * discount[np.newaxis, :]
-                * (
-                    reward
-                    + gamma * state_value_prediction
-                    - state_action_value_prediction
-                )
-            )
-            .sum(axis=1)
-            .mean()
-        )
         return estimated_trajectory_value
 
     def estimate_policy_value(
         self,
+        n_step_pdis: int,
         step_per_episode: int,
         action: np.ndarray,
         reward: np.ndarray,
         state_action_marginal_importance_weight: np.ndarray,
+        pscore: np.ndarray,
         evaluation_policy_action_dist: np.ndarray,
         state_action_value_prediction: np.ndarray,
         gamma: float = 1.0,
@@ -1452,6 +2089,10 @@ class DiscreteStateActionMarginalDoublyRobust(
 
         Parameters
         -------
+        n_step_pdis: int (>= 0)
+            Number of previous steps to use per-decision importance weight.
+            When zero is given, the estimator corresponds to the pure state marginal IS.
+
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
@@ -1463,6 +2104,10 @@ class DiscreteStateActionMarginalDoublyRobust(
 
         state_action_marginal_importance_weight: array-like of shape (n_episodes * step_per_episode, )
             Marginal importance weight of the state-action pair, i.e., :math:`d_{\\pi}(s, a) / d_{\\pi_0}(s, a)`
+
+        pscore: array-like of shape (n_episodes * step_per_episode, )
+            Conditional action choice probability of the behavior policy,
+            i.e., :math:`\\pi_0(a \\mid s)`
 
         evaluation_policy_action_dist: array-like of shape (n_episodes * step_per_episode, n_action)
             Conditional action distribution induced by the evaluation policy,
@@ -1482,15 +2127,16 @@ class DiscreteStateActionMarginalDoublyRobust(
 
         """
         check_scalar(
+            n_step_pdis,
+            name="n_step_pdis",
+            target_type=int,
+            min_val=0,
+        )
+        check_scalar(
             step_per_episode,
             name="step_per_episode",
             target_type=int,
             min_val=1,
-        )
-        check_array(
-            reward,
-            name="reward",
-            expected_dim=1,
         )
         check_array(
             state_action_marginal_importance_weight,
@@ -1499,16 +2145,18 @@ class DiscreteStateActionMarginalDoublyRobust(
             min_val=0.0,
         )
         check_array(
+            pscore,
+            name="pscore",
+            expected_dim=1,
+            min_val=0.0,
+            max_val=1.0,
+        )
+        check_array(
             evaluation_policy_action_dist,
             name="evaluation_policy_action_dist",
             expected_dim=2,
             min_val=0.0,
             max_val=1.0,
-        )
-        check_array(
-            state_action_value_prediction,
-            name="state_action_value_prediction",
-            expected_dim=2,
         )
         check_array(
             action,
@@ -1521,10 +2169,13 @@ class DiscreteStateActionMarginalDoublyRobust(
             action.shape[0]
             == reward.shape[0]
             == state_action_marginal_importance_weight.shape[0]
+            == pscore.shape[0]
             == evaluation_policy_action_dist.shape[0]
+            == state_action_value_prediction.shape[0]
         ):
             raise ValueError(
-                "Expected `action.shape[0] == reward.shape[0] == state_marginal_importance_weight.shape[0] == evaluation_policy_action_dist.shape[0]`"
+                "Expected `action.shape[0] == reward.shape[0] == state_action_marginal_importance_weight.shape[0] "
+                "== pscore.shape[0] == evaluation_policy_action_dist.shape[0] == state_action_value_prediction.shape[0]`"
                 ", but found False"
             )
         if evaluation_policy_action_dist.shape != state_action_value_prediction.shape:
@@ -1542,10 +2193,12 @@ class DiscreteStateActionMarginalDoublyRobust(
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
 
         estimated_policy_value = self._estimate_trajectory_value(
+            n_step_pdis=n_step_pdis,
             step_per_episode=step_per_episode,
             action=action,
             reward=reward,
             state_action_marginal_importance_weight=state_action_marginal_importance_weight,
+            pscore=pscore,
             evaluation_policy_action_dist=evaluation_policy_action_dist,
             state_action_value_prediction=state_action_value_prediction,
             gamma=gamma,
@@ -1554,10 +2207,12 @@ class DiscreteStateActionMarginalDoublyRobust(
 
     def estimate_interval(
         self,
+        n_step_pdis: int,
         step_per_episode: int,
         action: np.ndarray,
         reward: np.ndarray,
         state_action_marginal_importance_weight: np.ndarray,
+        pscore: np.ndarray,
         evaluation_policy_action_dist: np.ndarray,
         state_action_value_prediction: np.ndarray,
         gamma: float = 1.0,
@@ -1571,6 +2226,10 @@ class DiscreteStateActionMarginalDoublyRobust(
 
         Parameters
         -------
+        n_step_pdis: int (>= 0)
+            Number of previous steps to use per-decision importance weight.
+            When zero is given, the estimator corresponds to the pure state marginal IS.
+
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
@@ -1582,6 +2241,10 @@ class DiscreteStateActionMarginalDoublyRobust(
 
         state_action_marginal_importance_weight: array-like of shape (n_episodes * step_per_episode, )
             Marginal importance weight of the state-action pair, i.e., :math:`d_{\\pi}(s, a) / d_{\\pi_0}(s, a)`
+
+        pscore: array-like of shape (n_episodes * step_per_episode, )
+            Conditional action choice probability of the behavior policy,
+            i.e., :math:`\\pi_0(a \\mid s)`
 
         evaluation_policy_action_dist: array-like of shape (n_episodes * step_per_episode, n_action)
             Conditional action distribution induced by the evaluation policy,
@@ -1613,15 +2276,16 @@ class DiscreteStateActionMarginalDoublyRobust(
 
         """
         check_scalar(
+            n_step_pdis,
+            name="n_step_pdis",
+            target_type=int,
+            min_val=0,
+        )
+        check_scalar(
             step_per_episode,
             name="step_per_episode",
             target_type=int,
             min_val=1,
-        )
-        check_array(
-            reward,
-            name="reward",
-            expected_dim=1,
         )
         check_array(
             state_action_marginal_importance_weight,
@@ -1630,16 +2294,18 @@ class DiscreteStateActionMarginalDoublyRobust(
             min_val=0.0,
         )
         check_array(
+            pscore,
+            name="pscore",
+            expected_dim=1,
+            min_val=0.0,
+            max_val=1.0,
+        )
+        check_array(
             evaluation_policy_action_dist,
             name="evaluation_policy_action_dist",
             expected_dim=2,
             min_val=0.0,
             max_val=1.0,
-        )
-        check_array(
-            state_action_value_prediction,
-            name="state_action_value_prediction",
-            expected_dim=2,
         )
         check_array(
             action,
@@ -1652,10 +2318,13 @@ class DiscreteStateActionMarginalDoublyRobust(
             action.shape[0]
             == reward.shape[0]
             == state_action_marginal_importance_weight.shape[0]
+            == pscore.shape[0]
             == evaluation_policy_action_dist.shape[0]
+            == state_action_value_prediction.shape[0]
         ):
             raise ValueError(
-                "Expected `action.shape[0] == reward.shape[0] == state_action_marginal_importance_weight.shape[0] == evaluation_policy_action_dist.shape[0]`"
+                "Expected `action.shape[0] == reward.shape[0] == state_action_marginal_importance_weight.shape[0] "
+                "== pscore.shape[0] == evaluation_policy_action_dist.shape[0] == state_action_value_prediction.shape[0]`"
                 ", but found False"
             )
         if evaluation_policy_action_dist.shape != state_action_value_prediction.shape:
@@ -1678,10 +2347,12 @@ class DiscreteStateActionMarginalDoublyRobust(
             )
 
         estimated_trajectory_value = self._estimate_trajectory_value(
+            n_step_pdis=n_step_pdis,
             step_per_episode=step_per_episode,
             action=action,
             reward=reward,
             state_action_marginal_importance_weight=state_action_marginal_importance_weight,
+            pscore=pscore,
             evaluation_policy_action_dist=evaluation_policy_action_dist,
             state_action_value_prediction=state_action_value_prediction,
             gamma=gamma,
@@ -1702,17 +2373,19 @@ class DiscreteStateActionMarginalSelfNormalizedImportanceSampling(
 
     Note
     -------
-    SAM-SNIS estimates the policy value via state marginal importance weighting as follows.
+    SAM-SNIS estimates the policy value using state-action marginal importance weighting.
+    Following SOPE (Yuan et al., 2021), we consider the combination of marginalized OPE and :math:`k`-step PDIS as follows.
 
     .. math::
 
         \\hat{J}_{\\mathrm{SAM-SNIS}} (\\pi; \\mathcal{D})
-        := \\mathbb{E}_{n} [\\sum_{t=0}^{T-1} \\gamma^t \\frac{w(s_t, a_t)}{\\sum_n w(s_t, a_t)} r_t],
+        := \\mathbb{E}_{n} [\\sum_{t=0}^{k-1} \\gamma^t \\frac{w_{0:t}}{\\sum_{n} w_{*}} r_t ] + \\mathbb{E}_{n} [\\sum_{t=k}^{T-1} \\gamma^t \\frac{w(s_{t-k}, a_{t-k}) w_{t-k+1:t}}{\\sum_n w_{*}} r_t],
 
-    where :math:`w(s, a) := d_{\\pi}(s, a) / d_{\\pi_0}(s, a)`.
+    where :math:`w(s, a) := \\frac{d_{\\pi}(s, a)}{d_{\\pi_0}(s, a)}` and :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} \\frac{\\pi(a_t \\mid s_t)}{\\pi_0(a_t \\mid s_t)}`. w_{*} is the abstruction of any weights.
+    Note that, when :math:`k=0`, this estimator is identical to the (pure) state-action marginal SNIS.
 
-    There are several ways to estimate state-action marginal importance weight including Minimax Weight Learning (MWL) (Uehara et al., 2020).
-    The implementations of Minimax Learning is available in `ofrl/ope/minimax_estimators_discrete.py`.
+    There are several ways to estimate state-action marginal importance weight including Augmented Lagrangian Method (ALM) (Yang et al., 2020) and Minimax Weight Learning (MWL) (Uehara et al., 2020).
+    The implementations of the estimation methods of state-action marginal importance weight is available at `ofrl/ope/weight_value_learning`.
 
     Parameters
     -------
@@ -1726,6 +2399,12 @@ class DiscreteStateActionMarginalSelfNormalizedImportanceSampling(
 
     Masatoshi Uehara, Jiawei Huang, and Nan Jiang.
     "Minimax Weight and Q-Function Learning for Off-Policy Evaluation.", 2020.
+
+    Mengjiao Yang, Ofir Nachum, Bo Dai, Lihong Li, and Dale Schuurmans.
+    "Off-Policy Evaluation via the Regularized Lagrangian.", 2020.
+
+    Qiang Liu, Lihong Li, Ziyang Tang, and Dengyong Zhou.
+    "Breaking the Curse of Horizon: Infinite-Horizon Off-Policy Estimation.", 2018
 
     Alex Strehl, John Langford, Sham Kakade, and Lihong Li.
     "Learning from Logged Implicit Exploration Data.", 2010.
@@ -1742,9 +2421,13 @@ class DiscreteStateActionMarginalSelfNormalizedImportanceSampling(
 
     def _estimate_trajectory_value(
         self,
+        n_step_pdis: int,
         step_per_episode: int,
+        action: np.ndarray,
         reward: np.ndarray,
         state_action_marginal_importance_weight: np.ndarray,
+        pscore: np.ndarray,
+        evaluation_policy_action_dist: np.ndarray,
         gamma: float = 1.0,
         **kwargs,
     ) -> np.ndarray:
@@ -1752,14 +2435,29 @@ class DiscreteStateActionMarginalSelfNormalizedImportanceSampling(
 
         Parameters
         -------
+        n_step_pdis: int (>= 0)
+            Number of previous steps to use per-decision importance weight.
+            When zero is given, the estimator corresponds to the pure state marginal IS.
+
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
+
+        action: array-like of shape (n_episodes * step_per_episode, )
+            Action chosen by the behavior policy.
 
         reward: array-like of shape (n_episodes * step_per_episode, )
             Reward observation.
 
         state_action_marginal_importance_weight: array-like of shape (n_episodes * step_per_episode, )
             Marginal importance weight of the state-action pair, i.e., :math:`d_{\\pi}(s, a) / d_{\\pi_0}(s, a)`
+
+        pscore: array-like of shape (n_episodes * step_per_episode, )
+            Conditional action choice probability of the behavior policy,
+            i.e., :math:`\\pi_0(a \\mid s)`
+
+        evaluation_policy_action_dist: array-like of shape (n_episodes * step_per_episode, n_action)
+            Conditional action distribution induced by the evaluation policy,
+            i.e., :math:`\\pi(a \\mid s) \\forall a \\in \\mathcal{A}`
 
         gamma: float, default=1.0
             Discount factor. The value should be within `(0, 1]`.
@@ -1770,13 +2468,36 @@ class DiscreteStateActionMarginalSelfNormalizedImportanceSampling(
             Policy value estimated for each trajectory.
 
         """
-        weight = (
-            state_action_marginal_importance_weight
-            / state_action_marginal_importance_weight.mean()
+        behavior_policy_pscore = self._calc_behavior_policy_pscore(
+            n_step_pdis=n_step_pdis,
+            step_per_episode=step_per_episode,
+            pscore=pscore,
         )
-        undiscounted_value = (reward * weight).reshape((-1, step_per_episode))
-        discount = np.full(undiscounted_value.shape[1], gamma).cumprod()
-        estimated_trajectory_value = (undiscounted_value * discount).sum(axis=1)
+        evaluation_policy_pscore = self._calc_evaluation_policy_pscore(
+            n_step_pdis=n_step_pdis,
+            step_per_episode=step_per_episode,
+            action=action,
+            evaluation_policy_action_dist=evaluation_policy_action_dist,
+        )
+        per_decision_importance_weight = (
+            evaluation_policy_pscore / behavior_policy_pscore
+        )
+        state_action_marginal_importance_weight = self._calc_marginal_importance_weight(
+            n_step_pdis=n_step_pdis,
+            step_per_episode=step_per_episode,
+            state_action_marginal_importance_weight=state_action_marginal_importance_weight,
+        )
+        weight = (
+            state_action_marginal_importance_weight * per_decision_importance_weight
+        )
+        self_normalized_weight = weight / (weight.mean(axis=0)[np.newaxis, :] + 1e-10)
+
+        reward = reward.reshape((-1, step_per_episode))
+        discount = np.full(step_per_episode, gamma).cumprod() / gamma
+        estimated_trajectory_value = (
+            discount[np.newaxis, :] * self_normalized_weight * reward
+        ).sum(axis=1)
+
         return estimated_trajectory_value
 
 
@@ -1788,22 +2509,22 @@ class DiscreteStateActionMarginalSelfNormalizedDoublyRobust(
 
     Note
     -------
-    SAM-SNDR estimates the policy value via state marginal importance weighting as follows.
+    SAM-SNDR estimates the policy value using state-action marginal importance weighting.
+    Following SOPE (Yuan et al., 2021), we consider the combination of marginalized OPE and :math:`k`-step PDIS as follows.
 
     .. math::
 
         \\hat{J}_{\\mathrm{SAM-SNDR}} (\\pi; \\mathcal{D})
         := \\mathbb{E}_{n} [\\hat{Q}(s_0, a_0)]
-            + \\mathbb{E}_{n} [\\sum_{t=0}^{T-1} \\gamma^t \\frac{w(s_t, a_t)}{\\sum_n w(s_t, a_t)}
-                (r_t + \\gamma \\mathbb{E}_{a \\sim \\pi(a \\mid s_t)}[\\hat{Q}(s_{t+1}, a)] - \\hat{Q}(s_t, a_t))],
+            + \\mathbb{E}_{n} [\\sum_{t=0}^{k-1} \\gamma^t \\frac{w_{0:t}}{\\sum_{n} w_{*}} (r_t + \\gamma \\mathbb{E}_{a \\sim \\pi(a \\mid s_t)}[\\hat{Q}(s_{t+1}, a)] - \\hat{Q}(s_t, a_t))]
+            + \\mathbb{E}_{n} [\\sum_{t=k}^{T-1} \\gamma^t \\frac{w(s_{t-k}, a_{t-k}) w_{t-k+1:t}}{\\sum_{n} w_{*}} (r_t + \\gamma \\mathbb{E}_{a \\sim \\pi(a \\mid s_t)}[\\hat{Q}(s_{t+1}, a)] - \\hat{Q}(s_t, a_t))],
 
-    where :math:`w(s, a) := d_{\\pi}(s, a) / d_{\\pi_0}(s, a)`.
+    where :math:`w(s, a) := \\frac{d_{\\pi}(s, a)}{d_{\\pi_0}(s, a)}` and :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} \\frac{\\pi(a_t \\mid s_t)}{\\pi_0(a_t \\mid s_t)}`.
+    :math:`w_{*}` is the abstruction of any weights and :math:`Q(s, a)` is the state-action value.
+    Note that, when :math:`k=0`, this estimator is identical to the (pure) state-action marginal SNDR.
 
-    There are several ways to estimate state marginal importance weight :math:`w(s, a)`
-    including Minimax Weight Learning (MWL) (Uehara et al., 2020).
-
-    In addition, :math:`\\hat{Q}` can also be estimated using Minimax Q-Function Learning (MQL) (Uehara et al., 2020).
-    The implementations of Minimax Learning is available in `ofrl/ope/minimax_estimators_discrete.py`.
+    There are several ways to estimate state-action marginal importance weight including Augmented Lagrangian Method (ALM) (Yang et al., 2020) and Minimax Weight Learning (MWL) (Uehara et al., 2020).
+    The implementations of the estimation methods of state-action marginal importance weight is available at `ofrl/ope/weight_value_learning`.
 
     Parameters
     -------
@@ -1817,6 +2538,12 @@ class DiscreteStateActionMarginalSelfNormalizedDoublyRobust(
 
     Masatoshi Uehara, Jiawei Huang, and Nan Jiang.
     "Minimax Weight and Q-Function Learning for Off-Policy Evaluation.", 2020.
+
+    Mengjiao Yang, Ofir Nachum, Bo Dai, Lihong Li, and Dale Schuurmans.
+    "Off-Policy Evaluation via the Regularized Lagrangian.", 2020.
+
+    Qiang Liu, Lihong Li, Ziyang Tang, and Dengyong Zhou.
+    "Breaking the Curse of Horizon: Infinite-Horizon Off-Policy Estimation.", 2018
 
     Nan Jiang and Lihong Li.
     "Doubly Robust Off-policy Value Evaluation for Reinforcement Learning.", 2016.
@@ -1836,10 +2563,12 @@ class DiscreteStateActionMarginalSelfNormalizedDoublyRobust(
 
     def _estimate_trajectory_value(
         self,
+        n_step_pdis: int,
         step_per_episode: int,
         action: np.ndarray,
         reward: np.ndarray,
         state_action_marginal_importance_weight: np.ndarray,
+        pscore: np.ndarray,
         evaluation_policy_action_dist: np.ndarray,
         state_action_value_prediction: np.ndarray,
         gamma: float = 1.0,
@@ -1849,6 +2578,10 @@ class DiscreteStateActionMarginalSelfNormalizedDoublyRobust(
 
         Parameters
         -------
+        n_step_pdis: int (>= 0)
+            Number of previous steps to use per-decision importance weight.
+            When zero is given, the estimator corresponds to the pure state marginal IS.
+
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
@@ -1860,6 +2593,10 @@ class DiscreteStateActionMarginalSelfNormalizedDoublyRobust(
 
         state_action_marginal_importance_weight: array-like of shape (n_episodes * step_per_episode, )
             Marginal importance weight of the state-action pair, i.e., :math:`d_{\\pi}(s, a) / d_{\\pi_0}(s, a)`
+
+        pscore: array-like of shape (n_episodes * step_per_episode, )
+            Conditional action choice probability of the behavior policy,
+            i.e., :math:`\\pi_0(a \\mid s)`
 
         evaluation_policy_action_dist: array-like of shape (n_episodes * step_per_episode, n_action)
             Conditional action distribution induced by the evaluation policy,
@@ -1887,33 +2624,39 @@ class DiscreteStateActionMarginalSelfNormalizedDoublyRobust(
             np.arange(len(action)), action
         ].reshape((-1, step_per_episode))
 
-        weight = state_action_marginal_importance_weight.reshape((-1, step_per_episode))
-        weight = weight / weight.mean()
+        behavior_policy_pscore = self._calc_behavior_policy_pscore(
+            n_step_pdis=n_step_pdis,
+            step_per_episode=step_per_episode,
+            pscore=pscore,
+        )
+        evaluation_policy_pscore = self._calc_evaluation_policy_pscore(
+            n_step_pdis=n_step_pdis,
+            step_per_episode=step_per_episode,
+            action=action,
+            evaluation_policy_action_dist=evaluation_policy_action_dist,
+        )
+        per_decision_importance_weight = (
+            evaluation_policy_pscore / behavior_policy_pscore
+        )
+        state_action_marginal_importance_weight = self._calc_marginal_importance_weight(
+            n_step_pdis=n_step_pdis,
+            step_per_episode=step_per_episode,
+            state_action_marginal_importance_weight=state_action_marginal_importance_weight,
+        )
+        weight = (
+            state_action_marginal_importance_weight * per_decision_importance_weight
+        )
+        weight = weight / (weight.mean(axis=0)[np.newaxis, :] + 1e-10)
 
         reward = reward.reshape((-1, step_per_episode))
+        discount = np.full(step_per_episode, gamma).cumprod() / gamma
 
-        discount = np.full(step_per_episode, gamma).cumprod()
-        discount = np.roll(discount, 1)
-        discount[0] = 1
+        state_value_prediction = np.insert(state_value_prediction, -1, 0, axis=1)[:, 1:]
 
-        weight = weight[:, :-1]
-        discount = discount[:-1]
-        reward = reward[:, :-1]
-        state_value_prediction = state_action_value_prediction[:, 1:]
-        state_action_value_prediction = state_action_value_prediction[:, :-1]
+        estimated_trajectory_value = state_value_prediction[:, 0] + (
+            discount[np.newaxis, :]
+            * weight
+            * (reward + gamma * state_value_prediction - state_action_value_prediction)
+        ).sum(axis=1)
 
-        estimated_trajectory_value = state_value_prediction[:, 0].mean()
-        estimated_trajectory_value += (
-            (
-                weight
-                * discount[np.newaxis, :]
-                * (
-                    reward
-                    + gamma * state_value_prediction
-                    - state_action_value_prediction
-                )
-            )
-            .sum(axis=1)
-            .mean()
-        )
         return estimated_trajectory_value

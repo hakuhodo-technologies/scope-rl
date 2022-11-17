@@ -1,4 +1,4 @@
-"""Off-Policy Evaluation Class to Streamline OPE."""
+"""Meta Class to Handle Standard and Cumulative Distribution OPE."""
 from dataclasses import dataclass
 from typing import Dict, List, Tuple, Optional, Union
 from pathlib import Path
@@ -6,7 +6,6 @@ from pathlib import Path
 from collections import defaultdict
 
 import numpy as np
-from scipy.stats import norm
 from sklearn.utils import check_scalar
 from pandas import DataFrame
 import matplotlib.pyplot as plt
@@ -29,8 +28,8 @@ from ..utils import (
 
 
 @dataclass
-class DiscreteOffPolicyEvaluation:
-    """Class to perform a discrete-action OPE by multiple estimators simultaneously.
+class OffPolicyEvaluation:
+    """Class to perform OPE by multiple estimators simultaneously (compatible to both discrete/continuous action cases).
 
     Note
     -----------
@@ -48,6 +47,12 @@ class DiscreteOffPolicyEvaluation:
     ope_estimators: List[BaseOffPolicyEstimator]
         List of OPE estimators used to evaluate the policy value of the evaluation policies.
         Estimators must follow the interface of `ofrl.ope.BaseOffPolicyEstimator`.
+
+    action_scaler: {float, array-like of shape (action_dim, )}, default=None
+        Scaling factor of continuous action space.
+
+    sigma: float, default=1.0
+        Bandwidth hyperparameter of gaussian kernel for continuous action space.
 
     Examples
     ----------
@@ -165,22 +170,22 @@ class DiscreteOffPolicyEvaluation:
 
     logged_dataset: LoggedDataset
     ope_estimators: List[BaseOffPolicyEstimator]
+    action_scaler: Optional[Union[float, np.ndarray]] = None
+    sigma: float = 1.0
 
     def __post_init__(self) -> None:
         "Initialize class."
         check_logged_dataset(self.logged_dataset)
         self.step_per_episode = self.logged_dataset["step_per_episode"]
-
-        if self.logged_dataset["action_type"] != "discrete":
-            raise RuntimeError("logged_dataset does not `discrete` action_type")
+        self.action_type = self.logged_dataset["action_type"]
 
         self.ope_estimators_ = dict()
         for estimator in self.ope_estimators:
             self.ope_estimators_[estimator.estimator_name] = estimator
 
-            if estimator.action_type != "discrete":
+            if estimator.action_type != self.action_type:
                 raise RuntimeError(
-                    f"One of the ope_estimators, {estimator.estimator_name} does not match `discrete` action_type"
+                    f"One of the ope_estimators, {estimator.estimator_name} does not match the action_type of logged_dataset (`{self.action_type}`)"
                 )
 
             if not isinstance(estimator, BaseOffPolicyEstimator):
@@ -194,21 +199,40 @@ class DiscreteOffPolicyEvaluation:
             .sum(axis=1)
             .mean()
         ) + 1e-10  # to avoid devision by zero
-        behavior_policy_pscore = self.logged_dataset["pscore"].reshape(
-            (-1, self.step_per_episode)
-        )
-        behavior_policy_step_wise_pscore = np.cumprod(behavior_policy_pscore, axis=1)
-        behavior_policy_trajectory_wise_pscore = np.tile(
-            behavior_policy_step_wise_pscore[:, -1], (self.step_per_episode, 1)
-        ).T
 
-        self.input_dict_ = {
-            "step_per_episode": self.step_per_episode,
-            "action": self.logged_dataset["action"].astype(int),
-            "reward": self.logged_dataset["reward"],
-            "behavior_policy_step_wise_pscore": behavior_policy_step_wise_pscore.flatten(),
-            "behavior_policy_trajectory_wise_pscore": behavior_policy_trajectory_wise_pscore.flatten(),
-        }
+        if self.action_type == "discrete":
+            self.input_dict_ = {
+                "step_per_episode": self.step_per_episode,
+                "action": self.logged_dataset["action"].astype(int),
+                "reward": self.logged_dataset["reward"],
+                "pscore": self.logged_dataset["pscore"],
+            }
+        else:
+            if self.action_scaler is not None and not isinstance(
+                self.action_scaler, float
+            ):
+                check_array(
+                    self.action_scaler,
+                    name="action_scaler",
+                    expected_dim=1,
+                    min_val=0.0,
+                )
+
+                if self.action_scaler.shape[0] != self.logged_dataset["action_dim"]:
+                    raise ValueError(
+                        "Expected `action_scaler.shape[0] == logged_dataset['action_dim']`, but found False"
+                    )
+
+            check_scalar(self.sigma, name="sigma", expected_dim=1, min_val=0.0)
+
+            self.input_dict_ = {
+                "step_per_episode": self.step_per_episode,
+                "action": self.logged_dataset["action"].astype(int),
+                "reward": self.logged_dataset["reward"],
+                "pscore": self.logged_dataset["pscore"],
+                "action_scaler": self.action_scaler,
+                "sigma": self.sigma,
+            }
 
         self._estimate_confidence_interval = {
             "bootstrap": estimate_confidence_interval_by_bootstrap,
@@ -781,8 +805,8 @@ class DiscreteOffPolicyEvaluation:
 
 
 @dataclass
-class DiscreteCumulativeDistributionOffPolicyEvaluation:
-    """Class to conduct cumulative distribution OPE by multiple estimators simultaneously in discrete action space.
+class CumulativeDistributionOffPolicyEvaluation:
+    """Class to conduct cumulative distribution OPE by multiple estimators simultaneously (compatible to both discrete/continuous action cases).
 
     Note
     -----------
@@ -817,6 +841,12 @@ class DiscreteCumulativeDistributionOffPolicyEvaluation:
     n_partition: int, default=None
         Number of partitions in the reward scale (x-axis of CDF).
         When `use_custom_reward_scale == True`, a value must be given.
+
+    action_scaler: {float, array-like of shape (action_dim, )}, default=None
+        Scaling factor of continuous action space.
+
+    sigma: float, default=1.0
+        Bandwidth hyperparameter of gaussian kernel for continuous action space.
 
     Examples
     ----------
@@ -938,22 +968,22 @@ class DiscreteCumulativeDistributionOffPolicyEvaluation:
     scale_min: Optional[float] = None
     scale_max: Optional[float] = None
     n_partition: Optional[int] = None
+    action_scaler: Optional[Union[float, np.ndarray]] = None
+    sigma: float = 1.0
 
     def __post_init__(self) -> None:
         "Initialize class."
         check_logged_dataset(self.logged_dataset)
         self.step_per_episode = self.logged_dataset["step_per_episode"]
-
-        if self.logged_dataset["action_type"] != "discrete":
-            raise ValueError("logged_dataset does not `discrete` action_type")
+        self.action_type = self.logged_dataset["action_type"]
 
         self.ope_estimators_ = dict()
         for estimator in self.ope_estimators:
             self.ope_estimators_[estimator.estimator_name] = estimator
 
-            if estimator.action_type != "discrete":
+            if estimator.action_type != self.action_type:
                 raise RuntimeError(
-                    f"One of the ope_estimators, {estimator.estimator_name} does not match `discrete` action_type"
+                    f"One of the ope_estimators, {estimator.estimator_name} does not match the action_type of logged_dataset (`{self.action_type}`)"
                 )
 
             if not isinstance(estimator, BaseCumulativeDistributionOffPolicyEstimator):
@@ -997,21 +1027,40 @@ class DiscreteCumulativeDistributionOffPolicyEvaluation:
             .sum(axis=1)
             .mean()
         ) + 1e-10  # to avoid devision by zero
-        behavior_policy_pscore = self.logged_dataset["pscore"].reshape(
-            (-1, self.step_per_episode)
-        )
-        behavior_policy_step_wise_pscore = np.cumprod(behavior_policy_pscore, axis=1)
-        behavior_policy_trajectory_wise_pscore = np.tile(
-            behavior_policy_step_wise_pscore[:, -1], (self.step_per_episode, 1)
-        ).T
 
-        self.input_dict_ = {
-            "step_per_episode": self.step_per_episode,
-            "action": self.logged_dataset["action"].astype(int),
-            "reward": self.logged_dataset["reward"],
-            "behavior_policy_step_wise_pscore": behavior_policy_step_wise_pscore.flatten(),
-            "behavior_policy_trajectory_wise_pscore": behavior_policy_trajectory_wise_pscore.flatten(),
-        }
+        if self.action_type == "discrete":
+            self.input_dict_ = {
+                "step_per_episode": self.step_per_episode,
+                "action": self.logged_dataset["action"].astype(int),
+                "reward": self.logged_dataset["reward"],
+                "pscore": self.logged_dataset["pscore"],
+            }
+        else:
+            if self.action_scaler is not None and not isinstance(
+                self.action_scaler, float
+            ):
+                check_array(
+                    self.action_scaler,
+                    name="action_scaler",
+                    expected_dim=1,
+                    min_val=0.0,
+                )
+
+                if self.action_scaler.shape[0] != self.logged_dataset["action_dim"]:
+                    raise ValueError(
+                        "Expected `action_scaler.shape[0] == logged_dataset['action_dim']`, but found False"
+                    )
+
+            check_scalar(self.sigma, name="sigma", expected_dim=1, min_val=0.0)
+
+            self.input_dict_ = {
+                "step_per_episode": self.step_per_episode,
+                "action": self.logged_dataset["action"].astype(int),
+                "reward": self.logged_dataset["reward"],
+                "pscore": self.logged_dataset["pscore"],
+                "action_scaler": self.action_scaler,
+                "sigma": self.sigma,
+            }
 
     def obtain_reward_scale(
         self,

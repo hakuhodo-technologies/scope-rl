@@ -178,8 +178,8 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 
         \\hat{J}_{\\mathrm{TIS}} (\\pi; \\mathcal{D}) := \\mathbb{E}_{n} [\\sum_{t=0}^{T-1} \\gamma^t w_{0:T-1} \\delta(\\pi, a_{0:T-1}) r_t],
 
-    where :math:`w_{0:T-1} := \\prod_{t=0}^{T-1} \\frac{1}{\\pi_0(a_t \\mid s_t)}` is the inverse propensity weight
-    and :math:`\\delta(\\pi, a_{0:T-1}) = \\prod_{t=0}^{T-1} K(\\pi(s_t), a_t)` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy.
+    where :math:`w_{0:T-1} := \\prod_{t=0}^{T-1} \\frac{1}{\\pi_0(a_t \\mid s_t)}` is the inverse propensity weight.
+    :math:`\\delta(\\pi, a_{0:T-1}) = \\prod_{t=0}^{T-1} K(\\pi(s_t), a_t)` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy.
     Note that :math:`K(\\cdot)` is a kernel function.
 
     Parameters
@@ -213,7 +213,7 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         step_per_episode: int,
         action: np.ndarray,
         reward: np.ndarray,
-        behavior_policy_trajectory_wise_pscore: np.ndarray,
+        pscore: np.ndarray,
         evaluation_policy_action: np.ndarray,
         action_scaler: np.ndarray,
         gamma: float = 1.0,
@@ -233,9 +233,9 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         reward: array-like of shape (n_episodes * step_per_episode, )
             Reward observation.
 
-        behavior_policy_trajectory_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
-            Trajectory-wise action choice probability of the behavior policy,
-            i.e., :math:`\\prod_{t=0}^T \\pi_0(a_t \\mid s_t)`
+        pscore: array-like of shape (n_episodes * step_per_episode, )
+            Conditional action choice probability of the behavior policy,
+            i.e., :math:`\\pi_0(a \\mid s)`
 
         evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
             Action chosen by the evaluation policy.
@@ -255,32 +255,28 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
             Policy value estimated for each trajectory.
 
         """
-        action_dim = action.shape[1]
-        action = action.reshape((-1, step_per_episode, action_dim))
-        evaluation_policy_action = evaluation_policy_action.reshape(
-            (-1, step_per_episode, action_dim)
+        behavior_policy_pscore = self._calc_behavior_policy_pscore(
+            step_per_episode=step_per_episode,
+            pscore=pscore,
+            pscore_type="trajectory_wise",
         )
-        reward = reward.reshape((-1, step_per_episode))
-        behavior_policy_trajectory_wise_pscore = (
-            behavior_policy_trajectory_wise_pscore.reshape((-1, step_per_episode))
-        )
-        discount = np.full(reward.shape[1], gamma).cumprod()
-
-        similarity_weight = gaussian_kernel(
-            evaluation_policy_action / action_scaler[np.newaxis, :],
-            action / action_scaler[np.newaxis, :],
+        similarity_weight = self._calc_similarity_weight(
+            step_per_episode=step_per_episode,
+            action=action,
+            evaluation_policy_action=evaluation_policy_action,
+            action_scaler=action_scaler,
             sigma=sigma,
+            pscore_type="trajectory_wise",
         )
-        similarity_weight = similarity_weight.cumprod(axis=1)[:, -1, 0]
-        similarity_weight = np.tile(
-            similarity_weight.reshape((-1, 1)), step_per_episode
-        )
+
+        reward = reward.reshape((-1, step_per_episode))
+        discount = np.full(step_per_episode, gamma).cumprod() / gamma
 
         estimated_trajectory_value = (
-            discount
+            discount[np.newaxis, :]
             * reward
             * similarity_weight
-            / behavior_policy_trajectory_wise_pscore
+            / behavior_policy_pscore
         ).sum(axis=1)
 
         return estimated_trajectory_value
@@ -290,7 +286,7 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         step_per_episode: int,
         action: np.ndarray,
         reward: np.ndarray,
-        behavior_policy_trajectory_wise_pscore: np.ndarray,
+        pscore: np.ndarray,
         evaluation_policy_action: np.ndarray,
         gamma: float = 1.0,
         sigma: float = 1.0,
@@ -310,9 +306,9 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         reward: array-like of shape (n_episodes * step_per_episode, )
             Reward observation.
 
-        behavior_policy_trajectory_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
-            Trajectory-wise action choice probability of the behavior policy,
-            i.e., :math:`\\prod_{t=0}^T \\pi_0(a_t \\mid s_t)`
+        pscore: array-like of shape (n_episodes * step_per_episode, )
+            Conditional action choice probability of the behavior policy,
+            i.e., :math:`\\pi_0(a \\mid s)`
 
         evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
             Action chosen by the evaluation policy.
@@ -349,8 +345,8 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
             expected_dim=1,
         )
         check_array(
-            behavior_policy_trajectory_wise_pscore,
-            name="behavior_policy_trajectory_wise_pscore",
+            pscore,
+            name="pscore",
             expected_dim=1,
             min_val=0.0,
         )
@@ -362,17 +358,16 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         if not (
             action.shape[0]
             == reward.shape[0]
-            == behavior_policy_trajectory_wise_pscore.shape[0]
+            == pscore.shape[0]
             == evaluation_policy_action.shape[0]
         ):
             raise ValueError(
-                "Expected `action.shape[0] == reward.shape[0] == behavior_policy_trajectory_wise_pscore.shape[0] == evaluation_policy_action.shape[0]`"
+                "Expected `action.shape[0] == reward.shape[0] == pscore.shape[0] == evaluation_policy_action.shape[0]`"
                 ", but found False"
             )
-        if not (action.shape[1] == evaluation_policy_action.shape[1]):
+        if action.shape[1] != evaluation_policy_action.shape[1]:
             raise ValueError(
-                "Expected `action.shape[1] == evaluation_policy_action.shape[1]`"
-                ", but found False"
+                "Expected `action.shape[1] == evaluation_policy_action.shape[1]`, but found False"
             )
 
         action_dim = action.shape[1]
@@ -394,7 +389,7 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
             step_per_episode=step_per_episode,
             action=action,
             reward=reward,
-            behavior_policy_trajectory_wise_pscore=behavior_policy_trajectory_wise_pscore,
+            pscore=pscore,
             evaluation_policy_action=evaluation_policy_action,
             gamma=gamma,
             sigma=sigma,
@@ -406,7 +401,7 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         step_per_episode: int,
         action: np.ndarray,
         reward: np.ndarray,
-        behavior_policy_trajectory_wise_pscore: np.ndarray,
+        pscore: np.ndarray,
         evaluation_policy_action: np.ndarray,
         gamma: float = 1.0,
         sigma: float = 1.0,
@@ -430,9 +425,9 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         reward: array-like of shape (n_episodes * step_per_episode, )
             Reward observation.
 
-        behavior_policy_trajectory_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
-            Trajectory-wise action choice probability of the behavior policy,
-            i.e., :math:`\\prod_{t=0}^T \\pi_0(a_t \\mid s_t)`
+        pscore: array-like of shape (n_episodes * step_per_episode, )
+            Conditional action choice probability of the behavior policy,
+            i.e., :math:`\\pi_0(a \\mid s)`
 
         evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
             Action chosen by the evaluation policy.
@@ -481,8 +476,8 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
             expected_dim=1,
         )
         check_array(
-            behavior_policy_trajectory_wise_pscore,
-            name="behavior_policy_trajectory_wise_pscore",
+            pscore,
+            name="pscore",
             expected_dim=1,
             min_val=0.0,
         )
@@ -494,17 +489,16 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         if not (
             action.shape[0]
             == reward.shape[0]
-            == behavior_policy_trajectory_wise_pscore.shape[0]
+            == pscore.shape[0]
             == evaluation_policy_action.shape[0]
         ):
             raise ValueError(
-                "Expected `action.shape[0] == reward.shape[0] == behavior_policy_trajectory_wise_pscore.shape[0] == evaluation_policy_action.shape[0]`"
+                "Expected `action.shape[0] == reward.shape[0] == pscore.shape[0] == evaluation_policy_action.shape[0]`"
                 ", but found False"
             )
-        if not (action.shape[1] == evaluation_policy_action.shape[1]):
+        if action.shape[1] != evaluation_policy_action.shape[1]:
             raise ValueError(
-                "Expected `action.shape[1] == evaluation_policy_action.shape[1]`"
-                ", but found False"
+                "Expected `action.shape[1] == evaluation_policy_action.shape[1]`, but found False"
             )
 
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
@@ -531,7 +525,7 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
             step_per_episode=step_per_episode,
             action=action,
             reward=reward,
-            behavior_policy_trajectory_wise_pscore=behavior_policy_trajectory_wise_pscore,
+            pscore=pscore,
             evaluation_policy_action=evaluation_policy_action,
             gamma=gamma,
             sigma=sigma,
@@ -557,8 +551,8 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
 
         \\hat{J}_{\\mathrm{PDIS}} (\\pi; \\mathcal{D}) := \\mathbb{E}_{n} [\\sum_{t=0}^{T-1} \\gamma^t w_{0:t} \\delta(\\pi, a_{0:t}) r_t],
 
-    where :math:`w_{0:t} := \\prod_{t'=0}^t \\frac{1}{\\pi_0(a_{t'} \\mid s_{t'})}`
-    and :math:`\\delta(\\pi, a_{0:t}) = \\prod_{t'=0}^t K(\\pi(s_{t'}), a_{t'})` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy.
+    where :math:`w_{0:t} := \\prod_{t'=0}^t \\frac{1}{\\pi_0(a_{t'} \\mid s_{t'})}`.
+    :math:`\\delta(\\pi, a_{0:t}) = \\prod_{t'=0}^t K(\\pi(s_{t'}), a_{t'})` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy.
     Note that :math:`K(\\cdot)` is a kernel function.
 
     Parameters
@@ -592,7 +586,7 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
         step_per_episode: int,
         action: np.ndarray,
         reward: np.ndarray,
-        behavior_policy_step_wise_pscore: np.ndarray,
+        pscore: np.ndarray,
         evaluation_policy_action: np.ndarray,
         action_scaler: np.ndarray,
         gamma: float = 1.0,
@@ -612,9 +606,9 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
         reward: array-like of shape (n_episodes * step_per_episode, )
             Reward observation.
 
-        behavior_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
-            Step-wise action choice probability of the behavior policy,
-            i.e., :math:`\\prod_{t'=0}^t \\pi_0(a_{t'} \\mid s_{t'})`
+        pscore: array-like of shape (n_episodes * step_per_episode, )
+            Conditional action choice probability of the behavior policy,
+            i.e., :math:`\\pi_0(a \\mid s)`
 
         evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
             Action chosen by the evaluation policy.
@@ -634,27 +628,30 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
             Policy value estimated for each trajectory.
 
         """
-        action_dim = action.shape[1]
-        action = action.reshape((-1, step_per_episode, action_dim))
-        evaluation_policy_action = evaluation_policy_action.reshape(
-            (-1, step_per_episode, action_dim)
+        behavior_policy_pscore = self._calc_behavior_policy_pscore(
+            step_per_episode=step_per_episode,
+            pscore=pscore,
+            pscore_type="step_wise",
         )
-        reward = reward.reshape((-1, step_per_episode))
-        behavior_policy_step_wise_pscore = behavior_policy_step_wise_pscore.reshape(
-            (-1, step_per_episode)
-        )
-        discount = np.full(reward.shape[1], gamma).cumprod()
-
-        similarity_weight = gaussian_kernel(
-            evaluation_policy_action / action_scaler[np.newaxis, :],
-            action / action_scaler[np.newaxis, :],
+        similarity_weight = self._calc_similarity_weight(
+            step_per_episode=step_per_episode,
+            action=action,
+            evaluation_policy_action=evaluation_policy_action,
+            action_scaler=action_scaler,
             sigma=sigma,
+            pscore_type="step_wise",
         )
-        similarity_weight = similarity_weight.cumprod(axis=1)[:, :, 0]
+
+        reward = reward.reshape((-1, step_per_episode))
+        discount = np.full(step_per_episode, gamma).cumprod() / gamma
 
         estimated_trajectory_value = (
-            discount * reward * similarity_weight / behavior_policy_step_wise_pscore
+            discount[np.newaxis, :]
+            * reward
+            * similarity_weight
+            / behavior_policy_pscore
         ).sum(axis=1)
+
         return estimated_trajectory_value
 
     def estimate_policy_value(
@@ -662,7 +659,7 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
         step_per_episode: int,
         action: np.ndarray,
         reward: np.ndarray,
-        behavior_policy_step_wise_pscore: np.ndarray,
+        pscore: np.ndarray,
         evaluation_policy_action: np.ndarray,
         gamma: float = 1.0,
         sigma: float = 1.0,
@@ -682,9 +679,9 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
         reward: array-like of shape (n_episodes * step_per_episode, )
             Reward observation.
 
-        behavior_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
-            Step-wise action choice probability of the behavior policy,
-            i.e., :math:`\\prod_{t'=0}^t \\pi_0(a_{t'} \\mid s_{t'})`
+        pscore: array-like of shape (n_episodes * step_per_episode, )
+            Conditional action choice probability of the behavior policy,
+            i.e., :math:`\\pi_0(a \\mid s)`
 
         evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
             Action chosen by the evaluation policy.
@@ -721,8 +718,8 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
             expected_dim=1,
         )
         check_array(
-            behavior_policy_step_wise_pscore,
-            name="behavior_policy_step_wise_pscore",
+            pscore,
+            name="pscore",
             expected_dim=1,
             min_val=0.0,
         )
@@ -734,17 +731,16 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
         if not (
             action.shape[0]
             == reward.shape[0]
-            == behavior_policy_step_wise_pscore.shape[0]
+            == pscore.shape[0]
             == evaluation_policy_action.shape[0]
         ):
             raise ValueError(
-                "Expected `action.shape[0] == reward.shape[0] == behavior_policy_step_wise_pscore.shape[0] == evaluation_policy_action.shape[0]`"
+                "Expected `action.shape[0] == reward.shape[0] == pscore.shape[0] == evaluation_policy_action.shape[0]`"
                 ", but found False"
             )
-        if not (action.shape[1] == evaluation_policy_action.shape[1]):
+        if action.shape[1] != evaluation_policy_action.shape[1]:
             raise ValueError(
-                "Expected `action.shape[1] == evaluation_policy_action.shape[1]`"
-                ", but found False"
+                "Expected `action.shape[1] == evaluation_policy_action.shape[1]`, but found False"
             )
 
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
@@ -766,7 +762,7 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
             step_per_episode=step_per_episode,
             action=action,
             reward=reward,
-            behavior_policy_step_wise_pscore=behavior_policy_step_wise_pscore,
+            pscore=pscore,
             evaluation_policy_action=evaluation_policy_action,
             gamma=gamma,
             sigma=sigma,
@@ -778,7 +774,7 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
         step_per_episode: int,
         action: np.ndarray,
         reward: np.ndarray,
-        behavior_policy_step_wise_pscore: np.ndarray,
+        pscore: np.ndarray,
         evaluation_policy_action: np.ndarray,
         gamma: float = 1.0,
         sigma: float = 1.0,
@@ -802,9 +798,9 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
         reward: array-like of shape (n_episodes * step_per_episode, )
             Reward observation.
 
-        behavior_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
-            Step-wise action choice probability of the behavior policy,
-            i.e., :math:`\\prod_{t'=0}^t \\pi_0(a_{t'} \\mid s_{t'})`
+        pscore: array-like of shape (n_episodes * step_per_episode, )
+            Conditional action choice probability of the behavior policy,
+            i.e., :math:`\\pi_0(a \\mid s)`
 
         evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
             Action chosen by the evaluation policy.
@@ -853,8 +849,8 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
             expected_dim=1,
         )
         check_array(
-            behavior_policy_step_wise_pscore,
-            name="behavior_policy_step_wise_pscore",
+            pscore,
+            name="pscore",
             expected_dim=1,
             min_val=0.0,
         )
@@ -866,17 +862,16 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
         if not (
             action.shape[0]
             == reward.shape[0]
-            == behavior_policy_step_wise_pscore.shape[0]
+            == pscore.shape[0]
             == evaluation_policy_action.shape[0]
         ):
             raise ValueError(
-                "Expected `action.shape[0] == reward.shape[0] == behavior_policy_step_wise_pscore.shape[0] == evaluation_policy_action.shape[0]`"
+                "Expected `action.shape[0] == reward.shape[0] == pscore.shape[0] == evaluation_policy_action.shape[0]`"
                 ", but found False"
             )
-        if not (action.shape[1] == evaluation_policy_action.shape[1]):
+        if action.shape[1] != evaluation_policy_action.shape[1]:
             raise ValueError(
-                "Expected `action.shape[1] == evaluation_policy_action.shape[1]`"
-                ", but found False"
+                "Expected `action.shape[1] == evaluation_policy_action.shape[1]`, but found False"
             )
 
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
@@ -903,7 +898,7 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
             step_per_episode=step_per_episode,
             action=action,
             reward=reward,
-            behavior_policy_step_wise_pscore=behavior_policy_step_wise_pscore,
+            pscore=pscore,
             evaluation_policy_action=evaluation_policy_action,
             gamma=gamma,
             sigma=sigma,
@@ -929,10 +924,10 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
 
         \\hat{J}_{\\mathrm{DR}} (\\pi; \\mathcal{D})
         := \\mathbb{E}_{n} [\\sum_{t=0}^{T-1} \\gamma^t (w_{0:t} \\delta(\\pi, a_{0:t}) (r_t - \\hat{Q}(s_t, a_t))
-            + w_{0:t-1} \\delta(\\pi, a_{0:t-1}) \\mathbb{E}_{a \\sim \\pi(a \\mid s_t)}[\\hat{Q}(s_t, a)])],
+            + w_{0:t-1} \\delta(\\pi, a_{0:t-1}) \\hat{Q}(s_t, \\pi(s_t))]),
 
-    where :math:`w_{0:t} := \\prod_{t'=0}^t \\frac{1}{\\pi_0(a_{t'} \\mid s_{t'})}`
-    and :math:`\\delta(\\pi, a_{0:t}) = \\prod_{t'=1}^t K(\\pi(s_{t'}), a_{t'})` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy.
+    where :math:`w_{0:t} := \\prod_{t'=0}^t \\frac{1}{\\pi_0(a_{t'} \\mid s_{t'})}`.
+    :math:`\\delta(\\pi, a_{0:t}) = \\prod_{t'=1}^t K(\\pi(s_{t'}), a_{t'})` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy.
     Note that :math:`K(\\cdot)` is a kernel function.
 
     Parameters
@@ -972,7 +967,7 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
         step_per_episode: int,
         action: np.ndarray,
         reward: np.ndarray,
-        behavior_policy_step_wise_pscore: np.ndarray,
+        pscore: np.ndarray,
         evaluation_policy_action: np.ndarray,
         state_action_value_prediction: np.ndarray,
         action_scaler: np.ndarray,
@@ -993,16 +988,16 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
         reward: array-like of shape (n_episodes * step_per_episode, )
             Reward observation.
 
-        behavior_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
-            Step-wise action choice probability of the behavior policy,
-            i.e., :math:`\\prod_{t'=0}^t \\pi_0(a_{t'} \\mid s_{t'})`
+        pscore: array-like of shape (n_episodes * step_per_episode, )
+            Conditional action choice probability of the behavior policy,
+            i.e., :math:`\\pi_0(a \\mid s)`
 
         evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
             Action chosen by the evaluation policy.
 
-        state_action_value_prediction: array-like of shape (n_episodes * step_per_episode, )
-            :math:`\\hat{Q}` for the action chosen by the evaluation policy,
-            i.e., :math:`\\hat{Q}(s_t, \\pi(a \\mid s_t))`.
+        state_action_value_prediction: array-like of shape (n_episodes * step_per_episode, 2)
+            :math:`\\hat{Q}` for the observed action and action chosen evaluation policy,
+            i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a \\mid s_t))`.
 
         action_scaler: array-like of shape (action_dim, )
             Scaling factor of action.
@@ -1019,40 +1014,41 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
             Policy value estimated for each trajectory.
 
         """
-        action_dim = action.shape[1]
-        action = action.reshape((-1, step_per_episode, action_dim))
-        evaluation_policy_action = evaluation_policy_action.reshape(
-            (-1, step_per_episode, action_dim)
+        behavior_policy_pscore = self._calc_behavior_policy_pscore(
+            step_per_episode=step_per_episode,
+            pscore=pscore,
+            pscore_type="step_wise",
         )
+        similarity_weight = self._calc_similarity_weight(
+            step_per_episode=step_per_episode,
+            action=action,
+            evaluation_policy_action=evaluation_policy_action,
+            action_scaler=action_scaler,
+            sigma=sigma,
+            pscore_type="step_wise",
+        )
+        weight = similarity_weight / behavior_policy_pscore
+        weight_prev = np.roll(weight, 1, axis=1)
+        weight_prev[:, 0] = 1
 
         reward = reward.reshape((-1, step_per_episode))
+        discount = np.full(step_per_episode, gamma).cumprod() / gamma
+
         state_action_value_prediction = state_action_value_prediction.reshape(
-            (-1, step_per_episode)
+            (-1, step_per_episode, 2)
         )
-
-        pscore = behavior_policy_step_wise_pscore.reshape((-1, step_per_episode))
-        pscore_prev = np.roll(pscore, 1, axis=1)
-        pscore_prev[:, 0] = 1
-
-        discount = np.full(reward.shape[1], gamma).cumprod()
-
-        similarity_weight = gaussian_kernel(
-            evaluation_policy_action / action_scaler[np.newaxis, :],
-            action / action_scaler[np.newaxis, :],
-            sigma=sigma,
-        )
-        similarity_weight = similarity_weight.cumprod(axis=1)[:, :, 0]
-
-        similarity_weight_prev = np.roll(similarity_weight, 1, axis=1)
-        similarity_weight_prev[:, 0] = 1
+        state_action_value_prediction = np.insert(state_value_prediction, -1, 0, axis=1)
+        state_value_prediction = state_action_value_prediction[:, 1:, 1]
+        state_action_value_prediction = state_action_value_prediction[:, :-1, 0]
 
         estimated_trajectory_value = (
-            discount
+            discount[np.newaxis, :]
             * (
-                (reward - state_action_value_prediction) * similarity_weight / pscore
-                + state_action_value_prediction * similarity_weight_prev / pscore_prev
+                weight * (reward - state_action_value_prediction)
+                + weight_prev * state_action_value_prediction
             )
         ).sum(axis=1)
+
         return estimated_trajectory_value
 
     def estimate_policy_value(
@@ -1060,7 +1056,7 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
         step_per_episode: int,
         action: np.ndarray,
         reward: np.ndarray,
-        behavior_policy_step_wise_pscore: np.ndarray,
+        pscore: np.ndarray,
         evaluation_policy_action: np.ndarray,
         state_action_value_prediction: np.ndarray,
         gamma: float = 1.0,
@@ -1081,16 +1077,16 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
         reward: array-like of shape (n_episodes * step_per_episode, )
             Reward observation.
 
-        behavior_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
-            Step-wise action choice probability of the behavior policy,
-            i.e., :math:`\\prod_{t'=0}^t \\pi_0(a_{t'} \\mid s_{t'})`
+        pscore: array-like of shape (n_episodes * step_per_episode, )
+            Conditional action choice probability of the behavior policy,
+            i.e., :math:`\\pi_0(a \\mid s)`
 
         evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
             Action chosen by the evaluation policy.
 
-        state_action_value_prediction: array-like of shape (n_episodes * step_per_episode, )
-            :math:`\\hat{Q}` for the action chosen by the evaluation policy,
-            i.e., :math:`\\hat{Q}(s_t, \\pi(a \\mid s_t))`.
+        state_action_value_prediction: array-like of shape (n_episodes * step_per_episode, 2)
+            :math:`\\hat{Q}` for the observed action and action chosen evaluation policy,
+            i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a \\mid s_t))`.
 
         gamma: float, default=1.0
             Discount factor. The value should be within `(0, 1]`.
@@ -1124,8 +1120,8 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
             expected_dim=1,
         )
         check_array(
-            behavior_policy_step_wise_pscore,
-            name="behavior_policy_step_wise_pscore",
+            pscore,
+            name="pscore",
             expected_dim=1,
             min_val=0.0,
         )
@@ -1134,20 +1130,29 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
             name="evaluation_policy_action",
             expected_dim=2,
         )
+        check_array(
+            state_action_value_prediction,
+            name="state_action_value_prediction",
+            expected_dim=2,
+        )
         if not (
             action.shape[0]
             == reward.shape[0]
-            == behavior_policy_step_wise_pscore.shape[0]
+            == pscore.shape[0]
             == evaluation_policy_action.shape[0]
+            == state_action_value_prediction.shape[0]
         ):
             raise ValueError(
-                "Expected `action.shape[0] == reward.shape[0] == behavior_policy_step_wise_pscore.shape[0] == evaluation_policy_action.shape[0]`"
-                ", but found False"
+                "Expected `action.shape[0] == reward.shape[0] == pscore.shape[0] == evaluation_policy_action.shape[0] "
+                "== state_action_value_prediction.shape[0]`, but found False"
             )
-        if not (action.shape[1] == evaluation_policy_action.shape[1]):
+        if action.shape[1] != evaluation_policy_action.shape[1]:
             raise ValueError(
-                "Expected `action.shape[1] == evaluation_policy_action.shape[1]`"
-                ", but found False"
+                "Expected `action.shape[1] == evaluation_policy_action.shape[1]`, but found False"
+            )
+        if not state_action_value_prediction.shape[1] != 2:
+            raise ValueError(
+                "Expected `state_action_value_prediction.shape[1] == 2`, but found False"
             )
 
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
@@ -1169,7 +1174,7 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
             step_per_episode=step_per_episode,
             action=action,
             reward=reward,
-            behavior_policy_step_wise_pscore=behavior_policy_step_wise_pscore,
+            pscore=pscore,
             evaluation_policy_action=evaluation_policy_action,
             state_action_value_prediction=state_action_value_prediction,
             gamma=gamma,
@@ -1182,7 +1187,7 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
         step_per_episode: int,
         action: np.ndarray,
         reward: np.ndarray,
-        behavior_policy_step_wise_pscore: np.ndarray,
+        pscore: np.ndarray,
         evaluation_policy_action: np.ndarray,
         state_action_value_prediction: np.ndarray,
         gamma: float = 1.0,
@@ -1207,16 +1212,16 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
         reward: array-like of shape (n_episodes * step_per_episode, )
             Reward observation.
 
-        behavior_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
-            Step-wise action choice probability of the behavior policy,
-            i.e., :math:`\\prod_{t'=0}^t \\pi_0(a_{t'} \\mid s_{t'})`
+        pscore: array-like of shape (n_episodes * step_per_episode, )
+            Conditional action choice probability of the behavior policy,
+            i.e., :math:`\\pi_0(a \\mid s)`
 
         evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
             Action chosen by the evaluation policy.
 
-        state_action_value_prediction: array-like of shape (n_episodes * step_per_episode, )
-            :math:`\\hat{Q}` for the action chosen by the evaluation policy,
-            i.e., :math:`\\hat{Q}(s_t, \\pi(a \\mid s_t))`.
+        state_action_value_prediction: array-like of shape (n_episodes * step_per_episode, 2)
+            :math:`\\hat{Q}` for the observed action and action chosen evaluation policy,
+            i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a \\mid s_t))`.
 
         ggamma: float, default=1.0
             Discount factor. The value should be within `(0, 1]`.
@@ -1262,8 +1267,8 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
             expected_dim=1,
         )
         check_array(
-            behavior_policy_step_wise_pscore,
-            name="behavior_policy_step_wise_pscore",
+            pscore,
+            name="pscore",
             expected_dim=1,
             min_val=0.0,
         )
@@ -1272,20 +1277,29 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
             name="evaluation_policy_action",
             expected_dim=2,
         )
+        check_array(
+            state_action_value_prediction,
+            name="state_action_value_prediction",
+            expected_dim=2,
+        )
         if not (
             action.shape[0]
             == reward.shape[0]
-            == behavior_policy_step_wise_pscore.shape[0]
+            == pscore.shape[0]
             == evaluation_policy_action.shape[0]
+            == state_action_value_prediction.shape[0]
         ):
             raise ValueError(
-                "Expected `action.shape[0] == reward.shape[0] == behavior_policy_step_wise_pscore.shape[0] == evaluation_policy_action.shape[0]`"
-                ", but found False"
+                "Expected `action.shape[0] == reward.shape[0] == pscore.shape[0] == evaluation_policy_action.shape[0] "
+                "== state_action_value_prediction.shape[0]`, but found False"
             )
-        if not (action.shape[1] == evaluation_policy_action.shape[1]):
+        if action.shape[1] != evaluation_policy_action.shape[1]:
             raise ValueError(
-                "Expected `action.shape[1] == evaluation_policy_action.shape[1]`"
-                ", but found False"
+                "Expected `action.shape[1] == evaluation_policy_action.shape[1]`, but found False"
+            )
+        if not state_action_value_prediction.shape[1] != 2:
+            raise ValueError(
+                "Expected `state_action_value_prediction.shape[1] == 2`, but found False"
             )
 
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
@@ -1312,7 +1326,7 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
             step_per_episode=step_per_episode,
             action=action,
             reward=reward,
-            behavior_policy_step_wise_pscore=behavior_policy_step_wise_pscore,
+            pscore=pscore,
             evaluation_policy_action=evaluation_policy_action,
             state_action_value_prediction=state_action_value_prediction,
             gamma=gamma,
@@ -1342,8 +1356,8 @@ class ContinuousSelfNormalizedTrajectoryWiseImportanceSampling(
         \\hat{J}_{\\mathrm{SNTIS}} (\\pi; \\mathcal{D})
         := \\mathbb{E}_{n} [\\sum_{t=0}^{T-1} \\gamma^t \\frac{w_{0:T-1} \\delta(\\pi, a_{0:T-1})}{\\sum_{n} [w_{1:T-1} \\delta(\\pi, a_{0:T-1})]} r_t],
 
-    where :math:`w_{0:T-1} := \\prod_{t=0}^{T-1} \\frac{1}{\\pi_0(a_t \\mid s_t)}`
-    and :math:`\\delta(\\pi, a_{0:T}) = \\prod_{t=0}^{T-1} K(\\pi(s_t), a_t)` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy.
+    where :math:`w_{0:T-1} := \\prod_{t=0}^{T-1} \\frac{1}{\\pi_0(a_t \\mid s_t)}`.
+    :math:`\\delta(\\pi, a_{0:T}) = \\prod_{t=0}^{T-1} K(\\pi(s_t), a_t)` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy.
     Note that :math:`K(\\cdot)` is a kernel function.
 
     Parameters
@@ -1383,7 +1397,7 @@ class ContinuousSelfNormalizedTrajectoryWiseImportanceSampling(
         step_per_episode: int,
         action: np.ndarray,
         reward: np.ndarray,
-        behavior_policy_trajectory_wise_pscore: np.ndarray,
+        pscore: np.ndarray,
         evaluation_policy_action: np.ndarray,
         action_scaler: np.ndarray,
         gamma: float = 1.0,
@@ -1403,9 +1417,9 @@ class ContinuousSelfNormalizedTrajectoryWiseImportanceSampling(
         reward: array-like of shape (n_episodes * step_per_episode, )
             Reward observation.
 
-        behavior_policy_trajectory_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
-            Trajectory-wise action choice probability of the behavior policy,
-            i.e., :math:`\\prod_{t=0}^T \\pi_0(a_t \\mid s_t)`
+        pscore: array-like of shape (n_episodes * step_per_episode, )
+            Conditional action choice probability of the behavior policy,
+            i.e., :math:`\\pi_0(a \\mid s)`
 
         evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
             Action chosen by the evaluation policy.
@@ -1425,35 +1439,29 @@ class ContinuousSelfNormalizedTrajectoryWiseImportanceSampling(
             Policy value estimated for each trajectory.
 
         """
-        action_dim = action.shape[1]
-        action = action.reshape((-1, step_per_episode, action_dim))
-        evaluation_policy_action = evaluation_policy_action.reshape(
-            (-1, step_per_episode, action_dim)
+        behavior_policy_pscore = self._calc_behavior_policy_pscore(
+            step_per_episode=step_per_episode,
+            pscore=pscore,
+            pscore_type="trajectory_wise",
         )
-        reward = reward.reshape((-1, step_per_episode))
-        importance_weight = 1 / (
-            behavior_policy_trajectory_wise_pscore.reshape((-1, step_per_episode))
-        )
-        discount = np.full(reward.shape[1], gamma).cumprod()
-
-        similarity_weight = gaussian_kernel(
-            evaluation_policy_action / action_scaler[np.newaxis, :],
-            action / action_scaler[np.newaxis, :],
+        similarity_weight = self._calc_similarity_weight(
+            step_per_episode=step_per_episode,
+            action=action,
+            evaluation_policy_action=evaluation_policy_action,
+            action_scaler=action_scaler,
             sigma=sigma,
+            pscore_type="trajectory_wise",
         )
-        similarity_weight = similarity_weight.cumprod(axis=1)[:, -1, 0]
-        similarity_weight = np.tile(
-            similarity_weight.reshape((-1, 1)), step_per_episode
-        )
+        weight = similarity_weight / behavior_policy_pscore
+        self_normalized_weight = weight / (weight.mean(axis=0)[np.newaxis, :] + 1e-10)
 
-        weight = similarity_weight / importance_weight
-        weight_mean = weight.mean(axis=0)
-        weight_mean = np.tile(weight_mean, len(weight)).reshape((-1, step_per_episode))
-        self_normalized_weight = weight / (weight_mean + 1e-10)
+        reward = reward.reshape((-1, step_per_episode))
+        discount = np.full(step_per_episode, gamma).cumprod() / gamma
 
-        estimated_trajectory_value = (discount * reward * self_normalized_weight).sum(
-            axis=1
-        )
+        estimated_trajectory_value = (
+            discount[np.newaxis, :] * self_normalized_weight * reward
+        ).sum(axis=1)
+
         return estimated_trajectory_value
 
 
@@ -1472,8 +1480,8 @@ class ContinuousSelfNormalizedPerDecisionImportanceSampling(
         \\hat{J}_{\\mathrm{SNPDIS}} (\\pi; \\mathcal{D})
         := \\mathbb{E}_{n} [\\sum_{t=0}^{T-1} \\gamma^t \\frac{w_{1:t} \\delta(\\pi, a_{0:t})}{\\sum_{n} [w_{1:t} \\delta(\\pi, a_{0:t})]} r_t],
 
-    where :math:`w_{0:t} := \\prod_{t'=1}^t \\frac{1}{\\pi_0(a_{t'} \\mid s_{t'})}`
-    and :math:`\\delta(\\pi, a_{0:t}) = \\prod_{t'=1}^t K(\\pi(s_{t'}), a_{t'})` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy.
+    where :math:`w_{0:t} := \\prod_{t'=1}^t \\frac{1}{\\pi_0(a_{t'} \\mid s_{t'})}`.
+    :math:`\\delta(\\pi, a_{0:t}) = \\prod_{t'=1}^t K(\\pi(s_{t'}), a_{t'})` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy.
     Note that :math:`K(\\cdot)` is a kernel function.
 
     Parameters
@@ -1513,7 +1521,7 @@ class ContinuousSelfNormalizedPerDecisionImportanceSampling(
         step_per_episode: int,
         action: np.ndarray,
         reward: np.ndarray,
-        behavior_policy_step_wise_pscore: np.ndarray,
+        pscore: np.ndarray,
         evaluation_policy_action: np.ndarray,
         action_scaler: np.ndarray,
         gamma: float = 1.0,
@@ -1533,9 +1541,9 @@ class ContinuousSelfNormalizedPerDecisionImportanceSampling(
         reward: array-like of shape (n_episodes * step_per_episode, )
             Reward observation.
 
-        behavior_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
-            Step-wise action choice probability of the behavior policy,
-            i.e., :math:`\\prod_{t'=0}^t \\pi_0(a_{t'} \\mid s_{t'})`
+        pscore: array-like of shape (n_episodes * step_per_episode, )
+            Conditional action choice probability of the behavior policy,
+            i.e., :math:`\\pi_0(a \\mid s)`
 
         evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
             Action chosen by the evaluation policy.
@@ -1555,32 +1563,29 @@ class ContinuousSelfNormalizedPerDecisionImportanceSampling(
             Policy value estimated for each trajectory.
 
         """
-        action_dim = action.shape[1]
-        action = action.reshape((-1, step_per_episode, action_dim))
-        evaluation_policy_action = evaluation_policy_action.reshape(
-            (-1, step_per_episode, action_dim)
+        behavior_policy_pscore = self._calc_behavior_policy_pscore(
+            step_per_episode=step_per_episode,
+            pscore=pscore,
+            pscore_type="step_wise",
         )
-        reward = reward.reshape((-1, step_per_episode))
-        importance_weight = 1 / (
-            behavior_policy_step_wise_pscore.reshape((-1, step_per_episode))
-        )
-        discount = np.full(reward.shape[1], gamma).cumprod()
-
-        similarity_weight = gaussian_kernel(
-            evaluation_policy_action / action_scaler[np.newaxis, :],
-            action / action_scaler[np.newaxis, :],
+        similarity_weight = self._calc_similarity_weight(
+            step_per_episode=step_per_episode,
+            action=action,
+            evaluation_policy_action=evaluation_policy_action,
+            action_scaler=action_scaler,
             sigma=sigma,
+            pscore_type="step_wise",
         )
-        similarity_weight = similarity_weight.cumprod(axis=1)[:, :, 0]
+        weight = similarity_weight / behavior_policy_pscore
+        self_normalized_weight = weight / (weight.mean(axis=0)[np.newaxis, :] + 1e-10)
 
-        weight = similarity_weight / importance_weight
-        weight_mean = weight.mean(axis=0)
-        weight_mean = np.tile(weight_mean, len(weight)).reshape((-1, step_per_episode))
-        self_normalized_weight = weight / (weight_mean + 1e-10)
+        reward = reward.reshape((-1, step_per_episode))
+        discount = np.full(step_per_episode, gamma).cumprod() / gamma
 
-        estimated_trajectory_value = (discount * reward * self_normalized_weight).sum(
-            axis=1
-        )
+        estimated_trajectory_value = (
+            discount[np.newaxis, :] * self_normalized_weight * reward
+        ).sum(axis=1)
+
         return estimated_trajectory_value
 
 
@@ -1598,8 +1603,8 @@ class ContinuousSelfNormalizedDoublyRobust(ContinuousDoublyRobust):
         := \\mathbb{E}_{n} [\\sum_{t=0}^{T-1} \\gamma^t ( \\frac{w_{0:t} \\delta(\\pi, a_{0:t})}{\\sum_{n} [w_{0:t} \\delta(\\pi, a_{0:t})]} (r_t - \\hat{Q}(s_t, a_t))
             + \\frac{w_{0:t-1} \\delta(\\pi, a_{0:t-1})}{\\sum_{n} [w_{0:t-1} \\delta(\\pi, a_{0:t-1})]} \\mathbb{E}_{a \\sim \\pi(a \\mid s_t)}[\\hat{Q}(s_t, a)])],
 
-    where :math:`w_{0:t} := \\prod_{t'=0}^t \\frac{1}{\\pi_0(a_{t'} \\mid s_{t'})}`
-    and :math:`\\delta(\\pi, a_{0:t}) = \\prod_{t'=1}^t K(\\pi(s_{t'}), a_{t'})` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy.
+    where :math:`w_{0:t} := \\prod_{t'=0}^t \\frac{1}{\\pi_0(a_{t'} \\mid s_{t'})}`.
+    :math:`\\delta(\\pi, a_{0:t}) = \\prod_{t'=1}^t K(\\pi(s_{t'}), a_{t'})` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy.
     Note that :math:`K(\\cdot)` is a kernel function.
 
     Parameters
@@ -1641,7 +1646,7 @@ class ContinuousSelfNormalizedDoublyRobust(ContinuousDoublyRobust):
         step_per_episode: int,
         action: np.ndarray,
         reward: np.ndarray,
-        behavior_policy_step_wise_pscore: np.ndarray,
+        pscore: np.ndarray,
         evaluation_policy_action: np.ndarray,
         state_action_value_prediction: np.ndarray,
         action_scaler: np.ndarray,
@@ -1662,16 +1667,16 @@ class ContinuousSelfNormalizedDoublyRobust(ContinuousDoublyRobust):
         reward: array-like of shape (n_episodes * step_per_episode, )
             Reward observation.
 
-        behavior_policy_step_wise_pscore: array-like of shape (n_episodes * step_per_episode, )
-            Step-wise action choice probability of the behavior policy,
-            i.e., :math:`\\prod_{t'=0}^t \\pi_0(a_{t'} \\mid s_{t'})`
+        pscore: array-like of shape (n_episodes * step_per_episode, )
+            Conditional action choice probability of the behavior policy,
+            i.e., :math:`\\pi_0(a \\mid s)`
 
         evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
             Action chosen by the evaluation policy.
 
-        state_action_value_prediction: array-like of shape (n_episodes * step_per_episode, )
-            :math:`\\hat{Q}` for the action chosen by the evaluation policy,
-            i.e., :math:`\\hat{Q}(s_t, \\pi(a \\mid s_t))`.
+        state_action_value_prediction: array-like of shape (n_episodes * step_per_episode, 2)
+            :math:`\\hat{Q}` for the observed action and action chosen evaluation policy,
+            i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a \\mid s_t))`.
 
         action_scaler: array-like of shape (action_dim, )
             Scaling factor of action.
@@ -1688,58 +1693,40 @@ class ContinuousSelfNormalizedDoublyRobust(ContinuousDoublyRobust):
             Policy value estimated for each trajectory.
 
         """
-        action_dim = action.shape[1]
-        action = action.reshape((-1, step_per_episode, action_dim))
-        evaluation_policy_action = evaluation_policy_action.reshape(
-            (-1, step_per_episode, action_dim)
+        behavior_policy_pscore = self._calc_behavior_policy_pscore(
+            step_per_episode=step_per_episode,
+            pscore=pscore,
+            pscore_type="step_wise",
         )
+        similarity_weight = self._calc_similarity_weight(
+            step_per_episode=step_per_episode,
+            action=action,
+            evaluation_policy_action=evaluation_policy_action,
+            action_scaler=action_scaler,
+            sigma=sigma,
+            pscore_type="step_wise",
+        )
+        weight = similarity_weight / behavior_policy_pscore
+        self_normalized_weight = weight / (weight.mean(axis=1)[np.newaxis, :] + 1e-10)
+        self_normalized_weight_prev = np.roll(self_normalized_weight, 1, axis=1)
+        self_normalized_weight_prev[:, 0] = 1
 
         reward = reward.reshape((-1, step_per_episode))
+        discount = np.full(step_per_episode, gamma).cumprod() / gamma
+
         state_action_value_prediction = state_action_value_prediction.reshape(
-            (-1, step_per_episode)
+            (-1, step_per_episode, 2)
         )
-
-        pscore = behavior_policy_step_wise_pscore.reshape((-1, step_per_episode))
-        pscore_prev = np.roll(pscore, 1, axis=1)
-        pscore_prev[:, 0] = 1
-
-        importance_weight = 1 / pscore
-        importance_weight_prev = 1 / pscore_prev
-
-        discount = np.full(reward.shape[1], gamma).cumprod()
-
-        similarity_weight = gaussian_kernel(
-            evaluation_policy_action / action_scaler[np.newaxis, :],
-            action / action_scaler[np.newaxis, :],
-            sigma=sigma,
-        )
-        similarity_weight = similarity_weight.cumprod(axis=1)[:, :, 0]
-
-        similarity_weight_prev = np.roll(similarity_weight, 1, axis=1)
-        similarity_weight_prev[:, 0] = 1
-
-        weight = similarity_weight / importance_weight
-        weight_mean = weight.mean(axis=0)
-        weight_mean = np.tile(weight_mean, len(weight)).reshape((-1, step_per_episode))
-        self_normalized_weight = weight / (weight_mean + 1e-10)
-
-        # weight_prev = similarity_weight_prev / importance_weight_prev
-        weight_prev = importance_weight_prev
-        weight_prev_mean = weight_prev.mean(axis=0)
-        weight_prev_mean = np.tile(weight_prev_mean, len(weight_prev)).reshape(
-            (-1, step_per_episode)
-        )
-        self_normalized_weight_prev = weight_prev / (weight_prev_mean + 1e-10)
-
-        estimated_trajectory_value = (discount * reward * self_normalized_weight).sum(
-            axis=1
-        )
+        state_action_value_prediction = np.insert(state_value_prediction, -1, 0, axis=1)
+        state_value_prediction = state_action_value_prediction[:, 1:, 1]
+        state_action_value_prediction = state_action_value_prediction[:, :-1, 0]
 
         estimated_trajectory_value = (
-            discount
+            discount[np.newaxis, :]
             * (
-                (reward - state_action_value_prediction) * self_normalized_weight
-                + state_action_value_prediction * self_normalized_weight_prev
+                self_normalized_weight * (reward - state_action_value_prediction)
+                + self_normalized_weight_prev * state_action_value_prediction
             )
         ).sum(axis=1)
+
         return estimated_trajectory_value
