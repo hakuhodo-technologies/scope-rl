@@ -1,6 +1,6 @@
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Optional, Union, List
+from typing import Optional, List
 from pathlib import Path
 
 import numpy as np
@@ -16,6 +16,9 @@ from .ope import (
 )
 from ..types import OPEInputDict
 from ..utils import check_array, defaultdict_to_dict
+
+markers = ["o", "v", "^", "s", "p", "P", "*", "h", "X", "D", "d"]
+dkred = "#A60628"
 
 
 @dataclass
@@ -180,6 +183,9 @@ class OffPolicySelection:
 
     References
     -------
+    Vladislav Kurenkov and Sergey Kolesnikov.
+    "Showing Your Offline Reinforcement Learning Work: Online Evaluation Budget Matters.", 2022.
+
     Shengpu Tang and Jenna Wiens.
     "Model Selection for Offline Reinforcement Learning: Practical Considerations for Healthcare Settings.", 2021.
 
@@ -228,7 +234,7 @@ class OffPolicySelection:
         behavior_policy_reward = behavior_policy_reward.reshape((-1, step_per_episode))
         self.behavior_policy_value = behavior_policy_reward.sum(axis=1).mean()
 
-    def obtain_oracle_selection_result(
+    def obtain_true_selection_result(
         self,
         input_dict: OPEInputDict,
         return_variance: bool = False,
@@ -250,6 +256,8 @@ class OffPolicySelection:
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
+                state_action_marginal_importance_weight,
+                state_marginal_importance_weight,
                 on_policy_policy_value,
                 gamma,
             ]
@@ -399,6 +407,7 @@ class OffPolicySelection:
     def select_by_policy_value(
         self,
         input_dict: OPEInputDict,
+        return_true_values: bool = False,
         return_metrics: bool = False,
         return_by_dataframe: bool = False,
         top_k_in_eval_metrics: int = 1,
@@ -416,9 +425,14 @@ class OffPolicySelection:
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
+                state_action_marginal_importance_weight,
+                state_marginal_importance_weight,
                 on_policy_policy_value,
                 gamma,
             ]
+
+        return_true_values: bool, default=False
+            Whether to return the true policy value and its ranking.
 
         return_metrics: bool, default=False
             Whether to return the following evaluation metrics:
@@ -442,6 +456,9 @@ class OffPolicySelection:
                 estimated_ranking,
                 estimated_policy_value,
                 estimated_relative_policy_value,
+                true_ranking,
+                true_policy_value,
+                true_relative_policy_value,
                 mean_squared_error,
                 rank_correlation,
                 regret,
@@ -461,33 +478,48 @@ class OffPolicySelection:
                 Estimated relative policy value of the candidate policies compared to the behavior policy (sorted by estimated_ranking).
                 Recorded in `ranking_df_dict` when `return_by_dataframe == True`.
 
+            true_ranking: list of int
+                Ranking index of the (true) policy value of the candidate policies (sorted by estimated_ranking).
+                Recorded only when `return_true_values == True`.
+                Recorded in `ranking_df_dict` when `return_by_dataframe == True`.
+
+            true_policy_value: list of float
+                True policy value of the candidate policies (sorted by estimated_ranking).
+                Recorded only when `return_true_values == True`.
+                Recorded in `ranking_df_dict` when `return_by_dataframe == True`.
+
+            true_relative_policy_value: list of float
+                True relative policy value of the candidate policies compared to the behavior policy (sorted by estimated_ranking).
+                Recorded only when `return_true_values == True`.
+                Recorded in `ranking_df_dict` when `return_by_dataframe == True`.
+
             mean_squared_error: float
                 Mean-squared-error of the estimated policy value.
-                If `return_metric == False`, `None` is recorded.
+                Recorded only when `return_metric == True`.
                 Recorded in `metric_df` when `return_by_dataframe == True`.
 
             rank_correlation: tuple of float
                 Rank correlation coefficient between the true ranking and the estimated ranking, and its pvalue.
-                If `return_metric == False`, `None` is recorded.
+                Recorded only when `return_metric == True`.
                 Recorded in `metric_df` when `return_by_dataframe == True`.
 
             regret: tuple of float and int
                 Regret@k and k.
-                If `return_metric == False`, `None` is recorded.
+                Recorded only when `return_metric == True`.
                 Recorded in `metric_df` when `return_by_dataframe == True`.
 
             type_i_error_rate: float
                 Type I error rate of the hypothetical test. True Negative when the policy is safe but estimated as unsafe.
-                If `return_metric == False`, `None` is recorded.
+                Recorded only when `return_metric == True`.
                 Recorded in `metric_df` when `return_by_dataframe == True`.
 
             type_ii_error_rate: float
                 Type II error rate of the hypothetical test. False Positive when the policy is unsafe but undetected.
-                If `return_metric == False`, `None` is recorded.
+                Recorded only when `return_metric == True`.
                 Recorded in `metric_df` when `return_by_dataframe == True`.
 
             safety_threshold: float
-                The relative policy value required to be a safe policy.
+                The policy value required to be a safe policy.
 
         """
         if self.ope is None:
@@ -499,12 +531,12 @@ class OffPolicySelection:
             input_dict=input_dict,
         )
 
-        if return_metrics:
-            ground_truth_policy_value_dict = self.obtain_oracle_selection_result(
+        if return_true_values or return_metrics:
+            ground_truth_dict = self.obtain_true_selection_result(
                 input_dict=input_dict,
             )
-            true_ranking = ground_truth_policy_value_dict["ranking"]
-            true_policy_value = ground_truth_policy_value_dict["policy_value"]
+            true_ranking = ground_truth_dict["ranking"]
+            true_policy_value = ground_truth_dict["policy_value"]
 
         candidate_policy_names = (
             true_ranking if return_metrics else list(input_dict.keys())
@@ -515,12 +547,16 @@ class OffPolicySelection:
         for i, estimator in enumerate(self.ope.ope_estimators_):
 
             estimated_policy_value_ = np.zeros(n_policies)
+            true_policy_value_ = np.zeros(n_policies)
             for j, eval_policy in enumerate(candidate_policy_names):
                 estimated_policy_value_[j] = estimated_policy_value_dict[eval_policy][
                     estimator
                 ]
+                true_policy_value_[j] = true_policy_value[eval_policy][estimator]
 
             estimated_ranking_index_ = np.argsort(estimated_policy_value_)[::-1]
+            true_ranking_index_ = np.argsort(true_policy_value_)[::-1]
+
             estimated_ranking = [
                 candidate_policy_names[estimated_ranking_index_[i]]
                 for i in range(n_policies)
@@ -566,26 +602,31 @@ class OffPolicySelection:
                 "estimated_ranking": estimated_ranking,
                 "estimated_policy_value": estimated_policy_value,
                 "estimated_relative_policy_value": estimated_relative_policy_value,
-                "mean_squared_error": mse if return_metrics else None,
-                "rank_correlation": rankcorr if return_metrics else None,
-                "regret": (regret, top_k_in_eval_metrics) if return_metrics else None,
-                "type_i_error_rate": type_i_error_rate if return_metrics else None,
-                "type_ii_error_rate": type_ii_error_rate if return_metrics else None,
-                "safety_threshold": safety_criteria * self.behavior_policy_value,
             }
+            if return_true_values:
+                ops_dict[estimator]["true_ranking"] = true_ranking_index_[
+                    estimated_ranking_index_
+                ]
+                ops_dict[estimator]["true_policy_value"] = true_policy_value_[
+                    estimated_ranking_index_
+                ]
+                ops_dict[estimator]["true_relative_policy_value"] = (
+                    true_policy_value_[estimated_ranking_index_]
+                    / self.behavior_policy_value
+                )
+            if return_metrics:
+                ops_dict[estimator]["mean_squared_error"] = mse
+                ops_dict[estimator]["rank_correlation"] = rankcorr
+                ops_dict[estimator]["regret"] = (regret, top_k_in_eval_metrics)
+                ops_dict[estimator]["type_i_error_rate"] = type_i_error_rate
+                ops_dict[estimator]["type_ii_error_rate"] = type_ii_error_rate
+                ops_dict[estimator]["safety_threshold"] = (
+                    safety_criteria * self.behavior_policy_value
+                )
 
         if return_by_dataframe:
-            metric_df = pd.DataFrame()
-            mse, rankcorr, pvalue, regret, type_i, type_ii, = (
-                [],
-                [],
-                [],
-                [],
-                [],
-                [],
-            )
-
             ranking_df_dict = defaultdict(pd.DataFrame)
+
             for i, estimator in enumerate(self.ope.ope_estimators_):
                 ranking_df_ = pd.DataFrame()
                 ranking_df_["estimated_ranking"] = ops_dict[estimator][
@@ -597,30 +638,54 @@ class OffPolicySelection:
                 ranking_df_["estimated_relative_policy_value"] = ops_dict[estimator][
                     "estimated_relative_policy_value"
                 ]
+
+                if return_true_values:
+                    ranking_df_["true_ranking"] = ops_dict[estimator]["true_ranking"]
+                    ranking_df_["true_policy_value"] = ops_dict[estimator][
+                        "true_policy_value"
+                    ]
+                    ranking_df_["true_relative_policy_value"] = ops_dict[estimator][
+                        "true_relative_policy_value"
+                    ]
+
                 ranking_df_dict[estimator] = ranking_df_
-
-                mse.append(ops_dict[estimator]["mean_squared_error"])
-                rankcorr.append(ops_dict[estimator]["rank_correlation"][0])
-                pvalue.append(ops_dict[estimator]["rank_correlation"][1])
-                regret.append(ops_dict[estimator]["regret"][0])
-                type_i.append(ops_dict[estimator]["type_i_error_rate"])
-                type_ii.append(ops_dict[estimator]["type_ii_error_rate"])
-
-            metric_df["estimator"] = self.ope.ope_estimators_
-            metric_df["mean_squared_error"] = mse
-            metric_df["rank_correlation"] = rankcorr
-            metric_df["pvalue"] = pvalue
-            metric_df[f"regret@{top_k_in_eval_metrics}"] = regret
-            metric_df["type_i_error_rate"] = type_i
-            metric_df["type_ii_error_rate"] = type_ii
 
             ranking_df_dict = defaultdict_to_dict(ranking_df_dict)
 
-        return (ranking_df_dict, metric_df) if return_by_dataframe else ops_dict
+            if return_metrics:
+                mse, rankcorr, pvalue, regret, type_i, type_ii, = (
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                )
+                for i, estimator in enumerate(self.ope.ope_estimators_):
+                    mse.append(ops_dict[estimator]["mean_squared_error"])
+                    rankcorr.append(ops_dict[estimator]["rank_correlation"][0])
+                    pvalue.append(ops_dict[estimator]["rank_correlation"][1])
+                    regret.append(ops_dict[estimator]["regret"][0])
+                    type_i.append(ops_dict[estimator]["type_i_error_rate"])
+                    type_ii.append(ops_dict[estimator]["type_ii_error_rate"])
+
+                metric_df = pd.DataFrame()
+                metric_df["estimator"] = self.ope.ope_estimators_
+                metric_df["mean_squared_error"] = mse
+                metric_df["rank_correlation"] = rankcorr
+                metric_df["pvalue"] = pvalue
+                metric_df[f"regret@{top_k_in_eval_metrics}"] = regret
+                metric_df["type_i_error_rate"] = type_i
+                metric_df["type_ii_error_rate"] = type_ii
+
+            dfs = (ranking_df_dict, metric_df) if return_metrics else ranking_df_dict
+
+        return dfs if return_by_dataframe else ops_dict
 
     def select_by_policy_value_via_cumulative_distribution_ope(
         self,
         input_dict: OPEInputDict,
+        return_true_values: bool = False,
         return_metrics: bool = False,
         return_by_dataframe: bool = False,
         top_k_in_eval_metrics: int = 1,
@@ -638,9 +703,14 @@ class OffPolicySelection:
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
+                state_action_marginal_importance_weight,
+                state_marginal_importance_weight,
                 on_policy_policy_value,
                 gamma,
             ]
+
+        return_true_values: bool, default=False
+            Whether to return the true policy value and its ranking.
 
         return_metrics: bool, default=False
             Whether to return the following evaluation metrics:
@@ -664,6 +734,9 @@ class OffPolicySelection:
                 estimated_ranking,
                 estimated_policy_value,
                 estimated_relative_policy_value,
+                true_ranking,
+                true_policy_value,
+                true_relative_policy_value,
                 mean_squared_error,
                 rank_correlation,
                 regret,
@@ -683,33 +756,48 @@ class OffPolicySelection:
                 Estimated relative policy value of the candidate policies compared to the behavior policy (sorted by estimated_ranking).
                 Recorded in `ranking_df_dict` when `return_by_dataframe == True`.
 
+            true_ranking: list of int
+                Ranking index of the (true) policy value of the candidate policies (sorted by estimated_ranking).
+                Recorded only when `return_true_values == True`.
+                Recorded in `ranking_df_dict` when `return_by_dataframe == True`.
+
+            true_policy_value: list of float
+                True policy value of the candidate policies (sorted by estimated_ranking).
+                Recorded only when `return_true_values == True`.
+                Recorded in `ranking_df_dict` when `return_by_dataframe == True`.
+
+            true_relative_policy_value: list of float
+                True relative policy value of the candidate policies compared to the behavior policy (sorted by estimated_ranking).
+                Recorded only when `return_true_values == True`.
+                Recorded in `ranking_df_dict` when `return_by_dataframe == True`.
+
             mean_squared_error: float
                 Mean-squared-error of the estimated policy value.
-                If `return_metric == False`, `None` is recorded.
+                Recorded only when `return_metric == True`.
                 Recorded in `metric_df` when `return_by_dataframe == True`.
 
             rank_correlation: tuple of float
                 Rank correlation coefficient between the true ranking and the estimated ranking, and its pvalue.
-                If `return_metric == False`, `None` is recorded.
+                Recorded only when `return_metric == True`.
                 Recorded in `metric_df` when `return_by_dataframe == True`.
 
             regret: tuple of float and int
                 Regret@k and k.
-                If `return_metric == False`, `None` is recorded.
+                Recorded only when `return_metric == True`.
                 Recorded in `metric_df` when `return_by_dataframe == True`.
 
             type_i_error_rate: float
                 Type I error rate of the hypothetical test. True Negative when the policy is safe but estimated as unsafe.
-                If `return_metric == False`, `None` is recorded.
+                Recorded only when `return_metric == True`.
                 Recorded in `metric_df` when `return_by_dataframe == True`.
 
             type_ii_error_rate: float
                 Type II error rate of the hypothetical test. False Positive when the policy is unsafe but undetected.
-                If `return_metric == False`, `None` is recorded.
+                Recorded only when `return_metric == True`.
                 Recorded in `metric_df` when `return_by_dataframe == True`.
 
             safety_threshold: float
-                The relative policy value required to be a safe policy.
+                The policy value required to be a safe policy.
 
         """
         if self.cumulative_distribution_ope is None:
@@ -721,12 +809,12 @@ class OffPolicySelection:
             input_dict=input_dict,
         )
 
-        if return_metrics:
-            ground_truth_policy_value_dict = self.obtain_oracle_selection_result(
+        if return_true_values or return_metrics:
+            ground_truth_dict = self.obtain_true_selection_result(
                 input_dict=input_dict,
             )
-            true_ranking = ground_truth_policy_value_dict["ranking"]
-            true_policy_value = ground_truth_policy_value_dict["policy_value"]
+            true_ranking = ground_truth_dict["ranking"]
+            true_policy_value = ground_truth_dict["policy_value"]
 
         candidate_policy_names = (
             true_ranking if return_metrics else list(input_dict.keys())
@@ -737,12 +825,16 @@ class OffPolicySelection:
         for i, estimator in enumerate(self.cumulative_distribution_ope.ope_estimators_):
 
             estimated_policy_value_ = np.zeros(n_policies)
+            true_policy_value_ = np.zeros(n_policies)
             for j, eval_policy in enumerate(candidate_policy_names):
                 estimated_policy_value_[j] = estimated_policy_value_dict[eval_policy][
                     estimator
                 ]
+                true_policy_value_[j] = true_policy_value[eval_policy][estimator]
 
             estimated_ranking_index_ = np.argsort(estimated_policy_value_)[::-1]
+            true_ranking_index_ = np.argsort(true_policy_value_)[::-1]
+
             estimated_ranking = [
                 candidate_policy_names[estimated_ranking_index_[i]]
                 for i in range(n_policies)
@@ -790,29 +882,32 @@ class OffPolicySelection:
                 "estimated_ranking": estimated_ranking,
                 "estimated_policy_value": estimated_policy_value,
                 "estimated_relative_policy_value": estimated_relative_policy_value,
-                "mean_squared_error": mse if return_metrics else None,
-                "rank_correlation": rankcorr if return_metrics else None,
-                "regret": (regret, top_k_in_eval_metrics) if return_metrics else None,
-                "type_i_error_rate": type_i_error_rate if return_metrics else None,
-                "type_ii_error_rate": type_ii_error_rate if return_metrics else None,
-                "safety_threshold": safety_criteria * self.behavior_policy_value,
             }
+            if return_true_values:
+                ops_dict[estimator]["true_ranking"] = true_ranking_index_[
+                    estimated_ranking_index_
+                ]
+                ops_dict[estimator]["true_policy_value"] = true_policy_value_[
+                    estimated_ranking_index_
+                ]
+                ops_dict[estimator]["true_relative_policy_value"] = (
+                    true_policy_value_[estimated_ranking_index_]
+                    / self.behavior_policy_value
+                )
+            if return_metrics:
+                ops_dict[estimator]["mean_squared_error"] = mse
+                ops_dict[estimator]["rank_correlation"] = rankcorr
+                ops_dict[estimator]["regret"] = (regret, top_k_in_eval_metrics)
+                ops_dict[estimator]["type_i_error_rate"] = type_i_error_rate
+                ops_dict[estimator]["type_ii_error_rate"] = type_ii_error_rate
+                ops_dict[estimator]["safety_threshold"] = (
+                    safety_criteria * self.behavior_policy_value
+                )
 
         if return_by_dataframe:
-            metric_df = pd.DataFrame()
-            mse, rankcorr, pvalue, regret, type_i, type_ii, = (
-                [],
-                [],
-                [],
-                [],
-                [],
-                [],
-            )
-
             ranking_df_dict = defaultdict(pd.DataFrame)
-            for i, estimator in enumerate(
-                self.cumulative_distribution_ope.ope_estimators_
-            ):
+
+            for i, estimator in enumerate(self.ope.ope_estimators_):
                 ranking_df_ = pd.DataFrame()
                 ranking_df_["estimated_ranking"] = ops_dict[estimator][
                     "estimated_ranking"
@@ -823,30 +918,54 @@ class OffPolicySelection:
                 ranking_df_["estimated_relative_policy_value"] = ops_dict[estimator][
                     "estimated_relative_policy_value"
                 ]
+
+                if return_true_values:
+                    ranking_df_["true_ranking"] = ops_dict[estimator]["true_ranking"]
+                    ranking_df_["true_policy_value"] = ops_dict[estimator][
+                        "true_policy_value"
+                    ]
+                    ranking_df_["true_relative_policy_value"] = ops_dict[estimator][
+                        "true_relative_policy_value"
+                    ]
+
                 ranking_df_dict[estimator] = ranking_df_
-
-                mse.append(ops_dict[estimator]["mean_squared_error"])
-                rankcorr.append(ops_dict[estimator]["rank_correlation"][0])
-                pvalue.append(ops_dict[estimator]["rank_correlation"][1])
-                regret.append(ops_dict[estimator]["regret"][0])
-                type_i.append(ops_dict[estimator]["type_i_error_rate"])
-                type_ii.append(ops_dict[estimator]["type_ii_error_rate"])
-
-            metric_df["estimator"] = self.cumulative_distribution_ope.ope_estimators_
-            metric_df["mean_squared_error"] = mse
-            metric_df["rank_correlation"] = rankcorr
-            metric_df["pvalue"] = pvalue
-            metric_df[f"regret@{top_k_in_eval_metrics}"] = regret
-            metric_df["type_i_error_rate"] = type_i
-            metric_df["type_ii_error_rate"] = type_ii
 
             ranking_df_dict = defaultdict_to_dict(ranking_df_dict)
 
-        return (ranking_df_dict, metric_df) if return_by_dataframe else ops_dict
+            if return_metrics:
+                mse, rankcorr, pvalue, regret, type_i, type_ii, = (
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                )
+                for i, estimator in enumerate(self.ope.ope_estimators_):
+                    mse.append(ops_dict[estimator]["mean_squared_error"])
+                    rankcorr.append(ops_dict[estimator]["rank_correlation"][0])
+                    pvalue.append(ops_dict[estimator]["rank_correlation"][1])
+                    regret.append(ops_dict[estimator]["regret"][0])
+                    type_i.append(ops_dict[estimator]["type_i_error_rate"])
+                    type_ii.append(ops_dict[estimator]["type_ii_error_rate"])
+
+                metric_df = pd.DataFrame()
+                metric_df["estimator"] = self.ope.ope_estimators_
+                metric_df["mean_squared_error"] = mse
+                metric_df["rank_correlation"] = rankcorr
+                metric_df["pvalue"] = pvalue
+                metric_df[f"regret@{top_k_in_eval_metrics}"] = regret
+                metric_df["type_i_error_rate"] = type_i
+                metric_df["type_ii_error_rate"] = type_ii
+
+            dfs = (ranking_df_dict, metric_df) if return_metrics else ranking_df_dict
+
+        return dfs if return_by_dataframe else ops_dict
 
     def select_by_policy_value_lower_bound(
         self,
         input_dict: OPEInputDict,
+        return_true_values: bool = False,
         return_metrics: bool = False,
         return_by_dataframe: bool = False,
         top_k_in_eval_metrics: int = 1,
@@ -868,9 +987,14 @@ class OffPolicySelection:
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
+                state_action_marginal_importance_weight,
+                state_marginal_importance_weight,
                 on_policy_policy_value,
                 gamma,
             ]
+
+        return_true_values: bool, default=False
+            Whether to return the true policy value and its ranking.
 
         return_metrics: bool, default=False
             Whether to return the following evaluation metrics:
@@ -906,6 +1030,9 @@ class OffPolicySelection:
                 estimated_ranking,
                 estimated_policy_value_lower_bound,
                 estimated_relative_policy_value_lower_bound,
+                true_ranking,
+                true_policy_value,
+                true_relative_policy_value,
                 mean_squared_error,
                 rank_correlation,
                 regret,
@@ -925,32 +1052,47 @@ class OffPolicySelection:
                 Estimated relative policy value lower bound of the candidate policies compared to the behavior policy (sorted by estimated_ranking).
                 Recorded in `ranking_df_dict` when `return_by_dataframe == True`.
 
+            true_ranking: list of int
+                Ranking index of the (true) policy value of the candidate policies (sorted by estimated_ranking).
+                Recorded only when `return_true_values == True`.
+                Recorded in `ranking_df_dict` when `return_by_dataframe == True`.
+
+            true_policy_value: list of float
+                True policy value of the candidate policies (sorted by estimated_ranking).
+                Recorded only when `return_true_values == True`.
+                Recorded in `ranking_df_dict` when `return_by_dataframe == True`.
+
+            true_relative_policy_value: list of float
+                True relative policy value of the candidate policies compared to the behavior policy (sorted by estimated_ranking).
+                Recorded only when `return_true_values == True`.
+                Recorded in `ranking_df_dict` when `return_by_dataframe == True`.
+
             mean_squared_error: None
                 This is for API consistency.
                 Recorded in `metric_df` when `return_by_dataframe == True`.
 
             rank_correlation: tuple of float
                 Rank correlation coefficient between the true ranking and the estimated ranking, and its pvalue.
-                If `return_metric == False`, `None` is recorded.
+                Recorded only when `return_metric == True`.
                 Recorded in `metric_df` when `return_by_dataframe == True`.
 
             regret: tuple of float and int
                 Regret@k and k.
-                If `return_metric == False`, `None` is recorded.
+                Recorded only when `return_metric == True`.
                 Recorded in `metric_df` when `return_by_dataframe == True`.
 
             type_i_error_rate: float
                 Type I error rate of the hypothetical test. True Negative when the policy is safe but estimated as unsafe.
-                If `return_metric == False`, `None` is recorded.
+                Recorded only when `return_metric == True`.
                 Recorded in `metric_df` when `return_by_dataframe == True`.
 
             type_ii_error_rate: float
                 Type II error rate of the hypothetical test. False Positive when the policy is unsafe but undetected.
-                If `return_metric == False`, `None` is recorded.
+                Recorded only when `return_metric == True`.
                 Recorded in `metric_df` when `return_by_dataframe == True`.
 
             safety_threshold: float
-                The relative policy value required to be a safe policy.
+                The policy value required to be a safe policy.
 
         """
         if self.ope is None:
@@ -958,12 +1100,12 @@ class OffPolicySelection:
                 "ope is not given. Please initialize the class with ope attribute"
             )
 
-        if return_metrics:
-            ground_truth_policy_value_dict = self.obtain_oracle_selection_result(
+        if return_true_values or return_metrics:
+            ground_truth_dict = self.obtain_true_selection_result(
                 input_dict=input_dict,
             )
-            true_ranking = ground_truth_policy_value_dict["ranking"]
-            true_policy_value = ground_truth_policy_value_dict["policy_value"]
+            true_ranking = ground_truth_dict["ranking"]
+            true_policy_value = ground_truth_dict["policy_value"]
 
         candidate_policy_names = (
             true_ranking if return_metrics else list(input_dict.keys())
@@ -983,16 +1125,20 @@ class OffPolicySelection:
             for i, estimator in enumerate(self.ope.ope_estimators_):
 
                 estimated_policy_value_lower_bound_ = np.zeros(n_policies)
+                true_policy_value_ = np.zeros(n_policies)
                 for j, eval_policy in enumerate(candidate_policy_names):
                     estimated_policy_value_lower_bound_[
                         j
                     ] = estimated_policy_value_interval_dict[eval_policy][estimator][
                         f"{100 * (1. - alpha)}% CI (lower)"
                     ]
+                    true_policy_value_[j] = true_policy_value[eval_policy][estimator]
 
                 estimated_ranking_index_ = np.argsort(
                     estimated_policy_value_lower_bound_
                 )[::-1]
+                true_ranking_index_ = np.argsort(true_policy_value_)[::-1]
+
                 estimated_ranking = [
                     candidate_policy_names[estimated_ranking_index_[i]]
                     for i in range(n_policies)
@@ -1042,22 +1188,62 @@ class OffPolicySelection:
                     "estimated_ranking": estimated_ranking,
                     "estimated_policy_value_lower_bound": estimated_policy_value_lower_bound,
                     "estimated_relative_policy_value_lower_bound": estimated_relative_policy_value_lower_bound,
-                    "rank_correlation": rankcorr if return_metrics else None,
-                    "mean_squared_error": None,
-                    "regret": (regret, top_k_in_eval_metrics)
-                    if return_metrics
-                    else None,
-                    "type_i_error_rate": type_i_error_rate if return_metrics else None,
-                    "type_ii_error_rate": type_ii_error_rate
-                    if return_metrics
-                    else None,
-                    "safety_threshold": safety_criteria * self.behavior_policy_value,
                 }
+                if return_true_values:
+                    ops_dict[ci][estimator]["true_ranking"] = true_ranking_index_[
+                        estimated_ranking_index_
+                    ]
+                    ops_dict[ci][estimator]["true_policy_value"] = true_policy_value_[
+                        estimated_ranking_index_
+                    ]
+                    ops_dict[ci][estimator]["true_relative_policy_value"] = (
+                        true_policy_value_[estimated_ranking_index_]
+                        / self.behavior_policy_value
+                    )
+                if return_metrics:
+                    ops_dict[ci][estimator]["mean_squared_error"] = None
+                    ops_dict[ci][estimator]["rank_correlation"] = rankcorr
+                    ops_dict[ci][estimator]["regret"] = (regret, top_k_in_eval_metrics)
+                    ops_dict[ci][estimator]["type_i_error_rate"] = type_i_error_rate
+                    ops_dict[ci][estimator]["type_ii_error_rate"] = type_ii_error_rate
+                    ops_dict[ci][estimator]["safety_threshold"] = (
+                        safety_criteria * self.behavior_policy_value
+                    )
 
         ops_dict = defaultdict_to_dict(ops_dict)
 
         if return_by_dataframe:
-            metric_df = pd.DataFrame()
+            ranking_df_dict = defaultdict(lambda: defaultdict(pd.DataFrame))
+
+            for ci in cis:
+                for i, estimator in enumerate(self.ope.ope_estimators_):
+                    ranking_df_ = pd.DataFrame()
+                    ranking_df_["estimated_ranking"] = ops_dict[ci][estimator][
+                        "estimated_ranking"
+                    ]
+                    ranking_df_["estimated_policy_value"] = ops_dict[ci][estimator][
+                        "estimated_policy_value"
+                    ]
+                    ranking_df_["estimated_relative_policy_value"] = ops_dict[ci][
+                        estimator
+                    ]["estimated_relative_policy_value"]
+
+                    if return_true_values:
+                        ranking_df_["true_ranking"] = ops_dict[ci][estimator][
+                            "true_ranking"
+                        ]
+                        ranking_df_["true_policy_value"] = ops_dict[ci][estimator][
+                            "true_policy_value"
+                        ]
+                        ranking_df_["true_relative_policy_value"] = ops_dict[ci][
+                            estimator
+                        ]["true_relative_policy_value"]
+
+                    ranking_df_dict[ci][estimator] = ranking_df_
+
+            ranking_df_dict = defaultdict_to_dict(ranking_df_dict)
+
+        if return_metrics:
             ci_, estimator_, rankcorr, pvalue, regret, type_i, type_ii, = (
                 [],
                 [],
@@ -1067,24 +1253,8 @@ class OffPolicySelection:
                 [],
                 [],
             )
-
-            ranking_df_dict = defaultdict(lambda: defaultdict(pd.DataFrame))
             for ci in cis:
                 for i, estimator in enumerate(self.ope.ope_estimators_):
-                    ranking_df_ = pd.DataFrame()
-                    ranking_df_["estimated_ranking"] = ops_dict[ci][estimator][
-                        "estimated_ranking"
-                    ]
-                    ranking_df_["estimated_policy_value_lower_bound"] = ops_dict[ci][
-                        estimator
-                    ]["estimated_policy_value_lower_bound"]
-                    ranking_df_[
-                        "estimated_relative_policy_value_lower_bound"
-                    ] = ops_dict[ci][estimator][
-                        "estimated_relative_policy_value_lower_bound"
-                    ]
-                    ranking_df_dict[ci][estimator] = ranking_df_
-
                     ci_.append(ci)
                     estimator_.append(estimator)
                     rankcorr.append(ops_dict[ci][estimator]["rank_correlation"][0])
@@ -1093,6 +1263,7 @@ class OffPolicySelection:
                     type_i.append(ops_dict[ci][estimator]["type_i_error_rate"])
                     type_ii.append(ops_dict[ci][estimator]["type_ii_error_rate"])
 
+            metric_df = pd.DataFrame()
             metric_df["ci"] = ci_
             metric_df["estimator"] = estimator_
             metric_df["mean_squared_error"] = np.nan
@@ -1102,14 +1273,15 @@ class OffPolicySelection:
             metric_df["type_i_error_rate"] = type_i
             metric_df["type_ii_error_rate"] = type_ii
 
-            ranking_df_dict = defaultdict_to_dict(ranking_df_dict)
+            dfs = (ranking_df_dict, metric_df) if return_metrics else ranking_df_dict
 
-        return (ranking_df_dict, metric_df) if return_by_dataframe else ops_dict
+        return dfs if return_by_dataframe else ops_dict
 
     def select_by_lower_quartile(
         self,
         input_dict: OPEInputDict,
         alpha: float = 0.05,
+        return_true_values: bool = False,
         return_metrics: bool = False,
         return_by_dataframe: bool = False,
         safety_threshold: float = 0.0,
@@ -1126,12 +1298,17 @@ class OffPolicySelection:
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
+                state_action_marginal_importance_weight,
+                state_marginal_importance_weight,
                 on_policy_policy_value,
                 gamma,
             ]
 
         alpha: float, default=0.05
             Proportion of the sided region. The value should be within `[0, 0.5]`.
+
+        return_true_values: bool, default=False
+            Whether to return the true lower quartile of the trajectory wise reward and its ranking.
 
         return_metrics: bool, default=False
             Whether to return the following evaluation metrics:
@@ -1150,6 +1327,8 @@ class OffPolicySelection:
             key: [estimator_name][
                 estimated_ranking,
                 estimated_lower_quartile,
+                true_ranking,
+                true_lower_quartile,
                 mean_squared_error,
                 rank_correlation,
                 regret,
@@ -1165,14 +1344,24 @@ class OffPolicySelection:
                 Estimated lower quartile of the trajectory wise reward of the candidate policies (sorted by estimated_ranking).
                 Recorded in `ranking_df_dict` when `return_by_dataframe == True`.
 
+            true_ranking: list of int
+                Ranking index of the (true) lower quartile of the trajectory wise reward of the candidate policies (sorted by estimated_ranking).
+                Recorded only when `return_true_values == True`.
+                Recorded in `ranking_df_dict` when `return_by_dataframe == True`.
+
+            true_lower_quartile: list of float
+                True lower quartile of the trajectory wise reward of the candidate policies (sorted by estimated_ranking).
+                Recorded only when `return_true_values == True`.
+                Recorded in `ranking_df_dict` when `return_by_dataframe == True`.
+
             mean_squared_error: float
                 Mean-squared-error of the estimated lower quartile of the trajectory wise reward.
-                If `return_metric == False`, `None` is recorded.
+                Recorded only when `return_metric == True`.
                 Recorded in `metric_df` when `return_by_dataframe == True`.
 
             rank_correlation: tuple of float
                 Rank correlation coefficient between the true ranking and the estimated ranking, and its pvalue.
-                If `return_metric == False`, `None` is recorded.
+                Recorded only when `return_metric == True`.
                 Recorded in `metric_df` when `return_by_dataframe == True`.
 
             regret: None
@@ -1181,12 +1370,12 @@ class OffPolicySelection:
 
             type_i_error_rate: float
                 Type I error rate of the hypothetical test. True Negative when the policy is safe but estimated as unsafe.
-                If `return_metric == False`, `None` is recorded.
+                Recorded only when `return_metric == True`.
                 Recorded in `metric_df` when `return_by_dataframe == True`.
 
             type_ii_error_rate: float
                 Type II error rate of the hypothetical test. False Positive when the policy is unsafe but undetected.
-                If `return_metric == False`, `None` is recorded.
+                Recorded only when `return_metric == True`.
                 Recorded in `metric_df` when `return_by_dataframe == True`.
 
             safety_threshold: float
@@ -1205,8 +1394,8 @@ class OffPolicySelection:
             )
         )
 
-        if return_metrics:
-            ground_truth_dict = self.obtain_oracle_selection_result(
+        if return_true_values or return_metrics:
+            ground_truth_dict = self.obtain_true_selection_result(
                 input_dict=input_dict,
                 return_lower_quartile=True,
                 quartile_alpha=alpha,
@@ -1223,12 +1412,16 @@ class OffPolicySelection:
         for i, estimator in enumerate(self.cumulative_distribution_ope.ope_estimators_):
 
             estimated_lower_quartile_ = np.zeros(n_policies)
+            true_lower_quartile_ = np.zeros(n_policies)
             for j, eval_policy in enumerate(candidate_policy_names):
                 estimated_lower_quartile_[j] = estimated_interquartile_range_dict[
                     eval_policy
                 ][estimator][f"{100 * (1. - alpha)}% quartile (lower)"]
+                true_lower_quartile_[j] = true_lower_quartile[eval_policy][estimator]
 
             estimated_ranking_index_ = np.argsort(estimated_lower_quartile_)[::-1]
+            true_ranking_index_ = np.argsort(true_lower_quartile_)[::-1]
+
             estimated_ranking = [
                 candidate_policy_names[estimated_ranking_index_[i]]
                 for i in range(n_policies)
@@ -1259,25 +1452,25 @@ class OffPolicySelection:
             ops_dict[estimator] = {
                 "estimated_ranking": estimated_ranking,
                 "estimated_lower_quartile": estimated_lower_quartile,
-                "mean_squared_error": mse if return_metrics else None,
-                "rank_correlation": rankcorr if return_metrics else None,
-                "regret": None,
-                "type_i_error_rate": type_i_error_rate if return_metrics else None,
-                "type_ii_error_rate": type_ii_error_rate if return_metrics else None,
-                "safety_threshold": safety_threshold,
             }
+            if return_true_values:
+                ops_dict[estimator]["true_ranking"] = true_ranking_index_[
+                    estimated_ranking_index_
+                ]
+                ops_dict[estimator]["true_policy_value"] = true_lower_quartile_[
+                    estimated_ranking_index_
+                ]
+            if return_metrics:
+                ops_dict[estimator]["mean_squared_error"] = mse
+                ops_dict[estimator]["rank_correlation"] = rankcorr
+                ops_dict[estimator]["regret"] = None
+                ops_dict[estimator]["type_i_error_rate"] = type_i_error_rate
+                ops_dict[estimator]["type_ii_error_rate"] = type_ii_error_rate
+                ops_dict[estimator]["safety_threshold"] = safety_threshold
 
         if return_by_dataframe:
-            metric_df = pd.DataFrame()
-            mse, rankcorr, pvalue, type_i, type_ii, = (
-                [],
-                [],
-                [],
-                [],
-                [],
-            )
-
             ranking_df_dict = defaultdict(pd.DataFrame)
+
             for i, estimator in enumerate(
                 self.cumulative_distribution_ope.ope_estimators_
             ):
@@ -1288,30 +1481,52 @@ class OffPolicySelection:
                 ranking_df_["estimated_lower_quartile"] = ops_dict[estimator][
                     "estimated_lower_quartile"
                 ]
+
+                if return_true_values:
+                    ranking_df_["true_ranking"] = ops_dict[estimator]["true_ranking"]
+                    ranking_df_["true_lower_quartile"] = ops_dict[estimator][
+                        "true_lower_quartile"
+                    ]
+
                 ranking_df_dict[estimator] = ranking_df_
-
-                mse.append(ops_dict[estimator]["mean_squared_error"])
-                rankcorr.append(ops_dict[estimator]["rank_correlation"][0])
-                pvalue.append(ops_dict[estimator]["rank_correlation"][1])
-                type_i.append(ops_dict[estimator]["type_i_error_rate"])
-                type_ii.append(ops_dict[estimator]["type_ii_error_rate"])
-
-            metric_df["estimator"] = self.cumulative_distribution_ope.ope_estimators_
-            metric_df["mean_squared_error"] = mse
-            metric_df["rank_correlation"] = rankcorr
-            metric_df["pvalue"] = pvalue
-            metric_df["regret"] = np.nan
-            metric_df["type_i_error_rate"] = type_i
-            metric_df["type_ii_error_rate"] = type_ii
 
             ranking_df_dict = defaultdict_to_dict(ranking_df_dict)
 
-        return (ranking_df_dict, metric_df) if return_by_dataframe else ops_dict
+            if return_metrics:
+                mse, rankcorr, pvalue, type_i, type_ii, = (
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                )
+                for i, estimator in enumerate(self.ope.ope_estimators_):
+                    mse.append(ops_dict[estimator]["mean_squared_error"])
+                    rankcorr.append(ops_dict[estimator]["rank_correlation"][0])
+                    pvalue.append(ops_dict[estimator]["rank_correlation"][1])
+                    type_i.append(ops_dict[estimator]["type_i_error_rate"])
+                    type_ii.append(ops_dict[estimator]["type_ii_error_rate"])
+
+                metric_df = pd.DataFrame()
+                metric_df[
+                    "estimator"
+                ] = self.cumulative_distribution_ope.ope_estimators_
+                metric_df["mean_squared_error"] = mse
+                metric_df["rank_correlation"] = rankcorr
+                metric_df["pvalue"] = pvalue
+                metric_df["regret"] = np.nan
+                metric_df["type_i_error_rate"] = type_i
+                metric_df["type_ii_error_rate"] = type_ii
+
+            dfs = (ranking_df_dict, metric_df) if return_metrics else ranking_df_dict
+
+        return dfs if return_by_dataframe else ops_dict
 
     def select_by_conditional_value_at_risk(
         self,
         input_dict: OPEInputDict,
         alpha: float = 0.05,
+        return_true_values: bool = False,
         return_metrics: bool = False,
         return_by_dataframe: bool = False,
         safety_threshold: float = 0.0,
@@ -1328,12 +1543,17 @@ class OffPolicySelection:
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
+                state_action_marginal_importance_weight,
+                state_marginal_importance_weight,
                 on_policy_policy_value,
                 gamma,
             ]
 
         alpha: float, default=0.05
             Proportion of the sided region. The value should be within `[0, 1]`.
+
+        return_true_values: bool, default=False
+            Whether to return the true conditional value at risk and its ranking.
 
         return_metrics: bool, default=False
             Whether to return the following evaluation metrics:
@@ -1351,7 +1571,9 @@ class OffPolicySelection:
             Dictionary/dataframe containing the result of OPS conducted by OPE estimators.
             key: [estimator_name][
                 estimated_ranking,
-                estimated_lower_quartile,
+                estimated_conditional_value_at_risk,
+                true_ranking,
+                true_conditional_value_at_risk,
                 mean_squared_error,
                 rank_correlation,
                 regret,
@@ -1367,14 +1589,24 @@ class OffPolicySelection:
                 Estimated conditional value at risk of the candidate policies (sorted by estimated_ranking).
                 Recorded in `ranking_df_dict` when `return_by_dataframe == True`.
 
+            true_ranking: list of int
+                Ranking index of the (true) conditional value at risk of the candidate policies (sorted by estimated_ranking).
+                Recorded only when `return_true_values == True`.
+                Recorded in `ranking_df_dict` when `return_by_dataframe == True`.
+
+            true_conditional_value_at_risk: list of float
+                True conditional value at risk of the candidate policies (sorted by estimated_ranking).
+                Recorded only when `return_true_values == True`.
+                Recorded in `ranking_df_dict` when `return_by_dataframe == True`.
+
             mean_squared_error: float
                 Mean-squared-error of the estimated conditional value at risk.
-                If `return_metric == False`, `None` is recorded.
+                Recorded only when `return_metric == True`.
                 Recorded in `metric_df` when `return_by_dataframe == True`.
 
             rank_correlation: tuple or float
                 Rank correlation coefficient between the true ranking and the estimated ranking, and its pvalue.
-                If `return_metric == False`, `None` is recorded.
+                Recorded only when `return_metric == True`.
                 Recorded in `metric_df` when `return_by_dataframe == True`.
 
             regret: None
@@ -1383,12 +1615,12 @@ class OffPolicySelection:
 
             type_i_error_rate: float
                 Type I error rate of the hypothetical test. True Negative when the policy is safe but estimated as unsafe.
-                If `return_metric == False`, `None` is recorded.
+                Recorded only when `return_metric == True`.
                 Recorded in `metric_df` when `return_by_dataframe == True`.
 
             type_ii_error_rate: float
                 Type II error rate of the hypothetical test. False Positive when the policy is unsafe but undetected.
-                If `return_metric == False`, `None` is recorded.
+                Recorded only when `return_metric == True`.
                 Recorded in `metric_df` when `return_by_dataframe == True`.
 
             safety_threshold: float
@@ -1407,8 +1639,8 @@ class OffPolicySelection:
             )
         )
 
-        if return_metrics:
-            ground_truth_dict = self.obtain_oracle_selection_result(
+        if return_true_values or return_metrics:
+            ground_truth_dict = self.obtain_true_selection_result(
                 input_dict=input_dict,
                 return_conditional_value_at_risk=True,
                 cvar_alpha=alpha,
@@ -1423,6 +1655,15 @@ class OffPolicySelection:
 
         ops_dict = {}
         for i, estimator in enumerate(self.cumulative_distribution_ope.ope_estimators_):
+
+            estimated_cvar_ = np.zeros(n_policies)
+            true_cvar_ = np.zeros(n_policies)
+            for j, eval_policy in enumerate(candidate_policy_names):
+                estimated_cvar_[j] = estimated_cvar_dict[eval_policy][estimator]
+                true_cvar_[j] = true_cvar[eval_policy][estimator]
+
+            estimated_ranking_index_ = np.argsort(estimated_cvar_)[::-1]
+            true_ranking_index_ = np.argsort(true_cvar_)[::-1]
 
             estimated_cvar_ = np.zeros(n_policies)
             for j, eval_policy in enumerate(candidate_policy_names):
@@ -1459,25 +1700,25 @@ class OffPolicySelection:
             ops_dict[estimator] = {
                 "estimated_ranking": estimated_ranking,
                 "estimated_conditional_value_at_risk": estimated_cvar,
-                "mean_squared_error": mse if return_metrics else None,
-                "rank_correlation": rankcorr if return_metrics else None,
-                "regret": None,
-                "type_i_error_rate": type_i_error_rate if return_metrics else None,
-                "type_ii_error_rate": type_ii_error_rate if return_metrics else None,
-                "safety_threshold": safety_threshold,
             }
+            if return_true_values:
+                ops_dict[estimator]["true_ranking"] = true_ranking_index_[
+                    estimated_ranking_index_
+                ]
+                ops_dict[estimator]["true_conditional_value_at_risk"] = true_cvar_[
+                    estimated_ranking_index_
+                ]
+            if return_metrics:
+                ops_dict[estimator]["mean_squared_error"] = mse
+                ops_dict[estimator]["rank_correlation"] = rankcorr
+                ops_dict[estimator]["regret"] = None
+                ops_dict[estimator]["type_i_error_rate"] = type_i_error_rate
+                ops_dict[estimator]["type_ii_error_rate"] = type_ii_error_rate
+                ops_dict[estimator]["safety_threshold"] = safety_threshold
 
         if return_by_dataframe:
-            metric_df = pd.DataFrame()
-            mse, rankcorr, pvalue, type_i, type_ii, = (
-                [],
-                [],
-                [],
-                [],
-                [],
-            )
-
             ranking_df_dict = defaultdict(pd.DataFrame)
+
             for i, estimator in enumerate(
                 self.cumulative_distribution_ope.ope_estimators_
             ):
@@ -1488,25 +1729,46 @@ class OffPolicySelection:
                 ranking_df_["estimated_conditional_value_at_risk"] = ops_dict[
                     estimator
                 ]["estimated_conditional_value_at_risk"]
+
+                if return_true_values:
+                    ranking_df_["true_ranking"] = ops_dict[estimator]["true_ranking"]
+                    ranking_df_["true_conditional_value_at_risk"] = ops_dict[estimator][
+                        "true_conditional_value_at_risk"
+                    ]
+
                 ranking_df_dict[estimator] = ranking_df_
-
-                mse.append(ops_dict[estimator]["mean_squared_error"])
-                rankcorr.append(ops_dict[estimator]["rank_correlation"][0])
-                pvalue.append(ops_dict[estimator]["rank_correlation"][1])
-                type_i.append(ops_dict[estimator]["type_i_error_rate"])
-                type_ii.append(ops_dict[estimator]["type_ii_error_rate"])
-
-            metric_df["estimator"] = self.cumulative_distribution_ope.ope_estimators_
-            metric_df["mean_squared_error"] = mse
-            metric_df["rank_correlation"] = rankcorr
-            metric_df["pvalue"] = pvalue
-            metric_df["regret"] = np.nan
-            metric_df["type_i_error_rate"] = type_i
-            metric_df["type_ii_error_rate"] = type_ii
 
             ranking_df_dict = defaultdict_to_dict(ranking_df_dict)
 
-        return (ranking_df_dict, metric_df) if return_by_dataframe else ops_dict
+            if return_metrics:
+                mse, rankcorr, pvalue, type_i, type_ii, = (
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                )
+                for i, estimator in enumerate(self.ope.ope_estimators_):
+                    mse.append(ops_dict[estimator]["mean_squared_error"])
+                    rankcorr.append(ops_dict[estimator]["rank_correlation"][0])
+                    pvalue.append(ops_dict[estimator]["rank_correlation"][1])
+                    type_i.append(ops_dict[estimator]["type_i_error_rate"])
+                    type_ii.append(ops_dict[estimator]["type_ii_error_rate"])
+
+                metric_df = pd.DataFrame()
+                metric_df[
+                    "estimator"
+                ] = self.cumulative_distribution_ope.ope_estimators_
+                metric_df["mean_squared_error"] = mse
+                metric_df["rank_correlation"] = rankcorr
+                metric_df["pvalue"] = pvalue
+                metric_df["regret"] = np.nan
+                metric_df["type_i_error_rate"] = type_i
+                metric_df["type_ii_error_rate"] = type_ii
+
+            dfs = (ranking_df_dict, metric_df) if return_metrics else ranking_df_dict
+
+        return dfs if return_by_dataframe else ops_dict
 
     def visualize_policy_value_for_selection(
         self,
@@ -1533,6 +1795,8 @@ class OffPolicySelection:
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
+                state_action_marginal_importance_weight,
+                state_marginal_importance_weight,
                 on_policy_policy_value,
                 gamma,
             ]
@@ -1601,6 +1865,8 @@ class OffPolicySelection:
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
+                state_action_marginal_importance_weight,
+                state_marginal_importance_weight,
                 on_policy_policy_value,
                 gamma,
             ]
@@ -1655,6 +1921,8 @@ class OffPolicySelection:
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
+                state_action_marginal_importance_weight,
+                state_marginal_importance_weight,
                 on_policy_policy_value,
                 gamma,
             ]
@@ -1713,6 +1981,8 @@ class OffPolicySelection:
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
+                state_action_marginal_importance_weight,
+                state_marginal_importance_weight,
                 on_policy_policy_value,
                 gamma,
             ]
@@ -1772,6 +2042,8 @@ class OffPolicySelection:
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
+                state_action_marginal_importance_weight,
+                state_marginal_importance_weight,
                 on_policy_policy_value,
                 gamma,
             ]
@@ -1802,6 +2074,1322 @@ class OffPolicySelection:
             fig_name=fig_name,
         )
 
+    def visualize_topk_policy_value_selected_by_standard_ope(
+        self,
+        input_dict: OPEInputDict,
+        metrics: List[str] = ["best", "worst", "mean", "safety_violation_rate"],
+        max_topk: Optional[int] = None,
+        safety_criteria: Optional[float] = None,
+        fig_dir: Optional[Path] = None,
+        fig_name: str = "topk_policy_value_standard_ope.png",
+    ):
+        """Visualize the topk deployment result selected by standard OPE.
+
+        Parameters
+        -------
+        input_dict: OPEInputDict
+            Dictionary of the OPE inputs for each evaluation policy.
+            Please refer to `CreateOPEInput` class for the detail.
+            key: [evaluation_policy_name][
+                evaluation_policy_action,
+                evaluation_policy_action_dist,
+                state_action_value_prediction,
+                initial_state_value_prediction,
+                state_action_marginal_importance_weight,
+                state_marginal_importance_weight,
+                on_policy_policy_value,
+                gamma,
+            ]
+
+        metrics: list of {"best", "worst", "mean", "safety_violation_rate"}, default=["best", "worst", "mean", "safety_violation_rate"]
+            Indicate which of the policy performance among {"best", "worst", "mean"} and safety violation rate to report.
+
+        max_topk: int, default=None
+            Maximum number of policies to be deployed.
+            If `None` is given, all the policies will be deployed.
+
+        safety_criteria: float, default=None
+            The relative policy value required to be a safe policy.
+            For example, when 0.9 is given, candidate policy must exceed 90\\% of the behavior policy performance.
+
+        fig_dir: Path, default=None
+            Path to store the bar figure.
+            If `None` is given, the figure will not be saved.
+
+        fig_name: str, default="topk_policy_value_standard_ope.png"
+            Name of the bar figure.
+
+        """
+        if metrics is None:
+            metrics = ["best", "worst", "mean", "safety_violation_rate"]
+        for metric in metrics:
+            if metric not in ["best", "worst", "mean", "safety_violation_rate"]:
+                raise ValueError(
+                    f"the elements of metrics must be one of 'best', 'worst', 'mean', or 'safety_violation_rate', but {metric} is given"
+                )
+
+        if max_topk is None:
+            max_topk = len(input_dict)
+        check_scalar(max_topk, name="max_topk", target_type=int, min_val=1)
+        max_topk = min(max_topk, len(input_dict))
+
+        if "safety_violation_rate" in metrics:
+            safety_criteria = 0.0 if safety_criteria is None else safety_criteria
+
+        if safety_criteria is not None:
+            check_scalar(
+                safety_criteria, name="safety_criteria", target_type=float, min_val=0.0
+            )
+            safety_threshold = safety_criteria * self.behavior_policy_value
+        else:
+            safety_threshold = None
+
+        if fig_dir is not None and not isinstance(fig_dir, Path):
+            raise ValueError(f"fig_dir must be a Path, but {type(fig_dir)} is given")
+        if fig_name is not None and not isinstance(fig_name, str):
+            raise ValueError(f"fig_dir must be a string, but {type(fig_dir)} is given")
+
+        policy_value_dict = self.select_by_policy_value(
+            input_dict=input_dict,
+            return_true_values=True,
+        )
+
+        metric_dict = defaultdict(lambda: defaultdict(np.ndarray))
+        for i, estimator in enumerate(self.ope.ope_estimators_):
+            for j, metric in enumerate(metrics):
+
+                topk_metric = np.zeros(max_topk)
+                for topk in range(max_topk):
+                    topk_values = policy_value_dict[estimator]["true_policy_value"][
+                        :topk
+                    ]
+
+                    if metric == "best":
+                        topk_metric[topk] = topk_values.max()
+                    elif metric == "worst":
+                        topk_metric[topk] = topk_values.min()
+                    elif metric == "mean":
+                        topk_metric[topk] = topk_values.mean()
+                    else:
+                        topk_metric[topk] = (topk_values < safety_threshold).sum() / (
+                            topk + 1
+                        )
+
+                metric_dict[estimator][metric] = topk_metric
+
+        metric_dict = defaultdict_to_dict(metric_dict)
+
+        min_val = policy_value_dict[estimator]["true_policy_value"].min()
+        max_val = policy_value_dict[estimator]["true_policy_value"].max()
+        yaxis_min_val = (
+            min_val if safety_threshold is None else min(min_val, safety_threshold)
+        )
+        yaxis_max_val = (
+            max_val if safety_threshold is None else max(max_val, safety_threshold)
+        )
+        margin = (yaxis_max_val - yaxis_min_val) * 0.05
+
+        plt.style.use("ggplot")
+        n_figs = len(metrics)
+
+        fig, axes = plt.subplots(
+            nrows=1,
+            ncols=n_figs,
+            figsize=(4, 3 * n_figs),
+        )
+
+        for j, metric in enumerate(metrics):
+
+            for i, estimator in enumerate(self.ope.ope_estimators_):
+                axes[j].plot(
+                    np.arange(1, max_topk + 1),
+                    metric_dict[estimator][metric],
+                    marker=markers[i],
+                    legend=estimator,
+                )
+
+            if metric in ["best", "worst", "mean"]:
+                if safety_threshold is not None:
+                    axes[j].plot(
+                        np.arange(1, max_topk + 1),
+                        np.full(max_topk, safety_threshold),
+                        color=dkred,
+                        legend="safety threshold",
+                    )
+                    axes[j].plot(
+                        np.arange(1, max_topk + 1),
+                        np.full(max_topk, max_val),
+                        color="black",
+                        linewidth=0.5,
+                    )
+                    axes[j].plot(
+                        np.arange(1, max_topk + 1),
+                        np.full(max_topk, min_val),
+                        color="black",
+                        linewidth=0.5,
+                    )
+
+                axes[j].set_ylabel(f"{metric} policy value")
+                axes[j].set_ylim(yaxis_max_val - margin, yaxis_max_val + margin)
+
+            else:
+                axes[j].set_ylabel("safety violation rate")
+                axes[j].set_ylim(-0.05, 1.05)
+
+            axes[j].set_xlabel("# of policies deployed")
+
+        fig.tight_layout()
+        plt.show()
+
+        if fig_dir:
+            fig.savefig(str(fig_dir / fig_name), dpi=300, bbox_inches="tight")
+
+    def visualize_topk_policy_value_selected_by_cumulative_distribution_ope(
+        self,
+        input_dict: OPEInputDict,
+        metrics: Optional[List[str]] = None,
+        max_topk: Optional[int] = None,
+        safety_criteria: Optional[float] = None,
+        fig_dir: Optional[Path] = None,
+        fig_name: str = "topk_policy_value_cumulative_distribution_ope.png",
+    ):
+        """Visualize the topk deployment result selected by standard OPE.
+
+        Parameters
+        -------
+        input_dict: OPEInputDict
+            Dictionary of the OPE inputs for each evaluation policy.
+            Please refer to `CreateOPEInput` class for the detail.
+            key: [evaluation_policy_name][
+                evaluation_policy_action,
+                evaluation_policy_action_dist,
+                state_action_value_prediction,
+                initial_state_value_prediction,
+                state_action_marginal_importance_weight,
+                state_marginal_importance_weight,
+                on_policy_policy_value,
+                gamma,
+            ]
+
+        metrics: list of {"best", "worst", "mean", "safety_violation_rate"}, default=["best", "worst", "mean", "safety_violation_rate"]
+            Indicate which of the policy performance among {"best", "worst", "mean"} and safety violation rate to report.
+
+        max_topk: int, default=None
+            Maximum number of policies to be deployed.
+            If `None` is given, all the policies will be deployed.
+
+        safety_criteria: float, default=None
+            The relative policy value required to be a safe policy.
+            For example, when 0.9 is given, candidate policy must exceed 90\\% of the behavior policy performance.
+
+        fig_dir: Path, default=None
+            Path to store the bar figure.
+            If `None` is given, the figure will not be saved.
+
+        fig_name: str, default="topk_policy_value_standard_ope.png"
+            Name of the bar figure.
+
+        """
+        if metrics is None:
+            metrics = ["best", "worst", "mean", "safety_violation_rate"]
+        for metric in metrics:
+            if metric not in ["best", "worst", "mean", "safety_violation_rate"]:
+                raise ValueError(
+                    f"the elements of metrics must be one of 'best', 'worst', 'mean', or 'safety_violation_rate', but {metric} is given"
+                )
+
+        if max_topk is None:
+            max_topk = len(input_dict)
+        check_scalar(max_topk, name="max_topk", target_type=int, min_val=1)
+        max_topk = min(max_topk, len(input_dict))
+
+        if "safety_violation_rate" in metrics:
+            safety_criteria = 0.0 if safety_criteria is None else safety_criteria
+
+        if safety_criteria is not None:
+            check_scalar(
+                safety_criteria, name="safety_criteria", target_type=float, min_val=0.0
+            )
+            safety_threshold = safety_criteria * self.behavior_policy_value
+        else:
+            safety_threshold = None
+
+        if fig_dir is not None and not isinstance(fig_dir, Path):
+            raise ValueError(f"fig_dir must be a Path, but {type(fig_dir)} is given")
+        if fig_name is not None and not isinstance(fig_name, str):
+            raise ValueError(f"fig_dir must be a string, but {type(fig_dir)} is given")
+
+        estimated_policy_value_dict = (
+            self.select_by_policy_value_via_cumulative_distribution_ope(
+                input_dict=input_dict,
+                return_true_values=True,
+            )
+        )
+
+        metric_dict = defaultdict(lambda: defaultdict(np.ndarray))
+        for i, estimator in enumerate(self.cumulative_distribution_ope.ope_estimators_):
+            for j, metric in enumerate(metrics):
+
+                topk_metric = np.zeros(max_topk)
+                for topk in range(max_topk):
+                    topk_values = estimated_policy_value_dict[estimator][
+                        "true_policy_value"
+                    ][:topk]
+
+                    if metric == "best":
+                        topk_metric[topk] = topk_values.max()
+                    elif metric == "worst":
+                        topk_metric[topk] = topk_values.min()
+                    elif metric == "mean":
+                        topk_metric[topk] = topk_values.mean()
+                    else:
+                        topk_metric[topk] = (topk_values < safety_threshold).sum() / (
+                            topk + 1
+                        )
+
+                metric_dict[estimator][metric] = topk_metric
+
+        metric_dict = defaultdict_to_dict(metric_dict)
+
+        min_val = estimated_policy_value_dict[estimator]["true_policy_value"].min()
+        max_val = estimated_policy_value_dict[estimator]["true_policy_value"].max()
+        yaxis_min_val = (
+            min_val if safety_threshold is None else min(min_val, safety_threshold)
+        )
+        yaxis_max_val = (
+            max_val if safety_threshold is None else max(max_val, safety_threshold)
+        )
+        margin = (yaxis_max_val - yaxis_min_val) * 0.05
+
+        plt.style.use("ggplot")
+        n_figs = len(metrics)
+
+        fig, axes = plt.subplots(
+            nrows=1,
+            ncols=n_figs,
+            figsize=(4, 3 * n_figs),
+        )
+
+        for j, metric in enumerate(metrics):
+
+            for i, estimator in enumerate(self.ope.ope_estimators_):
+                axes[j].plot(
+                    np.arange(1, max_topk + 1),
+                    metric_dict[estimator][metric],
+                    marker=markers[i],
+                    legend=estimator,
+                )
+
+            if metric in ["best", "worst", "mean"]:
+                if safety_threshold is not None:
+                    axes[j].plot(
+                        np.arange(1, max_topk + 1),
+                        np.full(max_topk, safety_threshold),
+                        color=dkred,
+                        legend="safety threshold",
+                    )
+                    axes[j].plot(
+                        np.arange(1, max_topk + 1),
+                        np.full(max_topk, max_val),
+                        color="black",
+                        linewidth=0.5,
+                    )
+                    axes[j].plot(
+                        np.arange(1, max_topk + 1),
+                        np.full(max_topk, min_val),
+                        color="black",
+                        linewidth=0.5,
+                    )
+
+                axes[j].set_ylabel(f"{metric} policy value")
+                axes[j].set_ylim(yaxis_max_val - margin, yaxis_max_val + margin)
+
+            else:
+                axes[j].set_ylabel("safety violation rate")
+                axes[j].set_ylim(-0.05, 1.05)
+
+            axes[j].set_xlabel("# of policies deployed")
+
+        fig.tight_layout()
+        plt.show()
+
+        if fig_dir:
+            fig.savefig(str(fig_dir / fig_name), dpi=300, bbox_inches="tight")
+
+    def visualize_topk_policy_value_selected_by_lower_bound(
+        self,
+        input_dict: OPEInputDict,
+        metrics: Optional[List[str]] = None,
+        max_topk: Optional[int] = None,
+        safety_criteria: Optional[float] = None,
+        cis: List[str] = ["bootstrap"],
+        alpha: float = 0.05,
+        n_bootstrap_samples: int = 100,
+        random_state: Optional[int] = None,
+        fig_dir: Optional[Path] = None,
+        fig_name: str = "topk_policy_value_standard_ope.png",
+    ):
+        """Visualize the topk deployment result selected by standard OPE.
+
+        Parameters
+        -------
+        input_dict: OPEInputDict
+            Dictionary of the OPE inputs for each evaluation policy.
+            Please refer to `CreateOPEInput` class for the detail.
+            key: [evaluation_policy_name][
+                evaluation_policy_action,
+                evaluation_policy_action_dist,
+                state_action_value_prediction,
+                initial_state_value_prediction,
+                state_action_marginal_importance_weight,
+                state_marginal_importance_weight,
+                on_policy_policy_value,
+                gamma,
+            ]
+
+        metrics: list of {"best", "worst", "mean", "safety_violation_rate"}, default=["best", "worst", "mean", "safety_violation_rate"]
+            Indicate which of the policy performance among {"best", "worst", "mean"} and safety violation rate to report.
+
+        max_topk: int, default=None
+            Maximum number of policies to be deployed.
+            If `None` is given, all the policies will be deployed.
+
+        safety_criteria: float, default=None
+            The relative policy value required to be a safe policy.
+            For example, when 0.9 is given, candidate policy must exceed 90\\% of the behavior policy performance.
+
+         cis: list of {"bootstrap", "hoeffding", "bernstein", "ttest"}, default=["bootstrap"]
+            Estimation methods for confidence intervals.
+
+        alpha: float, default=0.05
+            Significance level. The value should be within `[0, 1)`.
+
+        n_bootstrap_samples: int, default=100 (> 0)
+            Number of resampling performed in the bootstrap procedure.
+
+        random_state: int, default=None (>= 0)
+            Random state.
+
+        fig_dir: Path, default=None
+            Path to store the bar figure.
+            If `None` is given, the figure will not be saved.
+
+        fig_name: str, default="topk_policy_value_standard_ope.png"
+            Name of the bar figure.
+
+        """
+        if metrics is None:
+            metrics = ["best", "worst", "mean", "safety_violation_rate"]
+        for metric in metrics:
+            if metric not in ["best", "worst", "mean", "safety_violation_rate"]:
+                raise ValueError(
+                    f"the elements of metrics must be one of 'best', 'worst', 'mean', or 'safety_violation_rate', but {metric} is given"
+                )
+
+        if max_topk is None:
+            max_topk = len(input_dict)
+        check_scalar(max_topk, name="max_topk", target_type=int, min_val=1)
+        max_topk = min(max_topk, len(input_dict))
+
+        if "safety_violation_rate" in metrics:
+            safety_criteria = 0.0 if safety_criteria is None else safety_criteria
+
+        if safety_criteria is not None:
+            check_scalar(
+                safety_criteria, name="safety_criteria", target_type=float, min_val=0.0
+            )
+            safety_threshold = safety_criteria * self.behavior_policy_value
+        else:
+            safety_threshold = None
+
+        if fig_dir is not None and not isinstance(fig_dir, Path):
+            raise ValueError(f"fig_dir must be a Path, but {type(fig_dir)} is given")
+        if fig_name is not None and not isinstance(fig_name, str):
+            raise ValueError(f"fig_dir must be a string, but {type(fig_dir)} is given")
+
+        policy_value_dict = self.select_by_policy_value_lower_bound(
+            input_dict=input_dict,
+            return_true_values=True,
+            cis=cis,
+            alpha=alpha,
+            n_bootstrap_samples=n_bootstrap_samples,
+            random_state=random_state,
+        )
+
+        metric_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(np.ndarray)))
+        for ci in cis:
+            for i, estimator in enumerate(self.ope.ope_estimators_):
+                for j, metric in enumerate(metrics):
+
+                    topk_metric = np.zeros(max_topk)
+                    for topk in range(max_topk):
+                        topk_values = policy_value_dict[ci][estimator][
+                            "true_policy_value"
+                        ][:topk]
+
+                        if metric == "best":
+                            topk_metric[topk] = topk_values.max()
+                        elif metric == "worst":
+                            topk_metric[topk] = topk_values.min()
+                        elif metric == "mean":
+                            topk_metric[topk] = topk_values.mean()
+                        else:
+                            topk_metric[topk] = (
+                                topk_values < safety_threshold
+                            ).sum() / (topk + 1)
+
+                    metric_dict[ci][estimator][metric] = topk_metric
+
+        metric_dict = defaultdict_to_dict(metric_dict)
+
+        min_val = policy_value_dict[estimator]["true_policy_value"].min()
+        max_val = policy_value_dict[estimator]["true_policy_value"].max()
+        yaxis_min_val = (
+            min_val if safety_threshold is None else min(min_val, safety_threshold)
+        )
+        yaxis_max_val = (
+            max_val if safety_threshold is None else max(max_val, safety_threshold)
+        )
+        margin = (yaxis_max_val - yaxis_min_val) * 0.05
+
+        plt.style.use("ggplot")
+        n_rows = len(cis)
+        n_cols = len(metrics)
+
+        fig, axes = plt.subplots(
+            nrows=n_rows,
+            ncols=n_cols,
+            figsize=(4 * n_rows, 3 * n_cols),
+        )
+
+        if n_rows == 1:
+            ci = cis[0]
+
+            for j, metric in enumerate(metrics):
+                for i, estimator in enumerate(self.ope.ope_estimators_):
+                    axes[j].plot(
+                        np.arange(1, max_topk + 1),
+                        metric_dict[ci][estimator][metric],
+                        marker=markers[i],
+                        legend=estimator,
+                    )
+
+                if metric in ["best", "worst", "mean"]:
+                    if safety_threshold is not None:
+                        axes[j].plot(
+                            np.arange(1, max_topk + 1),
+                            np.full(max_topk, safety_threshold),
+                            color=dkred,
+                            legend="safety threshold",
+                        )
+                        axes[j].plot(
+                            np.arange(1, max_topk + 1),
+                            np.full(max_topk, max_val),
+                            color="black",
+                            linewidth=0.5,
+                        )
+                        axes[j].plot(
+                            np.arange(1, max_topk + 1),
+                            np.full(max_topk, min_val),
+                            color="black",
+                            linewidth=0.5,
+                        )
+
+                    axes[j].set_ylabel(f"{metric} policy value")
+                    axes[j].set_ylim(yaxis_max_val - margin, yaxis_max_val + margin)
+
+                else:
+                    axes[j].set_ylabel("safety violation rate")
+                    axes[j].set_ylim(-0.05, 1.05)
+
+                axes[j].set_xlabel("# of policies deployed")
+
+        else:
+            for l, ci in enumerate(cis):
+
+                for j, metric in enumerate(metrics):
+                    for i, estimator in enumerate(self.ope.ope_estimators_):
+                        axes[l, j].plot(
+                            np.arange(1, max_topk + 1),
+                            metric_dict[ci][estimator][metric],
+                            marker=markers[i],
+                            legend=estimator,
+                        )
+
+                    if metric in ["best", "worst", "mean"]:
+                        if safety_threshold is not None:
+                            axes[l, j].plot(
+                                np.arange(1, max_topk + 1),
+                                np.full(max_topk, safety_threshold),
+                                color=dkred,
+                                legend="safety threshold",
+                            )
+                            axes[l, j].plot(
+                                np.arange(1, max_topk + 1),
+                                np.full(max_topk, max_val),
+                                color="black",
+                                linewidth=0.5,
+                            )
+                            axes[l, j].plot(
+                                np.arange(1, max_topk + 1),
+                                np.full(max_topk, min_val),
+                                color="black",
+                                linewidth=0.5,
+                            )
+
+                        axes[l, j].set_ylabel(f"{metric} policy value")
+                        axes[l, j].set_ylim(
+                            yaxis_max_val - margin, yaxis_max_val + margin
+                        )
+
+                    else:
+                        axes[l, j].set_ylabel("safety violation rate")
+                        axes[l, j].set_ylim(-0.05, 1.05)
+
+                    axes[l, j].set_xlabel("# of policies deployed")
+
+        fig.tight_layout()
+        plt.show()
+
+        if fig_dir:
+            fig.savefig(str(fig_dir / fig_name), dpi=300, bbox_inches="tight")
+
+    def visualize_topk_conditional_value_at_risk_selected_by_standard_ope(
+        self,
+        input_dict: OPEInputDict,
+        alpha: float = 0.05,
+        metrics: List[str] = ["best", "worst", "mean", "safety_violation_rate"],
+        max_topk: Optional[int] = None,
+        safety_threshold: Optional[float] = None,
+        fig_dir: Optional[Path] = None,
+        fig_name: str = "topk_conditional_value_at_risk_standard_ope.png",
+    ):
+        """Visualize the topk deployment result selected by standard OPE.
+
+        Parameters
+        -------
+        input_dict: OPEInputDict
+            Dictionary of the OPE inputs for each evaluation policy.
+            Please refer to `CreateOPEInput` class for the detail.
+            key: [evaluation_policy_name][
+                evaluation_policy_action,
+                evaluation_policy_action_dist,
+                state_action_value_prediction,
+                initial_state_value_prediction,
+                state_action_marginal_importance_weight,
+                state_marginal_importance_weight,
+                on_policy_policy_value,
+                gamma,
+            ]
+
+        alpha: float, default=0.05
+            Proportion of the sided region. The value should be within `[0, 1]`.
+
+        metrics: list of {"best", "worst", "mean", "safety_violation_rate"}, default=["best", "worst", "mean", "safety_violation_rate"]
+            Indicate which of the policy performance among {"best", "worst", "mean"} and safety violation rate to report.
+
+        max_topk: int, default=None
+            Maximum number of policies to be deployed.
+            If `None` is given, all the policies will be deployed.
+
+        safety_threshold: float, default=0.0 (>= 0)
+            The conditional value at risk required to be a safe policy.
+
+        fig_dir: Path, default=None
+            Path to store the bar figure.
+            If `None` is given, the figure will not be saved.
+
+        fig_name: str, default="topk_policy_value_standard_ope.png"
+            Name of the bar figure.
+
+        """
+        if metrics is None:
+            metrics = ["best", "worst", "mean", "safety_violation_rate"]
+        for metric in metrics:
+            if metric not in ["best", "worst", "mean", "safety_violation_rate"]:
+                raise ValueError(
+                    f"the elements of metrics must be one of 'best', 'worst', 'mean', or 'safety_violation_rate', but {metric} is given"
+                )
+
+        if max_topk is None:
+            max_topk = len(input_dict)
+        check_scalar(max_topk, name="max_topk", target_type=int, min_val=1)
+        max_topk = min(max_topk, len(input_dict))
+
+        if "safety_violation_rate" in metrics:
+            safety_threshold = 0.0 if safety_threshold is None else safety_threshold
+
+        if safety_threshold is not None:
+            check_scalar(
+                safety_threshold,
+                name="safety_threshold",
+                target_type=float,
+                min_val=0.0,
+            )
+
+        if fig_dir is not None and not isinstance(fig_dir, Path):
+            raise ValueError(f"fig_dir must be a Path, but {type(fig_dir)} is given")
+        if fig_name is not None and not isinstance(fig_name, str):
+            raise ValueError(f"fig_dir must be a string, but {type(fig_dir)} is given")
+
+        policy_value_dict = self.select_by_policy_value(
+            input_dict=input_dict,
+        )
+        cvar_dict_ = self.select_by_conditional_value_at_risk(
+            input_dict=input_dict,
+            alpha=alpha,
+            return_true_values=True,
+        )
+
+        cvar_dict = dict()
+        for i, estimator in enumerate(self.ope.ope_estimators_):
+            estimated_ranking = policy_value_dict[estimator]["estimated_ranking"]
+            true_cvar_unsorted = cvar_dict_[estimator]["true_conditional_value_at_risk"]
+            eval_policy_to_cvar_idx = dict(
+                zip(
+                    cvar_dict_[estimator]["estimated_ranking"],
+                    np.arange(len(input_dict)),
+                )
+            )
+
+            cvar = np.zeros((len(input_dict)))
+            for i, eval_policy in enumerate(estimated_ranking):
+                cvar[i] = true_cvar_unsorted[eval_policy_to_cvar_idx[eval_policy]]
+
+            cvar_dict[estimator] = cvar
+
+        metric_dict = defaultdict(lambda: defaultdict(np.ndarray))
+        for i, estimator in enumerate(self.ope.ope_estimators_):
+            for j, metric in enumerate(metrics):
+
+                topk_metric = np.zeros(max_topk)
+                for topk in range(max_topk):
+                    topk_values = cvar_dict[estimator][:topk]
+
+                    if metric == "best":
+                        topk_metric[topk] = topk_values.max()
+                    elif metric == "worst":
+                        topk_metric[topk] = topk_values.min()
+                    elif metric == "mean":
+                        topk_metric[topk] = topk_values.mean()
+                    else:
+                        topk_metric[topk] = (topk_values < safety_threshold).sum() / (
+                            topk + 1
+                        )
+
+                metric_dict[estimator][metric] = topk_metric
+
+        metric_dict = defaultdict_to_dict(metric_dict)
+
+        min_val = cvar_dict[estimator].min()
+        max_val = cvar_dict[estimator].max()
+        yaxis_min_val = (
+            min_val if safety_threshold is None else min(min_val, safety_threshold)
+        )
+        yaxis_max_val = (
+            max_val if safety_threshold is None else max(max_val, safety_threshold)
+        )
+        margin = (yaxis_max_val - yaxis_min_val) * 0.05
+
+        plt.style.use("ggplot")
+        n_figs = len(metrics)
+
+        fig, axes = plt.subplots(
+            nrows=1,
+            ncols=n_figs,
+            figsize=(4, 3 * n_figs),
+        )
+
+        for j, metric in enumerate(metrics):
+
+            for i, estimator in enumerate(self.ope.ope_estimators_):
+                axes[j].plot(
+                    np.arange(1, max_topk + 1),
+                    metric_dict[estimator][metric],
+                    marker=markers[i],
+                    legend=estimator,
+                )
+
+            if metric in ["best", "worst", "mean"]:
+                if safety_threshold is not None:
+                    axes[j].plot(
+                        np.arange(1, max_topk + 1),
+                        np.full(max_topk, safety_threshold),
+                        color=dkred,
+                        legend="safety threshold",
+                    )
+                    axes[j].plot(
+                        np.arange(1, max_topk + 1),
+                        np.full(max_topk, max_val),
+                        color="black",
+                        linewidth=0.5,
+                    )
+                    axes[j].plot(
+                        np.arange(1, max_topk + 1),
+                        np.full(max_topk, min_val),
+                        color="black",
+                        linewidth=0.5,
+                    )
+
+                axes[j].set_ylabel(f"{metric} CVaR (lower {alpha * 100}%)")
+                axes[j].set_ylim(yaxis_max_val - margin, yaxis_max_val + margin)
+
+            else:
+                axes[j].set_ylabel("safety violation rate")
+                axes[j].set_ylim(-0.05, 1.05)
+
+            axes[j].set_xlabel("# of policies deployed")
+
+        fig.tight_layout()
+        plt.show()
+
+        if fig_dir:
+            fig.savefig(str(fig_dir / fig_name), dpi=300, bbox_inches="tight")
+
+    def visualize_topk_conditional_value_at_risk_selected_by_cumulative_distribution_ope(
+        self,
+        input_dict: OPEInputDict,
+        alpha: float = 0.05,
+        metrics: Optional[List[str]] = None,
+        max_topk: Optional[int] = None,
+        safety_threshold: Optional[float] = None,
+        fig_dir: Optional[Path] = None,
+        fig_name: str = "topk_cvar_cumulative_distribution_ope.png",
+    ):
+        """Visualize the topk deployment result selected by standard OPE.
+
+        Parameters
+        -------
+        input_dict: OPEInputDict
+            Dictionary of the OPE inputs for each evaluation policy.
+            Please refer to `CreateOPEInput` class for the detail.
+            key: [evaluation_policy_name][
+                evaluation_policy_action,
+                evaluation_policy_action_dist,
+                state_action_value_prediction,
+                initial_state_value_prediction,
+                state_action_marginal_importance_weight,
+                state_marginal_importance_weight,
+                on_policy_policy_value,
+                gamma,
+            ]
+
+        alpha: float, default=0.05
+            Proportion of the sided region. The value should be within `[0, 1]`.
+
+        metrics: list of {"best", "worst", "mean", "safety_violation_rate"}, default=["best", "worst", "mean", "safety_violation_rate"]
+            Indicate which of the policy performance among {"best", "worst", "mean"} and safety violation rate to report.
+
+        max_topk: int, default=None
+            Maximum number of policies to be deployed.
+            If `None` is given, all the policies will be deployed.
+
+        safety_threshold: float, default=0.0 (>= 0)
+            The conditional value at risk required to be a safe policy.
+
+        fig_dir: Path, default=None
+            Path to store the bar figure.
+            If `None` is given, the figure will not be saved.
+
+        fig_name: str, default="topk_policy_value_standard_ope.png"
+            Name of the bar figure.
+
+        """
+        if metrics is None:
+            metrics = ["best", "worst", "mean", "safety_violation_rate"]
+        for metric in metrics:
+            if metric not in ["best", "worst", "mean", "safety_violation_rate"]:
+                raise ValueError(
+                    f"the elements of metrics must be one of 'best', 'worst', 'mean', or 'safety_violation_rate', but {metric} is given"
+                )
+
+        if max_topk is None:
+            max_topk = len(input_dict)
+        check_scalar(max_topk, name="max_topk", target_type=int, min_val=1)
+        max_topk = min(max_topk, len(input_dict))
+
+        if "safety_violation_rate" in metrics:
+            safety_threshold = 0.0 if safety_threshold is None else safety_threshold
+
+        if safety_threshold is not None:
+            check_scalar(
+                safety_threshold,
+                name="safety_threshold",
+                target_type=float,
+                min_val=0.0,
+            )
+
+        if fig_dir is not None and not isinstance(fig_dir, Path):
+            raise ValueError(f"fig_dir must be a Path, but {type(fig_dir)} is given")
+        if fig_name is not None and not isinstance(fig_name, str):
+            raise ValueError(f"fig_dir must be a string, but {type(fig_dir)} is given")
+
+        cvar_dict = self.select_by_conditional_value_at_risk(
+            input_dict=input_dict,
+            alpha=alpha,
+            return_true_values=True,
+        )
+
+        metric_dict = defaultdict(lambda: defaultdict(np.ndarray))
+        for i, estimator in enumerate(self.cumulative_distribution_ope.ope_estimators_):
+            for j, metric in enumerate(metrics):
+
+                topk_metric = np.zeros(max_topk)
+                for topk in range(max_topk):
+                    topk_values = cvar_dict[estimator][
+                        "true_conditional_value_at_risk"
+                    ][:topk]
+
+                    if metric == "best":
+                        topk_metric[topk] = topk_values.max()
+                    elif metric == "worst":
+                        topk_metric[topk] = topk_values.min()
+                    elif metric == "mean":
+                        topk_metric[topk] = topk_values.mean()
+                    else:
+                        topk_metric[topk] = (topk_values < safety_threshold).sum() / (
+                            topk + 1
+                        )
+
+                metric_dict[estimator][metric] = topk_metric
+
+        metric_dict = defaultdict_to_dict(metric_dict)
+
+        min_val = cvar_dict[estimator]["true_conditional_value_at_risk"].min()
+        max_val = cvar_dict[estimator]["true_conditional_value_at_risk"].max()
+        yaxis_min_val = (
+            min_val if safety_threshold is None else min(min_val, safety_threshold)
+        )
+        yaxis_max_val = (
+            max_val if safety_threshold is None else max(max_val, safety_threshold)
+        )
+        margin = (yaxis_max_val - yaxis_min_val) * 0.05
+
+        plt.style.use("ggplot")
+        n_figs = len(metrics)
+
+        fig, axes = plt.subplots(
+            nrows=1,
+            ncols=n_figs,
+            figsize=(4, 3 * n_figs),
+        )
+
+        for j, metric in enumerate(metrics):
+
+            for i, estimator in enumerate(self.ope.ope_estimators_):
+                axes[j].plot(
+                    np.arange(1, max_topk + 1),
+                    metric_dict[estimator][metric],
+                    marker=markers[i],
+                    legend=estimator,
+                )
+
+            if metric in ["best", "worst", "mean"]:
+                if safety_threshold is not None:
+                    axes[j].plot(
+                        np.arange(1, max_topk + 1),
+                        np.full(max_topk, safety_threshold),
+                        color=dkred,
+                        legend="safety threshold",
+                    )
+                    axes[j].plot(
+                        np.arange(1, max_topk + 1),
+                        np.full(max_topk, max_val),
+                        color="black",
+                        linewidth=0.5,
+                    )
+                    axes[j].plot(
+                        np.arange(1, max_topk + 1),
+                        np.full(max_topk, min_val),
+                        color="black",
+                        linewidth=0.5,
+                    )
+
+                axes[j].set_ylabel(f"{metric} CVaR (lower {alpha * 100}%)")
+                axes[j].set_ylim(yaxis_max_val - margin, yaxis_max_val + margin)
+
+            else:
+                axes[j].set_ylabel("safety violation rate")
+                axes[j].set_ylim(-0.05, 1.05)
+
+            axes[j].set_xlabel("# of policies deployed")
+
+        fig.tight_layout()
+        plt.show()
+
+        if fig_dir:
+            fig.savefig(str(fig_dir / fig_name), dpi=300, bbox_inches="tight")
+
+    def visualize_topk_lower_quartile_selected_by_standard_ope(
+        self,
+        input_dict: OPEInputDict,
+        alpha: float = 0.05,
+        metrics: List[str] = ["best", "worst", "mean", "safety_violation_rate"],
+        max_topk: Optional[int] = None,
+        safety_threshold: Optional[float] = None,
+        fig_dir: Optional[Path] = None,
+        fig_name: str = "topk_lower_quartile_standard_ope.png",
+    ):
+        """Visualize the topk deployment result selected by standard OPE.
+
+        Parameters
+        -------
+        input_dict: OPEInputDict
+            Dictionary of the OPE inputs for each evaluation policy.
+            Please refer to `CreateOPEInput` class for the detail.
+            key: [evaluation_policy_name][
+                evaluation_policy_action,
+                evaluation_policy_action_dist,
+                state_action_value_prediction,
+                initial_state_value_prediction,
+                state_action_marginal_importance_weight,
+                state_marginal_importance_weight,
+                on_policy_policy_value,
+                gamma,
+            ]
+
+        alpha: float, default=0.05
+            Proportion of the sided region. The value should be within `[0, 0.5]`.
+
+        metrics: list of {"best", "worst", "mean", "safety_violation_rate"}, default=["best", "worst", "mean", "safety_violation_rate"]
+            Indicate which of the policy performance among {"best", "worst", "mean"} and safety violation rate to report.
+
+        max_topk: int, default=None
+            Maximum number of policies to be deployed.
+            If `None` is given, all the policies will be deployed.
+
+        safety_threshold: float, default=0.0 (>= 0)
+            The conditional value at risk required to be a safe policy.
+
+        fig_dir: Path, default=None
+            Path to store the bar figure.
+            If `None` is given, the figure will not be saved.
+
+        fig_name: str, default="topk_policy_value_standard_ope.png"
+            Name of the bar figure.
+
+        """
+        if metrics is None:
+            metrics = ["best", "worst", "mean", "safety_violation_rate"]
+        for metric in metrics:
+            if metric not in ["best", "worst", "mean", "safety_violation_rate"]:
+                raise ValueError(
+                    f"the elements of metrics must be one of 'best', 'worst', 'mean', or 'safety_violation_rate', but {metric} is given"
+                )
+
+        if max_topk is None:
+            max_topk = len(input_dict)
+        check_scalar(max_topk, name="max_topk", target_type=int, min_val=1)
+        max_topk = min(max_topk, len(input_dict))
+
+        if "safety_violation_rate" in metrics:
+            safety_threshold = 0.0 if safety_threshold is None else safety_threshold
+
+        if safety_threshold is not None:
+            check_scalar(
+                safety_threshold,
+                name="safety_threshold",
+                target_type=float,
+                min_val=0.0,
+            )
+
+        if fig_dir is not None and not isinstance(fig_dir, Path):
+            raise ValueError(f"fig_dir must be a Path, but {type(fig_dir)} is given")
+        if fig_name is not None and not isinstance(fig_name, str):
+            raise ValueError(f"fig_dir must be a string, but {type(fig_dir)} is given")
+
+        policy_value_dict = self.select_by_policy_value(
+            input_dict=input_dict,
+        )
+        lower_quartile_dict_ = self.select_by_lower_quartile(
+            input_dict=input_dict,
+            alpha=alpha,
+            return_true_values=True,
+        )
+
+        lower_quartile_dict = dict()
+        for i, estimator in enumerate(self.ope.ope_estimators_):
+            estimated_ranking = policy_value_dict[estimator]["estimated_ranking"]
+            true_lower_quartile_unsorted = lower_quartile_dict_[estimator][
+                "true_lower_quartile"
+            ]
+            eval_policy_to_lower_quartile_idx = dict(
+                zip(
+                    lower_quartile_dict_[estimator]["estimated_ranking"],
+                    np.arange(len(input_dict)),
+                )
+            )
+
+            lower_quartile = np.zeros((len(input_dict)))
+            for i, eval_policy in enumerate(estimated_ranking):
+                lower_quartile[i] = true_lower_quartile_unsorted[
+                    eval_policy_to_lower_quartile_idx[eval_policy]
+                ]
+
+            lower_quartile_dict[estimator] = lower_quartile
+
+        metric_dict = defaultdict(lambda: defaultdict(np.ndarray))
+        for i, estimator in enumerate(self.ope.ope_estimators_):
+            for j, metric in enumerate(metrics):
+
+                topk_metric = np.zeros(max_topk)
+                for topk in range(max_topk):
+                    topk_values = lower_quartile_dict[estimator][:topk]
+
+                    if metric == "best":
+                        topk_metric[topk] = topk_values.max()
+                    elif metric == "worst":
+                        topk_metric[topk] = topk_values.min()
+                    elif metric == "mean":
+                        topk_metric[topk] = topk_values.mean()
+                    else:
+                        topk_metric[topk] = (topk_values < safety_threshold).sum() / (
+                            topk + 1
+                        )
+
+                metric_dict[estimator][metric] = topk_metric
+
+        metric_dict = defaultdict_to_dict(metric_dict)
+
+        min_val = lower_quartile_dict[estimator].min()
+        max_val = lower_quartile_dict[estimator].max()
+        yaxis_min_val = (
+            min_val if safety_threshold is None else min(min_val, safety_threshold)
+        )
+        yaxis_max_val = (
+            max_val if safety_threshold is None else max(max_val, safety_threshold)
+        )
+        margin = (yaxis_max_val - yaxis_min_val) * 0.05
+
+        plt.style.use("ggplot")
+        n_figs = len(metrics)
+
+        fig, axes = plt.subplots(
+            nrows=1,
+            ncols=n_figs,
+            figsize=(4, 3 * n_figs),
+        )
+
+        for j, metric in enumerate(metrics):
+
+            for i, estimator in enumerate(self.ope.ope_estimators_):
+                axes[j].plot(
+                    np.arange(1, max_topk + 1),
+                    metric_dict[estimator][metric],
+                    marker=markers[i],
+                    legend=estimator,
+                )
+
+            if metric in ["best", "worst", "mean"]:
+                if safety_threshold is not None:
+                    axes[j].plot(
+                        np.arange(1, max_topk + 1),
+                        np.full(max_topk, safety_threshold),
+                        color=dkred,
+                        legend="safety threshold",
+                    )
+                    axes[j].plot(
+                        np.arange(1, max_topk + 1),
+                        np.full(max_topk, max_val),
+                        color="black",
+                        linewidth=0.5,
+                    )
+                    axes[j].plot(
+                        np.arange(1, max_topk + 1),
+                        np.full(max_topk, min_val),
+                        color="black",
+                        linewidth=0.5,
+                    )
+
+                axes[j].set_ylabel(f"{metric} lower quartile ({alpha * 100}%)")
+                axes[j].set_ylim(yaxis_max_val - margin, yaxis_max_val + margin)
+
+            else:
+                axes[j].set_ylabel("safety violation rate")
+                axes[j].set_ylim(-0.05, 1.05)
+
+            axes[j].set_xlabel("# of policies deployed")
+
+        fig.tight_layout()
+        plt.show()
+
+        if fig_dir:
+            fig.savefig(str(fig_dir / fig_name), dpi=300, bbox_inches="tight")
+
+    def visualize_topk_lower_quartile_selected_by_cumulative_distribution_ope(
+        self,
+        input_dict: OPEInputDict,
+        alpha: float = 0.05,
+        metrics: Optional[List[str]] = None,
+        max_topk: Optional[int] = None,
+        safety_threshold: Optional[float] = None,
+        fig_dir: Optional[Path] = None,
+        fig_name: str = "topk_lower_quartile_cumulative_distribution_ope.png",
+    ):
+        """Visualize the topk deployment result selected by cumulative distribution OPE.
+
+        Parameters
+        -------
+        input_dict: OPEInputDict
+            Dictionary of the OPE inputs for each evaluation policy.
+            Please refer to `CreateOPEInput` class for the detail.
+            key: [evaluation_policy_name][
+                evaluation_policy_action,
+                evaluation_policy_action_dist,
+                state_action_value_prediction,
+                initial_state_value_prediction,
+                state_action_marginal_importance_weight,
+                state_marginal_importance_weight,
+                on_policy_policy_value,
+                gamma,
+            ]
+
+        alpha: float, default=0.05
+            Proportion of the sided region. The value should be within `[0, 0.5]`.
+
+        metrics: list of {"best", "worst", "mean", "safety_violation_rate"}, default=["best", "worst", "mean", "safety_violation_rate"]
+            Indicate which of the policy performance among {"best", "worst", "mean"} and safety violation rate to report.
+
+        max_topk: int, default=None
+            Maximum number of policies to be deployed.
+            If `None` is given, all the policies will be deployed.
+
+        safety_threshold: float, default=0.0 (>= 0)
+            The conditional value at risk required to be a safe policy.
+
+        fig_dir: Path, default=None
+            Path to store the bar figure.
+            If `None` is given, the figure will not be saved.
+
+        fig_name: str, default="topk_policy_value_standard_ope.png"
+            Name of the bar figure.
+
+        """
+        if metrics is None:
+            metrics = ["best", "worst", "mean", "safety_violation_rate"]
+        for metric in metrics:
+            if metric not in ["best", "worst", "mean", "safety_violation_rate"]:
+                raise ValueError(
+                    f"the elements of metrics must be one of 'best', 'worst', 'mean', or 'safety_violation_rate', but {metric} is given"
+                )
+
+        if max_topk is None:
+            max_topk = len(input_dict)
+        check_scalar(max_topk, name="max_topk", target_type=int, min_val=1)
+        max_topk = min(max_topk, len(input_dict))
+
+        if "safety_violation_rate" in metrics:
+            safety_threshold = 0.0 if safety_threshold is None else safety_threshold
+
+        if safety_threshold is not None:
+            check_scalar(
+                safety_threshold,
+                name="safety_threshold",
+                target_type=float,
+                min_val=0.0,
+            )
+
+        if fig_dir is not None and not isinstance(fig_dir, Path):
+            raise ValueError(f"fig_dir must be a Path, but {type(fig_dir)} is given")
+        if fig_name is not None and not isinstance(fig_name, str):
+            raise ValueError(f"fig_dir must be a string, but {type(fig_dir)} is given")
+
+        lower_quartile_dict = self.select_by_lower_quartile(
+            input_dict=input_dict,
+            alpha=alpha,
+            return_true_values=True,
+        )
+
+        metric_dict = defaultdict(lambda: defaultdict(np.ndarray))
+        for i, estimator in enumerate(self.cumulative_distribution_ope.ope_estimators_):
+            for j, metric in enumerate(metrics):
+
+                topk_metric = np.zeros(max_topk)
+                for topk in range(max_topk):
+                    topk_values = lower_quartile_dict[estimator]["true_lower_quartile"][
+                        :topk
+                    ]
+
+                    if metric == "best":
+                        topk_metric[topk] = topk_values.max()
+                    elif metric == "worst":
+                        topk_metric[topk] = topk_values.min()
+                    elif metric == "mean":
+                        topk_metric[topk] = topk_values.mean()
+                    else:
+                        topk_metric[topk] = (topk_values < safety_threshold).sum() / (
+                            topk + 1
+                        )
+
+                metric_dict[estimator][metric] = topk_metric
+
+        metric_dict = defaultdict_to_dict(metric_dict)
+
+        min_val = lower_quartile_dict[estimator]["true_lower_quartile"].min()
+        max_val = lower_quartile_dict[estimator]["true_lower_quartile"].max()
+        yaxis_min_val = (
+            min_val if safety_threshold is None else min(min_val, safety_threshold)
+        )
+        yaxis_max_val = (
+            max_val if safety_threshold is None else max(max_val, safety_threshold)
+        )
+        margin = (yaxis_max_val - yaxis_min_val) * 0.05
+
+        plt.style.use("ggplot")
+        n_figs = len(metrics)
+
+        fig, axes = plt.subplots(
+            nrows=1,
+            ncols=n_figs,
+            figsize=(4, 3 * n_figs),
+        )
+
+        for j, metric in enumerate(metrics):
+
+            for i, estimator in enumerate(self.ope.ope_estimators_):
+                axes[j].plot(
+                    np.arange(1, max_topk + 1),
+                    metric_dict[estimator][metric],
+                    marker=markers[i],
+                    legend=estimator,
+                )
+
+            if metric in ["best", "worst", "mean"]:
+                if safety_threshold is not None:
+                    axes[j].plot(
+                        np.arange(1, max_topk + 1),
+                        np.full(max_topk, safety_threshold),
+                        color=dkred,
+                        legend="safety threshold",
+                    )
+                    axes[j].plot(
+                        np.arange(1, max_topk + 1),
+                        np.full(max_topk, max_val),
+                        color="black",
+                        linewidth=0.5,
+                    )
+                    axes[j].plot(
+                        np.arange(1, max_topk + 1),
+                        np.full(max_topk, min_val),
+                        color="black",
+                        linewidth=0.5,
+                    )
+
+                axes[j].set_ylabel(f"{metric} lower quartile ({alpha * 100}%)")
+                axes[j].set_ylim(yaxis_max_val - margin, yaxis_max_val + margin)
+
+            else:
+                axes[j].set_ylabel("safety violation rate")
+                axes[j].set_ylim(-0.05, 1.05)
+
+            axes[j].set_xlabel("# of policies deployed")
+
+        fig.tight_layout()
+        plt.show()
+
+        if fig_dir:
+            fig.savefig(str(fig_dir / fig_name), dpi=300, bbox_inches="tight")
+
     def visualize_policy_value_for_validation(
         self,
         input_dict: OPEInputDict,
@@ -1812,6 +3400,8 @@ class OffPolicySelection:
     ):
         """Visualize the true policy value and its estimate (scatter plot).
 
+        Parameters
+        -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
             Please refer to `CreateOPEInput` class for the detail.
@@ -1820,6 +3410,8 @@ class OffPolicySelection:
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
+                state_action_marginal_importance_weight,
+                state_marginal_importance_weight,
                 on_policy_policy_value,
                 gamma,
             ]
@@ -1845,7 +3437,7 @@ class OffPolicySelection:
         if fig_name is not None and not isinstance(fig_name, str):
             raise ValueError(f"fig_dir must be a string, but {type(fig_dir)} is given")
 
-        ground_truth_policy_value_dict = self.obtain_oracle_selection_result(
+        ground_truth_policy_value_dict = self.obtain_true_selection_result(
             input_dict=input_dict,
         )
         true_ranking = ground_truth_policy_value_dict["ranking"]
@@ -1993,6 +3585,8 @@ class OffPolicySelection:
     ):
         """Visualize the true policy value and its estimate obtained by cumulative distribution OPE (scatter plot).
 
+        Parameters
+        -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
             Please refer to `CreateOPEInput` class for the detail.
@@ -2001,6 +3595,8 @@ class OffPolicySelection:
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
+                state_action_marginal_importance_weight,
+                state_marginal_importance_weight,
                 on_policy_policy_value,
                 gamma,
             ]
@@ -2019,7 +3615,7 @@ class OffPolicySelection:
             Name of the bar figure.
 
         """
-        ground_truth_policy_value_dict = self.obtain_oracle_selection_result(
+        ground_truth_policy_value_dict = self.obtain_true_selection_result(
             input_dict=input_dict,
         )
         true_ranking = ground_truth_policy_value_dict["ranking"]
@@ -2179,6 +3775,8 @@ class OffPolicySelection:
     ):
         """Visualize the true policy value and its estimate lower bound (scatter plot).
 
+        Parameters
+        -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
             Please refer to `CreateOPEInput` class for the detail.
@@ -2187,6 +3785,8 @@ class OffPolicySelection:
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
+                state_action_marginal_importance_weight,
+                state_marginal_importance_weight,
                 on_policy_policy_value,
                 gamma,
             ]
@@ -2217,7 +3817,7 @@ class OffPolicySelection:
             Name of the bar figure.
 
         """
-        ground_truth_policy_value_dict = self.obtain_oracle_selection_result(
+        ground_truth_policy_value_dict = self.obtain_true_selection_result(
             input_dict=input_dict,
         )
         true_ranking = ground_truth_policy_value_dict["ranking"]
@@ -2513,6 +4113,8 @@ class OffPolicySelection:
     ):
         """Visualize the true variance and its estimate (scatter plot).
 
+        Parameters
+        -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
             Please refer to `CreateOPEInput` class for the detail.
@@ -2521,6 +4123,8 @@ class OffPolicySelection:
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
+                state_action_marginal_importance_weight,
+                state_marginal_importance_weight,
                 on_policy_policy_value,
                 gamma,
             ]
@@ -2539,7 +4143,7 @@ class OffPolicySelection:
             Name of the bar figure.
 
         """
-        ground_truth_policy_value_dict = self.obtain_oracle_selection_result(
+        ground_truth_policy_value_dict = self.obtain_true_selection_result(
             input_dict=input_dict,
             return_variance=True,
         )
@@ -2675,6 +4279,8 @@ class OffPolicySelection:
     ):
         """Visualize the true lower quartile and its estimate (scatter plot).
 
+        Parameters
+        -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
             Please refer to `CreateOPEInput` class for the detail.
@@ -2683,6 +4289,8 @@ class OffPolicySelection:
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
+                state_action_marginal_importance_weight,
+                state_marginal_importance_weight,
                 on_policy_policy_value,
                 gamma,
             ]
@@ -2704,7 +4312,7 @@ class OffPolicySelection:
             Name of the bar figure.
 
         """
-        ground_truth_policy_value_dict = self.obtain_oracle_selection_result(
+        ground_truth_policy_value_dict = self.obtain_true_selection_result(
             input_dict=input_dict,
             quartile_alpha=alpha,
             return_lower_quartile=True,
@@ -2862,6 +4470,8 @@ class OffPolicySelection:
     ):
         """Visualize the true conditional value at risk and its estimate (scatter plot).
 
+        Parameters
+        -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
             Please refer to `CreateOPEInput` class for the detail.
@@ -2870,6 +4480,8 @@ class OffPolicySelection:
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
+                state_action_marginal_importance_weight,
+                state_marginal_importance_weight,
                 on_policy_policy_value,
                 gamma,
             ]
@@ -2891,7 +4503,7 @@ class OffPolicySelection:
             Name of the bar figure.
 
         """
-        ground_truth_policy_value_dict = self.obtain_oracle_selection_result(
+        ground_truth_policy_value_dict = self.obtain_true_selection_result(
             input_dict=input_dict,
             cvar_alpha=alpha,
             return_conditional_value_at_risk=True,
@@ -2958,8 +4570,8 @@ class OffPolicySelection:
                     estimated_cvar,
                 )
                 axes[i].set_title(estimator)
-                axes[i].set_xlabel("true CVaR")
-                axes[i].set_ylabel("estimated CVaR")
+                axes[i].set_xlabel(f"true CVaR (lower {alpha * 100}%)")
+                axes[i].set_ylabel(f"estimated CVaR (lower {alpha * 100}%)")
 
             if share_axes:
                 guide = np.linspace(guide_min, guide_max)
@@ -3017,8 +4629,12 @@ class OffPolicySelection:
                     linewidth=1.0,
                 )
                 axes[i // n_cols, i % n_cols].set_title(estimator)
-                axes[i // n_cols, i % n_cols].set_xlabel("true CVaR")
-                axes[i // n_cols, i % n_cols].set_ylabel("estimated CVaR")
+                axes[i // n_cols, i % n_cols].set_xlabel(
+                    f"true CVaR (lower {alpha * 100}%)"
+                )
+                axes[i // n_cols, i % n_cols].set_ylabel(
+                    f"estimated CVaR (lower {alpha * 100}%)"
+                )
 
             if share_axes:
                 guide = np.linspace(guide_min, guide_max)

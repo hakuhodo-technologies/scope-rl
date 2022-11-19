@@ -257,6 +257,8 @@ class OffPolicyEvaluation:
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
+                state_action_marginal_importance_weight,
+                state_marginal_importance_weight,
                 on_policy_policy_value,
                 gamma,
             ]
@@ -308,6 +310,8 @@ class OffPolicyEvaluation:
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
+                state_action_marginal_importance_weight,
+                state_marginal_importance_weight,
                 on_policy_policy_value,
                 gamma,
             ]
@@ -381,6 +385,8 @@ class OffPolicyEvaluation:
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
+                state_action_marginal_importance_weight,
+                state_marginal_importance_weight,
                 on_policy_policy_value,
                 gamma,
             ]
@@ -472,6 +478,8 @@ class OffPolicyEvaluation:
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
+                state_action_marginal_importance_weight,
+                state_marginal_importance_weight,
                 on_policy_policy_value,
                 gamma,
             ]
@@ -741,6 +749,8 @@ class OffPolicyEvaluation:
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
+                state_action_marginal_importance_weight,
+                state_marginal_importance_weight,
                 on_policy_policy_value,
                 gamma,
             ]
@@ -1102,6 +1112,8 @@ class CumulativeDistributionOffPolicyEvaluation:
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
+                state_action_marginal_importance_weight,
+                state_marginal_importance_weight,
                 on_policy_policy_value,
                 gamma,
             ]
@@ -1157,6 +1169,8 @@ class CumulativeDistributionOffPolicyEvaluation:
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
+                state_action_marginal_importance_weight,
+                state_marginal_importance_weight,
                 on_policy_policy_value,
                 gamma,
             ]
@@ -1208,6 +1222,8 @@ class CumulativeDistributionOffPolicyEvaluation:
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
+                state_action_marginal_importance_weight,
+                state_marginal_importance_weight,
                 on_policy_policy_value,
                 gamma,
             ]
@@ -1265,6 +1281,8 @@ class CumulativeDistributionOffPolicyEvaluation:
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
+                state_action_marginal_importance_weight,
+                state_marginal_importance_weight,
                 on_policy_policy_value,
                 gamma,
             ]
@@ -1344,6 +1362,8 @@ class CumulativeDistributionOffPolicyEvaluation:
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
+                state_action_marginal_importance_weight,
+                state_marginal_importance_weight,
                 on_policy_policy_value,
                 gamma,
             ]
@@ -1431,6 +1451,8 @@ class CumulativeDistributionOffPolicyEvaluation:
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
+                state_action_marginal_importance_weight,
+                state_marginal_importance_weight,
                 on_policy_policy_value,
                 gamma,
             ]
@@ -1650,6 +1672,8 @@ class CumulativeDistributionOffPolicyEvaluation:
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
+                state_action_marginal_importance_weight,
+                state_marginal_importance_weight,
                 on_policy_policy_value,
                 gamma,
             ]
@@ -1910,6 +1934,8 @@ class CumulativeDistributionOffPolicyEvaluation:
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
+                state_action_marginal_importance_weight,
+                state_marginal_importance_weight,
                 on_policy_policy_value,
                 gamma,
             ]
@@ -2068,6 +2094,8 @@ class CumulativeDistributionOffPolicyEvaluation:
                 evaluation_policy_action_dist,
                 state_action_value_prediction,
                 initial_state_value_prediction,
+                state_action_marginal_importance_weight,
+                state_marginal_importance_weight,
                 on_policy_policy_value,
                 gamma,
             ]
