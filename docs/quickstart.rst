@@ -66,7 +66,7 @@ We start by collecting the logged data useful for offline RL with a behavior pol
     >>> dataset = SyntheticDataset(
             env=env,
             behavior_policy=behavior_policy,
-            is_rtb_env=True,
+            maximum_step_per_episode=env.step_per_episode,
             random_state=random_state,
         )
     # collect logged data by a behavior policy

@@ -20,6 +20,7 @@ It takes an RL environment and the behavior policy (i.e., data collection policy
     >>> dataset = SyntheticDataset(
             env=env,
             behavior_policy=behavior_policy,
+            maximum_step_per_episode=env.step_per_episode,
             random_state=random_state,
         )
 
