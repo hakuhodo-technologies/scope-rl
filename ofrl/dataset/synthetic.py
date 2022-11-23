@@ -211,8 +211,7 @@ class SyntheticDataset(BaseDataset):
 
         if self.random_state is None:
             raise ValueError("random_state must be given")
-        self.random_ = check_random_state(self.random_state)
-        self.env.seed(self.random_state)
+        check_random_state(self.random_state)
 
     def obtain_trajectories(
         self,

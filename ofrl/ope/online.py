@@ -1299,13 +1299,13 @@ def rollout_policy_online(
             desc="[calculate on-policy policy value]",
             total=n_episodes,
         ):
-            state = env.reset()
+            state, info = env.reset()
             done = False
             episode_reward = 0
 
             while not done:
                 action = policy.predict_online(state)
-                state, reward, done, _ = env.step(action)
+                state, reward, done, _, _ = env.step(action)
                 episode_reward += reward
 
             on_policy_policy_values[i] = episode_reward
@@ -1316,14 +1316,14 @@ def rollout_policy_online(
             desc="[calculate on-policy policy value]",
             total=n_episodes,
         ):
-            state = env.reset()
+            state, info = env.reset()
             done = False
             episode_reward = 0
 
             t = 0
             while not done:
                 action = policy.sample_action_online(state)
-                state, reward, done, _ = env.step(action)
+                state, reward, done, _, _ = env.step(action)
                 episode_reward += gamma ** t * reward
                 t += 1
 

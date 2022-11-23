@@ -10,8 +10,6 @@ from d3rlpy.models.torch import Encoder, EncoderWithAction
 from d3rlpy.models.encoders import EncoderFactory
 from d3rlpy.models.encoders import _create_activation
 
-from ..utils import to_tensor
-
 
 class StateEncoder(nn.Module):
     def __init__(self, n_unique_states: int, dim_emb: int = 5):
@@ -26,7 +24,7 @@ class StateEncoder(nn.Module):
         )
 
     def encode(self, state_ids: np.ndarray, device: str = "cuda:0"):
-        state_ids = to_tensor(state_ids, dtype=int, device=device)
+        state_ids = torch.LongTensor(state_ids, device=device)
         with torch.no_grad():
             emb = self(state_ids).cpu().detach().numpy()
         return emb

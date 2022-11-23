@@ -401,7 +401,7 @@ class RTBEnv(gym.Env):
         done = self.t == self.step_per_episode - 1
 
         if done:
-            obs = self.reset()
+            obs, info = self.reset()
 
         else:
             # update timestep
