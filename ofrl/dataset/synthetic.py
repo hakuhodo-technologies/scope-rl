@@ -219,6 +219,7 @@ class SyntheticDataset(BaseDataset):
         n_episodes: int = 10000,
         step_per_episode: Optional[int] = None,
         obtain_info: bool = False,
+        seed_env: bool = False,
     ) -> LoggedDataset:
         """Rollout the behavior policy and obtain trajectories.
 
@@ -238,6 +239,9 @@ class SyntheticDataset(BaseDataset):
 
         obtain_info: bool, default=False
             Whether to gain info from the environment or not.
+
+        seed_env: bool, default=False
+            Whether to set seed on environment or not. 
 
         Returns
         -------
@@ -315,6 +319,9 @@ class SyntheticDataset(BaseDataset):
             min_val=1,
         )
 
+        if seed_env:
+            self.env.reset(self.random_state)
+
         states = np.empty(
             (n_episodes * step_per_episode, self.env.observation_space.shape[0])
         )
@@ -336,7 +343,7 @@ class SyntheticDataset(BaseDataset):
             desc="[obtain_trajectories]",
             total=n_episodes,
         ):
-            state = self.env.reset()
+            state, info_ = self.env.reset()
             terminal = False
 
             for t in range(step_per_episode):
@@ -344,7 +351,7 @@ class SyntheticDataset(BaseDataset):
                     action,
                     action_prob,
                 ) = self.behavior_policy.stochastic_action_with_pscore_online(state)
-                next_state, reward, done, info_ = self.env.step(action)
+                next_state, reward, done, truncated, info_ = self.env.step(action)
 
                 if (idx + 1) % step_per_episode == 0:
                     done = terminal = True
@@ -402,6 +409,7 @@ class SyntheticDataset(BaseDataset):
         n_steps: int = 100000,
         maximum_step_per_episode: Optional[int] = None,
         obtain_info: bool = False,
+        seed_env: bool = False,
     ) -> LoggedDataset:
         """Rollout the behavior policy and obtain steps.
 
@@ -415,6 +423,9 @@ class SyntheticDataset(BaseDataset):
 
         obtain_info: bool, default=False
             Whether to gain info from the environment or not.
+
+        seed_env: bool, default=False
+            Whether to set seed on environment or not. 
 
         Returns
         -------
@@ -486,6 +497,8 @@ class SyntheticDataset(BaseDataset):
             target_type=int,
             min_val=1,
         )
+        if seed_env:
+            self.env.reset(self.random_state)
 
         states = np.empty((n_steps, self.env.observation_space.shape[0]))
         if self.action_type == "discrete":
@@ -510,14 +523,14 @@ class SyntheticDataset(BaseDataset):
         ):
             if done:
                 n_episodes += 1
-                state = self.env.reset()
+                state, info_ = self.env.reset()
                 step = 0
                 done = False
             (
                 action,
                 action_prob,
             ) = self.behavior_policy.stochastic_action_with_pscore_online(state)
-            next_state, reward, done, info_ = self.env.step(action)
+            next_state, reward, done, truncated, info_ = self.env.step(action)
             terminal = step == maximum_step_per_episode - 1
 
             if obtain_info:

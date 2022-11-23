@@ -96,10 +96,10 @@ The basic interaction is performed using only four lines of code as follows.
 
 .. code-block:: python
 
-    >>> obs, done = env.reset(), False
+    >>> obs, info = env.reset(), False
     >>> while not done:
     >>>    action = agent.act(obs)
-    >>>    obs, reward, done, info = env.step(action)
+    >>>    obs, reward, done, truncated, info = env.step(action)
 
 Let's interact uniform random policy with a continuous action RTB environment. The discrete action case also works in a similar manner.
 
@@ -122,12 +122,12 @@ Let's interact uniform random policy with a continuous action RTB environment. T
         )
 
     # (3) basic interaction for continuous action case
-    >>> obs = env.reset()
+    >>> obs, info = env.reset()
     >>> done = False
 
     >>> while not done:
     >>>     action = agent.predict_online(obs)
-    >>>     obs, reward, done, info = env.step(action)
+    >>>     obs, reward, done, truncated, info = env.step(action)
 
 Note that, while we use `OFRL <>`_ and `d3rlpy <https://github.com/takuseno/d3rlpy>`_ here,
 RTBGym is compatible with any other libraries working on the `OpenAI Gym <https://gym.openai.com>`_ interface.

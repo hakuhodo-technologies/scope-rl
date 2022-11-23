@@ -437,9 +437,9 @@ class RTBEnv(gym.Env):
             "average_bid_price": np.mean(bid_prices),
         }
 
-        return obs, reward, done, info
+        return obs, reward, done, False, info
 
-    def reset(self) -> np.ndarray:
+    def reset(self, seed: Optional[int] = None) -> np.ndarray:
         """Initialize the environment.
 
         Note
@@ -457,7 +457,20 @@ class RTBEnv(gym.Env):
                   (budget consumption rate, cost per mille of impressions, auction winning rate, and reward)
                 - adjust rate (i.e., agent action) at the previous timestep
 
+        seed: Optional[int], default=None
+            Random state.
+
         """
+        if seed is not None:
+            self.random_ = check_random_state(seed)
+            self.simulator.random_ = check_random_state(seed)
+            self.simulator.search_volume_distribution.random_ = check_random_state(seed)
+            self.simulator.winning_price_distribution.random_ = check_random_state(seed)
+            self.simulator.ctr.random_ = check_random_state(seed)
+            self.simulator.cvr.random_ = check_random_state(
+                seed + 1
+            )  # to differentiate CVR from CTR
+
         # initialize internal env state
         self.t = 0
         self.prev_remaining_budget = self.remaining_budget = self.initial_budget
@@ -475,32 +488,10 @@ class RTBEnv(gym.Env):
             "reward": reward_,
             "adjust_rate": adjust_rate_,
         }
-        return np.array(list(obs.values())).astype(float)
+        return np.array(list(obs.values())).astype(float), {}
 
-    def render(self, mode: str = "human") -> None:
+    def render(self) -> None:
         pass
 
     def close(self) -> None:
         pass
-
-    def seed(self, seed: Optional[int] = None) -> None:
-        """Reset random state (seed).
-
-        Parameters
-        -------
-        seed: Optional[int], default=None
-            Random state.
-
-        """
-        if seed is None:
-            pass
-
-        else:
-            self.random_ = check_random_state(seed)
-            self.simulator.random_ = check_random_state(seed)
-            self.simulator.search_volume_distribution.random_ = check_random_state(seed)
-            self.simulator.winning_price_distribution.random_ = check_random_state(seed)
-            self.simulator.ctr.random_ = check_random_state(seed)
-            self.simulator.cvr.random_ = check_random_state(
-                seed + 1
-            )  # to differentiate CVR from CTR

@@ -328,7 +328,7 @@ class CustomizedRTBEnv(gym.Env):
 
         return self.env.step(action)
 
-    def reset(self) -> np.ndarray:
+    def reset(self, seed: Optional[int] = None) -> np.ndarray:
         """Initialize the environment.
 
         Note
@@ -346,14 +346,14 @@ class CustomizedRTBEnv(gym.Env):
                 (budget consumption rate, cost per mille of impressions, auction winning rate, and reward)
                 - adjust rate (i.e., agent action) at the previous timestep
 
-        """
-        return self.env.reset()
+        seed: Optional[int], default=None
+            Random state.
 
-    def render(self, mode: str = "human") -> None:
-        self.env.render(mode)
+        """
+        return self.env.reset(seed)
+
+    def render(self) -> None:
+        self.env.render()
 
     def close(self) -> None:
         self.env.close()
-
-    def seed(self, seed: int = None) -> None:
-        self.env.seed(seed)
