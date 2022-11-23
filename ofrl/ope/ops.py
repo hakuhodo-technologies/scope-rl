@@ -407,6 +407,7 @@ class OffPolicySelection:
     def select_by_policy_value(
         self,
         input_dict: OPEInputDict,
+        compared_estimators: Optional[List[str]] = None,
         return_true_values: bool = False,
         return_metrics: bool = False,
         return_by_dataframe: bool = False,
@@ -430,6 +431,10 @@ class OffPolicySelection:
                 on_policy_policy_value,
                 gamma,
             ]
+
+        compared_estimators: list of str, default=None
+            Name of compared estimators.
+            When `None` is given, all the estimators are compared.
 
         return_true_values: bool, default=False
             Whether to return the true policy value and its ranking.
@@ -526,15 +531,22 @@ class OffPolicySelection:
             raise RuntimeError(
                 "ope is not given. Please initialize the class with ope attribute"
             )
+        if compared_estimators is None:
+            compared_estimators = self.estimators_name["standard_ope"]
+        elif not set(compared_estimators).issubset(
+            self.estimators_name["standard_ope"]
+        ):
+            raise ValueError(
+                "compared_estimators must be a subset of self.estimators_name['standard_ope'], but found False."
+            )
 
         estimated_policy_value_dict = self.ope.estimate_policy_value(
-            input_dict=input_dict,
+            input_dict,
+            compared_estimators=compared_estimators,
         )
 
         if return_true_values or return_metrics:
-            ground_truth_dict = self.obtain_true_selection_result(
-                input_dict=input_dict,
-            )
+            ground_truth_dict = self.obtain_true_selection_result(input_dict)
             true_ranking = ground_truth_dict["ranking"]
             true_policy_value = ground_truth_dict["policy_value"]
 
@@ -544,7 +556,7 @@ class OffPolicySelection:
         n_policies = len(candidate_policy_names)
 
         ops_dict = {}
-        for i, estimator in enumerate(self.ope.ope_estimators_):
+        for i, estimator in enumerate(compared_estimators):
 
             estimated_policy_value_ = np.zeros(n_policies)
             true_policy_value_ = np.zeros(n_policies)
@@ -627,7 +639,7 @@ class OffPolicySelection:
         if return_by_dataframe:
             ranking_df_dict = defaultdict(pd.DataFrame)
 
-            for i, estimator in enumerate(self.ope.ope_estimators_):
+            for i, estimator in enumerate(compared_estimators):
                 ranking_df_ = pd.DataFrame()
                 ranking_df_["estimated_ranking"] = ops_dict[estimator][
                     "estimated_ranking"
@@ -661,7 +673,7 @@ class OffPolicySelection:
                     [],
                     [],
                 )
-                for i, estimator in enumerate(self.ope.ope_estimators_):
+                for i, estimator in enumerate(compared_estimators):
                     mse.append(ops_dict[estimator]["mean_squared_error"])
                     rankcorr.append(ops_dict[estimator]["rank_correlation"][0])
                     pvalue.append(ops_dict[estimator]["rank_correlation"][1])
@@ -670,7 +682,7 @@ class OffPolicySelection:
                     type_ii.append(ops_dict[estimator]["type_ii_error_rate"])
 
                 metric_df = pd.DataFrame()
-                metric_df["estimator"] = self.ope.ope_estimators_
+                metric_df["estimator"] = compared_estimators
                 metric_df["mean_squared_error"] = mse
                 metric_df["rank_correlation"] = rankcorr
                 metric_df["pvalue"] = pvalue
@@ -685,6 +697,7 @@ class OffPolicySelection:
     def select_by_policy_value_via_cumulative_distribution_ope(
         self,
         input_dict: OPEInputDict,
+        compared_estimators: Optional[List[str]] = None,
         return_true_values: bool = False,
         return_metrics: bool = False,
         return_by_dataframe: bool = False,
@@ -708,6 +721,10 @@ class OffPolicySelection:
                 on_policy_policy_value,
                 gamma,
             ]
+
+        compared_estimators: list of str, default=None
+            Name of compared estimators.
+            When `None` is given, all the estimators are compared.
 
         return_true_values: bool, default=False
             Whether to return the true policy value and its ranking.
@@ -804,15 +821,22 @@ class OffPolicySelection:
             raise RuntimeError(
                 "cumulative_distribution_ope is not given. Please initialize the class with cumulative_distribution_ope attribute"
             )
+        if compared_estimators is None:
+            compared_estimators = self.estimators_name["cumulative_distribution_ope"]
+        elif not set(compared_estimators).issubset(
+            self.estimators_name["cumulative_distribution_ope"]
+        ):
+            raise ValueError(
+                "compared_estimators must be a subset of self.estimators_name['cumulative_distribution_ope'], but found False."
+            )
 
         estimated_policy_value_dict = self.cumulative_distribution_ope.estimate_mean(
-            input_dict=input_dict,
+            input_dict,
+            compared_estimators=compared_estimators,
         )
 
         if return_true_values or return_metrics:
-            ground_truth_dict = self.obtain_true_selection_result(
-                input_dict=input_dict,
-            )
+            ground_truth_dict = self.obtain_true_selection_result(input_dict)
             true_ranking = ground_truth_dict["ranking"]
             true_policy_value = ground_truth_dict["policy_value"]
 
@@ -822,7 +846,7 @@ class OffPolicySelection:
         n_policies = len(candidate_policy_names)
 
         ops_dict = {}
-        for i, estimator in enumerate(self.cumulative_distribution_ope.ope_estimators_):
+        for i, estimator in enumerate(compared_estimators):
 
             estimated_policy_value_ = np.zeros(n_policies)
             true_policy_value_ = np.zeros(n_policies)
@@ -907,7 +931,7 @@ class OffPolicySelection:
         if return_by_dataframe:
             ranking_df_dict = defaultdict(pd.DataFrame)
 
-            for i, estimator in enumerate(self.ope.ope_estimators_):
+            for i, estimator in enumerate(compared_estimators):
                 ranking_df_ = pd.DataFrame()
                 ranking_df_["estimated_ranking"] = ops_dict[estimator][
                     "estimated_ranking"
@@ -941,7 +965,7 @@ class OffPolicySelection:
                     [],
                     [],
                 )
-                for i, estimator in enumerate(self.ope.ope_estimators_):
+                for i, estimator in enumerate(compared_estimators):
                     mse.append(ops_dict[estimator]["mean_squared_error"])
                     rankcorr.append(ops_dict[estimator]["rank_correlation"][0])
                     pvalue.append(ops_dict[estimator]["rank_correlation"][1])
@@ -950,7 +974,7 @@ class OffPolicySelection:
                     type_ii.append(ops_dict[estimator]["type_ii_error_rate"])
 
                 metric_df = pd.DataFrame()
-                metric_df["estimator"] = self.ope.ope_estimators_
+                metric_df["estimator"] = compared_estimators
                 metric_df["mean_squared_error"] = mse
                 metric_df["rank_correlation"] = rankcorr
                 metric_df["pvalue"] = pvalue
@@ -965,6 +989,7 @@ class OffPolicySelection:
     def select_by_policy_value_lower_bound(
         self,
         input_dict: OPEInputDict,
+        compared_estimators: Optional[List[str]] = None,
         return_true_values: bool = False,
         return_metrics: bool = False,
         return_by_dataframe: bool = False,
@@ -992,6 +1017,10 @@ class OffPolicySelection:
                 on_policy_policy_value,
                 gamma,
             ]
+
+        compared_estimators: list of str, default=None
+            Name of compared estimators.
+            When `None` is given, all the estimators are compared.
 
         return_true_values: bool, default=False
             Whether to return the true policy value and its ranking.
@@ -1099,11 +1128,17 @@ class OffPolicySelection:
             raise RuntimeError(
                 "ope is not given. Please initialize the class with ope attribute"
             )
+        if compared_estimators is None:
+            compared_estimators = self.estimators_name["standard_ope"]
+        elif not set(compared_estimators).issubset(
+            self.estimators_name["standard_ope"]
+        ):
+            raise ValueError(
+                "compared_estimators must be a subset of self.estimators_name['standard_ope'], but found False."
+            )
 
         if return_true_values or return_metrics:
-            ground_truth_dict = self.obtain_true_selection_result(
-                input_dict=input_dict,
-            )
+            ground_truth_dict = self.obtain_true_selection_result(input_dict)
             true_ranking = ground_truth_dict["ranking"]
             true_policy_value = ground_truth_dict["policy_value"]
 
@@ -1115,14 +1150,15 @@ class OffPolicySelection:
         ops_dict = defaultdict(dict)
         for ci in cis:
             estimated_policy_value_interval_dict = self.ope.estimate_intervals(
-                input_dict=input_dict,
+                input_dict,
+                compared_estimators=compared_estimators,
                 alpha=alpha,
                 ci=ci,
                 n_bootstrap_samples=n_bootstrap_samples,
                 random_state=random_state,
             )
 
-            for i, estimator in enumerate(self.ope.ope_estimators_):
+            for i, estimator in enumerate(compared_estimators):
 
                 estimated_policy_value_lower_bound_ = np.zeros(n_policies)
                 true_policy_value_ = np.zeros(n_policies)
@@ -1216,7 +1252,7 @@ class OffPolicySelection:
             ranking_df_dict = defaultdict(lambda: defaultdict(pd.DataFrame))
 
             for ci in cis:
-                for i, estimator in enumerate(self.ope.ope_estimators_):
+                for i, estimator in enumerate(compared_estimators):
                     ranking_df_ = pd.DataFrame()
                     ranking_df_["estimated_ranking"] = ops_dict[ci][estimator][
                         "estimated_ranking"
@@ -1254,7 +1290,7 @@ class OffPolicySelection:
                 [],
             )
             for ci in cis:
-                for i, estimator in enumerate(self.ope.ope_estimators_):
+                for i, estimator in enumerate(compared_estimators):
                     ci_.append(ci)
                     estimator_.append(estimator)
                     rankcorr.append(ops_dict[ci][estimator]["rank_correlation"][0])
@@ -1280,6 +1316,7 @@ class OffPolicySelection:
     def select_by_lower_quartile(
         self,
         input_dict: OPEInputDict,
+        compared_estimators: Optional[List[str]] = None,
         alpha: float = 0.05,
         return_true_values: bool = False,
         return_metrics: bool = False,
@@ -1303,6 +1340,10 @@ class OffPolicySelection:
                 on_policy_policy_value,
                 gamma,
             ]
+
+        compared_estimators: list of str, default=None
+            Name of compared estimators.
+            When `None` is given, all the estimators are compared.
 
         alpha: float, default=0.05
             Proportion of the sided region. The value should be within `[0, 0.5]`.
@@ -1386,17 +1427,26 @@ class OffPolicySelection:
             raise RuntimeError(
                 "cumulative_distribution_ope is not given. Please initialize the class with cumulative_distribution_ope attribute"
             )
+        if compared_estimators is None:
+            compared_estimators = self.estimators_name["cumulative_distribution_ope"]
+        elif not set(compared_estimators).issubset(
+            self.estimators_name["cumulative_distribution_ope"]
+        ):
+            raise ValueError(
+                "compared_estimators must be a subset of self.estimators_name['cumulative_distribution_ope'], but found False."
+            )
 
         estimated_interquartile_range_dict = (
             self.cumulative_distribution_ope.estimate_interquartile_range(
-                input_dict=input_dict,
+                input_dict,
+                compared_estimators=compared_estimators,
                 alpha=alpha,
             )
         )
 
         if return_true_values or return_metrics:
             ground_truth_dict = self.obtain_true_selection_result(
-                input_dict=input_dict,
+                input_dict,
                 return_lower_quartile=True,
                 quartile_alpha=alpha,
             )
@@ -1409,7 +1459,7 @@ class OffPolicySelection:
         n_policies = len(candidate_policy_names)
 
         ops_dict = {}
-        for i, estimator in enumerate(self.cumulative_distribution_ope.ope_estimators_):
+        for i, estimator in enumerate(compared_estimators):
 
             estimated_lower_quartile_ = np.zeros(n_policies)
             true_lower_quartile_ = np.zeros(n_policies)
@@ -1471,9 +1521,7 @@ class OffPolicySelection:
         if return_by_dataframe:
             ranking_df_dict = defaultdict(pd.DataFrame)
 
-            for i, estimator in enumerate(
-                self.cumulative_distribution_ope.ope_estimators_
-            ):
+            for i, estimator in enumerate(compared_estimators):
                 ranking_df_ = pd.DataFrame()
                 ranking_df_["estimated_ranking"] = ops_dict[estimator][
                     "estimated_ranking"
@@ -1500,7 +1548,7 @@ class OffPolicySelection:
                     [],
                     [],
                 )
-                for i, estimator in enumerate(self.ope.ope_estimators_):
+                for i, estimator in enumerate(compared_estimators):
                     mse.append(ops_dict[estimator]["mean_squared_error"])
                     rankcorr.append(ops_dict[estimator]["rank_correlation"][0])
                     pvalue.append(ops_dict[estimator]["rank_correlation"][1])
@@ -1508,9 +1556,7 @@ class OffPolicySelection:
                     type_ii.append(ops_dict[estimator]["type_ii_error_rate"])
 
                 metric_df = pd.DataFrame()
-                metric_df[
-                    "estimator"
-                ] = self.cumulative_distribution_ope.ope_estimators_
+                metric_df["estimator"] = compared_estimators
                 metric_df["mean_squared_error"] = mse
                 metric_df["rank_correlation"] = rankcorr
                 metric_df["pvalue"] = pvalue
@@ -1525,6 +1571,7 @@ class OffPolicySelection:
     def select_by_conditional_value_at_risk(
         self,
         input_dict: OPEInputDict,
+        compared_estimators: Optional[List[str]] = None,
         alpha: float = 0.05,
         return_true_values: bool = False,
         return_metrics: bool = False,
@@ -1548,6 +1595,10 @@ class OffPolicySelection:
                 on_policy_policy_value,
                 gamma,
             ]
+
+        compared_estimators: list of str, default=None
+            Name of compared estimators.
+            When `None` is given, all the estimators are compared.
 
         alpha: float, default=0.05
             Proportion of the sided region. The value should be within `[0, 1]`.
@@ -1631,17 +1682,26 @@ class OffPolicySelection:
             raise RuntimeError(
                 "cumulative_distribution_ope is not given. Please initialize the class with cumulative_distribution_ope attribute"
             )
+        if compared_estimators is None:
+            compared_estimators = self.estimators_name["cumulative_distribution_ope"]
+        elif not set(compared_estimators).issubset(
+            self.estimators_name["cumulative_distribution_ope"]
+        ):
+            raise ValueError(
+                "compared_estimators must be a subset of self.estimators_name['cumulative_distribution_ope'], but found False."
+            )
 
         estimated_cvar_dict = (
             self.cumulative_distribution_ope.estimate_conditional_value_at_risk(
-                input_dict=input_dict,
+                input_dict,
+                compared_estimators=compared_estimators,
                 alphas=alpha,
             )
         )
 
         if return_true_values or return_metrics:
             ground_truth_dict = self.obtain_true_selection_result(
-                input_dict=input_dict,
+                input_dict,
                 return_conditional_value_at_risk=True,
                 cvar_alpha=alpha,
             )
@@ -1654,7 +1714,7 @@ class OffPolicySelection:
         n_policies = len(candidate_policy_names)
 
         ops_dict = {}
-        for i, estimator in enumerate(self.cumulative_distribution_ope.ope_estimators_):
+        for i, estimator in enumerate(compared_estimators):
 
             estimated_cvar_ = np.zeros(n_policies)
             true_cvar_ = np.zeros(n_policies)
@@ -1719,9 +1779,7 @@ class OffPolicySelection:
         if return_by_dataframe:
             ranking_df_dict = defaultdict(pd.DataFrame)
 
-            for i, estimator in enumerate(
-                self.cumulative_distribution_ope.ope_estimators_
-            ):
+            for i, estimator in enumerate(compared_estimators):
                 ranking_df_ = pd.DataFrame()
                 ranking_df_["estimated_ranking"] = ops_dict[estimator][
                     "estimated_ranking"
@@ -1748,7 +1806,7 @@ class OffPolicySelection:
                     [],
                     [],
                 )
-                for i, estimator in enumerate(self.ope.ope_estimators_):
+                for i, estimator in enumerate(compared_estimators):
                     mse.append(ops_dict[estimator]["mean_squared_error"])
                     rankcorr.append(ops_dict[estimator]["rank_correlation"][0])
                     pvalue.append(ops_dict[estimator]["rank_correlation"][1])
@@ -1756,9 +1814,7 @@ class OffPolicySelection:
                     type_ii.append(ops_dict[estimator]["type_ii_error_rate"])
 
                 metric_df = pd.DataFrame()
-                metric_df[
-                    "estimator"
-                ] = self.cumulative_distribution_ope.ope_estimators_
+                metric_df["estimator"] = compared_estimators
                 metric_df["mean_squared_error"] = mse
                 metric_df["rank_correlation"] = rankcorr
                 metric_df["pvalue"] = pvalue
@@ -1773,6 +1829,7 @@ class OffPolicySelection:
     def visualize_policy_value_for_selection(
         self,
         input_dict: OPEInputDict,
+        compared_estimators: Optional[List[str]] = None,
         alpha: float = 0.05,
         ci: str = "bootstrap",
         n_bootstrap_samples: int = 100,
@@ -1800,6 +1857,10 @@ class OffPolicySelection:
                 on_policy_policy_value,
                 gamma,
             ]
+
+        compared_estimators: list of str, default=None
+            Name of compared estimators.
+            When `None` is given, all the estimators are compared.
 
         alpha: float, default=0.05
             Significance level. The value should be within `[0, 1)`.
@@ -1833,6 +1894,7 @@ class OffPolicySelection:
         """
         return self.ope.visualize_off_policy_estimates(
             input_dict=input_dict,
+            compared_estimators=compared_estimators,
             alpha=alpha,
             ci=ci,
             n_bootstrap_samples=n_bootstrap_samples,
@@ -1847,6 +1909,7 @@ class OffPolicySelection:
     def visualize_cumulative_distribution_function_for_selection(
         self,
         input_dict: OPEInputDict,
+        compared_estimators: Optional[List[str]] = None,
         hue: str = "estimator",
         legend: bool = True,
         n_cols: Optional[int] = None,
@@ -1871,6 +1934,10 @@ class OffPolicySelection:
                 gamma,
             ]
 
+        compared_estimators: list of str, default=None
+            Name of compared estimators.
+            When `None` is given, all the estimators are compared.
+
         hue: {"estimator", "policy"}, default="estimator"
             Hue of the plot.
 
@@ -1891,6 +1958,7 @@ class OffPolicySelection:
         return (
             self.cumulative_distribution_ope.visualize_cumulative_distribution_function(
                 input_dict=input_dict,
+                compared_estimators=compared_estimators,
                 hue=hue,
                 legend=legend,
                 n_cols=n_cols,
@@ -1902,6 +1970,7 @@ class OffPolicySelection:
     def visualize_policy_value_of_cumulative_distribution_ope_for_selection(
         self,
         input_dict: OPEInputDict,
+        compared_estimators: Optional[List[str]] = None,
         alpha: float = 0.05,
         is_relative: bool = False,
         hue: str = "estimator",
@@ -1927,6 +1996,10 @@ class OffPolicySelection:
                 gamma,
             ]
 
+        compared_estimators: list of str, default=None
+            Name of compared estimators.
+            When `None` is given, all the estimators are compared.
+
         alpha: float, default=0.05
             Significance level. The value should bw within `[0, 1)`.
 
@@ -1950,6 +2023,7 @@ class OffPolicySelection:
         """
         return self.cumulative_distribution_ope.visualize_policy_value(
             input_dict=input_dict,
+            compared_estimators=compared_estimators,
             alpha=alpha,
             is_relative=is_relative,
             hue=hue,
@@ -1961,6 +2035,7 @@ class OffPolicySelection:
     def visualize_conditional_value_at_risk_for_selection(
         self,
         input_dict: OPEInputDict,
+        compared_estimators: Optional[List[str]] = None,
         alphas: np.ndarray = np.linspace(0, 1, 20),
         hue: str = "estimator",
         legend: bool = True,
@@ -1987,6 +2062,10 @@ class OffPolicySelection:
                 gamma,
             ]
 
+        compared_estimators: list of str, default=None
+            Name of compared estimators.
+            When `None` is given, all the estimators are compared.
+
         alphas: array-like of shape (n_alpha, ), default=np.linspace(0, 1, 20)
             Set of proportions of the sided region.
 
@@ -2012,6 +2091,7 @@ class OffPolicySelection:
         """
         return self.cumulative_distribution_ope.visualize_conditional_value_at_risk(
             input_dict=input_dict,
+            compared_estimators=compared_estimators,
             alphas=alphas,
             hue=hue,
             legend=legend,
@@ -2024,6 +2104,7 @@ class OffPolicySelection:
     def visualize_interquartile_range_for_selection(
         self,
         input_dict: OPEInputDict,
+        compared_estimators: Optional[List[str]] = None,
         alpha: float = 0.05,
         hue: str = "estimator",
         sharey: bool = False,
@@ -2048,6 +2129,10 @@ class OffPolicySelection:
                 gamma,
             ]
 
+        compared_estimators: list of str, default=None
+            Name of compared estimators.
+            When `None` is given, all the estimators are compared.
+
         alpha: float, default=0.05
             Significance level. The value should be within `[0, 1)`.
 
@@ -2067,6 +2152,7 @@ class OffPolicySelection:
         """
         return self.cumulative_distribution_ope.visualize_interquartile_range(
             input_dict=input_dict,
+            compared_estimators=compared_estimators,
             alpha=alpha,
             hue=hue,
             sharey=sharey,
@@ -2077,6 +2163,7 @@ class OffPolicySelection:
     def visualize_topk_policy_value_selected_by_standard_ope(
         self,
         input_dict: OPEInputDict,
+        compared_estimators: Optional[List[str]] = None,
         metrics: List[str] = ["best", "worst", "mean", "safety_violation_rate"],
         max_topk: Optional[int] = None,
         safety_criteria: Optional[float] = None,
@@ -2101,6 +2188,10 @@ class OffPolicySelection:
                 gamma,
             ]
 
+        compared_estimators: list of str, default=None
+            Name of compared estimators.
+            When `None` is given, all the estimators are compared.
+
         metrics: list of {"best", "worst", "mean", "safety_violation_rate"}, default=["best", "worst", "mean", "safety_violation_rate"]
             Indicate which of the policy performance among {"best", "worst", "mean"} and safety violation rate to report.
 
@@ -2120,6 +2211,14 @@ class OffPolicySelection:
             Name of the bar figure.
 
         """
+        if compared_estimators is None:
+            compared_estimators = self.estimators_name["standard_ope"]
+        elif not set(compared_estimators).issubset(
+            self.estimators_name["standard_ope"]
+        ):
+            raise ValueError(
+                "compared_estimators must be a subset of self.estimators_name['standard_ope'], but found False."
+            )
         if metrics is None:
             metrics = ["best", "worst", "mean", "safety_violation_rate"]
         for metric in metrics:
@@ -2150,12 +2249,13 @@ class OffPolicySelection:
             raise ValueError(f"fig_dir must be a string, but {type(fig_dir)} is given")
 
         policy_value_dict = self.select_by_policy_value(
-            input_dict=input_dict,
+            input_dict,
+            compared_estimators=compared_estimators,
             return_true_values=True,
         )
 
         metric_dict = defaultdict(lambda: defaultdict(np.ndarray))
-        for i, estimator in enumerate(self.ope.ope_estimators_):
+        for i, estimator in enumerate(compared_estimators):
             for j, metric in enumerate(metrics):
 
                 topk_metric = np.zeros(max_topk)
@@ -2200,7 +2300,7 @@ class OffPolicySelection:
 
         for j, metric in enumerate(metrics):
 
-            for i, estimator in enumerate(self.ope.ope_estimators_):
+            for i, estimator in enumerate(compared_estimators):
                 axes[j].plot(
                     np.arange(1, max_topk + 1),
                     metric_dict[estimator][metric],
@@ -2247,6 +2347,7 @@ class OffPolicySelection:
     def visualize_topk_policy_value_selected_by_cumulative_distribution_ope(
         self,
         input_dict: OPEInputDict,
+        compared_estimators: Optional[List[str]] = None,
         metrics: Optional[List[str]] = None,
         max_topk: Optional[int] = None,
         safety_criteria: Optional[float] = None,
@@ -2271,6 +2372,10 @@ class OffPolicySelection:
                 gamma,
             ]
 
+        compared_estimators: list of str, default=None
+            Name of compared estimators.
+            When `None` is given, all the estimators are compared.
+
         metrics: list of {"best", "worst", "mean", "safety_violation_rate"}, default=["best", "worst", "mean", "safety_violation_rate"]
             Indicate which of the policy performance among {"best", "worst", "mean"} and safety violation rate to report.
 
@@ -2290,6 +2395,14 @@ class OffPolicySelection:
             Name of the bar figure.
 
         """
+        if compared_estimators is None:
+            compared_estimators = self.estimators_name["cumulative_distribution_ope"]
+        elif not set(compared_estimators).issubset(
+            self.estimators_name["cumulative_distribution_ope"]
+        ):
+            raise ValueError(
+                "compared_estimators must be a subset of self.estimators_name['cumulative_distribution_ope'], but found False."
+            )
         if metrics is None:
             metrics = ["best", "worst", "mean", "safety_violation_rate"]
         for metric in metrics:
@@ -2321,13 +2434,14 @@ class OffPolicySelection:
 
         estimated_policy_value_dict = (
             self.select_by_policy_value_via_cumulative_distribution_ope(
-                input_dict=input_dict,
+                input_dict,
+                compared_estimators=compared_estimators,
                 return_true_values=True,
             )
         )
 
         metric_dict = defaultdict(lambda: defaultdict(np.ndarray))
-        for i, estimator in enumerate(self.cumulative_distribution_ope.ope_estimators_):
+        for i, estimator in enumerate(compared_estimators):
             for j, metric in enumerate(metrics):
 
                 topk_metric = np.zeros(max_topk)
@@ -2372,7 +2486,7 @@ class OffPolicySelection:
 
         for j, metric in enumerate(metrics):
 
-            for i, estimator in enumerate(self.ope.ope_estimators_):
+            for i, estimator in enumerate(compared_estimators):
                 axes[j].plot(
                     np.arange(1, max_topk + 1),
                     metric_dict[estimator][metric],
@@ -2419,6 +2533,7 @@ class OffPolicySelection:
     def visualize_topk_policy_value_selected_by_lower_bound(
         self,
         input_dict: OPEInputDict,
+        compared_estimators: Optional[List[str]] = None,
         metrics: Optional[List[str]] = None,
         max_topk: Optional[int] = None,
         safety_criteria: Optional[float] = None,
@@ -2446,6 +2561,10 @@ class OffPolicySelection:
                 on_policy_policy_value,
                 gamma,
             ]
+
+        compared_estimators: list of str, default=None
+            Name of compared estimators.
+            When `None` is given, all the estimators are compared.
 
         metrics: list of {"best", "worst", "mean", "safety_violation_rate"}, default=["best", "worst", "mean", "safety_violation_rate"]
             Indicate which of the policy performance among {"best", "worst", "mean"} and safety violation rate to report.
@@ -2478,6 +2597,14 @@ class OffPolicySelection:
             Name of the bar figure.
 
         """
+        if compared_estimators is None:
+            compared_estimators = self.estimators_name["standard_ope"]
+        elif not set(compared_estimators).issubset(
+            self.estimators_name["standard_ope"]
+        ):
+            raise ValueError(
+                "compared_estimators must be a subset of self.estimators_name['standard_ope'], but found False."
+            )
         if metrics is None:
             metrics = ["best", "worst", "mean", "safety_violation_rate"]
         for metric in metrics:
@@ -2508,7 +2635,8 @@ class OffPolicySelection:
             raise ValueError(f"fig_dir must be a string, but {type(fig_dir)} is given")
 
         policy_value_dict = self.select_by_policy_value_lower_bound(
-            input_dict=input_dict,
+            input_dict,
+            compared_estimators=compared_estimators,
             return_true_values=True,
             cis=cis,
             alpha=alpha,
@@ -2518,7 +2646,7 @@ class OffPolicySelection:
 
         metric_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(np.ndarray)))
         for ci in cis:
-            for i, estimator in enumerate(self.ope.ope_estimators_):
+            for i, estimator in enumerate(compared_estimators):
                 for j, metric in enumerate(metrics):
 
                     topk_metric = np.zeros(max_topk)
@@ -2566,7 +2694,7 @@ class OffPolicySelection:
             ci = cis[0]
 
             for j, metric in enumerate(metrics):
-                for i, estimator in enumerate(self.ope.ope_estimators_):
+                for i, estimator in enumerate(compared_estimators):
                     axes[j].plot(
                         np.arange(1, max_topk + 1),
                         metric_dict[ci][estimator][metric],
@@ -2608,7 +2736,7 @@ class OffPolicySelection:
             for l, ci in enumerate(cis):
 
                 for j, metric in enumerate(metrics):
-                    for i, estimator in enumerate(self.ope.ope_estimators_):
+                    for i, estimator in enumerate(compared_estimators):
                         axes[l, j].plot(
                             np.arange(1, max_topk + 1),
                             metric_dict[ci][estimator][metric],
@@ -2657,6 +2785,7 @@ class OffPolicySelection:
     def visualize_topk_conditional_value_at_risk_selected_by_standard_ope(
         self,
         input_dict: OPEInputDict,
+        compared_estimators: Optional[List[str]] = None,
         alpha: float = 0.05,
         metrics: List[str] = ["best", "worst", "mean", "safety_violation_rate"],
         max_topk: Optional[int] = None,
@@ -2682,6 +2811,10 @@ class OffPolicySelection:
                 gamma,
             ]
 
+        compared_estimators: list of str, default=None
+            Name of compared estimators.
+            When `None` is given, all the estimators are compared.
+
         alpha: float, default=0.05
             Proportion of the sided region. The value should be within `[0, 1]`.
 
@@ -2703,6 +2836,14 @@ class OffPolicySelection:
             Name of the bar figure.
 
         """
+        if compared_estimators is None:
+            compared_estimators = self.estimators_name["standard_ope"]
+        elif not set(compared_estimators).issubset(
+            self.estimators_name["standard_ope"]
+        ):
+            raise ValueError(
+                "compared_estimators must be a subset of self.estimators_name['standard_ope'], but found False."
+            )
         if metrics is None:
             metrics = ["best", "worst", "mean", "safety_violation_rate"]
         for metric in metrics:
@@ -2733,33 +2874,33 @@ class OffPolicySelection:
             raise ValueError(f"fig_dir must be a string, but {type(fig_dir)} is given")
 
         policy_value_dict = self.select_by_policy_value(
-            input_dict=input_dict,
+            input_dict,
+            compared_estimators=compared_estimators,
         )
-        cvar_dict_ = self.select_by_conditional_value_at_risk(
-            input_dict=input_dict,
-            alpha=alpha,
-            return_true_values=True,
+        cvar_dict_ = self.obtain_true_selection_result(
+            input_dict,
+            return_conditional_value_at_risk=True,
+        )
+        cvar_dict_ = dict(
+            zip(
+                cvar_dict_["ranking_by_conditional_value_at_risk"],
+                cvar_dict_["conditional_value_at_risk"],
+            )
         )
 
         cvar_dict = dict()
         for i, estimator in enumerate(self.ope.ope_estimators_):
-            estimated_ranking = policy_value_dict[estimator]["estimated_ranking"]
-            true_cvar_unsorted = cvar_dict_[estimator]["true_conditional_value_at_risk"]
-            eval_policy_to_cvar_idx = dict(
-                zip(
-                    cvar_dict_[estimator]["estimated_ranking"],
-                    np.arange(len(input_dict)),
-                )
-            )
 
             cvar = np.zeros((len(input_dict)))
+            estimated_ranking = policy_value_dict[estimator]["estimated_ranking"]
+
             for i, eval_policy in enumerate(estimated_ranking):
-                cvar[i] = true_cvar_unsorted[eval_policy_to_cvar_idx[eval_policy]]
+                cvar[i] = cvar_dict_[eval_policy]
 
             cvar_dict[estimator] = cvar
 
         metric_dict = defaultdict(lambda: defaultdict(np.ndarray))
-        for i, estimator in enumerate(self.ope.ope_estimators_):
+        for i, estimator in enumerate(compared_estimators):
             for j, metric in enumerate(metrics):
 
                 topk_metric = np.zeros(max_topk)
@@ -2802,7 +2943,7 @@ class OffPolicySelection:
 
         for j, metric in enumerate(metrics):
 
-            for i, estimator in enumerate(self.ope.ope_estimators_):
+            for i, estimator in enumerate(compared_estimators):
                 axes[j].plot(
                     np.arange(1, max_topk + 1),
                     metric_dict[estimator][metric],
@@ -2849,6 +2990,7 @@ class OffPolicySelection:
     def visualize_topk_conditional_value_at_risk_selected_by_cumulative_distribution_ope(
         self,
         input_dict: OPEInputDict,
+        compared_estimators: Optional[List[str]] = None,
         alpha: float = 0.05,
         metrics: Optional[List[str]] = None,
         max_topk: Optional[int] = None,
@@ -2874,6 +3016,10 @@ class OffPolicySelection:
                 gamma,
             ]
 
+        compared_estimators: list of str, default=None
+            Name of compared estimators.
+            When `None` is given, all the estimators are compared.
+
         alpha: float, default=0.05
             Proportion of the sided region. The value should be within `[0, 1]`.
 
@@ -2895,6 +3041,14 @@ class OffPolicySelection:
             Name of the bar figure.
 
         """
+        if compared_estimators is None:
+            compared_estimators = self.estimators_name["cumulative_distribution_ope"]
+        elif not set(compared_estimators).issubset(
+            self.estimators_name["cumulative_distribution_ope"]
+        ):
+            raise ValueError(
+                "compared_estimators must be a subset of self.estimators_name['cumulative_distribution_ope'], but found False."
+            )
         if metrics is None:
             metrics = ["best", "worst", "mean", "safety_violation_rate"]
         for metric in metrics:
@@ -2931,7 +3085,7 @@ class OffPolicySelection:
         )
 
         metric_dict = defaultdict(lambda: defaultdict(np.ndarray))
-        for i, estimator in enumerate(self.cumulative_distribution_ope.ope_estimators_):
+        for i, estimator in enumerate(compared_estimators):
             for j, metric in enumerate(metrics):
 
                 topk_metric = np.zeros(max_topk)
@@ -2976,7 +3130,7 @@ class OffPolicySelection:
 
         for j, metric in enumerate(metrics):
 
-            for i, estimator in enumerate(self.ope.ope_estimators_):
+            for i, estimator in enumerate(compared_estimators):
                 axes[j].plot(
                     np.arange(1, max_topk + 1),
                     metric_dict[estimator][metric],
@@ -3023,6 +3177,7 @@ class OffPolicySelection:
     def visualize_topk_lower_quartile_selected_by_standard_ope(
         self,
         input_dict: OPEInputDict,
+        compared_estimators: Optional[List[str]] = None,
         alpha: float = 0.05,
         metrics: List[str] = ["best", "worst", "mean", "safety_violation_rate"],
         max_topk: Optional[int] = None,
@@ -3048,6 +3203,10 @@ class OffPolicySelection:
                 gamma,
             ]
 
+        compared_estimators: list of str, default=None
+            Name of compared estimators.
+            When `None` is given, all the estimators are compared.
+
         alpha: float, default=0.05
             Proportion of the sided region. The value should be within `[0, 0.5]`.
 
@@ -3069,6 +3228,14 @@ class OffPolicySelection:
             Name of the bar figure.
 
         """
+        if compared_estimators is None:
+            compared_estimators = self.estimators_name["standard_ope"]
+        elif not set(compared_estimators).issubset(
+            self.estimators_name["standard_ope"]
+        ):
+            raise ValueError(
+                "compared_estimators must be a subset of self.estimators_name['standard_ope'], but found False."
+            )
         if metrics is None:
             metrics = ["best", "worst", "mean", "safety_violation_rate"]
         for metric in metrics:
@@ -3099,37 +3266,41 @@ class OffPolicySelection:
             raise ValueError(f"fig_dir must be a string, but {type(fig_dir)} is given")
 
         policy_value_dict = self.select_by_policy_value(
-            input_dict=input_dict,
+            input_dict,
+            compared_estimators=compared_estimators,
         )
         lower_quartile_dict_ = self.select_by_lower_quartile(
-            input_dict=input_dict,
+            input_dict,
+            compared_estimators=compared_estimators,
             alpha=alpha,
             return_true_values=True,
         )
+        lower_quartile_dict_ = self.obtain_true_selection_result(
+            input_dict,
+            compared_estimators=compared_estimators,
+            alpha=alpha,
+            return_lower_quartile=True,
+        )
+        lower_quartile_dict_ = dict(
+            zip(
+                lower_quartile_dict_["ranking_by_conditional_value_at_risk"],
+                lower_quartile_dict_["conditional_value_at_risk"],
+            )
+        )
 
         lower_quartile_dict = dict()
-        for i, estimator in enumerate(self.ope.ope_estimators_):
-            estimated_ranking = policy_value_dict[estimator]["estimated_ranking"]
-            true_lower_quartile_unsorted = lower_quartile_dict_[estimator][
-                "true_lower_quartile"
-            ]
-            eval_policy_to_lower_quartile_idx = dict(
-                zip(
-                    lower_quartile_dict_[estimator]["estimated_ranking"],
-                    np.arange(len(input_dict)),
-                )
-            )
+        for i, estimator in enumerate(compared_estimators):
 
             lower_quartile = np.zeros((len(input_dict)))
+            estimated_ranking = policy_value_dict[estimator]["estimated_ranking"]
+
             for i, eval_policy in enumerate(estimated_ranking):
-                lower_quartile[i] = true_lower_quartile_unsorted[
-                    eval_policy_to_lower_quartile_idx[eval_policy]
-                ]
+                lower_quartile[i] = lower_quartile_dict_[eval_policy]
 
             lower_quartile_dict[estimator] = lower_quartile
 
         metric_dict = defaultdict(lambda: defaultdict(np.ndarray))
-        for i, estimator in enumerate(self.ope.ope_estimators_):
+        for i, estimator in enumerate(compared_estimators):
             for j, metric in enumerate(metrics):
 
                 topk_metric = np.zeros(max_topk)
@@ -3172,7 +3343,7 @@ class OffPolicySelection:
 
         for j, metric in enumerate(metrics):
 
-            for i, estimator in enumerate(self.ope.ope_estimators_):
+            for i, estimator in enumerate(compared_estimators):
                 axes[j].plot(
                     np.arange(1, max_topk + 1),
                     metric_dict[estimator][metric],
@@ -3219,6 +3390,7 @@ class OffPolicySelection:
     def visualize_topk_lower_quartile_selected_by_cumulative_distribution_ope(
         self,
         input_dict: OPEInputDict,
+        compared_estimators: Optional[List[str]] = None,
         alpha: float = 0.05,
         metrics: Optional[List[str]] = None,
         max_topk: Optional[int] = None,
@@ -3243,6 +3415,10 @@ class OffPolicySelection:
                 on_policy_policy_value,
                 gamma,
             ]
+
+        compared_estimators: list of str, default=None
+            Name of compared estimators.
+            When `None` is given, all the estimators are compared.
 
         alpha: float, default=0.05
             Proportion of the sided region. The value should be within `[0, 0.5]`.
@@ -3272,6 +3448,14 @@ class OffPolicySelection:
                 raise ValueError(
                     f"the elements of metrics must be one of 'best', 'worst', 'mean', or 'safety_violation_rate', but {metric} is given"
                 )
+        if compared_estimators is None:
+            compared_estimators = self.estimators_name["cumulative_distribution_ope"]
+        elif not set(compared_estimators).issubset(
+            self.estimators_name["cumulative_distribution_ope"]
+        ):
+            raise ValueError(
+                "compared_estimators must be a subset of self.estimators_name['cumulative_distribution_ope'], but found False."
+            )
 
         if max_topk is None:
             max_topk = len(input_dict)
@@ -3295,13 +3479,14 @@ class OffPolicySelection:
             raise ValueError(f"fig_dir must be a string, but {type(fig_dir)} is given")
 
         lower_quartile_dict = self.select_by_lower_quartile(
-            input_dict=input_dict,
+            input_dict,
+            compared_estimators=compared_estimators,
             alpha=alpha,
             return_true_values=True,
         )
 
         metric_dict = defaultdict(lambda: defaultdict(np.ndarray))
-        for i, estimator in enumerate(self.cumulative_distribution_ope.ope_estimators_):
+        for i, estimator in enumerate(compared_estimators):
             for j, metric in enumerate(metrics):
 
                 topk_metric = np.zeros(max_topk)
@@ -3346,7 +3531,7 @@ class OffPolicySelection:
 
         for j, metric in enumerate(metrics):
 
-            for i, estimator in enumerate(self.ope.ope_estimators_):
+            for i, estimator in enumerate(compared_estimators):
                 axes[j].plot(
                     np.arange(1, max_topk + 1),
                     metric_dict[estimator][metric],
@@ -3393,6 +3578,7 @@ class OffPolicySelection:
     def visualize_policy_value_for_validation(
         self,
         input_dict: OPEInputDict,
+        compared_estimators: Optional[List[str]] = None,
         n_cols: Optional[int] = None,
         share_axes: bool = False,
         fig_dir: Optional[Path] = None,
@@ -3416,6 +3602,10 @@ class OffPolicySelection:
                 gamma,
             ]
 
+        compared_estimators: list of str, default=None
+            Name of compared estimators.
+            When `None` is given, all the estimators are compared.
+
         n_cols: int, default=None
             Number of columns in the figure.
 
@@ -3430,6 +3620,14 @@ class OffPolicySelection:
             Name of the bar figure.
 
         """
+        if compared_estimators is None:
+            compared_estimators = self.estimators_name["standard_ope"]
+        elif not set(compared_estimators).issubset(
+            self.estimators_name["standard_ope"]
+        ):
+            raise ValueError(
+                "compared_estimators must be a subset of self.estimators_name['standard_ope'], but found False."
+            )
         if n_cols is not None:
             check_scalar(n_cols, name="n_cols", target_type=int, min_val=1)
         if fig_dir is not None and not isinstance(fig_dir, Path):
@@ -3437,18 +3635,14 @@ class OffPolicySelection:
         if fig_name is not None and not isinstance(fig_name, str):
             raise ValueError(f"fig_dir must be a string, but {type(fig_dir)} is given")
 
-        ground_truth_policy_value_dict = self.obtain_true_selection_result(
-            input_dict=input_dict,
-        )
-        true_ranking = ground_truth_policy_value_dict["ranking"]
-        true_policy_value = np.array(ground_truth_policy_value_dict["policy_value"])
-
-        estimated_policy_value_dict = self.select_by_policy_value(
-            input_dict=input_dict,
+        policy_value_dict = self.select_by_policy_value(
+            input_dict,
+            compared_estimators=compared_estimators,
+            return_true_values=True,
         )
 
         plt.style.use("ggplot")
-        n_figs = len(self.ope.ope_estimators_)
+        n_figs = len(compared_estimators)
         n_cols = min(5, n_figs) if n_cols is None else n_cols
         n_rows = (n_figs - 1) // n_cols + 1
 
@@ -3462,22 +3656,11 @@ class OffPolicySelection:
 
         guide_min, guide_max = 1e5, -1e5
         if n_rows == 1:
-            for i, estimator in enumerate(self.ope.ope_estimators_):
-                estimated_ranking_ = estimated_policy_value_dict[estimator][
-                    "estimated_ranking"
-                ]
-                estimated_policy_value_ = estimated_policy_value_dict[estimator][
+            for i, estimator in enumerate(compared_estimators):
+                true_policy_value = policy_value_dict[estimator]["true_policy_value"]
+                estimated_policy_value = policy_value_dict[estimator][
                     "estimated_policy_value"
                 ]
-
-                estimated_ranking_dict = {
-                    estimated_ranking_[i]: i for i in range(len(estimated_ranking_))
-                }
-                estimated_policy_value = [
-                    estimated_policy_value_[estimated_ranking_dict[true_ranking[i]]]
-                    for i in range(len(true_ranking))
-                ]
-                estimated_policy_value = np.array(estimated_policy_value)
 
                 min_val = np.minimum(
                     np.nanmin(true_policy_value), np.nanmin(estimated_policy_value)
@@ -3507,7 +3690,7 @@ class OffPolicySelection:
 
             if share_axes:
                 guide = np.linspace(guide_min, guide_max)
-                for i, estimator in enumerate(self.ope.ope_estimators_):
+                for i, estimator in enumerate(compared_estimators):
                     axes[i].plot(
                         guide,
                         guide,
@@ -3516,22 +3699,11 @@ class OffPolicySelection:
                     )
 
         else:
-            for i, estimator in enumerate(self.ope.ope_estimators_):
-                estimated_ranking_ = estimated_policy_value_dict[estimator][
-                    "estimated_ranking"
-                ]
-                estimated_policy_value_ = estimated_policy_value_dict[estimator][
+            for i, estimator in enumerate(compared_estimators):
+                true_policy_value = policy_value_dict[estimator]["true_policy_value"]
+                estimated_policy_value = policy_value_dict[estimator][
                     "estimated_policy_value"
                 ]
-
-                estimated_ranking_dict = {
-                    estimated_ranking_[i]: i for i in range(len(estimated_ranking_))
-                }
-                estimated_policy_value = [
-                    estimated_policy_value_[estimated_ranking_dict[true_ranking[i]]]
-                    for i in range(len(true_ranking))
-                ]
-                estimated_policy_value = np.array(estimated_policy_value)
 
                 min_val = np.minimum(
                     np.nanmin(true_policy_value), np.nanmin(estimated_policy_value)
@@ -3561,7 +3733,7 @@ class OffPolicySelection:
 
             if share_axes:
                 guide = np.linspace(guide_min, guide_max)
-                for i, estimator in enumerate(self.ope.ope_estimators_):
+                for i, estimator in enumerate(compared_estimators):
                     axes[i // n_cols, i % n_cols].plot(
                         guide,
                         guide,
@@ -3578,6 +3750,7 @@ class OffPolicySelection:
     def visualize_policy_value_of_cumulative_distribution_ope_for_validation(
         self,
         input_dict: OPEInputDict,
+        compared_estimators: Optional[List[str]] = None,
         n_cols: Optional[int] = None,
         share_axes: bool = False,
         fig_dir: Optional[Path] = None,
@@ -3601,6 +3774,10 @@ class OffPolicySelection:
                 gamma,
             ]
 
+        compared_estimators: list of str, default=None
+            Name of compared estimators.
+            When `None` is given, all the estimators are compared.
+
         n_cols: int, default=None
             Number of columns in the figure.
 
@@ -3615,20 +3792,23 @@ class OffPolicySelection:
             Name of the bar figure.
 
         """
-        ground_truth_policy_value_dict = self.obtain_true_selection_result(
-            input_dict=input_dict,
-        )
-        true_ranking = ground_truth_policy_value_dict["ranking"]
-        true_policy_value = np.array(ground_truth_policy_value_dict["policy_value"])
-
-        estimated_policy_value_dict = (
-            self.select_by_policy_value_via_cumulative_distribution_ope(
-                input_dict=input_dict,
+        if compared_estimators is None:
+            compared_estimators = self.estimators_name["cumulative_distribution_ope"]
+        elif not set(compared_estimators).issubset(
+            self.estimators_name["cumulative_distribution_ope"]
+        ):
+            raise ValueError(
+                "compared_estimators must be a subset of self.estimators_name['cumulative_distribution_ope'], but found False."
             )
+
+        policy_value_dict = self.select_by_policy_value_via_cumulative_distribution_ope(
+            input_dict,
+            compared_estimators=compared_estimators,
+            return_true_values=True,
         )
 
         plt.style.use("ggplot")
-        n_figs = len(self.cumulative_distribution_ope.ope_estimators_)
+        n_figs = len(compared_estimators)
         n_cols = min(5, n_figs) if n_cols is None else n_cols
         n_rows = (n_figs - 1) // n_cols + 1
 
@@ -3642,24 +3822,11 @@ class OffPolicySelection:
 
         guide_min, guide_max = 1e5, -1e5
         if n_rows == 1:
-            for i, estimator in enumerate(
-                self.cumulative_distribution_ope.ope_estimators_
-            ):
-                estimated_ranking_ = estimated_policy_value_dict[estimator][
-                    "estimated_ranking"
-                ]
-                estimated_policy_value_ = estimated_policy_value_dict[estimator][
+            for i, estimator in enumerate(compared_estimators):
+                true_policy_value = policy_value_dict[estimator]["true_policy_value"]
+                estimated_policy_value = policy_value_dict[estimator][
                     "estimated_policy_value"
                 ]
-
-                estimated_ranking_dict = {
-                    estimated_ranking_[i]: i for i in range(len(estimated_ranking_))
-                }
-                estimated_policy_value = [
-                    estimated_policy_value_[estimated_ranking_dict[true_ranking[i]]]
-                    for i in range(len(true_ranking))
-                ]
-                estimated_policy_value = np.array(estimated_policy_value)
 
                 min_val = np.minimum(
                     np.nanmin(true_policy_value), np.nanmin(estimated_policy_value)
@@ -3689,9 +3856,7 @@ class OffPolicySelection:
 
             if share_axes:
                 guide = np.linspace(guide_min, guide_max)
-                for i, estimator in enumerate(
-                    self.cumulative_distribution_ope.ope_estimators_
-                ):
+                for i, estimator in enumerate(compared_estimators):
                     axes[i].plot(
                         guide,
                         guide,
@@ -3703,21 +3868,10 @@ class OffPolicySelection:
             for i, estimator in enumerate(
                 self.cumulative_distribution_ope.ope_estimators_
             ):
-                estimated_ranking_ = estimated_policy_value_dict[estimator][
-                    "estimated_ranking"
-                ]
-                estimated_policy_value_ = estimated_policy_value_dict[estimator][
+                true_policy_value = policy_value_dict[estimator]["true_policy_value"]
+                estimated_policy_value = policy_value_dict[estimator][
                     "estimated_policy_value"
                 ]
-
-                estimated_ranking_dict = {
-                    estimated_ranking_[i]: i for i in range(len(estimated_ranking_))
-                }
-                estimated_policy_value = [
-                    estimated_policy_value_[estimated_ranking_dict[true_ranking[i]]]
-                    for i in range(len(true_ranking))
-                ]
-                estimated_policy_value = np.array(estimated_policy_value)
 
                 min_val = np.minimum(
                     np.nanmin(true_policy_value), np.nanmin(estimated_policy_value)
@@ -3747,7 +3901,7 @@ class OffPolicySelection:
 
             if share_axes:
                 guide = np.linspace(guide_min, guide_max)
-                for i, estimator in enumerate(self.ope.ope_estimators_):
+                for i, estimator in enumerate(compared_estimators):
                     axes[i // n_cols, i % n_cols].plot(
                         guide,
                         guide,
@@ -3764,6 +3918,7 @@ class OffPolicySelection:
     def visualize_policy_value_lower_bound_for_validation(
         self,
         input_dict: OPEInputDict,
+        compared_estimators: Optional[List[str]] = None,
         cis: List[str] = ["bootstrap"],
         alpha: float = 0.05,
         n_bootstrap_samples: int = 100,
@@ -3791,6 +3946,10 @@ class OffPolicySelection:
                 gamma,
             ]
 
+        compared_estimators: list of str, default=None
+            Name of compared estimators.
+            When `None` is given, all the estimators are compared.
+
         cis: list of {"bootstrap", "hoeffding", "bernstein", "ttest"}, default=["bootstrap"]
             Estimation methods for confidence intervals.
 
@@ -3817,22 +3976,26 @@ class OffPolicySelection:
             Name of the bar figure.
 
         """
-        ground_truth_policy_value_dict = self.obtain_true_selection_result(
-            input_dict=input_dict,
-        )
-        true_ranking = ground_truth_policy_value_dict["ranking"]
-        true_policy_value = ground_truth_policy_value_dict["policy_value"]
-
-        estimated_policy_value_dict = self.select_by_policy_value_lower_bound(
-            input_dict=input_dict,
+        if compared_estimators is None:
+            compared_estimators = self.estimators_name["standard_ope"]
+        elif not set(compared_estimators).issubset(
+            self.estimators_name["standard_ope"]
+        ):
+            raise ValueError(
+                "compared_estimators must be a subset of self.estimators_name['standard_ope'], but found False."
+            )
+        policy_value_dict = self.select_by_policy_value_lower_bound(
+            input_dict,
+            compared_estimators=compared_estimators,
             cis=cis,
             alpha=alpha,
             n_bootstrap_samples=n_bootstrap_samples,
             random_state=random_state,
+            return_true_values=True,
         )
 
         plt.style.use("ggplot")
-        n_figs = len(self.ope.ope_estimators_) * len(cis)
+        n_figs = len(compared_estimators) * len(cis)
         if len(cis) == 1:
             n_cols = min(5, n_figs) if n_cols is None else n_cols
         else:
@@ -3851,26 +4014,13 @@ class OffPolicySelection:
         if len(cis) == 1:
             if n_cols == 1:
                 for ci in cis:
-                    for i, estimator in enumerate(self.ope.ope_estimators_):
-                        estimated_ranking_ = estimated_policy_value_dict[ci][estimator][
-                            "estimated_ranking"
+                    for i, estimator in enumerate(compared_estimators):
+                        true_policy_value = policy_value_dict[ci][estimator][
+                            "true_policy_value"
                         ]
-                        estimated_policy_value_lower_bound_ = (
-                            estimated_policy_value_dict[ci][estimator][
-                                "estimated_policy_value_lower_bound"
-                            ]
-                        )
-
-                        estimated_ranking_dict = {
-                            estimated_ranking_[i]: i
-                            for i in range(len(estimated_ranking_))
-                        }
-                        estimated_policy_value_lower_bound = [
-                            estimated_policy_value_lower_bound_[
-                                estimated_ranking_dict[true_ranking[i]]
-                            ]
-                            for i in range(len(true_ranking))
-                        ]
+                        estimated_policy_value_lower_bound = policy_value_dict[ci][
+                            estimator
+                        ]["estimated_policy_value_lower_bound"]
 
                         min_val = np.minimum(
                             np.nanmin(true_policy_value),
@@ -3902,7 +4052,7 @@ class OffPolicySelection:
 
                 if share_axes:
                     guide = np.linspace(guide_min, guide_max)
-                    for i, estimator in enumerate(self.ope.ope_estimators_):
+                    for i, estimator in enumerate(compared_estimators):
                         axes[i].plot(
                             guide,
                             guide,
@@ -3912,26 +4062,13 @@ class OffPolicySelection:
 
             else:
                 for ci in cis:
-                    for i, estimator in enumerate(self.ope.ope_estimators_):
-                        estimated_ranking_ = estimated_policy_value_dict[ci][estimator][
-                            "estimated_ranking"
+                    for i, estimator in enumerate(compared_estimators):
+                        true_policy_value = policy_value_dict[ci][estimator][
+                            "true_policy_value"
                         ]
-                        estimated_policy_value_lower_bound_ = (
-                            estimated_policy_value_dict[ci][estimator][
-                                "estimated_policy_value_lower_bound"
-                            ]
-                        )
-
-                        estimated_ranking_dict = {
-                            estimated_ranking_[i]: i
-                            for i in range(len(estimated_ranking_))
-                        }
-                        estimated_policy_value_lower_bound = [
-                            estimated_policy_value_lower_bound_[
-                                estimated_ranking_dict[true_ranking[i]]
-                            ]
-                            for i in range(len(true_ranking))
-                        ]
+                        estimated_policy_value_lower_bound = policy_value_dict[ci][
+                            estimator
+                        ]["estimated_policy_value_lower_bound"]
 
                         min_val = np.minimum(
                             np.nanmin(true_policy_value),
@@ -3965,7 +4102,7 @@ class OffPolicySelection:
 
                 if share_axes:
                     guide = np.linspace(guide_min, guide_max)
-                    for i, estimator in enumerate(self.ope.ope_estimators_):
+                    for i, estimator in enumerate(compared_estimators):
                         axes[i // n_cols, i % n_cols].plot(
                             guide,
                             guide,
@@ -3976,26 +4113,13 @@ class OffPolicySelection:
         else:
             if n_cols == 1:
                 for j, ci in enumerate(cis):
-                    for estimator in enumerate(self.ope.ope_estimators_):
-                        estimated_ranking_ = estimated_policy_value_dict[ci][estimator][
-                            "estimated_ranking"
+                    for estimator in enumerate(compared_estimators):
+                        true_policy_value = policy_value_dict[ci][estimator][
+                            "true_policy_value"
                         ]
-                        estimated_policy_value_lower_bound_ = (
-                            estimated_policy_value_dict[ci][estimator][
-                                "estimated_policy_value_lower_bound"
-                            ]
-                        )
-
-                        estimated_ranking_dict = {
-                            estimated_ranking_[i]: i
-                            for i in range(len(estimated_ranking_))
-                        }
-                        estimated_policy_value_lower_bound = [
-                            estimated_policy_value_lower_bound_[
-                                estimated_ranking_dict[true_ranking[i]]
-                            ]
-                            for i in range(len(true_ranking))
-                        ]
+                        estimated_policy_value_lower_bound = policy_value_dict[ci][
+                            estimator
+                        ]["estimated_policy_value_lower_bound"]
 
                         min_val = np.minimum(
                             np.nanmin(true_policy_value),
@@ -4037,25 +4161,12 @@ class OffPolicySelection:
 
             else:
                 for j, ci in enumerate(cis):
-                    for i, estimator in enumerate(self.ope.ope_estimators_):
-                        estimated_ranking_ = estimated_policy_value_dict[ci][estimator][
-                            "estimated_ranking"
+                    for i, estimator in enumerate(compared_estimators):
+                        true_policy_value = policy_value_dict[ci][estimator][
+                            "true_policy_value"
                         ]
-                        estimated_policy_value_lower_bound_ = (
-                            estimated_policy_value_dict[ci][estimator][
-                                "estimated_policy_value_lower_bound"
-                            ]
-                        )
-
-                        estimated_ranking_dict = {
-                            estimated_ranking_[i]: i
-                            for i in range(len(estimated_ranking_))
-                        }
-                        estimated_policy_value_lower_bound = [
-                            estimated_policy_value_lower_bound_[
-                                estimated_ranking_dict[true_ranking[i]]
-                            ]
-                            for i in range(len(true_ranking))
+                        estimated_policy_value_lower_bound = policy_value_dict[ci][
+                            "estimated_policy_value_lower_bound"
                         ]
 
                         min_val = np.minimum(
@@ -4089,7 +4200,7 @@ class OffPolicySelection:
             if share_axes:
                 guide = np.linspace(guide_min, guide_max)
                 for j, ci in enumerate(cis):
-                    for i, estimator in enumerate(self.ope.ope_estimators_):
+                    for i, estimator in enumerate(compared_estimators):
                         axes[i, j].plot(
                             guide,
                             guide,
@@ -4106,6 +4217,7 @@ class OffPolicySelection:
     def visualize_variance_for_validation(
         self,
         input_dict: OPEInputDict,
+        compared_estimators: Optional[List[str]] = None,
         n_cols: Optional[int] = None,
         share_axes: bool = False,
         fig_dir: Optional[Path] = None,
@@ -4129,6 +4241,10 @@ class OffPolicySelection:
                 gamma,
             ]
 
+        compared_estimators: list of str, default=None
+            Name of compared estimators.
+            When `None` is given, all the estimators are compared.
+
         n_cols: int, default=None
             Number of columns in the figure.
 
@@ -4143,6 +4259,14 @@ class OffPolicySelection:
             Name of the bar figure.
 
         """
+        if compared_estimators is None:
+            compared_estimators = self.estimators_name["cumulative_distribution_ope"]
+        elif not set(compared_estimators).issubset(
+            self.estimators_name["cumulative_distribution_ope"]
+        ):
+            raise ValueError(
+                "compared_estimators must be a subset of self.estimators_name['cumulative_distribution_ope'], but found False."
+            )
         ground_truth_policy_value_dict = self.obtain_true_selection_result(
             input_dict=input_dict,
             return_variance=True,
@@ -4151,11 +4275,12 @@ class OffPolicySelection:
         true_variance = ground_truth_policy_value_dict["variance"]
 
         estimated_variance_dict = self.cumulative_distribution_ope.estimate_variance(
-            input_dict=input_dict,
+            input_dict,
+            compared_estimators=compared_estimators,
         )
 
         plt.style.use("ggplot")
-        n_figs = len(self.cumulative_distribution_ope.ope_estimators_)
+        n_figs = len(compared_estimators)
         n_cols = min(5, n_figs) if n_cols is None else n_cols
         n_rows = (n_figs - 1) // n_cols + 1
 
@@ -4169,9 +4294,7 @@ class OffPolicySelection:
 
         guide_min, guide_max = 1e5, -1e5
         if n_rows == 1:
-            for i, estimator in enumerate(
-                self.cumulative_distribution_ope.ope_estimators_
-            ):
+            for i, estimator in enumerate(compared_estimators):
                 estimated_variance = np.zeros(len(candidate_policy_names))
                 for j, eval_policy in enumerate(candidate_policy_names):
                     estimated_variance[j] = estimated_variance_dict[eval_policy][
@@ -4206,9 +4329,7 @@ class OffPolicySelection:
 
             if share_axes:
                 guide = np.linspace(guide_min, guide_max)
-                for i, estimator in enumerate(
-                    self.cumulative_distribution_ope.ope_estimators_
-                ):
+                for i, estimator in enumerate(compared_estimators):
                     axes[i].plot(
                         guide,
                         guide,
@@ -4217,9 +4338,7 @@ class OffPolicySelection:
                     )
 
         else:
-            for i, estimator in enumerate(
-                self.cumulative_distribution_ope.ope_estimators_
-            ):
+            for i, estimator in enumerate(compared_estimators):
                 estimated_variance = np.zeros(len(candidate_policy_names))
                 for j, eval_policy in enumerate(candidate_policy_names):
                     estimated_variance[j] = estimated_variance_dict[eval_policy][
@@ -4252,9 +4371,7 @@ class OffPolicySelection:
                 axes[i // n_cols, i % n_cols].xlabel("true variance")
                 axes[i // n_cols, i % n_cols].ylabel("estimated variance")
 
-            for i, estimator in enumerate(
-                self.cumulative_distribution_ope.ope_estimators_
-            ):
+            for i, estimator in enumerate(compared_estimators):
                 axes[i // n_cols, i % n_cols].plot(
                     guide,
                     guide,
@@ -4271,6 +4388,7 @@ class OffPolicySelection:
     def visualize_lower_quartile_for_validation(
         self,
         input_dict: OPEInputDict,
+        compared_estimators: Optional[List[str]] = None,
         alpha: float = 0.05,
         n_cols: Optional[int] = None,
         share_axes: bool = False,
@@ -4295,6 +4413,10 @@ class OffPolicySelection:
                 gamma,
             ]
 
+        compared_estimators: list of str, default=None
+            Name of compared estimators.
+            When `None` is given, all the estimators are compared.
+
         alpha: float, default=0.05
             Proportion of the sided region. The value should be within `[0, 0.5]`.
 
@@ -4312,21 +4434,24 @@ class OffPolicySelection:
             Name of the bar figure.
 
         """
-        ground_truth_policy_value_dict = self.obtain_true_selection_result(
-            input_dict=input_dict,
-            quartile_alpha=alpha,
-            return_lower_quartile=True,
-        )
-        true_ranking = ground_truth_policy_value_dict["ranking_by_lower_quartile"]
-        true_lower_quartile = ground_truth_policy_value_dict["lower_quartile"]
+        if compared_estimators is None:
+            compared_estimators = self.estimators_name["cumulative_distribution_ope"]
+        elif not set(compared_estimators).issubset(
+            self.estimators_name["cumulative_distribution_ope"]
+        ):
+            raise ValueError(
+                "compared_estimators must be a subset of self.estimators_name['cumulative_distribution_ope'], but found False."
+            )
 
-        estimated_policy_value_dict = self.select_by_lower_quartile(
-            input_dict=input_dict,
+        lower_quartile_dict = self.select_by_lower_quartile(
+            input_dict,
+            compared_estimators=compared_estimators,
             alpha=alpha,
+            return_true_values=True,
         )
 
         plt.style.use("ggplot")
-        n_figs = len(self.cumulative_distribution_ope.ope_estimators_)
+        n_figs = len(compared_estimators)
         n_cols = min(5, n_figs) if n_cols is None else n_cols
         n_rows = (n_figs - 1) // n_cols + 1
 
@@ -4340,22 +4465,12 @@ class OffPolicySelection:
 
         guide_min, guide_max = 1e5, -1e5
         if n_rows == 1:
-            for i, estimator in enumerate(
-                self.cumulative_distribution_ope.ope_estimators_
-            ):
-                estimated_ranking_ = estimated_policy_value_dict[estimator][
-                    "estimated_ranking"
+            for i, estimator in enumerate(compared_estimators):
+                true_lower_quartile = lower_quartile_dict[estimator][
+                    "true_lower_quartile"
                 ]
-                estimated_lower_quartile_ = estimated_policy_value_dict[estimator][
+                estimated_lower_quartile = lower_quartile_dict[estimator][
                     "estimated_lower_quartile"
-                ]
-
-                estimated_ranking_dict = {
-                    estimated_ranking_[i]: i for i in range(len(estimated_ranking_))
-                }
-                estimated_lower_quartile = [
-                    estimated_lower_quartile_[estimated_ranking_dict[true_ranking[i]]]
-                    for i in range(len(true_ranking))
                 ]
 
                 min_val = np.minimum(
@@ -4386,9 +4501,7 @@ class OffPolicySelection:
 
             if share_axes:
                 guide = np.linspace(guide_min, guide_max)
-                for i, estimator in enumerate(
-                    self.cumulative_distribution_ope.ope_estimators_
-                ):
+                for i, estimator in enumerate(compared_estimators):
                     axes[i].plot(
                         guide,
                         guide,
@@ -4397,22 +4510,12 @@ class OffPolicySelection:
                     )
 
         else:
-            for i, estimator in enumerate(
-                self.cumulative_distribution_ope.ope_estimators_
-            ):
-                estimated_ranking_ = estimated_policy_value_dict[estimator][
-                    "estimated_ranking"
+            for i, estimator in enumerate(compared_estimators):
+                true_lower_quartile = lower_quartile_dict[estimator][
+                    "true_lower_quartile"
                 ]
-                estimated_lower_quartile_ = estimated_policy_value_dict[estimator][
+                estimated_lower_quartile = lower_quartile_dict[estimator][
                     "estimated_lower_quartile"
-                ]
-
-                estimated_ranking_dict = {
-                    estimated_ranking_[i]: i for i in range(len(estimated_ranking_))
-                }
-                estimated_lower_quartile = [
-                    estimated_lower_quartile_[estimated_ranking_dict[true_ranking[i]]]
-                    for i in range(len(true_ranking))
                 ]
 
                 min_val = np.minimum(
@@ -4443,9 +4546,7 @@ class OffPolicySelection:
 
             if share_axes:
                 guide = np.linspace(guide_min, guide_max)
-                for i, estimator in enumerate(
-                    self.cumulative_distribution_ope.ope_estimators_
-                ):
+                for i, estimator in enumerate(compared_estimators):
                     axes[i // n_cols, i % n_cols].plot(
                         guide,
                         guide,
@@ -4462,6 +4563,7 @@ class OffPolicySelection:
     def visualize_conditional_value_at_risk_for_validation(
         self,
         input_dict: OPEInputDict,
+        compared_estimators: Optional[List[str]] = None,
         alpha: float = 0.05,
         n_cols: Optional[int] = None,
         share_axes: bool = False,
@@ -4486,6 +4588,10 @@ class OffPolicySelection:
                 gamma,
             ]
 
+        compared_estimators: list of str, default=None
+            Name of compared estimators.
+            When `None` is given, all the estimators are compared.
+
         alpha: float, default=0.05
             Proportion of the sided region. The value should be within `[0, 1]`.
 
@@ -4503,23 +4609,24 @@ class OffPolicySelection:
             Name of the bar figure.
 
         """
-        ground_truth_policy_value_dict = self.obtain_true_selection_result(
-            input_dict=input_dict,
-            cvar_alpha=alpha,
-            return_conditional_value_at_risk=True,
-        )
-        true_ranking = ground_truth_policy_value_dict[
-            "ranking_by_conditional_value_at_risk"
-        ]
-        true_cvar = ground_truth_policy_value_dict["conditional_value_at_risk"]
+        if compared_estimators is None:
+            compared_estimators = self.estimators_name["cumulative_distribution_ope"]
+        elif not set(compared_estimators).issubset(
+            self.estimators_name["cumulative_distribution_ope"]
+        ):
+            raise ValueError(
+                "compared_estimators must be a subset of self.estimators_name['cumulative_distribution_ope'], but found False."
+            )
 
-        estimated_policy_value_dict = self.select_by_conditional_value_at_risk(
-            input_dict=input_dict,
+        cvar_dict = self.select_by_conditional_value_at_risk(
+            input_dict,
+            compared_estimators=compared_estimators,
             alpha=alpha,
+            return_true_values=True,
         )
 
         plt.style.use("ggplot")
-        n_figs = len(self.cumulative_distribution_ope.ope_estimators_)
+        n_figs = len(compared_estimators)
         n_cols = min(5, n_figs) if n_cols is None else n_cols
         n_rows = (n_figs - 1) // n_cols + 1
 
@@ -4533,22 +4640,10 @@ class OffPolicySelection:
 
         guide_min, guide_max = 1e5, -1e5
         if n_rows == 1:
-            for i, estimator in enumerate(
-                self.cumulative_distribution_ope.ope_estimators_
-            ):
-                estimated_ranking_ = estimated_policy_value_dict[estimator][
-                    "estimated_ranking"
-                ]
-                estimated_cvar_ = estimated_policy_value_dict[estimator][
+            for i, estimator in enumerate(compared_estimators):
+                true_cvar = cvar_dict[estimator]["true_conditional_value_at_risk"]
+                estimated_cvar = cvar_dict[estimator][
                     "estimated_conditional_value_at_risk"
-                ]
-
-                estimated_ranking_dict = {
-                    estimated_ranking_[i]: i for i in range(len(estimated_ranking_))
-                }
-                estimated_cvar = [
-                    estimated_cvar_[estimated_ranking_dict[true_ranking[i]]]
-                    for i in range(len(true_ranking))
                 ]
 
                 min_val = np.minimum(np.nanmin(true_cvar), np.nanmin(estimated_cvar))
@@ -4575,9 +4670,7 @@ class OffPolicySelection:
 
             if share_axes:
                 guide = np.linspace(guide_min, guide_max)
-                for i, estimator in enumerate(
-                    self.cumulative_distribution_ope.ope_estimators_
-                ):
+                for i, estimator in enumerate(compared_estimators):
                     axes[i].plot(
                         guide,
                         guide,
@@ -4586,22 +4679,10 @@ class OffPolicySelection:
                     )
 
         else:
-            for i, estimator in enumerate(
-                self.cumulative_distribution_ope.ope_estimators_
-            ):
-                estimated_ranking_ = estimated_policy_value_dict[estimator][
-                    "estimated_ranking"
-                ]
-                estimated_cvar_ = estimated_policy_value_dict[estimator][
+            for i, estimator in enumerate(compared_estimators):
+                true_cvar = cvar_dict[estimator]["true_conditional_value_at_risk"]
+                estimated_cvar = cvar_dict[estimator][
                     "estimated_conditional_value_at_risk"
-                ]
-
-                estimated_ranking_dict = {
-                    estimated_ranking_[i]: i for i in range(len(estimated_ranking_))
-                }
-                estimated_cvar = [
-                    estimated_cvar_[estimated_ranking_dict[true_ranking[i]]]
-                    for i in range(len(true_ranking))
                 ]
 
                 min_val = np.minimum(np.nanmin(true_cvar), np.nanmin(estimated_cvar))
@@ -4638,9 +4719,7 @@ class OffPolicySelection:
 
             if share_axes:
                 guide = np.linspace(guide_min, guide_max)
-                for i, estimator in enumerate(
-                    self.cumulative_distribution_ope.ope_estimators_
-                ):
+                for i, estimator in enumerate(compared_estimators):
                     axes[i // n_cols, i % n_cols].plot(
                         guide,
                         guide,
@@ -4653,3 +4732,13 @@ class OffPolicySelection:
 
         if fig_dir:
             fig.savefig(str(fig_dir / fig_name), dpi=300, bbox_inches="tight")
+
+    @property
+    def estimators_name(self):
+        estimators_name = {
+            "standard_ope": None if self.ope is None else self.ope.estimators_name,
+            "cumulative_distribution_ope": None
+            if self.cumulative_distribution_ope is None
+            else self.cumulative_distribution_ope.estimators_name,
+        }
+        return estimators_name
