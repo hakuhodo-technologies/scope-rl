@@ -2211,6 +2211,10 @@ class OffPolicySelection:
             Name of the bar figure.
 
         """
+        if self.ope is None:
+            raise RuntimeError(
+                "ope is not given. Please initialize the class with ope attribute"
+            )
         if compared_estimators is None:
             compared_estimators = self.estimators_name["standard_ope"]
         elif not set(compared_estimators).issubset(
@@ -2395,6 +2399,10 @@ class OffPolicySelection:
             Name of the bar figure.
 
         """
+        if self.cumulative_distribution_ope is None:
+            raise RuntimeError(
+                "cumulative_distribution_ope is not given. Please initialize the class with cumulative_distribution_ope attribute"
+            )
         if compared_estimators is None:
             compared_estimators = self.estimators_name["cumulative_distribution_ope"]
         elif not set(compared_estimators).issubset(
@@ -2597,6 +2605,10 @@ class OffPolicySelection:
             Name of the bar figure.
 
         """
+        if self.ope is None:
+            raise RuntimeError(
+                "ope is not given. Please initialize the class with ope attribute"
+            )
         if compared_estimators is None:
             compared_estimators = self.estimators_name["standard_ope"]
         elif not set(compared_estimators).issubset(
@@ -2836,6 +2848,10 @@ class OffPolicySelection:
             Name of the bar figure.
 
         """
+        if self.cumulative_distribution_ope is None:
+            raise RuntimeError(
+                "cumulative_distribution_ope is not given. Please initialize the class with cumulative_distribution_ope attribute"
+            )
         if compared_estimators is None:
             compared_estimators = self.estimators_name["standard_ope"]
         elif not set(compared_estimators).issubset(
@@ -3041,6 +3057,10 @@ class OffPolicySelection:
             Name of the bar figure.
 
         """
+        if self.cumulative_distribution_ope is None:
+            raise RuntimeError(
+                "cumulative_distribution_ope is not given. Please initialize the class with cumulative_distribution_ope attribute"
+            )
         if compared_estimators is None:
             compared_estimators = self.estimators_name["cumulative_distribution_ope"]
         elif not set(compared_estimators).issubset(
@@ -3228,6 +3248,10 @@ class OffPolicySelection:
             Name of the bar figure.
 
         """
+        if self.ope is None:
+            raise RuntimeError(
+                "ope is not given. Please initialize the class with ope attribute"
+            )
         if compared_estimators is None:
             compared_estimators = self.estimators_name["standard_ope"]
         elif not set(compared_estimators).issubset(
@@ -3441,13 +3465,10 @@ class OffPolicySelection:
             Name of the bar figure.
 
         """
-        if metrics is None:
-            metrics = ["best", "worst", "mean", "safety_violation_rate"]
-        for metric in metrics:
-            if metric not in ["best", "worst", "mean", "safety_violation_rate"]:
-                raise ValueError(
-                    f"the elements of metrics must be one of 'best', 'worst', 'mean', or 'safety_violation_rate', but {metric} is given"
-                )
+        if self.cumulative_distribution_ope is None:
+            raise RuntimeError(
+                "cumulative_distribution_ope is not given. Please initialize the class with cumulative_distribution_ope attribute"
+            )
         if compared_estimators is None:
             compared_estimators = self.estimators_name["cumulative_distribution_ope"]
         elif not set(compared_estimators).issubset(
@@ -3456,6 +3477,13 @@ class OffPolicySelection:
             raise ValueError(
                 "compared_estimators must be a subset of self.estimators_name['cumulative_distribution_ope'], but found False."
             )
+        if metrics is None:
+            metrics = ["best", "worst", "mean", "safety_violation_rate"]
+        for metric in metrics:
+            if metric not in ["best", "worst", "mean", "safety_violation_rate"]:
+                raise ValueError(
+                    f"the elements of metrics must be one of 'best', 'worst', 'mean', or 'safety_violation_rate', but {metric} is given"
+                )
 
         if max_topk is None:
             max_topk = len(input_dict)
@@ -3620,6 +3648,10 @@ class OffPolicySelection:
             Name of the bar figure.
 
         """
+        if self.ope is None:
+            raise RuntimeError(
+                "ope is not given. Please initialize the class with ope attribute"
+            )
         if compared_estimators is None:
             compared_estimators = self.estimators_name["standard_ope"]
         elif not set(compared_estimators).issubset(
@@ -3792,6 +3824,10 @@ class OffPolicySelection:
             Name of the bar figure.
 
         """
+        if self.cumulative_distribution_ope is None:
+            raise RuntimeError(
+                "cumulative_distribution_ope is not given. Please initialize the class with cumulative_distribution_ope attribute"
+            )
         if compared_estimators is None:
             compared_estimators = self.estimators_name["cumulative_distribution_ope"]
         elif not set(compared_estimators).issubset(
@@ -3976,6 +4012,10 @@ class OffPolicySelection:
             Name of the bar figure.
 
         """
+        if self.ope is None:
+            raise RuntimeError(
+                "ope is not given. Please initialize the class with ope attribute"
+            )
         if compared_estimators is None:
             compared_estimators = self.estimators_name["standard_ope"]
         elif not set(compared_estimators).issubset(
@@ -4259,6 +4299,10 @@ class OffPolicySelection:
             Name of the bar figure.
 
         """
+        if self.cumulative_distribution_ope is None:
+            raise RuntimeError(
+                "cumulative_distribution_ope is not given. Please initialize the class with cumulative_distribution_ope attribute"
+            )
         if compared_estimators is None:
             compared_estimators = self.estimators_name["cumulative_distribution_ope"]
         elif not set(compared_estimators).issubset(
@@ -4434,6 +4478,10 @@ class OffPolicySelection:
             Name of the bar figure.
 
         """
+        if self.cumulative_distribution_ope is None:
+            raise RuntimeError(
+                "cumulative_distribution_ope is not given. Please initialize the class with cumulative_distribution_ope attribute"
+            )
         if compared_estimators is None:
             compared_estimators = self.estimators_name["cumulative_distribution_ope"]
         elif not set(compared_estimators).issubset(
@@ -4609,6 +4657,10 @@ class OffPolicySelection:
             Name of the bar figure.
 
         """
+        if self.cumulative_distribution_ope is None:
+            raise RuntimeError(
+                "cumulative_distribution_ope is not given. Please initialize the class with cumulative_distribution_ope attribute"
+            )
         if compared_estimators is None:
             compared_estimators = self.estimators_name["cumulative_distribution_ope"]
         elif not set(compared_estimators).issubset(
