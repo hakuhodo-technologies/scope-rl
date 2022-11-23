@@ -1,7 +1,8 @@
 """Useful tools."""
 from collections import defaultdict
-from typing import DefaultDict, Dict, Union, Optional, Any
+from typing import DefaultDict, Dict, Union, Optional, Any, Tuple
 
+import gym
 import scipy
 import numpy as np
 from sklearn.utils import check_scalar, check_random_state
@@ -328,3 +329,59 @@ def check_input_dict(input_dict: OPEInputDict):
                 raise RuntimeError(
                     f"{expected_key} does not exist in input_dict['{eval_policy}']"
                 )
+
+
+class NewGymAPIWrapper:
+    """This class converts old gym outputs (gym<0.26.0) to the new ones (gym>=0.26.0)."""
+    def __init__(
+        self,
+        env: gym.Env,
+    ):
+        self.env = env
+
+    def reset(self, seed: Optional[int] = None) -> np.ndarray:
+        self.env.seed(seed)
+        state = self.env.reset()
+        return state, {}
+
+    def step(self, action: Any) -> Tuple[Any]:
+        state, action, done, info = self.env.step(action)
+        return state, action, False, done, info
+
+    def render(self):
+        self.env.render()
+
+    def close(self):
+        self.env.close()
+
+    def __getattr__(self, key) -> Any:
+        return object.__getattribute__(self.env, key)
+
+
+class OldGymAPIWrapper:
+    """This class converts new gym outputs (gym>=0.26.0) to the old ones (gym<0.26.0)."""
+    def __init__(
+        self,
+        env: gym.Env,
+    ):
+        self.env = env
+
+    def reset(self) -> np.ndarray:
+        state, info = self.env.reset()
+        return state
+
+    def step(self, action: Any) -> Tuple[Any]:
+        state, action, done, truncated, info = self.env.step(action)
+        return state, action, done, info
+
+    def render(self, mode: str = "human"):
+        self.env.render()
+
+    def close(self):
+        self.env.close()
+
+    def seed(self, seed: Optional[int] = None):
+        self.env.reset(seed)
+
+    def __getattr__(self, key) -> Any:
+        return object.__getattribute__(self.env, key)
