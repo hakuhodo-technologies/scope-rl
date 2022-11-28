@@ -441,12 +441,12 @@ class DiscreteStateMarginalImportanceSampling(BaseStateMarginalOffPolicyEstimato
             Policy value estimated for each trajectory.
 
         """
-        behavior_policy_pscore = self._calc_behavior_policy_pscore(
+        behavior_policy_pscore = self._calc_behavior_policy_pscore_discrete(
             n_step_pdis=n_step_pdis,
             step_per_episode=step_per_episode,
             pscore=pscore,
         )
-        evaluation_policy_pscore = self._calc_evaluation_policy_pscore(
+        evaluation_policy_pscore = self._calc_evaluation_policy_pscore_discrete(
             n_step_pdis=n_step_pdis,
             step_per_episode=step_per_episode,
             action=action,
@@ -871,12 +871,12 @@ class DiscreteStateMarginalDoublyRobust(BaseStateMarginalOffPolicyEstimator):
             np.arange(len(action)), action
         ].reshape((-1, step_per_episode))
 
-        behavior_policy_pscore = self._calc_behavior_policy_pscore(
+        behavior_policy_pscore = self._calc_behavior_policy_pscore_discrete(
             n_step_pdis=n_step_pdis,
             step_per_episode=step_per_episode,
             pscore=pscore,
         )
-        evaluation_policy_pscore = self._calc_evaluation_policy_pscore(
+        evaluation_policy_pscore = self._calc_evaluation_policy_pscore_discrete(
             n_step_pdis=n_step_pdis,
             step_per_episode=step_per_episode,
             action=action,
@@ -1314,12 +1314,12 @@ class DiscreteStateMarginalSelfNormalizedImportanceSampling(
             Policy value estimated for each trajectory.
 
         """
-        behavior_policy_pscore = self._calc_behavior_policy_pscore(
+        behavior_policy_pscore = self._calc_behavior_policy_pscore_discrete(
             n_step_pdis=n_step_pdis,
             step_per_episode=step_per_episode,
             pscore=pscore,
         )
-        evaluation_policy_pscore = self._calc_evaluation_policy_pscore(
+        evaluation_policy_pscore = self._calc_evaluation_policy_pscore_discrete(
             n_step_pdis=n_step_pdis,
             step_per_episode=step_per_episode,
             action=action,
@@ -1467,12 +1467,12 @@ class DiscreteStateMarginalSelfNormalizedDoublyRobust(
             np.arange(len(action)), action
         ].reshape((-1, step_per_episode))
 
-        behavior_policy_pscore = self._calc_behavior_policy_pscore(
+        behavior_policy_pscore = self._calc_behavior_policy_pscore_discrete(
             n_step_pdis=n_step_pdis,
             step_per_episode=step_per_episode,
             pscore=pscore,
         )
-        evaluation_policy_pscore = self._calc_evaluation_policy_pscore(
+        evaluation_policy_pscore = self._calc_evaluation_policy_pscore_discrete(
             n_step_pdis=n_step_pdis,
             step_per_episode=step_per_episode,
             action=action,
@@ -1606,12 +1606,12 @@ class DiscreteStateActionMarginalImportanceSampling(
             Policy value estimated for each trajectory.
 
         """
-        behavior_policy_pscore = self._calc_behavior_policy_pscore(
+        behavior_policy_pscore = self._calc_behavior_policy_pscore_discrete(
             n_step_pdis=n_step_pdis,
             step_per_episode=step_per_episode,
             pscore=pscore,
         )
-        evaluation_policy_pscore = self._calc_evaluation_policy_pscore(
+        evaluation_policy_pscore = self._calc_evaluation_policy_pscore_discrete(
             n_step_pdis=n_step_pdis,
             step_per_episode=step_per_episode,
             action=action,
@@ -2035,12 +2035,12 @@ class DiscreteStateActionMarginalDoublyRobust(
             np.arange(len(action)), action
         ].reshape((-1, step_per_episode))
 
-        behavior_policy_pscore = self._calc_behavior_policy_pscore(
+        behavior_policy_pscore = self._calc_behavior_policy_pscore_discrete(
             n_step_pdis=n_step_pdis,
             step_per_episode=step_per_episode,
             pscore=pscore,
         )
-        evaluation_policy_pscore = self._calc_evaluation_policy_pscore(
+        evaluation_policy_pscore = self._calc_evaluation_policy_pscore_discrete(
             n_step_pdis=n_step_pdis,
             step_per_episode=step_per_episode,
             action=action,
@@ -2467,12 +2467,12 @@ class DiscreteStateActionMarginalSelfNormalizedImportanceSampling(
             Policy value estimated for each trajectory.
 
         """
-        behavior_policy_pscore = self._calc_behavior_policy_pscore(
+        behavior_policy_pscore = self._calc_behavior_policy_pscore_discrete(
             n_step_pdis=n_step_pdis,
             step_per_episode=step_per_episode,
             pscore=pscore,
         )
-        evaluation_policy_pscore = self._calc_evaluation_policy_pscore(
+        evaluation_policy_pscore = self._calc_evaluation_policy_pscore_discrete(
             n_step_pdis=n_step_pdis,
             step_per_episode=step_per_episode,
             action=action,
@@ -2622,12 +2622,12 @@ class DiscreteStateActionMarginalSelfNormalizedDoublyRobust(
             np.arange(len(action)), action
         ].reshape((-1, step_per_episode))
 
-        behavior_policy_pscore = self._calc_behavior_policy_pscore(
+        behavior_policy_pscore = self._calc_behavior_policy_pscore_discrete(
             n_step_pdis=n_step_pdis,
             step_per_episode=step_per_episode,
             pscore=pscore,
         )
-        evaluation_policy_pscore = self._calc_evaluation_policy_pscore(
+        evaluation_policy_pscore = self._calc_evaluation_policy_pscore_discrete(
             n_step_pdis=n_step_pdis,
             step_per_episode=step_per_episode,
             action=action,

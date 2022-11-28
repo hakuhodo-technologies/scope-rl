@@ -1143,6 +1143,22 @@ class CumulativeDistributionOffPolicyEvaluation:
             }
 
     def _target_value_given_idx(self, idx_: int, reward_scale: np.ndarray):
+        """Obtain target value in reward scale for cumulative distribution estimation.
+
+        Parameters
+        -------
+        idx_: list of int or int
+            Indicating index. When list is given, the average of the two will be returned.
+
+        reward_scale: array-like of shape (n_partition, )
+            Scale of the trajectory wise reward used for x-axis of CDF curve.
+
+        Return
+        -------
+        target_value: float
+            Value of the given index.
+
+        """
         if len(idx_) == 0 or idx_[0] == len(reward_scale) - 1:
             target_value = reward_scale[-1]
         else:

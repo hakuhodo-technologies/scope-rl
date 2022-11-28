@@ -344,7 +344,7 @@ class ContinuousStateMarginalImportanceSampling(BaseStateMarginalOffPolicyEstima
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_episodes * step_per_episode, )
+        action: array-like of shape (n_episodes * step_per_episode, action_dim)
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_episodes * step_per_episode, )
@@ -375,7 +375,7 @@ class ContinuousStateMarginalImportanceSampling(BaseStateMarginalOffPolicyEstima
             Policy value estimated for each trajectory.
 
         """
-        behavior_policy_pscore = self._calc_behavior_policy_pscore(
+        behavior_policy_pscore = self._calc_behavior_policy_pscore_continuous(
             n_step_pdis=n_step_pdis,
             step_per_episode=step_per_episode,
             pscore=pscore,
@@ -431,7 +431,7 @@ class ContinuousStateMarginalImportanceSampling(BaseStateMarginalOffPolicyEstima
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_episodes * step_per_episode, )
+        action: array-like of shape (n_episodes * step_per_episode, action_dim)
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_episodes * step_per_episode, )
@@ -576,7 +576,7 @@ class ContinuousStateMarginalImportanceSampling(BaseStateMarginalOffPolicyEstima
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_episodes * step_per_episode, )
+        action: array-like of shape (n_episodes * step_per_episode, action_dim)
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_episodes * step_per_episode, )
@@ -803,7 +803,7 @@ class ContinuousStateMarginalDoublyRobust(BaseStateMarginalOffPolicyEstimator):
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_episodes * step_per_episode, )
+        action: array-like of shape (n_episodes * step_per_episode, action_dim)
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_episodes * step_per_episode, )
@@ -838,7 +838,7 @@ class ContinuousStateMarginalDoublyRobust(BaseStateMarginalOffPolicyEstimator):
             Policy value estimated for each trajectory.
 
         """
-        behavior_policy_pscore = self._calc_behavior_policy_pscore(
+        behavior_policy_pscore = self._calc_behavior_policy_pscore_continuous(
             n_step_pdis=n_step_pdis,
             step_per_episode=step_per_episode,
             pscore=pscore,
@@ -906,7 +906,7 @@ class ContinuousStateMarginalDoublyRobust(BaseStateMarginalOffPolicyEstimator):
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_episodes * step_per_episode, )
+        action: array-like of shape (n_episodes * step_per_episode, action_dim)
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_episodes * step_per_episode, )
@@ -1067,7 +1067,7 @@ class ContinuousStateMarginalDoublyRobust(BaseStateMarginalOffPolicyEstimator):
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_episodes * step_per_episode, )
+        action: array-like of shape (n_episodes * step_per_episode, action_dim)
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_episodes * step_per_episode, )
@@ -1309,7 +1309,7 @@ class ContinuousStateMarginalSelfNormalizedImportanceSampling(
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_episodes * step_per_episode, )
+        action: array-like of shape (n_episodes * step_per_episode, action_dim)
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_episodes * step_per_episode, )
@@ -1340,7 +1340,7 @@ class ContinuousStateMarginalSelfNormalizedImportanceSampling(
             Policy value estimated for each trajectory.
 
         """
-        behavior_policy_pscore = self._calc_behavior_policy_pscore(
+        behavior_policy_pscore = self._calc_behavior_policy_pscore_continuous(
             n_step_pdis=n_step_pdis,
             step_per_episode=step_per_episode,
             pscore=pscore,
@@ -1462,7 +1462,7 @@ class ContinuousStateMarginalSelfNormalizedDoublyRobust(
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_episodes * step_per_episode, )
+        action: array-like of shape (n_episodes * step_per_episode, action_dim)
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_episodes * step_per_episode, )
@@ -1497,7 +1497,7 @@ class ContinuousStateMarginalSelfNormalizedDoublyRobust(
             Policy value estimated for each trajectory.
 
         """
-        behavior_policy_pscore = self._calc_behavior_policy_pscore(
+        behavior_policy_pscore = self._calc_behavior_policy_pscore_continuous(
             n_step_pdis=n_step_pdis,
             step_per_episode=step_per_episode,
             pscore=pscore,
@@ -1625,7 +1625,7 @@ class ContinuousStateActionMarginalImportanceSampling(
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_episodes * step_per_episode, )
+        action: array-like of shape (n_episodes * step_per_episode, action_dim)
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_episodes * step_per_episode, )
@@ -1656,7 +1656,7 @@ class ContinuousStateActionMarginalImportanceSampling(
             Policy value estimated for each trajectory.
 
         """
-        behavior_policy_pscore = self._calc_behavior_policy_pscore(
+        behavior_policy_pscore = self._calc_behavior_policy_pscore_continuous(
             n_step_pdis=n_step_pdis,
             step_per_episode=step_per_episode,
             pscore=pscore,
@@ -1711,7 +1711,7 @@ class ContinuousStateActionMarginalImportanceSampling(
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_episodes * step_per_episode, )
+        action: array-like of shape (n_episodes * step_per_episode, action_dim)
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_episodes * step_per_episode, )
@@ -1853,7 +1853,7 @@ class ContinuousStateActionMarginalImportanceSampling(
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_episodes * step_per_episode, )
+        action: array-like of shape (n_episodes * step_per_episode, action_dim)
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_episodes * step_per_episode, )
@@ -2079,7 +2079,7 @@ class ContinuousStateActionMarginalDoublyRobust(
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_episodes * step_per_episode, )
+        action: array-like of shape (n_episodes * step_per_episode, action_dim)
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_episodes * step_per_episode, )
@@ -2114,7 +2114,7 @@ class ContinuousStateActionMarginalDoublyRobust(
             Policy value estimated for each trajectory.
 
         """
-        behavior_policy_pscore = self._calc_behavior_policy_pscore(
+        behavior_policy_pscore = self._calc_behavior_policy_pscore_continuous(
             n_step_pdis=n_step_pdis,
             step_per_episode=step_per_episode,
             pscore=pscore,
@@ -2178,7 +2178,7 @@ class ContinuousStateActionMarginalDoublyRobust(
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_episodes * step_per_episode, )
+        action: array-like of shape (n_episodes * step_per_episode, action_dim)
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_episodes * step_per_episode, )
@@ -2338,7 +2338,7 @@ class ContinuousStateActionMarginalDoublyRobust(
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_episodes * step_per_episode, )
+        action: array-like of shape (n_episodes * step_per_episode, action_dim)
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_episodes * step_per_episode, )
@@ -2576,7 +2576,7 @@ class ContinuousStateActionMarginalSelfNormalizedImportanceSampling(
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_episodes * step_per_episode, )
+        action: array-like of shape (n_episodes * step_per_episode, action_dim)
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_episodes * step_per_episode, )
@@ -2607,7 +2607,7 @@ class ContinuousStateActionMarginalSelfNormalizedImportanceSampling(
             Policy value estimated for each trajectory.
 
         """
-        behavior_policy_pscore = self._calc_behavior_policy_pscore(
+        behavior_policy_pscore = self._calc_behavior_policy_pscore_continuous(
             n_step_pdis=n_step_pdis,
             step_per_episode=step_per_episode,
             pscore=pscore,
@@ -2729,7 +2729,7 @@ class ContinuousStateActionMarginalSelfNormalizedDoublyRobust(
         step_per_episode: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_episodes * step_per_episode, )
+        action: array-like of shape (n_episodes * step_per_episode, action_dim)
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_episodes * step_per_episode, )
@@ -2764,7 +2764,7 @@ class ContinuousStateActionMarginalSelfNormalizedDoublyRobust(
             Policy value estimated for each trajectory.
 
         """
-        behavior_policy_pscore = self._calc_behavior_policy_pscore(
+        behavior_policy_pscore = self._calc_behavior_policy_pscore_continuous(
             n_step_pdis=n_step_pdis,
             step_per_episode=step_per_episode,
             pscore=pscore,

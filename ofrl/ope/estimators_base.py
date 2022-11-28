@@ -1,7 +1,7 @@
 """Abstract Base Class for Off-Policy Estimator."""
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
-from typing import Callable, Dict, Optional, Tuple
+from typing import Callable, Optional, Tuple, Union, Dict, List
 
 import numpy as np
 from sklearn.utils import check_scalar
@@ -49,6 +49,31 @@ class BaseOffPolicyEstimator(metaclass=ABCMeta):
         pscore: np.ndarray,
         pscore_type: str,
     ):
+        """Calculate behavior policy pscore (action choice probability).
+
+        Parameters
+        -------
+        step_per_episode: int (> 0)
+            Number of timesteps in an episode.
+
+        pscore: array-like of shape (n_episodes * step_per_episode, )
+            Conditional action choice probability of the behavior policy,
+            i.e., :math:`\\pi_0(a \\mid s)`
+
+        pscore_type: {"trajectory-wise", "step-wise"}
+            Indicates wether to return trajectory-wise pscore or step-wise pscore.
+
+        Return
+        -------
+        behavior_policy_trajectory_wise_pscore: array-like of shape (n_episodes, step_per_episode)
+            Trajectory-wise action choice probability of the behavior policy,
+            i.e., :math:`\\prod_{t=0}^T \\pi_0(a_t \\mid s_t)`
+
+        behavior_policy_step_wise_pscore: array-like of shape (n_episodes, step_per_episode)
+            Step-wise action choice probability of the behavior policy,
+            i.e., :math:`\\prod_{t'=0}^t \\pi_0(a_{t'} \\mid s_{t'})`
+
+        """
         pscore = pscore.reshape((-1, step_per_episode))
 
         # step-wise pscore
@@ -67,6 +92,31 @@ class BaseOffPolicyEstimator(metaclass=ABCMeta):
         pscore: np.ndarray,
         pscore_type: str,
     ):
+        """Calculate behavior policy pscore (action choice probability).
+
+        Parameters
+        -------
+        step_per_episode: int (> 0)
+            Number of timesteps in an episode.
+
+        pscore: array-like of shape (n_episodes * step_per_episode, action_dim)
+            Conditional action choice probability of the behavior policy,
+            i.e., :math:`\\pi_0(a \\mid s)`
+
+        pscore_type: {"trajectory-wise", "step-wise"}
+            Indicates wether to return trajectory-wise pscore or step-wise pscore.
+
+        Return
+        -------
+        behavior_policy_trajectory_wise_pscore: array-like of shape (n_episodes, step_per_episode)
+            Trajectory-wise action choice probability of the behavior policy,
+            i.e., :math:`\\prod_{t=0}^T \\pi_0(a_t \\mid s_t)`
+
+        behavior_policy_step_wise_pscore: array-like of shape (n_episodes, step_per_episode)
+            Step-wise action choice probability of the behavior policy,
+            i.e., :math:`\\prod_{t'=0}^t \\pi_0(a_{t'} \\mid s_{t'})`
+
+        """
         action_dim = pscore.shape[1]
         pscore = pscore.reshape((-1, step_per_episode, action_dim))
 
@@ -90,7 +140,7 @@ class BaseOffPolicyEstimator(metaclass=ABCMeta):
         evaluation_policy_action_dist: np.ndarray,
         pscore_type: str,
     ):
-        """Transform the evaluation policy action distribution into the evaluation policy pscore (action choice probability).
+        """Calculate evaluation policy pscore (action choice probability).
 
         Parameters
         -------
@@ -109,11 +159,11 @@ class BaseOffPolicyEstimator(metaclass=ABCMeta):
 
         Return
         -------
-        evaluation_policy_trajectory_wise_pscore: array-like of shape (n_episodesstep_, per_episode)
+        evaluation_policy_trajectory_wise_pscore: array-like of shape (n_episodes, step_per_episode)
             Trajectory-wise action choice probability of the evaluation policy,
             i.e., :math:`\\prod_{t=0}^T \\pi(a_t \\mid s_t)`
 
-        evaluation_policy_step_wise_pscore: array-like of shape (n_episodesstep_per_episode),
+        evaluation_policy_step_wise_pscore: array-like of shape (n_episodes, step_per_episode)
             Step-wise action choice probability of the evaluation policy,
             i.e., :math:`\\prod_{t'=0}^t \\pi(a_{t'} \\mid s_{t'})`
 
@@ -141,6 +191,39 @@ class BaseOffPolicyEstimator(metaclass=ABCMeta):
         sigma: float,
         pscore_type: str,
     ):
+        """Calculate similarity weight.
+
+        Parameters
+        -------
+        step_per_episode: int (> 0)
+            Number of timesteps in an episode.
+
+        action: array-like of shape (n_episodes * step_per_episode, action_dim)
+            Action chosen by the behavior policy.
+
+        evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
+            Action chosen by the evaluation policy.
+
+        action_scaler: array-like of shape (action_dim, )
+            Scaling factor of action.
+
+        sigma: float, default=1.0
+            Bandwidth hyperparameter of gaussian kernel.
+
+        pscore_type: {"trajectory-wise", "step-wise"}
+            Indicates wether to return trajectory-wise pscore or step-wise pscore.
+
+        Return
+        -------
+        trajectory_wise_similarity_weight: np.ndarray of shape (n_episodes, step_per_episode)
+            Trajectory-wise similarity weight between the action chosen by behavior policy and that of evaluation policy,
+            i.e., :math:`\\prod_{t'=0}^{T-1} K(\\pi(s_t), a_t)` where :math:`K(\\cdot, \\cdot)` is a kernel function.
+
+        step_wise_similarity_weight: np.ndarray of shape (n_episodes, step_per_episode)
+            Step-wise similarity weight between the action chosen by behavior policy and that of evaluation policy,
+            i.e., :math:`\\prod_{t'=0}^t K(\\pi(s_t), a_t)` where :math:`K(\\cdot, \\cdot)` is a kernel function.
+
+        """
         similarity_weight = gaussian_kernel(
             evaluation_policy_action / action_scaler[np.newaxis, :],
             action / action_scaler[np.newaxis, :],
@@ -159,28 +242,112 @@ class BaseOffPolicyEstimator(metaclass=ABCMeta):
 
 
 @dataclass
-class BaseStateMarginalOffPolicyEstimator(BaseOffPolicyEstimator):
-    def _calc_behavior_policy_pscore(
+class BaseMarginalOffPolicyEstimator(BaseOffPolicyEstimator):
+    def _calc_behavior_policy_pscore_discrete(
         self,
         n_step_pdis: int,
         step_per_episode: int,
         pscore: np.ndarray,
     ):
+        """Calculate behavior policy pscore (action choice probability).
+
+        Parameters
+        -------
+        n_step_pdis: int (> 0)
+            Number of previous steps to use per-decision importance weight.
+
+        step_per_episode: int (> 0)
+            Number of timesteps in an episode.
+
+        pscore: array-like of shape (n_episodes * step_per_episode, )
+            Conditional action choice probability of the behavior policy,
+            i.e., :math:`\\pi_0(a \\mid s)`
+
+        Return
+        -------
+        behavior_policy_pscore: array-like of shape (n_episodes, step_per_episode)
+            Step-wise action choice probability of the behavior policy,
+            i.e., :math:`\\prod_{t'=0}^t \\pi_0(a_{t'} \\mid s_{t'})`
+            (adjusted by n_step_pdis)
+
+        """
         pscore = pscore.reshape((-1, step_per_episode))
-        pscore_ = np.roll(pscore, n_step_pdis + 1, axis=1)
-        pscore_[:, : n_step_pdis + 1] = 1
+        pscore_ = np.roll(pscore, n_step_pdis, axis=1)
+        pscore_[:, :n_step_pdis] = 1
 
         numerator = np.cumprod(pscore, axis=1)
         denominator = np.cumprod(pscore_, axis=1)
         return numerator / denominator
 
-    def _calc_evaluation_policy_pscore(
+    def _calc_behavior_policy_pscore_continuous(
+        self,
+        n_step_pdis: int,
+        step_per_episode: int,
+        pscore: np.ndarray,
+    ):
+        """Calculate behavior policy pscore (action choice probability).
+
+        Parameters
+        -------
+        n_step_pdis: int (> 0)
+            Number of previous steps to use per-decision importance weight.
+
+        step_per_episode: int (> 0)
+            Number of timesteps in an episode.
+
+        pscore: array-like of shape (n_episodes * step_per_episode, action_dim)
+            Conditional action choice probability of the behavior policy,
+            i.e., :math:`\\pi_0(a \\mid s)`
+
+        Return
+        -------
+        behavior_policy_pscore: array-like of shape (n_episodes, step_per_episode)
+            Step-wise action choice probability of the behavior policy,
+            i.e., :math:`\\prod_{t'=0}^t \\pi_0(a_{t'} \\mid s_{t'})`
+            (adjusted by n_step_pdis)
+
+        """
+        pscore = pscore.prod(axis=1)
+        pscore = pscore.reshape((-1, step_per_episode))
+        pscore_ = np.roll(pscore, n_step_pdis, axis=1)
+        pscore_[:, :n_step_pdis] = 1
+
+        numerator = np.cumprod(pscore, axis=1)
+        denominator = np.cumprod(pscore_, axis=1)
+        return numerator / denominator
+
+    def _calc_evaluation_policy_pscore_discrete(
         self,
         n_step_pdis: int,
         step_per_episode: int,
         action: np.ndarray,
         evaluation_policy_action_dist: np.ndarray,
     ):
+        """Calculate evaluation policy pscore (action choice probability).
+
+        Parameters
+        -------
+        n_step_pdis: int (> 0)
+            Number of previous steps to use per-decision importance weight.
+
+        step_per_episode: int (> 0)
+            Number of timesteps in an episode.
+
+        action: array-like of shape (n_episodes * step_per_episode, )
+            Action chosen by the behavior policy.
+
+        evaluation_policy_action_dist: array-like of shape (n_episodes * step_per_episode, n_action)
+            Conditional action distribution induced by the evaluation policy,
+            i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
+
+        Return
+        -------
+        evaluation_policy_pscore: array-like of shape (n_episodes, step_per_episode)
+            Step-wise action choice probability of the evaluation policy,
+            i.e., :math:`\\prod_{t'=0}^t \\pi(a_{t'} \\mid s_{t'})`
+            (adjusted by n_step_pdis)
+
+        """
         evaluation_policy_pscore = evaluation_policy_action_dist[
             np.arange(len(action)), action
         ].reshape((-1, step_per_episode))
@@ -202,19 +369,42 @@ class BaseStateMarginalOffPolicyEstimator(BaseOffPolicyEstimator):
         action_scaler: np.ndarray,
         sigma: float,
     ):
-        action_dim = action.shape[1]
-        action = action.reshape((-1, step_per_episode, action_dim))
-        evaluation_policy_action = evaluation_policy_action.reshape(
-            (-1, step_per_episode, action_dim)
-        )
+        """Calculate similarity weight.
 
+        Parameters
+        -------
+        n_step_pdis: int (> 0)
+            Number of previous steps to use per-decision importance weight.
+
+        step_per_episode: int (> 0)
+            Number of timesteps in an episode.
+
+        action: array-like of shape (n_episodes * step_per_episode, action_dim)
+            Action chosen by the behavior policy.
+
+        evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
+            Action chosen by the evaluation policy.
+
+        action_scaler: array-like of shape (action_dim, )
+            Scaling factor of action.
+
+        sigma: float, default=1.0
+            Bandwidth hyperparameter of gaussian kernel.
+
+        Return
+        -------
+        similarity_weight: np.ndarray of shape (n_episodes, step_per_episode)
+            Similarity weight between the action chosen by behavior policy and that of evaluation policy,
+            i.e., :math:`\\prod_{t'=0}^t K(\\pi(s_t), a_t)` where :math:`K(\\cdot, \\cdot)` is a kernel function.
+            (adjusted by n_step_pdis)
+
+        """
         similarity_weight = gaussian_kernel(
             evaluation_policy_action / action_scaler[np.newaxis, :],
             action / action_scaler[np.newaxis, :],
             sigma=sigma,
-        )
+        ).reshape((-1, step_per_episode))
 
-        similarity_weight = similarity_weight.reshape((-1, step_per_episode))
         similarity_weight_ = np.roll(similarity_weight, n_step_pdis + 1, axis=1)
         similarity_weight_[:, : n_step_pdis + 1] = 1
 
@@ -222,12 +412,38 @@ class BaseStateMarginalOffPolicyEstimator(BaseOffPolicyEstimator):
         denominator = np.cumprod(similarity_weight_, axis=1)
         return numerator / denominator
 
+    def _calc_marginal_importance_weight(self):
+        """Calculate marginal importance weight."""
+        raise NotImplementedError()
+
+
+@dataclass
+class BaseStateMarginalOffPolicyEstimator(BaseMarginalOffPolicyEstimator):
     def _calc_marginal_importance_weight(
         self,
         n_step_pdis: int,
         step_per_episode: int,
         state_marginal_importance_weight: np.ndarray,
     ):
+        """Calculate marginal importance weight.
+
+        Parameters
+        -------
+        n_step_pdis: int (> 0)
+            Number of previous steps to use per-decision importance weight.
+
+        step_per_episode: int (> 0)
+            Number of timesteps in an episode.
+
+        state_marginal_importance_weight: array-like of shape (n_episodes * step_per_episode, )
+            Marginal importance weight of the state, i.e., :math:`d_{\\pi}(s) / d_{\\pi_0}(s)`
+
+        Return
+        -------
+        state_marginal_importance_weight: np.ndarray of shape (n_episodes, step_per_episode)
+            Marginal importance weight adjusted by n_step_pdis.
+
+        """
         state_marginal_importance_weight = state_marginal_importance_weight.reshape(
             (-1, step_per_episode)
         )
@@ -240,78 +456,32 @@ class BaseStateMarginalOffPolicyEstimator(BaseOffPolicyEstimator):
 
 
 @dataclass
-class BaseStateActionMarginalOffPolicyEstimator(BaseStateMarginalOffPolicyEstimator):
-    def _calc_behavior_policy_pscore(
-        self,
-        n_step_pdis: int,
-        step_per_episode: int,
-        pscore: np.ndarray,
-    ):
-        pscore = pscore.reshape((-1, step_per_episode))
-        pscore_ = np.roll(pscore, n_step_pdis, axis=1)
-        pscore_[:, :n_step_pdis] = 1
-
-        numerator = np.cumprod(pscore, axis=1)
-        denominator = np.cumprod(pscore_, axis=1)
-        return numerator / denominator
-
-    def _calc_evaluation_policy_pscore(
-        self,
-        n_step_pdis: int,
-        step_per_episode: int,
-        action: np.ndarray,
-        evaluation_policy_action_dist: np.ndarray,
-    ):
-        evaluation_policy_pscore = evaluation_policy_action_dist[
-            np.arange(len(action)), action
-        ].reshape((-1, step_per_episode))
-        evaluation_policy_pscore_ = np.roll(
-            evaluation_policy_pscore, n_step_pdis, axis=1
-        )
-        evaluation_policy_pscore_[:, :n_step_pdis] = 1
-
-        numerator = np.cumprod(evaluation_policy_pscore, axis=1)
-        denominator = np.cumprod(evaluation_policy_pscore_, axis=1)
-        return numerator / denominator
-
-    def _calc_similarity_weight(
-        self,
-        n_step_pdis: int,
-        step_per_episode: int,
-        action: np.ndarray,
-        evaluation_policy_action: np.ndarray,
-        action_scaler: np.ndarray,
-        sigma: float,
-    ):
-        action_dim = action.shape[1]
-        action = action.reshape((-1, step_per_episode, action_dim))
-        evaluation_policy_action = evaluation_policy_action.reshape(
-            (-1, step_per_episode, action_dim)
-        )
-
-        similarity_weight = gaussian_kernel(
-            evaluation_policy_action / action_scaler[np.newaxis, :],
-            action / action_scaler[np.newaxis, :],
-            sigma=sigma,
-        )
-
-        action_dim = action.shape[1]
-        similarity_weight = similarity_weight.reshape(
-            (-1, step_per_episode, action_dim)
-        )
-        similarity_weight_ = np.roll(similarity_weight, n_step_pdis, axis=1)
-        similarity_weight_[:, :n_step_pdis] = 1
-
-        numerator = np.cumprod(similarity_weight, axis=1)
-        denominator = np.cumprod(similarity_weight_, axis=1)
-        return numerator / denominator
-
+class BaseStateActionMarginalOffPolicyEstimator(BaseMarginalOffPolicyEstimator):
     def _calc_marginal_importance_weight(
         self,
         n_step_pdis: int,
         step_per_episode: int,
         state_action_marginal_importance_weight: np.ndarray,
     ):
+        """Calculate marginal importance weight.
+
+        Parameters
+        -------
+        n_step_pdis: int (> 0)
+            Number of previous steps to use per-decision importance weight.
+
+        step_per_episode: int (> 0)
+            Number of timesteps in an episode.
+
+        state_action_marginal_importance_weight: array-like of shape (n_episodes * step_per_episode, )
+            Marginal importance weight of the state-action pair, i.e., :math:`d_{\\pi}(s, a) / d_{\\pi_0}(s, a)`
+
+        Return
+        -------
+        state_action_marginal_importance_weight: np.ndarray of shape (n_episodes, step_per_episode)
+            Marginal importance weight adjusted by n_step_pdis.
+
+        """
         state_action_marginal_importance_weight = (
             state_action_marginal_importance_weight.reshape((-1, step_per_episode))
         )
@@ -384,7 +554,25 @@ class BaseCumulativeDistributionOffPolicyEstimator(metaclass=ABCMeta):
 
         return reward_scale
 
-    def _target_value_given_idx(self, idx_: int, reward_scale: np.ndarray):
+    def _target_value_given_idx(
+        self, idx_: Union[List[int], int], reward_scale: np.ndarray
+    ):
+        """Obtain target value in reward scale for cumulative distribution estimation.
+
+        Parameters
+        -------
+        idx_: list of int or int
+            Indicating index. When list is given, the average of the two will be returned.
+
+        reward_scale: array-like of shape (n_partition, )
+            Scale of the trajectory wise reward used for x-axis of CDF curve.
+
+        Return
+        -------
+        target_value: float
+            Value of the given index.
+
+        """
         if len(idx_) == 0 or idx_[0] == len(reward_scale) - 1:
             target_value = reward_scale[-1]
         else:
@@ -501,7 +689,7 @@ class BaseCumulativeDistributionOffPolicyEstimator(metaclass=ABCMeta):
         reward: ndarray of shape (n_episodes * step_per_episode, )
             Reward observation.
 
-        pscore: array-like of shape (n_episodes * step_per_episode, )
+        pscore: array-like of shape (n_episodes * step_per_episode, action_dim)
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_0(a \\mid s)`
 
