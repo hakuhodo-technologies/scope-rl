@@ -2945,6 +2945,7 @@ class OffPolicySelection:
         cvar_dict_ = self.obtain_true_selection_result(
             input_dict,
             return_conditional_value_at_risk=True,
+            cvar_alpha=alpha,
         )
         cvar_dict_ = dict(
             zip(
