@@ -233,7 +233,7 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         reward: array-like of shape (n_episodes * step_per_episode, )
             Reward observation.
 
-        pscore: array-like of shape (n_episodes * step_per_episode, )
+        pscore: array-like of shape (n_episodes * step_per_episode, action_dim)
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_0(a \\mid s)`
 
@@ -255,7 +255,7 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
             Policy value estimated for each trajectory.
 
         """
-        behavior_policy_pscore = self._calc_behavior_policy_pscore(
+        behavior_policy_pscore = self._calc_behavior_policy_pscore_continuous(
             step_per_episode=step_per_episode,
             pscore=pscore,
             pscore_type="trajectory_wise",
@@ -306,7 +306,7 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         reward: array-like of shape (n_episodes * step_per_episode, )
             Reward observation.
 
-        pscore: array-like of shape (n_episodes * step_per_episode, )
+        pscore: array-like of shape (n_episodes * step_per_episode, action_dim)
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_0(a \\mid s)`
 
@@ -347,8 +347,9 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         check_array(
             pscore,
             name="pscore",
-            expected_dim=1,
+            expected_dim=2,
             min_val=0.0,
+            max_val=1.0,
         )
         check_array(
             evaluation_policy_action,
@@ -365,9 +366,11 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
                 "Expected `action.shape[0] == reward.shape[0] == pscore.shape[0] == evaluation_policy_action.shape[0]`"
                 ", but found False"
             )
-        if action.shape[1] != evaluation_policy_action.shape[1]:
+        if not (
+            action.shape[1] == evaluation_policy_action.shape[1] == pscore.shape[1]
+        ):
             raise ValueError(
-                "Expected `action.shape[1] == evaluation_policy_action.shape[1]`, but found False"
+                "Expected `action.shape[1] == evaluation_policy_action.shape[1] == pscore.shape[1]`, but found False"
             )
 
         action_dim = action.shape[1]
@@ -425,7 +428,7 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         reward: array-like of shape (n_episodes * step_per_episode, )
             Reward observation.
 
-        pscore: array-like of shape (n_episodes * step_per_episode, )
+        pscore: array-like of shape (n_episodes * step_per_episode, action_dim)
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_0(a \\mid s)`
 
@@ -478,8 +481,9 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         check_array(
             pscore,
             name="pscore",
-            expected_dim=1,
+            expected_dim=2,
             min_val=0.0,
+            max_val=1.0,
         )
         check_array(
             evaluation_policy_action,
@@ -496,9 +500,11 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
                 "Expected `action.shape[0] == reward.shape[0] == pscore.shape[0] == evaluation_policy_action.shape[0]`"
                 ", but found False"
             )
-        if action.shape[1] != evaluation_policy_action.shape[1]:
+        if not (
+            action.shape[1] == evaluation_policy_action.shape[1] == pscore.shape[1]
+        ):
             raise ValueError(
-                "Expected `action.shape[1] == evaluation_policy_action.shape[1]`, but found False"
+                "Expected `action.shape[1] == evaluation_policy_action.shape[1] == pscore.shape[1]`, but found False"
             )
 
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
@@ -606,7 +612,7 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
         reward: array-like of shape (n_episodes * step_per_episode, )
             Reward observation.
 
-        pscore: array-like of shape (n_episodes * step_per_episode, )
+        pscore: array-like of shape (n_episodes * step_per_episode, action_dim)
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_0(a \\mid s)`
 
@@ -628,7 +634,7 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
             Policy value estimated for each trajectory.
 
         """
-        behavior_policy_pscore = self._calc_behavior_policy_pscore(
+        behavior_policy_pscore = self._calc_behavior_policy_pscore_continuous(
             step_per_episode=step_per_episode,
             pscore=pscore,
             pscore_type="step_wise",
@@ -679,7 +685,7 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
         reward: array-like of shape (n_episodes * step_per_episode, )
             Reward observation.
 
-        pscore: array-like of shape (n_episodes * step_per_episode, )
+        pscore: array-like of shape (n_episodes * step_per_episode, action_dim)
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_0(a \\mid s)`
 
@@ -720,8 +726,9 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
         check_array(
             pscore,
             name="pscore",
-            expected_dim=1,
+            expected_dim=2,
             min_val=0.0,
+            max_val=1.0,
         )
         check_array(
             evaluation_policy_action,
@@ -738,7 +745,9 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
                 "Expected `action.shape[0] == reward.shape[0] == pscore.shape[0] == evaluation_policy_action.shape[0]`"
                 ", but found False"
             )
-        if action.shape[1] != evaluation_policy_action.shape[1]:
+        if not (
+            action.shape[1] == evaluation_policy_action.shape[1] == pscore.shape[1]
+        ):
             raise ValueError(
                 "Expected `action.shape[1] == evaluation_policy_action.shape[1]`, but found False"
             )
@@ -798,7 +807,7 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
         reward: array-like of shape (n_episodes * step_per_episode, )
             Reward observation.
 
-        pscore: array-like of shape (n_episodes * step_per_episode, )
+        pscore: array-like of shape (n_episodes * step_per_episode, action_dim)
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_0(a \\mid s)`
 
@@ -851,8 +860,9 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
         check_array(
             pscore,
             name="pscore",
-            expected_dim=1,
+            expected_dim=2,
             min_val=0.0,
+            max_val=1.0,
         )
         check_array(
             evaluation_policy_action,
@@ -869,7 +879,9 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
                 "Expected `action.shape[0] == reward.shape[0] == pscore.shape[0] == evaluation_policy_action.shape[0]`"
                 ", but found False"
             )
-        if action.shape[1] != evaluation_policy_action.shape[1]:
+        if not (
+            action.shape[1] == evaluation_policy_action.shape[1] == pscore.shape[1]
+        ):
             raise ValueError(
                 "Expected `action.shape[1] == evaluation_policy_action.shape[1]`, but found False"
             )
@@ -988,7 +1000,7 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
         reward: array-like of shape (n_episodes * step_per_episode, )
             Reward observation.
 
-        pscore: array-like of shape (n_episodes * step_per_episode, )
+        pscore: array-like of shape (n_episodes * step_per_episode, action_dim)
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_0(a \\mid s)`
 
@@ -1014,7 +1026,7 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
             Policy value estimated for each trajectory.
 
         """
-        behavior_policy_pscore = self._calc_behavior_policy_pscore(
+        behavior_policy_pscore = self._calc_behavior_policy_pscore_continuous(
             step_per_episode=step_per_episode,
             pscore=pscore,
             pscore_type="step_wise",
@@ -1037,15 +1049,14 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
         state_action_value_prediction = state_action_value_prediction.reshape(
             (-1, step_per_episode, 2)
         )
-        state_action_value_prediction = np.insert(state_value_prediction, -1, 0, axis=1)
-        state_value_prediction = state_action_value_prediction[:, 1:, 1]
-        state_action_value_prediction = state_action_value_prediction[:, :-1, 0]
+        state_value_prediction = state_action_value_prediction[:, :, 1]
+        state_action_value_prediction = state_action_value_prediction[:, :, 0]
 
         estimated_trajectory_value = (
             discount[np.newaxis, :]
             * (
                 weight * (reward - state_action_value_prediction)
-                + weight_prev * state_action_value_prediction
+                + weight_prev * state_value_prediction
             )
         ).sum(axis=1)
 
@@ -1077,7 +1088,7 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
         reward: array-like of shape (n_episodes * step_per_episode, )
             Reward observation.
 
-        pscore: array-like of shape (n_episodes * step_per_episode, )
+        pscore: array-like of shape (n_episodes * step_per_episode, action_dim)
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_0(a \\mid s)`
 
@@ -1122,8 +1133,9 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
         check_array(
             pscore,
             name="pscore",
-            expected_dim=1,
+            expected_dim=2,
             min_val=0.0,
+            max_val=1.0,
         )
         check_array(
             evaluation_policy_action,
@@ -1146,11 +1158,13 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
                 "Expected `action.shape[0] == reward.shape[0] == pscore.shape[0] == evaluation_policy_action.shape[0] "
                 "== state_action_value_prediction.shape[0]`, but found False"
             )
-        if action.shape[1] != evaluation_policy_action.shape[1]:
+        if not (
+            action.shape[1] == evaluation_policy_action.shape[1] == pscore.shape[1]
+        ):
             raise ValueError(
                 "Expected `action.shape[1] == evaluation_policy_action.shape[1]`, but found False"
             )
-        if not state_action_value_prediction.shape[1] != 2:
+        if state_action_value_prediction.shape[1] != 2:
             raise ValueError(
                 "Expected `state_action_value_prediction.shape[1] == 2`, but found False"
             )
@@ -1212,7 +1226,7 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
         reward: array-like of shape (n_episodes * step_per_episode, )
             Reward observation.
 
-        pscore: array-like of shape (n_episodes * step_per_episode, )
+        pscore: array-like of shape (n_episodes * step_per_episode, action_dim)
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_0(a \\mid s)`
 
@@ -1269,8 +1283,9 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
         check_array(
             pscore,
             name="pscore",
-            expected_dim=1,
+            expected_dim=2,
             min_val=0.0,
+            max_val=1.0,
         )
         check_array(
             evaluation_policy_action,
@@ -1293,11 +1308,13 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
                 "Expected `action.shape[0] == reward.shape[0] == pscore.shape[0] == evaluation_policy_action.shape[0] "
                 "== state_action_value_prediction.shape[0]`, but found False"
             )
-        if action.shape[1] != evaluation_policy_action.shape[1]:
+        if not (
+            action.shape[1] == evaluation_policy_action.shape[1] == pscore.shape[1]
+        ):
             raise ValueError(
                 "Expected `action.shape[1] == evaluation_policy_action.shape[1]`, but found False"
             )
-        if not state_action_value_prediction.shape[1] != 2:
+        if state_action_value_prediction.shape[1] != 2:
             raise ValueError(
                 "Expected `state_action_value_prediction.shape[1] == 2`, but found False"
             )
@@ -1417,7 +1434,7 @@ class ContinuousSelfNormalizedTrajectoryWiseImportanceSampling(
         reward: array-like of shape (n_episodes * step_per_episode, )
             Reward observation.
 
-        pscore: array-like of shape (n_episodes * step_per_episode, )
+        pscore: array-like of shape (n_episodes * step_per_episode, action_dim)
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_0(a \\mid s)`
 
@@ -1439,7 +1456,7 @@ class ContinuousSelfNormalizedTrajectoryWiseImportanceSampling(
             Policy value estimated for each trajectory.
 
         """
-        behavior_policy_pscore = self._calc_behavior_policy_pscore(
+        behavior_policy_pscore = self._calc_behavior_policy_pscore_continuous(
             step_per_episode=step_per_episode,
             pscore=pscore,
             pscore_type="trajectory_wise",
@@ -1541,7 +1558,7 @@ class ContinuousSelfNormalizedPerDecisionImportanceSampling(
         reward: array-like of shape (n_episodes * step_per_episode, )
             Reward observation.
 
-        pscore: array-like of shape (n_episodes * step_per_episode, )
+        pscore: array-like of shape (n_episodes * step_per_episode, action_dim)
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_0(a \\mid s)`
 
@@ -1563,7 +1580,7 @@ class ContinuousSelfNormalizedPerDecisionImportanceSampling(
             Policy value estimated for each trajectory.
 
         """
-        behavior_policy_pscore = self._calc_behavior_policy_pscore(
+        behavior_policy_pscore = self._calc_behavior_policy_pscore_continuous(
             step_per_episode=step_per_episode,
             pscore=pscore,
             pscore_type="step_wise",
@@ -1667,7 +1684,7 @@ class ContinuousSelfNormalizedDoublyRobust(ContinuousDoublyRobust):
         reward: array-like of shape (n_episodes * step_per_episode, )
             Reward observation.
 
-        pscore: array-like of shape (n_episodes * step_per_episode, )
+        pscore: array-like of shape (n_episodes * step_per_episode, action_dim)
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_0(a \\mid s)`
 
@@ -1693,7 +1710,7 @@ class ContinuousSelfNormalizedDoublyRobust(ContinuousDoublyRobust):
             Policy value estimated for each trajectory.
 
         """
-        behavior_policy_pscore = self._calc_behavior_policy_pscore(
+        behavior_policy_pscore = self._calc_behavior_policy_pscore_continuous(
             step_per_episode=step_per_episode,
             pscore=pscore,
             pscore_type="step_wise",
@@ -1707,7 +1724,7 @@ class ContinuousSelfNormalizedDoublyRobust(ContinuousDoublyRobust):
             pscore_type="step_wise",
         )
         weight = similarity_weight / behavior_policy_pscore
-        self_normalized_weight = weight / (weight.mean(axis=1)[np.newaxis, :] + 1e-10)
+        self_normalized_weight = weight / (weight.mean(axis=0)[np.newaxis, :] + 1e-10)
         self_normalized_weight_prev = np.roll(self_normalized_weight, 1, axis=1)
         self_normalized_weight_prev[:, 0] = 1
 
@@ -1717,15 +1734,14 @@ class ContinuousSelfNormalizedDoublyRobust(ContinuousDoublyRobust):
         state_action_value_prediction = state_action_value_prediction.reshape(
             (-1, step_per_episode, 2)
         )
-        state_action_value_prediction = np.insert(state_value_prediction, -1, 0, axis=1)
-        state_value_prediction = state_action_value_prediction[:, 1:, 1]
-        state_action_value_prediction = state_action_value_prediction[:, :-1, 0]
+        state_value_prediction = state_action_value_prediction[:, :, 1]
+        state_action_value_prediction = state_action_value_prediction[:, :, 0]
 
         estimated_trajectory_value = (
             discount[np.newaxis, :]
             * (
                 self_normalized_weight * (reward - state_action_value_prediction)
-                + self_normalized_weight_prev * state_action_value_prediction
+                + self_normalized_weight_prev * state_value_prediction
             )
         ).sum(axis=1)
 

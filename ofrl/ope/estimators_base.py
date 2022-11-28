@@ -43,7 +43,7 @@ class BaseOffPolicyEstimator(metaclass=ABCMeta):
             "ttest": estimate_confidence_interval_by_t_test,
         }
 
-    def _calc_behavior_policy_pscore(
+    def _calc_behavior_policy_pscore_discrete(
         self,
         step_per_episode: int,
         pscore: np.ndarray,
@@ -61,7 +61,29 @@ class BaseOffPolicyEstimator(metaclass=ABCMeta):
 
         return behavior_policy_pscore
 
-    def _calc_evaluation_policy_pscore(
+    def _calc_behavior_policy_pscore_continuous(
+        self,
+        step_per_episode: int,
+        pscore: np.ndarray,
+        pscore_type: str,
+    ):
+        action_dim = pscore.shape[1]
+        pscore = pscore.reshape((-1, step_per_episode, action_dim))
+
+        # joint probability
+        pscore = np.prod(pscore, axis=2)
+
+        # step-wise pscore
+        behavior_policy_pscore = np.cumprod(pscore, axis=1)
+
+        if pscore_type == "trajectory_wise":
+            behavior_policy_pscore = np.tile(
+                behavior_policy_pscore[:, -1], (step_per_episode, 1)
+            ).T
+
+        return behavior_policy_pscore
+
+    def _calc_evaluation_policy_pscore_discrete(
         self,
         step_per_episode: int,
         action: np.ndarray,
@@ -96,12 +118,12 @@ class BaseOffPolicyEstimator(metaclass=ABCMeta):
             i.e., :math:`\\prod_{t'=0}^t \\pi(a_{t'} \\mid s_{t'})`
 
         """
-        evaluation_policy_base_pscore = evaluation_policy_action_dist[
+        evaluation_policy_pscore = evaluation_policy_action_dist[
             np.arange(len(action)), action
         ].reshape((-1, step_per_episode))
 
         # step-wise pscore
-        evaluation_policy_pscore = np.cumprod(evaluation_policy_base_pscore, axis=1)
+        evaluation_policy_pscore = np.cumprod(evaluation_policy_pscore, axis=1)
 
         if pscore_type == "trajectory_wise":
             evaluation_policy_pscore = np.tile(
@@ -119,12 +141,6 @@ class BaseOffPolicyEstimator(metaclass=ABCMeta):
         sigma: float,
         pscore_type: str,
     ):
-        action_dim = action.shape[1]
-        action = action.reshape((-1, step_per_episode, action_dim))
-        evaluation_policy_action = evaluation_policy_action.reshape(
-            (-1, step_per_episode, action_dim)
-        )
-
         similarity_weight = gaussian_kernel(
             evaluation_policy_action / action_scaler[np.newaxis, :],
             action / action_scaler[np.newaxis, :],
@@ -368,12 +384,12 @@ class BaseCumulativeDistributionOffPolicyEstimator(metaclass=ABCMeta):
 
         return reward_scale
 
-    def _target_value_given_idx(idx_: int, reward_scale: np.ndarray):
-        if len(idx_):
+    def _target_value_given_idx(self, idx_: int, reward_scale: np.ndarray):
+        if len(idx_) == 0 or idx_[0] == len(reward_scale) - 1:
+            target_value = reward_scale[-1]
+        else:
             target_idx = idx_[0]
             target_value = (reward_scale[target_idx] + reward_scale[target_idx + 1]) / 2
-        else:
-            target_value = reward_scale[-1]
         return target_value
 
     def _aggregate_trajectory_wise_statistics_discrete(
@@ -529,21 +545,15 @@ class BaseCumulativeDistributionOffPolicyEstimator(metaclass=ABCMeta):
             and pscore is not None
             and evaluation_policy_action is not None
         ):
-
-            action_dim = action.shape[1]
-            action = action.reshape((-1, step_per_episode, action_dim))
-            evaluation_policy_action = evaluation_policy_action.reshape(
-                (-1, step_per_episode, action_dim)
-            )
-
             pscore = pscore.reshape((-1, step_per_episode))
-            behavior_policy_pscore = np.cumprod(pscore, axis=1)[:, -1]
+            behavior_policy_pscore = pscore.prod(axis=1)
 
             similarity_weight = gaussian_kernel(
                 evaluation_policy_action / action_scaler[np.newaxis, :],
                 action / action_scaler[np.newaxis, :],
                 sigma=sigma,
-            )
+            ).reshape((-1, step_per_episode))
+            similarity_weight = similarity_weight.prod(axis=1)
 
             trajectory_wise_importance_weight = (
                 similarity_weight / behavior_policy_pscore

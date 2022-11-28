@@ -240,7 +240,7 @@ class SyntheticDataset(BaseDataset):
             Whether to gain info from the environment or not.
 
         seed_env: bool, default=False
-            Whether to set seed on environment or not. 
+            Whether to set seed on environment or not.
 
         Returns
         -------
@@ -424,7 +424,7 @@ class SyntheticDataset(BaseDataset):
             Whether to gain info from the environment or not.
 
         seed_env: bool, default=False
-            Whether to set seed on environment or not. 
+            Whether to set seed on environment or not.
 
         Returns
         -------

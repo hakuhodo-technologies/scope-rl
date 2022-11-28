@@ -1289,7 +1289,7 @@ def rollout_policy_online(
     )
 
     on_policy_policy_values = np.zeros(n_episodes)
-    env.seed(random_state)
+    env.reset(seed=random_state)
 
     if not isinstance(policy, BaseHead):
         policy = OnlineHead(policy)

@@ -11,6 +11,7 @@ from sklearn.utils import check_scalar
 
 from pandas import DataFrame
 import matplotlib.pyplot as plt
+from matplotlib.legend import _get_legend_handles_labels
 
 from .estimators_base import (
     BaseOffPolicyEstimator,
@@ -224,7 +225,7 @@ class OffPolicyEvaluation:
                         "Expected `action_scaler.shape[0] == logged_dataset['action_dim']`, but found False"
                     )
 
-            check_scalar(self.sigma, name="sigma", expected_dim=1, min_val=0.0)
+            check_scalar(self.sigma, name="sigma", target_type=float, min_val=0.0)
 
             self.input_dict_ = {
                 "step_per_episode": self.step_per_episode,
@@ -603,7 +604,7 @@ class OffPolicyEvaluation:
                 lower = np.zeros(n_estimators)
                 upper = np.zeros(n_estimators)
 
-                for j, estimator in compared_estimators:
+                for j, estimator in enumerate(compared_estimators):
                     mean[j] = policy_value_interval_dict[eval_policy][estimator]["mean"]
                     lower[j] = policy_value_interval_dict[eval_policy][estimator][
                         f"{100 * (1. - alpha)}% CI (lower)"
@@ -676,7 +677,7 @@ class OffPolicyEvaluation:
 
             fig = plt.figure(figsize=(2 * n_policies, 4 * n_estimators))
 
-            for i, estimator in compared_estimators:
+            for i, estimator in enumerate(compared_estimators):
                 if i == 0:
                     ax = ax0 = fig.add_subplot(n_estimators, 1, i + 1)
                 elif sharey:
@@ -759,6 +760,9 @@ class OffPolicyEvaluation:
                 )
                 plt.yticks(fontsize=12)
                 plt.xticks(fontsize=12)
+
+        fig.subplots_adjust(top=1.0)
+        plt.show()
 
         if fig_dir:
             fig.savefig(str(fig_dir / fig_name), dpi=300, bbox_inches="tight")
@@ -1127,7 +1131,7 @@ class CumulativeDistributionOffPolicyEvaluation:
                         "Expected `action_scaler.shape[0] == logged_dataset['action_dim']`, but found False"
                     )
 
-            check_scalar(self.sigma, name="sigma", expected_dim=1, min_val=0.0)
+            check_scalar(self.sigma, name="sigma", target_type=float, min_val=0.0)
 
             self.input_dict_ = {
                 "step_per_episode": self.step_per_episode,
@@ -1138,12 +1142,12 @@ class CumulativeDistributionOffPolicyEvaluation:
                 "sigma": self.sigma,
             }
 
-    def _target_value_given_idx(idx_: int, reward_scale: np.ndarray):
-        if len(idx_):
+    def _target_value_given_idx(self, idx_: int, reward_scale: np.ndarray):
+        if len(idx_) == 0 or idx_[0] == len(reward_scale) - 1:
+            target_value = reward_scale[-1]
+        else:
             target_idx = idx_[0]
             target_value = (reward_scale[target_idx] + reward_scale[target_idx + 1]) / 2
-        else:
-            target_value = reward_scale[-1]
         return target_value
 
     def obtain_reward_scale(
@@ -1532,12 +1536,16 @@ class CumulativeDistributionOffPolicyEvaluation:
                 upper_idx_ = np.nonzero(density.cumsum() > 1 - alpha)[0]
 
                 interquartile_range_dict[eval_policy]["on_policy"] = {
-                    "median": self._target_value_given_idx(median_idx_),
+                    "median": self._target_value_given_idx(
+                        median_idx_, reward_scale=reward_scale
+                    ),
                     f"{100 * (1. - alpha)}% quartile (lower)": self._target_value_given_idx(
-                        lower_idx_
+                        lower_idx_,
+                        reward_scale=reward_scale,
                     ),
                     f"{100 * (1. - alpha)}% quartile (upper)": self._target_value_given_idx(
-                        upper_idx_
+                        upper_idx_,
+                        reward_scale=reward_scale,
                     ),
                 }
 
@@ -1607,6 +1615,12 @@ class CumulativeDistributionOffPolicyEvaluation:
 
         """
         check_input_dict(input_dict)
+        if compared_estimators is None:
+            compared_estimators = self.estimators_name
+        elif not set(compared_estimators).issubset(self.estimators_name):
+            raise ValueError(
+                "compared_estimators must be a subset of self.estimators_name, but found False."
+            )
         if hue not in ["estimator", "policy"]:
             raise ValueError(
                 f"hue must be either `estimator` or `policy`, but {hue} is given"
@@ -1634,7 +1648,7 @@ class CumulativeDistributionOffPolicyEvaluation:
             n_rows = (n_figs - 1) // n_cols + 1
 
             fig, axes = plt.subplots(
-                nrows=n_rows, ncols=n_cols, figsize=(4 * n_cols, 3 * n_rows)
+                nrows=n_rows, ncols=n_cols, figsize=(6 * n_cols, 4 * n_rows)
             )
 
             if n_rows == 1:
@@ -1663,6 +1677,11 @@ class CumulativeDistributionOffPolicyEvaluation:
                     if legend:
                         axes[i].legend()
 
+                if legend:
+                    handles, labels = axes[0].get_legend_handles_labels()
+                    # n_cols shows err
+                    # fig.legend(handles, labels, loc='upper center', bbox_to_anchor=(0.5, -0.1), n_cols=min(len(labels), 6))
+
             else:
                 for i, eval_policy in enumerate(input_dict.keys()):
                     for j, estimator in enumerate(compared_estimators):
@@ -1689,6 +1708,11 @@ class CumulativeDistributionOffPolicyEvaluation:
                     if legend:
                         axes[i // n_cols, i % n_cols].legend()
 
+                if legend:
+                    handles, labels = axes[0, 0].get_legend_handles_labels()
+                    # n_cols shows err
+                    # fig.legend(handles, labels, loc='upper center', bbox_to_anchor=(0.5, -0.1), n_cols=min(len(labels), 6))
+
         else:
             visualize_on_policy = True
             for eval_policy in input_dict:
@@ -1704,7 +1728,7 @@ class CumulativeDistributionOffPolicyEvaluation:
             n_rows = (n_figs - 1) // n_cols + 1
 
             fig, axes = plt.subplots(
-                nrows=n_rows, ncols=n_cols, figsize=(4 * n_cols, 3 * n_rows)
+                nrows=n_rows, ncols=n_cols, figsize=(6 * n_cols, 4 * n_rows)
             )
 
             if n_rows == 1:
@@ -1739,6 +1763,11 @@ class CumulativeDistributionOffPolicyEvaluation:
                     axes[i + 1].set_ylabel("cumulative probability")
                     if legend:
                         axes[i + 1].legend()
+
+                if legend:
+                    handles, labels = axes[0].get_legend_handles_labels()
+                    # n_cols shows err
+                    # fig.legend(handles, labels, loc='upper center', bbox_to_anchor=(0.5, -0.1), n_cols=min(len(labels), 6))
 
             else:
                 for i, estimator in enumerate(compared_estimators):
@@ -1777,7 +1806,12 @@ class CumulativeDistributionOffPolicyEvaluation:
                     if legend:
                         axes[(i + 1) // n_cols, (i + 1) % n_cols].legend()
 
-        fig.tight_layout()
+                if legend:
+                    handles, labels = axes[0, 0].get_legend_handles_labels()
+                    # n_cols shows err
+                    # fig.legend(handles, labels, loc='upper center', bbox_to_anchor=(0.5, -0.1), n_cols=min(len(labels), 6))
+
+        fig.subplots_adjust(hspace=0.35, wspace=0.2)
         plt.show()
 
         if fig_dir:
@@ -1893,7 +1927,7 @@ class CumulativeDistributionOffPolicyEvaluation:
                 variance = np.array(
                     list(variance_dict[eval_policy].values()), dtype=float
                 )
-                upper, lower = norm.interval(
+                lower, upper = norm.interval(
                     1 - alpha, loc=mean, scale=np.sqrt(variance)
                 )
 
@@ -1972,7 +2006,7 @@ class CumulativeDistributionOffPolicyEvaluation:
                     mean[j] = mean_dict[eval_policy][estimator]
                     variance[j] = variance_dict[eval_policy][estimator]
 
-                upper, lower = norm.interval(
+                lower, upper = norm.interval(
                     1 - alpha, loc=mean, scale=np.sqrt(variance)
                 )
 
@@ -1996,8 +2030,8 @@ class CumulativeDistributionOffPolicyEvaluation:
 
                 elines = ax.get_children()
                 for j in range(n_policies):
-                    elines[2 * j + 1].set_color("black")
-                    elines[2 * j + 1].set_linewidth(2.0)
+                    elines[3 * j + 2].set_color("black")
+                    elines[3 * j + 2].set_linewidth(2.0)
 
                 ax.set_title(estimator, fontsize=16)
                 ax.set_xticks(np.arange(n_policies))
@@ -2018,7 +2052,7 @@ class CumulativeDistributionOffPolicyEvaluation:
 
                 on_policy_mean = mean_dict[eval_policy]["on_policy"]
                 on_policy_variance = variance_dict[eval_policy]["on_policy"]
-                on_policy_upper, on_policy_lower = norm.interval(
+                on_policy_lower, on_policy_upper = norm.interval(
                     1 - alpha, loc=on_policy_mean, scale=np.sqrt(on_policy_variance)
                 )
 
@@ -2042,8 +2076,8 @@ class CumulativeDistributionOffPolicyEvaluation:
 
                 elines = ax.get_children()
                 for j in range(n_policies):
-                    elines[2 * j + 1].set_color("black")
-                    elines[2 * j + 1].set_linewidth(2.0)
+                    elines[3 * j + 2].set_color("black")
+                    elines[3 * j + 2].set_linewidth(2.0)
 
                 ax.set_title("on_policy", fontsize=16)
                 ax.set_xticks(np.arange(n_policies))
@@ -2055,6 +2089,9 @@ class CumulativeDistributionOffPolicyEvaluation:
                 plt.yticks(fontsize=12)
                 plt.xticks(fontsize=12)
                 plt.xlim(-0.5, len(input_dict) - 0.5)
+
+        fig.subplots_adjust(top=1.0)
+        plt.show()
 
         if fig_dir:
             fig.savefig(str(fig_dir / fig_name), dpi=300, bbox_inches="tight")
@@ -2137,14 +2174,14 @@ class CumulativeDistributionOffPolicyEvaluation:
             if input_dict[eval_policy]["on_policy_policy_value"] is None:
                 visualize_on_policy = False
 
-        if visualize_on_policy:
-            compared_estimators.append("on_policy")
-
         cvar_dict = self.estimate_conditional_value_at_risk(
             input_dict,
             compared_estimators=compared_estimators,
             alphas=alphas,
         )
+
+        if visualize_on_policy:
+            compared_estimators.append("on_policy")
 
         plt.style.use("ggplot")
 
@@ -2154,7 +2191,7 @@ class CumulativeDistributionOffPolicyEvaluation:
             n_rows = (n_figs - 1) // n_cols + 1
 
             fig, axes = plt.subplots(
-                nrows=n_rows, ncols=n_cols, figsize=(4 * n_cols, 3 * n_rows)
+                nrows=n_rows, ncols=n_cols, figsize=(6 * n_cols, 4 * n_rows)
             )
 
             if n_rows == 1:
@@ -2172,6 +2209,11 @@ class CumulativeDistributionOffPolicyEvaluation:
                     if legend:
                         axes[i].legend()
 
+                if legend:
+                    handles, labels = axes[0].get_legend_handles_labels()
+                    # n_cols shows err
+                    # fig.legend(handles, labels, loc='upper center', bbox_to_anchor=(0.5, -0.1), n_cols=min(len(labels), 6))
+
             else:
                 for i, eval_policy in enumerate(input_dict.keys()):
                     for j, estimator in enumerate(compared_estimators):
@@ -2187,13 +2229,18 @@ class CumulativeDistributionOffPolicyEvaluation:
                     if legend:
                         axes[i // n_cols, i % n_cols].legend()
 
+                if legend:
+                    handles, labels = axes[0, 0].get_legend_handles_labels()
+                    # n_cols shows err
+                    # fig.legend(handles, labels, loc='upper center', bbox_to_anchor=(0.5, -0.1), n_cols=min(len(labels), 6))
+
         else:
             n_figs = len(compared_estimators)
             n_cols = min(3, n_figs) if n_cols is None else n_cols
             n_rows = (n_figs - 1) // n_cols + 1
 
             fig, axes = plt.subplots(
-                nrows=n_rows, ncols=n_cols, figsize=(4 * n_cols, 3 * n_rows)
+                nrows=n_rows, ncols=n_cols, figsize=(6 * n_cols, 4 * n_rows)
             )
 
             if n_rows == 1:
@@ -2211,6 +2258,11 @@ class CumulativeDistributionOffPolicyEvaluation:
                     if legend:
                         axes[i].legend()
 
+                if legend:
+                    handles, labels = axes[0].get_legend_handles_labels()
+                    # n_cols shows err
+                    # fig.legend(handles, labels, loc='upper center', bbox_to_anchor=(0.5, -0.1), n_cols=min(len(labels), 6))
+
             else:
                 for i, estimator in enumerate(compared_estimators):
                     for j, eval_policy in enumerate(input_dict.keys()):
@@ -2226,7 +2278,12 @@ class CumulativeDistributionOffPolicyEvaluation:
                     if legend:
                         axes[i // n_cols, i % n_cols].legend()
 
-        fig.tight_layout()
+            if legend:
+                handles, labels = axes[0, 0].get_legend_handles_labels()
+                # n_cols shows err
+                # fig.legend(handles, labels, loc='upper center', bbox_to_anchor=(0.5, -0.1), n_cols=min(len(labels), 6))
+
+        fig.subplots_adjust(hspace=0.35, wspace=0.2)
         plt.show()
 
         if fig_dir:
@@ -2455,6 +2512,9 @@ class CumulativeDistributionOffPolicyEvaluation:
                 plt.yticks(fontsize=12)
                 plt.xticks(fontsize=12)
                 plt.xlim(-0.5, n_policies - 0.5)
+
+        fig.subplots_adjust(top=1.0)
+        plt.show()
 
         if fig_dir:
             fig.savefig(str(fig_dir / fig_name), dpi=300, bbox_inches="tight")

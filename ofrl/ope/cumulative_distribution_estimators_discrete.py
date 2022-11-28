@@ -114,6 +114,9 @@ class DiscreteCumulativeDistributionDirectMethod(
                 "Expected `reward.shape[0] // step_per_episode == initial_state_value_prediction`, but found False"
             )
 
+        initial_state_value_prediction = np.clip(
+            initial_state_value_prediction, reward_scale.min(), reward_scale.max()
+        )
         density = np.histogram(
             initial_state_value_prediction, bins=reward_scale, density=True
         )[0]
@@ -259,7 +262,9 @@ class DiscreteCumulativeDistributionDirectMethod(
         cvar = np.zeros_like(alphas)
         for i, alpha in enumerate(alphas):
             idx_ = np.nonzero(cumulative_density > alpha)[0]
-            lower_idx_ = idx_[0] if len(idx_) else -2
+            lower_idx_ = (
+                -2 if len(idx_) == 0 or idx_[0] == len(reward_scale) - 1 else idx_[0]
+            )
             cvar[i] = (np.diff(cumulative_density) * reward_scale[1:])[
                 : lower_idx_ + 1
             ].sum()
@@ -496,6 +501,9 @@ class DiscreteCumulativeDistributionTrajectoryWiseImportanceSampling(
         sorted_importance_weight = trajectory_wise_importance_weight[sort_idxes]
         cumulative_density = np.clip(sorted_importance_weight.cumsum() / n, 0, 1)
 
+        trajectory_wise_reward = np.clip(
+            trajectory_wise_reward, reward_scale.min(), reward_scale.max()
+        )
         histogram = np.histogram(
             trajectory_wise_reward, bins=reward_scale, density=False
         )[0]
@@ -678,7 +686,9 @@ class DiscreteCumulativeDistributionTrajectoryWiseImportanceSampling(
         cvar = np.zeros_like(alphas)
         for i, alpha in enumerate(alphas):
             idx_ = np.nonzero(cumulative_density > alpha)[0]
-            lower_idx_ = idx_[0] if len(idx_) else -2
+            lower_idx_ = (
+                -2 if len(idx_) == 0 or idx_[0] == len(reward_scale) - 1 else idx_[0]
+            )
             cvar[i] = (np.diff(cumulative_density) * reward_scale[1:])[
                 : lower_idx_ + 1
             ].sum()
@@ -939,6 +949,13 @@ class DiscreteCumulativeDistributionTrajectoryWiseDoublyRobust(
             gamma=gamma,
         )
 
+        trajectory_wise_reward = np.clip(
+            trajectory_wise_reward, reward_scale.min(), reward_scale.max()
+        )
+        initial_state_value_prediction = np.clip(
+            initial_state_value_prediction, reward_scale.min(), reward_scale.max()
+        )
+
         weighted_residual = np.zeros_like(reward_scale)
         for i, threshold in enumerate(reward_scale):
             observation = (trajectory_wise_reward <= threshold).astype(int)
@@ -1145,7 +1162,9 @@ class DiscreteCumulativeDistributionTrajectoryWiseDoublyRobust(
         cvar = np.zeros_like(alphas)
         for i, alpha in enumerate(alphas):
             idx_ = np.nonzero(cumulative_density > alpha)[0]
-            lower_idx_ = idx_[0] if len(idx_) else -2
+            lower_idx_ = (
+                -2 if len(idx_) == 0 or idx_[0] == len(reward_scale) - 1 else idx_[0]
+            )
             cvar[i] = (np.diff(cumulative_density) * reward_scale[1:])[
                 : lower_idx_ + 1
             ].sum()
@@ -1408,6 +1427,10 @@ class DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSampli
             sorted_importance_weight.cumsum() / weight_sum, 0, 1
         )
 
+        trajectory_wise_reward = np.clip(
+            trajectory_wise_reward, reward_scale.min(), reward_scale.max()
+        )
+
         histogram = np.histogram(
             trajectory_wise_reward, bins=reward_scale, density=False
         )[0]
@@ -1586,6 +1609,13 @@ class DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseDoublyRobust(
             evaluation_policy_action_dist=evaluation_policy_action_dist,
             initial_state_value_prediction=initial_state_value_prediction,
             gamma=gamma,
+        )
+
+        trajectory_wise_reward = np.clip(
+            trajectory_wise_reward, reward_scale.min(), reward_scale.max()
+        )
+        initial_state_value_prediction = np.clip(
+            initial_state_value_prediction, reward_scale.min(), reward_scale.max()
         )
 
         weighted_residual = np.zeros_like(reward_scale)

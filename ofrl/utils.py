@@ -34,7 +34,7 @@ def gaussian_kernel(
     """
     x_2 = (x ** 2).sum(axis=1)
     y_2 = (y ** 2).sum(axis=1)
-    x_y = x @ y.T
+    x_y = (x[:, np.newaxis, :] @ y[:, :, np.newaxis]).flatten()
     distance = x_2 + y_2 - 2 * x_y
     return np.exp(-distance / (2 * sigma ** 2))
 
@@ -333,6 +333,7 @@ def check_input_dict(input_dict: OPEInputDict):
 
 class NewGymAPIWrapper:
     """This class converts old gym outputs (gym<0.26.0) to the new ones (gym>=0.26.0)."""
+
     def __init__(
         self,
         env: gym.Env,
@@ -360,6 +361,7 @@ class NewGymAPIWrapper:
 
 class OldGymAPIWrapper:
     """This class converts new gym outputs (gym>=0.26.0) to the old ones (gym<0.26.0)."""
+
     def __init__(
         self,
         env: gym.Env,

@@ -15,7 +15,7 @@ from ..utils import check_array
 class ContinuousCumulativeDistributionDirectMethod(
     BaseCumulativeDistributionOffPolicyEstimator,
 ):
-    """Direct Method (DM) for estimating cumulative distribution function (CDF) in discrete-action OPE.
+    """Direct Method (DM) for estimating cumulative distribution function (CDF) in continuous-action OPE.
 
     Note
     -------
@@ -51,7 +51,7 @@ class ContinuousCumulativeDistributionDirectMethod(
     estimator_name: str = "cdf_dm"
 
     def __post_init__(self):
-        self.action_type = "discrete"
+        self.action_type = "continuous"
 
     def estimate_cumulative_distribution_function(
         self,
@@ -113,6 +113,10 @@ class ContinuousCumulativeDistributionDirectMethod(
             raise ValueError(
                 "Expected `reward.shape[0] // step_per_episode == initial_state_value_prediction`, but found False"
             )
+
+        initial_state_value_prediction = np.clip(
+            initial_state_value_prediction, reward_scale.min(), reward_scale.max()
+        )
 
         density = np.histogram(
             initial_state_value_prediction, bins=reward_scale, density=True
@@ -259,7 +263,9 @@ class ContinuousCumulativeDistributionDirectMethod(
         cvar = np.zeros_like(alphas)
         for i, alpha in enumerate(alphas):
             idx_ = np.nonzero(cumulative_density > alpha)[0]
-            lower_idx_ = idx_[0] if len(idx_) else -2
+            lower_idx_ = (
+                -2 if len(idx_) == 0 or idx_[0] == len(reward_scale) - 1 else idx_[0]
+            )
             cvar[i] = (np.diff(cumulative_density) * reward_scale[1:])[
                 : lower_idx_ + 1
             ].sum()
@@ -379,7 +385,7 @@ class ContinuousCumulativeDistributionTrajectoryWiseImportanceSampling(
     estimator_name: str = "cdf_tis"
 
     def __post_init__(self):
-        self.action_type = "discrete"
+        self.action_type = "continuous"
 
     def estimate_cumulative_distribution_function(
         self,
@@ -441,7 +447,7 @@ class ContinuousCumulativeDistributionTrajectoryWiseImportanceSampling(
         check_array(
             pscore,
             name="pscore",
-            expected_dim=1,
+            expected_dim=2,
             min_val=0.0,
             max_val=1.0,
         )
@@ -511,6 +517,10 @@ class ContinuousCumulativeDistributionTrajectoryWiseImportanceSampling(
         sort_idxes = trajectory_wise_reward.argsort()
         sorted_importance_weight = trajectory_wise_importance_weight[sort_idxes]
         cumulative_density = np.clip(sorted_importance_weight.cumsum() / n, 0, 1)
+
+        trajectory_wise_reward = np.clip(
+            trajectory_wise_reward, reward_scale.min(), reward_scale.max()
+        )
 
         histogram = np.histogram(
             trajectory_wise_reward, bins=reward_scale, density=False
@@ -721,7 +731,9 @@ class ContinuousCumulativeDistributionTrajectoryWiseImportanceSampling(
         cvar = np.zeros_like(alphas)
         for i, alpha in enumerate(alphas):
             idx_ = np.nonzero(cumulative_density > alpha)[0]
-            lower_idx_ = idx_[0] if len(idx_) else -2
+            lower_idx_ = (
+                -2 if len(idx_) == 0 or idx_[0] == len(reward_scale) - 1 else idx_[0]
+            )
             cvar[i] = (np.diff(cumulative_density) * reward_scale[1:])[
                 : lower_idx_ + 1
             ].sum()
@@ -822,7 +834,7 @@ class ContinuousCumulativeDistributionTrajectoryWiseImportanceSampling(
 class ContinuousCumulativeDistributionTrajectoryWiseDoublyRobust(
     BaseCumulativeDistributionOffPolicyEstimator,
 ):
-    """Trajectory-wise Doubly Robust (TDR) for estimating cumulative distribution function (CDF) in discrete-action OPE.
+    """Trajectory-wise Doubly Robust (TDR) for estimating cumulative distribution function (CDF) in continuous-action OPE.
 
     Note
     -------
@@ -869,7 +881,7 @@ class ContinuousCumulativeDistributionTrajectoryWiseDoublyRobust(
     estimator_name: str = "cdf_tdr"
 
     def __post_init__(self):
-        self.action_type = "discrete"
+        self.action_type = "continuous"
 
     def estimate_cumulative_distribution_function(
         self,
@@ -934,7 +946,7 @@ class ContinuousCumulativeDistributionTrajectoryWiseDoublyRobust(
         check_array(
             pscore,
             name="pscore",
-            expected_dim=1,
+            expected_dim=2,
             min_val=0.0,
             max_val=1.0,
         )
@@ -963,11 +975,17 @@ class ContinuousCumulativeDistributionTrajectoryWiseDoublyRobust(
             == reward.shape[0]
             == pscore.shape[0]
             == evaluation_policy_action.shape[0]
-            == initial_state_value_prediction.shape[0]
         ):
             raise ValueError(
                 "Expected `action.shape[0] == reward.shape[0] == pscore.shape[0] == evaluation_policy_trajectory_wise_pscore.shape[0] "
-                "== initial_state_value_prediction.shape[0]`, but found False"
+                ", but found False"
+            )
+        if (
+            reward.shape[0] // step_per_episode
+            != initial_state_value_prediction.shape[0]
+        ):
+            raise ValueError(
+                "Expected `reward.shape[0] // step_per_episode == initial_state_value_prediction`, but found False"
             )
         if action.shape[0] % step_per_episode:
             raise ValueError(
@@ -1004,6 +1022,13 @@ class ContinuousCumulativeDistributionTrajectoryWiseDoublyRobust(
             action_scaler=action_scaler,
             sigma=sigma,
             gamma=gamma,
+        )
+
+        trajectory_wise_reward = np.clip(
+            trajectory_wise_reward, reward_scale.min(), reward_scale.max()
+        )
+        initial_state_value_prediction = np.clip(
+            initial_state_value_prediction, reward_scale.min(), reward_scale.max()
         )
 
         weighted_residual = np.zeros_like(reward_scale)
@@ -1239,7 +1264,9 @@ class ContinuousCumulativeDistributionTrajectoryWiseDoublyRobust(
         cvar = np.zeros_like(alphas)
         for i, alpha in enumerate(alphas):
             idx_ = np.nonzero(cumulative_density > alpha)[0]
-            lower_idx_ = idx_[0] if len(idx_) else -2
+            lower_idx_ = (
+                -2 if len(idx_) == 0 or idx_[0] == len(reward_scale) - 1 else idx_[0]
+            )
             cvar[i] = (np.diff(cumulative_density) * reward_scale[1:])[
                 : lower_idx_ + 1
             ].sum()
@@ -1345,7 +1372,7 @@ class ContinuousCumulativeDistributionTrajectoryWiseDoublyRobust(
 class ContinuousCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSampling(
     ContinuousCumulativeDistributionTrajectoryWiseImportanceSampling,
 ):
-    """Self Normalized Trajectory-wise Importance Sampling (SNTIS) for estimating cumulative distribution function (CDF) in discrete-action OPE.
+    """Self Normalized Trajectory-wise Importance Sampling (SNTIS) for estimating cumulative distribution function (CDF) in continuous-action OPE.
 
     Note
     -------
@@ -1391,7 +1418,7 @@ class ContinuousCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSamp
     estimator_name: str = "cdf_sntis"
 
     def __post_init__(self):
-        self.action_type = "discrete"
+        self.action_type = "continuous"
 
     def estimate_cumulative_distribution_function(
         self,
@@ -1452,7 +1479,7 @@ class ContinuousCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSamp
         check_array(
             pscore,
             name="pscore",
-            expected_dim=1,
+            expected_dim=2,
             min_val=0.0,
             max_val=1.0,
         )
@@ -1464,7 +1491,7 @@ class ContinuousCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSamp
         check_array(
             action,
             name="action",
-            expected_dim=1,
+            expected_dim=2,
         )
         check_array(
             reward_scale,
@@ -1525,6 +1552,10 @@ class ContinuousCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSamp
             sorted_importance_weight.cumsum() / weight_sum, 0, 1
         )
 
+        trajectory_wise_reward = np.clip(
+            trajectory_wise_reward, reward_scale.min(), reward_scale.max()
+        )
+
         histogram = np.histogram(
             trajectory_wise_reward, bins=reward_scale, density=False
         )[0]
@@ -1537,7 +1568,7 @@ class ContinuousCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSamp
 class ContinuousCumulativeDistributionSelfNormalizedTrajectoryWiseDoublyRobust(
     ContinuousCumulativeDistributionTrajectoryWiseDoublyRobust,
 ):
-    """Self Normalized Trajectory-wise Doubly Robust (SNTDR) for estimating cumulative distribution function (CDF) in discrete-action OPE.
+    """Self Normalized Trajectory-wise Doubly Robust (SNTDR) for estimating cumulative distribution function (CDF) in continuous-action OPE.
 
     Note
     -------
@@ -1590,7 +1621,7 @@ class ContinuousCumulativeDistributionSelfNormalizedTrajectoryWiseDoublyRobust(
     estimator_name: str = "cdf_sntdr"
 
     def __post_init__(self):
-        self.action_type = "discrete"
+        self.action_type = "continuous"
 
     def estimate_cumulative_distribution_function(
         self,
@@ -1655,7 +1686,7 @@ class ContinuousCumulativeDistributionSelfNormalizedTrajectoryWiseDoublyRobust(
         check_array(
             pscore,
             name="pscore",
-            expected_dim=1,
+            expected_dim=2,
             min_val=0.0,
             max_val=1.0,
         )
@@ -1664,7 +1695,6 @@ class ContinuousCumulativeDistributionSelfNormalizedTrajectoryWiseDoublyRobust(
             name="evaluation_policy_action",
             expected_dim=2,
             min_val=0.0,
-            max_val=1.0,
         )
         check_array(
             initial_state_value_prediction,
@@ -1681,11 +1711,17 @@ class ContinuousCumulativeDistributionSelfNormalizedTrajectoryWiseDoublyRobust(
             == reward.shape[0]
             == pscore.shape[0]
             == evaluation_policy_action.shape[0]
-            == initial_state_value_prediction.shape[0]
         ):
             raise ValueError(
                 "Expected `action.shape[0] == reward.shape[0] == pscore.shape[0] == evaluation_policy_trajectory_wise_pscore.shape[0] "
-                "== initial_state_value_prediction.shape[0]`, but found False"
+                ", but found False"
+            )
+        if (
+            reward.shape[0] // step_per_episode
+            != initial_state_value_prediction.shape[0]
+        ):
+            raise ValueError(
+                "Expected `reward.shape[0] // step_per_episode == initial_state_value_prediction`, but found False"
             )
         if action.shape[0] % step_per_episode:
             raise ValueError(
@@ -1722,6 +1758,13 @@ class ContinuousCumulativeDistributionSelfNormalizedTrajectoryWiseDoublyRobust(
             action_scaler=action_scaler,
             sigma=sigma,
             gamma=gamma,
+        )
+
+        trajectory_wise_reward = np.clip(
+            trajectory_wise_reward, reward_scale.min(), reward_scale.max()
+        )
+        initial_state_value_prediction = np.clip(
+            initial_state_value_prediction, reward_scale.min(), reward_scale.max()
         )
 
         weighted_residual = np.zeros_like(reward_scale)

@@ -244,12 +244,12 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
             Policy value estimated for each trajectory.
 
         """
-        behavior_policy_pscore = self._calc_behavior_policy_pscore(
+        behavior_policy_pscore = self._calc_behavior_policy_pscore_discrete(
             step_per_episode=step_per_episode,
             pscore=pscore,
             pscore_type="trajectory_wise",
         )
-        evaluation_policy_pscore = self._calc_evaluation_policy_pscore(
+        evaluation_policy_pscore = self._calc_evaluation_policy_pscore_discrete(
             step_per_episode=step_per_episode,
             action=action,
             evaluation_policy_action_dist=evaluation_policy_action_dist,
@@ -573,12 +573,12 @@ class DiscretePerDecisionImportanceSampling(BaseOffPolicyEstimator):
             Policy value estimated for each trajectory.
 
         """
-        behavior_policy_pscore = self._calc_behavior_policy_pscore(
+        behavior_policy_pscore = self._calc_behavior_policy_pscore_discrete(
             step_per_episode=step_per_episode,
             pscore=pscore,
             pscore_type="step_wise",
         )
-        evaluation_policy_pscore = self._calc_evaluation_policy_pscore(
+        evaluation_policy_pscore = self._calc_evaluation_policy_pscore_discrete(
             step_per_episode=step_per_episode,
             action=action,
             evaluation_policy_action_dist=evaluation_policy_action_dist,
@@ -913,12 +913,12 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
             Policy value estimated for each trajectory.
 
         """
-        behavior_policy_pscore = self._calc_behavior_policy_pscore(
+        behavior_policy_pscore = self._calc_behavior_policy_pscore_discrete(
             step_per_episode=step_per_episode,
             pscore=pscore,
             pscore_type="step_wise",
         )
-        evaluation_policy_pscore = self._calc_evaluation_policy_pscore(
+        evaluation_policy_pscore = self._calc_evaluation_policy_pscore_discrete(
             step_per_episode=step_per_episode,
             action=action,
             evaluation_policy_action_dist=evaluation_policy_action_dist,
@@ -931,18 +931,21 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
         reward = reward.reshape((-1, step_per_episode))
         discount = np.full(step_per_episode, gamma).cumprod() / gamma
 
-        state_action_value_prediction = state_action_value_prediction.reshape(
-            (-1, step_per_episode, 2)
+        state_value_prediction = (
+            (state_action_value_prediction * evaluation_policy_action_dist)
+            .sum(axis=1)
+            .reshape((-1, step_per_episode))
         )
-        state_action_value_prediction = np.insert(state_value_prediction, -1, 0, axis=1)
-        state_value_prediction = state_action_value_prediction[:, 1:, 1]
-        state_action_value_prediction = state_action_value_prediction[:, :-1, 0]
+
+        state_action_value_prediction = state_action_value_prediction[
+            np.arange(len(action)), action
+        ].reshape((-1, step_per_episode))
 
         estimated_trajectory_value = (
             discount[np.newaxis, :]
             * (
                 weight * (reward - state_action_value_prediction)
-                + weight_prev * state_action_value_prediction
+                + weight_prev * state_value_prediction
             )
         ).sum(axis=1)
 
@@ -1306,12 +1309,12 @@ class DiscreteSelfNormalizedTrajectoryWiseImportanceSampling(
             Policy value estimated for each trajectory.
 
         """
-        behavior_policy_pscore = self._calc_behavior_policy_pscore(
+        behavior_policy_pscore = self._calc_behavior_policy_pscore_discrete(
             step_per_episode=step_per_episode,
             pscore=pscore,
             pscore_type="trajectory_wise",
         )
-        evaluation_policy_pscore = self._calc_evaluation_policy_pscore(
+        evaluation_policy_pscore = self._calc_evaluation_policy_pscore_discrete(
             step_per_episode=step_per_episode,
             action=action,
             evaluation_policy_action_dist=evaluation_policy_action_dist,
@@ -1415,19 +1418,19 @@ class DiscreteSelfNormalizedPerDecisionImportanceSampling(
             Policy value estimated for each trajectory.
 
         """
-        behavior_policy_pscore = self._calc_behavior_policy_pscore(
+        behavior_policy_pscore = self._calc_behavior_policy_pscore_discrete(
             step_per_episode=step_per_episode,
             pscore=pscore,
             pscore_type="step_wise",
         )
-        evaluation_policy_pscore = self._calc_evaluation_policy_pscore(
+        evaluation_policy_pscore = self._calc_evaluation_policy_pscore_discrete(
             step_per_episode=step_per_episode,
             action=action,
             evaluation_policy_action_dist=evaluation_policy_action_dist,
             pscore_type="step_wise",
         )
         weight = evaluation_policy_pscore / behavior_policy_pscore
-        self_normalized_weight = weight / (weight.mean(axis=1)[np.newaxis, :] + 1e-10)
+        self_normalized_weight = weight / (weight.mean(axis=0)[np.newaxis, :] + 1e-10)
 
         reward = reward.reshape((-1, step_per_episode))
         discount = np.full(step_per_episode, gamma).cumprod() / gamma
@@ -1532,12 +1535,12 @@ class DiscreteSelfNormalizedDoublyRobust(DiscreteDoublyRobust):
             Policy value estimated for each trajectory.
 
         """
-        behavior_policy_pscore = self._calc_behavior_policy_pscore(
+        behavior_policy_pscore = self._calc_behavior_policy_pscore_discrete(
             step_per_episode=step_per_episode,
             pscore=pscore,
             pscore_type="step_wise",
         )
-        evaluation_policy_pscore = self._calc_evaluation_policy_pscore(
+        evaluation_policy_pscore = self._calc_evaluation_policy_pscore_discrete(
             step_per_episode=step_per_episode,
             action=action,
             evaluation_policy_action_dist=evaluation_policy_action_dist,
@@ -1551,18 +1554,21 @@ class DiscreteSelfNormalizedDoublyRobust(DiscreteDoublyRobust):
         reward = reward.reshape((-1, step_per_episode))
         discount = np.full(step_per_episode, gamma).cumprod() / gamma
 
-        state_action_value_prediction = state_action_value_prediction.reshape(
-            (-1, step_per_episode, 2)
+        state_value_prediction = (
+            (state_action_value_prediction * evaluation_policy_action_dist)
+            .sum(axis=1)
+            .reshape((-1, step_per_episode))
         )
-        state_action_value_prediction = np.insert(state_value_prediction, -1, 0, axis=1)
-        state_value_prediction = state_action_value_prediction[:, 1:, 1]
-        state_action_value_prediction = state_action_value_prediction[:, :-1, 0]
+
+        state_action_value_prediction = state_action_value_prediction[
+            np.arange(len(action)), action
+        ].reshape((-1, step_per_episode))
 
         estimated_trajectory_value = (
             discount[np.newaxis, :]
             * (
                 self_normalized_weight * (reward - state_action_value_prediction)
-                + self_normalized_weight_prev * state_action_value_prediction
+                + self_normalized_weight_prev * state_value_prediction
             )
         ).sum(axis=1)
 

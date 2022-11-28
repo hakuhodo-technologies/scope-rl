@@ -102,38 +102,39 @@ class CreateOPEInput:
     def __post_init__(self) -> None:
         "Initialize class."
         check_logged_dataset(self.logged_dataset)
-        self.n_episodes = self.logged_dataset["n_episodes"]
         self.action_type = self.logged_dataset["action_type"]
         self.n_actions = self.logged_dataset["n_actions"]
         self.action_dim = self.logged_dataset["action_dim"]
         self.state_dim = self.logged_dataset["state_dim"]
+        self.n_episodes = self.logged_dataset["n_episodes"]
         self.step_per_episode = self.logged_dataset["step_per_episode"]
+        self.n_samples = self.n_episodes * self.step_per_episode
 
-        self.state = self.logged_dataset["state"].reshape(
-            (-1, self.step_per_episode, self.state_dim)
-        )
-        self.reward = self.logged_dataset["reward"].reshape((-1, self.step_per_episode))
-        self.pscore = self.logged_dataset["pscore"].reshape((-1, self.step_per_episode))
-        self.done = self.logged_dataset["done"].reshape((-1, self.step_per_episode))
-        self.terminal = self.logged_dataset["terminal"].reshape(
-            (-1, self.step_per_episode)
-        )
+        self.state = self.logged_dataset["state"]
+        self.action = self.logged_dataset["action"]
+        self.reward = self.logged_dataset["reward"]
+        self.pscore = self.logged_dataset["pscore"]
+        self.done = self.logged_dataset["done"]
+        self.terminal = self.logged_dataset["terminal"]
+
+        self.state_2d = self.state.reshape((-1, self.step_per_episode, self.state_dim))
+        self.reward_2d = self.reward.reshape((-1, self.step_per_episode))
+        self.pscore_2d = self.pscore.reshape((-1, self.step_per_episode))
+        self.done_2d = self.done.reshape((-1, self.step_per_episode))
+        self.terminal_2d = self.terminal.reshape((-1, self.step_per_episode))
         if self.action_type == "discrete":
-            self.action = self.logged_dataset["action"].reshape(
-                (-1, self.step_per_episode)
-            )
+            self.action_2d = self.action.reshape((-1, self.step_per_episode))
         else:
-            self.action = self.logged_dataset["action"].reshape(
+            self.action_2d = self.action.reshape(
                 (-1, self.step_per_episode, self.action_dim)
             )
-        self.n_samples = len(self.state)
 
         self.mdp_dataset = MDPDataset(
-            observations=self.logged_dataset["state"],
-            actions=self.logged_dataset["action"],
-            rewards=self.logged_dataset["reward"],
-            terminals=self.logged_dataset["done"],
-            episode_terminals=self.logged_dataset["terminal"],
+            observations=self.state,
+            actions=self.action,
+            rewards=self.reward,
+            terminals=self.done,
+            episode_terminals=self.terminal,
             discrete_action=(self.action_type == "discrete"),
         )
 
@@ -240,12 +241,12 @@ class CreateOPEInput:
 
             for k in range(k_fold):
                 if self.action_type == "discrete":
-                    self.fqe[evaluation_policy.name][k] = DiscreteFQE(
-                        algo=evaluation_policy, **self.model_args["fqe"]
+                    self.fqe[evaluation_policy.name].append(
+                        DiscreteFQE(algo=evaluation_policy, **self.model_args["fqe"])
                     )
                 else:
-                    self.fqe[evaluation_policy.name][k] = ContinuousFQE(
-                        algo=evaluation_policy, **self.model_args["fqe"]
+                    self.fqe[evaluation_policy.name].append(
+                        ContinuousFQE(algo=evaluation_policy, **self.model_args["fqe"])
                     )
 
             if k_fold == 1:
@@ -257,8 +258,8 @@ class CreateOPEInput:
                     scorers={},
                 )
             else:
-                all_idx = np.arange(self.n_samples)
-                idx = np.array([self.n_samples + k // k_fold for k in range(k_fold)])
+                all_idx = np.arange(self.n_episodes)
+                idx = np.array([self.n_episodes + k // k_fold for k in range(k_fold)])
                 idx = np.insert(idx, 0, 0)
 
                 for k in range(k_fold):
@@ -266,20 +267,20 @@ class CreateOPEInput:
                     subset_idx_ = np.setdiff1d(all_idx, idx_)
 
                     if self.action_type == "discrete":
-                        action_ = self.action[subset_idx_].flatten()
+                        action_ = self.action_2d[subset_idx_].flatten()
                     else:
-                        action_ = self.action[subset_idx_].reshape(
+                        action_ = self.action_2d[subset_idx_].reshape(
                             (-1, self.action_dim)
                         )
 
                     mdp_dataset_ = MDPDataset(
-                        observations=self.state[subset_idx_].reshape(
+                        observations=self.state_2d[subset_idx_].reshape(
                             (-1, self.state_dim)
                         ),
                         actions=action_,
-                        rewards=self.reward[subset_idx_].flatten(),
-                        terminals=self.done[subset_idx_].flatten(),
-                        episode_terminals=self.terminal[subset_idx_].flatten(),
+                        rewards=self.reward_2d[subset_idx_].flatten(),
+                        terminals=self.done_2d[subset_idx_].flatten(),
+                        episode_terminals=self.terminal_2d[subset_idx_].flatten(),
                         discrete_action=(self.action_type == "discrete"),
                     )
                     self.fqe[evaluation_policy.name][k].fit(
@@ -338,46 +339,46 @@ class CreateOPEInput:
 
             for k in range(k_fold):
                 if self.action_type == "discrete":
-                    self.state_action_dual_function[evaluation_policy.name][
-                        k
-                    ] = DiscreteAugmentedLagrangianStateActionWightValueLearning(
-                        method=method,
-                        q_function=DiscreteQFunction(
-                            n_actions=self.n_actions,
-                            state_dim=self.state_dim,
-                            hidden_dim=self.model_args["hidden_dim"],
+                    self.state_action_dual_function[evaluation_policy.name].append(
+                        DiscreteAugmentedLagrangianStateActionWightValueLearning(
+                            method=method,
+                            q_function=DiscreteQFunction(
+                                n_actions=self.n_actions,
+                                state_dim=self.state_dim,
+                                hidden_dim=self.model_args["hidden_dim"],
+                                device=self.device,
+                            ),
+                            w_function=DiscreteStateActionWeightFunction(
+                                n_actions=self.n_actions,
+                                state_dim=self.state_dim,
+                                hidden_dim=self.model_args["hidden_dim"],
+                            ),
                             device=self.device,
-                        ),
-                        w_function=DiscreteStateActionWeightFunction(
-                            n_actions=self.n_actions,
-                            state_dim=self.state_dim,
-                            hidden_dim=self.model_args["hidden_dim"],
-                        ),
-                        device=self.device,
+                        )
                     )
                 else:
-                    self.state_action_dual_function[evaluation_policy.name][
-                        k
-                    ] = ContinuousAugmentedLagrangianStateActionWightValueLearning(
-                        method=method,
-                        q_function=ContinuousQFunction(
-                            action_dim=self.action_dim,
-                            state_dim=self.state_dim,
-                            hidden_dim=self.model_args["hidden_dim"],
-                        ),
-                        w_function=ContinuousStateActionWeightFunction(
-                            action_dim=self.action_dim,
-                            state_dim=self.state_dim,
-                            hidden_dim=self.model_args["hidden_dim"],
-                        ),
-                        device=self.device,
+                    self.state_action_dual_function[evaluation_policy.name].append(
+                        ContinuousAugmentedLagrangianStateActionWightValueLearning(
+                            method=method,
+                            q_function=ContinuousQFunction(
+                                action_dim=self.action_dim,
+                                state_dim=self.state_dim,
+                                hidden_dim=self.model_args["hidden_dim"],
+                            ),
+                            w_function=ContinuousStateActionWeightFunction(
+                                action_dim=self.action_dim,
+                                state_dim=self.state_dim,
+                                hidden_dim=self.model_args["hidden_dim"],
+                            ),
+                            device=self.device,
+                        )
                     )
 
             if k_fold == 1:
                 self.state_action_dual_function[evaluation_policy.name][0].fit(
-                    state=self.logged_dataset["state"],
-                    action=self.logged_dataset["action"],
-                    reward=self.logged_dataset["reward"],
+                    state=self.state,
+                    action=self.action,
+                    reward=self.reward,
                     evaluation_policy_action=self.obtain_evaluation_policy_action(
                         evaluation_policy=evaluation_policy,
                     ),
@@ -397,8 +398,8 @@ class CreateOPEInput:
                         (-1, self.step_per_episode, self.action_dim)
                     )
 
-                all_idx = np.arange(self.n_samples)
-                idx = np.array([self.n_samples + k // k_fold for k in range(k_fold)])
+                all_idx = np.arange(self.n_episodes)
+                idx = np.array([self.n_episodes + k // k_fold for k in range(k_fold)])
                 idx = np.insert(idx, 0, 0)
 
                 for k in range(k_fold):
@@ -406,12 +407,12 @@ class CreateOPEInput:
                     subset_idx_ = np.setdiff1d(all_idx, idx_)
 
                     if self.action_type == "discrete":
-                        action_ = self.action[subset_idx_].flatten()
+                        action_ = self.action_2d[subset_idx_].flatten()
                         evaluation_policy_action_ = evaluation_policy_action[
                             subset_idx_
                         ].flatten()
                     else:
-                        action_ = self.action[subset_idx_].reshape(
+                        action_ = self.action_2d[subset_idx_].reshape(
                             (-1, self.action_dim)
                         )
                         evaluation_policy_action_ = evaluation_policy_action[
@@ -419,9 +420,9 @@ class CreateOPEInput:
                         ].reshape((-1, self.action_dim))
 
                     self.state_action_dual_function[evaluation_policy.name][k].fit(
-                        state=self.state[subset_idx_].reshape((-1, self.state_dim)),
+                        state=self.state_2d[subset_idx_].reshape((-1, self.state_dim)),
                         action=action_,
-                        reward=self.reward[subset_idx_].flatten(),
+                        reward=self.reward_2d[subset_idx_].flatten(),
                         evaluation_policy_action=evaluation_policy_action_,
                         random_state=random_state,
                         **self.model_args["state_action_dual"],
@@ -471,35 +472,35 @@ class CreateOPEInput:
 
             for k in range(k_fold):
                 if self.action_type == "discrete":
-                    self.state_action_value_function[evaluation_policy.name][
-                        k
-                    ] = DiscreteMinimaxStateActionValueLearning(
-                        q_function=DiscreteQFunction(
-                            n_actions=self.n_actions,
-                            state_dim=self.state_dim,
-                            hidden_dim=self.model_args["hidden_dim"],
+                    self.state_action_value_function[evaluation_policy.name].append(
+                        DiscreteMinimaxStateActionValueLearning(
+                            q_function=DiscreteQFunction(
+                                n_actions=self.n_actions,
+                                state_dim=self.state_dim,
+                                hidden_dim=self.model_args["hidden_dim"],
+                                device=self.device,
+                            ),
                             device=self.device,
-                        ),
-                        device=self.device,
+                        )
                     )
                 else:
-                    self.state_action_value_function[evaluation_policy.name][
-                        k
-                    ] = ContinuousMinimaxStateActionValueLearning(
-                        q_function=ContinuousQFunction(
-                            action_dim=self.action_dim,
-                            state_dim=self.state_dim,
-                            hidden_dim=self.model_args["hidden_dim"],
-                        ),
-                        device=self.device,
+                    self.state_action_value_function[evaluation_policy.name].append(
+                        ContinuousMinimaxStateActionValueLearning(
+                            q_function=ContinuousQFunction(
+                                action_dim=self.action_dim,
+                                state_dim=self.state_dim,
+                                hidden_dim=self.model_args["hidden_dim"],
+                            ),
+                            device=self.device,
+                        )
                     )
 
             if k_fold == 1:
                 self.state_action_value_function[evaluation_policy.name][0].fit(
-                    state=self.logged_dataset["state"],
-                    action=self.logged_dataset["action"],
-                    reward=self.logged_dataset["reward"],
-                    pscore=self.logged_dataset["pscore"],
+                    state=self.state,
+                    action=self.action,
+                    reward=self.reward,
+                    pscore=self.pscore,
                     evaluation_policy_action=self.obtain_evaluation_policy_action(
                         evaluation_policy=evaluation_policy,
                     ),
@@ -519,8 +520,8 @@ class CreateOPEInput:
                         (-1, self.step_per_episode, self.action_dim)
                     )
 
-                all_idx = np.arange(self.n_samples)
-                idx = np.array([self.n_samples + k // k_fold for k in range(k_fold)])
+                all_idx = np.arange(self.n_episodes)
+                idx = np.array([self.n_episodes + k // k_fold for k in range(k_fold)])
                 idx = np.insert(idx, 0, 0)
 
                 for k in range(k_fold):
@@ -528,12 +529,12 @@ class CreateOPEInput:
                     subset_idx_ = np.setdiff1d(all_idx, idx_)
 
                     if self.action_type == "discrete":
-                        action_ = self.action[subset_idx_].flatten()
+                        action_ = self.action_2d[subset_idx_].flatten()
                         evaluation_policy_action_ = evaluation_policy_action[
                             subset_idx_
                         ].flatten()
                     else:
-                        action_ = self.action[subset_idx_].reshape(
+                        action_ = self.action_2d[subset_idx_].reshape(
                             (-1, self.action_dim)
                         )
                         evaluation_policy_action_ = evaluation_policy_action[
@@ -541,10 +542,10 @@ class CreateOPEInput:
                         ].reshape((-1, self.action_dim))
 
                     self.state_action_value_function[evaluation_policy.name][k].fit(
-                        state=self.state[subset_idx_].reshape((-1, self.state_dim)),
+                        state=self.state_2d[subset_idx_].reshape((-1, self.state_dim)),
                         action=action_,
-                        reward=self.reward[subset_idx_].flatten(),
-                        pscore=self.pscore[subset_idx_].flatten(),
+                        reward=self.reward_2d[subset_idx_].flatten(),
+                        pscore=self.pscore_2d[subset_idx_].flatten(),
                         evaluation_policy_action=evaluation_policy_action_,
                         random_state=random_state,
                         **self.model_args["state_action_value"],
@@ -597,34 +598,34 @@ class CreateOPEInput:
 
             for k in range(k_fold):
                 if self.action_type == "discrete":
-                    self.state_action_weight_function[evaluation_policy.name][
-                        k
-                    ] = DiscreteMinimaxStateActionWeightLearning(
-                        w_function=DiscreteStateActionWeightFunction(
-                            n_actions=self.n_actions,
-                            state_dim=self.state_dim,
-                            hidden_dim=self.model_args["hidden_dim"],
+                    self.state_action_weight_function[evaluation_policy.name].append(
+                        DiscreteMinimaxStateActionWeightLearning(
+                            w_function=DiscreteStateActionWeightFunction(
+                                n_actions=self.n_actions,
+                                state_dim=self.state_dim,
+                                hidden_dim=self.model_args["hidden_dim"],
+                                device=self.device,
+                            ),
                             device=self.device,
-                        ),
-                        device=self.device,
+                        )
                     )
                 else:
-                    self.state_action_weight_function[evaluation_policy.name][
-                        k
-                    ] = ContinuousMinimaxStateActionWeightLearning(
-                        w_function=ContinuousStateActionWeightFunction(
-                            action_dim=self.action_dim,
-                            state_dim=self.state_dim,
-                            hidden_dim=self.model_args["hidden_dim"],
-                        ),
-                        device=self.device,
+                    self.state_action_weight_function[evaluation_policy.name].append(
+                        ContinuousMinimaxStateActionWeightLearning(
+                            w_function=ContinuousStateActionWeightFunction(
+                                action_dim=self.action_dim,
+                                state_dim=self.state_dim,
+                                hidden_dim=self.model_args["hidden_dim"],
+                            ),
+                            device=self.device,
+                        )
                     )
 
             if k_fold == 1:
                 self.state_action_weight_function[evaluation_policy.name][0].fit(
-                    state=self.logged_dataset["state"],
-                    action=self.logged_dataset["action"],
-                    reward=self.logged_dataset["reward"],
+                    state=self.state,
+                    action=self.action,
+                    reward=self.reward,
                     evaluation_policy_action=self.obtain_evaluation_policy_action(
                         evaluation_policy=evaluation_policy,
                     ),
@@ -644,8 +645,8 @@ class CreateOPEInput:
                         (-1, self.step_per_episode, self.action_dim)
                     )
 
-                all_idx = np.arange(self.n_samples)
-                idx = np.array([self.n_samples + k // k_fold for k in range(k_fold)])
+                all_idx = np.arange(self.n_episodes)
+                idx = np.array([self.n_episodes + k // k_fold for k in range(k_fold)])
                 idx = np.insert(idx, 0, 0)
 
                 for k in range(k_fold):
@@ -653,12 +654,12 @@ class CreateOPEInput:
                     subset_idx_ = np.setdiff1d(all_idx, idx_)
 
                     if self.action_type == "discrete":
-                        action_ = self.action[subset_idx_].flatten()
+                        action_ = self.action_2d[subset_idx_].flatten()
                         evaluation_policy_action_ = evaluation_policy_action[
                             subset_idx_
                         ].flatten()
                     else:
-                        action_ = self.action[subset_idx_].reshape(
+                        action_ = self.action_2d[subset_idx_].reshape(
                             (-1, self.action_dim)
                         )
                         evaluation_policy_action_ = evaluation_policy_action[
@@ -666,9 +667,9 @@ class CreateOPEInput:
                         ].reshape((-1, self.action_dim))
 
                     self.state_action_weight_function[evaluation_policy.name][k].fit(
-                        state=self.state[subset_idx_].reshape((-1, self.state_dim)),
+                        state=self.state_2d[subset_idx_].reshape((-1, self.state_dim)),
                         action=action_,
-                        reward=self.reward[subset_idx_].flatten(),
+                        reward=self.reward_2d[subset_idx_].flatten(),
                         evaluation_policy_action=evaluation_policy_action_,
                         random_state=random_state,
                         **self.model_args["state_action_weight"],
@@ -722,42 +723,42 @@ class CreateOPEInput:
 
             for k in range(k_fold):
                 if self.action_type == "discrete":
-                    self.state_dual_function[evaluation_policy.name][
-                        k
-                    ] = DiscreteAugmentedLagrangianStateWightValueLearning(
-                        method=method,
-                        v_function=VFunction(
-                            state_dim=self.state_dim,
-                            hidden_dim=self.model_args["hidden_dim"],
-                        ),
-                        w_function=StateWeightFunction(
-                            state_dim=self.state_dim,
-                            hidden_dim=self.model_args["hidden_dim"],
-                        ),
-                        device=self.device,
+                    self.state_dual_function[evaluation_policy.name].append(
+                        DiscreteAugmentedLagrangianStateWightValueLearning(
+                            method=method,
+                            v_function=VFunction(
+                                state_dim=self.state_dim,
+                                hidden_dim=self.model_args["hidden_dim"],
+                            ),
+                            w_function=StateWeightFunction(
+                                state_dim=self.state_dim,
+                                hidden_dim=self.model_args["hidden_dim"],
+                            ),
+                            device=self.device,
+                        )
                     )
                 else:
-                    self.state_dual_function[evaluation_policy.name][
-                        k
-                    ] = ContinuousAugmentedLagrangianStateWightValueLearning(
-                        method=method,
-                        v_function=VFunction(
-                            state_dim=self.state_dim,
-                            hidden_dim=self.model_args["hidden_dim"],
-                        ),
-                        w_function=StateWeightFunction(
-                            state_dim=self.state_dim,
-                            hidden_dim=self.model_args["hidden_dim"],
-                        ),
-                        device=self.device,
+                    self.state_dual_function[evaluation_policy.name].append(
+                        ContinuousAugmentedLagrangianStateWightValueLearning(
+                            method=method,
+                            v_function=VFunction(
+                                state_dim=self.state_dim,
+                                hidden_dim=self.model_args["hidden_dim"],
+                            ),
+                            w_function=StateWeightFunction(
+                                state_dim=self.state_dim,
+                                hidden_dim=self.model_args["hidden_dim"],
+                            ),
+                            device=self.device,
+                        )
                     )
 
             if k_fold == 1:
                 self.state_dual_function[evaluation_policy.name][0].fit(
-                    state=self.logged_dataset["state"],
-                    action=self.logged_dataset["action"],
-                    reward=self.logged_dataset["reward"],
-                    pscore=self.logged_dataset["pscore"],
+                    state=self.state,
+                    action=self.action,
+                    reward=self.reward,
+                    pscore=self.pscore,
                     evaluation_policy_action=self.obtain_evaluation_policy_action(
                         evaluation_policy=evaluation_policy,
                     ),
@@ -777,8 +778,8 @@ class CreateOPEInput:
                         (-1, self.step_per_episode, self.action_dim)
                     )
 
-                all_idx = np.arange(self.n_samples)
-                idx = np.array([self.n_samples + k // k_fold for k in range(k_fold)])
+                all_idx = np.arange(self.n_episodes)
+                idx = np.array([self.n_episodes + k // k_fold for k in range(k_fold)])
                 idx = np.insert(idx, 0, 0)
 
                 for k in range(k_fold):
@@ -786,12 +787,12 @@ class CreateOPEInput:
                     subset_idx_ = np.setdiff1d(all_idx, idx_)
 
                     if self.action_type == "discrete":
-                        action_ = self.action[subset_idx_].flatten()
+                        action_ = self.action_2d[subset_idx_].flatten()
                         evaluation_policy_action_ = evaluation_policy_action[
                             subset_idx_
                         ].flatten()
                     else:
-                        action_ = self.action[subset_idx_].reshape(
+                        action_ = self.action_2d[subset_idx_].reshape(
                             (-1, self.action_dim)
                         )
                         evaluation_policy_action_ = evaluation_policy_action[
@@ -799,10 +800,10 @@ class CreateOPEInput:
                         ].reshape((-1, self.action_dim))
 
                     self.state_dual_function[evaluation_policy.name][k].fit(
-                        state=self.state[subset_idx_].reshape((-1, self.state_dim)),
+                        state=self.state_2d[subset_idx_].reshape((-1, self.state_dim)),
                         action=action_,
-                        reward=self.reward[subset_idx_].flatten(),
-                        pscore=self.pscore[subset_idx_].flatten(),
+                        reward=self.reward_2d[subset_idx_].flatten(),
+                        pscore=self.pscore_2d[subset_idx_].flatten(),
                         evaluation_policy_action=evaluation_policy_action_,
                         random_state=random_state,
                         **self.model_args["state_dual"],
@@ -852,32 +853,32 @@ class CreateOPEInput:
 
             for k in range(k_fold):
                 if self.action_type == "discrete":
-                    self.state_value_function[
-                        evaluation_policy.name
-                    ] = DiscreteMinimaxStateValueLearning(
-                        v_function=VFunction(
-                            state_dim=self.state_dim,
-                            hidden_dim=self.model_args["hidden_dim"],
-                        ),
-                        device=self.device,
+                    self.state_value_function[evaluation_policy.name].append(
+                        DiscreteMinimaxStateValueLearning(
+                            v_function=VFunction(
+                                state_dim=self.state_dim,
+                                hidden_dim=self.model_args["hidden_dim"],
+                            ),
+                            device=self.device,
+                        )
                     )
                 else:
-                    self.state_value_function[
-                        evaluation_policy.name
-                    ] = ContinuousMinimaxStateValueLearning(
-                        v_function=VFunction(
-                            state_dim=self.state_dim,
-                            hidden_dim=self.model_args["hidden_dim"],
-                        ),
-                        device=self.device,
+                    self.state_value_function[evaluation_policy.name].append(
+                        ContinuousMinimaxStateValueLearning(
+                            v_function=VFunction(
+                                state_dim=self.state_dim,
+                                hidden_dim=self.model_args["hidden_dim"],
+                            ),
+                            device=self.device,
+                        )
                     )
 
             if k_fold == 1:
                 self.state_value_function[evaluation_policy.name][0].fit(
-                    state=self.logged_dataset["state"],
-                    action=self.logged_dataset["action"],
-                    reward=self.logged_dataset["reward"],
-                    pscore=self.logged_dataset["pscore"],
+                    state=self.state,
+                    action=self.action,
+                    reward=self.reward,
+                    pscore=self.pscore,
                     evaluation_policy_action=self.obtain_evaluation_policy_action(
                         evaluation_policy=evaluation_policy,
                     ),
@@ -897,8 +898,8 @@ class CreateOPEInput:
                         (-1, self.step_per_episode, self.action_dim)
                     )
 
-                all_idx = np.arange(self.n_samples)
-                idx = np.array([self.n_samples + k // k_fold for k in range(k_fold)])
+                all_idx = np.arange(self.n_episodes)
+                idx = np.array([self.n_episodes + k // k_fold for k in range(k_fold)])
                 idx = np.insert(idx, 0, 0)
 
                 for k in range(k_fold):
@@ -906,12 +907,12 @@ class CreateOPEInput:
                     subset_idx_ = np.setdiff1d(all_idx, idx_)
 
                     if self.action_type == "discrete":
-                        action_ = self.action[subset_idx_].flatten()
+                        action_ = self.action_2d[subset_idx_].flatten()
                         evaluation_policy_action_ = evaluation_policy_action[
                             subset_idx_
                         ].flatten()
                     else:
-                        action_ = self.action[subset_idx_].reshape(
+                        action_ = self.action_2d[subset_idx_].reshape(
                             (-1, self.action_dim)
                         )
                         evaluation_policy_action_ = evaluation_policy_action[
@@ -919,10 +920,10 @@ class CreateOPEInput:
                         ].reshape((-1, self.action_dim))
 
                     self.state_value_function[evaluation_policy.name][k].fit(
-                        state=self.state[subset_idx_].reshape((-1, self.state_dim)),
+                        state=self.state_2d[subset_idx_].reshape((-1, self.state_dim)),
                         action=action_,
-                        reward=self.reward[subset_idx_].flatten(),
-                        pscore=self.pscore[subset_idx_].flatten(),
+                        reward=self.reward_2d[subset_idx_].flatten(),
+                        pscore=self.pscore_2d[subset_idx_].flatten(),
                         evaluation_policy_action=evaluation_policy_action_,
                         random_state=random_state,
                         **self.model_args["state_value"],
@@ -972,34 +973,34 @@ class CreateOPEInput:
 
             for k in range(k_fold):
                 if self.action_type == "discrete":
-                    self.state_weight_function[
-                        evaluation_policy.name
-                    ] = DiscreteMinimaxStateWeightLearning(
-                        w_function=StateWeightFunction(
-                            n_actions=self.n_actions,
-                            state_dim=self.state_dim,
-                            hidden_dim=self.model_args["hidden_dim"],
-                        ),
-                        device=self.device,
+                    self.state_weight_function[evaluation_policy.name].append(
+                        DiscreteMinimaxStateWeightLearning(
+                            w_function=StateWeightFunction(
+                                n_actions=self.n_actions,
+                                state_dim=self.state_dim,
+                                hidden_dim=self.model_args["hidden_dim"],
+                            ),
+                            device=self.device,
+                        )
                     )
                 else:
-                    self.state_weight_function[
-                        evaluation_policy.name
-                    ] = ContinuousMinimaxStateWeightLearning(
-                        w_function=StateWeightFunction(
-                            action_dim=self.action_dim,
-                            state_dim=self.state_dim,
-                            hidden_dim=self.model_args["hidden_dim"],
-                        ),
-                        device=self.device,
+                    self.state_weight_function[evaluation_policy.name].append(
+                        ContinuousMinimaxStateWeightLearning(
+                            w_function=StateWeightFunction(
+                                action_dim=self.action_dim,
+                                state_dim=self.state_dim,
+                                hidden_dim=self.model_args["hidden_dim"],
+                            ),
+                            device=self.device,
+                        )
                     )
 
             if k_fold == 1:
                 self.state_weight_function[evaluation_policy.name][0].fit(
-                    state=self.logged_dataset["state"],
-                    action=self.logged_dataset["action"],
-                    reward=self.logged_dataset["reward"],
-                    pscore=self.logged_dataset["pscore"],
+                    state=self.state,
+                    action=self.action,
+                    reward=self.reward,
+                    pscore=self.pscore,
                     evaluation_policy_action=self.obtain_evaluation_policy_action(
                         evaluation_policy=evaluation_policy,
                     ),
@@ -1019,8 +1020,8 @@ class CreateOPEInput:
                         (-1, self.step_per_episode, self.action_dim)
                     )
 
-                all_idx = np.arange(self.n_samples)
-                idx = np.array([self.n_samples + k // k_fold for k in range(k_fold)])
+                all_idx = np.arange(self.n_episodes)
+                idx = np.array([self.n_episodes + k // k_fold for k in range(k_fold)])
                 idx = np.insert(idx, 0, 0)
 
                 for k in range(k_fold):
@@ -1028,12 +1029,12 @@ class CreateOPEInput:
                     subset_idx_ = np.setdiff1d(all_idx, idx_)
 
                     if self.action_type == "discrete":
-                        action_ = self.action[subset_idx_].flatten()
+                        action_ = self.action_2d[subset_idx_].flatten()
                         evaluation_policy_action_ = evaluation_policy_action[
                             subset_idx_
                         ].flatten()
                     else:
-                        action_ = self.action[subset_idx_].reshape(
+                        action_ = self.action_2d[subset_idx_].reshape(
                             (-1, self.action_dim)
                         )
                         evaluation_policy_action_ = evaluation_policy_action[
@@ -1041,10 +1042,12 @@ class CreateOPEInput:
                         ].reshape((-1, self.action_dim))
 
                         self.state_weight_function[evaluation_policy.name][k].fit(
-                            state=self.state[subset_idx_].reshape((-1, self.state_dim)),
+                            state=self.state_2d[subset_idx_].reshape(
+                                (-1, self.state_dim)
+                            ),
                             action=action_,
-                            reward=self.reward[subset_idx_].flatten(),
-                            pscore=self.pscore[subset_idx_].flatten(),
+                            reward=self.reward_2d[subset_idx_].flatten(),
+                            pscore=self.pscore_2d[subset_idx_].flatten(),
                             evaluation_policy_action=evaluation_policy_action_,
                             random_state=random_state,
                             **self.model_args["state_weight"],
@@ -1070,7 +1073,7 @@ class CreateOPEInput:
         if not isinstance(evaluation_policy, BaseHead):
             raise ValueError("evaluation_policy must be a child class of BaseHead")
 
-        return evaluation_policy.predict(x=self.logged_dataset["state"])
+        return evaluation_policy.sample_action(self.state)
 
     def obtain_evaluation_policy_action_prob_for_observed_state_action(
         self,
@@ -1092,10 +1095,7 @@ class CreateOPEInput:
         if not isinstance(evaluation_policy, BaseHead):
             raise ValueError("evaluation_policy must be a child class of BaseHead")
 
-        return evaluation_policy.calc_pscore_given_action(
-            x=self.logged_dataset["state"],
-            action=self.logged_dataset["action"],
-        )
+        return evaluation_policy.calc_pscore_given_action(self.state, self.action)
 
     def obtain_evaluation_policy_action_dist(
         self,
@@ -1117,11 +1117,7 @@ class CreateOPEInput:
         if not isinstance(evaluation_policy, BaseHead):
             raise ValueError("evaluation_policy must be a child class of BaseHead")
 
-        action_dist = evaluation_policy.calc_action_choice_probability(
-            self.logged_dataset["state"]
-        )
-
-        return action_dist
+        return evaluation_policy.calc_action_choice_probability(self.state)
 
     def obtain_state_action_value_prediction_discrete(
         self,
@@ -1156,7 +1152,7 @@ class CreateOPEInput:
         if not isinstance(evaluation_policy, BaseHead):
             raise ValueError("evaluation_policy must be a child class of BaseHead")
 
-        idx = np.array([self.n_samples + k // k_fold for k in range(k_fold)])
+        idx = np.array([self.n_episodes + k // k_fold for k in range(k_fold)])
         idx = np.insert(idx, 0, 0)
 
         state_action_value_prediction = np.zeros(
@@ -1165,12 +1161,12 @@ class CreateOPEInput:
 
         for k in range(k_fold):
             idx_ = np.arange(idx[k], idx[k + 1])
-            x = self.state[idx_].flatten()
+            x = self.state_2d[idx_].reshape((-1, self.state_dim))
 
             x_ = []
             for i in range(x.shape[0]):
                 x_.append(np.tile(x[i], (self.n_actions, 1)))
-            x_ = np.array(x_).reshape((-1, x.shape[1]))
+            x_ = np.array(x_).reshape((-1, self.state_dim))
             a_ = np.tile(np.arange(self.n_actions), x.shape[0])
 
             if method == "fqe":
@@ -1231,10 +1227,12 @@ class CreateOPEInput:
         if not isinstance(evaluation_policy, BaseHead):
             raise ValueError("evaluation_policy must be a child class of BaseHead")
 
-        idx = np.array([self.n_samples + k // k_fold for k in range(k_fold)])
+        idx = np.array([self.n_episodes + k // k_fold for k in range(k_fold)])
         idx = np.insert(idx, 0, 0)
 
-        evaluation_policy_action = evaluation_policy.predict(self.state)
+        evaluation_policy_action = self.obtain_evaluation_policy_action(
+            evaluation_policy
+        ).reshape((-1, self.step_per_episode, self.action_dim))
         state_action_value_prediction = np.zeros(
             (self.n_episodes, self.step_per_episode, 2)
         )
@@ -1242,9 +1240,11 @@ class CreateOPEInput:
         for k in range(k_fold):
             idx_ = np.arange(idx[k], idx[k + 1])
 
-            state_ = self.state[idx_].reshape((-1, self.state_dim))
-            action_ = self.action[idx_].flatten()
-            evaluation_policy_action_ = evaluation_policy_action[idx_].flatten()
+            state_ = self.state_2d[idx_].reshape((-1, self.state_dim))
+            action_ = self.action_2d[idx_].reshape((-1, self.action_dim))
+            evaluation_policy_action_ = evaluation_policy_action[idx_].reshape(
+                (-1, self.action_dim)
+            )
 
             if method == "fqe":
                 state_action_value_prediction_behavior_ = self.fqe[
@@ -1275,12 +1275,12 @@ class CreateOPEInput:
                 ][k].predict_value(state_, evaluation_policy_action_)
 
             state_action_value_prediction[
-                idx_, 0
+                idx_, :, 0
             ] = state_action_value_prediction_behavior_.reshape(
                 (-1, self.step_per_episode)
             )
             state_action_value_prediction[
-                idx_, 1
+                idx_, :, 1
             ] = state_action_value_prediction_eval_.reshape((-1, self.step_per_episode))
 
         return state_action_value_prediction.reshape((-1, 2))  # (n_samples, 2)
@@ -1325,23 +1325,24 @@ class CreateOPEInput:
                 k_fold=k_fold,
             )
             state_value = np.sum(state_action_value * action_dist, axis=1)
+            state_value = state_value.reshape((-1, self.step_per_episode))
 
         else:
-            idx = np.array([self.n_samples + k // k_fold for k in range(k_fold)])
+            idx = np.array([self.n_episodes + k // k_fold for k in range(k_fold)])
             idx = np.insert(idx, 0, 0)
 
-            state_value = np.zeros(self.n_samples)
+            state_value = np.zeros((self.n_episodes, self.step_per_episode))
 
             for k in range(k_fold):
                 idx_ = np.arange(idx[k], idx[k + 1])
-                state_ = self.state[idx_].reshape((-1, self.state_dim))
+                state_ = self.state_2d[idx_].reshape((-1, self.state_dim))
 
                 state_value_ = self.state_value_function[evaluation_policy.name][
                     k
                 ].predict(
                     state=state_,
                 )
-                state_value[idx_] = state_value_.reshape((-1, self.step_per_episode))
+                state_value[idx_] = state_value_
 
         return state_value[:, 0]  # (n_episodes, )
 
@@ -1382,16 +1383,16 @@ class CreateOPEInput:
                 method=method,
                 evaluation_policy=evaluation_policy,
                 k_fold=k_fold,
-            )
+            )[:, 1].reshape((-1, self.step_per_episode))
         else:
-            idx = np.array([self.n_samples + k // k_fold for k in range(k_fold)])
+            idx = np.array([self.n_episodes + k // k_fold for k in range(k_fold)])
             idx = np.insert(idx, 0, 0)
 
-            state_value = np.zeros(self.n_samples)
+            state_value = np.zeros(self.n_episodes)
 
             for k in range(k_fold):
                 idx_ = np.arange(idx[k], idx[k + 1])
-                state_ = self.state[idx_].reshape((-1, self.state_dim))
+                state_ = self.state_2d[idx_].reshape((-1, self.state_dim))
 
                 state_value_ = self.state_value_function[evaluation_policy.name][
                     k
@@ -1434,15 +1435,17 @@ class CreateOPEInput:
         if not isinstance(evaluation_policy, BaseHead):
             raise ValueError("evaluation_policy must be a child class of BaseHead")
 
-        idx = np.array([self.n_samples + k // k_fold for k in range(k_fold)])
+        idx = np.array([self.n_episodes + k // k_fold for k in range(k_fold)])
         idx = np.insert(idx, 0, 0)
 
-        state_action_weight_prediction = np.zeros((-1, self.step_per_episode))
+        state_action_weight_prediction = np.zeros(
+            (self.n_episodes, self.step_per_episode)
+        )
 
         for k in range(k_fold):
             idx_ = np.arange(idx[k], idx[k + 1])
-            state_ = self.state[idx_].reshape((-1, self.state_dim))
-            action_ = self.action[idx_].flatten()
+            state_ = self.state_2d[idx_].reshape((-1, self.state_dim))
+            action_ = self.action_2d[idx_].flatten()
 
             if method == "dice":
                 state_action_weight_prediction_ = self.state_action_dual_function[
@@ -1492,14 +1495,14 @@ class CreateOPEInput:
         if not isinstance(evaluation_policy, BaseHead):
             raise ValueError("evaluation_policy must be a child class of BaseHead")
 
-        idx = np.array([self.n_samples + k // k_fold for k in range(k_fold)])
+        idx = np.array([self.n_episodes + k // k_fold for k in range(k_fold)])
         idx = np.insert(idx, 0, 0)
 
         state_weight_prediction = np.zeros((self.n_episodes, self.step_per_episode))
 
         for k in range(k_fold):
             idx_ = np.arange(idx[k], idx[k + 1])
-            state_ = self.state[idx_].reshape((-1, self.state_dim))
+            state_ = self.state_2d[idx_].reshape((-1, self.state_dim))
 
             if method == "dice":
                 state_weight_prediction_ = self.state_dual_function[
