@@ -9,6 +9,13 @@ from sklearn.utils import check_scalar, check_random_state
 
 from .types import LoggedDataset, OPEInputDict
 
+# for scalers
+from typing import ClassVar, List
+import gym
+import torch
+from d3rlpy.dataset import MDPDataset, Transition
+from d3rlpy.preprocessing import Scaler, ActionScaler
+
 
 def gaussian_kernel(
     x: np.ndarray,
@@ -387,3 +394,240 @@ class OldGymAPIWrapper:
 
     def __getattr__(self, key) -> Any:
         return object.__getattribute__(self.env, key)
+
+
+class MinMaxActionScaler(ActionScaler):
+    r"""Min-Max normalization action preprocessing.
+    Actions will be normalized in range ``[-1.0, 1.0]``.
+    .. math::
+        a' = (a - \min{a}) / (\max{a} - \min{a}) * 2 - 1
+    .. code-block:: python
+        from d3rlpy.dataset import MDPDataset
+        from d3rlpy.algos import CQL
+        dataset = MDPDataset(observations, actions, rewards, terminals)
+        # initialize algorithm with MinMaxActionScaler
+        cql = CQL(action_scaler='min_max')
+        # scaler is initialized from the given transitions
+        transitions = []
+        for episode in dataset.episodes:
+            transitions += episode.transitions
+        cql.fit(transitions)
+    You can also initialize with :class:`d3rlpy.dataset.MDPDataset` object or
+    manually.
+    .. code-block:: python
+        from d3rlpy.preprocessing import MinMaxActionScaler
+        # initialize with dataset
+        scaler = MinMaxActionScaler(dataset)
+        # initialize manually
+        minimum = actions.min(axis=0)
+        maximum = actions.max(axis=0)
+        action_scaler = MinMaxActionScaler(minimum=minimum, maximum=maximum)
+        cql = CQL(action_scaler=action_scaler)
+    Args:
+        dataset (d3rlpy.dataset.MDPDataset): dataset object.
+        min (numpy.ndarray): minimum values at each entry.
+        max (numpy.ndarray): maximum values at each entry.
+    """
+
+    TYPE: ClassVar[str] = "min_max"
+    _minimum: Optional[np.ndarray]
+    _maximum: Optional[np.ndarray]
+
+    def __init__(
+        self,
+        dataset: Optional[MDPDataset] = None,
+        maximum: Optional[np.ndarray] = None,
+        minimum: Optional[np.ndarray] = None,
+    ):
+        self._minimum = None
+        self._maximum = None
+        if dataset:
+            transitions = []
+            for episode in dataset.episodes:
+                transitions += episode.transitions
+            self.fit(transitions)
+        elif maximum is not None and minimum is not None:
+            self._minimum = np.asarray(minimum)
+            self._maximum = np.asarray(maximum)
+
+    def fit(self, transitions: List[Transition]) -> None:
+        if self._minimum is not None and self._maximum is not None:
+            return
+
+        for i, transition in enumerate(transitions):
+            action = np.asarray(transition.action)
+            if i == 0:
+                minimum = action
+                maximum = action
+            else:
+                minimum = np.minimum(minimum, action)
+                maximum = np.maximum(maximum, action)
+
+        self._minimum = minimum.reshape((1,) + minimum.shape)
+        self._maximum = maximum.reshape((1,) + maximum.shape)
+
+    def fit_with_env(self, env: gym.Env) -> None:
+        if self._minimum is not None and self._maximum is not None:
+            return
+
+        assert isinstance(env.action_space, gym.spaces.Box)
+        shape = env.action_space.shape
+        low = np.asarray(env.action_space.low)
+        high = np.asarray(env.action_space.high)
+        self._minimum = low.reshape((1,) + shape)
+        self._maximum = high.reshape((1,) + shape)
+
+    def transform(self, action: torch.Tensor) -> torch.Tensor:
+        assert self._minimum is not None and self._maximum is not None
+        minimum = torch.tensor(self._minimum, dtype=torch.float32, device=action.device)
+        maximum = torch.tensor(self._maximum, dtype=torch.float32, device=action.device)
+        # transform action into [-1.0, 1.0]
+        return ((action - minimum) / (maximum - minimum)) * 2.0 - 1.0
+
+    def reverse_transform(self, action: torch.Tensor) -> torch.Tensor:
+        assert self._minimum is not None and self._maximum is not None
+        minimum = torch.tensor(self._minimum, dtype=torch.float32, device=action.device)
+        maximum = torch.tensor(self._maximum, dtype=torch.float32, device=action.device)
+        # transform action from [-1.0, 1.0]
+        return ((maximum - minimum) * ((action + 1.0) / 2.0)) + minimum
+
+    def transform_numpy(self, action: np.ndarray) -> np.ndarray:
+        assert self._minimum is not None and self._maximum is not None
+        minimum, maximum = self._minimum, self._maximum
+        # transform action into [-1.0, 1.0]
+        return ((action - minimum) / (maximum - minimum)) * 2.0 - 1.0
+
+    def reverse_transform_numpy(self, action: np.ndarray) -> np.ndarray:
+        assert self._minimum is not None and self._maximum is not None
+        minimum, maximum = self._minimum, self._maximum
+        # transform action from [-1.0, 1.0]
+        return ((maximum - minimum) * ((action + 1.0) / 2.0)) + minimum
+
+    def get_params(self, deep: bool = False) -> Dict[str, Any]:
+        if self._minimum is not None:
+            minimum = self._minimum.copy() if deep else self._minimum
+        else:
+            minimum = None
+
+        if self._maximum is not None:
+            maximum = self._maximum.copy() if deep else self._maximum
+        else:
+            maximum = None
+
+        return {"minimum": minimum, "maximum": maximum}
+
+
+class MinMaxScaler(Scaler):
+    r"""Min-Max normalization preprocessing.
+    .. math::
+        x' = (x - \min{x}) / (\max{x} - \min{x})
+    .. code-block:: python
+        from d3rlpy.dataset import MDPDataset
+        from d3rlpy.algos import CQL
+        dataset = MDPDataset(observations, actions, rewards, terminals)
+        # initialize algorithm with MinMaxScaler
+        cql = CQL(scaler='min_max')
+        # scaler is initialized from the given transitions
+        transitions = []
+        for episode in dataset.episodes:
+            transitions += episode.transitions
+        cql.fit(transitions)
+    You can also initialize with :class:`d3rlpy.dataset.MDPDataset` object or
+    manually.
+    .. code-block:: python
+        from d3rlpy.preprocessing import MinMaxScaler
+        # initialize with dataset
+        scaler = MinMaxScaler(dataset)
+        # initialize manually
+        minimum = observations.min(axis=0)
+        maximum = observations.max(axis=0)
+        scaler = MinMaxScaler(minimum=minimum, maximum=maximum)
+        cql = CQL(scaler=scaler)
+    Args:
+        dataset (d3rlpy.dataset.MDPDataset): dataset object.
+        min (numpy.ndarray): minimum values at each entry.
+        max (numpy.ndarray): maximum values at each entry.
+    """
+
+    TYPE: ClassVar[str] = "min_max"
+    _minimum: Optional[np.ndarray]
+    _maximum: Optional[np.ndarray]
+
+    def __init__(
+        self,
+        dataset: Optional[MDPDataset] = None,
+        maximum: Optional[np.ndarray] = None,
+        minimum: Optional[np.ndarray] = None,
+    ):
+        self._minimum = None
+        self._maximum = None
+        if dataset:
+            transitions = []
+            for episode in dataset.episodes:
+                transitions += episode.transitions
+            self.fit(transitions)
+        elif maximum is not None and minimum is not None:
+            self._minimum = np.asarray(minimum)
+            self._maximum = np.asarray(maximum)
+
+    def fit(self, transitions: List[Transition]) -> None:
+        if self._minimum is not None and self._maximum is not None:
+            return
+
+        for i, transition in enumerate(transitions):
+            observation = np.asarray(transition.observation)
+            if i == 0:
+                minimum = observation
+                maximum = observation
+            else:
+                minimum = np.minimum(minimum, observation)
+                maximum = np.maximum(maximum, observation)
+
+        self._minimum = minimum.reshape((1,) + minimum.shape)
+        self._maximum = maximum.reshape((1,) + maximum.shape)
+
+    def fit_with_env(self, env: gym.Env) -> None:
+        if self._minimum is not None and self._maximum is not None:
+            return
+
+        assert isinstance(env.observation_space, gym.spaces.Box)
+        shape = env.observation_space.shape
+        low = np.asarray(env.observation_space.low)
+        high = np.asarray(env.observation_space.high)
+        self._minimum = low.reshape((1,) + shape)
+        self._maximum = high.reshape((1,) + shape)
+
+    def transform(self, x: torch.Tensor) -> torch.Tensor:
+        assert self._minimum is not None and self._maximum is not None
+        minimum = torch.tensor(self._minimum, dtype=torch.float32, device=x.device)
+        maximum = torch.tensor(self._maximum, dtype=torch.float32, device=x.device)
+        return (x - minimum) / (maximum - minimum)
+
+    def reverse_transform(self, x: torch.Tensor) -> torch.Tensor:
+        assert self._minimum is not None and self._maximum is not None
+        minimum = torch.tensor(self._minimum, dtype=torch.float32, device=x.device)
+        maximum = torch.tensor(self._maximum, dtype=torch.float32, device=x.device)
+        return ((maximum - minimum) * x) + minimum
+
+    def transform_numpy(self, x: np.ndarray) -> np.ndarray:
+        assert self._minimum is not None and self._maximum is not None
+        minimum, maximum = self._minimum, self._maximum
+        return (x - minimum) / (maximum - minimum)
+
+    def reverse_transform_numpy(self, x: torch.Tensor) -> torch.Tensor:
+        assert self._minimum is not None and self._maximum is not None
+        minimum, maximum = self._minimum, self._maximum
+        return ((maximum - minimum) * x) + minimum
+
+    def get_params(self, deep: bool = False) -> Dict[str, Any]:
+        if self._maximum is not None:
+            maximum = self._maximum.copy() if deep else self._maximum
+        else:
+            maximum = None
+
+        if self._minimum is not None:
+            minimum = self._minimum.copy() if deep else self._minimum
+        else:
+            minimum = None
+
+        return {"maximum": maximum, "minimum": minimum}
