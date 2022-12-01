@@ -11,7 +11,6 @@ from sklearn.utils import check_scalar
 
 from pandas import DataFrame
 import matplotlib.pyplot as plt
-from matplotlib.legend import _get_legend_handles_labels
 
 from .estimators_base import (
     BaseOffPolicyEstimator,
@@ -56,6 +55,10 @@ class OffPolicyEvaluation:
 
     sigma: float, default=1.0
         Bandwidth hyperparameter of gaussian kernel for continuous action space.
+
+    n_step_pdis: int, default=0 (>= 0)
+        Number of previous steps to use per-decision importance weight in marginal OPE estimators.
+        When zero is given, the estimator corresponds to the pure state(-action) marginal IS.
 
     Examples
     ----------
@@ -113,7 +116,7 @@ class OffPolicyEvaluation:
             )
 
         # data collection
-        >>> logged_dataset = dataset.obtain_trajectories(n_episodes=100, obtain_info=True)
+        >>> logged_dataset = dataset.obtain_trajectories(n_trajectories=100, obtain_info=True)
 
         # evaluation policy
         >>> ddqn_ = DiscreteEpsilonGreedyHead(
@@ -138,7 +141,7 @@ class OffPolicyEvaluation:
         >>> input_dict = prep.obtain_whole_inputs(
                 evaluation_policies=[ddqn_, random_],
                 env=env,
-                n_episodes_on_policy_evaluation=100,
+                n_trajectories_on_policy_evaluation=100,
                 random_state=12345,
             )
 
@@ -174,11 +177,12 @@ class OffPolicyEvaluation:
     ope_estimators: List[BaseOffPolicyEstimator]
     action_scaler: Optional[Union[float, np.ndarray]] = None
     sigma: float = 1.0
+    n_step_pdis: int = 0
 
     def __post_init__(self) -> None:
         "Initialize class."
         check_logged_dataset(self.logged_dataset)
-        self.step_per_episode = self.logged_dataset["step_per_episode"]
+        self.step_per_trajectory = self.logged_dataset["step_per_trajectory"]
         self.action_type = self.logged_dataset["action_type"]
 
         self.ope_estimators_ = dict()
@@ -197,14 +201,14 @@ class OffPolicyEvaluation:
 
         self.behavior_policy_value = (
             self.logged_dataset["reward"]
-            .reshape((-1, self.step_per_episode))
+            .reshape((-1, self.step_per_trajectory))
             .sum(axis=1)
             .mean()
         ) + 1e-10  # to avoid devision by zero
 
         if self.action_type == "discrete":
             self.input_dict_ = {
-                "step_per_episode": self.step_per_episode,
+                "step_per_trajectory": self.step_per_trajectory,
                 "action": self.logged_dataset["action"].astype(int),
                 "reward": self.logged_dataset["reward"],
                 "pscore": self.logged_dataset["pscore"],
@@ -228,7 +232,7 @@ class OffPolicyEvaluation:
             check_scalar(self.sigma, name="sigma", target_type=float, min_val=0.0)
 
             self.input_dict_ = {
-                "step_per_episode": self.step_per_episode,
+                "step_per_trajectory": self.step_per_trajectory,
                 "action": self.logged_dataset["action"].astype(int),
                 "reward": self.logged_dataset["reward"],
                 "pscore": self.logged_dataset["pscore"],
@@ -301,6 +305,7 @@ class OffPolicyEvaluation:
                 ] = estimator.estimate_policy_value(
                     **input_dict[eval_policy],
                     **self.input_dict_,
+                    n_step_pdis=self.n_step_pdis,
                 )
         return defaultdict_to_dict(policy_value_dict)
 
@@ -387,6 +392,7 @@ class OffPolicyEvaluation:
                 ] = estimator.estimate_interval(
                     **input_dict[eval_policy],
                     **self.input_dict_,
+                    n_step_pdis=self.n_step_pdis,
                     alpha=alpha,
                     ci=ci,
                     n_bootstrap_samples=n_bootstrap_samples,
@@ -926,7 +932,7 @@ class CumulativeDistributionOffPolicyEvaluation:
     action_scaler: {float, array-like of shape (action_dim, )}, default=None
         Scaling factor of continuous action space.
 
-    sigma: float, default=1.0
+    sigma: float, default=1.0 (> 0)
         Bandwidth hyperparameter of gaussian kernel for continuous action space.
 
     Examples
@@ -985,7 +991,7 @@ class CumulativeDistributionOffPolicyEvaluation:
             )
 
         # data collection
-        >>> logged_dataset = dataset.obtain_trajectories(n_episodes=100, obtain_info=True)
+        >>> logged_dataset = dataset.obtain_trajectories(n_trajectories=100, obtain_info=True)
 
         # evaluation policy
         >>> ddqn_ = DiscreteEpsilonGreedyHead(
@@ -1010,7 +1016,7 @@ class CumulativeDistributionOffPolicyEvaluation:
         >>> input_dict = prep.obtain_whole_inputs(
                 evaluation_policies=[ddqn_, random_],
                 env=env,
-                n_episodes_on_policy_evaluation=100,
+                n_trajectories_on_policy_evaluation=100,
                 random_state=12345,
             )
 
@@ -1054,7 +1060,7 @@ class CumulativeDistributionOffPolicyEvaluation:
     def __post_init__(self) -> None:
         "Initialize class."
         check_logged_dataset(self.logged_dataset)
-        self.step_per_episode = self.logged_dataset["step_per_episode"]
+        self.step_per_trajectory = self.logged_dataset["step_per_trajectory"]
         self.action_type = self.logged_dataset["action_type"]
 
         self.ope_estimators_ = dict()
@@ -1103,14 +1109,14 @@ class CumulativeDistributionOffPolicyEvaluation:
 
         self.behavior_policy_value = (
             self.logged_dataset["reward"]
-            .reshape((-1, self.step_per_episode))
+            .reshape((-1, self.step_per_trajectory))
             .sum(axis=1)
             .mean()
         ) + 1e-10  # to avoid devision by zero
 
         if self.action_type == "discrete":
             self.input_dict_ = {
-                "step_per_episode": self.step_per_episode,
+                "step_per_trajectory": self.step_per_trajectory,
                 "action": self.logged_dataset["action"].astype(int),
                 "reward": self.logged_dataset["reward"],
                 "pscore": self.logged_dataset["pscore"],
@@ -1134,7 +1140,7 @@ class CumulativeDistributionOffPolicyEvaluation:
             check_scalar(self.sigma, name="sigma", target_type=float, min_val=0.0)
 
             self.input_dict_ = {
-                "step_per_episode": self.step_per_episode,
+                "step_per_trajectory": self.step_per_trajectory,
                 "action": self.logged_dataset["action"].astype(int),
                 "reward": self.logged_dataset["reward"],
                 "pscore": self.logged_dataset["pscore"],
@@ -1184,7 +1190,7 @@ class CumulativeDistributionOffPolicyEvaluation:
         else:
             reward = (
                 self.logged_dataset["reward"]
-                .reshape((-1, self.step_per_episode))
+                .reshape((-1, self.step_per_trajectory))
                 .sum(axis=1)
             )
             reward_scale = np.sort(np.unique(reward))

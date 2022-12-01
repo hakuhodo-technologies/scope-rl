@@ -25,7 +25,9 @@ def visualize_on_policy_policy_value(
     env: gym.Env,
     policies: List[Union[AlgoBase, BaseHead]],
     policy_names: List[str],
-    n_episodes: int = 100,
+    n_trajectories: int = 100,
+    step_per_trajectory: Optional[int] = None,
+    evaluate_on_stationary_distribution: bool = False,
     gamma: float = 1.0,
     alpha: float = 0.05,
     n_bootstrap_samples: int = 100,
@@ -46,8 +48,15 @@ def visualize_on_policy_policy_value(
     policy_names: list of str
         Name of policies.
 
-    n_episodes: int, default=100 (> 0)
+    n_trajectories: int, default=100 (> 0)
         Number of trajectories to rollout.
+
+    step_per_trajectory: int, default=None (> 0)
+        Number of timesteps in an trajectory.
+
+    evaluate_on_stationary_distribution: bool, default=False
+        Whether to evaluate policy on stationary distribution.
+        When True, evaluation policy is evaluated by rollout without resetting environment at each trajectory.
 
     gamma: float, default=1.0
         Discount factor. The value should be within `(0, 1]`.
@@ -87,7 +96,9 @@ def visualize_on_policy_policy_value(
         on_policy_Policy_value_dict[name] = rollout_policy_online(
             env=env,
             policy=policy,
-            n_episodes=n_episodes,
+            n_trajectories=n_trajectories,
+            step_per_trajectory=step_per_trajectory,
+            evaluate_on_stationary_distribution=evaluate_on_stationary_distribution,
             gamma=gamma,
             random_state=random_state,
         )
@@ -113,7 +124,9 @@ def visualize_on_policy_policy_value_with_variance(
     env: gym.Env,
     policies: List[Union[AlgoBase, BaseHead]],
     policy_names: List[str],
-    n_episodes: int = 100,
+    n_trajectories: int = 100,
+    step_per_trajectory: Optional[int] = None,
+    evaluate_on_stationary_distribution: bool = False,
     gamma: float = 1.0,
     alpha: float = 0.05,
     random_state: Optional[int] = None,
@@ -133,8 +146,15 @@ def visualize_on_policy_policy_value_with_variance(
     policy_names: list of str
         Name of policies.
 
-    n_episodes: int, default=100 (> 0)
+    n_trajectories: int, default=100 (> 0)
         Number of trajectories to rollout.
+
+    step_per_trajectory: int, default=None (> 0)
+        Number of timesteps in an trajectory.
+
+    evaluate_on_stationary_distribution: bool, default=False
+        Whether to evaluate policy on stationary distribution.
+        When True, evaluation policy is evaluated by rollout without resetting environment at each trajectory.
 
     gamma: float, default=1.0
         Discount factor. The value should be within `(0, 1]`.
@@ -172,7 +192,9 @@ def visualize_on_policy_policy_value_with_variance(
         statistics_dict = calc_on_policy_statistics(
             env=env,
             policy=policy,
-            n_episodes=n_episodes,
+            n_trajectories=n_trajectories,
+            step_per_trajectory=step_per_trajectory,
+            evaluate_on_stationary_distribution=evaluate_on_stationary_distribution,
             gamma=gamma,
             quartile_alpha=alpha,
             random_state=random_state,
@@ -218,7 +240,9 @@ def visualize_on_policy_cumulative_distribution_function(
     env: gym.Env,
     policies: List[Union[AlgoBase, BaseHead]],
     policy_names: List[str],
-    n_episodes: int = 100,
+    n_trajectories: int = 100,
+    step_per_trajectory: Optional[int] = None,
+    evaluate_on_stationary_distribution: bool = False,
     gamma: float = 1.0,
     use_custom_reward_scale: bool = False,
     scale_min: Optional[float] = None,
@@ -239,8 +263,15 @@ def visualize_on_policy_cumulative_distribution_function(
     policy: {AlgoBase, BaseHead}
         A policy to be evaluated.
 
-    n_episodes: int, default=100 (> 0)
+    n_trajectories: int, default=100 (> 0)
         Number of trajectories to rollout.
+
+    step_per_trajectory: int, default=None (> 0)
+        Number of timesteps in an trajectory.
+
+    evaluate_on_stationary_distribution: bool, default=False
+        Whether to evaluate policy on stationary distribution.
+        When True, evaluation policy is evaluated by rollout without resetting environment at each trajectory.
 
     gamma: float, default=1.0
         Discount factor. The value should be within `(0, 1]`.
@@ -288,7 +319,9 @@ def visualize_on_policy_cumulative_distribution_function(
         cdf, reward_scale = calc_on_policy_cumulative_distribution_function(
             env=env,
             policy=policy,
-            n_episodes=n_episodes,
+            n_trajectories=n_trajectories,
+            step_per_trajectory=step_per_trajectory,
+            evaluate_on_stationary_distribution=evaluate_on_stationary_distribution,
             gamma=gamma,
             scale_min=scale_min,
             scale_max=scale_max,
@@ -315,7 +348,9 @@ def visualize_on_policy_conditional_value_at_risk(
     env: gym.Env,
     policies: List[Union[AlgoBase, BaseHead]],
     policy_names: List[str],
-    n_episodes: int = 100,
+    n_trajectories: int = 100,
+    step_per_trajectory: Optional[int] = None,
+    evaluate_on_stationary_distribution: bool = False,
     gamma: float = 1.0,
     alphas: np.ndarray = np.linspace(0, 1, 20),
     use_custom_reward_scale: bool = False,
@@ -337,8 +372,15 @@ def visualize_on_policy_conditional_value_at_risk(
     policy: {AlgoBase, BaseHead}
         A policy to be evaluated.
 
-    n_episodes: int, default=100 (> 0)
+    n_trajectories: int, default=100 (> 0)
         Number of trajectories to rollout.
+
+    step_per_trajectory: int, default=None (> 0)
+        Number of timesteps in an trajectory.
+
+    evaluate_on_stationary_distribution: bool, default=False
+        Whether to evaluate policy on stationary distribution.
+        When True, evaluation policy is evaluated by rollout without resetting environment at each trajectory.
 
     gamma: float, default=1.0
         Discount factor. The value should be within `(0, 1]`.
@@ -389,7 +431,9 @@ def visualize_on_policy_conditional_value_at_risk(
         cvar = calc_on_policy_conditional_value_at_risk(
             env=env,
             policy=policy,
-            n_episodes=n_episodes,
+            n_trajectories=n_trajectories,
+            step_per_trajectory=step_per_trajectory,
+            evaluate_on_stationary_distribution=evaluate_on_stationary_distribution,
             gamma=gamma,
             alphas=alphas,
             scale_min=scale_min,
@@ -417,7 +461,9 @@ def visualize_on_policy_interquartile_range(
     env: gym.Env,
     policies: List[Union[AlgoBase, BaseHead]],
     policy_names: List[str],
-    n_episodes: int = 100,
+    n_trajectories: int = 100,
+    step_per_trajectory: Optional[int] = None,
+    evaluate_on_stationary_distribution: bool = False,
     gamma: float = 1.0,
     alpha: float = 0.05,
     use_custom_reward_scale: bool = False,
@@ -438,8 +484,15 @@ def visualize_on_policy_interquartile_range(
     policy: {AlgoBase, BaseHead}
         A policy to be evaluated.
 
-    n_episodes: int, default=100 (> 0)
+    n_trajectories: int, default=100 (> 0)
         Number of trajectories to rollout.
+
+    step_per_trajectory: int, default=None (> 0)
+        Number of timesteps in an trajectory.
+
+    evaluate_on_stationary_distribution: bool, default=False
+        Whether to evaluate policy on stationary distribution.
+        When True, evaluation policy is evaluated by rollout without resetting environment at each trajectory.
 
     gamma: float, default=1.0
         Discount factor. The value should be within `(0, 1]`.
@@ -495,7 +548,9 @@ def visualize_on_policy_interquartile_range(
         statistics_dict = calc_on_policy_statistics(
             env=env,
             policy=policy,
-            n_episodes=n_episodes,
+            n_trajectories=n_trajectories,
+            step_per_trajectory=step_per_trajectory,
+            evaluate_on_stationary_distribution=evaluate_on_stationary_distribution,
             gamma=gamma,
             quartile_alpha=alpha,
             scale_min=scale_min,
@@ -558,7 +613,9 @@ def visualize_on_policy_interquartile_range(
 def calc_on_policy_statistics(
     env: gym.Env,
     policy: Union[AlgoBase, BaseHead],
-    n_episodes: int = 100,
+    n_trajectories: int = 100,
+    step_per_trajectory: Optional[int] = None,
+    evaluate_on_stationary_distribution: bool = False,
     gamma: float = 1.0,
     quartile_alpha: float = 0.05,
     cvar_alpha: float = 0.05,
@@ -578,8 +635,15 @@ def calc_on_policy_statistics(
     policy: {AlgoBase, BaseHead}
         A policy to be evaluated.
 
-    n_episodes: int, default=100 (> 0)
+    n_trajectories: int, default=100 (> 0)
         Number of trajectories to rollout.
+
+    step_per_trajectory: int, default=None (> 0)
+        Number of timesteps in an trajectory.
+
+    evaluate_on_stationary_distribution: bool, default=False
+        Whether to evaluate policy on stationary distribution.
+        When True, evaluation policy is evaluated by rollout without resetting environment at each trajectory.
 
     gamma: float, default=1.0
         Discount factor. The value should be within `(0, 1]`.
@@ -659,7 +723,9 @@ def calc_on_policy_statistics(
     on_policy_policy_values = rollout_policy_online(
         env=env,
         policy=policy,
-        n_episodes=n_episodes,
+        n_trajectories=n_trajectories,
+        step_per_trajectory=step_per_trajectory,
+        evaluate_on_stationary_distribution=evaluate_on_stationary_distribution,
         gamma=gamma,
         random_state=random_state,
     )
@@ -717,10 +783,12 @@ def calc_on_policy_statistics(
 def calc_on_policy_policy_value(
     env: gym.Env,
     policy: Union[AlgoBase, BaseHead],
-    use_bootstrap: bool = False,
-    n_episodes: int = 100,
+    n_trajectories: int = 100,
+    step_per_trajectory: Optional[int] = None,
+    evaluate_on_stationary_distribution: bool = False,
     gamma: float = 1.0,
     alpha: float = 0.05,
+    use_bootstrap: bool = False,
     n_bootstrap_samples: int = 100,
     random_state: Optional[int] = None,
 ):
@@ -734,17 +802,24 @@ def calc_on_policy_policy_value(
     policy: {AlgoBase, BaseHead}
         A policy to be evaluated.
 
-    use_bootstrap: bool, default=False
-        Whether to use bootstrap sampling or not.
+    n_trajectories: int, default=100 (> 0)
+        Number of trajectories to rollout.
+
+    step_per_trajectory: int, default=None (> 0)
+        Number of timesteps in an trajectory.
+
+    evaluate_on_stationary_distribution: bool, default=False
+        Whether to evaluate policy on stationary distribution.
+        When True, evaluation policy is evaluated by rollout without resetting environment at each trajectory.
 
     gamma: float, default=1.0
         Discount factor. The value should be within `(0, 1]`.
 
-    n_episodes: int, default=100 (> 0)
-        Number of trajectories to rollout.
-
     alpha: float, default=0.05
         Significance level. The value should be within `(0, 1]`.
+
+    use_bootstrap: bool, default=False
+        Whether to use bootstrap sampling or not.
 
     n_bootstrap_samples: int, default=10000 (> 0)
         Number of resampling performed in the bootstrap procedure.
@@ -762,7 +837,9 @@ def calc_on_policy_policy_value(
         on_policy_policy_value = calc_on_policy_policy_value_interval(
             env=env,
             policy=policy,
-            n_episodes=n_episodes,
+            n_trajectories=n_trajectories,
+            step_per_trajectory=step_per_trajectory,
+            evaluate_on_stationary_distribution=evaluate_on_stationary_distribution,
             gamma=gamma,
             alpha=alpha,
             n_bootstrap_samples=n_bootstrap_samples,
@@ -772,7 +849,9 @@ def calc_on_policy_policy_value(
         on_policy_policy_value = rollout_policy_online(
             env=env,
             policy=policy,
-            n_episodes=n_episodes,
+            n_trajectories=n_trajectories,
+            step_per_trajectory=step_per_trajectory,
+            evaluate_on_stationary_distribution=evaluate_on_stationary_distribution,
             gamma=gamma,
             random_state=random_state,
         ).mean()
@@ -782,7 +861,9 @@ def calc_on_policy_policy_value(
 def calc_on_policy_policy_value_interval(
     env: gym.Env,
     policy: Union[AlgoBase, BaseHead],
-    n_episodes: int = 100,
+    n_trajectories: int = 100,
+    step_per_trajectory: Optional[int] = None,
+    evaluate_on_stationary_distribution: bool = False,
     gamma: float = 1.0,
     alpha: float = 0.05,
     n_bootstrap_samples: int = 100,
@@ -798,8 +879,15 @@ def calc_on_policy_policy_value_interval(
     policy: {AlgoBase, BaseHead}
         A policy to be evaluated.
 
-    n_episodes: int, default=100 (> 0)
+    n_trajectories: int, default=100 (> 0)
         Number of trajectories to rollout.
+
+    step_per_trajectory: int, default=None (> 0)
+        Number of timesteps in an trajectory.
+
+    evaluate_on_stationary_distribution: bool, default=False
+        Whether to evaluate policy on stationary distribution.
+        When True, evaluation policy is evaluated by rollout without resetting environment at each trajectory.
 
     gamma: float, default=1.0
         Discount factor. The value should be within `(0, 1]`.
@@ -822,7 +910,9 @@ def calc_on_policy_policy_value_interval(
     on_policy_policy_values = rollout_policy_online(
         env=env,
         policy=policy,
-        n_episodes=n_episodes,
+        n_trajectories=n_trajectories,
+        step_per_trajectory=step_per_trajectory,
+        evaluate_on_stationary_distribution=evaluate_on_stationary_distribution,
         gamma=gamma,
         random_state=random_state,
     )
@@ -837,7 +927,9 @@ def calc_on_policy_policy_value_interval(
 def calc_on_policy_variance(
     env: gym.Env,
     policy: Union[AlgoBase, BaseHead],
-    n_episodes: int = 100,
+    n_trajectories: int = 100,
+    step_per_trajectory: Optional[int] = None,
+    evaluate_on_stationary_distribution: bool = False,
     gamma: float = 1.0,
     random_state: Optional[int] = None,
 ):
@@ -851,8 +943,15 @@ def calc_on_policy_variance(
     policy: {AlgoBase, BaseHead}
         A policy to be evaluated.
 
-    n_episodes: int, default=100 (> 0)
+    n_trajectories: int, default=100 (> 0)
         Number of trajectories to rollout.
+
+    step_per_trajectory: int, default=None (> 0)
+        Number of timesteps in an trajectory.
+
+    evaluate_on_stationary_distribution: bool, default=False
+        Whether to evaluate policy on stationary distribution.
+        When True, evaluation policy is evaluated by rollout without resetting environment at each trajectory.
 
     gamma: float, default=1.0
         Discount factor. The value should be within `(0, 1]`.
@@ -869,7 +968,9 @@ def calc_on_policy_variance(
     on_policy_policy_values = rollout_policy_online(
         env=env,
         policy=policy,
-        n_episodes=n_episodes,
+        n_trajectories=n_trajectories,
+        step_per_trajectory=step_per_trajectory,
+        evaluate_on_stationary_distribution=evaluate_on_stationary_distribution,
         gamma=gamma,
         random_state=random_state,
     )
@@ -879,7 +980,9 @@ def calc_on_policy_variance(
 def calc_on_policy_conditional_value_at_risk(
     env: gym.Env,
     policy: Union[AlgoBase, BaseHead],
-    n_episodes: int = 100,
+    n_trajectories: int = 100,
+    step_per_trajectory: Optional[int] = None,
+    evaluate_on_stationary_distribution: bool = False,
     gamma: float = 1.0,
     alphas: Union[np.ndarray, float] = np.linspace(0, 1, 20),
     use_custom_reward_scale: bool = False,
@@ -898,8 +1001,15 @@ def calc_on_policy_conditional_value_at_risk(
     policy: {AlgoBase, BaseHead}
         A policy to be evaluated.
 
-    n_episodes: int, default=100 (> 0)
+    n_trajectories: int, default=100 (> 0)
         Number of trajectories to rollout.
+
+    step_per_trajectory: int, default=None (> 0)
+        Number of timesteps in an trajectory.
+
+    evaluate_on_stationary_distribution: bool, default=False
+        Whether to evaluate policy on stationary distribution.
+        When True, evaluation policy is evaluated by rollout without resetting environment at each trajectory.
 
     gamma: float, default=1.0
         Discount factor. The value should be within `(0, 1]`.
@@ -975,7 +1085,9 @@ def calc_on_policy_conditional_value_at_risk(
     on_policy_policy_values = rollout_policy_online(
         env=env,
         policy=policy,
-        n_episodes=n_episodes,
+        n_trajectories=n_trajectories,
+        step_per_trajectory=step_per_trajectory,
+        evaluate_on_stationary_distribution=evaluate_on_stationary_distribution,
         gamma=gamma,
         random_state=random_state,
     )
@@ -1003,7 +1115,9 @@ def calc_on_policy_conditional_value_at_risk(
 def calc_on_policy_interquartile_range(
     env: gym.Env,
     policy: Union[AlgoBase, BaseHead],
-    n_episodes: int = 100,
+    n_trajectories: int = 100,
+    step_per_trajectory: Optional[int] = None,
+    evaluate_on_stationary_distribution: bool = False,
     gamma: float = 1.0,
     alpha: float = 0.05,
     use_custom_reward_scale: bool = False,
@@ -1020,8 +1134,15 @@ def calc_on_policy_interquartile_range(
     policy: {AlgoBase, BaseHead}
         A policy to be evaluated.
 
-    n_episodes: int, default=100 (> 0)
+    n_trajectories: int, default=100 (> 0)
         Number of trajectories to rollout.
+
+    step_per_trajectory: int, default=None (> 0)
+        Number of timesteps in an trajectory.
+
+    evaluate_on_stationary_distribution: bool, default=False
+        Whether to evaluate policy on stationary distribution.
+        When True, evaluation policy is evaluated by rollout without resetting environment at each trajectory.
 
     gamma: float, default=1.0
         Discount factor. The value should be within `(0, 1]`.
@@ -1089,7 +1210,9 @@ def calc_on_policy_interquartile_range(
     on_policy_policy_values = rollout_policy_online(
         env=env,
         policy=policy,
-        n_episodes=n_episodes,
+        n_trajectories=n_trajectories,
+        step_per_trajectory=step_per_trajectory,
+        evaluate_on_stationary_distribution=evaluate_on_stationary_distribution,
         gamma=gamma,
         random_state=random_state,
     )
@@ -1129,7 +1252,9 @@ def calc_on_policy_interquartile_range(
 def calc_on_policy_cumulative_distribution_function(
     env: gym.Env,
     policy: Union[AlgoBase, BaseHead],
-    n_episodes: int = 100,
+    n_trajectories: int = 100,
+    step_per_trajectory: Optional[int] = None,
+    evaluate_on_stationary_distribution: bool = False,
     gamma: float = 1.0,
     use_custom_reward_scale: bool = False,
     scale_min: Optional[float] = None,
@@ -1147,8 +1272,15 @@ def calc_on_policy_cumulative_distribution_function(
     policy: {AlgoBase, BaseHead}
         A policy to be evaluated.
 
-    n_episodes: int, default=100 (> 0)
+    n_trajectories: int, default=100 (> 0)
         Number of trajectories to rollout.
+
+    step_per_trajectory: int, default=None (> 0)
+        Number of timesteps in an trajectory.
+
+    evaluate_on_stationary_distribution: bool, default=False
+        Whether to evaluate policy on stationary distribution.
+        When True, evaluation policy is evaluated by rollout without resetting environment at each trajectory.
 
     gamma: float, default=1.0
         Discount factor. The value should be within `(0, 1]`.
@@ -1215,7 +1347,9 @@ def calc_on_policy_cumulative_distribution_function(
     on_policy_policy_values = rollout_policy_online(
         env=env,
         policy=policy,
-        n_episodes=n_episodes,
+        n_trajectories=n_trajectories,
+        step_per_trajectory=step_per_trajectory,
+        evaluate_on_stationary_distribution=evaluate_on_stationary_distribution,
         gamma=gamma,
         random_state=random_state,
     )
@@ -1239,7 +1373,9 @@ def calc_on_policy_cumulative_distribution_function(
 def rollout_policy_online(
     env: gym.Env,
     policy: Union[AlgoBase, BaseHead],
-    n_episodes: int = 100,
+    n_trajectories: int = 100,
+    step_per_trajectory: Optional[int] = None,
+    evaluate_on_stationary_distribution: bool = False,
     gamma: float = 1.0,
     random_state: Optional[int] = None,
 ):
@@ -1253,8 +1389,15 @@ def rollout_policy_online(
     policy: {AlgoBase, BaseHead}
         A policy to be evaluated.
 
-    n_episodes: int, default=100 (> 0)
+    n_trajectories: int, default=100 (> 0)
         Number of trajectories to rollout.
+
+    step_per_trajectory: int, default=None (> 0)
+        Number of timesteps in an trajectory.
+
+    evaluate_on_stationary_distribution: bool, default=False
+        Whether to evaluate policy on stationary distribution.
+        When True, evaluation policy is evaluated by rollout without resetting environment at each trajectory.
 
     gamma: float, default=1.0
         Discount factor. The value should be within `(0, 1]`.
@@ -1264,7 +1407,7 @@ def rollout_policy_online(
 
     Return
     -------
-    on_policy_policy_values: ndarray of shape (n_episodes, )
+    on_policy_policy_values: ndarray of shape (n_trajectories, )
         Trajectory-wise on-policy policy values.
 
     """
@@ -1275,8 +1418,8 @@ def rollout_policy_online(
     if not isinstance(policy, (AlgoBase, BaseHead)):
         raise ValueError("policy must be a child class of either AlgoBase or BaseHead")
     check_scalar(
-        n_episodes,
-        name="n_episodes",
+        n_trajectories,
+        name="n_trajectories",
         target_type=int,
         min_val=1,
     )
@@ -1287,46 +1430,106 @@ def rollout_policy_online(
         min_val=0.0,
         max_val=1.0,
     )
+    if step_per_trajectory is not None:
+        check_scalar(
+            step_per_trajectory, name="step_per_trajectory", target_type=int, min_val=1
+        )
+    elif evaluate_on_stationary_distribution:
+        raise ValueError(
+            "step_per_trajectory must be given when `evaluate_on_stationary_distribution == True`."
+        )
+    else:
+        step_per_trajectory = np.infty
 
-    on_policy_policy_values = np.zeros(n_episodes)
+    on_policy_policy_values = np.zeros(n_trajectories)
     env.reset(seed=random_state)
 
     if not isinstance(policy, BaseHead):
         policy = OnlineHead(policy)
 
-        for i in tqdm(
-            range(n_episodes),
-            desc="[calculate on-policy policy value]",
-            total=n_episodes,
-        ):
-            state, info = env.reset()
-            done = False
-            episode_reward = 0
+        if evaluate_on_stationary_distribution:
+            done = True
 
-            while not done:
-                action = policy.predict_online(state)
-                state, reward, done, _, _ = env.step(action)
-                episode_reward += reward
+            for i in tqdm(
+                range(n_trajectories),
+                desc="[calculate on-policy policy value]",
+                total=n_trajectories,
+            ):
+                cumulative_reward = 0
 
-            on_policy_policy_values[i] = episode_reward
+                if done:
+                    state, _ = env.reset()
+                    done = False
+
+                for t in range(step_per_trajectory):
+                    action = policy.predict_online(state)
+                    state, reward, done, _, _ = env.step(action)
+                    cumulative_reward += gamma ** t * reward
+
+                on_policy_policy_values[i] = cumulative_reward
+
+        else:
+            for i in tqdm(
+                range(n_trajectories),
+                desc="[calculate on-policy policy value]",
+                total=n_trajectories,
+            ):
+                state, _ = env.reset()
+                done = False
+                episode_reward = 0
+                t = 0
+
+                while not done:
+                    action = policy.predict_online(state)
+                    state, reward, done, _, _ = env.step(action)
+                    t += 1
+
+                    episode_reward += gamma ** t * reward
+                    done = done or (t == step_per_trajectory)
+
+                on_policy_policy_values[i] = episode_reward
 
     else:
-        for i in tqdm(
-            range(n_episodes),
-            desc="[calculate on-policy policy value]",
-            total=n_episodes,
-        ):
-            state, info = env.reset()
-            done = False
-            episode_reward = 0
+        if evaluate_on_stationary_distribution:
+            done = True
 
-            t = 0
-            while not done:
-                action = policy.sample_action_online(state)
-                state, reward, done, _, _ = env.step(action)
-                episode_reward += gamma ** t * reward
-                t += 1
+            for i in tqdm(
+                range(n_trajectories),
+                desc="[calculate on-policy policy value]",
+                total=n_trajectories,
+            ):
+                cumulative_reward = 0
 
-            on_policy_policy_values[i] = episode_reward
+                if done:
+                    state, _ = env.reset()
+                    done = False
+
+                for t in range(step_per_trajectory):
+                    action = policy.sample_action_online(state)
+                    state, reward, done, _, _ = env.step(action)
+                    cumulative_reward += gamma ** t * reward
+
+                on_policy_policy_values[i] = cumulative_reward
+
+        else:
+            for i in tqdm(
+                range(n_trajectories),
+                desc="[calculate on-policy policy value]",
+                total=n_trajectories,
+            ):
+                state, _ = env.reset()
+                done = False
+                episode_reward = 0
+                t = 0
+
+                while not done:
+                    action = policy.sample_action_online(state)
+                    state, reward, done, _, _ = env.step(action)
+                    t += 1
+
+                    episode_reward += gamma ** t * reward
+                    done = done or (t == step_per_trajectory)
+
+                on_policy_policy_values[i] = episode_reward
 
     return on_policy_policy_values

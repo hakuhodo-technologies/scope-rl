@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Optional, Union
+from typing import Optional
 from tqdm import tqdm
 from warnings import warn
 
@@ -8,6 +8,8 @@ from torch import optim
 
 import numpy as np
 from sklearn.utils import check_scalar
+
+from d3rlpy.preprocessing import Scaler, ActionScaler
 
 from .base import BaseWeightValueLearner
 from .function import (
@@ -62,6 +64,12 @@ class ContinuousAugmentedLagrangianStateActionWightValueLearning(
     w_function: ContinuousStateActionWeightFunction
         Weight function model.
 
+    state_scaler: d3rlpy.preprocessing.Scaler, default=None
+        Scaling factor of state.
+
+    action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
+        Scaling factor of action.
+
     device: str, default="cuda:0"
         Specifies device used for torch.
 
@@ -90,11 +98,24 @@ class ContinuousAugmentedLagrangianStateActionWightValueLearning(
     method: str
     q_function: ContinuousQFunction
     w_function: ContinuousStateActionWeightFunction
+    state_scaler: Optional[Scaler] = None
+    action_scaler: Optional[ActionScaler] = None
     device: str = "cuda:0"
 
     def __post_init__(self):
         self.q_function.to(self.device)
         self.w_function.to(self.device)
+
+        if self.state_scaler is not None:
+            if not isinstance(self.state_scaler, Scaler):
+                raise ValueError(
+                    "state_scaler must be an instance of d3rlpy.preprocessing.Scaler, but found False"
+                )
+        if self.action_scaler is not None:
+            if not isinstance(self.action_scaler, ActionScaler):
+                raise ValueError(
+                    "action_scaler must be an instance of d3rlpy.preprocessing.ActionScaler, but found False"
+                )
 
     def _objective_function(
         self,
@@ -115,25 +136,25 @@ class ContinuousAugmentedLagrangianStateActionWightValueLearning(
 
         Parameters
         -------
-        initial_state: Tensor of shape (n_episodes, state_dim)
+        initial_state: Tensor of shape (n_trajectories, state_dim)
             Initial state of a trajectory (or states sampled from a stationary distribution).
 
-        initial_action: Tensor of shape (n_episodes, action_dim)
+        initial_action: Tensor of shape (n_trajectories, action_dim)
             Initial action chose by the evaluation policy.
 
-        state: Tensor of shape (n_episodes, state_dim)
+        state: Tensor of shape (n_trajectories, state_dim)
             State observed by the behavior policy.
 
-        action: Tensor of shape (n_episodes, action_dim)
+        action: Tensor of shape (n_trajectories, action_dim)
             Action chosen by the behavior policy.
 
-        reward: Tensor of shape (n_episodes, )
+        reward: Tensor of shape (n_trajectories, )
             Reward observed for each (state, action) pair.
 
-        next_state: Tensor of shape (n_episodes, state_dim)
+        next_state: Tensor of shape (n_trajectories, state_dim)
             Next state observed for each (state, action) pair.
 
-        next_action: Tensor of shape (n_episodes, action_dim)
+        next_action: Tensor of shape (n_trajectories, action_dim)
             Next action chosen by the evaluation policy.
 
         lambda_: Tensor of shape (1, )
@@ -175,11 +196,12 @@ class ContinuousAugmentedLagrangianStateActionWightValueLearning(
 
     def fit(
         self,
-        method: str,
+        step_per_trajectory: int,
         state: np.ndarray,
         action: np.ndarray,
         reward: np.ndarray,
         evaluation_policy_action: np.ndarray,
+        method: str = "best_dice",
         n_epochs: int = 100,
         n_steps_per_epoch: int = 100,
         batch_size: int = 32,
@@ -198,23 +220,23 @@ class ContinuousAugmentedLagrangianStateActionWightValueLearning(
 
         Parameters
         -------
-        method: {"dual_dice", "gen_dice", "algae_dice", "best_dice", "mql", "mwl", "custom"}, default="best_dice"
-            Indicates which parameter set should be used. When, "custom" users can specify their own parameter.
-
-        step_per_episode: int (> 0)
+        step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
 
-        state: array-like of shape (n_episodes * step_per_episode, state_dim)
+        state: array-like of shape (n_trajectories * step_per_trajectory, state_dim)
             State observed by the behavior policy.
 
-        action: array-like of shape (n_episodes * step_per_episode, action_dim)
+        action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the behavior policy.
 
-        reward: array-like of shape (n_episodes * step_per_episode)
+        reward: array-like of shape (n_trajectories * step_per_trajectory)
             Reward observed for each (state, action) pair.
 
-        evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
+        evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Next action chose by the evaluation policy.
+
+        method: {"dual_dice", "gen_dice", "algae_dice", "best_dice", "mql", "mwl", "custom"}, default="best_dice"
+            Indicates which parameter set should be used. When, "custom" users can specify their own parameter.
 
         n_epochs: int, default=100
             Number of epochs to train.
@@ -258,7 +280,7 @@ class ContinuousAugmentedLagrangianStateActionWightValueLearning(
 
         """
         check_scalar(
-            step_per_episode, name="step_per_episode", target_type=int, min_val=1
+            step_per_trajectory, name="step_per_trajectory", target_type=int, min_val=1
         )
         check_array(state, name="state", expected_dim=2)
         check_array(action, name="action", expected_dim=2)
@@ -275,9 +297,9 @@ class ContinuousAugmentedLagrangianStateActionWightValueLearning(
             raise ValueError(
                 "Expected `state.shape[0] == action.shape[0] == reward.shape[0] == evaluation_policy_action.shape[0]`, but found False"
             )
-        if state.shape[0] % step_per_episode:
+        if state.shape[0] % step_per_trajectory:
             raise ValueError(
-                "Expected `state.shape[0] % step_per_episode == 0`, but found False"
+                "Expected `state.shape[0] % step_per_trajectory == 0`, but found False"
             )
         if action.shape[1] != evaluation_policy_action.shape[1]:
             raise ValueError(
@@ -348,20 +370,25 @@ class ContinuousAugmentedLagrangianStateActionWightValueLearning(
 
         state_dim = state.shape[1]
         action_dim = action.shape[1]
-        state = state.reshape((-1, step_per_episode, state_dim))
-        action = action.reshape((-1, step_per_episode, action_dim))
-        reward = reward.reshape((-1, step_per_episode))
+        state = state.reshape((-1, step_per_trajectory, state_dim))
+        action = action.reshape((-1, step_per_trajectory, action_dim))
+        reward = reward.reshape((-1, step_per_trajectory))
         evaluation_policy_action = evaluation_policy_action.reshape(
-            (-1, step_per_episode, action_dim)
+            (-1, step_per_trajectory, action_dim)
         )
 
-        n_episodes, step_per_episode, _ = state.shape
+        n_trajectories, step_per_trajectory, _ = state.shape
         state = torch.FloatTensor(state, device=self.device)
         action = torch.FloatTensor(action, device=self.device)
         reward = torch.FloatTensor(reward, device=self.device)
         evaluation_policy_action = torch.FloatTensor(
             evaluation_policy_action, device=self.device
         )
+
+        if self.state_scaler is not None:
+            state = self.state_scaler.transform(state)
+        if self.action_scaler is not None:
+            action = self.action_scaler.transform(action)
 
         q_optimizer = optim.SGD(self.q_function.parameters(), lr=q_lr, momentum=0.9)
         w_optimizer = optim.SGD(self.w_function.parameters(), lr=w_lr, momentum=0.9)
@@ -376,8 +403,8 @@ class ContinuousAugmentedLagrangianStateActionWightValueLearning(
             total=n_epochs,
         ):
             for grad_step in range(n_steps_per_epoch):
-                idx_ = torch.randint(n_episodes, size=(batch_size,))
-                t_ = torch.randint(step_per_episode - 1, size=(batch_size,))
+                idx_ = torch.randint(n_trajectories, size=(batch_size,))
+                t_ = torch.randint(step_per_trajectory - 1, size=(batch_size,))
 
                 initial_action = torch.multinomial(
                     evaluation_policy_action[idx_, 0], num_samples=1
@@ -422,15 +449,15 @@ class ContinuousAugmentedLagrangianStateActionWightValueLearning(
 
         Parameters
         -------
-        state: array-like of shape (n_episodes * step_per_episode, state_dim)
+        state: array-like of shape (n_trajectories * step_per_trajectory, state_dim)
             State observed by the behavior policy.
 
-        action: array-like of shape (n_episodes * step_per_episode, action_dim)
+        action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the behavior/evaluation policy.
 
         Return
         -------
-        q_value: ndarray of shape (n_episodes * step_per_episode)
+        q_value: ndarray of shape (n_trajectories * step_per_trajectory)
             Q value of each (state, action) pair.
 
         """
@@ -443,6 +470,11 @@ class ContinuousAugmentedLagrangianStateActionWightValueLearning(
 
         state = torch.FloatTensor(state, device=self.device)
         action = torch.FloatTensor(action, device=self.device)
+
+        if self.state_scaler is not None:
+            state = self.state_scaler.transform(state)
+        if self.action_scaler is not None:
+            action = self.action_scaler.transform(action)
 
         with torch.no_grad():
             q_value = self.q_function(state, action).to("cpu").detach().numpy()
@@ -457,19 +489,19 @@ class ContinuousAugmentedLagrangianStateActionWightValueLearning(
 
         Parameters
         -------
-        state: array-like of shape (n_episodes * step_per_episode, state_dim)
+        state: array-like of shape (n_trajectories * step_per_trajectory, state_dim)
             State observed by the behavior policy.
 
-        evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
+        evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
 
         Return
         -------
-        v_function: ndarray of shape (n_episodes * step_per_episode)
+        v_function: ndarray of shape (n_trajectories * step_per_trajectory)
             State value.
 
         """
-        return self.predict_q_function(state=state, action=evaluation_policy_action)
+        return self.predict_q_function(state, evaluation_policy_action)
 
     def predict_value(
         self,
@@ -480,19 +512,19 @@ class ContinuousAugmentedLagrangianStateActionWightValueLearning(
 
         Parameters
         -------
-        state: array-like of shape (n_episodes * step_per_episode, state_dim)
+        state: array-like of shape (n_trajectories * step_per_trajectory, state_dim)
             State observed by the behavior policy.
 
-        action: array-like of shape (n_episodes * step_per_episode, action_dim)
+        action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the behavior/evaluation policy.
 
         Return
         -------
-        q_value: ndarray of shape (n_episodes * step_per_episode)
+        q_value: ndarray of shape (n_trajectories * step_per_trajectory)
             Q value of each (state, action) pair.
 
         """
-        return self.predict_q_function(state=state, action=action)
+        return self.predict_q_function(state, action)
 
     def predict_weight(
         self,
@@ -503,15 +535,15 @@ class ContinuousAugmentedLagrangianStateActionWightValueLearning(
 
         Parameters
         -------
-        state: array-like of shape (n_episodes * step_per_episode, state_dim)
+        state: array-like of shape (n_trajectories * step_per_trajectory, state_dim)
             State observed by the behavior policy.
 
-        action: array-like of shape (n_episodes * step_per_episode, action_dim)
+        action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the behavior policy.
 
         Return
         -------
-        w_hat: ndarray of shape (n_episodes * step_per_episode)
+        w_hat: ndarray of shape (n_trajectories * step_per_trajectory)
             Estimated state-action marginal importance weight.
 
         """
@@ -524,6 +556,11 @@ class ContinuousAugmentedLagrangianStateActionWightValueLearning(
 
         state = torch.FloatTensor(state, device=self.device)
         action = torch.FloatTensor(action, device=self.device)
+
+        if self.state_scaler is not None:
+            state = self.state_scaler.transform(state)
+        if self.action_scaler is not None:
+            action = self.action_scaler.transform(action)
 
         with torch.no_grad():
             w_hat = self.w_function(state, action).to("cpu").detach().numpy()
@@ -538,33 +575,33 @@ class ContinuousAugmentedLagrangianStateActionWightValueLearning(
 
         Parameters
         -------
-        state: array-like of shape (n_episodes * step_per_episode, state_dim)
+        state: array-like of shape (n_trajectories * step_per_trajectory, state_dim)
             State observed by the behavior policy.
 
-        action: array-like of shape (n_episodes * step_per_episode, action_dim)
+        action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the behavior policy.
 
         Return
         -------
-        q_value: ndarray of shape (n_episodes * step_per_episode)
+        q_value: ndarray of shape (n_trajectories * step_per_trajectory)
             Q value of each (state, action) pair.
 
-        w_hat: ndarray of shape (n_episodes * step_per_episode)
+        w_hat: ndarray of shape (n_trajectories * step_per_trajectory)
             Estimated state-action marginal importance weight.
 
         """
-        q_value = self.predict_value(state=state, action=action)
-        w_hat = self.predict_weight(state=state, action=action)
+        q_value = self.predict_value(state, action)
+        w_hat = self.predict_weight(state, action)
         return q_value, w_hat
 
     def fit_predict(
         self,
-        method: str,
-        step_per_episode: int,
+        step_per_trajectory: int,
         state: np.ndarray,
         action: np.ndarray,
         reward: np.ndarray,
         evaluation_policy_action: np.ndarray,
+        method: str = "best_dice",
         n_epochs: int = 100,
         n_steps_per_epoch: int = 100,
         batch_size: int = 32,
@@ -583,23 +620,23 @@ class ContinuousAugmentedLagrangianStateActionWightValueLearning(
 
         Parameters
         -------
-        method: {"dual_dice", "gen_dice", "algae_dice", "best_dice", "mql", "mwl", "custom"}, default="best_dice"
-            Indicates which parameter set should be used. When, "custom" users can specify their own parameter.
-
-        step_per_episode: int (> 0)
+        step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
 
-        state: array-like of shape (n_episodes * step_per_episode, state_dim)
+        state: array-like of shape (n_trajectories * step_per_trajectory, state_dim)
             State observed by the behavior policy.
 
-        action: array-like of shape (n_episodes * step_per_episode, action_dim)
+        action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the behavior policy.
 
-        reward: array-like of shape (n_episodes * step_per_episode)
+        reward: array-like of shape (n_trajectories * step_per_trajectory)
             Reward observed for each (state, action) pair.
 
-        evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
+        evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Next action chose by the evaluation policy.
+
+        method: {"dual_dice", "gen_dice", "algae_dice", "best_dice", "mql", "mwl", "custom"}, default="best_dice"
+            Indicates which parameter set should be used. When, "custom" users can specify their own parameter.
 
         n_epochs: int, default=100
             Number of epochs to train.
@@ -643,20 +680,20 @@ class ContinuousAugmentedLagrangianStateActionWightValueLearning(
 
         Return
         -------
-        q_value: ndarray of shape (n_episodes * step_per_episode)
+        q_value: ndarray of shape (n_trajectories * step_per_trajectory)
             Q value of each (state, action) pair.
 
-        w_hat: ndarray of shape (n_episodes * step_per_episode)
+        w_hat: ndarray of shape (n_trajectories * step_per_trajectory)
             Estimated state-action marginal importance weight.
 
         """
         self.fit(
-            method=method,
-            step_per_episode=step_per_episode,
+            step_per_trajectory=step_per_trajectory,
             state=state,
             action=action,
             reward=reward,
             evaluation_policy_action=evaluation_policy_action,
+            method=method,
             n_epochs=n_epochs,
             n_steps_per_epoch=n_steps_per_epoch,
             batch_size=batch_size,
@@ -670,7 +707,7 @@ class ContinuousAugmentedLagrangianStateActionWightValueLearning(
             enable_lambda=enable_lambda,
             random_state=random_state,
         )
-        return self.predict(state=state, action=action)
+        return self.predict(state, action)
 
 
 @dataclass
@@ -718,6 +755,12 @@ class ContinuousAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearne
     w_function: StateWeightFunction
         Weight function model.
 
+    state_scaler: d3rlpy.preprocessing.Scaler, default=None
+        Scaling factor of state.
+
+    action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
+        Scaling factor of action.
+
     device: str, default="cuda:0"
         Specifies device used for torch.
 
@@ -745,11 +788,24 @@ class ContinuousAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearne
 
     v_function: VFunction
     w_function: StateWeightFunction
+    state_scaler: Optional[Scaler] = None
+    action_scaler: Optional[ActionScaler] = None
     device: str = "cuda:0"
 
     def __post_init__(self):
         self.v_function.to(self.device)
         self.w_function.to(self.device)
+
+        if self.state_scaler is not None:
+            if not isinstance(self.state_scaler, Scaler):
+                raise ValueError(
+                    "state_scaler must be an instance of d3rlpy.preprocessing.Scaler, but found False"
+                )
+        if self.action_scaler is not None:
+            if not isinstance(self.action_scaler, ActionScaler):
+                raise ValueError(
+                    "action_scaler must be an instance of d3rlpy.preprocessing.ActionScaler, but found False"
+                )
 
     def _objective_function(
         self,
@@ -768,19 +824,19 @@ class ContinuousAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearne
 
         Parameters
         -------
-        initial_state: Tensor of shape (n_episodes, state_dim)
+        initial_state: Tensor of shape (n_trajectories, state_dim)
             Initial state of a trajectory (or states sampled from a stationary distribution).
 
-        state: array-like of shape (n_episodes, state_dim)
+        state: array-like of shape (n_trajectories, state_dim)
             State observed by the behavior policy.
 
-        reward: Tensor of shape (n_episodes, )
+        reward: Tensor of shape (n_trajectories, )
             Reward observed for each (state, action) pair.
 
-        next_state: Tensor of shape (n_episodes, state_dim)
+        next_state: Tensor of shape (n_trajectories, state_dim)
             Next state observed for each (state, action) pair.
 
-        importance_weight: Tensor of shape (n_episodes, )
+        importance_weight: Tensor of shape (n_trajectories, )
             Immediate importance weight at each step, i.e., :math:`K(a_t, \\pi(s_t)) / \\pi_0(a_t | s_t)`,
             where :math:`K(\\cdot, \\cdot)` is a kernel function.
 
@@ -819,13 +875,13 @@ class ContinuousAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearne
 
     def fit(
         self,
-        method: str,
-        step_per_episode: int,
+        step_per_trajectory: int,
         state: np.ndarray,
         action: np.ndarray,
         reward: np.ndarray,
         pscore: np.ndarray,
         evaluation_policy_action: np.ndarray,
+        method: str = "best_dice",
         n_epochs: int = 100,
         n_steps_per_epoch: int = 100,
         batch_size: int = 32,
@@ -838,7 +894,6 @@ class ContinuousAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearne
         alpha_w: Optional[float] = None,
         alpha_r: Optional[bool] = None,
         enable_lambda: Optional[bool] = None,
-        action_scaler: Optional[Union[float, np.ndarray]] = None,
         random_state: Optional[int] = None,
         **kwargs,
     ):
@@ -846,26 +901,26 @@ class ContinuousAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearne
 
         Parameters
         -------
-        method: {"dual_dice", "gen_dice", "algae_dice", "best_dice", "mvl", "mwl", "custom"}, default="best_dice"
-            Indicates which parameter set should be used. When, "custom" users can specify their own parameter.
-
-        step_per_episode: int (> 0)
+        step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
 
-        state: array-like of shape (n_episodes * step_per_episode, state_dim)
+        state: array-like of shape (n_trajectories * step_per_trajectory, state_dim)
             State observed by the behavior policy.
 
-        action: array-like of shape (n_episodes * step_per_episode, action_dim)
+        action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the behavior policy.
 
-        reward: array-like of shape (n_episodes * step_per_episode)
+        reward: array-like of shape (n_trajectories * step_per_trajectory)
             Reward observed for each (state, action) pair.
 
-        pscore: array-like of shape (n_episodes * step_per_episode)
+        pscore: array-like of shape (n_trajectories * step_per_trajectory)
             Action choice probability of the behavior policy for the chosen action.
 
-        evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
+        evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
+
+        method: {"dual_dice", "gen_dice", "algae_dice", "best_dice", "mvl", "mwl", "custom"}, default="best_dice"
+            Indicates which parameter set should be used. When, "custom" users can specify their own parameter.
 
         n_epochs: int, default=100
             Number of epochs to train.
@@ -915,7 +970,7 @@ class ContinuousAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearne
 
         """
         check_scalar(
-            step_per_episode, name="step_per_episode", target_type=int, min_val=1
+            step_per_trajectory, name="step_per_trajectory", target_type=int, min_val=1
         )
         check_array(state, name="state", expected_dim=2)
         check_array(action, name="action", expected_dim=2)
@@ -934,9 +989,9 @@ class ContinuousAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearne
             raise ValueError(
                 "Expected `state.shape[0] == action.shape[0] == reward.shape[0] == pscore.shape[0] == evaluation_policy_action.shape[0]`, but found False"
             )
-        if state.shape[0] % step_per_episode:
+        if state.shape[0] % step_per_trajectory:
             raise ValueError(
-                "Expected `state.shape[0] % step_per_episode == 0`, but found False"
+                "Expected `state.shape[0] % step_per_trajectory == 0`, but found False"
             )
         if action.shape[1] != evaluation_policy_action.shape[1]:
             raise ValueError(
@@ -1001,42 +1056,46 @@ class ContinuousAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearne
         check_scalar(w_lr, name="w_lr", target_type=float, min_val=0.0)
         check_scalar(lambda_lr, name="lambda_lr", target_type=float, min_val=0.0)
 
-        action_dim = action.shape[1]
-        if action_scaler is None:
-            action_scaler = np.ones(action_dim)
-        elif isinstance(action_scaler, float):
-            action_scaler = np.full(action_dim, action_scaler)
-
-        check_array(action_scaler, name="action_scaler", expected_dim=1, min_val=0.0)
-        if action_scaler.shape[0] != action_dim:
-            raise ValueError(
-                "Expected `action_scaler.shape[0] == action.shape[1]`, but found False"
-            )
-
         if random_state is None:
             raise ValueError("Random state mush be given.")
         torch.manual_seed(random_state)
 
         state_dim = state.shape[1]
         action_dim = action.shape[1]
-        state = state.reshape((-1, step_per_episode, state_dim))
-        action = action.reshape((-1, step_per_episode, action_dim))
-        reward = reward.reshape((-1, step_per_episode))
-        pscore = pscore.reshape((-1, step_per_episode))
-        evaluation_policy_action = evaluation_policy_action.reshape(
-            (-1, step_per_episode, action_dim)
-        )
-
-        n_episodes, step_per_episode, _ = state.shape
-        state = torch.FloatTensor(state, device=self.device)
-        reward = torch.FloatTensor(reward, device=self.device)
+        if self.action_scaler is not None:
+            evaluation_policy_action_ = self.action_scaler.transform_numpy(
+                evaluation_policy_action.reshape((-1, action_dim))
+            )
+            action_ = self.action_scaler.transform_numpy(
+                action.reshape((-1, action_dim))
+            )
+        else:
+            evaluation_policy_action_ = evaluation_policy_action
+            action_ = action
 
         similarity_weight = gaussian_kernel(
-            evaluation_policy_action.reshape((-1, action_dim)) / action_scaler[None, :],
-            action.reshape((-1, action_dim)) / action_scaler[None, :],
+            evaluation_policy_action_,
+            action_,
             sigma=sigma,
-        ).reshape((n_episodes, step_per_episode))
+        ).reshape((-1, step_per_trajectory))
+
+        state = state.reshape((-1, step_per_trajectory, state_dim))
+        action = action.reshape((-1, step_per_trajectory, action_dim))
+        reward = reward.reshape((-1, step_per_trajectory))
+        pscore = pscore.reshape((-1, step_per_trajectory))
+        evaluation_policy_action = evaluation_policy_action.reshape(
+            (-1, step_per_trajectory, action_dim)
+        )
+
+        n_trajectories, step_per_trajectory, _ = state.shape
+        state = torch.FloatTensor(state, device=self.device)
+        reward = torch.FloatTensor(reward, device=self.device)
         importance_weight = torch.FloatTensor(similarity_weight / pscore)
+
+        if self.state_scaler is not None:
+            state = self.state_scaler.transform(state)
+        if self.action_scaler is not None:
+            action = self.action_scaler.transform(action)
 
         v_optimizer = optim.SGD(self.v_function.parameters(), lr=v_lr, momentum=0.9)
         w_optimizer = optim.SGD(self.w_function.parameters(), lr=w_lr, momentum=0.9)
@@ -1051,8 +1110,8 @@ class ContinuousAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearne
             total=n_epochs,
         ):
             for grad_step in range(n_steps_per_epoch):
-                idx_ = torch.randint(n_episodes, size=(batch_size,))
-                t_ = torch.randint(step_per_episode - 1, size=(batch_size,))
+                idx_ = torch.randint(n_trajectories, size=(batch_size,))
+                t_ = torch.randint(step_per_trajectory - 1, size=(batch_size,))
 
                 objective_loss = self._objective_function(
                     initial_state=state[idx_, 0],
@@ -1087,17 +1146,20 @@ class ContinuousAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearne
 
         Parameters
         -------
-        state: array-like of shape (n_episodes * step_per_episode, state_dim)
+        state: array-like of shape (n_trajectories * step_per_trajectory, state_dim)
             State observed by the behavior policy.
 
         Return
         -------
-        v_function: ndarray of shape (n_episodes * step_per_episode)
+        v_function: ndarray of shape (n_trajectories * step_per_trajectory)
             State value.
 
         """
         check_array(state, name="state", expected_dim=2)
         state = torch.FloatTensor(state, device=self.device)
+
+        if self.state_scaler is not None:
+            state = self.state_scaler.transform(state)
 
         with torch.no_grad():
             v_function = self.v_function(state).to("cpu").detach().numpy()
@@ -1112,17 +1174,20 @@ class ContinuousAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearne
 
         Parameters
         -------
-        state: array-like of shape (n_episodes * step_per_episode, state_dim)
+        state: array-like of shape (n_trajectories * step_per_trajectory, state_dim)
             State observed by the behavior policy.
 
         Return
         -------
-        w_hat: ndarray of shape (n_episodes * step_per_episode)
+        w_hat: ndarray of shape (n_trajectories * step_per_trajectory)
             Estimated state marginal importance weight.
 
         """
         check_array(state, name="state", expected_dim=2)
         state = torch.FloatTensor(state, device=self.device)
+
+        if self.state_scaler is not None:
+            state = self.state_scaler.transform(state)
 
         with torch.no_grad():
             w_hat = self.w_function(state).to("cpu").detach().numpy()
@@ -1137,31 +1202,31 @@ class ContinuousAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearne
 
         Parameters
         -------
-        state: array-like of shape (n_episodes * step_per_episode, state_dim)
+        state: array-like of shape (n_trajectories * step_per_trajectory, state_dim)
             State observed by the behavior policy.
 
         Return
         -------
-        v_function: ndarray of shape (n_episodes * step_per_episode)
+        v_function: ndarray of shape (n_trajectories * step_per_trajectory)
             V function of each (state, action) pair.
 
-        w_hat: ndarray of shape (n_episodes * step_per_episode)
+        w_hat: ndarray of shape (n_trajectories * step_per_trajectory)
             Estimated state-action marginal importance weight.
 
         """
-        v_function = self.predict_value(state=state)
-        w_hat = self.predict_weight(state=state)
+        v_function = self.predict_value(state)
+        w_hat = self.predict_weight(state)
         return v_function, w_hat
 
     def fit_predict(
         self,
-        method: str,
-        step_per_episode: int,
+        step_per_trajectory: int,
         state: np.ndarray,
         action: np.ndarray,
         reward: np.ndarray,
         pscore: np.ndarray,
         evaluation_policy_action: np.ndarray,
+        method: str = "best_dice",
         n_epochs: int = 100,
         n_steps_per_epoch: int = 100,
         batch_size: int = 32,
@@ -1174,7 +1239,6 @@ class ContinuousAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearne
         alpha_w: Optional[float] = None,
         alpha_r: Optional[bool] = None,
         enable_lambda: Optional[bool] = None,
-        action_scaler: Optional[Union[float, np.ndarray]] = None,
         random_state: Optional[int] = None,
         **kawrgs,
     ):
@@ -1182,26 +1246,26 @@ class ContinuousAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearne
 
         Parameters
         -------
-        method: {"dual_dice", "gen_dice", "algae_dice", "best_dice", "mvl", "mwl", "custom"}, default="best_dice"
-            Indicates which parameter set should be used. When, "custom" users can specify their own parameter.
-
-        step_per_episode: int (> 0)
+        step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
 
-        state: array-like of shape (n_episodes * step_per_episode, state_dim)
+        state: array-like of shape (n_trajectories * step_per_trajectory, state_dim)
             State observed by the behavior policy.
 
-        action: array-like of shape (n_episodes * step_per_episode, action_dim)
+        action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the behavior policy.
 
-        reward: array-like of shape (n_episodes, )
+        reward: array-like of shape (n_trajectories, )
             Reward observed for each (state, action) pair.
 
-        pscore: array-like of shape (n_episodes * step_per_episode)
+        pscore: array-like of shape (n_trajectories * step_per_trajectory)
             Action choice probability of the behavior policy for the chosen action.
 
-        evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
+        evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
+
+        method: {"dual_dice", "gen_dice", "algae_dice", "best_dice", "mvl", "mwl", "custom"}, default="best_dice"
+            Indicates which parameter set should be used. When, "custom" users can specify their own parameter.
 
         n_epochs: int, default=100
             Number of epochs to train.
@@ -1243,29 +1307,26 @@ class ContinuousAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearne
             Whether to optimize :math:`\\lambda`. If False, :math:`\\lambda` is automatically set to zero.
             A boolean value should be given when `method == "custom"`.
 
-        action_scaler: {float, array-like of shape (action_dim, )}, default=None
-            Scaling factor of action.
-
         random_state: int, default=None
             Random state.
 
         Return
         -------
-        q_value: ndarray of shape (n_episodes * step_per_episode)
+        q_value: ndarray of shape (n_trajectories * step_per_trajectory)
             Q value of each (state, action) pair.
 
-        w_hat: ndarray of shape (n_episodes * step_per_episode)
+        w_hat: ndarray of shape (n_trajectories * step_per_trajectory)
             Estimated state-action marginal importance weight.
 
         """
         self.fit(
-            method=method,
-            step_per_episode=step_per_episode,
+            step_per_trajectory=step_per_trajectory,
             state=state,
             action=action,
             reward=reward,
             pscore=pscore,
             evaluation_policy_action=evaluation_policy_action,
+            method=method,
             n_epochs=n_epochs,
             n_steps_per_epoch=n_steps_per_epoch,
             batch_size=batch_size,
@@ -1278,7 +1339,6 @@ class ContinuousAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearne
             alpha_w=alpha_w,
             alpha_r=alpha_r,
             enable_lambda=enable_lambda,
-            action_scaler=action_scaler,
             random_state=random_state,
         )
-        return self.predict(state=state, action=action)
+        return self.predict(state, action)

@@ -67,54 +67,126 @@ class DiscreteDirectMethod(BaseOffPolicyEstimator):
 
     def _estimate_trajectory_value(
         self,
-        initial_state_value_prediction,
+        step_per_trajectory: int,
+        evaluation_policy_action_dist: np.ndarray,
+        state_action_value_prediction: np.ndarray,
         **kwargs,
     ) -> np.ndarray:
         """Estimate the trajectory-wise policy value.
 
         Parameters
         -------
-        initial_state_value_prediction: array-like of shape (n_episodes, )
-            Estimated initial state value.
+        step_per_trajectory: int (> 0)
+            Number of timesteps in an episode.
+
+        evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
+            Conditional action distribution induced by the evaluation policy,
+            i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
+
+        state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, n_action)
+            :math:`\\hat{Q}` for all action,
+            i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
 
         Return
         -------
-        estimated_trajectory_wise_policy_value: ndarray of shape (n_episodes, )
+        estimated_trajectory_wise_policy_value: ndarray of shape (n_trajectories, )
             Policy value estimated for each trajectory.
-            (Equivalent to initial_state_value_prediction.)
 
         """
-        return initial_state_value_prediction
+        state_value = (
+            (state_action_value_prediction * evaluation_policy_action_dist)
+            .sum(axis=1)
+            .reshape((-1, step_per_trajectory))
+        )
+        return state_value[:, 0]
 
     def estimate_policy_value(
-        self, initial_state_value_prediction: np.ndarray, **kwargs
+        self,
+        step_per_trajectory: int,
+        evaluation_policy_action_dist: np.ndarray,
+        state_action_value_prediction: np.ndarray,
+        **kwargs,
     ) -> float:
         """Estimate the policy value of the evaluation policy.
 
         Parameters
         -------
-        initial_state_value_prediction: array-like of shape (n_episodes, )
-            Estimated initial state value.
+        step_per_trajectory: int (> 0)
+            Number of timesteps in an episode.
+
+        evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
+            Conditional action distribution induced by the evaluation policy,
+            i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
+
+        state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, n_action)
+            :math:`\\hat{Q}` for all action,
+            i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
 
         Return
         -------
-        V_hat: ndarray of shape (n_episodes, )
+        V_hat: ndarray of shape (n_trajectories, )
             Estimated policy value.
 
         """
-        check_array(
-            initial_state_value_prediction,
-            name="initial_state_value_prediction",
-            expected_dim=1,
+        check_scalar(
+            step_per_trajectory,
+            name="step_per_trajectory",
+            target_type=int,
+            min_val=1,
         )
+        check_array(
+            state_action_value_prediction,
+            name="state_action_value_prediction",
+            expected_dim=2,
+        )
+        check_array(
+            evaluation_policy_action_dist,
+            name="evaluation_policy_action_dist",
+            expected_dim=2,
+            min_val=0.0,
+            max_val=1.0,
+        )
+        if (
+            state_action_value_prediction.shape[0]
+            != evaluation_policy_action_dist.shape[0]
+        ):
+            raise ValueError(
+                "Expected `state_action_value_prediction.shape[0] == evaluation_policy_action_dist.shape[0]`"
+                ", but found False"
+            )
+        if (
+            state_action_value_prediction.shape[1]
+            != evaluation_policy_action_dist.shape[1]
+        ):
+            raise ValueError(
+                "Expected `state_action_value_prediction.shape[1] == evaluation_policy_action_dist.shape[1]`"
+                ", but found False"
+            )
+        if state_action_value_prediction.shape[0] % step_per_trajectory:
+            raise ValueError(
+                "Expected `state_action_value_prediction.shape[0] \\% step_per_trajectory == 0`, but found False"
+            )
+        if not np.allclose(
+            evaluation_policy_action_dist.sum(axis=1),
+            np.ones(evaluation_policy_action_dist.shape[0]),
+        ):
+            raise ValueError(
+                "Expected `evaluation_policy_action_dist.sum(axis=1) == np.ones(evaluation_policy_action_dist.shape[0])`"
+                ", but found it False"
+            )
+
         estimated_policy_value = self._estimate_trajectory_value(
-            initial_state_value_prediction
+            step_per_trajectory=step_per_trajectory,
+            evaluation_policy_action_dist=evaluation_policy_action_dist,
+            state_action_value_prediction=state_action_value_prediction,
         ).mean()
         return estimated_policy_value
 
     def estimate_interval(
         self,
-        initial_state_value_prediction: np.ndarray,
+        step_per_trajectory: int,
+        evaluation_policy_action_dist: np.ndarray,
+        state_action_value_prediction: np.ndarray,
         alpha: float = 0.05,
         ci: str = "bootstrap",
         n_bootstrap_samples: int = 10000,
@@ -125,8 +197,16 @@ class DiscreteDirectMethod(BaseOffPolicyEstimator):
 
         Parameters
         -------
-        initial_state_value_prediction: array-like of shape (n_episodes, )
-            Estimated initial state value.
+        step_per_trajectory: int (> 0)
+            Number of timesteps in an episode.
+
+        evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
+            Conditional action distribution induced by the evaluation policy,
+            i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
+
+        state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, n_action)
+            :math:`\\hat{Q}` for all action,
+            i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
 
         alpha: float, default=0.05
             Significance level. The value should be within `[0, 1)`.
@@ -146,18 +226,61 @@ class DiscreteDirectMethod(BaseOffPolicyEstimator):
             Dictionary storing the estimated mean and upper-lower confidence bounds.
 
         """
-        check_array(
-            initial_state_value_prediction,
-            name="initial_state_value_prediction",
-            expected_dim=1,
+        check_scalar(
+            step_per_trajectory,
+            name="step_per_trajectory",
+            target_type=int,
+            min_val=1,
         )
+        check_array(
+            state_action_value_prediction,
+            name="state_action_value_prediction",
+            expected_dim=2,
+        )
+        check_array(
+            evaluation_policy_action_dist,
+            name="evaluation_policy_action_dist",
+            expected_dim=2,
+            min_val=0.0,
+            max_val=1.0,
+        )
+        if (
+            state_action_value_prediction.shape[0]
+            != evaluation_policy_action_dist.shape[0]
+        ):
+            raise ValueError(
+                "Expected `state_action_value_prediction.shape[0] == evaluation_policy_action_dist.shape[0]`"
+                ", but found False"
+            )
+        if (
+            state_action_value_prediction.shape[1]
+            != evaluation_policy_action_dist.shape[1]
+        ):
+            raise ValueError(
+                "Expected `state_action_value_prediction.shape[1] == evaluation_policy_action_dist.shape[1]`"
+                ", but found False"
+            )
+        if state_action_value_prediction.shape[0] % step_per_trajectory:
+            raise ValueError(
+                "Expected `state_action_value_prediction.shape[0] \\% step_per_trajectory == 0`, but found False"
+            )
+        if not np.allclose(
+            evaluation_policy_action_dist.sum(axis=1),
+            np.ones(evaluation_policy_action_dist.shape[0]),
+        ):
+            raise ValueError(
+                "Expected `evaluation_policy_action_dist.sum(axis=1) == np.ones(evaluation_policy_action_dist.shape[0])`"
+                ", but found it False"
+            )
         if ci not in self._estimate_confidence_interval.keys():
             raise ValueError(
                 f"ci must be one of 'bootstrap', 'hoeffding', 'bernstein', or 'ttest', but {ci} is given"
             )
 
         estimated_trajectory_value = self._estimate_trajectory_value(
-            initial_state_value_prediction
+            step_per_trajectory=step_per_trajectory,
+            evaluation_policy_action_dist=evaluation_policy_action_dist,
+            state_action_value_prediction=state_action_value_prediction,
         )
         return self._estimate_confidence_interval[ci](
             samples=estimated_trajectory_value,
@@ -206,7 +329,7 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 
     def _estimate_trajectory_value(
         self,
-        step_per_episode: int,
+        step_per_trajectory: int,
         action: np.ndarray,
         reward: np.ndarray,
         pscore: np.ndarray,
@@ -218,20 +341,20 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 
         Parameters
         -------
-        step_per_episode: int (> 0)
+        step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_episodes * step_per_episode, )
+        action: array-like of shape (n_trajectories * step_per_trajectory, )
             Action chosen by the behavior policy.
 
-        reward: array-like of shape (n_episodes * step_per_episode, )
+        reward: array-like of shape (n_trajectories * step_per_trajectory, )
             Reward observation.
 
-        pscore: array-like of shape (n_episodes * step_per_episode, )
+        pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_0(a \\mid s)`
 
-        evaluation_policy_action_dist: array-like of shape (n_episodes * step_per_episode, n_action)
+        evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
             Conditional action distribution induced by the evaluation policy,
             i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
 
@@ -240,25 +363,25 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 
         Return
         -------
-        estimated_trajectory_wise_policy_value: ndarray of shape (n_episodes, )
+        estimated_trajectory_wise_policy_value: ndarray of shape (n_trajectories, )
             Policy value estimated for each trajectory.
 
         """
         behavior_policy_pscore = self._calc_behavior_policy_pscore_discrete(
-            step_per_episode=step_per_episode,
+            step_per_trajectory=step_per_trajectory,
             pscore=pscore,
             pscore_type="trajectory_wise",
         )
         evaluation_policy_pscore = self._calc_evaluation_policy_pscore_discrete(
-            step_per_episode=step_per_episode,
+            step_per_trajectory=step_per_trajectory,
             action=action,
             evaluation_policy_action_dist=evaluation_policy_action_dist,
             pscore_type="trajectory_wise",
         )
         weight = evaluation_policy_pscore / behavior_policy_pscore
 
-        reward = reward.reshape((-1, step_per_episode))
-        discount = np.full(step_per_episode, gamma).cumprod() / gamma
+        reward = reward.reshape((-1, step_per_trajectory))
+        discount = np.full(step_per_trajectory, gamma).cumprod() / gamma
         estimated_trajectory_value = (discount[np.newaxis, :] * weight * reward).sum(
             axis=1
         )
@@ -267,7 +390,7 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 
     def estimate_policy_value(
         self,
-        step_per_episode: int,
+        step_per_trajectory: int,
         action: np.ndarray,
         reward: np.ndarray,
         pscore: np.ndarray,
@@ -279,20 +402,20 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 
         Parameters
         -------
-        step_per_episode: int (> 0)
+        step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_episodes * step_per_episode, )
+        action: array-like of shape (n_trajectories * step_per_trajectory, )
             Action chosen by the behavior policy.
 
-        reward: array-like of shape (n_episodes * step_per_episode, )
+        reward: array-like of shape (n_trajectories * step_per_trajectory, )
             Reward observation.
 
-        pscore: array-like of shape (n_episodes * step_per_episode, )
+        pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_0(a \\mid s)`
 
-        evaluation_policy_action_dist: array-like of shape (n_episodes * step_per_episode, n_action)
+        evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
             Conditional action distribution induced by the evaluation policy,
             i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
 
@@ -301,13 +424,13 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 
         Return
         -------
-        V_hat: ndarray of shape (n_episodes, )
+        V_hat: ndarray of shape (n_trajectories, )
             Estimated policy value.
 
         """
         check_scalar(
-            step_per_episode,
-            name="step_per_episode",
+            step_per_trajectory,
+            name="step_per_trajectory",
             target_type=int,
             min_val=1,
         )
@@ -347,6 +470,10 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
                 "Expected `action.shape[0] == reward.shape[0] == pscore.shape[0] == evaluation_policy_action_dist.shape[0]`"
                 ", but found False"
             )
+        if action.shape[0] % step_per_trajectory:
+            raise ValueError(
+                "Expected `action.shape[0] \\% step_per_trajectory == 0`, but found False"
+            )
         if not np.allclose(
             evaluation_policy_action_dist.sum(axis=1),
             np.ones(evaluation_policy_action_dist.shape[0]),
@@ -358,7 +485,7 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
 
         estimated_policy_value = self._estimate_trajectory_value(
-            step_per_episode=step_per_episode,
+            step_per_trajectory=step_per_trajectory,
             action=action,
             reward=reward,
             pscore=pscore,
@@ -369,7 +496,7 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 
     def estimate_interval(
         self,
-        step_per_episode: int,
+        step_per_trajectory: int,
         action: np.ndarray,
         reward: np.ndarray,
         pscore: np.ndarray,
@@ -385,20 +512,20 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 
         Parameters
         -------
-        step_per_episode: int (> 0)
+        step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_episodes * step_per_episode, )
+        action: array-like of shape (n_trajectories * step_per_trajectory, )
             Action chosen by the behavior policy.
 
-        reward: array-like of shape (n_episodes * step_per_episode, )
+        reward: array-like of shape (n_trajectories * step_per_trajectory, )
             Reward observation.
 
-        pscore: array-like of shape (n_episodes * step_per_episode, )
+        pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_0(a \\mid s)`
 
-        evaluation_policy_action_dist: array-like of shape (n_episodes * step_per_episode, n_action)
+        evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
             Conditional action distribution induced by the evaluation policy,
             i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
 
@@ -424,8 +551,8 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 
         """
         check_scalar(
-            step_per_episode,
-            name="step_per_episode",
+            step_per_trajectory,
+            name="step_per_trajectory",
             target_type=int,
             min_val=1,
         )
@@ -465,6 +592,10 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
                 "Expected `action.shape[0] == reward.shape[0] == pscore.shape[0] == evaluation_policy_action_dist.shape[0]`"
                 ", but found False"
             )
+        if action.shape[0] % step_per_trajectory:
+            raise ValueError(
+                "Expected `action.shape[0] \\% step_per_trajectory == 0`, but found False"
+            )
         if not np.allclose(
             evaluation_policy_action_dist.sum(axis=1),
             np.ones(evaluation_policy_action_dist.shape[0]),
@@ -481,7 +612,7 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
             )
 
         estimated_trajectory_value = self._estimate_trajectory_value(
-            step_per_episode=step_per_episode,
+            step_per_trajectory=step_per_trajectory,
             action=action,
             reward=reward,
             pscore=pscore,
@@ -535,7 +666,7 @@ class DiscretePerDecisionImportanceSampling(BaseOffPolicyEstimator):
 
     def _estimate_trajectory_value(
         self,
-        step_per_episode: int,
+        step_per_trajectory: int,
         action: np.ndarray,
         reward: np.ndarray,
         pscore: np.ndarray,
@@ -547,20 +678,20 @@ class DiscretePerDecisionImportanceSampling(BaseOffPolicyEstimator):
 
         Parameters
         -------
-        step_per_episode: int (> 0)
+        step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_episodes * step_per_episode, )
+        action: array-like of shape (n_trajectories * step_per_trajectory, )
             Action chosen by the behavior policy.
 
-        reward: array-like of shape (n_episodes * step_per_episode, )
+        reward: array-like of shape (n_trajectories * step_per_trajectory, )
             Reward observation.
 
-        pscore: array-like of shape (n_episodes * step_per_episode, )
+        pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_0(a \\mid s)`
 
-        evaluation_policy_action_dist: array-like of shape (n_episodes * step_per_episode, n_action)
+        evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
             Conditional action distribution induced by the evaluation policy,
             i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
 
@@ -569,25 +700,25 @@ class DiscretePerDecisionImportanceSampling(BaseOffPolicyEstimator):
 
         Return
         -------
-        estimated_trajectory_wise_policy_value: ndarray of shape (n_episodes, )
+        estimated_trajectory_wise_policy_value: ndarray of shape (n_trajectories, )
             Policy value estimated for each trajectory.
 
         """
         behavior_policy_pscore = self._calc_behavior_policy_pscore_discrete(
-            step_per_episode=step_per_episode,
+            step_per_trajectory=step_per_trajectory,
             pscore=pscore,
             pscore_type="step_wise",
         )
         evaluation_policy_pscore = self._calc_evaluation_policy_pscore_discrete(
-            step_per_episode=step_per_episode,
+            step_per_trajectory=step_per_trajectory,
             action=action,
             evaluation_policy_action_dist=evaluation_policy_action_dist,
             pscore_type="step_wise",
         )
         weight = evaluation_policy_pscore / behavior_policy_pscore
 
-        reward = reward.reshape((-1, step_per_episode))
-        discount = np.full(step_per_episode, gamma).cumprod() / gamma
+        reward = reward.reshape((-1, step_per_trajectory))
+        discount = np.full(step_per_trajectory, gamma).cumprod() / gamma
         estimated_trajectory_value = (discount[np.newaxis, :] * weight * reward).sum(
             axis=1
         )
@@ -596,7 +727,7 @@ class DiscretePerDecisionImportanceSampling(BaseOffPolicyEstimator):
 
     def estimate_policy_value(
         self,
-        step_per_episode: int,
+        step_per_trajectory: int,
         action: np.ndarray,
         reward: np.ndarray,
         pscore: np.ndarray,
@@ -608,20 +739,20 @@ class DiscretePerDecisionImportanceSampling(BaseOffPolicyEstimator):
 
         Parameters
         -------
-        step_per_episode: int (> 0)
+        step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_episodes * step_per_episode, )
+        action: array-like of shape (n_trajectories * step_per_trajectory, )
             Action chosen by the behavior policy.
 
-        reward: array-like of shape (n_episodes * step_per_episode, )
+        reward: array-like of shape (n_trajectories * step_per_trajectory, )
             Reward observation.
 
-        pscore: array-like of shape (n_episodes * step_per_episode, )
+        pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_0(a \\mid s)`
 
-        evaluation_policy_action_dist: array-like of shape (n_episodes * step_per_episode, n_action)
+        evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
             Conditional action distribution induced by the evaluation policy,
             i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
 
@@ -630,13 +761,13 @@ class DiscretePerDecisionImportanceSampling(BaseOffPolicyEstimator):
 
         Return
         -------
-        V_hat: ndarray of shape (n_episodes, )
+        V_hat: ndarray of shape (n_trajectories, )
             Estimated policy value.
 
         """
         check_scalar(
-            step_per_episode,
-            name="step_per_episode",
+            step_per_trajectory,
+            name="step_per_trajectory",
             target_type=int,
             min_val=1,
         )
@@ -676,6 +807,10 @@ class DiscretePerDecisionImportanceSampling(BaseOffPolicyEstimator):
                 "Expected `action.shape[0] == reward.shape[0] == pscore.shape[0] == evaluation_policy_action_dist.shape[0]`"
                 ", but found False"
             )
+        if action.shape[0] % step_per_trajectory:
+            raise ValueError(
+                "Expected `action.shape[0] \\% step_per_trajectory == 0`, but found False"
+            )
         if not np.allclose(
             evaluation_policy_action_dist.sum(axis=1),
             np.ones(evaluation_policy_action_dist.shape[0]),
@@ -687,7 +822,7 @@ class DiscretePerDecisionImportanceSampling(BaseOffPolicyEstimator):
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
 
         return self._estimate_trajectory_value(
-            step_per_episode=step_per_episode,
+            step_per_trajectory=step_per_trajectory,
             action=action,
             reward=reward,
             pscore=pscore,
@@ -697,7 +832,7 @@ class DiscretePerDecisionImportanceSampling(BaseOffPolicyEstimator):
 
     def estimate_interval(
         self,
-        step_per_episode: int,
+        step_per_trajectory: int,
         action: np.ndarray,
         reward: np.ndarray,
         pscore: np.ndarray,
@@ -713,20 +848,20 @@ class DiscretePerDecisionImportanceSampling(BaseOffPolicyEstimator):
 
         Parameters
         -------
-        step_per_episode: int (> 0)
+        step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_episodes * step_per_episode, )
+        action: array-like of shape (n_trajectories * step_per_trajectory, )
             Action chosen by the behavior policy.
 
-        reward: array-like of shape (n_episodes * step_per_episode, )
+        reward: array-like of shape (n_trajectories * step_per_trajectory, )
             Reward observation.
 
-        pscore: array-like of shape (n_episodes * step_per_episode, )
+        pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_0(a \\mid s)`
 
-        evaluation_policy_action_dist: array-like of shape (n_episodes * step_per_episode, n_action)
+        evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
             Conditional action distribution induced by the evaluation policy,
             i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
 
@@ -752,8 +887,8 @@ class DiscretePerDecisionImportanceSampling(BaseOffPolicyEstimator):
 
         """
         check_scalar(
-            step_per_episode,
-            name="step_per_episode",
+            step_per_trajectory,
+            name="step_per_trajectory",
             target_type=int,
             min_val=1,
         )
@@ -793,6 +928,10 @@ class DiscretePerDecisionImportanceSampling(BaseOffPolicyEstimator):
                 "Expected `action.shape[0] == reward.shape[0] == pscore.shape[0] == evaluation_policy_action_dist.shape[0]`"
                 ", but found False"
             )
+        if action.shape[0] % step_per_trajectory:
+            raise ValueError(
+                "Expected `action.shape[0] \\% step_per_trajectory == 0`, but found False"
+            )
         if not np.allclose(
             evaluation_policy_action_dist.sum(axis=1),
             np.ones(evaluation_policy_action_dist.shape[0]),
@@ -809,7 +948,7 @@ class DiscretePerDecisionImportanceSampling(BaseOffPolicyEstimator):
             )
 
         estimated_trajectory_value = self._estimate_trajectory_value(
-            step_per_episode=step_per_episode,
+            step_per_trajectory=step_per_trajectory,
             action=action,
             reward=reward,
             pscore=pscore,
@@ -870,7 +1009,7 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
 
     def _estimate_trajectory_value(
         self,
-        step_per_episode: int,
+        step_per_trajectory: int,
         action: np.ndarray,
         reward: np.ndarray,
         pscore: np.ndarray,
@@ -883,24 +1022,24 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
 
         Parameters
         -------
-        step_per_episode: int (> 0)
+        step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_episodes * step_per_episode, )
+        action: array-like of shape (n_trajectories * step_per_trajectory, )
             Action chosen by the behavior policy.
 
-        reward: array-like of shape (n_episodes * step_per_episode, )
+        reward: array-like of shape (n_trajectories * step_per_trajectory, )
             Reward observation.
 
-        pscore: array-like of shape (n_episodes * step_per_episode, )
+        pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_0(a \\mid s)`
 
-        evaluation_policy_action_dist: array-like of shape (n_episodes * step_per_episode, n_action)
+        evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
             Conditional action distribution induced by the evaluation policy,
             i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
 
-        state_action_value_prediction: array-like of shape (n_episodes * step_per_episode, n_action)
+        state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, n_action)
             :math:`\\hat{Q}` for all action,
             i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
 
@@ -909,17 +1048,17 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
 
         Return
         -------
-        estimated_trajectory_wise_policy_value: ndarray of shape (n_episodes, )
+        estimated_trajectory_wise_policy_value: ndarray of shape (n_trajectories, )
             Policy value estimated for each trajectory.
 
         """
         behavior_policy_pscore = self._calc_behavior_policy_pscore_discrete(
-            step_per_episode=step_per_episode,
+            step_per_trajectory=step_per_trajectory,
             pscore=pscore,
             pscore_type="step_wise",
         )
         evaluation_policy_pscore = self._calc_evaluation_policy_pscore_discrete(
-            step_per_episode=step_per_episode,
+            step_per_trajectory=step_per_trajectory,
             action=action,
             evaluation_policy_action_dist=evaluation_policy_action_dist,
             pscore_type="step_wise",
@@ -928,18 +1067,18 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
         weight_prev = np.roll(weight, 1, axis=1)
         weight_prev[:, 0] = 1
 
-        reward = reward.reshape((-1, step_per_episode))
-        discount = np.full(step_per_episode, gamma).cumprod() / gamma
+        reward = reward.reshape((-1, step_per_trajectory))
+        discount = np.full(step_per_trajectory, gamma).cumprod() / gamma
 
         state_value_prediction = (
             (state_action_value_prediction * evaluation_policy_action_dist)
             .sum(axis=1)
-            .reshape((-1, step_per_episode))
+            .reshape((-1, step_per_trajectory))
         )
 
         state_action_value_prediction = state_action_value_prediction[
             np.arange(len(action)), action
-        ].reshape((-1, step_per_episode))
+        ].reshape((-1, step_per_trajectory))
 
         estimated_trajectory_value = (
             discount[np.newaxis, :]
@@ -953,7 +1092,7 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
 
     def estimate_policy_value(
         self,
-        step_per_episode: int,
+        step_per_trajectory: int,
         action: np.ndarray,
         reward: np.ndarray,
         pscore: np.ndarray,
@@ -966,24 +1105,24 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
 
         Parameters
         -------
-        step_per_episode: int (> 0)
+        step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_episodes * step_per_episode, )
+        action: array-like of shape (n_trajectories * step_per_trajectory, )
             Action chosen by the behavior policy.
 
-        reward: array-like of shape (n_episodes * step_per_episode, )
+        reward: array-like of shape (n_trajectories * step_per_trajectory, )
             Reward observation.
 
-        pscore: array-like of shape (n_episodes * step_per_episode, )
+        pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_0(a \\mid s)`
 
-        evaluation_policy_action_dist: array-like of shape (n_episodes * step_per_episode, n_action)
+        evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
             Conditional action distribution induced by the evaluation policy,
             i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
 
-        state_action_value_prediction: array-like of shape (n_episodes * step_per_episode, n_action)
+        state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, n_action)
             :math:`\\hat{Q}` for all action,
             i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
 
@@ -992,13 +1131,13 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
 
         Return
         -------
-        V_hat: ndarray of shape (n_episodes, )
+        V_hat: ndarray of shape (n_trajectories, )
             Estimated policy value.
 
         """
         check_scalar(
-            step_per_episode,
-            name="step_per_episode",
+            step_per_trajectory,
+            name="step_per_trajectory",
             target_type=int,
             min_val=1,
         )
@@ -1053,6 +1192,10 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
                 "Expected `state_action_value_prediction.shape[1] == evaluation_policy_action_dist.shape[1]`"
                 ", but found False"
             )
+        if action.shape[0] % step_per_trajectory:
+            raise ValueError(
+                "Expected `action.shape[0] \\% step_per_trajectory == 0`, but found False"
+            )
         if not np.allclose(
             evaluation_policy_action_dist.sum(axis=1),
             np.ones(evaluation_policy_action_dist.shape[0]),
@@ -1064,7 +1207,7 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
 
         return self._estimate_trajectory_value(
-            step_per_episode=step_per_episode,
+            step_per_trajectory=step_per_trajectory,
             action=action,
             reward=reward,
             pscore=pscore,
@@ -1075,7 +1218,7 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
 
     def estimate_interval(
         self,
-        step_per_episode: int,
+        step_per_trajectory: int,
         action: np.ndarray,
         reward: np.ndarray,
         pscore: np.ndarray,
@@ -1092,24 +1235,24 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
 
         Parameters
         -------
-        step_per_episode: int (> 0)
+        step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_episodes * step_per_episode, )
+        action: array-like of shape (n_trajectories * step_per_trajectory, )
             Action chosen by the behavior policy.
 
-        reward: array-like of shape (n_episodes * step_per_episode, )
+        reward: array-like of shape (n_trajectories * step_per_trajectory, )
             Reward observation.
 
-        pscore: array-like of shape (n_episodes * step_per_episode, )
+        pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_0(a \\mid s)`
 
-        evaluation_policy_action_dist: array-like of shape (n_episodes * step_per_episode, n_action)
+        evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
             Conditional action distribution induced by the evaluation policy,
             i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
 
-        state_action_value_prediction: array-like of shape (n_episodes * step_per_episode, n_action)
+        state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, n_action)
             :math:`\\hat{Q}` for all action,
             i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
 
@@ -1135,8 +1278,8 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
 
         """
         check_scalar(
-            step_per_episode,
-            name="step_per_episode",
+            step_per_trajectory,
+            name="step_per_trajectory",
             target_type=int,
             min_val=1,
         )
@@ -1191,6 +1334,10 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
                 "Expected `state_action_value_prediction.shape[1] == evaluation_policy_action_dist.shape[1]`"
                 ", but found False"
             )
+        if action.shape[0] % step_per_trajectory:
+            raise ValueError(
+                "Expected `action.shape[0] \\% step_per_trajectory == 0`, but found False"
+            )
         if not np.allclose(
             evaluation_policy_action_dist.sum(axis=1),
             np.ones(evaluation_policy_action_dist.shape[0]),
@@ -1207,7 +1354,7 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
             )
 
         estimated_trajectory_value = self._estimate_trajectory_value(
-            step_per_episode=step_per_episode,
+            step_per_trajectory=step_per_trajectory,
             action=action,
             reward=reward,
             pscore=pscore,
@@ -1271,7 +1418,7 @@ class DiscreteSelfNormalizedTrajectoryWiseImportanceSampling(
 
     def _estimate_trajectory_value(
         self,
-        step_per_episode: int,
+        step_per_trajectory: int,
         action: np.ndarray,
         reward: np.ndarray,
         pscore: np.ndarray,
@@ -1283,20 +1430,20 @@ class DiscreteSelfNormalizedTrajectoryWiseImportanceSampling(
 
         Parameters
         -------
-        step_per_episode: int (> 0)
+        step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_episodes * step_per_episode, )
+        action: array-like of shape (n_trajectories * step_per_trajectory, )
             Action chosen by the behavior policy.
 
-        reward: array-like of shape (n_episodes * step_per_episode, )
+        reward: array-like of shape (n_trajectories * step_per_trajectory, )
             Reward observation.
 
-        pscore: array-like of shape (n_episodes * step_per_episode, )
+        pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_0(a \\mid s)`
 
-        evaluation_policy_action_dist: array-like of shape (n_episodes * step_per_episode, n_action)
+        evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
             Conditional action distribution induced by the evaluation policy,
             i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
 
@@ -1305,17 +1452,17 @@ class DiscreteSelfNormalizedTrajectoryWiseImportanceSampling(
 
         Return
         -------
-        estimated_trajectory_wise_policy_value: ndarray of shape (n_episodes, )
+        estimated_trajectory_wise_policy_value: ndarray of shape (n_trajectories, )
             Policy value estimated for each trajectory.
 
         """
         behavior_policy_pscore = self._calc_behavior_policy_pscore_discrete(
-            step_per_episode=step_per_episode,
+            step_per_trajectory=step_per_trajectory,
             pscore=pscore,
             pscore_type="trajectory_wise",
         )
         evaluation_policy_pscore = self._calc_evaluation_policy_pscore_discrete(
-            step_per_episode=step_per_episode,
+            step_per_trajectory=step_per_trajectory,
             action=action,
             evaluation_policy_action_dist=evaluation_policy_action_dist,
             pscore_type="trajectory_wise",
@@ -1323,8 +1470,8 @@ class DiscreteSelfNormalizedTrajectoryWiseImportanceSampling(
         weight = evaluation_policy_pscore / behavior_policy_pscore
         self_normalized_weight = weight / (weight.mean(axis=0)[np.newaxis, :] + 1e-10)
 
-        reward = reward.reshape((-1, step_per_episode))
-        discount = np.full(step_per_episode, gamma).cumprod() / gamma
+        reward = reward.reshape((-1, step_per_trajectory))
+        discount = np.full(step_per_trajectory, gamma).cumprod() / gamma
         estimated_trajectory_value = (
             discount[np.newaxis, :] * self_normalized_weight * reward
         ).sum(axis=1)
@@ -1380,7 +1527,7 @@ class DiscreteSelfNormalizedPerDecisionImportanceSampling(
 
     def _estimate_trajectory_value(
         self,
-        step_per_episode: int,
+        step_per_trajectory: int,
         action: np.ndarray,
         reward: np.ndarray,
         pscore: np.ndarray,
@@ -1392,20 +1539,20 @@ class DiscreteSelfNormalizedPerDecisionImportanceSampling(
 
         Parameters
         -------
-        step_per_episode: int (> 0)
+        step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_episodes * step_per_episode, )
+        action: array-like of shape (n_trajectories * step_per_trajectory, )
             Action chosen by the behavior policy.
 
-        reward: array-like of shape (n_episodes * step_per_episode, )
+        reward: array-like of shape (n_trajectories * step_per_trajectory, )
             Reward observation.
 
-        pscore: array-like of shape (n_episodes * step_per_episode, )
+        pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_0(a \\mid s)`
 
-        evaluation_policy_action_dist: array-like of shape (n_episodes * step_per_episode, n_action)
+        evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
             Conditional action distribution induced by the evaluation policy,
             i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
 
@@ -1414,17 +1561,17 @@ class DiscreteSelfNormalizedPerDecisionImportanceSampling(
 
         Return
         -------
-        estimated_trajectory_wise_policy_value: ndarray of shape (n_episodes, )
+        estimated_trajectory_wise_policy_value: ndarray of shape (n_trajectories, )
             Policy value estimated for each trajectory.
 
         """
         behavior_policy_pscore = self._calc_behavior_policy_pscore_discrete(
-            step_per_episode=step_per_episode,
+            step_per_trajectory=step_per_trajectory,
             pscore=pscore,
             pscore_type="step_wise",
         )
         evaluation_policy_pscore = self._calc_evaluation_policy_pscore_discrete(
-            step_per_episode=step_per_episode,
+            step_per_trajectory=step_per_trajectory,
             action=action,
             evaluation_policy_action_dist=evaluation_policy_action_dist,
             pscore_type="step_wise",
@@ -1432,8 +1579,8 @@ class DiscreteSelfNormalizedPerDecisionImportanceSampling(
         weight = evaluation_policy_pscore / behavior_policy_pscore
         self_normalized_weight = weight / (weight.mean(axis=0)[np.newaxis, :] + 1e-10)
 
-        reward = reward.reshape((-1, step_per_episode))
-        discount = np.full(step_per_episode, gamma).cumprod() / gamma
+        reward = reward.reshape((-1, step_per_trajectory))
+        discount = np.full(step_per_trajectory, gamma).cumprod() / gamma
         estimated_trajectory_value = (
             discount[np.newaxis, :] * self_normalized_weight * reward
         ).sum(axis=1)
@@ -1492,7 +1639,7 @@ class DiscreteSelfNormalizedDoublyRobust(DiscreteDoublyRobust):
 
     def _estimate_trajectory_value(
         self,
-        step_per_episode: int,
+        step_per_trajectory: int,
         action: np.ndarray,
         reward: np.ndarray,
         pscore: np.ndarray,
@@ -1505,24 +1652,24 @@ class DiscreteSelfNormalizedDoublyRobust(DiscreteDoublyRobust):
 
         Parameters
         -------
-        step_per_episode: int (> 0)
+        step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_episodes * step_per_episode, )
+        action: array-like of shape (n_trajectories * step_per_trajectory, )
             Action chosen by the behavior policy.
 
-        reward: array-like of shape (n_episodes * step_per_episode, )
+        reward: array-like of shape (n_trajectories * step_per_trajectory, )
             Reward observation.
 
-        pscore: array-like of shape (n_episodes * step_per_episode, )
+        pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_0(a \\mid s)`
 
-        evaluation_policy_action_dist: array-like of shape (n_episodes * step_per_episode, n_action)
+        evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
             Conditional action distribution induced by the evaluation policy,
             i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
 
-        state_action_value_prediction: array-like of shape (n_episodes * step_per_episode, n_action)
+        state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, n_action)
             :math:`\\hat{Q}` for all action,
             i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
 
@@ -1531,17 +1678,17 @@ class DiscreteSelfNormalizedDoublyRobust(DiscreteDoublyRobust):
 
         Return
         -------
-        estimated_trajectory_wise_policy_value: ndarray of shape (n_episodes, )
+        estimated_trajectory_wise_policy_value: ndarray of shape (n_trajectories, )
             Policy value estimated for each trajectory.
 
         """
         behavior_policy_pscore = self._calc_behavior_policy_pscore_discrete(
-            step_per_episode=step_per_episode,
+            step_per_trajectory=step_per_trajectory,
             pscore=pscore,
             pscore_type="step_wise",
         )
         evaluation_policy_pscore = self._calc_evaluation_policy_pscore_discrete(
-            step_per_episode=step_per_episode,
+            step_per_trajectory=step_per_trajectory,
             action=action,
             evaluation_policy_action_dist=evaluation_policy_action_dist,
             pscore_type="step_wise",
@@ -1551,18 +1698,18 @@ class DiscreteSelfNormalizedDoublyRobust(DiscreteDoublyRobust):
         self_normalized_weight_prev = np.roll(self_normalized_weight, 1, axis=1)
         self_normalized_weight_prev[:, 0] = 1
 
-        reward = reward.reshape((-1, step_per_episode))
-        discount = np.full(step_per_episode, gamma).cumprod() / gamma
+        reward = reward.reshape((-1, step_per_trajectory))
+        discount = np.full(step_per_trajectory, gamma).cumprod() / gamma
 
         state_value_prediction = (
             (state_action_value_prediction * evaluation_policy_action_dist)
             .sum(axis=1)
-            .reshape((-1, step_per_episode))
+            .reshape((-1, step_per_trajectory))
         )
 
         state_action_value_prediction = state_action_value_prediction[
             np.arange(len(action)), action
-        ].reshape((-1, step_per_episode))
+        ].reshape((-1, step_per_trajectory))
 
         estimated_trajectory_value = (
             discount[np.newaxis, :]

@@ -110,7 +110,7 @@ class OffPolicySelection:
             )
 
         # data collection
-        >>> logged_dataset = dataset.obtain_trajectories(n_episodes=100, obtain_info=True)
+        >>> logged_dataset = dataset.obtain_trajectories(n_trajectories=100, obtain_info=True)
 
         # evaluation policy
         >>> ddqn_ = DiscreteEpsilonGreedyHead(
@@ -135,7 +135,7 @@ class OffPolicySelection:
         >>> input_dict = prep.obtain_whole_inputs(
                 evaluation_policies=[ddqn_, random_],
                 env=env,
-                n_episodes_on_policy_evaluation=100,
+                n_trajectories_on_policy_evaluation=100,
                 random_state=12345,
             )
 
@@ -217,10 +217,10 @@ class OffPolicySelection:
                 "cumulative_distribution_ope must be the instance of CumulativeDistributionOffPolicyEvaluation"
             )
 
-        step_per_episode = self.ope.logged_dataset["step_per_episode"]
+        step_per_trajectory = self.ope.logged_dataset["step_per_trajectory"]
         check_scalar(
-            step_per_episode,
-            name="ope.logged_dataset['step_per_episode']",
+            step_per_trajectory,
+            name="ope.logged_dataset['step_per_trajectory']",
             target_type=int,
             min_val=1,
         )
@@ -230,7 +230,9 @@ class OffPolicySelection:
             behavior_policy_reward, name="ope.logged_dataset['reward']", expected_dim=1
         )
 
-        behavior_policy_reward = behavior_policy_reward.reshape((-1, step_per_episode))
+        behavior_policy_reward = behavior_policy_reward.reshape(
+            (-1, step_per_trajectory)
+        )
         self.behavior_policy_value = behavior_policy_reward.sum(axis=1).mean()
 
     def obtain_true_selection_result(
@@ -1956,7 +1958,7 @@ class OffPolicySelection:
                 input_dict=input_dict,
                 compared_estimators=compared_estimators,
                 hue=hue,
-                label=legend,
+                legend=legend,
                 n_cols=n_cols,
                 fig_dir=fig_dir,
                 fig_name=fig_name,
@@ -2090,7 +2092,7 @@ class OffPolicySelection:
             compared_estimators=compared_estimators,
             alphas=alphas,
             hue=hue,
-            label=legend,
+            legend=legend,
             n_cols=n_cols,
             sharey=sharey,
             fig_dir=fig_dir,

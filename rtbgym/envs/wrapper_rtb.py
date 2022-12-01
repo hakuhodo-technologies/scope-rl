@@ -143,7 +143,7 @@ class CustomizedRTBEnv(gym.Env):
         on_policy_performance = calc_on_policy_policy_value(
             env,
             agent,
-            n_episodes=100,
+            n_trajectories=100,
             random_state=12345
         )
         on_policy_performance  # 11.75

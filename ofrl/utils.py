@@ -289,12 +289,12 @@ def check_logged_dataset(logged_dataset: LoggedDataset):
     """
     dataset_keys = logged_dataset.keys()
     for expected_key in [
-        "n_episodes",
+        "n_trajectories",
         "action_type",
         "n_actions",
         "action_dim",
         "state_dim",
-        "step_per_episode",
+        "step_per_trajectory",
         "state",
         "action",
         "reward",

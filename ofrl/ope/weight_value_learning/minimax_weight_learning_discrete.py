@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import Optional
 from tqdm import tqdm
+from pathlib import Path
 
 import torch
 from torch import optim
@@ -8,6 +9,8 @@ from torch.nn import functional as F
 
 import numpy as np
 from sklearn.utils import check_scalar
+
+from d3rlpy.preprocessing import Scaler
 
 from .base import BaseWeightValueLearner
 from .function import (
@@ -52,6 +55,9 @@ class DiscreteMinimaxStateActionWeightLearning(BaseWeightValueLearner):
     w_function: DiscreteStateActionWeightFunction
         Weight function model.
 
+    state_scaler: d3rlpy.preprocessing.Scaler, default=None
+        Scaling factor of state.
+
     device: str, default="cuda:0"
         Specifies device used for torch.
 
@@ -63,10 +69,23 @@ class DiscreteMinimaxStateActionWeightLearning(BaseWeightValueLearner):
     """
 
     w_function: DiscreteStateActionWeightFunction
+    state_scaler: Optional[Scaler] = None
     device: str = "cuda:0"
 
     def __post_init__(self):
         self.w_function.to(self.device)
+
+        if self.state_scaler is not None:
+            if not isinstance(self.state_scaler, Scaler):
+                raise ValueError(
+                    "state_scaler must be an instance of d3rlpy.preprocessing.Scaler, but found False"
+                )
+
+    def load(self, path: Path):
+        self.w_function.load_state_dict(torch.load(path))
+
+    def save(self, path: Path):
+        torch.save(self.w_function.state_dict(), path)
 
     def _gaussian_kernel(
         self,
@@ -90,7 +109,7 @@ class DiscreteMinimaxStateActionWeightLearning(BaseWeightValueLearner):
                 action_onehot_1 @ action_onehot_2.T
             )
 
-        return kernel  # shape (n_episodes, n_episodes)
+        return kernel  # shape (n_trajectories, n_trajectories)
 
     def _first_term(
         self,
@@ -158,22 +177,22 @@ class DiscreteMinimaxStateActionWeightLearning(BaseWeightValueLearner):
 
         Parameters
         -------
-        initial_state: Tensor of shape (n_episodes, state_dim)
+        initial_state: Tensor of shape (n_trajectories, state_dim)
             Initial state of a trajectory (or states sampled from a stationary distribution).
 
-        initial_action: Tensor of shape (n_episodes, )
+        initial_action: Tensor of shape (n_trajectories, )
             Initial action chosen by the evaluation policy.
 
-        state: array-like of shape (n_episodes, state_dim)
+        state: array-like of shape (n_trajectories, state_dim)
             State observed by the behavior policy.
 
-        action: Tensor of shape (n_episodes, )
+        action: Tensor of shape (n_trajectories, )
             Action chosen by the behavior policy.
 
-        next_state: Tensor of shape (n_episodes, state_dim)
+        next_state: Tensor of shape (n_trajectories, state_dim)
             Next state observed for each (state, action) pair.
 
-        next_action: Tensor of shape (n_episodes, )
+        next_action: Tensor of shape (n_trajectories, )
             Next action chosen by the evaluation policy.
 
         gamma: float
@@ -222,9 +241,9 @@ class DiscreteMinimaxStateActionWeightLearning(BaseWeightValueLearner):
 
     def fit(
         self,
+        step_per_trajectory: int,
         state: np.ndarray,
         action: np.ndarray,
-        reward: np.ndarray,
         evaluation_policy_action_dist: np.ndarray,
         n_epochs: int = 100,
         n_steps_per_epoch: int = 100,
@@ -239,16 +258,16 @@ class DiscreteMinimaxStateActionWeightLearning(BaseWeightValueLearner):
 
         Parameters
         -------
-        state: array-like of shape (n_episodes * step_per_episode, state_dim)
+        step_per_trajectory: int (> 0)
+            Number of timesteps in an episode.
+
+        state: array-like of shape (n_trajectories * step_per_trajectory, state_dim)
             State observed by the behavior policy.
 
-        action: array-like of shape (n_episodes * step_per_episode)
+        action: array-like of shape (n_trajectories * step_per_trajectory)
             Action chosen by the behavior policy.
 
-        reward: array-like of shape (n_episodes * step_per_episode)
-            Reward observed for each (state, action) pair.
-
-        evaluation_policy_action_dist: array-like of shape (n_episodes * step_per_episode, n_actions)
+        evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_actions)
             Conditional action distribution induced by the evaluation policy,
             i.e., :math:`\\pi(a \\mid s_{t+1}) \\forall a \\in \\mathcal{A}`
 
@@ -276,7 +295,6 @@ class DiscreteMinimaxStateActionWeightLearning(BaseWeightValueLearner):
         """
         check_array(state, name="state", expected_dim=2)
         check_array(action, name="action", expected_dim=1)
-        check_array(reward, name="reward", expected_dim=1)
         check_array(
             evaluation_policy_action_dist,
             name="evaluation_policy_action_dist",
@@ -285,17 +303,14 @@ class DiscreteMinimaxStateActionWeightLearning(BaseWeightValueLearner):
             max_val=1.0,
         )
         if not (
-            state.shape[0]
-            == action.shape[0]
-            == reward.shape[0]
-            == evaluation_policy_action_dist.shape[0]
+            state.shape[0] == action.shape[0] == evaluation_policy_action_dist.shape[0]
         ):
             raise ValueError(
-                "Expected `state.shape[0] == action.shape[0] == reward.shape[0] == evaluation_policy_action_dist.shape[0]`, but found False"
+                "Expected `state.shape[0] == action.shape[0] == evaluation_policy_action_dist.shape[0]`, but found False"
             )
-        if state.shape[0] % step_per_episode:
+        if state.shape[0] % step_per_trajectory:
             raise ValueError(
-                "Expected `state.shape[0] % step_per_episode == 0`, but found False"
+                "Expected `state.shape[0] % step_per_trajectory == 0`, but found False"
             )
         if not np.allclose(
             np.ones(evaluation_policy_action_dist.shape[0]),
@@ -320,31 +335,32 @@ class DiscreteMinimaxStateActionWeightLearning(BaseWeightValueLearner):
 
         state_dim = state.shape[1]
         n_actions = evaluation_policy_action_dist.shape[1]
-        state = state.reshape((-1, step_per_episode, state_dim))
-        action = action.reshape((-1, step_per_episode))
-        reward = reward.reshape((-1, step_per_episode))
-        evaluation_policy_action = evaluation_policy_action.reshape(
-            (-1, step_per_episode, n_actions)
+        state = state.reshape((-1, step_per_trajectory, state_dim))
+        action = action.reshape((-1, step_per_trajectory))
+        evaluation_policy_action_dist = evaluation_policy_action_dist.reshape(
+            (-1, step_per_trajectory, n_actions)
         )
 
-        n_episodes, step_per_episode, _ = state.shape
+        n_trajectories, step_per_trajectory, _ = state.shape
         state = torch.FloatTensor(state, device=self.device)
         action = torch.LongTensor(action, device=self.device)
-        reward = torch.FloatTensor(reward, device=self.device)
         evaluation_policy_action_dist = torch.FloatTensor(
             evaluation_policy_action_dist, device=self.device
         )
+
+        if self.state_scaler is not None:
+            state = self.state_scaler.transform(state)
 
         optimizer = optim.SGD(self.w_function.parameters(), lr=lr, momentum=0.9)
 
         for epoch in tqdm(
             np.arange(n_epochs),
-            desc=["fitting_weight_and_value_functions"],
+            desc="[fitting_weight_and_value_functions]",
             total=n_epochs,
         ):
             for grad_step in range(n_steps_per_epoch):
-                idx_ = torch.randint(n_episodes, size=(batch_size,))
-                t_ = torch.randint(step_per_episode - 1, size=(batch_size,))
+                idx_ = torch.randint(n_trajectories, size=(batch_size,))
+                t_ = torch.randint(step_per_trajectory - 1, size=(batch_size,))
 
                 initial_action = torch.multinomial(
                     evaluation_policy_action_dist[idx_, 0], num_samples=1
@@ -358,7 +374,6 @@ class DiscreteMinimaxStateActionWeightLearning(BaseWeightValueLearner):
                     initial_action=initial_action,
                     state=state[idx_, t_],
                     action=action[idx_, t_],
-                    reward=reward[idx_, t_],
                     next_state=state[idx_, t_ + 1],
                     next_action=next_action,
                     gamma=gamma,
@@ -378,15 +393,15 @@ class DiscreteMinimaxStateActionWeightLearning(BaseWeightValueLearner):
 
         Parameters
         -------
-        state: array-like of shape (n_episodes * step_per_episode, state_dim)
+        state: array-like of shape (n_trajectories * step_per_trajectory, state_dim)
             State observed by the behavior policy.
 
-        action: array-like of shape (n_episodes * step_per_episode)
+        action: array-like of shape (n_trajectories * step_per_trajectory)
             Action chosen by the behavior policy.
 
         Return
         -------
-        importance_weight: ndarray of shape (n_episodes, step_per_episode)
+        importance_weight: ndarray of shape (n_trajectories, step_per_trajectory)
             Estimated state-action marginal importance weight.
 
         """
@@ -400,6 +415,9 @@ class DiscreteMinimaxStateActionWeightLearning(BaseWeightValueLearner):
         state = torch.FloatTensor(state, device=self.device)
         action = torch.LongTensor(action, device=self.device)
 
+        if self.state_scaler is not None:
+            state = self.state_scaler.transform(state)
+
         with torch.no_grad():
             importance_weight = (
                 self.w_function(state, action).to("cpu").detach().numpy()
@@ -407,12 +425,34 @@ class DiscreteMinimaxStateActionWeightLearning(BaseWeightValueLearner):
 
         return importance_weight
 
-    def fit_predict(
+    def predict(
         self,
-        step_per_episode: int,
         state: np.ndarray,
         action: np.ndarray,
-        reward: np.ndarray,
+    ):
+        """Predict function.
+
+        Parameters
+        -------
+        state: array-like of shape (n_trajectories * step_per_trajectory, state_dim)
+            State observed by the behavior policy.
+
+        action: array-like of shape (n_trajectories * step_per_trajectory)
+            Action chosen by the behavior policy.
+
+        Return
+        -------
+        importance_weight: ndarray of shape (n_trajectories, step_per_trajectory)
+            Estimated state-action marginal importance weight.
+
+        """
+        return self.predict_weight(state, action)
+
+    def fit_predict(
+        self,
+        step_per_trajectory: int,
+        state: np.ndarray,
+        action: np.ndarray,
         evaluation_policy_action_dist: np.ndarray,
         n_epochs: int = 100,
         n_steps_per_epoch: int = 100,
@@ -427,19 +467,16 @@ class DiscreteMinimaxStateActionWeightLearning(BaseWeightValueLearner):
 
         Parameters
         -------
-        step_per_episode: int (> 0)
+        step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
 
-        state: array-like of shape (n_episodes * step_per_episode, state_dim)
+        state: array-like of shape (n_trajectories * step_per_trajectory, state_dim)
             State observed by the behavior policy.
 
-        action: array-like of shape (n_episodes * step_per_episode)
+        action: array-like of shape (n_trajectories * step_per_trajectory)
             Action chosen by the behavior policy.
 
-        reward: array-like of shape (n_episodes * step_per_episode)
-            Reward observed for each (state, action) pair.
-
-        evaluation_policy_action_dist: array-like of shape (n_episodes * step_per_episode, n_actions)
+        evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_actions)
             Conditional action distribution induced by the evaluation policy,
             i.e., :math:`\\pi(a \\mid s_{t+1}) \\forall a \\in \\mathcal{A}`
 
@@ -466,15 +503,14 @@ class DiscreteMinimaxStateActionWeightLearning(BaseWeightValueLearner):
 
         Return
         -------
-        importance_weight: ndarray of shape (n_episodes * step_per_episode)
+        importance_weight: ndarray of shape (n_trajectories * step_per_trajectory)
             Estimated state-action marginal importance weight.
 
         """
         self.fit(
-            step_per_episode=step_per_episode,
+            step_per_trajectory=step_per_trajectory,
             state=state,
             action=action,
-            reward=reward,
             evaluation_policy_action_dist=evaluation_policy_action_dist,
             n_epochs=n_epochs,
             n_steps_per_epoch=n_steps_per_epoch,
@@ -484,7 +520,7 @@ class DiscreteMinimaxStateActionWeightLearning(BaseWeightValueLearner):
             lr=lr,
             random_state=random_state,
         )
-        return self.predict_weight(state=state, action=action)
+        return self.predict_weight(state, action)
 
 
 @dataclass
@@ -524,6 +560,9 @@ class DiscreteMinimaxStateWeightLearning(BaseWeightValueLearner):
     w_function: StateWeightFunction
         Weight function model.
 
+    state_scaler: d3rlpy.preprocessing.Scaler, default=None
+        Scaling factor of state.
+
     device: str, default="cuda:0"
         Specifies device used for torch.
 
@@ -535,10 +574,23 @@ class DiscreteMinimaxStateWeightLearning(BaseWeightValueLearner):
     """
 
     w_function: StateWeightFunction
+    state_scaler: Optional[Scaler] = None
     device: str = "cuda:0"
 
     def __post_init__(self):
         self.w_function.to(self.device)
+
+        if self.state_scaler is not None:
+            if not isinstance(self.state_scaler, Scaler):
+                raise ValueError(
+                    "state_scaler must be an instance of d3rlpy.preprocessing.Scaler, but found False"
+                )
+
+    def load(self, path: Path):
+        self.w_function.load_state_dict(torch.load(path))
+
+    def save(self, path: Path):
+        torch.save(self.w_function.state_dict(), path)
 
     def _gaussian_kernel(
         self,
@@ -562,7 +614,7 @@ class DiscreteMinimaxStateWeightLearning(BaseWeightValueLearner):
                 action_onehot_1 @ action_onehot_2.T
             )
 
-        return kernel  # shape (n_episodes, n_episodes)
+        return kernel  # shape (n_trajectories, n_trajectories)
 
     def _first_term(
         self,
@@ -631,25 +683,25 @@ class DiscreteMinimaxStateWeightLearning(BaseWeightValueLearner):
 
         Parameters
         -------
-        initial_state: Tensor of shape (n_episodes, state_dim)
+        initial_state: Tensor of shape (n_trajectories, state_dim)
             Initial state of a trajectory (or states sampled from a stationary distribution).
 
-        initial_action: Tensor of shape (n_episodes, )
+        initial_action: Tensor of shape (n_trajectories, )
             Initial action chosen by the evaluation policy.
 
-        state: array-like of shape (n_episodes, state_dim)
+        state: array-like of shape (n_trajectories, state_dim)
             State observed by the behavior policy.
 
-        action: Tensor of shape (n_episodes, )
+        action: Tensor of shape (n_trajectories, )
             Action chosen by the behavior policy.
 
-        next_state: Tensor of shape (n_episodes, state_dim)
+        next_state: Tensor of shape (n_trajectories, state_dim)
             Next state observed for each (state, action) pair.
 
-        next_action: Tensor of shape (n_episodes, )
+        next_action: Tensor of shape (n_trajectories, )
             Next action chosen by the evaluation policy.
 
-        importance_weight: Tensor of shape (n_episodes, )
+        importance_weight: Tensor of shape (n_trajectories, )
             Immediate importance weight of the given (state, action) pair,
             i.e., :math:`\\pi(a_t | s_t) / \\pi_0(a_t | s_t)`.
 
@@ -699,10 +751,9 @@ class DiscreteMinimaxStateWeightLearning(BaseWeightValueLearner):
 
     def fit(
         self,
-        step_per_episode: int,
+        step_per_trajectory: int,
         state: np.ndarray,
         action: np.ndarray,
-        reward: np.ndarray,
         pscore: np.ndarray,
         evaluation_policy_action_dist: np.ndarray,
         n_epochs: int = 100,
@@ -718,22 +769,19 @@ class DiscreteMinimaxStateWeightLearning(BaseWeightValueLearner):
 
         Parameters
         -------
-        step_per_episode: int (> 0)
+        step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
 
-        state: array-like of shape (n_episodes * step_per_episode, state_dim)
+        state: array-like of shape (n_trajectories * step_per_trajectory, state_dim)
             State observed by the behavior policy.
 
-        action: array-like of shape (n_episodes * step_per_episode)
+        action: array-like of shape (n_trajectories * step_per_trajectory)
             Action chosen by the behavior policy.
 
-        reward: array-like of shape (n_episodes * step_per_episode)
-            Reward observed for each (state, action) pair.
-
-        pscore: array-like of shape (n_episodes, step_per_episode)
+        pscore: array-like of shape (n_trajectories, step_per_trajectory)
             Action choice probability of the behavior policy for the chosen action.
 
-        evaluation_policy_action_dist: array-like of shape (n_episodes * step_per_episode, n_actions)
+        evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_actions)
             Conditional action distribution induced by the evaluation policy,
             i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
 
@@ -760,11 +808,10 @@ class DiscreteMinimaxStateWeightLearning(BaseWeightValueLearner):
 
         """
         check_scalar(
-            step_per_episode, name="step_per_episode", target_type=int, min_val=1
+            step_per_trajectory, name="step_per_trajectory", target_type=int, min_val=1
         )
         check_array(state, name="state", expected_dim=2)
         check_array(action, name="action", expected_dim=1)
-        check_array(reward, name="reward", expected_dim=1)
         check_array(pscore, name="pscore", expected_dim=1, min_val=0.0, max_val=1.0)
         check_array(
             evaluation_policy_action_dist,
@@ -776,16 +823,15 @@ class DiscreteMinimaxStateWeightLearning(BaseWeightValueLearner):
         if not (
             state.shape[0]
             == action.shape[0]
-            == reward.shape[0]
             == pscore.shape[0]
             == evaluation_policy_action_dist.shape[0]
         ):
             raise ValueError(
-                "Expected `state.shape[0] == action.shape[0] == reward.shape[0] == pscore.shape[0] == evaluation_policy_action_dist.shape[0]`, but found False"
+                "Expected `state.shape[0] == action.shape[0] == pscore.shape[0] == evaluation_policy_action_dist.shape[0]`, but found False"
             )
-        if state.shape[0] % step_per_episode:
+        if state.shape[0] % step_per_trajectory:
             raise ValueError(
-                "Expected `state.shape[0] % step_per_episode == 0`, but found False"
+                "Expected `state.shape[0] % step_per_trajectory == 0`, but found False"
             )
         if not np.allclose(
             np.ones(evaluation_policy_action_dist.shape[0]),
@@ -810,39 +856,39 @@ class DiscreteMinimaxStateWeightLearning(BaseWeightValueLearner):
 
         state_dim = state.shape[1]
         n_actions = evaluation_policy_action_dist.shape[1]
-        state = state.reshape((-1, step_per_episode, state_dim))
-        action = action.reshape((-1, step_per_episode))
-        reward = reward.reshape((-1, step_per_episode))
-        pscore = pscore.reshape((-1, step_per_episode))
-        evaluation_policy_action = evaluation_policy_action.reshape(
-            (-1, step_per_episode, n_actions)
+        state = state.reshape((-1, step_per_trajectory, state_dim))
+        action = action.reshape((-1, step_per_trajectory))
+        pscore = pscore.reshape((-1, step_per_trajectory))
+        evaluation_policy_action_dist = evaluation_policy_action_dist.reshape(
+            (-1, step_per_trajectory, n_actions)
         )
 
-        n_episodes, step_per_episode, _ = state.shape
+        n_trajectories, step_per_trajectory, _ = state.shape
         state = torch.FloatTensor(state, device=self.device)
         action = torch.LongTensor(action, device=self.device)
-        reward = torch.FloatTensor(reward, device=self.device)
         importance_weight = torch.FloatTensor(
-            evaluation_policy_action_dist.flatten()[
-                np.arange(n_episodes * step_per_episode), action.flatten()
+            evaluation_policy_action_dist.reshape((-1, n_actions))[
+                np.arange(n_trajectories * step_per_trajectory), action.flatten()
             ]
             / pscore.flatten()
-        ).reshape((n_episodes, step_per_episode))
-
+        ).reshape((n_trajectories, step_per_trajectory))
         evaluation_policy_action_dist = torch.FloatTensor(
             evaluation_policy_action_dist, device=self.device
         )
+
+        if self.state_scaler is not None:
+            state = self.state_scaler.transform(state)
 
         optimizer = optim.SGD(self.w_function.parameters(), lr=lr, momentum=0.9)
 
         for epoch in tqdm(
             np.arange(n_epochs),
-            desc=["fitting_weight_and_value_functions"],
+            desc="[fitting_weight_and_value_functions]",
             total=n_epochs,
         ):
             for grad_step in range(n_steps_per_epoch):
-                idx_ = torch.randint(n_episodes, size=(batch_size,))
-                t_ = torch.randint(step_per_episode - 1, size=(batch_size,))
+                idx_ = torch.randint(n_trajectories, size=(batch_size,))
+                t_ = torch.randint(step_per_trajectory - 2, size=(batch_size,))
 
                 initial_action = torch.multinomial(
                     evaluation_policy_action_dist[idx_, 0], num_samples=1
@@ -856,7 +902,6 @@ class DiscreteMinimaxStateWeightLearning(BaseWeightValueLearner):
                     initial_action=initial_action,
                     state=state[idx_, t_],
                     action=action[idx_, t_],
-                    reward=reward[idx_, t_],
                     next_state=state[idx_, t_ + 1],
                     next_action=next_action,
                     importance_weight=importance_weight[idx_, t_],
@@ -876,23 +921,28 @@ class DiscreteMinimaxStateWeightLearning(BaseWeightValueLearner):
 
         Parameters
         -------
-        state: array-like of shape (n_episodes * step_per_episode, state_dim)
+        state: array-like of shape (n_trajectories * step_per_trajectory, state_dim)
             State observed by the behavior policy.
+
+        state_scaler: d3rlpy.preprocessing.Scaler, default=None
+            Scaling factor of state.
 
         Return
         -------
-        importance_weight: ndarray of shape (n_episodes * step_per_episode)
+        importance_weight: ndarray of shape (n_trajectories * step_per_trajectory, )
             Estimated state marginal importance weight.
 
         """
         check_array(state, name="state", expected_dim=2)
-        n_episodes, step_per_episode, state_dim = state.shape
-        state = torch.FloatTensor(state.reshape((-1, state_dim)), device=self.device)
+        state = torch.FloatTensor(state, device=self.device)
+
+        if self.state_scaler is not None:
+            state = self.state_scaler.transform(state)
 
         with torch.no_grad():
             importance_weight = self.w_function(state).to("cpu").detach().numpy()
 
-        return importance_weight.reshape((n_episodes, step_per_episode))
+        return importance_weight
 
     def predict_state_action_marginal_importance_weight(
         self,
@@ -905,22 +955,25 @@ class DiscreteMinimaxStateWeightLearning(BaseWeightValueLearner):
 
         Parameters
         -------
-        state: array-like of shape (n_episodes * step_per_episode, state_dim)
+        state: array-like of shape (n_trajectories * step_per_trajectory, state_dim)
             State observed by the behavior policy.
 
-        action: array-like of shape (n_episodes * step_per_episode)
+        action: array-like of shape (n_trajectories * step_per_trajectory)
             Action chosen by the behavior policy.
 
-        pscore: array-like of shape (n_episodes  *step_per_episode)
+        pscore: array-like of shape (n_trajectories  *step_per_trajectory)
             Action choice probability of the behavior policy for the chosen action.
 
-        evaluation_policy_action_dist: array-like of shape (n_episodes * step_per_episode, n_actions)
+        evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_actions)
             Conditional action distribution induced by the evaluation policy,
             i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
 
+        state_scaler: d3rlpy.preprocessing.Scaler, default=None
+            Scaling factor of state.
+
         Return
         -------
-        importance_weight: ndarray of shape (n_episodes * step_per_episode)
+        importance_weight: ndarray of shape (n_trajectories * step_per_trajectory, )
             Estimated state-action marginal importance weight.
 
         """
@@ -972,12 +1025,34 @@ class DiscreteMinimaxStateWeightLearning(BaseWeightValueLearner):
 
         Parameters
         -------
-        state: array-like of shape (n_episodes * step_per_episode, state_dim)
+        state: array-like of shape (n_trajectories * step_per_trajectory, state_dim)
+            State observed by the behavior policy.
+
+        state_scaler: d3rlpy.preprocessing.Scaler, default=None
+            Scaling factor of state.
+
+        Return
+        -------
+        importance_weight: ndarray of shape (n_trajectories * step_per_trajectory, )
+            Estimated state marginal importance weight.
+
+        """
+        return self.predict_state_marginal_importance_weight(state)
+
+    def predict(
+        self,
+        state: np.ndarray,
+    ):
+        """Predict state marginal importance weight.
+
+        Parameters
+        -------
+        state: array-like of shape (n_trajectories * step_per_trajectory, state_dim)
             State observed by the behavior policy.
 
         Return
         -------
-        importance_weight: ndarray of shape (n_episodes * step_per_episode)
+        importance_weight: ndarray of shape (n_trajectories * step_per_trajectory, )
             Estimated state marginal importance weight.
 
         """
@@ -985,10 +1060,9 @@ class DiscreteMinimaxStateWeightLearning(BaseWeightValueLearner):
 
     def fit_predict(
         self,
-        step_per_episode: int,
+        step_per_trajectory: int,
         state: np.ndarray,
         action: np.ndarray,
-        reward: np.ndarray,
         pscore: np.ndarray,
         evaluation_policy_action_dist: np.ndarray,
         n_epochs: int = 100,
@@ -1004,22 +1078,19 @@ class DiscreteMinimaxStateWeightLearning(BaseWeightValueLearner):
 
         Parameters
         -------
-        step_per_episode: int (> 0)
+        step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
 
-        state: array-like of shape (n_episodes * step_per_episode, state_dim)
+        state: array-like of shape (n_trajectories * step_per_trajectory, state_dim)
             State observed by the behavior policy.
 
-        action: array-like of shape (n_episodes * step_per_episode)
+        action: array-like of shape (n_trajectories * step_per_trajectory)
             Action chosen by the behavior policy.
 
-        reward: array-like of shape (n_episodes * step_per_episode)
-            Reward observed for each (state, action) pair.
-
-        pscore: array-like of shape (n_episodes * step_per_episode)
+        pscore: array-like of shape (n_trajectories * step_per_trajectory)
             Action choice probability of the behavior policy for the chosen action.
 
-        evaluation_policy_action_dist: array-like of shape (n_episodes * step_per_episode, n_actions)
+        evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_actions)
             Conditional action distribution induced by the evaluation policy,
             i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
 
@@ -1046,15 +1117,14 @@ class DiscreteMinimaxStateWeightLearning(BaseWeightValueLearner):
 
         Return
         -------
-        importance_weight: ndarray of shape (n_episodes, )
+        importance_weight: ndarray of shape (n_trajectories, )
             Estimated state-action marginal importance weight.
 
         """
         self.fit(
-            step_per_episode=step_per_episode,
+            step_per_trajectory=step_per_trajectory,
             state=state,
             action=action,
-            reward=reward,
             pscore=pscore,
             evaluation_policy_action_dist=evaluation_policy_action_dist,
             n_epochs=n_epochs,
@@ -1065,4 +1135,4 @@ class DiscreteMinimaxStateWeightLearning(BaseWeightValueLearner):
             lr=lr,
             random_state=random_state,
         )
-        return self.predict_weight(state=state)
+        return self.predict_weight(state)

@@ -29,7 +29,7 @@ class SyntheticDataset(BaseDataset):
     behavior_policy: AlgoBase
         RL policy that collects the logged data.
 
-    maximum_step_per_episode: int, default=None (> 0)
+    max_episode_steps: int, default=None (> 0)
         Maximum number of timesteps in an episode.
 
     action_meaning: dict
@@ -111,11 +111,11 @@ class SyntheticDataset(BaseDataset):
             )
 
         # data collection
-        >>> logged_dataset = dataset.obtain_trajectories(n_episodes=100, obtain_info=True)
+        >>> logged_dataset = dataset.obtain_trajectories(n_trajectories=100, obtain_info=True)
         >>> logged_dataset
         {'size': 700,
-        'n_episodes': 100,
-        'step_per_episode': 7,
+        'n_trajectories': 100,
+        'step_per_trajectory': 7,
         'action_type': 'discrete',
         'action_dim': 10,
         'action_keys': None,
@@ -168,7 +168,7 @@ class SyntheticDataset(BaseDataset):
 
     env: gym.Env
     behavior_policy: BaseHead
-    maximum_step_per_episode: Optional[int] = None
+    max_episode_steps: Optional[int] = None
     action_meaning: Optional[Dict[int, Any]] = None
     action_keys: Optional[List[str]] = None
     state_keys: Optional[List[str]] = None
@@ -194,29 +194,29 @@ class SyntheticDataset(BaseDataset):
             self.n_actions = None
             self.action_dim = self.env.action_space.shape[0]
 
-        if self.maximum_step_per_episode is None:
+        if self.max_episode_steps is None:
             if self.env.spec.max_episode_steps is None:
                 raise ValueError(
-                    "when env.spec.max_episode_steps is None, maximum_step_per_episode must be given."
+                    "when env.spec.max_episode_steps is None, max_episode_steps must be given."
                 )
             else:
-                self.maximum_step_per_episode = self.env.spec.max_episode_steps
+                self.max_episode_steps = self.env.spec.max_episode_steps
 
         check_scalar(
-            self.maximum_step_per_episode,
-            name="maximum_step_per_episode",
+            self.max_episode_steps,
+            name="maximum_episode_steps",
             target_type=int,
             min_val=1,
         )
 
         if self.random_state is None:
             raise ValueError("random_state must be given")
-        check_random_state(self.random_state)
+        self.random_ = check_random_state(self.random_state)
 
-    def obtain_trajectories(
+    def obtain_episodes(
         self,
-        n_episodes: int = 10000,
-        step_per_episode: Optional[int] = None,
+        n_trajectories: int = 10000,
+        step_per_trajectory: Optional[int] = None,
         obtain_info: bool = False,
         seed_env: bool = False,
     ) -> LoggedDataset:
@@ -224,17 +224,18 @@ class SyntheticDataset(BaseDataset):
 
         Note
         -------
-        This function is intended to be used for the environment which has fixed length of episodes.
-        Please use `.obtain_steps` when using the environment which has varying length of episodes.
-        Also, make sure you initialize the class with `step_per_episode` before calling this function.
+        This function is intended to be used for the environment which has a fixed length of episodes (episodic setting).
+
+        For non-episodic, stationary setting (such as cartpole or taxi as used in (Liu et al., 2018) and (Uehara et al., 2020)),
+        please also consider using `.obtain_steps()` to collect logged dataset.
 
         Parameters
         -------
-        n_episodes: int, default=10000 (> 0)
+        n_trajectories: int, default=10000 (> 0)
             Number of trajectories to rollout the behavior policy and collect data.
 
-        step_per_episode: int, default=None (> 0)
-            Number of timesteps in an episode.
+        step_per_trajectory: int, default=None (> 0)
+            Number of timesteps in an trajectory.
 
         obtain_info: bool, default=False
             Whether to gain info from the environment or not.
@@ -248,11 +249,11 @@ class SyntheticDataset(BaseDataset):
             size: int (> 0)
                 Number of steps the dataset records.
 
-            n_episodes: int (> 0)
-                Number of episodes the dataset records.
+            n_trajectories: int (> 0)
+                Number of trajectories the dataset records.
 
-            step_per_episode: int (> 0)
-                Number of timesteps in an episode.
+            step_per_trajectory: int (> 0)
+                Number of timesteps in an trajectory.
 
             action_type: str
                 Action type of the RL agent.
@@ -301,19 +302,27 @@ class SyntheticDataset(BaseDataset):
             pscore: ndarray of shape (size, )
                 Action choice probability of the behavior policy for the chosen action.
 
+        References
+        -------
+        Masatoshi Uehara, Jiawei Huang, and Nan Jiang.
+        "Minimax Weight and Q-Function Learning for Off-Policy Evaluation.", 2020.
+
+        Qiang Liu, Lihong Li, Ziyang Tang, and Dengyong Zhou.
+        "Breaking the Curse of Horizon: Infinite-Horizon Off-Policy Estimation.", 2018
+
         """
-        if step_per_episode is None:
-            step_per_episode = self.maximum_step_per_episode
+        if step_per_trajectory is None:
+            step_per_trajectory = self.max_episode_steps
 
         check_scalar(
-            n_episodes,
+            n_trajectories,
             name="n_espisodes",
             target_type=int,
             min_val=1,
         )
         check_scalar(
-            step_per_episode,
-            name="step_per_episode",
+            step_per_trajectory,
+            name="step_per_trajectory",
             target_type=int,
             min_val=1,
         )
@@ -321,38 +330,40 @@ class SyntheticDataset(BaseDataset):
         if seed_env:
             self.env.reset(self.random_state)
 
-        states = np.empty(
-            (n_episodes * step_per_episode, self.env.observation_space.shape[0])
+        states = np.zeros(
+            (n_trajectories * step_per_trajectory, self.env.observation_space.shape[0])
         )
         if self.action_type == "discrete":
-            actions = np.empty(n_episodes * step_per_episode)
-            action_probs = np.empty(n_episodes * step_per_episode)
+            actions = np.zeros(n_trajectories * step_per_trajectory)
+            action_probs = np.zeros(n_trajectories * step_per_trajectory)
         else:
-            actions = np.empty((n_episodes * step_per_episode, self.action_dim))
-            action_probs = np.empty((n_episodes * step_per_episode, self.action_dim))
+            actions = np.zeros((n_trajectories * step_per_trajectory, self.action_dim))
+            action_probs = np.zeros(
+                (n_trajectories * step_per_trajectory, self.action_dim)
+            )
 
-        rewards = np.empty(n_episodes * step_per_episode)
-        dones = np.empty(n_episodes * step_per_episode)
-        terminals = np.empty(n_episodes * step_per_episode)
+        rewards = np.zeros(n_trajectories * step_per_trajectory)
+        dones = np.zeros(n_trajectories * step_per_trajectory)
+        terminals = np.zeros(n_trajectories * step_per_trajectory)
         info = {}
 
         idx = 0
         for _ in tqdm(
-            np.arange(n_episodes),
+            np.arange(n_trajectories),
             desc="[obtain_trajectories]",
-            total=n_episodes,
+            total=n_trajectories,
         ):
             state, info_ = self.env.reset()
             terminal = False
 
-            for t in range(step_per_episode):
+            for t in range(step_per_trajectory):
                 (
                     action,
                     action_prob,
                 ) = self.behavior_policy.stochastic_action_with_pscore_online(state)
                 next_state, reward, done, truncated, info_ = self.env.step(action)
 
-                if (idx + 1) % step_per_episode == 0:
+                if (idx + 1) % step_per_trajectory == 0:
                     done = terminal = True
 
                 states[idx] = state
@@ -367,7 +378,7 @@ class SyntheticDataset(BaseDataset):
                         for key, type_ in self.info_keys.items():
                             if type_ in [int, float]:
                                 info[key] = np.zeros(
-                                    n_episodes * step_per_episode, dtype=type_
+                                    n_trajectories * step_per_trajectory, dtype=type_
                                 )
                             else:
                                 info[key] = []
@@ -382,10 +393,9 @@ class SyntheticDataset(BaseDataset):
                 idx += 1
 
         logged_dataset = {
-            "size": n_episodes * step_per_episode,
-            "n_episodes": n_episodes,
-            "step_per_episode": step_per_episode,
-            "maximum_step_per_episode": step_per_episode,
+            "size": n_trajectories * step_per_trajectory,
+            "n_trajectories": n_trajectories,
+            "step_per_trajectory": step_per_trajectory,
             "action_type": self.action_type,
             "n_actions": self.n_actions,
             "action_dim": self.action_dim,
@@ -405,20 +415,34 @@ class SyntheticDataset(BaseDataset):
 
     def obtain_steps(
         self,
-        n_steps: int = 100000,
-        maximum_step_per_episode: Optional[int] = None,
+        n_trajectories: int = 10000,
+        step_per_trajectory: int = 10,
+        minimum_rollout_length: int = 0,
+        maximum_rollout_length: int = 100,
         obtain_info: bool = False,
+        obtain_trajectories_from_single_interaction: bool = False,
         seed_env: bool = False,
     ) -> LoggedDataset:
         """Rollout the behavior policy and obtain steps.
 
+        Note
+        -------
+        This function is intended to be used for the environment which has a stationary state distribution.
+        For episodic RL, please also consider using `.obtain_episodes()`.
+
         Parameters
         -------
-        n_steps: int, default=100000 (> 0)
-            Number of steps to rollout the behavior policy and collect data.
+        n_trajectories: int, default=10000 (> 0)
+            Number of trajectories to rollout the behavior policy and collect data.
 
-        maximum_step_per_episode: int, default=None (> 0)
-            Maximum number of timesteps in an episode.
+        step_per_trajectory: int, default=100 (> 0)
+            Number of timesteps in an trajectory.
+
+        minimum_rollout_length: int, default=0 (>= 0)
+            Minimum length of rollout before collecting dataset.
+
+        maximum_rollout_length: int, default=100 (>= minimum_rollout_length)
+            Maximum length of rollout before collecting dataset.
 
         obtain_info: bool, default=False
             Whether to gain info from the environment or not.
@@ -426,17 +450,22 @@ class SyntheticDataset(BaseDataset):
         seed_env: bool, default=False
             Whether to set seed on environment or not.
 
+        obtain_trajectories_from_single_interaction: bool, default=False
+            Whether to collect whole data from a single trajectory.
+            If True, the initial state of trajectory i is the next state of the trajectory (i-1)'s last state.
+            If False, the initial state will be sampled by rolling out the behavior policy after resetting the environment.
+
         Returns
         -------
         logged_dataset: dict
             size: int (> 0)
                 Number of steps the dataset records.
 
-            n_episodes: int (> 0)
-                Number of episodes the dataset records.
+            n_trajectories: int (> 0)
+                Number of trajectories the dataset records.
 
-            step_per_episode: int (> 0)
-                Number of timesteps in an episode.
+            step_per_trajectory: int (> 0)
+                Number of timesteps in an trajectory.
 
             action_type: str
                 Action type of the RL agent.
@@ -485,89 +514,135 @@ class SyntheticDataset(BaseDataset):
             pscore: ndarray of shape (size, )
                 Action choice probability of the behavior policy for the chosen action.
 
-        """
-        if maximum_step_per_episode is None:
-            maximum_step_per_episode = self.maximum_step_per_episode
+        References
+        -------
+        Masatoshi Uehara, Jiawei Huang, and Nan Jiang.
+        "Minimax Weight and Q-Function Learning for Off-Policy Evaluation.", 2020.
 
-        check_scalar(n_steps, name="n_steps", target_type=int, min_val=1)
+        Qiang Liu, Lihong Li, Ziyang Tang, and Dengyong Zhou.
+        "Breaking the Curse of Horizon: Infinite-Horizon Off-Policy Estimation.", 2018
+
+        """
+        check_scalar(n_trajectories, name="n_trajectories", target_type=int, min_val=1)
         check_scalar(
-            maximum_step_per_episode,
-            name="maximum_step_per_episode",
-            target_type=int,
-            min_val=1,
+            step_per_trajectory, name="step_per_trajectory", target_type=int, min_val=1
         )
+        check_scalar(
+            minimum_rollout_length,
+            name=minimum_rollout_length,
+            target_type=int,
+            min_val=0,
+        )
+        check_scalar(
+            maximum_rollout_length,
+            name=maximum_rollout_length,
+            target_type=int,
+            min_val=0,
+        )
+        if maximum_rollout_length < minimum_rollout_length:
+            raise ValueError(
+                "maximum_rollout_length must be larger than minimum_rollout_length, but found False."
+            )
+
         if seed_env:
             self.env.reset(self.random_state)
 
-        states = np.empty((n_steps, self.env.observation_space.shape[0]))
+        states = np.zeros(
+            (n_trajectories * step_per_trajectory, self.env.observation_space.shape[0])
+        )
         if self.action_type == "discrete":
-            actions = np.empty(n_steps)
-            action_probs = np.empty(n_steps)
+            actions = np.zeros(n_trajectories * step_per_trajectory)
+            action_probs = np.zeros(n_trajectories * step_per_trajectory)
         else:
-            actions = np.empty(n_steps, self.action_dim)
-            action_probs = np.empty(n_steps, self.action_dim)
+            actions = np.zeros(n_trajectories * step_per_trajectory, self.action_dim)
+            action_probs = np.zeros(
+                n_trajectories * step_per_trajectory, self.action_dim
+            )
 
-        rewards = np.empty(n_steps)
-        dones = np.empty(n_steps)
-        terminals = np.empty(n_steps)
+        rewards = np.zeros(n_trajectories * step_per_trajectory)
+        dones = np.zeros(n_trajectories * step_per_trajectory)
+        terminals = np.zeros(n_trajectories * step_per_trajectory)
         info = {}
 
-        n_episodes = 0
-        done = True
+        rollout_lengths = self.random_.choice(
+            np.arange(minimum_rollout_length, maximum_rollout_length),
+            size=n_trajectories,
+        )
 
-        for idx in tqdm(
-            np.arange(n_steps),
-            desc="[obtain_steps]",
-            total=n_steps,
+        idx, step = 0, 0
+        done = False
+        state, info_ = self.env.reset()
+
+        for i in tqdm(
+            np.arange(n_trajectories),
+            desc="[obtain_trajectories]",
+            total=n_trajectories,
         ):
-            if done:
-                n_episodes += 1
-                state, info_ = self.env.reset()
-                step = 0
-                done = False
-            (
-                action,
-                action_prob,
-            ) = self.behavior_policy.stochastic_action_with_pscore_online(state)
-            next_state, reward, done, truncated, info_ = self.env.step(action)
-            terminal = step == maximum_step_per_episode - 1
+            state = next_state
 
-            if obtain_info:
-                if idx == 0:
+            if not obtain_trajectories_from_single_interaction:
+                done = True
+
+                for rollout_step in rollout_lengths[i]:
+
+                    if done:
+                        state, info_ = self.env.reset()
+                        step = 0
+
+                    action = self.behavior_policy.sample_action_online(state)
+                    state, reward, done, truncated, info_ = self.env.step(action)
+                    step += 1
+
+            for t in range(step_per_trajectory):
+
+                if done:
+                    state, info_ = self.env.reset()
+                    done = False
+                    step = 0
+
+                (
+                    action,
+                    action_prob,
+                ) = self.behavior_policy.stochastic_action_with_pscore_online(state)
+                next_state, reward, done, truncated, info_ = self.env.step(action)
+
+                states[idx] = state
+                actions[idx] = action
+                action_probs[idx] = action_prob
+                rewards[idx] = reward
+                dones[idx] = done
+                terminals[idx] = step + 1 == self.max_episode_steps
+
+                if obtain_info:
+                    if idx == 0:
+                        for key, type_ in self.info_keys.items():
+                            if type_ in [int, float]:
+                                info[key] = np.zeros(
+                                    n_trajectories * step_per_trajectory, dtype=type_
+                                )
+                            else:
+                                info[key] = []
+
                     for key, type_ in self.info_keys.items():
                         if type_ in [int, float]:
-                            info[key] = np.zeros(n_steps, dtype=type_)
+                            info[key][idx] = info_[key]
                         else:
-                            info[key] = []
+                            info[key].append(info_[key])
 
-                for key, type_ in self.info_keys.items():
-                    if type_ in [int, float]:
-                        info[key][idx] = info_[key]
-                    else:
-                        info[key].append(info_[key])
-
-            states[idx] = state
-            actions[idx] = action
-            action_probs[idx] = action_prob
-            rewards[idx] = reward
-            dones[idx] = done or terminal
-            terminals[idx] = terminal
-
-            for key, value in info_.items():
-                info[key][idx] = value
-
-            state = next_state
-            step += 1
+                state = next_state
+                idx += 1
+                step += 1
 
         logged_dataset = {
-            "size": n_steps,
-            "n_episodes": n_episodes,
-            "step_per_episode": None,
-            "maximum_step_per_episode": maximum_step_per_episode,
+            "size": n_trajectories * step_per_trajectory,
+            "n_trajectories": n_trajectories,
+            "step_per_trajectory": step_per_trajectory,
             "action_type": self.action_type,
             "n_actions": self.n_actions,
             "action_dim": self.action_dim,
             "action_meaning": self.action_meaning,
+            "action_keys": self.action_keys,
+            "state_dim": self.state_dim,
             "state_keys": self.state_keys,
             "state": states,
             "action": actions,

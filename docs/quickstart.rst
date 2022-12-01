@@ -66,11 +66,11 @@ We start by collecting the logged data useful for offline RL with a behavior pol
     >>> dataset = SyntheticDataset(
             env=env,
             behavior_policy=behavior_policy,
-            maximum_step_per_episode=env.step_per_episode,
+            max_episode_steps=env.step_per_episode,
             random_state=random_state,
         )
     # collect logged data by a behavior policy
-    >>> logged_dataset = dataset.obtain_trajectories(n_episodes=10000)
+    >>> logged_dataset = dataset.obtain_episodes(n_trajectories=10000)
     >>> print(logged_dataset.keys())
 
 Users can collect logged data from any environment with `OpenAI Gym <https://gym.openai.com>`_-like interface using a variety of behavior policies.

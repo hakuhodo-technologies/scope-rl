@@ -1,12 +1,15 @@
 from dataclasses import dataclass
-from typing import Optional, Union
+from typing import Optional
 from tqdm import tqdm
+from pathlib import Path
 
 import torch
 from torch import optim
 
 import numpy as np
 from sklearn.utils import check_scalar
+
+from d3rlpy.preprocessing import Scaler, ActionScaler
 
 from .base import BaseWeightValueLearner
 from .function import (
@@ -47,6 +50,12 @@ class ContinuousMinimaxStateActionValueLearning(BaseWeightValueLearner):
     q_function: ContinuousQFunction
         Q function model.
 
+    state_scaler: d3rlpy.preprocessing.Scaler, default=None
+        Scaling factor of state.
+
+    action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
+        Scaling factor of action.
+
     device: str, default="cuda:0"
         Specifies device used for torch.
 
@@ -58,10 +67,29 @@ class ContinuousMinimaxStateActionValueLearning(BaseWeightValueLearner):
     """
 
     q_function: ContinuousQFunction
+    state_scaler: Optional[Scaler] = None
+    action_scaler: Optional[ActionScaler] = None
     device: str = "cuda:0"
 
     def __post_init__(self):
         self.q_function.to(self.device)
+
+        if self.state_scaler is not None:
+            if not isinstance(self.state_scaler, Scaler):
+                raise ValueError(
+                    "state_scaler must be an instance of d3rlpy.preprocessing.Scaler, but found False"
+                )
+        if self.action_scaler is not None:
+            if not isinstance(self.action_scaler, ActionScaler):
+                raise ValueError(
+                    "action_scaler must be an instance of d3rlpy.preprocessing.ActionScaler, but found False"
+                )
+
+    def load(self, path: Path):
+        self.q_function.load_state_dict(torch.load(path))
+
+    def save(self, path: Path):
+        torch.save(self.q_function.state_dict(), path)
 
     def _inverse(
         self,
@@ -83,18 +111,17 @@ class ContinuousMinimaxStateActionValueLearning(BaseWeightValueLearner):
         state: torch.Tensor,
         action: torch.Tensor,
         sigma: float,
-        action_scaler: torch.Tensor,
     ):
         """Gaussian kernel for all input pairs."""
         with torch.no_grad():
-            input = torch.cat((state, action / action_scaler[None, :]), dim=1)
+            input = torch.cat((state, action), dim=1)
             # (x - x') ** 2 = x ** 2 + x' ** 2 - 2 x x'
             x_2 = (input ** 2).sum(dim=1)
             x_y = input @ input.T
-            distance = x_2[:, None] + x_2[None, :] - 2 * x_y
+            distance = 2 * (x_2[:, None] - x_y)
             kernel = torch.exp(-distance / sigma)
 
-        return kernel  # shape (n_episodes, n_episodes)
+        return kernel  # shape (n_trajectories, n_trajectories)
 
     def _kernel_term(
         self,
@@ -103,12 +130,14 @@ class ContinuousMinimaxStateActionValueLearning(BaseWeightValueLearner):
         lambda_: float,
     ):
         """Kernel term in the objective function."""
-        n_episodes = len(kernel)
+        n_trajectories = len(kernel)
         sqrt_kernel = self._sqrt(kernel)
-        inverse_kernel = self._inverse(alpha * torch.eye(n_episodes) + lambda_ * kernel)
+        inverse_kernel = self._inverse(
+            alpha * torch.eye(n_trajectories) + lambda_ * kernel
+        )
         return (
             sqrt_kernel @ inverse_kernel @ sqrt_kernel
-        )  # shape (n_episodes, n_episodes)
+        )  # shape (n_trajectories, n_trajectories)
 
     def _objective_function(
         self,
@@ -122,28 +151,27 @@ class ContinuousMinimaxStateActionValueLearning(BaseWeightValueLearner):
         sigma: float,
         alpha: float,
         lambda_: float,
-        action_scaler: torch.Tensor,
     ):
         """Objective function of Minimax Q Learning.
 
         Parameters
         -------
-        state: array-like of shape (n_episodes, state_dim)
+        state: array-like of shape (n_trajectories, state_dim)
             State observed by the behavior policy.
 
-        action: Tensor of shape (n_episodes, action_dim)
+        action: Tensor of shape (n_trajectories, action_dim)
             Action chosen by the behavior policy.
 
-        reward: Tensor of shape (n_episodes, )
+        reward: Tensor of shape (n_trajectories, )
             Reward observed for each (state, action) pair.
 
-        next_state: Tensor of shape (n_episodes, state_dim)
+        next_state: Tensor of shape (n_trajectories, state_dim)
             Next state observed for each (state, action) pair.
 
-        next_action: Tensor of shape (n_episodes, action_dim)
+        next_action: Tensor of shape (n_trajectories, action_dim)
             Next action chosen by the evaluation policy.
 
-        importance_weight: Tensor of shape (n_episodes, )
+        importance_weight: Tensor of shape (n_trajectories, )
             Immediate importance weight of the given (state, action) pair,
             i.e., :math:`\\pi(a_t | s_t) / \\pi_0(a_t | s_t)`.
 
@@ -156,9 +184,6 @@ class ContinuousMinimaxStateActionValueLearning(BaseWeightValueLearner):
         alpha: float
 
         lambda_: float
-
-        action_scaler: Tensor of shape (action_dim, )
-            Scaling factor of action.
 
         Return
         -------
@@ -173,15 +198,13 @@ class ContinuousMinimaxStateActionValueLearning(BaseWeightValueLearner):
         td_error = importance_weight * (reward + gamma * next_q) - current_q
         return (
             td_error.T
-            @ self._kernel_term(
-                kernel, alpha=alpha, lambda_=lambda_, action_scaler=action_scaler
-            )
+            @ self._kernel_term(kernel, alpha=alpha, lambda_=lambda_)
             @ td_error
         )
 
     def fit(
         self,
-        step_per_episode: int,
+        step_per_trajectory: int,
         state: np.ndarray,
         action: np.ndarray,
         reward: np.ndarray,
@@ -195,7 +218,6 @@ class ContinuousMinimaxStateActionValueLearning(BaseWeightValueLearner):
         alpha: float = 1e-3,
         lambda_: float = 1e-3,
         lr: float = 1e-3,
-        action_scaler: Optional[Union[float, np.ndarray]] = None,
         random_state: Optional[int] = None,
         **kwargs,
     ):
@@ -203,22 +225,22 @@ class ContinuousMinimaxStateActionValueLearning(BaseWeightValueLearner):
 
         Parameters
         -------
-        step_per_episode: int (> 0)
+        step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
 
-        state: array-like of shape (n_episodes * step_per_episode, state_dim)
+        state: array-like of shape (n_trajectories * step_per_trajectory, state_dim)
             State observed by the behavior policy.
 
-        action: array-like of shape (n_episodes * step_per_episode, action_dim)
+        action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the behavior policy.
 
-        reward: array-like of shape (n_episodes * step_per_episode)
+        reward: array-like of shape (n_trajectories * step_per_trajectory)
             Reward observed for each (state, action) pair.
 
-        pscore: array-like of shape (n_episodes * step_per_episode)
+        pscore: array-like of shape (n_trajectories * step_per_trajectory)
             Action choice probability of the behavior policy for the chosen action.
 
-        evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
+        evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
 
         n_epochs: int, default=100
@@ -243,15 +265,12 @@ class ContinuousMinimaxStateActionValueLearning(BaseWeightValueLearner):
         lr: float, default=1e-3
             Learning rate.
 
-        action_scaler: {float, array-like of shape (action_dim, )}, default=None
-            Scaling factor of action.
-
         random_state: int, default=None
             Random state.
 
         """
         check_scalar(
-            step_per_episode, name="step_per_episode", target_type=int, min_val=1
+            step_per_trajectory, name="step_per_trajectory", target_type=int, min_val=1
         )
         check_array(state, name="state", expected_dim=2)
         check_array(action, name="action", expected_dim=2)
@@ -272,9 +291,9 @@ class ContinuousMinimaxStateActionValueLearning(BaseWeightValueLearner):
             raise ValueError(
                 "Expected `state.shape[0] == action.shape[0] == reward.shape[0] == == pscore.shape[0] == evaluation_policy_action.shape[0]`, but found False"
             )
-        if state.shape[0] % step_per_episode:
+        if state.shape[0] % step_per_trajectory:
             raise ValueError(
-                "Expected `state.shape[0] % step_per_episode == 0`, but found False"
+                "Expected `state.shape[0] % step_per_trajectory == 0`, but found False"
             )
         if action.shape[1] != evaluation_policy_action.shape[1]:
             raise ValueError(
@@ -292,46 +311,50 @@ class ContinuousMinimaxStateActionValueLearning(BaseWeightValueLearner):
         check_scalar(batch_size, name="batch_size", target_type=int, min_val=1)
         check_scalar(lr, name="lr", target_type=float, min_val=0.0)
 
-        action_dim = action.shape[1]
-        if action_scaler is None:
-            action_scaler = np.ones(action_dim)
-        elif isinstance(action_scaler, float):
-            action_scaler = np.full(action_dim, action_scaler)
-
-        check_array(action_scaler, name="action_scaler", expected_dim=1, min_val=0.0)
-        if action_scaler.shape[0] != action_dim:
-            raise ValueError(
-                "Expected `action_scaler.shape[0] == action.shape[1]`, but found False"
-            )
-
         if random_state is None:
             raise ValueError("Random state mush be given.")
         torch.manual_seed(random_state)
 
         state_dim = state.shape[1]
         action_dim = action.shape[1]
-        state = state.reshape((-1, step_per_episode, state_dim))
-        action = action.reshape((-1, step_per_episode, action_dim))
-        reward = reward.reshape((-1, step_per_episode))
-        pscore = pscore.reshape((-1, step_per_episode))
+        state = state.reshape((-1, step_per_trajectory, state_dim))
+        action = action.reshape((-1, step_per_trajectory, action_dim))
+        reward = reward.reshape((-1, step_per_trajectory))
+        pscore = pscore.reshape((-1, step_per_trajectory))
         evaluation_policy_action = evaluation_policy_action.reshape(
-            (-1, step_per_episode, action_dim)
+            (-1, step_per_trajectory, action_dim)
         )
 
-        n_episodes, step_per_episode, _ = state.shape
+        if self.action_scaler is not None:
+            evaluation_policy_action_ = self.action_scaler.transform_numpy(
+                evaluation_policy_action.reshape((-1, action_dim))
+            )
+            action_ = self.action_scaler.transform_numpy(
+                action.reshape((-1, action_dim))
+            )
+        else:
+            evaluation_policy_action_ = evaluation_policy_action
+            action_ = action
+
+        similarity_weight = gaussian_kernel(
+            evaluation_policy_action_,
+            action_,
+            sigma=sigma,
+        ).reshape((-1, step_per_trajectory))
+
+        n_trajectories, step_per_trajectory, _ = state.shape
         state = torch.FloatTensor(state, device=self.device)
         action = torch.LongTensor(action, device=self.device)
         reward = torch.FloatTensor(reward, device=self.device)
         evaluation_policy_action = torch.FloatTensor(
             evaluation_policy_action, device=self.device
         )
-
-        similarity_weight = gaussian_kernel(
-            evaluation_policy_action.reshape((-1, action_dim)) / action_scaler[None, :],
-            action.reshape((-1, action_dim)) / action_scaler[None, :],
-            sigma=sigma,
-        ).reshape((n_episodes, step_per_episode))
         importance_weight = torch.FloatTensor(similarity_weight / pscore)
+
+        if self.state_scaler is not None:
+            state = self.state_scaler.transform(state)
+        if self.action_scaler is not None:
+            action = self.action_scaler.transform(action)
 
         optimizer = optim.SGD(self.q_function.parameters(), lr=lr, momentum=0.9)
 
@@ -341,8 +364,8 @@ class ContinuousMinimaxStateActionValueLearning(BaseWeightValueLearner):
             total=n_epochs,
         ):
             for grad_step in range(n_steps_per_epoch):
-                idx_ = torch.randint(n_episodes, size=(batch_size,))
-                t_ = torch.randint(step_per_episode - 1, size=(batch_size,))
+                idx_ = torch.randint(n_trajectories, size=(batch_size,))
+                t_ = torch.randint(step_per_trajectory - 1, size=(batch_size,))
 
                 objective_loss = self._objective_function(
                     state=state[idx_, t_],
@@ -370,15 +393,15 @@ class ContinuousMinimaxStateActionValueLearning(BaseWeightValueLearner):
 
         Parameters
         -------
-        state: array-like of shape (n_episodes * step_per_episode, state_dim)
+        state: array-like of shape (n_trajectories * step_per_trajectory, state_dim)
             State observed by the behavior policy.
 
-        action: array-like of shape (n_episodes * step_per_episode, action_dim)
+        action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the behavior/evaluation policy.
 
         Return
         -------
-        q_value: ndarray of shape (n_episodes * step_per_episode)
+        q_value: ndarray of shape (n_trajectories * step_per_trajectory)
             Q value of each (state, action) pair.
 
         """
@@ -391,6 +414,11 @@ class ContinuousMinimaxStateActionValueLearning(BaseWeightValueLearner):
 
         state = torch.FloatTensor(state, device=self.device)
         action = torch.FloatTensor(action, device=self.device)
+
+        if self.state_scaler is not None:
+            state = self.state_scaler.transform(state)
+        if self.action_scaler is not None:
+            action = self.action_scaler.transform(action)
 
         with torch.no_grad():
             q_value = self.q_function(state, action).to("cpu").detach().numpy()
@@ -406,19 +434,19 @@ class ContinuousMinimaxStateActionValueLearning(BaseWeightValueLearner):
 
         Parameters
         -------
-        state: array-like of shape (n_episodes * step_per_episode, state_dim)
+        state: array-like of shape (n_trajectories * step_per_trajectory, state_dim)
             State observed by the behavior policy.
 
-        evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
+        evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
 
         Return
         -------
-        v_function: ndarray of shape (n_episodes * step_per_episode)
+        v_function: ndarray of shape (n_trajectories * step_per_trajectory)
             State value.
 
         """
-        return self.predict_q_function(state=state, action=evaluation_policy_action)
+        return self.predict_q_function(state, evaluation_policy_action)
 
     def predict_value(
         self,
@@ -429,23 +457,23 @@ class ContinuousMinimaxStateActionValueLearning(BaseWeightValueLearner):
 
         Parameters
         -------
-        state: array-like of shape (n_episodes * step_per_episode, state_dim)
+        state: array-like of shape (n_trajectories * step_per_trajectory, state_dim)
             State observed by the behavior policy.
 
-        action: array-like of shape (n_episodes * step_per_episode, action_dim)
+        action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the behavior policy.
 
         Return
         -------
-        q_value: ndarray of shape (n_episodes * step_per_episode)
+        q_value: ndarray of shape (n_trajectories * step_per_trajectory)
             Q value of each (state, action) pair.
 
         """
-        return self.predict_q_function(state=state, action=action)
+        return self.predict_q_function(state, action)
 
     def fit_predict(
         self,
-        step_per_episode: int,
+        step_per_trajectory: int,
         state: np.ndarray,
         action: np.ndarray,
         reward: np.ndarray,
@@ -459,7 +487,6 @@ class ContinuousMinimaxStateActionValueLearning(BaseWeightValueLearner):
         alpha: float = 1e-3,
         lambda_: float = 1e-3,
         lr: float = 1e-3,
-        action_scaler: Optional[Union[float, np.ndarray]] = None,
         random_state: Optional[int] = None,
         **kwargs,
     ):
@@ -467,22 +494,22 @@ class ContinuousMinimaxStateActionValueLearning(BaseWeightValueLearner):
 
         Parameters
         -------
-        step_per_episode: int (> 0)
+        step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
 
-        state: array-like of shape (n_episodes * step_per_episode, state_dim)
+        state: array-like of shape (n_trajectories * step_per_trajectory, state_dim)
             State observed by the behavior policy.
 
-        action: array-like of shape (n_episodes * step_per_episode, action_dim)
+        action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the behavior policy.
 
-        reward: array-like of shape (n_episodes * step_per_episode)
+        reward: array-like of shape (n_trajectories * step_per_trajectory)
             Reward observed for each (state, action) pair.
 
-        pscore: array-like of shape (n_episodes * step_per_episode)
+        pscore: array-like of shape (n_trajectories * step_per_trajectory)
             Action choice probability of the behavior policy for the chosen action.
 
-        evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
+        evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
 
         n_epochs: int, default=100
@@ -507,15 +534,12 @@ class ContinuousMinimaxStateActionValueLearning(BaseWeightValueLearner):
         lr: float, default=1e-3
             Learning rate.
 
-        action_scaler: {float, array-like of shape (action_dim, )}, default=None
-            Scaling factor of action.
-
         random_state: int, default=None
             Random state.
 
         """
         self.fit(
-            step_per_episode=step_per_episode,
+            step_per_trajectory=step_per_trajectory,
             state=state,
             action=action,
             reward=reward,
@@ -529,10 +553,9 @@ class ContinuousMinimaxStateActionValueLearning(BaseWeightValueLearner):
             alpha=alpha,
             lambda_=lambda_,
             lr=lr,
-            action_scaler=action_scaler,
             random_state=random_state,
         )
-        return self.predict_value(state=state, action=action)
+        return self.predict_value(state, action)
 
 
 @dataclass
@@ -577,10 +600,29 @@ class ContinuousMinimaxStateValueLearning(BaseWeightValueLearner):
     """
 
     v_function: VFunction
+    state_scaler: Optional[Scaler] = None
+    action_scaler: Optional[ActionScaler] = None
     device: str = "cuda:0"
 
     def __post_init__(self):
         self.v_function.to(self.device)
+
+        if self.state_scaler is not None:
+            if not isinstance(self.state_scaler, Scaler):
+                raise ValueError(
+                    "state_scaler must be an instance of d3rlpy.preprocessing.Scaler, but found False"
+                )
+        if self.action_scaler is not None:
+            if not isinstance(self.action_scaler, ActionScaler):
+                raise ValueError(
+                    "action_scaler must be an instance of d3rlpy.preprocessing.ActionScaler, but found False"
+                )
+
+    def load(self, path: Path):
+        self.v_function.load_state_dict(torch.load(path))
+
+    def save(self, path: Path):
+        torch.save(self.v_function.state_dict(), path)
 
     def _inverse(
         self,
@@ -602,18 +644,17 @@ class ContinuousMinimaxStateValueLearning(BaseWeightValueLearner):
         state: torch.Tensor,
         action: torch.Tensor,
         sigma: float,
-        action_scaler: torch.Tensor,
     ):
         """Gaussian kernel for all input pairs."""
         with torch.no_grad():
-            input = torch.cat((state, action / action_scaler[None, :]), dim=1)
+            input = torch.cat((state, action), dim=1)
             # (x - x') ** 2 = x ** 2 + x' ** 2 - 2 x x'
             x_2 = (input ** 2).sum(dim=1)
             x_y = input @ input.T
             distance = x_2[:, None] + x_2[None, :] - 2 * x_y
             kernel = torch.exp(-distance / sigma)
 
-        return kernel  # shape (n_episodes, n_episodes)
+        return kernel  # shape (n_trajectories, n_trajectories)
 
     def _kernel_term(
         self,
@@ -622,12 +663,14 @@ class ContinuousMinimaxStateValueLearning(BaseWeightValueLearner):
         lambda_: float,
     ):
         """Kernel term in the objective function."""
-        n_episodes = len(kernel)
+        n_trajectories = len(kernel)
         sqrt_kernel = self._sqrt(kernel)
-        inverse_kernel = self._inverse(alpha * torch.eye(n_episodes) + lambda_ * kernel)
+        inverse_kernel = self._inverse(
+            alpha * torch.eye(n_trajectories) + lambda_ * kernel
+        )
         return (
             sqrt_kernel @ inverse_kernel @ sqrt_kernel
-        )  # shape (n_episodes, n_episodes)
+        )  # shape (n_trajectories, n_trajectories)
 
     def _objective_function(
         self,
@@ -640,25 +683,24 @@ class ContinuousMinimaxStateValueLearning(BaseWeightValueLearner):
         sigma: float,
         alpha: float,
         lambda_: float,
-        action_scaler: torch.Tensor,
     ):
         """Objective function of Minimax V Learning.
 
         Parameters
         -------
-        state: array-like of shape (n_episodes, state_dim)
+        state: array-like of shape (n_trajectories, state_dim)
             State observed by the behavior policy.
 
-        action: Tensor of shape (n_episodes, action_dim)
+        action: Tensor of shape (n_trajectories, action_dim)
             Action chosen by the behavior policy.
 
-        reward: Tensor of shape (n_episodes, )
+        reward: Tensor of shape (n_trajectories, )
             Reward observed for each (state, action) pair.
 
-        next_state: Tensor of shape (n_episodes, state_dim)
+        next_state: Tensor of shape (n_trajectories, state_dim)
             Next state observed for each (state, action) pair.
 
-        importance_weight: Tensor of shape (n_episodes, )
+        importance_weight: Tensor of shape (n_trajectories, )
             Immediate importance weight of the given (state, action) pair,
             i.e., :math:`\\pi(a_t | s_t) / \\pi_0(a_t | s_t)`.
 
@@ -672,18 +714,13 @@ class ContinuousMinimaxStateValueLearning(BaseWeightValueLearner):
 
         lambda_: float
 
-        action_scaler: Tensor of shape (action_dim, )
-            Scaling factor of action.
-
         Return
         -------
         objective_function: Tensor of shape (1, )
             Objective function of MVL.
 
         """
-        kernel = self._gaussian_kernel(
-            state, action, sigma=sigma, action_scaler=action_scaler
-        )
+        kernel = self._gaussian_kernel(state, action, sigma=sigma)
         current_v = self.v_function(state)
         next_v = self.v_function(next_state)
 
@@ -696,7 +733,7 @@ class ContinuousMinimaxStateValueLearning(BaseWeightValueLearner):
 
     def fit(
         self,
-        step_per_episode: int,
+        step_per_trajectory: int,
         state: np.ndarray,
         action: np.ndarray,
         reward: np.ndarray,
@@ -710,7 +747,6 @@ class ContinuousMinimaxStateValueLearning(BaseWeightValueLearner):
         alpha: float = 1e-3,
         lambda_: float = 1e-3,
         lr: float = 1e-3,
-        action_scaler: Optional[Union[float, np.ndarray]] = None,
         random_state: Optional[int] = None,
         **kwargs,
     ):
@@ -718,22 +754,22 @@ class ContinuousMinimaxStateValueLearning(BaseWeightValueLearner):
 
         Parameters
         -------
-        step_per_episode: int (> 0)
+        step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
 
-        state: array-like of shape (n_episodes * step_per_episode, state_dim)
+        state: array-like of shape (n_trajectories * step_per_trajectory, state_dim)
             State observed by the behavior policy.
 
-        action: array-like of shape (n_episodes * step_per_episode, action_dim)
+        action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the behavior policy.
 
-        reward: array-like of shape (n_episodes * step_per_episode)
+        reward: array-like of shape (n_trajectories * step_per_trajectory)
             Reward observed for each (state, action) pair.
 
-        pscore: array-like of shape (n_episodes * step_per_episode)
+        pscore: array-like of shape (n_trajectories * step_per_trajectory)
             Action choice probability of the behavior policy for the chosen action.
 
-        evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
+        evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
 
         n_epochs: int, default=100
@@ -758,15 +794,12 @@ class ContinuousMinimaxStateValueLearning(BaseWeightValueLearner):
         lr: float, default=1e-3
             Learning rate.
 
-        action_scaler: {float, array-like of shape (action_dim, )}, default=None
-            Scaling factor of action.
-
         random_state: int, default=None
             Random state.
 
         """
         check_scalar(
-            step_per_episode, name="step_per_episode", target_type=int, min_val=1
+            step_per_trajectory, name="step_per_trajectory", target_type=int, min_val=1
         )
         check_array(state, name="state", expected_dim=2)
         check_array(action, name="action", expected_dim=2)
@@ -787,9 +820,9 @@ class ContinuousMinimaxStateValueLearning(BaseWeightValueLearner):
             raise ValueError(
                 "Expected `state.shape[0] == action.shape[0] == reward.shape[0] == pscore.shape[0] == evaluation_policy_action.shape[0]`, but found False"
             )
-        if state.shape[0] % step_per_episode:
+        if state.shape[0] % step_per_trajectory:
             raise ValueError(
-                "Expected `state.shape[0] % step_per_episode == 0`, but found False"
+                "Expected `state.shape[0] % step_per_trajectory == 0`, but found False"
             )
         if action.shape[1] != evaluation_policy_action.shape[1]:
             raise ValueError(
@@ -807,43 +840,47 @@ class ContinuousMinimaxStateValueLearning(BaseWeightValueLearner):
         check_scalar(batch_size, name="batch_size", target_type=int, min_val=1)
         check_scalar(lr, name="lr", target_type=float, min_val=0.0)
 
-        action_dim = action.shape[1]
-        if action_scaler is None:
-            action_scaler = np.ones(action_dim)
-        elif isinstance(action_scaler, float):
-            action_scaler = np.full(action_dim, action_scaler)
-
-        check_array(action_scaler, name="action_scaler", expected_dim=1, min_val=0.0)
-        if action_scaler.shape[0] != action_dim:
-            raise ValueError(
-                "Expected `action_scaler.shape[0] == action.shape[1]`, but found False"
-            )
-
         if random_state is None:
             raise ValueError("Random state mush be given.")
         torch.manual_seed(random_state)
 
         state_dim = state.shape[1]
         action_dim = action.shape[1]
-        state = state.reshape((-1, step_per_episode, state_dim))
-        action = action.reshape((-1, step_per_episode, action_dim))
-        reward = reward.reshape((-1, step_per_episode))
-        pscore = pscore.reshape((-1, step_per_episode))
+        if self.action_scaler is not None:
+            evaluation_policy_action_ = self.action_scaler.transform_numpy(
+                evaluation_policy_action.reshape((-1, action_dim))
+            )
+            action_ = self.action_scaler.transform_numpy(
+                action.reshape((-1, action_dim))
+            )
+        else:
+            evaluation_policy_action_ = evaluation_policy_action
+            action_ = action
+
+        similarity_weight = gaussian_kernel(
+            evaluation_policy_action_,
+            action_,
+            sigma=sigma,
+        ).reshape((-1, step_per_trajectory))
+
+        state = state.reshape((-1, step_per_trajectory, state_dim))
+        action = action.reshape((-1, step_per_trajectory, action_dim))
+        reward = reward.reshape((-1, step_per_trajectory))
+        pscore = pscore.reshape((-1, step_per_trajectory))
         evaluation_policy_action = evaluation_policy_action.reshape(
-            (-1, step_per_episode, action_dim)
+            (-1, step_per_trajectory, action_dim)
         )
 
-        n_episodes, step_per_episode, _ = state.shape
+        n_trajectories, step_per_trajectory, _ = state.shape
         state = torch.FloatTensor(state, device=self.device)
         action = torch.FloatTensor(action, device=self.device)
         reward = torch.FloatTensor(reward, device=self.device)
-
-        similarity_weight = gaussian_kernel(
-            evaluation_policy_action.reshape((-1, action_dim)) / action_scaler[None, :],
-            action.reshape((-1, action_dim)) / action_scaler[None, :],
-            sigma=sigma,
-        ).reshape((n_episodes, step_per_episode))
         importance_weight = torch.FloatTensor(similarity_weight / pscore)
+
+        if self.state_scaler is not None:
+            state = self.state_scaler.transform(state)
+        if self.action_scaler is not None:
+            action = self.action_scaler.transform(action)
 
         optimizer = optim.SGD(self.v_function.parameters(), lr=lr, momentum=0.9)
 
@@ -853,8 +890,8 @@ class ContinuousMinimaxStateValueLearning(BaseWeightValueLearner):
             total=n_epochs,
         ):
             for grad_step in range(n_steps_per_epoch):
-                idx_ = torch.randint(n_episodes, size=(batch_size,))
-                t_ = torch.randint(step_per_episode - 1, size=(batch_size,))
+                idx_ = torch.randint(n_trajectories, size=(batch_size,))
+                t_ = torch.randint(step_per_trajectory - 1, size=(batch_size,))
 
                 objective_loss = self._objective_function(
                     state=state[idx_, t_],
@@ -866,7 +903,6 @@ class ContinuousMinimaxStateValueLearning(BaseWeightValueLearner):
                     sigma=sigma,
                     alpha=alpha,
                     lambda_=lambda_,
-                    action_scaler=action_scaler,
                 )
 
                 optimizer.zero_grad()
@@ -881,17 +917,20 @@ class ContinuousMinimaxStateValueLearning(BaseWeightValueLearner):
 
         Parameters
         -------
-        state: array-like of shape (n_episodes * step_per_episode, state_dim)
+        state: array-like of shape (n_trajectories * step_per_trajectory, state_dim)
             State observed by the behavior policy.
 
         Return
         -------
-        v_function: ndarray of shape (n_episodes * step_per_episode)
+        v_function: ndarray of shape (n_trajectories * step_per_trajectory)
             State value.
 
         """
-        check_array(state, name="state", expected_dim=3)
+        check_array(state, name="state", expected_dim=2)
         state = torch.FloatTensor(state, device=self.device)
+
+        if self.state_scaler is not None:
+            state = self.state_scaler.transform(state)
 
         with torch.no_grad():
             v_value = self.v_function(state).to("cpu").detach().numpy()
@@ -906,12 +945,12 @@ class ContinuousMinimaxStateValueLearning(BaseWeightValueLearner):
 
         Parameters
         -------
-        state: array-like of shape (n_episodes * step_per_episode, state_dim)
+        state: array-like of shape (n_trajectories * step_per_trajectory, state_dim)
             State observed by the behavior policy.
 
         Return
         -------
-        v_function: ndarray of shape (n_episodes * step_per_episode)
+        v_function: ndarray of shape (n_trajectories * step_per_trajectory)
             State value.
 
         """
@@ -919,7 +958,7 @@ class ContinuousMinimaxStateValueLearning(BaseWeightValueLearner):
 
     def fit_predict(
         self,
-        step_per_episode: int,
+        step_per_trajectory: int,
         state: np.ndarray,
         action: np.ndarray,
         reward: np.ndarray,
@@ -933,7 +972,6 @@ class ContinuousMinimaxStateValueLearning(BaseWeightValueLearner):
         alpha: float = 1e-3,
         lambda_: float = 1e-3,
         lr: float = 1e-3,
-        action_scaler: Optional[Union[float, np.ndarray]] = None,
         random_state: Optional[int] = None,
         **kwargs,
     ):
@@ -941,22 +979,22 @@ class ContinuousMinimaxStateValueLearning(BaseWeightValueLearner):
 
         Parameters
         -------
-        step_per_episode: int (> 0)
+        step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
 
-        state: array-like of shape (n_episodes * step_per_episode, state_dim)
+        state: array-like of shape (n_trajectories * step_per_trajectory, state_dim)
             State observed by the behavior policy.
 
-        action: array-like of shape (n_episodes * step_per_episode, action_dim)
+        action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the behavior policy.
 
-        reward: array-like of shape (n_episodes * step_per_episode, )
+        reward: array-like of shape (n_trajectories * step_per_trajectory, )
             Reward observed for each (state, action) pair.
 
-        pscore: array-like of shape (n_episodes * step_per_episode, )
+        pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Action choice probability of the behavior policy for the chosen action.
 
-        evaluation_policy_action: array-like of shape (n_episodes * step_per_episode, action_dim)
+        evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
 
         n_epochs: int, default=100
@@ -989,7 +1027,7 @@ class ContinuousMinimaxStateValueLearning(BaseWeightValueLearner):
 
         """
         self.fit(
-            step_per_episode=step_per_episode,
+            step_per_trajectory=step_per_trajectory,
             state=state,
             action=action,
             reward=reward,
@@ -1003,7 +1041,6 @@ class ContinuousMinimaxStateValueLearning(BaseWeightValueLearner):
             alpha=alpha,
             lambda_=lambda_,
             lr=lr,
-            action_scaler=action_scaler,
             random_state=random_state,
         )
-        return self.predict_value(state=state)
+        return self.predict_value(state)

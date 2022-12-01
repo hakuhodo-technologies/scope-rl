@@ -34,9 +34,7 @@ class StateWeightFunction(nn.Module):
     def forward(
         self,
         state: torch.Tensor,
-        action: torch.Tensor,
     ):
-        action = self.action_onehot(action)
         x = F.relu(self.fc1(state))
         return F.relu(self.fc2(x))
 
@@ -59,7 +57,7 @@ class DiscreteQFunction(nn.Module):
         state: torch.Tensor,
         action: torch.Tensor,
     ):
-        action = self.action_onehot(action)
+        action = self.action_onehot[action]
         x = F.relu(self.fc1(state))
         values = self.fc2(x)
         return (values * action).sum(axis=1)
@@ -137,9 +135,8 @@ class DiscreteStateActionWeightFunction(nn.Module):
         state: torch.Tensor,
         action: torch.Tensor,
     ):
-        action = self.action_onehot(action)
-        x = torch.cat((state, action), dim=1)
-        x = F.relu(self.fc1(x))
+        action = self.action_onehot[action]
+        x = F.relu(self.fc1(state))
         values = F.relu(self.fc2(x))
         return (values * action).sum(axis=1)
 

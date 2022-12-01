@@ -10,11 +10,11 @@ class BaseDataset(metaclass=ABCMeta):
     """Base class for logged dataset."""
 
     @abstractmethod
-    def obtain_trajectories(self, n_episodes: int) -> LoggedDataset:
+    def obtain_episodes(self, n_trajectories: int) -> LoggedDataset:
         """Rollout behavior policy and obtain trajectories."""
         raise NotImplementedError
 
     @abstractmethod
-    def obtain_steps(self, n_episodes: int) -> LoggedDataset:
+    def obtain_steps(self, n_trajectories: int) -> LoggedDataset:
         """Rollout behavior policy and obtain steps."""
         raise NotImplementedError

@@ -20,6 +20,7 @@ from ofrl.ope.basic_estimators_discrete import (
     DiscreteSelfNormalizedDoublyRobust,
 )
 from ofrl.ope.marginal_estimators_discrete import (
+    DiscreteDoubleReinforcementLearning,
     DiscreteStateMarginalImportanceSampling,
     DiscreteStateMarginalDoublyRobust,
     DiscreteStateMarginalSelfNormalizedImportanceSampling,
@@ -58,6 +59,7 @@ from ofrl.ope.basic_estimators_continuous import (
     ContinuousSelfNormalizedDoublyRobust,
 )
 from ofrl.ope.marginal_estimators_continuous import (
+    ContinuousDoubleReinforcementLearning,
     ContinuousStateMarginalImportanceSampling,
     ContinuousStateMarginalDoublyRobust,
     ContinuousStateMarginalSelfNormalizedImportanceSampling,
@@ -104,6 +106,7 @@ __all__ = [
     "DiscreteSelfNormalizedTrajectoryWiseImportanceSampling",
     "DiscreteSelfNormalizedPerDecisionImportanceSampling",
     "DiscreteSelfNormalizedDoublyRobust",
+    "DiscreteDoubleReinforcementLearning",
     "DiscreteStateMarginalImportanceSampling",
     "DiscreteStateMarginalDoublyRobust",
     "DiscreteStateMarginalSelfNormalizedImportanceSampling",
@@ -130,6 +133,7 @@ __all__ = [
     "ContinuousSelfNormalizedTrajectoryWiseImportanceSampling",
     "ContinuousSelfNormalizedPerDecisionImportanceSampling",
     "ContinuousSelfNormalizedDoublyRobust",
+    "ContinuousDoubleReinforcementLearning",
     "ContinuousStateMarginalImportanceSampling",
     "ContinuousStateMarginalDoublyRobust",
     "ContinuousStateMarginalSelfNormalizedImportanceSampling",
@@ -188,6 +192,7 @@ __basic__ = [
 
 
 __marginal__ = [
+    "DiscreteDoubleReinforcementLearning",
     "DiscreteStateMarginalImportanceSampling",
     "DiscreteStateMarginalDoublyRobust",
     "DiscreteStateMarginalSelfNormalizedImportanceSampling",
@@ -196,6 +201,7 @@ __marginal__ = [
     "DiscreteStateActionMarginalDoublyRobust",
     "DiscreteStateActionMarginalSelfNormalizedImportanceSampling",
     "DiscreteStateActionMarginalSelfNormalizedDoublyRobust",
+    "ContinuousDoubleReinforcementLearning",
     "ContinuousStateMarginalImportanceSampling",
     "ContinuousStateMarginalDoublyRobust",
     "ContinuousStateMarginalSelfNormalizedImportanceSampling",
@@ -248,6 +254,7 @@ __discrete__ = [
     "DiscreteSelfNormalizedTrajectoryWiseImportanceSampling",
     "DiscreteSelfNormalizedStepWiseImportanceSampling",
     "DiscreteSelfNormalizedDoublyRobust",
+    "DiscreteDoubleReinforcementLearning",
     "DiscreteStateMarginalImportanceSampling",
     "DiscreteStateMarginalDoublyRobust",
     "DiscreteStateMarginalSelfNormalizedImportanceSampling",
@@ -280,6 +287,7 @@ __continuous__ = [
     "ContinuousSelfNormalizedTrajectoryWiseImportanceSampling",
     "ContinuousSelfNormalizedStepWiseImportanceSampling",
     "ContinuousSelfNormalizedDoublyRobust",
+    "ContinuousDoubleReinforcementLearning",
     "ContinuousStateMarginalImportanceSampling",
     "ContinuousStateMarginalDoublyRobust",
     "ContinuousStateMarginalSelfNormalizedImportanceSampling",

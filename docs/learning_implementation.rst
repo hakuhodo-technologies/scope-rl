@@ -20,7 +20,7 @@ It takes an RL environment and the behavior policy (i.e., data collection policy
     >>> dataset = SyntheticDataset(
             env=env,
             behavior_policy=behavior_policy,
-            maximum_step_per_episode=env.step_per_episode,
+            max_episode_steps=env.step_per_episode,
             random_state=random_state,
         )
 
@@ -29,7 +29,7 @@ Then, it collects logged data as follows.
 .. code-block:: python
 
     # collect logged data by a behavior policy
-    >>> logged_dataset = dataset.obtain_trajectories(n_episodes=10000)
+    >>> logged_dataset = dataset.obtain_episodes(n_trajectories=10000)
 
 
 The behavior policy can either be deterministic or stochastic when conducting offline policy learning.

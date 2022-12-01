@@ -174,11 +174,11 @@ behavior_policy = DiscreteEpsilonGreedyHead(
 dataset = SyntheticDataset(
     env=env,
     behavior_policy=behavior_policy,
-    maximum_step_per_episode=env.step_per_episode,
+    maximum_episode_steps=env.step_per_episode,
     random_state=random_state,
 )
 # the behavior policy collects some logged data
-logged_dataset = dataset.obtain_trajectories(n_episodes=10000)
+logged_dataset = dataset.obtain_trajectories(n_trajectories=10000)
 ```
 
 ### Offline Reinforcement Learning
@@ -258,7 +258,7 @@ prep = CreateOPEInput(
 input_dict = prep.obtain_whole_inputs(
     evaluation_policies=evaluation_policies,
     env=env,
-    n_episodes_on_policy_evaluation=100,
+    n_trajectories_on_policy_evaluation=100,
     random_state=random_state,
 )
 # initialize the OPE class
