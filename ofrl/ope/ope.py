@@ -12,6 +12,8 @@ from sklearn.utils import check_scalar
 from pandas import DataFrame
 import matplotlib.pyplot as plt
 
+from d3rlpy.preprocessing import ActionScaler
+
 from .estimators_base import (
     BaseOffPolicyEstimator,
     BaseCumulativeDistributionOffPolicyEstimator,
@@ -50,15 +52,15 @@ class OffPolicyEvaluation:
         List of OPE estimators used to evaluate the policy value of the evaluation policies.
         Estimators must follow the interface of `ofrl.ope.BaseOffPolicyEstimator`.
 
-    action_scaler: {float, array-like of shape (action_dim, )}, default=None
-        Scaling factor of continuous action space.
+    n_step_pdis: int, default=0 (>= 0)
+        Number of previous steps to use per-decision importance weight in marginal OPE estimators.
+        When zero is given, the estimator corresponds to the pure state(-action) marginal IS.
 
     sigma: float, default=1.0
         Bandwidth hyperparameter of gaussian kernel for continuous action space.
 
-    n_step_pdis: int, default=0 (>= 0)
-        Number of previous steps to use per-decision importance weight in marginal OPE estimators.
-        When zero is given, the estimator corresponds to the pure state(-action) marginal IS.
+    action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
+        Scaling factor of action.
 
     Examples
     ----------
@@ -175,9 +177,9 @@ class OffPolicyEvaluation:
 
     logged_dataset: LoggedDataset
     ope_estimators: List[BaseOffPolicyEstimator]
-    action_scaler: Optional[Union[float, np.ndarray]] = None
-    sigma: float = 1.0
     n_step_pdis: int = 0
+    sigma: float = 1.0
+    action_scaler: Optional[ActionScaler] = None
 
     def __post_init__(self) -> None:
         "Initialize class."
@@ -929,11 +931,11 @@ class CumulativeDistributionOffPolicyEvaluation:
         Number of partitions in the reward scale (x-axis of CDF).
         When `use_custom_reward_scale == True`, a value must be given.
 
-    action_scaler: {float, array-like of shape (action_dim, )}, default=None
-        Scaling factor of continuous action space.
-
     sigma: float, default=1.0 (> 0)
         Bandwidth hyperparameter of gaussian kernel for continuous action space.
+
+    action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
+        Scaling factor of action.
 
     Examples
     ----------
@@ -1054,8 +1056,8 @@ class CumulativeDistributionOffPolicyEvaluation:
     scale_min: Optional[float] = None
     scale_max: Optional[float] = None
     n_partition: Optional[int] = None
-    action_scaler: Optional[Union[float, np.ndarray]] = None
     sigma: float = 1.0
+    action_scaler: Optional[ActionScaler] = None
 
     def __post_init__(self) -> None:
         "Initialize class."
