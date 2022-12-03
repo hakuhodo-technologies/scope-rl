@@ -334,8 +334,8 @@ class SyntheticDataset(BaseDataset):
             (n_trajectories * step_per_trajectory, self.env.observation_space.shape[0])
         )
         if self.action_type == "discrete":
-            actions = np.zeros(n_trajectories * step_per_trajectory)
-            action_probs = np.zeros(n_trajectories * step_per_trajectory)
+            actions = np.zeros(n_trajectories * step_per_trajectory, dtype=int)
+            action_probs = np.zeros(n_trajectories * step_per_trajectory, dtype=int)
         else:
             actions = np.zeros((n_trajectories * step_per_trajectory, self.action_dim))
             action_probs = np.zeros(
@@ -551,8 +551,8 @@ class SyntheticDataset(BaseDataset):
             (n_trajectories * step_per_trajectory, self.env.observation_space.shape[0])
         )
         if self.action_type == "discrete":
-            actions = np.zeros(n_trajectories * step_per_trajectory)
-            action_probs = np.zeros(n_trajectories * step_per_trajectory)
+            actions = np.zeros(n_trajectories * step_per_trajectory, dtype=int)
+            action_probs = np.zeros(n_trajectories * step_per_trajectory, dtype=int)
         else:
             actions = np.zeros(n_trajectories * step_per_trajectory, self.action_dim)
             action_probs = np.zeros(

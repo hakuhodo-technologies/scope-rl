@@ -18,7 +18,7 @@ class VFunction(nn.Module):
         state: torch.Tensor,
     ):
         x = F.relu(self.fc1(state))
-        return self.fc2(x)
+        return self.fc2(x).flatten()
 
 
 class StateWeightFunction(nn.Module):
@@ -36,7 +36,7 @@ class StateWeightFunction(nn.Module):
         state: torch.Tensor,
     ):
         x = F.relu(self.fc1(state))
-        return F.relu(self.fc2(x))
+        return F.relu(self.fc2(x)).flatten()
 
 
 class DiscreteQFunction(nn.Module):

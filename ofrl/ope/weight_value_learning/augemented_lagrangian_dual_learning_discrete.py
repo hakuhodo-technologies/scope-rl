@@ -72,6 +72,37 @@ class DiscreteAugmentedLagrangianStateActionWightValueLearning(BaseWeightValueLe
     state_scaler: d3rlpy.preprocessing.Scaler, default=None
         Scaling factor of state.
 
+    method: {"dual_dice", "gen_dice", "algae_dice", "best_dice", "mql", "mwl", "custom"}, default="best_dice"
+        Indicates which parameter set should be used. When, "custom" users can specify their own parameter.
+
+    batch_size: int, default=32
+        Batch size.
+
+    q_lr: float, default=1e-3
+        Learning rate of q_function.
+
+    w_lr: float, default=1e-3
+        Learning rate of w_function.
+
+    lambda_lr: float, default=1e-3
+        Learning rate of lambda_.
+
+    alpha_q: float, default=None
+        Regularization coefficient of the Q-function.
+        A value should be given when `method == "custom"`.
+
+    alpha_w: float, default=None
+        Regularization coefficient of the weight function.
+        A value should be given when `method == "custom"`.
+
+    alpha_r: bool, default=None
+        Wether to consider the reward observation.
+        A value should be given when `method == "custom"`.
+
+    enable_lambda: bool, default=None
+        Whether to optimize :math:`\\lambda`. If False, :math:`\\lambda` is automatically set to zero.
+        A boolean value should be given when `method == "custom"`.
+
     device: str, default="cuda:0"
         Specifies device used for torch.
 
@@ -97,24 +128,86 @@ class DiscreteAugmentedLagrangianStateActionWightValueLearning(BaseWeightValueLe
 
     """
 
-    method: str
     q_function: DiscreteQFunction
     w_function: DiscreteStateActionWeightFunction
     gamma: float = 1.0
     sigma: float = 1.0
     state_scaler: Optional[Scaler] = None
+    method: str = "best_dice"
+    batch_size: int = 32
+    q_lr: float = 1e-3
+    w_lr: float = 1e-3
+    lambda_lr: float = 1e-3
+    alpha_q: Optional[float] = None
+    alpha_w: Optional[float] = None
+    alpha_r: Optional[bool] = None
+    enable_lambda: Optional[bool] = None
     device: str = "cuda:0"
 
     def __post_init__(self):
         self.q_function.to(self.device)
         self.w_function.to(self.device)
 
-        check_scalar(self.gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
+        check_scalar(
+            self.gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0
+        )
         check_scalar(self.sigma, name="sigma", target_type=float, min_val=0.0)
         if self.state_scaler is not None and not isinstance(self.state_scaler, Scaler):
             raise ValueError(
                 "state_scaler must be an instance of d3rlpy.preprocessing.Scaler, but found False"
             )
+
+        if self.method not in [
+            "dual_dice",
+            "gen_dice",
+            "algae_dice",
+            "best_dice",
+            "mql",
+            "mwl",
+            "custom",
+        ]:
+            raise ValueError(
+                f"method must be one of {'dual_dice', 'gen_dice', 'algae_dice', 'best_dice', 'mql', 'mwl', 'custom'}, but {self.method} is given"
+            )
+        if self.method == "custom":
+            if self.alpha_q is None:
+                raise ValueError("alpha_q must be given when `method == 'custom'`")
+            if self.alpha_w is None:
+                raise ValueError("alpha_w must be given when `method == 'custom'`")
+            if self.alpha_r is None:
+                raise ValueError("alpha_r must be given when `method == 'custom'`")
+            if self.enable_lambda is None:
+                raise ValueError(
+                    "enable_lambda must be given when `method == 'custom'`"
+                )
+        else:
+            if self.alpha_q is not None:
+                warn(
+                    f"alpha_q is given, but alpha_q will be initialized with by the setting of {self.method}."
+                    "To customize, `method` should be set to 'custom'."
+                )
+            if self.alpha_w is not None:
+                warn(
+                    f"alpha_w is given, but alpha_w will be initialized with by the setting of {self.method}."
+                    "To customize, `method` should be set to 'custom'."
+                )
+            if self.alpha_r is not None:
+                warn(
+                    f"alpha_r is given, but alpha_r will be initialized with by the setting of {self.method}."
+                    "To customize, `method` should be set to 'custom'."
+                )
+
+            self.alpha_q = float(self.method in ["dual_dice", "gen_dice"])
+            self.alpha_w = float(self.method in ["algae_dice", "best_dice"])
+            self.alpha_r = self.method in ["algae_dice", "best_dice", "mql"]
+            self.enable_lambda = self.method in ["gen_dice", "best_dice"]
+
+        check_scalar(self.alpha_q, name="alpha_q", target_type=float)
+        check_scalar(self.alpha_w, name="alpha_w", target_type=float)
+        check_scalar(self.batch_size, name="batch_size", target_type=int, min_val=1)
+        check_scalar(self.q_lr, name="q_lr", target_type=float, min_val=0.0)
+        check_scalar(self.w_lr, name="w_lr", target_type=float, min_val=0.0)
+        check_scalar(self.lambda_lr, name="lambda_lr", target_type=float, min_val=0.0)
 
     def load(self, path_q: Path, path_w: Path):
         self.q_function.load_state_dict(torch.load(path_q))
@@ -134,9 +227,6 @@ class DiscreteAugmentedLagrangianStateActionWightValueLearning(BaseWeightValueLe
         next_state: torch.Tensor,
         next_action: torch.Tensor,
         lambda_: torch.Tensor,
-        alpha_q: float,
-        alpha_w: float,
-        alpha_r: bool,
     ):
         """Objective function of Augmented Lagrangian method.
 
@@ -166,18 +256,6 @@ class DiscreteAugmentedLagrangianStateActionWightValueLearning(BaseWeightValueLe
         lambda_: Tensor of shape (1, )
             lambda_ hyperparameter to stabilize the optimization.
 
-        gamma: float
-            Discount factor. The value should be within `(0, 1]`.
-
-        alpha_q: float
-            Regularization coefficient of the Q-function.
-
-        alpha_w: float
-            Regularization coefficient of the weight function.
-
-        alpha_r: bool
-            Wether to consider the reward observation.
-
         Return
         -------
         objective_function: Tensor of shape (1, )
@@ -190,14 +268,14 @@ class DiscreteAugmentedLagrangianStateActionWightValueLearning(BaseWeightValueLe
         td_value = (
             self.w_function(state, action)
             * (
-                alpha_r * reward
+                self.alpha_r * reward
                 + self.gamma * self.q_function(next_state, next_action)
                 - self.q_function(state, action)
                 - lambda_
             )
         ).mean()
-        q_regularization = alpha_q * (self.q_function(state, action) ** 2).mean()
-        w_regularization = alpha_w * (self.w_function(state, action) ** 2).mean()
+        q_regularization = self.alpha_q * (self.q_function(state, action) ** 2).mean()
+        w_regularization = self.alpha_w * (self.w_function(state, action) ** 2).mean()
         return initial_value + td_value + q_regularization - w_regularization
 
     def fit(
@@ -207,17 +285,8 @@ class DiscreteAugmentedLagrangianStateActionWightValueLearning(BaseWeightValueLe
         action: np.ndarray,
         reward: np.ndarray,
         evaluation_policy_action_dist: np.ndarray,
-        method: str = "best_dice",
         n_epochs: int = 100,
         n_steps_per_epoch: int = 100,
-        batch_size: int = 32,
-        q_lr: float = 1e-3,
-        w_lr: float = 1e-3,
-        lambda_lr: float = 1e-3,
-        alpha_q: Optional[float] = None,
-        alpha_w: Optional[float] = None,
-        alpha_r: Optional[bool] = None,
-        enable_lambda: Optional[bool] = None,
         random_state: Optional[int] = None,
         **kwargs,
     ):
@@ -241,42 +310,11 @@ class DiscreteAugmentedLagrangianStateActionWightValueLearning(BaseWeightValueLe
             Conditional action distribution induced by the evaluation policy,
             i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
 
-        method: {"dual_dice", "gen_dice", "algae_dice", "best_dice", "mql", "mwl", "custom"}, default="best_dice"
-            Indicates which parameter set should be used. When, "custom" users can specify their own parameter.
-
         n_epochs: int, default=100
             Number of epochs to train.
 
         n_steps_per_epoch: int, default=100
             Number of gradient steps in a epoch.
-
-        batch_size: int, default=32
-            Batch size.
-
-        q_lr: float, default=1e-3
-            Learning rate of q_function.
-
-        w_lr: float, default=1e-3
-            Learning rate of w_function.
-
-        lambda_lr: float, default=1e-3
-            Learning rate of lambda_.
-
-        alpha_q: float, default=None
-            Regularization coefficient of the Q-function.
-            A value should be given when `method == "custom"`.
-
-        alpha_w: float, default=None
-            Regularization coefficient of the weight function.
-            A value should be given when `method == "custom"`.
-
-        alpha_r: bool, default=None
-            Wether to consider the reward observation.
-            A value should be given when `method == "custom"`.
-
-        enable_lambda: bool, default=None
-            Whether to optimize :math:`\\lambda`. If False, :math:`\\lambda` is automatically set to zero.
-            A boolean value should be given when `method == "custom"`.
 
         random_state: int, default=None
             Random state.
@@ -316,62 +354,10 @@ class DiscreteAugmentedLagrangianStateActionWightValueLearning(BaseWeightValueLe
                 "evaluation_policy_action_dist must sums up to one in axis=1, but found False"
             )
 
-        if method not in [
-            "dual_dice",
-            "gen_dice",
-            "algae_dice",
-            "best_dice",
-            "mql",
-            "mwl",
-            "custom",
-        ]:
-            raise ValueError(
-                f"method must be one of {'dual_dice', 'gen_dice', 'algae_dice', 'best_dice', 'mql', 'mwl', 'custom'}, but {method} is given"
-            )
-        if method == "custom":
-            if alpha_q is None:
-                raise ValueError("alpha_q must be given when `method == 'custom'`")
-            if alpha_w is None:
-                raise ValueError("alpha_w must be given when `method == 'custom'`")
-            if alpha_r is None:
-                raise ValueError("alpha_r must be given when `method == 'custom'`")
-            if enable_lambda is None:
-                raise ValueError(
-                    "enable_lambda must be given when `method == 'custom'`"
-                )
-        else:
-            if alpha_q is not None:
-                warn(
-                    f"alpha_q is given, but alpha_q will be initialized with by the setting of {method}."
-                    "To customize, `method` should be set to 'custom'."
-                )
-            if alpha_w is not None:
-                warn(
-                    f"alpha_w is given, but alpha_w will be initialized with by the setting of {method}."
-                    "To customize, `method` should be set to 'custom'."
-                )
-            if alpha_r is not None:
-                warn(
-                    f"alpha_r is given, but alpha_r will be initialized with by the setting of {method}."
-                    "To customize, `method` should be set to 'custom'."
-                )
-
-            alpha_q = method in ["dual_dice", "gen_dice"]
-            alpha_w = method in ["algae_dice", "best_dice"]
-            alpha_r = method in ["algae_dice", "best_dice", "mql"]
-            enable_lambda = method in ["gen_dice", "best_dice"]
-            self.lambda_ = torch.zeros(size=(1,), device=self.device)
-
-        check_scalar(alpha_q, name="alpha_q", target_type=float)
-        check_scalar(alpha_w, name="alpha_w", target_type=float)
         check_scalar(n_epochs, name="n_epochs", target_type=int, min_val=1)
         check_scalar(
             n_steps_per_epoch, name="n_steps_per_epoch", target_type=int, min_val=1
         )
-        check_scalar(batch_size, name="batch_size", target_type=int, min_val=1)
-        check_scalar(q_lr, name="q_lr", target_type=float, min_val=0.0)
-        check_scalar(w_lr, name="w_lr", target_type=float, min_val=0.0)
-        check_scalar(lambda_lr, name="lambda_lr", target_type=float, min_val=0.0)
 
         if random_state is None:
             raise ValueError("Random state mush be given.")
@@ -397,21 +383,29 @@ class DiscreteAugmentedLagrangianStateActionWightValueLearning(BaseWeightValueLe
         if self.state_scaler is not None:
             state = self.state_scaler.transform(state)
 
-        q_optimizer = optim.SGD(self.q_function.parameters(), lr=q_lr, momentum=0.9)
-        w_optimizer = optim.SGD(self.w_function.parameters(), lr=w_lr, momentum=0.9)
+        q_optimizer = optim.SGD(
+            self.q_function.parameters(), lr=self.q_lr, momentum=0.9
+        )
+        w_optimizer = optim.SGD(
+            self.w_function.parameters(), lr=self.w_lr, momentum=0.9
+        )
 
-        if enable_lambda:
+        if self.enable_lambda:
             self.lambda_ = torch.ones(size=(1,), device=self.device, requires_grad=True)
-            lambda_optimizer = optim.SGD(self.lambda_, lr=lambda_lr, momentum=0.9)
+            lambda_optimizer = optim.SGD(
+                [self.lambda_], lr=self.lambda_lr, momentum=0.9
+            )
+        else:
+            self.lambda_ = torch.zeros(size=(1,), device=self.device)
 
         for epoch in tqdm(
             np.arange(n_epochs),
-            desc=["fitting_weight_and_value_functions"],
+            desc="[fitting_weight_and_value_functions]",
             total=n_epochs,
         ):
             for grad_step in range(n_steps_per_epoch):
-                idx_ = torch.randint(n_trajectories, size=(batch_size,))
-                t_ = torch.randint(step_per_trajectory - 1, size=(batch_size,))
+                idx_ = torch.randint(n_trajectories, size=(self.batch_size,))
+                t_ = torch.randint(step_per_trajectory - 2, size=(self.batch_size,))
 
                 initial_action = torch.multinomial(
                     evaluation_policy_action_dist[idx_, 0], num_samples=1
@@ -429,21 +423,18 @@ class DiscreteAugmentedLagrangianStateActionWightValueLearning(BaseWeightValueLe
                     next_state=state[idx_, t_ + 1],
                     next_action=next_action,
                     lambda_=self.lambda_,
-                    alpha_q=alpha_q,
-                    alpha_w=alpha_w,
-                    alpha_r=alpha_r,
                 )
 
                 q_optimizer.zero_grad()
                 w_optimizer.zero_grad()
-                if enable_lambda:
+                if self.enable_lambda:
                     lambda_optimizer.zero_grad()
 
                 objective_loss.backward()
 
                 q_optimizer.step()
                 w_optimizer.step()
-                if enable_lambda:
+                if self.enable_lambda:
                     lambda_optimizer.step()
 
     def predict_q_function_for_all_actions(
@@ -669,17 +660,8 @@ class DiscreteAugmentedLagrangianStateActionWightValueLearning(BaseWeightValueLe
         action: np.ndarray,
         reward: np.ndarray,
         evaluation_policy_action_dist: np.ndarray,
-        method: str = "best_dice",
         n_epochs: int = 100,
         n_steps_per_epoch: int = 100,
-        batch_size: int = 32,
-        q_lr: float = 1e-3,
-        w_lr: float = 1e-3,
-        lambda_lr: float = 1e-3,
-        alpha_q: Optional[float] = None,
-        alpha_w: Optional[float] = None,
-        alpha_r: Optional[bool] = None,
-        enable_lambda: Optional[bool] = None,
         random_state: Optional[int] = None,
         **kwargs,
     ):
@@ -712,34 +694,6 @@ class DiscreteAugmentedLagrangianStateActionWightValueLearning(BaseWeightValueLe
         n_steps_per_epoch: int, default=100
             Number of gradient steps in a epoch.
 
-        batch_size: int, default=32
-            Batch size.
-
-        q_lr: float, default=1e-3
-            Learning rate of q_function.
-
-        w_lr: float, default=1e-3
-            Learning rate of w_function.
-
-        lambda_lr: float, default=1e-3
-            Learning rate of lambda_.
-
-        alpha_q: float, default=None
-            Regularization coefficient of the Q-function.
-            A value should be given when `method == "custom"`.
-
-        alpha_w: float, default=None
-            Regularization coefficient of the weight function.
-            A value should be given when `method == "custom"`.
-
-        alpha_r: bool, default=None
-            Wether to consider the reward observation.
-            A value should be given when `method == "custom"`.
-
-        enable_lambda: bool, default=None
-            Whether to optimize :math:`\\lambda`. If False, :math:`\\lambda` is automatically set to zero.
-            A boolean value should be given when `method == "custom"`.
-
         random_state: int, default=None
             Random state.
 
@@ -758,17 +712,8 @@ class DiscreteAugmentedLagrangianStateActionWightValueLearning(BaseWeightValueLe
             action=action,
             reward=reward,
             evaluation_policy_action_dist=evaluation_policy_action_dist,
-            method=method,
             n_epochs=n_epochs,
             n_steps_per_epoch=n_steps_per_epoch,
-            batch_size=batch_size,
-            q_lr=q_lr,
-            w_lr=w_lr,
-            lambda_lr=lambda_lr,
-            alpha_q=alpha_q,
-            alpha_w=alpha_w,
-            alpha_r=alpha_r,
-            enable_lambda=enable_lambda,
             random_state=random_state,
         )
         return self.predict(state, action)
@@ -828,6 +773,37 @@ class DiscreteAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearner)
     state_scaler: d3rlpy.preprocessing.Scaler, default=None
         Scaling factor of state.
 
+    method: {"dual_dice", "gen_dice", "algae_dice", "best_dice", "mvl", "mwl", "custom"}, default="best_dice"
+        Indicates which parameter set should be used. When, "custom" users can specify their own parameter.
+
+    batch_size: int, default=32
+        Batch size.
+
+    v_lr: float, default=1e-3
+        Learning rate of v_function.
+
+    w_lr: float, default=1e-3
+        Learning rate of w_function.
+
+    lambda_lr: float, default=1e-3
+        Learning rate of lambda_.
+
+    alpha_v: float, default=None
+        Regularization coefficient of the V-function.
+        A value should be given when `method == "custom"`.
+
+    alpha_w: float, default=None
+        Regularization coefficient of the weight function.
+        A value should be given when `method == "custom"`.
+
+    alpha_r: bool, default=None
+        Wether to consider the reward observation.
+        A value should be given when `method == "custom"`.
+
+    enable_lambda: bool, default=None
+        Whether to optimize :math:`\\lambda`. If False, :math:`\\lambda` is automatically set to zero.
+        A boolean value should be given when `method == "custom"`.
+
     device: str, default="cuda:0"
         Specifies device used for torch.
 
@@ -858,18 +834,81 @@ class DiscreteAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearner)
     gamma: float = 1.0
     sigma: float = 1.0
     state_scaler: Optional[Scaler] = None
+    method: str = "best_dice"
+    batch_size: int = 32
+    v_lr: float = 1e-3
+    w_lr: float = 1e-3
+    lambda_lr: float = 1e-3
+    alpha_v: Optional[float] = None
+    alpha_w: Optional[float] = None
+    alpha_r: Optional[bool] = None
+    enable_lambda: Optional[bool] = None
     device: str = "cuda:0"
 
     def __post_init__(self):
         self.v_function.to(self.device)
         self.w_function.to(self.device)
 
-        check_scalar(self.gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
+        check_scalar(
+            self.gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0
+        )
         check_scalar(self.sigma, name="sigma", target_type=float, min_val=0.0)
         if self.state_scaler is not None and not isinstance(self.state_scaler, Scaler):
             raise ValueError(
                 "state_scaler must be an instance of d3rlpy.preprocessing.Scaler, but found False"
             )
+
+        if self.method not in [
+            "dual_dice",
+            "gen_dice",
+            "algae_dice",
+            "best_dice",
+            "mvl",
+            "mwl",
+            "custom",
+        ]:
+            raise ValueError(
+                f"method must be one of {'dual_dice', 'gen_dice', 'algae_dice', 'best_dice', 'mvl', 'mwl', 'custom'}, but {self.method} is given"
+            )
+        if self.method == "custom":
+            if self.alpha_v is None:
+                raise ValueError("alpha_v must be given when `method == 'custom'`")
+            if self.alpha_w is None:
+                raise ValueError("alpha_w must be given when `method == 'custom'`")
+            if self.alpha_r is None:
+                raise ValueError("alpha_r must be given when `method == 'custom'`")
+            if self.enable_lambda is None:
+                raise ValueError(
+                    "enable_lambda must be given when `method == 'custom'`"
+                )
+        else:
+            if self.alpha_v is not None:
+                warn(
+                    f"alpha_v is given, but alpha_v will be initialized with by the setting of {self.method}."
+                    "To customize, `method` should be set to 'custom'."
+                )
+            if self.alpha_w is not None:
+                warn(
+                    f"alpha_w is given, but alpha_w will be initialized with by the setting of {self.method}."
+                    "To customize, `method` should be set to 'custom'."
+                )
+            if self.alpha_r is not None:
+                warn(
+                    f"alpha_r is given, but alpha_r will be initialized with by the setting of {self.method}."
+                    "To customize, `method` should be set to 'custom'."
+                )
+
+            self.alpha_v = float(self.method in ["dual_dice", "gen_dice"])
+            self.alpha_w = float(self.method in ["algae_dice", "best_dice"])
+            self.alpha_r = self.method in ["algae_dice", "best_dice", "mvl"]
+            self.enable_lambda = self.method in ["gen_dice", "best_dice"]
+
+        check_scalar(self.alpha_v, name="alpha_q", target_type=float)
+        check_scalar(self.alpha_w, name="alpha_w", target_type=float)
+        check_scalar(self.batch_size, name="batch_size", target_type=int, min_val=1)
+        check_scalar(self.v_lr, name="q_lr", target_type=float, min_val=0.0)
+        check_scalar(self.w_lr, name="w_lr", target_type=float, min_val=0.0)
+        check_scalar(self.lambda_lr, name="lambda_lr", target_type=float, min_val=0.0)
 
     def load(self, path_v: Path, path_w: Path):
         self.v_function.load_state_dict(torch.load(path_v))
@@ -887,9 +926,6 @@ class DiscreteAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearner)
         reward: torch.Tensor,
         next_state: torch.Tensor,
         lambda_: torch.Tensor,
-        alpha_v: float,
-        alpha_w: float,
-        alpha_r: bool,
     ):
         """Objective function of Augmented Lagrangian method.
 
@@ -913,34 +949,27 @@ class DiscreteAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearner)
         lambda_: Tensor of shape (1, )
             lambda_ hyperparameter to stabilize the optimization.
 
-        alpha_v: float
-            Regularization coefficient of the V-function.
-
-        alpha_w: float
-            Regularization coefficient of the weight function.
-
-        alpha_r: bool
-            Wether to consider the reward observation.
-
         Return
         -------
         objective_function: Tensor of shape (1, )
             Objective function of the Augmented Lagrangian method.
 
         """
-        initial_value = (1 - self.gamma) * self.v_function(initial_state).mean() + lambda_
+        initial_value = (1 - self.gamma) * self.v_function(
+            initial_state
+        ).mean() + lambda_
         td_value = (
             self.w_function(state)
             * importance_weight
             * (
-                alpha_r * reward
+                self.alpha_r * reward
                 + self.gamma * self.v_function(next_state)
                 - self.v_function(state)
                 - lambda_
             )
         ).mean()
-        q_regularization = alpha_v * (self.v_function(state) ** 2).mean()
-        w_regularization = alpha_w * (self.w_function(state) ** 2).mean()
+        q_regularization = self.alpha_v * (self.v_function(state) ** 2).mean()
+        w_regularization = self.alpha_w * (self.w_function(state) ** 2).mean()
         return initial_value + td_value + q_regularization - w_regularization
 
     def fit(
@@ -951,17 +980,8 @@ class DiscreteAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearner)
         reward: np.ndarray,
         pscore: np.ndarray,
         evaluation_policy_action_dist: np.ndarray,
-        method: str = "best_dice",
         n_epochs: int = 100,
         n_steps_per_epoch: int = 100,
-        batch_size: int = 32,
-        v_lr: float = 1e-3,
-        w_lr: float = 1e-3,
-        lambda_lr: float = 1e-3,
-        alpha_v: Optional[float] = None,
-        alpha_w: Optional[float] = None,
-        alpha_r: Optional[bool] = None,
-        enable_lambda: Optional[bool] = None,
         random_state: Optional[int] = None,
         **kwargs,
     ):
@@ -988,42 +1008,11 @@ class DiscreteAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearner)
             Conditional action distribution induced by the evaluation policy,
             i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
 
-        method: {"dual_dice", "gen_dice", "algae_dice", "best_dice", "mvl", "mwl", "custom"}, default="best_dice"
-            Indicates which parameter set should be used. When, "custom" users can specify their own parameter.
-
         n_epochs: int, default=100
             Number of epochs to train.
 
         n_steps_per_epoch: int, default=100
             Number of gradient steps in a epoch.
-
-        batch_size: int, default=32
-            Batch size.
-
-        v_lr: float, default=1e-3
-            Learning rate of v_function.
-
-        w_lr: float, default=1e-3
-            Learning rate of w_function.
-
-        lambda_lr: float, default=1e-3
-            Learning rate of lambda_.
-
-        alpha_v: float, default=None
-            Regularization coefficient of the V-function.
-            A value should be given when `method == "custom"`.
-
-        alpha_w: float, default=None
-            Regularization coefficient of the weight function.
-            A value should be given when `method == "custom"`.
-
-        alpha_r: bool, default=None
-            Wether to consider the reward observation.
-            A value should be given when `method == "custom"`.
-
-        enable_lambda: bool, default=None
-            Whether to optimize :math:`\\lambda`. If False, :math:`\\lambda` is automatically set to zero.
-            A boolean value should be given when `method == "custom"`.
 
         random_state: int, default=None
             Random state.
@@ -1034,7 +1023,7 @@ class DiscreteAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearner)
         )
         check_array(state, name="state", expected_dim=2)
         check_array(action, name="action", expected_dim=1)
-        check_array(reward, name="reward", expected_dim=2)
+        check_array(reward, name="reward", expected_dim=1)
         check_array(pscore, name="pscore", expected_dim=1, min_val=0.0, max_val=1.0)
         check_array(
             evaluation_policy_action_dist,
@@ -1065,66 +1054,18 @@ class DiscreteAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearner)
                 "evaluation_policy_action_dist must sums up to one in axis=1, but found False"
             )
 
-        if method not in [
-            "dual_dice",
-            "gen_dice",
-            "algae_dice",
-            "best_dice",
-            "mvl",
-            "mwl",
-            "custom",
-        ]:
-            raise ValueError(
-                f"method must be one of {'dual_dice', 'gen_dice', 'algae_dice', 'best_dice', 'mql', 'mwl', 'custom'}, but {method} is given"
-            )
-        if method == "custom":
-            if alpha_v is None:
-                raise ValueError("alpha_v must be given when `method == 'custom'`")
-            if alpha_w is None:
-                raise ValueError("alpha_w must be given when `method == 'custom'`")
-            if alpha_r is None:
-                raise ValueError("alpha_r must be given when `method == 'custom'`")
-            if enable_lambda is None:
-                raise ValueError(
-                    "enable_lambda must be given when `method == 'custom'`"
-                )
-        else:
-            if alpha_v is not None:
-                warn(
-                    f"alpha_v is given, but alpha_v will be initialized with by the setting of {method}."
-                    "To customize, `method` should be set to 'custom'."
-                )
-            if alpha_w is not None:
-                warn(
-                    f"alpha_w is given, but alpha_w will be initialized with by the setting of {method}."
-                    "To customize, `method` should be set to 'custom'."
-                )
-            if alpha_r is not None:
-                warn(
-                    f"alpha_r is given, but alpha_r will be initialized with by the setting of {method}."
-                    "To customize, `method` should be set to 'custom'."
-                )
-
-            alpha_q = method in ["dual_dice", "gen_dice"]
-            alpha_w = method in ["algae_dice", "best_dice"]
-            alpha_r = method in ["algae_dice", "best_dice", "mvl"]
-            enable_lambda = method in ["gen_dice", "best_dice"]
-            self.lambda_ = torch.zeros(size=(1,), device=self.device)
-
-        check_scalar(alpha_q, name="alpha_q", target_type=float)
-        check_scalar(alpha_w, name="alpha_w", target_type=float)
         check_scalar(n_epochs, name="n_epochs", target_type=int, min_val=1)
         check_scalar(
             n_steps_per_epoch, name="n_steps_per_epoch", target_type=int, min_val=1
         )
-        check_scalar(batch_size, name="batch_size", target_type=int, min_val=1)
-        check_scalar(v_lr, name="v_lr", target_type=float, min_val=0.0)
-        check_scalar(w_lr, name="w_lr", target_type=float, min_val=0.0)
-        check_scalar(lambda_lr, name="lambda_lr", target_type=float, min_val=0.0)
 
         if random_state is None:
             raise ValueError("Random state mush be given.")
         torch.manual_seed(random_state)
+
+        importance_weight = (
+            evaluation_policy_action_dist[np.arange(len(action)), action] / pscore
+        )
 
         state_dim = state.shape[1]
         n_actions = evaluation_policy_action_dist.shape[1]
@@ -1132,38 +1073,42 @@ class DiscreteAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearner)
         action = action.reshape((-1, step_per_trajectory))
         reward = reward.reshape((-1, step_per_trajectory))
         pscore = pscore.reshape((-1, step_per_trajectory))
-        evaluation_policy_action = evaluation_policy_action.reshape(
+        importance_weight = importance_weight.reshape((-1, step_per_trajectory))
+        evaluation_policy_action_dist = evaluation_policy_action_dist.reshape(
             (-1, step_per_trajectory, n_actions)
         )
 
         n_trajectories, step_per_trajectory, _ = state.shape
         state = torch.FloatTensor(state, device=self.device)
         reward = torch.FloatTensor(reward, device=self.device)
-        importance_weight = torch.FloatTensor(
-            evaluation_policy_action_dist.flatten()[
-                np.arange(n_trajectories * step_per_trajectory), action.flatten()
-            ]
-            / pscore.flatten()
-        ).reshape((n_trajectories, step_per_trajectory))
+        importance_weight = torch.FloatTensor(importance_weight, device=self.device)
 
         if self.state_scaler is not None:
             state = self.state_scaler.transform(state)
 
-        v_optimizer = optim.SGD(self.v_function.parameters(), lr=v_lr, momentum=0.9)
-        w_optimizer = optim.SGD(self.w_function.parameters(), lr=w_lr, momentum=0.9)
+        v_optimizer = optim.SGD(
+            self.v_function.parameters(), lr=self.v_lr, momentum=0.9
+        )
+        w_optimizer = optim.SGD(
+            self.w_function.parameters(), lr=self.w_lr, momentum=0.9
+        )
 
-        if enable_lambda:
+        if self.enable_lambda:
             self.lambda_ = torch.ones(size=(1,), device=self.device, requires_grad=True)
-            lambda_optimizer = optim.SGD(self.lambda_, lr=lambda_lr, momentum=0.9)
+            lambda_optimizer = optim.SGD(
+                [self.lambda_], lr=self.lambda_lr, momentum=0.9
+            )
+        else:
+            self.lambda_ = torch.zeros(size=(1,), device=self.device)
 
         for epoch in tqdm(
             np.arange(n_epochs),
-            desc=["fitting_weight_and_value_functions"],
+            desc="[fitting_weight_and_value_functions]",
             total=n_epochs,
         ):
             for grad_step in range(n_steps_per_epoch):
-                idx_ = torch.randint(n_trajectories, size=(batch_size,))
-                t_ = torch.randint(step_per_trajectory, size=(batch_size,))
+                idx_ = torch.randint(n_trajectories, size=(self.batch_size,))
+                t_ = torch.randint(step_per_trajectory - 2, size=(self.batch_size,))
 
                 objective_loss = self._objective_function(
                     initial_state=state[idx_, 0],
@@ -1172,21 +1117,18 @@ class DiscreteAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearner)
                     next_state=state[idx_, t_ + 1],
                     importance_weight=importance_weight[idx_, t_],
                     lambda_=self.lambda_,
-                    alpha_v=alpha_v,
-                    alpha_w=alpha_w,
-                    alpha_r=alpha_r,
                 )
 
                 v_optimizer.zero_grad()
                 w_optimizer.zero_grad()
-                if enable_lambda:
+                if self.enable_lambda:
                     lambda_optimizer.zero_grad()
 
                 objective_loss.backward()
 
                 v_optimizer.step()
                 w_optimizer.step()
-                if enable_lambda:
+                if self.enable_lambda:
                     lambda_optimizer.step()
 
     def predict_value(
@@ -1277,17 +1219,8 @@ class DiscreteAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearner)
         reward: np.ndarray,
         pscore: np.ndarray,
         evaluation_policy_action_dist: np.ndarray,
-        method: str = "best_dice",
         n_epochs: int = 100,
         n_steps_per_epoch: int = 100,
-        batch_size: int = 32,
-        q_lr: float = 1e-3,
-        w_lr: float = 1e-3,
-        lambda_lr: float = 1e-3,
-        alpha_v: Optional[float] = None,
-        alpha_w: Optional[float] = None,
-        alpha_r: Optional[bool] = None,
-        enable_lambda: Optional[bool] = None,
         random_state: Optional[int] = None,
         **kwargs,
     ):
@@ -1314,42 +1247,11 @@ class DiscreteAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearner)
             Conditional action distribution induced by the evaluation policy,
             i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
 
-        method: {"dual_dice", "gen_dice", "algae_dice", "best_dice", "mvl", "mwl", "custom"}, default="best_dice"
-            Indicates which parameter set should be used. When, "custom" users can specify their own parameter.
-
         n_epochs: int, default=100
             Number of epochs to train.
 
         n_steps_per_epoch: int, default=100
             Number of gradient steps in a epoch.
-
-        batch_size: int, default=32
-            Batch size.
-
-        q_lr: float, default=1e-3
-            Learning rate of q_function.
-
-        w_lr: float, default=1e-3
-            Learning rate of w_function.
-
-        lambda_lr: float, default=1e-3
-            Learning rate of lambda_.
-
-        alpha_v: float, default=None
-            Regularization coefficient of the V-function.
-            A value should be given when `method == "custom"`.
-
-        alpha_w: float, default=None
-            Regularization coefficient of the weight function.
-            A value should be given when `method == "custom"`.
-
-        alpha_r: bool, default=None
-            Wether to consider the reward observation.
-            A value should be given when `method == "custom"`.
-
-        enable_lambda: bool, default=None
-            Whether to optimize :math:`\\lambda`. If False, :math:`\\lambda` is automatically set to zero.
-            A boolean value should be given when `method == "custom"`.
 
         random_state: int, default=None
             Random state.
@@ -1370,17 +1272,8 @@ class DiscreteAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearner)
             reward=reward,
             pscore=pscore,
             evaluation_policy_action_dist=evaluation_policy_action_dist,
-            method=method,
             n_epochs=n_epochs,
             n_steps_per_epoch=n_steps_per_epoch,
-            batch_size=batch_size,
-            q_lr=q_lr,
-            w_lr=w_lr,
-            lambda_lr=lambda_lr,
-            alpha_v=alpha_v,
-            alpha_w=alpha_w,
-            alpha_r=alpha_r,
-            enable_lambda=enable_lambda,
             random_state=random_state,
         )
         return self.predict(state, action)

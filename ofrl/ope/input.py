@@ -124,6 +124,7 @@ class CreateOPEInput:
     sigma: float = 1.0
     state_scaler: Optional[Scaler] = None
     action_scaler: Optional[ActionScaler] = None
+    hidden_dim: int = 100
     device: str = "cuda:0"
 
     def __post_init__(self) -> None:
@@ -168,7 +169,10 @@ class CreateOPEInput:
         )
 
         if self.env is not None:
-            if isinstance(self.env.action_space, Box) and self.action_type == "discrete":
+            if (
+                isinstance(self.env.action_space, Box)
+                and self.action_type == "discrete"
+            ):
                 raise RuntimeError(
                     "Found mismatch in action_type between env and logged_dataset"
                 )
@@ -245,7 +249,9 @@ class CreateOPEInput:
 
         self.initial_state_dict = {}
 
-        check_scalar(self.gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
+        check_scalar(
+            self.gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0
+        )
         check_scalar(self.sigma, name="sigma", target_type=float, min_val=0.0)
         if self.state_scaler is not None:
             if not isinstance(self.state_scaler, Scaler):
@@ -328,11 +334,16 @@ class CreateOPEInput:
             else:
                 all_idx = np.arange(self.n_trajectories)
                 idx = np.array(
-                    [self.n_trajectories + k // k_fold for k in range(k_fold)]
+                    [(self.n_trajectories + k) // k_fold for k in range(k_fold)]
                 )
                 idx = np.insert(idx, 0, 0)
+                idx = idx.cumsum()
 
-                for k in range(k_fold):
+                for k in tqdm(
+                    np.arange(k_fold),
+                    desc="[cross-fitting]",
+                    total=k_fold,
+                ):
                     idx_ = np.arange(idx[k], idx[k + 1])
                     subset_idx_ = np.setdiff1d(all_idx, idx_)
 
@@ -363,7 +374,6 @@ class CreateOPEInput:
 
     def build_and_fit_state_action_dual_model(
         self,
-        method: str,
         evaluation_policy: BaseHead,
         k_fold: int = 1,
         n_epochs: int = 1,
@@ -374,9 +384,6 @@ class CreateOPEInput:
 
         Parameters
         -------
-         method: {"dual_dice", "gen_dice", "algae_dice", "best_dice", "mql", "mwl", "custom"}, default="best_dice"
-            Indicates which parameter set should be used. When, "custom" users can specify their own parameter.
-
         evaluation_policy: BaseHead
             Evaluation policy.
 
@@ -411,7 +418,6 @@ class CreateOPEInput:
                 if self.action_type == "discrete":
                     self.state_action_dual_function[evaluation_policy.name].append(
                         DiscreteAugmentedLagrangianStateActionWightValueLearning(
-                            method=method,
                             q_function=DiscreteQFunction(
                                 n_actions=self.n_actions,
                                 state_dim=self.state_dim,
@@ -422,15 +428,16 @@ class CreateOPEInput:
                                 n_actions=self.n_actions,
                                 state_dim=self.state_dim,
                                 hidden_dim=self.model_args["hidden_dim"],
+                                device=self.device,
                             ),
                             state_scaler=self.state_scaler,
                             device=self.device,
+                            **self.model_args["state_action_dual"],
                         )
                     )
                 else:
                     self.state_action_dual_function[evaluation_policy.name].append(
                         ContinuousAugmentedLagrangianStateActionWightValueLearning(
-                            method=method,
                             q_function=ContinuousQFunction(
                                 action_dim=self.action_dim,
                                 state_dim=self.state_dim,
@@ -444,6 +451,7 @@ class CreateOPEInput:
                             state_scaler=self.state_scaler,
                             action_scaler=self.action_scaler,
                             device=self.device,
+                            **self.model_args["state_action_dual"],
                         )
                     )
 
@@ -467,7 +475,6 @@ class CreateOPEInput:
                         reward=self.reward,
                         evaluation_policy_action_dist=evaluation_policy_action_dist,
                         random_state=random_state,
-                        **self.model_args["state_action_dual"],
                     )
                 else:
                     self.state_action_dual_function[evaluation_policy.name][0].fit(
@@ -477,12 +484,13 @@ class CreateOPEInput:
                         reward=self.reward,
                         evaluation_policy_action=evaluation_policy_action,
                         random_state=random_state,
-                        **self.model_args["state_action_dual"],
                     )
             else:
                 if self.action_type == "discrete":
-                    evaluation_policy_action = evaluation_policy_action.reshape(
-                        (-1, self.step_per_trajectory)
+                    evaluation_policy_action_dist = (
+                        evaluation_policy_action_dist.reshape(
+                            (-1, self.step_per_trajectory, self.n_actions)
+                        )
                     )
                 else:
                     evaluation_policy_action = evaluation_policy_action.reshape(
@@ -491,17 +499,22 @@ class CreateOPEInput:
 
                 all_idx = np.arange(self.n_trajectories)
                 idx = np.array(
-                    [self.n_trajectories + k // k_fold for k in range(k_fold)]
+                    [(self.n_trajectories + k) // k_fold for k in range(k_fold)]
                 )
                 idx = np.insert(idx, 0, 0)
+                idx = idx.cumsum()
 
-                for k in range(k_fold):
+                for k in tqdm(
+                    np.arange(k_fold),
+                    desc="[cross-fitting]",
+                    total=k_fold,
+                ):
                     idx_ = np.arange(idx[k], idx[k + 1])
                     subset_idx_ = np.setdiff1d(all_idx, idx_)
 
                     if self.action_type == "discrete":
                         action_ = self.action_2d[subset_idx_].flatten()
-                        evaluation_policy_action_dist_ = evaluation_policy_action_dist_[
+                        evaluation_policy_action_dist_ = evaluation_policy_action_dist[
                             subset_idx_
                         ].reshape((-1, self.n_actions))
                     else:
@@ -522,7 +535,6 @@ class CreateOPEInput:
                             reward=self.reward_2d[subset_idx_].flatten(),
                             evaluation_policy_action_dist=evaluation_policy_action_dist_,
                             random_state=random_state,
-                            **self.model_args["state_action_dual"],
                         )
                     else:
                         self.state_action_dual_function[evaluation_policy.name][k].fit(
@@ -534,7 +546,6 @@ class CreateOPEInput:
                             reward=self.reward_2d[subset_idx_].flatten(),
                             evaluation_policy_action=evaluation_policy_action_,
                             random_state=random_state,
-                            **self.model_args["state_action_dual"],
                         )
 
     def build_and_fit_state_action_value_model(
@@ -586,11 +597,12 @@ class CreateOPEInput:
                             q_function=DiscreteQFunction(
                                 n_actions=self.n_actions,
                                 state_dim=self.state_dim,
-                                hidden_dim=self.model_args["hidden_dim"],
                                 device=self.device,
+                                hidden_dim=self.model_args["hidden_dim"],
                             ),
                             state_scaler=self.state_scaler,
                             device=self.device,
+                            **self.model_args["state_action_value"],
                         )
                     )
                 else:
@@ -604,6 +616,7 @@ class CreateOPEInput:
                             state_scaler=self.state_scaler,
                             action_scaler=self.action_scaler,
                             device=self.device,
+                            **self.model_args["state_action_value"],
                         )
                     )
 
@@ -628,7 +641,6 @@ class CreateOPEInput:
                         pscore=self.pscore,
                         evaluation_policy_action_dist=evaluation_policy_action_dist,
                         random_state=random_state,
-                        **self.model_args["state_action_value"],
                     )
                 else:
                     self.state_action_value_function[evaluation_policy.name][0].fit(
@@ -639,7 +651,6 @@ class CreateOPEInput:
                         pscore=self.pscore,
                         evaluation_policy_action=evaluation_policy_action,
                         random_state=random_state,
-                        **self.model_args["state_action_value"],
                     )
             else:
                 if self.action_type == "discrete":
@@ -655,11 +666,16 @@ class CreateOPEInput:
 
                 all_idx = np.arange(self.n_trajectories)
                 idx = np.array(
-                    [self.n_trajectories + k // k_fold for k in range(k_fold)]
+                    [(self.n_trajectories + k) // k_fold for k in range(k_fold)]
                 )
                 idx = np.insert(idx, 0, 0)
+                idx = idx.cumsum()
 
-                for k in range(k_fold):
+                for k in tqdm(
+                    np.arange(k_fold),
+                    desc="[cross-fitting]",
+                    total=k_fold,
+                ):
                     idx_ = np.arange(idx[k], idx[k + 1])
                     subset_idx_ = np.setdiff1d(all_idx, idx_)
 
@@ -687,7 +703,6 @@ class CreateOPEInput:
                             pscore=self.pscore_2d[subset_idx_].flatten(),
                             evaluation_policy_action_dist=evaluation_policy_action_dist_,
                             random_state=random_state,
-                            **self.model_args["state_action_value"],
                         )
                     else:
                         self.state_action_value_function[evaluation_policy.name][k].fit(
@@ -697,10 +712,11 @@ class CreateOPEInput:
                             ),
                             action=action_,
                             reward=self.reward_2d[subset_idx_].flatten(),
-                            pscore=self.pscore_2d[subset_idx_].flatten(),
+                            pscore=self.pscore_2d[subset_idx_].reshape(
+                                (-1, self.action_dim)
+                            ),
                             evaluation_policy_action=evaluation_policy_action_,
                             random_state=random_state,
-                            **self.model_args["state_action_value"],
                         )
 
     def build_and_fit_state_action_weight_model(
@@ -760,6 +776,7 @@ class CreateOPEInput:
                             ),
                             state_scaler=self.state_scaler,
                             device=self.device,
+                            **self.model_args["state_action_weight"],
                         )
                     )
                 else:
@@ -773,6 +790,7 @@ class CreateOPEInput:
                             state_scaler=self.state_scaler,
                             action_scaler=self.action_scaler,
                             device=self.device,
+                            **self.model_args["state_action_weight"],
                         )
                     )
 
@@ -796,7 +814,6 @@ class CreateOPEInput:
                         reward=self.reward,
                         evaluation_policy_action_dist=evaluation_policy_action_dist,
                         random_state=random_state,
-                        **self.model_args["state_action_weight"],
                     )
                 else:
                     self.state_action_weight_function[evaluation_policy.name][0].fit(
@@ -806,7 +823,6 @@ class CreateOPEInput:
                         reward=self.reward,
                         evaluation_policy_action=evaluation_policy_action,
                         random_state=random_state,
-                        **self.model_args["state_action_weight"],
                     )
             else:
                 if self.action_type == "discrete":
@@ -822,11 +838,16 @@ class CreateOPEInput:
 
                 all_idx = np.arange(self.n_trajectories)
                 idx = np.array(
-                    [self.n_trajectories + k // k_fold for k in range(k_fold)]
+                    [(self.n_trajectories + k) // k_fold for k in range(k_fold)]
                 )
                 idx = np.insert(idx, 0, 0)
+                idx = idx.cumsum()
 
-                for k in range(k_fold):
+                for k in tqdm(
+                    np.arange(k_fold),
+                    desc="[cross-fitting]",
+                    total=k_fold,
+                ):
                     idx_ = np.arange(idx[k], idx[k + 1])
                     subset_idx_ = np.setdiff1d(all_idx, idx_)
 
@@ -855,7 +876,6 @@ class CreateOPEInput:
                             reward=self.reward_2d[subset_idx_].flatten(),
                             evaluation_policy_action_dist=evaluation_policy_action_dist_,
                             random_state=random_state,
-                            **self.model_args["state_action_weight"],
                         )
                     else:
                         self.state_action_weight_function[evaluation_policy.name][
@@ -869,12 +889,10 @@ class CreateOPEInput:
                             reward=self.reward_2d[subset_idx_].flatten(),
                             evaluation_policy_action=evaluation_policy_action_,
                             random_state=random_state,
-                            **self.model_args["state_action_weight"],
                         )
 
     def build_and_fit_state_dual_model(
         self,
-        method: str,
         evaluation_policy: BaseHead,
         k_fold: int = 1,
         n_epochs: int = 1,
@@ -885,9 +903,6 @@ class CreateOPEInput:
 
         Parameters
         -------
-        method: {"dual_dice", "gen_dice", "algae_dice", "best_dice", "mql", "mwl", "custom"}, default="best_dice"
-            Indicates which parameter set should be used. When, "custom" users can specify their own parameter.
-
         evaluation_policy: BaseHead
             Evaluation policy.
 
@@ -922,7 +937,6 @@ class CreateOPEInput:
                 if self.action_type == "discrete":
                     self.state_dual_function[evaluation_policy.name].append(
                         DiscreteAugmentedLagrangianStateWightValueLearning(
-                            method=method,
                             v_function=VFunction(
                                 state_dim=self.state_dim,
                                 hidden_dim=self.model_args["hidden_dim"],
@@ -933,12 +947,12 @@ class CreateOPEInput:
                             ),
                             state_scaler=self.state_scaler,
                             device=self.device,
+                            **self.model_args["state_dual"],
                         )
                     )
                 else:
                     self.state_dual_function[evaluation_policy.name].append(
                         ContinuousAugmentedLagrangianStateWightValueLearning(
-                            method=method,
                             v_function=VFunction(
                                 state_dim=self.state_dim,
                                 hidden_dim=self.model_args["hidden_dim"],
@@ -950,6 +964,7 @@ class CreateOPEInput:
                             state_scaler=self.state_scaler,
                             action_scaler=self.action_scaler,
                             device=self.device,
+                            **self.model_args["state_dual"],
                         )
                     )
 
@@ -974,7 +989,6 @@ class CreateOPEInput:
                         pscore=self.pscore,
                         evaluation_policy_action_dist=evaluation_policy_action_dist,
                         random_state=random_state,
-                        **self.model_args["state_dual"],
                     )
                 else:
                     self.state_dual_function[evaluation_policy.name][0].fit(
@@ -985,7 +999,6 @@ class CreateOPEInput:
                         pscore=self.pscore,
                         evaluation_policy_action=evaluation_policy_action,
                         random_state=random_state,
-                        **self.model_args["state_dual"],
                     )
             else:
                 if self.action_type == "discrete":
@@ -1001,11 +1014,16 @@ class CreateOPEInput:
 
                 all_idx = np.arange(self.n_trajectories)
                 idx = np.array(
-                    [self.n_trajectories + k // k_fold for k in range(k_fold)]
+                    [(self.n_trajectories + k) // k_fold for k in range(k_fold)]
                 )
                 idx = np.insert(idx, 0, 0)
+                idx = idx.cumsum()
 
-                for k in range(k_fold):
+                for k in tqdm(
+                    np.arange(k_fold),
+                    desc="[cross-fitting]",
+                    total=k_fold,
+                ):
                     idx_ = np.arange(idx[k], idx[k + 1])
                     subset_idx_ = np.setdiff1d(all_idx, idx_)
 
@@ -1033,7 +1051,6 @@ class CreateOPEInput:
                             pscore=self.pscore_2d[subset_idx_].flatten(),
                             evaluation_policy_action_dist=evaluation_policy_action_dist_,
                             random_state=random_state,
-                            **self.model_args["state_dual"],
                         )
                     else:
                         self.state_dual_function[evaluation_policy.name][k].fit(
@@ -1043,10 +1060,11 @@ class CreateOPEInput:
                             ),
                             action=action_,
                             reward=self.reward_2d[subset_idx_].flatten(),
-                            pscore=self.pscore_2d[subset_idx_].flatten(),
+                            pscore=self.pscore_2d[subset_idx_].reshape(
+                                (-1, self.action_dim)
+                            ),
                             evaluation_policy_action=evaluation_policy_action_,
                             random_state=random_state,
-                            **self.model_args["state_dual"],
                         )
 
     def build_and_fit_state_value_model(
@@ -1101,6 +1119,7 @@ class CreateOPEInput:
                             ),
                             state_scaler=self.state_scaler,
                             device=self.device,
+                            **self.model_args["state_value"],
                         )
                     )
                 else:
@@ -1113,6 +1132,7 @@ class CreateOPEInput:
                             state_scaler=self.state_scaler,
                             action_scaler=self.action_scaler,
                             device=self.device,
+                            **self.model_args["state_value"],
                         )
                     )
 
@@ -1137,7 +1157,16 @@ class CreateOPEInput:
                         pscore=self.pscore,
                         evaluation_policy_action_dist=evaluation_policy_action_dist,
                         random_state=random_state,
-                        **self.model_args["state_value"],
+                    )
+                else:
+                    self.state_value_function[evaluation_policy.name][0].fit(
+                        step_per_trajectory=self.step_per_trajectory,
+                        state=self.state,
+                        action=self.action,
+                        reward=self.reward,
+                        pscore=self.pscore,
+                        evaluation_policy_action=evaluation_policy_action,
+                        random_state=random_state,
                     )
             else:
                 if self.action_type == "discrete":
@@ -1153,11 +1182,16 @@ class CreateOPEInput:
 
                 all_idx = np.arange(self.n_trajectories)
                 idx = np.array(
-                    [self.n_trajectories + k // k_fold for k in range(k_fold)]
+                    [(self.n_trajectories + k) // k_fold for k in range(k_fold)]
                 )
                 idx = np.insert(idx, 0, 0)
+                idx = idx.cumsum()
 
-                for k in range(k_fold):
+                for k in tqdm(
+                    np.arange(k_fold),
+                    desc="[cross-fitting]",
+                    total=k_fold,
+                ):
                     idx_ = np.arange(idx[k], idx[k + 1])
                     subset_idx_ = np.setdiff1d(all_idx, idx_)
 
@@ -1185,7 +1219,6 @@ class CreateOPEInput:
                             pscore=self.pscore_2d[subset_idx_].flatten(),
                             evaluation_policy_action_dist=evaluation_policy_action_dist_,
                             random_state=random_state,
-                            **self.model_args["state_value"],
                         )
                     else:
                         self.state_value_function[evaluation_policy.name][k].fit(
@@ -1195,10 +1228,11 @@ class CreateOPEInput:
                             ),
                             action=action_,
                             reward=self.reward_2d[subset_idx_].flatten(),
-                            pscore=self.pscore_2d[subset_idx_].flatten(),
+                            pscore=self.pscore_2d[subset_idx_].reshape(
+                                (-1, self.action_dim)
+                            ),
                             evaluation_policy_action=evaluation_policy_action_,
                             random_state=random_state,
-                            **self.model_args["state_value"],
                         )
 
     def build_and_fit_state_weight_model(
@@ -1253,6 +1287,7 @@ class CreateOPEInput:
                             ),
                             state_scaler=self.state_scaler,
                             device=self.device,
+                            **self.model_args["state_weight"],
                         )
                     )
                 else:
@@ -1265,6 +1300,7 @@ class CreateOPEInput:
                             state_scaler=self.state_scaler,
                             action_scaler=self.action_scaler,
                             device=self.device,
+                            **self.model_args["state_weight"],
                         )
                     )
 
@@ -1289,7 +1325,6 @@ class CreateOPEInput:
                         pscore=self.pscore,
                         evaluation_policy_action_dist=evaluation_policy_action_dist,
                         random_state=random_state,
-                        **self.model_args["state_weight"],
                     )
                 else:
                     self.state_weight_function[evaluation_policy.name][0].fit(
@@ -1300,7 +1335,6 @@ class CreateOPEInput:
                         pscore=self.pscore,
                         evaluation_policy_action=evaluation_policy_action,
                         random_state=random_state,
-                        **self.model_args["state_weight"],
                     )
             else:
                 if self.action_type == "discrete":
@@ -1316,11 +1350,16 @@ class CreateOPEInput:
 
                 all_idx = np.arange(self.n_trajectories)
                 idx = np.array(
-                    [self.n_trajectories + k // k_fold for k in range(k_fold)]
+                    [(self.n_trajectories + k) // k_fold for k in range(k_fold)]
                 )
                 idx = np.insert(idx, 0, 0)
+                idx = idx.cumsum()
 
-                for k in range(k_fold):
+                for k in tqdm(
+                    np.arange(k_fold),
+                    desc="[cross-fitting]",
+                    total=k_fold,
+                ):
                     idx_ = np.arange(idx[k], idx[k + 1])
                     subset_idx_ = np.setdiff1d(all_idx, idx_)
 
@@ -1348,7 +1387,6 @@ class CreateOPEInput:
                                 pscore=self.pscore_2d[subset_idx_].flatten(),
                                 evaluation_policy_action_dist=evaluation_policy_action_dist_,
                                 random_state=random_state,
-                                **self.model_args["state_weight"],
                             )
                         else:
                             self.state_weight_function[evaluation_policy.name][k].fit(
@@ -1358,10 +1396,11 @@ class CreateOPEInput:
                                 ),
                                 action=action_,
                                 reward=self.reward_2d[subset_idx_].flatten(),
-                                pscore=self.pscore_2d[subset_idx_].flatten(),
+                                pscore=self.pscore_2d[subset_idx_].reshape(
+                                    (-1, self.action_dim)
+                                ),
                                 evaluation_policy_action=evaluation_policy_action_,
                                 random_state=random_state,
-                                **self.model_args["state_weight"],
                             )
 
     def obtain_initial_state(
@@ -1578,8 +1617,9 @@ class CreateOPEInput:
         if not isinstance(evaluation_policy, BaseHead):
             raise ValueError("evaluation_policy must be a child class of BaseHead")
 
-        idx = np.array([self.n_trajectories + k // k_fold for k in range(k_fold)])
+        idx = np.array([(self.n_trajectories + k) // k_fold for k in range(k_fold)])
         idx = np.insert(idx, 0, 0)
+        idx = idx.cumsum()
 
         if self.action_type == "discrete":
             state_action_value_prediction = np.zeros(
@@ -1817,9 +1857,10 @@ class CreateOPEInput:
 
             else:
                 idx = np.array(
-                    [self.n_trajectories + k // k_fold for k in range(k_fold)]
+                    [(self.n_trajectories + k) // k_fold for k in range(k_fold)]
                 )
                 idx = np.insert(idx, 0, 0)
+                idx = idx.cumsum()
 
                 state_value = np.zeros((self.n_trajectories, self.step_per_trajectory))
 
@@ -1830,7 +1871,9 @@ class CreateOPEInput:
                     state_value_ = self.state_value_function[evaluation_policy.name][
                         k
                     ].predict(state_)
-                    state_value[idx_] = state_value_
+                    state_value[idx_] = state_value_.reshape(
+                        (-1, self.step_per_trajectory)
+                    )
 
             initial_state_value = state_value[:, 0]
 
@@ -1868,8 +1911,9 @@ class CreateOPEInput:
         if not isinstance(evaluation_policy, BaseHead):
             raise ValueError("evaluation_policy must be a child class of BaseHead")
 
-        idx = np.array([self.n_trajectories + k // k_fold for k in range(k_fold)])
+        idx = np.array([(self.n_trajectories + k) // k_fold for k in range(k_fold)])
         idx = np.insert(idx, 0, 0)
+        idx = idx.cumsum()
 
         state_action_weight_prediction = np.zeros(
             (self.n_trajectories, self.step_per_trajectory)
@@ -1932,8 +1976,9 @@ class CreateOPEInput:
         if not isinstance(evaluation_policy, BaseHead):
             raise ValueError("evaluation_policy must be a child class of BaseHead")
 
-        idx = np.array([self.n_trajectories + k // k_fold for k in range(k_fold)])
+        idx = np.array([(self.n_trajectories + k) // k_fold for k in range(k_fold)])
         idx = np.insert(idx, 0, 0)
+        idx = idx.cumsum()
 
         state_weight_prediction = np.zeros(
             (self.n_trajectories, self.step_per_trajectory)
@@ -2191,7 +2236,7 @@ class CreateOPEInput:
 
         if require_weight_prediction:
 
-            if w_function_method == "dual":
+            if w_function_method == "dice":
                 for i in tqdm(
                     range(len(evaluation_policies)),
                     desc="[fit Augmented Lagrangian model]",

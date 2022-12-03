@@ -216,7 +216,9 @@ class OffPolicyEvaluation:
                 "pscore": self.logged_dataset["pscore"],
             }
         else:
-            if self.action_scaler is not None and not isinstance(self.action_scaler, ActionScaler):
+            if self.action_scaler is not None and not isinstance(
+                self.action_scaler, ActionScaler
+            ):
                 raise ValueError(
                     "action_scaler must be an instance of d3rlpy.preprocessing.ActionScaler, but found False"
                 )
@@ -1113,7 +1115,9 @@ class CumulativeDistributionOffPolicyEvaluation:
                 "pscore": self.logged_dataset["pscore"],
             }
         else:
-            if self.action_scaler is not None and not isinstance(self.action_scaler, ActionScaler):
+            if self.action_scaler is not None and not isinstance(
+                self.action_scaler, ActionScaler
+            ):
                 raise ValueError(
                     "action_scaler must be an instance of d3rlpy.preprocessing.ActionScaler, but found False"
                 )
