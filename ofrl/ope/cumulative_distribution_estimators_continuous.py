@@ -93,7 +93,6 @@ class ContinuousCumulativeDistributionDirectMethod(
         check_scalar(
             step_per_trajectory, name="step_per_trajectory", target_type=int, min_val=1
         )
-        check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
         check_array(reward, name="reward", expected_dim=1)
         check_array(
             state_action_value_prediction,
@@ -117,6 +116,8 @@ class ContinuousCumulativeDistributionDirectMethod(
             raise ValueError(
                 "Expected `state_action_value_prediction.shape[1] == 2`, but found False"
             )
+
+        check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
 
         (
             trajectory_wise_reward,
@@ -459,7 +460,6 @@ class ContinuousCumulativeDistributionTrajectoryWiseImportanceSampling(
         check_scalar(
             step_per_trajectory, name="step_per_trajectory", target_type=int, min_val=1
         )
-        check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
         check_array(reward, name="reward", expected_dim=1)
         check_array(
             pscore,
@@ -502,16 +502,11 @@ class ContinuousCumulativeDistributionTrajectoryWiseImportanceSampling(
                 "Expected `action.shape[1] == evaluation_policy_action.shape[1]`, but found False"
             )
 
-        action_dim = action.shape[1]
-        if action_scaler is None:
-            action_scaler = np.ones(action_dim)
-        elif isinstance(action_scaler, float):
-            action_scaler = np.full(action_dim, action_scaler)
-
-        check_array(action_scaler, name="action_scaler", expected_dim=1, min_val=0.0)
-        if action_scaler.shape[0] != action_dim:
+        check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
+        check_scalar(sigma, name="sigma", target_type=float, min_val=0.0)
+        if action_scaler is not None and not isinstance(action_scaler, ActionScaler):
             raise ValueError(
-                "Expected `action_scaler.shape[0] == action.shape[1]`, but found False"
+                "action_scaler must be an instance of d3rlpy.preprocessing.ActionScaler, but found False"
             )
 
         (
@@ -959,7 +954,6 @@ class ContinuousCumulativeDistributionTrajectoryWiseDoublyRobust(
         check_scalar(
             step_per_trajectory, name="step_per_trajectory", target_type=int, min_val=1
         )
-        check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
         check_array(reward, name="reward", expected_dim=1)
         check_array(
             pscore,
@@ -1012,16 +1006,11 @@ class ContinuousCumulativeDistributionTrajectoryWiseDoublyRobust(
                 "Expected `state_action_value_prediction.shape[1] == 2`, but found False"
             )
 
-        action_dim = action.shape[1]
-        if action_scaler is None:
-            action_scaler = np.ones(action_dim)
-        elif isinstance(action_scaler, float):
-            action_scaler = np.full(action_dim, action_scaler)
-
-        check_array(action_scaler, name="action_scaler", expected_dim=1, min_val=0.0)
-        if action_scaler.shape[0] != action_dim:
+        check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
+        check_scalar(sigma, name="sigma", target_type=float, min_val=0.0)
+        if action_scaler is not None and not isinstance(action_scaler, ActionScaler):
             raise ValueError(
-                "Expected `action_scaler.shape[0] == action.shape[1]`, but found False"
+                "action_scaler must be an instance of d3rlpy.preprocessing.ActionScaler, but found False"
             )
 
         (
@@ -1494,7 +1483,6 @@ class ContinuousCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSamp
         check_scalar(
             step_per_trajectory, name="step_per_trajectory", target_type=int, min_val=1
         )
-        check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
         check_array(reward, name="reward", expected_dim=1)
         check_array(
             pscore,
@@ -1537,16 +1525,11 @@ class ContinuousCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSamp
                 "Expected `action.shape[1] == evaluation_policy_action.shape[1]`, but found False"
             )
 
-        action_dim = action.shape[1]
-        if action_scaler is None:
-            action_scaler = np.ones(action_dim)
-        elif isinstance(action_scaler, float):
-            action_scaler = np.full(action_dim, action_scaler)
-
-        check_array(action_scaler, name="action_scaler", expected_dim=1, min_val=0.0)
-        if action_scaler.shape[0] != action_dim:
+        check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
+        check_scalar(sigma, name="sigma", target_type=float, min_val=0.0)
+        if action_scaler is not None and not isinstance(action_scaler, ActionScaler):
             raise ValueError(
-                "Expected `action_scaler.shape[0] == action.shape[1]`, but found False"
+                "action_scaler must be an instance of d3rlpy.preprocessing.ActionScaler, but found False"
             )
 
         (
@@ -1702,7 +1685,6 @@ class ContinuousCumulativeDistributionSelfNormalizedTrajectoryWiseDoublyRobust(
         check_scalar(
             step_per_trajectory, name="step_per_trajectory", target_type=int, min_val=1
         )
-        check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
         check_array(reward, name="reward", expected_dim=1)
         check_array(
             pscore,
@@ -1751,16 +1733,11 @@ class ContinuousCumulativeDistributionSelfNormalizedTrajectoryWiseDoublyRobust(
                 "Expected `state_action_value_prediction.shape[1] == 2`, but found False"
             )
 
-        action_dim = action.shape[1]
-        if action_scaler is None:
-            action_scaler = np.ones(action_dim)
-        elif isinstance(action_scaler, float):
-            action_scaler = np.full(action_dim, action_scaler)
-
-        check_array(action_scaler, name="action_scaler", expected_dim=1, min_val=0.0)
-        if action_scaler.shape[0] != action_dim:
+        check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
+        check_scalar(sigma, name="sigma", target_type=float, min_val=0.0)
+        if action_scaler is not None and not isinstance(action_scaler, ActionScaler):
             raise ValueError(
-                "Expected `action_scaler.shape[0] == action.shape[1]`, but found False"
+                "action_scaler must be an instance of d3rlpy.preprocessing.ActionScaler, but found False"
             )
 
         (

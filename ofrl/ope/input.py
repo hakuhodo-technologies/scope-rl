@@ -61,6 +61,9 @@ class CreateOPEInput:
     logged_dataset: LoggedDataset
         Logged dataset used to conduct OPE.
 
+    env: gym.Env, default=None
+        Reinforcement learning (RL) environment.
+
     model_args: dict[str, dict], default=None
         Arguments of the base model.
         The key should be: [
@@ -79,6 +82,12 @@ class CreateOPEInput:
 
         Note that, please "scaler" and "action_scaler" in the following argument
         (, as we will overwrite those specified by model_args[model]["scaler/action_scaler"]).
+
+    gamma: float, default=1.0
+            Discount factor. The value should be within `(0, 1]`.
+
+    sigma: float, default=1.0 (> 0.0)
+        Bandwidth hyperparameter of gaussian kernel.
 
     state_scaler: d3rlpy.preprocessing.Scaler, default=None
         Scaling factor of state.
@@ -109,7 +118,10 @@ class CreateOPEInput:
     """
 
     logged_dataset: LoggedDataset
+    env: Optional[gym.Env] = None,
     model_args: Optional[Dict[str, Any]] = None
+    gamma: float = 1.0
+    sigma: float = 1.0
     state_scaler: Optional[Scaler] = None
     action_scaler: Optional[ActionScaler] = None
     device: str = "cuda:0"
@@ -154,6 +166,19 @@ class CreateOPEInput:
             episode_terminals=self.terminal,
             discrete_action=(self.action_type == "discrete"),
         )
+
+        if self.env is not None:
+            if isinstance(self.env.action_space, Box) and self.action_type == "discrete":
+                raise RuntimeError(
+                    "Found mismatch in action_type between env and logged_dataset"
+                )
+            elif (
+                isinstance(self.env.action_space, Discrete)
+                and self.action_type == "continuous"
+            ):
+                raise RuntimeError(
+                    "Found mismatch in action_type between env and logged_dataset"
+                )
 
         if self.model_args is None:
             self.model_args = {
@@ -220,6 +245,8 @@ class CreateOPEInput:
 
         self.initial_state_dict = {}
 
+        check_scalar(self.gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
+        check_scalar(self.sigma, name="sigma", target_type=float, min_val=0.0)
         if self.state_scaler is not None:
             if not isinstance(self.state_scaler, Scaler):
                 raise ValueError(
@@ -275,6 +302,7 @@ class CreateOPEInput:
                         DiscreteFQE(
                             algo=evaluation_policy,
                             scaler=self.state_scaler,
+                            gamma=self.gamma,
                             **self.model_args["fqe"],
                         )
                     )
@@ -284,6 +312,7 @@ class CreateOPEInput:
                             algo=evaluation_policy,
                             scaler=self.state_scaler,
                             action_scaler=self.action_scaler,
+                            gamma=self.gamma,
                             **self.model_args["fqe"],
                         )
                     )
@@ -1337,7 +1366,6 @@ class CreateOPEInput:
 
     def obtain_initial_state(
         self,
-        env: gym.Env,
         evaluation_policy: BaseHead,
         resample_initial_state: bool = False,
         minimum_rollout_length: int = 0,
@@ -1348,9 +1376,6 @@ class CreateOPEInput:
 
         Parameters
         -------
-        env: gym.Env
-            Reinforcement learning (RL) environment.
-
         evaluation_policy: BaseHead
             Evaluation policy.
 
@@ -1418,10 +1443,10 @@ class CreateOPEInput:
                 ):
                     for rollout_step in rollout_lengths[i]:
                         if done:
-                            state, _ = env.reset()
+                            state, _ = self.env.reset()
 
                         action = evaluation_policy.sample_action_online(state)
-                        state, _, done, _, _ = env.step(action)
+                        state, _, done, _, _ = self.env.step(action)
 
                     initial_state[i] = state
 
@@ -1665,7 +1690,6 @@ class CreateOPEInput:
     def obtain_initial_state_value_prediction(
         self,
         method: str,
-        env: gym.Env,
         evaluation_policy: BaseHead,
         k_fold: int = 1,
         resample_initial_state: bool = False,
@@ -1679,9 +1703,6 @@ class CreateOPEInput:
         -------
         method: {"fqe", "dice_q", "dice_v", "mql", "mvl"}
             Estimation method.
-
-        env: gym.Env
-            Reinforcement learning (RL) environment.
 
         evaluation_policy: BaseHead
             Evaluation policy.
@@ -1717,7 +1738,6 @@ class CreateOPEInput:
 
         if resample_initial_state:
             initial_state = self.obtain_initial_state(
-                env=env,
                 evaluation_policy=evaluation_policy,
                 resample_initial_state=resample_initial_state,
                 minimum_rollout_length=minimum_rollout_length,
@@ -1942,7 +1962,6 @@ class CreateOPEInput:
     def obtain_whole_inputs(
         self,
         evaluation_policies: List[BaseHead],
-        env: Optional[gym.Env] = None,
         require_value_prediction: bool = False,
         require_weight_prediction: bool = False,
         resample_initial_state: bool = False,
@@ -1956,7 +1975,6 @@ class CreateOPEInput:
         use_stationary_distribution_on_policy_evaluation: bool = False,
         minimum_rollout_length: int = 0,
         maximum_rollout_length: int = 100,
-        gamma: float = 1.0,
         random_state: Optional[int] = None,
     ) -> OPEInputDict:
         """Obtain input as a dictionary.
@@ -1965,9 +1983,6 @@ class CreateOPEInput:
         -------
         evaluation_policies: list of BaseHead
             Evaluation policies.
-
-        env: gym.Env
-            Reinforcement learning (RL) environment.
 
         require_value_prediction: bool, default=False
             Whether to obtain value prediction.
@@ -1978,6 +1993,8 @@ class CreateOPEInput:
         resample_initial_state: bool, default=False
             Whether to resample initial state distribution using the given evaluation policy.
             When False, the initial state distribution of the behavior policy is used instead.
+
+            Note that, this parameter is applicable only when self.env is given.
 
         q_function_method: {"fqe", "dice", "mql"}
             Estimation method of :math:`Q(s, a)`.
@@ -2016,9 +2033,6 @@ class CreateOPEInput:
 
         maximum_rollout_length: int, default=100 (>= minimum_rollout_length)
             Maximum length of rollout to collect initial state.
-
-        gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
 
         random_state: int, default=None (>= 0)
             Random state.
@@ -2077,24 +2091,17 @@ class CreateOPEInput:
 
             on_policy_policy_value: ndarray of shape (n_trajectories_on_policy_evaluation, )
                 On-policy policy value.
-                If `env is None`, `None` is recorded.
+                If `self.env is None`, `None` is recorded.
 
             gamma: float
                 Discount factor.
 
         """
-        if env is not None:
-            if isinstance(env.action_space, Box) and self.action_type == "discrete":
-                raise RuntimeError(
-                    "Found mismatch in action_type between env and logged_dataset"
-                )
-            elif (
-                isinstance(env.action_space, Discrete)
-                and self.action_type == "continuous"
-            ):
-                raise RuntimeError(
-                    "Found mismatch in action_type between env and logged_dataset"
-                )
+        if resample_initial_state and self.env is None:
+            warn(
+                "resample_initial_state is True, but self.env is not given. Thus, initial_state will not be resampled."
+                "Please initialize CreateInput class with self.env to resample initial state."
+            )
 
         for eval_policy in evaluation_policies:
             if eval_policy.action_type != self.action_type:
@@ -2262,7 +2269,6 @@ class CreateOPEInput:
                     "initial_state_value_prediction"
                 ] = self.obtain_initial_state_value_prediction(
                     method=v_function_method,
-                    env=env,
                     evaluation_policy=evaluation_policies[i],
                     k_fold=k_fold,
                     resample_initial_state=resample_initial_state,
@@ -2303,24 +2309,24 @@ class CreateOPEInput:
                 ] = None
 
             # input for the evaluation of OPE estimators
-            if env is not None:
+            if self.env is not None:
                 if n_trajectories_on_policy_evaluation is None:
                     n_trajectories_on_policy_evaluation = self.n_trajectories
 
                 input_dict[evaluation_policies[i].name][
                     "on_policy_policy_value"
                 ] = rollout_policy_online(
-                    env,
+                    self.env,
                     evaluation_policies[i],
                     n_trajectories=n_trajectories_on_policy_evaluation,
                     evaluate_on_stationary_distribution=use_stationary_distribution_on_policy_evaluation,
                     step_per_trajectory=self.step_per_trajectory,
-                    gamma=gamma,
+                    gamma=self.gamma,
                     random_state=random_state,
                 )
             else:
                 input_dict[evaluation_policies[i].name]["on_policy_policy_value"] = None
 
-            input_dict[evaluation_policies[i].name]["gamma"] = gamma
+            input_dict[evaluation_policies[i].name]["gamma"] = self.gamma
 
         return defaultdict_to_dict(input_dict)

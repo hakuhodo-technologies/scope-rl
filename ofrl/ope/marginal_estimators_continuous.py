@@ -534,19 +534,12 @@ class ContinuousStateMarginalImportanceSampling(BaseStateMarginalOffPolicyEstima
             raise ValueError(
                 "Expected `action.shape[1] == evaluation_policy_action.shape[1] == pscore.shape[1]`, but found False"
             )
+
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
         check_scalar(sigma, name="sigma", target_type=float, min_val=0.0)
-
-        action_dim = action.shape[1]
-        if action_scaler is None:
-            action_scaler = np.ones(action_dim)
-        elif isinstance(action_scaler, float):
-            action_scaler = np.full(action_dim, action_scaler)
-
-        check_array(action_scaler, name="action_scaler", expected_dim=1, min_val=0.0)
-        if action_scaler.shape[0] != action_dim:
+        if action_scaler is not None and not isinstance(action_scaler, ActionScaler):
             raise ValueError(
-                "Expected `action_scaler.shape[0] == action.shape[1]`, but found False"
+                "action_scaler must be an instance of d3rlpy.preprocessing.ActionScaler, but found False"
             )
 
         estimated_policy_value = self._estimate_trajectory_value(
@@ -693,19 +686,12 @@ class ContinuousStateMarginalImportanceSampling(BaseStateMarginalOffPolicyEstima
             raise ValueError(
                 "Expected `action.shape[1] == evaluation_policy_action.shape[1] == pscore.shape[1]`, but found False"
             )
+
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
         check_scalar(sigma, name="sigma", target_type=float, min_val=0.0)
-
-        action_dim = action.shape[1]
-        if action_scaler is None:
-            action_scaler = np.ones(action_dim)
-        elif isinstance(action_scaler, float):
-            action_scaler = np.full(action_dim, action_scaler)
-
-        check_array(action_scaler, name="action_scaler", expected_dim=1, min_val=0.0)
-        if action_scaler.shape[0] != action_dim:
+        if action_scaler is not None and not isinstance(action_scaler, ActionScaler):
             raise ValueError(
-                "Expected `action_scaler.shape[0] == action.shape[1]`, but found False"
+                "action_scaler must be an instance of d3rlpy.preprocessing.ActionScaler, but found False"
             )
 
         if ci not in self._estimate_confidence_interval.keys():
@@ -1037,19 +1023,12 @@ class ContinuousStateMarginalDoublyRobust(BaseStateMarginalOffPolicyEstimator):
             raise ValueError(
                 "Expected `state_action_value_prediction.shape[1] == 2`, but found False"
             )
+
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
         check_scalar(sigma, name="sigma", target_type=float, min_val=0.0)
-
-        action_dim = action.shape[1]
-        if action_scaler is None:
-            action_scaler = np.ones(action_dim)
-        elif isinstance(action_scaler, float):
-            action_scaler = np.full(action_dim, action_scaler)
-
-        check_array(action_scaler, name="action_scaler", expected_dim=1, min_val=0.0)
-        if action_scaler.shape[0] != action_dim:
+        if action_scaler is not None and not isinstance(action_scaler, ActionScaler):
             raise ValueError(
-                "Expected `action_scaler.shape[0] == action.shape[1]`, but found False"
+                "action_scaler must be an instance of d3rlpy.preprocessing.ActionScaler, but found False"
             )
 
         estimated_policy_value = self._estimate_trajectory_value(
@@ -1222,19 +1201,12 @@ class ContinuousStateMarginalDoublyRobust(BaseStateMarginalOffPolicyEstimator):
             raise ValueError(
                 "Expected `state_action_value_prediction.shape[1] == 2`, but found False"
             )
+
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
         check_scalar(sigma, name="sigma", target_type=float, min_val=0.0)
-
-        action_dim = action.shape[1]
-        if action_scaler is None:
-            action_scaler = np.ones(action_dim)
-        elif isinstance(action_scaler, float):
-            action_scaler = np.full(action_dim, action_scaler)
-
-        check_array(action_scaler, name="action_scaler", expected_dim=1, min_val=0.0)
-        if action_scaler.shape[0] != action_dim:
+        if action_scaler is not None and not isinstance(action_scaler, ActionScaler):
             raise ValueError(
-                "Expected `action_scaler.shape[0] == action.shape[1]`, but found False"
+                "action_scaler must be an instance of d3rlpy.preprocessing.ActionScaler, but found False"
             )
 
         if ci not in self._estimate_confidence_interval.keys():
@@ -2004,19 +1976,12 @@ class ContinuousStateActionMarginalImportanceSampling(
             raise ValueError(
                 "Expected `action.shape[1] == evaluation_policy_action.shape[1] == pscore.shape[1]`, but found False"
             )
+
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
         check_scalar(sigma, name="sigma", target_type=float, min_val=0.0)
-
-        action_dim = action.shape[1]
-        if action_scaler is None:
-            action_scaler = np.ones(action_dim)
-        elif isinstance(action_scaler, float):
-            action_scaler = np.full(action_dim, action_scaler)
-
-        check_array(action_scaler, name="action_scaler", expected_dim=1, min_val=0.0)
-        if action_scaler.shape[0] != action_dim:
+        if action_scaler is not None and not isinstance(action_scaler, ActionScaler):
             raise ValueError(
-                "Expected `action_scaler.shape[0] == action.shape[1]`, but found False"
+                "action_scaler must be an instance of d3rlpy.preprocessing.ActionScaler, but found False"
             )
 
         estimated_policy_value = self._estimate_trajectory_value(
@@ -2163,19 +2128,12 @@ class ContinuousStateActionMarginalImportanceSampling(
             raise ValueError(
                 "Expected `action.shape[1] == evaluation_policy_action.shape[1] == pscore.shape[1]`, but found False"
             )
+
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
         check_scalar(sigma, name="sigma", target_type=float, min_val=0.0)
-
-        action_dim = action.shape[1]
-        if action_scaler is None:
-            action_scaler = np.ones(action_dim)
-        elif isinstance(action_scaler, float):
-            action_scaler = np.full(action_dim, action_scaler)
-
-        check_array(action_scaler, name="action_scaler", expected_dim=1, min_val=0.0)
-        if action_scaler.shape[0] != action_dim:
+        if action_scaler is not None and not isinstance(action_scaler, ActionScaler):
             raise ValueError(
-                "Expected `action_scaler.shape[0] == action.shape[1]`, but found False"
+                "action_scaler must be an instance of d3rlpy.preprocessing.ActionScaler, but found False"
             )
 
         if ci not in self._estimate_confidence_interval.keys():
@@ -2509,19 +2467,12 @@ class ContinuousStateActionMarginalDoublyRobust(
             raise ValueError(
                 "Expected `state_action_value_prediction.shape[1] == 2`, but found False"
             )
+
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
         check_scalar(sigma, name="sigma", target_type=float, min_val=0.0)
-
-        action_dim = action.shape[1]
-        if action_scaler is None:
-            action_scaler = np.ones(action_dim)
-        elif isinstance(action_scaler, float):
-            action_scaler = np.full(action_dim, action_scaler)
-
-        check_array(action_scaler, name="action_scaler", expected_dim=1, min_val=0.0)
-        if action_scaler.shape[0] != action_dim:
+        if action_scaler is not None and not isinstance(action_scaler, ActionScaler):
             raise ValueError(
-                "Expected `action_scaler.shape[0] == action.shape[1]`, but found False"
+                "action_scaler must be an instance of d3rlpy.preprocessing.ActionScaler, but found False"
             )
 
         estimated_policy_value = self._estimate_trajectory_value(
@@ -2694,19 +2645,12 @@ class ContinuousStateActionMarginalDoublyRobust(
             raise ValueError(
                 "Expected `state_action_value_prediction.shape[1] == 2`, but found False"
             )
+
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
         check_scalar(sigma, name="sigma", target_type=float, min_val=0.0)
-
-        action_dim = action.shape[1]
-        if action_scaler is None:
-            action_scaler = np.ones(action_dim)
-        elif isinstance(action_scaler, float):
-            action_scaler = np.full(action_dim, action_scaler)
-
-        check_array(action_scaler, name="action_scaler", expected_dim=1, min_val=0.0)
-        if action_scaler.shape[0] != action_dim:
+        if action_scaler is not None and not isinstance(action_scaler, ActionScaler):
             raise ValueError(
-                "Expected `action_scaler.shape[0] == action.shape[1]`, but found False"
+                "action_scaler must be an instance of d3rlpy.preprocessing.ActionScaler, but found False"
             )
 
         if ci not in self._estimate_confidence_interval.keys():

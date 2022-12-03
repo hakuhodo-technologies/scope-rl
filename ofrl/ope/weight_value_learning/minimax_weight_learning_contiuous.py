@@ -53,6 +53,12 @@ class ContinuousMinimaxStateActionWeightLearning(BaseWeightValueLearner):
     -------
     w_function: ContinuousStateActionWeightFunction
         Weight function model.
+    
+    gamma: float, default=1.0
+        Discount factor. The value should be within `(0, 1]`.
+
+    sigma: float, default=1.0 (> 0.0)
+        Bandwidth hyperparameter of gaussian kernel.
 
     state_scaler: d3rlpy.preprocessing.Scaler, default=None
         Scaling factor of state.
@@ -71,6 +77,8 @@ class ContinuousMinimaxStateActionWeightLearning(BaseWeightValueLearner):
     """
 
     w_function: ContinuousStateActionWeightFunction
+    gamma: float = 1.0
+    sigma: float = 1.0
     state_scaler: Optional[Scaler] = None
     action_scaler: Optional[ActionScaler] = None
     device: str = "cuda:0"
@@ -78,16 +86,16 @@ class ContinuousMinimaxStateActionWeightLearning(BaseWeightValueLearner):
     def __post_init__(self):
         self.w_function.to(self.device)
 
-        if self.state_scaler is not None:
-            if not isinstance(self.state_scaler, Scaler):
-                raise ValueError(
-                    "state_scaler must be an instance of d3rlpy.preprocessing.Scaler, but found False"
-                )
-        if self.action_scaler is not None:
-            if not isinstance(self.action_scaler, ActionScaler):
-                raise ValueError(
-                    "action_scaler must be an instance of d3rlpy.preprocessing.ActionScaler, but found False"
-                )
+        check_scalar(self.gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
+        check_scalar(self.sigma, name="sigma", target_type=float, min_val=0.0)
+        if self.state_scaler is not None and not isinstance(self.state_scaler, Scaler):
+            raise ValueError(
+                "state_scaler must be an instance of d3rlpy.preprocessing.Scaler, but found False"
+            )
+        if self.action_scaler is not None and not isinstance(self.action_scaler, ActionScaler):
+            raise ValueError(
+                "action_scaler must be an instance of d3rlpy.preprocessing.ActionScaler, but found False"
+            )
 
     def load(self, path: Path):
         self.w_function.load_state_dict(torch.load(path))
@@ -101,7 +109,6 @@ class ContinuousMinimaxStateActionWeightLearning(BaseWeightValueLearner):
         action_1: torch.Tensor,
         state_2: torch.Tensor,
         action_2: torch.Tensor,
-        sigma: float,
     ):
         """Gaussian kernel for all input pairs."""
         with torch.no_grad():
@@ -112,7 +119,7 @@ class ContinuousMinimaxStateActionWeightLearning(BaseWeightValueLearner):
             x2_2 = (x2 ** 2).sum(dim=1)
             x_y = input @ input.T
             distance = x1_2[:, None] + x2_2[None, :] - 2 * x_y
-            kernel = torch.exp(-distance / sigma)
+            kernel = torch.exp(-distance / self.sigma)
 
         return kernel  # shape (n_trajectories, n_trajectories)
 
@@ -123,37 +130,17 @@ class ContinuousMinimaxStateActionWeightLearning(BaseWeightValueLearner):
         next_state: torch.Tensor,
         next_action: torch.Tensor,
         importance_weight: torch.Tensor,
-        gamma: float,
-        sigma: float,
     ):
         importance_weight = importance_weight @ importance_weight.T
         positive_term = self._gaussian_kernel(
-            state,
-            action,
-            state,
-            action,
-            sigma=sigma,
+            state, action, state, action,
         ) + self._gaussian_kernel(
-            next_state,
-            next_action,
-            next_state,
-            next_action,
-            sigma=sigma,
+            next_state, next_action, next_state, next_action,
         )
-        negative_term = self._gaussian_kernel(
-            state,
-            action,
-            next_state,
-            next_action,
-            sigma=sigma,
-        ) + self._gaussian_kernel(
-            next_state,
-            next_action,
-            state,
-            action,
-            sigma=sigma,
+        negative_term = 2 * self._gaussian_kernel(
+            state, action, next_state, next_action,
         )
-        return (importance_weight * (positive_term - gamma * negative_term)).mean()
+        return (importance_weight * (positive_term - self.gamma * negative_term)).mean()
 
     def _second_term(
         self,
@@ -162,17 +149,11 @@ class ContinuousMinimaxStateActionWeightLearning(BaseWeightValueLearner):
         next_state: torch.Tensor,
         next_action: torch.Tensor,
         importance_weight: torch.Tensor,
-        gamma: float,
-        sigma: float,
     ):
         base_term = importance_weight[:, None] * self._gaussian_kernel(
-            next_state,
-            next_action,
-            initial_state,
-            initial_action,
-            sigma=sigma,
+            next_state, next_action, initial_state, initial_action,
         )
-        return gamma * (1 - gamma) * (base_term @ base_term.T).mean()
+        return self.gamma * (1 - self.gamma) * (base_term @ base_term.T).mean()
 
     def _third_term(
         self,
@@ -181,17 +162,11 @@ class ContinuousMinimaxStateActionWeightLearning(BaseWeightValueLearner):
         state: torch.Tensor,
         action: torch.Tensor,
         importance_weight: torch.Tensor,
-        gamma: float,
-        sigma: float,
     ):
         base_term = importance_weight[:, None] * self._gaussian_kernel(
-            state,
-            action,
-            initial_state,
-            initial_action,
-            sigma=sigma,
+            state, action, initial_state, initial_action,
         )
-        return gamma * (1 - gamma) * (base_term @ base_term.T).mean()
+        return self.gamma * (1 - self.gamma) * (base_term @ base_term.T).mean()
 
     def _objective_function(
         self,
@@ -201,8 +176,6 @@ class ContinuousMinimaxStateActionWeightLearning(BaseWeightValueLearner):
         action: torch.Tensor,
         next_state: torch.Tensor,
         next_action: torch.Tensor,
-        gamma: float,
-        sigma: float,
     ):
         """Objective function of Minimax Weight Learning.
 
@@ -226,12 +199,6 @@ class ContinuousMinimaxStateActionWeightLearning(BaseWeightValueLearner):
         next_action: Tensor of shape (n_trajectories, action_dim)
             Next action chosen by the evaluation policy.
 
-        gamma: float
-            Discount factor. The value should be within `(0, 1]`.
-
-        sigma: float
-            Bandwidth hyperparameter of gaussian kernel.
-
         Return
         -------
         objective_function: Tensor of shape (1, )
@@ -246,8 +213,6 @@ class ContinuousMinimaxStateActionWeightLearning(BaseWeightValueLearner):
             next_state=next_state,
             next_action=next_action,
             importance_weight=importance_weight,
-            gamma=gamma,
-            sigma=sigma,
         )
         second_term = self._second_term(
             initial_state=initial_state,
@@ -255,8 +220,6 @@ class ContinuousMinimaxStateActionWeightLearning(BaseWeightValueLearner):
             next_state=next_state,
             next_action=next_action,
             importance_weight=importance_weight,
-            gamma=gamma,
-            sigma=sigma,
         )
         third_term = self._third_term(
             initial_state=initial_state,
@@ -264,8 +227,6 @@ class ContinuousMinimaxStateActionWeightLearning(BaseWeightValueLearner):
             state=state,
             action=action,
             importance_weight=importance_weight,
-            gamma=gamma,
-            sigma=sigma,
         )
 
         return first_term + second_term - third_term
@@ -279,8 +240,6 @@ class ContinuousMinimaxStateActionWeightLearning(BaseWeightValueLearner):
         n_epochs: int = 100,
         n_steps_per_epoch: int = 100,
         batch_size: int = 32,
-        gamma: float = 1.0,
-        sigma: float = 1.0,
         lr: float = 1e-3,
         random_state: Optional[int] = None,
         **kwargs,
@@ -309,12 +268,6 @@ class ContinuousMinimaxStateActionWeightLearning(BaseWeightValueLearner):
 
         batch_size: int, default=32
             Batch size.
-
-        gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
-
-        sigma: float, default=1.0
-            Bandwidth hyperparameter of gaussian kernel.
 
         lr: float, default=1e-3
             Learning rate.
@@ -346,8 +299,6 @@ class ContinuousMinimaxStateActionWeightLearning(BaseWeightValueLearner):
                 "Expected `action.shape[1] == evaluation_policy_action.shape[1]`, but found False"
             )
 
-        check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
-        check_scalar(sigma, name="sigma", target_type=float, min_val=0.0)
         check_scalar(n_epochs, name="n_epochs", target_type=int, min_val=1)
         check_scalar(
             n_steps_per_epoch, name="n_steps_per_epoch", target_type=int, min_val=1
@@ -397,8 +348,6 @@ class ContinuousMinimaxStateActionWeightLearning(BaseWeightValueLearner):
                     action=action[idx_, t_],
                     next_state=state[idx_, t_ + 1],
                     next_action=action[idx_, t_ + 1],
-                    gamma=gamma,
-                    sigma=sigma,
                 )
 
                 optimizer.zero_grad()
@@ -480,8 +429,6 @@ class ContinuousMinimaxStateActionWeightLearning(BaseWeightValueLearner):
         n_epochs: int = 100,
         n_steps_per_epoch: int = 100,
         batch_size: int = 32,
-        gamma: float = 1.0,
-        sigma: float = 1.0,
         lr: float = 1e-3,
         random_state: Optional[int] = None,
         **kwargs,
@@ -511,12 +458,6 @@ class ContinuousMinimaxStateActionWeightLearning(BaseWeightValueLearner):
         batch_size: int, default=32
             Batch size.
 
-        gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
-
-        sigma: float, default=1.0
-            Bandwidth hyperparameter of gaussian kernel.
-
         lr: float, default=1e-3
             Learning rate.
 
@@ -537,8 +478,6 @@ class ContinuousMinimaxStateActionWeightLearning(BaseWeightValueLearner):
             n_epochs=n_epochs,
             n_steps_per_epoch=n_steps_per_epoch,
             batch_size=batch_size,
-            gamma=gamma,
-            sigma=sigma,
             lr=lr,
             random_state=random_state,
         )
@@ -582,6 +521,12 @@ class ContinuousMinimaxStateWeightLearning(BaseWeightValueLearner):
     w_function: StateWeightFunction
         Weight function model.
 
+    gamma: float, default=1.0
+        Discount factor. The value should be within `(0, 1]`.
+
+    sigma: float, default=1.0 (> 0.0)
+        Bandwidth hyperparameter of gaussian kernel.
+
     state_scaler: d3rlpy.preprocessing.Scaler, default=None
         Scaling factor of state.
 
@@ -599,6 +544,8 @@ class ContinuousMinimaxStateWeightLearning(BaseWeightValueLearner):
     """
 
     w_function: StateWeightFunction
+    gamma: float = 1.0
+    sigma: float = 1.0
     state_scaler: Optional[Scaler] = None
     action_scaler: Optional[ActionScaler] = None
     device: str = "cuda:0"
@@ -606,16 +553,16 @@ class ContinuousMinimaxStateWeightLearning(BaseWeightValueLearner):
     def __post_init__(self):
         self.w_function.to(self.device)
 
-        if self.state_scaler is not None:
-            if not isinstance(self.state_scaler, Scaler):
-                raise ValueError(
-                    "state_scaler must be an instance of d3rlpy.preprocessing.Scaler, but found False"
-                )
-        if self.action_scaler is not None:
-            if not isinstance(self.action_scaler, ActionScaler):
-                raise ValueError(
-                    "action_scaler must be an instance of d3rlpy.preprocessing.ActionScaler, but found False"
-                )
+        check_scalar(self.gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
+        check_scalar(self.sigma, name="sigma", target_type=float, min_val=0.0)
+        if self.state_scaler is not None and not isinstance(self.state_scaler, Scaler):
+            raise ValueError(
+                "state_scaler must be an instance of d3rlpy.preprocessing.Scaler, but found False"
+            )
+        if self.action_scaler is not None and not isinstance(self.action_scaler, ActionScaler):
+            raise ValueError(
+                "action_scaler must be an instance of d3rlpy.preprocessing.ActionScaler, but found False"
+            )
 
     def load(self, path: Path):
         self.w_function.load_state_dict(torch.load(path))
@@ -627,7 +574,6 @@ class ContinuousMinimaxStateWeightLearning(BaseWeightValueLearner):
         self,
         state: torch.Tensor,
         action: torch.Tensor,
-        sigma: float,
     ):
         """Gaussian kernel for all input pairs."""
         with torch.no_grad():
@@ -636,7 +582,7 @@ class ContinuousMinimaxStateWeightLearning(BaseWeightValueLearner):
             x_2 = (input ** 2).sum(dim=1)
             x_y = input @ input.T
             distance = x_2[:, None] + x_2[None, :] - 2 * x_y
-            kernel = torch.exp(-distance / sigma)
+            kernel = torch.exp(-distance / self.sigma)
 
         return kernel  # shape (n_trajectories, n_trajectories)
 
@@ -647,37 +593,17 @@ class ContinuousMinimaxStateWeightLearning(BaseWeightValueLearner):
         next_state: torch.Tensor,
         next_action: torch.Tensor,
         importance_weight: torch.Tensor,
-        gamma: float,
-        sigma: float,
     ):
         importance_weight = importance_weight @ importance_weight.T
         positive_term = self._gaussian_kernel(
-            state,
-            action,
-            state,
-            action,
-            sigma=sigma,
+            state, action, state, action,
         ) + self._gaussian_kernel(
-            next_state,
-            next_action,
-            next_state,
-            next_action,
-            sigma=sigma,
+            next_state, next_action, next_state, next_action,
         )
-        negative_term = self._gaussian_kernel(
-            state,
-            action,
-            next_state,
-            next_action,
-            sigma=sigma,
-        ) + self._gaussian_kernel(
-            next_state,
-            next_action,
-            state,
-            action,
-            sigma=sigma,
+        negative_term = 2 * self._gaussian_kernel(
+            state, action, next_state, next_action,
         )
-        return (importance_weight * (positive_term - gamma * negative_term)).mean()
+        return (importance_weight * (positive_term - self.gamma * negative_term)).mean()
 
     def _second_term(
         self,
@@ -686,17 +612,11 @@ class ContinuousMinimaxStateWeightLearning(BaseWeightValueLearner):
         next_state: torch.Tensor,
         next_action: torch.Tensor,
         importance_weight: torch.Tensor,
-        gamma: float,
-        sigma: float,
     ):
         base_term = importance_weight[:, None] * self._gaussian_kernel(
-            next_state,
-            next_action,
-            initial_state,
-            initial_action,
-            sigma=sigma,
+            next_state, next_action, initial_state, initial_action,
         )
-        return gamma * (1 - gamma) * (base_term @ base_term.T).mean()
+        return self.gamma * (1 - self.gamma) * (base_term @ base_term.T).mean()
 
     def _third_term(
         self,
@@ -705,17 +625,14 @@ class ContinuousMinimaxStateWeightLearning(BaseWeightValueLearner):
         state: torch.Tensor,
         action: torch.Tensor,
         importance_weight: torch.Tensor,
-        gamma: float,
-        sigma: float,
     ):
         base_term = importance_weight[:, None] * self._gaussian_kernel(
             state,
             action,
             initial_state,
             initial_action,
-            sigma=sigma,
         )
-        return gamma * (1 - gamma) * (base_term @ base_term.T).mean()
+        return self.gamma * (1 - self.gamma) * (base_term @ base_term.T).mean()
 
     def _objective_function(
         self,
@@ -726,8 +643,6 @@ class ContinuousMinimaxStateWeightLearning(BaseWeightValueLearner):
         next_state: torch.Tensor,
         next_action: torch.Tensor,
         importance_weight: torch.Tensor,
-        gamma: float,
-        sigma: float,
     ):
         """Objective function of Minimax Weight Learning.
 
@@ -755,12 +670,6 @@ class ContinuousMinimaxStateWeightLearning(BaseWeightValueLearner):
             Immediate importance weight of the given (state, action) pair,
             i.e., :math:`\\pi(a_t | s_t) / \\pi_0(a_t | s_t)`.
 
-        gamma: float
-            Discount factor. The value should be within `(0, 1]`.
-
-        sigma: float
-            Bandwidth hyperparameter of gaussian kernel.
-
         Return
         -------
         objective_function: Tensor of shape (1, )
@@ -775,8 +684,6 @@ class ContinuousMinimaxStateWeightLearning(BaseWeightValueLearner):
             next_state=next_state,
             next_action=next_action,
             importance_weight=importance_weight,
-            gamma=gamma,
-            sigma=sigma,
         )
         second_term = self._second_term(
             initial_state=initial_state,
@@ -784,8 +691,6 @@ class ContinuousMinimaxStateWeightLearning(BaseWeightValueLearner):
             next_state=next_state,
             next_action=next_action,
             importance_weight=importance_weight,
-            gamma=gamma,
-            sigma=sigma,
         )
         third_term = self._third_term(
             initial_state=initial_state,
@@ -793,8 +698,6 @@ class ContinuousMinimaxStateWeightLearning(BaseWeightValueLearner):
             state=state,
             action=action,
             importance_weight=importance_weight,
-            gamma=gamma,
-            sigma=sigma,
         )
 
         return first_term + second_term - third_term
@@ -809,8 +712,6 @@ class ContinuousMinimaxStateWeightLearning(BaseWeightValueLearner):
         n_epochs: int = 100,
         n_steps_per_epoch: int = 100,
         batch_size: int = 32,
-        gamma: float = 1.0,
-        sigma: float = 1.0,
         lr: float = 1e-3,
         random_state: Optional[int] = None,
         **kwargs,
@@ -842,12 +743,6 @@ class ContinuousMinimaxStateWeightLearning(BaseWeightValueLearner):
 
         batch_size: int, default=32
             Batch size.
-
-        gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
-
-        sigma: float, default=1.0
-            Bandwidth hyperparameter of gaussian kernel.
 
         lr: float, default=1e-3
             Learning rate.
@@ -887,8 +782,6 @@ class ContinuousMinimaxStateWeightLearning(BaseWeightValueLearner):
                 "Expected `action.shape[1] == evaluation_policy_action_dist.shape[1] == pscore.shape[1]`, but found False"
             )
 
-        check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
-        check_scalar(sigma, name="sigma", target_type=float, min_val=0.0)
         check_scalar(n_epochs, name="n_epochs", target_type=int, min_val=1)
         check_scalar(
             n_steps_per_epoch, name="n_steps_per_epoch", target_type=int, min_val=1
@@ -923,7 +816,7 @@ class ContinuousMinimaxStateWeightLearning(BaseWeightValueLearner):
         similarity_weight = gaussian_kernel(
             evaluation_policy_action_,
             action_,
-            sigma=sigma,
+            sigma=self.sigma,
         ).reshape((-1, step_per_trajectory))
 
         n_trajectories, step_per_trajectory, _ = state.shape
@@ -955,8 +848,6 @@ class ContinuousMinimaxStateWeightLearning(BaseWeightValueLearner):
                     next_state=state[idx_, t_ + 1],
                     next_action=evaluation_policy_action[idx_, t_ + 1],
                     importance_weight=importance_weight[idx_, t_],
-                    gamma=gamma,
-                    sigma=sigma,
                 )
 
                 optimizer.zero_grad()
@@ -997,7 +888,6 @@ class ContinuousMinimaxStateWeightLearning(BaseWeightValueLearner):
         action: np.ndarray,
         pscore: np.ndarray,
         evaluation_policy_action: np.ndarray,
-        sigma: float,
     ):
         """Predict state-action marginal importance weight.
 
@@ -1063,7 +953,7 @@ class ContinuousMinimaxStateWeightLearning(BaseWeightValueLearner):
         similarity_weight = gaussian_kernel(
             evaluation_policy_action_,
             action_,
-            sigma=sigma,
+            sigma=self.sigma,
         )
 
         state_marginal_importance_weight = (
@@ -1123,8 +1013,6 @@ class ContinuousMinimaxStateWeightLearning(BaseWeightValueLearner):
         n_epochs: int = 100,
         n_steps_per_epoch: int = 100,
         batch_size: int = 32,
-        gamma: float = 1.0,
-        sigma: float = 1.0,
         lr: float = 1e-3,
         random_state: Optional[int] = None,
         **kwargs,
@@ -1178,8 +1066,6 @@ class ContinuousMinimaxStateWeightLearning(BaseWeightValueLearner):
             n_epochs=n_epochs,
             n_steps_per_epoch=n_steps_per_epoch,
             batch_size=batch_size,
-            gamma=gamma,
-            sigma=sigma,
             lr=lr,
             random_state=random_state,
         )

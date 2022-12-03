@@ -216,21 +216,10 @@ class OffPolicyEvaluation:
                 "pscore": self.logged_dataset["pscore"],
             }
         else:
-            if self.action_scaler is not None and not isinstance(
-                self.action_scaler, float
-            ):
-                check_array(
-                    self.action_scaler,
-                    name="action_scaler",
-                    expected_dim=1,
-                    min_val=0.0,
+            if self.action_scaler is not None and not isinstance(self.action_scaler, ActionScaler):
+                raise ValueError(
+                    "action_scaler must be an instance of d3rlpy.preprocessing.ActionScaler, but found False"
                 )
-
-                if self.action_scaler.shape[0] != self.logged_dataset["action_dim"]:
-                    raise ValueError(
-                        "Expected `action_scaler.shape[0] == logged_dataset['action_dim']`, but found False"
-                    )
-
             check_scalar(self.sigma, name="sigma", target_type=float, min_val=0.0)
 
             self.input_dict_ = {
@@ -1124,21 +1113,10 @@ class CumulativeDistributionOffPolicyEvaluation:
                 "pscore": self.logged_dataset["pscore"],
             }
         else:
-            if self.action_scaler is not None and not isinstance(
-                self.action_scaler, float
-            ):
-                check_array(
-                    self.action_scaler,
-                    name="action_scaler",
-                    expected_dim=1,
-                    min_val=0.0,
+            if self.action_scaler is not None and not isinstance(self.action_scaler, ActionScaler):
+                raise ValueError(
+                    "action_scaler must be an instance of d3rlpy.preprocessing.ActionScaler, but found False"
                 )
-
-                if self.action_scaler.shape[0] != self.logged_dataset["action_dim"]:
-                    raise ValueError(
-                        "Expected `action_scaler.shape[0] == logged_dataset['action_dim']`, but found False"
-                    )
-
             check_scalar(self.sigma, name="sigma", target_type=float, min_val=0.0)
 
             self.input_dict_ = {

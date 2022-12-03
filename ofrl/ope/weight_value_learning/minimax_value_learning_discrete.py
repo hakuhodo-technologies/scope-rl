@@ -51,6 +51,12 @@ class DiscreteMinimaxStateActionValueLearning(BaseWeightValueLearner):
     q_function: DiscreteQFunction
         Q function model.
 
+    gamma: float, default=1.0
+        Discount factor. The value should be within `(0, 1]`.
+
+    sigma: float, default=1.0 (> 0.0)
+        Bandwidth hyperparameter of gaussian kernel.
+
     state_scaler: d3rlpy.preprocessing.Scaler, default=None
         Scaling factor of state.
 
@@ -65,17 +71,20 @@ class DiscreteMinimaxStateActionValueLearning(BaseWeightValueLearner):
     """
 
     q_function: DiscreteQFunction
+    gamma: float = 1.0
+    sigma: float = 1.0
     state_scaler: Optional[Scaler] = None
     device: str = "cuda:0"
 
     def __post_init__(self):
         self.q_function.to(self.device)
 
-        if self.state_scaler is not None:
-            if not isinstance(self.state_scaler, Scaler):
-                raise ValueError(
-                    "state_scaler must be an instance of d3rlpy.preprocessing.Scaler, but found False"
-                )
+        check_scalar(self.gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
+        check_scalar(self.sigma, name="sigma", target_type=float, min_val=0.0)
+        if self.state_scaler is not None and not isinstance(self.state_scaler, Scaler):
+            raise ValueError(
+                "state_scaler must be an instance of d3rlpy.preprocessing.Scaler, but found False"
+            )
 
     def load(self, path: Path):
         self.q_function.load_state_dict(torch.load(path))
@@ -102,7 +111,6 @@ class DiscreteMinimaxStateActionValueLearning(BaseWeightValueLearner):
         self,
         state: torch.Tensor,
         action: torch.Tensor,
-        sigma: float,
     ):
         """Gaussian kernel for all input pairs."""
         with torch.no_grad():
@@ -112,7 +120,7 @@ class DiscreteMinimaxStateActionValueLearning(BaseWeightValueLearner):
             distance = x_2[:, None] + x_2[None, :] - 2 * x_y
 
             action_onehot = F.one_hot(action)
-            kernel = torch.exp(-distance / sigma) * (action_onehot @ action_onehot.T)
+            kernel = torch.exp(-distance / self.sigma) * (action_onehot @ action_onehot.T)
 
         return kernel  # shape (n_trajectories, n_trajectories)
 
@@ -140,8 +148,6 @@ class DiscreteMinimaxStateActionValueLearning(BaseWeightValueLearner):
         next_state: torch.Tensor,
         next_action: torch.Tensor,
         importance_weight: torch.Tensor,
-        gamma: float,
-        sigma: float,
         alpha: float,
         lambda_: float,
     ):
@@ -168,12 +174,6 @@ class DiscreteMinimaxStateActionValueLearning(BaseWeightValueLearner):
             Immediate importance weight of the given (state, action) pair,
             i.e., :math:`\\pi(a_t | s_t) / \\pi_0(a_t | s_t)`.
 
-        gamma: float
-            Discount factor. The value should be within `(0, 1]`.
-
-        sigma: float
-            Bandwidth hyperparameter of gaussian kernel.
-
         alpha: float
 
         lambda_: float
@@ -184,11 +184,11 @@ class DiscreteMinimaxStateActionValueLearning(BaseWeightValueLearner):
             Objective function of MQL.
 
         """
-        kernel = self._gaussian_kernel(state, action, sigma=sigma)
+        kernel = self._gaussian_kernel(state, action)
         current_q = self.q_function(state, action)
         next_q = self.q_function(next_state, next_action)
 
-        td_error = importance_weight * (reward + gamma * next_q) - current_q
+        td_error = importance_weight * (reward + self.gamma * next_q) - current_q
         return (
             td_error.T
             @ self._kernel_term(kernel, alpha=alpha, lambda_=lambda_)
@@ -206,8 +206,6 @@ class DiscreteMinimaxStateActionValueLearning(BaseWeightValueLearner):
         n_epochs: int = 100,
         n_steps_per_epoch: int = 100,
         batch_size: int = 32,
-        gamma: float = 1.0,
-        sigma: float = 1.0,
         alpha: float = 1e-3,
         lambda_: float = 1e-3,
         lr: float = 1e-3,
@@ -245,12 +243,6 @@ class DiscreteMinimaxStateActionValueLearning(BaseWeightValueLearner):
 
         batch_size: int, default=32
             Batch size.
-
-        gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
-
-        sigma: float, default=1.0
-            Bandwidth hyperparameter of gaussian kernel.
 
         alpha: float, default=1e-3
 
@@ -299,8 +291,6 @@ class DiscreteMinimaxStateActionValueLearning(BaseWeightValueLearner):
                 "evaluation_policy_action_dist must sums up to one in axis=1, but found False"
             )
 
-        check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
-        check_scalar(sigma, name="sigma", target_type=float, min_val=0.0)
         check_scalar(alpha, name="alpha", min_val=0.0)
         check_scalar(lambda_, name="lambda_", min_val=0.0)
         check_scalar(n_epochs, name="n_epochs", target_type=int, min_val=1)
@@ -365,8 +355,6 @@ class DiscreteMinimaxStateActionValueLearning(BaseWeightValueLearner):
                     next_state=state[idx_, t_ + 1],
                     next_action=next_action,
                     importance_weight=importance_weight[idx_, t_],
-                    gamma=gamma,
-                    sigma=sigma,
                     alpha=alpha,
                     lambda_=lambda_,
                 )
@@ -534,8 +522,6 @@ class DiscreteMinimaxStateActionValueLearning(BaseWeightValueLearner):
         n_epochs: int = 100,
         n_steps_per_epoch: int = 100,
         batch_size: int = 32,
-        gamma: float = 1.0,
-        sigma: float = 1.0,
         alpha: float = 1e-3,
         lambda_: float = 1e-3,
         lr: float = 1e-3,
@@ -574,12 +560,6 @@ class DiscreteMinimaxStateActionValueLearning(BaseWeightValueLearner):
         batch_size: int, default=32
             Batch size.
 
-        gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
-
-        sigma: float, default=1.0
-            Bandwidth hyperparameter of gaussian kernel.
-
         alpha: float, default=1e-3
 
         lambda_: float, default=1e-3
@@ -601,8 +581,6 @@ class DiscreteMinimaxStateActionValueLearning(BaseWeightValueLearner):
             n_epochs=n_epochs,
             n_steps_per_epoch=n_steps_per_epoch,
             batch_size=batch_size,
-            gamma=gamma,
-            sigma=sigma,
             alpha=alpha,
             lambda_=lambda_,
             lr=lr,
@@ -642,6 +620,12 @@ class DiscreteMinimaxStateValueLearning(BaseWeightValueLearner):
     q_function: DiscreteQFunction
         Q function model.
 
+    gamma: float, default=1.0
+        Discount factor. The value should be within `(0, 1]`.
+
+    sigma: float, default=1.0 (> 0.0)
+        Bandwidth hyperparameter of gaussian kernel.
+
     state_scaler: d3rlpy.preprocessing.Scaler, default=None
         Scaling factor of state.
 
@@ -656,17 +640,20 @@ class DiscreteMinimaxStateValueLearning(BaseWeightValueLearner):
     """
 
     v_function: VFunction
+    gamma: float = 1.0
+    sigma: float = 1.0
     state_scaler: Optional[Scaler] = None
     device: str = "cuda:0"
 
     def __post_init__(self):
         self.v_function.to(self.device)
 
-        if self.state_scaler is not None:
-            if not isinstance(self.state_scaler, Scaler):
-                raise ValueError(
-                    "state_scaler must be an instance of d3rlpy.preprocessing.Scaler, but found False"
-                )
+        check_scalar(self.gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
+        check_scalar(self.sigma, name="sigma", target_type=float, min_val=0.0)
+        if self.state_scaler is not None and not isinstance(self.state_scaler, Scaler):
+            raise ValueError(
+                "state_scaler must be an instance of d3rlpy.preprocessing.Scaler, but found False"
+            )
 
     def load(self, path: Path):
         self.v_function.load_state_dict(torch.load(path))
@@ -693,7 +680,6 @@ class DiscreteMinimaxStateValueLearning(BaseWeightValueLearner):
         self,
         state: torch.Tensor,
         action: torch.Tensor,
-        sigma: float,
     ):
         """Gaussian kernel for all input pairs."""
         with torch.no_grad():
@@ -703,7 +689,7 @@ class DiscreteMinimaxStateValueLearning(BaseWeightValueLearner):
             distance = x_2[:, None] + x_2[None, :] - 2 * x_y
 
             action_onehot = F.one_hot(action)
-            kernel = torch.exp(-distance / sigma) * (action_onehot @ action_onehot.T)
+            kernel = torch.exp(-distance / self.sigma) * (action_onehot @ action_onehot.T)
 
         return kernel  # shape (n_trajectories, n_trajectories)
 
@@ -728,8 +714,6 @@ class DiscreteMinimaxStateValueLearning(BaseWeightValueLearner):
         reward: torch.Tensor,
         next_state: torch.Tensor,
         importance_weight: torch.Tensor,
-        gamma: float,
-        sigma: float,
         alpha: float,
         lambda_: float,
     ):
@@ -753,12 +737,6 @@ class DiscreteMinimaxStateValueLearning(BaseWeightValueLearner):
             Immediate importance weight of the given (state, action) pair,
             i.e., :math:`\\pi(a_t | s_t) / \\pi_0(a_t | s_t)`.
 
-        gamma: float
-            Discount factor. The value should be within `(0, 1]`.
-
-        sigma: float
-            Bandwidth hyperparameter of gaussian kernel.
-
         alpha: float
 
         lambda_: float
@@ -769,11 +747,11 @@ class DiscreteMinimaxStateValueLearning(BaseWeightValueLearner):
             Objective function of MVL.
 
         """
-        kernel = self._gaussian_kernel(state, action, sigma=sigma)
+        kernel = self._gaussian_kernel(state, action)
         current_v = self.v_function(state)
         next_v = self.v_function(next_state)
 
-        td_error = importance_weight * (reward + gamma * next_v) - current_v
+        td_error = importance_weight * (reward + self.gamma * next_v) - current_v
         return (
             td_error.T
             @ self._kernel_term(kernel, alpha=alpha, lambda_=lambda_)
@@ -791,8 +769,6 @@ class DiscreteMinimaxStateValueLearning(BaseWeightValueLearner):
         n_epochs: int = 100,
         n_steps_per_epoch: int = 100,
         batch_size: int = 32,
-        gamma: float = 1.0,
-        sigma: float = 1.0,
         alpha: float = 1e-3,
         lambda_: float = 1e-3,
         lr: float = 1e-3,
@@ -830,12 +806,6 @@ class DiscreteMinimaxStateValueLearning(BaseWeightValueLearner):
 
         batch_size: int, default=32
             Batch size.
-
-        gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
-
-        sigma: float, default=1.0
-            Bandwidth hyperparameter of gaussian kernel.
 
         alpha: float, default=1e-3
 
@@ -884,8 +854,6 @@ class DiscreteMinimaxStateValueLearning(BaseWeightValueLearner):
                 "evaluation_policy_action_dist must sums up to one in axis=2, but found False"
             )
 
-        check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
-        check_scalar(sigma, name="sigma", target_type=float, min_val=0.0)
         check_scalar(alpha, name="alpha", min_val=0.0)
         check_scalar(lambda_, name="lambda_", min_val=0.0)
         check_scalar(n_epochs, name="n_epochs", target_type=int, min_val=1)
@@ -940,8 +908,6 @@ class DiscreteMinimaxStateValueLearning(BaseWeightValueLearner):
                     reward=reward[idx_, t_],
                     next_state=state[idx_, t_ + 1],
                     importance_weight=importance_weight[idx_, t_],
-                    gamma=gamma,
-                    sigma=sigma,
                     alpha=alpha,
                     lambda_=lambda_,
                 )
@@ -1008,8 +974,6 @@ class DiscreteMinimaxStateValueLearning(BaseWeightValueLearner):
         n_epochs: int = 100,
         n_steps_per_epoch: int = 100,
         batch_size: int = 32,
-        gamma: float = 1.0,
-        sigma: float = 1.0,
         alpha: float = 1e-3,
         lambda_: float = 1e-3,
         lr: float = 1e-3,
@@ -1048,12 +1012,6 @@ class DiscreteMinimaxStateValueLearning(BaseWeightValueLearner):
         batch_size: int, default=32
             Batch size.
 
-        gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
-
-        sigma: float, default=1.0
-            Bandwidth hyperparameter of gaussian kernel.
-
         alpha: float, default=1e-3
 
         lambda_: float, default=1e-3
@@ -1075,8 +1033,6 @@ class DiscreteMinimaxStateValueLearning(BaseWeightValueLearner):
             n_epochs=n_epochs,
             n_steps_per_epoch=n_steps_per_epoch,
             batch_size=batch_size,
-            gamma=gamma,
-            sigma=sigma,
             alpha=alpha,
             lambda_=lambda_,
             lr=lr,

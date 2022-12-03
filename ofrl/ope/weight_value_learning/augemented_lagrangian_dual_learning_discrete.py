@@ -63,6 +63,12 @@ class DiscreteAugmentedLagrangianStateActionWightValueLearning(BaseWeightValueLe
     w_function: DiscreteStateActionWeightFunction
         Weight function model.
 
+    gamma: float, default=1.0
+        Discount factor. The value should be within `(0, 1]`.
+
+    sigma: float, default=1.0 (> 0.0)
+        Bandwidth hyperparameter of gaussian kernel. (This is for API consistency)
+
     state_scaler: d3rlpy.preprocessing.Scaler, default=None
         Scaling factor of state.
 
@@ -94,6 +100,8 @@ class DiscreteAugmentedLagrangianStateActionWightValueLearning(BaseWeightValueLe
     method: str
     q_function: DiscreteQFunction
     w_function: DiscreteStateActionWeightFunction
+    gamma: float = 1.0
+    sigma: float = 1.0
     state_scaler: Optional[Scaler] = None
     device: str = "cuda:0"
 
@@ -101,11 +109,12 @@ class DiscreteAugmentedLagrangianStateActionWightValueLearning(BaseWeightValueLe
         self.q_function.to(self.device)
         self.w_function.to(self.device)
 
-        if self.state_scaler is not None:
-            if not isinstance(self.state_scaler, Scaler):
-                raise ValueError(
-                    "state_scaler must be an instance of d3rlpy.preprocessing.Scaler, but found False"
-                )
+        check_scalar(self.gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
+        check_scalar(self.sigma, name="sigma", target_type=float, min_val=0.0)
+        if self.state_scaler is not None and not isinstance(self.state_scaler, Scaler):
+            raise ValueError(
+                "state_scaler must be an instance of d3rlpy.preprocessing.Scaler, but found False"
+            )
 
     def load(self, path_q: Path, path_w: Path):
         self.q_function.load_state_dict(torch.load(path_q))
@@ -125,7 +134,6 @@ class DiscreteAugmentedLagrangianStateActionWightValueLearning(BaseWeightValueLe
         next_state: torch.Tensor,
         next_action: torch.Tensor,
         lambda_: torch.Tensor,
-        gamma: float,
         alpha_q: float,
         alpha_w: float,
         alpha_r: bool,
@@ -176,14 +184,14 @@ class DiscreteAugmentedLagrangianStateActionWightValueLearning(BaseWeightValueLe
             Objective function of the Augmented Lagrangian method.
 
         """
-        initial_value = (1 - gamma) * self.q_function(
+        initial_value = (1 - self.gamma) * self.q_function(
             initial_state, initial_action
         ).mean() + lambda_
         td_value = (
             self.w_function(state, action)
             * (
                 alpha_r * reward
-                + gamma * self.q_function(next_state, next_action)
+                + self.gamma * self.q_function(next_state, next_action)
                 - self.q_function(state, action)
                 - lambda_
             )
@@ -206,7 +214,6 @@ class DiscreteAugmentedLagrangianStateActionWightValueLearning(BaseWeightValueLe
         q_lr: float = 1e-3,
         w_lr: float = 1e-3,
         lambda_lr: float = 1e-3,
-        gamma: float = 1.0,
         alpha_q: Optional[float] = None,
         alpha_w: Optional[float] = None,
         alpha_r: Optional[bool] = None,
@@ -254,9 +261,6 @@ class DiscreteAugmentedLagrangianStateActionWightValueLearning(BaseWeightValueLe
 
         lambda_lr: float, default=1e-3
             Learning rate of lambda_.
-
-        gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
 
         alpha_q: float, default=None
             Regularization coefficient of the Q-function.
@@ -358,7 +362,6 @@ class DiscreteAugmentedLagrangianStateActionWightValueLearning(BaseWeightValueLe
             enable_lambda = method in ["gen_dice", "best_dice"]
             self.lambda_ = torch.zeros(size=(1,), device=self.device)
 
-        check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
         check_scalar(alpha_q, name="alpha_q", target_type=float)
         check_scalar(alpha_w, name="alpha_w", target_type=float)
         check_scalar(n_epochs, name="n_epochs", target_type=int, min_val=1)
@@ -426,7 +429,6 @@ class DiscreteAugmentedLagrangianStateActionWightValueLearning(BaseWeightValueLe
                     next_state=state[idx_, t_ + 1],
                     next_action=next_action,
                     lambda_=self.lambda_,
-                    gamma=gamma,
                     alpha_q=alpha_q,
                     alpha_w=alpha_w,
                     alpha_r=alpha_r,
@@ -674,7 +676,6 @@ class DiscreteAugmentedLagrangianStateActionWightValueLearning(BaseWeightValueLe
         q_lr: float = 1e-3,
         w_lr: float = 1e-3,
         lambda_lr: float = 1e-3,
-        gamma: float = 1.0,
         alpha_q: Optional[float] = None,
         alpha_w: Optional[float] = None,
         alpha_r: Optional[bool] = None,
@@ -723,9 +724,6 @@ class DiscreteAugmentedLagrangianStateActionWightValueLearning(BaseWeightValueLe
         lambda_lr: float, default=1e-3
             Learning rate of lambda_.
 
-        gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
-
         alpha_q: float, default=None
             Regularization coefficient of the Q-function.
             A value should be given when `method == "custom"`.
@@ -767,7 +765,6 @@ class DiscreteAugmentedLagrangianStateActionWightValueLearning(BaseWeightValueLe
             q_lr=q_lr,
             w_lr=w_lr,
             lambda_lr=lambda_lr,
-            gamma=gamma,
             alpha_q=alpha_q,
             alpha_w=alpha_w,
             alpha_r=alpha_r,
@@ -822,6 +819,12 @@ class DiscreteAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearner)
     w_function: StateWeightFunction
         Weight function model.
 
+    gamma: float, default=1.0
+        Discount factor. The value should be within `(0, 1]`.
+
+    sigma: float, default=1.0 (> 0.0)
+        Bandwidth hyperparameter of gaussian kernel. (This is for API consistency)
+
     state_scaler: d3rlpy.preprocessing.Scaler, default=None
         Scaling factor of state.
 
@@ -852,6 +855,8 @@ class DiscreteAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearner)
 
     v_function: VFunction
     w_function: StateWeightFunction
+    gamma: float = 1.0
+    sigma: float = 1.0
     state_scaler: Optional[Scaler] = None
     device: str = "cuda:0"
 
@@ -859,11 +864,12 @@ class DiscreteAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearner)
         self.v_function.to(self.device)
         self.w_function.to(self.device)
 
-        if self.state_scaler is not None:
-            if not isinstance(self.state_scaler, Scaler):
-                raise ValueError(
-                    "state_scaler must be an instance of d3rlpy.preprocessing.Scaler, but found False"
-                )
+        check_scalar(self.gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
+        check_scalar(self.sigma, name="sigma", target_type=float, min_val=0.0)
+        if self.state_scaler is not None and not isinstance(self.state_scaler, Scaler):
+            raise ValueError(
+                "state_scaler must be an instance of d3rlpy.preprocessing.Scaler, but found False"
+            )
 
     def load(self, path_v: Path, path_w: Path):
         self.v_function.load_state_dict(torch.load(path_v))
@@ -881,7 +887,6 @@ class DiscreteAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearner)
         reward: torch.Tensor,
         next_state: torch.Tensor,
         lambda_: torch.Tensor,
-        gamma: float,
         alpha_v: float,
         alpha_w: float,
         alpha_r: bool,
@@ -908,9 +913,6 @@ class DiscreteAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearner)
         lambda_: Tensor of shape (1, )
             lambda_ hyperparameter to stabilize the optimization.
 
-        gamma: float
-            Discount factor. The value should be within `(0, 1]`.
-
         alpha_v: float
             Regularization coefficient of the V-function.
 
@@ -926,13 +928,13 @@ class DiscreteAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearner)
             Objective function of the Augmented Lagrangian method.
 
         """
-        initial_value = (1 - gamma) * self.v_function(initial_state).mean() + lambda_
+        initial_value = (1 - self.gamma) * self.v_function(initial_state).mean() + lambda_
         td_value = (
             self.w_function(state)
             * importance_weight
             * (
                 alpha_r * reward
-                + gamma * self.v_function(next_state)
+                + self.gamma * self.v_function(next_state)
                 - self.v_function(state)
                 - lambda_
             )
@@ -956,7 +958,6 @@ class DiscreteAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearner)
         v_lr: float = 1e-3,
         w_lr: float = 1e-3,
         lambda_lr: float = 1e-3,
-        gamma: float = 1.0,
         alpha_v: Optional[float] = None,
         alpha_w: Optional[float] = None,
         alpha_r: Optional[bool] = None,
@@ -1007,9 +1008,6 @@ class DiscreteAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearner)
 
         lambda_lr: float, default=1e-3
             Learning rate of lambda_.
-
-        gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
 
         alpha_v: float, default=None
             Regularization coefficient of the V-function.
@@ -1113,7 +1111,6 @@ class DiscreteAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearner)
             enable_lambda = method in ["gen_dice", "best_dice"]
             self.lambda_ = torch.zeros(size=(1,), device=self.device)
 
-        check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
         check_scalar(alpha_q, name="alpha_q", target_type=float)
         check_scalar(alpha_w, name="alpha_w", target_type=float)
         check_scalar(n_epochs, name="n_epochs", target_type=int, min_val=1)
@@ -1175,7 +1172,6 @@ class DiscreteAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearner)
                     next_state=state[idx_, t_ + 1],
                     importance_weight=importance_weight[idx_, t_],
                     lambda_=self.lambda_,
-                    gamma=gamma,
                     alpha_v=alpha_v,
                     alpha_w=alpha_w,
                     alpha_r=alpha_r,
@@ -1288,7 +1284,6 @@ class DiscreteAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearner)
         q_lr: float = 1e-3,
         w_lr: float = 1e-3,
         lambda_lr: float = 1e-3,
-        gamma: float = 1.0,
         alpha_v: Optional[float] = None,
         alpha_w: Optional[float] = None,
         alpha_r: Optional[bool] = None,
@@ -1340,9 +1335,6 @@ class DiscreteAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearner)
         lambda_lr: float, default=1e-3
             Learning rate of lambda_.
 
-        gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
-
         alpha_v: float, default=None
             Regularization coefficient of the V-function.
             A value should be given when `method == "custom"`.
@@ -1385,7 +1377,6 @@ class DiscreteAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearner)
             q_lr=q_lr,
             w_lr=w_lr,
             lambda_lr=lambda_lr,
-            gamma=gamma,
             alpha_v=alpha_v,
             alpha_w=alpha_w,
             alpha_r=alpha_r,
