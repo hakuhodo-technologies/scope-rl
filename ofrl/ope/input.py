@@ -118,7 +118,7 @@ class CreateOPEInput:
     """
 
     logged_dataset: LoggedDataset
-    env: Optional[gym.Env] = None,
+    env: Optional[gym.Env] = None
     model_args: Optional[Dict[str, Any]] = None
     gamma: float = 1.0
     sigma: float = 1.0

@@ -323,7 +323,7 @@ class DiscreteDoubleReinforcementLearning(BaseOffPolicyEstimator):
             )
         if (
             evaluation_policy_action_dist.shape[1]
-            != state_action_value_prediction[1].shape
+            != state_action_value_prediction.shape[1]
         ):
             raise ValueError(
                 "Expected `evaluation_policy_action_dist.shape[1] == state_action_value_prediction.shape[1]`, but found False"
@@ -1231,7 +1231,7 @@ class DiscreteStateMarginalDoublyRobust(BaseStateMarginalOffPolicyEstimator):
             )
         if (
             action.shape[0] // step_per_trajectory
-            == initial_state_value_prediction.shape[0]
+            != initial_state_value_prediction.shape[0]
         ):
             raise ValueError(
                 "Expected `action.shape[0] // step_per_trajectory == initial_state_value_prediction.shape[0]`, but found False"
@@ -1418,7 +1418,7 @@ class DiscreteStateMarginalDoublyRobust(BaseStateMarginalOffPolicyEstimator):
             )
         if (
             action.shape[0] // step_per_trajectory
-            == initial_state_value_prediction.shape[0]
+            != initial_state_value_prediction.shape[0]
         ):
             raise ValueError(
                 "Expected `action.shape[0] // step_per_trajectory == initial_state_value_prediction.shape[0]`, but found False"
@@ -2470,7 +2470,7 @@ class DiscreteStateActionMarginalDoublyRobust(
             )
         if (
             action.shape[0] // step_per_trajectory
-            == initial_state_value_prediction.shape[0]
+            != initial_state_value_prediction.shape[0]
         ):
             raise ValueError(
                 "Expected `action.shape[0] // step_per_trajectory == initial_state_value_prediction.shape[0]`, but found False"
@@ -2648,7 +2648,7 @@ class DiscreteStateActionMarginalDoublyRobust(
             )
         if (
             action.shape[0] // step_per_trajectory
-            == initial_state_value_prediction.shape[0]
+            != initial_state_value_prediction.shape[0]
         ):
             raise ValueError(
                 "Expected `action.shape[0] // step_per_trajectory == initial_state_value_prediction.shape[0]`, but found False"

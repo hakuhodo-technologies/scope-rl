@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import Optional
-from tqdm import tqdm
+from tqdm.auto import tqdm
 from pathlib import Path
 from warnings import warn
 

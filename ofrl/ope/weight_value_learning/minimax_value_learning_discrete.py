@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import Optional
-from tqdm import tqdm
+from tqdm.auto import tqdm
 from pathlib import Path
 
 import torch
@@ -337,7 +337,7 @@ class DiscreteMinimaxStateActionValueLearning(BaseWeightValueLearner):
 
         for epoch in tqdm(
             np.arange(n_epochs),
-            desc=["fitting_weight_and_value_functions"],
+            desc=["fitting_value_function"],
             total=n_epochs,
         ):
             for grad_step in range(n_steps_per_epoch):
@@ -895,7 +895,7 @@ class DiscreteMinimaxStateValueLearning(BaseWeightValueLearner):
 
         for epoch in tqdm(
             np.arange(n_epochs),
-            desc=["fitting_V_function"],
+            desc=["fitting_value_function"],
             total=n_epochs,
         ):
             for grad_step in range(n_steps_per_epoch):

@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import Optional
-from tqdm import tqdm
+from tqdm.auto import tqdm
 from pathlib import Path
 
 import torch
@@ -117,7 +117,7 @@ class ContinuousMinimaxStateActionWeightLearning(BaseWeightValueLearner):
             # (x - x') ** 2 = x ** 2 + x' ** 2 - 2 x x'
             x1_2 = (x1 ** 2).sum(dim=1)
             x2_2 = (x2 ** 2).sum(dim=1)
-            x_y = input @ input.T
+            x_y = x1 @ x2.T
             distance = x1_2[:, None] + x2_2[None, :] - 2 * x_y
             kernel = torch.exp(-distance / self.sigma)
 
@@ -334,7 +334,7 @@ class ContinuousMinimaxStateActionWeightLearning(BaseWeightValueLearner):
 
         for epoch in tqdm(
             np.arange(n_epochs),
-            desc="[fitting_weight_and_value_functions]",
+            desc="[fitting_weight_function]",
             total=n_epochs,
         ):
             for grad_step in range(n_steps_per_epoch):
@@ -572,16 +572,20 @@ class ContinuousMinimaxStateWeightLearning(BaseWeightValueLearner):
 
     def _gaussian_kernel(
         self,
-        state: torch.Tensor,
-        action: torch.Tensor,
+        state_1: torch.Tensor,
+        action_1: torch.Tensor,
+        state_2: torch.Tensor,
+        action_2: torch.Tensor,
     ):
         """Gaussian kernel for all input pairs."""
         with torch.no_grad():
-            input = torch.cat((state, action), dim=1)
+            x1 = torch.cat((state_1, action_1), dim=1)
+            x2 = torch.cat((state_2, action_2), dim=1)
             # (x - x') ** 2 = x ** 2 + x' ** 2 - 2 x x'
-            x_2 = (input ** 2).sum(dim=1)
-            x_y = input @ input.T
-            distance = x_2[:, None] + x_2[None, :] - 2 * x_y
+            x1_2 = (x1 ** 2).sum(dim=1)
+            x2_2 = (x2 ** 2).sum(dim=1)
+            x_y = x1 @ x2.T
+            distance = x1_2[:, None] + x2_2[None, :] - 2 * x_y
             kernel = torch.exp(-distance / self.sigma)
 
         return kernel  # shape (n_trajectories, n_trajectories)
@@ -822,18 +826,20 @@ class ContinuousMinimaxStateWeightLearning(BaseWeightValueLearner):
         n_trajectories, step_per_trajectory, _ = state.shape
         state = torch.FloatTensor(state, device=self.device)
         action = torch.FloatTensor(action, device=self.device)
+        evaluation_policy_action = torch.FloatTensor(evaluation_policy_action, device=self.device)
         importance_weight = torch.FloatTensor(similarity_weight / pscore)
 
         if self.state_scaler is not None:
             state = self.state_scaler.transform(state)
         if self.action_scaler is not None:
             action = self.action_scaler.transform(action)
+            evaluation_policy_action = self.action_scaler.transform(evaluation_policy_action)
 
         optimizer = optim.SGD(self.w_function.parameters(), lr=lr, momentum=0.9)
 
         for epoch in tqdm(
             np.arange(n_epochs),
-            desc="[fitting_weight_and_value_functions]",
+            desc="[fitting_weight_function]",
             total=n_epochs,
         ):
             for grad_step in range(n_steps_per_epoch):

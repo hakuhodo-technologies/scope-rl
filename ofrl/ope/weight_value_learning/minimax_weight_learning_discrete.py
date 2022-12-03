@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import Optional
-from tqdm import tqdm
+from tqdm.auto import tqdm
 from pathlib import Path
 
 import torch
@@ -102,6 +102,7 @@ class DiscreteMinimaxStateActionWeightLearning(BaseWeightValueLearner):
         action_1: torch.Tensor,
         state_2: torch.Tensor,
         action_2: torch.Tensor,
+        n_actions: int,
     ):
         """Gaussian kernel for all input pairs."""
         with torch.no_grad():
@@ -111,8 +112,8 @@ class DiscreteMinimaxStateActionWeightLearning(BaseWeightValueLearner):
             x_y = state_1 @ state_2.T
             distance = x_2[:, None] + y_2[None, :] - 2 * x_y
 
-            action_onehot_1 = F.one_hot(action_1)
-            action_onehot_2 = F.one_hot(action_2)
+            action_onehot_1 = F.one_hot(action_1, num_classes=n_actions)
+            action_onehot_2 = F.one_hot(action_2, num_classes=n_actions)
             kernel = torch.exp(-distance / self.sigma) * (
                 action_onehot_1 @ action_onehot_2.T
             )
@@ -121,6 +122,7 @@ class DiscreteMinimaxStateActionWeightLearning(BaseWeightValueLearner):
 
     def _first_term(
         self,
+        n_actions: int,
         state: torch.Tensor,
         action: torch.Tensor,
         next_state: torch.Tensor,
@@ -129,17 +131,18 @@ class DiscreteMinimaxStateActionWeightLearning(BaseWeightValueLearner):
     ):
         importance_weight = importance_weight @ importance_weight.T
         positive_term = self._gaussian_kernel(
-            state, action, state, action,
+            state, action, state, action, n_actions=n_actions,
         ) + self._gaussian_kernel(
-            next_state, next_action, next_state, next_action,
+            next_state, next_action, next_state, next_action, n_actions=n_actions,
         )
         negative_term = 2 * self._gaussian_kernel(
-            state, action, next_state, next_action,
+            state, action, next_state, next_action, n_actions=n_actions,
         )
         return (importance_weight * (positive_term - self.gamma * negative_term)).mean()
 
     def _second_term(
         self,
+        n_actions: int,
         initial_state: torch.Tensor,
         initial_action: torch.Tensor,
         next_state: torch.Tensor,
@@ -147,12 +150,13 @@ class DiscreteMinimaxStateActionWeightLearning(BaseWeightValueLearner):
         importance_weight: torch.Tensor,
     ):
         base_term = importance_weight[:, None] * self._gaussian_kernel(
-            next_state, next_action, initial_state, initial_action,
+            next_state, next_action, initial_state, initial_action, n_actions=n_actions,
         )
         return self.gamma * (1 - self.gamma) * (base_term @ base_term.T).mean()
 
     def _third_term(
         self,
+        n_actions: int,
         initial_state: torch.Tensor,
         initial_action: torch.Tensor,
         state: torch.Tensor,
@@ -160,12 +164,13 @@ class DiscreteMinimaxStateActionWeightLearning(BaseWeightValueLearner):
         importance_weight: torch.Tensor,
     ):
         base_term = importance_weight[:, None] * self._gaussian_kernel(
-            state, action, initial_state, initial_action,
+            state, action, initial_state, initial_action, n_actions=n_actions,
         )
         return self.gamma * (1 - self.gamma) * (base_term @ base_term.T).mean()
 
     def _objective_function(
         self,
+        n_actions: int,
         initial_state: torch.Tensor,
         initial_action: torch.Tensor,
         state: torch.Tensor,
@@ -177,6 +182,9 @@ class DiscreteMinimaxStateActionWeightLearning(BaseWeightValueLearner):
 
         Parameters
         -------
+        n_actions: int (> 0)
+            Number of actions.
+
         initial_state: Tensor of shape (n_trajectories, state_dim)
             Initial state of a trajectory (or states sampled from a stationary distribution).
 
@@ -204,6 +212,7 @@ class DiscreteMinimaxStateActionWeightLearning(BaseWeightValueLearner):
         importance_weight = self.w_function(state, action)
 
         first_term = self._first_term(
+            n_actions=n_actions,
             state=state,
             action=action,
             next_state=next_state,
@@ -211,6 +220,7 @@ class DiscreteMinimaxStateActionWeightLearning(BaseWeightValueLearner):
             importance_weight=importance_weight,
         )
         second_term = self._second_term(
+            n_actions=n_actions,
             initial_state=initial_state,
             initial_action=initial_action,
             next_state=next_state,
@@ -218,6 +228,7 @@ class DiscreteMinimaxStateActionWeightLearning(BaseWeightValueLearner):
             importance_weight=importance_weight,
         )
         third_term = self._third_term(
+            n_actions=n_actions,
             initial_state=initial_state,
             initial_action=initial_action,
             state=state,
@@ -333,7 +344,7 @@ class DiscreteMinimaxStateActionWeightLearning(BaseWeightValueLearner):
 
         for epoch in tqdm(
             np.arange(n_epochs),
-            desc="[fitting_weight_and_value_functions]",
+            desc="[fitting_weight_function]",
             total=n_epochs,
         ):
             for grad_step in range(n_steps_per_epoch):
@@ -348,6 +359,7 @@ class DiscreteMinimaxStateActionWeightLearning(BaseWeightValueLearner):
                 ).flatten()
 
                 objective_loss = self._objective_function(
+                    n_actions=n_actions,
                     initial_state=state[idx_, 0],
                     initial_action=initial_action,
                     state=state[idx_, t_],
@@ -574,6 +586,7 @@ class DiscreteMinimaxStateWeightLearning(BaseWeightValueLearner):
         action_1: torch.Tensor,
         state_2: torch.Tensor,
         action_2: torch.Tensor,
+        n_actions: int,
     ):
         """Gaussian kernel for all input pairs."""
         with torch.no_grad():
@@ -583,8 +596,8 @@ class DiscreteMinimaxStateWeightLearning(BaseWeightValueLearner):
             x_y = state_1 @ state_2.T
             distance = x_2[:, None] + y_2[None, :] - 2 * x_y
 
-            action_onehot_1 = F.one_hot(action_1)
-            action_onehot_2 = F.one_hot(action_2)
+            action_onehot_1 = F.one_hot(action_1, num_classes=n_actions)
+            action_onehot_2 = F.one_hot(action_2, num_classes=n_actions)
             kernel = torch.exp(-distance / self.sigma) * (
                 action_onehot_1 @ action_onehot_2.T
             )
@@ -593,6 +606,7 @@ class DiscreteMinimaxStateWeightLearning(BaseWeightValueLearner):
 
     def _first_term(
         self,
+        n_actions: int,
         state: torch.Tensor,
         action: torch.Tensor,
         next_state: torch.Tensor,
@@ -601,17 +615,18 @@ class DiscreteMinimaxStateWeightLearning(BaseWeightValueLearner):
     ):
         importance_weight = importance_weight @ importance_weight.T
         positive_term = self._gaussian_kernel(
-            state, action, state, action,
+            state, action, state, action, n_actions=n_actions,
         ) + self._gaussian_kernel(
-            next_state, next_action, next_state, next_action,
+            next_state, next_action, next_state, next_action, n_actions=n_actions,
         )
         negative_term = 2 * self._gaussian_kernel(
-            state, action, next_state, next_action,
+            state, action, next_state, next_action, n_actions=n_actions,
         )
         return (importance_weight * (positive_term - self.gamma * negative_term)).mean()
 
     def _second_term(
         self,
+        n_actions: int,
         initial_state: torch.Tensor,
         initial_action: torch.Tensor,
         next_state: torch.Tensor,
@@ -619,12 +634,13 @@ class DiscreteMinimaxStateWeightLearning(BaseWeightValueLearner):
         importance_weight: torch.Tensor,
     ):
         base_term = importance_weight[:, None] * self._gaussian_kernel(
-            next_state, next_action, initial_state, initial_action,
+            next_state, next_action, initial_state, initial_action, n_actions=n_actions,
         )
         return self.gamma * (1 - self.gamma) * (base_term @ base_term.T).mean()
 
     def _third_term(
         self,
+        n_actions: int,
         initial_state: torch.Tensor,
         initial_action: torch.Tensor,
         state: torch.Tensor,
@@ -632,12 +648,13 @@ class DiscreteMinimaxStateWeightLearning(BaseWeightValueLearner):
         importance_weight: torch.Tensor,
     ):
         base_term = importance_weight[:, None] * self._gaussian_kernel(
-            state, action, initial_state, initial_action,
+            state, action, initial_state, initial_action, n_actions=n_actions,
         )
         return self.gamma * (1 - self.gamma) * (base_term @ base_term.T).mean()
 
     def _objective_function(
         self,
+        n_actions: int,
         initial_state: torch.Tensor,
         initial_action: torch.Tensor,
         state: torch.Tensor,
@@ -650,6 +667,9 @@ class DiscreteMinimaxStateWeightLearning(BaseWeightValueLearner):
 
         Parameters
         -------
+        n_actions: int (> 0)
+            Number of actions.
+
         initial_state: Tensor of shape (n_trajectories, state_dim)
             Initial state of a trajectory (or states sampled from a stationary distribution).
 
@@ -681,6 +701,7 @@ class DiscreteMinimaxStateWeightLearning(BaseWeightValueLearner):
         importance_weight = self.w_function(state) * importance_weight
 
         first_term = self._first_term(
+            n_actions=n_actions,
             state=state,
             action=action,
             next_state=next_state,
@@ -688,6 +709,7 @@ class DiscreteMinimaxStateWeightLearning(BaseWeightValueLearner):
             importance_weight=importance_weight,
         )
         second_term = self._second_term(
+            n_actions=n_actions,
             initial_state=initial_state,
             initial_action=initial_action,
             next_state=next_state,
@@ -695,6 +717,7 @@ class DiscreteMinimaxStateWeightLearning(BaseWeightValueLearner):
             importance_weight=importance_weight,
         )
         third_term = self._third_term(
+            n_actions=n_actions,
             initial_state=initial_state,
             initial_action=initial_action,
             state=state,
@@ -828,7 +851,7 @@ class DiscreteMinimaxStateWeightLearning(BaseWeightValueLearner):
 
         for epoch in tqdm(
             np.arange(n_epochs),
-            desc="[fitting_weight_and_value_functions]",
+            desc="[fitting_weight_function]",
             total=n_epochs,
         ):
             for grad_step in range(n_steps_per_epoch):
@@ -843,6 +866,7 @@ class DiscreteMinimaxStateWeightLearning(BaseWeightValueLearner):
                 ).flatten()
 
                 objective_loss = self._objective_function(
+                    n_actions=n_actions,
                     initial_state=state[idx_, 0],
                     initial_action=initial_action,
                     state=state[idx_, t_],
