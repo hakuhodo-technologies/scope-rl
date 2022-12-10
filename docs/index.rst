@@ -38,9 +38,9 @@ We provide a wrapper class for transforming the policy into a stochastic policy 
    * Gaussian (continuous)
    * Truncated Gaussian (continuous)
 
-
 Basic OPE (discrete / continuous)
 ----------
+   (Basic estimators)
    * Direct Method (DM) :cite:`beygelzimer2009offset`
    * Trajectory-wise Importance Sampling (TIS) :cite:`precup2000eligibility`
    * Per-Decision Importance Sampling (PDIS) :cite:`precup2000eligibility`
@@ -49,6 +49,32 @@ Basic OPE (discrete / continuous)
    * Self-Normalized Per-Decision Importance Sampling (SNPDIS) :cite:`precup2000eligibility` :cite:`kallus2020optimal`
    * Self-Normalized Doubly Robust (SNDR) :cite:`jiang2016doubly` :cite:`thomas2016data` :cite:`kallus2020optimal`
 
+   (State Marginal Estimators)
+   * State Marginal Direct Method (SM-DM) :cite:`uehara2020minimax`
+   * State Marginal Importance Sampling (SM-IS) :cite:`liu2018breaking` :cite:`uehara2020minimax` :cite:`yuan2021sope`
+   * State Marginal Doubly Robust (SM-DR) :cite:`liu2018breaking` :cite:`uehara2020minimax` :cite:`yuan2021sope`
+   * State Marginal Self-Normalized Importance Sampling (SM-SNIS) :cite:`liu2018breaking` :cite:`uehara2020minimax` :cite:`yuan2021sope`
+   * State Marginal Self-Normalized Doubly Robust (SM-SNDR) :cite:`liu2018breaking` :cite:`uehara2020minimax` :cite:`yuan2021sope`
+
+   (State-Action Marginal Estimators)
+   * State-Action Marginal Importance Sampling (SAM-IS) :cite:`liu2018breaking` :cite:`uehara2020minimax` :cite:`yuan2021sope`
+   * State-Action Marginal Doubly Robust (SAM-DR) :cite:`liu2018breaking` :cite:`uehara2020minimax` :cite:`yuan2021sope`
+   * State-Action Marginal Self-Normalized Importance Sampling (SAM-SNIS) :cite:`liu2018breaking` :cite:`uehara2020minimax` :cite:`yuan2021sope`
+   * State-Action Marginal Self-Normalized Doubly Robust (SAM-SNDR) :cite:`liu2018breaking` :cite:`uehara2020minimax` :cite:`yuan2021sope`
+
+   (Double Reinforcement Learning)
+   * Double Reinforcement Learning :cite:`kallus2020double`
+
+   (Estimation Methods of Marginal Importance Weights)
+   * Augmented Lagrangian Method (ALM) :cite:`yang2020off`
+     * BestDICE :cite:`yang2020off`
+     * GradientDICE :cite:`zhang2020gradientdice`
+     * GenDICE :cite:`zhang2020gendice`
+     * AlgaeDICE :cite:`nachum2019algaedice`
+     * DualDICE :cite:`nachum2019dualdice`
+     * MQL/MWL :cite:`uehara2020minimax`
+   * Minimax Q-Learning and Weight Learning (MQL/MWL) :cite:`uehara2020minimax`
+
 High Confidence OPE (discrete / continuous)
 ----------
    * Bootstrap :citep:`thomas2015improve` :cite:`hanna2017bootstrapping`
@@ -56,21 +82,33 @@ High Confidence OPE (discrete / continuous)
    * (Empirical) Bernstein :citep:`thomas2015evaluation` :citep:`thomas2015improve`
    * Student T-test :citep:`thomas2015improve`
 
-Cumulative Distribution OPE (discrete)
+Cumulative Distribution OPE (discrete / continuous)
 ----------
+   (Estimators)
    * Direct Method (DM) :cite:`beygelzimer2009offset` :cite:`huang2021off`
    * Trajectory-wise Importance Sampling (TIS) :cite:`precup2000eligibility` :cite:`huang2021off` :cite:`chundak2021universal`
    * Trajectory-wise Doubly Robust (TDR) :cite:`jiang2016doubly` :cite:`thomas2016data` :cite:`huang2021off`
    * Self-Normalized Trajectory-wise Importance Sampling (SNTIS) :cite:`precup2000eligibility` :cite:`kallus2020optimal` :cite:`huang2021off` :cite:`chundak2021universal`
    * Self-Normalized Trajectory-wise Doubly Robust (SNDR) :cite:`jiang2016doubly` :cite:`thomas2016data` :cite:`kallus2020optimal` :cite:`huang2021off`
 
+   (Metrics of Interest)
+   * Cumulative Distribution Function (CDF)
+   * Mean (i.e., policy value)
+   * Variance
+   * Conditional Value at Risk (CVaR)
+   * Interquartile Range
+
 Off-Policy Selection Metrics
 ----------
+   (OPE metrics)
    * Mean Squared Error :cite:`paine2020hyperparameter` :cite:`voloshin2021empirical` :cite:`fu2021benchmarks`
    * Spearman's Rank Correlation Coefficient :cite:`paine2020hyperparameter` :cite:`fu2021benchmarks`
    * Regret :cite:`paine2020hyperparameter` :cite:`fu2021benchmarks`
    * Type I and Type II Error Rates
 
+   (top k deployment performance)
+   * {Best/Worst/Mean} of {policy value/conditional value at risk/lower quartile}
+   * Safety violation rate
 
 In addition to the offline RL/OPE related resources, we provide a configurative RL environment for Real-Time Bidding (RTB) as a sub-package of this library.
 Please refer to `RTBGym's documentation <>`_ for the details.

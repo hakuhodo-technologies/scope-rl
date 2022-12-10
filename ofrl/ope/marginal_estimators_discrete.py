@@ -23,7 +23,7 @@ class DiscreteDoubleReinforcementLearning(BaseOffPolicyEstimator):
     .. math::
 
         \\hat{J}_{\\mathrm{DRL}} (\\pi; \\mathcal{D})
-        := \\frac{1}{n} \\sum{k=1}^K \\sum_{i=1}^{n_k} \\sum_{t=0}^{T-1} (w^j(s_{i,t}, a_{i, t}) (r_{i, t} - Q^j(s_{i, t}, a_{i, t}))
+        := \\frac{1}{n} \\sum_{k=1}^K \\sum_{i=1}^{n_k} \\sum_{t=0}^{T-1} (w^j(s_{i,t}, a_{i, t}) (r_{i, t} - Q^j(s_{i, t}, a_{i, t}))
             + w^j(s_{i, t-1}, a_{i, t-1}) \\mathbb{E}_{a \\sim \\pi(a \\mid s_t)}[Q^j(s_{i, t}, a)] )
 
     where :math:`w(s, a) \\approx d^{\\pi}(s, a) / d^{\\pi_0}(s, a)` is the state-action marginal importance weight and :math:`Q(s, a)` is the Q function.
