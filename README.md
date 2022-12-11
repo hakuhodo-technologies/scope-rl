@@ -39,7 +39,7 @@ This software is intended for the episodic RL setup. For those interested in the
 ### Implementations
 
 *OFRL* mainly consists of the following three modules.
-- [**dataset module**](./_gym/dataset): This module provides tools to generate synthetic data from any environment on top of [OpenAI Gym](http://gym.openai.com/)-like interface. It also provides tools to preprocess the logged data.
+- [**dataset module**](./_gym/dataset): This module provides tools to generate synthetic data from any environment on top of [OpenAI Gym](http://gym.openai.com/) and [Gymnasium](https://gymnasium.farama.org/)-like interface. It also provides tools to preprocess the logged data.
 - [**policy module**](./_gym/policy): This module provides a wrapper class for [d3rlpy](https://github.com/takuseno/d3rlpy) to enable a flexible data collection.
 - [**ope module**](./_gym/ope): This module provides a generic abstract class to implement an OPE estimator and some popular estimators. It also provides some tools useful for performing OPS.
 
@@ -59,19 +59,26 @@ This software is intended for the episodic RL setup. For those interested in the
 <summary><strong>OPE Estimators </strong>(click to expand)</summary>
 
 - Expected Reward Estimation
-  - Direct Method (Fitted Q Evaluation)
-  - Trajectory-wise Importance Sampling
-  - Per-Decision Importance Sampling
-  - Doubly Robust
-  - Self-Normalized Trajectory-wise Importance Sampling
-  - Self-Normalized Per-Decision Importance Sampling
-  - Self-Normalized Doubly Robust
+  - Basic Estimators
+    - Direct Method (Fitted Q Evaluation)
+    - Trajectory-wise Importance Sampling
+    - Per-Decision Importance Sampling
+    - Doubly Robust
+    - Self-Normalized Trajectory-wise Importance Sampling
+    - Self-Normalized Per-Decision Importance Sampling
+    - Self-Normalized Doubly Robust
+  - State Marginal Estimators
+  - State-Action Marginal Estimators
+  - Double Reinforcement Learning
+  - Weight and Value Learning Methods
+    - Augmented Lagrangian Method (BestDICE, DualDICE, GradientDICE, GenDICE, MQL/MWL)
+    - Minimax Q-Learning and Weight Learning (MQL/MWL)
 - Confidence Interval Estimation
   - Bootstrap
   - Hoeffding
   - (Empirical) Bernstein
   - Student T-test
-- Cumulative Distribution Function and Statistics Estimation (Discrete only)
+- Cumulative Distribution Function and Statistics Estimation
   - Direct Method (Fitted Q Evaluation)
   - Trajectory-wise Importance Sampling
   - Trajectory-wise Doubly Robust
@@ -97,6 +104,8 @@ This software is intended for the episodic RL setup. For those interested in the
 - Spearman's Rank Correlation Coefficient
 - Regret
 - Type I and Type II Error Rates
+- {Best/Worst/Mean} performances of top-k policies
+- Safety violation rate of top-k policies
 
 </details>
 

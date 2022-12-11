@@ -269,28 +269,6 @@ SOPE is available by specifying :class:`n_step_pdis` in the state marginal and s
 :class:`n_step_pdis=0` is equivalent to the original marginal OPE estimators.
 
 
-Extension to the continuous action space
-----------
-When the action space is continuous, the naive importance weight :math:`w_t = \pi(a_t|s_t) / \pi_0(a_t|s_t) = (\pi(a |s_t) / \pi_0(a_t|s_t)) \cdot \mathbb{I}(a = a_t)` rejects almost every actions,
-as :math:`\mathbb{I}(a = a_t)` filters only the action observed in the logged data.
-
-To address this issue, continuous-action OPE estimators apply kernel density estimation technique to smooth the importance weight.
-
-.. math::
-
-    \overline{w}_t = \int_{a \in \mathcal{A}} \frac{\pi(a \mid s_t)}{\pi_0(a_t | s_t)} \cdot \frac{1}{h} K \left( \frac{a - a_t}{h} \right) da,
-
-where :math:`K(\cdot)` denotes a kernel function and :math:`h` is the bandwidth hyperparameter.
-We can use any function as :math:`K(\cdot)` that meets the following qualities:
-
-* 1) :math:`\int xK(x) dx = 0`,
-* 2) :math:`\int K(x) dx = 1`,
-* 3) :math:`\lim _{x \rightarrow-\infty} K(x)=\lim _{x \rightarrow+\infty} K(x)=0`,
-* 4) :math:`K(x) \geq 0, \forall x`.
-
-In our implementation, we use the (distance-based) Gaussian kernel :math:`K(x)=\frac{1}{\sqrt{2 \pi}} e^{-\frac{x^{2}}{2}}`.
-
-
 High Confidence Off-Policy Evaluation (HC-OPE)
 ----------
 To alleviate the risk of optimistic estimation, we are often interested in the confidence intervals and the lower bound of the estimated policy value.
@@ -327,6 +305,28 @@ and :math:`\sigma` to be the standard deviation.
 
 Among the above high confidence interval estimation, hoeffding and empirical bernstein derives lower bound without any distribution assumption of :math:`p(\hat{J})`, which sometimes leads to quite conservative estimation.
 On the other hand, T-test is based on the assumption that each sample of :math:`p(\hat{J})` follows the normal distribution.
+
+
+Extension to the Continuous Action Space
+----------
+When the action space is continuous, the naive importance weight :math:`w_t = \pi(a_t|s_t) / \pi_0(a_t|s_t) = (\pi(a |s_t) / \pi_0(a_t|s_t)) \cdot \mathbb{I}(a = a_t)` rejects almost every actions,
+as :math:`\mathbb{I}(a = a_t)` filters only the action observed in the logged data.
+
+To address this issue, continuous-action OPE estimators apply kernel density estimation technique to smooth the importance weight.
+
+.. math::
+
+    \overline{w}_t = \int_{a \in \mathcal{A}} \frac{\pi(a \mid s_t)}{\pi_0(a_t | s_t)} \cdot \frac{1}{h} K \left( \frac{a - a_t}{h} \right) da,
+
+where :math:`K(\cdot)` denotes a kernel function and :math:`h` is the bandwidth hyperparameter.
+We can use any function as :math:`K(\cdot)` that meets the following qualities:
+
+* 1) :math:`\int xK(x) dx = 0`,
+* 2) :math:`\int K(x) dx = 1`,
+* 3) :math:`\lim _{x \rightarrow-\infty} K(x)=\lim _{x \rightarrow+\infty} K(x)=0`,
+* 4) :math:`K(x) \geq 0, \forall x`.
+
+In our implementation, we use the (distance-based) Gaussian kernel :math:`K(x)=\frac{1}{\sqrt{2 \pi}} e^{-\frac{x^{2}}{2}}`.
 
 For further descriptions, please also refer to `package reference <>`_.
 The quickstart example is also available `here <>`_.
@@ -456,20 +456,16 @@ Evaluation Metrics of OPE/OPS
 Finally, we describe the metrics to evaluate the quality of OPE estimators and its OPS result.
 
 * Mean Squared Error (MSE): 
-
-This metrics measures the estimation accuracy as :math:`\sum_{\pi \in \Pi} (\hat{J}(\pi; \mathcal{D}) - J(\pi))^2 / |\Pi|`.
+    This metrics measures the estimation accuracy as :math:`\sum_{\pi \in \Pi} (\hat{J}(\pi; \mathcal{D}) - J(\pi))^2 / |\Pi|`.
 
 * Regret@k: 
-
-This metrics measures how well the selected policy(ies) performs. In particular, Regret@1 indicates the expected performance difference between the (oracle) best policy and the selected policy as :math:`J(\pi^{\ast}) - J(\hat{\pi}^{\ast})`, where :math:`\pi^{\ast} := {\arg\max}_{\pi \in \Pi} J(\pi)` and :math:`\hat{\pi}^{\ast} := {\arg\max}_{\pi \in \Pi} \hat{J}(\pi; \mathcal{D})`.
+    This metrics measures how well the selected policy(ies) performs. In particular, Regret@1 indicates the expected performance difference between the (oracle) best policy and the selected policy as :math:`J(\pi^{\ast}) - J(\hat{\pi}^{\ast})`, where :math:`\pi^{\ast} := {\arg\max}_{\pi \in \Pi} J(\pi)` and :math:`\hat{\pi}^{\ast} := {\arg\max}_{\pi \in \Pi} \hat{J}(\pi; \mathcal{D})`.
 
 * Spearman's Rank Correlation Coefficient: 
-
-This metrics measures how well the raking of the candidate estimators are preserved in the OPE result.
+    This metrics measures how well the raking of the candidate estimators are preserved in the OPE result.
 
 * Type I and Type II Error Rate: 
-
-This metrics measures how well an OPE estimator validates whether the policy performance surpasses the given safety threshold or not.
+    This metrics measures how well an OPE estimator validates whether the policy performance surpasses the given safety threshold or not.
 
 To ease the comparison of candidate (evaluation) policies and the OPE estimators, we provide the :class:`OffPolicySelection` class.
 

@@ -37,7 +37,7 @@ from ofrl.ope.cumulative_distribution_estimators_discrete import (
     DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSampling,
     DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseDoublyRobust,
 )
-from ofrl.ope.weight_value_learning.augemented_lagrangian_dual_learning_discrete import (
+from ofrl.ope.weight_value_learning.augmented_lagrangian_learning_discrete import (
     DiscreteAugmentedLagrangianStateActionWightValueLearning,
     DiscreteAugmentedLagrangianStateWightValueLearning,
 )
@@ -76,7 +76,7 @@ from ofrl.ope.cumulative_distribution_estimators_continuous import (
     ContinuousCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSampling,
     ContinuousCumulativeDistributionSelfNormalizedTrajectoryWiseDoublyRobust,
 )
-from ofrl.ope.weight_value_learning.augemented_lagrangian_dual_learning_continuous import (
+from ofrl.ope.weight_value_learning.augmented_lagrangian_learning_continuous import (
     ContinuousAugmentedLagrangianStateActionWightValueLearning,
     ContinuousAugmentedLagrangianStateWightValueLearning,
 )
@@ -84,7 +84,7 @@ from ofrl.ope.weight_value_learning.minimax_value_learning_continuous import (
     ContinuousMinimaxStateActionValueLearning,
     ContinuousMinimaxStateValueLearning,
 )
-from ofrl.ope.weight_value_learning.minimax_weight_learning_contiuous import (
+from ofrl.ope.weight_value_learning.minimax_weight_learning_continuous import (
     ContinuousMinimaxStateActionWeightLearning,
     ContinuousMinimaxStateWeightLearning,
 )

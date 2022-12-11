@@ -328,14 +328,14 @@ Citation
 ~~~~~~~~~~
 If you use our pipeline in your work, please cite our paper below.
 
-```
-@article{kiyohara2021accelerating,
-  title={Accelerating Offline Reinforcement Learning Application in Real-Time Bidding and Recommendation: Potential Use of Simulation},
-  author={Kiyohara, Haruka and Kawakami, Kosuke and Saito, Yuta},
-  journal={arXiv preprint arXiv:2109.08331},
-  year={2021}
-}
-```
+.. code-block::
+
+    @article{kiyohara2021accelerating,
+        title={Accelerating Offline Reinforcement Learning Application in Real-Time Bidding and Recommendation: Potential Use of Simulation},
+        author={Kiyohara, Haruka and Kawakami, Kosuke and Saito, Yuta},
+        journal={arXiv preprint arXiv:2109.08331},
+        year={2021}
+    }
 
 Contact
 ~~~~~~~~~~

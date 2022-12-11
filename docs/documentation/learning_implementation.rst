@@ -9,7 +9,7 @@ Please also refer to `quickstart <>`_ for the example workflows.
 
 Synthetic Dataset Generation
 ~~~~~~~~~~
-Synthetic Dataset Generation Module is an easy-to-use data collection module which is compatible to any `OpenAI Gym <https://gym.openai.com>`_-like RL environment.
+Synthetic Dataset Generation Module is an easy-to-use data collection module which is compatible to any `OpenAI Gym <https://gym.openai.com>`_ and `Gymnasium <https://gymnasium.farama.org/>`_-like RL environment.
 
 It takes an RL environment and the behavior policy (i.e., data collection policy) as input to instantiate the class.
 

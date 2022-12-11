@@ -3,6 +3,8 @@ logs/
 d3rlpy_logs/
 preview/
 .venv/
+_autosummary/
+_autogallery/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

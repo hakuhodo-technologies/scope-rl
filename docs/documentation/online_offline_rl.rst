@@ -23,11 +23,12 @@ The goal of RL is to maximize the following expected cumulative reward (i.e., po
 where :math:`\gamma` is a discount rate and :math:`\tau := (s_t, a_t, s_{t+1}, r_t)_{t=0}^{T-1}` is the trajectory of the policy which is sampled from 
 :math:`p_{\pi}(\tau) := d_0(s_0) \prod_{t=0}^{T-1} \pi(a_t | s_t) \mathcal{T}(s_{t+1} | s_t, a_t) P_r(r_t | s_t, a_t)`.
 
-There are several approaches to maximize the policy value. Below, we review three basic methods, On-Policy Policy Gradient, Q-Learning, and Actor-Critic.
+There are several approaches to maximize the policy value. Below, we review three basic methods, On-Policy Policy Gradient :cite:`kakade2001natural` :cite:`silver2014deterministic`, 
+Q-Learning :cite:`watkins1992q` :cite:`mnih2013playing`, and Actor-Critic :cite:`konda1999actor` :cite:`degris2012off`.
 
 On-Policy Policy Gradient
 ----------
-One of the most naive approach to maximize the policy value is to directly learn a policy through gradient ascent as follows.
+One of the most naive approach to maximize the policy value is to directly learn a policy through gradient ascent as follows :cite:`kakade2001natural` :cite:`silver2014deterministic`.
 
 .. math::
 
@@ -48,8 +49,8 @@ However, as the algorithm needs :math:`n` trajectories collected by :math:`\pi_{
 
 Q-Learning
 ----------
-To pursue the sample efficiency, Q-Learning instead takes Off-Policy approach, which leverages a large amount of data in the replay buffer.
-Specifically, it aims to learn the following state value :math:`V(s_t)` and state-action value :math:`Q(s_t, a_t)` using the data collected by previous online interactions.
+To pursue the sample efficiency, Q-Learning instead takes Off-Policy approach, which leverages a large amount of data in the replay buffer :cite:`mnih2013playing`.
+Specifically, it aims to learn the following state value :math:`V(s_t)` and state-action value :math:`Q(s_t, a_t)` using the data collected by previous online interactions :cite:`watkins1992q`.
 
 .. math::
 
@@ -84,7 +85,7 @@ Based on this Q-function, the greedy policy :math:`\pi_k` chooses actions as fol
 where :math:`\mathbb{I} \{ \cdot \}` is the indicator function. 
 
 Though this strategy enhances sample efficiency compared to On-Policy Policy Gradient, 
-Q-learning is known to suffer from approximation error when the *deadly triad* conditions -- bootstrapping (i.e., TD learning), function approximation, and off-policy -- are simultaneously satisfied. 
+Q-learning is known to suffer from approximation error when the *deadly triad* conditions -- bootstrapping (i.e., TD learning), function approximation, and off-policy -- are simultaneously satisfied :cite:`van2018deep`. 
 
 As a result, :math:`\hat{Q}(\cdot)` can fail to estimate the true state-action value, which may lead to a sub-optimal policy.
 
@@ -93,7 +94,7 @@ Such *exploration* helps improve the quality of :math:`\hat{Q}(\cdot)` by collec
 
 Actor-Critic
 ----------
-Actor-critic is a hybrid of Policy Gradient and Q-Learning.
+Actor-critic :cite:`konda1999actor` :cite:`degris2012off` is a hybrid of Policy Gradient and Q-Learning.
 It first estimate the Q-function and then calculate the advantage of choosing actions (:math:`A(s, a) := Q(s, a) - V(s)`) to derive an approximated policy gradient as follows.
 
 .. math::
@@ -108,12 +109,12 @@ where :math:`\hat{A}(s_t, a_t) := \hat{Q}(s_t, a_t) - \mathbb{E}_{a \sim \pi_{\t
 and :math:`\pi_{\theta_k}(s_{t+1})` is an action sampled from :math:`\pi_{\theta_k}(\cdot)`.
 
 Compared to the (vanilla) On-policy Policy Gradient, Actor-Critic stabilizes the policy gradient and enhances sample efficiency by the use of :math:`\hat{Q}`.
-In addition, compared to Q-learning, Actor-Critic is more suitable in continuous action space because we do not have to discretize the action space to choose actions.
+Moreover, in continuous action space, Actor-Critic is often more suitable than Q-learning, which requires discretization of the action space to choose actions.
 
 Offline Reinforcement Learning
 ~~~~~~~~~~
-While online learning is a powerful framework to learn a (near) optimal policy through interaction, however, it also entails risk of taking sub-optimal or even unsafe actions, especially in the initial learning phase.
-Moreover, updating a policy in a online manner may also require huge implementation costs (in applications such as recommender systems and robotics).
+While online learning is a powerful framework to learn a (near) optimal policy through interaction, however, it also entails risk of taking sub-optimal or even unsafe actions, especially in the initial learning phase :cite:`levine2020offline`.
+Moreover, updating a policy in a online manner may also require huge implementation costs (in applications such as recommender systems and robotics) :cite:`matsushima2020deployment`.
 
 To overcome the above issue, offline RL aims to learn a new policy in an `offline` manner, leveraging the logged data collected by a past deployment policy. 
 Specifically, let us assume that we are accessible to the logged dataset :math:`\mathcal{D}` consisting of :math:`n` trajectories, each of which is generated by a behavior policy :math:`\pi_0` as follows.
@@ -125,7 +126,7 @@ Specifically, let us assume that we are accessible to the logged dataset :math:`
 A key ingredient here is that we can observe feedback only for the actions chosen by the behavior policy. 
 Therefore, when learning a new policy in an offline manner, we need to answer the counterfactual question, 
 
-`"What if a new policy chooses a different action from that of behavior policy?"`. 
+.. center:: `"What if a new policy chooses a different action from that of behavior policy?"`. 
 
 Further, the state and reward observations in the logged dataset are also biased since state transition and data collection heavily depend on the action chosen by the behavior policy. 
 Therefore, we need to tackle the `distributional shift` between the behavior policy and a new policy and deal with the out-of-distribution problem. 
@@ -133,7 +134,8 @@ Therefore, we need to tackle the `distributional shift` between the behavior pol
 The problem of Extrapolation Error
 ----------
 Apparently, Q-learning seems to be compatible with the offline setting, as it uses large amount of data to learn Q-function.
-However, Q-function is known to suffer from `extrapolation error` due to the distribution shift and the deadly triad conditions (i.e., the combination of the bootstrapping, function approximation, and off-policy).
+However, Q-function is known to suffer from `extrapolation error` :cite:`fujimoto2019off` 
+due to the distribution shift and the deadly triad conditions (i.e., the combination of the bootstrapping, function approximation, and off-policy) :cite:`van2018deep`.
 
 To investigate why the extrapolation error arises, let us recall the following TD loss of the Q-learning.
 
@@ -174,7 +176,7 @@ However, the divergence regularization may also restrict the generalizability be
 
 Another way to regularize the distribution shift is to force :math:`\pi` to imitate :math:`\pi` in the policy optimization phase (not in Q-learning phase) as follows.
 
-For example, TD3 + BC :cite:`fujimoto2021minimalist` imposes a strong behavior cloning regularization when the average Q-value is large.
+For example, TD3+BC :cite:`fujimoto2021minimalist` imposes a strong behavior cloning regularization when the average Q-value is large.
 
 .. math::
 
@@ -228,7 +230,8 @@ To derive the conservative Q-function without explicitly quantifying the uncerta
 where :math:`\alpha` is the hyperparameter to balance the loss function. 
 The first term aims to minimize the maximum Q-value of the policy :math:`\mu` to alleviate the overestimation while maximizing the Q-value of the behavior policy. 
 By adding this loss function, CQL effectively learn the Q-function under the state-action pairs supported by :math:`\pi_0`, while being conservative to the out-of-distribution action. 
-However, CQL is also known to be too conservative to generalize well. Many advanced algorithms including COMBO :cite:`yu2021combo` have been developed to improve the generalizability of CQL. 
+However, CQL is also known to be too conservative to generalize well. Many advanced algorithms including COMBO :cite:`yu2021combo` (, which exploits model-based data augmentation for OOD observations)
+have been developed to improve the generalizability of CQL. 
 
 Implicit Q-Learning
 ----------
@@ -260,7 +263,7 @@ This prevents the propagation of the overestimation bias, even when the basic TD
 
 ~~~~~
 
-For further taxonomies, algorithms, and descriptions, we refer readers to survey papers :cite:`levine2020offline` and :cite:`prudencio2022survey`. 
+For further taxonomies, algorithms, and descriptions, we refer readers to survey papers :cite:`levine2020offline` :cite:`prudencio2022survey`. 
 `awesome-offline-rl <https://github.com/hanjuku-kaso/awesome-offline-rl>`_ also provides a comprehensive list of literature.
 
 After learning a new policy, we are often interested in the performance validation. We describe the problem formulation of Off-Policy Evaluation (OPE) and Selection (OPS) `here <>`_.

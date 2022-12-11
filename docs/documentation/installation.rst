@@ -1,5 +1,5 @@
 ==========
-installation
+Installation
 ==========
 
 ``ofrl`` is available on PyPI, and can be installed from ``pip`` or source as follows.

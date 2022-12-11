@@ -5,11 +5,14 @@ Quickstart
 We show an example workflow of synthetic dataset collection, offline Reinforcement Learning (RL) to Off-Policy Evaluation (OPE).
 The workflow mainly consists of following three steps:
 
-* **Synthetic Dataset Generation and Data Preprocessing**: The initial step is to collect logged data using a behavior policy. In synthetic setup, we first train the behavior policy through online interaction and then generate dataset with the behavior policy. In practical situation, we can also utilize the preprocessed logged data from real-world applications.
+* **Synthetic Dataset Generation and Data Preprocessing**: 
+    The initial step is to collect logged data using a behavior policy. In synthetic setup, we first train the behavior policy through online interaction and then generate dataset with the behavior policy. In practical situation, we can also utilize the preprocessed logged data from real-world applications.
 
-* **Offline Reinforcement Learning**: Next, we now learn a new (and better) policy from only offline logged data, without any online interactions.
+* **Offline Reinforcement Learning**: 
+    Next, we now learn a new (and better) policy from only offline logged data, without any online interactions.
 
-* **Off-Policy Evaluation and Selection**: After learning several candidate policies in an offline manner, we validate their performance in an offline manner and choose the best policy.
+* **Off-Policy Evaluation and Selection**: 
+    After learning several candidate policies in an offline manner, we validate their performance in an offline manner and choose the best policy.
 
 In this example, we use `RTBGym <https://github.com/negocia-inc/ofrl/blob/main/rtbgym>`_ (a sub-package of OFRL) and `d3rlpy <https://github.com/takuseno/d3rlpy>`_. Please satisfy the requirements in advance.
 
@@ -17,7 +20,7 @@ In this example, we use `RTBGym <https://github.com/negocia-inc/ofrl/blob/main/r
 Synthetic Dataset Generation and Data Preprocessing
 ~~~~~~~~~~
 
-We start by collecting the logged data useful for offline RL with a behavior policy.
+We start by collecting the logged data using DDQN :cite:`van2016deep` as a behavior policy.
 
 .. code-block:: python
 
@@ -43,7 +46,6 @@ We start by collecting the logged data useful for offline RL with a behavior pol
     # initialize the algorithm
     >>> ddqn = DoubleDQN()
     # train an online policy
-    # this takes about 5min to compute
     >>> ddqn.fit_online(
             env,
             buffer=ReplayBuffer(maxlen=10000, env=env),
@@ -80,7 +82,7 @@ Moreover, by preprocessing the logged data, one can also handle their own logged
 Offline Reinforcement Learning
 ~~~~~~~~~~
 
-Now we are ready to learn a new policy only from logged data.
+Now we are ready to learn a new policy only from logged data. Specifically, we learn CQL :cite:`kumar2020conservative` policy here. (Please also refer to `overview <>`_ about the algorithm.)
 Note that, we use `d3rlpy <https://github.com/takuseno/d3rlpy>`_ for offline RL.
 
 .. code-block:: python
@@ -119,7 +121,9 @@ Finally, we evaluate the performance of the learned policy using offline logged 
 
 Basic OPE
 ----------
-We compare the estimation results from various OPE estimators, Direct Method (DM), Trajectory-wise Importance Sampling (TIS), Step-wise Importance Sampling (SIS), and Doubly Robust (DR).
+We compare the estimation results from various OPE estimators, Direct Method (DM) :cite:`beygelzimer2009offset` :cite:`le2019batch`, 
+Trajectory-wise Importance Sampling (TIS) :cite:`precup2000eligibility`, Step-wise Importance Sampling (SIS) :cite:`precup2000eligibility`, 
+and Doubly Robust (DR) :cite:`jiang2016doubly` :cite:`thomas2016data`.
 
 .. code-block:: python
 
@@ -185,7 +189,8 @@ Users can implement their own OPE estimators by following the interface of :clas
 
 Cumulative Distribution OPE
 ----------
-The following shows the example of estimating cumulative distribution function of the trajectory-wise rewards and its statistics.
+The following shows the example of estimating cumulative distribution function of the trajectory-wise rewards and its statistics 
+using Cumulative Distribution OPE estimators :cite:`huang2021off` :cite:`huang2022off` :cite:`chandak2021universal`.
 
 .. code-block:: python
 
@@ -256,6 +261,8 @@ Finally, we provide the code to conduct OPS, which selects the "best" performing
             share_axes=True,
         )
 
-A formal quickstart examples with RTBGym are available `here <https://github.com/negocia-inc/ofrl/blob/main/examples/quickstart>`_.
+~~~~~
+
+More tutorials with a variety of environment and OPE estimators are available in `tutorial <>`_.
 
 
