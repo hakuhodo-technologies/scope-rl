@@ -41,11 +41,14 @@ extensions = [
     "sphinx.ext.todo",
     "sphinx.ext.coverage",
     "sphinx.ext.mathjax",
+    # "sphinx.ext.linkcode",
     "sphinx.ext.viewcode",
     "sphinx.ext.inheritance_diagram",
     "sphinxcontrib.bibtex",
-    'sphinx_copybutton',
-    'sphinx_gallery.gen_gallery',
+    "sphinx_copybutton",
+    "sphinx_gallery.gen_gallery",
+    "numpydoc",
+    "sphinx_design",
 ]
 
 # bibtex
@@ -65,14 +68,8 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-# html_theme = "sphinx_rtd_theme"
-
 html_theme = "pydata_sphinx_theme"
-
 html_theme_options = {
-  "external_links": [
-      {"name": "GitHub", "url": "https://github.com/negocia-inc/ofrl"},
-  ],
   "icon_links": [
         {
             # Label for this link
@@ -86,27 +83,27 @@ html_theme_options = {
         }
    ],
    "header_links_before_dropdown": 6,
+   "footer_items": ["copyright"],
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
+html_css_files = ['css/custom.css']
 
 # whether to display to the source .rst file
 html_show_sourcelink = False 
 html_show_sphinx = False
 
 autosummary_generate = True
-
+autodoc_typehints = 'description'
 autodoc_default_options = {
     "members": None,
     "show-inheritance": None,
     "inherited-members": None,
     "member-order": "groupwise",
 }
-
-autodoc_typehints = 'description'
 
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3/', None),
@@ -115,11 +112,6 @@ intersphinx_mapping = {
     'gym': ('https://www.gymlibrary.dev/', None),
     'gymnasium': ('https://gymnasium.farama.org/', None),
 }
-
-# gallery thumbnail
-# nbsphinx_thumbnails = {
-#     'gallery/thumbnail-from-conf-py': 'gallery/a-local-file.png',
-# }
 
 # gallery example path
 from sphinx_gallery.sorting import ExplicitOrder
@@ -138,3 +130,21 @@ sphinx_gallery_conf = {
     ),
     'within_subsection_order': FileNameSortKey,
 }
+# gallery thumbnail
+# nbsphinx_thumbnails = {
+#     'gallery/thumbnail-from-conf-py': 'gallery/a-local-file.png',
+# }
+
+# mapping between class methods and its abbreviation
+numpydoc_xref_aliases = {
+    # 'LeaveOneOut': 'sklearn.model_selection.LeaveOneOut',
+}
+
+# # provide links for linkcode
+# def linkcode_resolve(domain, info):
+#     if domain != 'py':
+#         return None
+#     if not info['module']:
+#         return None
+#     filename = info['module'].replace('.', '/')
+#     return f"https://github.com/negocia-inc/ofrl/tree/main/{filename}.py"

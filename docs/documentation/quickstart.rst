@@ -14,7 +14,16 @@ The workflow mainly consists of following three steps:
 * **Off-Policy Evaluation and Selection**: 
     After learning several candidate policies in an offline manner, we validate their performance in an offline manner and choose the best policy.
 
+.. card:: workflow
+    :img-top: ../_static/images/workflow.png
+    :text-align: center
+
 In this example, we use `RTBGym <https://github.com/negocia-inc/ofrl/blob/main/rtbgym>`_ (a sub-package of OFRL) and `d3rlpy <https://github.com/takuseno/d3rlpy>`_. Please satisfy the requirements in advance.
+
+.. seealso::
+
+    * :doc:`distinctive_features` describes the distinctive features of OFRL in detail.
+    * :doc:`Overview (online/offline RL) <online_offline_rl>` and :doc:`Overview (OPE/OPS) <ope_ops>` describe the problem settings.
 
 
 Synthetic Dataset Generation and Data Preprocessing
@@ -27,62 +36,66 @@ We start by collecting the logged data using DDQN :cite:`van2016deep` as a behav
     # implement data collection procedure on the RTBGym environment
 
     # import ofrl modules
-    >>> from ofrl.dataset import SyntheticDataset
-    >>> from ofrl.policy import DiscreteEpsilonGreedyHead
+    from ofrl.dataset import SyntheticDataset
+    from ofrl.policy import DiscreteEpsilonGreedyHead
     # import d3rlpy algorithms
-    >>> from d3rlpy.algos import DoubleDQN
-    >>> from d3rlpy.online.buffers import ReplayBuffer
-    >>> from d3rlpy.online.explorers import ConstantEpsilonGreedy
+    from d3rlpy.algos import DoubleDQN
+    from d3rlpy.online.buffers import ReplayBuffer
+    from d3rlpy.online.explorers import ConstantEpsilonGreedy
     # import rtbgym and gym
-    >>> import rtbgym
-    >>> import gym
+    import rtbgym
+    import gym
     # random state
-    >>> random_state = 12345
+    random_state = 12345
 
     # (0) Setup environment
-    >>> env = gym.make("RTBEnv-discrete-v0")
+    env = gym.make("RTBEnv-discrete-v0")
 
     # (1) Learn a baseline online policy (using d3rlpy)
     # initialize the algorithm
-    >>> ddqn = DoubleDQN()
+    ddqn = DoubleDQN()
     # train an online policy
-    >>> ddqn.fit_online(
-            env,
-            buffer=ReplayBuffer(maxlen=10000, env=env),
-            explorer=ConstantEpsilonGreedy(epsilon=0.3),
-            n_steps=100000,
-            n_steps_per_epoch=1000,
-            update_start_step=1000,
-        )
+    ddqn.fit_online(
+        env,
+        buffer=ReplayBuffer(maxlen=10000, env=env),
+        explorer=ConstantEpsilonGreedy(epsilon=0.3),
+        n_steps=100000,
+        n_steps_per_epoch=1000,
+        update_start_step=1000,
+    )
 
     # (2) Generate logged dataset
     # convert ddqn policy into a stochastic behavior policy
-    >>> behavior_policy = DiscreteEpsilonGreedyHead(
-            ddqn,
-            n_actions=env.action_space.n,
-            epsilon=0.3,
-            name="ddqn_epsilon_0.3",
-            random_state=random_state,
-        )
+    behavior_policy = DiscreteEpsilonGreedyHead(
+        ddqn,
+        n_actions=env.action_space.n,
+        epsilon=0.3,
+        name="ddqn_epsilon_0.3",
+        random_state=random_state,
+    )
     # initialize the dataset class
-    >>> dataset = SyntheticDataset(
-            env=env,
-            behavior_policy=behavior_policy,
-            max_episode_steps=env.step_per_episode,
-            random_state=random_state,
-        )
+    dataset = SyntheticDataset(
+        env=env,
+        behavior_policy=behavior_policy,
+        max_episode_steps=env.step_per_episode,
+        random_state=random_state,
+    )
     # collect logged data by a behavior policy
-    >>> logged_dataset = dataset.obtain_episodes(n_trajectories=10000)
-    >>> print(logged_dataset.keys())
+    logged_dataset = dataset.obtain_episodes(n_trajectories=10000)
+    print(logged_dataset.keys())
 
-Users can collect logged data from any environment with `OpenAI Gym <https://gym.openai.com>`_-like interface using a variety of behavior policies.
+Users can collect logged data from any environment with `OpenAI Gym <https://gym.openai.com>`_ and `Gymnasium <https://github.com/Farama-Foundation/Gymnasium>`_-like interface using a variety of behavior policies.
 Moreover, by preprocessing the logged data, one can also handle their own logged data from real-world applications.
+
+.. seealso::
+
+    * :doc:`Related tutorials <_autogallery/ofrl_others/index>`
 
 
 Offline Reinforcement Learning
 ~~~~~~~~~~
 
-Now we are ready to learn a new policy only from logged data. Specifically, we learn CQL :cite:`kumar2020conservative` policy here. (Please also refer to `overview <>`_ about the algorithm.)
+Now we are ready to learn a new policy only from logged data. Specifically, we learn CQL :cite:`kumar2020conservative` policy here. (Please also refer to :doc:`online_offline_rl` about the problem setting and the algorithms.)
 Note that, we use `d3rlpy <https://github.com/takuseno/d3rlpy>`_ for offline RL.
 
 .. code-block:: python
@@ -90,29 +103,34 @@ Note that, we use `d3rlpy <https://github.com/takuseno/d3rlpy>`_ for offline RL.
     # implement offline RL procedure using ofrl and d3rlpy
 
     # import d3rlpy algorithms
-    >>> from d3rlpy.dataset import MDPDataset
-    >>> from d3rlpy.algos import DiscreteCQL
+    from d3rlpy.dataset import MDPDataset
+    from d3rlpy.algos import DiscreteCQL
 
     # (3) Learning a new policy from offline logged data (using d3rlpy)
     # convert dataset into d3rlpy's dataset
-    >>> offlinerl_dataset = MDPDataset(
-            observations=logged_dataset["state"],
-            actions=logged_dataset["action"],
-            rewards=logged_dataset["reward"],
-            terminals=logged_dataset["done"],
-            episode_terminals=logged_dataset["done"],
-            discrete_action=True,
-        )
+    offlinerl_dataset = MDPDataset(
+        observations=logged_dataset["state"],
+        actions=logged_dataset["action"],
+        rewards=logged_dataset["reward"],
+        terminals=logged_dataset["done"],
+        episode_terminals=logged_dataset["done"],
+        discrete_action=True,
+    )
     # initialize the algorithm
-    >>> cql = DiscreteCQL()
+    cql = DiscreteCQL()
     # train an offline policy
-    >>> cql.fit(
-            offlinerl_dataset,
-            n_steps=10000,
-            scorers={},
-        )
+    cql.fit(
+        offlinerl_dataset,
+        n_steps=10000,
+        scorers={},
+    )
 
-For the details of algorithm implementation, please refer to `d3rlpy's documentation <https://d3rlpy.readthedocs.io/en/v0.91/>`_.
+.. seealso::
+
+    * :doc:`Related tutorials <_autogallery/ofrl_others/index>`
+    * :doc:`Problem setting <learning_implementation>`
+    * :doc:`Supported implementations and useful tools <online_offline_rl>`: 
+    * (external) `d3rlpy's documentation <https://d3rlpy.readthedocs.io/en/latest/>`_
 
 
 Off-Policy Evaluation (OPE) and Selection (OPS)
@@ -130,62 +148,76 @@ and Doubly Robust (DR) :cite:`jiang2016doubly` :cite:`thomas2016data`.
     # implement OPE procedure using OFRL
 
     # import OFRL modules
-    >>> from ofrl.ope import CreateOPEInput
-    >>> from ofrl.ope import DiscreteOffPolicyEvaluation as OPE
-    >>> from ofrl.ope import DiscreteDirectMethod as DM
-    >>> from ofrl.ope import DiscreteTrajectoryWiseImportanceSampling as TIS
-    >>> from ofrl.ope import DiscretePerDecisionImportanceSampling as PDIS
-    >>> from ofrl.ope import DiscreteDoublyRobust as DR
+    from ofrl.ope import CreateOPEInput
+    from ofrl.ope import DiscreteOffPolicyEvaluation as OPE
+    from ofrl.ope import DiscreteDirectMethod as DM
+    from ofrl.ope import DiscreteTrajectoryWiseImportanceSampling as TIS
+    from ofrl.ope import DiscretePerDecisionImportanceSampling as PDIS
+    from ofrl.ope import DiscreteDoublyRobust as DR
 
     # (4) Evaluate the learned policy in an offline manner
     # we compare ddqn, cql, and random policy
-    >>> cql_ = DiscreteEpsilonGreedyHead(
-            base_policy=cql,
-            n_actions=env.action_space.n,
-            name="cql",
-            epsilon=0.0,
-            random_state=random_state,
-        )
-    >>> ddqn_ = DiscreteEpsilonGreedyHead(
-            base_policy=ddqn,
-            n_actions=env.action_space.n,
-            name="ddqn",
-            epsilon=0.0,
-            random_state=random_state,
-        )
-    >>> random_ = DiscreteEpsilonGreedyHead(
-            base_policy=ddqn,
-            n_actions=env.action_space.n,
-            name="random",
-            epsilon=1.0,
-            random_state=random_state,
-        )
-    >>> evaluation_policies = [cql_, ddqn_, random_]
+    cql_ = DiscreteEpsilonGreedyHead(
+        base_policy=cql,
+        n_actions=env.action_space.n,
+        name="cql",
+        epsilon=0.0,
+        random_state=random_state,
+    )
+    ddqn_ = DiscreteEpsilonGreedyHead(
+        base_policy=ddqn,
+        n_actions=env.action_space.n,
+        name="ddqn",
+        epsilon=0.0,
+        random_state=random_state,
+    )
+    random_ = DiscreteEpsilonGreedyHead(
+        base_policy=ddqn,
+        n_actions=env.action_space.n,
+        name="random",
+        epsilon=1.0,
+        random_state=random_state,
+    )
+    evaluation_policies = [cql_, ddqn_, random_]
     # create input for OPE class
-    >>> prep = CreateOPEInput(
-            logged_dataset=logged_dataset,
-            use_base_model=True,  # use model-based prediction
-        )
-    >>> input_dict = prep.obtain_whole_inputs(
-            evaluation_policies=evaluation_policies,
-            env=env,
-            n_episodes_on_policy_evaluation=100,
-            random_state=random_state,
-        )
+    prep = CreateOPEInput(
+        env=env,
+        logged_dataset=logged_dataset,
+        use_base_model=True,  # use model-based prediction
+    )
+    input_dict = prep.obtain_whole_inputs(
+        evaluation_policies=evaluation_policies,
+        n_trajectories_on_policy_evaluation=100,
+        random_state=random_state,
+    )
     # initialize the OPE class
-    >>> ope = OPE(
-            logged_dataset=logged_dataset,
-            ope_estimators=[DM(), TIS(), PDIS(), DR()],
-        )
+    ope = OPE(
+        logged_dataset=logged_dataset,
+        ope_estimators=[DM(), TIS(), PDIS(), DR()],
+    )
     # conduct OPE and visualize the result
-    >>> ope.visualize_off_policy_estimates(
-            input_dict,
-            random_state=random_state,
-            sharey=True,
-        )
+    ope.visualize_off_policy_estimates(
+        input_dict,
+        random_state=random_state,
+        sharey=True,
+    )
 
-Users can implement their own OPE estimators by following the interface of :class:`obp.ope.BaseOffPolicyEstimator` class.
-:class:`obp.ope.OffPolicyEvaluation` class summarizes and compares the estimation results of various OPE estimators.
+.. card:: 
+    :img-top: ../_static/images/ope_policy_value_basic.png
+    :text-align: center
+    
+    Policy Value Estimated by OPE Estimators
+
+Users can implement their own OPE estimators by following the interface of :class:`obp.ope.BaseOffPolicyEstimator`.
+In addition, :class:`obp.ope.OffPolicyEvaluation` summarizes and compares the estimation results of various OPE estimators.
+
+.. seealso::
+
+    * :doc:`Related tutorials <_autogallery/basic_ope/index>`
+    * :doc:`Problem setting <ope_ops>`
+    * :doc:`Supported OPE estimators <evaluation_implementation>` and their API reference 
+    * (advanced) :doc:`Marginal OPE estimators <evaluation_implementation>`, their tutorials, and API reference.
+
 
 Cumulative Distribution OPE
 ----------
@@ -195,35 +227,47 @@ using Cumulative Distribution OPE estimators :cite:`huang2021off` :cite:`huang20
 .. code-block:: python
 
     # import OFRL modules
-    >>> from ofrl.ope import DiscreteCumulativeDistributionOffPolicyEvaluation as CumulativeDistributionOPE
-    >>> from ofrl.ope import DiscreteCumulativeDistributionDirectMethod as CD_DM
-    >>> from ofrl.ope import DiscreteCumulativeDistributionTrajectoryWiseImportanceSampling as CD_IS
-    >>> from ofrl.ope import DiscreteCumulativeDistributionTrajectoryWiseDoublyRobust as CD_DR
-    >>> from ofrl.ope import DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSampling as CD_SNIS
-    >>> from ofrl.ope import DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseDoublyRobust as CD_SNDR
+    from ofrl.ope import DiscreteCumulativeDistributionOffPolicyEvaluation as CumulativeDistributionOPE
+    from ofrl.ope import DiscreteCumulativeDistributionDirectMethod as CD_DM
+    from ofrl.ope import DiscreteCumulativeDistributionTrajectoryWiseImportanceSampling as CD_IS
+    from ofrl.ope import DiscreteCumulativeDistributionTrajectoryWiseDoublyRobust as CD_DR
+    from ofrl.ope import DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSampling as CD_SNIS
+    from ofrl.ope import DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseDoublyRobust as CD_SNDR
 
     # (4) Evaluate the learned policy using cumulative distribution function (in an offline manner)
     # we compare ddqn, cql, and random policy defined in the previous section (i.e., (3) of basic OPE procedure)
     # initialize the OPE class
-    >>> cd_ope = CumulativeDistributionOPE(
-            logged_dataset=logged_dataset,
-            ope_estimators=[
-            CD_DM(estimator_name="cdf_dm"),
-            CD_IS(estimator_name="cdf_is"),
-            CD_DR(estimator_name="cdf_dr"),
-            CD_SNIS(estimator_name="cdf_snis"),
-            CD_SNDR(estimator_name="cdf_sndr"),
-            ],
-        )
+    cd_ope = CumulativeDistributionOPE(
+        logged_dataset=logged_dataset,
+        ope_estimators=[
+        CD_DM(estimator_name="cdf_dm"),
+        CD_IS(estimator_name="cdf_is"),
+        CD_DR(estimator_name="cdf_dr"),
+        CD_SNIS(estimator_name="cdf_snis"),
+        CD_SNDR(estimator_name="cdf_sndr"),
+        ],
+    )
     # estimate variance
-    >>> variance_dict = cd_ope.estimate_variance(input_dict)
+    variance_dict = cd_ope.estimate_variance(input_dict)
     # estimate CVaR
-    >>> cvar_dict = cd_ope.estimate_conditional_value_at_risk(input_dict, alphas=0.3)
+    cvar_dict = cd_ope.estimate_conditional_value_at_risk(input_dict, alphas=0.3)
     # estimate and visualize cumulative distribution function
-    >>> cd_ope.visualize_cumulative_distribution_function(input_dict, n_cols=4)
+    cd_ope.visualize_cumulative_distribution_function(input_dict, n_cols=4)
 
-Users can implement their own OPE estimators by following the interface of :class:`obp.ope.BaseCumulativeDistributionOffPolicyEstimator` class.
-:class:`obp.ope.DiscreteCumulativeDistributionOffPolicyEvaluation` class summarizes and compares the estimation results of various OPE estimators.
+.. card:: 
+    :img-top: ../_static/images/ope_cumulative_distribution_function.png
+    :text-align: center
+    
+    Cumulative Distribution Function Estimated by OPE Estimators
+
+Users can implement their own OPE estimators by following the interface of :class:`obp.ope.BaseCumulativeDistributionOffPolicyEstimator`.
+In addition, :class:`obp.ope.DiscreteCumulativeDistributionOffPolicyEvaluation` summarizes and compares the estimation results of various OPE estimators.
+
+.. seealso::
+
+    * :doc:`Related tutorials <_autogallery/cumulative_distribution_ope/index>`
+    * :doc:`Problem setting <ope_ops>`
+    * :doc:`Supported OPE estimators <evaluation_implementation>` and their API reference 
 
 
 Off-Policy Selection and Evaluation of OPE/OPS
@@ -233,36 +277,60 @@ Finally, we provide the code to conduct OPS, which selects the "best" performing
 .. code-block:: python
 
     # import OFRL modules
-    >>> from ofrl.ope import OffPolicySelection
+    from ofrl.ope import OffPolicySelection
 
     # (5) Conduct Off-Policy Selection
     # Initialize the OPS class
-    >>> ops = OffPolicySelection(
-            ope=ope,
-            cumulative_distribution_ope=cd_ope,
-        )
+    ops = OffPolicySelection(
+        ope=ope,
+        cumulative_distribution_ope=cd_ope,
+    )
     # rank candidate policy by policy value estimated by (basic) OPE
-    >>> ranking_dict = ops.select_by_policy_value(input_dict)
+    ranking_dict = ops.select_by_policy_value(input_dict)
     # rank candidate policy by policy value estimated by cumulative distribution OPE
-    >>> ranking_dict_ = ops.select_by_policy_value_via_cumulative_distribution_ope(input_dict)
+    ranking_dict_ = ops.select_by_policy_value_via_cumulative_distribution_ope(input_dict)
 
     # (6) Evaluate OPS/OPE results
     # rank candidate policy by estimated lower quartile and evaluate the selection results
-    >>> ranking_df, metric_df = ops.select_by_lower_quartile(
-            input_dict,
-            alpha=0.3,
-            return_metrics=True,
-            return_by_dataframe=True,
-        )
+    ranking_df, metric_df = ops.select_by_lower_quartile(
+        input_dict,
+        alpha=0.3,
+        return_metrics=True,
+        return_by_dataframe=True,
+    )
+    # visualize the top k deployment result
+    ops.visualize_topk_policy_value_selected_by_standard_ope(
+        input_dict=input_dict,
+        compared_estimators=["dm", "tis", "pdis", "dr"],
+        safety_criteria=1.0,
+    )
     # visualize the OPS results with the ground-truth metrics
-    >>> ops.visualize_lower_quartile_for_validation(
-            input_dict,
-            alpha=0.3,
-            share_axes=True,
-        )
+    ops.visualize_lower_quartile_for_validation(
+        input_dict,
+        alpha=0.3,
+        share_axes=True,
+    )
+
+.. card:: 
+    :img-top: ../_static/images/ops_topk_performance.png
+    :text-align: center
+    
+    Comparison of the Top-k Statistics of Policy Value
+
+.. card:: 
+    :img-top: ../_static/images/ops_variance_validation.png
+    :text-align: center
+    
+    Validation of Estimated and Ground-truth Variance of Policy Value
+
+.. seealso::
+
+    * :doc:`Related tutorials <_autogallery/ops/index>`
+    * :doc:`Problem setting <ope_ops>`
+    * :doc:`OPS evaluation protocols <evaluation_implementation>` and their API reference 
 
 ~~~~~
 
-More tutorials with a variety of environment and OPE estimators are available in `tutorial <>`_.
+More tutorials with a variety of environments and OPE estimators are available in the next page!
 
 

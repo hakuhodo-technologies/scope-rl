@@ -6,6 +6,10 @@
 OFRL; a Python library for offline reinforcement learning, off-policy evaluation, and selection
 ===================================
 
+.. card:: logo
+    :img-top: ../_static/images/logo.png
+    :text-align: center
+    
 Overview
 ~~~~~~~~~~
 *OFRL* is an open-source Python library for offline Reinforcement Learning (RL) and Off-Policy Evaluation and Selection (OPE/OPS).
@@ -26,8 +30,19 @@ Our software facilitates implementation, evaluation and algorithm comparison rel
 * **Off-Policy Selection**: 
    OPS aims to select the best policy from several candidate policies using offline logged data. OFRL supports the basic implementations of OPS methods and provide some metrics to evaluate OPS result.
 
-This website contains pages with example implementations that demonstrates the usage of this library.
-The package reference page consists of the full reference documentation for the currently implemented modules.
+.. card:: workflow
+    :img-top: ../_static/images/workflow.png
+    :text-align: center
+
+.. important::
+
+   This documentation aims to provide a gentle introduction to offline RL and OPE/OPS in the following steps.
+
+   1. Explain the basic concepts in :doc:`Overview (online/offline RL) <online_offline_rl>` and :doc:`Overview (OPE/OPS) <ope_ops>`.
+   2. Provide a variety of examples of conducting offline RL and OPE/OPS in practical problem settings in :doc:`Quickstart <quickstart>` and :doc:`Tutorial <tutorial>`.
+   3. Describe the algorithms and implementations in detail in :doc:`Supported Implementation <evaluation_implementation>` and :doc:`Package Reference <ofrl>`.
+
+   You can also find why OFRL is a distinctive pipeline for offline RL and OPE/OPS in :doc:`distinctive_features`
 
 Implementation
 ~~~~~~~~~~
@@ -49,6 +64,16 @@ Continuous
 
 Basic OPE
 ----------
+
+.. card:: 
+    :img-top: ../_static/images/ope_policy_value_basic.png
+    :text-align: center
+    
+    Policy Value Estimated by OPE Estimators
+
+OPRL provides a variety of OPE estimators both in discrete and continuous action spaces.
+Moreover, OFRL also implements meta class to handle OPE with multiple estimators at once and provide generic classes of OPE estimators to facilitate research development.
+
 Basic estimators
 ^^^^^^
 * Direct Method (DM) :cite:`beygelzimer2009offset` :cite:`le2019batch`
@@ -78,7 +103,7 @@ Double Reinforcement Learning
 ^^^^^^
 * Double Reinforcement Learning :cite:`kallus2020double`
 
-Estimation Methods of Marginal Importance Weights
+Weight and Value Learning Methods
 ^^^^^^
 * Augmented Lagrangian Method (ALM) :cite:`yang2020off`
    * BestDICE :cite:`yang2020off`
@@ -90,7 +115,7 @@ Estimation Methods of Marginal Importance Weights
 * Minimax Q-Learning and Weight Learning (MQL/MWL) :cite:`uehara2020minimax`
 
 High Confidence OPE
-----------
+^^^^^^
 * Bootstrap :cite:`thomas2015improvement` :cite:`hanna2017bootstrapping`
 * Hoeffding :cite:`thomas2015evaluation`
 * (Empirical) Bernstein :cite:`thomas2015evaluation` :cite:`thomas2015improvement`
@@ -98,6 +123,16 @@ High Confidence OPE
 
 Cumulative Distribution OPE
 ----------
+
+.. card:: 
+    :img-top: ../_static/images/ope_cumulative_distribution_function.png
+    :text-align: center
+
+    Cumulative Distribution Function Estimated by OPE Estimators
+
+OFRL also provides cumulative distribution OPE estimators, which enables practitioners to evaluate various risk metrics (e.g., conditional value at risk) for safety assessment.
+Meta class and generic abstract class are available also for cumulative distribution OPE.
+
 Estimators
 ^^^^^^
 * Direct Method (DM) :cite:`huang2021off`
@@ -116,6 +151,17 @@ Metrics of Interest
 
 Off-Policy Selection Metrics
 ----------
+
+.. card:: 
+    :img-top: ../_static/images/ops_topk_performance.png
+    :text-align: center
+    
+    Comparison of the Top-k Statistics of Policy Value
+
+Finally, OFRL also standardizes the evaluation protocol of OPE in two axes, first by measuring the accuracy of OPE over the whole candidate policies, 
+and second by evaluating the gains and costs in top-k deployment (e.g., the best and worst performance in top-k deployment).
+The streamlined implementations and visualization of OPS class provide informative insights on offline RL and OPE performance.
+
 OPE metrics
 ^^^^^^
 * Mean Squared Error :cite:`paine2020hyperparameter` :cite:`voloshin2021empirical` :cite:`fu2021benchmarks`
@@ -128,8 +174,12 @@ OPS metrics (performance of top k deployment policies)
 * {Best/Worst/Mean} of {policy value/conditional value at risk/lower quartile}
 * Safety violation rate
 
-In addition to the offline RL/OPE related resources, we provide a configurative RL environment for Real-Time Bidding (RTB) as a sub-package of this library.
-Please refer to `RTBGym's documentation <>`_ for the details.
+.. seealso::
+
+   We also provide configurative RL environments as sub-packages of this library.
+
+   * :doc:`RTBGym <rtbgym_about>` for Real-Time Bidding (RTB) of online advertisement
+
 
 Citation
 ~~~~~~~~~~
@@ -201,10 +251,3 @@ Table of Contents
    frequently_asked_questions
    release_notes
    references
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`

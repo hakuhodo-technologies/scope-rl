@@ -3,9 +3,7 @@ Supported Implementation
 ==========
 
 Our implementation aims to streamline the data collection, (offline) policy learning, and off-policy evaluation/selection (OPE/OPS) procedure.
-We rely on `d3rlpy's implementation <>`_ of the learning algorithms and provide some useful tools to streamline the above offline RL procedure.
-
-Please also refer to `quickstart <>`_ for the example workflows.
+We rely on `d3rlpy <https://github.com/takuseno/d3rlpy>`_'s implementation of the learning algorithms and provide some useful tools to streamline the above offline RL procedure.
 
 Synthetic Dataset Generation
 ~~~~~~~~~~
@@ -32,6 +30,11 @@ Then, it collects logged data as follows.
     >>> logged_dataset = dataset.obtain_episodes(n_trajectories=10000)
 
 
+.. seealso::
+
+    :doc:`quickstart` describes the detailed example workflows.
+
+
 The behavior policy can either be deterministic or stochastic when conducting offline policy learning.
 For OPE/OPS, the behavior policy should be a stochastic one.
 
@@ -40,7 +43,7 @@ To convert the d3rlpy's deterministic policy to a stochastic one, we provide sev
 Policy Wrapper
 ~~~~~~~~~~
 
-Here, we describe some useful wrapper tools to convert the d3rlpy's policy.
+Here, we describe some useful wrapper tools to convert a `d3rlpy <https://github.com/takuseno/d3rlpy>`_'s policy to the behavior/evaluation policies.
 
 DiscreteHead
 ----------
@@ -73,7 +76,7 @@ This module enables step-wise interaction of the policy.
 
 Online Evaluation
 ~~~~~~~~~~
-Finally, we provide the series of functions to be used for online performance evaluation in `ope/online.py <>`_.
+Finally, we provide the series of functions to be used for online performance evaluation in :doc:`ofrl/ope/online.py <_autosummary/ofrl.ope.online>`.
 
 (Rollout)
 
@@ -95,4 +98,7 @@ Finally, we provide the series of functions to be used for online performance ev
 * :class:`visualize_on_policy_conditional_value_at_risk`
 * :class:`visualize_on_policy_interquartile_range`
 
-For further descriptions, please also refer to `package reference <>`_.
+.. seealso::
+
+    * :doc:`Related tutorials <_autogallery/ofrl_others/index>`
+    * :doc:`Package reference <ofrl>`

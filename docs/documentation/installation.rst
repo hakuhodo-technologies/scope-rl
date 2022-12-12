@@ -17,3 +17,17 @@ From source:
     git clone https://github.com/negocia-inc/ofrl
     cd ofrl
     python setup.py install
+
+~~~~~
+
+If you use our pipeline in your work, please cite our paper below.
+
+.. code-block::
+
+   @article{kiyohara2023xxx
+      title={},
+      author={},
+      journal={},
+      year={},
+   }
+ 
