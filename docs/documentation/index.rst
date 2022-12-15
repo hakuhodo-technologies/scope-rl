@@ -34,7 +34,7 @@ Our software facilitates implementation, evaluation and algorithm comparison rel
     :img-top: ../_static/images/workflow.png
     :text-align: center
 
-.. important::
+.. note::
 
    This documentation aims to provide a gentle introduction to offline RL and OPE/OPS in the following steps.
 

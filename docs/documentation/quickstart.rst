@@ -139,6 +139,15 @@ Finally, we evaluate the performance of the learned policy using offline logged 
 
 Basic OPE
 ----------
+The goal of (basic) OPE is to accurately estimate the expected performance (i.e., trajectory-wise reward) of a given evaluation policy:
+
+.. math::
+
+    J(\pi) := \mathbb{E}_{\tau} \left [ \sum_{t=0}^{T-1} \gamma^t r_{t} \mid \pi \right ],
+
+where :math:`\pi` is the evaluation policy and :math:`\sum_{t=0}^{T-1} \gamma^t r_{t}` is the trajectory-wise reward. 
+(See :doc:`problem setting <ope_ops>` for the detailed notations).
+
 We compare the estimation results from various OPE estimators, Direct Method (DM) :cite:`beygelzimer2009offset` :cite:`le2019batch`, 
 Trajectory-wise Importance Sampling (TIS) :cite:`precup2000eligibility`, Step-wise Importance Sampling (SIS) :cite:`precup2000eligibility`, 
 and Doubly Robust (DR) :cite:`jiang2016doubly` :cite:`thomas2016data`.
@@ -221,6 +230,14 @@ In addition, :class:`obp.ope.OffPolicyEvaluation` summarizes and compares the es
 
 Cumulative Distribution OPE
 ----------
+while the basic OPE is beneficial for estimating the average policy performance, we are often also interested in the performance distribution of the evaluation policy
+and risk-sensitive performance metrics including conditional value at risk (CVaR).
+Cumulative distribution OPE enables to estimate the following cumulative distribution function and risk functions derived by CDF.
+
+.. math::
+
+    F(m, \pi) := \mathbb{E} \left[ \mathbb{I} \left \{ \sum_{t=0}^{T-1} \gamma^t r_t \leq m \right \} \mid \pi \right]
+
 The following shows the example of estimating cumulative distribution function of the trajectory-wise rewards and its statistics 
 using Cumulative Distribution OPE estimators :cite:`huang2021off` :cite:`huang2022off` :cite:`chandak2021universal`.
 

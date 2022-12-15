@@ -5,6 +5,7 @@ preview/
 .venv/
 _autosummary/
 _autogallery/
+.npmrd
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
