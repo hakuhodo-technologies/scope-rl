@@ -41,14 +41,14 @@ extensions = [
     "sphinx.ext.todo",
     "sphinx.ext.coverage",
     "sphinx.ext.mathjax",
-    # "sphinx.ext.linkcode",
     "sphinx.ext.viewcode",
-    "sphinx.ext.inheritance_diagram",
     "sphinxcontrib.bibtex",
     "sphinx_copybutton",
     "sphinx_gallery.gen_gallery",
     "numpydoc",
     "sphinx_design",
+    "sphinx_tabs.tabs",
+    "sphinxemoji.sphinxemoji",
 ]
 
 # bibtex
@@ -70,20 +70,23 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 #
 html_theme = "pydata_sphinx_theme"
 html_theme_options = {
-  "icon_links": [
-        {
-            # Label for this link
-            "name": "GitHub",
-            # URL where the link will redirect
-            "url": "https://github.com/negocia-inc/ofrl",  # required
-            # Icon class (if "type": "fontawesome"), or path to local image (if "type": "local")
-            "icon": "fab fa-github-square",
-            # The type of image to be used (see below for details)
-            "type": "fontawesome",
-        }
-   ],
-   "header_links_before_dropdown": 6,
-   "footer_items": ["copyright"],
+    "github_url": "https://github.com/negocia-inc/ofrl",
+    # "twitter_url": "https://twitter.com/{account}",
+    # "icon_links": [
+    #         {
+    #             # Label for this link
+    #             "name": "GitHub",
+    #             # URL where the link will redirect
+    #             "url": "https://github.com/negocia-inc/ofrl",  # required
+    #             # Icon class (if "type": "fontawesome"), or path to local image (if "type": "local")
+    #             "icon": "fab fa-github-square",
+    #             # The type of image to be used (see below for details)
+    #             "type": "fontawesome",
+    #         }
+    # ],
+    "header_links_before_dropdown": 6,
+    # "navbar_start": ["navbar-logo", "version"],
+    "footer_items": ["copyright"],
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
@@ -91,19 +94,39 @@ html_theme_options = {
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
 html_css_files = ["css/custom.css"]
-html_js_files = ["https://kit.fontawesome.com/de0e05fd52.js", "https://example.com/fontawesome/v6.2.1/js/all.js"]
 
 # whether to display to the source .rst file
-html_show_sourcelink = False 
+html_show_sourcelink = False
 html_show_sphinx = False
 
 autosummary_generate = True
 autodoc_typehints = 'description'
+autodoc_typehints_description_target = "documented"
 autodoc_default_options = {
     "members": None,
-    "show-inheritance": None,
-    "inherited-members": None,
-    "member-order": "groupwise",
+    "member-order": "bysource",
+    "exclude-members": "forward",
+}
+
+# mapping between class methods and its abbreviation
+numpydoc_member_order = "bysource"
+numpydoc_show_inherited_class_members = {
+    "ofrl.policy.head.BaseHead": False,
+    "ofrl.policy.head.ContinuousEvalHead": False,
+    "ofrl.policy.head.ContinuousGaussianHead": False,
+    "ofrl.policy.head.ContinuousTruncatedGaussianHead": False,
+    "ofrl.policy.head.DiscreteEpsilonGreedyHead": False,
+    "ofrl.policy.head.DiscreteSoftmaxHead": False,
+    "ofrl.policy.head.OnlineHead": False,
+    "ofrl.ope.weight_value_learning.function.VFunction": False,
+    "ofrl.ope.weight_value_learning.function.StateWeightFunction": False,
+    "ofrl.ope.weight_value_learning.function.DiscreteQFunction": False,
+    "ofrl.ope.weight_value_learning.function.ContinuousQFunction": False,
+    "ofrl.ope.weight_value_learning.function.DiscreteStateActionWeightFunction": False,
+    "ofrl.ope.weight_value_learning.function.ContinuousStateActionWeightFunction": False,
+}
+numpydoc_xref_aliases = {
+    # 'LeaveOneOut': 'sklearn.model_selection.LeaveOneOut',
 }
 
 intersphinx_mapping = {
@@ -130,16 +153,12 @@ sphinx_gallery_conf = {
         ]
     ),
     'within_subsection_order': FileNameSortKey,
+    'download_all_examples': False,
 }
 # gallery thumbnail
 # nbsphinx_thumbnails = {
 #     'gallery/thumbnail-from-conf-py': 'gallery/a-local-file.png',
 # }
-
-# mapping between class methods and its abbreviation
-numpydoc_xref_aliases = {
-    # 'LeaveOneOut': 'sklearn.model_selection.LeaveOneOut',
-}
 
 # # provide links for linkcode
 # def linkcode_resolve(domain, info):
@@ -148,4 +167,4 @@ numpydoc_xref_aliases = {
 #     if not info['module']:
 #         return None
 #     filename = info['module'].replace('.', '/')
-#     return f"https://github.com/negocia-inc/ofrl/tree/main/{filename}.py"
+#     return f"https://github.com/{repository}/tree/main/{filename}.py"

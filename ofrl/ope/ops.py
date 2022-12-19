@@ -1,3 +1,4 @@
+"""Meta class to handle Off-Policy Selection (OPS) and evaluation of OPE/OPS."""
 from collections import defaultdict
 from dataclasses import dataclass
 from typing import Optional, List
@@ -23,11 +24,22 @@ dkred = "#A60628"
 
 @dataclass
 class OffPolicySelection:
-    """Class to conduct OPS by multiple estimators simultaneously.
+    """Class to conduct OPS and evaluation of OPE/OPS with multiple estimators simultaneously.
 
     Note
     -----------
-    OPS selects the "best" policy among several candidates based on the policy value or other statistics estimates by OPE.
+    **Off-Policy Selection (OPS)** 
+    
+    OPS selects the "best" policy among several candidates based on the policy value or other statistics estimated by OPE.
+
+    .. math::
+
+        \\hat{\\pi} := {\\arg \\max}_{\\pi \\in \\Pi} \hat{J}(\\pi)
+
+    where :math:`\\Pi` is a set of candidate policies and :math:`\hat{J}(\\cdot)` is some OPE estimates of the policy performance. Below, we describe two types of OPE
+    to estimate such policy performance.
+
+    **Off-Policy Evaluation (OPE)**
 
     (Basic) OPE estimates the expected policy performance called the policy value.
 
@@ -35,131 +47,162 @@ class OffPolicySelection:
 
         V(\\pi) := \\mathbb{E} \\left[ \\sum_{t=1}^T \\gamma^{t-1} r_t \\mid \\pi \\right]
 
-    CumulativeDistributionOPE first estimates the following cumulative distribution function,
-    and then estimates some statistics including variance, conditional value at risk, and interquartile range.
+    where :math:`r_t` is the reward observation at each timestep :math:`t`, 
+    :math:`T` is the total number of timesteps in an episode, and :math:`\\gamma` is the discount factor.
+
+    .. seealso::
+
+        :class:`OffPolicyEvaluation`
+
+    **Cumulative Distribution OPE**
+
+    In contrast, cumulative distribution OPE first estimates the following cumulative distribution function.
 
     .. math::
 
         F(t, \\pi) := \\mathbb{E} \\left[ \\mathbb{I} \\left \\{ \\sum_{t=1}^T \\gamma^{t-1} r_t \\leq t \\right \\} \\mid \\pi \\right]
 
+    Then, cumulative distribution OPE also estimates some risk functions including variance, conditional value at risk, and interquartile range based on the CDF estimate.
+
+    .. seealso::
+
+        :class:`CumulativeDistributionOffPolicyEvaluation`
+
     Parameters
     -----------
-    ope: {DiscreteOffPolicyEvaluation, ContinuousOffPolicyEvaluation}, default=None
+    ope: OffPolicyEvaluation, default=None
         Instance of the (standard) OPE class.
 
-    cumulative_distribution_ope: DiscreteCumulativeDistributionOffPolicyEvaluation, default=None
+    cumulative_distribution_ope: CumulativeDistributionOffPolicyEvaluation, default=None
         Instance of the cumulative distribution OPE class.
 
     Examples
     ----------
-    .. ::code-block:: python
+
+    Preparation:
+
+    .. code-block:: python
 
         # import necessary module from OFRL
-        >>> from ofrl.dataset import SyntheticDataset
-        >>> from ofrl.policy import DiscreteEpsilonGreedyHead
-        >>> from ofrl.ope import CreateOPEInput
-        >>> from ofrl.ope import OffPolicySelection
-        >>> from ofrl.ope import DiscreteOffPolicyEvaluation as OPE
-        >>> from ofrl.ope import DiscreteTrajectoryWiseImportanceSampling as TIS
-        >>> from ofrl.ope import DiscretePerDecisionImportanceSampling as PDIS
-        >>> from ofrl.ope import DiscreteCumulativeDistributionOffPolicyEvaluation as CumulativeDistributionOPE
-        >>> from ofrl.ope import DiscreteCumulativeDistributionTrajectoryWiseImportanceSampling as CDIS
-        >>> from ofrl.ope import DiscreteCumulativeDistributionTrajectoryWiseSelfNormalizedImportanceSampling as CDSIS
+        from ofrl.dataset import SyntheticDataset
+        from ofrl.policy import DiscreteEpsilonGreedyHead
+        from ofrl.ope import CreateOPEInput
+        from ofrl.ope import OffPolicySelection
+        from ofrl.ope import DiscreteOffPolicyEvaluation as OPE
+        from ofrl.ope import DiscreteTrajectoryWiseImportanceSampling as TIS
+        from ofrl.ope import DiscretePerDecisionImportanceSampling as PDIS
+        from ofrl.ope import DiscreteCumulativeDistributionOffPolicyEvaluation as CumulativeDistributionOPE
+        from ofrl.ope import DiscreteCumulativeDistributionTrajectoryWiseImportanceSampling as CDIS
+        from ofrl.ope import DiscreteCumulativeDistributionTrajectoryWiseSelfNormalizedImportanceSampling as CDSIS
 
         # import necessary module from other libraries
-        >>> import gym
-        >>> import rtbgym
-        >>> from d3rlpy.algos import DoubleDQN
-        >>> from d3rlpy.online.buffers import ReplayBuffer
-        >>> from d3rlpy.online.explorers import ConstantEpsilonGreedy
+        import gym
+        import rtbgym
+        from d3rlpy.algos import DoubleDQN
+        from d3rlpy.online.buffers import ReplayBuffer
+        from d3rlpy.online.explorers import ConstantEpsilonGreedy
 
         # initialize environment
-        >>> env = gym.make("RTBEnv-discrete-v0")
+        env = gym.make("RTBEnv-discrete-v0")
 
         # define (RL) agent (i.e., policy) and train on the environment
-        >>> ddqn = DoubleDQN()
-        >>> buffer = ReplayBuffer(
-                maxlen=10000,
-                env=env,
-            )
-        >>> explorer = ConstantEpsilonGreedy(
-                epsilon=0.3,
-            )
-        >>> ddqn.fit_online(
-                env=env,
-                buffer=buffer,
-                explorer=explorer,
-                n_steps=10000,
-                n_steps_per_epoch=1000,
-            )
+        ddqn = DoubleDQN()
+        buffer = ReplayBuffer(
+            maxlen=10000,
+            env=env,
+        )
+        explorer = ConstantEpsilonGreedy(
+            epsilon=0.3,
+        )
+        ddqn.fit_online(
+            env=env,
+            buffer=buffer,
+            explorer=explorer,
+            n_steps=10000,
+            n_steps_per_epoch=1000,
+        )
 
         # convert ddqn policy to stochastic data collection policy
-        >>> behavior_policy = DiscreteEpsilonGreedyHead(
-                ddqn,
-                n_actions=env.action_space.n,
-                epsilon=0.3,
-                name="ddqn_epsilon_0.3",
-                random_state=12345,
-            )
+        behavior_policy = DiscreteEpsilonGreedyHead(
+            ddqn,
+            n_actions=env.action_space.n,
+            epsilon=0.3,
+            name="ddqn_epsilon_0.3",
+            random_state=12345,
+        )
 
         # initialize dataset class
-        >>> dataset = SyntheticDataset(
-                env=env,
-                behavior_policy=behavior_policy,
-                random_state=12345,
-            )
+        dataset = SyntheticDataset(
+            env=env,
+            behavior_policy=behavior_policy,
+            random_state=12345,
+        )
 
         # data collection
-        >>> logged_dataset = dataset.obtain_trajectories(n_trajectories=100, obtain_info=True)
+        logged_dataset = dataset.obtain_trajectories(n_trajectories=100)
+
+    Create Input for OPE:
+
+    .. code-block:: python
 
         # evaluation policy
-        >>> ddqn_ = DiscreteEpsilonGreedyHead(
-                base_policy=ddqn,
-                n_actions=env.action_space.n,
-                name="ddqn",
-                epsilon=0.0,
-                random_state=12345
-            )
-        >>> random_ = DiscreteEpsilonGreedyHead(
-                base_policy=ddqn,
-                n_actions=env.action_space.n,
-                name="random",
-                epsilon=1.0,
-                random_state=12345
-            )
+        ddqn_ = DiscreteEpsilonGreedyHead(
+            base_policy=ddqn,
+            n_actions=env.action_space.n,
+            name="ddqn",
+            epsilon=0.0,
+            random_state=12345
+        )
+        random_ = DiscreteEpsilonGreedyHead(
+            base_policy=ddqn,
+            n_actions=env.action_space.n,
+            name="random",
+            epsilon=1.0,
+            random_state=12345
+        )
 
         # create input for off-policy evaluation (OPE)
-        >>> prep = CreateOPEInput(
-                logged_dataset=logged_dataset,
-            )
-        >>> input_dict = prep.obtain_whole_inputs(
-                evaluation_policies=[ddqn_, random_],
-                env=env,
-                n_trajectories_on_policy_evaluation=100,
-                random_state=12345,
-            )
+        prep = CreateOPEInput(
+            logged_dataset=logged_dataset,
+        )
+        input_dict = prep.obtain_whole_inputs(
+            evaluation_policies=[ddqn_, random_],
+            env=env,
+            n_trajectories_on_policy_evaluation=100,
+            random_state=12345,
+        )
+
+    **Off-Policy Evaluation and Selection**:
+
+    .. code-block:: python
 
         # OPS
-        >>> ope = OPE(
-                logged_dataset=logged_dataset,
-                ope_estimators=[TIS(), PDIS()],
-            )
-        >>> cd_ope = CumulativeDistributionOPE(
-                logged_dataset=logged_dataset,
-                ope_estimators=[
-                    CDIS(estimator_name="cdf_is"),
-                    CDSIS(estimator_name="cdf_sis"),
-                ],
-            )
-        >>> ops = OffPolicySelection(
-                ope=ope,
-                cumulative_distribution_ope=cd_ope,
-            )
-        >>> ops_dict = ops.select_by_policy_value(
-                input_dict=input_dict,
-                return_metrics=True,
-            )
+        ope = OPE(
+            logged_dataset=logged_dataset,
+            ope_estimators=[TIS(), PDIS()],
+        )
+        cd_ope = CumulativeDistributionOPE(
+            logged_dataset=logged_dataset,
+            ope_estimators=[
+                CDIS(estimator_name="cdf_is"),
+                CDSIS(estimator_name="cdf_sis"),
+            ],
+        )
+        ops = OffPolicySelection(
+            ope=ope,
+            cumulative_distribution_ope=cd_ope,
+        )
+        ops_dict = ops.select_by_policy_value(
+            input_dict=input_dict,
+            return_metrics=True,
+        )
+
+    **Output**:
+
+    .. code-block:: python
+
         >>> ops_dict
+
         {'tis': {'estimated_ranking': ['ddqn', 'random'],
                 'estimated_policy_value': array([21.3624954,  0.3827044]),
                 'estimated_relative_policy_value': array([1.44732354, 0.02592848]),
@@ -179,6 +222,10 @@ class OffPolicySelection:
                 'type_ii_error_rate': 0.0,
                 'safety_threshold': 13.284}}
 
+    .. seealso::
+
+        * :doc:`Quickstart </documentation/quickstart>`
+        * :doc:`Related tutorials </documentation/_autogallery/ops/index>`
 
     References
     -------
@@ -251,17 +298,23 @@ class OffPolicySelection:
         -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
-            Please refer to `CreateOPEInput` class for the detail.
-            key: [evaluation_policy_name][
-                evaluation_policy_action,
-                evaluation_policy_action_dist,
-                state_action_value_prediction,
-                initial_state_value_prediction,
-                state_action_marginal_importance_weight,
-                state_marginal_importance_weight,
-                on_policy_policy_value,
-                gamma,
-            ]
+            
+            .. code-block:: python
+
+                key: [evaluation_policy_name][
+                    evaluation_policy_action,
+                    evaluation_policy_action_dist,
+                    state_action_value_prediction,
+                    initial_state_value_prediction,
+                    state_action_marginal_importance_weight,
+                    state_marginal_importance_weight,
+                    on_policy_policy_value,
+                    gamma,
+                ]
+
+            .. seealso::
+
+                :class:`ope.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         return_variance: bool, default=False
             Whether to return the variance or not.
@@ -286,6 +339,20 @@ class OffPolicySelection:
         ground_truth_dict/ground_truth_df: dict or dataframe
             Dictionary/dataframe containing the following ground-truth (on-policy) metrics.
 
+            .. code-block:: python
+
+                key: [
+                    ranking,
+                    policy_value,
+                    relative_policy_value,
+                    variance,
+                    ranking_by_lower_quartile,
+                    lower_quartile,
+                    ranking_by_conditional_value_at_risk,
+                    conditional_value_at_risk,
+                    parameters,  # only when return_by_dataframe == False
+                ]
+
             ranking: list of str
                 Name of the candidate policies sorted by the ground-truth policy value.
 
@@ -297,26 +364,27 @@ class OffPolicySelection:
 
             variance: list of float
                 Ground-truth variance of the trajectory wise reward of the candidate policies (sorted by ranking).
-                If `return_variance == False`, `None` is recorded.
+                If return_variance is `False`, `None` is recorded.
 
             ranking_by_lower_quartile: list of str
                 Name of the candidate policies sorted by the ground-truth lower quartile of the trajectory wise reward.
-                If `return_lower_quartile == False`, `None` is recorded.
+                If return_lower_quartile is `False`, `None` is recorded.
 
             lower_quartile: list of float
                 Ground-truth lower quartile of the candidate policies (sorted by ranking_by_lower_quartile).
-                If `return_lower_quartile == False`, `None` is recorded.
+                If return_lower_quartile is `False`, `None` is recorded.
 
             ranking_by_conditional_value_at_risk: list of str
                 Name of the candidate policies sorted by the ground-truth conditional value at risk.
-                If `return_conditional_value_at_risk == False`, `None` is recorded.
+                If return_conditional_value_at_risk is `False`, `None` is recorded.
 
             conditional_value_at_risk: list of float
                 Ground-truth conditional value at risk of the candidate policies (sorted by ranking_by_conditional_value_at_risk).
-                If `return_conditional_value_at_risk == False`, `None` is recorded.
+                If return_conditional_value_at_risk is `False`, `None` is recorded.
 
             parameters: dict
                 Dictionary containing quartile_alpha, and cvar_alpha.
+                If return_by_dataframe is `True`, parameters will not be returned.
 
         """
         candidate_policy_names = list(input_dict.keys())
@@ -421,17 +489,23 @@ class OffPolicySelection:
         -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
-            Please refer to `CreateOPEInput` class for the detail.
-            key: [evaluation_policy_name][
-                evaluation_policy_action,
-                evaluation_policy_action_dist,
-                state_action_value_prediction,
-                initial_state_value_prediction,
-                state_action_marginal_importance_weight,
-                state_marginal_importance_weight,
-                on_policy_policy_value,
-                gamma,
-            ]
+            
+            .. code-block:: python
+
+                key: [evaluation_policy_name][
+                    evaluation_policy_action,
+                    evaluation_policy_action_dist,
+                    state_action_value_prediction,
+                    initial_state_value_prediction,
+                    state_action_marginal_importance_weight,
+                    state_marginal_importance_weight,
+                    on_policy_policy_value,
+                    gamma,
+                ]
+
+            .. seealso::
+
+                :class:`ope.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
@@ -458,71 +532,74 @@ class OffPolicySelection:
         -------
         ops_dict/(ranking_df_dict, metric_df): dict or dataframe
             Dictionary/dataframe containing the result of OPS conducted by OPE estimators.
-            key: [estimator_name][
-                estimated_ranking,
-                estimated_policy_value,
-                estimated_relative_policy_value,
-                true_ranking,
-                true_policy_value,
-                true_relative_policy_value,
-                mean_squared_error,
-                rank_correlation,
-                regret,
-                type_i_error_rate,
-                type_ii_error_rate,
-            ]
+
+            .. code-block:: python 
+
+                key: [estimator_name][
+                    estimated_ranking,
+                    estimated_policy_value,
+                    estimated_relative_policy_value,
+                    true_ranking,
+                    true_policy_value,
+                    true_relative_policy_value,
+                    mean_squared_error,
+                    rank_correlation,
+                    regret,
+                    type_i_error_rate,
+                    type_ii_error_rate,
+                ]
 
             estimated_ranking: list of str
                 Name of the candidate policies sorted by the estimated policy value.
-                Recorded in `ranking_df_dict` when `return_by_dataframe == True`.
+                Recorded in ranking_df_dict if return_by_dataframe is `True`.
 
             estimated_policy_value: list of float
                 Estimated policy value of the candidate policies (sorted by estimated_ranking).
-                Recorded in `ranking_df_dict` when `return_by_dataframe == True`.
+                Recorded in ranking_df_dict if return_by_dataframe is `True`.
 
             estimated_relative_policy_value: list of float
                 Estimated relative policy value of the candidate policies compared to the behavior policy (sorted by estimated_ranking).
-                Recorded in `ranking_df_dict` when `return_by_dataframe == True`.
+                Recorded in ranking_df_dict if return_by_dataframe is `True`.
 
             true_ranking: list of int
                 Ranking index of the (true) policy value of the candidate policies (sorted by estimated_ranking).
-                Recorded only when `return_true_values == True`.
-                Recorded in `ranking_df_dict` when `return_by_dataframe == True`.
+                Recorded only when return_true_values is `True`.
+                Recorded in ranking_df_dict if return_by_dataframe is `True`.
 
             true_policy_value: list of float
                 True policy value of the candidate policies (sorted by estimated_ranking).
-                Recorded only when `return_true_values == True`.
-                Recorded in `ranking_df_dict` when `return_by_dataframe == True`.
+                Recorded only when return_true_values is `True`.
+                Recorded in ranking_df_dict when return_by_dataframe is `True`.
 
             true_relative_policy_value: list of float
                 True relative policy value of the candidate policies compared to the behavior policy (sorted by estimated_ranking).
-                Recorded only when `return_true_values == True`.
-                Recorded in `ranking_df_dict` when `return_by_dataframe == True`.
+                Recorded only when return_true_values is `True`.
+                Recorded in ranking_df_dict if return_by_dataframe is `True`.
 
             mean_squared_error: float
                 Mean-squared-error of the estimated policy value.
-                Recorded only when `return_metric == True`.
-                Recorded in `metric_df` when `return_by_dataframe == True`.
+                Recorded only when return_metric is `True`.
+                Recorded in metric_df if return_by_dataframe is `True`.
 
             rank_correlation: tuple of float
                 Rank correlation coefficient between the true ranking and the estimated ranking, and its pvalue.
-                Recorded only when `return_metric == True`.
-                Recorded in `metric_df` when `return_by_dataframe == True`.
+                Recorded only when return_metric is `True`.
+                Recorded in metric_df if return_by_dataframe is `True`.
 
             regret: tuple of float and int
                 Regret@k and k.
-                Recorded only when `return_metric == True`.
-                Recorded in `metric_df` when `return_by_dataframe == True`.
+                Recorded only when return_metric is `True`.
+                Recorded in metric_df if return_by_dataframe is `True`.
 
             type_i_error_rate: float
                 Type I error rate of the hypothetical test. True Negative when the policy is safe but estimated as unsafe.
-                Recorded only when `return_metric == True`.
-                Recorded in `metric_df` when `return_by_dataframe == True`.
+                Recorded only when return_metric is `True`.
+                Recorded in metric_df if return_by_dataframe is `True`.
 
             type_ii_error_rate: float
                 Type II error rate of the hypothetical test. False Positive when the policy is unsafe but undetected.
-                Recorded only when `return_metric == True`.
-                Recorded in `metric_df` when `return_by_dataframe == True`.
+                Recorded only when return_metric is `True`.
+                Recorded in metric_df when return_by_dataframe is `True`.
 
             safety_threshold: float
                 The policy value required to be a safe policy.
@@ -710,21 +787,27 @@ class OffPolicySelection:
         -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
-            Please refer to `CreateOPEInput` class for the detail.
-            key: [evaluation_policy_name][
-                evaluation_policy_action,
-                evaluation_policy_action_dist,
-                state_action_value_prediction,
-                initial_state_value_prediction,
-                state_action_marginal_importance_weight,
-                state_marginal_importance_weight,
-                on_policy_policy_value,
-                gamma,
-            ]
+            
+            .. code-block:: python
+
+                key: [evaluation_policy_name][
+                    evaluation_policy_action,
+                    evaluation_policy_action_dist,
+                    state_action_value_prediction,
+                    initial_state_value_prediction,
+                    state_action_marginal_importance_weight,
+                    state_marginal_importance_weight,
+                    on_policy_policy_value,
+                    gamma,
+                ]
+
+            .. seealso::
+
+                :class:`ope.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
-            When `None` is given, all the estimators are compared.
+            If `None` is given, all the estimators are compared.
 
         return_true_values: bool, default=False
             Whether to return the true policy value and its ranking.
@@ -747,71 +830,74 @@ class OffPolicySelection:
         -------
         ops_dict/(ranking_df_dict, metric_df): dict or dataframe
             Dictionary/dataframe containing the result of OPS conducted by OPE estimators.
-            key: [estimator_name][
-                estimated_ranking,
-                estimated_policy_value,
-                estimated_relative_policy_value,
-                true_ranking,
-                true_policy_value,
-                true_relative_policy_value,
-                mean_squared_error,
-                rank_correlation,
-                regret,
-                type_i_error_rate,
-                type_ii_error_rate,
-            ]
+
+            .. code-block:: python
+
+                key: [estimator_name][
+                    estimated_ranking,
+                    estimated_policy_value,
+                    estimated_relative_policy_value,
+                    true_ranking,
+                    true_policy_value,
+                    true_relative_policy_value,
+                    mean_squared_error,
+                    rank_correlation,
+                    regret,
+                    type_i_error_rate,
+                    type_ii_error_rate,
+                ]
 
             estimated_ranking: list of str
                 Name of the candidate policies sorted by the estimated policy value.
-                Recorded in `ranking_df_dict` when `return_by_dataframe == True`.
+                Recorded in ranking_df_dict if return_by_dataframe is `True`.
 
             estimated_policy_value: list of float
                 Estimated policy value of the candidate policies (sorted by estimated_ranking).
-                Recorded in `ranking_df_dict` when `return_by_dataframe == True`.
+                Recorded in ranking_df_dict if return_by_dataframe is `True`.
 
             estimated_relative_policy_value: list of float
                 Estimated relative policy value of the candidate policies compared to the behavior policy (sorted by estimated_ranking).
-                Recorded in `ranking_df_dict` when `return_by_dataframe == True`.
+                Recorded in ranking_df_dict if return_by_dataframe is `True`.
 
             true_ranking: list of int
                 Ranking index of the (true) policy value of the candidate policies (sorted by estimated_ranking).
-                Recorded only when `return_true_values == True`.
-                Recorded in `ranking_df_dict` when `return_by_dataframe == True`.
+                Recorded only when return_true_values is `True`.
+                Recorded in ranking_df_dict if return_by_dataframe is `True`.
 
             true_policy_value: list of float
                 True policy value of the candidate policies (sorted by estimated_ranking).
-                Recorded only when `return_true_values == True`.
-                Recorded in `ranking_df_dict` when `return_by_dataframe == True`.
+                Recorded only when return_true_values is `True`.
+                Recorded in ranking_df_dict if return_by_dataframe is `True`.
 
             true_relative_policy_value: list of float
                 True relative policy value of the candidate policies compared to the behavior policy (sorted by estimated_ranking).
-                Recorded only when `return_true_values == True`.
-                Recorded in `ranking_df_dict` when `return_by_dataframe == True`.
+                Recorded only when return_true_values is `True`.
+                Recorded in ranking_df_dict if return_by_dataframe is `True`.
 
             mean_squared_error: float
                 Mean-squared-error of the estimated policy value.
-                Recorded only when `return_metric == True`.
-                Recorded in `metric_df` when `return_by_dataframe == True`.
+                Recorded only when return_metric is `True`.
+                Recorded in metric_df if return_by_dataframe is `True`.
 
             rank_correlation: tuple of float
                 Rank correlation coefficient between the true ranking and the estimated ranking, and its pvalue.
-                Recorded only when `return_metric == True`.
-                Recorded in `metric_df` when `return_by_dataframe == True`.
+                Recorded only when return_metric is `True`.
+                Recorded in metric_df when return_by_dataframe is `True`.
 
             regret: tuple of float and int
                 Regret@k and k.
-                Recorded only when `return_metric == True`.
-                Recorded in `metric_df` when `return_by_dataframe == True`.
+                Recorded only when return_metric is `True`.
+                Recorded in metric_df if return_by_dataframe is `True`.
 
             type_i_error_rate: float
                 Type I error rate of the hypothetical test. True Negative when the policy is safe but estimated as unsafe.
-                Recorded only when `return_metric == True`.
-                Recorded in `metric_df` when `return_by_dataframe == True`.
+                Recorded only when return_metric is `True`.
+                Recorded in metric_df when return_by_dataframe is `True`.
 
             type_ii_error_rate: float
                 Type II error rate of the hypothetical test. False Positive when the policy is unsafe but undetected.
-                Recorded only when `return_metric == True`.
-                Recorded in `metric_df` when `return_by_dataframe == True`.
+                Recorded only when return_metric is `True`.
+                Recorded in metric_df when return_by_dataframe is `True`.
 
             safety_threshold: float
                 The policy value required to be a safe policy.
@@ -1005,17 +1091,23 @@ class OffPolicySelection:
         -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
-            Please refer to `CreateOPEInput` class for the detail.
-            key: [evaluation_policy_name][
-                evaluation_policy_action,
-                evaluation_policy_action_dist,
-                state_action_value_prediction,
-                initial_state_value_prediction,
-                state_action_marginal_importance_weight,
-                state_marginal_importance_weight,
-                on_policy_policy_value,
-                gamma,
-            ]
+            
+            .. code-block:: python
+
+                key: [evaluation_policy_name][
+                    evaluation_policy_action,
+                    evaluation_policy_action_dist,
+                    state_action_value_prediction,
+                    initial_state_value_prediction,
+                    state_action_marginal_importance_weight,
+                    state_marginal_importance_weight,
+                    on_policy_policy_value,
+                    gamma,
+                ]
+
+            .. seealso::
+
+                :class:`ope.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
@@ -1054,70 +1146,73 @@ class OffPolicySelection:
         -------
         ops_dict/(ranking_df_dict, metric_df): dict or dataframe
             Dictionary/dataframe containing the result of OPS conducted by OPE estimators.
-            key: [ci][estimator_name][
-                estimated_ranking,
-                estimated_policy_value_lower_bound,
-                estimated_relative_policy_value_lower_bound,
-                true_ranking,
-                true_policy_value,
-                true_relative_policy_value,
-                mean_squared_error,
-                rank_correlation,
-                regret,
-                type_i_error_rate,
-                type_ii_error_rate,
-            ]
+
+            .. code-block:: python
+
+                key: [ci][estimator_name][
+                    estimated_ranking,
+                    estimated_policy_value_lower_bound,
+                    estimated_relative_policy_value_lower_bound,
+                    true_ranking,
+                    true_policy_value,
+                    true_relative_policy_value,
+                    mean_squared_error,
+                    rank_correlation,
+                    regret,
+                    type_i_error_rate,
+                    type_ii_error_rate,
+                ]
 
             estimated_ranking: list of str
                 Name of the candidate policies sorted by the estimated policy value lower bound.
-                Recorded in `ranking_df_dict` when `return_by_dataframe == True`.
+                Recorded in ranking_df_dict if return_by_dataframe is `True`.
 
             estimated_policy_value_lower_bound: list of float
                 Estimated policy value lower bound of the candidate policies (sorted by estimated_ranking).
-                Recorded in `ranking_df_dict` when `return_by_dataframe == True`.
+                Recorded in ranking_df_dict if return_by_dataframe is `True`.
 
             estimated_relative_policy_value_lower_bound: list of float
                 Estimated relative policy value lower bound of the candidate policies compared to the behavior policy (sorted by estimated_ranking).
-                Recorded in `ranking_df_dict` when `return_by_dataframe == True`.
+                Recorded in ranking_df_dict if return_by_dataframe is `True`.
 
             true_ranking: list of int
                 Ranking index of the (true) policy value of the candidate policies (sorted by estimated_ranking).
-                Recorded only when `return_true_values == True`.
-                Recorded in `ranking_df_dict` when `return_by_dataframe == True`.
+                Recorded only when return_true_values is `True`.
+                Recorded in ranking_df_dict if return_by_dataframe is `True`.
 
             true_policy_value: list of float
                 True policy value of the candidate policies (sorted by estimated_ranking).
-                Recorded only when `return_true_values == True`.
-                Recorded in `ranking_df_dict` when `return_by_dataframe == True`.
+                Recorded only when return_true_values is `True`.
+                Recorded in ranking_df_dict if return_by_dataframe is `True`.
 
             true_relative_policy_value: list of float
                 True relative policy value of the candidate policies compared to the behavior policy (sorted by estimated_ranking).
-                Recorded only when `return_true_values == True`.
-                Recorded in `ranking_df_dict` when `return_by_dataframe == True`.
+                Recorded only when return_true_values is `True`.
+                Recorded in ranking_df_dict if return_by_dataframe is `True`.
 
             mean_squared_error: None
                 This is for API consistency.
-                Recorded in `metric_df` when `return_by_dataframe == True`.
+                Recorded in metric_df if return_by_dataframe is `True`.
 
             rank_correlation: tuple of float
                 Rank correlation coefficient between the true ranking and the estimated ranking, and its pvalue.
-                Recorded only when `return_metric == True`.
-                Recorded in `metric_df` when `return_by_dataframe == True`.
+                Recorded only when return_metric is `True`.
+                Recorded in metric_df if return_by_dataframe is `True`.
 
             regret: tuple of float and int
                 Regret@k and k.
-                Recorded only when `return_metric == True`.
-                Recorded in `metric_df` when `return_by_dataframe == True`.
+                Recorded only when return_metric is `True`.
+                Recorded in metric_df if return_by_dataframe is `True`.
 
             type_i_error_rate: float
                 Type I error rate of the hypothetical test. True Negative when the policy is safe but estimated as unsafe.
-                Recorded only when `return_metric == True`.
-                Recorded in `metric_df` when `return_by_dataframe == True`.
+                Recorded only when return_metric is `True`.
+                Recorded in metric_df if return_by_dataframe is `True`.
 
             type_ii_error_rate: float
                 Type II error rate of the hypothetical test. False Positive when the policy is unsafe but undetected.
-                Recorded only when `return_metric == True`.
-                Recorded in `metric_df` when `return_by_dataframe == True`.
+                Recorded only when return_metric is `True`.
+                Recorded in metric_df if return_by_dataframe is `True`.
 
             safety_threshold: float
                 The policy value required to be a safe policy.
@@ -1329,17 +1424,23 @@ class OffPolicySelection:
         -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
-            Please refer to `CreateOPEInput` class for the detail.
-            key: [evaluation_policy_name][
-                evaluation_policy_action,
-                evaluation_policy_action_dist,
-                state_action_value_prediction,
-                initial_state_value_prediction,
-                state_action_marginal_importance_weight,
-                state_marginal_importance_weight,
-                on_policy_policy_value,
-                gamma,
-            ]
+            
+            .. code-block:: python
+
+                key: [evaluation_policy_name][
+                    evaluation_policy_action,
+                    evaluation_policy_action_dist,
+                    state_action_value_prediction,
+                    initial_state_value_prediction,
+                    state_action_marginal_importance_weight,
+                    state_marginal_importance_weight,
+                    on_policy_policy_value,
+                    gamma,
+                ]
+
+            .. seealso::
+
+                :class:`ope.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
@@ -1365,59 +1466,62 @@ class OffPolicySelection:
         -------
         ops_dict/(ranking_df_dict, metric_df): dict or dataframe
             Dictionary/dataframe containing the result of OPS conducted by OPE estimators.
-            key: [estimator_name][
-                estimated_ranking,
-                estimated_lower_quartile,
-                true_ranking,
-                true_lower_quartile,
-                mean_squared_error,
-                rank_correlation,
-                regret,
-                type_i_error_rate,
-                type_ii_error_rate,
-            ]
+
+            .. code-block:: python
+
+                key: [estimator_name][
+                    estimated_ranking,
+                    estimated_lower_quartile,
+                    true_ranking,
+                    true_lower_quartile,
+                    mean_squared_error,
+                    rank_correlation,
+                    regret,
+                    type_i_error_rate,
+                    type_ii_error_rate,
+                ]
 
             estimated_ranking: list of str
                 Name of the candidate policies sorted by the estimated lower quartile of the trajectory wise reward.
-                Recorded in `ranking_df_dict` when `return_by_dataframe == True`.
+                Recorded in ranking_df_dict if return_by_dataframe is `True`.
 
             estimated_lower_quartile: list of float
                 Estimated lower quartile of the trajectory wise reward of the candidate policies (sorted by estimated_ranking).
-                Recorded in `ranking_df_dict` when `return_by_dataframe == True`.
+                Recorded in ranking_df_dict if return_by_dataframe is `True`.
 
             true_ranking: list of int
                 Ranking index of the (true) lower quartile of the trajectory wise reward of the candidate policies (sorted by estimated_ranking).
-                Recorded only when `return_true_values == True`.
-                Recorded in `ranking_df_dict` when `return_by_dataframe == True`.
+                Recorded only when return_true_values is `True`.
+                Recorded in ranking_df_dict if return_by_dataframe is `True`.
 
             true_lower_quartile: list of float
                 True lower quartile of the trajectory wise reward of the candidate policies (sorted by estimated_ranking).
-                Recorded only when `return_true_values == True`.
-                Recorded in `ranking_df_dict` when `return_by_dataframe == True`.
+                Recorded only when return_true_values is `True`.
+                Recorded in ranking_df_dict if return_by_dataframe is `True`.
 
             mean_squared_error: float
                 Mean-squared-error of the estimated lower quartile of the trajectory wise reward.
-                Recorded only when `return_metric == True`.
-                Recorded in `metric_df` when `return_by_dataframe == True`.
+                Recorded only when return_metric is `True`.
+                Recorded in metric_df if return_by_dataframe is `True`.
 
             rank_correlation: tuple of float
                 Rank correlation coefficient between the true ranking and the estimated ranking, and its pvalue.
-                Recorded only when `return_metric == True`.
-                Recorded in `metric_df` when `return_by_dataframe == True`.
+                Recorded only when return_metric is `True`.
+                Recorded in metric_df if return_by_dataframe is `True`.
 
             regret: None
                 This is for API consistency.
-                Recorded in `metric_df` when `return_by_dataframe == True`.
+                Recorded in metric_df if return_by_dataframe is `True`.
 
             type_i_error_rate: float
                 Type I error rate of the hypothetical test. True Negative when the policy is safe but estimated as unsafe.
-                Recorded only when `return_metric == True`.
-                Recorded in `metric_df` when `return_by_dataframe == True`.
+                Recorded only when return_metric is `True`.
+                Recorded in metric_df if return_by_dataframe is `True`.
 
             type_ii_error_rate: float
                 Type II error rate of the hypothetical test. False Positive when the policy is unsafe but undetected.
-                Recorded only when `return_metric == True`.
-                Recorded in `metric_df` when `return_by_dataframe == True`.
+                Recorded only when return_metric is `True`.
+                Recorded in metric_df if return_by_dataframe is `True`.
 
             safety_threshold: float
                 The lower quartile required to be a safe policy.
@@ -1583,17 +1687,23 @@ class OffPolicySelection:
         -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
-            Please refer to `CreateOPEInput` class for the detail.
-            key: [evaluation_policy_name][
-                evaluation_policy_action,
-                evaluation_policy_action_dist,
-                state_action_value_prediction,
-                initial_state_value_prediction,
-                state_action_marginal_importance_weight,
-                state_marginal_importance_weight,
-                on_policy_policy_value,
-                gamma,
-            ]
+            
+            .. code-block:: python
+
+                key: [evaluation_policy_name][
+                    evaluation_policy_action,
+                    evaluation_policy_action_dist,
+                    state_action_value_prediction,
+                    initial_state_value_prediction,
+                    state_action_marginal_importance_weight,
+                    state_marginal_importance_weight,
+                    on_policy_policy_value,
+                    gamma,
+                ]
+
+            .. seealso::
+
+                :class:`ope.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
@@ -1619,59 +1729,62 @@ class OffPolicySelection:
         -------
         ops_dict/(ranking_df_dict, metric_df): dict or dataframe
             Dictionary/dataframe containing the result of OPS conducted by OPE estimators.
-            key: [estimator_name][
-                estimated_ranking,
-                estimated_conditional_value_at_risk,
-                true_ranking,
-                true_conditional_value_at_risk,
-                mean_squared_error,
-                rank_correlation,
-                regret,
-                type_i_error_rate,
-                type_ii_error_rate,
-            ]
+
+            .. code-block:: python
+
+                key: [estimator_name][
+                    estimated_ranking,
+                    estimated_conditional_value_at_risk,
+                    true_ranking,
+                    true_conditional_value_at_risk,
+                    mean_squared_error,
+                    rank_correlation,
+                    regret,
+                    type_i_error_rate,
+                    type_ii_error_rate,
+                ]
 
             estimated_ranking: list of str
                 Name of the candidate policies sorted by the estimated conditional value at risk.
-                Recorded in `ranking_df_dict` when `return_by_dataframe == True`.
+                Recorded in ranking_df_dict if return_by_dataframe is `True`.
 
             estimated_conditional_value_at_risk: list of float
                 Estimated conditional value at risk of the candidate policies (sorted by estimated_ranking).
-                Recorded in `ranking_df_dict` when `return_by_dataframe == True`.
+                Recorded in ranking_df_dict if return_by_dataframe is `True`.
 
             true_ranking: list of int
                 Ranking index of the (true) conditional value at risk of the candidate policies (sorted by estimated_ranking).
-                Recorded only when `return_true_values == True`.
-                Recorded in `ranking_df_dict` when `return_by_dataframe == True`.
+                Recorded only when return_true_values is `True`.
+                Recorded in ranking_df_dict if return_by_dataframe is `True`.
 
             true_conditional_value_at_risk: list of float
                 True conditional value at risk of the candidate policies (sorted by estimated_ranking).
-                Recorded only when `return_true_values == True`.
-                Recorded in `ranking_df_dict` when `return_by_dataframe == True`.
+                Recorded only when return_true_values is `True`.
+                Recorded in ranking_df_dict if return_by_dataframe is `True`.
 
             mean_squared_error: float
                 Mean-squared-error of the estimated conditional value at risk.
-                Recorded only when `return_metric == True`.
-                Recorded in `metric_df` when `return_by_dataframe == True`.
+                Recorded only when return_metric is `True`.
+                Recorded in metric_df if return_by_dataframe is `True`.
 
             rank_correlation: tuple or float
                 Rank correlation coefficient between the true ranking and the estimated ranking, and its pvalue.
-                Recorded only when `return_metric == True`.
-                Recorded in `metric_df` when `return_by_dataframe == True`.
+                Recorded only when return_metric is `True`.
+                Recorded in metric_df if return_by_dataframe is `True`.
 
             regret: None
                 This is for API consistency.
-                Recorded in `metric_df` when `return_by_dataframe == True`.
+                Recorded in metric_df if return_by_dataframe is `True`.
 
             type_i_error_rate: float
                 Type I error rate of the hypothetical test. True Negative when the policy is safe but estimated as unsafe.
-                Recorded only when `return_metric == True`.
-                Recorded in `metric_df` when `return_by_dataframe == True`.
+                Recorded only when return_metric is `True`.
+                Recorded in metric_df if return_by_dataframe is `True`.
 
             type_ii_error_rate: float
                 Type II error rate of the hypothetical test. False Positive when the policy is unsafe but undetected.
-                Recorded only when `return_metric == True`.
-                Recorded in `metric_df` when `return_by_dataframe == True`.
+                Recorded only when return_metric is `True`.
+                Recorded in metric_df if return_by_dataframe is True`.
 
             safety_threshold: float
                 The conditional value at risk required to be a safe policy.
@@ -1836,7 +1949,7 @@ class OffPolicySelection:
         hue: str = "estimator",
         sharey: bool = False,
         fig_dir: Optional[Path] = None,
-        fig_name: str = "estimated_policy_value.png",
+        fig_name: str = "estimated_policy_value_standard_ope.png",
     ):
         """Visualize the policy value estimated by OPE estimators (box plot).
 
@@ -1844,17 +1957,23 @@ class OffPolicySelection:
         -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
-            Please refer to `CreateOPEInput` class for the detail.
-            key: [evaluation_policy_name][
-                evaluation_policy_action,
-                evaluation_policy_action_dist,
-                state_action_value_prediction,
-                initial_state_value_prediction,
-                state_action_marginal_importance_weight,
-                state_marginal_importance_weight,
-                on_policy_policy_value,
-                gamma,
-            ]
+            
+            .. code-block:: python
+
+                key: [evaluation_policy_name][
+                    evaluation_policy_action,
+                    evaluation_policy_action_dist,
+                    state_action_value_prediction,
+                    initial_state_value_prediction,
+                    state_action_marginal_importance_weight,
+                    state_marginal_importance_weight,
+                    on_policy_policy_value,
+                    gamma,
+                ]
+
+            .. seealso::
+
+                :class:`ope.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
@@ -1873,20 +1992,20 @@ class OffPolicySelection:
             Random state.
 
         is_relative: bool, default=False
-            If True, the method visualizes the estimated policy value of the evaluation policy
+            If `True`, the method visualizes the estimated policy value of the evaluation policy
             relative to the on-policy policy value of the behavior policy.
 
         hue: {"estimator", "policy"}, default="estimator"
             Hue of the plot.
 
         sharey: bool, default=False
-            If True, the y-axis will be shared among different estimators or evaluation policies.
+            If `True`, the y-axis will be shared among different estimators or evaluation policies.
 
         fig_dir: Path, default=None
             Path to store the bar figure.
             If `None` is given, the figure will not be saved.
 
-        fig_name: str, default="estimated_policy_value.png"
+        fig_name: str, default="estimated_policy_value_standard_ope.png"
             Name of the bar figure.
 
         """
@@ -1920,17 +2039,23 @@ class OffPolicySelection:
         -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
-            Please refer to `CreateOPEInput` class for the detail.
-            key: [evaluation_policy_name][
-                evaluation_policy_action,
-                evaluation_policy_action_dist,
-                state_action_value_prediction,
-                initial_state_value_prediction,
-                state_action_marginal_importance_weight,
-                state_marginal_importance_weight,
-                on_policy_policy_value,
-                gamma,
-            ]
+            
+            .. code-block:: python
+
+                key: [evaluation_policy_name][
+                    evaluation_policy_action,
+                    evaluation_policy_action_dist,
+                    state_action_value_prediction,
+                    initial_state_value_prediction,
+                    state_action_marginal_importance_weight,
+                    state_marginal_importance_weight,
+                    on_policy_policy_value,
+                    gamma,
+                ]
+
+            .. seealso::
+
+                :class:`ope.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
@@ -1942,7 +2067,7 @@ class OffPolicySelection:
         legend: bool, default=True
             Whether to include a legend in the figure.
 
-        n_cols: int, default=None
+        n_cols: int, default=None (> 0)
             Number of columns in the figure.
 
         fig_dir: Path, default=None
@@ -1974,7 +2099,7 @@ class OffPolicySelection:
         hue: str = "estimator",
         sharey: bool = False,
         fig_dir: Optional[Path] = None,
-        fig_name: str = "estimated_policy_value.png",
+        fig_name: str = "estimated_policy_value_cumulative_distribution_ope.png",
     ) -> None:
         """Visualize the policy value estimated by cumulative distribution OPE estimators (box plot).
 
@@ -1982,17 +2107,23 @@ class OffPolicySelection:
         -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
-            Please refer to `CreateOPEInput` class for the detail.
-            key: [evaluation_policy_name][
-                evaluation_policy_action,
-                evaluation_policy_action_dist,
-                state_action_value_prediction,
-                initial_state_value_prediction,
-                state_action_marginal_importance_weight,
-                state_marginal_importance_weight,
-                on_policy_policy_value,
-                gamma,
-            ]
+            
+            .. code-block:: python
+
+                key: [evaluation_policy_name][
+                    evaluation_policy_action,
+                    evaluation_policy_action_dist,
+                    state_action_value_prediction,
+                    initial_state_value_prediction,
+                    state_action_marginal_importance_weight,
+                    state_marginal_importance_weight,
+                    on_policy_policy_value,
+                    gamma,
+                ]
+
+            .. seealso::
+
+                :class:`ope.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
@@ -2002,20 +2133,20 @@ class OffPolicySelection:
             Significance level. The value should bw within `[0, 1)`.
 
         is_relative: bool, default=False
-            If True, the method visualizes the estimated policy value of the evaluation policy
+            If `True`, the method visualizes the estimated policy value of the evaluation policy
             relative to the ground-truth policy value of the behavior policy.
 
         hue: {"estimator", "policy"}, default="estimator"
             Hue of the plot.
 
         sharey: bool, default=False
-            If True, the y-axis will be shared among different evaluation policies.
+            If `True`, the y-axis will be shared among different evaluation policies.
 
         fig_dir: Path, default=None
             Path to store the bar figure.
             If `None` is given, the figure will not be saved.
 
-        fig_name: str, default="estimated_policy_value.png"
+        fig_name: str, default="estimated_policy_value_cumulative_distribution_ope.png"
             Name of the bar figure.
 
         """
@@ -2034,13 +2165,13 @@ class OffPolicySelection:
         self,
         input_dict: OPEInputDict,
         compared_estimators: Optional[List[str]] = None,
-        alphas: np.ndarray = np.linspace(0, 1, 20),
+        alphas: Optional[np.ndarray] = None,
         hue: str = "estimator",
         legend: bool = True,
         n_cols: Optional[int] = None,
         sharey: bool = False,
         fig_dir: Optional[Path] = None,
-        fig_name: str = "estimated_policy_value.png",
+        fig_name: str = "estimated_conditional_value_at_risk.png",
     ) -> None:
         """Visualize the conditional value at risk estimated by cumulative distribution OPE estimators (cdf plot).
 
@@ -2048,24 +2179,31 @@ class OffPolicySelection:
         -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
-            Please refer to `CreateOPEInput` class for the detail.
-            key: [evaluation_policy_name][
-                evaluation_policy_action,
-                evaluation_policy_action_dist,
-                state_action_value_prediction,
-                initial_state_value_prediction,
-                state_action_marginal_importance_weight,
-                state_marginal_importance_weight,
-                on_policy_policy_value,
-                gamma,
-            ]
+            
+            .. code-block:: python
+
+                key: [evaluation_policy_name][
+                    evaluation_policy_action,
+                    evaluation_policy_action_dist,
+                    state_action_value_prediction,
+                    initial_state_value_prediction,
+                    state_action_marginal_importance_weight,
+                    state_marginal_importance_weight,
+                    on_policy_policy_value,
+                    gamma,
+                ]
+
+            .. seealso::
+
+                :class:`ope.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
             When `None` is given, all the estimators are compared.
 
-        alphas: array-like of shape (n_alpha, ), default=np.linspace(0, 1, 20)
-            Set of proportions of the sided region.
+        alphas: array-like of shape (n_alpha, ), default=None
+            Set of proportions of the sided region. The values should be within `[0, 1)`.
+            If `None` is given, :class:`np.linspace(0, 1, 21)` will be used.
 
         hue: {"estimator", "policy"}, default="estimator"
             Hue of the plot.
@@ -2073,17 +2211,17 @@ class OffPolicySelection:
         legend: bool, default=True
             Whether to include a legend in the figure.
 
-        n_cols: int, default=None
+        n_cols: int, default=None (> 0)
             Number of columns in the figure.
 
         sharey: bool, default=False
-            If True, the y-axis will be shared among different evaluation policies.
+            If `True`, the y-axis will be shared among different evaluation policies.
 
         fig_dir: Path, default=None
             Path to store the bar figure.
             If `None` is given, the figure will not be saved.
 
-        fig_name: str, default="estimated_policy_value.png"
+        fig_name: str, default="estimated_conditional_value_at_risk.png"
             Name of the bar figure.
 
         """
@@ -2107,7 +2245,7 @@ class OffPolicySelection:
         hue: str = "estimator",
         sharey: bool = False,
         fig_dir: Optional[Path] = None,
-        fig_name: str = "estimated_policy_value.png",
+        fig_name: str = "estimated_interquartile_range.png",
     ) -> None:
         """Visualize the interquartile range estimated by cumulative distribution OPE estimators (box plot).
 
@@ -2115,17 +2253,23 @@ class OffPolicySelection:
         -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
-            Please refer to `CreateOPEInput` class for the detail.
-            key: [evaluation_policy_name][
-                evaluation_policy_action,
-                evaluation_policy_action_dist,
-                state_action_value_prediction,
-                initial_state_value_prediction,
-                state_action_marginal_importance_weight,
-                state_marginal_importance_weight,
-                on_policy_policy_value,
-                gamma,
-            ]
+            
+            .. code-block:: python
+
+                key: [evaluation_policy_name][
+                    evaluation_policy_action,
+                    evaluation_policy_action_dist,
+                    state_action_value_prediction,
+                    initial_state_value_prediction,
+                    state_action_marginal_importance_weight,
+                    state_marginal_importance_weight,
+                    on_policy_policy_value,
+                    gamma,
+                ]
+
+            .. seealso::
+
+                :class:`ope.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
@@ -2138,13 +2282,13 @@ class OffPolicySelection:
             Hue of the plot.
 
         sharey: bool, default=False
-            If True, the y-axis will be shared among different evaluation policies.
+            If `True`, the y-axis will be shared among different evaluation policies.
 
         fig_dir: Path, default=None
             Path to store the bar figure.
             If `None` is given, the figure will not be saved.
 
-        fig_name: str, default="estimated_policy_value.png"
+        fig_name: str, default="estimated_interquartile_range.png"
             Name of the bar figure.
 
         """
@@ -2175,17 +2319,23 @@ class OffPolicySelection:
         -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
-            Please refer to `CreateOPEInput` class for the detail.
-            key: [evaluation_policy_name][
-                evaluation_policy_action,
-                evaluation_policy_action_dist,
-                state_action_value_prediction,
-                initial_state_value_prediction,
-                state_action_marginal_importance_weight,
-                state_marginal_importance_weight,
-                on_policy_policy_value,
-                gamma,
-            ]
+            
+            .. code-block:: python
+
+                key: [evaluation_policy_name][
+                    evaluation_policy_action,
+                    evaluation_policy_action_dist,
+                    state_action_value_prediction,
+                    initial_state_value_prediction,
+                    state_action_marginal_importance_weight,
+                    state_marginal_importance_weight,
+                    on_policy_policy_value,
+                    gamma,
+                ]
+
+            .. seealso::
+
+                :class:`ope.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
@@ -2377,17 +2527,23 @@ class OffPolicySelection:
         -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
-            Please refer to `CreateOPEInput` class for the detail.
-            key: [evaluation_policy_name][
-                evaluation_policy_action,
-                evaluation_policy_action_dist,
-                state_action_value_prediction,
-                initial_state_value_prediction,
-                state_action_marginal_importance_weight,
-                state_marginal_importance_weight,
-                on_policy_policy_value,
-                gamma,
-            ]
+            
+            .. code-block:: python
+
+                key: [evaluation_policy_name][
+                    evaluation_policy_action,
+                    evaluation_policy_action_dist,
+                    state_action_value_prediction,
+                    initial_state_value_prediction,
+                    state_action_marginal_importance_weight,
+                    state_marginal_importance_weight,
+                    on_policy_policy_value,
+                    gamma,
+                ]
+
+            .. seealso::
+
+                :class:`ope.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
@@ -2411,7 +2567,7 @@ class OffPolicySelection:
             Path to store the bar figure.
             If `None` is given, the figure will not be saved.
 
-        fig_name: str, default="topk_policy_value_standard_ope.png"
+        fig_name: str, default="topk_policy_value_cumulative_distribution_ope.png"
             Name of the bar figure.
 
         """
@@ -2577,7 +2733,7 @@ class OffPolicySelection:
         random_state: Optional[int] = None,
         legend: bool = True,
         fig_dir: Optional[Path] = None,
-        fig_name: str = "topk_policy_value_standard_ope.png",
+        fig_name: str = "topk_policy_value_standard_ope_lower_bound.png",
     ):
         """Visualize the topk deployment result selected by standard OPE.
 
@@ -2585,17 +2741,23 @@ class OffPolicySelection:
         -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
-            Please refer to `CreateOPEInput` class for the detail.
-            key: [evaluation_policy_name][
-                evaluation_policy_action,
-                evaluation_policy_action_dist,
-                state_action_value_prediction,
-                initial_state_value_prediction,
-                state_action_marginal_importance_weight,
-                state_marginal_importance_weight,
-                on_policy_policy_value,
-                gamma,
-            ]
+            
+            .. code-block:: python
+
+                key: [evaluation_policy_name][
+                    evaluation_policy_action,
+                    evaluation_policy_action_dist,
+                    state_action_value_prediction,
+                    initial_state_value_prediction,
+                    state_action_marginal_importance_weight,
+                    state_marginal_importance_weight,
+                    on_policy_policy_value,
+                    gamma,
+                ]
+
+            .. seealso::
+
+                :class:`ope.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
@@ -2631,7 +2793,7 @@ class OffPolicySelection:
             Path to store the bar figure.
             If `None` is given, the figure will not be saved.
 
-        fig_name: str, default="topk_policy_value_standard_ope.png"
+        fig_name: str, default="topk_policy_value_standard_ope_lower_bound.png"
             Name of the bar figure.
 
         """
@@ -2851,7 +3013,7 @@ class OffPolicySelection:
         safety_threshold: Optional[float] = None,
         legend: bool = True,
         fig_dir: Optional[Path] = None,
-        fig_name: str = "topk_conditional_value_at_risk_standard_ope.png",
+        fig_name: str = "topk_cvar_standard_ope.png",
     ):
         """Visualize the topk deployment result selected by standard OPE.
 
@@ -2859,17 +3021,23 @@ class OffPolicySelection:
         -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
-            Please refer to `CreateOPEInput` class for the detail.
-            key: [evaluation_policy_name][
-                evaluation_policy_action,
-                evaluation_policy_action_dist,
-                state_action_value_prediction,
-                initial_state_value_prediction,
-                state_action_marginal_importance_weight,
-                state_marginal_importance_weight,
-                on_policy_policy_value,
-                gamma,
-            ]
+            
+            .. code-block:: python
+
+                key: [evaluation_policy_name][
+                    evaluation_policy_action,
+                    evaluation_policy_action_dist,
+                    state_action_value_prediction,
+                    initial_state_value_prediction,
+                    state_action_marginal_importance_weight,
+                    state_marginal_importance_weight,
+                    on_policy_policy_value,
+                    gamma,
+                ]
+
+            .. seealso::
+
+                :class:`ope.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
@@ -2895,7 +3063,7 @@ class OffPolicySelection:
             Path to store the bar figure.
             If `None` is given, the figure will not be saved.
 
-        fig_name: str, default="topk_policy_value_standard_ope.png"
+        fig_name: str, default="topk_cvar_standard_ope.png"
             Name of the bar figure.
 
         """
@@ -3083,17 +3251,23 @@ class OffPolicySelection:
         -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
-            Please refer to `CreateOPEInput` class for the detail.
-            key: [evaluation_policy_name][
-                evaluation_policy_action,
-                evaluation_policy_action_dist,
-                state_action_value_prediction,
-                initial_state_value_prediction,
-                state_action_marginal_importance_weight,
-                state_marginal_importance_weight,
-                on_policy_policy_value,
-                gamma,
-            ]
+            
+            .. code-block:: python
+
+                key: [evaluation_policy_name][
+                    evaluation_policy_action,
+                    evaluation_policy_action_dist,
+                    state_action_value_prediction,
+                    initial_state_value_prediction,
+                    state_action_marginal_importance_weight,
+                    state_marginal_importance_weight,
+                    on_policy_policy_value,
+                    gamma,
+                ]
+
+            .. seealso::
+
+                :class:`ope.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
@@ -3119,7 +3293,7 @@ class OffPolicySelection:
             Path to store the bar figure.
             If `None` is given, the figure will not be saved.
 
-        fig_name: str, default="topk_policy_value_standard_ope.png"
+        fig_name: str, default="topk_cvar_cumulative_distribution_ope.png"
             Name of the bar figure.
 
         """
@@ -3288,17 +3462,23 @@ class OffPolicySelection:
         -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
-            Please refer to `CreateOPEInput` class for the detail.
-            key: [evaluation_policy_name][
-                evaluation_policy_action,
-                evaluation_policy_action_dist,
-                state_action_value_prediction,
-                initial_state_value_prediction,
-                state_action_marginal_importance_weight,
-                state_marginal_importance_weight,
-                on_policy_policy_value,
-                gamma,
-            ]
+            
+            .. code-block:: python
+
+                key: [evaluation_policy_name][
+                    evaluation_policy_action,
+                    evaluation_policy_action_dist,
+                    state_action_value_prediction,
+                    initial_state_value_prediction,
+                    state_action_marginal_importance_weight,
+                    state_marginal_importance_weight,
+                    on_policy_policy_value,
+                    gamma,
+                ]
+
+            .. seealso::
+
+                :class:`ope.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
@@ -3324,7 +3504,7 @@ class OffPolicySelection:
             Path to store the bar figure.
             If `None` is given, the figure will not be saved.
 
-        fig_name: str, default="topk_policy_value_standard_ope.png"
+        fig_name: str, default="topk_lower_quartile_standard_ope.png"
             Name of the bar figure.
 
         """
@@ -3512,17 +3692,23 @@ class OffPolicySelection:
         -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
-            Please refer to `CreateOPEInput` class for the detail.
-            key: [evaluation_policy_name][
-                evaluation_policy_action,
-                evaluation_policy_action_dist,
-                state_action_value_prediction,
-                initial_state_value_prediction,
-                state_action_marginal_importance_weight,
-                state_marginal_importance_weight,
-                on_policy_policy_value,
-                gamma,
-            ]
+            
+            .. code-block:: python
+
+                key: [evaluation_policy_name][
+                    evaluation_policy_action,
+                    evaluation_policy_action_dist,
+                    state_action_value_prediction,
+                    initial_state_value_prediction,
+                    state_action_marginal_importance_weight,
+                    state_marginal_importance_weight,
+                    on_policy_policy_value,
+                    gamma,
+                ]
+
+            .. seealso::
+
+                :class:`ope.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
@@ -3548,7 +3734,7 @@ class OffPolicySelection:
             Path to store the bar figure.
             If `None` is given, the figure will not be saved.
 
-        fig_name: str, default="topk_policy_value_standard_ope.png"
+        fig_name: str, default="topk_lower_quartile_cumulative_distribution_ope.png"
             Name of the bar figure.
 
         """
@@ -3702,7 +3888,7 @@ class OffPolicySelection:
         n_cols: Optional[int] = None,
         share_axes: bool = False,
         fig_dir: Optional[Path] = None,
-        fig_name: str = "scatter_policy_value.png",
+        fig_name: str = "validation_policy_value_standard_ope.png",
     ):
         """Visualize the true policy value and its estimate (scatter plot).
 
@@ -3710,23 +3896,29 @@ class OffPolicySelection:
         -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
-            Please refer to `CreateOPEInput` class for the detail.
-            key: [evaluation_policy_name][
-                evaluation_policy_action,
-                evaluation_policy_action_dist,
-                state_action_value_prediction,
-                initial_state_value_prediction,
-                state_action_marginal_importance_weight,
-                state_marginal_importance_weight,
-                on_policy_policy_value,
-                gamma,
-            ]
+            
+            .. code-block:: python
+
+                key: [evaluation_policy_name][
+                    evaluation_policy_action,
+                    evaluation_policy_action_dist,
+                    state_action_value_prediction,
+                    initial_state_value_prediction,
+                    state_action_marginal_importance_weight,
+                    state_marginal_importance_weight,
+                    on_policy_policy_value,
+                    gamma,
+                ]
+
+            .. seealso::
+
+                :class:`ope.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
             When `None` is given, all the estimators are compared.
 
-        n_cols: int, default=None
+        n_cols: int, default=None (> 0)
             Number of columns in the figure.
 
         share_axes: bool, default=False
@@ -3736,7 +3928,7 @@ class OffPolicySelection:
             Path to store the bar figure.
             If `None` is given, the figure will not be saved.
 
-        fig_name: str, default="scatter_policy_value.png"
+        fig_name: str, default="validation_policy_value_standard_ope.png"
             Name of the bar figure.
 
         """
@@ -3878,7 +4070,7 @@ class OffPolicySelection:
         n_cols: Optional[int] = None,
         share_axes: bool = False,
         fig_dir: Optional[Path] = None,
-        fig_name: str = "scatter_policy_value_of_cumulative_distribution_ope.png",
+        fig_name: str = "validation_policy_value_cumulative_distribution_ope.png",
     ):
         """Visualize the true policy value and its estimate obtained by cumulative distribution OPE (scatter plot).
 
@@ -3886,23 +4078,29 @@ class OffPolicySelection:
         -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
-            Please refer to `CreateOPEInput` class for the detail.
-            key: [evaluation_policy_name][
-                evaluation_policy_action,
-                evaluation_policy_action_dist,
-                state_action_value_prediction,
-                initial_state_value_prediction,
-                state_action_marginal_importance_weight,
-                state_marginal_importance_weight,
-                on_policy_policy_value,
-                gamma,
-            ]
+            
+            .. code-block:: python
+
+                key: [evaluation_policy_name][
+                    evaluation_policy_action,
+                    evaluation_policy_action_dist,
+                    state_action_value_prediction,
+                    initial_state_value_prediction,
+                    state_action_marginal_importance_weight,
+                    state_marginal_importance_weight,
+                    on_policy_policy_value,
+                    gamma,
+                ]
+
+            .. seealso::
+
+                :class:`ope.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
             When `None` is given, all the estimators are compared.
 
-        n_cols: int, default=None
+        n_cols: int, default=None (> 0)
             Number of columns in the figure.
 
         share_axes: bool, default=False
@@ -3912,7 +4110,7 @@ class OffPolicySelection:
             Path to store the bar figure.
             If `None` is given, the figure will not be saved.
 
-        fig_name: str, default="scatter_policy_value_of_cumulative_distribution_ope.png"
+        fig_name: str, default="validation_policy_value_cumulative_distribution_ope.png"
             Name of the bar figure.
 
         """
@@ -4054,7 +4252,7 @@ class OffPolicySelection:
         n_cols: Optional[int] = None,
         share_axes: bool = False,
         fig_dir: Optional[Path] = None,
-        fig_name: str = "scatter_policy_value_lower_bound.png",
+        fig_name: str = "validation_policy_value_lower_bound.png",
     ):
         """Visualize the true policy value and its estimate lower bound (scatter plot).
 
@@ -4062,17 +4260,23 @@ class OffPolicySelection:
         -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
-            Please refer to `CreateOPEInput` class for the detail.
-            key: [evaluation_policy_name][
-                evaluation_policy_action,
-                evaluation_policy_action_dist,
-                state_action_value_prediction,
-                initial_state_value_prediction,
-                state_action_marginal_importance_weight,
-                state_marginal_importance_weight,
-                on_policy_policy_value,
-                gamma,
-            ]
+            
+            .. code-block:: python
+
+                key: [evaluation_policy_name][
+                    evaluation_policy_action,
+                    evaluation_policy_action_dist,
+                    state_action_value_prediction,
+                    initial_state_value_prediction,
+                    state_action_marginal_importance_weight,
+                    state_marginal_importance_weight,
+                    on_policy_policy_value,
+                    gamma,
+                ]
+
+            .. seealso::
+
+                :class:`ope.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
@@ -4090,7 +4294,7 @@ class OffPolicySelection:
         random_state: int, default=None (>= 0)
             Random state.
 
-        n_cols: int, default=None
+        n_cols: int, default=None (> 0)
             Number of columns in the figure.
 
         share_axes: bool, default=False
@@ -4100,7 +4304,7 @@ class OffPolicySelection:
             Path to store the bar figure.
             If `None` is given, the figure will not be saved.
 
-        fig_name: str, default="scatter_policy_value_lower_bound.png"
+        fig_name: str, default="validation_policy_value_lower_bound.png"
             Name of the bar figure.
 
         """
@@ -4353,7 +4557,7 @@ class OffPolicySelection:
         n_cols: Optional[int] = None,
         share_axes: bool = False,
         fig_dir: Optional[Path] = None,
-        fig_name: str = "scatter_variance.png",
+        fig_name: str = "validation_variance.png",
     ):
         """Visualize the true variance and its estimate (scatter plot).
 
@@ -4361,23 +4565,29 @@ class OffPolicySelection:
         -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
-            Please refer to `CreateOPEInput` class for the detail.
-            key: [evaluation_policy_name][
-                evaluation_policy_action,
-                evaluation_policy_action_dist,
-                state_action_value_prediction,
-                initial_state_value_prediction,
-                state_action_marginal_importance_weight,
-                state_marginal_importance_weight,
-                on_policy_policy_value,
-                gamma,
-            ]
+            
+            .. code-block:: python
+
+                key: [evaluation_policy_name][
+                    evaluation_policy_action,
+                    evaluation_policy_action_dist,
+                    state_action_value_prediction,
+                    initial_state_value_prediction,
+                    state_action_marginal_importance_weight,
+                    state_marginal_importance_weight,
+                    on_policy_policy_value,
+                    gamma,
+                ]
+
+            .. seealso::
+
+                :class:`ope.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
             When `None` is given, all the estimators are compared.
 
-        n_cols: int, default=None
+        n_cols: int, default=None (> 0)
             Number of columns in the figure.
 
         share_axes: bool, default=False
@@ -4387,7 +4597,7 @@ class OffPolicySelection:
             Path to store the bar figure.
             If `None` is given, the figure will not be saved.
 
-        fig_name: str, default="scatter_variance.png"
+        fig_name: str, default="validation_variance.png"
             Name of the bar figure.
 
         """
@@ -4529,7 +4739,7 @@ class OffPolicySelection:
         n_cols: Optional[int] = None,
         share_axes: bool = False,
         fig_dir: Optional[Path] = None,
-        fig_name: str = "scatter_lower_quartile.png",
+        fig_name: str = "validation_lower_quartile.png",
     ):
         """Visualize the true lower quartile and its estimate (scatter plot).
 
@@ -4537,17 +4747,23 @@ class OffPolicySelection:
         -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
-            Please refer to `CreateOPEInput` class for the detail.
-            key: [evaluation_policy_name][
-                evaluation_policy_action,
-                evaluation_policy_action_dist,
-                state_action_value_prediction,
-                initial_state_value_prediction,
-                state_action_marginal_importance_weight,
-                state_marginal_importance_weight,
-                on_policy_policy_value,
-                gamma,
-            ]
+            
+            .. code-block:: python
+
+                key: [evaluation_policy_name][
+                    evaluation_policy_action,
+                    evaluation_policy_action_dist,
+                    state_action_value_prediction,
+                    initial_state_value_prediction,
+                    state_action_marginal_importance_weight,
+                    state_marginal_importance_weight,
+                    on_policy_policy_value,
+                    gamma,
+                ]
+
+            .. seealso::
+
+                :class:`ope.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
@@ -4556,7 +4772,7 @@ class OffPolicySelection:
         alpha: float, default=0.05
             Proportion of the sided region. The value should be within `[0, 0.5]`.
 
-        n_cols: int, default=None
+        n_cols: int, default=None (> 0)
             Number of columns in the figure.
 
         share_axes: bool, default=False
@@ -4566,7 +4782,7 @@ class OffPolicySelection:
             Path to store the bar figure.
             If `None` is given, the figure will not be saved.
 
-        fig_name: str, default="scatter_lower_quartile.png"
+        fig_name: str, default="validation_lower_quartile.png"
             Name of the bar figure.
 
         """
@@ -4708,7 +4924,7 @@ class OffPolicySelection:
         n_cols: Optional[int] = None,
         share_axes: bool = False,
         fig_dir: Optional[Path] = None,
-        fig_name: str = "scatter_conditional_value_at_risk.png",
+        fig_name: str = "validation_conditional_value_at_risk.png",
     ):
         """Visualize the true conditional value at risk and its estimate (scatter plot).
 
@@ -4716,17 +4932,23 @@ class OffPolicySelection:
         -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
-            Please refer to `CreateOPEInput` class for the detail.
-            key: [evaluation_policy_name][
-                evaluation_policy_action,
-                evaluation_policy_action_dist,
-                state_action_value_prediction,
-                initial_state_value_prediction,
-                state_action_marginal_importance_weight,
-                state_marginal_importance_weight,
-                on_policy_policy_value,
-                gamma,
-            ]
+            
+            .. code-block:: python
+
+                key: [evaluation_policy_name][
+                    evaluation_policy_action,
+                    evaluation_policy_action_dist,
+                    state_action_value_prediction,
+                    initial_state_value_prediction,
+                    state_action_marginal_importance_weight,
+                    state_marginal_importance_weight,
+                    on_policy_policy_value,
+                    gamma,
+                ]
+
+            .. seealso::
+
+                :class:`ope.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
@@ -4735,7 +4957,7 @@ class OffPolicySelection:
         alpha: float, default=0.05
             Proportion of the sided region. The value should be within `[0, 1]`.
 
-        n_cols: int, default=None
+        n_cols: int, default=None (> 0)
             Number of columns in the figure.
 
         share_axes: bool, default=False
@@ -4745,7 +4967,7 @@ class OffPolicySelection:
             Path to store the bar figure.
             If `None` is given, the figure will not be saved.
 
-        fig_name: str, default="scatter_conditional_value_at_risk.png"
+        fig_name: str, default="validation_conditional_value_at_risk.png"
             Name of the bar figure.
 
         """

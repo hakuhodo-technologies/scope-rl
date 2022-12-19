@@ -40,9 +40,9 @@ Our software facilitates implementation, evaluation and algorithm comparison rel
 
    1. Explain the basic concepts in :doc:`Overview (online/offline RL) <online_offline_rl>` and :doc:`Overview (OPE/OPS) <ope_ops>`.
    2. Provide a variety of examples of conducting offline RL and OPE/OPS in practical problem settings in :doc:`Quickstart <quickstart>` and :doc:`Tutorial <tutorial>`.
-   3. Describe the algorithms and implementations in detail in :doc:`Supported Implementation <evaluation_implementation>` and :doc:`Package Reference <ofrl>`.
+   3. Describe the algorithms and implementations in detail in :doc:`Supported Implementation <evaluation_implementation>` and :doc:`Package Reference <ofrl_api>`.
 
-   You can also find why OFRL is a distinctive pipeline for offline RL and OPE/OPS in :doc:`distinctive_features`
+   You can also find the distinctive features of OFRL in :doc:`distinctive_features`
 
 Implementation
 ~~~~~~~~~~
@@ -178,7 +178,7 @@ OPS metrics (performance of top k deployment policies)
 
    We also provide configurative RL environments as sub-packages of this library.
 
-   * :doc:`RTBGym <rtbgym_about>` for Real-Time Bidding (RTB) of online advertisement
+   * :doc:`RTBGym <rtbgym_about>`: Real-Time Bidding (RTB) of online advertisement
 
 
 Citation
@@ -212,7 +212,7 @@ Table of Contents
 
    installation
    quickstart
-   tutorial
+   _autogallery/index
    distinctive_features
 
 .. toctree::
@@ -239,8 +239,8 @@ Table of Contents
    :maxdepth: 2
    :caption: Package References:
 
-   ofrl
-   rtbgym
+   ofrl_api
+   rtbgym_api
 
 .. toctree::
    :maxdepth: 1
@@ -249,5 +249,5 @@ Table of Contents
    Github <https://github.com/negocia-inc/ofrl>
    LICENSE <https://github.com/negocia-inc/ofrl/blob/main/LICENSE>
    frequently_asked_questions
-   release_notes
+   release_notes <https://github.com/negocia-inc/ofrl/releases>
    references

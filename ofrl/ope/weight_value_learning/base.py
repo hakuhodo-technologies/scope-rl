@@ -1,11 +1,15 @@
-"""Abstract Base class for Weight Value Learning."""
+"""Abstract base class for weight and value learning."""
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
 
 
 @dataclass
 class BaseWeightValueLearner(metaclass=ABCMeta):
-    """Base class for weight/value learning."""
+    """Base class for weight/value learning.
+    
+    Imported as: :class:`ofrl.ope.weight_value_learning.BaseWeightValueLearner`
+    
+    """
 
     @abstractmethod
     def save(self):

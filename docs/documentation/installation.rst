@@ -4,19 +4,19 @@ Installation
 
 ``ofrl`` is available on PyPI, and can be installed from ``pip`` or source as follows.
 
-From ``pip``:
+.. card::
+    
+    .. tabs::
 
-.. code-block:: bash
+        .. code-tab:: bash From :class:`pip`
 
-    pip install ofrl
+            pip install ofrl
 
-From source:
+        .. code-tab:: bash From source
 
-.. code-block:: bash
-
-    git clone https://github.com/negocia-inc/ofrl
-    cd ofrl
-    python setup.py install
+            git clone https://github.com/negocia-inc/ofrl
+            cd ofrl
+            python setup.py install
 
 ~~~~~
 

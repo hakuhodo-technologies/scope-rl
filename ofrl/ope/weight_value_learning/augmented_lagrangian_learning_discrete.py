@@ -1,3 +1,4 @@
+"""Augmented Lagrangian method for weight/value function learning (discrete action space)."""
 from dataclasses import dataclass
 from typing import Optional
 from tqdm.auto import tqdm
@@ -25,6 +26,10 @@ from ...utils import check_array
 @dataclass
 class DiscreteAugmentedLagrangianStateActionWightValueLearning(BaseWeightValueLearner):
     """Augmented Lagrangian method for weight/value function of marginal OPE estimators (for discrete action space).
+
+    Bases: :class:`ofrl.ope.weight_value_learning.BaseWeightValueLearner`
+
+    Imported as: :class:`ofrl.ope.weight_value_learning.DiscreteAugmentedLagrangianStateActionWightValueLearning`
 
     Note
     -------
@@ -722,6 +727,10 @@ class DiscreteAugmentedLagrangianStateActionWightValueLearning(BaseWeightValueLe
 @dataclass
 class DiscreteAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearner):
     """Augmented Lagrangian method for weight/value function of marginal OPE estimators (for discrete action space).
+
+    Bases: :class:`ofrl.ope.weight_value_learning.BaseWeightValueLearner`
+
+    Imported as: :class:`ofrl.ope.weight_value_learning.DiscreteAugmentedLagrangianStateWightValueLearning`
 
     Note
     -------

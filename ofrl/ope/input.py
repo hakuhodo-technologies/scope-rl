@@ -1,4 +1,4 @@
-"""Off-Policy Evaluation Class to Streamline OPE."""
+"""Class to create input for Off-Policy Evaluation (OPE)."""
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Any
 from warnings import warn
@@ -64,29 +64,38 @@ class CreateOPEInput:
     env: gym.Env, default=None
         Reinforcement learning (RL) environment.
 
-    model_args: dict[str, dict], default=None
-        Arguments of the base model.
-        The key should be: [
-            "fqe",
-            "state_action_dual",
-            "state_action_value",
-            "state_action_weight",
-            "state_dual",
-            "state_value",
-            "state_weight",
-            "hidden_dim",  # hidden dim of value/weight function, except FQE
-        ]
+    model_args: dict of dict, default=None
+        Arguments of the models.
+        
+        .. code-block:: python
+        
+            key: [
+                "fqe",
+                "state_action_dual",
+                "state_action_value",
+                "state_action_weight",
+                "state_dual",
+                "state_value",
+                "state_weight",
+                "hidden_dim",  # hidden dim of value/weight function, except FQE
+            ]
 
-        Please refer to initialization arguments for FQE, and refer to arguments of fit method for other models.
-        (FQE is implemented in d3rlpy. The other models are implemented in ofrl/ope/weight_value_learning/.)
+        .. note::
+        
+            Please specify :class:`scaler` and :class:`action_scaler` when calling :class:`.obtain_whole_inputs()`
+            (, as we will overwrite those specified by :class:`model_args[model]["scaler/action_scaler"]`).
 
-        Note that, please "scaler" and "action_scaler" in the following argument
-        (, as we will overwrite those specified by model_args[model]["scaler/action_scaler"]).
+        .. seealso::
+
+            The followings describe the parameters of each model.
+
+            * (external) `d3rlpy's documentation about FQE <https://d3rlpy.readthedocs.io/en/latest/references/off_policy_evaluation.html>`_
+            * (API reference) :class:`ofrl.ope.weight_value_learning`
 
     gamma: float, default=1.0
             Discount factor. The value should be within `(0, 1]`.
 
-    sigma: float, default=1.0 (> 0.0)
+    sigma: float, default=1.0 (> 0)
         Bandwidth hyperparameter of gaussian kernel.
 
     state_scaler: d3rlpy.preprocessing.Scaler, default=None
@@ -98,22 +107,107 @@ class CreateOPEInput:
     device: str, default="cuda:0"
         Specifies device used for torch.
 
-    References
-    -------
-    Yuta Saito, Shunsuke Aihara, Megumi Matsutani, and Yusuke Narita.
-    "Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation.", 2021.
+    Examples
+    ----------
+    Preparation:
 
-    Takuma Seno and Michita Imai.
-    "d3rlpy: An Offline Deep Reinforcement Library.", 2021.
+    .. code-block:: python
 
-    Masatoshi Uehara, Jiawei Huang, and Nan Jiang.
-    "Minimax Weight and Q-Function Learning for Off-Policy Evaluation.", 2020.
+        # import necessary module from OFRL
+        from ofrl.dataset import SyntheticDataset
+        from ofrl.policy import DiscreteEpsilonGreedyHead
+        from ofrl.ope import CreateOPEInput
+        from ofrl.ope import DiscreteOffPolicyEvaluation as OPE
+        from ofrl.ope import DiscreteTrajectoryWiseImportanceSampling as TIS
+        from ofrl.ope import DiscretePerDecisionImportanceSampling as PDIS
 
-    Mengjiao Yang, Ofir Nachum, Bo Dai, Lihong Li, and Dale Schuurmans.
-    "Off-Policy Evaluation via the Regularized Lagrangian.", 2020.
+        # import necessary module from other libraries
+        import gym
+        import rtbgym
+        from d3rlpy.algos import DoubleDQN
+        from d3rlpy.online.buffers import ReplayBuffer
+        from d3rlpy.online.explorers import ConstantEpsilonGreedy
 
-    Hoang Le, Cameron Voloshin, and Yisong Yue.
-    "Batch Policy Learning under Constraints.", 2019.
+        # initialize environment
+        env = gym.make("RTBEnv-discrete-v0")
+
+        # define (RL) agent (i.e., policy) and train on the environment
+        ddqn = DoubleDQN()
+        buffer = ReplayBuffer(
+            maxlen=10000,
+            env=env,
+        )
+        explorer = ConstantEpsilonGreedy(
+            epsilon=0.3,
+        )
+        ddqn.fit_online(
+            env=env,
+            buffer=buffer,
+            explorer=explorer,
+            n_steps=10000,
+            n_steps_per_epoch=1000,
+        )
+
+        # convert ddqn policy to stochastic data collection policy
+        behavior_policy = DiscreteEpsilonGreedyHead(
+            ddqn,
+            n_actions=env.action_space.n,
+            epsilon=0.3,
+            name="ddqn_epsilon_0.3",
+            random_state=12345,
+        )
+
+        # initialize dataset class
+        dataset = SyntheticDataset(
+            env=env,
+            behavior_policy=behavior_policy,
+            random_state=12345,
+        )
+
+        # data collection
+        logged_dataset = dataset.obtain_episodes(n_trajectories=100)
+
+    **Create Input**:
+
+    .. code-block:: python
+
+        # evaluation policy
+        ddqn_ = DiscreteEpsilonGreedyHead(
+            base_policy=ddqn,
+            n_actions=env.action_space.n,
+            name="ddqn",
+            epsilon=0.0,
+            random_state=12345
+        )
+        random_ = DiscreteEpsilonGreedyHead(
+            base_policy=ddqn,
+            n_actions=env.action_space.n,
+            name="random",
+            epsilon=1.0,
+            random_state=12345
+        )
+
+        # create input for off-policy evaluation (OPE)
+        prep = CreateOPEInput(
+            logged_dataset=logged_dataset,
+        )
+        input_dict = prep.obtain_whole_inputs(
+            evaluation_policies=[ddqn_, random_],
+            env=env,
+            n_trajectories_on_policy_evaluation=100,
+            random_state=12345,
+        )
+
+    **Output**:
+
+    .. code-block:: python
+
+        >>> input_dict
+
+    .. seealso::
+
+        * :doc:`Quickstart </documentation/quickstart>`
+        * :doc:`Related tutorials </documentation/_autogallery/ofrl_others/index>`
 
     """
 
@@ -124,7 +218,6 @@ class CreateOPEInput:
     sigma: float = 1.0
     state_scaler: Optional[Scaler] = None
     action_scaler: Optional[ActionScaler] = None
-    hidden_dim: int = 100
     device: str = "cuda:0"
 
     def __post_init__(self) -> None:
@@ -396,7 +489,7 @@ class CreateOPEInput:
         n_steps_per_epoch: int, default=10000 (> 0)
             Number of steps in an epoch.
 
-        random_state: int, default=None
+        random_state: int, default=None (>= 0)
             Random state.
 
         """
@@ -572,7 +665,7 @@ class CreateOPEInput:
         n_steps_per_epoch: int, default=10000 (> 0)
             Number of steps in an epoch.
 
-        random_state: int, default=None
+        random_state: int, default=None (>= 0)
             Random state.
 
         """
@@ -743,7 +836,7 @@ class CreateOPEInput:
         n_steps_per_epoch: int, default=10000 (> 0)
             Number of steps in an epoch.
 
-        random_state: int, default=None
+        random_state: int, default=None (>= 0)
             Random state.
 
         """
@@ -915,7 +1008,7 @@ class CreateOPEInput:
         n_steps_per_epoch: int, default=10000 (> 0)
             Number of steps in an epoch.
 
-        random_state: int, default=None
+        random_state: int, default=None (>= 0)
             Random state.
 
         """
@@ -1091,7 +1184,7 @@ class CreateOPEInput:
         n_steps_per_epoch: int, default=10000 (> 0)
             Number of steps in an epoch.
 
-        random_state: int, default=None
+        random_state: int, default=None (>= 0)
             Random state.
 
         """
@@ -1259,7 +1352,7 @@ class CreateOPEInput:
         n_steps_per_epoch: int, default=10000 (> 0)
             Number of steps in an epoch.
 
-        random_state: int, default=None
+        random_state: int, default=None (>= 0)
             Random state.
 
         """
@@ -1420,7 +1513,7 @@ class CreateOPEInput:
 
         resample_initial_state: bool, default=False
             Whether to resample initial state distribution using the given evaluation policy.
-            When False, the initial state distribution of the behavior policy is used instead.
+            If `False`, the initial state distribution of the behavior policy is used instead.
 
         minimum_rollout_length: int, default=0 (>= 0)
             Minimum length of rollout before collecting dataset.
@@ -1603,11 +1696,11 @@ class CreateOPEInput:
         Return
         -------
         state_action_value_prediction: ndarray of shape (n_trajectories * step_per_trajectory, n_actions) or (n_trajectories * step_per_trajectory, 2)
-            When `action_type == "discrete"`, output is state action value for observed state and all actions,
-            i.e., math`\\hat{Q}(s, a) \\forall a \\in \\mathcal{A}`.
+            If action_type is "discrete", output is state action value for observed state and all actions,
+            i.e., :math:`\\hat{Q}(s, a) \\forall a \\in \\mathcal{A}`.
 
-            When `action_type == "continuous"`, output is state action value for the observed action and action chosen evaluation policy,
-            i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a \\mid s_t))`.
+            If action_type is "continuous", output is state action value for the observed action and action chosen evaluation policy,
+            i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(s_t))`.
 
         """
         if method not in ["fqe", "dice", "mql"]:
@@ -1752,7 +1845,7 @@ class CreateOPEInput:
 
         resample_initial_state: bool, default=False
             Whether to resample initial state distribution using the given evaluation policy.
-            When False, the initial state distribution of the behavior policy is used instead.
+            If `False`, the initial state distribution of the behavior policy is used instead.
 
         minimum_rollout_length: int, default=0 (>= 0)
             Minimum length of rollout before collecting dataset.
@@ -2037,7 +2130,7 @@ class CreateOPEInput:
 
         resample_initial_state: bool, default=False
             Whether to resample initial state distribution using the given evaluation policy.
-            When False, the initial state distribution of the behavior policy is used instead.
+            If `False`, the initial state distribution of the behavior policy is used instead.
 
             Note that, this parameter is applicable only when self.env is given.
 
@@ -2053,7 +2146,7 @@ class CreateOPEInput:
         k_fold: int, default=1 (> 0)
             Number of folds for cross-fitting.
 
-            If :math:`K>1`, we split the logged dataset into :matk:`K` folds.
+            If :math:`K>1`, we split the logged dataset into :math:`K` folds.
             :math:`\\mathcal{D}_j` is the :math:`j`-th split of logged data consisting of :math:`n_k` samples.
             Then, the value and weight functions (:math:`w^j` and :math:`Q^j`) are trained on the subset of data used for OPE,
             i.e., :math:`\\mathcal{D} \\setminus \\mathcal{D}_j`.
@@ -2071,7 +2164,7 @@ class CreateOPEInput:
 
         use_stationary_distribution_on_policy_evaluation: bool, default=False
             Whether to evaluate policy on stationary distribution.
-            When True, evaluation policy is evaluated by rollout without resetting environment at each episode.
+            If `True`, evaluation policy is evaluated by rollout without resetting environment at each episode.
 
         minimum_rollout_length: int, default=0 (>= 0)
             Minimum length of rollout to collect initial state.
@@ -2086,57 +2179,60 @@ class CreateOPEInput:
         -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
-            key: [evaluation_policy_name][
-                evaluation_policy_action,
-                evaluation_policy_action_dist,
-                state_action_value_prediction,
-                initial_state_value_prediction,
-                state_action_marginal_importance_weight,
-                state_marginal_importance_weight,
-                on_policy_policy_value,
-                gamma,
-            ]
 
-            evaluation_policy_action: ndarray of shape (n_trajectories * step_per_trajectorys, action_dim)
+            .. code-block:: python
+
+                key: [evaluation_policy_name][
+                    evaluation_policy_action,
+                    evaluation_policy_action_dist,
+                    state_action_value_prediction,
+                    initial_state_value_prediction,
+                    state_action_marginal_importance_weight,
+                    state_marginal_importance_weight,
+                    on_policy_policy_value,
+                    gamma,
+                ]
+
+            evaluation_policy_action: ndarray of shape (n_trajectories * step_per_trajectories, action_dim)
                 Action chosen by the deterministic evaluation policy.
-                If `action_type == "discrete"`, `None` is recorded.
+                If action_type is "discrete", `None` is recorded.
 
             evaluation_policy_action_dist: ndarray of shape (n_trajectories * step_per_trajectory, n_actions)
                 Conditional action distribution induced by the evaluation policy,
-                i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
-                If `action_type == "continuous"`, `None` is recorded.
+                i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`.
+                If action_type is "continuous", `None` is recorded.
 
             state_action_value_prediction: ndarray
-                If `action_type == "discrete"`, :math:`\\hat{Q}` for all actions,
+                If action_type is "discrete", :math:`\\hat{Q}` for all actions,
                 i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
                 shape (n_trajectories * step_per_trajectory, n_actions)
 
-                If `action_type == "continuous"`, :math:`\\hat{Q}` for the observed action and action chosen evaluation policy,
+                If action_type is "continuous", :math:`\\hat{Q}` for the observed action and action chosen evaluation policy,
                 i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a \\mid s_t))`.
                 shape (n_trajectories * step_per_trajectory, 2)
 
-                If `require_value_prediction == False`, `None` is recorded.
+                If require_value_prediction is `False`, `None` is recorded.
 
             initial_state_value_prediction: ndarray of shape (n_trajectories, )
                 Estimated initial state value.
 
-                If `use_base_model == False`, `None` is recorded.
+                If use_base_model is `False`, `None` is recorded.
 
             state_action_marginal_importance_weight: ndarray of shape (n_trajectories * step_per_trajectory, )
                 Estimated state-action marginal importance weight,
                 i.e., :math:`\\hat{w}(s_t, a_t) \\approx d^{\\pi}(s_t, a_t) / d^{\\pi_0}(s_t, a_t)`.
 
-                If `require_weight_prediction == False`, `None` is recorded.
+                If require_weight_prediction is `False`, `None` is recorded.
 
             state_marginal_importance_weight: ndarray of shape (n_trajectories * step_per_trajectory, )
                 Estimated state marginal importance weight,
                 i.e., :math:`\\hat{w}(s_t) \\approx d^{\\pi}(s_t) / d^{\\pi_0}(s_t)`.
 
-                If `require_weight_prediction == False`, `None` is recorded.
+                If require_weight_prediction is `False`, `None` is recorded.
 
             on_policy_policy_value: ndarray of shape (n_trajectories_on_policy_evaluation, )
                 On-policy policy value.
-                If `self.env is None`, `None` is recorded.
+                If self.env is `None`, `None` is recorded.
 
             gamma: float
                 Discount factor.

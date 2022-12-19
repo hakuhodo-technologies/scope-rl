@@ -1,4 +1,4 @@
-"""Abstract Base Class for Off-Policy Estimator."""
+"""Abstract base class for Off-Policy Estimator."""
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
 from typing import Callable, Optional, Tuple, Union, Dict, List
@@ -19,7 +19,40 @@ from ..utils import (
 
 @dataclass
 class BaseOffPolicyEstimator(metaclass=ABCMeta):
-    """Base class for OPE estimators."""
+    """Base class for (basic) OPE estimators.
+    
+    Note
+    -------
+    This abstract base class also implements the following private methods.
+
+    *abstract* _estimate_policy_value:
+        Estimate the trajectory-wise expected reward.
+
+    _calc_behavior_policy_pscore_discrete:
+        Calculate behavior policy pscore (action choice probability) for the discrete action setup.
+
+    _calc_behavior_policy_pscore_continuous:
+        Calculate behavior policy pscore (action choice probability) for the continuous action setup.
+
+    _calc_evaluation_policy_pscore_discrete:
+        Calculate evaluation policy pscore (action choice probability) for the discrete action setup.
+
+    _calc_similarity_weight:
+        Calculate similarity weight (for continuous action case) for the continuous action setup.
+
+    *property* _estimate_confidence_interval:
+        Dictionary containing names and functions of ci methods. 
+
+        .. code-block:: python
+        
+            key: [
+                bootstrap, 
+                hoeffding,
+                bernstein,
+                ttest,
+            ]
+    
+    """
 
     @abstractmethod
     def _estimate_trajectory_value(self) -> np.ndarray:
@@ -38,6 +71,7 @@ class BaseOffPolicyEstimator(metaclass=ABCMeta):
 
     @property
     def _estimate_confidence_interval(self) -> Dict[str, Callable]:
+        """Dictionary containing names and functions of ci methods. """
         return {
             "bootstrap": estimate_confidence_interval_by_bootstrap,
             "hoeffding": estimate_confidence_interval_by_hoeffding,
@@ -250,6 +284,45 @@ class BaseOffPolicyEstimator(metaclass=ABCMeta):
 
 @dataclass
 class BaseMarginalOffPolicyEstimator(BaseOffPolicyEstimator):
+    """Base class for OPE estimators with marginal importance sampling.
+    
+    Note
+    -------
+    This abstract base class also implements the following private methods.
+
+    *abstract* _estimate_policy_value:
+        Estimate the trajectory-wise expected reward.
+
+    _calc_behavior_policy_pscore_discrete:
+        Calculate behavior policy pscore (action choice probability) for the discrete action setup.
+
+    _calc_behavior_policy_pscore_continuous:
+        Calculate behavior policy pscore (action choice probability) for the continuous action setup.
+
+    _calc_evaluation_policy_pscore_discrete:
+        Calculate evaluation policy pscore (action choice probability) for the discrete action setup.
+
+    _calc_similarity_weight:
+        Calculate similarity weight (for continuous action case) for the continuous action setup.
+
+    _calc_marginal_importance_weight(self):
+        Calculate marginal importance weight. 
+        (Specified either in :class:`BaseStateMarginalOffPolicyEstimator` or :class:`BaseStateActionMarginalOffPolicyEstimator`)
+
+    *property* _estimate_confidence_interval:
+        Dictionary containing names and functions of ci methods. 
+
+        .. code-block:: python
+        
+            key: [
+                bootstrap, 
+                hoeffding,
+                bernstein,
+                ttest,
+            ]
+    
+    """
+
     def _calc_behavior_policy_pscore_discrete(
         self,
         n_step_pdis: int,
@@ -427,11 +500,49 @@ class BaseMarginalOffPolicyEstimator(BaseOffPolicyEstimator):
 
     def _calc_marginal_importance_weight(self):
         """Calculate marginal importance weight."""
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 @dataclass
 class BaseStateMarginalOffPolicyEstimator(BaseMarginalOffPolicyEstimator):
+    """Base class for State Marginal OPE estimators.
+    
+    Note
+    -------
+    This abstract base class also implements the following private methods.
+
+    *abstract* _estimate_policy_value:
+        Estimate the trajectory-wise expected reward.
+
+    _calc_behavior_policy_pscore_discrete:
+        Calculate behavior policy pscore (action choice probability) for the discrete action setup.
+
+    _calc_behavior_policy_pscore_continuous:
+        Calculate behavior policy pscore (action choice probability) for the continuous action setup.
+
+    _calc_evaluation_policy_pscore_discrete:
+        Calculate evaluation policy pscore (action choice probability) for the discrete action setup.
+
+    _calc_similarity_weight:
+        Calculate similarity weight (for continuous action case) for the continuous action setup.
+
+    _calc_marginal_importance_weight(self):
+        Calculate marginal importance weight. 
+
+    *property* _estimate_confidence_interval:
+        Dictionary containing names and functions of ci methods. 
+
+        .. code-block:: python
+        
+            key: [
+                bootstrap, 
+                hoeffding,
+                bernstein,
+                ttest,
+            ]
+    
+    """
+
     def _calc_marginal_importance_weight(
         self,
         n_step_pdis: int,
@@ -470,6 +581,44 @@ class BaseStateMarginalOffPolicyEstimator(BaseMarginalOffPolicyEstimator):
 
 @dataclass
 class BaseStateActionMarginalOffPolicyEstimator(BaseMarginalOffPolicyEstimator):
+    """Base class for State-Action Marginal OPE estimators.
+    
+    Note
+    -------
+    This abstract base class also implements the following private methods.
+
+    *abstract* _estimate_policy_value:
+        Estimate the trajectory-wise expected reward.
+
+    _calc_behavior_policy_pscore_discrete:
+        Calculate behavior policy pscore (action choice probability) for the discrete action setup.
+
+    _calc_behavior_policy_pscore_continuous:
+        Calculate behavior policy pscore (action choice probability) for the continuous action setup.
+
+    _calc_evaluation_policy_pscore_discrete:
+        Calculate evaluation policy pscore (action choice probability) for the discrete action setup.
+
+    _calc_similarity_weight:
+        Calculate similarity weight (for continuous action case) for the continuous action setup.
+
+    _calc_marginal_importance_weight(self):
+        Calculate marginal importance weight. 
+
+    *property* _estimate_confidence_interval:
+        Dictionary containing names and functions of ci methods. 
+
+        .. code-block:: python
+        
+            key: [
+                bootstrap, 
+                hoeffding,
+                bernstein,
+                ttest,
+            ]
+    
+    """
+
     def _calc_marginal_importance_weight(
         self,
         n_step_pdis: int,
@@ -508,7 +657,22 @@ class BaseStateActionMarginalOffPolicyEstimator(BaseMarginalOffPolicyEstimator):
 
 @dataclass
 class BaseCumulativeDistributionOffPolicyEstimator(metaclass=ABCMeta):
-    """Base class for Cumulative Distribution OPE estimators."""
+    """Base class for Cumulative Distribution OPE estimators.
+    
+    Note
+    -------
+    This abstract base class also implements the following private methods.
+
+    _aggregate_trajectory_wise_statistics_discrete:
+        Aggregate step-wise observations into trajectory wise statistics for the discrete action setup.
+
+    _aggregate_trajectory_wise_statistics_continuous:
+        Aggregate step-wise observations into trajectory wise statistics for the continuous action setup.
+
+    _target_value_given_idx:
+        Obtain target value in reward scale for cumulative distribution estimation.
+    
+    """
 
     @abstractmethod
     def estimate_cumulative_distribution_function(self) -> Tuple[np.ndarray]:
@@ -534,38 +698,6 @@ class BaseCumulativeDistributionOffPolicyEstimator(metaclass=ABCMeta):
     def estimate_interquartile_range(self) -> Dict[str, float]:
         """Estimate the interquartile range of the policy value."""
         raise NotImplementedError
-
-    def obtain_reward_scale(self, gamma: float = 1.0) -> np.ndarray:
-        """Obtain the reward scale of the cumulative distribution function.
-
-        Parameters
-        -------
-        gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
-
-        Return
-        -------
-        reward_scale: ndarray of shape (n_partition, )
-            Reward scale of the cumulative distribution function.
-
-        """
-        check_scalar(gamma, name="gamma", type=float, min_val=0.0, max_val=1.0)
-
-        if self.use_observations_as_reward_scale:
-            behavior_policy_reward = self.input_dict_["reward"].reshape(
-                (-1, self.step_per_trajectory)
-            )
-            discount = np.full(behavior_policy_reward.shape[1], gamma).cumprod()
-            behavior_policy_trajectory_wise_reward = (
-                behavior_policy_reward * discount
-            ).sum(axis=1)
-            reward_scale = np.sort(np.unique(behavior_policy_trajectory_wise_reward))
-        else:
-            reward_scale = np.linspace(
-                self.scale_min, self.scale_max, num=self.n_partition
-            )
-
-        return reward_scale
 
     def _target_value_given_idx(
         self, idx_: Union[List[int], int], reward_scale: np.ndarray

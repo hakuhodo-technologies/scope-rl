@@ -4,6 +4,8 @@ Overview
 
 We describe the problem setup and prevalent approaches of Off-Policy Evaluation (OPE) and Selection (OPS).
 
+.. _overview_ope:
+
 Off-Policy Evaluation
 ~~~~~~~~~~
 We consider a general reinforcement learning setup, which is formalized by Markov Decision Process (MDP) as :math:`\langle \mathcal{S}, \mathcal{A}, \mathcal{T}, P_r, \gamma \rangle`.
@@ -26,6 +28,8 @@ In OPE/OPS, we are given a logged dataset :math:`\mathcal{D}` consisting of :mat
 
 Our goal is to leverage this the logged dataset to accurately evaluate the performance of evaluation policies (OPE) and to select the best candidate policies based on OPE result (OPS).
 
+.. _overview_basic_ope:
+
 Policy Value Estimation
 ----------
 
@@ -39,7 +43,13 @@ Estimating the policy value before deploying policy in online environment is ben
 However, the challenge is that we need to answer a counterfactual question, *''What if a new policy chooses a different action from that of behavior policy?''*
 by dealing with the distribution shift between :math:`\pi_0` and :math:`\pi`.
 
-We describe basic OPE methods for estimating the policy value `here <>`_.
+.. seealso::
+
+    * :doc:`Supported OPE estimators <evaluation_implementation>` and :doc:`their API reference <_autosummary/ofrl.ope.basic_estimators_discrete>` 
+    * (advanced) :doc:`Marginal OPE estimators <evaluation_implementation>`, and their :doc:`API reference <_autosummary/ofrl.ope.marginal_ope_discrete>`
+    * :doc:`Quickstart <quickstart>` and :doc:`related tutorials <_autogallery/basic_ope/index>`
+
+.. _overview_cumulative_distribution_ope:
 
 Cumulative Distribution and Risk Function Estimation
 ----------
@@ -61,7 +71,12 @@ Then, we can derive various risk functions based on :math:`F(\cdot)` as follows.
 where we let :math:`G := \sum_{t=0}^{T-1} \gamma^t r_t` to represent the random variable of trajectory wise reward
 and :math:`dF(G) := \mathrm{lim}_{\Delta \rightarrow 0} F(G) - F(G- \Delta)`.
 
-We describe cumulative distribution OPE estimators `here <>`_.
+.. seealso::
+
+    * :doc:`Supported OPE estimators <evaluation_implementation>` and :doc:`their API reference <_autosummary/ofrl.ope.cumulative_distribution_estimators_discrete>` 
+    * :doc:`Quickstart <quickstart>` and :doc:`related tutorials <_autogallery/cumulative_distribution_ope/index>`
+
+.. _overview_ops:
 
 Off-Policy Selection
 ~~~~~~~~~~
@@ -76,3 +91,17 @@ where the :math:`\hat{J}(\cdot)` is the OPE estimate of the policy value, which 
 
 In OPS, how well the ranking of the candidate policy preserves and the safety of the chosen policy matters as well as the accuracy of OPE.
 We describe some evaluation metrics of OPE/OPS `here <>`_.
+
+.. seealso::
+
+    * :doc:`OPS evaluation protocols <evaluation_implementation>` and :doc:`their API reference <_autosummary/ofrl.ope.ops>` 
+    * :doc:`Quickstart <quickstart>` and :doc:`related tutorials <_autogallery/ops/index>`
+
+.. seealso::
+
+    For further theoretical properties of OPE estimators, we refer readers to a survey paper :cite:`uehara2022review`.
+    `awesome-offline-rl <https://github.com/hanjuku-kaso/awesome-offline-rl>`_ also provides a comprehensive list of literature.
+
+.. seealso::
+
+    :doc:`Overview (online/offline RL) <online_offline_rl>` describes the problem setting of the policy learning (offline RL) part.

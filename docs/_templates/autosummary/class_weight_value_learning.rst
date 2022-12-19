@@ -3,7 +3,6 @@
 .. currentmodule:: {{ module }}
 
 .. autoclass:: {{ objname }}
-    :inherited-members:
 
 {% block methods %}
 {% if methods %}

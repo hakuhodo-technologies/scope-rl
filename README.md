@@ -502,13 +502,15 @@ For any question about the paper and software, feel free to contact: kiyohara.h.
 
 35. Masatoshi Uehara, Jiawei Huang, and Nan Jiang. [Minimax Weight and Q-Function Learning for Off-Policy Evaluation](https://arxiv.org/abs/1910.12809). In *Proceedings of the 37th International Conference on Machine Learning*, 9659--9668, 2020.
 
-36. Mengjiao Yang, Ofir Nachum, Bo Dai, Lihong Li, and Dale Schuurmans. [Off-Policy Evaluation via the Regularized Lagrangian](https://arxiv.org/abs/2007.03438). In *Advances in Neural Information Processing Systems*, 6551--6561, 2020.
+36. Masatoshi Uehara, Chengchun Shi, and Nathan Kallus. [A Review of Off-Policy Evaluation in Reinforcement Learning](https://arxiv.org/abs/2212.06355). *arXiv preprint arXiv:2212.06355*, 2022.
 
-37. Christina J. Yuan, Yash Chandak, Stephen Giguere, Philip S. Thomas, and Scott Niekum. [SOPE: Spectrum of Off-Policy Estimators](https://arxiv.org/abs/2111.03936). In *Advances in Neural Information Processing Systems*, 18958--18969, 2022.
+37. Mengjiao Yang, Ofir Nachum, Bo Dai, Lihong Li, and Dale Schuurmans. [Off-Policy Evaluation via the Regularized Lagrangian](https://arxiv.org/abs/2007.03438). In *Advances in Neural Information Processing Systems*, 6551--6561, 2020.
 
-38. Shangtong Zhang, Bo Liu, and Shimon Whiteson. [GradientDICE: Rethinking Generalized Offline Estimation of Stationary Values](https://arxiv.org/abs/2001.11113). In *Proceedings of the 37th International Conference on Machine Learning*, 11194--11203, 2020.
+38. Christina J. Yuan, Yash Chandak, Stephen Giguere, Philip S. Thomas, and Scott Niekum. [SOPE: Spectrum of Off-Policy Estimators](https://arxiv.org/abs/2111.03936). In *Advances in Neural Information Processing Systems*, 18958--18969, 2022.
 
-39. Ruiyi Zhang, Bo Dai, Lihong Li, and Dale Schuurmans. [GenDICE: Generalized Offline Estimation of Stationary Values](https://arxiv.org/abs/2002.09072). In *International Conference on Learning Representations*, 2020.
+39. Shangtong Zhang, Bo Liu, and Shimon Whiteson. [GradientDICE: Rethinking Generalized Offline Estimation of Stationary Values](https://arxiv.org/abs/2001.11113). In *Proceedings of the 37th International Conference on Machine Learning*, 11194--11203, 2020.
+
+40. Ruiyi Zhang, Bo Dai, Lihong Li, and Dale Schuurmans. [GenDICE: Generalized Offline Estimation of Stationary Values](https://arxiv.org/abs/2002.09072). In *International Conference on Learning Representations*, 2020.
 
 </details>
 

@@ -4,6 +4,8 @@ Overview
 
 We describe the problem setup and prevalent approaches of online/offline Reinforcement Learning (RL).
 
+.. _overview_online_rl:
+
 Online Reinforcement Learning
 ~~~~~~~~~~
 We consider a general reinforcement learning setup, which is formalized by Markov Decision Process (MDP) as :math:`\langle \mathcal{S}, \mathcal{A}, \mathcal{T}, P_r, \gamma \rangle`.
@@ -114,6 +116,8 @@ and :math:`\pi_{\theta_k}(s_{t+1})` is an action sampled from :math:`\pi_{\theta
 
 Compared to the (vanilla) On-policy Policy Gradient, Actor-Critic stabilizes the policy gradient and enhances sample efficiency by the use of :math:`\hat{Q}`.
 Moreover, in continuous action space, Actor-Critic is often more suitable than Q-learning, which requires discretization of the action space to choose actions.
+
+.. _overview_offline_rl:
 
 Offline Reinforcement Learning
 ~~~~~~~~~~
@@ -265,21 +269,25 @@ where :math:`\hat{Q}_{\theta}` and :math:`V_{\psi}` is learned distinctly, with 
     L_2^{\lambda}(z) := |\tau - \mathbb{I}(z < 0)| z^2
 
 where :math:`\tau` is the parameter to control the asymmetricity. When :math:`\tau > 0.5`, the loss function penalizes the positive value of :math:`z` more.
-Therefore, :math:`\hat{V}` learned with :math:`\tau \rightarrow 1` indicates the maximum Q-value among the observed state-action pairs, while that learned with :math:`\tau = 0.5` indicates the average Q-value among those pairs.
+Therefore, :math:`\hat{V}` learned with :math:`\tau \rightarrow 1` indicates the maximum Q-value among the observed state-action pairs, 
+while that learned with :math:`\tau = 0.5` indicates the average Q-value among those pairs.
 This prevents the propagation of the overestimation bias, even when the basic TD loss is used to learn the Q-function as follows.
 
 .. math::
 
     \hat{\mathcal{L}}_{Q}(\theta) = \mathbb{E}_n [ (\hat{Q}_{\theta}(s_t, a_t) - (r_t + \hat{V}_{\psi}(s_{t+1}))) ]
 
+.. seealso::
+
+    * :doc:`Supported implementations and useful tools <learning_implementation>` 
+    * :doc:`Quickstart <quickstart>` and :doc:`related tutorials <_autogallery/ofrl_others/index>`
 
 .. seealso::
 
     For further taxonomies, algorithms, and descriptions, we refer readers to survey papers :cite:`levine2020offline` :cite:`prudencio2022survey`. 
     `awesome-offline-rl <https://github.com/hanjuku-kaso/awesome-offline-rl>`_ also provides a comprehensive list of literature.
 
-
 .. seealso::
 
-    After learning a new policy, we are often interested in the performance validation. We describe the problem formulation of Off-Policy Evaluation (OPE) and Selection (OPS) :doc:`here <ope_ops>`.
-    The supported implementation of learning and evaluation are described in :doc:`Supported Implementations (learning) <learning_implementation>` and :doc:`Supported Implementation (evaluation) <evaluation_implementation>`. 
+    After learning a new policy, we are often interested in the performance validation. 
+    We describe the problem formulation of Off-Policy Evaluation (OPE) and Selection (OPS) in :doc:`Overview (OPE/OPS) <ope_ops>`.

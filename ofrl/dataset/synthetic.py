@@ -1,4 +1,4 @@
-"""Synthetic Dataset Generation."""
+"""Class to handle synthetic dataset generation."""
 from dataclasses import dataclass
 from typing import Optional, Any, Dict, List
 from tqdm.auto import tqdm
@@ -17,9 +17,29 @@ from ..types import LoggedDataset
 class SyntheticDataset(BaseDataset):
     """Class for synthetic data generation.
 
+    Bases: :class:`ofrl.dataset.BaseDataset`
+
+    Imported as: :class:`ofrl.dataset.SyntheticDataset`
+
     Note
     -------
-    Generate a logged dataset for Offline reinforcement learning (RL) and off-policy evaluation/selection (OPE/OPS).
+    Logged dataset is directly used for Off-Policy Evaluation (OPE). 
+    Moreover, it is also compatible to d3rlpy (offline RL library) with the following command.
+
+    .. code-block:: python
+
+        d3rlpy_dataset = MDPDataset(
+            observations=logged_dataset["state"],
+            actions=logged_dataset["action"],
+            rewards=logged_dataset["reward"],
+            terminals=logged_dataset["done"],
+            episode_terminals=logged_dataset["terminal"],
+            discrete_action=(logged_dataset["action_type"]=="discrete"),
+        )
+
+    .. seealso::
+
+        (external) `d3rlpy's documentation about MDPDataset <https://d3rlpy.readthedocs.io/en/latest/references/dataset.html>`_
 
     Parameters
     -------
@@ -52,67 +72,79 @@ class SyntheticDataset(BaseDataset):
     Examples
     -------
 
-    .. ::code-block:: python
+    Preparation:
+
+    .. code-block:: python
 
         # import necessary module from OFRL
-        >>> from ofrl.dataset import SyntheticDataset
-        >>> from ofrl.policy import DiscreteEpsilonGreedyHead
+        from ofrl.dataset import SyntheticDataset
+        from ofrl.policy import DiscreteEpsilonGreedyHead
 
         # import necessary module from other libraries
-        >>> import gym
-        >>> import rtbgym
-        >>> from d3rlpy.algos import DoubleDQN
-        >>> from d3rlpy.online.buffers import ReplayBuffer
-        >>> from d3rlpy.online.explorers import ConstantEpsilonGreedy
+        import gym
+        import rtbgym
+        from d3rlpy.algos import DoubleDQN
+        from d3rlpy.online.buffers import ReplayBuffer
+        from d3rlpy.online.explorers import ConstantEpsilonGreedy
 
         # initialize environment
-        >>> env = gym.make("RTBEnv-discrete-v0")
+        env = gym.make("RTBEnv-discrete-v0")
 
         # define (RL) agent (i.e., policy) and train on the environment
-        >>> ddqn = DoubleDQN()
-        >>> buffer = ReplayBuffer(
-                maxlen=10000,
-                env=env,
-            )
-        >>> explorer = ConstantEpsilonGreedy(
-                epsilon=0.3,
-            )
-        >>> ddqn.fit_online(
-                env=env,
-                buffer=buffer,
-                explorer=explorer,
-                n_steps=10000,
-                n_steps_per_epoch=1000,
-            )
+        ddqn = DoubleDQN()
+        buffer = ReplayBuffer(
+            maxlen=10000,
+            env=env,
+        )
+        explorer = ConstantEpsilonGreedy(
+            epsilon=0.3,
+        )
+        ddqn.fit_online(
+            env=env,
+            buffer=buffer,
+            explorer=explorer,
+            n_steps=10000,
+            n_steps_per_epoch=1000,
+        )
 
         # convert ddqn policy to stochastic data collection policy
-        >>> behavior_policy = DiscreteEpsilonGreedyHead(
-                ddqn,
-                n_actions=env.action_space.n,
-                epsilon=0.3,
-                name="ddqn_epsilon_0.3",
-                random_state=12345,
-            )
+        behavior_policy = DiscreteEpsilonGreedyHead(
+            ddqn,
+            n_actions=env.action_space.n,
+            epsilon=0.3,
+            name="ddqn_epsilon_0.3",
+            random_state=12345,
+        )
+
+    **Synthetic Dataset Generation**:
+
+    .. code-block:: python
 
         # initialize dataset class
-        >>> dataset = SyntheticDataset(
-                env=env,
-                behavior_policy=behavior_policy,
-                action_meaning=env.action_meaning,
-                state_keys=env.obs_keys,
-                info_keys={
-                    "search_volume": int,
-                    "impression": int,
-                    "click": int,
-                    "conversion": int,
-                    "average_bid_price": float,
-                },
-                random_state=12345,
-            )
+        dataset = SyntheticDataset(
+            env=env,
+            behavior_policy=behavior_policy,
+            action_meaning=env.action_meaning,
+            state_keys=env.obs_keys,
+            info_keys={
+                "search_volume": int,
+                "impression": int,
+                "click": int,
+                "conversion": int,
+                "average_bid_price": float,
+            },
+            random_state=12345,
+        )
 
         # data collection
-        >>> logged_dataset = dataset.obtain_trajectories(n_trajectories=100, obtain_info=True)
+        logged_dataset = dataset.obtain_trajectories(n_trajectories=100, obtain_info=True)
+
+    **Output**:
+    
+    .. code-block:: python
+
         >>> logged_dataset
+
         {'size': 700,
         'n_trajectories': 100,
         'step_per_trajectory': 7,
@@ -153,16 +185,10 @@ class SyntheticDataset(BaseDataset):
                    4.2565445 , 458.76344086])},
         'pscore': array([0.73, 0.73, 0.73, ..., 0.73, 0.03, 0.73])}
 
-    References
-    -------
-    Yuta Saito, Shunsuke Aihara, Megumi Matsutani, and Yusuke Narita.
-    "Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation.", 2021.
+    .. seealso::
 
-    Takuma Seno and Michita Imai.
-    "d3rlpy: An Offline Deep Reinforcement Library.", 2021.
-
-    Greg Brockman, Vicki Cheung, Ludwig Pettersson, Jonas Schneider, John Schulman, Jie Tang, abd Wojciech Zaremba.
-    "OpenAI Gym.", 2016.
+        * :doc:`Quickstart </documentation/quickstart>`
+        * :doc:`Related tutorials </documentation/_autogallery/ofrl_others/index>`
 
     """
 
@@ -220,14 +246,22 @@ class SyntheticDataset(BaseDataset):
         obtain_info: bool = False,
         seed_env: bool = False,
     ) -> LoggedDataset:
-        """Rollout the behavior policy and obtain trajectories.
+        """Rollout the behavior policy and obtain episodes.
 
         Note
         -------
         This function is intended to be used for the environment which has a fixed length of episodes (episodic setting).
 
         For non-episodic, stationary setting (such as cartpole or taxi as used in (Liu et al., 2018) and (Uehara et al., 2020)),
-        please also consider using `.obtain_steps()` to collect logged dataset.
+        please also consider using :class:`.obtain_steps()` to collect logged dataset.
+
+        **References**
+
+        Masatoshi Uehara, Jiawei Huang, and Nan Jiang.
+        "Minimax Weight and Q-Function Learning for Off-Policy Evaluation.", 2020.
+
+        Qiang Liu, Lihong Li, Ziyang Tang, and Dengyong Zhou.
+        "Breaking the Curse of Horizon: Infinite-Horizon Off-Policy Estimation.", 2018
 
         Parameters
         -------
@@ -246,6 +280,30 @@ class SyntheticDataset(BaseDataset):
         Returns
         -------
         logged_dataset: dict
+            Dictionary containing the environmental settings and trajectories obtained by the behavior policy.
+
+            .. code-block:: python
+
+                key: [
+                    size,
+                    n_trajectories,
+                    step_per_trajectory,
+                    action_type,
+                    n_actions,
+                    action_dim,
+                    action_keys,
+                    action_meaning,
+                    state_dim,
+                    state_keys,
+                    state,
+                    action,
+                    reward,
+                    done,
+                    terminal,
+                    info,
+                    pscore,
+                ]
+
             size: int (> 0)
                 Number of steps the dataset records.
 
@@ -301,14 +359,6 @@ class SyntheticDataset(BaseDataset):
 
             pscore: ndarray of shape (size, )
                 Action choice probability of the behavior policy for the chosen action.
-
-        References
-        -------
-        Masatoshi Uehara, Jiawei Huang, and Nan Jiang.
-        "Minimax Weight and Q-Function Learning for Off-Policy Evaluation.", 2020.
-
-        Qiang Liu, Lihong Li, Ziyang Tang, and Dengyong Zhou.
-        "Breaking the Curse of Horizon: Infinite-Horizon Off-Policy Estimation.", 2018
 
         """
         if step_per_trajectory is None:
@@ -427,8 +477,18 @@ class SyntheticDataset(BaseDataset):
 
         Note
         -------
-        This function is intended to be used for the environment which has a stationary state distribution.
-        For episodic RL, please also consider using `.obtain_episodes()`.
+        This function is intended to be used for the environment which has a stationary state distribution 
+        (such as cartpole or taxi as used in (Liu et al., 2018) and (Uehara et al., 2020)).
+
+        For the (standard) episodic RL setting, please also consider using :class:`.obtain_episodes()`.
+
+        **References**
+
+        Masatoshi Uehara, Jiawei Huang, and Nan Jiang.
+        "Minimax Weight and Q-Function Learning for Off-Policy Evaluation.", 2020.
+
+        Qiang Liu, Lihong Li, Ziyang Tang, and Dengyong Zhou.
+        "Breaking the Curse of Horizon: Infinite-Horizon Off-Policy Estimation.", 2018
 
         Parameters
         -------
@@ -452,12 +512,36 @@ class SyntheticDataset(BaseDataset):
 
         obtain_trajectories_from_single_interaction: bool, default=False
             Whether to collect whole data from a single trajectory.
-            If True, the initial state of trajectory i is the next state of the trajectory (i-1)'s last state.
-            If False, the initial state will be sampled by rolling out the behavior policy after resetting the environment.
+            If `True`, the initial state of trajectory i is the next state of the trajectory (i-1)'s last state.
+            If `False`, the initial state will be sampled by rolling out the behavior policy after resetting the environment.
 
         Returns
         -------
         logged_dataset: dict
+            Dictionary containing the environmental settings and trajectories obtained by the behavior policy.
+
+            .. code-block:: python
+
+                key: [
+                    size,
+                    n_trajectories,
+                    step_per_trajectory,
+                    action_type,
+                    n_actions,
+                    action_dim,
+                    action_keys,
+                    action_meaning,
+                    state_dim,
+                    state_keys,
+                    state,
+                    action,
+                    reward,
+                    done,
+                    terminal,
+                    info,
+                    pscore,
+                ]
+
             size: int (> 0)
                 Number of steps the dataset records.
 
@@ -513,14 +597,6 @@ class SyntheticDataset(BaseDataset):
 
             pscore: ndarray of shape (size, )
                 Action choice probability of the behavior policy for the chosen action.
-
-        References
-        -------
-        Masatoshi Uehara, Jiawei Huang, and Nan Jiang.
-        "Minimax Weight and Q-Function Learning for Off-Policy Evaluation.", 2020.
-
-        Qiang Liu, Lihong Li, Ziyang Tang, and Dengyong Zhou.
-        "Breaking the Curse of Horizon: Infinite-Horizon Off-Policy Estimation.", 2018
 
         """
         check_scalar(n_trajectories, name="n_trajectories", target_type=int, min_val=1)

@@ -18,13 +18,14 @@ The workflow mainly consists of following three steps:
     :img-top: ../_static/images/workflow.png
     :text-align: center
 
-In this example, we use `RTBGym <https://github.com/negocia-inc/ofrl/blob/main/rtbgym>`_ (a sub-package of OFRL) and `d3rlpy <https://github.com/takuseno/d3rlpy>`_. Please satisfy the requirements in advance.
+In this example, we use :doc:`RTBGym <rtbgym>` (a sub-package of OFRL) and `d3rlpy <https://github.com/takuseno/d3rlpy>`_. Please satisfy the `requirements <>`_ in advance.
 
 .. seealso::
 
     * :doc:`distinctive_features` describes the distinctive features of OFRL in detail.
     * :doc:`Overview (online/offline RL) <online_offline_rl>` and :doc:`Overview (OPE/OPS) <ope_ops>` describe the problem settings.
 
+.. _quickstart_dataset:
 
 Synthetic Dataset Generation and Data Preprocessing
 ~~~~~~~~~~
@@ -90,12 +91,14 @@ Moreover, by preprocessing the logged data, one can also handle their own logged
 .. seealso::
 
     * :doc:`Related tutorials <_autogallery/ofrl_others/index>`
+    * API references of :ref:`dataset modules <ofrl_api_dataset>` and :ref:`policy wrapper (Head) <ofrl_api_policy>`
 
+.. _quickstart_offlinerl:
 
 Offline Reinforcement Learning
 ~~~~~~~~~~
 
-Now we are ready to learn a new policy only from logged data. Specifically, we learn CQL :cite:`kumar2020conservative` policy here. (Please also refer to :doc:`online_offline_rl` about the problem setting and the algorithms.)
+Now we are ready to learn a new policy only from logged data. Specifically, we learn CQL :cite:`kumar2020conservative` policy here. (Please also refer to :ref:`overview_offline_rl` about the problem setting and the algorithms.)
 Note that, we use `d3rlpy <https://github.com/takuseno/d3rlpy>`_ for offline RL.
 
 .. code-block:: python
@@ -128,14 +131,17 @@ Note that, we use `d3rlpy <https://github.com/takuseno/d3rlpy>`_ for offline RL.
 .. seealso::
 
     * :doc:`Related tutorials <_autogallery/ofrl_others/index>`
-    * :doc:`Problem setting <learning_implementation>`
-    * :doc:`Supported implementations and useful tools <online_offline_rl>`: 
+    * :ref:`Problem setting <overview_offline_rl>`
+    * :doc:`Supported implementations and useful tools <learning_implementation>` 
     * (external) `d3rlpy's documentation <https://d3rlpy.readthedocs.io/en/latest/>`_
 
+.. _quickstart_ope_ops:
 
 Off-Policy Evaluation (OPE) and Selection (OPS)
 ~~~~~~~~~~
 Finally, we evaluate the performance of the learned policy using offline logged data.
+
+.. _quickstart_basic_ope:
 
 Basic OPE
 ----------
@@ -224,9 +230,10 @@ In addition, :class:`obp.ope.OffPolicyEvaluation` summarizes and compares the es
 
     * :doc:`Related tutorials <_autogallery/basic_ope/index>`
     * :doc:`Problem setting <ope_ops>`
-    * :doc:`Supported OPE estimators <evaluation_implementation>` and their API reference 
-    * (advanced) :doc:`Marginal OPE estimators <evaluation_implementation>`, their tutorials, and API reference.
+    * :doc:`Supported OPE estimators <evaluation_implementation>` and :doc:`their API reference <_autosummary/ofrl.ope.basic_estimators_discrete>` 
+    * (advanced) :ref:`Marginal OPE estimators <implementation_marginal_ope>`, and their :doc:`API reference <_autosummary/ofrl.ope.marginal_ope_discrete>`
 
+.. _quickstart_cumulative_distribution_ope:
 
 Cumulative Distribution OPE
 ----------
@@ -283,9 +290,11 @@ In addition, :class:`obp.ope.DiscreteCumulativeDistributionOffPolicyEvaluation` 
 .. seealso::
 
     * :doc:`Related tutorials <_autogallery/cumulative_distribution_ope/index>`
-    * :doc:`Problem setting <ope_ops>`
-    * :doc:`Supported OPE estimators <evaluation_implementation>` and their API reference 
+    * :ref:`Problem setting <overview_cumulative_distribution_ope>`
+    * :ref:`Supported cumulative distribution OPE estimators <implementation_cumulative_distribution_ope>` 
+    and :doc:`their API reference <_autosummary/ofrl.ope.cumulative_distribution_ope_discrete>` 
 
+.. _quickstart_ops:
 
 Off-Policy Selection and Evaluation of OPE/OPS
 ----------
@@ -343,8 +352,8 @@ Finally, we provide the code to conduct OPS, which selects the "best" performing
 .. seealso::
 
     * :doc:`Related tutorials <_autogallery/ops/index>`
-    * :doc:`Problem setting <ope_ops>`
-    * :doc:`OPS evaluation protocols <evaluation_implementation>` and their API reference 
+    * :ref:`Problem setting <overview_ops>`
+    * :ref:`OPS evaluation protocols <implementation_eval_ope_ops>` and :doc:`their API reference <_autosummary/ofrl.ope.ops>` 
 
 ~~~~~
 

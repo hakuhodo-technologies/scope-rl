@@ -1,3 +1,4 @@
+"""Augmented Lagrangian method for weight/value function learning (continuous action space)."""
 from dataclasses import dataclass
 from typing import Optional
 from tqdm.auto import tqdm
@@ -28,6 +29,10 @@ class ContinuousAugmentedLagrangianStateActionWightValueLearning(
     BaseWeightValueLearner
 ):
     """Augmented Lagrangian method for weight/value function of marginal OPE estimators (for continuous action space).
+
+    Bases: :class:`ofrl.ope.weight_value_learning.BaseWeightValueLearner`
+
+    Imported as: :class:`ofrl.ope.weight_value_learning.ContinuousAugmentedLagrangianStateActionWightValueLearning`
 
     Note
     -------
@@ -663,6 +668,10 @@ class ContinuousAugmentedLagrangianStateActionWightValueLearning(
 @dataclass
 class ContinuousAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearner):
     """Augmented Lagrangian method for weight/value function of marginal OPE estimators (for continuous action space).
+
+    Bases: :class:`ofrl.ope.weight_value_learning.BaseWeightValueLearner`
+
+    Imported as: :class:`ofrl.ope.weight_value_learning.ContinuousAugmentedLagrangianStateWightValueLearning`
 
     Note
     -------

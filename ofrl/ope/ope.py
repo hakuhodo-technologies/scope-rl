@@ -1,4 +1,4 @@
-"""Meta Class to Handle Standard and Cumulative Distribution OPE."""
+"""Meta class to handle standard and cumulative distribution OPE."""
 from dataclasses import dataclass
 from typing import Dict, List, Tuple, Optional, Union
 from pathlib import Path
@@ -33,30 +33,33 @@ from ..utils import (
 
 @dataclass
 class OffPolicyEvaluation:
-    """Class to perform OPE by multiple estimators simultaneously (compatible to both discrete/continuous action cases).
+    """Class to perform OPE by multiple estimators simultaneously (applicable to both discrete/continuous action cases).
 
     Note
     -----------
-    OPE estimates the expected policy performance called the policy value.
+    OPE estimates the expected policy performance of a given evaluation policy called the policy value.
 
     .. math::
 
         V(\\pi) := \\mathbb{E} \\left[ \\sum_{t=0}^{T-1} \\gamma^t r_t \\mid \\pi \\right]
+
+    where :math:`\\pi` is the evaluation policy, :math:`r_t` is the reward observation at each timestep :math:`t`, 
+    :math:`T` is the total number of timesteps in an episode, and :math:`\\gamma` is the discount factor.
 
     Parameters
     -----------
     logged_dataset: LoggedDataset
         Logged dataset used to conduct OPE.
 
-    ope_estimators: List[BaseOffPolicyEstimator]
+    ope_estimators: list of BaseOffPolicyEstimator
         List of OPE estimators used to evaluate the policy value of the evaluation policies.
-        Estimators must follow the interface of `ofrl.ope.BaseOffPolicyEstimator`.
+        Estimators must follow the interface of :class:`ofrl.ope.BaseOffPolicyEstimator`.
 
     n_step_pdis: int, default=0 (>= 0)
         Number of previous steps to use per-decision importance weight in marginal OPE estimators.
-        When zero is given, the estimator corresponds to the pure state(-action) marginal IS.
+        If zero is given, the estimator corresponds to the pure state(-action) marginal IS.
 
-    sigma: float, default=1.0
+    sigma: float, default=1.0 (> 0)
         Bandwidth hyperparameter of gaussian kernel for continuous action space.
 
     action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
@@ -64,114 +67,122 @@ class OffPolicyEvaluation:
 
     Examples
     ----------
-    .. ::code-block:: python
+
+    Preparation:
+
+    .. code-block:: python
 
         # import necessary module from OFRL
-        >>> from ofrl.dataset import SyntheticDataset
-        >>> from ofrl.policy import DiscreteEpsilonGreedyHead
-        >>> from ofrl.ope import CreateOPEInput
-        >>> from ofrl.ope import DiscreteOffPolicyEvaluation as OPE
-        >>> from ofrl.ope import DiscreteTrajectoryWiseImportanceSampling as TIS
-        >>> from ofrl.ope import DiscretePerDecisionImportanceSampling as PDIS
+        from ofrl.dataset import SyntheticDataset
+        from ofrl.policy import DiscreteEpsilonGreedyHead
+        from ofrl.ope import CreateOPEInput
+        from ofrl.ope import DiscreteOffPolicyEvaluation as OPE
+        from ofrl.ope import DiscreteTrajectoryWiseImportanceSampling as TIS
+        from ofrl.ope import DiscretePerDecisionImportanceSampling as PDIS
 
         # import necessary module from other libraries
-        >>> import gym
-        >>> import rtbgym
-        >>> from d3rlpy.algos import DoubleDQN
-        >>> from d3rlpy.online.buffers import ReplayBuffer
-        >>> from d3rlpy.online.explorers import ConstantEpsilonGreedy
+        import gym
+        import rtbgym
+        from d3rlpy.algos import DoubleDQN
+        from d3rlpy.online.buffers import ReplayBuffer
+        from d3rlpy.online.explorers import ConstantEpsilonGreedy
 
         # initialize environment
-        >>> env = gym.make("RTBEnv-discrete-v0")
+        env = gym.make("RTBEnv-discrete-v0")
 
         # define (RL) agent (i.e., policy) and train on the environment
-        >>> ddqn = DoubleDQN()
-        >>> buffer = ReplayBuffer(
-                maxlen=10000,
-                env=env,
-            )
-        >>> explorer = ConstantEpsilonGreedy(
-                epsilon=0.3,
-            )
-        >>> ddqn.fit_online(
-                env=env,
-                buffer=buffer,
-                explorer=explorer,
-                n_steps=10000,
-                n_steps_per_epoch=1000,
-            )
+        ddqn = DoubleDQN()
+        buffer = ReplayBuffer(
+            maxlen=10000,
+            env=env,
+        )
+        explorer = ConstantEpsilonGreedy(
+            epsilon=0.3,
+        )
+        ddqn.fit_online(
+            env=env,
+            buffer=buffer,
+            explorer=explorer,
+            n_steps=10000,
+            n_steps_per_epoch=1000,
+        )
 
         # convert ddqn policy to stochastic data collection policy
-        >>> behavior_policy = DiscreteEpsilonGreedyHead(
-                ddqn,
-                n_actions=env.action_space.n,
-                epsilon=0.3,
-                name="ddqn_epsilon_0.3",
-                random_state=12345,
-            )
+        behavior_policy = DiscreteEpsilonGreedyHead(
+            ddqn,
+            n_actions=env.action_space.n,
+            epsilon=0.3,
+            name="ddqn_epsilon_0.3",
+            random_state=12345,
+        )
 
         # initialize dataset class
-        >>> dataset = SyntheticDataset(
-                env=env,
-                behavior_policy=behavior_policy,
-                random_state=12345,
-            )
+        dataset = SyntheticDataset(
+            env=env,
+            behavior_policy=behavior_policy,
+            random_state=12345,
+        )
 
         # data collection
-        >>> logged_dataset = dataset.obtain_trajectories(n_trajectories=100, obtain_info=True)
+        logged_dataset = dataset.obtain_episodes(n_trajectories=100)
+
+    Create Input for OPE:
+
+    .. code-block:: python
 
         # evaluation policy
-        >>> ddqn_ = DiscreteEpsilonGreedyHead(
-                base_policy=ddqn,
-                n_actions=env.action_space.n,
-                name="ddqn",
-                epsilon=0.0,
-                random_state=12345
-            )
-        >>> random_ = DiscreteEpsilonGreedyHead(
-                base_policy=ddqn,
-                n_actions=env.action_space.n,
-                name="random",
-                epsilon=1.0,
-                random_state=12345
-            )
+        ddqn_ = DiscreteEpsilonGreedyHead(
+            base_policy=ddqn,
+            n_actions=env.action_space.n,
+            name="ddqn",
+            epsilon=0.0,
+            random_state=12345
+        )
+        random_ = DiscreteEpsilonGreedyHead(
+            base_policy=ddqn,
+            n_actions=env.action_space.n,
+            name="random",
+            epsilon=1.0,
+            random_state=12345
+        )
 
         # create input for off-policy evaluation (OPE)
-        >>> prep = CreateOPEInput(
-                logged_dataset=logged_dataset,
-            )
-        >>> input_dict = prep.obtain_whole_inputs(
-                evaluation_policies=[ddqn_, random_],
-                env=env,
-                n_trajectories_on_policy_evaluation=100,
-                random_state=12345,
-            )
+        prep = CreateOPEInput(
+            logged_dataset=logged_dataset,
+        )
+        input_dict = prep.obtain_whole_inputs(
+            evaluation_policies=[ddqn_, random_],
+            env=env,
+            n_trajectories_on_policy_evaluation=100,
+            random_state=12345,
+        )
+
+    **Off-Policy Evaluation**:
+
+    .. code-block:: python
 
         # OPE
-        >>> ope = OPE(
-                logged_dataset=logged_dataset,
-                ope_estimators=[TIS(), PDIS()],
-            )
-        >>> policy_value_dict = ope.estimate_policy_value(
-                input_dict=input_dict,
-            )
+        ope = OPE(
+            logged_dataset=logged_dataset,
+            ope_estimators=[TIS(), PDIS()],
+        )
+        policy_value_dict = ope.estimate_policy_value(
+            input_dict=input_dict,
+        )
+
+    **Output**:
+
+    .. code-block:: python
+
         >>> policy_value_dict
+
         {'ddqn': {'on_policy': 15.95, 'tis': 18.103809657474702, 'pdis': 16.95314065192053},
         'random': {'on_policy': 12.69, 'tis': 0.4885685147584351, 'pdis': 6.2752568547701335}}
 
-    References
-    -------
-    Yuta Saito, Shunsuke Aihara, Megumi Matsutani, and Yusuke Narita.
-    "Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation.", 2021.
+    .. seealso::
 
-    Josiah P. Hanna, Peter Stone, and Scott Niekum.
-    "Bootstrapping with Models: Confidence Intervals for Off-Policy Evaluation.", 2017.
-
-    Philip S. Thomas, Georgios Theocharous, and Mohammad Ghavamzadeh.
-    "High Confidence Policy Improvement.", 2015.
-
-    Philip S. Thomas, Georgios Theocharous, and Mohammad Ghavamzadeh.
-    "High Confidence Off-Policy Evaluation.", 2015.
+        * :doc:`Quickstart </documentation/quickstart>`
+        * :doc:`Related tutorials </documentation/_autogallery/basic_ope/index>`
 
     """
 
@@ -251,27 +262,33 @@ class OffPolicyEvaluation:
         -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
-            Please refer to `CreateOPEInput` class for the detail.
-            key: [evaluation_policy_name][
-                evaluation_policy_action,
-                evaluation_policy_action_dist,
-                state_action_value_prediction,
-                initial_state_value_prediction,
-                state_action_marginal_importance_weight,
-                state_marginal_importance_weight,
-                on_policy_policy_value,
-                gamma,
-            ]
+            
+            .. code-block:: python
+
+                key: [evaluation_policy_name][
+                    evaluation_policy_action,
+                    evaluation_policy_action_dist,
+                    state_action_value_prediction,
+                    initial_state_value_prediction,
+                    state_action_marginal_importance_weight,
+                    state_marginal_importance_weight,
+                    on_policy_policy_value,
+                    gamma,
+                ]
+
+            .. seealso::
+
+                :class:`ope.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
-            When `None` is given, all the estimators are compared.
+            If `None` is given, all the estimators are compared.
 
         Return
         -------
         policy_value_dict: dict
             Dictionary containing the policy value of each evaluation policy estimated by OPE estimators.
-            key: [evaluation_policy_name][OPE_estimator_name]
+            key: :class:`[evaluation_policy_name][OPE_estimator_name]`
 
         """
         check_input_dict(input_dict)
@@ -317,21 +334,27 @@ class OffPolicyEvaluation:
         -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
-            Please refer to `CreateOPEInput` class for the detail.
-            key: [evaluation_policy_name][
-                evaluation_policy_action,
-                evaluation_policy_action_dist,
-                state_action_value_prediction,
-                initial_state_value_prediction,
-                state_action_marginal_importance_weight,
-                state_marginal_importance_weight,
-                on_policy_policy_value,
-                gamma,
-            ]
+
+            .. code-block:: python
+
+                key: [evaluation_policy_name][
+                    evaluation_policy_action,
+                    evaluation_policy_action_dist,
+                    state_action_value_prediction,
+                    initial_state_value_prediction,
+                    state_action_marginal_importance_weight,
+                    state_marginal_importance_weight,
+                    on_policy_policy_value,
+                    gamma,
+                ]
+
+            .. seealso::
+
+                :class:`ope.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
-            When `None` is given, all the estimators are compared.
+            If `None` is given, all the estimators are compared.
 
         alpha: float, default=0.05
             Significance level. The value should be within `[0, 1)`.
@@ -349,7 +372,18 @@ class OffPolicyEvaluation:
         -------
         policy_value_interval_dict: dict
             Dictionary containing the confidence intervals estimated by nonparametric bootstrap.
-            key: [evaluation_policy_name][OPE_estimator_name]
+            key: :class:`[evaluation_policy_name][OPE_estimator_name]`
+
+        References
+        -------
+        Josiah P. Hanna, Peter Stone, and Scott Niekum.
+        "Bootstrapping with Models: Confidence Intervals for Off-Policy Evaluation.", 2017.
+
+        Philip S. Thomas, Georgios Theocharous, and Mohammad Ghavamzadeh.
+        "High Confidence Policy Improvement.", 2015.
+
+        Philip S. Thomas, Georgios Theocharous, and Mohammad Ghavamzadeh.
+        "High Confidence Off-Policy Evaluation.", 2015.
 
         """
         check_input_dict(input_dict)
@@ -409,21 +443,27 @@ class OffPolicyEvaluation:
         -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
-            Please refer to `CreateOPEInput` class for the detail.
-            key: [evaluation_policy_name][
-                evaluation_policy_action,
-                evaluation_policy_action_dist,
-                state_action_value_prediction,
-                initial_state_value_prediction,
-                state_action_marginal_importance_weight,
-                state_marginal_importance_weight,
-                on_policy_policy_value,
-                gamma,
-            ]
+            
+            .. code-block:: python
+
+                key: [evaluation_policy_name][
+                    evaluation_policy_action,
+                    evaluation_policy_action_dist,
+                    state_action_value_prediction,
+                    initial_state_value_prediction,
+                    state_action_marginal_importance_weight,
+                    state_marginal_importance_weight,
+                    on_policy_policy_value,
+                    gamma,
+                ]
+
+            .. seealso::
+
+                :class:`ope.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
-            When `None` is given, all the estimators are compared.
+            If `None` is given, all the estimators are compared.
 
         alpha: float, default=0.05
             Significance level. The value should be within `[0, 1)`.
@@ -441,11 +481,11 @@ class OffPolicyEvaluation:
         -------
         policy_value_dict: dict
             Dictionary containing the policy value of each evaluation policy estimated by OPE estimators.
-            key: [evaluation_policy_name][OPE_estimator_name]
+            key: :class:`[evaluation_policy_name][OPE_estimator_name]`
 
         policy_value_interval_dict: dict
             Dictionary containing the confidence intervals estimated by nonparametric bootstrap.
-            key: [evaluation_policy_name][OPE_estimator_name]
+            key: :class:`[evaluation_policy_name][OPE_estimator_name]`
 
         """
         check_input_dict(input_dict)
@@ -511,21 +551,27 @@ class OffPolicyEvaluation:
         -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
-            Please refer to `CreateOPEInput` class for the detail.
-            key: [evaluation_policy_name][
-                evaluation_policy_action,
-                evaluation_policy_action_dist,
-                state_action_value_prediction,
-                initial_state_value_prediction,
-                state_action_marginal_importance_weight,
-                state_marginal_importance_weight,
-                on_policy_policy_value,
-                gamma,
-            ]
+            
+            .. code-block:: python
+
+                key: [evaluation_policy_name][
+                    evaluation_policy_action,
+                    evaluation_policy_action_dist,
+                    state_action_value_prediction,
+                    initial_state_value_prediction,
+                    state_action_marginal_importance_weight,
+                    state_marginal_importance_weight,
+                    on_policy_policy_value,
+                    gamma,
+                ]
+
+            .. seealso::
+
+                :class:`ope.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
-            When `None` is given, all the estimators are compared.
+            If `None` is given, all the estimators are compared.
 
         alpha: float, default=0.05
             Significance level. The value should be within `(0, 1]`.
@@ -540,14 +586,14 @@ class OffPolicyEvaluation:
             Random state.
 
         is_relative: bool, default=False
-            If True, the method visualizes the estimated policy value of the evaluation policies
+            If `True`, the method visualizes the estimated policy value of the evaluation policies
             relative to the on-policy policy value of the behavior policy.
 
         hue: {"estimator", "policy"}, default="estimator"
             Hue of the plot.
 
         sharey: bool, default=False
-            If True, the y-axis will be shared among different estimators or evaluation policies.
+            If `True`, the y-axis will be shared among different estimators or evaluation policies.
 
         fig_dir: Path, default=None
             Path to store the bar figure.
@@ -779,14 +825,14 @@ class OffPolicyEvaluation:
         -------
         Evaluate the estimation performance/accuracy of OPE estimators by relative estimation error (relative-EE) or squared error (SE).
 
-        .. math ::
+        .. math::
 
             \\mathrm{Relative-EE}(\\hat{V}; \\mathcal{D})
             := \\left| \\frac{\\hat{V}(\\pi; \\mathcal{D}) - V_{\\mathrm{on}}(\\pi)}{V_{\\mathrm{on}}(\\pi)} \\right|,
 
-        .. math ::
+        .. math::
 
-            \\mathrm{SE}(\\hat{V}; \\mathcal{D}) := \\left( \\hat{V}(\\pi; \\mathcal{D}) - V_{\\mathrm{on} \\right)^2,
+            \\mathrm{SE}(\\hat{V}; \\mathcal{D}) := \\left( \\hat{V}(\\pi; \\mathcal{D}) - V_{\\mathrm{on}} \\right)^2,
 
         where :math:`V_{\\mathrm{on}}(\\pi)` is the on-policy policy value of the evaluation policy :math:`\\pi`.
         :math:`\\hat{V}(\\pi; \\mathcal{D})` is the policy value estimated by the OPE estimator :math:`\\hat{V}` and logged dataset :math:`\\mathcal{D}`.
@@ -795,21 +841,28 @@ class OffPolicyEvaluation:
         -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
-            Please refer to `CreateOPEInput` class for the detail.
-            key: [evaluation_policy_name][
-                evaluation_policy_action,
-                evaluation_policy_action_dist,
-                state_action_value_prediction,
-                initial_state_value_prediction,
-                state_action_marginal_importance_weight,
-                state_marginal_importance_weight,
-                on_policy_policy_value,
-                gamma,
-            ]
+            Please refer to :class:`CreateOPEInput` class for the detail.
+            
+            .. code-block:: python
+
+                key: [evaluation_policy_name][
+                    evaluation_policy_action,
+                    evaluation_policy_action_dist,
+                    state_action_value_prediction,
+                    initial_state_value_prediction,
+                    state_action_marginal_importance_weight,
+                    state_marginal_importance_weight,
+                    on_policy_policy_value,
+                    gamma,
+                ]
+
+            .. seealso::
+
+                :class:`ope.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
-            When `None` is given, all the estimators are compared.
+            If `None` is given, all the estimators are compared.
 
         metric: {"relative-ee", "se"}, default="relative-ee"
             Evaluation metric used to evaluate and compare the estimation performance/accuracy of OPE estimators.
@@ -821,7 +874,7 @@ class OffPolicyEvaluation:
         -------
         eval_metric_ope_dict/eval_metric_ope_df: dict or dataframe
             Dictionary/dataframe containing evaluation metric for evaluating the estimation performance/accuracy of OPE estimators.
-            key: [evaluation_policy_name][OPE_estimator_name]
+            key: :class:`[evaluation_policy_name][OPE_estimator_name]`
 
         """
         check_input_dict(input_dict)
@@ -886,7 +939,7 @@ class OffPolicyEvaluation:
 
 @dataclass
 class CumulativeDistributionOffPolicyEvaluation:
-    """Class to conduct cumulative distribution OPE by multiple estimators simultaneously (compatible to both discrete/continuous action cases).
+    """Class to conduct cumulative distribution OPE by multiple estimators simultaneously (applicable to both discrete/continuous action cases).
 
     Note
     -----------
@@ -895,6 +948,9 @@ class CumulativeDistributionOffPolicyEvaluation:
     .. math::
 
         F(m, \\pi) := \\mathbb{E} \\left[ \\mathbb{I} \\left \\{ \\sum_{t=0}^{T-1} \\gamma^t r_t \\leq m \\right \\} \\mid \\pi \\right]
+
+    where :math:`\\pi` is the evaluation policy, :math:`r_t` is the reward observation at each timestep :math:`t`, 
+    :math:`T` is the total number of timesteps in an episode, and :math:`\\gamma` is the discount factor.
 
     Parameters
     -----------
@@ -907,20 +963,22 @@ class CumulativeDistributionOffPolicyEvaluation:
 
     use_custom_reward_scale: bool, default=False
         Whether to use the custom reward scale or the reward observed by the behavior policy.
-        If True, the reward scale is uniform, following Huang et al. (2021).
-        If False, the reward scale follows the one defined in Chundak et al. (2021).
+
+        If `True`, the reward scale is uniform, following Huang et al. (2021).
+
+        If `False`, the reward scale follows the one defined in Chundak et al. (2021).
 
     scale_min: float, default=None
         Minimum value of the reward scale in CDF.
-        When `use_custom_reward_scale == True`, a value must be given.
+        If use_custom_reward_scale is `True`, a value must be given.
 
     scale_max: float, default=None
         Maximum value of the reward scale in CDF.
-        When `use_custom_reward_scale == True`, a value must be given.
+        If use_custom_reward_scale is `True`, a value must be given.
 
     n_partition: int, default=None
         Number of partitions in the reward scale (x-axis of CDF).
-        When `use_custom_reward_scale == True`, a value must be given.
+        If use_custom_reward_scale is `True`, a value must be given.
 
     sigma: float, default=1.0 (> 0)
         Bandwidth hyperparameter of gaussian kernel for continuous action space.
@@ -930,103 +988,125 @@ class CumulativeDistributionOffPolicyEvaluation:
 
     Examples
     ----------
-    .. ::code-block:: python
+
+    Preparation:
+
+    .. code-block:: python
 
         # import necessary module from OFRL
-        >>> from ofrl.dataset import SyntheticDataset
-        >>> from ofrl.policy import DiscreteEpsilonGreedyHead
-        >>> from ofrl.ope import CreateOPEInput
-        >>> from ofrl.ope import DiscreteCumulativeDistributionOffPolicyEvaluation as CumulativeDistributionOPE
-        >>> from ofrl.ope import DiscreteCumulativeDistributionTrajectoryWiseImportanceSampling as CDIS
-        >>> from ofrl.ope import DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSampling as CDSIS
+        from ofrl.dataset import SyntheticDataset
+        from ofrl.policy import DiscreteEpsilonGreedyHead
+        from ofrl.ope import CreateOPEInput
+        from ofrl.ope import DiscreteCumulativeDistributionOffPolicyEvaluation as CumulativeDistributionOPE
+        from ofrl.ope import DiscreteCumulativeDistributionTrajectoryWiseImportanceSampling as CDIS
+        from ofrl.ope import DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSampling as CDSIS
 
         # import necessary module from other libraries
-        >>> import gym
-        >>> import rtbgym
-        >>> from d3rlpy.algos import DoubleDQN
-        >>> from d3rlpy.online.buffers import ReplayBuffer
-        >>> from d3rlpy.online.explorers import ConstantEpsilonGreedy
+        import gym
+        import rtbgym
+        from d3rlpy.algos import DoubleDQN
+        from d3rlpy.online.buffers import ReplayBuffer
+        from d3rlpy.online.explorers import ConstantEpsilonGreedy
 
         # initialize environment
-        >>> env = gym.make("RTBEnv-discrete-v0")
+        env = gym.make("RTBEnv-discrete-v0")
 
         # define (RL) agent (i.e., policy) and train on the environment
-        >>> ddqn = DoubleDQN()
-        >>> buffer = ReplayBuffer(
-                maxlen=10000,
-                env=env,
-            )
-        >>> explorer = ConstantEpsilonGreedy(
-                epsilon=0.3,
-            )
-        >>> ddqn.fit_online(
-                env=env,
-                buffer=buffer,
-                explorer=explorer,
-                n_steps=10000,
-                n_steps_per_epoch=1000,
-            )
+        ddqn = DoubleDQN()
+        buffer = ReplayBuffer(
+            maxlen=10000,
+            env=env,
+        )
+        explorer = ConstantEpsilonGreedy(
+            epsilon=0.3,
+        )
+        ddqn.fit_online(
+            env=env,
+            buffer=buffer,
+            explorer=explorer,
+            n_steps=10000,
+            n_steps_per_epoch=1000,
+        )
 
         # convert ddqn policy to stochastic data collection policy
-        >>> behavior_policy = DiscreteEpsilonGreedyHead(
-                ddqn,
-                n_actions=env.action_space.n,
-                epsilon=0.3,
-                name="ddqn_epsilon_0.3",
-                random_state=12345,
-            )
+        behavior_policy = DiscreteEpsilonGreedyHead(
+            ddqn,
+            n_actions=env.action_space.n,
+            epsilon=0.3,
+            name="ddqn_epsilon_0.3",
+            random_state=12345,
+        )
 
         # initialize dataset class
-        >>> dataset = SyntheticDataset(
-                env=env,
-                behavior_policy=behavior_policy,
-                random_state=12345,
-            )
+        dataset = SyntheticDataset(
+            env=env,
+            behavior_policy=behavior_policy,
+            random_state=12345,
+        )
 
         # data collection
-        >>> logged_dataset = dataset.obtain_trajectories(n_trajectories=100, obtain_info=True)
+        logged_dataset = dataset.obtain_trajectories(n_trajectories=100)
+
+    Create Input for OPE:
+
+    .. code-block:: python
 
         # evaluation policy
-        >>> ddqn_ = DiscreteEpsilonGreedyHead(
-                base_policy=ddqn,
-                n_actions=env.action_space.n,
-                name="ddqn",
-                epsilon=0.0,
-                random_state=12345
-            )
-        >>> random_ = DiscreteEpsilonGreedyHead(
-                base_policy=ddqn,
-                n_actions=env.action_space.n,
-                name="random",
-                epsilon=1.0,
-                random_state=12345
-            )
+        ddqn_ = DiscreteEpsilonGreedyHead(
+            base_policy=ddqn,
+            n_actions=env.action_space.n,
+            name="ddqn",
+            epsilon=0.0,
+            random_state=12345
+        )
+        random_ = DiscreteEpsilonGreedyHead(
+            base_policy=ddqn,
+            n_actions=env.action_space.n,
+            name="random",
+            epsilon=1.0,
+            random_state=12345
+        )
 
         # create input for off-policy evaluation (OPE)
-        >>> prep = CreateOPEInput(
-                logged_dataset=logged_dataset,
-            )
-        >>> input_dict = prep.obtain_whole_inputs(
-                evaluation_policies=[ddqn_, random_],
-                env=env,
-                n_trajectories_on_policy_evaluation=100,
-                random_state=12345,
-            )
+        prep = CreateOPEInput(
+            logged_dataset=logged_dataset,
+        )
+        input_dict = prep.obtain_whole_inputs(
+            evaluation_policies=[ddqn_, random_],
+            env=env,
+            n_trajectories_on_policy_evaluation=100,
+            random_state=12345,
+        )
+
+    **Cumulative Distribution OPE**:
+
+    .. code-block:: python
 
         # OPE
-        >>> cd_ope = CumulativeDistributionOPE(
-                logged_dataset=logged_dataset,
-                ope_estimators=[
-                    CDIS(estimator_name="cdf_is"),
-                    CDSIS(estimator_name="cdf_sis"),
-                ],
-            )
-        >>> variance_dict = cd_ope.estimate_variance(
-                input_dict=input_dict,
-            )
+        cd_ope = CumulativeDistributionOPE(
+            logged_dataset=logged_dataset,
+            ope_estimators=[
+                CDIS(estimator_name="cdf_is"),
+                CDSIS(estimator_name="cdf_sis"),
+            ],
+        )
+        variance_dict = cd_ope.estimate_variance(
+            input_dict=input_dict,
+        )
+
+    **Output**:
+
+    .. code-block:: python
+
         >>> variance_dict
+
         {'ddqn': {'on_policy': 18.6216, 'cdf_is': 19.201934808340265, 'cdf_snis': 25.315555555555555},
         'random': {'on_policy': 21.512806887023064, 'cdf_is': 13.591854902638273, 'cdf_snis': 7.158545530356914}}
+
+    .. seealso::
+
+        * :doc:`Quickstart </documentation/quickstart>`
+        * :doc:`Related tutorials </documentation/_autogallery/cumulative_distribution_ope/index>`
 
     References
     -------
@@ -1138,7 +1218,7 @@ class CumulativeDistributionOffPolicyEvaluation:
         Parameters
         -------
         idx_: list of int or int
-            Indicating index. When list is given, the average of the two will be returned.
+            Indicating index. If a list is given, the average of the two will be returned.
 
         reward_scale: array-like of shape (n_partition, )
             Scale of the trajectory wise reward used for x-axis of CDF curve.
@@ -1191,27 +1271,33 @@ class CumulativeDistributionOffPolicyEvaluation:
         -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
-            Please refer to `CreateOPEInput` class for the detail.
-            key: [evaluation_policy_name][
-                evaluation_policy_action,
-                evaluation_policy_action_dist,
-                state_action_value_prediction,
-                initial_state_value_prediction,
-                state_action_marginal_importance_weight,
-                state_marginal_importance_weight,
-                on_policy_policy_value,
-                gamma,
-            ]
+            
+            .. code-block:: python
+
+                key: [evaluation_policy_name][
+                    evaluation_policy_action,
+                    evaluation_policy_action_dist,
+                    state_action_value_prediction,
+                    initial_state_value_prediction,
+                    state_action_marginal_importance_weight,
+                    state_marginal_importance_weight,
+                    on_policy_policy_value,
+                    gamma,
+                ]
+
+            .. seealso::
+
+                :class:`ope.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
-            When `None` is given, all the estimators are compared.
+            If `None` is given, all the estimators are compared.
 
         Return
         -------
         cumulative_distribution_dict: dict
             Dictionary containing the cumulative distribution of each evaluation policy estimated by OPE estimators.
-            key: [evaluation_policy_name][OPE_estimator_name]
+            key: :class:`[evaluation_policy_name][OPE_estimator_name]`
 
         """
         check_input_dict(input_dict)
@@ -1261,27 +1347,33 @@ class CumulativeDistributionOffPolicyEvaluation:
         -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
-            Please refer to `CreateOPEInput` class for the detail.
-            key: [evaluation_policy_name][
-                evaluation_policy_action,
-                evaluation_policy_action_dist,
-                state_action_value_prediction,
-                initial_state_value_prediction,
-                state_action_marginal_importance_weight,
-                state_marginal_importance_weight,
-                on_policy_policy_value,
-                gamma,
-            ]
+            
+            .. code-block:: python
+
+                key: [evaluation_policy_name][
+                    evaluation_policy_action,
+                    evaluation_policy_action_dist,
+                    state_action_value_prediction,
+                    initial_state_value_prediction,
+                    state_action_marginal_importance_weight,
+                    state_marginal_importance_weight,
+                    on_policy_policy_value,
+                    gamma,
+                ]
+
+            .. seealso::
+
+                :class:`ope.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
-            When `None` is given, all the estimators are compared.
+            If `None` is given, all the estimators are compared.
 
         Return
         -------
         mean_dict: dict
             Dictionary containing the mean trajectory wise reward of each evaluation policy estimated by OPE estimators.
-            key: [evaluation_policy_name][OPE_estimator_name]
+            key: :class:`[evaluation_policy_name][OPE_estimator_name]`
 
         """
         check_input_dict(input_dict)
@@ -1327,27 +1419,33 @@ class CumulativeDistributionOffPolicyEvaluation:
         -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
-            Please refer to `CreateOPEInput` class for the detail.
-            key: [evaluation_policy_name][
-                evaluation_policy_action,
-                evaluation_policy_action_dist,
-                state_action_value_prediction,
-                initial_state_value_prediction,
-                state_action_marginal_importance_weight,
-                state_marginal_importance_weight,
-                on_policy_policy_value,
-                gamma,
-            ]
+            
+            .. code-block:: python
+
+                key: [evaluation_policy_name][
+                    evaluation_policy_action,
+                    evaluation_policy_action_dist,
+                    state_action_value_prediction,
+                    initial_state_value_prediction,
+                    state_action_marginal_importance_weight,
+                    state_marginal_importance_weight,
+                    on_policy_policy_value,
+                    gamma,
+                ]
+
+            .. seealso::
+
+                :class:`ope.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
-            When `None` is given, all the estimators are compared.
+            If `None` is given, all the estimators are compared.
 
         Return
         -------
         variance_dict: dict
             Dictionary containing the variance of trajectory wise reward of each evaluation policy estimated by OPE estimators.
-            key: [evaluation_policy_name][OPE_estimator_name]
+            key: :class:`[evaluation_policy_name][OPE_estimator_name]`
 
         """
         check_input_dict(input_dict)
@@ -1391,7 +1489,7 @@ class CumulativeDistributionOffPolicyEvaluation:
         self,
         input_dict: OPEInputDict,
         compared_estimators: Optional[List[str]] = None,
-        alphas: Union[np.ndarray, float] = np.linspace(0, 1, 20),
+        alphas: Optional[Union[np.ndarray, float]] = None,
     ):
         """Estimate the conditional value at risk of the trajectory wise reward of the evaluation policies.
 
@@ -1399,30 +1497,37 @@ class CumulativeDistributionOffPolicyEvaluation:
         -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
-            Please refer to `CreateOPEInput` class for the detail.
-            key: [evaluation_policy_name][
-                evaluation_policy_action,
-                evaluation_policy_action_dist,
-                state_action_value_prediction,
-                initial_state_value_prediction,
-                state_action_marginal_importance_weight,
-                state_marginal_importance_weight,
-                on_policy_policy_value,
-                gamma,
-            ]
+            
+            .. code-block:: python
+
+                key: [evaluation_policy_name][
+                    evaluation_policy_action,
+                    evaluation_policy_action_dist,
+                    state_action_value_prediction,
+                    initial_state_value_prediction,
+                    state_action_marginal_importance_weight,
+                    state_marginal_importance_weight,
+                    on_policy_policy_value,
+                    gamma,
+                ]
+
+            .. seealso::
+
+                :class:`ope.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
-            When `None` is given, all the estimators are compared.
+            If `None` is given, all the estimators are compared.
 
-        alphas: {float, array-like of shape (n_alpha, )}, default=np.linspace(0, 1, 20)
+        alphas: {float, array-like of shape (n_alpha, )}, default=None
             Set of proportions of the sided region. The value(s) should be within `[0, 1)`.
+            If `None` is given, :class:`np.linspace(0, 1, 21)` will be used.
 
         Return
         -------
         conditional_value_at_risk_dict: dict
             Dictionary containing the conditional value at risk of trajectory wise reward of each evaluation policy estimated by OPE estimators.
-            key: [evaluation_policy_name][OPE_estimator_name]
+            key: :class:`[evaluation_policy_name][OPE_estimator_name]`
 
         """
         check_input_dict(input_dict)
@@ -1432,6 +1537,8 @@ class CumulativeDistributionOffPolicyEvaluation:
             raise ValueError(
                 "compared_estimators must be a subset of self.estimators_name, but found False."
             )
+        if alphas is None:
+            alphas = np.linspace(0, 1, 21)
         if isinstance(alphas, float):
             check_scalar(
                 alphas, name="alphas", target_type=float, min_val=0.0, max_val=1.0
@@ -1492,21 +1599,27 @@ class CumulativeDistributionOffPolicyEvaluation:
         -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
-            Please refer to `CreateOPEInput` class for the detail.
-            key: [evaluation_policy_name][
-                evaluation_policy_action,
-                evaluation_policy_action_dist,
-                state_action_value_prediction,
-                initial_state_value_prediction,
-                state_action_marginal_importance_weight,
-                state_marginal_importance_weight,
-                on_policy_policy_value,
-                gamma,
-            ]
+            
+            .. code-block:: python
+
+                key: [evaluation_policy_name][
+                    evaluation_policy_action,
+                    evaluation_policy_action_dist,
+                    state_action_value_prediction,
+                    initial_state_value_prediction,
+                    state_action_marginal_importance_weight,
+                    state_marginal_importance_weight,
+                    on_policy_policy_value,
+                    gamma,
+                ]
+
+            .. seealso::
+
+                :class:`ope.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
-            When `None` is given, all the estimators are compared.
+            If `None` is given, all the estimators are compared.
 
         alpha: float, default=0.05
             Proportion of the sided region. The value should be within `(0, 1]`.
@@ -1515,7 +1628,7 @@ class CumulativeDistributionOffPolicyEvaluation:
         -------
         interquartile_range_dict: dict
             Dictionary containing the interquartile range of trajectory wise reward of each evaluation policy estimated by OPE estimators.
-            key: [evaluation_policy_name][OPE_estimator_name][quartile_name]
+            key: :class:`[evaluation_policy_name][OPE_estimator_name][quartile_name]`
 
         """
         check_input_dict(input_dict)
@@ -1587,21 +1700,27 @@ class CumulativeDistributionOffPolicyEvaluation:
         -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
-            Please refer to `CreateOPEInput` class for the detail.
-            key: [evaluation_policy_name][
-                evaluation_policy_action,
-                evaluation_policy_action_dist,
-                state_action_value_prediction,
-                initial_state_value_prediction,
-                state_action_marginal_importance_weight,
-                state_marginal_importance_weight,
-                on_policy_policy_value,
-                gamma,
-            ]
+            
+            .. code-block:: python
+
+                key: [evaluation_policy_name][
+                    evaluation_policy_action,
+                    evaluation_policy_action_dist,
+                    state_action_value_prediction,
+                    initial_state_value_prediction,
+                    state_action_marginal_importance_weight,
+                    state_marginal_importance_weight,
+                    on_policy_policy_value,
+                    gamma,
+                ]
+
+            .. seealso::
+
+                :class:`ope.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
-            When `None` is given, all the estimators are compared.
+            If `None` is given, all the estimators are compared.
 
         hue: {"estimator", "policy"}, default="estimator"
             Hue of the plot.
@@ -1840,34 +1959,40 @@ class CumulativeDistributionOffPolicyEvaluation:
         -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
-            Please refer to `CreateOPEInput` class for the detail.
-            key: [evaluation_policy_name][
-                evaluation_policy_action,
-                evaluation_policy_action_dist,
-                state_action_value_prediction,
-                initial_state_value_prediction,
-                state_action_marginal_importance_weight,
-                state_marginal_importance_weight,
-                on_policy_policy_value,
-                gamma,
-            ]
+            
+            .. code-block:: python
+
+                key: [evaluation_policy_name][
+                    evaluation_policy_action,
+                    evaluation_policy_action_dist,
+                    state_action_value_prediction,
+                    initial_state_value_prediction,
+                    state_action_marginal_importance_weight,
+                    state_marginal_importance_weight,
+                    on_policy_policy_value,
+                    gamma,
+                ]
+
+            .. seealso::
+
+                :class:`ope.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
-            When `None` is given, all the estimators are compared.
+            If `None` is given, all the estimators are compared.
 
         alpha: float, default=0.05
             Significance level. The value should be within `[0, 1)`.
 
         is_relative: bool, default=False
-            If True, the method visualizes the estimated policy value of the evaluation policies
+            If `True`, the method visualizes the estimated policy value of the evaluation policies
             relative to the ground-truth policy value of the behavior policy.
 
         hue: {"estimator", "policy"}, default="estimator"
             Hue of the plot.
 
         sharey: bool, default=False
-            If True, the y-axis will be shared among different evaluation policies.
+            If `True`, the y-axis will be shared among different evaluation policies.
 
         fig_dir: Path, default=None
             Path to store the bar figure.
@@ -2106,13 +2231,13 @@ class CumulativeDistributionOffPolicyEvaluation:
         self,
         input_dict: OPEInputDict,
         compared_estimators: Optional[List[str]] = None,
-        alphas: np.ndarray = np.linspace(0, 1, 20),
+        alphas: Optional[np.ndarray] = None,
         hue: str = "estimator",
         legend: bool = True,
         n_cols: Optional[int] = None,
         sharey: bool = False,
         fig_dir: Optional[Path] = None,
-        fig_name: str = "estimated_policy_value.png",
+        fig_name: str = "estimated_conditional_value_at_risk.png",
     ) -> None:
         """Visualize the conditional value at risk estimated by OPE estimators.
 
@@ -2120,24 +2245,31 @@ class CumulativeDistributionOffPolicyEvaluation:
         -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
-            Please refer to `CreateOPEInput` class for the detail.
-            key: [evaluation_policy_name][
-                evaluation_policy_action,
-                evaluation_policy_action_dist,
-                state_action_value_prediction,
-                initial_state_value_prediction,
-                state_action_marginal_importance_weight,
-                state_marginal_importance_weight,
-                on_policy_policy_value,
-                gamma,
-            ]
+            
+            .. code-block:: python
+
+                key: [evaluation_policy_name][
+                    evaluation_policy_action,
+                    evaluation_policy_action_dist,
+                    state_action_value_prediction,
+                    initial_state_value_prediction,
+                    state_action_marginal_importance_weight,
+                    state_marginal_importance_weight,
+                    on_policy_policy_value,
+                    gamma,
+                ]
+
+            .. seealso::
+
+                :class:`ope.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
-            When `None` is given, all the estimators are compared.
+            If `None` is given, all the estimators are compared.
 
-        alphas: array-like of shape (n_alpha, ) default=np.linspace(0, 1, 20)
-            Set of proportions of the sided region. The value should be within `(0, 1]`.
+        alphas: array-like of shape (n_alpha, ), default=None
+            Set of proportions of the sided region. The values should be within `[0, 1)`.
+            If `None` is given, :class:`np.linspace(0, 1, 21)` will be used.
 
         hue: {"estimator", "policy"}, default="estimator"
             Hue of the plot.
@@ -2155,7 +2287,7 @@ class CumulativeDistributionOffPolicyEvaluation:
             Path to store the bar figure.
             If `None` is given, the figure will not be saved.
 
-        fig_name: str, default="estimated_policy_value.png"
+        fig_name: str, default="estimated_conditional_value_at_risk.png"
             Name of the bar figure.
 
         """
@@ -2166,6 +2298,8 @@ class CumulativeDistributionOffPolicyEvaluation:
             raise ValueError(
                 "compared_estimators must be a subset of self.estimators_name, but found False."
             )
+        if alphas is None:
+            alphas = np.linspace(0, 1, 21)
         if hue not in ["estimator", "policy"]:
             raise ValueError(
                 f"hue must be either `estimator` or `policy`, but {hue} is given"
@@ -2303,7 +2437,7 @@ class CumulativeDistributionOffPolicyEvaluation:
         hue: str = "estimator",
         sharey: bool = False,
         fig_dir: Optional[Path] = None,
-        fig_name: str = "estimated_policy_value.png",
+        fig_name: str = "estimated_interquartile_range.png",
     ) -> None:
         """Visualize the interquartile range estimated by OPE estimators.
 
@@ -2311,21 +2445,27 @@ class CumulativeDistributionOffPolicyEvaluation:
         -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
-            Please refer to `CreateOPEInput` class for the detail.
-            key: [evaluation_policy_name][
-                evaluation_policy_action,
-                evaluation_policy_action_dist,
-                state_action_value_prediction,
-                initial_state_value_prediction,
-                state_action_marginal_importance_weight,
-                state_marginal_importance_weight,
-                on_policy_policy_value,
-                gamma,
-            ]
+            
+            .. code-block:: python
+
+                key: [evaluation_policy_name][
+                    evaluation_policy_action,
+                    evaluation_policy_action_dist,
+                    state_action_value_prediction,
+                    initial_state_value_prediction,
+                    state_action_marginal_importance_weight,
+                    state_marginal_importance_weight,
+                    on_policy_policy_value,
+                    gamma,
+                ]
+
+            .. seealso::
+
+                :class:`ope.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
-            When `None` is given, all the estimators are compared.
+            If `None` is given, all the estimators are compared.
 
         alpha: float, default=0.05
             Significance level. The value should be within `[0, 1)`.
@@ -2334,13 +2474,13 @@ class CumulativeDistributionOffPolicyEvaluation:
             Hue of the plot.
 
         sharey: bool, default=False
-            If True, the y-axis will be shared among different evaluation policies.
+            If `True`, the y-axis will be shared among different evaluation policies.
 
         fig_dir: Path, default=None
             Path to store the bar figure.
             If `None` is given, the figure will not be saved.
 
-        fig_name: str, default="estimated_policy_value.png"
+        fig_name: str, default="estimated_interquartile_range.png"
             Name of the bar figure.
 
         """
