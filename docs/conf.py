@@ -87,6 +87,7 @@ html_theme_options = {
     "header_links_before_dropdown": 6,
     # "navbar_start": ["navbar-logo", "version"],
     "footer_items": ["copyright"],
+    "show_prev_next": False,
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
@@ -105,7 +106,7 @@ autodoc_typehints_description_target = "documented"
 autodoc_default_options = {
     "members": None,
     "member-order": "bysource",
-    "exclude-members": "forward",
+    "exclude-members": "forward,close,render,np_random,render_mode,unwrapped,spec",
 }
 
 # mapping between class methods and its abbreviation
@@ -141,19 +142,20 @@ intersphinx_mapping = {
 from sphinx_gallery.sorting import ExplicitOrder
 from sphinx_gallery.sorting import FileNameSortKey
 sphinx_gallery_conf = {
-    'examples_dirs': "tutorial",   # path to your example scripts
-    'gallery_dirs': "documentation/_autogallery",  # path to where to save gallery generated output
-    'subsection_order': ExplicitOrder(
+    "examples_dirs": "tutorial",   # path to your example scripts
+    "gallery_dirs": "documentation/_autogallery",  # path to where to save gallery generated output
+    "subsection_order": ExplicitOrder(
         [
-            'tutorial/basic_ope',
-            'tutorial/cumulative_distribution_ope',
-            'tutorial/ops',
-            'tutorial/ofrl_others',
-            'tutorial/rtbgym',
+            "tutorial/basic_ope",
+            "tutorial/cumulative_distribution_ope",
+            "tutorial/ops",
+            "tutorial/ofrl_others",
+            "tutorial/rtbgym",
+            "tutorial/footer",
         ]
     ),
-    'within_subsection_order': FileNameSortKey,
-    'download_all_examples': False,
+    "within_subsection_order": FileNameSortKey,
+    "download_all_examples": False,
 }
 # gallery thumbnail
 # nbsphinx_thumbnails = {

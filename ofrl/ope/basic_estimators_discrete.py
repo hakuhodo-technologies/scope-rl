@@ -1,4 +1,4 @@
-"""Off-Policy Estimators for Discrete Action."""
+"""Off-Policy Estimators for discrete action cases."""
 from dataclasses import dataclass
 from typing import Dict, Optional
 
@@ -13,25 +13,33 @@ from ..utils import check_array
 class DiscreteDirectMethod(BaseOffPolicyEstimator):
     """Direct Method (DM) for discrete-action OPE.
 
+    Bases: :class:`ofrl.ope.BaseOffPolicyEstimator`
+
+    Imported as: :class:`ofrl.ope.DiscreteDirectMethod`
+
     Note
     -------
     DM estimates the policy value using the initial state value as follows.
 
     .. math::
 
-        \\hat{J}_{\\mathrm{DM}} (\\pi; \\mathcal{D}) := \\mathbb{E}_n [\\mathbb{E}_{a_0 \\sim \\pi(a_0 \\mid s_0)} [\\hat{Q}(s_0, a_0)] ] 
+        \\hat{J}_{\\mathrm{DM}} (\\pi; \\mathcal{D}) 
+        := \\mathbb{E}_n [\\mathbb{E}_{a_0 \\sim \\pi(a_0 | s_0)} [\\hat{Q}(s_0, a_0)] ] 
         = \\mathbb{E}_n [\\hat{V}(s_0)],
 
     where :math:`\\mathcal{D}=\\{\\{(s_t, a_t, r_t)\\}_{t=0}^{T-1}\\}_{i=1}^n` is the logged dataset with :math:`n` trajectories of data.
     :math:`T` indicates step per episode. :math:`\\hat{Q}(s_t, a_t)` is the estimated Q value given a state-action pair.
-    \\hat{V}(s_t) is the estimated value function given a state.
+    :math:`\\hat{V}(s_t)` is the estimated value function given a state.
+
+    DM has low variance, but can incur bias due to approximation errors.
 
     There are several ways to estimate :math:`\\hat{Q}(s, a)` such as Fitted Q Evaluation (FQE) (Le et al., 2019) and
-    Minimax Q-Function Learning (MQL) (Uehara et al., 2020). :math:`\\hat{V}(s)` is estimated in a similar manner using
-    Minimax Value Learning (MVL) (Uehara et al., 2020).
+    Minimax Q-Function Learning (MQL) (Uehara et al., 2020). 
 
-    We use the implementation of FQE provided by d3rlpy (Seno et al., 2021).
-    The implementations of Minimax Learning is available in `ofrl/ope/minimax_estimators_discrete.py`.
+    .. seealso::
+
+        The implementation of FQE is provided by `d3rlpy <https://d3rlpy.readthedocs.io/en/latest/references/off_policy_evaluation.html>`_.
+        The implementations of Minimax Learning is available at :class:`ofrl.ope.weight_value_learning`.
 
     Parameters
     -------
@@ -40,20 +48,11 @@ class DiscreteDirectMethod(BaseOffPolicyEstimator):
 
     References
     -------
-    Yuta Saito, Shunsuke Aihara, Megumi Matsutani, and Yusuke Narita.
-    "Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation.", 2021.
-
-    Takuma Seno and Michita Imai.
-    "d3rlpy: An Offline Deep Reinforcement Library.", 2021.
-
     Masatoshi Uehara, Jiawei Huang, and Nan Jiang.
-    "Minimax Weight and Q-Function Learning for Off-Policy Evaluation.", 2020.
+    "Minimax Weight and Q-Function Learning for Off-Policy Evaluation." 2020.
 
     Hoang Le, Cameron Voloshin, and Yisong Yue.
-    "Batch Policy Learning under Constraints.", 2019.
-
-    Alina Beygelzimer and John Langford.
-    "The Offset Tree for Learning with Partial Labels.", 2009.
+    "Batch Policy Learning under Constraints." 2019.
 
     """
 
@@ -78,7 +77,7 @@ class DiscreteDirectMethod(BaseOffPolicyEstimator):
 
         evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
             Conditional action distribution induced by the evaluation policy,
-            i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
+            i.e., :math:`\\pi(a | s_t) \\forall a \\in \\mathcal{A}`
 
         state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, n_action)
             :math:`\\hat{Q}` for all action,
@@ -113,7 +112,7 @@ class DiscreteDirectMethod(BaseOffPolicyEstimator):
 
         evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
             Conditional action distribution induced by the evaluation policy,
-            i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
+            i.e., :math:`\\pi(a | s_t) \\forall a \\in \\mathcal{A}`
 
         state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, n_action)
             :math:`\\hat{Q}` for all action,
@@ -199,7 +198,7 @@ class DiscreteDirectMethod(BaseOffPolicyEstimator):
 
         evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
             Conditional action distribution induced by the evaluation policy,
-            i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
+            i.e., :math:`\\pi(a | s_t) \\forall a \\in \\mathcal{A}`
 
         state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, n_action)
             :math:`\\hat{Q}` for all action,
@@ -221,6 +220,14 @@ class DiscreteDirectMethod(BaseOffPolicyEstimator):
         -------
         estimated_confidence_interval: dict
             Dictionary storing the estimated mean and upper-lower confidence bounds.
+
+            .. code-block:: python
+
+                key: [
+                    mean,
+                    {100 * (1. - alpha)}% CI (lower),
+                    {100 * (1. - alpha)}% CI (upper),
+                ]
 
         """
         check_scalar(
@@ -291,15 +298,22 @@ class DiscreteDirectMethod(BaseOffPolicyEstimator):
 class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
     """Trajectory-wise Important Sampling (TIS) for discrete-action OPE.
 
+    Bases: :class:`ofrl.ope.BaseOffPolicyEstimator`
+
+    Imported as: :class:`ofrl.ope.DiscreteTrajectoryWiseImportanceSampling`
+
     Note
     -------
     TIS estimates the policy value via trajectory-wise importance weight as follows.
 
     .. math::
 
-        \\hat{J}_{\\mathrm{TIS}} (\\pi; \\mathcal{D}) := \\mathbb{E}_{n} [\\sum_{t=0}^{T-1} \\gamma^t w_{0:T-1} r_t],
+        \\hat{J}_{\\mathrm{TIS}} (\\pi; \\mathcal{D}) := \\mathbb{E}_{n} \\left[\\sum_{t=0}^{T-1} \\gamma^t w_{0:T-1} r_t \\right],
 
-    where :math:`w_{0:T-1} := \\prod_{t=0}^{T-1} \\frac{\\pi(a_t \\mid s_t)}{\\pi_0(a_t \\mid s_t)}` is the importance weight.
+    where :math:`w_{0:T-1} := \\prod_{t=0}^{T-1} (\\pi(a_t | s_t) / \\pi_0(a_t | s_t))` is the trajectory-wise importance weight.
+
+    TIS enables an unbiased estimation of the policy value. However, when the trajectory length (:math:`T`) is large, 
+    TIS suffers from high variance due to the product of importance weights.
 
     Parameters
     -------
@@ -308,14 +322,8 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 
     References
     -------
-    Yuta Saito, Shunsuke Aihara, Megumi Matsutani, and Yusuke Narita.
-    "Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation.", 2021.
-
-    Alex Strehl, John Langford, Sham Kakade, and Lihong Li.
-    "Learning from Logged Implicit Exploration Data.", 2010.
-
     Doina Precup, Richard S. Sutton, and Satinder P. Singh.
-    "Eligibility Traces for Off-Policy Policy Evaluation.", 2000.
+    "Eligibility Traces for Off-Policy Policy Evaluation." 2000.
 
     """
 
@@ -349,14 +357,14 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a \\mid s)`
+            i.e., :math:`\\pi_0(a | s)`
 
         evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
             Conditional action distribution induced by the evaluation policy,
-            i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
+            i.e., :math:`\\pi(a | s_t) \\forall a \\in \\mathcal{A}`
 
         gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
+            Discount factor. The value should be within (0, 1].
 
         Return
         -------
@@ -410,14 +418,14 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a \\mid s)`
+            i.e., :math:`\\pi_0(a | s)`
 
         evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
             Conditional action distribution induced by the evaluation policy,
-            i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
+            i.e., :math:`\\pi(a | s_t) \\forall a \\in \\mathcal{A}`
 
         gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
+            Discount factor. The value should be within (0, 1].
 
         Return
         -------
@@ -520,14 +528,14 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a \\mid s)`
+            i.e., :math:`\\pi_0(a | s)`
 
         evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
             Conditional action distribution induced by the evaluation policy,
-            i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
+            i.e., :math:`\\pi(a | s_t) \\forall a \\in \\mathcal{A}`
 
         gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
+            Discount factor. The value should be within (0, 1].
 
         alpha: float, default=0.05
             Significance level. The value should be within `[0, 1)`.
@@ -545,6 +553,14 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         -------
         estimated_confidence_interval: dict
             Dictionary storing the estimated mean and upper-lower confidence bounds.
+
+            .. code-block:: python
+
+                key: [
+                    mean,
+                    {100 * (1. - alpha)}% CI (lower),
+                    {100 * (1. - alpha)}% CI (upper),
+                ]
 
         """
         check_scalar(
@@ -628,15 +644,23 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 class DiscretePerDecisionImportanceSampling(BaseOffPolicyEstimator):
     """Per-Decision Importance Sampling (PDIS) for discrete-action OPE.
 
+    Bases: :class:`ofrl.ope.BaseOffPolicyEstimator`
+
+    Imported as: :class:`ofrl.ope.DiscretePerDecisionImportanceSampling`
+
     Note
     -------
     PDIS estimates the policy value via step-wise importance weighting as follows.
 
     .. math::
 
-        \\hat{J}_{\\mathrm{PDIS}} (\\pi; \\mathcal{D}) := \\mathbb{E}_{n} [\\sum_{t=0}^{T-1} \\gamma^t w_{0:t} r_t],
+        \\hat{J}_{\\mathrm{PDIS}} (\\pi; \\mathcal{D}) := \\mathbb{E}_{n} \\left[\\sum_{t=0}^{T-1} \\gamma^t w_{0:t} r_t \\right],
 
-    where :math:`w_{0:t} := \\prod_{t'=0}^t \\frac{\\pi(a_{t'} \\mid s_{t'})}{\\pi_0(a_{t'} \\mid s_{t'})}`
+    where :math:`w_{0:t} := \\prod_{t'=0}^t (\\pi(a_{t'} | s_{t'}) / \\pi_0(a_{t'} | s_{t'}))` is the importance weight of past interactions 
+    (referred to as per-decision importance weight).
+
+    By using per-decision importance weight instead of the trajectory-wise importance weight, PDIS reduces the variance of TIS while remaining unbiased. 
+    However, when the length of a trajectory (:math:`T`) is large, PDIS still suffers from high variance.
 
     Parameters
     -------
@@ -645,14 +669,8 @@ class DiscretePerDecisionImportanceSampling(BaseOffPolicyEstimator):
 
     References
     -------
-    Yuta Saito, Shunsuke Aihara, Megumi Matsutani, and Yusuke Narita.
-    "Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation.", 2021.
-
-    Alex Strehl, John Langford, Sham Kakade, and Lihong Li.
-    "Learning from Logged Implicit Exploration Data.", 2010.
-
     Doina Precup, Richard S. Sutton, and Satinder P. Singh.
-    "Eligibility Traces for Off-Policy Policy Evaluation.", 2000.
+    "Eligibility Traces for Off-Policy Policy Evaluation." 2000.
 
     """
 
@@ -686,14 +704,14 @@ class DiscretePerDecisionImportanceSampling(BaseOffPolicyEstimator):
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a \\mid s)`
+            i.e., :math:`\\pi_0(a | s)`
 
         evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
             Conditional action distribution induced by the evaluation policy,
-            i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
+            i.e., :math:`\\pi(a | s_t) \\forall a \\in \\mathcal{A}`
 
         gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
+            Discount factor. The value should be within (0, 1].
 
         Return
         -------
@@ -747,14 +765,14 @@ class DiscretePerDecisionImportanceSampling(BaseOffPolicyEstimator):
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a \\mid s)`
+            i.e., :math:`\\pi_0(a | s)`
 
         evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
             Conditional action distribution induced by the evaluation policy,
-            i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
+            i.e., :math:`\\pi(a | s_t) \\forall a \\in \\mathcal{A}`
 
         gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
+            Discount factor. The value should be within (0, 1].
 
         Return
         -------
@@ -856,14 +874,14 @@ class DiscretePerDecisionImportanceSampling(BaseOffPolicyEstimator):
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a \\mid s)`
+            i.e., :math:`\\pi_0(a | s)`
 
         evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
             Conditional action distribution induced by the evaluation policy,
-            i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
+            i.e., :math:`\\pi(a | s_t) \\forall a \\in \\mathcal{A}`
 
         gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
+            Discount factor. The value should be within (0, 1].
 
         alpha: float, default=0.05
             Significance level. The value should be within `[0, 1)`.
@@ -881,6 +899,14 @@ class DiscretePerDecisionImportanceSampling(BaseOffPolicyEstimator):
         -------
         estimated_confidence_interval: dict
             Dictionary storing the estimated mean and upper-lower confidence bounds.
+
+            .. code-block:: python
+
+                key: [
+                    mean,
+                    {100 * (1. - alpha)}% CI (lower),
+                    {100 * (1. - alpha)}% CI (upper),
+                ]
 
         """
         check_scalar(
@@ -964,6 +990,10 @@ class DiscretePerDecisionImportanceSampling(BaseOffPolicyEstimator):
 class DiscreteDoublyRobust(BaseOffPolicyEstimator):
     """Doubly Robust (DR) for discrete-action OPE.
 
+    Bases: :class:`ofrl.ope.BaseOffPolicyEstimator`
+
+    Imported as: :class:`ofrl.ope.DiscreteDoublyRobust`
+
     Note
     -------
     DR estimates the policy value via step-wise importance weighting and :math:`\\hat{Q}` as follows.
@@ -971,9 +1001,12 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
     .. math::
 
         \\hat{J}_{\\mathrm{DR}} (\\pi; \\mathcal{D})
-        := \\mathbb{E}_{n} [\\sum_{t=0}^{T-1} \\gamma^t (w_{0:t} (r_t - \\hat{Q}(s_t, a_t)) + w_{0:t-1} \\mathbb{E}_{a \\sim \\pi(a \\mid s_t)}[\\hat{Q}(s_t, a)])],
+        := \\mathbb{E}_{n} \\left[\\sum_{t=0}^{T-1} \\gamma^t (w_{0:t} (r_t - \\hat{Q}(s_t, a_t)) + w_{0:t-1} \\mathbb{E}_{a \\sim \\pi(a | s_t)}[\\hat{Q}(s_t, a)]) \\right],
 
-    where :math:`w_{0:t} := \\prod_{t'=0}^t \\frac{\\pi(a_{t'} \\mid s_{t'})}{\\pi_0(a_{t'} \\mid s_{t'})}`
+    where :math:`w_{0:t} := \\prod_{t'=0}^t (\\pi(a_{t'} | s_{t'}) / \\pi_0(a_{t'} | s_{t'}))` is the per-decision importance weight.
+
+    DR is unbiased and reduces the variance of PDIS when :math:`\\hat{Q}(\\cdot)` is reasonably accurate to satisfy :math:`0 < \\hat{Q}(\\cdot) < 2 Q(\\cdot)`. 
+    However, when the importance weight is quite large, it may still suffer from a high variance.
 
     Parameters
     -------
@@ -982,20 +1015,11 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
 
     References
     -------
-    Yuta Saito, Shunsuke Aihara, Megumi Matsutani, and Yusuke Narita.
-    "Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation.", 2021.
-
-    Hoang Le, Cameron Voloshin, and Yisong Yue.
-    "Batch Policy Learning under Constraints.", 2019.
-
     Nan Jiang and Lihong Li.
-    "Doubly Robust Off-policy Value Evaluation for Reinforcement Learning.", 2016.
+    "Doubly Robust Off-policy Value Evaluation for Reinforcement Learning." 2016.
 
     Philip S. Thomas and Emma Brunskill.
-    "Data-Efficient Off-Policy Policy Evaluation for Reinforcement Learning.", 2016.
-
-    Miroslav Dudík, Dumitru Erhan, John Langford, and Lihong Li.
-    "Doubly Robust Policy Evaluation and Optimization.", 2014.
+    "Data-Efficient Off-Policy Policy Evaluation for Reinforcement Learning." 2016.
 
     """
 
@@ -1030,18 +1054,18 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a \\mid s)`
+            i.e., :math:`\\pi_0(a | s)`
 
         evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
             Conditional action distribution induced by the evaluation policy,
-            i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
+            i.e., :math:`\\pi(a | s_t) \\forall a \\in \\mathcal{A}`
 
         state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, n_action)
             :math:`\\hat{Q}` for all action,
             i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
 
         gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
+            Discount factor. The value should be within (0, 1].
 
         Return
         -------
@@ -1113,18 +1137,18 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a \\mid s)`
+            i.e., :math:`\\pi_0(a | s)`
 
         evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
             Conditional action distribution induced by the evaluation policy,
-            i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
+            i.e., :math:`\\pi(a | s_t) \\forall a \\in \\mathcal{A}`
 
         state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, n_action)
             :math:`\\hat{Q}` for all action,
             i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
 
         gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
+            Discount factor. The value should be within (0, 1].
 
         Return
         -------
@@ -1243,18 +1267,18 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a \\mid s)`
+            i.e., :math:`\\pi_0(a | s)`
 
         evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
             Conditional action distribution induced by the evaluation policy,
-            i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
+            i.e., :math:`\\pi(a | s_t) \\forall a \\in \\mathcal{A}`
 
         state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, n_action)
             :math:`\\hat{Q}` for all action,
             i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
 
         gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
+            Discount factor. The value should be within (0, 1].
 
         alpha: float, default=0.05
             Significance level. The value should be within `[0, 1)`.
@@ -1272,6 +1296,14 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
         -------
         estimated_confidence_interval: dict
             Dictionary storing the estimated mean and upper-lower confidence bounds.
+
+            .. code-block:: python
+
+                key: [
+                    mean,
+                    {100 * (1. - alpha)}% CI (lower),
+                    {100 * (1. - alpha)}% CI (upper),
+                ]
 
         """
         check_scalar(
@@ -1373,6 +1405,10 @@ class DiscreteSelfNormalizedTrajectoryWiseImportanceSampling(
 ):
     """Self-Normalized Trajectory-wise Important Sampling (SNTIS) for discrete-action OPE.
 
+    Bases: :class:`ofrl.ope.DiscreteTrajectoryWiseImportanceSampling` -> :class:`ofrl.ope.BaseOffPolicyEstimator`
+
+    Imported as: :class:`ofrl.ope.DiscreteSelfNormalizedTrajectoryWiseImportanceSampling`
+
     Note
     -------
     SNTIS estimates the policy value via self-normalized trajectory-wise importance weight as follows.
@@ -1380,9 +1416,11 @@ class DiscreteSelfNormalizedTrajectoryWiseImportanceSampling(
     .. math::
 
         \\hat{J}_{\\mathrm{SNTIS}} (\\pi; \\mathcal{D})
-        := \\mathbb{E}_{n} [\\sum_{t=0}^{T-1} \\gamma^t \\frac{w_{0:T-1}}{\\sum_{n} [w_{0:T-1}]} r_t],
+        := \\mathbb{E}_{n} \\left[\\sum_{t=0}^{T-1} \\gamma^t \\frac{w_{0:T-1}}{\\sum_{n} w_{0:T-1}} r_t \\right],
 
-    where :math:`w_{0:T-1} := \\prod_{t=0}^{T-1} \\frac{\\pi(a_t \\mid s_t)}{\\pi_0(a_t \\mid s_t)}`
+    where :math:`w_{0:T-1} := \\prod_{t=0}^{T-1} (\\pi(a_t | s_t) / \\pi_0(a_t | s_t))` is the trajectory-wise importance weight.
+
+    The self-normalized estimator is no longer unbiased, but has variance bounded by :math:`r_{max}^2` while also being consistent.
 
     Parameters
     -------
@@ -1392,19 +1430,13 @@ class DiscreteSelfNormalizedTrajectoryWiseImportanceSampling(
     References
     -------
     Yuta Saito, Shunsuke Aihara, Megumi Matsutani, and Yusuke Narita.
-    "Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation.", 2021.
+    "Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation." 2021.
 
     Nathan Kallus and Masatoshi Uehara.
-    "Intrinsically Efficient, Stable, and Bounded Off-Policy Evaluation for Reinforcement Learning.", 2019.
-
-    Adith Swaminathan and Thorsten Joachims.
-    "The Self-Normalized Estimator for Counterfactual Learning.", 2015.
-
-    Alex Strehl, John Langford, Sham Kakade, and Lihong Li.
-    "Learning from Logged Implicit Exploration Data.", 2010.
+    "Intrinsically Efficient, Stable, and Bounded Off-Policy Evaluation for Reinforcement Learning." 2019.
 
     Doina Precup, Richard S. Sutton, and Satinder P. Singh.
-    "Eligibility Traces for Off-Policy Policy Evaluation.", 2000.
+    "Eligibility Traces for Off-Policy Policy Evaluation." 2000.
 
     """
 
@@ -1438,14 +1470,14 @@ class DiscreteSelfNormalizedTrajectoryWiseImportanceSampling(
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a \\mid s)`
+            i.e., :math:`\\pi_0(a | s)`
 
         evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
             Conditional action distribution induced by the evaluation policy,
-            i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
+            i.e., :math:`\\pi(a | s_t) \\forall a \\in \\mathcal{A}`
 
         gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
+            Discount factor. The value should be within (0, 1].
 
         Return
         -------
@@ -1482,6 +1514,10 @@ class DiscreteSelfNormalizedPerDecisionImportanceSampling(
 ):
     """Self-Normalized Per-Decision Importance Sampling (SNPDIS) for discrete-action OPE.
 
+    Bases: :class:`ofrl.ope.DiscretePerDecisionImportanceSampling` -> :class:`ofrl.ope.BaseOffPolicyEstimator`
+
+    Imported as: :class:`ofrl.ope.DiscreteSelfNormalizedPerDecisionImportanceSampling`
+
     Note
     -------
     SNPDIS estimates the policy value via self-normalized step-wise importance weighting as follows.
@@ -1489,9 +1525,11 @@ class DiscreteSelfNormalizedPerDecisionImportanceSampling(
     .. math::
 
         \\hat{J}_{\\mathrm{SNPDIS}} (\\pi; \\mathcal{D})
-        := \\mathbb{E}_{n} [\\sum_{t=0}^{T-1} \\gamma^t \\frac{w_{1:t}}{\\sum_{n} [w_{1:t}]} r_t],
+        := \\mathbb{E}_{n} \\left[\\sum_{t=0}^{T-1} \\gamma^t \\frac{w_{1:t}}{\\sum_{n} w_{1:t}} r_t \\right],
 
-    where :math:`w_{0:t} := \\prod_{t'=1}^t \\frac{\\pi(a_{t'} \\mid s_{t'})}{\\pi_0(a_{t'} \\mid s_{t'})}`
+    where :math:`w_{0:t} := \\prod_{t'=1}^t (\\pi(a_{t'} | s_{t'}) / \\pi_0(a_{t'} | s_{t'}))` is the per-decision importance weight.
+
+    The self-normalized estimator is no longer unbiased, but has variance bounded by :math:`r_{max}^2` while also being consistent.
 
     Parameters
     -------
@@ -1500,20 +1538,11 @@ class DiscreteSelfNormalizedPerDecisionImportanceSampling(
 
     References
     -------
-    Yuta Saito, Shunsuke Aihara, Megumi Matsutani, and Yusuke Narita.
-    "Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation.", 2021.
-
     Nathan Kallus and Masatoshi Uehara.
-    "Intrinsically Efficient, Stable, and Bounded Off-Policy Evaluation for Reinforcement Learning.", 2019.
-
-    Adith Swaminathan and Thorsten Joachims.
-    "The Self-Normalized Estimator for Counterfactual Learning.", 2015.
-
-    Alex Strehl, John Langford, Sham Kakade, and Lihong Li.
-    "Learning from Logged Implicit Exploration Data.", 2010.
+    "Intrinsically Efficient, Stable, and Bounded Off-Policy Evaluation for Reinforcement Learning." 2019.
 
     Doina Precup, Richard S. Sutton, and Satinder P. Singh.
-    "Eligibility Traces for Off-Policy Policy Evaluation.", 2000.
+    "Eligibility Traces for Off-Policy Policy Evaluation." 2000.
 
     """
 
@@ -1547,14 +1576,14 @@ class DiscreteSelfNormalizedPerDecisionImportanceSampling(
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a \\mid s)`
+            i.e., :math:`\\pi_0(a | s)`
 
         evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
             Conditional action distribution induced by the evaluation policy,
-            i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
+            i.e., :math:`\\pi(a | s_t) \\forall a \\in \\mathcal{A}`
 
         gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
+            Discount factor. The value should be within (0, 1].
 
         Return
         -------
@@ -1589,18 +1618,23 @@ class DiscreteSelfNormalizedPerDecisionImportanceSampling(
 class DiscreteSelfNormalizedDoublyRobust(DiscreteDoublyRobust):
     """Self-Normalized Doubly Robust (SNDR) for discrete-action OPE.
 
+    Bases: :class:`ofrl.ope.DiscreteDoublyRobust` -> :class:`ofrl.ope.BaseOffPolicyEstimator`
+
+    Imported as: :class:`ofrl.ope.DiscreteSelfNormalizedDoublyRobust`
+
     Note
     -------
     SNDR estimates the policy value via self-normalized step-wise importance weighting and :math:`\\hat{Q}` as follows.
 
     .. math::
 
-        \\hat{J}_{\\mathrm{DR}} (\\pi; \\mathcal{D})
-        := \\mathbb{E}_{n} [\\sum_{t=0}^{T-1} \\gamma^t \\frac{w_{0:t-1}}{\\sum_{n} [w_{0:t-1}]}
-                (w_t (r_t - \\hat{Q}(s_t, a_t)) + \\mathbb{E}_{a \\sim \\pi(a \\mid s_t)}[\\hat{Q}(s_t, a)])],
+        \\hat{J}_{\\mathrm{SNDR}} (\\pi; \\mathcal{D})
+        &:= \\mathbb{E}_{n} \\Biggl[\\sum_{t=0}^{T-1} \\gamma^t \\biggl( \\frac{w_{0:t}}{\\sum_{n} w_{0:t}} (r_t - \\hat{Q}(s_t, a_t)) \\\\
+        & \quad \quad \quad \quad \quad + \\frac{w_{0:t-1}}{\\sum_{n} w_{0:t-1}} \\mathbb{E}_{a \\sim \\pi(a | s_t)}[\\hat{Q}(s_t, a)] \\biggr) \\Biggr],
 
-    where :math:`w_{0:t} := \\prod_{t'=0}^t \\frac{\\pi(a_{t'} \\mid s_{t'})}{\\pi_0(a_{t'} \\mid s_{t'})}`
-    and :math:`w_{t}} := \\frac{\\pi(a_t \\mid s_t)}{\\pi_0(a_t \\mid s_t)}`
+    where :math:`w_{0:t} := \\prod_{t'=0}^t (\\pi(a_{t'} | s_{t'}) / \\pi_0(a_{t'} | s_{t'}))` is the per-decision importance weight.
+
+    The self-normalized estimator is no longer unbiased, but has variance bounded by :math:`r_{max}^2` while also being consistent.
 
     Parameters
     -------
@@ -1609,23 +1643,14 @@ class DiscreteSelfNormalizedDoublyRobust(DiscreteDoublyRobust):
 
     References
     -------
-    Yuta Saito, Shunsuke Aihara, Megumi Matsutani, and Yusuke Narita.
-    "Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation.", 2021.
-
-    Hoang Le, Cameron Voloshin, and Yisong Yue.
-    "Batch Policy Learning under Constraints.", 2019.
-
     Nathan Kallus and Masatoshi Uehara.
-    "Intrinsically Efficient, Stable, and Bounded Off-Policy Evaluation for Reinforcement Learning.", 2019.
+    "Intrinsically Efficient, Stable, and Bounded Off-Policy Evaluation for Reinforcement Learning." 2019.
 
     Nan Jiang and Lihong Li.
-    "Doubly Robust Off-policy Value Evaluation for Reinforcement Learning.", 2016.
+    "Doubly Robust Off-policy Value Evaluation for Reinforcement Learning." 2016.
 
     Philip S. Thomas and Emma Brunskill.
-    "Data-Efficient Off-Policy Policy Evaluation for Reinforcement Learning.", 2016.
-
-    Miroslav Dudík, Dumitru Erhan, John Langford, and Lihong Li.
-    "Doubly Robust Policy Evaluation and Optimization.", 2014.
+    "Data-Efficient Off-Policy Policy Evaluation for Reinforcement Learning." 2016.
 
     """
 
@@ -1660,18 +1685,18 @@ class DiscreteSelfNormalizedDoublyRobust(DiscreteDoublyRobust):
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a \\mid s)`
+            i.e., :math:`\\pi_0(a | s)`
 
         evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
             Conditional action distribution induced by the evaluation policy,
-            i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
+            i.e., :math:`\\pi(a | s_t) \\forall a \\in \\mathcal{A}`
 
         state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, n_action)
             :math:`\\hat{Q}` for all action,
             i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
 
         gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
+            Discount factor. The value should be within (0, 1].
 
         Return
         -------

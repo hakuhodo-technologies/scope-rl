@@ -78,8 +78,8 @@ DiscreteHead
 This module transforms a deterministic policy to a stochastic one in discrete action case.
 Specifically, we have two stochastic policies.
 
-* :class:`DiscreteEpsilonGreedyHead`: :math:`\pi(a | s) := (1 - \epsilon) * \pi_{\mathrm{det}}(a | s) + \epsilon / |\mathcal{A}|`.
-* :class:`DiscreteSoftmaxHead`: :math:`\pi(a | s) := \displaystyle \frac{\exp(Q^{(\pi_{\mathrm{det}})}(s, a) / \tau)}{\sum_{a' \in \mathcal{A}} \exp(Q^{(\pi_{\mathrm{det}})}(s, a') / \tau)}`.
+    * :class:`DiscreteEpsilonGreedyHead`: :math:`\pi(a | s) := (1 - \epsilon) * \pi_{\mathrm{det}}(a | s) + \epsilon / |\mathcal{A}|`.
+    * :class:`DiscreteSoftmaxHead`: :math:`\pi(a | s) := \displaystyle \frac{\exp(Q^{(\pi_{\mathrm{det}})}(s, a) / \tau)}{\sum_{a' \in \mathcal{A}} \exp(Q^{(\pi_{\mathrm{det}})}(s, a') / \tau)}`.
 
 Note that :math:`\mathbb{I}(\cdot)` is the indicator function and :math:`\tau` is the temperature parameter.
 DiscreteEpsilonGreedyHead is also used to construct a deterministic evaluation policy in OPE/OPS.
@@ -91,12 +91,12 @@ ContinuousHead
 This module transforms a deterministic policy to a stochastic one in discrete action case.
 Specifically, we have two stochastic policies.
 
-* :class:`ContinuousGaussianHead`: :math:`\pi(a | s) := \mathrm{Normal}(\pi_{\mathrm{det}}(s), \sigma)`.
-* :class:`ContinuousTruncatedGaussianHead`: :math:`\pi(a | s) := \mathrm{TruncatedNormal}(\pi_{\mathrm{det}}(s), \sigma)`.
+    * :class:`ContinuousGaussianHead`: :math:`\pi(a | s) := \mathrm{Normal}(\pi_{\mathrm{det}}(s), \sigma)`.
+    * :class:`ContinuousTruncatedGaussianHead`: :math:`\pi(a | s) := \mathrm{TruncatedNormal}(\pi_{\mathrm{det}}(s), \sigma)`.
 
 We also provide the wrapper class of deterministic policy to be used in OPE.
 
-* :class:`ContinuousEvalHead`: :math:`\pi(s) = \pi_{\mathrm{det}}(s)`.
+    * :class:`ContinuousEvalHead`: :math:`\pi(s) = \pi_{\mathrm{det}}(s)`.
 
 .. _implementation_online_head:
 
@@ -104,11 +104,15 @@ OnlineHead
 ----------
 This module enables step-wise interaction of the policy.
 
-* :class:`OnlineHead`
+    * :class:`OnlineHead`
 
 Online Evaluation
 ~~~~~~~~~~
 Finally, we provide the series of functions to be used for online performance evaluation in :doc:`ofrl/ope/online.py <_autosummary/ofrl.ope.online>`.
+
+.. seealso::
+
+    * :doc:`Related tutorials <_autogallery/ofrl_others/index>`
 
 (Rollout)
 
@@ -133,3 +137,57 @@ Finally, we provide the series of functions to be used for online performance ev
 .. seealso::
 
     * :doc:`Related tutorials <_autogallery/ofrl_others/index>`
+
+.. grid::
+    :margin: 0
+
+    .. grid-item::
+        :columns: 3
+        :margin: 0
+        :padding: 0
+
+        .. grid::
+            :margin: 0
+
+            .. grid-item-card::
+                :link: online_offline_rl
+                :link-type: doc
+                :shadow: none
+                :margin: 0
+                :padding: 0
+
+                <<< Prev
+                **Problem Formulation**
+
+    .. grid-item::
+        :columns: 6
+        :margin: 0
+        :padding: 0
+
+    .. grid-item::
+        :columns: 3
+        :margin: 0
+        :padding: 0
+
+        .. grid::
+            :margin: 0
+
+            .. grid-item-card::
+                :link: evaluation_implementation
+                :link-type: doc
+                :shadow: none
+                :margin: 0
+                :padding: 0
+
+                Next >>>
+                **Off_policy Evaluation**
+
+            .. grid-item-card::
+                :link: ofrl_api
+                :link-type: doc
+                :shadow: none
+                :margin: 0
+                :padding: 0
+
+                Next >>>
+                **Package Reference**

@@ -359,4 +359,56 @@ Finally, we provide the code to conduct OPS, which selects the "best" performing
 
 More tutorials with a variety of environments and OPE estimators are available in the next page!
 
+.. grid::
+
+    .. grid-item::
+        :columns: 2
+        :margin: 0
+        :padding: 0
+
+        .. grid::
+            :margin: 0
+
+            .. grid-item-card::
+                :link: installation
+                :link-type: doc
+                :shadow: none
+                :margin: 0
+                :padding: 0
+
+                <<< Prev
+                **Quickstart**
+
+    .. grid-item::
+        :columns: 8
+        :margin: 0
+        :padding: 0
+
+    .. grid-item::
+        :columns: 2
+        :margin: 0
+        :padding: 0
+
+        .. grid::
+            :margin: 0
+
+            .. grid-item-card::
+                :link: _autogallery/index
+                :link-type: doc
+                :shadow: none
+                :margin: 0
+                :padding: 0
+
+                Next >>>
+                **Tutorial**
+
+            .. grid-item-card::
+                :link: index
+                :link-type: doc
+                :shadow: none
+                :margin: 0
+                :padding: 0
+
+                Next >>>
+                **Documentation**
 

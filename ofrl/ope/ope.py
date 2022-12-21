@@ -35,6 +35,8 @@ from ..utils import (
 class OffPolicyEvaluation:
     """Class to perform OPE by multiple estimators simultaneously (applicable to both discrete/continuous action cases).
 
+    Imported as: :class:`ofrl.ope.OffPolicyEvaluation`
+
     Note
     -----------
     OPE estimates the expected policy performance of a given evaluation policy called the policy value.
@@ -377,13 +379,13 @@ class OffPolicyEvaluation:
         References
         -------
         Josiah P. Hanna, Peter Stone, and Scott Niekum.
-        "Bootstrapping with Models: Confidence Intervals for Off-Policy Evaluation.", 2017.
+        "Bootstrapping with Models: Confidence Intervals for Off-Policy Evaluation." 2017.
 
         Philip S. Thomas, Georgios Theocharous, and Mohammad Ghavamzadeh.
-        "High Confidence Policy Improvement.", 2015.
+        "High Confidence Policy Improvement." 2015.
 
         Philip S. Thomas, Georgios Theocharous, and Mohammad Ghavamzadeh.
-        "High Confidence Off-Policy Evaluation.", 2015.
+        "High Confidence Off-Policy Evaluation." 2015.
 
         """
         check_input_dict(input_dict)
@@ -574,7 +576,7 @@ class OffPolicyEvaluation:
             If `None` is given, all the estimators are compared.
 
         alpha: float, default=0.05
-            Significance level. The value should be within `(0, 1]`.
+            Significance level. The value should be within (0, 1].
 
         ci: {"bootstrap", "hoeffding", "bernstein", "ttest"}, default="bootstrap"
             Estimation method for confidence intervals.
@@ -941,9 +943,11 @@ class OffPolicyEvaluation:
 class CumulativeDistributionOffPolicyEvaluation:
     """Class to conduct cumulative distribution OPE by multiple estimators simultaneously (applicable to both discrete/continuous action cases).
 
+    Imported as: :class:`ofrl.ope.CumutiveDistributionOffPolicyEvaluation`
+
     Note
     -----------
-    CumulativeDistributionOPE first estimates the following cumulative distribution function, and then estimates some statistics.
+    Cumulative distribution OPE first estimates the following cumulative distribution function, and then estimates some statistics.
 
     .. math::
 
@@ -951,6 +955,16 @@ class CumulativeDistributionOffPolicyEvaluation:
 
     where :math:`\\pi` is the evaluation policy, :math:`r_t` is the reward observation at each timestep :math:`t`, 
     :math:`T` is the total number of timesteps in an episode, and :math:`\\gamma` is the discount factor.
+
+    CDF is itself informative, but also enables us to calculate the following risk functions.
+
+    * Mean: :math:`\\mu(F) := \\int_{G} G \\, \\mathrm{d}F(G)`
+    * Variance: :math:`\\sigma^2(F) := \\int_{G} (G - \\mu(F))^2 \\, \\mathrm{d}F(G)`
+    * :math:`\\alpha`-quartile: :math:`Q^{\\alpha}(F) := \\min \\{ G \\mid F(G) \\leq \\alpha \\}`
+    * Conditional Value at Risk (CVaR): :math:`\\int_{G} G \\, \mathbb{I}\\{ G \\leq Q^{\\alpha}(F) \\} \\, \\mathrm{d}F(G)`
+
+    where we let :math:`G := \\sum_{t=0}^{T-1} \\gamma^t r_t` to represent the random variable of trajectory wise reward
+    and :math:`dF(G) := \\mathrm{lim}_{\\Delta \\rightarrow 0} F(G) - F(G- \\Delta)`.
 
     Parameters
     -----------
@@ -1111,13 +1125,13 @@ class CumulativeDistributionOffPolicyEvaluation:
     References
     -------
     Audrey Huang, Liu Leqi, Zachary C. Lipton, and Kamyar Azizzadenesheli.
-    "Off-Policy Risk Assessment for Markov Decision Processes.", 2022.
+    "Off-Policy Risk Assessment for Markov Decision Processes." 2022.
 
     Audrey Huang, Liu Leqi, Zachary C. Lipton, and Kamyar Azizzadenesheli.
-    "Off-Policy Risk Assessment in Contextual Bandits.", 2021.
+    "Off-Policy Risk Assessment in Contextual Bandits." 2021.
 
     Yash Chandak, Scott Niekum, Bruno Castro da Silva, Erik Learned-Miller, Emma Brunskill, and Philip S. Thomas.
-    "Universal Off-Policy Evaluation.", 2021.
+    "Universal Off-Policy Evaluation." 2021.
 
     """
 
@@ -1622,7 +1636,7 @@ class CumulativeDistributionOffPolicyEvaluation:
             If `None` is given, all the estimators are compared.
 
         alpha: float, default=0.05
-            Proportion of the sided region. The value should be within `(0, 1]`.
+            Proportion of the sided region. The value should be within (0, 1].
 
         Return
         -------

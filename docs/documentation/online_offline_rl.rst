@@ -291,3 +291,57 @@ This prevents the propagation of the overestimation bias, even when the basic TD
 
     After learning a new policy, we are often interested in the performance validation. 
     We describe the problem formulation of Off-Policy Evaluation (OPE) and Selection (OPS) in :doc:`Overview (OPE/OPS) <ope_ops>`.
+
+.. grid::
+    :margin: 0
+
+    .. grid-item::
+        :columns: 3
+        :margin: 0
+        :padding: 0
+
+        .. grid::
+            :margin: 0
+
+            .. grid-item-card::
+                :link: index
+                :link-type: doc
+                :shadow: none
+                :margin: 0
+                :padding: 0
+
+                <<< Prev
+                **Documentation (Back to Top)**
+
+    .. grid-item::
+        :columns: 6
+        :margin: 0
+        :padding: 0
+
+    .. grid-item::
+        :columns: 3
+        :margin: 0
+        :padding: 0
+
+        .. grid::
+            :margin: 0
+
+            .. grid-item-card::
+                :link: ope_ops
+                :link-type: doc
+                :shadow: none
+                :margin: 0
+                :padding: 0
+
+                Next >>>
+                **Off_Policy Evaluation**
+
+            .. grid-item-card::
+                :link: learning_implementation
+                :link-type: doc
+                :shadow: none
+                :margin: 0
+                :padding: 0
+
+                Next >>>
+                **Supported Implementation**

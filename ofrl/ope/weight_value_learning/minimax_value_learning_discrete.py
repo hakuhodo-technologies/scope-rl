@@ -1,3 +1,4 @@
+"""Minimax value function learning (discrete action cases)."""
 from dataclasses import dataclass
 from typing import Optional
 from tqdm.auto import tqdm
@@ -23,6 +24,10 @@ from ...utils import check_array
 @dataclass
 class DiscreteMinimaxStateActionValueLearning(BaseWeightValueLearner):
     """Minimax Q Learning for marginal OPE estimators (for discrete action space).
+
+    Bases: :class:`ofrl.ope.weight_value_learning.BaseWeightValueLearner`
+
+    Imported as: :class:`ofrl.ope.weight_value_learning.DiscreteMinimaxStateActionValueLearning`
 
     Note
     -------
@@ -52,22 +57,24 @@ class DiscreteMinimaxStateActionValueLearning(BaseWeightValueLearner):
         Q function model.
 
     gamma: float, default=1.0
-        Discount factor. The value should be within `(0, 1]`.
+        Discount factor. The value should be within (0, 1].
 
-    sigma: float, default=1.0 (> 0.0)
+    sigma: float, default=1.0 (> 0)
         Bandwidth hyperparameter of gaussian kernel.
 
     state_scaler: d3rlpy.preprocessing.Scaler, default=None
         Scaling factor of state.
 
-    batch_size: int, default=32
+    batch_size: int, default=32 (> 0)
         Batch size.
 
-    alpha: float, default=1e-3
+    alpha: float, default=1e-3 (> 0)
+        Regularization of Q-function.
 
-    lambda_: float, default=1e-3
+    lambda_: float, default=1e-3 (>= 0)
+        Stabilizer to obtain a fast convergence rate.
 
-    lr: float, default=1e-3
+    lr: float, default=1e-3 (> 0)
         Learning rate.
 
     device: str, default="cuda:0"
@@ -76,7 +83,7 @@ class DiscreteMinimaxStateActionValueLearning(BaseWeightValueLearner):
     References
     -------
     Masatoshi Uehara, Jiawei Huang, and Nan Jiang.
-    "Minimax Weight and Q-Function Learning for Off-Policy Evaluation.", 2020.
+    "Minimax Weight and Q-Function Learning for Off-Policy Evaluation." 2020.
 
     """
 
@@ -239,13 +246,13 @@ class DiscreteMinimaxStateActionValueLearning(BaseWeightValueLearner):
             Conditional action distribution induced by the evaluation policy,
             i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
 
-        n_epochs: int, default=100
+        n_epochs: int, default=100 (> 0)
             Number of epochs to train.
 
-        n_steps_per_epoch: int, default=100
+        n_steps_per_epoch: int, default=100 (> 0)
             Number of gradient steps in a epoch.
 
-        random_state: int, default=None
+        random_state: int, default=None (>= 0)
             Random state.
 
         """
@@ -555,13 +562,13 @@ class DiscreteMinimaxStateActionValueLearning(BaseWeightValueLearner):
             Conditional action distribution induced by the evaluation policy,
             i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
 
-        n_epochs: int, default=100
+        n_epochs: int, default=100 (> 0)
             Number of epochs to train.
 
-        n_steps_per_epoch: int, default=100
+        n_steps_per_epoch: int, default=100 (> 0)
             Number of gradient steps in a epoch.
 
-        random_state: int, default=None
+        random_state: int, default=None (>= 0)
             Random state.
 
         """
@@ -582,6 +589,10 @@ class DiscreteMinimaxStateActionValueLearning(BaseWeightValueLearner):
 @dataclass
 class DiscreteMinimaxStateValueLearning(BaseWeightValueLearner):
     """Minimax V Learning for marginal OPE estimators (for discrete action space).
+
+    Bases: :class:`ofrl.ope.weight_value_learning.BaseWeightValueLearner`
+
+    Imported as: :class:`ofrl.ope.weight_value_learning.DiscreteMinimaxStateValueLearning`
 
     Note
     -------
@@ -607,26 +618,28 @@ class DiscreteMinimaxStateValueLearning(BaseWeightValueLearner):
 
     Parameters
     -------
-    q_function: DiscreteQFunction
-        Q function model.
+    v_function: DiscreteQFunction
+        V function model.
 
     gamma: float, default=1.0
-        Discount factor. The value should be within `(0, 1]`.
+        Discount factor. The value should be within (0, 1].
 
-    sigma: float, default=1.0 (> 0.0)
+    sigma: float, default=1.0 (> 0)
         Bandwidth hyperparameter of gaussian kernel.
 
     state_scaler: d3rlpy.preprocessing.Scaler, default=None
         Scaling factor of state.
 
-    batch_size: int, default=32
+    batch_size: int, default=32 (> 0)
         Batch size.
 
-    alpha: float, default=1e-3
+    alpha: float, default=1e-3 (> 0)
+        Regularization of V-function.
 
-    lambda_: float, default=1e-3
+    lambda_: float, default=1e-3 (>= 0)
+        Stabilizer to obtain a fast convergence rate.
 
-    lr: float, default=1e-3
+    lr: float, default=1e-3 (> 0)
         Learning rate.
 
     device: str, default="cuda:0"
@@ -635,7 +648,7 @@ class DiscreteMinimaxStateValueLearning(BaseWeightValueLearner):
     References
     -------
     Masatoshi Uehara, Jiawei Huang, and Nan Jiang.
-    "Minimax Weight and Q-Function Learning for Off-Policy Evaluation.", 2020.
+    "Minimax Weight and Q-Function Learning for Off-Policy Evaluation." 2020.
 
     """
 
@@ -794,13 +807,13 @@ class DiscreteMinimaxStateValueLearning(BaseWeightValueLearner):
             Conditional action distribution induced by the evaluation policy,
             i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
 
-        n_epochs: int, default=100
+        n_epochs: int, default=100 (> 0)
             Number of epochs to train.
 
-        n_steps_per_epoch: int, default=100
+        n_steps_per_epoch: int, default=100 (> 0)
             Number of gradient steps in a epoch.
 
-        random_state: int, default=None
+        random_state: int, default=None (>= 0)
             Random state.
 
         """
@@ -998,13 +1011,13 @@ class DiscreteMinimaxStateValueLearning(BaseWeightValueLearner):
             Conditional action distribution induced by the evaluation policy,
             i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
 
-        n_epochs: int, default=100
+        n_epochs: int, default=100 (> 0)
             Number of epochs to train.
 
-        n_steps_per_epoch: int, default=100
+        n_steps_per_epoch: int, default=100 (> 0)
             Number of gradient steps in a epoch.
 
-        random_state: int, default=None
+        random_state: int, default=None (>= 0)
             Random state.
 
         """

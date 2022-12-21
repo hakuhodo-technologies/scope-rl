@@ -251,3 +251,44 @@ Table of Contents
    frequently_asked_questions
    release_notes <https://github.com/negocia-inc/ofrl/releases>
    references
+
+.. grid::
+    :margin: 0
+
+    .. grid-item::
+        :columns: 3
+        :margin: 0
+        :padding: 0
+
+    .. grid-item::
+        :columns: 6
+        :margin: 0
+        :padding: 0
+
+    .. grid-item::
+        :columns: 3
+        :margin: 0
+        :padding: 0
+
+        .. grid::
+            :margin: 0
+
+            .. grid-item-card::
+                :link: distinctive_features
+                :link-type: doc
+                :shadow: none
+                :margin: 0
+                :padding: 0
+
+                Next >>>
+                **Why_OFRL?**
+
+            .. grid-item-card::
+                :link: /documentation/index
+                :link-type: doc
+                :shadow: none
+                :margin: 0
+                :padding: 0
+
+                Next >>>
+                **Quickstart**

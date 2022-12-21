@@ -1,3 +1,4 @@
+from ofrl.ope.weight_value_learning.base import BaseWeightValueLearner
 from ofrl.ope.weight_value_learning.augmented_lagrangian_learning_discrete import (
     DiscreteAugmentedLagrangianStateActionWightValueLearning,
     DiscreteAugmentedLagrangianStateWightValueLearning,
@@ -25,6 +26,7 @@ from ofrl.ope.weight_value_learning.minimax_weight_learning_continuous import (
 
 
 __all__ = [
+    "BaseWeightValueLearner",
     "DiscreteAugmentedLagrangianStateActionWightValueLearning",
     "DiscreteAugmentedLagrangianStateWightValueLearning",
     "ContinuousAugmentedLagrangianStateActionWightValueLearning",

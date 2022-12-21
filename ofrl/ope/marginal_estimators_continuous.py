@@ -1,3 +1,4 @@
+"""State(-Action) Marginal Off-Policy Estimators for continuous action cases (designed for deterministic policies)."""
 from dataclasses import dataclass
 from typing import Optional, Union, Dict
 
@@ -18,6 +19,10 @@ from ..utils import check_array
 class ContinuousDoubleReinforcementLearning(BaseOffPolicyEstimator):
     """Double Reinforcement Learning (DRL) estimator for continuous action space.
 
+    Bases: :class:`ofrl.ope.BaseOffPolicyEstimator`
+
+    Imported as: :class:`ofrl.ope.ContinuousDoubleReinforcementLearning`
+
     Note
     -------
     DRL estimates the policy value using state-action marginal importance weight and Q function estimated by cross-fitting.
@@ -25,15 +30,21 @@ class ContinuousDoubleReinforcementLearning(BaseOffPolicyEstimator):
     .. math::
 
         \\hat{J}_{\\mathrm{DRL}} (\\pi; \\mathcal{D})
-        := \\frac{1}{n} \\sum_{k=1}^K \\sum_{i=1}^{n_k} \\sum_{t=0}^{T-1} ( w^j(s_{i,t}, a_{i, t}) (r_{i, t} - Q^j(s_{i, t}, a_{i, t}))
-            + w^j(s_{i, t-1}, a_{i, t-1}) Q^j(s_{i, t}, \\pi(s_{i, t})) )
+        &:= \\frac{1}{n} \\sum_{k=1}^K \\sum_{i=1}^{n_k} \\sum_{t=0}^{T-1} ( w^j(s_{i,t}, a_{i, t}) (r_{i, t} - Q^j(s_{i, t}, a_{i, t})) \\\\
+        & \quad \quad + w^j(s_{i, t-1}, a_{i, t-1}) Q^j(s_{i, t}, \\pi(s_{i, t})) )
 
     where :math:`w(s, a) \\approx d^{\\pi}(s, a) / d^{\\pi_0}(s, a)` is the state-action marginal importance weight and :math:`Q(s, a)` is the Q function.
     :math:`K` is the number of folds and :math:`\\mathcal{D}_j` is the :math:`j`-th split of logged data consisting of :math:`n_k` samples.
     :math:`w^j` and :math:`Q^j` are trained on the subset of data used for OPE, i.e., :math:`\\mathcal{D} \\setminus \\mathcal{D}_j`.
 
-    There are several ways to estimate state marginal importance weight including Augmented Lagrangian Method (ALM) (Yang et al., 2020) and Minimax Weight Learning (MWL) (Uehara et al., 2020).
-    The implementations of the estimation methods of state marginal importance weight is available at `ofrl/ope/weight_value_learning`.
+    **TODO** statistical efficiency
+
+    There are several ways to estimate state(-action) marginal importance weight including Augmented Lagrangian Method (ALM) (Yang et al., 2020) 
+    and Minimax Weight Learning (MWL) (Uehara et al., 2020).
+
+    .. seealso::
+
+        The implementations of such weight learning methods are available at :class:`ofrl.ope.weight_value_learning`.
 
     Parameters
     -------
@@ -43,13 +54,13 @@ class ContinuousDoubleReinforcementLearning(BaseOffPolicyEstimator):
     References
     -------
     Nathan Kallus and Masatoshi Uehara.
-    "Double Reinforcement Learning for Efficient Off-Policy Evaluation in Markov Decision Processes.", 2020.
+    "Double Reinforcement Learning for Efficient Off-Policy Evaluation in Markov Decision Processes." 2020.
 
     Masatoshi Uehara, Jiawei Huang, and Nan Jiang.
-    "Minimax Weight and Q-Function Learning for Off-Policy Evaluation.", 2020.
+    "Minimax Weight and Q-Function Learning for Off-Policy Evaluation." 2020.
 
     Mengjiao Yang, Ofir Nachum, Bo Dai, Lihong Li, and Dale Schuurmans.
-    "Off-Policy Evaluation via the Regularized Lagrangian.", 2020.
+    "Off-Policy Evaluation via the Regularized Lagrangian." 2020.
 
     """
 
@@ -80,7 +91,7 @@ class ContinuousDoubleReinforcementLearning(BaseOffPolicyEstimator):
 
         state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, 2)
             :math:`\\hat{Q}` for the observed action and action chosen evaluation policy,
-            i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a \\mid s_t))`.
+            i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a | s_t))`.
 
         Return
         -------
@@ -132,7 +143,7 @@ class ContinuousDoubleReinforcementLearning(BaseOffPolicyEstimator):
 
         state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, 2)
             :math:`\\hat{Q}` for the observed action and action chosen evaluation policy,
-            i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a \\mid s_t))`.
+            i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a | s_t))`.
 
         Return
         -------
@@ -206,7 +217,7 @@ class ContinuousDoubleReinforcementLearning(BaseOffPolicyEstimator):
 
         state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, 2)
             :math:`\\hat{Q}` for the observed action and action chosen evaluation policy,
-            i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a \\mid s_t))`.
+            i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a | s_t))`.
 
         alpha: float, default=0.05
             Significance level. The value should be within `[0, 1)`.
@@ -224,6 +235,14 @@ class ContinuousDoubleReinforcementLearning(BaseOffPolicyEstimator):
         -------
         estimated_confidence_interval: dict
             Dictionary storing the estimated mean and upper-lower confidence bounds.
+
+            .. code-block:: python
+
+                key: [
+                    mean,
+                    {100 * (1. - alpha)}% CI (lower),
+                    {100 * (1. - alpha)}% CI (upper),
+                ]
 
         """
         check_scalar(
@@ -277,8 +296,181 @@ class ContinuousDoubleReinforcementLearning(BaseOffPolicyEstimator):
 
 
 @dataclass
+class ContinuousStateMarginalDirectMethod(BaseStateMarginalOffPolicyEstimator):
+    """Direct Method (DM) for continuous-action and stationary OPE (designed for deterministic policies).
+
+    Bases: :class:`ofrl.ope.BaseStateMarginalOffPolicyEstimator` -> :class:`ofrl.ope.BaseOffPolicyEstimator`
+
+    Imported as: :class:`ofrl.ope.ContinuousStateMarginalDirectMethod`
+
+    Note
+    -------
+    DM estimates the policy value using the initial state value as follows.
+
+    .. math::
+
+        \\hat{J}_{\\mathrm{DM}} (\\pi; \\mathcal{D}) 
+        := \\mathbb{E}_n [\\hat{Q}(s_0, \\pi(s_0))]]
+        = \\mathbb{E}_n [\\hat{V}(s_0)],
+
+    where :math:`\\mathcal{D}=\\{\\{(s_t, a_t, r_t)\\}_{t=0}^{T-1}\\}_{i=1}^n` is the logged dataset with :math:`n` trajectories of data.
+    :math:`T` indicates step per episode. :math:`\\hat{Q}(s_t, a_t)` is the estimated Q value given a state-action pair.
+    \\hat{V}(s_t) is the estimated value function given a state.
+
+    DM has low variance, but can incur bias due to approximation errors.
+
+    There are several ways to estimate :math:`\\hat{Q}(s, a)` such as Fitted Q Evaluation (FQE) (Le et al., 2019), 
+    Minimax Q-Function Learning (MQL) (Uehara et al., 2020), and Augmented Lagrangian Method (ALM) (Yang et al., 2020).
+
+    .. seealso::
+
+        The implementation of FQE is provided by `d3rlpy <https://d3rlpy.readthedocs.io/en/latest/references/off_policy_evaluation.html>`_.
+        The implementations of Minimax Weight and Value Learning (including ALM) is available at :class:`ofrl.ope.weight_value_learning`.
+
+    Note
+    -------
+    This function is different from :class:`ContinuousDirectMethod` in that
+    the initial state is sampled from the stationary distribution :math:`d^{\pi}(s_0)`.
+
+    Parameters
+    -------
+    estimator_name: str, default="sm_dm"
+        Name of the estimator.
+
+    References
+    -------
+    Masatoshi Uehara, Jiawei Huang, and Nan Jiang.
+    "Minimax Weight and Q-Function Learning for Off-Policy Evaluation." 2020.
+
+    Mengjiao Yang, Ofir Nachum, Bo Dai, Lihong Li, and Dale Schuurmans.
+    "Off-Policy Evaluation via the Regularized Lagrangian." 2020.
+
+    Hoang Le, Cameron Voloshin, and Yisong Yue.
+    "Batch Policy Learning under Constraints." 2019.
+
+    """
+
+    estimator_name = "sm_dm"
+
+    def __post_init__(self):
+        self.action_type = "continuous"
+
+    def _estimate_trajectory_value(
+        self,
+        initial_state_value_prediction: np.ndarray,
+        **kwargs,
+    ) -> np.ndarray:
+        """Estimate the trajectory-wise policy value.
+
+        Parameters
+        -------
+        initial_state_value_prediction: array-like of shape (n_trajectories, )
+            Estimated initial state value.
+
+        Return
+        -------
+        estimated_trajectory_wise_policy_value: ndarray of shape (n_trajectories, )
+            Policy value estimated for each trajectory.
+            (Equivalent to initial_state_value_prediction.)
+
+        """
+        return initial_state_value_prediction
+
+    def estimate_policy_value(
+        self,
+        initial_state_value_prediction: np.ndarray,
+        **kwargs,
+    ) -> float:
+        """Estimate the policy value of the evaluation policy.
+
+        Parameters
+        -------
+        initial_state_value_prediction: array-like of shape (n_trajectories, )
+            Estimated initial state value.
+
+        Return
+        -------
+        V_hat: ndarray of shape (n_trajectories, )
+            Estimated policy value.
+
+        """
+        check_array(
+            initial_state_value_prediction,
+            name="initial_state_value_prediction",
+            expected_dim=1,
+        )
+        estimated_policy_value = self._estimate_trajectory_value(
+            initial_state_value_prediction,
+        ).mean()
+        return estimated_policy_value
+
+    def estimate_interval(
+        self,
+        initial_state_value_prediction: np.ndarray,
+        alpha: float = 0.05,
+        ci: str = "bootstrap",
+        n_bootstrap_samples: int = 10000,
+        random_state: Optional[int] = None,
+        **kwargs,
+    ) -> Dict[str, float]:
+        """Estimate the confidence interval of the policy value by nonparametric bootstrap.
+
+        Parameters
+        -------
+        initial_state_value_prediction: array-like of shape (n_trajectories, )
+            Estimated initial state value.
+
+        alpha: float, default=0.05
+            Significance level. The value should be within `[0, 1)`
+
+        n_bootstrap_samples: int, default=10000 (> 0)
+            Number of resampling performed in the bootstrap procedure.
+
+        random_state: int, default=None (>= 0)
+            Random state.
+
+        Return
+        -------
+        estimated_confidence_interval: dict
+            Dictionary storing the estimated mean and upper-lower confidence bounds.
+
+            .. code-block:: python
+
+                key: [
+                    mean,
+                    {100 * (1. - alpha)}% CI (lower),
+                    {100 * (1. - alpha)}% CI (upper),
+                ]
+
+        """
+        check_array(
+            initial_state_value_prediction,
+            name="initial_state_value_prediction",
+            expected_dim=1,
+        )
+        if ci not in self._estimate_confidence_interval.keys():
+            raise ValueError(
+                f"ci must be one of 'bootstrap', 'hoeffding', 'bernstein', or 'ttest', but {ci} is given"
+            )
+
+        estimated_trajectory_value = self._estimate_trajectory_value(
+            initial_state_value_prediction,
+        )
+        return self._estimate_confidence_interval[ci](
+            samples=estimated_trajectory_value,
+            alpha=alpha,
+            n_bootstrap_samples=n_bootstrap_samples,
+            random_state=random_state,
+        )
+
+
+@dataclass
 class ContinuousStateMarginalImportanceSampling(BaseStateMarginalOffPolicyEstimator):
     """State Marginal Importance Sampling (SM-IS) for continuous-action OPE.
+
+    Bases: :class:`ofrl.ope.BaseStateMarginalOffPolicyEstimator` -> :class:`ofrl.ope.BaseOffPolicyEstimator`
+
+    Imported as: :class:`ofrl.ope.ContinuousStateMarginalImportanceSampling`
 
     Note
     -------
@@ -288,15 +480,23 @@ class ContinuousStateMarginalImportanceSampling(BaseStateMarginalOffPolicyEstima
     .. math::
 
         \\hat{J}_{\\mathrm{SM-IS}} (\\pi; \\mathcal{D})
-        := \\mathbb{E}_{n} [\\sum_{t=0}^{k-1} \\gamma^t w_{0:t} \\delta(\\pi, a_{0:t}) r_t ] + \\mathbb{E}_{n} [\\sum_{t=k}^{T-1} \\gamma^t w_s(s_{t-k}) w_{t-k:t} \\delta(\\pi, a_{t-k:t}) r_t],
+        &:= \\mathbb{E}_{n} \\left[\\sum_{t=0}^{k-1} \\gamma^t w_{0:t} \\delta(\\pi, a_{0:t}) r_t \\right] \\\\
+        & \quad \quad + \\mathbb{E}_{n} \\left[\\sum_{t=k}^{T-1} \\gamma^t w_s(s_{t-k}) w_{t-k:t} \\delta(\\pi, a_{t-k:t}) r_t \\right],
 
-    where :math:`w_s(s) := \\frac{d_{\\pi}(s)}{d_{\\pi_0}(s)}` and :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} \\frac{\\pi(a_t \\mid s_t)}{\\pi_0(a_t \\mid s_t)}`.
+    where :math:`w_s(s) := d_{\\pi}(s) / d_{\\pi_0}(s)` and :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} (\\pi(a_t | s_t) / \\pi_0(a_t | s_t))`.
     :math:`\\delta(\\pi, a_{t_1:t_2}) = \\prod_{t=t_1}^{t_2} K(\\pi(s_t), a_t)` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy
     (:math:`K(\\cdot, \\cdot)` is a kernel function).
-    Note that, when :math:`k=0`, this estimator is identical to the (pure) state marginal IS.
+    When :math:`k=0`, this estimator is identical to the (pure) state marginal IS.
 
-    There are several ways to estimate state marginal importance weight including Augmented Lagrangian Method (ALM) (Yang et al., 2020) and Minimax Weight Learning (MWL) (Uehara et al., 2020).
-    The implementations of the estimation methods of state marginal importance weight is available at `ofrl/ope/weight_value_learning`.
+    SM-IS is unbiased when the marginal importance weight is estimated correctly. 
+    Moreover, SM-IS reduces the variance caused by trajectory-wise or per-decision importance weight by considering the marginal distribution across various timesteps.
+
+    There are several ways to estimate state(-action) marginal importance weight including Augmented Lagrangian Method (ALM) (Yang et al., 2020) 
+    and Minimax Weight Learning (MWL) (Uehara et al., 2020).
+
+    .. seealso::
+
+        The implementations of such weight learning methods are available at :class:`ofrl.ope.weight_value_learning`.
 
     Parameters
     -------
@@ -306,25 +506,22 @@ class ContinuousStateMarginalImportanceSampling(BaseStateMarginalOffPolicyEstima
     References
     -------
     Christina J. Yuan, Yash Chandak, Stephen Giguere, Philip S. Thomas, and Scott Niekum.
-    "SOPE: Spectrum of Off-Policy Estimators.", 2021.
+    "SOPE: Spectrum of Off-Policy Estimators." 2021.
 
     Masatoshi Uehara, Jiawei Huang, and Nan Jiang.
-    "Minimax Weight and Q-Function Learning for Off-Policy Evaluation.", 2020.
+    "Minimax Weight and Q-Function Learning for Off-Policy Evaluation." 2020.
 
     Mengjiao Yang, Ofir Nachum, Bo Dai, Lihong Li, and Dale Schuurmans.
-    "Off-Policy Evaluation via the Regularized Lagrangian.", 2020.
+    "Off-Policy Evaluation via the Regularized Lagrangian." 2020.
 
     Nathan Kallus and Angela Zhou.
-    "Policy Evaluation and Optimization with Continuous Treatments.", 2019.
+    "Policy Evaluation and Optimization with Continuous Treatments." 2019.
 
     Qiang Liu, Lihong Li, Ziyang Tang, and Dengyong Zhou.
-    "Breaking the Curse of Horizon: Infinite-Horizon Off-Policy Estimation.", 2018
-
-    Alex Strehl, John Langford, Sham Kakade, and Lihong Li.
-    "Learning from Logged Implicit Exploration Data.", 2010.
+    "Breaking the Curse of Horizon: Infinite-Horizon Off-Policy Estimation." 2018
 
     Doina Precup, Richard S. Sutton, and Satinder P. Singh.
-    "Eligibility Traces for Off-Policy Policy Evaluation.", 2000.
+    "Eligibility Traces for Off-Policy Policy Evaluation." 2000.
 
     """
 
@@ -369,15 +566,15 @@ class ContinuousStateMarginalImportanceSampling(BaseStateMarginalOffPolicyEstima
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a \\mid s)`
+            i.e., :math:`\\pi_0(a | s)`
 
         evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
 
         gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
+            Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0
+        sigma: float, default=1.0 (> 0)
             Bandwidth hyperparameter of gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
@@ -456,15 +653,15 @@ class ContinuousStateMarginalImportanceSampling(BaseStateMarginalOffPolicyEstima
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a \\mid s)`
+            i.e., :math:`\\pi_0(a | s)`
 
         evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
 
         gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
+            Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0
+        sigma: float, default=1.0 (> 0)
             Bandwidth hyperparameter of gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
@@ -596,15 +793,15 @@ class ContinuousStateMarginalImportanceSampling(BaseStateMarginalOffPolicyEstima
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a \\mid s)`
+            i.e., :math:`\\pi_0(a | s)`
 
         evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
 
         gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
+            Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0
+        sigma: float, default=1.0 (> 0)
             Bandwidth hyperparameter of gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
@@ -626,6 +823,14 @@ class ContinuousStateMarginalImportanceSampling(BaseStateMarginalOffPolicyEstima
         -------
         estimated_confidence_interval: dict
             Dictionary storing the estimated mean and upper-lower confidence bounds.
+
+            .. code-block:: python
+
+                key: [
+                    mean,
+                    {100 * (1. - alpha)}% CI (lower),
+                    {100 * (1. - alpha)}% CI (upper),
+                ]
 
         """
         check_scalar(
@@ -723,6 +928,10 @@ class ContinuousStateMarginalImportanceSampling(BaseStateMarginalOffPolicyEstima
 class ContinuousStateMarginalDoublyRobust(BaseStateMarginalOffPolicyEstimator):
     """State Marginal Doubly Robust (SM-DR) for continuous-action OPE.
 
+    Bases: :class:`ofrl.ope.BaseStateMarginalOffPolicyEstimator` -> :class:`ofrl.ope.BaseOffPolicyEstimator`
+
+    Imported as: :class:`ofrl.ope.ContinuousStateMarginalDoublyRobust`
+
     Note
     -------
     SM-DR estimates the policy value using state marginal importance weighting.
@@ -731,17 +940,24 @@ class ContinuousStateMarginalDoublyRobust(BaseStateMarginalOffPolicyEstimator):
     .. math::
 
         \\hat{J}_{\\mathrm{SM-DR}} (\\pi; \\mathcal{D})
-        := \\mathbb{E}_{n} [\\hat{Q}(s_0, a_0)]
-            + \\mathbb{E}_{n} [\\sum_{t=0}^{k-1} \\gamma^t w_{0:t} \\delta(\\pi, a_{0:t}) (r_t + \\gamma \\mathbb{E}_{a \\sim \\pi(a \\mid s_t)}[\\hat{Q}(s_{t+1}, a)] - \\hat{Q}(s_t, a_t))]
-            + \\mathbb{E}_{n} [\\sum_{t=k}^{T-1} \\gamma^t w_s(s_{t-k}) w_{t-k:t} \\delta{\\pi, a_{t-k:t}} (r_t + \\gamma \\mathbb{E}_{a \\sim \\pi(a \\mid s_t)}[\\hat{Q}(s_{t+1}, a)] - \\hat{Q}(s_t, a_t))],
+        &:= \\mathbb{E}_{n} [\\hat{Q}(s_0, \\pi(a_0))] \\\\
+        & \quad \quad + \\mathbb{E}_{n} \\left[\\sum_{t=0}^{k-1} \\gamma^t w_{0:t} \\delta(\\pi, a_{0:t}) (r_t + \\gamma \\hat{Q}(s_{t+1}, \\pi(s_{t+1}))] - \\hat{Q}(s_t, a_t)) \\right] \\\\
+        & \quad \quad + \\mathbb{E}_{n} \\left[\\sum_{t=k}^{T-1} \\gamma^t w_s(s_{t-k}) w_{t-k:t} \\delta{\\pi, a_{t-k:t}} (r_t + \\gamma \\hat{Q}(s_{t+1}, \\pi(s_{t+1}))] - \\hat{Q}(s_t, a_t)) \\right],
 
-    where :math:`w_s(s) := \\frac{d_{\\pi}(s)}{d_{\\pi_0}(s)}` and :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} \\frac{\\pi(a_t \\mid s_t)}{\\pi_0(a_t \\mid s_t)}`. :math:`Q(s, a)` is the state-action value.
+    where :math:`w_s(s) := d_{\\pi}(s) / d_{\\pi_0}(s)` and :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} (\\pi(a_t | s_t) / \\pi_0(a_t | s_t))`. :math:`Q(s, a)` is the state-action value.
     :math:`\\delta(\\pi, a_{t_1:t_2}) = \\prod_{t=t_1}^{t_2} K(\\pi(s_t), a_t)` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy
     (:math:`K(\\cdot, \\cdot)` is a kernel function).
-    Note that, when :math:`k=0`, this estimator is identical to the (pure) state marginal DR.
+    When :math:`k=0`, this estimator is identical to the (pure) state marginal DR.
 
-    There are several ways to estimate state marginal importance weight including Augmented Lagrangian Method (ALM) (Yang et al., 2020) and Minimax Weight Learning (MWL) (Uehara et al., 2020).
-    The implementations of the estimation methods of state marginal importance weight is available at `ofrl/ope/weight_value_learning`.
+    SM-DR is unbiased when either the marginal importance weight or Q-function is estimated correctly. 
+    Moreover, SM-DR reduces the variance caused by trajectory-wise or per-decision importance weight by considering the marginal distribution across various timesteps.
+
+    There are several ways to estimate state(-action) marginal importance weight including Augmented Lagrangian Method (ALM) (Yang et al., 2020) 
+    and Minimax Weight Learning (MWL) (Uehara et al., 2020).
+
+    .. seealso::
+
+        The implementations of such weight learning methods are available at :class:`ofrl.ope.weight_value_learning`.
 
     Parameters
     -------
@@ -751,28 +967,25 @@ class ContinuousStateMarginalDoublyRobust(BaseStateMarginalOffPolicyEstimator):
     References
     -------
     Christina J. Yuan, Yash Chandak, Stephen Giguere, Philip S. Thomas, and Scott Niekum.
-    "SOPE: Spectrum of Off-Policy Estimators.", 2021.
+    "SOPE: Spectrum of Off-Policy Estimators." 2021.
 
     Masatoshi Uehara, Jiawei Huang, and Nan Jiang.
-    "Minimax Weight and Q-Function Learning for Off-Policy Evaluation.", 2020.
+    "Minimax Weight and Q-Function Learning for Off-Policy Evaluation." 2020.
 
     Mengjiao Yang, Ofir Nachum, Bo Dai, Lihong Li, and Dale Schuurmans.
-    "Off-Policy Evaluation via the Regularized Lagrangian.", 2020.
+    "Off-Policy Evaluation via the Regularized Lagrangian." 2020.
 
     Nathan Kallus and Angela Zhou.
-    "Policy Evaluation and Optimization with Continuous Treatments.", 2019.
+    "Policy Evaluation and Optimization with Continuous Treatments." 2019.
 
     Qiang Liu, Lihong Li, Ziyang Tang, and Dengyong Zhou.
-    "Breaking the Curse of Horizon: Infinite-Horizon Off-Policy Estimation.", 2018
+    "Breaking the Curse of Horizon: Infinite-Horizon Off-Policy Estimation." 2018
 
     Nan Jiang and Lihong Li.
-    "Doubly Robust Off-policy Value Evaluation for Reinforcement Learning.", 2016.
+    "Doubly Robust Off-policy Value Evaluation for Reinforcement Learning." 2016.
 
     Philip S. Thomas and Emma Brunskill.
-    "Data-Efficient Off-Policy Policy Evaluation for Reinforcement Learning.", 2016.
-
-    Miroslav Dudík, Dumitru Erhan, John Langford, and Lihong Li.
-    "Doubly Robust Policy Evaluation and Optimization.", 2014.
+    "Data-Efficient Off-Policy Policy Evaluation for Reinforcement Learning." 2016.
 
     """
 
@@ -819,22 +1032,22 @@ class ContinuousStateMarginalDoublyRobust(BaseStateMarginalOffPolicyEstimator):
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a \\mid s)`
+            i.e., :math:`\\pi_0(a | s)`
 
         evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
 
         state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, 2)
             :math:`\\hat{Q}` for the observed action and action chosen evaluation policy,
-            i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a \\mid s_t))`.
+            i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a | s_t))`.
 
         initial_state_value_prediction: array-like of shape (n_trajectories, )
             Estimated initial state value.
 
         gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
+            Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0
+        sigma: float, default=1.0 (> 0)
             Bandwidth hyperparameter of gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
@@ -923,22 +1136,22 @@ class ContinuousStateMarginalDoublyRobust(BaseStateMarginalOffPolicyEstimator):
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a \\mid s)`
+            i.e., :math:`\\pi_0(a | s)`
 
         evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
 
         state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, 2)
             :math:`\\hat{Q}` for the observed action and action chosen evaluation policy,
-            i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a \\mid s_t))`.
+            i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a | s_t))`.
 
         initial_state_value_prediction: array-like of shape (n_trajectories, )
             Estimated initial state value.
 
         gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
+            Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0
+        sigma: float, default=1.0 (> 0)
             Bandwidth hyperparameter of gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
@@ -1089,22 +1302,22 @@ class ContinuousStateMarginalDoublyRobust(BaseStateMarginalOffPolicyEstimator):
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a \\mid s)`
+            i.e., :math:`\\pi_0(a | s)`
 
         evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
 
         state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, 2)
             :math:`\\hat{Q}` for the observed action and action chosen evaluation policy,
-            i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a \\mid s_t))`.
+            i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a | s_t))`.
 
         initial_state_value_prediction: array-like of shape (n_trajectories, )
             Estimated initial state value.
 
         gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
+            Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0
+        sigma: float, default=1.0 (> 0)
             Bandwidth hyperparameter of gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
@@ -1126,6 +1339,14 @@ class ContinuousStateMarginalDoublyRobust(BaseStateMarginalOffPolicyEstimator):
         -------
         estimated_confidence_interval: dict
             Dictionary storing the estimated mean and upper-lower confidence bounds.
+
+            .. code-block:: python
+
+                key: [
+                    mean,
+                    {100 * (1. - alpha)}% CI (lower),
+                    {100 * (1. - alpha)}% CI (upper),
+                ]
 
         """
         check_scalar(
@@ -1242,6 +1463,10 @@ class ContinuousStateMarginalSelfNormalizedImportanceSampling(
 ):
     """State Marginal Self-Normalized Importance Sampling (SM-SNIS) for continuous-action OPE.
 
+    Bases: :class:`ofrl.ope.ContinuousStateMarginalImportanceSampling` :class:`ofrl.ope.BaseStateMarginalOffPolicyEstimator` -> :class:`ofrl.ope.BaseOffPolicyEstimator`
+
+    Imported as: :class:`ofrl.ope.ContinuousStateMarginalSelfNormalizedImportanceSampling`
+
     Note
     -------
     SM-SNIS estimates the policy value using state marginal importance weighting.
@@ -1250,16 +1475,23 @@ class ContinuousStateMarginalSelfNormalizedImportanceSampling(
     .. math::
 
         \\hat{J}_{\\mathrm{SM-SNIS}} (\\pi; \\mathcal{D})
-        := \\mathbb{E}_{n} [\\sum_{t=0}^{k-1} \\gamma^t \\frac{w_{0:t} \\delta(\\pi, a_{0:t})}{\\sum_{n} w_{0:t} \\delta(\\pi, a_{0:t})} r_t ]
-            + \\mathbb{E}_{n} [\\sum_{t=k}^{T-1} \\gamma^t \\frac{w_s(s_{t-k}) w_{t-k:t} \\delta{t-k:t}}{\\sum_n w_s(s_{t-k}) w_{t-k:t} \\delta{t-k:t}} r_t],
+        &:= \\mathbb{E}_{n} \\left[\\sum_{t=0}^{k-1} \\gamma^t \\frac{w_{0:t} \\delta(\\pi, a_{0:t})}{\\sum_{n} w_{0:t} \\delta(\\pi, a_{0:t})} r_t \\right] \\\\
+        & \quad \quad + \\mathbb{E}_{n} \\left[\\sum_{t=k}^{T-1} \\gamma^t \\frac{w_s(s_{t-k}) w_{t-k:t} \\delta{t-k:t}}{\\sum_n w_s(s_{t-k}) w_{t-k:t} \\delta{t-k:t}} r_t \\right],
 
-    where :math:`w_s(s) := \\frac{d_{\\pi}(s)}{d_{\\pi_0}(s)}` and :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} \\frac{\\pi(a_t \\mid s_t)}{\\pi_0(a_t \\mid s_t)}`.
+    where :math:`w_s(s) := d_{\\pi}(s) / d_{\\pi_0}(s)` and :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} (\\pi(a_t | s_t) / \\pi_0(a_t | s_t))`.
     :math:`\\delta(\\pi, a_{t_1:t_2}) = \\prod_{t=t_1}^{t_2} K(\\pi(s_t), a_t)` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy
     (:math:`K(\\cdot, \\cdot)` is a kernel function).
-    Note that, when :math:`k=0`, this estimator is identical to the (pure) state marginal SNIS.
+    When :math:`k=0`, this estimator is identical to the (pure) state marginal SNIS.
 
-    There are several ways to estimate state marginal importance weight including Augmented Lagrangian Method (ALM) (Yang et al., 2020) and Minimax Weight Learning (MWL) (Uehara et al., 2020).
-    The implementations of the estimation methods of state marginal importance weight is available at `ofrl/ope/weight_value_learning`.
+    SM-SNIS is consistent when the marginal importance weight is estimated correctly. 
+    Moreover, SM-SNIS reduces the variance caused by trajectory-wise or per-decision importance weight by considering the marginal distribution across various timesteps.
+
+    There are several ways to estimate state(-action) marginal importance weight including Augmented Lagrangian Method (ALM) (Yang et al., 2020) 
+    and Minimax Weight Learning (MWL) (Uehara et al., 2020).
+
+    .. seealso::
+
+        The implementations of such weight learning methods are available at :class:`ofrl.ope.weight_value_learning`.
 
     Parameters
     -------
@@ -1269,28 +1501,22 @@ class ContinuousStateMarginalSelfNormalizedImportanceSampling(
     References
     -------
     Christina J. Yuan, Yash Chandak, Stephen Giguere, Philip S. Thomas, and Scott Niekum.
-    "SOPE: Spectrum of Off-Policy Estimators.", 2021.
+    "SOPE: Spectrum of Off-Policy Estimators." 2021.
 
     Masatoshi Uehara, Jiawei Huang, and Nan Jiang.
-    "Minimax Weight and Q-Function Learning for Off-Policy Evaluation.", 2020.
+    "Minimax Weight and Q-Function Learning for Off-Policy Evaluation." 2020.
 
     Mengjiao Yang, Ofir Nachum, Bo Dai, Lihong Li, and Dale Schuurmans.
-    "Off-Policy Evaluation via the Regularized Lagrangian.", 2020.
+    "Off-Policy Evaluation via the Regularized Lagrangian." 2020.
 
     Nathan Kallus and Angela Zhou.
-    "Policy Evaluation and Optimization with Continuous Treatments.", 2019.
+    "Policy Evaluation and Optimization with Continuous Treatments." 2019.
 
     Qiang Liu, Lihong Li, Ziyang Tang, and Dengyong Zhou.
-    "Breaking the Curse of Horizon: Infinite-Horizon Off-Policy Estimation.", 2018
-
-    Adith Swaminathan and Thorsten Joachims.
-    "The Self-Normalized Estimator for Counterfactual Learning.", 2015.
-
-    Alex Strehl, John Langford, Sham Kakade, and Lihong Li.
-    "Learning from Logged Implicit Exploration Data.", 2010.
+    "Breaking the Curse of Horizon: Infinite-Horizon Off-Policy Estimation." 2018
 
     Doina Precup, Richard S. Sutton, and Satinder P. Singh.
-    "Eligibility Traces for Off-Policy Policy Evaluation.", 2000.
+    "Eligibility Traces for Off-Policy Policy Evaluation." 2000.
 
     """
 
@@ -1335,15 +1561,15 @@ class ContinuousStateMarginalSelfNormalizedImportanceSampling(
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a \\mid s)`
+            i.e., :math:`\\pi_0(a | s)`
 
         evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
 
         gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
+            Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0
+        sigma: float, default=1.0 (> 0)
             Bandwidth hyperparameter of gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
@@ -1393,6 +1619,10 @@ class ContinuousStateMarginalSelfNormalizedDoublyRobust(
 ):
     """State Marginal Self-Normalized Doubly Robust (SM-SNDR) for continuous-action OPE.
 
+    Bases: :class:`ofrl.ContinuousStateMarginalDoublyRobust` :class:`ofrl.BaseStateMarginalOffPolicyEstimator` -> :class:`ofrl.ope.BaseOffPolicyEstimator`
+
+    Imported as: :class:`ofrl.ope.ContinuousStateMarginalSelfNormalizedDoublyRobust`
+
     Note
     -------
     SM-SNDR estimates the policy value using state marginal importance weighting.
@@ -1401,17 +1631,24 @@ class ContinuousStateMarginalSelfNormalizedDoublyRobust(
     .. math::
 
         \\hat{J}_{\\mathrm{SM-SNDR}} (\\pi; \\mathcal{D})
-        := \\mathbb{E}_{n} [\\hat{Q}(s_0, a_0)]
-            + \\mathbb{E}_{n} [\\sum_{t=0}^{k-1} \\gamma^t \\frac{w_{0:t} \\delta(\\pi, a_{0:t})}{\\sum_{n} w_{0:t} \\delta(\\pi, a_{0:t})} (r_t + \\gamma \\mathbb{E}_{a \\sim \\pi(a \\mid s_t)}[\\hat{Q}(s_{t+1}, a)] - \\hat{Q}(s_t, a_t))]
-            + \\mathbb{E}_{n} [\\sum_{t=k}^{T-1} \\gamma^t \\frac{w_s(s_{t-k}) w_{t-k:t} \\delta(\\pi, a_{t-k:t})}{\\sum_{n} w_s(s_{t-k}) w_{t-k:t} \\delta(\\pi, a_{t-k:t})} (r_t + \\gamma \\mathbb{E}_{a \\sim \\pi(a \\mid s_t)}[\\hat{Q}(s_{t+1}, a)] - \\hat{Q}(s_t, a_t))],
+        &:= \\mathbb{E}_{n} [\\hat{Q}(s_0, \\pi(s_0)] \\\\
+        & \quad \quad + \\mathbb{E}_{n} \\left[\\sum_{t=0}^{k-1} \\gamma^t \\frac{w_{0:t} \\delta(\\pi, a_{0:t})}{\\sum_{n} w_{0:t} \\delta(\\pi, a_{0:t})} (r_t + \\gamma \\hat{Q}(s_{t+1}, \\pi(s_{t+1})))] - \\hat{Q}(s_t, a_t)) \\right] \\\\
+        & \quad \quad + \\mathbb{E}_{n} \\left[\\sum_{t=k}^{T-1} \\gamma^t \\frac{w_s(s_{t-k}) w_{t-k:t} \\delta(\\pi, a_{t-k:t})}{\\sum_{n} w_s(s_{t-k}) w_{t-k:t} \\delta(\\pi, a_{t-k:t})} (r_t + \\gamma \\hat{Q}(s_{t+1}, \\pi(s_{t+1}))] - \\hat{Q}(s_t, a_t)) \\right],
 
-    where :math:`w_s(s) := \\frac{d_{\\pi}(s)}{d_{\\pi_0}(s)}` and :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} \\frac{\\pi(a_t \\mid s_t)}{\\pi_0(a_t \\mid s_t)}`. :math:`Q(s, a)` is the state-action value.
+    where :math:`w_s(s) := d_{\\pi}(s) / d_{\\pi_0}(s)` and :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} (\\pi(a_t | s_t) / \\pi_0(a_t | s_t))`. :math:`Q(s, a)` is the state-action value.
     :math:`\\delta(\\pi, a_{t_1:t_2}) = \\prod_{t=t_1}^{t_2} K(\\pi(s_t), a_t)` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy
     (:math:`K(\\cdot, \\cdot)` is a kernel function).
-    Note that, when :math:`k=0`, this estimator is identical to the (pure) state marginal SNDR.
+    When :math:`k=0`, this estimator is identical to the (pure) state marginal SNDR.
 
-    There are several ways to estimate state marginal importance weight including Augmented Lagrangian Method (ALM) (Yang et al., 2020) and Minimax Weight Learning (MWL) (Uehara et al., 2020).
-    The implementations of the estimation methods of state marginal importance weight is available at `ofrl/ope/weight_value_learning`.
+    SM-SNDR is consistent when either the marginal importance weight or Q-function is estimated correctly. 
+    Moreover, SM-SNDR reduces the variance caused by trajectory-wise or per-decision importance weight by considering the marginal distribution across various timesteps.
+
+    There are several ways to estimate state(-action) marginal importance weight including Augmented Lagrangian Method (ALM) (Yang et al., 2020) 
+    and Minimax Weight Learning (MWL) (Uehara et al., 2020).
+
+    .. seealso::
+
+        The implementations of such weight learning methods are available at :class:`ofrl.ope.weight_value_learning`.
 
     Parameters
     -------
@@ -1421,28 +1658,25 @@ class ContinuousStateMarginalSelfNormalizedDoublyRobust(
     References
     -------
     Christina J. Yuan, Yash Chandak, Stephen Giguere, Philip S. Thomas, and Scott Niekum.
-    "SOPE: Spectrum of Off-Policy Estimators.", 2021.
+    "SOPE: Spectrum of Off-Policy Estimators." 2021.
 
     Masatoshi Uehara, Jiawei Huang, and Nan Jiang.
-    "Minimax Weight and Q-Function Learning for Off-Policy Evaluation.", 2020.
+    "Minimax Weight and Q-Function Learning for Off-Policy Evaluation." 2020.
 
     Mengjiao Yang, Ofir Nachum, Bo Dai, Lihong Li, and Dale Schuurmans.
-    "Off-Policy Evaluation via the Regularized Lagrangian.", 2020.
+    "Off-Policy Evaluation via the Regularized Lagrangian." 2020.
 
     Nathan Kallus and Angela Zhou.
-    "Policy Evaluation and Optimization with Continuous Treatments.", 2019.
+    "Policy Evaluation and Optimization with Continuous Treatments." 2019.
 
     Qiang Liu, Lihong Li, Ziyang Tang, and Dengyong Zhou.
-    "Breaking the Curse of Horizon: Infinite-Horizon Off-Policy Estimation.", 2018
+    "Breaking the Curse of Horizon: Infinite-Horizon Off-Policy Estimation." 2018
 
     Nan Jiang and Lihong Li.
-    "Doubly Robust Off-policy Value Evaluation for Reinforcement Learning.", 2016.
+    "Doubly Robust Off-policy Value Evaluation for Reinforcement Learning." 2016.
 
     Philip S. Thomas and Emma Brunskill.
-    "Data-Efficient Off-Policy Policy Evaluation for Reinforcement Learning.", 2016.
-
-    Miroslav Dudík, Dumitru Erhan, John Langford, and Lihong Li.
-    "Doubly Robust Policy Evaluation and Optimization.", 2014.
+    "Data-Efficient Off-Policy Policy Evaluation for Reinforcement Learning." 2016.
 
     """
 
@@ -1489,22 +1723,22 @@ class ContinuousStateMarginalSelfNormalizedDoublyRobust(
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a \\mid s)`
+            i.e., :math:`\\pi_0(a | s)`
 
         evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
 
         state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, 2)
             :math:`\\hat{Q}` for the observed action and action chosen evaluation policy,
-            i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a \\mid s_t))`.
+            i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a | s_t))`.
 
         initial_state_value_prediction: array-like of shape (n_trajectories, )
             Estimated initial state value.
 
         gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
+            Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0
+        sigma: float, default=1.0 (> 0)
             Bandwidth hyperparameter of gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
@@ -1558,170 +1792,14 @@ class ContinuousStateMarginalSelfNormalizedDoublyRobust(
 
 
 @dataclass
-class ContinuousDirectMethod(BaseStateMarginalOffPolicyEstimator):
-    """Direct Method (DM) for continuous-action and stationary OPE (designed for deterministic policies).
-
-    Note
-    -------
-    DM estimates the policy value using the initial state value given by Fitted Q Evaluation (FQE) as follows.
-
-    .. math::
-
-        \\hat{J}_{\\mathrm{DM}} (\\pi; \\mathcal{D}) := \\mathbb{E}_n [\\mathbb{E}_{a_0 \\sim \\pi(a_0 \\mid s_0)} [\\hat{Q}(s_0, a_0)] ],
-
-    .. math::
-
-        \\hat{J}_{\\mathrm{DM}} (\\pi; \\mathcal{D}) := \\mathbb{E}_n [\\hat{V}(s_0)],
-
-    where :math:`\\mathcal{D}=\\{\\{(s_t, a_t, r_t)\\}_{t=0}^{T-1}\\}_{i=1}^n` is the logged dataset with :math:`n` trajectories of data.
-    :math:`T` indicates step per episode. :math:`\\hat{Q}(s_t, a_t)` is the estimated Q value given a state-action pair.
-    \\hat{V}(s_t) is the estimated value function given a state.
-
-    There are several ways to estimate :math:`\\hat{Q}(s, a)` such as Fitted Q Evaluation (FQE) (Le et al., 2019) and
-    Minimax Q-Function Learning (MQL) (Uehara et al., 2020). :math:`\\hat{V}(s)` is estimated in a similar manner using
-    Minimax Value Learning (MVL) (Uehara et al., 2020).
-
-    We use the implementation of FQE provided by d3rlpy (Seno et al., 2021).
-    The implementations of Minimax Learning is available in `ofrl/ope/minimax_estimators_continuous.py`.
-
-    Note that, this function is different from DiscreteDirectMethod in `ofrl/ope/basic_estimators.py` in that
-    the initial state is sampled from the stationary distribution :math:`d^{\pi}(s_0)`.
-
-    Parameters
-    -------
-    estimator_name: str, default="sm_dm"
-        Name of the estimator.
-
-    References
-    -------
-    Yuta Saito, Shunsuke Aihara, Megumi Matsutani, and Yusuke Narita.
-    "Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation.", 2021.
-
-    Takuma Seno and Michita Imai.
-    "d3rlpy: An Offline Deep Reinforcement Library.", 2021.
-
-    Masatoshi Uehara, Jiawei Huang, and Nan Jiang.
-    "Minimax Weight and Q-Function Learning for Off-Policy Evaluation.", 2020.
-
-    Hoang Le, Cameron Voloshin, and Yisong Yue.
-    "Batch Policy Learning under Constraints.", 2019.
-
-    Alina Beygelzimer and John Langford.
-    "The Offset Tree for Learning with Partial Labels.", 2009.
-
-    """
-
-    estimator_name = "sm_dm"
-
-    def __post_init__(self):
-        self.action_type = "continuous"
-
-    def _estimate_trajectory_value(
-        self,
-        initial_state_value_prediction: np.ndarray,
-        **kwargs,
-    ) -> np.ndarray:
-        """Estimate the trajectory-wise policy value.
-
-        Parameters
-        -------
-        initial_state_value_prediction: array-like of shape (n_trajectories, )
-            Estimated initial state value.
-
-        Return
-        -------
-        estimated_trajectory_wise_policy_value: array-like of shape (n_trajectories, )
-            Policy value estimated for each trajectory.
-            (Equivalent to initial_state_value_prediction.)
-
-        """
-        return initial_state_value_prediction
-
-    def estimate_policy_value(
-        self,
-        initial_state_value_prediction: np.ndarray,
-        **kwargs,
-    ) -> float:
-        """Estimate the policy value of the evaluation policy.
-
-        Parameters
-        -------
-        initial_state_value_prediction: array-like of shape (n_trajectories, )
-            Estimated initial state value.
-
-        Return
-        -------
-        V_hat: ndarray of shape (n_trajectories, )
-            Estimated policy value.
-
-        """
-        check_array(
-            initial_state_value_prediction,
-            name="initial_state_value_prediction",
-            expected_dim=1,
-        )
-        estimated_policy_value = self._estimate_trajectory_value(
-            initial_state_value_prediction,
-        ).mean()
-        return estimated_policy_value
-
-    def estimate_interval(
-        self,
-        initial_state_value_prediction: np.ndarray,
-        alpha: float = 0.05,
-        ci: str = "bootstrap",
-        n_bootstrap_samples: int = 10000,
-        random_state: Optional[int] = None,
-        **kwargs,
-    ) -> Dict[str, float]:
-        """Estimate the confidence interval of the policy value by nonparametric bootstrap.
-
-        Parameters
-        -------
-        initial_state_value_prediction: array-like of shape (n_trajectories, )
-            Estimated initial state value.
-
-        alpha: float, default=0.05
-            Significance level. The value should be within `[0, 1)`
-
-        n_bootstrap_samples: int, default=10000 (> 0)
-            Number of resampling performed in the bootstrap procedure.
-
-        random_state: int, default=None (>= 0)
-            Random state.
-
-        Return
-        -------
-        estimated_confidence_interval: dict
-            Dictionary storing the estimated mean and upper-lower confidence bounds.
-
-        """
-        check_array(
-            initial_state_value_prediction,
-            name="initial_state_value_prediction",
-            expected_dim=1,
-        )
-        if ci not in self._estimate_confidence_interval.keys():
-            raise ValueError(
-                f"ci must be one of 'bootstrap', 'hoeffding', 'bernstein', or 'ttest', but {ci} is given"
-            )
-
-        estimated_trajectory_value = self._estimate_trajectory_value(
-            initial_state_value_prediction,
-        )
-        return self._estimate_confidence_interval[ci](
-            samples=estimated_trajectory_value,
-            alpha=alpha,
-            n_bootstrap_samples=n_bootstrap_samples,
-            random_state=random_state,
-        )
-
-
-@dataclass
 class ContinuousStateActionMarginalImportanceSampling(
     BaseStateActionMarginalOffPolicyEstimator
 ):
     """State-Action Marginal Importance Sampling (SAM-IS) for continuous-action OPE.
+
+    Bases: :class:`ofrl.ope.BaseStateActionMarginalOffPolicyEstimator` -> :class:`ofrl.ope.BaseOffPolicyEstimator`
+
+    Imported as: :class:`ofrl.ope.ContinuousStateActionMarginalImportanceSampling`
 
     Note
     -------
@@ -1731,15 +1809,23 @@ class ContinuousStateActionMarginalImportanceSampling(
     .. math::
 
         \\hat{J}_{\\mathrm{SAM-IS}} (\\pi; \\mathcal{D})
-        := \\mathbb{E}_{n} [\\sum_{t=0}^{k-1} \\gamma^t w_{0:t} \\delta(\\pi, a_{t_1:t_2}) r_t ] + \\mathbb{E}_{n} [\\sum_{t=k}^{T-1} \\gamma^t w(s_{t-k}, a_{t-k}) w_{t-k+1:t} \\delta(\\pi, a_{t_1:t_2}) r_t],
+        &:= \\mathbb{E}_{n} \\left[\\sum_{t=0}^{k-1} \\gamma^t w_{0:t} \\delta(\\pi, a_{t_1:t_2}) r_t \\right] \\\\
+        & \quad \quad + \\mathbb{E}_{n} \\left[\\sum_{t=k}^{T-1} \\gamma^t w(s_{t-k}, a_{t-k}) w_{t-k+1:t} \\delta(\\pi, a_{t_1:t_2}) r_t \\right],
 
-    where :math:`w(s, a) := \\frac{d_{\\pi}(s, a)}{d_{\\pi_0}(s, a)}` and :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} \\frac{\\pi(a_t \\mid s_t)}{\\pi_0(a_t \\mid s_t)}`.
+    where :math:`w(s, a) := d_{\\pi}(s, a) / d_{\\pi_0}(s, a)` and :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} (\\pi(a_t | s_t) / \\pi_0(a_t | s_t))`.
     :math:`\\delta(\\pi, a_{t_1:t_2}) = \\prod_{t=t_1}^{t_2} K(\\pi(s_t), a_t)` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy
     (:math:`K(\\cdot, \\cdot)` is a kernel function).
-    Note that, when :math:`k=0`, this estimator is identical to the (pure) state-action marginal IS.
+    When :math:`k=0`, this estimator is identical to the (pure) state-action marginal IS.
 
-    There are several ways to estimate state-action marginal importance weight including Augmented Lagrangian Method (ALM) (Yang et al., 2020) and Minimax Weight Learning (MWL) (Uehara et al., 2020).
-    The implementations of the estimation methods of state-action marginal importance weight is available at `ofrl/ope/weight_value_learning`.
+    SAM-IS is unbiased when the marginal importance weight is estimated correctly. 
+    Moreover, SAM-IS reduces the variance caused by trajectory-wise or per-decision importance weight by considering the marginal distribution across various timesteps.
+
+    There are several ways to estimate state(-action) marginal importance weight including Augmented Lagrangian Method (ALM) (Yang et al., 2020) 
+    and Minimax Weight Learning (MWL) (Uehara et al., 2020).
+
+    .. seealso::
+
+        The implementations of such weight learning methods are available at :class:`ofrl.ope.weight_value_learning`.
 
     Parameters
     -------
@@ -1749,25 +1835,19 @@ class ContinuousStateActionMarginalImportanceSampling(
     References
     -------
     Christina J. Yuan, Yash Chandak, Stephen Giguere, Philip S. Thomas, and Scott Niekum.
-    "SOPE: Spectrum of Off-Policy Estimators.", 2021.
+    "SOPE: Spectrum of Off-Policy Estimators." 2021.
 
     Masatoshi Uehara, Jiawei Huang, and Nan Jiang.
-    "Minimax Weight and Q-Function Learning for Off-Policy Evaluation.", 2020.
+    "Minimax Weight and Q-Function Learning for Off-Policy Evaluation." 2020.
 
     Mengjiao Yang, Ofir Nachum, Bo Dai, Lihong Li, and Dale Schuurmans.
-    "Off-Policy Evaluation via the Regularized Lagrangian.", 2020.
+    "Off-Policy Evaluation via the Regularized Lagrangian." 2020.
 
     Nathan Kallus and Angela Zhou.
-    "Policy Evaluation and Optimization with Continuous Treatments.", 2019.
-
-    Qiang Liu, Lihong Li, Ziyang Tang, and Dengyong Zhou.
-    "Breaking the Curse of Horizon: Infinite-Horizon Off-Policy Estimation.", 2018
-
-    Alex Strehl, John Langford, Sham Kakade, and Lihong Li.
-    "Learning from Logged Implicit Exploration Data.", 2010.
+    "Policy Evaluation and Optimization with Continuous Treatments." 2019.
 
     Doina Precup, Richard S. Sutton, and Satinder P. Singh.
-    "Eligibility Traces for Off-Policy Policy Evaluation.", 2000.
+    "Eligibility Traces for Off-Policy Policy Evaluation." 2000.
 
     """
 
@@ -1812,15 +1892,15 @@ class ContinuousStateActionMarginalImportanceSampling(
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a \\mid s)`
+            i.e., :math:`\\pi_0(a | s)`
 
         evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
 
         gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
+            Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0
+        sigma: float, default=1.0 (> 0)
             Bandwidth hyperparameter of gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
@@ -1898,15 +1978,15 @@ class ContinuousStateActionMarginalImportanceSampling(
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a \\mid s)`
+            i.e., :math:`\\pi_0(a | s)`
 
         evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
 
         gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
+            Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0
+        sigma: float, default=1.0 (> 0)
             Bandwidth hyperparameter of gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
@@ -2038,15 +2118,15 @@ class ContinuousStateActionMarginalImportanceSampling(
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a \\mid s)`
+            i.e., :math:`\\pi_0(a | s)`
 
         evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
 
         gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
+            Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0
+        sigma: float, default=1.0 (> 0)
             Bandwidth hyperparameter of gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
@@ -2068,6 +2148,14 @@ class ContinuousStateActionMarginalImportanceSampling(
         -------
         estimated_confidence_interval: dict
             Dictionary storing the estimated mean and upper-lower confidence bounds.
+
+            .. code-block:: python
+
+                key: [
+                    mean,
+                    {100 * (1. - alpha)}% CI (lower),
+                    {100 * (1. - alpha)}% CI (upper),
+                ]
 
         """
         check_scalar(
@@ -2167,6 +2255,10 @@ class ContinuousStateActionMarginalDoublyRobust(
 ):
     """State-Action Marginal Doubly Robust (SAM-DR) for continuous-action OPE.
 
+    Bases: :class:`ofrl.ope.BaseStateActionMarginalOffPolicyEstimator` -> :class:`ofrl.ope.BaseOffPolicyEstimator`
+
+    Imported as: :class:`ofrl.ope.ContinuousStateActionMarginalDoublyRobust`
+
     Note
     -------
     SAM-DR estimates the policy value using state-action marginal importance weighting.
@@ -2175,17 +2267,24 @@ class ContinuousStateActionMarginalDoublyRobust(
     .. math::
 
         \\hat{J}_{\\mathrm{SAM-DR}} (\\pi; \\mathcal{D})
-        := \\mathbb{E}_{n} [\\hat{Q}(s_0, a_0)]
-            + \\mathbb{E}_{n} [\\sum_{t=0}^{k-1} \\gamma^t w_{0:t} \\delta(\\pi, a_{0:t}) (r_t + \\gamma \\mathbb{E}_{a \\sim \\pi(a \\mid s_t)}[\\hat{Q}(s_{t+1}, a)] - \\hat{Q}(s_t, a_t))]
-            + \\mathbb{E}_{n} [\\sum_{t=k}^{T-1} \\gamma^t w(s_{t-k}, a_{t-k}) w_{t-k+1:t} \\delta(\\pi, a_{t-k+1:t}) (r_t + \\gamma \\mathbb{E}_{a \\sim \\pi(a \\mid s_t)}[\\hat{Q}(s_{t+1}, a)] - \\hat{Q}(s_t, a_t))],
+        &:= \\mathbb{E}_{n} [\\hat{Q}(s_0, \\pi(s_0))] \\\\
+        & \quad \quad + \\mathbb{E}_{n} \\left[\\sum_{t=0}^{k-1} \\gamma^t w_{0:t} \\delta(\\pi, a_{0:t}) (r_t + \\gamma \\hat{Q}(s_{t+1}, \\pi(s_{t+1}))] - \\hat{Q}(s_t, a_t)) \\right] \\\\
+        & \quad \quad + \\mathbb{E}_{n} \\left[\\sum_{t=k}^{T-1} \\gamma^t w(s_{t-k}, a_{t-k}) w_{t-k+1:t} \\delta(\\pi, a_{t-k+1:t}) (r_t + \\gamma \\hat{Q}(s_{t+1}, \\pi(s_{t+1})) - \\hat{Q}(s_t, a_t)) \\right],
 
-    where :math:`w(s, a) := \\frac{d_{\\pi}(s, a)}{d_{\\pi_0}(s, a)}` and :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} \\frac{\\pi(a_t \\mid s_t)}{\\pi_0(a_t \\mid s_t)}`. :math:`Q(s, a)` is the state-action value.
+    where :math:`w(s, a) := d_{\\pi}(s, a) / d_{\\pi_0}(s, a)` and :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} (\\pi(a_t | s_t) / \\pi_0(a_t | s_t))`. :math:`Q(s, a)` is the state-action value.
     :math:`\\delta(\\pi, a_{t_1:t_2}) = \\prod_{t=t_1}^{t_2} K(\\pi(s_t), a_t)` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy
     (:math:`K(\\cdot, \\cdot)` is a kernel function).
-    Note that, when :math:`k=0`, this estimator is identical to the (pure) state-action marginal DR.
+    When :math:`k=0`, this estimator is identical to the (pure) state-action marginal DR.
 
-    There are several ways to estimate state-action marginal importance weight including Augmented Lagrangian Method (ALM) (Yang et al., 2020) and Minimax Weight Learning (MWL) (Uehara et al., 2020).
-    The implementations of the estimation methods of state-action marginal importance weight is available at `ofrl/ope/weight_value_learning`.
+    SAM-DR is unbiased when either the marginal importance weight or Q-function is estimated correctly. 
+    Moreover, SAM-DR reduces the variance caused by trajectory-wise or per-decision importance weight by considering the marginal distribution across various timesteps.
+
+    There are several ways to estimate state(-action) marginal importance weight including Augmented Lagrangian Method (ALM) (Yang et al., 2020) 
+    and Minimax Weight Learning (MWL) (Uehara et al., 2020).
+
+    .. seealso::
+
+        The implementations of such weight learning methods are available at :class:`ofrl.ope.weight_value_learning`.
 
     Parameters
     -------
@@ -2195,28 +2294,22 @@ class ContinuousStateActionMarginalDoublyRobust(
     References
     -------
     Christina J. Yuan, Yash Chandak, Stephen Giguere, Philip S. Thomas, and Scott Niekum.
-    "SOPE: Spectrum of Off-Policy Estimators.", 2021.
+    "SOPE: Spectrum of Off-Policy Estimators." 2021.
 
     Masatoshi Uehara, Jiawei Huang, and Nan Jiang.
-    "Minimax Weight and Q-Function Learning for Off-Policy Evaluation.", 2020.
+    "Minimax Weight and Q-Function Learning for Off-Policy Evaluation." 2020.
 
     Mengjiao Yang, Ofir Nachum, Bo Dai, Lihong Li, and Dale Schuurmans.
-    "Off-Policy Evaluation via the Regularized Lagrangian.", 2020.
+    "Off-Policy Evaluation via the Regularized Lagrangian." 2020.
 
     Nathan Kallus and Angela Zhou.
-    "Policy Evaluation and Optimization with Continuous Treatments.", 2019.
-
-    Qiang Liu, Lihong Li, Ziyang Tang, and Dengyong Zhou.
-    "Breaking the Curse of Horizon: Infinite-Horizon Off-Policy Estimation.", 2018
+    "Policy Evaluation and Optimization with Continuous Treatments." 2019.
 
     Nan Jiang and Lihong Li.
-    "Doubly Robust Off-policy Value Evaluation for Reinforcement Learning.", 2016.
+    "Doubly Robust Off-policy Value Evaluation for Reinforcement Learning." 2016.
 
     Philip S. Thomas and Emma Brunskill.
-    "Data-Efficient Off-Policy Policy Evaluation for Reinforcement Learning.", 2016.
-
-    Miroslav Dudík, Dumitru Erhan, John Langford, and Lihong Li.
-    "Doubly Robust Policy Evaluation and Optimization.", 2014.
+    "Data-Efficient Off-Policy Policy Evaluation for Reinforcement Learning." 2016.
 
     """
 
@@ -2263,22 +2356,22 @@ class ContinuousStateActionMarginalDoublyRobust(
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a \\mid s)`
+            i.e., :math:`\\pi_0(a | s)`
 
         evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
 
         state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, 2)
             :math:`\\hat{Q}` for the observed action and action chosen evaluation policy,
-            i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a \\mid s_t))`.
+            i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a | s_t))`.
 
         initial_state_value_prediction: array-like of shape (n_trajectories, )
             Estimated initial state value.
 
         gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
+            Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0
+        sigma: float, default=1.0 (> 0)
             Bandwidth hyperparameter of gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
@@ -2367,22 +2460,22 @@ class ContinuousStateActionMarginalDoublyRobust(
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a \\mid s)`
+            i.e., :math:`\\pi_0(a | s)`
 
         evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
 
         state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, 2)
             :math:`\\hat{Q}` for the observed action and action chosen evaluation policy,
-            i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a \\mid s_t))`.
+            i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a | s_t))`.
 
         initial_state_value_prediction: array-like of shape (n_trajectories, )
             Estimated initial state value.
 
         gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
+            Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0
+        sigma: float, default=1.0 (> 0)
             Bandwidth hyperparameter of gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
@@ -2533,22 +2626,22 @@ class ContinuousStateActionMarginalDoublyRobust(
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a \\mid s)`
+            i.e., :math:`\\pi_0(a | s)`
 
         evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
 
         state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, 2)
             :math:`\\hat{Q}` for the observed action and action chosen evaluation policy,
-            i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a \\mid s_t))`.
+            i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a | s_t))`.
 
         initial_state_value_prediction: array-like of shape (n_trajectories, )
             Estimated initial state value.
 
         gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
+            Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0
+        sigma: float, default=1.0 (> 0)
             Bandwidth hyperparameter of gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
@@ -2570,6 +2663,14 @@ class ContinuousStateActionMarginalDoublyRobust(
         -------
         estimated_confidence_interval: dict
             Dictionary storing the estimated mean and upper-lower confidence bounds.
+
+            .. code-block:: python
+
+                key: [
+                    mean,
+                    {100 * (1. - alpha)}% CI (lower),
+                    {100 * (1. - alpha)}% CI (upper),
+                ]
 
         """
         check_scalar(
@@ -2686,6 +2787,10 @@ class ContinuousStateActionMarginalSelfNormalizedImportanceSampling(
 ):
     """State-Action Marginal Self-Normalized Importance Sampling (SAM-SNIS) for continuous-action OPE.
 
+    Bases: :class:`ofrl.ope.ContinuousStateActionMarginalImportanceSampling` :class:`ofrl.ope.BaseStateActionMarginalOffPolicyEstimator` -> :class:`ofrl.ope.BaseOffPolicyEstimator`
+
+    Imported as: :class:`ofrl.ope.ContinuousStateActionMarginalSelfNormalizedImportanceSampling`
+
     Note
     -------
     SAM-SNIS estimates the policy value using state-action marginal importance weighting.
@@ -2694,16 +2799,23 @@ class ContinuousStateActionMarginalSelfNormalizedImportanceSampling(
     .. math::
 
         \\hat{J}_{\\mathrm{SAM-SNIS}} (\\pi; \\mathcal{D})
-        := \\mathbb{E}_{n} [\\sum_{t=0}^{k-1} \\gamma^t \\frac{w_{0:t} \\delta(\\pi, a_{0:t})}{\\sum_{n} w_{0:t} \\delta(\\pi, a_{0:t})} r_t ]
-            + \\mathbb{E}_{n} [\\sum_{t=k}^{T-1} \\gamma^t \\frac{w(s_{t-k}, a_{t-k}) w_{t-k+1:t} \\delta(\\pi, a_{t-l+1:t})}{\\sum_n w(s_{t-k}, a_{t-k}) w_{t-k+1:t} \\delta(\\pi, a_{t-l+1:t})} r_t],
+        &:= \\mathbb{E}_{n} \\left[\\sum_{t=0}^{k-1} \\gamma^t \\frac{w_{0:t} \\delta(\\pi, a_{0:t})}{\\sum_{n} w_{0:t} \\delta(\\pi, a_{0:t})} r_t \\right] \\\\
+        & \quad \quad + \\mathbb{E}_{n} \\left[\\sum_{t=k}^{T-1} \\gamma^t \\frac{w(s_{t-k}, a_{t-k}) w_{t-k+1:t} \\delta(\\pi, a_{t-l+1:t})}{\\sum_n w(s_{t-k}, a_{t-k}) w_{t-k+1:t} \\delta(\\pi, a_{t-l+1:t})} r_t \\right],
 
-    where :math:`w(s, a) := \\frac{d_{\\pi}(s, a)}{d_{\\pi_0}(s, a)}` and :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} \\frac{\\pi(a_t \\mid s_t)}{\\pi_0(a_t \\mid s_t)}`.
+    where :math:`w(s, a) := d_{\\pi}(s, a) / d_{\\pi_0}(s, a)` and :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} (\\pi(a_t | s_t) / \\pi_0(a_t | s_t))`.
     :math:`\\delta(\\pi, a_{t_1:t_2}) = \\prod_{t=t_1}^{t_2} K(\\pi(s_t), a_t)` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy
     (:math:`K(\\cdot, \\cdot)` is a kernel function).
-    Note that, when :math:`k=0`, this estimator is identical to the (pure) state-action marginal SNIS.
+    When :math:`k=0`, this estimator is identical to the (pure) state-action marginal SNIS.
 
-    There are several ways to estimate state-action marginal importance weight including Augmented Lagrangian Method (ALM) (Yang et al., 2020) and Minimax Weight Learning (MWL) (Uehara et al., 2020).
-    The implementations of the estimation methods of state-action marginal importance weight is available at `ofrl/ope/weight_value_learning`.
+    SAM-SNIS is consistent when the marginal importance weight is estimated correctly. 
+    Moreover, SAM-SNIS reduces the variance caused by trajectory-wise or per-decision importance weight by considering the marginal distribution across various timesteps.
+
+    There are several ways to estimate state(-action) marginal importance weight including Augmented Lagrangian Method (ALM) (Yang et al., 2020) 
+    and Minimax Weight Learning (MWL) (Uehara et al., 2020).
+
+    .. seealso::
+
+        The implementations of such weight learning methods are available at :class:`ofrl.ope.weight_value_learning`.
 
     Parameters
     -------
@@ -2713,25 +2825,19 @@ class ContinuousStateActionMarginalSelfNormalizedImportanceSampling(
     References
     -------
     Christina J. Yuan, Yash Chandak, Stephen Giguere, Philip S. Thomas, and Scott Niekum.
-    "SOPE: Spectrum of Off-Policy Estimators.", 2021.
+    "SOPE: Spectrum of Off-Policy Estimators." 2021.
 
     Masatoshi Uehara, Jiawei Huang, and Nan Jiang.
-    "Minimax Weight and Q-Function Learning for Off-Policy Evaluation.", 2020.
+    "Minimax Weight and Q-Function Learning for Off-Policy Evaluation." 2020.
 
     Mengjiao Yang, Ofir Nachum, Bo Dai, Lihong Li, and Dale Schuurmans.
-    "Off-Policy Evaluation via the Regularized Lagrangian.", 2020.
+    "Off-Policy Evaluation via the Regularized Lagrangian." 2020.
 
     Nathan Kallus and Angela Zhou.
-    "Policy Evaluation and Optimization with Continuous Treatments.", 2019.
-
-    Qiang Liu, Lihong Li, Ziyang Tang, and Dengyong Zhou.
-    "Breaking the Curse of Horizon: Infinite-Horizon Off-Policy Estimation.", 2018
-
-    Alex Strehl, John Langford, Sham Kakade, and Lihong Li.
-    "Learning from Logged Implicit Exploration Data.", 2010.
+    "Policy Evaluation and Optimization with Continuous Treatments." 2019.
 
     Doina Precup, Richard S. Sutton, and Satinder P. Singh.
-    "Eligibility Traces for Off-Policy Policy Evaluation.", 2000.
+    "Eligibility Traces for Off-Policy Policy Evaluation." 2000.
 
     """
 
@@ -2776,15 +2882,15 @@ class ContinuousStateActionMarginalSelfNormalizedImportanceSampling(
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a \\mid s)`
+            i.e., :math:`\\pi_0(a | s)`
 
         evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
 
         gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
+            Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0
+        sigma: float, default=1.0 (> 0)
             Bandwidth hyperparameter of gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
@@ -2834,6 +2940,10 @@ class ContinuousStateActionMarginalSelfNormalizedDoublyRobust(
 ):
     """State-Action Marginal Self-Normalized Doubly Robust (SAM-SNDR) for continuous-action OPE.
 
+    Bases: :class:`ofrl.ope.ContinuousStateActionMarginalDoublyRobust` :class:`ofrl.ope.BaseStateActionMarginalOffPolicyEstimator` -> :class:`ofrl.ope.BaseOffPolicyEstimator`
+
+    Imported as: :class:`ofrl.ope.ContinuousStateActionMarginalSelfNormalizedIDoublyRobust`
+
     Note
     -------
     SAM-SNDR estimates the policy value using state-action marginal importance weighting.
@@ -2842,17 +2952,24 @@ class ContinuousStateActionMarginalSelfNormalizedDoublyRobust(
     .. math::
 
         \\hat{J}_{\\mathrm{SAM-SNDR}} (\\pi; \\mathcal{D})
-        := \\mathbb{E}_{n} [\\hat{Q}(s_0, a_0)]
-            + \\mathbb{E}_{n} [\\sum_{t=0}^{k-1} \\gamma^t \\frac{w_{0:t} \\delta(\\pi, a_{0:t})}{\\sum_{n} w_{0:t} \\delta(\\pi, a_{0:t})} (r_t + \\gamma \\mathbb{E}_{a \\sim \\pi(a \\mid s_t)}[\\hat{Q}(s_{t+1}, a)] - \\hat{Q}(s_t, a_t))]
-            + \\mathbb{E}_{n} [\\sum_{t=k}^{T-1} \\gamma^t \\frac{w(s_{t-k}, a_{t-k}) w_{t-k+1:t} \\delta(\\pi, a_{t-k+1:t})}{\\sum_{n} w(s_{t-k}, a_{t-k}) w_{t-k+1:t} \\delta(\\pi, a_{t-k+1:t})} (r_t + \\gamma \\mathbb{E}_{a \\sim \\pi(a \\mid s_t)}[\\hat{Q}(s_{t+1}, a)] - \\hat{Q}(s_t, a_t))],
+        &:= \\mathbb{E}_{n} [\\hat{Q}(s_0, \\pi(s_0))] \\\\
+        & \quad \quad + \\mathbb{E}_{n} \\left[\\sum_{t=0}^{k-1} \\gamma^t \\frac{w_{0:t} \\delta(\\pi, a_{0:t})}{\\sum_{n} w_{0:t} \\delta(\\pi, a_{0:t})} (r_t + \\gamma \\hat{Q}(s_{t+1}, \\pi(s_{t+1}))] - \\hat{Q}(s_t, a_t)) \\right] \\\\
+        & \quad \quad + \\mathbb{E}_{n} \\left[\\sum_{t=k}^{T-1} \\gamma^t \\frac{w(s_{t-k}, a_{t-k}) w_{t-k+1:t} \\delta(\\pi, a_{t-k+1:t})}{\\sum_{n} w(s_{t-k}, a_{t-k}) w_{t-k+1:t} \\delta(\\pi, a_{t-k+1:t})} (r_t + \\gamma \\hat{Q}(s_{t+1}, \\pi(s_{t+1}))] - \\hat{Q}(s_t, a_t)) \\right],
 
-    where :math:`w(s, a) := \\frac{d_{\\pi}(s, a)}{d_{\\pi_0}(s, a)}` and :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} \\frac{\\pi(a_t \\mid s_t)}{\\pi_0(a_t \\mid s_t)}`. :math:`Q(s, a)` is the state-action value.
+    where :math:`w(s, a) := d_{\\pi}(s, a) / d_{\\pi_0}(s, a)` and :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} (\\pi(a_t | s_t) / \\pi_0(a_t | s_t))`. :math:`Q(s, a)` is the state-action value.
     :math:`\\delta(\\pi, a_{t_1:t_2}) = \\prod_{t=t_1}^{t_2} K(\\pi(s_t), a_t)` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy
     (:math:`K(\\cdot, \\cdot)` is a kernel function).
-    Note that, when :math:`k=0`, this estimator is identical to the (pure) state-action marginal SNDR.
+    When :math:`k=0`, this estimator is identical to the (pure) state-action marginal SNDR.
 
-    There are several ways to estimate state-action marginal importance weight including Augmented Lagrangian Method (ALM) (Yang et al., 2020) and Minimax Weight Learning (MWL) (Uehara et al., 2020).
-    The implementations of the estimation methods of state-action marginal importance weight is available at `ofrl/ope/weight_value_learning`.
+    SAM-SNDR is consistent when either the marginal importance weight or Q-function is estimated correctly. 
+    Moreover, SAM-SNDR reduces the variance caused by trajectory-wise or per-decision importance weight by considering the marginal distribution across various timesteps.
+
+    There are several ways to estimate state(-action) marginal importance weight including Augmented Lagrangian Method (ALM) (Yang et al., 2020) 
+    and Minimax Weight Learning (MWL) (Uehara et al., 2020).
+
+    .. seealso::
+
+        The implementations of such weight learning methods are available at :class:`ofrl.ope.weight_value_learning`.
 
     Parameters
     -------
@@ -2862,28 +2979,22 @@ class ContinuousStateActionMarginalSelfNormalizedDoublyRobust(
     References
     -------
     Christina J. Yuan, Yash Chandak, Stephen Giguere, Philip S. Thomas, and Scott Niekum.
-    "SOPE: Spectrum of Off-Policy Estimators.", 2021.
+    "SOPE: Spectrum of Off-Policy Estimators." 2021.
 
     Masatoshi Uehara, Jiawei Huang, and Nan Jiang.
-    "Minimax Weight and Q-Function Learning for Off-Policy Evaluation.", 2020.
+    "Minimax Weight and Q-Function Learning for Off-Policy Evaluation." 2020.
 
     Mengjiao Yang, Ofir Nachum, Bo Dai, Lihong Li, and Dale Schuurmans.
-    "Off-Policy Evaluation via the Regularized Lagrangian.", 2020.
+    "Off-Policy Evaluation via the Regularized Lagrangian." 2020.
 
     Nathan Kallus and Angela Zhou.
-    "Policy Evaluation and Optimization with Continuous Treatments.", 2019.
-
-    Qiang Liu, Lihong Li, Ziyang Tang, and Dengyong Zhou.
-    "Breaking the Curse of Horizon: Infinite-Horizon Off-Policy Estimation.", 2018
+    "Policy Evaluation and Optimization with Continuous Treatments." 2019.
 
     Nan Jiang and Lihong Li.
-    "Doubly Robust Off-policy Value Evaluation for Reinforcement Learning.", 2016.
+    "Doubly Robust Off-policy Value Evaluation for Reinforcement Learning." 2016.
 
     Philip S. Thomas and Emma Brunskill.
-    "Data-Efficient Off-Policy Policy Evaluation for Reinforcement Learning.", 2016.
-
-    Miroslav Dudík, Dumitru Erhan, John Langford, and Lihong Li.
-    "Doubly Robust Policy Evaluation and Optimization.", 2014.
+    "Data-Efficient Off-Policy Policy Evaluation for Reinforcement Learning." 2016.
 
     """
 
@@ -2930,22 +3041,22 @@ class ContinuousStateActionMarginalSelfNormalizedDoublyRobust(
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a \\mid s)`
+            i.e., :math:`\\pi_0(a | s)`
 
         evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
 
         state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, 2)
             :math:`\\hat{Q}` for the observed action and action chosen evaluation policy,
-            i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a \\mid s_t))`.
+            i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a | s_t))`.
 
         initial_state_value_prediction: array-like of shape (n_trajectories, )
             Estimated initial state value.
 
         gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
+            Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0
+        sigma: float, default=1.0 (> 0)
             Bandwidth hyperparameter of gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None

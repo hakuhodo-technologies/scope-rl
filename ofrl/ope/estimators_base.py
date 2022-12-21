@@ -20,6 +20,8 @@ from ..utils import (
 @dataclass
 class BaseOffPolicyEstimator(metaclass=ABCMeta):
     """Base class for (basic) OPE estimators.
+
+    Imported as: :class:`ofrl.ope.BaseOffPolicyEstimator`
     
     Note
     -------
@@ -285,6 +287,10 @@ class BaseOffPolicyEstimator(metaclass=ABCMeta):
 @dataclass
 class BaseMarginalOffPolicyEstimator(BaseOffPolicyEstimator):
     """Base class for OPE estimators with marginal importance sampling.
+
+    Bases: :class:`ofrl.ope.BaseOffPolicyEstimator`
+
+    Imported as: :class:`ofrl.ope.estimators_base.BaseMarginalOffPolicyEstimator`
     
     Note
     -------
@@ -506,6 +512,10 @@ class BaseMarginalOffPolicyEstimator(BaseOffPolicyEstimator):
 @dataclass
 class BaseStateMarginalOffPolicyEstimator(BaseMarginalOffPolicyEstimator):
     """Base class for State Marginal OPE estimators.
+
+    Bases: :class:`ofrl.ope.BaseMarginalOffPolicyEstimator` -> :class:`ofrl.ope.BaseOffPolicyEstimator`
+
+    Imported as: :class:`ofrl.ope.BaseStateMarginalOffPolicyEstimator`
     
     Note
     -------
@@ -582,6 +592,10 @@ class BaseStateMarginalOffPolicyEstimator(BaseMarginalOffPolicyEstimator):
 @dataclass
 class BaseStateActionMarginalOffPolicyEstimator(BaseMarginalOffPolicyEstimator):
     """Base class for State-Action Marginal OPE estimators.
+
+    Bases: :class:`ofrl.ope.BaseMarginalOffPolicyEstimator` -> :class:`ofrl.ope.BaseOffPolicyEstimator`
+
+    Imported as: :class:`ofrl.ope.BaseStateActionMarginalOffPolicyEstimator`
     
     Note
     -------
@@ -658,6 +672,8 @@ class BaseStateActionMarginalOffPolicyEstimator(BaseMarginalOffPolicyEstimator):
 @dataclass
 class BaseCumulativeDistributionOffPolicyEstimator(metaclass=ABCMeta):
     """Base class for Cumulative Distribution OPE estimators.
+
+    Imported as: :class:`ofrl.ope.BaseCumulativeDistributionOffPolicyEstimator`
     
     Note
     -------
@@ -676,7 +692,7 @@ class BaseCumulativeDistributionOffPolicyEstimator(metaclass=ABCMeta):
 
     @abstractmethod
     def estimate_cumulative_distribution_function(self) -> Tuple[np.ndarray]:
-        """Estimate the cumulative distribution function (cdf) of the policy value."""
+        """Estimate the cumulative distribution function (CDF) of the policy value."""
         raise NotImplementedError
 
     @abstractmethod
@@ -691,7 +707,7 @@ class BaseCumulativeDistributionOffPolicyEstimator(metaclass=ABCMeta):
 
     @abstractmethod
     def estimate_conditional_value_at_risk(self) -> float:
-        """Estimate the conditional value at risk (cVaR) of the policy value."""
+        """Estimate the conditional value at risk (CVaR) of the policy value."""
         raise NotImplementedError
 
     @abstractmethod
@@ -761,7 +777,7 @@ class BaseCumulativeDistributionOffPolicyEstimator(metaclass=ABCMeta):
             i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
 
         gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
+            Discount factor. The value should be within (0, 1].
 
         Return
         -------
@@ -857,7 +873,7 @@ class BaseCumulativeDistributionOffPolicyEstimator(metaclass=ABCMeta):
             i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a \\mid s_t))`.
 
         gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
+            Discount factor. The value should be within (0, 1].
 
         sigma: float, default=1.0
             Bandwidth hyperparameter of gaussian kernel.

@@ -1,4 +1,4 @@
-"""Abstract base class for Logged Dataset."""
+"""Abstract base class for logged dataset."""
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
 

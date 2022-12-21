@@ -1,3 +1,4 @@
+"""Minimax weight function learning (discrete action cases)."""
 from dataclasses import dataclass
 from typing import Optional
 from tqdm.auto import tqdm
@@ -24,6 +25,10 @@ from ...utils import check_array
 class DiscreteMinimaxStateActionWeightLearning(BaseWeightValueLearner):
     """Minimax Weight Learning for marginal OPE estimators (for discrete action space).
 
+    Bases: :class:`ofrl.ope.weight_value_learning.BaseWeightValueLearner`
+
+    Imported as: :class:`ofrl.ope.weight_value_learning.DiscreteMinimaxStateActionWightLearning`
+
     Note
     -------
     Minimax Weight Learning uses that the following holds true about Q-function.
@@ -40,11 +45,14 @@ class DiscreteMinimaxStateActionWeightLearning(BaseWeightValueLearner):
 
     .. math::
 
-        \\max_w L_w^2(w, Q) = \\mathbb{E}_{(s_t, a_t, s_{t+1}), (\\tilde{s}_t, \\tilde{a}_t, \\tilde{s}_{t+1}) \\sim d^{\\pi_0}, a_{t+1} \\sim \\pi(a_{t+1} | s_{t+1}), \\tilde{a}_{t+1} \\sim \\pi(\\tilde{a}_{t+1} | \\tilde{s}_{t+1})}[
+        \\max_w L_w^2(w, Q) 
+        &= \\mathbb{E}_{(s_t, a_t, s_{t+1}), (\\tilde{s}_t, \\tilde{a}_t, \\tilde{s}_{t+1}) \\sim d^{\\pi_0}, a_{t+1} \\sim \\pi(a_{t+1} | s_{t+1}), \\tilde{a}_{t+1} \\sim \\pi(\\tilde{a}_{t+1} | \\tilde{s}_{t+1})}[
             w(s_t, a_t) w(\\tilde{s}_t, \\tilde{a}_t) ( K((s_t, a_t), (\\tilde{s}_t, \\tilde{a}_t)) + K((s_{t+1}, a_{t+1}), (\\tilde{s}_{t+1}, \\tilde{a}_{t+1})) - \\gamma ( K((s_t, a_t), (\\tilde{s}_{t+1}, \\tilde{a}_{t+1})) + K((s_{t+1}, a_{t+1}), (\\tilde{s}_t, \\tilde{a}_t)) ))
-        ] + \\gamma (1 - \\gamma) \\mathbb{E}_{(s_t, a_t, s_{t+1}), (\\tilde{s}_t, \\tilde{a}_t, \\tilde{s}_{t+1}) \\sim d^{\\pi_0}, a_{t+1} \\sim \\pi(a_{t+1} | s_{t+1}), \\tilde{a}_{t+1} \\sim \\pi(\\tilde{a}_{t+1} | \\tilde{s}_{t+1}), s_0 \\sim d(s_0), \\tilde{s}_0 \\sim d(\\tilde{s}_0), a_0 \\sim \\pi(a_0 | s_0), \\tilde{a}_0 \\sim \\pi(\\tilde{a}_0 | \\tilde{s}_0)}[
+        ] \\\\
+        & \quad \quad + \\gamma (1 - \\gamma) \\mathbb{E}_{(s_t, a_t, s_{t+1}), (\\tilde{s}_t, \\tilde{a}_t, \\tilde{s}_{t+1}) \\sim d^{\\pi_0}, a_{t+1} \\sim \\pi(a_{t+1} | s_{t+1}), \\tilde{a}_{t+1} \\sim \\pi(\\tilde{a}_{t+1} | \\tilde{s}_{t+1}), s_0 \\sim d(s_0), \\tilde{s}_0 \\sim d(\\tilde{s}_0), a_0 \\sim \\pi(a_0 | s_0), \\tilde{a}_0 \\sim \\pi(\\tilde{a}_0 | \\tilde{s}_0)}[
             w(s_t, a_t) K((s_{t+1}, a_{t+1}), (\\tilde{s}_0, \\tilde{a}_0)) + w(\\tilde{s}_t, \\tilde{a}_t) K((\\tilde{s}_{t+1}, \\tilde{a}_{t+1}), (s_0, a_0))
-        ] - (1 - \\gamma) \\mathbb{E}_{(s_t, a_t), (\\tilde{s}_t, \\tilde{a}_t) \\sim d^{\\pi_0}, s_0 \\sim d(s_0), \\tilde{s}_0 \\sim d(\\tilde{s}_0), a_0 \\sim \\pi(a_0 | s_0), \\tilde{a}_0 \\sim \\pi(\\tilde{a}_0 | \\tilde{s}_0)}[
+        ] \\\\
+        & \quad \quad - (1 - \\gamma) \\mathbb{E}_{(s_t, a_t), (\\tilde{s}_t, \\tilde{a}_t) \\sim d^{\\pi_0}, s_0 \\sim d(s_0), \\tilde{s}_0 \\sim d(\\tilde{s}_0), a_0 \\sim \\pi(a_0 | s_0), \\tilde{a}_0 \\sim \\pi(\\tilde{a}_0 | \\tilde{s}_0)}[
             w(s_t, a_t) K((s_t, a_t), (\\tilde{s}_0, \\tilde{a}_0)) + w(\\tilde{s}_t, \\tilde{a}_t) K((\\tilde{s}_t, \\tilde{a}_t), (s_0, a_0))
         ]
 
@@ -56,18 +64,18 @@ class DiscreteMinimaxStateActionWeightLearning(BaseWeightValueLearner):
         Weight function model.
 
     gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
+            Discount factor. The value should be within (0, 1].
 
-    sigma: float, default=1.0 (> 0.0)
+    sigma: float, default=1.0 (> 0)
         Bandwidth hyperparameter of gaussian kernel.
 
     state_scaler: d3rlpy.preprocessing.Scaler, default=None
         Scaling factor of state.
 
-    batch_size: int, default=32
+    batch_size: int, default=32 (> 0)
         Batch size.
 
-    lr: float, default=1e-3
+    lr: float, default=1e-3 (> 0)
         Learning rate.
 
     device: str, default="cuda:0"
@@ -76,7 +84,7 @@ class DiscreteMinimaxStateActionWeightLearning(BaseWeightValueLearner):
     References
     -------
     Masatoshi Uehara, Jiawei Huang, and Nan Jiang.
-    "Minimax Weight and Q-Function Learning for Off-Policy Evaluation.", 2020.
+    "Minimax Weight and Q-Function Learning for Off-Policy Evaluation." 2020.
 
     """
 
@@ -299,13 +307,13 @@ class DiscreteMinimaxStateActionWeightLearning(BaseWeightValueLearner):
             Conditional action distribution induced by the evaluation policy,
             i.e., :math:`\\pi(a \\mid s_{t+1}) \\forall a \\in \\mathcal{A}`
 
-        n_epochs: int, default=100
+        n_epochs: int, default=100 (> 0)
             Number of epochs to train.
 
-        n_steps_per_epoch: int, default=100
+        n_steps_per_epoch: int, default=100 (> 0)
             Number of gradient steps in a epoch.
 
-        random_state: int, default=None
+        random_state: int, default=None (>= 0)
             Random state.
 
         """
@@ -487,13 +495,13 @@ class DiscreteMinimaxStateActionWeightLearning(BaseWeightValueLearner):
             Conditional action distribution induced by the evaluation policy,
             i.e., :math:`\\pi(a \\mid s_{t+1}) \\forall a \\in \\mathcal{A}`
 
-        n_epochs: int, default=100
+        n_epochs: int, default=100 (> 0)
             Number of epochs to train.
 
-        n_steps_per_epoch: int, default=100
+        n_steps_per_epoch: int, default=100 (> 0)
             Number of gradient steps in a epoch.
 
-        random_state: int, default=None
+        random_state: int, default=None (>= 0)
             Random state.
 
         Return
@@ -518,6 +526,10 @@ class DiscreteMinimaxStateActionWeightLearning(BaseWeightValueLearner):
 class DiscreteMinimaxStateWeightLearning(BaseWeightValueLearner):
     """Minimax Weight Learning for marginal OPE estimators (for discrete action space).
 
+    Bases: :class:`ofrl.ope.weight_value_learning.BaseWeightValueLearner`
+
+    Imported as: :class:`ofrl.ope.weight_value_learning.DiscreteMinimaxStateWightLearning`
+
     Note
     -------
     Minimax Weight Learning uses that the following holds true about Q-function.
@@ -535,11 +547,14 @@ class DiscreteMinimaxStateWeightLearning(BaseWeightValueLearner):
 
     .. math::
 
-        \\max_w L_w^2(w, Q) = \\mathbb{E}_{(s_t, a_t, s_{t+1}), (\\tilde{s}_t, \\tilde{a}_t, \\tilde{s}_{t+1}) \\sim d^{\\pi_0}, a_{t+1} \\sim \\pi(a_{t+1} | s_{t+1}), \\tilde{a}_{t+1} \\sim \\pi(\\tilde{a}_{t+1} | \\tilde{s}_{t+1})}[
+        \\max_w L_w^2(w, Q) 
+        &= \\mathbb{E}_{(s_t, a_t, s_{t+1}), (\\tilde{s}_t, \\tilde{a}_t, \\tilde{s}_{t+1}) \\sim d^{\\pi_0}, a_{t+1} \\sim \\pi(a_{t+1} | s_{t+1}), \\tilde{a}_{t+1} \\sim \\pi(\\tilde{a}_{t+1} | \\tilde{s}_{t+1})}[
             w_s(s_t) w_a(s_t, a_t) w_s(\\tilde{s}_t) w_a(\\tilde{s}_t, \\tilde{a}_t) ( K((s_t, a_t), (\\tilde{s}_t, \\tilde{a}_t)) + K((s_{t+1}, a_{t+1}), (\\tilde{s}_{t+1}, \\tilde{a}_{t+1})) - \\gamma ( K((s_t, a_t), (\\tilde{s}_{t+1}, \\tilde{a}_{t+1})) + K((s_{t+1}, a_{t+1}), (\\tilde{s}_t, \\tilde{a}_t)) ))
-        ] + \\gamma (1 - \\gamma) \\mathbb{E}_{(s_t, a_t, s_{t+1}), (\\tilde{s}_t, \\tilde{a}_t, \\tilde{s}_{t+1}) \\sim d^{\\pi_0}, a_{t+1} \\sim \\pi(a_{t+1} | s_{t+1}), \\tilde{a}_{t+1} \\sim \\pi(\\tilde{a}_{t+1} | \\tilde{s}_{t+1}), s_0 \\sim d(s_0), \\tilde{s}_0 \\sim d(\\tilde{s}_0), a_0 \\sim \\pi(a_0 | s_0), \\tilde{a}_0 \\sim \\pi(\\tilde{a}_0 | \\tilde{s}_0)}[
+        ] \\\\
+        & \quad \quad + \\gamma (1 - \\gamma) \\mathbb{E}_{(s_t, a_t, s_{t+1}), (\\tilde{s}_t, \\tilde{a}_t, \\tilde{s}_{t+1}) \\sim d^{\\pi_0}, a_{t+1} \\sim \\pi(a_{t+1} | s_{t+1}), \\tilde{a}_{t+1} \\sim \\pi(\\tilde{a}_{t+1} | \\tilde{s}_{t+1}), s_0 \\sim d(s_0), \\tilde{s}_0 \\sim d(\\tilde{s}_0), a_0 \\sim \\pi(a_0 | s_0), \\tilde{a}_0 \\sim \\pi(\\tilde{a}_0 | \\tilde{s}_0)}[
             w_s(s_t) w_a(s_t, a_t) K((s_{t+1}, a_{t+1}), (\\tilde{s}_0, \\tilde{a}_0)) + w_s(\\tilde{s}_t) w_a(\\tilde{s}_t, \\tilde{a}_t) K((\\tilde{s}_{t+1}, \\tilde{a}_{t+1}), (s_0, a_0))
-        ] - (1 - \\gamma) \\mathbb{E}_{(s_t, a_t), (\\tilde{s}_t, \\tilde{a}_t) \\sim d^{\\pi_0}, s_0 \\sim d(s_0), \\tilde{s}_0 \\sim d(\\tilde{s}_0), a_0 \\sim \\pi(a_0 | s_0), \\tilde{a}_0 \\sim \\pi(\\tilde{a}_0 | \\tilde{s}_0)}[
+        ] \\\\
+        & \quad \quad - (1 - \\gamma) \\mathbb{E}_{(s_t, a_t), (\\tilde{s}_t, \\tilde{a}_t) \\sim d^{\\pi_0}, s_0 \\sim d(s_0), \\tilde{s}_0 \\sim d(\\tilde{s}_0), a_0 \\sim \\pi(a_0 | s_0), \\tilde{a}_0 \\sim \\pi(\\tilde{a}_0 | \\tilde{s}_0)}[
             w_s(s_t) w_a(s_t, a_t) K((s_t, a_t), (\\tilde{s}_0, \\tilde{a}_0)) + w_s(\\tilde{s}_t) w_a(\\tilde{s}_t, \\tilde{a}_t) K((\\tilde{s}_t, \\tilde{a}_t), (s_0, a_0))
         ]
 
@@ -552,18 +567,18 @@ class DiscreteMinimaxStateWeightLearning(BaseWeightValueLearner):
         Weight function model.
 
     gamma: float, default=1.0
-        Discount factor. The value should be within `(0, 1]`.
+        Discount factor. The value should be within (0, 1].
 
-    sigma: float, default=1.0 (> 0.0)
+    sigma: float, default=1.0 (> 0)
         Bandwidth hyperparameter of gaussian kernel.
 
     state_scaler: d3rlpy.preprocessing.Scaler, default=None
         Scaling factor of state.
 
-    batch_size: int, default=32
+    batch_size: int, default=32 (> 0)
         Batch size.
 
-    lr: float, default=1e-3
+    lr: float, default=1e-3 (> 0)
         Learning rate.
 
     device: str, default="cuda:0"
@@ -572,7 +587,7 @@ class DiscreteMinimaxStateWeightLearning(BaseWeightValueLearner):
     References
     -------
     Masatoshi Uehara, Jiawei Huang, and Nan Jiang.
-    "Minimax Weight and Q-Function Learning for Off-Policy Evaluation.", 2020.
+    "Minimax Weight and Q-Function Learning for Off-Policy Evaluation." 2020.
 
     """
 
@@ -804,13 +819,13 @@ class DiscreteMinimaxStateWeightLearning(BaseWeightValueLearner):
             Conditional action distribution induced by the evaluation policy,
             i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
 
-        n_epochs: int, default=100
+        n_epochs: int, default=100 (> 0)
             Number of epochs to train.
 
-        n_steps_per_epoch: int, default=100
+        n_steps_per_epoch: int, default=100 (> 0)
             Number of gradient steps in a epoch.
 
-        random_state: int, default=None
+        random_state: int, default=None (>= 0)
             Random state.
 
         """
@@ -1092,13 +1107,13 @@ class DiscreteMinimaxStateWeightLearning(BaseWeightValueLearner):
             Conditional action distribution induced by the evaluation policy,
             i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
 
-        n_epochs: int, default=100
+        n_epochs: int, default=100 (> 0)
             Number of epochs to train.
 
-        n_steps_per_epoch: int, default=100
+        n_steps_per_epoch: int, default=100 (> 0)
             Number of gradient steps in a epoch.
 
-        random_state: int, default=None
+        random_state: int, default=None (>= 0)
             Random state.
 
         Return

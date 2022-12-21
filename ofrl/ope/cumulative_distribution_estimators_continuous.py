@@ -1,6 +1,6 @@
-"""Cumulative Distribution Off-Policy Estimators for Continuous action."""
+"""Cumulative Distribution Off-Policy Estimators for continuous action cases (designed for deterministic policies)."""
 from dataclasses import dataclass
-from typing import Optional, Union, Tuple
+from typing import Optional, Tuple
 
 import numpy as np
 from sklearn.utils import check_scalar
@@ -19,15 +19,29 @@ class ContinuousCumulativeDistributionDirectMethod(
 ):
     """Direct Method (DM) for estimating cumulative distribution function (CDF) in continuous-action OPE.
 
+    Bases: :class:`ofrl.ope.BaseCumulativeDistributionOffPolicyEstimator`
+
+    Imported as: :class:`ofrl.ope.ContinuousCumulativeDistributionDirectMethod`
+
     Note
     -------
-    DM estimates CDF using the initial state value given by Fitted Q Evaluation (FQE) as follows.
+    DM estimates CDF using the initial state value as follows.
 
     .. math::
 
-        \\hat{F}_{\\mathrm{DM}}(m, \\pi; \\mathcal{D}) := \\mathbb{E}_{n} \\left[ \\hat{G}(m; s_0, \\pi(a_0)) \\right]
+        \\hat{F}_{\\mathrm{DM}}(m, \\pi; \\mathcal{D}) := \\mathbb{E}_{n} [\\hat{G}(m; s_0, \\pi(a_0))]
 
     where :math:`\\hat{F}(\\cdot)` is the estimated cumulative distribution function and :math:`\\hat{G}(\\cdot)` is the estimated conditional distribution.
+
+    DM has low variance, but can incur bias due to approximation errors.
+
+    There are several ways to estimate :math:`\\hat{Q}(s, a)` such as Fitted Q Evaluation (FQE) (Le et al., 2019) and
+    Minimax Q-Function Learning (MQL) (Uehara et al., 2020). 
+
+    .. seealso::
+
+        The implementation of FQE is provided by `d3rlpy <https://d3rlpy.readthedocs.io/en/latest/references/off_policy_evaluation.html>`_.
+        The implementations of Minimax Learning is available at :class:`ofrl.ope.weight_value_learning`.
 
     Parameters
     -------
@@ -37,16 +51,16 @@ class ContinuousCumulativeDistributionDirectMethod(
     References
     -------
     Yash Chandak, Scott Niekum, Bruno Castro da Silva, Erik Learned-Miller, Emma Brunskill, and Philip S. Thomas.
-    "Universal Off-Policy Evaluation.", 2021.
+    "Universal Off-Policy Evaluation." 2021.
 
     Audrey Huang, Liu Leqi, Zachary C. Lipton, and Kamyar Azizzadenesheli.
-    "Off-Policy Risk Assessment in Contextual Bandits.", 2021.
+    "Off-Policy Risk Assessment in Contextual Bandits." 2021.
+
+    Masatoshi Uehara, Jiawei Huang, and Nan Jiang.
+    "Minimax Weight and Q-Function Learning for Off-Policy Evaluation." 2020.
 
     Hoang Le, Cameron Voloshin, and Yisong Yue.
-    "Batch Policy Learning under Constraints.", 2019.
-
-    Alina Beygelzimer and John Langford.
-    "The Offset Tree for Learning with Partial Labels.", 2009.
+    "Batch Policy Learning under Constraints." 2019.
 
     """
 
@@ -82,11 +96,11 @@ class ContinuousCumulativeDistributionDirectMethod(
             Scale of the trajectory wise reward used for x-axis of CDF curve.
 
         gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
+            Discount factor. The value should be within (0, 1].
 
         Return
         -------
-        estimated_cumulative_distribution_function: array-like of shape (n_partition, ) or (n_episode, )
+        estimated_cumulative_distribution_function: ndarray of shape (n_partition, ) or (n_episode, )
             Estimated cumulative distribution function for the pre-defined reward scale.
 
         """
@@ -165,7 +179,7 @@ class ContinuousCumulativeDistributionDirectMethod(
             Scale of the trajectory wise reward used for x-axis of CDF curve.
 
         gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
+            Discount factor. The value should be within (0, 1].
 
         Return
         -------
@@ -209,7 +223,7 @@ class ContinuousCumulativeDistributionDirectMethod(
             Scale of the trajectory wise reward used for x-axis of CDF curve.
 
         gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
+            Discount factor. The value should be within (0, 1].
 
         Return
         -------
@@ -234,7 +248,7 @@ class ContinuousCumulativeDistributionDirectMethod(
         state_action_value_prediction: np.ndarray,
         reward_scale: np.ndarray,
         gamma: float = 1.0,
-        alphas: np.ndarray = np.linspace(0, 1, 20),
+        alphas: Optional[np.ndarray] = None,
         **kwargs,
     ):
         """Estimate conditional value at risk.
@@ -255,17 +269,20 @@ class ContinuousCumulativeDistributionDirectMethod(
             Scale of the trajectory wise reward used for x-axis of CDF curve.
 
         gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
+            Discount factor. The value should be within (0, 1].
 
-        alphas: array-like of default=np.linspace(0, 1, 20)
-            Set of proportions of the sided region.
+        alphas: array-like of shape (n_alpha, ), default=None
+            Set of proportions of the sided region. The values should be within `[0, 1)`.
+            If `None` is given, :class:`np.linspace(0, 1, 21)` will be used.
 
         Return
         -------
-        estimated_conditional_value_at_risk: NDArray
+        estimated_conditional_value_at_risk: ndarray of (n_alpha, )
             Estimated conditional value at risk (CVaR) of the policy value.
 
         """
+        if alphas is None:
+            alphas = np.linspace(0, 1, 21)
         check_array(alphas, name="alphas", expected_dim=1, min_val=0.0, max_val=1.0)
         alphas = np.sort(alphas)
 
@@ -317,14 +334,14 @@ class ContinuousCumulativeDistributionDirectMethod(
             Scale of the trajectory wise reward used for x-axis of CDF curve.
 
         gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
+            Discount factor. The value should be within (0, 1].
 
         alpha: float, default=0.05
             Proportion of the sided region.
 
         Return
         -------
-        estimated_interquartile_range: Dict[str, float]
+        estimated_interquartile_range: dict
             Estimated interquartile range of the policy value.
 
         """
@@ -365,6 +382,10 @@ class ContinuousCumulativeDistributionTrajectoryWiseImportanceSampling(
 ):
     """Trajectory-wise Importance Sampling (TIS) for estimating cumulative distribution function (CDF) in continuous-action OPE.
 
+    Bases: :class:`ofrl.ope.BaseCumulativeDistributionOffPolicyEstimator`
+
+    Imported as: :class:`ofrl.ope.ContinuousCumulativeTrajectoryWiseImportanceSampling`
+
     Note
     -------
     TIS estimates CDF using importance sampling techniques as follows.
@@ -375,9 +396,12 @@ class ContinuousCumulativeDistributionTrajectoryWiseImportanceSampling(
         := \\mathbb{E}_{n} \\left[ w_{1:T-1} \\delta(\\pi, a_{0:T-1}) \\mathbb{I} \\left \\{\\sum_{t=0}^{T-1} \\gamma^t r_t \\leq m \\right \\} \\right]
 
     where :math:`\\hat{F}(\\cdot)` is the estimated cumulative distribution function,
-    :math:`w_{0:T-1} := \\prod_{t=0}^{T-1} \\frac{\\pi(a_t \\mid s_t)}{\\pi_0(a_t \\mid s_t)}` is the trajectory-wise importance weight,
+    :math:`w_{0:T-1} := \\prod_{t=0}^{T-1} (\\pi(a_t \\mid s_t) / \\pi_0(a_t \\mid s_t))` is the trajectory-wise importance weight,
     and :math:`\\mathbb{I} \\{ \\cdot \\}` is the indicator function.
     :math:`\\delta(\\pi, a_{0:T-1}) = \\prod_{t=0}^{T-1} K(\\pi(s_t), a_t)` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy.
+
+    TIS enables an unbiased estimation of the policy value. However, when the trajectory length (:math:`T`) is large, 
+    TIS suffers from high variance due to the product of importance weights.
 
     Parameters
     -------
@@ -387,16 +411,13 @@ class ContinuousCumulativeDistributionTrajectoryWiseImportanceSampling(
     References
     -------
     Yash Chandak, Scott Niekum, Bruno Castro da Silva, Erik Learned-Miller, Emma Brunskill, and Philip S. Thomas.
-    "Universal Off-Policy Evaluation.", 2021.
+    "Universal Off-Policy Evaluation." 2021.
 
     Audrey Huang, Liu Leqi, Zachary C. Lipton, and Kamyar Azizzadenesheli.
-    "Off-Policy Risk Assessment in Contextual Bandits.", 2021.
+    "Off-Policy Risk Assessment in Contextual Bandits." 2021.
 
-    Alex Strehl, John Langford, Sham Kakade, and Lihong Li.
-    "Learning from Logged Implicit Exploration Data.", 2010.
-
-    Doina Precup, Richard S. Sutton, and Satinder P. Singh.
-    "Eligibility Traces for Off-Policy Policy Evaluation.", 2000.
+    Nathan Kallus and Angela Zhou.
+    "Policy Evaluation and Optimization with Continuous Treatments." 2019.
 
     """
 
@@ -443,9 +464,9 @@ class ContinuousCumulativeDistributionTrajectoryWiseImportanceSampling(
             Scale of the trajectory wise reward used for x-axis of CDF curve.
 
         gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
+            Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0
+        sigma: float, default=1.0 (> 0)
             Bandwidth hyperparameter of gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
@@ -453,7 +474,7 @@ class ContinuousCumulativeDistributionTrajectoryWiseImportanceSampling(
 
         Return
         -------
-        estimated_cumulative_distribution_function: array-like of shape (n_partition, ) or (n_episode, )
+        estimated_cumulative_distribution_function: ndarray of shape (n_partition, ) or (n_episode, )
             Estimated cumulative distribution function for the pre-defined reward scale.
 
         """
@@ -578,9 +599,9 @@ class ContinuousCumulativeDistributionTrajectoryWiseImportanceSampling(
             Scale of the trajectory wise reward used for x-axis of CDF curve.
 
         gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
+            Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0
+        sigma: float, default=1.0 (> 0)
             Bandwidth hyperparameter of gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
@@ -642,9 +663,9 @@ class ContinuousCumulativeDistributionTrajectoryWiseImportanceSampling(
             Scale of the trajectory wise reward used for x-axis of CDF curve.
 
         gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
+            Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0
+        sigma: float, default=1.0 (> 0)
             Bandwidth hyperparameter of gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
@@ -681,7 +702,7 @@ class ContinuousCumulativeDistributionTrajectoryWiseImportanceSampling(
         gamma: float = 1.0,
         sigma: float = 1.0,
         action_scaler: Optional[ActionScaler] = None,
-        alphas: np.ndarray = np.linspace(0, 1, 20),
+        alphas: Optional[np.ndarray] = None,
         **kwargs,
     ):
         """Estimate conditional value at risk.
@@ -708,23 +729,26 @@ class ContinuousCumulativeDistributionTrajectoryWiseImportanceSampling(
             Scale of the trajectory wise reward used for x-axis of CDF curve.
 
         gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
+            Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0
+        sigma: float, default=1.0 (> 0)
             Bandwidth hyperparameter of gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
 
-        alphas: array-like of default=np.linspace(0, 1, 20)
-            Set of proportions of the sided region.
+        alphas: array-like of shape (n_alpha, ), default=None
+            Set of proportions of the sided region. The values should be within `[0, 1)`.
+            If `None` is given, :class:`np.linspace(0, 1, 21)` will be used.
 
         Return
         -------
-        estimated_conditional_value_at_risk: NDArray
+        estimated_conditional_value_at_risk: ndarray of (n_alpha, )
             Estimated conditional value at risk (CVaR) of the policy value.
 
         """
+        if alphas is None:
+            alphas = np.linspace(0, 1, 21)
         check_array(alphas, name="alphas", expected_dim=1, min_val=0.0, max_val=1.0)
         alphas = np.sort(alphas)
 
@@ -790,9 +814,9 @@ class ContinuousCumulativeDistributionTrajectoryWiseImportanceSampling(
             Scale of the trajectory wise reward used for x-axis of CDF curve.
 
         gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
+            Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0
+        sigma: float, default=1.0 (> 0)
             Bandwidth hyperparameter of gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
@@ -803,7 +827,7 @@ class ContinuousCumulativeDistributionTrajectoryWiseImportanceSampling(
 
         Return
         -------
-        estimated_interquartile_range: Dict[str, float]
+        estimated_interquartile_range: dict
             Estimated interquartile range of the policy value.
 
         """
@@ -848,6 +872,11 @@ class ContinuousCumulativeDistributionTrajectoryWiseDoublyRobust(
 ):
     """Trajectory-wise Doubly Robust (TDR) for estimating cumulative distribution function (CDF) in continuous-action OPE.
 
+    Bases: :class:`ofrl.ope.BaseCumulativeDistributionOffPolicyEstimator`
+
+    Imported as: :class:`ofrl.ope.ContinuousCumulativeTrajectoryWiseDoublyRobust`
+
+
     Note
     -------
     TDR estimates CDF using importance sampling techniques as follows.
@@ -855,13 +884,15 @@ class ContinuousCumulativeDistributionTrajectoryWiseDoublyRobust(
     .. math::
 
         \\hat{F}_{\\mathrm{TDR}}(m, \\pi; \\mathcal{D})
-        := \\mathbb{E}_{n} \\left[ w_{0:T-1} \\delta(\\pi, a_{0:T-1}) \\left( \\mathbb{I} \\left \\{\\sum_{t=0}^{T-1} \\gamma^t r_t \\leq m \\right \\} - \\hat{G}(m; s_0, a_0) \\right) \\right]
-        + \\hat{F}_{\\mathrm{DM}}(m, \\pi; \\mathcal{D})
+        &:= \\mathbb{E}_{n} [\\hat{G}(m; s_0, \\pi(a_0))] \\\\
+        & \quad \quad + \\mathbb{E}_{n} \\left[ w_{0:T-1} \\delta(\\pi, a_{0:T-1}) \\left( \\mathbb{I} \\left \\{\\sum_{t=0}^{T-1} \\gamma^t r_t \\leq m \\right \\} - \\hat{G}(m; s_0, a_0) \\right) \\right]
 
-    where :math:`\\hat{F}(\\cdot)` is the estimated cumulative distribution function,
-    :math:`w_{0:T-1} := \\prod_{t=0}^{T-1} \\frac{\\pi(a_t \\mid s_t)}{\\pi_0(a_t \\mid s_t)}` is the trajectory-wise importance weight,
-    and :math:`\\mathbb{I} \\{ \\cdot \\}` is the indicator function.
+    where :math:`\\hat{F}(\\cdot)` is the estimated cumulative distribution function and :math:`\\hat{G}(\\cdot)` is the estimated conditional distribution.
+    :math:`w_{0:T-1} := \\prod_{t=0}^{T-1} (\\pi(a_t \\mid s_t) / \\pi_0(a_t \\mid s_t))` is the trajectory-wise importance weight and :math:`\\mathbb{I} \\{ \\cdot \\}` is the indicator function.
     :math:`\\delta(\\pi, a_{0:T-1}) = \\prod_{t=0}^{T-1} K(\\pi(s_t), a_t)` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy.
+
+    TDR is unbiased and reduces the variance of TIS when :math:`\\hat{Q}(\\cdot)` is reasonably accurate to satisfy :math:`0 < \\hat{Q}(\\cdot) < 2 Q(\\cdot)`. 
+    However, when the importance weight is quite large, it may still suffer from a high variance.
 
     Parameters
     -------
@@ -871,22 +902,13 @@ class ContinuousCumulativeDistributionTrajectoryWiseDoublyRobust(
     References
     -------
     Yash Chandak, Scott Niekum, Bruno Castro da Silva, Erik Learned-Miller, Emma Brunskill, and Philip S. Thomas.
-    "Universal Off-Policy Evaluation.", 2021.
+    "Universal Off-Policy Evaluation." 2021.
 
     Audrey Huang, Liu Leqi, Zachary C. Lipton, and Kamyar Azizzadenesheli.
-    "Off-Policy Risk Assessment in Contextual Bandits.", 2021.
+    "Off-Policy Risk Assessment in Contextual Bandits." 2021.
 
-    Hoang Le, Cameron Voloshin, and Yisong Yue.
-    "Batch Policy Learning under Constraints.", 2019.
-
-    Nan Jiang and Lihong Li.
-    "Doubly Robust Off-policy Value Evaluation for Reinforcement Learning.", 2016.
-
-    Philip S. Thomas and Emma Brunskill.
-    "Data-Efficient Off-Policy Policy Evaluation for Reinforcement Learning.", 2016.
-
-    Miroslav Dudík, Dumitru Erhan, John Langford, and Lihong Li.
-    "Doubly Robust Policy Evaluation and Optimization.", 2014.
+    Nathan Kallus and Angela Zhou.
+    "Policy Evaluation and Optimization with Continuous Treatments." 2019.
 
     """
 
@@ -937,9 +959,9 @@ class ContinuousCumulativeDistributionTrajectoryWiseDoublyRobust(
             Scale of the trajectory wise reward used for x-axis of CDF curve.
 
         gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
+            Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0
+        sigma: float, default=1.0 (> 0)
             Bandwidth hyperparameter of gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
@@ -947,7 +969,7 @@ class ContinuousCumulativeDistributionTrajectoryWiseDoublyRobust(
 
         Return
         -------
-        estimated_cumulative_distribution_function: array-like of shape (n_partition, ) or (n_episode, )
+        estimated_cumulative_distribution_function: ndarray of shape (n_partition, ) or (n_episode, )
             Estimated cumulative distribution function for the pre-defined reward scale.
 
         """
@@ -1094,9 +1116,9 @@ class ContinuousCumulativeDistributionTrajectoryWiseDoublyRobust(
             Scale of the trajectory wise reward used for x-axis of CDF curve.
 
         gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
+            Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0
+        sigma: float, default=1.0 (> 0)
             Bandwidth hyperparameter of gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
@@ -1164,9 +1186,9 @@ class ContinuousCumulativeDistributionTrajectoryWiseDoublyRobust(
             Scale of the trajectory wise reward used for x-axis of CDF curve.
 
         gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
+            Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0
+        sigma: float, default=1.0 (> 0)
             Bandwidth hyperparameter of gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
@@ -1205,7 +1227,7 @@ class ContinuousCumulativeDistributionTrajectoryWiseDoublyRobust(
         gamma: float = 1.0,
         sigma: float = 1.0,
         action_scaler: Optional[ActionScaler] = None,
-        alphas: np.ndarray = np.linspace(0, 1, 20),
+        alphas: Optional[np.ndarray] = None,
         **kwargs,
     ):
         """Estimate conditional value at risk.
@@ -1236,23 +1258,26 @@ class ContinuousCumulativeDistributionTrajectoryWiseDoublyRobust(
             Scale of the trajectory wise reward used for x-axis of CDF curve.
 
         gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
+            Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0
+        sigma: float, default=1.0 (> 0)
             Bandwidth hyperparameter of gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
 
-        alphas: array-like of default=np.linspace(0, 1, 20)
-            Set of proportions of the sided region.
+        alphas: array-like of shape (n_alpha, ), default=None
+            Set of proportions of the sided region. The values should be within `[0, 1)`.
+            If `None` is given, :class:`np.linspace(0, 1, 21)` will be used.
 
         Return
         -------
-        estimated_conditional_value_at_risk: NDArray
+        estimated_conditional_value_at_risk: ndarray of (n_alpha, )
             Estimated conditional value at risk (CVaR) of the policy value.
 
         """
+        if alphas is None:
+            alphas = np.linspace(0, 1, 21)
         check_array(alphas, name="alphas", expected_dim=1, min_val=0.0, max_val=1.0)
         alphas = np.sort(alphas)
 
@@ -1324,9 +1349,9 @@ class ContinuousCumulativeDistributionTrajectoryWiseDoublyRobust(
             Scale of the trajectory wise reward used for x-axis of CDF curve.
 
         gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
+            Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0
+        sigma: float, default=1.0 (> 0)
             Bandwidth hyperparameter of gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
@@ -1337,7 +1362,7 @@ class ContinuousCumulativeDistributionTrajectoryWiseDoublyRobust(
 
         Return
         -------
-        estimated_interquartile_range: Dict[str, float]
+        estimated_interquartile_range: dict
             Estimated interquartile range of the policy value.
 
         """
@@ -1383,6 +1408,11 @@ class ContinuousCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSamp
 ):
     """Self Normalized Trajectory-wise Importance Sampling (SNTIS) for estimating cumulative distribution function (CDF) in continuous-action OPE.
 
+    Bases: :class:`ofrl.ope.ContinuousCumulativeTrajectoryWiseImportanceSampling` -> :class:`ofrl.ope.BaseCumulativeDistributionOffPolicyEstimator`
+
+    Imported as: :class:`ofrl.ope.ContinuousCumulativeSelfNormalizedTrajectoryWiseImportanceSampling`
+
+
     Note
     -------
     SNTIS estimates CDF using importance sampling techniques as follows.
@@ -1390,12 +1420,14 @@ class ContinuousCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSamp
     .. math::
 
         \\hat{F}_{\\mathrm{SNTIS}}(m, \\pi; \\mathcal{D}))
-        := \\mathbb{E}_{n} \\left[ \\frac{w_{0:T-1} \\delta(\\pi, a_{0:T-1})}{\\sum_{n} [w_{0:T-1} \\delta(\\pi, a_{0:T-1})]} \\mathbb{I} \\left \\{\\sum_{t=0}^{T-1} \\gamma^t r_t \\leq m \\right \\} \\right]
+        := \\mathbb{E}_{n} \\left[ \\frac{w_{0:T-1} \\delta(\\pi, a_{0:T-1})}{\\sum_{n} w_{0:T-1} \\delta(\\pi, a_{0:T-1})} \\mathbb{I} \\left \\{\\sum_{t=0}^{T-1} \\gamma^t r_t \\leq m \\right \\} \\right]
 
     where :math:`\\hat{F}(\\cdot)` is the estimated cumulative distribution function,
-    :math:`w_{0:T-1} := \\prod_{t=0}^{T-1} \\frac{\\pi(a_t \\mid s_t)}{\\pi_0(a_t \\mid s_t)}` is the trajectory-wise importance weight,
+    :math:`w_{0:T-1} := \\prod_{t=0}^{T-1} (\\pi(a_t \\mid s_t) / \\pi_0(a_t \\mid s_t))` is the trajectory-wise importance weight,
     and :math:`\\mathbb{I} \\{ \\cdot \\}` is the indicator function.
     :math:`\\delta(\\pi, a_{0:T-1}) = \\prod_{t=0}^{T-1} K(\\pi(s_t), a_t)` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy.
+
+    The self-normalized estimator is no longer unbiased, but has a bounded variance while also being consistent.
 
     Parameters
     -------
@@ -1405,23 +1437,14 @@ class ContinuousCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSamp
     References
     -------
     Yash Chandak, Scott Niekum, Bruno Castro da Silva, Erik Learned-Miller, Emma Brunskill, and Philip S. Thomas.
-    "Universal Off-Policy Evaluation.", 2021.
+    "Universal Off-Policy Evaluation." 2021.
 
     Audrey Huang, Liu Leqi, Zachary C. Lipton, and Kamyar Azizzadenesheli.
-    "Off-Policy Risk Assessment in Contextual Bandits.", 2021.
+    "Off-Policy Risk Assessment in Contextual Bandits." 2021.
 
-    Nathan Kallus and Masatoshi Uehara.
-    "Intrinsically Efficient, Stable, and Bounded Off-Policy Evaluation for Reinforcement Learning.", 2019.
-
-    Adith Swaminathan and Thorsten Joachims.
-    "The Self-Normalized Estimator for Counterfactual Learning.", 2015.
-
-    Alex Strehl, John Langford, Sham Kakade, and Lihong Li.
-    "Learning from Logged Implicit Exploration Data.", 2010.
-
-    Doina Precup, Richard S. Sutton, and Satinder P. Singh.
-    "Eligibility Traces for Off-Policy Policy Evaluation.", 2000.
-
+    Nathan Kallus and Angela Zhou.
+    "Policy Evaluation and Optimization with Continuous Treatments." 2019.
+    
     """
 
     estimator_name: str = "cdf_sntis"
@@ -1466,9 +1489,9 @@ class ContinuousCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSamp
             Scale of the trajectory wise reward used for x-axis of CDF curve.
 
         gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
+            Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0
+        sigma: float, default=1.0 (> 0)
             Bandwidth hyperparameter of gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
@@ -1476,7 +1499,7 @@ class ContinuousCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSamp
 
         Return
         -------
-        estimated_cumulative_distribution_function: array-like of shape (n_partition, ) or (n_episode, )
+        estimated_cumulative_distribution_function: ndarray of shape (n_partition, ) or (n_episode, )
             Estimated cumulative distribution function for the pre-defined reward scale.
 
         """
@@ -1573,20 +1596,26 @@ class ContinuousCumulativeDistributionSelfNormalizedTrajectoryWiseDoublyRobust(
 ):
     """Self Normalized Trajectory-wise Doubly Robust (SNTDR) for estimating cumulative distribution function (CDF) in continuous-action OPE.
 
+    Bases: :class:`ofrl.ope.ContinuousCumulativeTrajectoryWiseDoublyRobust` -> :class:`ofrl.ope.BaseCumulativeDistributionOffPolicyEstimator`
+
+    Imported as: :class:`ofrl.ope.ContinuousCumulativeSelfNormalizedTrajectoryWiseDoublyRobust`
+
     Note
     -------
     SNTDR estimates CDF using importance sampling techniques as follows.
 
     .. math::
 
-        \\hat{F}_{\\mathrm{SNTDR}}(,m \\pi; \\mathcal{D}))
-        := \\mathbb{E}_{n} \\left[ \\frac{w_{0:T-1} \\delta(\\pi, a_{0:T-1})}{\\sum_{n} [w_{0:T-1} \\delta(\\pi, a_{0:T-1})]} \\left( \\mathbb{I} \\left \\{\\sum_{t=0}^{T-1} \\gamma^t r_t \\leq t \\right \\} - \\hat{G}(m; s_0, a_0) \\right) \\right]
-            + \\hat{F}_{\\mathrm{DM}}(m, \\pi; \\mathcal{D}))
+        \\hat{F}_{\\mathrm{SNTDR}}(m, \\pi; \\mathcal{D}))
+        &:= \\mathbb{E}_{n} [\\hat{G}(m; s_0, \\pi(a_0))] \\\\
+        & \\quad \\quad + \\mathbb{E}_{n} \\left[ \\frac{w_{0:T-1} \\delta(\\pi, a_{0:T-1})}{\\sum_{n} w_{0:T-1} \\delta(\\pi, a_{0:T-1})} \\left( \\mathbb{I} \\left \\{\\sum_{t=0}^{T-1} \\gamma^t r_t \\leq t \\right \\} - \\hat{G}(m; s_0, a_0) \\right) \\right]
+        
 
-    where :math:`\\hat{F}(\\cdot)` is the estimated cumulative distribution function,
-    :math:`w_{0:T-1} := \\prod_{t=0}^{T-1} \\frac{\\pi(a_t \\mid s_t)}{\\pi_0(a_t \\mid s_t)}` is the trajectory-wise importance weight,
-    and :math:`\\mathbb{I} \\{ \\cdot \\}` is the indicator function.
+    where :math:`\\hat{F}(\\cdot)` is the estimated cumulative distribution function and :math:`\\hat{G}(\\cdot)` is the estimated conditional distribution.
+    :math:`w_{0:T-1} := \\prod_{t=0}^{T-1} (\\pi(a_t \\mid s_t) / \\pi_0(a_t \\mid s_t))` is the trajectory-wise importance weight and :math:`\\mathbb{I} \\{ \\cdot \\}` is the indicator function.
     :math:`\\delta(\\pi, a_{0:T-1}) = \\prod_{t=0}^{T-1} K(\\pi(s_t), a_t)` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy.
+
+    The self-normalized estimator is no longer unbiased, but has a bounded variance while also being consistent.
 
     Parameters
     -------
@@ -1596,28 +1625,13 @@ class ContinuousCumulativeDistributionSelfNormalizedTrajectoryWiseDoublyRobust(
     References
     -------
     Yash Chandak, Scott Niekum, Bruno Castro da Silva, Erik Learned-Miller, Emma Brunskill, and Philip S. Thomas.
-    "Universal Off-Policy Evaluation.", 2021.
+    "Universal Off-Policy Evaluation." 2021.
 
     Audrey Huang, Liu Leqi, Zachary C. Lipton, and Kamyar Azizzadenesheli.
-    "Off-Policy Risk Assessment in Contextual Bandits.", 2021.
+    "Off-Policy Risk Assessment in Contextual Bandits." 2021.
 
-    Hoang Le, Cameron Voloshin, and Yisong Yue.
-    "Batch Policy Learning under Constraints.", 2019.
-
-    Nathan Kallus and Masatoshi Uehara.
-    "Intrinsically Efficient, Stable, and Bounded Off-Policy Evaluation for Reinforcement Learning.", 2019.
-
-    Nan Jiang and Lihong Li.
-    "Doubly Robust Off-policy Value Evaluation for Reinforcement Learning.", 2016.
-
-    Philip S. Thomas and Emma Brunskill.
-    "Data-Efficient Off-Policy Policy Evaluation for Reinforcement Learning.", 2016.
-
-    Adith Swaminathan and Thorsten Joachims.
-    "The Self-Normalized Estimator for Counterfactual Learning.", 2015.
-
-    Miroslav Dudík, Dumitru Erhan, John Langford, and Lihong Li.
-    "Doubly Robust Policy Evaluation and Optimization.", 2014.
+    Nathan Kallus and Angela Zhou.
+    "Policy Evaluation and Optimization with Continuous Treatments." 2019.
 
     """
 
@@ -1668,9 +1682,9 @@ class ContinuousCumulativeDistributionSelfNormalizedTrajectoryWiseDoublyRobust(
             Scale of the trajectory wise reward used for x-axis of CDF curve.
 
         gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
+            Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0
+        sigma: float, default=1.0 (> 0)
             Bandwidth hyperparameter of gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
@@ -1678,7 +1692,7 @@ class ContinuousCumulativeDistributionSelfNormalizedTrajectoryWiseDoublyRobust(
 
         Return
         -------
-        estimated_cumulative_distribution_function: array-like of shape (n_partition, ) or (n_episode, )
+        estimated_cumulative_distribution_function: ndarray of shape (n_partition, ) or (n_episode, )
             Estimated cumulative distribution function for the pre-defined reward scale.
 
         """

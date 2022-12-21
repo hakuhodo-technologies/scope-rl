@@ -21,15 +21,18 @@ We often aim to achieve this goal by adjusting bidding price function parameter 
 where :math:`r^{\ast}` denotes a predicted or expected reward (KPIs).
 
 We often formulate this RTB problem as the following Constrained Markov Decision Process (CMDP) as :math:`\langle \mathcal{S}, \mathcal{A}, \mathcal{T}, P_r, \gamma, C \rangle`.
-    * `timestep` (:math:`1 \leq t \leq T`): One episode (a day or a week) consists of several timesteps (24 hours or seven days, for instance).
-    * `state` (:math:`s \in \mathcal{S}`): We observe some feedback from the environment at each timestep, which includes the following.
-        * timestep
-        * remaining budget
-        * impression level features (budget consumption rate, cost per mille of impressions, auction winning rate, reward) at the previous timestep
-        * adjust rate (RL agent's decision making) at the previous timestep
-    * `action` (:math:`a \in \mathcal{A}`): Agent chooses adjust rate parameter :math:`\alpha` to maximize KPIs.
-    * `reward` (:math:`r \in \mathbb{R}`): Total number of clicks or conversions obtained during the timestep.
-    * `constraints` (:math:`C`): The pre-determined episodic budget should not be exceeded.
+
+* `timestep` (:math:`1 \leq t \leq T`): One episode (a day or a week) consists of several timesteps (24 hours or seven days, for instance).
+* `state` (:math:`s \in \mathcal{S}`): We observe some feedback from the environment at each timestep, which includes the following.
+
+    * timestep
+    * remaining budget
+    * impression level features (budget consumption rate, cost per mille of impressions, auction winning rate, reward) at the previous timestep
+    * adjust rate (RL agent's decision making) at the previous timestep
+    
+* `action` (:math:`a \in \mathcal{A}`): Agent chooses adjust rate parameter :math:`\alpha` to maximize KPIs.
+* `reward` (:math:`r \in \mathbb{R}`): Total number of clicks or conversions obtained during the timestep.
+* `constraints` (:math:`C`): The pre-determined episodic budget should not be exceeded.
 
 Note that :math:`\mathcal{T}: \mathcal{S} \times \mathcal{A} \rightarrow \mathcal{P}(\mathcal{S})` is the state transition probability where :math:`\mathcal{T}(s'\mid s,a)` is the probability of observing state :math:`s'` after taking action :math:`a` given state :math:`s`.
 :math:`P_r: \mathcal{S} \times \mathcal{A} \times \mathbb{R} \rightarrow [0,1]` is the probability distribution of the immediate reward.

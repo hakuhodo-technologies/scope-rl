@@ -56,6 +56,8 @@ from ..utils import (
 class CreateOPEInput:
     """Class to prepare OPE inputs.
 
+    Imported as: :class:`ofrl.ope.CreateOPEInput`
+
     Parameters
     -------
     logged_dataset: LoggedDataset
@@ -93,7 +95,7 @@ class CreateOPEInput:
             * (API reference) :class:`ofrl.ope.weight_value_learning`
 
     gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
+            Discount factor. The value should be within (0, 1].
 
     sigma: float, default=1.0 (> 0)
         Bandwidth hyperparameter of gaussian kernel.

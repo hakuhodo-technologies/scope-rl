@@ -24,7 +24,7 @@ class SyntheticDataset(BaseDataset):
     Note
     -------
     Logged dataset is directly used for Off-Policy Evaluation (OPE). 
-    Moreover, it is also compatible to d3rlpy (offline RL library) with the following command.
+    Moreover, it is also compatible to `d3rlpy <https://github.com/takuseno/d3rlpy>`_ (offline RL library) with the following command.
 
     .. code-block:: python
 
@@ -258,10 +258,10 @@ class SyntheticDataset(BaseDataset):
         **References**
 
         Masatoshi Uehara, Jiawei Huang, and Nan Jiang.
-        "Minimax Weight and Q-Function Learning for Off-Policy Evaluation.", 2020.
+        "Minimax Weight and Q-Function Learning for Off-Policy Evaluation." 2020.
 
         Qiang Liu, Lihong Li, Ziyang Tang, and Dengyong Zhou.
-        "Breaking the Curse of Horizon: Infinite-Horizon Off-Policy Estimation.", 2018
+        "Breaking the Curse of Horizon: Infinite-Horizon Off-Policy Estimation." 2018
 
         Parameters
         -------
@@ -485,10 +485,10 @@ class SyntheticDataset(BaseDataset):
         **References**
 
         Masatoshi Uehara, Jiawei Huang, and Nan Jiang.
-        "Minimax Weight and Q-Function Learning for Off-Policy Evaluation.", 2020.
+        "Minimax Weight and Q-Function Learning for Off-Policy Evaluation." 2020.
 
         Qiang Liu, Lihong Li, Ziyang Tang, and Dengyong Zhou.
-        "Breaking the Curse of Horizon: Infinite-Horizon Off-Policy Estimation.", 2018
+        "Breaking the Curse of Horizon: Infinite-Horizon Off-Policy Estimation." 2018
 
         Parameters
         -------

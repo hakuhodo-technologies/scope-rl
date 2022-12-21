@@ -26,6 +26,8 @@ dkred = "#A60628"
 class OffPolicySelection:
     """Class to conduct OPS and evaluation of OPE/OPS with multiple estimators simultaneously.
 
+    Imported as: :class:`ofrl.ope.OffPolicySelection`
+
     Note
     -----------
     **Off-Policy Selection (OPS)** 
@@ -230,17 +232,17 @@ class OffPolicySelection:
     References
     -------
     Vladislav Kurenkov and Sergey Kolesnikov.
-    "Showing Your Offline Reinforcement Learning Work: Online Evaluation Budget Matters.", 2022.
+    "Showing Your Offline Reinforcement Learning Work: Online Evaluation Budget Matters." 2022.
 
     Shengpu Tang and Jenna Wiens.
-    "Model Selection for Offline Reinforcement Learning: Practical Considerations for Healthcare Settings.", 2021.
+    "Model Selection for Offline Reinforcement Learning: Practical Considerations for Healthcare Settings." 2021.
 
     Justin Fu, Mohammad Norouzi, Ofir Nachum, George Tucker, Ziyu Wang, Alexander Novikov, Mengjiao Yang,
     Michael R. Zhang, Yutian Chen, Aviral Kumar, Cosmin Paduraru, Sergey Levine, and Tom Le Paine.
-    "Benchmarks for Deep Off-Policy Evaluation.", 2021.
+    "Benchmarks for Deep Off-Policy Evaluation." 2021.
 
     Tom Le Paine, Cosmin Paduraru, Andrea Michi, Caglar Gulcehre, Konrad Zolna, Alexander Novikov, Ziyu Wang, and Nando de Freitas.
-    "Hyperparameter Selection for Offline Reinforcement Learning.", 2020.
+    "Hyperparameter Selection for Offline Reinforcement Learning." 2020.
 
     """
 

@@ -1,3 +1,4 @@
+"""Minimax value function learning (continuous action cases)."""
 from dataclasses import dataclass
 from typing import Optional
 from tqdm.auto import tqdm
@@ -22,6 +23,10 @@ from ...utils import check_array, gaussian_kernel
 @dataclass
 class ContinuousMinimaxStateActionValueLearning(BaseWeightValueLearner):
     """Minimax Q Learning for marginal OPE estimators (for continuous action space).
+
+    Bases: :class:`ofrl.ope.weight_value_learning.BaseWeightValueLearner`
+
+    Imported as: :class:`ofrl.ope.weight_value_learning.ContinuousMinimaxStateActionValueLearning`
 
     Note
     -------
@@ -51,9 +56,9 @@ class ContinuousMinimaxStateActionValueLearning(BaseWeightValueLearner):
         Q function model.
 
     gamma: float, default=1.0
-        Discount factor. The value should be within `(0, 1]`.
+        Discount factor. The value should be within (0, 1].
 
-    sigma: float, default=1.0 (> 0.0)
+    sigma: float, default=1.0 (> 0)
         Bandwidth hyperparameter of gaussian kernel.
 
     state_scaler: d3rlpy.preprocessing.Scaler, default=None
@@ -62,14 +67,16 @@ class ContinuousMinimaxStateActionValueLearning(BaseWeightValueLearner):
     action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
         Scaling factor of action.
 
-    batch_size: int, default=32
+    batch_size: int, default=32 (> 0)
         Batch size.
 
-    alpha: float, default=1e-3
+    alpha: float, default=1e-3 (> 0)
+        Regularization of Q-function.
 
-    lambda_: float, default=1e-3
+    lambda_: float, default=1e-3 (>= 0)
+        Stabilizer to obtain a fast convergence rate.
 
-    lr: float, default=1e-3
+    lr: float, default=1e-3 (> 0)
         Learning rate.
 
     device: str, default="cuda:0"
@@ -78,7 +85,7 @@ class ContinuousMinimaxStateActionValueLearning(BaseWeightValueLearner):
     References
     -------
     Masatoshi Uehara, Jiawei Huang, and Nan Jiang.
-    "Minimax Weight and Q-Function Learning for Off-Policy Evaluation.", 2020.
+    "Minimax Weight and Q-Function Learning for Off-Policy Evaluation." 2020.
 
     """
 
@@ -247,13 +254,13 @@ class ContinuousMinimaxStateActionValueLearning(BaseWeightValueLearner):
         evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
 
-        n_epochs: int, default=100
+        n_epochs: int, default=100 (> 0)
             Number of epochs to train.
 
-        n_steps_per_epoch: int, default=100
+        n_steps_per_epoch: int, default=100 (> 0)
             Number of gradient steps in a epoch.
 
-        random_state: int, default=None
+        random_state: int, default=None (>= 0)
             Random state.
 
         """
@@ -509,13 +516,13 @@ class ContinuousMinimaxStateActionValueLearning(BaseWeightValueLearner):
         evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
 
-        n_epochs: int, default=100
+        n_epochs: int, default=100 (> 0)
             Number of epochs to train.
 
-        n_steps_per_epoch: int, default=100
+        n_steps_per_epoch: int, default=100 (> 0)
             Number of gradient steps in a epoch.
 
-        random_state: int, default=None
+        random_state: int, default=None (>= 0)
             Random state.
 
         """
@@ -536,6 +543,10 @@ class ContinuousMinimaxStateActionValueLearning(BaseWeightValueLearner):
 @dataclass
 class ContinuousMinimaxStateValueLearning(BaseWeightValueLearner):
     """Minimax V Learning for marginal OPE estimators (for continuous action space).
+
+    Bases: :class:`ofrl.ope.weight_value_learning.BaseWeightValueLearner`
+
+    Imported as: :class:`ofrl.ope.weight_value_learning.ContinuousMinimaxStateValueLearning`
 
     Note
     -------
@@ -561,13 +572,13 @@ class ContinuousMinimaxStateValueLearning(BaseWeightValueLearner):
 
     Parameters
     -------
-    q_function: DiscreteQFunction
-        Q function model.
+    v_function: DiscreteQFunction
+        V function model.
 
     gamma: float, default=1.0
-        Discount factor. The value should be within `(0, 1]`.
+        Discount factor. The value should be within (0, 1].
 
-    sigma: float, default=1.0 (> 0.0)
+    sigma: float, default=1.0 (> 0)
         Bandwidth hyperparameter of gaussian kernel.
 
     state_scaler: d3rlpy.preprocessing.Scaler, default=None
@@ -576,14 +587,16 @@ class ContinuousMinimaxStateValueLearning(BaseWeightValueLearner):
     action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
         Scaling factor of action.
 
-    batch_size: int, default=32
+    batch_size: int, default=32 (> 0)
         Batch size.
 
-    alpha: float, default=1e-3
+    alpha: float, default=1e-3 (> 0)
+        Regularization of V-function.
 
-    lambda_: float, default=1e-3
+    lambda_: float, default=1e-3 (>= 0)
+        Stabilizer to obtain a fast convergence rate.
 
-    lr: float, default=1e-3
+    lr: float, default=1e-3 (> 0)
         Learning rate.
 
     device: str, default="cuda:0"
@@ -592,7 +605,7 @@ class ContinuousMinimaxStateValueLearning(BaseWeightValueLearner):
     References
     -------
     Masatoshi Uehara, Jiawei Huang, and Nan Jiang.
-    "Minimax Weight and Q-Function Learning for Off-Policy Evaluation.", 2020.
+    "Minimax Weight and Q-Function Learning for Off-Policy Evaluation." 2020.
 
     """
 
@@ -754,13 +767,13 @@ class ContinuousMinimaxStateValueLearning(BaseWeightValueLearner):
         evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
 
-        n_epochs: int, default=100
+        n_epochs: int, default=100 (> 0)
             Number of epochs to train.
 
-        n_steps_per_epoch: int, default=100
+        n_steps_per_epoch: int, default=100 (> 0)
             Number of gradient steps in a epoch.
 
-        random_state: int, default=None
+        random_state: int, default=None (>= 0)
             Random state.
 
         """
@@ -968,16 +981,16 @@ class ContinuousMinimaxStateValueLearning(BaseWeightValueLearner):
         evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
 
-        n_epochs: int, default=100
+        n_epochs: int, default=100 (> 0)
             Number of epochs to train.
 
-        n_steps_per_epoch: int, default=100
+        n_steps_per_epoch: int, default=100 (> 0)
             Number of gradient steps in a epoch.
 
         action_scaler: {float, array-like of shape (action_dim, )}, default=None
             Scaling factor of action.
 
-        random_state: int, default=None
+        random_state: int, default=None (>= 0)
             Random state.
 
         """

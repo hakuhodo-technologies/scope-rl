@@ -1,4 +1,4 @@
-"On-Policy Performance Comparison."
+"On-Policy performance comparison."
 from tqdm.auto import tqdm
 from typing import List, Union, Optional
 from pathlib import Path
@@ -59,7 +59,7 @@ def visualize_on_policy_policy_value(
         When True, evaluation policy is evaluated by rollout without resetting environment at each trajectory.
 
     gamma: float, default=1.0
-        Discount factor. The value should be within `(0, 1]`.
+        Discount factor. The value should be within (0, 1].
 
     alpha: float, default=0.05
         Significance level. The value should be within `[0, 1)`.
@@ -157,7 +157,7 @@ def visualize_on_policy_policy_value_with_variance(
         When True, evaluation policy is evaluated by rollout without resetting environment at each trajectory.
 
     gamma: float, default=1.0
-        Discount factor. The value should be within `(0, 1]`.
+        Discount factor. The value should be within (0, 1].
 
     alpha: float, default=0.05
         Significance level. The value should be within `[0, 1)`.
@@ -274,7 +274,7 @@ def visualize_on_policy_cumulative_distribution_function(
         When True, evaluation policy is evaluated by rollout without resetting environment at each trajectory.
 
     gamma: float, default=1.0
-        Discount factor. The value should be within `(0, 1]`.
+        Discount factor. The value should be within (0, 1].
 
     use_custom_reward_scale: bool, default=False
         Whether to use the custom reward scale or the reward observed by the behavior policy.
@@ -383,10 +383,10 @@ def visualize_on_policy_conditional_value_at_risk(
         When True, evaluation policy is evaluated by rollout without resetting environment at each trajectory.
 
     gamma: float, default=1.0
-        Discount factor. The value should be within `(0, 1]`.
+        Discount factor. The value should be within (0, 1].
 
     alphas: array-like of shape (n_alpha, ) default=np.linspace(0, 1, 20)
-        Set of proportions of the sided region. The value should be within `(0, 1]`.
+        Set of proportions of the sided region. The value should be within (0, 1].
 
     use_custom_reward_scale: bool, default=False
         Whether to use the custom reward scale or the reward observed by the behavior policy.
@@ -495,7 +495,7 @@ def visualize_on_policy_interquartile_range(
         When True, evaluation policy is evaluated by rollout without resetting environment at each trajectory.
 
     gamma: float, default=1.0
-        Discount factor. The value should be within `(0, 1]`.
+        Discount factor. The value should be within (0, 1].
 
     alpha: float, default=0.05
         Significance level. The value should be within `[0, 1)`.
@@ -646,13 +646,13 @@ def calc_on_policy_statistics(
         When True, evaluation policy is evaluated by rollout without resetting environment at each trajectory.
 
     gamma: float, default=1.0
-        Discount factor. The value should be within `(0, 1]`.
+        Discount factor. The value should be within (0, 1].
 
     quartile_alpha: float, default=0.05
-        Proportion of the sided region. The value should be within `(0, 1]`.
+        Proportion of the sided region. The value should be within (0, 1].
 
     cvar_alpha: float, default=0.05
-        Proportion of the sided region. The value should be within `(0, 1]`.
+        Proportion of the sided region. The value should be within (0, 1].
 
     use_custom_reward_scale: bool, default=False
         Whether to use the custom reward scale or the reward observed by the behavior policy.
@@ -813,10 +813,10 @@ def calc_on_policy_policy_value(
         When True, evaluation policy is evaluated by rollout without resetting environment at each trajectory.
 
     gamma: float, default=1.0
-        Discount factor. The value should be within `(0, 1]`.
+        Discount factor. The value should be within (0, 1].
 
     alpha: float, default=0.05
-        Significance level. The value should be within `(0, 1]`.
+        Significance level. The value should be within (0, 1].
 
     use_bootstrap: bool, default=False
         Whether to use bootstrap sampling or not.
@@ -890,7 +890,7 @@ def calc_on_policy_policy_value_interval(
         When True, evaluation policy is evaluated by rollout without resetting environment at each trajectory.
 
     gamma: float, default=1.0
-        Discount factor. The value should be within `(0, 1]`.
+        Discount factor. The value should be within (0, 1].
 
     alpha: float, default=0.05
         Significance level. The value should be within `[0, 1)`.
@@ -954,7 +954,7 @@ def calc_on_policy_variance(
         When True, evaluation policy is evaluated by rollout without resetting environment at each trajectory.
 
     gamma: float, default=1.0
-        Discount factor. The value should be within `(0, 1]`.
+        Discount factor. The value should be within (0, 1].
 
     random_state: int, default=None (>= 0)
         Random state.
@@ -1012,7 +1012,7 @@ def calc_on_policy_conditional_value_at_risk(
         When True, evaluation policy is evaluated by rollout without resetting environment at each trajectory.
 
     gamma: float, default=1.0
-        Discount factor. The value should be within `(0, 1]`.
+        Discount factor. The value should be within (0, 1].
 
     alphas: {float, array-like of shape (n_alpha, )}, default=np.linspace(0, 1, 20)
         Set of proportions of the sided region. The value(s) should be within `[0, 1)`.
@@ -1145,10 +1145,10 @@ def calc_on_policy_interquartile_range(
         When True, evaluation policy is evaluated by rollout without resetting environment at each trajectory.
 
     gamma: float, default=1.0
-        Discount factor. The value should be within `(0, 1]`.
+        Discount factor. The value should be within (0, 1].
 
     alpha: float, default=0.05
-        Proportion of the sided region. The value should be within `(0, 1]`.
+        Proportion of the sided region. The value should be within (0, 1].
 
     use_custom_reward_scale: bool, default=False
         Whether to use the custom reward scale or the reward observed by the behavior policy.
@@ -1283,7 +1283,7 @@ def calc_on_policy_cumulative_distribution_function(
         When True, evaluation policy is evaluated by rollout without resetting environment at each trajectory.
 
     gamma: float, default=1.0
-        Discount factor. The value should be within `(0, 1]`.
+        Discount factor. The value should be within (0, 1].
 
     use_custom_reward_scale: bool, default=False
         Whether to use the custom reward scale or the reward observed by the behavior policy.
@@ -1400,7 +1400,7 @@ def rollout_policy_online(
         When True, evaluation policy is evaluated by rollout without resetting environment at each trajectory.
 
     gamma: float, default=1.0
-        Discount factor. The value should be within `(0, 1]`.
+        Discount factor. The value should be within (0, 1].
 
     random_state: int, default=None (>= 0)
         Random state.

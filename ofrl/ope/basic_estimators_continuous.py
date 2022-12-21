@@ -1,4 +1,4 @@
-"""Off-Policy Estimators for Continuous Action (designed for deterministic policies)."""
+"""Off-Policy Estimators for continuous action cases (designed for deterministic policies)."""
 from dataclasses import dataclass
 from typing import Dict, Union, Optional
 
@@ -15,28 +15,33 @@ from ..utils import check_array
 class ContinuousDirectMethod(BaseOffPolicyEstimator):
     """Direct Method (DM) for continuous-action OPE (designed for deterministic policies).
 
+    Bases: :class:`ofrl.ope.BaseOffPolicyEstimator`
+
+    Imported as: :class:`ofrl.ope.ContinuousDirectMethod`
+
     Note
     -------
-    DM estimates the policy value using the initial state value given by Fitted Q Evaluation (FQE) as follows.
+    DM estimates the policy value using the initial state value as follows.
 
     .. math::
 
-        \\hat{J}_{\\mathrm{DM}} (\\pi; \\mathcal{D}) := \\mathbb{E}_n [\\mathbb{E}_{a_0 \\sim \\pi(a_0 \\mid s_0)} [\\hat{Q}(s_0, a_0)] ],
-
-    .. math::
-
-        \\hat{J}_{\\mathrm{DM}} (\\pi; \\mathcal{D}) := \\mathbb{E}_n [\\hat{V}(s_0)],
+        \\hat{J}_{\\mathrm{DM}} (\\pi; \\mathcal{D}) 
+        := \\mathbb{E}_n [\\hat{Q}(s_0, \\pi(s_0))]
+        = \\mathbb{E}_n [\\hat{V}(s_0)],
 
     where :math:`\\mathcal{D}=\\{\\{(s_t, a_t, r_t)\\}_{t=0}^{T-1}\\}_{i=1}^n` is the logged dataset with :math:`n` trajectories of data.
     :math:`T` indicates step per episode. :math:`\\hat{Q}(s_t, a_t)` is the estimated Q value given a state-action pair.
     \\hat{V}(s_t) is the estimated value function given a state.
 
-    There are several ways to estimate :math:`\\hat{Q}(s, a)` such as Fitted Q Evaluation (FQE) (Le et al., 2019) and
-    Minimax Q-Function Learning (MQL) (Uehara et al., 2020). :math:`\\hat{V}(s)` is estimated in a similar manner using
-    Minimax Value Learning (MVL) (Uehara et al., 2020).
+    DM has low variance, but can incur bias due to approximation errors.
 
-    We use the implementation of FQE provided by d3rlpy (Seno et al., 2021).
-    The implementations of Minimax Learning is available in `ofrl/ope/minimax_estimators_continuous.py`.
+    There are several ways to estimate :math:`\\hat{Q}(s, a)` such as Fitted Q Evaluation (FQE) (Le et al., 2019) and
+    Minimax Q-Function Learning (MQL) (Uehara et al., 2020). 
+
+    .. seealso::
+
+        The implementation of FQE is provided by `d3rlpy <https://d3rlpy.readthedocs.io/en/latest/references/off_policy_evaluation.html>`_.
+        The implementations of Minimax Learning is available at :class:`ofrl.ope.weight_value_learning`.
 
     Parameters
     -------
@@ -45,20 +50,11 @@ class ContinuousDirectMethod(BaseOffPolicyEstimator):
 
     References
     -------
-    Yuta Saito, Shunsuke Aihara, Megumi Matsutani, and Yusuke Narita.
-    "Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation.", 2021.
-
-    Takuma Seno and Michita Imai.
-    "d3rlpy: An Offline Deep Reinforcement Library.", 2021.
-
     Masatoshi Uehara, Jiawei Huang, and Nan Jiang.
-    "Minimax Weight and Q-Function Learning for Off-Policy Evaluation.", 2020.
+    "Minimax Weight and Q-Function Learning for Off-Policy Evaluation." 2020.
 
     Hoang Le, Cameron Voloshin, and Yisong Yue.
-    "Batch Policy Learning under Constraints.", 2019.
-
-    Alina Beygelzimer and John Langford.
-    "The Offset Tree for Learning with Partial Labels.", 2009.
+    "Batch Policy Learning under Constraints." 2019.
 
     """
 
@@ -82,11 +78,11 @@ class ContinuousDirectMethod(BaseOffPolicyEstimator):
 
         state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, 2)
             :math:`\\hat{Q}` for the observed action and action chosen evaluation policy,
-            i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a \\mid s_t))`.
+            i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a | s_t))`.
 
         Return
         -------
-        estimated_trajectory_wise_policy_value: array-like of shape (n_trajectories, )
+        estimated_trajectory_wise_policy_value: ndarray of shape (n_trajectories, )
             Policy value estimated for each trajectory.
 
         """
@@ -110,7 +106,7 @@ class ContinuousDirectMethod(BaseOffPolicyEstimator):
 
         state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, 2)
             :math:`\\hat{Q}` for the observed action and action chosen evaluation policy,
-            i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a \\mid s_t))`.
+            i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a | s_t))`.
 
         Return
         -------
@@ -163,7 +159,7 @@ class ContinuousDirectMethod(BaseOffPolicyEstimator):
 
         state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, 2)
             :math:`\\hat{Q}` for the observed action and action chosen evaluation policy,
-            i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a \\mid s_t))`.
+            i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a | s_t))`.
 
         alpha: float, default=0.05
             Significance level. The value should be within `[0, 1)`
@@ -178,6 +174,14 @@ class ContinuousDirectMethod(BaseOffPolicyEstimator):
         -------
         estimated_confidence_interval: dict
             Dictionary storing the estimated mean and upper-lower confidence bounds.
+
+            .. code-block:: python
+
+                key: [
+                    mean,
+                    {100 * (1. - alpha)}% CI (lower),
+                    {100 * (1. - alpha)}% CI (upper),
+                ]
 
         """
         check_scalar(
@@ -220,17 +224,24 @@ class ContinuousDirectMethod(BaseOffPolicyEstimator):
 class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
     """Trajectory-wise Importance Sampling (TIS) for continuous-action OPE (designed for deterministic policies).
 
+    Bases: :class:`ofrl.ope.BaseOffPolicyEstimator`
+
+    Imported as: :class:`ofrl.ope.ContinuousTrajectoryWiseImportanceSampling`
+
     Note
     -------
     TIS estimates the policy value via trajectory-wise importance weight as follows.
 
     .. math::
 
-        \\hat{J}_{\\mathrm{TIS}} (\\pi; \\mathcal{D}) := \\mathbb{E}_{n} [\\sum_{t=0}^{T-1} \\gamma^t w_{0:T-1} \\delta(\\pi, a_{0:T-1}) r_t],
+        \\hat{J}_{\\mathrm{TIS}} (\\pi; \\mathcal{D}) := \\mathbb{E}_{n} \\left[\\sum_{t=0}^{T-1} \\gamma^t w_{0:T-1} \\delta(\\pi, a_{0:T-1}) r_t \\right],
 
-    where :math:`w_{0:T-1} := \\prod_{t=0}^{T-1} \\frac{1}{\\pi_0(a_t \\mid s_t)}` is the inverse propensity weight.
+    where :math:`w_{0:T-1} := \\prod_{t=0}^{T-1} (1 / \\pi_0(a_t | s_t))` is the (trajectory-wise) inverse propensity weight.
     :math:`\\delta(\\pi, a_{0:T-1}) = \\prod_{t=0}^{T-1} K(\\pi(s_t), a_t)` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy.
     Note that :math:`K(\\cdot)` is a kernel function.
+
+    TIS enables an unbiased estimation of the policy value. However, when the trajectory length (:math:`T`) is large, 
+    TIS suffers from high variance due to the product of importance weights.
 
     Parameters
     -------
@@ -239,17 +250,11 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 
     References
     -------
-    Yuta Saito, Shunsuke Aihara, Megumi Matsutani, and Yusuke Narita.
-    "Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation.", 2021.
-
     Nathan Kallus and Angela Zhou.
-    "Policy Evaluation and Optimization with Continuous Treatments.", 2019.
-
-    Alex Strehl, John Langford, Sham Kakade, and Lihong Li.
-    "Learning from Logged Implicit Exploration Data.", 2010.
+    "Policy Evaluation and Optimization with Continuous Treatments." 2019.
 
     Doina Precup, Richard S. Sutton, and Satinder P. Singh.
-    "Eligibility Traces for Off-Policy Policy Evaluation.", 2000.
+    "Eligibility Traces for Off-Policy Policy Evaluation." 2000.
 
     """
 
@@ -285,16 +290,16 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a \\mid s)`
+            i.e., :math:`\\pi_0(a | s)`
 
         evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
 
         gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
+            Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0
-            Standard deviation of Gaussian distribution (i.e., `band_width` hyperparameter of gaussian kernel).
+        sigma: float, default=1.0 (> 0)
+            Bandwidth hyperparameter of gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -358,16 +363,16 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a \\mid s)`
+            i.e., :math:`\\pi_0(a | s)`
 
         evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
 
         gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
+            Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0
-            Standard deviation of Gaussian distribution (i.e., `band_width` hyperparameter of gaussian kernel).
+        sigma: float, default=1.0 (> 0)
+            Bandwidth hyperparameter of gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -476,16 +481,16 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a \\mid s)`
+            i.e., :math:`\\pi_0(a | s)`
 
         evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
 
         gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
+            Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0
-            Standard deviation of Gaussian distribution (i.e., `band_width` hyperparameter of gaussian kernel).
+        sigma: float, default=1.0 (> 0)
+            Bandwidth hyperparameter of gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -506,6 +511,14 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         -------
         estimated_confidence_interval: dict
             Dictionary storing the estimated mean and upper-lower confidence bounds.
+
+            .. code-block:: python
+
+                key: [
+                    mean,
+                    {100 * (1. - alpha)}% CI (lower),
+                    {100 * (1. - alpha)}% CI (upper),
+                ]
 
         """
         check_scalar(
@@ -591,17 +604,25 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
     """Per-Decision Importance Sampling (PDIS) for continuous-action OPE (designed for deterministic policies).
 
+    Bases: :class:`ofrl.ope.BaseOffPolicyEstimator`
+
+    Imported as: :class:`ofrl.ope.ContinuousPerDecisionImportanceSampling`
+
     Note
     -------
     PDIS estimates the policy value via step-wise importance weighting as follows.
 
     .. math::
 
-        \\hat{J}_{\\mathrm{PDIS}} (\\pi; \\mathcal{D}) := \\mathbb{E}_{n} [\\sum_{t=0}^{T-1} \\gamma^t w_{0:t} \\delta(\\pi, a_{0:t}) r_t],
+        \\hat{J}_{\\mathrm{PDIS}} (\\pi; \\mathcal{D}) := \\mathbb{E}_{n} \\left[\\sum_{t=0}^{T-1} \\gamma^t w_{0:t} \\delta(\\pi, a_{0:t}) r_t \\right],
 
-    where :math:`w_{0:t} := \\prod_{t'=0}^t \\frac{1}{\\pi_0(a_{t'} \\mid s_{t'})}`.
+    where :math:`w_{0:t} := \\prod_{t'=0}^t (1 / \\pi_0(a_{t'} | s_{t'}))`. is the importance weight of past interactions 
+    (referred to as per-decision importance weight).
     :math:`\\delta(\\pi, a_{0:t}) = \\prod_{t'=0}^t K(\\pi(s_{t'}), a_{t'})` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy.
     Note that :math:`K(\\cdot)` is a kernel function.
+
+    By using per-decision importance weight instead of the trajectory-wise importance weight, PDIS reduces the variance of TIS while remaining unbiased. 
+    However, when the length of a trajectory (:math:`T`) is large, PDIS still suffers from high variance.
 
     Parameters
     -------
@@ -610,17 +631,11 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
 
     References
     -------
-    Yuta Saito, Shunsuke Aihara, Megumi Matsutani, and Yusuke Narita.
-    "Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation.", 2021.
-
     Nathan Kallus and Angela Zhou.
-    "Policy Evaluation and Optimization with Continuous Treatments.", 2019.
-
-    Alex Strehl, John Langford, Sham Kakade, and Lihong Li.
-    "Learning from Logged Implicit Exploration Data.", 2010.
+    "Policy Evaluation and Optimization with Continuous Treatments." 2019.
 
     Doina Precup, Richard S. Sutton, and Satinder P. Singh.
-    "Eligibility Traces for Off-Policy Policy Evaluation.", 2000.
+    "Eligibility Traces for Off-Policy Policy Evaluation." 2000.
 
     """
 
@@ -656,16 +671,16 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a \\mid s)`
+            i.e., :math:`\\pi_0(a | s)`
 
         evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
 
         gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
+            Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0
-            Standard deviation of Gaussian distribution (i.e., `band_width` hyperparameter of gaussian kernel).
+        sigma: float, default=1.0 (> 0)
+            Bandwidth hyperparameter of gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -729,16 +744,16 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a \\mid s)`
+            i.e., :math:`\\pi_0(a | s)`
 
         evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
 
         gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
+            Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0
-            Standard deviation of Gaussian distribution (i.e., `band_width` hyperparameter of gaussian kernel).
+        sigma: float, default=1.0 (> 0)
+            Bandwidth hyperparameter of gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -847,16 +862,16 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a \\mid s)`
+            i.e., :math:`\\pi_0(a | s)`
 
         evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
 
         gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
+            Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0
-            Standard deviation of Gaussian distribution (i.e., `band_width` hyperparameter of gaussian kernel).
+        sigma: float, default=1.0 (> 0)
+            Bandwidth hyperparameter of gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -877,6 +892,14 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
         -------
         estimated_confidence_interval: dict
             Dictionary storing the estimated mean and upper-lower confidence bounds.
+
+            .. code-block:: python
+
+                key: [
+                    mean,
+                    {100 * (1. - alpha)}% CI (lower),
+                    {100 * (1. - alpha)}% CI (upper),
+                ]
 
         """
         check_scalar(
@@ -962,6 +985,10 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
 class ContinuousDoublyRobust(BaseOffPolicyEstimator):
     """Doubly Robust (DR) for continuous-action OPE (designed for deterministic policies).
 
+    Bases: :class:`ofrl.ope.BaseOffPolicyEstimator`
+
+    Imported as: :class:`ofrl.ope.ContinuousDoublyRobust`
+
     Note
     -------
     DR estimates the policy value via step-wise importance weighting and :math:`\\hat{Q}` as follows.
@@ -969,12 +996,15 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
     .. math::
 
         \\hat{J}_{\\mathrm{DR}} (\\pi; \\mathcal{D})
-        := \\mathbb{E}_{n} [\\sum_{t=0}^{T-1} \\gamma^t (w_{0:t} \\delta(\\pi, a_{0:t}) (r_t - \\hat{Q}(s_t, a_t))
-            + w_{0:t-1} \\delta(\\pi, a_{0:t-1}) \\hat{Q}(s_t, \\pi(s_t))]),
+        &:= \\mathbb{E}_{n} \\Biggl[\\sum_{t=0}^{T-1} \\gamma^t (w_{0:t} \\delta(\\pi, a_{0:t}) (r_t - \\hat{Q}(s_t, a_t)) \\\\
+        & \quad \quad \quad \quad \quad + w_{0:t-1} \\delta(\\pi, a_{0:t-1}) \\hat{Q}(s_t, \\pi(s_t))) \\Biggr],
 
-    where :math:`w_{0:t} := \\prod_{t'=0}^t \\frac{1}{\\pi_0(a_{t'} \\mid s_{t'})}`.
+    where :math:`w_{0:t} := \\prod_{t'=0}^t (1 / \\pi_0(a_{t'} | s_{t'}))` is the per-decision importance weight.
     :math:`\\delta(\\pi, a_{0:t}) = \\prod_{t'=1}^t K(\\pi(s_{t'}), a_{t'})` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy.
     Note that :math:`K(\\cdot)` is a kernel function.
+
+    DR is unbiased and reduces the variance of PDIS when :math:`\\hat{Q}(\\cdot)` is reasonably accurate to satisfy :math:`0 < \\hat{Q}(\\cdot) < 2 Q(\\cdot)`. 
+    However, when the importance weight is quite large, it may still suffer from a high variance.
 
     Parameters
     -------
@@ -983,23 +1013,14 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
 
     References
     -------
-    Yuta Saito, Shunsuke Aihara, Megumi Matsutani, and Yusuke Narita.
-    "Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation.", 2021.
-
     Nathan Kallus and Angela Zhou.
-    "Policy Evaluation and Optimization with Continuous Treatments.", 2019.
-
-    Hoang Le, Cameron Voloshin, and Yisong Yue.
-    "Batch Policy Learning under Constraints.", 2019.
+    "Policy Evaluation and Optimization with Continuous Treatments." 2019.
 
     Nan Jiang and Lihong Li.
-    "Doubly Robust Off-policy Value Evaluation for Reinforcement Learning.", 2016.
+    "Doubly Robust Off-policy Value Evaluation for Reinforcement Learning." 2016.
 
     Philip S. Thomas and Emma Brunskill.
-    "Data-Efficient Off-Policy Policy Evaluation for Reinforcement Learning.", 2016.
-
-    Miroslav Dudík, Dumitru Erhan, John Langford, and Lihong Li.
-    "Doubly Robust Policy Evaluation and Optimization.", 2014.
+    "Data-Efficient Off-Policy Policy Evaluation for Reinforcement Learning." 2016.
 
     """
 
@@ -1036,20 +1057,20 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a \\mid s)`
+            i.e., :math:`\\pi_0(a | s)`
 
         evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
 
         state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, 2)
             :math:`\\hat{Q}` for the observed action and action chosen evaluation policy,
-            i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a \\mid s_t))`.
+            i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a | s_t))`.
 
         gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
+            Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0
-            Standard deviation of Gaussian distribution (i.e., `band_width` hyperparameter of gaussian kernel).
+        sigma: float, default=1.0 (> 0)
+            Bandwidth hyperparameter of gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -1105,7 +1126,7 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
         evaluation_policy_action: np.ndarray,
         state_action_value_prediction: np.ndarray,
         gamma: float = 1.0,
-        sigma: Optional[np.ndarray] = None,
+        sigma: float = 1.0,
         action_scaler: Optional[ActionScaler] = None,
         **kwargs,
     ) -> float:
@@ -1124,20 +1145,20 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a \\mid s)`
+            i.e., :math:`\\pi_0(a | s)`
 
         evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
 
         state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, 2)
             :math:`\\hat{Q}` for the observed action and action chosen evaluation policy,
-            i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a \\mid s_t))`.
+            i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a | s_t))`.
 
         gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
+            Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0
-            Standard deviation of Gaussian distribution (i.e., `band_width` hyperparameter of gaussian kernel).
+        sigma: float, default=1.0 (> 0)
+            Bandwidth hyperparameter of gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -1258,20 +1279,20 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a \\mid s)`
+            i.e., :math:`\\pi_0(a | s)`
 
         evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
 
         state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, 2)
             :math:`\\hat{Q}` for the observed action and action chosen evaluation policy,
-            i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a \\mid s_t))`.
+            i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a | s_t))`.
 
         ggamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
+            Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0
-            Standard deviation of Gaussian distribution (i.e., `band_width` hyperparameter of gaussian kernel).
+        sigma: float, default=1.0 (> 0)
+            Bandwidth hyperparameter of gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -1292,6 +1313,14 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
         -------
         estimated_confidence_interval: dict
             Dictionary storing the estimated mean and upper-lower confidence bounds.
+
+            .. code-block:: python
+
+                key: [
+                    mean,
+                    {100 * (1. - alpha)}% CI (lower),
+                    {100 * (1. - alpha)}% CI (upper),
+                ]
 
         """
         check_scalar(
@@ -1390,6 +1419,10 @@ class ContinuousSelfNormalizedTrajectoryWiseImportanceSampling(
 ):
     """Self-Normalized Trajectory-wise Importance Sampling (SNTIS) for continuous-action OPE (designed for deterministic policies).
 
+    Bases: :class:`ofrl.ope.ContinuousTrajectoryWiseImportanceSampling` -> :class:`ofrl.ope.BaseOffPolicyEstimator`
+
+    Imported as: :class:`ofrl.ope.ContinuousSelfNormalizedTrajectoryWiseImportanceSampling`
+
     Note
     -------
     SNTIS estimates the policy value via self-normalized trajectory-wise importance weight as follows.
@@ -1397,11 +1430,13 @@ class ContinuousSelfNormalizedTrajectoryWiseImportanceSampling(
     .. math::
 
         \\hat{J}_{\\mathrm{SNTIS}} (\\pi; \\mathcal{D})
-        := \\mathbb{E}_{n} [\\sum_{t=0}^{T-1} \\gamma^t \\frac{w_{0:T-1} \\delta(\\pi, a_{0:T-1})}{\\sum_{n} [w_{1:T-1} \\delta(\\pi, a_{0:T-1})]} r_t],
+        := \\mathbb{E}_{n} \\left[\\sum_{t=0}^{T-1} \\gamma^t \\frac{w_{0:T-1} \\delta(\\pi, a_{0:T-1})}{\\sum_{n} w_{1:T-1} \\delta(\\pi, a_{0:T-1})} r_t \\right],
 
-    where :math:`w_{0:T-1} := \\prod_{t=0}^{T-1} \\frac{1}{\\pi_0(a_t \\mid s_t)}`.
+    where :math:`w_{0:T-1} := \\prod_{t=0}^{T-1} (1 / \\pi_0(a_t | s_t))` is the trajectory-wise importance weight.
     :math:`\\delta(\\pi, a_{0:T}) = \\prod_{t=0}^{T-1} K(\\pi(s_t), a_t)` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy.
     Note that :math:`K(\\cdot)` is a kernel function.
+
+    The self-normalized estimator is no longer unbiased, but has variance bounded by :math:`r_{max}^2` while also being consistent.
 
     Parameters
     -------
@@ -1410,23 +1445,14 @@ class ContinuousSelfNormalizedTrajectoryWiseImportanceSampling(
 
     References
     -------
-    Yuta Saito, Shunsuke Aihara, Megumi Matsutani, and Yusuke Narita.
-    "Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation.", 2021.
-
     Nathan Kallus and Angela Zhou.
-    "Policy Evaluation and Optimization with Continuous Treatments.", 2019.
+    "Policy Evaluation and Optimization with Continuous Treatments." 2019.
 
     Nathan Kallus and Masatoshi Uehara.
-    "Intrinsically Efficient, Stable, and Bounded Off-Policy Evaluation for Reinforcement Learning.", 2019.
-
-    Adith Swaminathan and Thorsten Joachims.
-    "The Self-Normalized Estimator for Counterfactual Learning.", 2015.
-
-    Alex Strehl, John Langford, Sham Kakade, and Lihong Li.
-    "Learning from Logged Implicit Exploration Data.", 2010.
+    "Intrinsically Efficient, Stable, and Bounded Off-Policy Evaluation for Reinforcement Learning." 2019.
 
     Doina Precup, Richard S. Sutton, and Satinder P. Singh.
-    "Eligibility Traces for Off-Policy Policy Evaluation.", 2000.
+    "Eligibility Traces for Off-Policy Policy Evaluation." 2000.
 
     """
 
@@ -1462,16 +1488,16 @@ class ContinuousSelfNormalizedTrajectoryWiseImportanceSampling(
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a \\mid s)`
+            i.e., :math:`\\pi_0(a | s)`
 
         evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
 
         gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
+            Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0
-            Standard deviation of Gaussian distribution (i.e., `band_width` hyperparameter of gaussian kernel).
+        sigma: float, default=1.0 (> 0)
+            Bandwidth hyperparameter of gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -1512,7 +1538,11 @@ class ContinuousSelfNormalizedTrajectoryWiseImportanceSampling(
 class ContinuousSelfNormalizedPerDecisionImportanceSampling(
     ContinuousPerDecisionImportanceSampling
 ):
-    """Self-Normalized Per-Decision Importance Sampling (SNPDIS) for continuous-action OPE (assume deterministic policies).
+    """Self-Normalized Per-Decision Importance Sampling (SNPDIS) for continuous-action OPE (designed for deterministic policies).
+
+    Bases: :class:`ofrl.ope.ContinuousPerDecisionImportanceSampling` -> :class:`ofrl.ope.BaseOffPolicyEstimator`
+
+    Imported as: :class:`ofrl.ope.ContinuousSelfNormalizedPerDecisionImportanceSampling`
 
     Note
     -------
@@ -1521,11 +1551,13 @@ class ContinuousSelfNormalizedPerDecisionImportanceSampling(
     .. math::
 
         \\hat{J}_{\\mathrm{SNPDIS}} (\\pi; \\mathcal{D})
-        := \\mathbb{E}_{n} [\\sum_{t=0}^{T-1} \\gamma^t \\frac{w_{1:t} \\delta(\\pi, a_{0:t})}{\\sum_{n} [w_{1:t} \\delta(\\pi, a_{0:t})]} r_t],
+        := \\mathbb{E}_{n} \\left[\\sum_{t=0}^{T-1} \\gamma^t \\frac{w_{1:t} \\delta(\\pi, a_{0:t})}{\\sum_{n} w_{1:t} \\delta(\\pi, a_{0:t})} r_t \\right],
 
-    where :math:`w_{0:t} := \\prod_{t'=1}^t \\frac{1}{\\pi_0(a_{t'} \\mid s_{t'})}`.
+    where :math:`w_{0:t} := \\prod_{t'=1}^t (1 / \\pi_0(a_{t'} | s_{t'}))` is the per-decision importance weight.
     :math:`\\delta(\\pi, a_{0:t}) = \\prod_{t'=1}^t K(\\pi(s_{t'}), a_{t'})` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy.
     Note that :math:`K(\\cdot)` is a kernel function.
+
+    The self-normalized estimator is no longer unbiased, but has variance bounded by :math:`r_{max}^2` while also being consistent.
 
     Parameters
     -------
@@ -1534,23 +1566,14 @@ class ContinuousSelfNormalizedPerDecisionImportanceSampling(
 
     References
     -------
-    Yuta Saito, Shunsuke Aihara, Megumi Matsutani, and Yusuke Narita.
-    "Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation.", 2021.
-
     Nathan Kallus and Angela Zhou.
-    "Policy Evaluation and Optimization with Continuous Treatments.", 2019.
+    "Policy Evaluation and Optimization with Continuous Treatments." 2019.
 
     Nathan Kallus and Masatoshi Uehara.
-    "Intrinsically Efficient, Stable, and Bounded Off-Policy Evaluation for Reinforcement Learning.", 2019.
-
-    Adith Swaminathan and Thorsten Joachims.
-    "The Self-Normalized Estimator for Counterfactual Learning.", 2015.
-
-    Alex Strehl, John Langford, Sham Kakade, and Lihong Li.
-    "Learning from Logged Implicit Exploration Data.", 2010.
+    "Intrinsically Efficient, Stable, and Bounded Off-Policy Evaluation for Reinforcement Learning." 2019.
 
     Doina Precup, Richard S. Sutton, and Satinder P. Singh.
-    "Eligibility Traces for Off-Policy Policy Evaluation.", 2000.
+    "Eligibility Traces for Off-Policy Policy Evaluation." 2000.
 
     """
 
@@ -1586,16 +1609,16 @@ class ContinuousSelfNormalizedPerDecisionImportanceSampling(
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a \\mid s)`
+            i.e., :math:`\\pi_0(a | s)`
 
         evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
 
         gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
+            Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0
-            Standard deviation of Gaussian distribution (i.e., `band_width` hyperparameter of gaussian kernel).
+        sigma: float, default=1.0 (> 0)
+            Bandwidth hyperparameter of gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -1634,7 +1657,11 @@ class ContinuousSelfNormalizedPerDecisionImportanceSampling(
 
 @dataclass
 class ContinuousSelfNormalizedDoublyRobust(ContinuousDoublyRobust):
-    """Self-Normalized Doubly Robust (SNDR) for continuous-action OPE (assume deterministic policies).
+    """Self-Normalized Doubly Robust (SNDR) for continuous-action OPE (designed for deterministic policies).
+
+    Bases: :class:`ofrl.ope.ContinuousDoublyRobust` -> :class:`ofrl.ope.BaseOffPolicyEstimator`
+
+    Imported as: :class:`ofrl.ope.ContinuousSelfNormalizedDoublyRobust`
 
     Note
     -------
@@ -1643,12 +1670,14 @@ class ContinuousSelfNormalizedDoublyRobust(ContinuousDoublyRobust):
     .. math::
 
         \\hat{J}_{\\mathrm{DR}} (\\pi; \\mathcal{D})
-        := \\mathbb{E}_{n} [\\sum_{t=0}^{T-1} \\gamma^t ( \\frac{w_{0:t} \\delta(\\pi, a_{0:t})}{\\sum_{n} [w_{0:t} \\delta(\\pi, a_{0:t})]} (r_t - \\hat{Q}(s_t, a_t))
-            + \\frac{w_{0:t-1} \\delta(\\pi, a_{0:t-1})}{\\sum_{n} [w_{0:t-1} \\delta(\\pi, a_{0:t-1})]} \\mathbb{E}_{a \\sim \\pi(a \\mid s_t)}[\\hat{Q}(s_t, a)])],
+        &:= \\mathbb{E}_{n} \\Biggl[\\sum_{t=0}^{T-1} \\gamma^t \\biggl( \\frac{w_{0:t} \\delta(\\pi, a_{0:t})}{\\sum_{n} w_{0:t} \\delta(\\pi, a_{0:t})} (r_t - \\hat{Q}(s_t, a_t)) \\\\
+        & \quad \quad \quad \quad \quad + \\frac{w_{0:t-1} \\delta(\\pi, a_{0:t-1})}{\\sum_{n} w_{0:t-1} \\delta(\\pi, a_{0:t-1})} \\hat{Q}(s_t, \\pi(s_t)) \\biggr) \\Biggr],
 
-    where :math:`w_{0:t} := \\prod_{t'=0}^t \\frac{1}{\\pi_0(a_{t'} \\mid s_{t'})}`.
+    where :math:`w_{0:t} := \\prod_{t'=0}^t (1 / \\pi_0(a_{t'} | s_{t'}))` is the per-decision importance weight.
     :math:`\\delta(\\pi, a_{0:t}) = \\prod_{t'=1}^t K(\\pi(s_{t'}), a_{t'})` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy.
     Note that :math:`K(\\cdot)` is a kernel function.
+
+    The self-normalized estimator is no longer unbiased, but has variance bounded by :math:`r_{max}^2` while also being consistent.
 
     Parameters
     -------
@@ -1657,26 +1686,18 @@ class ContinuousSelfNormalizedDoublyRobust(ContinuousDoublyRobust):
 
     References
     -------
-    Yuta Saito, Shunsuke Aihara, Megumi Matsutani, and Yusuke Narita.
-    "Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation.", 2021.
-
-    Hoang Le, Cameron Voloshin, and Yisong Yue.
-    "Batch Policy Learning under Constraints.", 2019.
-
     Nathan Kallus and Angela Zhou.
-    "Policy Evaluation and Optimization with Continuous Treatments.", 2019.
+    "Policy Evaluation and Optimization with Continuous Treatments." 2019.
 
     Nathan Kallus and Masatoshi Uehara.
-    "Intrinsically Efficient, Stable, and Bounded Off-Policy Evaluation for Reinforcement Learning.", 2019.
+    "Intrinsically Efficient, Stable, and Bounded Off-Policy Evaluation for Reinforcement Learning." 2019.
 
     Nan Jiang and Lihong Li.
-    "Doubly Robust Off-policy Value Evaluation for Reinforcement Learning.", 2016.
+    "Doubly Robust Off-policy Value Evaluation for Reinforcement Learning." 2016.
 
     Philip S. Thomas and Emma Brunskill.
-    "Data-Efficient Off-Policy Policy Evaluation for Reinforcement Learning.", 2016.
+    "Data-Efficient Off-Policy Policy Evaluation for Reinforcement Learning." 2016.
 
-    Miroslav Dudík, Dumitru Erhan, John Langford, and Lihong Li.
-    "Doubly Robust Policy Evaluation and Optimization.", 2014.
     """
 
     estimator_name = "sndr"
@@ -1712,20 +1733,20 @@ class ContinuousSelfNormalizedDoublyRobust(ContinuousDoublyRobust):
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a \\mid s)`
+            i.e., :math:`\\pi_0(a | s)`
 
         evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
 
         state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, 2)
             :math:`\\hat{Q}` for the observed action and action chosen evaluation policy,
-            i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a \\mid s_t))`.
+            i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a | s_t))`.
 
         gamma: float, default=1.0
-            Discount factor. The value should be within `(0, 1]`.
+            Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0
-            Standard deviation of Gaussian distribution (i.e., `band_width` hyperparameter of gaussian kernel).
+        sigma: float, default=1.0 (> 0)
+            Bandwidth hyperparameter of gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.

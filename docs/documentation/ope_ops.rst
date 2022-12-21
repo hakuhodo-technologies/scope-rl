@@ -105,3 +105,47 @@ We describe some evaluation metrics of OPE/OPS `here <>`_.
 .. seealso::
 
     :doc:`Overview (online/offline RL) <online_offline_rl>` describes the problem setting of the policy learning (offline RL) part.
+
+.. grid::
+    :margin: 0
+
+    .. grid-item::
+        :columns: 3
+        :margin: 0
+        :padding: 0
+
+        .. grid::
+            :margin: 0
+
+            .. grid-item-card::
+                :link: online_offline_rl
+                :link-type: doc
+                :shadow: none
+                :margin: 0
+                :padding: 0
+
+                <<< Prev
+                **Offline RL**
+
+    .. grid-item::
+        :columns: 6
+        :margin: 0
+        :padding: 0
+
+    .. grid-item::
+        :columns: 3
+        :margin: 0
+        :padding: 0
+
+        .. grid::
+            :margin: 0
+
+            .. grid-item-card::
+                :link: evaluation_implementation
+                :link-type: doc
+                :shadow: none
+                :margin: 0
+                :padding: 0
+
+                Next >>>
+                **Supported Implementation**

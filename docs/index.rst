@@ -238,13 +238,43 @@ Welcome to OFRL!
                     * Per-Decision Importance Sampling
                     * ...
    
-
 .. toctree::
-   :maxdepth: 1
+    :maxdepth: 1
 
-   Installation <documentation/installation>
-   Quickstart <documentation/quickstart>
-   Tutorial <documentation/_autogallery/index>
-   Documentation <documentation/index>
-   FAQs <documentation/frequently_asked_questions>
-   Release Notes <https://github.com/negocia-inc/ofrl/releases>
+    Installation <documentation/installation>
+    Quickstart <documentation/quickstart>
+    Tutorial <documentation/_autogallery/index>
+    Documentation <documentation/index>
+    FAQs <documentation/frequently_asked_questions>
+    Release Notes <https://github.com/negocia-inc/ofrl/releases>
+
+.. grid::
+
+    .. grid-item::
+        :columns: 2
+        :margin: 0
+        :padding: 0
+
+    .. grid-item::
+        :columns: 8
+        :margin: 0
+        :padding: 0
+
+    .. grid-item::
+        :columns: 2
+        :margin: 0
+        :padding: 0
+
+        .. grid::
+            :margin: 0
+
+            .. grid-item-card::
+                :link: documentation/installation
+                :link-type: doc
+                :shadow: none
+                :margin: 0
+                :padding: 0
+
+                Next >>>
+                **Installation**
+

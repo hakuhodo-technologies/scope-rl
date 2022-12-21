@@ -1,18 +1,3 @@
-==========
-Why OFRL?
-==========
-
-Motivation
-----------
-
-
-Key contributions
-----------
-
-
-Comparisons with existing platforms
-----------
-
 .. grid::
     :margin: 0
 
@@ -25,14 +10,14 @@ Comparisons with existing platforms
             :margin: 0
 
             .. grid-item-card::
-                :link: index
+                :link: /documentation/quickstart
                 :link-type: doc
                 :shadow: none
                 :margin: 0
                 :padding: 0
 
                 <<< Prev
-                **Documentation (Back to Top)**
+                **Quickstart**
 
     .. grid-item::
         :columns: 6
@@ -48,21 +33,21 @@ Comparisons with existing platforms
             :margin: 0
 
             .. grid-item-card::
-                :link: online_offline_rl
+                :link: /documentation/distinctive_features
                 :link-type: doc
                 :shadow: none
                 :margin: 0
                 :padding: 0
 
                 Next >>>
-                **Problem Formulation**
+                **Why_OFRL?**
 
             .. grid-item-card::
-                :link: quickstart
+                :link: /documentation/index
                 :link-type: doc
                 :shadow: none
                 :margin: 0
                 :padding: 0
 
                 Next >>>
-                **Quickstart**
+                **Documentation**

@@ -1,4 +1,4 @@
-"""Augmented Lagrangian method for weight/value function learning (discrete action space)."""
+"""Augmented Lagrangian method for weight/value function learning (discrete action cases)."""
 from dataclasses import dataclass
 from typing import Optional
 from tqdm.auto import tqdm
@@ -44,21 +44,32 @@ class DiscreteAugmentedLagrangianStateActionWightValueLearning(BaseWeightValueLe
 
     .. math::
 
-        L(w, Q, \\lambda) := (1 - \\gamma) \\mathbb{E}_{s_0 \\sim d(s_0), a_0 \\sim \\pi(s_0)} [Q(s_0, a_0)] + \\lambda
-                            + \\mathbb{E}_{(s_t, a_t, r_t, s_{t+1}) \\sim d^{\\pi_0}, a_{t+1} \\sim \\pi(a_{t+1} | s_{t+1})} [w(s_t, a_t) (\\alpha_r r_t + \\gamma Q(s_{t+1}, a_{t+1}) - Q(s_t, a_t) - \\lambda)]
-                            + \\alpha_Q \\mathbb{E}_{(s_t, a_t) \\sim d^{\\pi_0}} [Q^2(s_t, a_t)] - \\alpha_w \\mathbb{E}_{(s_t, a_t) \\sim d^{\\pi_0}} [w^2(s_t, a_t)]
+        L(w, Q, \\lambda) 
+        &:= (1 - \\gamma) \\mathbb{E}_{s_0 \\sim d(s_0), a_0 \\sim \\pi(s_0)} [Q(s_0, a_0)] + \\lambda \\\\
+        & \\quad \\quad + \\mathbb{E}_{(s_t, a_t, r_t, s_{t+1}) \\sim d^{\\pi_0}, a_{t+1} \\sim \\pi(a_{t+1} | s_{t+1})} [w(s_t, a_t) (\\alpha_r r_t + \\gamma Q(s_{t+1}, a_{t+1}) - Q(s_t, a_t) - \\lambda)] \\\\
+        & \\quad \\quad + \\alpha_Q \\mathbb{E}_{(s_t, a_t) \\sim d^{\\pi_0}} [Q^2(s_t, a_t)] - \\alpha_w \\mathbb{E}_{(s_t, a_t) \\sim d^{\\pi_0}} [w^2(s_t, a_t)]
 
     where :math:`Q(s_t, a_t)` is the Q-function, :math:`w(s_t, a_t) \\approx d^{\\pi}(s_t, a_t) / d^{\\pi_0}(s_t, a_t)` is the state-action marginal importance weight.
 
     This estimator corresponds to the following estimators in its special cases.
+
     - DualDICE (Nachum et al., 2019): :math:`\\alpha_Q = 1, \\alpha_w = 0, \\alpha_r = 0, \\lambda = 0`.
     - GenDICE (Zhang et al., 2020), GradientDICE (Zhang et al., 2020): :math:`\\alpha_Q = 1, \\alpha_w = 0, \\alpha_r = 0`
     - AlgaeDICE (Nachum et al., 2019): :math:`\\alpha_Q = 0, \\alpha_w = 1, \\alpha_r = 1, \\lambda = 0`
     - BestDICE (Yang et al., 2020): :math:`\\alpha_Q = 0, \\alpha_w = 1, \\alpha_r = 1`
-    - Minimax Q Learning (MQL) (Uehara and Jiang, 2019): :math:`alpha_Q = 0, \\alpha_w = 0, \\alpha_r = 1, \\lambda = 0`
-    - Minimax Weight Learning (MWL) (Uehara and Jiang, 2019): :math:`alpha_Q = 0, \\alpha_w = 0, \\alpha_r = 0, \\lambda = 0`
+    - Minimax Q Learning (MQL) (Uehara and Jiang, 2019): :math:`\\alpha_Q = 0, \\alpha_w = 0, \\alpha_r = 1, \\lambda = 0`
+    - Minimax Weight Learning (MWL) (Uehara and Jiang, 2019): :math:`\\alpha_Q = 0, \\alpha_w = 0, \\alpha_r = 0, \\lambda = 0`
 
-    Note that, the positivity constraint :math:`w \\leq 0` should be imposed in the function approximation model.
+    ALM is beneficial in that it can simultaneously learn both Q-function and W-function in an adversarial manner. 
+    However, since the objective function of ALM is not convex, it may suffer from learning instability.
+
+    Note
+    -------
+    The positivity constraint :math:`w \\geq 0` should be imposed in the function approximation model.
+
+    .. seealso::
+
+        :class:`ofrl.ope.weight_value_learning.function`
 
     Parameters
     -------
@@ -69,9 +80,9 @@ class DiscreteAugmentedLagrangianStateActionWightValueLearning(BaseWeightValueLe
         Weight function model.
 
     gamma: float, default=1.0
-        Discount factor. The value should be within `(0, 1]`.
+        Discount factor. The value should be within (0, 1].
 
-    sigma: float, default=1.0 (> 0.0)
+    sigma: float, default=1.0 (> 0)
         Bandwidth hyperparameter of gaussian kernel. (This is for API consistency)
 
     state_scaler: d3rlpy.preprocessing.Scaler, default=None
@@ -80,33 +91,33 @@ class DiscreteAugmentedLagrangianStateActionWightValueLearning(BaseWeightValueLe
     method: {"dual_dice", "gen_dice", "algae_dice", "best_dice", "mql", "mwl", "custom"}, default="best_dice"
         Indicates which parameter set should be used. When, "custom" users can specify their own parameter.
 
-    batch_size: int, default=32
+    batch_size: int, default=32 (> 0)
         Batch size.
 
-    q_lr: float, default=1e-3
+    q_lr: float, default=1e-3 (> 0)
         Learning rate of q_function.
 
-    w_lr: float, default=1e-3
+    w_lr: float, default=1e-3 (> 0)
         Learning rate of w_function.
 
-    lambda_lr: float, default=1e-3
+    lambda_lr: float, default=1e-3 (> 0)
         Learning rate of lambda_.
 
-    alpha_q: float, default=None
+    alpha_q: float, default=None (>= 0)
         Regularization coefficient of the Q-function.
-        A value should be given when `method == "custom"`.
+        A value should be given if method is "custom".
 
-    alpha_w: float, default=None
+    alpha_w: float, default=None (>= 0)
         Regularization coefficient of the weight function.
-        A value should be given when `method == "custom"`.
+        A value should be given if method is "custom".
 
     alpha_r: bool, default=None
         Wether to consider the reward observation.
-        A value should be given when `method == "custom"`.
+        A value should be given if method is "custom".
 
     enable_lambda: bool, default=None
-        Whether to optimize :math:`\\lambda`. If False, :math:`\\lambda` is automatically set to zero.
-        A boolean value should be given when `method == "custom"`.
+        Whether to optimize :math:`\\lambda`. If `False`, :math:`\\lambda` is automatically set to zero.
+        A boolean value should be given if method is "custom".
 
     device: str, default="cuda:0"
         Specifies device used for torch.
@@ -114,22 +125,22 @@ class DiscreteAugmentedLagrangianStateActionWightValueLearning(BaseWeightValueLe
     References
     -------
     Masatoshi Uehara, Jiawei Huang, and Nan Jiang.
-    "Minimax Weight and Q-Function Learning for Off-Policy Evaluation.", 2020.
+    "Minimax Weight and Q-Function Learning for Off-Policy Evaluation." 2020.
 
     Mengjiao Yang, Ofir Nachum, Bo Dai, Lihong Li, and Dale Schuurmans.
-    "Off-Policy Evaluation via the Regularized Lagrangian.", 2020.
+    "Off-Policy Evaluation via the Regularized Lagrangian." 2020.
 
     Shangtong Zhang, Bo Liu, and Shimon Whiteson.
-    "GradientDICE: Rethinking Generalized Offline Estimation of Stationary Values.", 2020.
+    "GradientDICE: Rethinking Generalized Offline Estimation of Stationary Values." 2020.
 
     Ruiyi Zhang, Bo Dai, Lihong Li, and Dale Schuurmans.
-    "GenDICE: Generalized Offline Estimation of Stationary Values.", 2020.
+    "GenDICE: Generalized Offline Estimation of Stationary Values." 2020.
 
     Ofir Nachum, Bo Dai, Ilya Kostrikov, Yinlam Chow, Lihong Li, and Dale Schuurmans.
-    "AlgaeDICE: Policy Gradient from Arbitrary Experience.", 2019.
+    "AlgaeDICE: Policy Gradient from Arbitrary Experience." 2019.
 
     Ofir Nachum, Yinlam Chow, Bo Dai, and Lihong Li.
-    "DualDICE: Behavior-Agnostic Estimation of Discounted Stationary Distribution Corrections.", 2019.
+    "DualDICE: Behavior-Agnostic Estimation of Discounted Stationary Distribution Corrections." 2019.
 
     """
 
@@ -315,13 +326,13 @@ class DiscreteAugmentedLagrangianStateActionWightValueLearning(BaseWeightValueLe
             Conditional action distribution induced by the evaluation policy,
             i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
 
-        n_epochs: int, default=100
+        n_epochs: int, default=100 (> 0)
             Number of epochs to train.
 
-        n_steps_per_epoch: int, default=100
+        n_steps_per_epoch: int, default=100 (> 0)
             Number of gradient steps in a epoch.
 
-        random_state: int, default=None
+        random_state: int, default=None (>= 0)
             Random state.
 
         """
@@ -693,13 +704,13 @@ class DiscreteAugmentedLagrangianStateActionWightValueLearning(BaseWeightValueLe
         method: {"dual_dice", "gen_dice", "algae_dice", "best_dice", "mql", "mwl", "custom"}, default="best_dice"
             Indicates which parameter set should be used. When, "custom" users can specify their own parameter.
 
-        n_epochs: int, default=100
+        n_epochs: int, default=100 (> 0)
             Number of epochs to train.
 
-        n_steps_per_epoch: int, default=100
+        n_steps_per_epoch: int, default=100 (> 0)
             Number of gradient steps in a epoch.
 
-        random_state: int, default=None
+        random_state: int, default=None (>= 0)
             Random state.
 
         Return
@@ -748,22 +759,33 @@ class DiscreteAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearner)
 
     .. math::
 
-        L(w, V, \\lambda) := (1 - \\gamma) \\mathbb{E}_{s_0 \\sim d(s_0)} [V(s_0)] + \\lambda
-                            + \\mathbb{E}_{(s_t, a_t, r_t, s_{t+1}) \\sim d^{\\pi_0}} [w_s(s_t) w_a(s_t, a_t) (\\alpha_r r_t + \\gamma V(s_{t+1}) - V(s_t) - \\lambda)]
-                            + \\alpha_V \\mathbb{E}_{s_t \\sim d^{\\pi_0}} [V^2(s_t)] - \\alpha_w \\mathbb{E}_{s_t \\sim d^{\\pi_0}} [w_s^2(s_t)]
+        L(w, V, \\lambda) 
+        &:= (1 - \\gamma) \\mathbb{E}_{s_0 \\sim d(s_0)} [V(s_0)] + \\lambda \\\\
+        & \\quad \\quad + \\mathbb{E}_{(s_t, a_t, r_t, s_{t+1}) \\sim d^{\\pi_0}} [w_s(s_t) w_a(s_t, a_t) (\\alpha_r r_t + \\gamma V(s_{t+1}) - V(s_t) - \\lambda)] \\\\
+        & \\quad \\quad + \\alpha_V \\mathbb{E}_{s_t \\sim d^{\\pi_0}} [V^2(s_t)] - \\alpha_w \\mathbb{E}_{s_t \\sim d^{\\pi_0}} [w_s^2(s_t)]
 
     where :math:`V(s_t)` is the V-function, :math:`w_s(s_t) \\approx d^{\\pi}(s_t) / d^{\\pi_0}(s_t)` is the state marginal importance weight.
     :math:`w_a(s_t, a_t) = \\pi(a_t | s_t) / \\pi_0(a_t | s_t)` is the immediate importance weight.
 
     This estimator is analogous to the following estimators in its special cases (although the following uses Q-function and state-action marginal importance weight).
+
     - DualDICE (Nachum et al., 2019): :math:`\\alpha_Q = 1, \\alpha_w = 0, \\alpha_r = 0, \\lambda = 0`.
     - GenDICE (Zhang et al., 2020), GradientDICE (Zhang et al., 2020): :math:`\\alpha_Q = 1, \\alpha_w = 0, \\alpha_r = 0`
     - AlgaeDICE (Nachum et al., 2019): :math:`\\alpha_Q = 0, \\alpha_w = 1, \\alpha_r = 1, \\lambda = 0`
     - BestDICE (Yang et al., 2020): :math:`\\alpha_Q = 0, \\alpha_w = 1, \\alpha_r = 1`
-    - Minimax Value Learning (MVL) (Uehara and Jiang, 2019): :math:`alpha_Q = 0, \\alpha_w = 0, \\alpha_r = 1, \\lambda = 0`
-    - Minimax Weight Learning (MWL) (Uehara and Jiang, 2019): :math:`alpha_Q = 0, \\alpha_w = 0, \\alpha_r = 0, \\lambda = 0`
+    - Minimax Value Learning (MVL) (Uehara and Jiang, 2019): :math:`\\alpha_Q = 0, \\alpha_w = 0, \\alpha_r = 1, \\lambda = 0`
+    - Minimax Weight Learning (MWL) (Uehara and Jiang, 2019): :math:`\\alpha_Q = 0, \\alpha_w = 0, \\alpha_r = 0, \\lambda = 0`
 
-    Note that, the positivity constraint :math:`w \\leq 0` should be imposed in the function approximation model.
+    ALM is beneficial in that it can simultaneously learn both V-function and W-function in an adversarial manner. 
+    However, since the objective function of ALM is not convex, it may suffer from learning instability.
+
+    Note
+    -------
+    The positivity constraint :math:`w \\geq 0` should be imposed in the function approximation model.
+
+    .. seealso::
+
+        :class:`ofrl.ope.weight_value_learning.function`
 
     Parameters
     -------
@@ -774,9 +796,9 @@ class DiscreteAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearner)
         Weight function model.
 
     gamma: float, default=1.0
-        Discount factor. The value should be within `(0, 1]`.
+        Discount factor. The value should be within (0, 1].
 
-    sigma: float, default=1.0 (> 0.0)
+    sigma: float, default=1.0 (> 0)
         Bandwidth hyperparameter of gaussian kernel. (This is for API consistency)
 
     state_scaler: d3rlpy.preprocessing.Scaler, default=None
@@ -785,33 +807,33 @@ class DiscreteAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearner)
     method: {"dual_dice", "gen_dice", "algae_dice", "best_dice", "mvl", "mwl", "custom"}, default="best_dice"
         Indicates which parameter set should be used. When, "custom" users can specify their own parameter.
 
-    batch_size: int, default=32
+    batch_size: int, default=32 (> 0)
         Batch size.
 
-    v_lr: float, default=1e-3
+    v_lr: float, default=1e-3 (> 0)
         Learning rate of v_function.
 
-    w_lr: float, default=1e-3
+    w_lr: float, default=1e-3 (> 0)
         Learning rate of w_function.
 
-    lambda_lr: float, default=1e-3
+    lambda_lr: float, default=1e-3 (> 0)
         Learning rate of lambda_.
 
-    alpha_v: float, default=None
+    alpha_v: float, default=None (>= 0)
         Regularization coefficient of the V-function.
-        A value should be given when `method == "custom"`.
+        A value should be given if method is "custom".
 
-    alpha_w: float, default=None
+    alpha_w: float, default=None (>= 0)
         Regularization coefficient of the weight function.
-        A value should be given when `method == "custom"`.
+        A value should be given if method is "custom".
 
     alpha_r: bool, default=None
         Wether to consider the reward observation.
-        A value should be given when `method == "custom"`.
+        A value should be given if method is "custom".
 
     enable_lambda: bool, default=None
-        Whether to optimize :math:`\\lambda`. If False, :math:`\\lambda` is automatically set to zero.
-        A boolean value should be given when `method == "custom"`.
+        Whether to optimize :math:`\\lambda`. If `False`, :math:`\\lambda` is automatically set to zero.
+        A boolean value should be given if method is "custom".
 
     device: str, default="cuda:0"
         Specifies device used for torch.
@@ -819,22 +841,22 @@ class DiscreteAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearner)
     References
     -------
     Masatoshi Uehara, Jiawei Huang, and Nan Jiang.
-    "Minimax Weight and Q-Function Learning for Off-Policy Evaluation.", 2020.
+    "Minimax Weight and Q-Function Learning for Off-Policy Evaluation." 2020.
 
     Mengjiao Yang, Ofir Nachum, Bo Dai, Lihong Li, and Dale Schuurmans.
-    "Off-Policy Evaluation via the Regularized Lagrangian.", 2020.
+    "Off-Policy Evaluation via the Regularized Lagrangian." 2020.
 
     Shangtong Zhang, Bo Liu, and Shimon Whiteson.
-    "GradientDICE: Rethinking Generalized Offline Estimation of Stationary Values.", 2020.
+    "GradientDICE: Rethinking Generalized Offline Estimation of Stationary Values." 2020.
 
     Ruiyi Zhang, Bo Dai, Lihong Li, and Dale Schuurmans.
-    "GenDICE: Generalized Offline Estimation of Stationary Values.", 2020.
+    "GenDICE: Generalized Offline Estimation of Stationary Values." 2020.
 
     Ofir Nachum, Bo Dai, Ilya Kostrikov, Yinlam Chow, Lihong Li, and Dale Schuurmans.
-    "AlgaeDICE: Policy Gradient from Arbitrary Experience.", 2019.
+    "AlgaeDICE: Policy Gradient from Arbitrary Experience." 2019.
 
     Ofir Nachum, Yinlam Chow, Bo Dai, and Lihong Li.
-    "DualDICE: Behavior-Agnostic Estimation of Discounted Stationary Distribution Corrections.", 2019.
+    "DualDICE: Behavior-Agnostic Estimation of Discounted Stationary Distribution Corrections." 2019.
 
     """
 
@@ -1017,13 +1039,13 @@ class DiscreteAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearner)
             Conditional action distribution induced by the evaluation policy,
             i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
 
-        n_epochs: int, default=100
+        n_epochs: int, default=100 (> 0)
             Number of epochs to train.
 
-        n_steps_per_epoch: int, default=100
+        n_steps_per_epoch: int, default=100 (> 0)
             Number of gradient steps in a epoch.
 
-        random_state: int, default=None
+        random_state: int, default=None (>= 0)
             Random state.
 
         """
@@ -1256,13 +1278,13 @@ class DiscreteAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearner)
             Conditional action distribution induced by the evaluation policy,
             i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
 
-        n_epochs: int, default=100
+        n_epochs: int, default=100 (> 0)
             Number of epochs to train.
 
-        n_steps_per_epoch: int, default=100
+        n_steps_per_epoch: int, default=100 (> 0)
             Number of gradient steps in a epoch.
 
-        random_state: int, default=None
+        random_state: int, default=None (>= 0)
             Random state.
 
         Return

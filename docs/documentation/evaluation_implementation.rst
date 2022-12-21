@@ -120,20 +120,20 @@ Extensions
 
 Direct Method (DM)
 ----------
-DM :cite:`beygelzimer2009offset` is a model-based approach which uses the initial state value estimated by Fitted Q Evaluation (FQE) :cite:`le2019batch`.
+DM :cite:`beygelzimer2009offset` is a model-based approach which uses the initial state value (estimated by e.g., Fitted Q Evaluation (FQE) :cite:`le2019batch`).
 It first learns the Q-function and then leverages the learned Q-function as follows.
 
 .. math::
 
-    \hat{J}_{\mathrm{DM}} (\pi; \mathcal{D}) := \mathbb{E}_n \left[ \mathbb{E}_{a_0 \sim \pi(a_0 | s_0)} [\hat{Q}(s_0, a_0)] \right] = \mathbb{E}_n [\hat{V}(s_0)],
+    \hat{J}_{\mathrm{DM}} (\pi; \mathcal{D}) := \mathbb{E}_n [ \mathbb{E}_{a_0 \sim \pi(a_0 | s_0)} [\hat{Q}(s_0, a_0)] ] = \mathbb{E}_n [\hat{V}(s_0)],
 
 where :math:`\mathcal{D}=\{\{(s_t, a_t, r_t)\}_{t=0}^T\}_{i=1}^n` is the logged dataset with :math:`n` trajectories of data.
 :math:`T` indicates step per episode. :math:`\hat{Q}(s_t, a_t)` is the estimated state-action value and :math:`\hat{V}(s_t)` is the estimated state value.
 
-DM has low variance, but can incur bias caused by approximation errors.
+DM has low variance, but can incur bias due to approximation errors.
 
-* :class:`DiscreteDirectMethod`
-* :class:`ContinuousDirectMethod`
+    * :class:`DiscreteDirectMethod`
+    * :class:`ContinuousDirectMethod`
 
 .. note::
 
@@ -150,13 +150,13 @@ TIS :cite:`precup2000eligibility` uses importance sampling technique to correct 
 
     \hat{J}_{\mathrm{TIS}} (\pi; \mathcal{D}) := \mathbb{E}_{n} \left[\sum_{t=0}^{T-1} \gamma^t w_{1:T-1} r_t \right],
 
-where :math:`w_{0:T-1} := \prod_{t=0}^{T-1} (\pi(a_t | s_t) / \pi_0(a_t | s_t))` is the importance weight.
+where :math:`w_{0:T-1} := \prod_{t=0}^{T-1} (\pi(a_t | s_t) / \pi_0(a_t | s_t))` is the trajectory-wise importance weight.
 
 TIS enables an unbiased estimation of the policy value. However, when the trajectory length :math:`T` is large, TIS suffers from high variance
 due to the product of importance weights.
 
-* :class:`DiscreteTrajectoryWiseImportanceSampling`
-* :class:`ContinuousTrajectoryWiseImportanceSampling`
+    * :class:`DiscreteTrajectoryWiseImportanceSampling`
+    * :class:`ContinuousTrajectoryWiseImportanceSampling`
 
 .. _implementation_pdis:
 
@@ -170,12 +170,12 @@ PDIS only considers the importance weight of the past interactions when estimati
 
     \hat{J}_{\mathrm{PDIS}} (\pi; \mathcal{D}) := \mathbb{E}_{n} \left[ \sum_{t=0}^{T-1} \gamma^t w_{0:t} r_t \right],
 
-where :math:`w_{0:t} := \prod_{t'=0}^t (\pi_e(a_{t'} \mid s_{t'}) / \pi_b(a_{t'} \mid s_{t'}))` is the importance weight of past interactions.
+where :math:`w_{0:t} := \prod_{t'=0}^t (\pi_e(a_{t'} | s_{t'}) / \pi_b(a_{t'} | s_{t'}))` is the importance weight of past interactions.
 
 PDIS remains unbiased while reducing the variance of TIS. However, when :math:`t` is large, PDIS still suffers from high variance.
 
-* :class:`DiscretePerDecisionImportanceSampling`
-* :class:`ContinuousPerDecisionWiseImportanceSampling`
+    * :class:`DiscretePerDecisionImportanceSampling`
+    * :class:`ContinuousPerDecisionWiseImportanceSampling`
 
 .. _implementation_dr:
 
@@ -189,10 +189,11 @@ It introduces :math:`\hat{Q}` as a baseline estimation in the recursive form of 
     \hat{J}_{\mathrm{DR}} (\pi; \mathcal{D})
     := \mathbb{E}_{n} \left[\sum_{t=0}^{T-1} \gamma^t (w_{0:t} (r_t - \hat{Q}(s_t, a_t)) + w_{0:t-1} \mathbb{E}_{a \sim \pi(a | s_t)}[\hat{Q}(s_t, a)])\right],
 
-DR is unbiased and reduces the variance of IPS when :math:`\hat{Q}(\cdot)` is reasonably accurate to satisfy :math:`0 < \hat{Q}(\cdot) < 2 Q(\cdot)`.
+DR is unbiased and reduces the variance of PDIS when :math:`\hat{Q}(\cdot)` is reasonably accurate to satisfy :math:`0 < \hat{Q}(\cdot) < 2 Q(\cdot)`. 
+However, when the importance weight is quite large, it may still suffer from a high variance.
 
-* :class:`DiscreteDoublyRobust`
-* :class:`ContinuousDoublyRobust`
+    * :class:`DiscreteDoublyRobust`
+    * :class:`ContinuousDoublyRobust`
 
 .. _implementation_sn:
 
@@ -207,19 +208,19 @@ Specifically, it substitute importance weight :math:`w_{\ast}` as follows.
 
 where :math:`\tilde{w}_{\ast}` is the self-normalized importance weight.
 
-Self-normalized estimators has variance bounded by :math:`r_{max}^2` while also being consistent.
+Self-normalized estimators are no longer unbiased, but has variance bounded by :math:`r_{max}^2` while also being consistent.
 
 (Discrete)
 
-* :class:`DiscreteSelfNormalizedTrajectoryWiseImportanceSampling`
-* :class:`DiscreteSelfNormalizedPerDecisionImportanceSampling`
-* :class:`DiscreteSelfNormalizedDoublyRobust`
+    * :class:`DiscreteSelfNormalizedTrajectoryWiseImportanceSampling`
+    * :class:`DiscreteSelfNormalizedPerDecisionImportanceSampling`
+    * :class:`DiscreteSelfNormalizedDoublyRobust`
 
 (Continuous)
 
-* :class:`ContinuousSelfNormalizedTrajectoryWiseImportanceSampling`
-* :class:`ContinuousSelfNormalizedPerDecisionImportanceSampling`
-* :class:`ContinuousSelfNormalizedDoublyRobust`
+    * :class:`ContinuousSelfNormalizedTrajectoryWiseImportanceSampling`
+    * :class:`ContinuousSelfNormalizedPerDecisionImportanceSampling`
+    * :class:`ContinuousSelfNormalizedDoublyRobust`
 
 .. _implementation_marginal_ope:
 
@@ -238,7 +239,10 @@ Then, the importance weight is replaced as follows.
 .. math::
 
     w(s_t, a_t) &= w_{s, a}(s_t, a_t) \\
-    w(s_t, a_t) &= w_{s}(s_t) \frac{\pi(a_t | s_t)}{\pi_0(a_t | s_t)}
+    w(s_t, a_t) &= w_{s}(s_t) w_{t}(s_t, a_t)
+    
+    
+where :math:`w_t(s_t, a_t) = \pi(a_t | s_t) / \pi_0(a_t | s_t)` is the immediate importance weight.
 
 This estimator is particularly useful when policy visits the same or similar states among different trajectories or different timestep.
 (e.g., when the state transition is something like :math:`\cdots \rightarrow s_1 \rightarrow s_2 \rightarrow s_1 \rightarrow s_2 \rightarrow \cdots` or when the trajectories always visits some particular state as :math:`\cdots \rightarrow s_{*} \rightarrow s_{1} \rightarrow s_{*} \rightarrow \cdots`)
@@ -278,18 +282,18 @@ We implement state marginal and state-action marginal OPE estimators in the foll
 
 (State Marginal Estimators)
 
-* :class:`StateMarginalDirectMethod`
-* :class:`StateMarginalImportanceSampling`
-* :class:`StateMarginalDoublyRobust`
-* :class:`StateMarginalSelfNormalizedImportanceSampling`
-* :class:`StateMarginalSelfNormalizedDoublyRobust`
+    * :class:`StateMarginalDirectMethod`
+    * :class:`StateMarginalImportanceSampling`
+    * :class:`StateMarginalDoublyRobust`
+    * :class:`StateMarginalSelfNormalizedImportanceSampling`
+    * :class:`StateMarginalSelfNormalizedDoublyRobust`
 
 (State-Action Marginal Estimators)
 
-* :class:`StateActionMarginalImportanceSampling`
-* :class:`StateActionMarginalDoublyRobust`
-* :class:`StateActionMarginalSelfNormalizedImportanceSampling`
-* :class:`StateActionMarginalSelfNormalizedDoublyRobust`
+    * :class:`StateActionMarginalImportanceSampling`
+    * :class:`StateActionMarginalDoublyRobust`
+    * :class:`StateActionMarginalSelfNormalizedImportanceSampling`
+    * :class:`StateActionMarginalSelfNormalizedDoublyRobust`
 
 .. _implementation_drl:
 
@@ -302,15 +306,15 @@ Comparing DR in the standard and marginal OPE, we notice that their formulation 
 .. math::
 
     \hat{J}_{\mathrm{DR}} (\pi; \mathcal{D})
-    := \mathbb{E}_{n} [\sum_{t=0}^{T-1} \gamma^t (w_{0:t} (r_t - \hat{Q}(s_t, a_t)) + w_{0:t-1} \mathbb{E}_{a \sim \pi(a \mid s_t)}[\hat{Q}(s_t, a)])],
+    := \mathbb{E}_{n} \left[\sum_{t=0}^{T-1} \gamma^t (w_{0:t} (r_t - \hat{Q}(s_t, a_t)) + w_{0:t-1} \mathbb{E}_{a \sim \pi(a | s_t)}[\hat{Q}(s_t, a)]) \right],
 
 (DR in marginal OPE)
 
 .. math::
 
     \hat{J}_{\mathrm{SAM-DR}} (\pi; \mathcal{D})
-    &:= \mathbb{E}_{n} [\hat{Q}(s_0, a_0)] \\
-    & \quad \quad + \mathbb{E}_{n} [\sum_{t=0}^{T-1} \gamma^t w_{s, a}(s_t, a_t) (r_t + \gamma \mathbb{E}_{a \sim \pi(a \mid s_t)}[\hat{Q}(s_{t+1}, a)] - \hat{Q}(s_t, a_t))],
+    &:= \mathbb{E}_{n} [\mathbb{E}_{a_0 \sim \pi(a_0 | s_0)} \hat{Q}(s_0, a_0)] \\
+    & \quad \quad + \mathbb{E}_{n} \left[\sum_{t=0}^{T-1} \gamma^t w_{s, a}(s_t, a_t) (r_t + \gamma \mathbb{E}_{a \sim \pi(a | s_t)}[\hat{Q}(s_{t+1}, a)] - \hat{Q}(s_t, a_t)) \right],
 
 **TODO** (brief discussion about statistical efficiency)
 
@@ -322,20 +326,20 @@ DRL :cite:`kallus2020double` leverages the marginal importance sampling in the s
 
     \hat{J}_{\mathrm{DRL}} (\pi; \mathcal{D})
     & := \frac{1}{n} \sum_{k=1}^K \sum_{i=1}^{n_k} \sum_{t=0}^{T-1} (w_s^j(s_{i,t}, a_{i, t}) (r_{i, t} - Q^j(s_{i, t}, a_{i, t})) \\
-    & \quad \quad + w_s^j(s_{i, t-1}, a_{i, t-1}) \mathbb{E}_{a \sim \pi(a \mid s_t)}[Q^j(s_{i, t}, a)] )
+    & \quad \quad + w_s^j(s_{i, t-1}, a_{i, t-1}) \mathbb{E}_{a \sim \pi(a | s_t)}[Q^j(s_{i, t}, a)] )
 
 Note that, DRL uses "cross-fitting" as an additional strategy to achieve a statistical efficiency.
 Specifically, let :math:`K` is the number of folds and :math:`\mathcal{D}_j` is the :math:`j`-th split of logged data consisting of :math:`n_k` samples.
 Cross-fitting trains :math:`w^j` and :math:`Q^j` on the subset of data used for OPE, i.e., :math:`\mathcal{D} \setminus \mathcal{D}_j`.
+
+    * :class:`DiscreteDoubleReinforcementLearning`
+    * :class:`ContinuousDoubleReinforcementLearning`
 
 .. tip::
 
     .. dropdown:: How to obtain Q-hat via cross-fitting?
 
         To obtain :math:`\hat{Q}` via cross-fitting, please specify **TODO**
-
-* :class:`DiscreteDoubleReinforcementLearning`
-* :class:`ContinuousDoubleReinforcementLearning`
 
 .. _implementation_sope:
 
@@ -380,7 +384,7 @@ where SOPE uses per-decision importance weight :math:`w_t(s_t, a_t) := \pi(a_t |
 
 .. _implementation_high_confidence_ope:
 
-High Confidence Off-Policy Evaluation (HC-OPE)
+High Confidence Off-Policy Evaluation (HCOPE)
 ----------
 To alleviate the risk of optimistic estimation, we are often interested in the confidence intervals and the lower bound of the estimated policy value.
 We implement four methods to estimate the confidence intervals :cite:`thomas2015evaluation` :cite:`thomas2015improvement`.
@@ -448,7 +452,7 @@ To address this issue, continuous-action OPE estimators apply kernel density est
 
 .. math::
 
-    \overline{w}_t = \int_{a \in \mathcal{A}} \frac{\pi(a \mid s_t)}{\pi_0(a_t | s_t)} \cdot \frac{1}{h} K \left( \frac{a - a_t}{h} \right) da,
+    \overline{w}_t = \int_{a \in \mathcal{A}} \frac{\pi(a | s_t)}{\pi_0(a_t | s_t)} \cdot \frac{1}{h} K \left( \frac{a - a_t}{h} \right) da,
 
 where :math:`K(\cdot)` denotes a kernel function and :math:`h` is the bandwidth hyperparameter.
 We can use any function as :math:`K(\cdot)` that meets the following qualities:
@@ -564,14 +568,14 @@ DM adopts model-based approach to estimate the cumulative distribution function.
 
 .. math::
 
-        \hat{F}_{\mathrm{DM}}(m, \pi; \mathcal{D}) := \mathbb{E}_{n} \left[ \mathbb{E}_{a_0 \sim \pi(a_0 | s_0)} \hat{G}(m; s_0, a_0) \right]
+        \hat{F}_{\mathrm{DM}}(m, \pi; \mathcal{D}) := \mathbb{E}_{n} [\mathbb{E}_{a_0 \sim \pi(a_0 | s_0)} \hat{G}(m; s_0, a_0)]
 
 where :math:`\hat{F}(\cdot)` is the estimated cumulative distribution function and :math:`\hat{G}(\cdot)` is the estimated conditional distribution.
 
 DM is vulnerable to the approximation error, but has low variance.
 
-* :class:`DiscreteCumulativeDistributionDirectMethod`
-* :class:`ContinuousCumulativeDistributionDirectMethod`
+    * :class:`DiscreteCumulativeDistributionDirectMethod`
+    * :class:`ContinuousCumulativeDistributionDirectMethod`
 
 .. _implementation_cd_tis:
 
@@ -588,8 +592,8 @@ TIS is unbiased but can suffer from high variance.
 In particular, :math:`\hat{F}_{\mathrm{TIS}}(\cdot)` sometimes becomes more than one when the variance is high.
 Therefore, we correct CDF as :math:`\hat{F}^{\ast}_{\mathrm{TIS}}(m, \pi; \mathcal{D}) := \min(\max_{m' \leq m} \hat{F}_{\mathrm{TIS}}(m', \pi; \mathcal{D}), 1)` :cite:`huang2021off`.
 
-* :class:`DiscreteCumulativeDistributionTrajectoryWiseImportanceSampling`
-* :class:`ContinuousCumulativeDistributionTrajectoryWiseImportanceSampling`
+    * :class:`DiscreteCumulativeDistributionTrajectoryWiseImportanceSampling`
+    * :class:`ContinuousCumulativeDistributionTrajectoryWiseImportanceSampling`
 
 .. _implementation_cd_tdr:
 
@@ -613,16 +617,16 @@ Since :math:`\hat{F}_{\mathrm{TDR}}(\cdot)` may be less than zero or more than o
 
 Note that, this estimator is not equivalent to the (recursive) DR estimator defined by :cite:`huang2022off`. We are planning to implement the recursive version in a future update of the software.
 
-* :class:`DiscreteCumulativeDistributionTrajectoryWiseDoublyRobust`
-* :class:`ContinuousCumulativeDistributionTrajectoryWiseDoublyRobust`
+    * :class:`DiscreteCumulativeDistributionTrajectoryWiseDoublyRobust`
+    * :class:`ContinuousCumulativeDistributionTrajectoryWiseDoublyRobust`
 
 Finally, we also provide the self-normalized estimators for TIS and TDR.
 They use the self-normalized importance weight :math:`\tilde{w}_{\ast} := w_{\ast} / \mathbb{E}_{n}[w_{\ast}]` for the variance reduction purpose.
 
-* :class:`DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSampling`
-* :class:`DiscreteCumulativeDistributionSelfNormalizedDoublyRobust`
-* :class:`ContinuousCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSampling`
-* :class:`ContinuousCumulativeDistributionSelfNormalizedDoublyRobust`
+    * :class:`DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSampling`
+    * :class:`DiscreteCumulativeDistributionSelfNormalizedDoublyRobust`
+    * :class:`ContinuousCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSampling`
+    * :class:`ContinuousCumulativeDistributionSelfNormalizedDoublyRobust`
 
 .. _implementation_eval_ope_ops:
 
@@ -724,3 +728,67 @@ The OPS class implements the following functions.
 * :class:`visualize_variance_for_validation`
 * :class:`visualize_lower_quartile_for_validation`
 * :class:`visualize_conditional_value_at_risk_for_validation`
+
+.. grid::
+    :margin: 0
+
+    .. grid-item::
+        :columns: 3
+        :margin: 0
+        :padding: 0
+
+        .. grid::
+            :margin: 0
+
+            .. grid-item-card::
+                :link: online_offline_rl
+                :link-type: doc
+                :shadow: none
+                :margin: 0
+                :padding: 0
+
+                <<< Prev
+                **Problem Formulation**
+
+            .. grid-item-card::
+                :link: learning_implementation
+                :link-type: doc
+                :shadow: none
+                :margin: 0
+                :padding: 0
+
+                <<< Prev
+                **Offline RL**
+
+    .. grid-item::
+        :columns: 6
+        :margin: 0
+        :padding: 0
+
+    .. grid-item::
+        :columns: 3
+        :margin: 0
+        :padding: 0
+
+        .. grid::
+            :margin: 0
+
+            .. grid-item-card::
+                :link: ofrl_api
+                :link-type: doc
+                :shadow: none
+                :margin: 0
+                :padding: 0
+
+                Next >>>
+                **Package Reference**
+
+            .. grid-item-card::
+                :link: quickstart
+                :link-type: doc
+                :shadow: none
+                :margin: 0
+                :padding: 0
+
+                Next >>>
+                **Quickstart**
