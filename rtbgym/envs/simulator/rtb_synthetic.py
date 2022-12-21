@@ -21,8 +21,9 @@ from ...types import Numeric
 
 @dataclass
 class RTBSyntheticSimulator(BaseSimulator):
-    """Class to calculate outcome probability and stochastically determine auction result
-       in Real-Time Bidding (RTB) setting for display advertising.
+    """Class to calculate outcome probability and stochastically determine auction result in Real-Time Bidding (RTB) setting for display advertising.
+
+    Imported as: :class:`rtbgym.envs.simulator.RTBSyntheticSimulator`
 
     Parameters
     -------
@@ -67,7 +68,7 @@ class RTBSyntheticSimulator(BaseSimulator):
 
     minimum_standard_bid_price: int, default=None (> 0)
         Minimum value for standard bid price.
-        If `None`, minimum_standard_bid_price is set to `standard_bid_price_distribution.mean / 2`.
+        If `None`, minimum_standard_bid_price is set to :class:`standard_bid_price_distribution.mean / 2`.
 
     search_volume_distribution: NormalDistribution, default=NormalDistribution(mean=200, std=20, random_state=12345)
         Search volume distribution for each timestep.
@@ -81,10 +82,10 @@ class RTBSyntheticSimulator(BaseSimulator):
     References
     -------
     Di Wu, Xiujun Chen, Xun Yang, Hao Wang, Qing Tan, Xiaoxun Zhang, Jian Xu, and Kun Gai.
-    "Budget Constrained Bidding by Model-free Reinforcement Learning in Display Advertising.", 2018.
+    "Budget Constrained Bidding by Model-free Reinforcement Learning in Display Advertising." 2018.
 
     Jun Zhao, Guang Qiu, Ziyu Guan, Wei Zhao, and Xiaofei He.
-    "Deep Reinforcement Learning for Sponsored Search Real-time Bidding.", 2018.
+    "Deep Reinforcement Learning for Sponsored Search Real-time Bidding." 2018.
 
     """
 
@@ -433,11 +434,11 @@ class RTBSyntheticSimulator(BaseSimulator):
 
         Parameters
         -------
-        ad_ids: ndarray of shape (search_volume, )
+        ad_ids: array-like of shape (search_volume, )
             IDs of the ads.
             (search_volume is determined in RL environment.)
 
-        user_ids: ndarray of shape (search_volume, )
+        user_ids: array-like of shape (search_volume, )
             IDs of the users.
             (search_volume is determined in RL environment.)
 
@@ -480,8 +481,7 @@ class RTBSyntheticSimulator(BaseSimulator):
         user_ids: np.ndarray,
         bid_prices: np.ndarray,
     ) -> Tuple[np.ndarray]:
-        """Simulate bidding auction for given queries.
-           (calculate outcome probability and stochastically determine auction result.)
+        """Simulate bidding auction for given queries. (Calculate outcome probability and stochastically determine auction result.)
 
         Parameters
         -------

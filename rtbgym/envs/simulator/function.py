@@ -18,16 +18,21 @@ from ...utils import check_array
 class WinningPriceDistribution(BaseWinningPriceDistribution):
     """Class to sample the winning price (i.e., second price) and compare with the given bid price.
 
+    Imported as: :class:`rtbgym.envs.simulator.WinningDistribution` 
+
     Note
     -------
     Winning price distribution follows gamma distribution.
-    Please override this class to define your own WinningPriceDistribution.
 
     .. math::
 
         p(x) = x^{k-1} \\frac{\\exp(- x / \\theta)}{\\theta^k \\Gamma(k)},
 
     where :math:`\\Gamma(k) := (k-1)!` and :math:`k` and :math:`\\theta` are hyperparameters.
+
+    Tip
+    -------
+    Use :class:`BaseWinningPriceDistribution` to define custom WinningPriceDistribution.
 
     Parameters
     -------
@@ -59,7 +64,7 @@ class WinningPriceDistribution(BaseWinningPriceDistribution):
     References
     -------
     Wen-Yuan Zhu, Wen-Yueh Shih, Ying-Hsuan Lee, Wen-Chih Peng, and Jiun-Long Huang.
-    "A Gamma-based Regression for Winning Price Estimation in Real-Time Bidding Advertising.", 2017.
+    "A Gamma-based Regression for Winning Price Estimation in Real-Time Bidding Advertising." 2017.
 
     """
 
@@ -183,6 +188,8 @@ class WinningPriceDistribution(BaseWinningPriceDistribution):
 class ClickThroughRate(BaseClickAndConversionRate):
     """Class to calculate ground-truth CTR (i.e., click per impression).
 
+    Imported as: :class:`rtbgym.envs.simulator.ClickThroughRate`
+
     Note
     -------
     We define two coefficient, context coefficient (`coef`) and time coefficient (`time_coef`).
@@ -192,7 +199,9 @@ class ClickThroughRate(BaseClickAndConversionRate):
     In short, CTR is calculated as follows.
         CTR = (context @ coef) * time_coef, where @ denotes inner product.
 
-    Please override this class to define your own CTR.
+    Tip
+    -------
+    Use :class:`BaseClickAndConversionRate` to define custom ClickThroughRate.
 
     Parameters
     -------
@@ -393,6 +402,8 @@ class ClickThroughRate(BaseClickAndConversionRate):
 class ConversionRate(BaseClickAndConversionRate):
     """Class to calculate ground-truth CVR (i.e., conversion per click).
 
+    Imported as: :class:`rtbgym.envs.simulator.ConversionRate`
+
     Note
     -------
     We define two coefficient, context coefficient (`coef`) and time coefficient (`time_coef`).
@@ -402,7 +413,9 @@ class ConversionRate(BaseClickAndConversionRate):
     In short, CVR is calculated as follows.
         CVR = (context @ coef) * time_coef, where @ denotes inner product.
 
-    Please override this class to define your own CTR.
+    Tip
+    -------
+    Use :class:`BaseClickAndConversionRate` to define custom ConversionRate.
 
     Parameters
     -------

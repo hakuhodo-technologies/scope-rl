@@ -15,6 +15,8 @@ from ...types import Numeric
 class Bidder:
     """Class to determine bid price.
 
+    Imported as: :class:`rtbgym.envs.simulator.Bidder` 
+
     Note
     -------
     Intended to be called and initialized from RTBEnv class in env.py.
@@ -47,10 +49,10 @@ class Bidder:
     References
     -------
     Di Wu, Xiujun Chen, Xun Yang, Hao Wang, Qing Tan, Xiaoxun Zhang, Jian Xu, and Kun Gai.
-    "Budget Constrained Bidding by Model-free Reinforcement Learning in Display Advertising.", 2018.
+    "Budget Constrained Bidding by Model-free Reinforcement Learning in Display Advertising." 2018.
 
     Jun Zhao, Guang Qiu, Ziyu Guan, Wei Zhao, and Xiaofei He.
-    "Deep Reinforcement Learning for Sponsored Search Real-time Bidding.", 2018.
+    "Deep Reinforcement Learning for Sponsored Search Real-time Bidding." 2018.
 
     """
 
