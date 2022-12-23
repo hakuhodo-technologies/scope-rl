@@ -23,6 +23,7 @@ env = RTBEnv(random_state=12345)
 gym.envs.register(
     id="RTBEnv-discrete-v0",
     entry_point="rtbgym.envs.wrapper_rtb:CustomizedRTBEnv",
+    nondeterministic=True,
     kwargs={
         "original_env": env,
         "reward_predictor": LogisticRegression(),
@@ -33,6 +34,7 @@ gym.envs.register(
 gym.envs.register(
     id="RTBEnv-continuous-v0",
     entry_point="rtbgym.envs.wrapper_rtb:CustomizedRTBEnv",
+    nondeterministic=True,
     kwargs={
         "original_env": env,
         "reward_predictor": LogisticRegression(),

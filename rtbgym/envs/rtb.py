@@ -24,10 +24,14 @@ from ..types import Action, Numeric
 class RTBEnv(gym.Env):
     """Class for Real-Time Bidding (RTB) environment for reinforcement learning (RL) agent to interact.
 
+    Bases: :class:`gym.Env`
+
+    Imported as: :class:`rtbgym.RTBEnv`
+
     Note
     -------
-    Adopt OpenAI Gym like interface. See Examples below for the usage.
-    Use RTBSyntheticSimulator/RTBSemiSyntheticSimulator in simulator.py to collect auction results.
+    RTBGym works with OpenAI Gym and Gymnasium-like interface. See Examples below for the usage.
+    This environment uses :class:`RTBSyntheticSimulator` to collect auction results.
 
     Constrained Markov Decision Process (CMDP) definition are given as follows:
         timestep: int (> 0)
@@ -37,11 +41,11 @@ class RTBEnv(gym.Env):
 
         state: array-like of shape (7, )
             Statistical feedbacks of auctions during the timestep, including following values.
-                - timestep
-                - remaining budget
-                - impression level features at the previous timestep
-                  (budget consumption rate, cost per mille of impressions, auction winning rate, and reward)
-                - adjust rate (i.e., RL agent action) at the previous timestep
+
+            - timestep
+            - remaining budget
+            - impression level features at the previous timestep (budget consumption rate, cost per mille of impressions, auction winning rate, and reward)
+            - adjust rate (i.e., RL agent action) at the previous timestep
 
         action: {int, float, array-like of shape (1, )} (>= 0)
             Adjust rate parameter used for determining the bid price as follows.
@@ -57,8 +61,9 @@ class RTBEnv(gym.Env):
         reward: int (>= 0)
             Total clicks/conversions gained during the timestep.
 
-        discount_rate: int (= 1)
+        discount_rate: int
             Discount factor for cumulative reward calculation.
+            Set discount_rate = 1 (i.e., no discount) in RTB.
 
         constraint: int (> 0)
             Total cost should not exceed the initial budget.
@@ -119,7 +124,7 @@ class RTBEnv(gym.Env):
 
     minimum_standard_bid_price: int, default=None (> 0)
         Minimum value for standard bid price.
-        If `None`, minimum_standard_bid_price is set to `standard_bid_price_distribution.mean / 2`.
+        If `None`, minimum_standard_bid_price is set to :class:`standard_bid_price_distribution.mean / 2`.
 
     search_volume_distribution: NormalDistribution, default=NormalDistribution(mean=30, std=10)
         Search volume distribution for each timestep.
@@ -133,7 +138,9 @@ class RTBEnv(gym.Env):
     Examples
     -------
 
-    .. codeblock:: python
+    Setup:
+
+    .. code-block:: python
 
         # import necessary module from rtbgym
         from rtbgym.env import RTBEnv
@@ -155,7 +162,11 @@ class RTBEnv(gym.Env):
             )
         )
 
-        # OpenAI Gym like interaction with agent
+    Interaction:
+
+    .. code-block:: python
+
+        # OpenAI Gym and Gymnasium-like interaction with agent
         for episode in range(1000):
             obs = env.reset()
             done = False
@@ -164,22 +175,36 @@ class RTBEnv(gym.Env):
                 action = agent.predict_online(obs)
                 obs, reward, done, info = env.step(action)
 
+    Online Evaluation:
+
+    .. code-block:: python
+
         # calculate on-policy policy value
         on_policy_performance = calc_on_policy_policy_value(
             env,
             agent,
-            n_episodes=100,
+            n_trajectories=100,
             random_state=12345
         )
-        on_policy_performance  # 13.44
+
+    Output:
+
+    .. code-block:: python
+
+        >>> on_policy_performance  
+         
+        13.44
 
     References
     -------
-    Takuma Seno and Michita Imai.
-    "d3rlpy: An Offline Deep Reinforcement Library.", 2021.
+    Di Wu, Xiujun Chen, Xun Yang, Hao Wang, Qing Tan, Xiaoxun Zhang, Jian Xu, and Kun Gai.
+    "Budget Constrained Bidding by Model-free Reinforcement Learning in Display Advertising." 2018.
+
+    Jun Zhao, Guang Qiu, Ziyu Guan, Wei Zhao, and Xiaofei He.
+    "Deep Reinforcement Learning for Sponsored Search Real-time Bidding." 2018.
 
     Greg Brockman, Vicki Cheung, Ludwig Pettersson, Jonas Schneider, John Schulman, Jie Tang, and Wojciech Zaremba.
-    "OpenAI Gym.", 2016.
+    "OpenAI Gym." 2016.
 
     """
 
@@ -305,16 +330,14 @@ class RTBEnv(gym.Env):
         Note
         -------
         The rollout procedure is given as follows.
+
         1. Sample ads and users for (search volume, ) auctions occur during the timestep. (in Simulator)
 
         2. Determine bid price. (In Bidder)
-            :math:`bid_price_{t, i} = adjust_rate_{t} \\times predicted_reward_{t,i}/ground_truth_reward_{t, i} ( \\times const.)`
 
-        3. Calculate outcome probability and stochastically determine auction result. (in Simulator)
-            auction results: cost (i.e., second price), impression, click, conversion
+        3. Calculate outcome probability and stochastically determine auction result. (in Simulator) The auction results include cost (i.e., second price), impression, click, and conversion.
 
-        4. Check if the cumulative cost during the timestep exceeds the remaining budget or not.
-           (If exceeds, cancel the corresponding auction results.)
+        4. Check if the cumulative cost during the timestep exceeds the remaining budget or not. (If exceeds, cancel the corresponding auction results.)
 
         5. Aggregate auction results and return feedbacks to the RL agent.
 
@@ -401,7 +424,7 @@ class RTBEnv(gym.Env):
         done = self.t == self.step_per_episode - 1
 
         if done:
-            obs = self.reset()
+            obs, info = self.reset()
 
         else:
             # update timestep
@@ -437,14 +460,19 @@ class RTBEnv(gym.Env):
             "average_bid_price": np.mean(bid_prices),
         }
 
-        return obs, reward, done, info
+        return obs, reward, done, False, info
 
-    def reset(self) -> np.ndarray:
+    def reset(self, seed: Optional[int] = None) -> np.ndarray:
         """Initialize the environment.
 
         Note
         -------
         Remaining budget is initialized to the initial budget of an episode.
+
+        Parameters
+        -------
+        seed: Optional[int], default=None
+            Random state.
 
         Returns
         -------
@@ -458,6 +486,16 @@ class RTBEnv(gym.Env):
                 - adjust rate (i.e., agent action) at the previous timestep
 
         """
+        if seed is not None:
+            self.random_ = check_random_state(seed)
+            self.simulator.random_ = check_random_state(seed)
+            self.simulator.search_volume_distribution.random_ = check_random_state(seed)
+            self.simulator.winning_price_distribution.random_ = check_random_state(seed)
+            self.simulator.ctr.random_ = check_random_state(seed)
+            self.simulator.cvr.random_ = check_random_state(
+                seed + 1
+            )  # to differentiate CVR from CTR
+
         # initialize internal env state
         self.t = 0
         self.prev_remaining_budget = self.remaining_budget = self.initial_budget
@@ -475,32 +513,10 @@ class RTBEnv(gym.Env):
             "reward": reward_,
             "adjust_rate": adjust_rate_,
         }
-        return np.array(list(obs.values())).astype(float)
+        return np.array(list(obs.values())).astype(float), {}
 
-    def render(self, mode: str = "human") -> None:
+    def render(self) -> None:
         pass
 
     def close(self) -> None:
         pass
-
-    def seed(self, seed: Optional[int] = None) -> None:
-        """Reset random state (seed).
-
-        Parameters
-        -------
-        seed: Optional[int], default=None
-            Random state.
-
-        """
-        if seed is None:
-            pass
-
-        else:
-            self.random_ = check_random_state(seed)
-            self.simulator.random_ = check_random_state(seed)
-            self.simulator.search_volume_distribution.random_ = check_random_state(seed)
-            self.simulator.winning_price_distribution.random_ = check_random_state(seed)
-            self.simulator.ctr.random_ = check_random_state(seed)
-            self.simulator.cvr.random_ = check_random_state(
-                seed + 1
-            )  # to differentiate CVR from CTR

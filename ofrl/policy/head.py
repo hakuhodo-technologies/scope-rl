@@ -17,7 +17,23 @@ from ..utils import check_array
 
 @dataclass
 class BaseHead(AlgoBase):
-    """Base class to convert a greedy policy into a stochastic policy."""
+    """Base class to convert a greedy policy into a stochastic policy.
+
+    Bases: :class:`d3rlpy.algos.AlgoBase`
+    
+    Imported as: :class:`ofrl.policy.BaseHead`
+
+    Note
+    -------
+    To ensure API compatibility with `d3rlpy <https://github.com/takuseno/d3rlpy>`_, :class:`BaseHead` inherits :class:`d3rlpy.algos.AlgoBase`.
+    This base class also has additional methods including :class:`fit`, :class:`predict`, and :class:`predict_value`. Please also refer to the 
+    following documentation for the methods which are not described in this API reference.
+
+    .. seealso::
+
+        (external) `d3rlpy's documentation about AlgoBase <https://d3rlpy.readthedocs.io/en/latest/references/algos.html>`_
+    
+    """
 
     @abstractmethod
     def stochastic_action_with_pscore(self, x: np.ndarray):
@@ -186,7 +202,25 @@ class BaseHead(AlgoBase):
 
 @dataclass
 class OnlineHead(BaseHead):
-    """Class to enable OpenAI Gym like online interaction.
+    """Class to enable online interaction.
+
+    Bases: :class:`ofrl.policy.BaseHead`
+
+    Imported as: :class:`ofrl.policy.OnlineHead`
+
+    Note
+    -------
+    This class aims to make a d3rlpy's policy an instance of :class:`BaseHead`.
+
+    Note
+    -------
+    To ensure API compatibility with `d3rlpy <https://github.com/takuseno/d3rlpy>`_, :class:`BaseHead` inherits :class:`d3rlpy.algos.AlgoBase`.
+    This base class also has additional methods including :class:`fit`, :class:`predict`, and :class:`predict_value`. Please also refer to the 
+    following documentation for the methods which are not described in this API reference.
+
+    .. seealso::
+
+        (external) `d3rlpy's documentation about AlgoBase <https://d3rlpy.readthedocs.io/en/latest/references/algos.html>`_
 
     Parameters
     -------
@@ -198,18 +232,25 @@ class OnlineHead(BaseHead):
     base_policy: AlgoBase
 
     def stochastic_action_with_pscore(self, x: np.ndarray):
+        """Only for API consistency."""
         pass
 
     def calc_action_choice_probability(self, x: np.ndarray):
+        """Only for API consistency."""
         pass
 
     def calc_pscore_given_action(self, x: np.ndarray, action: np.ndarray):
+        """Only for API consistency."""
         pass
 
 
 @dataclass
 class DiscreteEpsilonGreedyHead(BaseHead):
     """Class to convert a deterministic policy into an epsilon-greedy policy.
+
+    Bases: :class:`ofrl.policy.BaseHead`
+
+    Imported as: :class:`ofrl.policy.DiscreteEpsilonGreedyHead`
 
     Note
     -------
@@ -221,6 +262,16 @@ class DiscreteEpsilonGreedyHead(BaseHead):
 
     where :math:`\\epsilon` is the probability of taking random actions and :math:`a*` is the greedy action.
     :math:`\\mathbb{I}(\\cdot)` denotes the indicator function.
+
+    Note
+    -------
+    To ensure API compatibility with `d3rlpy <https://github.com/takuseno/d3rlpy>`_, :class:`BaseHead` inherits :class:`d3rlpy.algos.AlgoBase`.
+    This base class also has additional methods including :class:`fit`, :class:`predict`, and :class:`predict_value`. Please also refer to the 
+    following documentation for the methods which are not described in this API reference.
+
+    .. seealso::
+
+        (external) `d3rlpy's documentation about AlgoBase <https://d3rlpy.readthedocs.io/en/latest/references/algos.html>`_
 
     Parameters
     -------
@@ -357,6 +408,10 @@ class DiscreteEpsilonGreedyHead(BaseHead):
 class DiscreteSoftmaxHead(BaseHead):
     """Class to convert a Q-learning based policy into a softmax policy.
 
+    Bases: :class:`ofrl.policy.BaseHead`
+
+    Imported as: :class:`ofrl.policy.DiscreteSoftmaxHead`
+
     Note
     -------
     Softmax policy stochastically chooses actions (i.e., :math:`a \\in \\mathcal{A}`) given state :math:`s` as follows.
@@ -367,6 +422,16 @@ class DiscreteSoftmaxHead(BaseHead):
 
     where :math:`\\tau` is the temperature parameter of the softmax function.
     :math:`Q(s, a)` is the predicted value for the given :math:`(s, a)` pair.
+
+    Note
+    -------
+    To ensure API compatibility with `d3rlpy <https://github.com/takuseno/d3rlpy>`_, :class:`BaseHead` inherits :class:`d3rlpy.algos.AlgoBase`.
+    This base class also has additional methods including :class:`fit`, :class:`predict`, and :class:`predict_value`. Please also refer to the 
+    following documentation for the methods which are not described in this API reference.
+
+    .. seealso::
+
+        (external) `d3rlpy's documentation about AlgoBase <https://d3rlpy.readthedocs.io/en/latest/references/algos.html>`_
 
     Parameters
     -------
@@ -380,7 +445,7 @@ class DiscreteSoftmaxHead(BaseHead):
         Number of actions.
 
     tau: float, default=1.0
-        Temperature parameter. The value should be within `(-infty, infty)`.
+        Temperature parameter. The value should not be zero.
         A negative value leads to a sub-optimal policy.
 
     random_state: int, default=None (>= 0)
@@ -551,10 +616,14 @@ class DiscreteSoftmaxHead(BaseHead):
 class ContinuousGaussianHead(BaseHead):
     """Class to sample action from Gaussian distribution.
 
+    Bases: :class:`ofrl.policy.BaseHead`
+
+    Imported as: :class:`ofrl.policy.ContinuousGaussianHead`
+
     Note
     -------
     This class should be used when action_space is not clipped.
-    Otherwise, please use ContinuousTruncatedGaussianHead instead.
+    Otherwise, please use :class:`ContinuousTruncatedGaussianHead` instead.
 
     Given a deterministic policy, a gaussian policy samples action :math:`a \\in \\mathcal{A}` given state :math:`s` as follows.
 
@@ -564,6 +633,16 @@ class ContinuousGaussianHead(BaseHead):
 
     where :math:`\\sigma` is the standard deviation of the normal distribution.
     :math:`\\pi(s)` is the action chosen by the deterministic policy.
+
+    Note
+    -------
+    To ensure API compatibility with `d3rlpy <https://github.com/takuseno/d3rlpy>`_, :class:`BaseHead` inherits :class:`d3rlpy.algos.AlgoBase`.
+    This base class also has additional methods including :class:`fit`, :class:`predict`, and :class:`predict_value`. Please also refer to the 
+    following documentation for the methods which are not described in this API reference.
+
+    .. seealso::
+
+        (external) `d3rlpy's documentation about AlgoBase <https://d3rlpy.readthedocs.io/en/latest/references/algos.html>`_
 
     Parameters
     -------
@@ -691,6 +770,10 @@ class ContinuousGaussianHead(BaseHead):
 class ContinuousTruncatedGaussianHead(BaseHead):
     """Class to sample action from Truncated Gaussian distribution.
 
+    Bases: :class:`ofrl.policy.BaseHead`
+
+    Imported as: :class:`ofrl.policy.ContinuousTruncatedGaussianHead`
+
     Note
     -------
     Given a deterministic policy, a truncated gaussian policy samples action :math:`a \\in \\mathcal{A}` given state :math:`s` as follows.
@@ -701,6 +784,16 @@ class ContinuousTruncatedGaussianHead(BaseHead):
 
     where :math:`\\sigma` is the standard deviation of the truncated normal distribution.
     :math:`\\pi(s)` is the action chosen by the deterministic policy.
+
+    Note
+    -------
+    To ensure API compatibility with `d3rlpy <https://github.com/takuseno/d3rlpy>`_, :class:`BaseHead` inherits :class:`d3rlpy.algos.AlgoBase`.
+    This base class also has additional methods including :class:`fit`, :class:`predict`, and :class:`predict_value`. Please also refer to the 
+    following documentation for the methods which are not described in this API reference.
+
+    .. seealso::
+
+        (external) `d3rlpy's documentation about AlgoBase <https://d3rlpy.readthedocs.io/en/latest/references/algos.html>`_
 
     Parameters
     -------
@@ -845,6 +938,20 @@ class ContinuousTruncatedGaussianHead(BaseHead):
 @dataclass
 class ContinuousEvalHead(BaseHead):
     """Class to transform the base policy into a deterministic evaluation policy.
+
+    Bases: :class:`ofrl.policy.BaseHead`
+
+    Imported as: :class:`ofrl.policy.ContinuousEvalHead`
+
+    Note
+    -------
+    To ensure API compatibility with `d3rlpy <https://github.com/takuseno/d3rlpy>`_, :class:`BaseHead` inherits :class:`d3rlpy.algos.AlgoBase`.
+    This base class also has additional methods including :class:`fit`, :class:`predict`, and :class:`predict_value`. Please also refer to the 
+    following documentation for the methods which are not described in this API reference.
+
+    .. seealso::
+
+        (external) `d3rlpy's documentation about AlgoBase <https://d3rlpy.readthedocs.io/en/latest/references/algos.html>`_
 
     Parameters
     -------

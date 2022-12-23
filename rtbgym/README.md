@@ -101,10 +101,10 @@ env_ = gym.make('RTBEnv-continuous-v0')
 The basic interaction is performed using only four lines of code as follows.
 
 ```Python
-obs, done = env.reset(), False
+obs, info = env.reset(), False
 while not done:
     action = agent.act(obs)
-    obs, reward, done, info = env.step(action)
+    obs, reward, done, truncated, info = env.step(action)
 ```
 
 Let's visualize case with uniform random policy (in continuous action case). The discrete case also works in a similar manner.
@@ -127,7 +127,7 @@ agent = OnlineHead(
 )
 
 # (3) basic interaction for continuous action case
-obs = env.reset()
+obs, info = env.reset()
 done = False
 # logs
 remaining_budget = [obs[1]]
@@ -135,7 +135,7 @@ cumulative_reward = [0]
 
 while not done:
     action = agent.predict_online(obs)
-    obs, reward, done, info = env.step(action)
+    obs, reward, done, truncated, info = env.step(action)
     # logs
     remaining_budget.append(obs[1])
     cumulative_reward.append(cumulative_reward[-1] + reward)

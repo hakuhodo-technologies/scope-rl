@@ -4,14 +4,14 @@ RTBGym; a Python-based configurative simulation environment for Real-Time Biddin
 Overview
 ~~~~~~~~~~
 *RTBGym* is an open-source simulation platform for Real-Time Bidding (RTB) of Display Advertising.
-The simulator is particularly intended for reinforcement learning algorithms and follows `OpenAI Gym <https://gym.openai.com>`_ interface.
+The simulator is particularly intended for reinforcement learning algorithms and follows `OpenAI Gym <https://gym.openai.com>`_ and `Gymnasium <https://github.com/Farama-Foundation/Gymnasium>`_ interface.
 We design RTBGym as a configurative environment so that researchers and practitioner can customize the environmental modules including WinningPriceDistribution, ClickThroughRate, and ConversionRate.
 
-Note that, RTBGym is publicized as a sub-package of `OFRL <>`_, which facilitates the implementation of offline reinforcement learning procedure.
+Note that, RTBGym is publicized as a sub-package of :doc:`OFRL <index>`, which streamlines the implementation of offline reinforcement learning (offline RL) and off-policy evaluation and selection (OPE/OPS) procedures.
 
 Basic Setting
 ~~~~~~~~~~
-In RTB, the objective of the RL agent is to maximize some KPIs (number of clicks or conversions) within an episode under given budget constraints.
+In RTB, the objective of the RL agent is to maximize some Key Performance Indicators (KPIs; number of clicks or conversions) within an episode under given budget constraints.
 We often aim to achieve this goal by adjusting bidding price function parameter :math:`\alpha`. Specifically, we adjust bid price using :math:`\alpha` as follows.
 
 .. math::
@@ -21,15 +21,18 @@ We often aim to achieve this goal by adjusting bidding price function parameter 
 where :math:`r^{\ast}` denotes a predicted or expected reward (KPIs).
 
 We often formulate this RTB problem as the following Constrained Markov Decision Process (CMDP) as :math:`\langle \mathcal{S}, \mathcal{A}, \mathcal{T}, P_r, \gamma, C \rangle`.
-    * `timestep` (:math:`1 \leq t \leq T`): One episode (a day or a week) consists of several timesteps (24 hours or seven days, for instance).
-    * `state` (:math:`s \in \mathcal{S}`): We observe some feedback from the environment at each timestep, which includes the following.
-        * timestep
-        * remaining budget
-        * impression level features (budget consumption rate, cost per mille of impressions, auction winning rate, reward) at the previous timestep
-        * adjust rate (RL agent's decision making) at the previous timestep
-    * `action` (:math:`a \in \mathcal{A}`): Agent chooses adjust rate parameter :math:`\alpha` to maximize KPIs.
-    * `reward` (:math:`r \in \mathbb{R}`): Total number of clicks or conversions obtained during the timestep.
-    * `constraints` (:math:`C`): The pre-determined episodic budget should not be exceeded.
+
+* `timestep` (:math:`1 \leq t \leq T`): One episode (a day or a week) consists of several timesteps (24 hours or seven days, for instance).
+* `state` (:math:`s \in \mathcal{S}`): We observe some feedback from the environment at each timestep, which includes the following.
+
+    * timestep
+    * remaining budget
+    * impression level features (budget consumption rate, cost per mille of impressions, auction winning rate, reward) at the previous timestep
+    * adjust rate (RL agent's decision making) at the previous timestep
+    
+* `action` (:math:`a \in \mathcal{A}`): Agent chooses adjust rate parameter :math:`\alpha` to maximize KPIs.
+* `reward` (:math:`r \in \mathbb{R}`): Total number of clicks or conversions obtained during the timestep.
+* `constraints` (:math:`C`): The pre-determined episodic budget should not be exceeded.
 
 Note that :math:`\mathcal{T}: \mathcal{S} \times \mathcal{A} \rightarrow \mathcal{P}(\mathcal{S})` is the state transition probability where :math:`\mathcal{T}(s'\mid s,a)` is the probability of observing state :math:`s'` after taking action :math:`a` given state :math:`s`.
 :math:`P_r: \mathcal{S} \times \mathcal{A} \times \mathbb{R} \rightarrow [0,1]` is the probability distribution of the immediate reward.
@@ -72,65 +75,67 @@ We also define the bidding function in the Bidder class and the auction simulati
 Quickstart and Configurations
 ~~~~~~~~~~
 
-We provide an example usage of the standard and customized environment. \
-The online/offlline RL and Off-Policy Evaluation examples are provides in `OFRL's README <>`_.
+We provide an example usage of the standard and customized environment. 
+The online/offlline RL and OPE/OPS examples are provides in :doc:`OFRL's quickstart <quickstart>`.
 
 Standard RTBEnv
 ----------
 
-Our standard RTBEnv is available from `gym.make()`, following the `OpenAI Gym <https://gym.openai.com>`_ interface.
+Our standard RTBEnv is available from :class:`gym.make()`, 
+following the `OpenAI Gym <https://gym.openai.com>`_ and `Gymnasium <https://github.com/Farama-Foundation/Gymnasium>`_ interface.
 
 .. code-block:: python
 
     # import rtbgym and gym
-    >>> import rtbgym
-    >>> import gym
+    import rtbgym
+    import gym
 
     # (1) standard environment for discrete action space
-    >>> env = gym.make('RTBEnv-discrete-v0')
+    env = gym.make('RTBEnv-discrete-v0')
 
     # (2) standard environment for continuous action space
-    >>> env_ = gym.make('RTBEnv-continuous-v0')
+    env_ = gym.make('RTBEnv-continuous-v0')
 
 The basic interaction is performed using only four lines of code as follows.
 
 .. code-block:: python
 
-    >>> obs, done = env.reset(), False
-    >>> while not done:
-    >>>    action = agent.act(obs)
-    >>>    obs, reward, done, info = env.step(action)
+    obs, info = env.reset(), False
+    while not done:
+       action = agent.act(obs)
+       obs, reward, done, truncated, info = env.step(action)
 
 Let's interact uniform random policy with a continuous action RTB environment. The discrete action case also works in a similar manner.
 
 .. code-block:: python
 
     # import from other libraries
-    >>> from ofrl.policy import OnlineHead
-    >>> from d3rlpy.algos import RandomPolicy as ContinuousRandomPolicy
-    >>> from d3rlpy.preprocessing import MinMaxActionScaler
-    >>> import matplotlib.pyplot as plt
+    from ofrl.policy import OnlineHead
+    from d3rlpy.algos import RandomPolicy as ContinuousRandomPolicy
+    from d3rlpy.preprocessing import MinMaxActionScaler
+    import matplotlib.pyplot as plt
 
     # define a random agent (for continuous action)
-    >>> agent = OnlineHead(
-            ContinuousRandomPolicy(
-                action_scaler=MinMaxActionScaler(
-                    minimum=0.1,  # minimum value that policy can take
-                    maximum=10,  # maximum value that policy can take
-                )
+    agent = OnlineHead(
+        ContinuousRandomPolicy(
+            action_scaler=MinMaxActionScaler(
+                minimum=0.1,  # minimum value that policy can take
+                maximum=10,  # maximum value that policy can take
             )
         )
+    )
 
     # (3) basic interaction for continuous action case
-    >>> obs = env.reset()
-    >>> done = False
+    obs, info = env.reset()
+    done = False
 
-    >>> while not done:
-    >>>     action = agent.predict_online(obs)
-    >>>     obs, reward, done, info = env.step(action)
+    while not done:
+        action = agent.predict_online(obs)
+        obs, reward, done, truncated, info = env.step(action)
 
-Note that, while we use `OFRL <>`_ and `d3rlpy <https://github.com/takuseno/d3rlpy>`_ here,
-RTBGym is compatible with any other libraries working on the `OpenAI Gym <https://gym.openai.com>`_ interface.
+Note that, while we use :doc:`OFRL <index>` and `d3rlpy <https://github.com/takuseno/d3rlpy>`_ here,
+RTBGym is compatible with any other libraries that is compatible to the `OpenAI Gym <https://gym.openai.com>`_ 
+and `Gymnasium <https://github.com/Farama-Foundation/Gymnasium>`_ interface.
 
 Customized RTBEnv
 ----------
@@ -164,14 +169,14 @@ Example:
 
 .. code-block:: python
 
-    >>> from rtbgym import RTBEnv
-    >>> env = RTBEnv(
-            objective="click",  # maximize the number of total impressions
-            cost_indicator="click",  # cost arises every time click occurs
-            step_per_episode=14,  # 14 days as an episode
-            initial_budget=5000,  # budget available for 14 dayas is 5000
-            random_state=12345,
-        )
+    from rtbgym import RTBEnv
+    env = RTBEnv(
+        objective="click",  # maximize the number of total impressions
+        cost_indicator="click",  # cost arises every time click occurs
+        step_per_episode=14,  # 14 days as an episode
+        initial_budget=5000,  # budget available for 14 dayas is 5000
+        random_state=12345,
+    )
 
 Specifically, users can define their own :class:`WinningPriceDistribution`, :class:`ClickThroughRate`, and :class:`ConversionRate` as follows.
 
@@ -288,13 +293,13 @@ Example of Custom ClickThroughRate (and Conversion Rate):
             clicks = self.random_.rand(len(ad_ids)) < ctrs
             return clicks.astype(int)
 
-Note that, custom conversion rate can be defined in a simmilar manner.
+Note that, custom conversion rate can be defined in a similar manner.
 
 Wrapper class for custom bidding setup
 ----------
 
-To customize the bidding setup, we also provide `CustomizedRTBEnv`, which enables discretization or re-definition of the action space.
-In addition, users can set their own `reward_predictor`.
+To customize the bidding setup, we also provide :class:`CustomizedRTBEnv`, which enables discretization or re-definition of the action space.
+In addition, users can set their own :class:`reward_predictor`.
 
 The list of arguments are given as follows.
 
@@ -311,31 +316,27 @@ Example:
 
 .. code-block:: python
 
-    >>> from rtbgym import CustomizedRTBEnv
-    >>> custom_env = CustomizedRTBEnv(
-            original_env=env,
-            reward_predictor=None,  # use ground-truth (expected) reward as a reward predictor (oracle)
-            action_type="discrete",
-        )
+    from rtbgym import CustomizedRTBEnv
+    custom_env = CustomizedRTBEnv(
+        original_env=env,
+        reward_predictor=None,  # use ground-truth (expected) reward as a reward predictor (oracle)
+        action_type="discrete",
+    )
 
-More examples are available at `quickstart/rtb_synthetic_customize_env.ipynb <./examples/quickstart/rtb_synthetic_customize_env.ipynb>`_.
-The statistics of the environment is also visualized at `quickstart/rtb_synthetic_data_collection.ipynb <./examples/quickstart/rtb_synthetic_data_collection.ipynb>`_.
-
-Finally, example usages for online/offline RL and OPE/OPS studies are available at `quickstart/rtb_synthetic_discrete_basic.ipynb <./examples/quickstart/rtb_synthetic_discrete_basic.ipynb>`_ (discrete action space)
-and `quickstart/rtb_synthetic_continuous_basic.ipynb <./examples/quickstart/rtb_synthetic_continuous_basic.ipynb>`_ (continuous action space).
+More examples are available at :doc:`RTBGym Tutorials <_autogallery/rtbgym/index>`.
 
 Citation
 ~~~~~~~~~~
 If you use our pipeline in your work, please cite our paper below.
 
-```
-@article{kiyohara2021accelerating,
-  title={Accelerating Offline Reinforcement Learning Application in Real-Time Bidding and Recommendation: Potential Use of Simulation},
-  author={Kiyohara, Haruka and Kawakami, Kosuke and Saito, Yuta},
-  journal={arXiv preprint arXiv:2109.08331},
-  year={2021}
-}
-```
+.. code-block::
+
+    @article{kiyohara2021accelerating,
+        title={Accelerating Offline Reinforcement Learning Application in Real-Time Bidding and Recommendation: Potential Use of Simulation},
+        author={Kiyohara, Haruka and Kawakami, Kosuke and Saito, Yuta},
+        journal={arXiv preprint arXiv:2109.08331},
+        year={2021}
+    }
 
 Contact
 ~~~~~~~~~~

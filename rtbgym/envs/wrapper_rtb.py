@@ -1,4 +1,4 @@
-"""Customization of RL setting by decision makers."""
+"""Customization of RTBEnv."""
 from typing import Tuple, Optional, Union, Any
 
 import gym
@@ -15,20 +15,24 @@ from ..types import Action, Numeric
 class CustomizedRTBEnv(gym.Env):
     """Wrapper class for RTBEnv to customize RL action space and bidder by decision makers.
 
+    Bases: :class:`gym.Env`
+
+    Imported as: :class:`rtbgym.CustomizedRTBEnv`
+
     Note
     -------
-    We can customize three following decision making using CustomizedEnv.
+    Users can customize three following decision making using CustomizedEnv.
         - reward_predictor in Bidder class
             We use predicted rewards to calculate bid price as follows.
-                :math:`bid_price_{t, i} = adjust_rate_{t} \\times predicted_reward_{t,i} ( \\times const.)`
-
-            If `None`, we use ground-truth reward instead of predicted reward.
+            
+            :math:`{bid price}_{t, i} = {adjust rate}_{t} \\times {predicted reward}_{t,i} ( \\times const.)`
 
         - scaler in Bidder class
             Scaler defines const.in the bid price calculation as follows.
-                :math:`const. = scaler \\times standard_bid_price`
+            
+            :math:`const. = scaler \\times {standard bid price}`
 
-            where standard_bid_price indicates the average of standard_bid_price
+            where standard_bid_price indicates the average of the standard bid price
             (bid price which has approximately 50% impression probability) over all ads.
 
         - action space for agent
@@ -46,26 +50,24 @@ class CustomizedRTBEnv(gym.Env):
 
         state: array-like of shape (7, )
             Statistical feedbacks of auctions during the timestep, including following values.
-                - timestep
-                - remaining budget
-                - impression level features at the previous timestep
-                  (budget consumption rate, cost per mille of impressions, auction winning rate, and reward)
-                - adjust rate (i.e., RL agent action) at the previous timestep
+
+            - timestep
+            - remaining budget
+            - impression level features at the previous timestep (budget consumption rate, cost per mille of impressions, auction winning rate, and reward)
+            - adjust rate (i.e., RL agent action) at the previous timestep
 
         action: {int, float, array-like of shape (1, )} (>= 0)
             Adjust rate parameter used for the bid price calculation as follows.
             Note that the following bid price is individually determined for each auction.
 
-            .. math::
-
-                {bid price}_{t, i} = {adjust rate}_{t} \\times {predicted reward}_{t,i} ( \\times {const.})
+            :math:`{bid price}_{t, i} = {adjust rate}_{t} \\times {predicted reward}_{t,i} ( \\times {const.})`
 
             Both discrete and continuous actions are acceptable.
 
         reward: int (> 0)
             Total clicks/conversions gained during the timestep.
 
-        discount_rate: int (= 1)
+        discount_rate: int
             Discount factor for cumulative reward calculation.
             Set discount_rate = 1 (i.e., no discount) in RTB.
 
@@ -107,7 +109,9 @@ class CustomizedRTBEnv(gym.Env):
     Examples
     -------
 
-    .. codeblock:: python
+    Setup:
+
+    .. code-block:: python
 
         # import necessary module from rtbgym
         from rtbgym.env import RTBEnv
@@ -130,7 +134,11 @@ class CustomizedRTBEnv(gym.Env):
         agent = OnlineHead(DiscreteRandomPolicy())
         agent.build_with_env(env)
 
-        # OpenAI Gym like interaction with agent
+    Interaction:
+
+    .. code-block:: python
+
+        # OpenAI Gym and Gymnasium-like interaction with agent
         for episode in range(1000):
             obs = env.reset()
             done = False
@@ -139,28 +147,36 @@ class CustomizedRTBEnv(gym.Env):
                 action = agent.predict_online(obs)
                 obs, reward, done, info = env.step(action)
 
+    Online Evaluation:
+
+    .. code-block:: python 
+
         # calculate on-policy policy value
         on_policy_performance = calc_on_policy_policy_value(
             env,
             agent,
-            n_episodes=100,
+            n_trajectories=100,
             random_state=12345
         )
-        on_policy_performance  # 11.75
+
+    Output:
+
+    .. code-block:: python
+
+        >>> on_policy_performance 
+        
+        11.75
 
     References
     -------
-    Takuma Seno and Michita Imai.
-    "d3rlpy: An Offline Deep Reinforcement Library.", 2021.
-
     Di Wu, Xiujun Chen, Xun Yang, Hao Wang, Qing Tan, Xiaoxun Zhang, Jian Xu, and Kun Gai.
-    "Budget Constrained Bidding by Model-free Reinforcement Learning in Display Advertising.", 2018.
+    "Budget Constrained Bidding by Model-free Reinforcement Learning in Display Advertising." 2018.
 
     Jun Zhao, Guang Qiu, Ziyu Guan, Wei Zhao, and Xiaofei He.
-    "Deep Reinforcement Learning for Sponsored Search Real-time Bidding.", 2018.
+    "Deep Reinforcement Learning for Sponsored Search Real-time Bidding." 2018.
 
     Greg Brockman, Vicki Cheung, Ludwig Pettersson, Jonas Schneider, John Schulman, Jie Tang, and Wojciech Zaremba.
-    "OpenAI Gym.", 2016.
+    "OpenAI Gym." 2016.
 
     """
 
@@ -328,12 +344,17 @@ class CustomizedRTBEnv(gym.Env):
 
         return self.env.step(action)
 
-    def reset(self) -> np.ndarray:
+    def reset(self, seed: Optional[int] = None) -> np.ndarray:
         """Initialize the environment.
 
         Note
         -------
         Remaining budget is initialized to the initial budget of an episode.
+
+        Parameters
+        -------
+        seed: Optional[int], default=None
+            Random state.
 
         Returns
         -------
@@ -347,13 +368,10 @@ class CustomizedRTBEnv(gym.Env):
                 - adjust rate (i.e., agent action) at the previous timestep
 
         """
-        return self.env.reset()
+        return self.env.reset(seed)
 
-    def render(self, mode: str = "human") -> None:
-        self.env.render(mode)
+    def render(self) -> None:
+        self.env.render()
 
     def close(self) -> None:
         self.env.close()
-
-    def seed(self, seed: int = None) -> None:
-        self.env.seed(seed)

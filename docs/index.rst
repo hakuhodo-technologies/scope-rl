@@ -1,151 +1,280 @@
-.. OFRL documentation master file, created by
-   sphinx-quickstart on Thu Jan 20 15:25:38 2022.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
-OFRL; a Python library for offline reinforcement learning, off-policy evaluation, and selection
+===================================
+Welcome to OFRL!
 ===================================
 
-Overview
-~~~~~~~~~~
-*OFRL* is an open-source Python library for offline Reinforcement Learning (RL) and Off-Policy Evaluation (OPE).
-This library aims to facilitate an easy, flexible and reliable experiment in offline RL research, as well as to provide a streamlined implementation also for practitioners.
-OFRL includes a series of modules to implement synthetic dataset generation and dataset preprocessing, a variety of OPE estimators, and also Off-Policy Selection (OPS) methods.
+.. card:: Title
 
-OFRL is applicable to any RL environment with `OpenAI Gym <https://gym.openai.com>`_-like interface.
-The library is also compatible with `d3rlpy <https://github.com/takuseno/d3rlpy>`_, which provides the algorithm implementation of both online and offline RL methods.
+   .. grid:: 2
 
-Our software facilitates implementation, evaluation and algorithm comparison related to the following research topics:
+      .. grid-item-card::
+         :img-background: _static/images/ope_policy_value_basic.png
+         :link: documentation/quickstart
+         :link-type: doc
+         :shadow: none
+         :columns: 3
 
-* **Offline Reinforcement Learning**: Offline RL aims to learn a new policy from only offline logged data collected by a behavior policy. OFRL enables an flexible experiment using customized dataset on diverse environments collected by various behavior policies.
+      .. grid-item-card::  Title 2
+         :columns: 3
 
-* **Off-Policy Evaluation**: OPE aims to evaluate the performance of a counterfactual policy using only offline logged data. OFRL supports the basic implementations of OPE estimators and streamline the experimental procedure to evaluate OPE estimators.
+         B
 
-* **Off-Policy Selection**: OPS aims to select the best policy from several candidate policies using offline logged data. OFRL supports the basic implementations of OPS methods and provide some metrics to evaluate OPS result.
+      .. grid-item-card::  Title 3
+         :columns: 6
 
-This website contains pages with example implementations that demonstrates the usage of this library.
-The package reference page consists of the full reference documentation for the currently implemented modules.
+         C
 
-implementation
-~~~~~~~~~~
+   description |:trophy:| :octicon:`rocket` :bdg-ref-secondary-line:`getting started <documentation/installation>`
 
-Data Collection Policy and Offline RL
-----------
-OFRL override `d3rlpy <https://github.com/takuseno/d3rlpy>`_'s implementation for the base algorithm.
-We provide a wrapper class for transforming the policy into a stochastic policy as follows.
-   * Epsilon Greedy (discrete)
-   * Softmax (discrete)
-   * Gaussian (continuous)
-   * Truncated Gaussian (continuous)
+   .. button-ref:: documentation/installation
+      :ref-type: doc
+      :color: primary
+      :shadow:
+
+      Getting Started
+   
+:download:`Click here to download slides <_static/images/ope_policy_value_basic.png>`
+
+.. button-link:: _static/images/ope_policy_value_basic.png
+      :color: primary
+      :shadow:
+
+      :octicon:`download` **Download files**
+
+.. tabs::
+
+   .. tab:: Links
+
+      .. grid:: 2
+
+         .. grid-item-card::
+            :img-background: _static/images/ope_policy_value_basic.png
+            :link: documentation/quickstart
+            :link-type: doc
+            :shadow: none
+            :columns: 3
+
+         .. grid-item-card::  Title 2
+            :columns: 3
+
+         .. grid-item-card::
+            :columns: 3
+            :shadow: none
+
+            .. button-link:: _static/images/ope_policy_value_basic.png
+
+               **Download**
+
+   .. tab:: Links
+
+      .. grid:: 2
+
+         .. grid-item::
+            :columns: 2
+
+            .. button-link:: _static/images/ope_policy_value_basic.png
+               :color: primary
+               :shadow:
+
+               :octicon:`download` **Download files**
+            
+         .. grid-item::
+            :columns: 2
+
+            .. button-link:: _static/images/ope_policy_value_basic.png
+               :color: primary
+               :shadow:
+
+               :octicon:`download` **Download files**
+
+   .. tab:: Paper
+
+      `link <>`_
+
+   .. code-tab:: py Citation
+
+      aaa
 
 
-Basic OPE (discrete / continuous)
-----------
-   * Direct Method (DM) :cite:`beygelzimer2009offset`
-   * Trajectory-wise Importance Sampling (TIS) :cite:`precup2000eligibility`
-   * Per-Decision Importance Sampling (PDIS) :cite:`precup2000eligibility`
-   * Doubly Robust (DR) :cite:`jiang2016doubly` :cite:`thomas2016data`
-   * Self-Normalized Trajectory-wise Importance Sampling (SNTIS) :cite:`precup2000eligibility` :cite:`kallus2020optimal`
-   * Self-Normalized Per-Decision Importance Sampling (SNPDIS) :cite:`precup2000eligibility` :cite:`kallus2020optimal`
-   * Self-Normalized Doubly Robust (SNDR) :cite:`jiang2016doubly` :cite:`thomas2016data` :cite:`kallus2020optimal`
+.. card::
+    :link: /documentation/quickstart
+    :link-type: doc
 
-High Confidence OPE (discrete / continuous)
-----------
-   * Bootstrap :citep:`thomas2015improve` :cite:`hanna2017bootstrapping`
-   * Hoeffding :citep:`thomas2015evaluation`
-   * (Empirical) Bernstein :citep:`thomas2015evaluation` :citep:`thomas2015improve`
-   * Student T-test :citep:`thomas2015improve`
+    .. grid:: 2
 
-Cumulative Distribution OPE (discrete)
-----------
-   * Direct Method (DM) :cite:`beygelzimer2009offset` :cite:`huang2021off`
-   * Trajectory-wise Importance Sampling (TIS) :cite:`precup2000eligibility` :cite:`huang2021off` :cite:`chundak2021universal`
-   * Trajectory-wise Doubly Robust (TDR) :cite:`jiang2016doubly` :cite:`thomas2016data` :cite:`huang2021off`
-   * Self-Normalized Trajectory-wise Importance Sampling (SNTIS) :cite:`precup2000eligibility` :cite:`kallus2020optimal` :cite:`huang2021off` :cite:`chundak2021universal`
-   * Self-Normalized Trajectory-wise Doubly Robust (SNDR) :cite:`jiang2016doubly` :cite:`thomas2016data` :cite:`kallus2020optimal` :cite:`huang2021off`
+        .. grid-item-card::
+            :img-background: /_static/images/ope_policy_value_basic.png
+            :shadow: none
+            :columns: 4
 
-Off-Policy Selection Metrics
-----------
-   * Mean Squared Error :cite:`paine2020hyperparameter` :cite:`voloshin2021empirical` :cite:`fu2021benchmarks`
-   * Spearman's Rank Correlation Coefficient :cite:`paine2020hyperparameter` :cite:`fu2021benchmarks`
-   * Regret :cite:`paine2020hyperparameter` :cite:`fu2021benchmarks`
-   * Type I and Type II Error Rates
+        .. grid-item:: **Basic OPE (Discrete)**
+            :columns: 8
 
+            * Direct Method
+            * Per-Decision Importance Sampling
+            * ...
 
-In addition to the offline RL/OPE related resources, we provide a configurative RL environment for Real-Time Bidding (RTB) as a sub-package of this library.
-Please refer to `RTBGym's documentation <>`_ for the details.
+.. card::
+    :link: /documentation/quickstart
+    :link-type: doc
 
-Citation
-~~~~~~~~~~
-If you use our pipeline in your work, please cite our paper below.
+    .. grid::
+        :gutter: 1
 
-```
-@article{
-   title={},
-   author={},
-   journal={},
-   year={},
-}
-```
+        .. grid-item::
+            :columns: 4
 
-Contact
-~~~~~~~~~~
-For any question about the paper and pipeline, feel free to contact: kiyohara.h.aa@m.titech.ac.jp
+            .. grid:: 1
+                :gutter: 1
 
-Contribution
-~~~~~~~~~~
-Any contributions to OFRL are more than welcome!
-Please refer to `CONTRIBUTING.md <>`_ for general guidelines how to contribute to the project.
+                **Basic OPE (Continuous)**
 
-Table of Contents
-~~~~~~~~~~
+            .. grid:: 1
+                :gutter: 1
 
+                .. grid-item-card:: 
+                    :img-background: /_static/images/ope_policy_value_basic.png
+                    :shadow: none
+
+        .. grid-item::
+            :columns: 8
+
+            .. grid:: 1
+                :gutter: 1
+                :padding: 1
+
+                .. grid-item:: 
+
+                    * Direct Method
+                    * Per-Decision Importance Sampling
+                    * ...
+
+.. card::
+    :link: /documentation/quickstart
+    :link-type: doc
+
+    .. grid::
+        :gutter: 1
+
+        .. grid-item::
+            :columns: 4
+
+            .. grid:: 1
+                :gutter: 1
+
+                .. grid-item-card:: 
+                    :img-background: /_static/images/ope_policy_value_basic.png
+                    :shadow: none
+
+        .. grid-item::
+            :columns: 8
+
+            .. grid:: 1
+                :gutter: 1
+
+                .. grid-item:: **Basic OPE (Continuous)**
+
+                    * Direct Method
+                    * Per-Decision Importance Sampling
+                    * ...
+
+.. card::
+    :link: /documentation/quickstart
+    :link-type: doc
+
+    .. grid::
+        :gutter: 1
+
+        .. grid-item::
+            :columns: 4
+
+            .. grid:: 1
+                :gutter: 1
+
+                .. grid-item-card:: 
+                    :img-background: /_static/images/ope_policy_value_basic.png
+                    :shadow: none
+
+        .. grid-item::
+            :columns: 1
+
+        .. grid-item::
+            :columns: 7
+
+            .. grid:: 1
+                :gutter: 1
+
+                .. grid-item:: **Basic OPE (Continuous)**
+
+                    * Direct Method
+                    * Per-Decision Importance Sampling
+                    * ...
+
+.. card::
+    :link: /documentation/quickstart
+    :link-type: doc
+
+    .. grid::
+        :gutter: 1
+
+        .. grid-item::
+            :columns: 4
+
+            .. grid:: 1
+                :gutter: 1
+
+                .. grid-item-card:: 
+                    :img-background: /_static/images/ope_policy_value_basic.png
+                    :shadow: none
+
+        .. grid-item::
+            :columns: 7
+
+            .. grid:: 1
+                :gutter: 1
+
+                .. grid-item:: **Basic OPE (Continuous)**
+
+                    * Direct Method
+                    * Per-Decision Importance Sampling
+                    * ...
+   
 .. toctree::
-   :maxdepth: 3
-   :caption: Getting Started:
+    :maxdepth: 1
 
-   installation
-   quickstart
+    Installation <documentation/installation>
+    Quickstart <documentation/quickstart>
+    Tutorial <documentation/_autogallery/index>
+    Documentation <documentation/index>
+    FAQs <documentation/frequently_asked_questions>
+    Release Notes <https://github.com/negocia-inc/ofrl/releases>
 
-.. toctree::
-   :maxdepth: 3
-   :caption: Online and Offline Reinforcement Learning (online/offline RL):
+.. grid::
 
-   online_offline_rl
-   learning_implementation
+    .. grid-item::
+        :columns: 2
+        :margin: 0
+        :padding: 0
 
-.. toctree::
-   :maxdepth: 3
-   :caption: Off-Policy evaluation/selection (OPE/OPS):
+    .. grid-item::
+        :columns: 8
+        :margin: 0
+        :padding: 0
 
-   ope_ops
-   evaluation_implementation
+    .. grid-item::
+        :columns: 2
+        :margin: 0
+        :padding: 0
 
-.. toctree::
-   :maxdepth: 3
-   :caption: Sub-package RTBGym:
+        .. grid::
+            :margin: 0
 
-   rtbgym_about
-   rtbgym_conf
-   rtbgym_quickstart
+            .. grid-item-card::
+                :link: documentation/installation
+                :link-type: doc
+                :shadow: none
+                :margin: 0
+                :padding: 0
 
-.. toctree::
-   :maxdepth: 3
-   :caption: Package Reference:
+                Next >>>
+                **Installation**
 
-   ofrl
-   rtbgym
-
-.. toctree::
-   :caption: Others:
-
-   Github <https://github.com/negocia-inc/ofrl>
-   LICENSE <https://github.com/negocia-inc/ofrl/blob/main/LICENSE>
-   references
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`

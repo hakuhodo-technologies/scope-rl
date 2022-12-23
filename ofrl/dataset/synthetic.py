@@ -1,6 +1,6 @@
-"""Synthetic Dataset Generation."""
+"""Class to handle synthetic dataset generation."""
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Any, Dict, List
 from tqdm.auto import tqdm
 
 import gym
@@ -17,9 +17,29 @@ from ..types import LoggedDataset
 class SyntheticDataset(BaseDataset):
     """Class for synthetic data generation.
 
+    Bases: :class:`ofrl.dataset.BaseDataset`
+
+    Imported as: :class:`ofrl.dataset.SyntheticDataset`
+
     Note
     -------
-    Generate a logged dataset for Offline reinforcement learning (RL) and off-policy evaluation/selection (OPE/OPS).
+    Logged dataset is directly used for Off-Policy Evaluation (OPE). 
+    Moreover, it is also compatible to `d3rlpy <https://github.com/takuseno/d3rlpy>`_ (offline RL library) with the following command.
+
+    .. code-block:: python
+
+        d3rlpy_dataset = MDPDataset(
+            observations=logged_dataset["state"],
+            actions=logged_dataset["action"],
+            rewards=logged_dataset["reward"],
+            terminals=logged_dataset["done"],
+            episode_terminals=logged_dataset["terminal"],
+            discrete_action=(logged_dataset["action_type"]=="discrete"),
+        )
+
+    .. seealso::
+
+        (external) `d3rlpy's documentation about MDPDataset <https://d3rlpy.readthedocs.io/en/latest/references/dataset.html>`_
 
     Parameters
     -------
@@ -29,8 +49,22 @@ class SyntheticDataset(BaseDataset):
     behavior_policy: AlgoBase
         RL policy that collects the logged data.
 
-    step_per_episode: int, default=None (> 0)
-        Number of timesteps in an episode.
+    max_episode_steps: int, default=None (> 0)
+        Maximum number of timesteps in an episode.
+
+    action_meaning: dict
+        Dictionary which maps discrete action index into specific actions.
+        If action_type is "continuous", `None` is recorded.
+
+    action_keys: list of str
+        Name of the action variable at each dimension.
+        If action_type is "discrete", `None` is recorded.
+
+    state_keys: list of str
+        Name of the state variable at each dimension.
+
+    info_keys: Dict[str, type]
+        Dictionary containing of key and the type of info components.
 
     random_state: int, default=None (>= 0)
         Random state.
@@ -38,64 +72,85 @@ class SyntheticDataset(BaseDataset):
     Examples
     -------
 
-    .. ::code-block:: python
+    Preparation:
+
+    .. code-block:: python
 
         # import necessary module from OFRL
-        >>> from ofrl.dataset import SyntheticDataset
-        >>> from ofrl.policy import DiscreteEpsilonGreedyHead
+        from ofrl.dataset import SyntheticDataset
+        from ofrl.policy import DiscreteEpsilonGreedyHead
 
         # import necessary module from other libraries
-        >>> import gym
-        >>> import rtbgym
-        >>> from d3rlpy.algos import DoubleDQN
-        >>> from d3rlpy.online.buffers import ReplayBuffer
-        >>> from d3rlpy.online.explorers import ConstantEpsilonGreedy
+        import gym
+        import rtbgym
+        from d3rlpy.algos import DoubleDQN
+        from d3rlpy.online.buffers import ReplayBuffer
+        from d3rlpy.online.explorers import ConstantEpsilonGreedy
 
         # initialize environment
-        >>> env = gym.make("RTBEnv-discrete-v0")
+        env = gym.make("RTBEnv-discrete-v0")
 
         # define (RL) agent (i.e., policy) and train on the environment
-        >>> ddqn = DoubleDQN()
-        >>> buffer = ReplayBuffer(
-                maxlen=10000,
-                env=env,
-            )
-        >>> explorer = ConstantEpsilonGreedy(
-                epsilon=0.3,
-            )
-        >>> ddqn.fit_online(
-                env=env,
-                buffer=buffer,
-                explorer=explorer,
-                n_steps=10000,
-                n_steps_per_epoch=1000,
-            )
+        ddqn = DoubleDQN()
+        buffer = ReplayBuffer(
+            maxlen=10000,
+            env=env,
+        )
+        explorer = ConstantEpsilonGreedy(
+            epsilon=0.3,
+        )
+        ddqn.fit_online(
+            env=env,
+            buffer=buffer,
+            explorer=explorer,
+            n_steps=10000,
+            n_steps_per_epoch=1000,
+        )
 
         # convert ddqn policy to stochastic data collection policy
-        >>> behavior_policy = DiscreteEpsilonGreedyHead(
-                ddqn,
-                n_actions=env.action_space.n,
-                epsilon=0.3,
-                name="ddqn_epsilon_0.3",
-                random_state=12345,
-            )
+        behavior_policy = DiscreteEpsilonGreedyHead(
+            ddqn,
+            n_actions=env.action_space.n,
+            epsilon=0.3,
+            name="ddqn_epsilon_0.3",
+            random_state=12345,
+        )
+
+    **Synthetic Dataset Generation**:
+
+    .. code-block:: python
 
         # initialize dataset class
-        >>> dataset = SyntheticDataset(
-                env=env,
-                behavior_policy=behavior_policy,
-                is_rtb_env=True,
-                random_state=12345,
-            )
+        dataset = SyntheticDataset(
+            env=env,
+            behavior_policy=behavior_policy,
+            action_meaning=env.action_meaning,
+            state_keys=env.obs_keys,
+            info_keys={
+                "search_volume": int,
+                "impression": int,
+                "click": int,
+                "conversion": int,
+                "average_bid_price": float,
+            },
+            random_state=12345,
+        )
 
         # data collection
-        >>> logged_dataset = dataset.obtain_trajectories(n_episodes=100, obtain_info=True)
+        logged_dataset = dataset.obtain_trajectories(n_trajectories=100, obtain_info=True)
+
+    **Output**:
+    
+    .. code-block:: python
+
         >>> logged_dataset
+
         {'size': 700,
-        'n_episodes': 100,
-        'step_per_episode': 7,
+        'n_trajectories': 100,
+        'step_per_trajectory': 7,
         'action_type': 'discrete',
         'action_dim': 10,
+        'action_keys': None,
         'action_meaning': array([ 0.1       ,  0.16681005,  0.27825594,  0.46415888,  0.77426368,
                 1.29154967,  2.15443469,  3.59381366,  5.9948425 , 10.        ]),
         'state_keys': ['timestep',
@@ -130,23 +185,20 @@ class SyntheticDataset(BaseDataset):
                    4.2565445 , 458.76344086])},
         'pscore': array([0.73, 0.73, 0.73, ..., 0.73, 0.03, 0.73])}
 
-    References
-    -------
-    Yuta Saito, Shunsuke Aihara, Megumi Matsutani, and Yusuke Narita.
-    "Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation.", 2021.
+    .. seealso::
 
-    Takuma Seno and Michita Imai.
-    "d3rlpy: An Offline Deep Reinforcement Library.", 2021.
-
-    Greg Brockman, Vicki Cheung, Ludwig Pettersson, Jonas Schneider, John Schulman, Jie Tang, abd Wojciech Zaremba.
-    "OpenAI Gym.", 2016.
+        * :doc:`Quickstart </documentation/quickstart>`
+        * :doc:`Related tutorials </documentation/_autogallery/ofrl_others/index>`
 
     """
 
     env: gym.Env
     behavior_policy: BaseHead
-    step_per_episode: Optional[int] = None
-    is_rtb_env: bool = False
+    max_episode_steps: Optional[int] = None
+    action_meaning: Optional[Dict[int, Any]] = None
+    action_keys: Optional[List[str]] = None
+    state_keys: Optional[List[str]] = None
+    info_keys: Optional[Dict[str, type]] = None
     random_state: Optional[int] = None
 
     def __post_init__(self):
@@ -168,59 +220,98 @@ class SyntheticDataset(BaseDataset):
             self.n_actions = None
             self.action_dim = self.env.action_space.shape[0]
 
-        if self.is_rtb_env:
-            self.step_per_episode = self.env.step_per_episode
-            self.action_meaning = (
-                self.env.action_meaning if self.action_type == "discrete" else None
-            )
-            self.state_keys = self.env.obs_keys
-        else:
-            self.action_meaning = None
-            self.state_keys = None
+        if self.max_episode_steps is None:
+            if self.env.spec.max_episode_steps is None:
+                raise ValueError(
+                    "when env.spec.max_episode_steps is None, max_episode_steps must be given."
+                )
+            else:
+                self.max_episode_steps = self.env.spec.max_episode_steps
 
-        if self.step_per_episode is None:
-            self.max_episode_steps = self.env._max_episode_steps
-        else:
-            self.max_episode_steps = self.step_per_episode
         check_scalar(
-            self.step_per_episode, name="step_per_episode", target_type=int, min_val=1
+            self.max_episode_steps,
+            name="maximum_episode_steps",
+            target_type=int,
+            min_val=1,
         )
 
         if self.random_state is None:
             raise ValueError("random_state must be given")
         self.random_ = check_random_state(self.random_state)
-        self.env.seed(self.random_state)
 
-    def obtain_trajectories(
-        self, n_episodes: int = 10000, obtain_info: bool = False
+    def obtain_episodes(
+        self,
+        n_trajectories: int = 10000,
+        step_per_trajectory: Optional[int] = None,
+        obtain_info: bool = False,
+        seed_env: bool = False,
     ) -> LoggedDataset:
-        """Rollout the behavior policy and obtain trajectories.
+        """Rollout the behavior policy and obtain episodes.
 
         Note
         -------
-        This function is intended to be used for the environment which has fixed length of episodes.
-        Please use `.obtain_steps` when using the environment which has varying length of episodes.
-        Also, make sure you initialize the class with `step_per_episode` before calling this function.
+        This function is intended to be used for the environment which has a fixed length of episodes (episodic setting).
+
+        For non-episodic, stationary setting (such as cartpole or taxi as used in (Liu et al., 2018) and (Uehara et al., 2020)),
+        please also consider using :class:`.obtain_steps()` to collect logged dataset.
+
+        **References**
+
+        Masatoshi Uehara, Jiawei Huang, and Nan Jiang.
+        "Minimax Weight and Q-Function Learning for Off-Policy Evaluation." 2020.
+
+        Qiang Liu, Lihong Li, Ziyang Tang, and Dengyong Zhou.
+        "Breaking the Curse of Horizon: Infinite-Horizon Off-Policy Estimation." 2018
 
         Parameters
         -------
-        n_episodes: int, default=10000 (> 0)
+        n_trajectories: int, default=10000 (> 0)
             Number of trajectories to rollout the behavior policy and collect data.
+
+        step_per_trajectory: int, default=None (> 0)
+            Number of timesteps in an trajectory.
 
         obtain_info: bool, default=False
             Whether to gain info from the environment or not.
 
+        seed_env: bool, default=False
+            Whether to set seed on environment or not.
+
         Returns
         -------
         logged_dataset: dict
+            Dictionary containing the environmental settings and trajectories obtained by the behavior policy.
+
+            .. code-block:: python
+
+                key: [
+                    size,
+                    n_trajectories,
+                    step_per_trajectory,
+                    action_type,
+                    n_actions,
+                    action_dim,
+                    action_keys,
+                    action_meaning,
+                    state_dim,
+                    state_keys,
+                    state,
+                    action,
+                    reward,
+                    done,
+                    terminal,
+                    info,
+                    pscore,
+                ]
+
             size: int (> 0)
                 Number of steps the dataset records.
 
-            n_episodes: int (> 0)
-                Number of episodes the dataset records.
+            n_trajectories: int (> 0)
+                Number of trajectories the dataset records.
 
-            step_per_episode: int (> 0)
-                Number of timesteps in an episode.
+            step_per_trajectory: int (> 0)
+                Number of timesteps in an trajectory.
 
             action_type: str
                 Action type of the RL agent.
@@ -234,6 +325,10 @@ class SyntheticDataset(BaseDataset):
                 Dimensions of the actions.
                 If action_type is "discrete", `None` is recorded.
 
+            action_keys: list of str
+                Name of the action variable at each dimension.
+                If action_type is "discrete", `None` is recorded.
+
             action_meaning: dict
                 Dictionary which maps discrete action index into specific actions.
                 If action_type is "continuous", `None` is recorded.
@@ -245,7 +340,7 @@ class SyntheticDataset(BaseDataset):
                 Name of the state variable at each dimension.
 
             state: ndarray of shape (size, state_dim)
-                State observed in the environment.
+                State observed by the behavior policy.
 
             action: ndarray of shape (size, ) or (size, action_dim)
                 Action chosen by the behavior policy.
@@ -266,126 +361,195 @@ class SyntheticDataset(BaseDataset):
                 Action choice probability of the behavior policy for the chosen action.
 
         """
-        if self.step_per_episode is None:
-            raise RuntimeError(
-                "Please initialize SyntheticDataset class with step_per_episode to use .obtain_trajectories()"
-            )
+        if step_per_trajectory is None:
+            step_per_trajectory = self.max_episode_steps
+
         check_scalar(
-            n_episodes,
+            n_trajectories,
             name="n_espisodes",
             target_type=int,
             min_val=1,
         )
+        check_scalar(
+            step_per_trajectory,
+            name="step_per_trajectory",
+            target_type=int,
+            min_val=1,
+        )
 
-        states = np.empty(
-            (
-                n_episodes * self.step_per_episode,
-                self.env.observation_space.shape[0],
-            )
+        if seed_env:
+            self.env.reset(self.random_state)
+
+        states = np.zeros(
+            (n_trajectories * step_per_trajectory, self.env.observation_space.shape[0])
         )
         if self.action_type == "discrete":
-            actions = np.empty(n_episodes * self.step_per_episode)
-            action_probs = np.empty(n_episodes * self.step_per_episode)
+            actions = np.zeros(n_trajectories * step_per_trajectory, dtype=int)
+            action_probs = np.zeros(n_trajectories * step_per_trajectory)
         else:
-            actions = np.empty((n_episodes * self.step_per_episode, self.action_dim))
-            action_probs = np.empty(
-                (n_episodes * self.step_per_episode, self.action_dim)
+            actions = np.zeros((n_trajectories * step_per_trajectory, self.action_dim))
+            action_probs = np.zeros(
+                (n_trajectories * step_per_trajectory, self.action_dim)
             )
 
-        rewards = np.empty(n_episodes * self.step_per_episode)
-        dones = np.empty(n_episodes * self.step_per_episode)
+        rewards = np.zeros(n_trajectories * step_per_trajectory)
+        dones = np.zeros(n_trajectories * step_per_trajectory)
+        terminals = np.zeros(n_trajectories * step_per_trajectory)
         info = {}
 
         idx = 0
         for _ in tqdm(
-            np.arange(n_episodes),
+            np.arange(n_trajectories),
             desc="[obtain_trajectories]",
-            total=n_episodes,
+            total=n_trajectories,
         ):
-            state = self.env.reset()
-            done = False
+            state, info_ = self.env.reset()
+            terminal = False
 
-            while not done:
+            for t in range(step_per_trajectory):
                 (
                     action,
                     action_prob,
                 ) = self.behavior_policy.stochastic_action_with_pscore_online(state)
-                next_state, reward, done, info_ = self.env.step(action)
+                next_state, reward, done, truncated, info_ = self.env.step(action)
+
+                if (idx + 1) % step_per_trajectory == 0:
+                    done = terminal = True
 
                 states[idx] = state
                 actions[idx] = action
                 action_probs[idx] = action_prob
                 rewards[idx] = reward
                 dones[idx] = done
+                terminals[idx] = terminal
 
                 if obtain_info:
                     if idx == 0:
-                        info_keys = info_.keys()
-
-                        if self.is_rtb_env:
-                            for key in info_keys:
-                                info[key] = np.empty(n_episodes * self.step_per_episode)
-                        else:
-                            for key in info_keys:
+                        for key, type_ in self.info_keys.items():
+                            if type_ in [int, float]:
+                                info[key] = np.zeros(
+                                    n_trajectories * step_per_trajectory, dtype=type_
+                                )
+                            else:
                                 info[key] = []
 
-                    if self.is_rtb_env:
-                        for key, value in info_.items():
-                            info[key][idx] = value
-                    else:
-                        for key, value in info_.items():
-                            info[key].append(value)
-
-                idx += 1
-                if idx % self.step_per_episode == 0:
-                    done = True
+                    for key, type_ in self.info_keys.items():
+                        if type_ in [int, float]:
+                            info[key][idx] = info_[key]
+                        else:
+                            info[key].append(info_[key])
 
                 state = next_state
+                idx += 1
 
         logged_dataset = {
-            "size": n_episodes * self.step_per_episode,
-            "n_episodes": n_episodes,
-            "step_per_episode": self.step_per_episode,
+            "size": n_trajectories * step_per_trajectory,
+            "n_trajectories": n_trajectories,
+            "step_per_trajectory": step_per_trajectory,
             "action_type": self.action_type,
             "n_actions": self.n_actions,
             "action_dim": self.action_dim,
             "action_meaning": self.action_meaning,
+            "action_keys": self.action_keys,
             "state_dim": self.state_dim,
             "state_keys": self.state_keys,
             "state": states,
             "action": actions,
             "reward": rewards,
             "done": dones,
-            "terminal": dones,
+            "terminal": terminals,
             "info": info,
             "pscore": action_probs,
         }
         return logged_dataset
 
     def obtain_steps(
-        self, n_steps: int = 100000, obtain_info: bool = False
+        self,
+        n_trajectories: int = 10000,
+        step_per_trajectory: int = 10,
+        minimum_rollout_length: int = 0,
+        maximum_rollout_length: int = 100,
+        obtain_info: bool = False,
+        obtain_trajectories_from_single_interaction: bool = False,
+        seed_env: bool = False,
     ) -> LoggedDataset:
         """Rollout the behavior policy and obtain steps.
 
+        Note
+        -------
+        This function is intended to be used for the environment which has a stationary state distribution 
+        (such as cartpole or taxi as used in (Liu et al., 2018) and (Uehara et al., 2020)).
+
+        For the (standard) episodic RL setting, please also consider using :class:`.obtain_episodes()`.
+
+        **References**
+
+        Masatoshi Uehara, Jiawei Huang, and Nan Jiang.
+        "Minimax Weight and Q-Function Learning for Off-Policy Evaluation." 2020.
+
+        Qiang Liu, Lihong Li, Ziyang Tang, and Dengyong Zhou.
+        "Breaking the Curse of Horizon: Infinite-Horizon Off-Policy Estimation." 2018
+
         Parameters
         -------
-        n_steps: int, default=100000 (> 0)
-            Number of steps to rollout the behavior policy and collect data.
+        n_trajectories: int, default=10000 (> 0)
+            Number of trajectories to rollout the behavior policy and collect data.
+
+        step_per_trajectory: int, default=100 (> 0)
+            Number of timesteps in an trajectory.
+
+        minimum_rollout_length: int, default=0 (>= 0)
+            Minimum length of rollout before collecting dataset.
+
+        maximum_rollout_length: int, default=100 (>= minimum_rollout_length)
+            Maximum length of rollout before collecting dataset.
 
         obtain_info: bool, default=False
             Whether to gain info from the environment or not.
 
+        seed_env: bool, default=False
+            Whether to set seed on environment or not.
+
+        obtain_trajectories_from_single_interaction: bool, default=False
+            Whether to collect whole data from a single trajectory.
+            If `True`, the initial state of trajectory i is the next state of the trajectory (i-1)'s last state.
+            If `False`, the initial state will be sampled by rolling out the behavior policy after resetting the environment.
+
         Returns
         -------
         logged_dataset: dict
+            Dictionary containing the environmental settings and trajectories obtained by the behavior policy.
+
+            .. code-block:: python
+
+                key: [
+                    size,
+                    n_trajectories,
+                    step_per_trajectory,
+                    action_type,
+                    n_actions,
+                    action_dim,
+                    action_keys,
+                    action_meaning,
+                    state_dim,
+                    state_keys,
+                    state,
+                    action,
+                    reward,
+                    done,
+                    terminal,
+                    info,
+                    pscore,
+                ]
+
             size: int (> 0)
                 Number of steps the dataset records.
 
-            n_episodes: int (> 0)
-                Number of episodes the dataset records.
+            n_trajectories: int (> 0)
+                Number of trajectories the dataset records.
 
-            step_per_episode: int (> 0)
-                Number of timesteps in an episode.
+            step_per_trajectory: int (> 0)
+                Number of timesteps in an trajectory.
 
             action_type: str
                 Action type of the RL agent.
@@ -399,6 +563,10 @@ class SyntheticDataset(BaseDataset):
                 Dimensions of the actions.
                 If action_type is "discrete", `None` is recorded.
 
+            action_keys: list of str
+                Name of the action variable at each dimension.
+                If action_type is "discrete", `None` is recorded.
+
             action_meaning: dict
                 Dictionary which maps discrete action index into specific actions.
                 If action_type is "continuous", `None` is recorded.
@@ -410,7 +578,7 @@ class SyntheticDataset(BaseDataset):
                 Name of the state variable at each dimension.
 
             state: ndarray of shape (size, state_dim)
-                State observed in the environment.
+                State observed by the behavior policy.
 
             action: ndarray of shape (size, ) or (size, action_dim)
                 Action chosen by the behavior policy.
@@ -431,84 +599,126 @@ class SyntheticDataset(BaseDataset):
                 Action choice probability of the behavior policy for the chosen action.
 
         """
-        check_scalar(n_steps, name="n_steps", target_type=int, min_val=1)
-        states = np.empty(
-            (
-                n_steps,
-                self.env.observation_space.shape[0],
+        check_scalar(n_trajectories, name="n_trajectories", target_type=int, min_val=1)
+        check_scalar(
+            step_per_trajectory, name="step_per_trajectory", target_type=int, min_val=1
+        )
+        check_scalar(
+            minimum_rollout_length,
+            name=minimum_rollout_length,
+            target_type=int,
+            min_val=0,
+        )
+        check_scalar(
+            maximum_rollout_length,
+            name=maximum_rollout_length,
+            target_type=int,
+            min_val=0,
+        )
+        if maximum_rollout_length < minimum_rollout_length:
+            raise ValueError(
+                "maximum_rollout_length must be larger than minimum_rollout_length, but found False."
             )
+
+        if seed_env:
+            self.env.reset(self.random_state)
+
+        states = np.zeros(
+            (n_trajectories * step_per_trajectory, self.env.observation_space.shape[0])
         )
         if self.action_type == "discrete":
-            actions = np.empty(n_steps)
-            action_probs = np.empty(n_steps)
+            actions = np.zeros(n_trajectories * step_per_trajectory, dtype=int)
+            action_probs = np.zeros(n_trajectories * step_per_trajectory, dtype=int)
         else:
-            actions = np.empty(n_steps, self.action_dim)
-            action_probs = np.empty(n_steps, self.action_dim)
+            actions = np.zeros(n_trajectories * step_per_trajectory, self.action_dim)
+            action_probs = np.zeros(
+                n_trajectories * step_per_trajectory, self.action_dim
+            )
 
-        rewards = np.empty(n_steps)
-        dones = np.empty(n_steps)
-        terminals = np.empty(n_steps)
+        rewards = np.zeros(n_trajectories * step_per_trajectory)
+        dones = np.zeros(n_trajectories * step_per_trajectory)
+        terminals = np.zeros(n_trajectories * step_per_trajectory)
         info = {}
 
-        n_episodes = 0
-        done = True
+        rollout_lengths = self.random_.choice(
+            np.arange(minimum_rollout_length, maximum_rollout_length),
+            size=n_trajectories,
+        )
 
-        for idx in tqdm(
-            np.arange(n_steps),
-            desc="[obtain_steps]",
-            total=n_steps,
+        idx, step = 0, 0
+        done = False
+        state, info_ = self.env.reset()
+
+        for i in tqdm(
+            np.arange(n_trajectories),
+            desc="[obtain_trajectories]",
+            total=n_trajectories,
         ):
-            if done:
-                n_episodes += 1
-                state = self.env.reset()
-                step = 0
-                done = False
-            (
-                action,
-                action_prob,
-            ) = self.behavior_policy.stochastic_action_with_pscore_online(state)
-            next_state, reward, done, info_ = self.env.step(action)
-            terminal = step == self.max_episode_steps - 1
-
-            if obtain_info:
-                if idx == 0:
-                    info_keys = info_.keys()
-
-                    if self.is_rtb_env:
-                        for key in info_keys:
-                            info[key] = np.empty(n_episodes * self.step_per_episode)
-                    else:
-                        for key in info_keys:
-                            info[key] = []
-
-                if self.is_rtb_env:
-                    for key, value in info_.items():
-                        info[key][idx] = value
-                else:
-                    for key, value in info_.items():
-                        info[key].append(value)
-
-            states[idx] = state
-            actions[idx] = action
-            action_probs[idx] = action_prob
-            rewards[idx] = reward
-            dones[idx] = done or terminal
-            terminals[idx] = terminal
-
-            for key, value in info_.items():
-                info[key][idx] = value
-
             state = next_state
-            step += 1
+
+            if not obtain_trajectories_from_single_interaction:
+                done = True
+
+                for rollout_step in rollout_lengths[i]:
+
+                    if done:
+                        state, info_ = self.env.reset()
+                        step = 0
+
+                    action = self.behavior_policy.sample_action_online(state)
+                    state, reward, done, truncated, info_ = self.env.step(action)
+                    step += 1
+
+            for t in range(step_per_trajectory):
+
+                if done:
+                    state, info_ = self.env.reset()
+                    done = False
+                    step = 0
+
+                (
+                    action,
+                    action_prob,
+                ) = self.behavior_policy.stochastic_action_with_pscore_online(state)
+                next_state, reward, done, truncated, info_ = self.env.step(action)
+
+                states[idx] = state
+                actions[idx] = action
+                action_probs[idx] = action_prob
+                rewards[idx] = reward
+                dones[idx] = done
+                terminals[idx] = step + 1 == self.max_episode_steps
+
+                if obtain_info:
+                    if idx == 0:
+                        for key, type_ in self.info_keys.items():
+                            if type_ in [int, float]:
+                                info[key] = np.zeros(
+                                    n_trajectories * step_per_trajectory, dtype=type_
+                                )
+                            else:
+                                info[key] = []
+
+                    for key, type_ in self.info_keys.items():
+                        if type_ in [int, float]:
+                            info[key][idx] = info_[key]
+                        else:
+                            info[key].append(info_[key])
+
+                state = next_state
+                idx += 1
+                step += 1
 
         logged_dataset = {
-            "size": n_steps,
-            "n_episodes": n_episodes,
-            "step_per_episode": self.step_per_episode,
+            "size": n_trajectories * step_per_trajectory,
+            "n_trajectories": n_trajectories,
+            "step_per_trajectory": step_per_trajectory,
             "action_type": self.action_type,
             "n_actions": self.n_actions,
             "action_dim": self.action_dim,
             "action_meaning": self.action_meaning,
+            "action_keys": self.action_keys,
+            "state_dim": self.state_dim,
             "state_keys": self.state_keys,
             "state": states,
             "action": actions,

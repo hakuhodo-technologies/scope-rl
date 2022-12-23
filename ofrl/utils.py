@@ -1,12 +1,42 @@
 """Useful tools."""
 from collections import defaultdict
-from typing import DefaultDict, Dict, Union, Optional, Any
+from typing import DefaultDict, Dict, Union, Optional, Any, Tuple
 
+import gym
 import scipy
 import numpy as np
 from sklearn.utils import check_scalar, check_random_state
 
 from .types import LoggedDataset, OPEInputDict
+
+
+def gaussian_kernel(
+    x: np.ndarray,
+    y: np.ndarray,
+    sigma: float = 1.0,
+):
+    """Gaussian kernel.
+
+    x: array-like of shape (n_samples, n_dim)
+        Input array 1.
+
+    y: array-like of shape (n_samples, n_dim)
+        Input array 2.
+
+    sigma: float, default=1.0
+        Bandwidth hyperparameter of gaussian kernel.
+
+    Returns
+    -------
+    kernel_density: ndarray of (n_samples, )
+        kernel density of x given y.
+
+    """
+    x_2 = (x ** 2).sum(axis=1)
+    y_2 = (y ** 2).sum(axis=1)
+    x_y = (x[:, np.newaxis, :] @ y[:, :, np.newaxis]).flatten()
+    distance = x_2 + y_2 - 2 * x_y
+    return np.exp(-distance / (2 * sigma ** 2))
 
 
 def estimate_confidence_interval_by_bootstrap(
@@ -112,7 +142,7 @@ def estimate_confidence_interval_by_empirical_bernstein(
 
     .. math::
 
-        |\\hat{\\mu} - \\mu]| \\leq \\frac{7 X_{\\max} \\log(2 / \\alpha)}{3 (n - 1)} + \\sqrt{\\frac{2 \hat{\mathbb{V}}(X) \log(2 / \\alpha)}{n(n - 1)}}`
+        |\\hat{\\mu} - \\mu]| \\leq \\frac{7 X_{\\max} \\log(2 / \\alpha)}{3 (n - 1)} + \\sqrt{\\frac{2 \\hat{\\mathbb{V}}(X) \\log(2 / \\alpha)}{n(n - 1)}}`
 
     where :math:`n` is the data size and :math:`\\hat{\\mathbb{V}}` is the sample variance.
 
@@ -157,7 +187,7 @@ def estimate_confidence_interval_by_t_test(
 
     .. math::
 
-        |\\hat{\\mu} - \\mu]| \\leq \\frac{T_{\\mathrm{test}}(1 - \\alpha, n-1)}{\\sqrt{n} / \hat{\\sigma}}``
+        |\\hat{\\mu} - \\mu]| \\leq \\frac{T_{\\mathrm{test}}(1 - \\alpha, n-1)}{\\sqrt{n} / \\hat{\\sigma}}``
 
     where :math:`n` is the data size, :math:`T_{\\mathrm{test}}(\\cdot,\\cdot)` is the T-value, and :math:`\\sigma` is the standard deviation, respectively.
 
@@ -259,12 +289,12 @@ def check_logged_dataset(logged_dataset: LoggedDataset):
     """
     dataset_keys = logged_dataset.keys()
     for expected_key in [
-        "n_episodes",
+        "n_trajectories",
         "action_type",
         "n_actions",
         "action_dim",
         "state_dim",
-        "step_per_episode",
+        "step_per_trajectory",
         "state",
         "action",
         "reward",
@@ -299,3 +329,61 @@ def check_input_dict(input_dict: OPEInputDict):
                 raise RuntimeError(
                     f"{expected_key} does not exist in input_dict['{eval_policy}']"
                 )
+
+
+class NewGymAPIWrapper:
+    """This class converts old gym outputs (gym<0.26.0) to the new ones (gym>=0.26.0)."""
+
+    def __init__(
+        self,
+        env: gym.Env,
+    ):
+        self.env = env
+
+    def reset(self, seed: Optional[int] = None) -> np.ndarray:
+        self.env.seed(seed)
+        state = self.env.reset()
+        return state, {}
+
+    def step(self, action: Any) -> Tuple[Any]:
+        state, action, done, info = self.env.step(action)
+        return state, action, False, done, info
+
+    def render(self):
+        self.env.render()
+
+    def close(self):
+        self.env.close()
+
+    def __getattr__(self, key) -> Any:
+        return object.__getattribute__(self.env, key)
+
+
+class OldGymAPIWrapper:
+    """This class converts new gym outputs (gym>=0.26.0) to the old ones (gym<0.26.0)."""
+
+    def __init__(
+        self,
+        env: gym.Env,
+    ):
+        self.env = env
+
+    def reset(self) -> np.ndarray:
+        state, info = self.env.reset()
+        return state
+
+    def step(self, action: Any) -> Tuple[Any]:
+        state, action, done, truncated, info = self.env.step(action)
+        return state, action, done, info
+
+    def render(self, mode: str = "human"):
+        self.env.render()
+
+    def close(self):
+        self.env.close()
+
+    def seed(self, seed: Optional[int] = None):
+        self.env.reset(seed)
+
+    def __getattr__(self, key) -> Any:
+        return object.__getattribute__(self.env, key)

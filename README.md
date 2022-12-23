@@ -39,7 +39,7 @@ This software is intended for the episodic RL setup. For those interested in the
 ### Implementations
 
 *OFRL* mainly consists of the following three modules.
-- [**dataset module**](./_gym/dataset): This module provides tools to generate synthetic data from any environment on top of [OpenAI Gym](http://gym.openai.com/)-like interface. It also provides tools to preprocess the logged data.
+- [**dataset module**](./_gym/dataset): This module provides tools to generate synthetic data from any environment on top of [OpenAI Gym](http://gym.openai.com/) and [Gymnasium](https://gymnasium.farama.org/)-like interface. It also provides tools to preprocess the logged data.
 - [**policy module**](./_gym/policy): This module provides a wrapper class for [d3rlpy](https://github.com/takuseno/d3rlpy) to enable a flexible data collection.
 - [**ope module**](./_gym/ope): This module provides a generic abstract class to implement an OPE estimator and some popular estimators. It also provides some tools useful for performing OPS.
 
@@ -59,19 +59,26 @@ This software is intended for the episodic RL setup. For those interested in the
 <summary><strong>OPE Estimators </strong>(click to expand)</summary>
 
 - Expected Reward Estimation
-  - Direct Method (Fitted Q Evaluation)
-  - Trajectory-wise Importance Sampling
-  - Per-Decision Importance Sampling
-  - Doubly Robust
-  - Self-Normalized Trajectory-wise Importance Sampling
-  - Self-Normalized Per-Decision Importance Sampling
-  - Self-Normalized Doubly Robust
+  - Basic Estimators
+    - Direct Method (Fitted Q Evaluation)
+    - Trajectory-wise Importance Sampling
+    - Per-Decision Importance Sampling
+    - Doubly Robust
+    - Self-Normalized Trajectory-wise Importance Sampling
+    - Self-Normalized Per-Decision Importance Sampling
+    - Self-Normalized Doubly Robust
+  - State Marginal Estimators
+  - State-Action Marginal Estimators
+  - Double Reinforcement Learning
+  - Weight and Value Learning Methods
+    - Augmented Lagrangian Method (BestDICE, DualDICE, GradientDICE, GenDICE, MQL/MWL)
+    - Minimax Q-Learning and Weight Learning (MQL/MWL)
 - Confidence Interval Estimation
   - Bootstrap
   - Hoeffding
   - (Empirical) Bernstein
   - Student T-test
-- Cumulative Distribution Function and Statistics Estimation (Discrete only)
+- Cumulative Distribution Function and Statistics Estimation
   - Direct Method (Fitted Q Evaluation)
   - Trajectory-wise Importance Sampling
   - Trajectory-wise Doubly Robust
@@ -97,6 +104,8 @@ This software is intended for the episodic RL setup. For those interested in the
 - Spearman's Rank Correlation Coefficient
 - Regret
 - Type I and Type II Error Rates
+- {Best/Worst/Mean} performances of top-k policies
+- Safety violation rate of top-k policies
 
 </details>
 
@@ -174,11 +183,11 @@ behavior_policy = DiscreteEpsilonGreedyHead(
 dataset = SyntheticDataset(
     env=env,
     behavior_policy=behavior_policy,
-    is_rtb_env=True,
+    maximum_episode_steps=env.step_per_episode,
     random_state=random_state,
 )
 # the behavior policy collects some logged data
-logged_dataset = dataset.obtain_trajectories(n_episodes=10000)
+logged_dataset = dataset.obtain_trajectories(n_trajectories=10000)
 ```
 
 ### Offline Reinforcement Learning
@@ -258,7 +267,7 @@ prep = CreateOPEInput(
 input_dict = prep.obtain_whole_inputs(
     evaluation_policies=evaluation_policies,
     env=env,
-    n_episodes_on_policy_evaluation=100,
+    n_trajectories_on_policy_evaluation=100,
     random_state=random_state,
 )
 # initialize the OPE class
@@ -273,7 +282,7 @@ ope.visualize_off_policy_estimates(
     sharey=True,
 )
 ```
-<div align="center"><img src="./images/ope_policy_value_basic.png" width="100%"/></div>
+<div align="center"><img src=".docs/_static/images/ope_policy_value_basic.png" width="100%"/></div>
 <figcaption>
 <p align="center">
   Policy Value Estimated by OPE Estimators
@@ -317,7 +326,7 @@ cvar_dict = cd_ope.estimate_conditional_value_at_risk(input_dict, alphas=0.3)
 # estimate and visualize the cumulative distribution function of the policy performance
 cd_ope.visualize_cumulative_distribution_function(input_dict, n_cols=4)
 ```
-<div align="center"><img src="./images/ope_cumulative_distribution_function.png" width="100%"/></div>
+<div align="center"><img src=".docs/_static/images/ope_cumulative_distribution_function.png" width="100%"/></div>
 <figcaption>
 <p align="center">
   Cumulative Distribution Function Estimated by OPE Estimators
@@ -346,7 +355,21 @@ ops = OffPolicySelection(
 ranking_dict = ops.select_by_policy_value(input_dict)
 # rank the candidate policies by their policy value estimated by cumulative distribution OPE
 ranking_dict_ = ops.select_by_policy_value_via_cumulative_distribution_ope(input_dict)
+# visualize the top k deployment result
+ops.visualize_topk_policy_value_selected_by_standard_ope(
+    input_dict=input_dict,
+    compared_estimators=["dm", "tis", "pdis", "dr"],
+    safety_criteria=1.0,
+)
+```
+<div align="center"><img src=".docs/_static/images/ops_topk_policy_value.png" width="100%"/></div>
+<figcaption>
+<p align="center">
+  Comparison of the Top-k Statistics of Policy Value
+</p>
+</figcaption>
 
+```Python
 # (6) Evaluate the OPS/OPE results
 # rank the candidate policies by their estimated lower quartile and evaluate the selection results
 ranking_df, metric_df = ops.select_by_lower_quartile(
@@ -362,20 +385,21 @@ ops.visualize_cvar_for_validation(
     share_axes=True,
 )
 ```
-<div align="center"><img src="./images/ops_variance_validation.png" width="100%"/></div>
+<div align="center"><img src=".docs/_static/images/ops_variance_validation.png" width="100%"/></div>
 <figcaption>
 <p align="center">
-  Comparison of Estimated and Ground-truth Variance of Policy Value
+  Validation of Estimated and Ground-truth Variance of Policy Value
 </p>
 </figcaption>
 
-For more examples, please refer to [quickstart/rtb_synthetic_discrete_advanced.ipynb](./examples/quickstart/rtb_synthetic_discrete_advanced.ipynb).
+For more examples, please refer to [quickstart/rtb_synthetic_discrete_advanced.ipynb](./examples/quickstart/rtb_synthetic_discrete_advanced.ipynb) for discrete actions and 
+[quickstart/rtb_synthetic_continuous_advanced.ipynb](./examples/quickstart/rtb_synthetic_continuous_advanced.ipynb) for continuous actions.
 
 ## Citation
 
 If you use our software in your work, please cite our paper:
 
-Haruka Kiyohara, Kosuke Kawakami, Yuta Saito.<br>
+Haruka Kiyohara, Ren Kishimoto, Kosuke Kawakami, Ken Kobayashi, Kazuhide Nakata, Yuta Saito.<br>
 **Title**<br>
 [link]()
 
@@ -395,7 +419,10 @@ This project is licensed under Apache 2.0 license - see [LICENSE](LICENSE) file 
 ## Project Team
 
 - [Haruka Kiyohara](https://sites.google.com/view/harukakiyohara) (**Main Contributor**; Tokyo Institute of Technology)
+- Ren Kishimoto (Tokyo Institute of Technology)
 - Kosuke Kawakami (negocia, Inc.)
+- Ken Kobayashi (Tokyo Institute of Technology)
+- Kazuhide Nakata (Tokyo Institute of Technology)
 - [Yuta Saito](https://usait0.com/en/) (Cornell University)
 
 ## Contact
@@ -429,41 +456,61 @@ For any question about the paper and software, feel free to contact: kiyohara.h.
 
 11. Nan Jiang and Lihong Li. [Doubly Robust Off-policy Value Evaluation for Reinforcement Learning](https://arxiv.org/abs/1511.03722). In *Proceedings of the 33rd International Conference on Machine Learning*, 652-661, 2016.
 
-12. Nathan Kallus, Xiaojie Mao, Kaiwen Wang, and Zhengyuan Zhou. [Doubly Robust Distributionally Robust Off-Policy Evaluation and Learning](https://arxiv.org/abs/2202.09667). In *Proceedings of the 39th International Conference on Machine Learning*, ,2022.
-
 13. Nathan Kallus and Masatoshi Uehara. [Intrinsically Efficient, Stable, and Bounded Off-Policy Evaluation for Reinforcement Learning](https://arxiv.org/abs/1906.03735). In *Advances in Neural Information Processing Systems*, 3325-3334, 2019.
 
-14. Nathan Kallus and Angela Zhou. [Policy Evaluation and Optimization with Continuous Treatments](https://arxiv.org/abs/1802.06037). In *Proceedings of the 21st International Conference on Artificial Intelligence and Statistics*, 1243-1251, 2019.
+14. Nathan Kallus and Masatoshi Uehara. [Double Reinforcement Learning for Efficient Off-Policy Evaluation in Markov Decision Processes](https://arxiv.org/abs/1908.08526). In *Journal of Machine Learning Research*, 167, 2020.
 
-15. Aviral Kumar, Aurick Zhou, George Tucker, and Sergey Levine. [Conservative Q-Learning for Offline Reinforcement Learning](https://arxiv.org/abs/2006.04779). In *Advances in Neural Information Processing Systems*, 1179-1191, 2020.
+15. Nathan Kallus and Angela Zhou. [Policy Evaluation and Optimization with Continuous Treatments](https://arxiv.org/abs/1802.06037). In *Proceedings of the 21st International Conference on Artificial Intelligence and Statistics*, 1243-1251, 2019.
 
-16. Hoang Le, Cameron Voloshin, and Yisong Yue. [Batch Policy Learning under Constraints](https://arxiv.org/abs/1903.08738). In *Proceedings of the 36th International Conference on Machine Learning*, 3703-3712, 2019.
+16. Aviral Kumar, Aurick Zhou, George Tucker, and Sergey Levine. [Conservative Q-Learning for Offline Reinforcement Learning](https://arxiv.org/abs/2006.04779). In *Advances in Neural Information Processing Systems*, 1179-1191, 2020.
 
-17. Sergey Levine, Aviral Kumar, George Tucker, and Justin Fu. [Offline Reinforcement Learning: Tutorial, Review, and Perspectives on Open Problems](https://arxiv.org/abs/2005.01643). *arXiv preprint arXiv:2005.01643*, 2020.
+17. Vladislav Kurenkov and Sergey Kolesnikov. [Showing Your Offline Reinforcement Learning Work: Online Evaluation Budget Matters](https://arxiv.org/abs/2110.04156). In *Proceedings of the 39th International Conference on Machine Learning*, 11729--11752, 2022.
 
-18. Tom Le Paine, Cosmin Paduraru, Andrea Michi, Caglar Gulcehre, Konrad Zolna, Alexander Novikov, Ziyu Wang, and Nando de Freitas. [Hyperparameter Selection for Offline Reinforcement Learning](https://arxiv.org/abs/2007.090550). *arXiv preprint arXiv:2007.09055*, 2020.
+18. Hoang Le, Cameron Voloshin, and Yisong Yue. [Batch Policy Learning under Constraints](https://arxiv.org/abs/1903.08738). In *Proceedings of the 36th International Conference on Machine Learning*, 3703-3712, 2019.
 
-19. Doina Precup, Richard S. Sutton, and Satinder P. Singh. [Eligibility Traces for Off-Policy Policy Evaluation](https://scholarworks.umass.edu/cgi/viewcontent.cgi?article=1079&context=cs_faculty_pubs). In *Proceedings of the 17th International Conference on Machine Learning*, 759–766, 2000.
+19. Haanvid Lee, Jongmin Lee, Yunseon Choi, Wonseok Jeon, Byung-Jun Lee, Yung-Kyun Noh, and Kee-Eung Kim. [Local Metric Learning for Off-Policy Evaluation in Contextual Bandits with Continuous Actions](https://arxiv.org/abs/2210.13373). In *Advances in Neural Information Processing Systems*, xxxx-xxxx, 2022.
 
-20. Rafael Figueiredo Prudencio, Marcos R. O. A. Maximo, and Esther Luna Colombini. [A Survey on Offline Reinforcement Learning: Taxonomy, Review, and Open Problems](https://arxiv.org/abs/2203.01387). *arXiv preprint arXiv:2203.01387*, 2022.
+20. Sergey Levine, Aviral Kumar, George Tucker, and Justin Fu. [Offline Reinforcement Learning: Tutorial, Review, and Perspectives on Open Problems](https://arxiv.org/abs/2005.01643). *arXiv preprint arXiv:2005.01643*, 2020.
 
-21. Yuta Saito, Shunsuke Aihara, Megumi Matsutani, and Yusuke Narita. [Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation](https://arxiv.org/abs/2008.07146). In *Advances in Neural Information Processing Systems*, , 2021.
+21. Qiang Liu, Lihong Li, Ziyang Tang, and Dengyong Zhou. [Breaking the Curse of Horizon: Infinite-Horizon Off-Policy Estimation](https://arxiv.org/abs/1810.12429). In *Advances in Neural Information Processing Systems*, 2018.
 
-22. Takuma Seno and Michita Imai. [d3rlpy: An Offline Deep Reinforcement Library](https://arxiv.org/abs/2111.03788), *arXiv preprint arXiv:2111.03788*, 2021.
+22. Ofir Nachum, Yinlam Chow, Bo Dai, and Lihong Li. [DualDICE: Behavior-Agnostic Estimation of Discounted Stationary Distribution Corrections](https://arxiv.org/abs/1906.04733). In *Advances in Neural Information Processing Systems*, 2019.
 
-23. Nian Si, Fan Zhang, Zhengyuan Zhou, and Jose Blanchet. [Distributional Robust Batch Contextual Bandits](https://arxiv.org/abs/2006.05630). In *Proceedings of the 37th International Conference on Machine Learning*, 8884-8894, 2020.
+23. Ofir Nachum, Bo Dai, Ilya Kostrikov, Yinlam Chow, Lihong Li, and Dale Schuurmans. [AlgaeDICE: Policy Gradient from Arbitrary Experience](https://arxiv.org/abs/1912.02074). *arXiv preprint arXiv:1912.02074*, 2019.
 
-24. Alex Strehl, John Langford, Sham Kakade, and Lihong Li. [Learning from Logged Implicit Exploration Data](https://arxiv.org/abs/1003.0120). In *Advances in Neural Information Processing Systems*, 2217-2225, 2010.
+24. Tom Le Paine, Cosmin Paduraru, Andrea Michi, Caglar Gulcehre, Konrad Zolna, Alexander Novikov, Ziyu Wang, and Nando de Freitas. [Hyperparameter Selection for Offline Reinforcement Learning](https://arxiv.org/abs/2007.090550). *arXiv preprint arXiv:2007.09055*, 2020.
 
-25. Adith Swaminathan and Thorsten Joachims. [The Self-Normalized Estimator for Counterfactual Learning](https://papers.nips.cc/paper/2015/hash/39027dfad5138c9ca0c474d71db915c3-Abstract.html). In *Advances in Neural Information Processing Systems*, 3231-3239, 2015.
+25. Doina Precup, Richard S. Sutton, and Satinder P. Singh. [Eligibility Traces for Off-Policy Policy Evaluation](https://scholarworks.umass.edu/cgi/viewcontent.cgi?article=1079&context=cs_faculty_pubs). In *Proceedings of the 17th International Conference on Machine Learning*, 759–766, 2000.
 
-26. Shengpu Tang and Jenna Wiens. [Model Selection for Offline Reinforcement Learning: Practical Considerations for Healthcare Settings](https://arxiv.org/abs/2107.11003). In,*Proceedings of the 6th Machine Learning for Healthcare Conference*, 2-35, 2021.
+26. Rafael Figueiredo Prudencio, Marcos R. O. A. Maximo, and Esther Luna Colombini. [A Survey on Offline Reinforcement Learning: Taxonomy, Review, and Open Problems](https://arxiv.org/abs/2203.01387). *arXiv preprint arXiv:2203.01387*, 2022.
 
-27. Philip S. Thomas and Emma Brunskill. [Data-Efficient Off-Policy Policy Evaluation for Reinforcement Learning](https://arxiv.org/abs/1604.00923). In *Proceedings of the 33rd International Conference on Machine Learning*, 2139-2148, 2016.
+27. Yuta Saito, Shunsuke Aihara, Megumi Matsutani, and Yusuke Narita. [Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation](https://arxiv.org/abs/2008.07146). In *Advances in Neural Information Processing Systems*, , 2021.
 
-28. Philip S. Thomas, Georgios Theocharous, and Mohammad Ghavamzadeh. [High Confidence Off-Policy Evaluation](https://ojs.aaai.org/index.php/AAAI/article/view/9541). In *Proceedings of the 9th AAAI Conference on Artificial Intelligence*, 2015.
+28. Takuma Seno and Michita Imai. [d3rlpy: An Offline Deep Reinforcement Library](https://arxiv.org/abs/2111.03788), *arXiv preprint arXiv:2111.03788*, 2021.
 
-29. Philip S. Thomas, Georgios Theocharous, and Mohammad Ghavamzadeh. [High Confidence Policy Improvement](https://proceedings.mlr.press/v37/thomas15.html). In *Proceedings of the 32nd International Conference on Machine Learning*, 2380-2388, 2015.
+29. Alex Strehl, John Langford, Sham Kakade, and Lihong Li. [Learning from Logged Implicit Exploration Data](https://arxiv.org/abs/1003.0120). In *Advances in Neural Information Processing Systems*, 2217-2225, 2010.
+
+30. Adith Swaminathan and Thorsten Joachims. [The Self-Normalized Estimator for Counterfactual Learning](https://papers.nips.cc/paper/2015/hash/39027dfad5138c9ca0c474d71db915c3-Abstract.html). In *Advances in Neural Information Processing Systems*, 3231-3239, 2015.
+
+31. Shengpu Tang and Jenna Wiens. [Model Selection for Offline Reinforcement Learning: Practical Considerations for Healthcare Settings](https://arxiv.org/abs/2107.11003). In,*Proceedings of the 6th Machine Learning for Healthcare Conference*, 2-35, 2021.
+
+32. Philip S. Thomas and Emma Brunskill. [Data-Efficient Off-Policy Policy Evaluation for Reinforcement Learning](https://arxiv.org/abs/1604.00923). In *Proceedings of the 33rd International Conference on Machine Learning*, 2139-2148, 2016.
+
+33. Philip S. Thomas, Georgios Theocharous, and Mohammad Ghavamzadeh. [High Confidence Off-Policy Evaluation](https://ojs.aaai.org/index.php/AAAI/article/view/9541). In *Proceedings of the 9th AAAI Conference on Artificial Intelligence*, 2015.
+
+34. Philip S. Thomas, Georgios Theocharous, and Mohammad Ghavamzadeh. [High Confidence Policy Improvement](https://proceedings.mlr.press/v37/thomas15.html). In *Proceedings of the 32nd International Conference on Machine Learning*, 2380-2388, 2015.
+
+35. Masatoshi Uehara, Jiawei Huang, and Nan Jiang. [Minimax Weight and Q-Function Learning for Off-Policy Evaluation](https://arxiv.org/abs/1910.12809). In *Proceedings of the 37th International Conference on Machine Learning*, 9659--9668, 2020.
+
+36. Masatoshi Uehara, Chengchun Shi, and Nathan Kallus. [A Review of Off-Policy Evaluation in Reinforcement Learning](https://arxiv.org/abs/2212.06355). *arXiv preprint arXiv:2212.06355*, 2022.
+
+37. Mengjiao Yang, Ofir Nachum, Bo Dai, Lihong Li, and Dale Schuurmans. [Off-Policy Evaluation via the Regularized Lagrangian](https://arxiv.org/abs/2007.03438). In *Advances in Neural Information Processing Systems*, 6551--6561, 2020.
+
+38. Christina J. Yuan, Yash Chandak, Stephen Giguere, Philip S. Thomas, and Scott Niekum. [SOPE: Spectrum of Off-Policy Estimators](https://arxiv.org/abs/2111.03936). In *Advances in Neural Information Processing Systems*, 18958--18969, 2022.
+
+39. Shangtong Zhang, Bo Liu, and Shimon Whiteson. [GradientDICE: Rethinking Generalized Offline Estimation of Stationary Values](https://arxiv.org/abs/2001.11113). In *Proceedings of the 37th International Conference on Machine Learning*, 11194--11203, 2020.
+
+40. Ruiyi Zhang, Bo Dai, Lihong Li, and Dale Schuurmans. [GenDICE: Generalized Offline Estimation of Stationary Values](https://arxiv.org/abs/2002.09072). In *International Conference on Learning Representations*, 2020.
 
 </details>
 
