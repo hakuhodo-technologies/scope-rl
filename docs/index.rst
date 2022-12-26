@@ -1,251 +1,283 @@
-===================================
-Welcome to OFRL!
-===================================
+:notoc:
 
-.. card:: Title
+.. card:: OFRL
+    :class-title: top-page-title-title
+    :class-body: top-page-title-desc
+    :text-align: center
+    :shadow: none
 
-   .. grid:: 2
+    one sentence to describe
 
-      .. grid-item-card::
-         :img-background: _static/images/ope_policy_value_basic.png
-         :link: documentation/quickstart
-         :link-type: doc
-         :shadow: none
-         :columns: 3
-
-      .. grid-item-card::  Title 2
-         :columns: 3
-
-         B
-
-      .. grid-item-card::  Title 3
-         :columns: 6
-
-         C
-
-   description |:trophy:| :octicon:`rocket` :bdg-ref-secondary-line:`getting started <documentation/installation>`
-
-   .. button-ref:: documentation/installation
+    .. button-ref:: documentation/installation
       :ref-type: doc
       :color: primary
       :shadow:
 
       Getting Started
-   
-:download:`Click here to download slides <_static/images/ope_policy_value_basic.png>`
 
-.. button-link:: _static/images/ope_policy_value_basic.png
-      :color: primary
-      :shadow:
+.. raw:: html
 
-      :octicon:`download` **Download files**
+    <h2>Why OFRL?</h2>
 
-.. tabs::
+.. grid-item::
+    :class: top-page-list
 
-   .. tab:: Links
+    * End-to-end implementation of Offline RL and OPE
 
-      .. grid:: 2
+    * Variety of OPE estimators and standardized evaluation protocol of OPE 
+    
+    * Provide Cumulative Distribution OPE for risk function estimation
+
+    * Validate potential risks of OPS in deploying poor policies
+
+.. raw:: html
+
+    <div class="top-page-link">
+        <a href="documentation/index.html">>>> Explore!</a>
+    </div>
+
+.. raw:: html
+
+    <h2>Try OFRL in two lines of code!</h2>
+
+    <div class="top-page-list">
+        <ul>
+            <li>Compare policy performance via OPE</li>
+        </ul>
+    </div>
+
+.. code-block:: python
+
+    # initialize the OPE class
+    ope = OPE(
+        logged_dataset=logged_dataset,
+        ope_estimators=[DM(), TIS(), PDIS(), DR()],
+    )
+    # conduct OPE and visualize the result
+    ope.visualize_off_policy_estimates(
+        input_dict,
+        random_state=random_state,
+        sharey=True,
+    )
+
+.. card:: 
+    :img-top: ../_static/images/ope_policy_value_basic.png
+    :text-align: center
+    
+    Policy Value Estimated by OPE Estimators
+
+
+.. raw:: html
+
+    <div class="top-page-link">
+        <a href="documentation/index.html">>>> See more</a>
+    </div>
+    <div class="white-space-5px"></div>
+
+.. raw:: html
+
+    <div class="top-page-list">
+        <ul>
+            <li>Compare cumulative distribution function (CDF) via OPE</li>
+        </ul>
+    </div>
+
+.. code-block:: python
+
+    # initialize the OPE class
+    cd_ope = CumulativeDistributionOPE(
+        logged_dataset=logged_dataset,
+        ope_estimators=[
+        CD_DM(estimator_name="cdf_dm"),
+        CD_IS(estimator_name="cdf_is"),
+        CD_DR(estimator_name="cdf_dr"),
+        CD_SNIS(estimator_name="cdf_snis"),
+        CD_SNDR(estimator_name="cdf_sndr"),
+        ],
+    )
+    # estimate and visualize cumulative distribution function
+    cd_ope.visualize_cumulative_distribution_function(input_dict, n_cols=4)
+
+.. card:: 
+    :img-top: ../_static/images/ope_cumulative_distribution_function.png
+    :text-align: center
+    
+    Cumulative Distribution Function Estimated by OPE Estimators
+
+.. raw:: html
+
+    <div class="top-page-link">
+        <a href="documentation/index.html">>>> See more</a>
+    </div>
+    <div class="white-space-5px"></div>
 
-         .. grid-item-card::
-            :img-background: _static/images/ope_policy_value_basic.png
-            :link: documentation/quickstart
-            :link-type: doc
-            :shadow: none
-            :columns: 3
+.. raw:: html
 
-         .. grid-item-card::  Title 2
-            :columns: 3
+    <div class="top-page-list">
+        <ul>
+            <li>Validate top-k performance and risks of OPS</li>
+        </ul>
+    </div>
 
-         .. grid-item-card::
-            :columns: 3
-            :shadow: none
+.. code-block:: python
 
-            .. button-link:: _static/images/ope_policy_value_basic.png
+    # Initialize the OPS class
+    ops = OffPolicySelection(
+        ope=ope,
+        cumulative_distribution_ope=cd_ope,
+    )
+    # visualize the top k deployment result
+    ops.visualize_topk_policy_value_selected_by_standard_ope(
+        input_dict=input_dict,
+        compared_estimators=["dm", "tis", "pdis", "dr"],
+        safety_criteria=1.0,
+    )
 
-               **Download**
+.. card:: 
+    :img-top: ../_static/images/ops_topk_performance.png
+    :text-align: center
+    
+    Comparison of the Top-k Statistics of Policy Value
 
-   .. tab:: Links
+.. raw:: html
 
-      .. grid:: 2
+    <div class="top-page-link">
+        <a href="documentation/index.html">>>> See more</a>
+    </div>
+    <div class="white-space-5px"></div>
 
-         .. grid-item::
-            :columns: 2
+.. raw:: html
 
-            .. button-link:: _static/images/ope_policy_value_basic.png
-               :color: primary
-               :shadow:
+    <div class="top-page-list">
+        <ul>
+            <li>Understand the trend of estimation errors</li>
+        </ul>
+    </div>
 
-               :octicon:`download` **Download files**
-            
-         .. grid-item::
-            :columns: 2
+.. code-block:: python
 
-            .. button-link:: _static/images/ope_policy_value_basic.png
-               :color: primary
-               :shadow:
+    # Initialize the OPS class
+    ops = OffPolicySelection(
+        ope=ope,
+        cumulative_distribution_ope=cd_ope,
+    )
+    # visualize the OPS results with the ground-truth metrics
+    ops.visualize_lower_quartile_for_validation(
+        input_dict,
+        alpha=0.3,
+        share_axes=True,
+    )
 
-               :octicon:`download` **Download files**
+.. card:: 
+    :img-top: ../_static/images/ops_variance_validation.png
+    :text-align: center
+    
+    Validation of Estimated and Ground-truth Variance of Policy Value
 
-   .. tab:: Paper
+.. raw:: html
 
-      `link <>`_
+    <div class="top-page-link">
+        <a href="documentation/index.html">>>> See more</a>
+    </div>
+    <div class="white-space-5px"></div>
 
-   .. code-tab:: py Citation
+.. raw:: html
 
-      aaa
+    <h2>Explore more with OFRL</h2>
 
+    <div class="top-page-gallery-link">
+        <a href="documentation/tutorial/index.html">Tutorials</a>
+    </div>
 
-.. card::
-    :link: /documentation/quickstart
-    :link-type: doc
+.. card-carousel:: 4
 
-    .. grid:: 2
+    .. card:: Basic Off-Policy Evaluation
+        :img-top: .png
 
-        .. grid-item-card::
-            :img-background: /_static/images/ope_policy_value_basic.png
-            :shadow: none
-            :columns: 4
+    .. card:: Marginal Off-Policy Evaluation
+        :img-top: .png
 
-        .. grid-item:: **Basic OPE (Discrete)**
-            :columns: 8
+    .. card:: Cumulative Distribution Off-Policy Evaluation
+        :img-top: .png
 
-            * Direct Method
-            * Per-Decision Importance Sampling
-            * ...
+    .. card:: Off-Policy Selection
+        :img-top: .png
 
-.. card::
-    :link: /documentation/quickstart
-    :link-type: doc
+    .. card:: Evaluation of OPE/OPS
+        :img-top: .png
 
-    .. grid::
-        :gutter: 1
+    .. card:: Ablation with various value functions
+        :img-top: .png
 
-        .. grid-item::
-            :columns: 4
+    .. card:: Ablation with xxx
+        :img-top: .png
 
-            .. grid:: 1
-                :gutter: 1
+.. raw:: html
 
-                **Basic OPE (Continuous)**
+    <div class="top-page-gallery-link">
+        <a href="documentation/subpackages/index.html">Applications</a>
+    </div>
 
-            .. grid:: 1
-                :gutter: 1
 
-                .. grid-item-card:: 
-                    :img-background: /_static/images/ope_policy_value_basic.png
-                    :shadow: none
+.. card-carousel:: 4
 
-        .. grid-item::
-            :columns: 8
+    .. card:: Example on Real-Time Bidding
+        :img-top: .png
 
-            .. grid:: 1
-                :gutter: 1
-                :padding: 1
+    .. card:: Example on Recommendation
+        :img-top: .png
 
-                .. grid-item:: 
+    .. card:: Example on xxx
+        :img-top: .png
 
-                    * Direct Method
-                    * Per-Decision Importance Sampling
-                    * ...
+    .. card:: Example on xxx
+        :img-top: .png
 
-.. card::
-    :link: /documentation/quickstart
-    :link-type: doc
 
-    .. grid::
-        :gutter: 1
+.. raw:: html
 
-        .. grid-item::
-            :columns: 4
+    <h2>Citation</h2>
 
-            .. grid:: 1
-                :gutter: 1
+| **Title** [`arXiv <>`_] [`Proceedings <>`_]
+| Authors.
 
-                .. grid-item-card:: 
-                    :img-background: /_static/images/ope_policy_value_basic.png
-                    :shadow: none
+.. code-block::
 
-        .. grid-item::
-            :columns: 8
+   @article{kiyohara2023xxx
+      title={},
+      author={},
+      journal={},
+      year={},
+   }
 
-            .. grid:: 1
-                :gutter: 1
+.. raw:: html
 
-                .. grid-item:: **Basic OPE (Continuous)**
+    <div class="white-space-5px"></div>
+    <h2>Join us!</h2>
 
-                    * Direct Method
-                    * Per-Decision Importance Sampling
-                    * ...
+Any contributions to OFRL are more than welcome!
 
-.. card::
-    :link: /documentation/quickstart
-    :link-type: doc
+* `Guidelines for contribution (CONTRIBUTING.md) <>`_
+* `Google Group <>`_
 
-    .. grid::
-        :gutter: 1
+If you have any questions, feel free to contact: kiyohara.h.aa@m.titech.ac.jp
 
-        .. grid-item::
-            :columns: 4
 
-            .. grid:: 1
-                :gutter: 1
+.. raw:: html
 
-                .. grid-item-card:: 
-                    :img-background: /_static/images/ope_policy_value_basic.png
-                    :shadow: none
+    <div class="white-space-5px"></div>
 
-        .. grid-item::
-            :columns: 1
-
-        .. grid-item::
-            :columns: 7
-
-            .. grid:: 1
-                :gutter: 1
-
-                .. grid-item:: **Basic OPE (Continuous)**
-
-                    * Direct Method
-                    * Per-Decision Importance Sampling
-                    * ...
-
-.. card::
-    :link: /documentation/quickstart
-    :link-type: doc
-
-    .. grid::
-        :gutter: 1
-
-        .. grid-item::
-            :columns: 4
-
-            .. grid:: 1
-                :gutter: 1
-
-                .. grid-item-card:: 
-                    :img-background: /_static/images/ope_policy_value_basic.png
-                    :shadow: none
-
-        .. grid-item::
-            :columns: 7
-
-            .. grid:: 1
-                :gutter: 1
-
-                .. grid-item:: **Basic OPE (Continuous)**
-
-                    * Direct Method
-                    * Per-Decision Importance Sampling
-                    * ...
-   
 .. toctree::
     :maxdepth: 1
+    :hidden:
 
     Installation <documentation/installation>
     Quickstart <documentation/quickstart>
     Tutorial <documentation/_autogallery/index>
     Documentation <documentation/index>
     FAQs <documentation/frequently_asked_questions>
+    News <documentation/news>
+    Sub-packages <documentation/subpackages/index>
     Release Notes <https://github.com/negocia-inc/ofrl/releases>
 
 .. grid::

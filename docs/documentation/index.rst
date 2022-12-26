@@ -1,8 +1,3 @@
-.. OFRL documentation master file, created by
-   sphinx-quickstart on Thu Jan 20 15:25:38 2022.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
 OFRL; a Python library for offline reinforcement learning, off-policy evaluation, and selection
 ===================================
 
@@ -185,6 +180,9 @@ Citation
 ~~~~~~~~~~
 If you use our pipeline in your work, please cite our paper below.
 
+| **Title** [`arXiv <>`_] [`Proceedings <>`_]
+| Authors.
+
 .. code-block::
 
    @article{kiyohara2023xxx
@@ -233,14 +231,15 @@ Table of Contents
    :maxdepth: 1
    :caption: Sub-packages:
 
-   rtbgym_about
+   Gallery of Sub-packages <subpackages/index>
+   subpackages/rtbgym_about
 
 .. toctree::
    :maxdepth: 2
    :caption: Package References:
 
    ofrl_api
-   rtbgym_api
+   subpackages/rtbgym_api
 
 .. toctree::
    :maxdepth: 1
@@ -249,7 +248,8 @@ Table of Contents
    Github <https://github.com/negocia-inc/ofrl>
    LICENSE <https://github.com/negocia-inc/ofrl/blob/main/LICENSE>
    frequently_asked_questions
-   release_notes <https://github.com/negocia-inc/ofrl/releases>
+   News <news>
+   Release Notes <https://github.com/negocia-inc/ofrl/releases>
    references
 
 .. grid::

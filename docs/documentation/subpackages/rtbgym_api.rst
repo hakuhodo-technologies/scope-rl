@@ -7,7 +7,7 @@ RTBGym Package Reference
 env module
 ----------
 .. autosummary::
-    :toctree: _autosummary/rtbgym/env
+    :toctree: ../_autosummary/rtbgym/env
     :recursive:
     :nosignatures:
     :template: module_rtb_env
@@ -20,7 +20,7 @@ env module
 simulation module
 ----------
 .. autosummary::
-    :toctree: _autosummary/rtbgym/simulation
+    :toctree: ../_autosummary/rtbgym/simulation
     :recursive:
     :nosignatures:
 
@@ -34,7 +34,7 @@ simulation module
 others
 ----------
 .. autosummary::
-    :toctree: _autosummary/rtbgym/utils
+    :toctree: ../_autosummary/rtbgym/utils
     :recursive:
     :nosignatures:
 
@@ -50,6 +50,16 @@ others
 
         .. grid::
             :margin: 0
+
+            .. grid-item-card::
+                :link: index
+                :link-type: doc
+                :shadow: none
+                :margin: 0
+                :padding: 0
+
+                <<< Prev
+                **RTBGym**
 
             .. grid-item-card::
                 :link: index

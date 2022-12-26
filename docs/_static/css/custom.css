@@ -1,5 +1,50 @@
 /* Make each footer item in-line so they stack horizontally instead of vertically */
 .footer-item {
-    margin: 0 auto;
-    text-align: center;
-  }
+  margin: 0 auto;
+  text-align: center;
+}
+
+/* Top page design */
+.top-page-title-background {
+  background-color: transparent;
+  background-image: url("./images/top_img.png");
+  border: 2px solid transparent;
+}
+
+.top-page-title-title {
+  font-size: 40px;
+  color: var(--pst-color-primary);
+  text-align: center;
+  padding-top: 20%;
+}
+
+.top-page-title-desc {
+  font-size: 20px;
+  color: var(--pst-color-primary);
+  text-align: center;
+  padding-bottom: 20%;
+}
+
+.top-page-list li {
+  font-size: 20px;
+}
+
+.top-page-link {
+  font-size: 20px;
+  text-align: right;
+  padding-right: 2%;
+}
+
+.top-page-gallery-link {
+  font-size: 20px;
+  text-align: left;
+  padding-bottom: 5px;
+}
+
+.white-space-20px {
+  padding: 20px;
+}
+
+.white-space-5px {
+  padding: 5px;
+}

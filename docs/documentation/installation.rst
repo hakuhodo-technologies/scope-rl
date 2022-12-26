@@ -1,4 +1,5 @@
-==========
+:notoc:
+
 Installation
 ==========
 
@@ -18,9 +19,18 @@ Installation
             cd ofrl
             python setup.py install
 
-~~~~~
+
+.. raw:: html
+
+    <div class="white-space-20px"></div>
+
+Citation
+==========
 
 If you use our pipeline in your work, please cite our paper below.
+
+| **Title** [`arXiv <>`_] [`Proceedings <>`_]
+| Authors.
 
 .. code-block::
 
