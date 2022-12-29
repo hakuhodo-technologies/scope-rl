@@ -30,8 +30,8 @@ class OffPolicySelection:
 
     Note
     -----------
-    **Off-Policy Selection (OPS)** 
-    
+    **Off-Policy Selection (OPS)**
+
     OPS selects the "best" policy among several candidates based on the policy value or other statistics estimated by OPE.
 
     .. math::
@@ -49,7 +49,7 @@ class OffPolicySelection:
 
         V(\\pi) := \\mathbb{E} \\left[ \\sum_{t=1}^T \\gamma^{t-1} r_t \\mid \\pi \\right]
 
-    where :math:`r_t` is the reward observation at each timestep :math:`t`, 
+    where :math:`r_t` is the reward observation at each timestep :math:`t`,
     :math:`T` is the total number of timesteps in an episode, and :math:`\\gamma` is the discount factor.
 
     .. seealso::
@@ -300,7 +300,7 @@ class OffPolicySelection:
         -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
-            
+
             .. code-block:: python
 
                 key: [evaluation_policy_name][
@@ -316,7 +316,7 @@ class OffPolicySelection:
 
             .. seealso::
 
-                :class:`ope.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         return_variance: bool, default=False
             Whether to return the variance or not.
@@ -491,7 +491,7 @@ class OffPolicySelection:
         -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
-            
+
             .. code-block:: python
 
                 key: [evaluation_policy_name][
@@ -507,7 +507,7 @@ class OffPolicySelection:
 
             .. seealso::
 
-                :class:`ope.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
@@ -535,7 +535,7 @@ class OffPolicySelection:
         ops_dict/(ranking_df_dict, metric_df): dict or dataframe
             Dictionary/dataframe containing the result of OPS conducted by OPE estimators.
 
-            .. code-block:: python 
+            .. code-block:: python
 
                 key: [estimator_name][
                     estimated_ranking,
@@ -789,7 +789,7 @@ class OffPolicySelection:
         -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
-            
+
             .. code-block:: python
 
                 key: [evaluation_policy_name][
@@ -805,7 +805,7 @@ class OffPolicySelection:
 
             .. seealso::
 
-                :class:`ope.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
@@ -1093,7 +1093,7 @@ class OffPolicySelection:
         -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
-            
+
             .. code-block:: python
 
                 key: [evaluation_policy_name][
@@ -1109,7 +1109,7 @@ class OffPolicySelection:
 
             .. seealso::
 
-                :class:`ope.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
@@ -1426,7 +1426,7 @@ class OffPolicySelection:
         -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
-            
+
             .. code-block:: python
 
                 key: [evaluation_policy_name][
@@ -1442,7 +1442,7 @@ class OffPolicySelection:
 
             .. seealso::
 
-                :class:`ope.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
@@ -1689,7 +1689,7 @@ class OffPolicySelection:
         -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
-            
+
             .. code-block:: python
 
                 key: [evaluation_policy_name][
@@ -1705,7 +1705,7 @@ class OffPolicySelection:
 
             .. seealso::
 
-                :class:`ope.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
@@ -1959,7 +1959,7 @@ class OffPolicySelection:
         -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
-            
+
             .. code-block:: python
 
                 key: [evaluation_policy_name][
@@ -1975,7 +1975,7 @@ class OffPolicySelection:
 
             .. seealso::
 
-                :class:`ope.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
@@ -2041,7 +2041,7 @@ class OffPolicySelection:
         -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
-            
+
             .. code-block:: python
 
                 key: [evaluation_policy_name][
@@ -2057,7 +2057,7 @@ class OffPolicySelection:
 
             .. seealso::
 
-                :class:`ope.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
@@ -2109,7 +2109,7 @@ class OffPolicySelection:
         -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
-            
+
             .. code-block:: python
 
                 key: [evaluation_policy_name][
@@ -2125,7 +2125,7 @@ class OffPolicySelection:
 
             .. seealso::
 
-                :class:`ope.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
@@ -2181,7 +2181,7 @@ class OffPolicySelection:
         -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
-            
+
             .. code-block:: python
 
                 key: [evaluation_policy_name][
@@ -2197,7 +2197,7 @@ class OffPolicySelection:
 
             .. seealso::
 
-                :class:`ope.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
@@ -2255,7 +2255,7 @@ class OffPolicySelection:
         -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
-            
+
             .. code-block:: python
 
                 key: [evaluation_policy_name][
@@ -2271,7 +2271,7 @@ class OffPolicySelection:
 
             .. seealso::
 
-                :class:`ope.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
@@ -2321,7 +2321,7 @@ class OffPolicySelection:
         -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
-            
+
             .. code-block:: python
 
                 key: [evaluation_policy_name][
@@ -2337,7 +2337,7 @@ class OffPolicySelection:
 
             .. seealso::
 
-                :class:`ope.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
@@ -2529,7 +2529,7 @@ class OffPolicySelection:
         -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
-            
+
             .. code-block:: python
 
                 key: [evaluation_policy_name][
@@ -2545,7 +2545,7 @@ class OffPolicySelection:
 
             .. seealso::
 
-                :class:`ope.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
@@ -2743,7 +2743,7 @@ class OffPolicySelection:
         -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
-            
+
             .. code-block:: python
 
                 key: [evaluation_policy_name][
@@ -2759,7 +2759,7 @@ class OffPolicySelection:
 
             .. seealso::
 
-                :class:`ope.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
@@ -3023,7 +3023,7 @@ class OffPolicySelection:
         -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
-            
+
             .. code-block:: python
 
                 key: [evaluation_policy_name][
@@ -3039,7 +3039,7 @@ class OffPolicySelection:
 
             .. seealso::
 
-                :class:`ope.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
@@ -3253,7 +3253,7 @@ class OffPolicySelection:
         -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
-            
+
             .. code-block:: python
 
                 key: [evaluation_policy_name][
@@ -3269,7 +3269,7 @@ class OffPolicySelection:
 
             .. seealso::
 
-                :class:`ope.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
@@ -3464,7 +3464,7 @@ class OffPolicySelection:
         -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
-            
+
             .. code-block:: python
 
                 key: [evaluation_policy_name][
@@ -3480,7 +3480,7 @@ class OffPolicySelection:
 
             .. seealso::
 
-                :class:`ope.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
@@ -3694,7 +3694,7 @@ class OffPolicySelection:
         -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
-            
+
             .. code-block:: python
 
                 key: [evaluation_policy_name][
@@ -3710,7 +3710,7 @@ class OffPolicySelection:
 
             .. seealso::
 
-                :class:`ope.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
@@ -3898,7 +3898,7 @@ class OffPolicySelection:
         -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
-            
+
             .. code-block:: python
 
                 key: [evaluation_policy_name][
@@ -3914,7 +3914,7 @@ class OffPolicySelection:
 
             .. seealso::
 
-                :class:`ope.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
@@ -4080,7 +4080,7 @@ class OffPolicySelection:
         -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
-            
+
             .. code-block:: python
 
                 key: [evaluation_policy_name][
@@ -4096,7 +4096,7 @@ class OffPolicySelection:
 
             .. seealso::
 
-                :class:`ope.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
@@ -4262,7 +4262,7 @@ class OffPolicySelection:
         -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
-            
+
             .. code-block:: python
 
                 key: [evaluation_policy_name][
@@ -4278,7 +4278,7 @@ class OffPolicySelection:
 
             .. seealso::
 
-                :class:`ope.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
@@ -4567,7 +4567,7 @@ class OffPolicySelection:
         -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
-            
+
             .. code-block:: python
 
                 key: [evaluation_policy_name][
@@ -4583,7 +4583,7 @@ class OffPolicySelection:
 
             .. seealso::
 
-                :class:`ope.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
@@ -4749,7 +4749,7 @@ class OffPolicySelection:
         -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
-            
+
             .. code-block:: python
 
                 key: [evaluation_policy_name][
@@ -4765,7 +4765,7 @@ class OffPolicySelection:
 
             .. seealso::
 
-                :class:`ope.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
@@ -4934,7 +4934,7 @@ class OffPolicySelection:
         -------
         input_dict: OPEInputDict
             Dictionary of the OPE inputs for each evaluation policy.
-            
+
             .. code-block:: python
 
                 key: [evaluation_policy_name][
@@ -4950,7 +4950,7 @@ class OffPolicySelection:
 
             .. seealso::
 
-                :class:`ope.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.

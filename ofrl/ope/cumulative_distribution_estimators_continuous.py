@@ -36,7 +36,7 @@ class ContinuousCumulativeDistributionDirectMethod(
     DM has low variance, but can incur bias due to approximation errors.
 
     There are several ways to estimate :math:`\\hat{Q}(s, a)` such as Fitted Q Evaluation (FQE) (Le et al., 2019) and
-    Minimax Q-Function Learning (MQL) (Uehara et al., 2020). 
+    Minimax Q-Function Learning (MQL) (Uehara et al., 2020).
 
     .. seealso::
 
@@ -400,7 +400,7 @@ class ContinuousCumulativeDistributionTrajectoryWiseImportanceSampling(
     and :math:`\\mathbb{I} \\{ \\cdot \\}` is the indicator function.
     :math:`\\delta(\\pi, a_{0:T-1}) = \\prod_{t=0}^{T-1} K(\\pi(s_t), a_t)` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy.
 
-    TIS enables an unbiased estimation of the policy value. However, when the trajectory length (:math:`T`) is large, 
+    TIS enables an unbiased estimation of the policy value. However, when the trajectory length (:math:`T`) is large,
     TIS suffers from high variance due to the product of importance weights.
 
     Parameters
@@ -1444,7 +1444,7 @@ class ContinuousCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSamp
 
     Nathan Kallus and Angela Zhou.
     "Policy Evaluation and Optimization with Continuous Treatments." 2019.
-    
+
     """
 
     estimator_name: str = "cdf_sntis"

@@ -6,7 +6,7 @@ import torch.nn.functional as F
 
 class VFunction(nn.Module):
     """Value Function (for both discrete and continuous action space).
-    
+
     Bases: :class:`torch.nn.Module`
 
     Imported as: :class:`ofrl.ope.weight_value_learning.function.VFunction`
@@ -18,8 +18,9 @@ class VFunction(nn.Module):
 
     hidden_dim: int, default=100 (> 0)
         Hidden dimension of the network.
-    
+
     """
+
     def __init__(
         self,
         state_dim: int,
@@ -39,7 +40,7 @@ class VFunction(nn.Module):
 
 class StateWeightFunction(nn.Module):
     """State Weight Function (for both discrete and continuous action space).
-    
+
     Bases: :class:`torch.nn.Module`
 
     Imported as: :class:`ofrl.ope.weight_value_learning.function.StateWeightFunction`
@@ -51,8 +52,9 @@ class StateWeightFunction(nn.Module):
 
     hidden_dim: int, default=100 (> 0)
         Hidden dimension of the network.
-    
+
     """
+
     def __init__(
         self,
         state_dim: int,
@@ -72,7 +74,7 @@ class StateWeightFunction(nn.Module):
 
 class DiscreteQFunction(nn.Module):
     """Q Function (for discrete action space).
-    
+
     Bases: :class:`torch.nn.Module`
 
     Imported as: :class:`ofrl.ope.weight_value_learning.function.DiscreteQFunction`
@@ -90,8 +92,9 @@ class DiscreteQFunction(nn.Module):
 
     device: str, default="cuda:0"
         Specifies device used for torch.
-    
+
     """
+
     def __init__(
         self,
         n_actions: int,
@@ -149,7 +152,7 @@ class DiscreteQFunction(nn.Module):
 
 class ContinuousQFunction(nn.Module):
     """Q Function (for continuous action space).
-    
+
     Bases: :class:`torch.nn.Module`
 
     Imported as: :class:`ofrl.ope.weight_value_learning.function.ContinuousQFunction`
@@ -164,8 +167,9 @@ class ContinuousQFunction(nn.Module):
 
     hidden_dim: int, default=100 (> 0)
         Hidden dimension of the network.
-    
+
     """
+
     def __init__(
         self,
         action_dim: int,
@@ -189,7 +193,7 @@ class ContinuousQFunction(nn.Module):
 
 class DiscreteStateActionWeightFunction(nn.Module):
     """State Action Weight Function (for discrete action space).
-    
+
     Bases: :class:`torch.nn.Module`
 
     Imported as: :class:`ofrl.ope.weight_value_learning.function.DiscreteStateActionWeightFunction`
@@ -207,8 +211,9 @@ class DiscreteStateActionWeightFunction(nn.Module):
 
     device: str, default="cuda:0"
         Specifies device used for torch.
-    
+
     """
+
     def __init__(
         self,
         n_actions: int,
@@ -234,7 +239,7 @@ class DiscreteStateActionWeightFunction(nn.Module):
 
 class ContinuousStateActionWeightFunction(nn.Module):
     """State Action Weight Function (for continuous action space).
-    
+
     Bases: :class:`torch.nn.Module`
 
     Imported as: :class:`ofrl.ope.weight_value_learning.function.ContinuousStateActionWeightFunction`
@@ -249,8 +254,9 @@ class ContinuousStateActionWeightFunction(nn.Module):
 
     hidden_dim: int, default=100 (> 0)
         Hidden dimension of the network.
-    
+
     """
+
     def __init__(
         self,
         action_dim: int,

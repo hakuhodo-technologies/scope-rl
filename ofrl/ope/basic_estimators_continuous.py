@@ -25,7 +25,7 @@ class ContinuousDirectMethod(BaseOffPolicyEstimator):
 
     .. math::
 
-        \\hat{J}_{\\mathrm{DM}} (\\pi; \\mathcal{D}) 
+        \\hat{J}_{\\mathrm{DM}} (\\pi; \\mathcal{D})
         := \\mathbb{E}_n [\\hat{Q}(s_0, \\pi(s_0))]
         = \\mathbb{E}_n [\\hat{V}(s_0)],
 
@@ -36,7 +36,7 @@ class ContinuousDirectMethod(BaseOffPolicyEstimator):
     DM has low variance, but can incur bias due to approximation errors.
 
     There are several ways to estimate :math:`\\hat{Q}(s, a)` such as Fitted Q Evaluation (FQE) (Le et al., 2019) and
-    Minimax Q-Function Learning (MQL) (Uehara et al., 2020). 
+    Minimax Q-Function Learning (MQL) (Uehara et al., 2020).
 
     .. seealso::
 
@@ -240,7 +240,7 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
     :math:`\\delta(\\pi, a_{0:T-1}) = \\prod_{t=0}^{T-1} K(\\pi(s_t), a_t)` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy.
     Note that :math:`K(\\cdot)` is a kernel function.
 
-    TIS enables an unbiased estimation of the policy value. However, when the trajectory length (:math:`T`) is large, 
+    TIS enables an unbiased estimation of the policy value. However, when the trajectory length (:math:`T`) is large,
     TIS suffers from high variance due to the product of importance weights.
 
     Parameters
@@ -616,12 +616,12 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
 
         \\hat{J}_{\\mathrm{PDIS}} (\\pi; \\mathcal{D}) := \\mathbb{E}_{n} \\left[\\sum_{t=0}^{T-1} \\gamma^t w_{0:t} \\delta(\\pi, a_{0:t}) r_t \\right],
 
-    where :math:`w_{0:t} := \\prod_{t'=0}^t (1 / \\pi_0(a_{t'} | s_{t'}))`. is the importance weight of past interactions 
+    where :math:`w_{0:t} := \\prod_{t'=0}^t (1 / \\pi_0(a_{t'} | s_{t'}))`. is the importance weight of past interactions
     (referred to as per-decision importance weight).
     :math:`\\delta(\\pi, a_{0:t}) = \\prod_{t'=0}^t K(\\pi(s_{t'}), a_{t'})` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy.
     Note that :math:`K(\\cdot)` is a kernel function.
 
-    By using per-decision importance weight instead of the trajectory-wise importance weight, PDIS reduces the variance of TIS while remaining unbiased. 
+    By using per-decision importance weight instead of the trajectory-wise importance weight, PDIS reduces the variance of TIS while remaining unbiased.
     However, when the length of a trajectory (:math:`T`) is large, PDIS still suffers from high variance.
 
     Parameters

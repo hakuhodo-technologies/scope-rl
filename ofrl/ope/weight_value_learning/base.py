@@ -6,9 +6,9 @@ from dataclasses import dataclass
 @dataclass
 class BaseWeightValueLearner(metaclass=ABCMeta):
     """Base class for weight/value learning.
-    
+
     Imported as: :class:`ofrl.ope.weight_value_learning.BaseWeightValueLearner`
-    
+
     """
 
     @abstractmethod

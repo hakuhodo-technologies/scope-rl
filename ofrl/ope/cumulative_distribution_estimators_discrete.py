@@ -34,7 +34,7 @@ class DiscreteCumulativeDistributionDirectMethod(
     DM has low variance, but can incur bias due to approximation errors.
 
     There are several ways to estimate :math:`\\hat{Q}(s, a)` such as Fitted Q Evaluation (FQE) (Le et al., 2019) and
-    Minimax Q-Function Learning (MQL) (Uehara et al., 2020). 
+    Minimax Q-Function Learning (MQL) (Uehara et al., 2020).
 
     .. seealso::
 
@@ -453,7 +453,7 @@ class DiscreteCumulativeDistributionTrajectoryWiseImportanceSampling(
     :math:`w_{0:T-1} := \\prod_{t=0}^{T-1} (\\pi(a_t \\mid s_t) / \\pi_0(a_t \\mid s_t))` is the trajectory-wise importance weight,
     and :math:`\\mathbb{I} \\{ \\cdot \\}` is the indicator function.
 
-    TIS enables an unbiased estimation of the policy value. However, when the trajectory length (:math:`T`) is large, 
+    TIS enables an unbiased estimation of the policy value. However, when the trajectory length (:math:`T`) is large,
     TIS suffers from high variance due to the product of importance weights.
 
     Parameters

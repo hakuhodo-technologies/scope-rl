@@ -10,6 +10,7 @@ from sklearn.utils import check_scalar, check_random_state
 
 from .base import BaseDataset
 from ..policy.head import BaseHead
+from ..utils import MultipleLoggedDataset
 from ..types import LoggedDataset
 
 
@@ -23,18 +24,18 @@ class SyntheticDataset(BaseDataset):
 
     Note
     -------
-    Logged dataset is directly used for Off-Policy Evaluation (OPE). 
+    Logged dataset is directly used for Off-Policy Evaluation (OPE).
     Moreover, it is also compatible to `d3rlpy <https://github.com/takuseno/d3rlpy>`_ (offline RL library) with the following command.
 
     .. code-block:: python
 
         d3rlpy_dataset = MDPDataset(
-            observations=logged_dataset["state"],
-            actions=logged_dataset["action"],
-            rewards=logged_dataset["reward"],
-            terminals=logged_dataset["done"],
-            episode_terminals=logged_dataset["terminal"],
-            discrete_action=(logged_dataset["action_type"]=="discrete"),
+            observations=logged_datasets["state"],
+            actions=logged_datasets["action"],
+            rewards=logged_datasets["reward"],
+            terminals=logged_datasets["done"],
+            episode_terminals=logged_datasets["terminal"],
+            discrete_action=(logged_datasets["action_type"]=="discrete"),
         )
 
     .. seealso::
@@ -137,13 +138,13 @@ class SyntheticDataset(BaseDataset):
         )
 
         # data collection
-        logged_dataset = dataset.obtain_trajectories(n_trajectories=100, obtain_info=True)
+        logged_datasets = dataset.obtain_trajectories(n_trajectories=100, obtain_info=True)
 
     **Output**:
-    
+
     .. code-block:: python
 
-        >>> logged_dataset
+        >>> logged_datasets
 
         {'size': 700,
         'n_trajectories': 100,
@@ -279,7 +280,7 @@ class SyntheticDataset(BaseDataset):
 
         Returns
         -------
-        logged_dataset: dict
+        logged_dataset: list of dict
             Dictionary containing the environmental settings and trajectories obtained by the behavior policy.
 
             .. code-block:: python
@@ -477,7 +478,7 @@ class SyntheticDataset(BaseDataset):
 
         Note
         -------
-        This function is intended to be used for the environment which has a stationary state distribution 
+        This function is intended to be used for the environment which has a stationary state distribution
         (such as cartpole or taxi as used in (Liu et al., 2018) and (Uehara et al., 2020)).
 
         For the (standard) episodic RL setting, please also consider using :class:`.obtain_episodes()`.
@@ -507,13 +508,13 @@ class SyntheticDataset(BaseDataset):
         obtain_info: bool, default=False
             Whether to gain info from the environment or not.
 
-        seed_env: bool, default=False
-            Whether to set seed on environment or not.
-
         obtain_trajectories_from_single_interaction: bool, default=False
             Whether to collect whole data from a single trajectory.
             If `True`, the initial state of trajectory i is the next state of the trajectory (i-1)'s last state.
             If `False`, the initial state will be sampled by rolling out the behavior policy after resetting the environment.
+
+        seed_env: bool, default=False
+            Whether to set seed on environment or not.
 
         Returns
         -------
@@ -729,3 +730,347 @@ class SyntheticDataset(BaseDataset):
             "pscore": action_probs,
         }
         return logged_dataset
+
+    def obtain_multiple_datasets_with_episodes(
+        self,
+        n_datasets: int = 5,
+        n_trajectories: int = 10000,
+        step_per_trajectory: Optional[int] = None,
+        obtain_info: bool = False,
+        seed_env: bool = False,
+        path: str = "logged_dataset/",
+        save_relative_path: bool = False,
+    ) -> LoggedDataset:
+        """Rollout the behavior policy and obtain episodes.
+
+        Note
+        -------
+        This function calls :class:`obtain_episodes` and save multiple logged dataset in :class:`MultipleDatasetClass`.
+
+        Note
+        -------
+        This function is intended to be used for the environment which has a fixed length of episodes (episodic setting).
+
+        For non-episodic, stationary setting (such as cartpole or taxi as used in (Liu et al., 2018) and (Uehara et al., 2020)),
+        please also consider using :class:`.obtain_steps()` to collect logged dataset.
+
+        **References**
+
+        Masatoshi Uehara, Jiawei Huang, and Nan Jiang.
+        "Minimax Weight and Q-Function Learning for Off-Policy Evaluation." 2020.
+
+        Qiang Liu, Lihong Li, Ziyang Tang, and Dengyong Zhou.
+        "Breaking the Curse of Horizon: Infinite-Horizon Off-Policy Estimation." 2018
+
+        Parameters
+        -------
+        n_datasets: int, default=5
+            Number of (independent) dataset.
+
+        n_trajectories: int, default=10000 (> 0)
+            Number of trajectories to rollout the behavior policy and collect data.
+
+        step_per_trajectory: int, default=None (> 0)
+            Number of timesteps in an trajectory.
+
+        obtain_info: bool, default=False
+            Whether to gain info from the environment or not.
+
+        seed_env: bool, default=False
+            Whether to set seed on environment or not. (Only applicable to the first dataset.)
+
+        path: str
+            Path to the directory. Either absolute and relative path is acceptable.
+
+        save_relative_path: bool, default=False.
+            Whether to save a relative path.
+            If `True`, a path relative to the ofrl directory will be saved.
+            If `False`, the absolute path will be saved.
+
+            Note that, this option was added in order to run examples in the documentation properly.
+            Otherwise, the default setting (`False`) is recommended.
+
+        Returns
+        -------
+        logged_datasets: MultipleLoggedDataset
+            Instance containing multiple logged datasets.
+
+            Each logged dataset is accessible by the following command.
+
+            .. code-block:: python
+
+                logged_dataset_0 = logged_datasets.get(0)
+
+            Each logged dataset contains the following.
+
+            .. code-block:: python
+
+                key: [
+                    size,
+                    n_trajectories,
+                    step_per_trajectory,
+                    action_type,
+                    n_actions,
+                    action_dim,
+                    action_keys,
+                    action_meaning,
+                    state_dim,
+                    state_keys,
+                    state,
+                    action,
+                    reward,
+                    done,
+                    terminal,
+                    info,
+                    pscore,
+                ]
+
+            size: int (> 0)
+                Number of steps the dataset records.
+
+            n_trajectories: int (> 0)
+                Number of trajectories the dataset records.
+
+            step_per_trajectory: int (> 0)
+                Number of timesteps in an trajectory.
+
+            action_type: str
+                Action type of the RL agent.
+                Either "discrete" or "continuous".
+
+            n_actions: int (> 0)
+                Number of discrete actions.
+                If action_type is "continuous", `None` is recorded.
+
+            action_dim: int (> 0)
+                Dimensions of the actions.
+                If action_type is "discrete", `None` is recorded.
+
+            action_keys: list of str
+                Name of the action variable at each dimension.
+                If action_type is "discrete", `None` is recorded.
+
+            action_meaning: dict
+                Dictionary which maps discrete action index into specific actions.
+                If action_type is "continuous", `None` is recorded.
+
+            state_dim: int (> 0)
+                Dimensions of the states.
+
+            state_keys: list of str
+                Name of the state variable at each dimension.
+
+            state: ndarray of shape (size, state_dim)
+                State observed by the behavior policy.
+
+            action: ndarray of shape (size, ) or (size, action_dim)
+                Action chosen by the behavior policy.
+
+            reward: ndarray of shape (size, )
+                Reward observed for each (state, action) pair.
+
+            done: ndarray of shape (size, )
+                Whether an episode ends or not.
+
+            terminal: ndarray of shape (size, )
+                Whether an episode reaches the pre-defined maximum steps.
+
+            info: dict
+                Additional feedbacks from the environment.
+
+            pscore: ndarray of shape (size, )
+                Action choice probability of the behavior policy for the chosen action.
+
+        """
+        multiple_logged_datasets = MultipleLoggedDataset(
+            path=path, save_relative_path=save_relative_path
+        )
+
+        for i in range(n_datasets):
+            logged_dataset = self.obtain_episodes(
+                n_trajectories=n_trajectories,
+                step_per_trajectory=step_per_trajectory,
+                obtain_info=obtain_info,
+                seed_env=(seed_env and i == 0),
+            )
+            multiple_logged_datasets.add(logged_dataset)
+
+        return multiple_logged_datasets
+
+    def obtain_multiple_logged_dataset_with_steps(
+        self,
+        n_datasets: int = 5,
+        n_trajectories: int = 10000,
+        step_per_trajectory: int = 10,
+        minimum_rollout_length: int = 0,
+        maximum_rollout_length: int = 100,
+        obtain_info: bool = False,
+        obtain_trajectories_from_single_interaction: bool = False,
+        seed_env: bool = False,
+        path: str = "logged_dataset/",
+        save_relative_path: bool = False,
+    ) -> LoggedDataset:
+        """Rollout the behavior policy and obtain steps.
+
+        Note
+        -------
+        This function is intended to be used for the environment which has a stationary state distribution
+        (such as cartpole or taxi as used in (Liu et al., 2018) and (Uehara et al., 2020)).
+
+        For the (standard) episodic RL setting, please also consider using :class:`.obtain_episodes()`.
+
+        **References**
+
+        Masatoshi Uehara, Jiawei Huang, and Nan Jiang.
+        "Minimax Weight and Q-Function Learning for Off-Policy Evaluation." 2020.
+
+        Qiang Liu, Lihong Li, Ziyang Tang, and Dengyong Zhou.
+        "Breaking the Curse of Horizon: Infinite-Horizon Off-Policy Estimation." 2018
+
+        Parameters
+        -------
+        n_datasets: int, default=5
+            Number of (independent) dataset.
+
+        n_trajectories: int, default=10000 (> 0)
+            Number of trajectories to rollout the behavior policy and collect data.
+
+        step_per_trajectory: int, default=100 (> 0)
+            Number of timesteps in an trajectory.
+
+        minimum_rollout_length: int, default=0 (>= 0)
+            Minimum length of rollout before collecting dataset.
+
+        maximum_rollout_length: int, default=100 (>= minimum_rollout_length)
+            Maximum length of rollout before collecting dataset.
+
+        obtain_info: bool, default=False
+            Whether to gain info from the environment or not.
+
+        obtain_trajectories_from_single_interaction: bool, default=False
+            Whether to collect whole data from a single trajectory.
+            If `True`, the initial state of trajectory i is the next state of the trajectory (i-1)'s last state.
+            If `False`, the initial state will be sampled by rolling out the behavior policy after resetting the environment.
+
+        seed_env: bool, default=False
+            Whether to set seed on environment or not.
+
+        path: str
+            Path to the directory. Either absolute and relative path is acceptable.
+
+        save_relative_path: bool, default=False.
+            Whether to save a relative path.
+            If `True`, a path relative to the ofrl directory will be saved.
+            If `False`, the absolute path will be saved.
+
+            Note that, this option was added in order to run examples in the documentation properly.
+            Otherwise, the default setting (`False`) is recommended.
+
+        Returns
+        -------
+        logged_dataset: MultipleLoggedDataset
+            Instance containing multiple logged datasets.
+
+            By calling the following command, we can access each logged dataset as follows.
+
+            .. code-block:: python
+
+                logged_dataset_0 = logged_datasets.get(0)
+
+            Each logged dataset contains the following.
+
+            .. code-block:: python
+
+                key: [
+                    size,
+                    n_trajectories,
+                    step_per_trajectory,
+                    action_type,
+                    n_actions,
+                    action_dim,
+                    action_keys,
+                    action_meaning,
+                    state_dim,
+                    state_keys,
+                    state,
+                    action,
+                    reward,
+                    done,
+                    terminal,
+                    info,
+                    pscore,
+                ]
+
+            size: int (> 0)
+                Number of steps the dataset records.
+
+            n_trajectories: int (> 0)
+                Number of trajectories the dataset records.
+
+            step_per_trajectory: int (> 0)
+                Number of timesteps in an trajectory.
+
+            action_type: str
+                Action type of the RL agent.
+                Either "discrete" or "continuous".
+
+            n_actions: int (> 0)
+                Number of discrete actions.
+                If action_type is "continuous", `None` is recorded.
+
+            action_dim: int (> 0)
+                Dimensions of the actions.
+                If action_type is "discrete", `None` is recorded.
+
+            action_keys: list of str
+                Name of the action variable at each dimension.
+                If action_type is "discrete", `None` is recorded.
+
+            action_meaning: dict
+                Dictionary which maps discrete action index into specific actions.
+                If action_type is "continuous", `None` is recorded.
+
+            state_dim: int (> 0)
+                Dimensions of the states.
+
+            state_keys: list of str
+                Name of the state variable at each dimension.
+
+            state: ndarray of shape (size, state_dim)
+                State observed by the behavior policy.
+
+            action: ndarray of shape (size, ) or (size, action_dim)
+                Action chosen by the behavior policy.
+
+            reward: ndarray of shape (size, )
+                Reward observed for each (state, action) pair.
+
+            done: ndarray of shape (size, )
+                Whether an episode ends or not.
+
+            terminal: ndarray of shape (size, )
+                Whether an episode reaches the pre-defined maximum steps.
+
+            info: dict
+                Additional feedbacks from the environment.
+
+            pscore: ndarray of shape (size, )
+                Action choice probability of the behavior policy for the chosen action.
+
+        """
+        multiple_logged_datasets = MultipleLoggedDataset(
+            path=path, save_relative_path=save_relative_path
+        )
+        for i in range(n_datasets):
+            logged_dataset = self.obtain_step(
+                n_trajectories=n_trajectories,
+                step_per_trajectory=step_per_trajectory,
+                minimum_rollout_length=minimum_rollout_length,
+                maximum_rollout_length=maximum_rollout_length,
+                obtain_info=obtain_info,
+                obtain_trajectories_from_single_interaction=obtain_trajectories_from_single_interaction,
+                seed_env=(seed_env and i == 0),
+            )
+            multiple_logged_datasets.add(logged_dataset)
+
+        return multiple_logged_datasets
