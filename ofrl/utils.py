@@ -258,6 +258,15 @@ class MultipleInputDict:
 
         return use_same_eval_policy
 
+    @property
+    def n_eval_policies(self):
+        """Check the number of evaluation policies of each input dict."""
+        n_eval_policies = np.zeros(self.n_datasets)
+        for i in range(self.n_datasets):
+            n_eval_policies[i] = len(self.eval_policy_name_list[i])
+
+        return n_eval_policies
+
 
 def gaussian_kernel(
     x: np.ndarray,

@@ -2082,11 +2082,10 @@ class CreateOPEInput:
 
         return state_weight_prediction.flatten()
 
-    def obtain_input_dict(
+    def _obtain_whole_inputs(
         self,
-        logged_dataset: Union[LoggedDataset, MultipleLoggedDataset],
+        logged_dataset: LoggedDataset,
         evaluation_policies: List[BaseHead],
-        dataset_id: Optional[Union[int, str]],
         require_value_prediction: bool = False,
         require_weight_prediction: bool = False,
         resample_initial_state: bool = False,
@@ -2137,10 +2136,6 @@ class CreateOPEInput:
 
         evaluation_policies: list of BaseHead
             Evaluation policies.
-
-        dataset_id: int or str, default=None
-            Id (or name) of the logged dataset.
-            Required when logged_dataset is :class:`MultipleLoggedDataset`.
 
         require_value_prediction: bool, default=False
             Whether to obtain value prediction.
@@ -2258,17 +2253,6 @@ class CreateOPEInput:
                 Discount factor.
 
         """
-        if isinstance(logged_dataset, MultipleLoggedDataset):
-            if dataset_id is None:
-                raise ValueError(
-                    "dataset_id must be given when using MultipleLoggedDataset."
-                )
-            else:
-                logged_dataset = MultipleLoggedDataset.get(dataset_id)
-                logged_dataset_name = f"logged_dataset (dataset_id: {dataset_id})"
-        else:
-            logged_dataset_name = "logged_dataset"
-
         check_logged_dataset(logged_dataset)
         self._register_logged_dataset(logged_dataset)
 
@@ -2276,27 +2260,21 @@ class CreateOPEInput:
             if isinstance(self.env.action_space, Box):
                 if logged_dataset["action_type"] != "discrete":
                     raise RuntimeError(
-                        f"Detected mismatch between action_type of {logged_dataset_name} and env.action_space."
+                        f"Detected mismatch between action_type of logged_dataset and env.action_space."
                     )
                 elif logged_dataset["n_actions"] != self.env.action_space.n:
                     raise RuntimeError(
-                        f"Detected mismatch between n_actions of {logged_dataset_name} and env.action_space.n."
+                        f"Detected mismatch between n_actions of logged_dataset and env.action_space.n."
                     )
             else:
                 if logged_dataset["action_type"] != "continuous":
                     raise RuntimeError(
-                        f"Detected mismatch between action_type of {logged_dataset_name} and env.action_space."
+                        f"Detected mismatch between action_type of logged_dataset and env.action_space."
                     )
                 elif logged_dataset["action_dim"] != self.env.action_space.shape[0]:
                     raise RuntimeError(
-                        f"Detected mismatch between action_dim of {logged_dataset_name} and env.action_space.shape[0]."
+                        f"Detected mismatch between action_dim of logged_dataset and env.action_space.shape[0]."
                     )
-
-        if resample_initial_state and self.env is None:
-            warn(
-                "resample_initial_state is True, but self.env is not given. Thus, initial_state will not be resampled."
-                "Please initialize CreateInput class with self.env to resample initial state."
-            )
 
         for eval_policy in evaluation_policies:
             if eval_policy.action_type != self.action_type:
@@ -2304,14 +2282,6 @@ class CreateOPEInput:
                     f"One of the evaluation_policies, {eval_policy.name} does not match action_type in logged_dataset."
                     " Please use {self.action_type} action_type instead."
                 )
-
-        if n_trajectories_on_policy_evaluation is not None:
-            check_scalar(
-                n_trajectories_on_policy_evaluation,
-                name="n_trajectories_on_policy_evaluation",
-                target_type=int,
-                min_val=1,
-            )
 
         if require_value_prediction:
 
@@ -2526,10 +2496,11 @@ class CreateOPEInput:
 
         return defaultdict_to_dict(input_dict)
 
-    def obtain_multiple_input_dict(
+    def obtain_whole_inputs(
         self,
-        logged_datasets: MultipleLoggedDataset,
+        logged_dataset: Union[LoggedDataset, MultipleLoggedDataset],
         evaluation_policies: Union[List[BaseHead], List[List[BaseHead]]],
+        dataset_id: Optional[Union[int, str]] = None,
         require_value_prediction: bool = False,
         require_weight_prediction: bool = False,
         resample_initial_state: bool = False,
@@ -2551,8 +2522,8 @@ class CreateOPEInput:
 
         Parameters
         -------
-        logged_datasets: MultipleLoggedDataset
-            Multiple logged datasets, each of which contains the following.
+        logged_dataset: LoggedDataset or MultipleLoggedDataset
+            Logged dataset containing the following.
 
             .. code-block:: python
 
@@ -2585,6 +2556,10 @@ class CreateOPEInput:
             If a nested list is given, different evaluation policies are applied for each logged dataset.
 
             The length of a nested list (:class:`len(evaluation_policies)` must be equal to :class:`len(logged_datasets)`.)
+
+        dataset_id: int or str, default=None
+            Id (or name) of the logged dataset.
+            Required when logged_dataset is :class:`MultipleLoggedDataset`.
 
         require_value_prediction: bool, default=False
             Whether to obtain value prediction.
@@ -2652,16 +2627,16 @@ class CreateOPEInput:
 
         Return
         -------
-        input_dicts: MultipleInputDict
-            Instance containing multiple input dictionary for OPE.
+        input_dicts: OPEInputDict or MultipleInputDict
+            MultipleInputDict is a instance containing (multiple) input dictionary for OPE.
 
-             Each input dict is accessible by the following command.
+            Each input dict is accessible by the following command.
 
             .. code-block:: python
 
                 input_dict_0 = input_dict.get(0)
 
-            Each input dict contains the following.
+            Each input dict consists of the following.
 
             .. code-block:: python
 
@@ -2721,20 +2696,64 @@ class CreateOPEInput:
                 Discount factor.
 
         """
-        if isinstance(evaluation_policies[0], BaseHead):
-            multiple_input_dicts = [
-                evaluation_policies for _ in range(len(logged_datasets))
-            ]
+        if isinstance(logged_dataset, MultipleLoggedDataset):
+            if dataset_id is None:
+                if isinstance(evaluation_policies[0], BaseHead):
+                    evaluation_policies = [
+                        evaluation_policies for _ in range(len(logged_dataset))
+                    ]
 
-        multiple_input_dicts = MultipleInputDict(
-            path=path, save_relative_path=save_relative_path
-        )
+                input_dict = MultipleInputDict(
+                    path=path, save_relative_path=save_relative_path
+                )
 
-        for i in range(len(logged_datasets)):
-            input_dict = self.obtain_input_dict(
-                logged_dataset=logged_datasets,
-                evaluation_policies=evaluation_policies[i],
-                dataset_id=i,
+                for i in range(len(logged_dataset)):
+                    logged_dataset_ = logged_dataset.get(i)
+                    input_dict_ = self._obtain_whole_inputs(
+                        logged_dataset=logged_dataset_,
+                        evaluation_policies=evaluation_policies[i],
+                        require_value_prediction=require_value_prediction,
+                        require_weight_prediction=require_weight_prediction,
+                        resample_initial_state=resample_initial_state,
+                        q_function_method=q_function_method,
+                        v_function_method=v_function_method,
+                        w_function_method=w_function_method,
+                        k_fold=k_fold,
+                        n_epochs=n_epochs,
+                        n_steps_per_epoch=n_steps_per_epoch,
+                        n_trajectories_on_policy_evaluation=n_trajectories_on_policy_evaluation,
+                        use_stationary_distribution_on_policy_evaluation=use_stationary_distribution_on_policy_evaluation,
+                        minimum_rollout_length=minimum_rollout_length,
+                        maximum_rollout_length=maximum_rollout_length,
+                        random_state=random_state,
+                    )
+                    input_dict.add(input_dict_)
+
+            else:
+                logged_dataset = logged_dataset.get(dataset_id)
+                input_dict = self._obtain_whole_inputs(
+                    logged_dataset=logged_dataset,
+                    evaluation_policies=evaluation_policies,
+                    require_value_prediction=require_value_prediction,
+                    require_weight_prediction=require_weight_prediction,
+                    resample_initial_state=resample_initial_state,
+                    q_function_method=q_function_method,
+                    v_function_method=v_function_method,
+                    w_function_method=w_function_method,
+                    k_fold=k_fold,
+                    n_epochs=n_epochs,
+                    n_steps_per_epoch=n_steps_per_epoch,
+                    n_trajectories_on_policy_evaluation=n_trajectories_on_policy_evaluation,
+                    use_stationary_distribution_on_policy_evaluation=use_stationary_distribution_on_policy_evaluation,
+                    minimum_rollout_length=minimum_rollout_length,
+                    maximum_rollout_length=maximum_rollout_length,
+                    random_state=random_state,
+                )
+
+        else:
+            input_dict = self._obtain_whole_inputs(
+                logged_dataset=logged_dataset,
+                evaluation_policies=evaluation_policies,
                 require_value_prediction=require_value_prediction,
                 require_weight_prediction=require_weight_prediction,
                 resample_initial_state=resample_initial_state,
@@ -2747,8 +2766,8 @@ class CreateOPEInput:
                 n_trajectories_on_policy_evaluation=n_trajectories_on_policy_evaluation,
                 use_stationary_distribution_on_policy_evaluation=use_stationary_distribution_on_policy_evaluation,
                 minimum_rollout_length=minimum_rollout_length,
+                maximum_rollout_length=maximum_rollout_length,
                 random_state=random_state,
             )
-            multiple_input_dicts.add(input_dict)
 
-        return multiple_input_dicts
+        return input_dict

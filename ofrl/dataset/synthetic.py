@@ -240,7 +240,7 @@ class SyntheticDataset(BaseDataset):
             raise ValueError("random_state must be given")
         self.random_ = check_random_state(self.random_state)
 
-    def obtain_episodes(
+    def _obtain_episodes(
         self,
         n_trajectories: int = 10000,
         step_per_trajectory: Optional[int] = None,
@@ -464,7 +464,7 @@ class SyntheticDataset(BaseDataset):
         }
         return logged_dataset
 
-    def obtain_steps(
+    def _obtain_steps(
         self,
         n_trajectories: int = 10000,
         step_per_trajectory: int = 10,
@@ -731,7 +731,7 @@ class SyntheticDataset(BaseDataset):
         }
         return logged_dataset
 
-    def obtain_multiple_datasets_with_episodes(
+    def obtain_episodes(
         self,
         n_datasets: int = 5,
         n_trajectories: int = 10000,
@@ -764,8 +764,9 @@ class SyntheticDataset(BaseDataset):
 
         Parameters
         -------
-        n_datasets: int, default=5
+        n_datasets: int, default=1 (> 0)
             Number of (independent) dataset.
+            If the value is more than 1, the method returns :class:`MultipleDataset` instead of :class:`LoggedDataset`.
 
         n_trajectories: int, default=10000 (> 0)
             Number of trajectories to rollout the behavior policy and collect data.
@@ -792,8 +793,8 @@ class SyntheticDataset(BaseDataset):
 
         Returns
         -------
-        logged_datasets: MultipleLoggedDataset
-            Instance containing multiple logged datasets.
+        logged_dataset(s): LoggedDataset or MultipleLoggedDataset
+            MultipleDataset is a instance containing (multiple) logged datasets.
 
             Each logged dataset is accessible by the following command.
 
@@ -801,7 +802,7 @@ class SyntheticDataset(BaseDataset):
 
                 logged_dataset_0 = logged_datasets.get(0)
 
-            Each logged dataset contains the following.
+            Each logged dataset consists of the following.
 
             .. code-block:: python
 
@@ -882,22 +883,31 @@ class SyntheticDataset(BaseDataset):
                 Action choice probability of the behavior policy for the chosen action.
 
         """
-        multiple_logged_datasets = MultipleLoggedDataset(
-            path=path, save_relative_path=save_relative_path
-        )
-
-        for i in range(n_datasets):
+        if n_datasets == 1:
             logged_dataset = self.obtain_episodes(
                 n_trajectories=n_trajectories,
                 step_per_trajectory=step_per_trajectory,
                 obtain_info=obtain_info,
                 seed_env=(seed_env and i == 0),
             )
-            multiple_logged_datasets.add(logged_dataset)
 
-        return multiple_logged_datasets
+        else:
+            logged_dataset = MultipleLoggedDataset(
+                path=path, save_relative_path=save_relative_path
+            )
 
-    def obtain_multiple_logged_dataset_with_steps(
+            for i in range(n_datasets):
+                logged_dataset_ = self.obtain_episodes(
+                    n_trajectories=n_trajectories,
+                    step_per_trajectory=step_per_trajectory,
+                    obtain_info=obtain_info,
+                    seed_env=(seed_env and i == 0),
+                )
+                logged_dataset.add(logged_dataset_)
+
+        return logged_dataset
+
+    def obtain_steps(
         self,
         n_datasets: int = 5,
         n_trajectories: int = 10000,
@@ -929,8 +939,9 @@ class SyntheticDataset(BaseDataset):
 
         Parameters
         -------
-        n_datasets: int, default=5
+        n_datasets: int, default=1 (> 0)
             Number of (independent) dataset.
+            If the value is more than 1, the method returns :class:`MultipleDataset` instead of :class:`LoggedDataset`.
 
         n_trajectories: int, default=10000 (> 0)
             Number of trajectories to rollout the behavior policy and collect data.
@@ -968,8 +979,8 @@ class SyntheticDataset(BaseDataset):
 
         Returns
         -------
-        logged_dataset: MultipleLoggedDataset
-            Instance containing multiple logged datasets.
+        logged_dataset(s): LoggedDataset or MultipleLoggedDataset
+            MultipleDataset is a instance containing (multiple) logged datasets.
 
             By calling the following command, we can access each logged dataset as follows.
 
@@ -977,7 +988,7 @@ class SyntheticDataset(BaseDataset):
 
                 logged_dataset_0 = logged_datasets.get(0)
 
-            Each logged dataset contains the following.
+            Each logged dataset consists the following.
 
             .. code-block:: python
 
@@ -1058,11 +1069,8 @@ class SyntheticDataset(BaseDataset):
                 Action choice probability of the behavior policy for the chosen action.
 
         """
-        multiple_logged_datasets = MultipleLoggedDataset(
-            path=path, save_relative_path=save_relative_path
-        )
-        for i in range(n_datasets):
-            logged_dataset = self.obtain_step(
+        if n_datasets == 1:
+            logged_dataset = self.obtain_steps(
                 n_trajectories=n_trajectories,
                 step_per_trajectory=step_per_trajectory,
                 minimum_rollout_length=minimum_rollout_length,
@@ -1071,6 +1079,21 @@ class SyntheticDataset(BaseDataset):
                 obtain_trajectories_from_single_interaction=obtain_trajectories_from_single_interaction,
                 seed_env=(seed_env and i == 0),
             )
-            multiple_logged_datasets.add(logged_dataset)
 
-        return multiple_logged_datasets
+        else:
+            logged_dataset = MultipleLoggedDataset(
+                path=path, save_relative_path=save_relative_path
+            )
+            for i in range(n_datasets):
+                logged_dataset_ = self.obtain_steps(
+                    n_trajectories=n_trajectories,
+                    step_per_trajectory=step_per_trajectory,
+                    minimum_rollout_length=minimum_rollout_length,
+                    maximum_rollout_length=maximum_rollout_length,
+                    obtain_info=obtain_info,
+                    obtain_trajectories_from_single_interaction=obtain_trajectories_from_single_interaction,
+                    seed_env=(seed_env and i == 0),
+                )
+                logged_dataset.add(logged_dataset_)
+
+        return logged_dataset
