@@ -1,7 +1,6 @@
-"""Class to create input for Off-Policy Evaluation (OPE)."""
+"""Meta class to create input for Off-Policy Evaluation (OPE)."""
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Any, Union
-from warnings import warn
 
 from collections import defaultdict
 from tqdm.auto import tqdm
@@ -2257,7 +2256,7 @@ class CreateOPEInput:
         self._register_logged_dataset(logged_dataset)
 
         if self.env is not None:
-            if isinstance(self.env.action_space, Box):
+            if isinstance(self.env.action_space, Discrete):
                 if logged_dataset["action_type"] != "discrete":
                     raise RuntimeError(
                         f"Detected mismatch between action_type of logged_dataset and env.action_space."
@@ -2707,7 +2706,11 @@ class CreateOPEInput:
                     path=path, save_relative_path=save_relative_path
                 )
 
-                for i in range(len(logged_dataset)):
+                for i in tqdm(
+                    np.arange(len(logged_dataset)),
+                    desc="[collect input data: datasets]",
+                    total=len(logged_dataset),
+                ):
                     logged_dataset_ = logged_dataset.get(i)
                     input_dict_ = self._obtain_whole_inputs(
                         logged_dataset=logged_dataset_,

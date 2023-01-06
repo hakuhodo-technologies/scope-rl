@@ -733,7 +733,7 @@ class SyntheticDataset(BaseDataset):
 
     def obtain_episodes(
         self,
-        n_datasets: int = 5,
+        n_datasets: int = 1,
         n_trajectories: int = 10000,
         step_per_trajectory: Optional[int] = None,
         obtain_info: bool = False,
@@ -745,7 +745,7 @@ class SyntheticDataset(BaseDataset):
 
         Note
         -------
-        This function calls :class:`obtain_episodes` and save multiple logged dataset in :class:`MultipleDatasetClass`.
+        This function calls :class:`obtain_episodes` and save multiple logged dataset in :class:`MultipleLoggedDataset`.
 
         Note
         -------
@@ -766,7 +766,7 @@ class SyntheticDataset(BaseDataset):
         -------
         n_datasets: int, default=1 (> 0)
             Number of (independent) dataset.
-            If the value is more than 1, the method returns :class:`MultipleDataset` instead of :class:`LoggedDataset`.
+            If the value is more than 1, the method returns :class:`MultipleLoggedDataset` instead of :class:`LoggedDataset`.
 
         n_trajectories: int, default=10000 (> 0)
             Number of trajectories to rollout the behavior policy and collect data.
@@ -794,7 +794,7 @@ class SyntheticDataset(BaseDataset):
         Returns
         -------
         logged_dataset(s): LoggedDataset or MultipleLoggedDataset
-            MultipleDataset is a instance containing (multiple) logged datasets.
+            MultipleLoggedDataset is a instance containing (multiple) logged datasets.
 
             Each logged dataset is accessible by the following command.
 
@@ -884,7 +884,7 @@ class SyntheticDataset(BaseDataset):
 
         """
         if n_datasets == 1:
-            logged_dataset = self.obtain_episodes(
+            logged_dataset = self._obtain_episodes(
                 n_trajectories=n_trajectories,
                 step_per_trajectory=step_per_trajectory,
                 obtain_info=obtain_info,
@@ -896,8 +896,12 @@ class SyntheticDataset(BaseDataset):
                 path=path, save_relative_path=save_relative_path
             )
 
-            for i in range(n_datasets):
-                logged_dataset_ = self.obtain_episodes(
+            for i in tqdm(
+                np.arange(n_datasets),
+                desc="[obtain_datasets]",
+                total=n_datasets,
+            ):
+                logged_dataset_ = self._obtain_episodes(
                     n_trajectories=n_trajectories,
                     step_per_trajectory=step_per_trajectory,
                     obtain_info=obtain_info,
@@ -909,7 +913,7 @@ class SyntheticDataset(BaseDataset):
 
     def obtain_steps(
         self,
-        n_datasets: int = 5,
+        n_datasets: int = 1,
         n_trajectories: int = 10000,
         step_per_trajectory: int = 10,
         minimum_rollout_length: int = 0,
@@ -941,7 +945,7 @@ class SyntheticDataset(BaseDataset):
         -------
         n_datasets: int, default=1 (> 0)
             Number of (independent) dataset.
-            If the value is more than 1, the method returns :class:`MultipleDataset` instead of :class:`LoggedDataset`.
+            If the value is more than 1, the method returns :class:`MultiplLoggedeDataset` instead of :class:`LoggedDataset`.
 
         n_trajectories: int, default=10000 (> 0)
             Number of trajectories to rollout the behavior policy and collect data.
@@ -980,7 +984,7 @@ class SyntheticDataset(BaseDataset):
         Returns
         -------
         logged_dataset(s): LoggedDataset or MultipleLoggedDataset
-            MultipleDataset is a instance containing (multiple) logged datasets.
+            MultipleLoggedDataset is a instance containing (multiple) logged datasets.
 
             By calling the following command, we can access each logged dataset as follows.
 
@@ -1070,7 +1074,7 @@ class SyntheticDataset(BaseDataset):
 
         """
         if n_datasets == 1:
-            logged_dataset = self.obtain_steps(
+            logged_dataset = self._obtain_steps(
                 n_trajectories=n_trajectories,
                 step_per_trajectory=step_per_trajectory,
                 minimum_rollout_length=minimum_rollout_length,
@@ -1084,8 +1088,12 @@ class SyntheticDataset(BaseDataset):
             logged_dataset = MultipleLoggedDataset(
                 path=path, save_relative_path=save_relative_path
             )
-            for i in range(n_datasets):
-                logged_dataset_ = self.obtain_steps(
+            for i in tqdm(
+                np.arange(n_datasets),
+                desc="[obtain_datasets]",
+                total=n_datasets,
+            ):
+                logged_dataset_ = self._obtain_steps(
                     n_trajectories=n_trajectories,
                     step_per_trajectory=step_per_trajectory,
                     minimum_rollout_length=minimum_rollout_length,

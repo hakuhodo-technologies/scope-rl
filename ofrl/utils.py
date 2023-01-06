@@ -30,17 +30,6 @@ class MultipleLoggedDataset:
         Note that, this option was added in order to run examples in the documentation properly.
         Otherwise, the default setting (`False`) is recommended.
 
-    Attributes
-    -------
-    n_datasets: int
-        Number of saved logged dataset.
-
-    name_to_id_mapping: dict
-        Mapping from (datasets') name to id.
-
-    id_to_name_mapping: list
-        Mapping from id to (datasets') name
-
     """
 
     path: str
@@ -144,17 +133,6 @@ class MultipleInputDict:
 
         Note that, this option was added in order to run examples in the documentation properly.
         Otherwise, the default setting (`False`) is recommended.
-
-    Attributes
-    -------
-    n_datasets: int
-        Number of saved logged dataset.
-
-    name_to_id_mapping: dict
-        Mapping from (datasets') name to id.
-
-    id_to_name_mapping: list
-        Mapping from id to (datasets') name
 
     """
 
@@ -261,7 +239,7 @@ class MultipleInputDict:
     @property
     def n_eval_policies(self):
         """Check the number of evaluation policies of each input dict."""
-        n_eval_policies = np.zeros(self.n_datasets)
+        n_eval_policies = np.zeros(self.n_datasets, dtype=int)
         for i in range(self.n_datasets):
             n_eval_policies[i] = len(self.eval_policy_name_list[i])
 

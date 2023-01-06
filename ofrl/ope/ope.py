@@ -2,7 +2,6 @@
 from dataclasses import dataclass
 from typing import Dict, List, Tuple, Optional, Union, Any
 from pathlib import Path
-from warnings import warn
 
 from collections import defaultdict
 
@@ -581,6 +580,7 @@ class OffPolicyEvaluation:
 
         """
         check_input_dict(input_dict)
+        eval_metric_ope_dict = defaultdict(dict)
 
         if metric == "relative-ee":
             for eval_policy in input_dict.keys():
@@ -699,8 +699,10 @@ class OffPolicyEvaluation:
                     raise ValueError(
                         "dataset_id must be given when using MultipleInputDict."
                     )
+                if isinstance(input_dict, MultipleInputDict):
+                    input_dict = input_dict.get(dataset_id)
+
                 self._register_logged_dataset(dataset_id)
-                input_dict = input_dict.get(dataset_id)
 
             policy_value_dict = self._estimate_policy_value(
                 input_dict,
@@ -826,8 +828,10 @@ class OffPolicyEvaluation:
                     raise ValueError(
                         "dataset_id must be given when using MultipleInputDict."
                     )
+                if isinstance(input_dict, MultipleInputDict):
+                    input_dict = input_dict.get(dataset_id)
+
                 self._register_logged_dataset(dataset_id)
-                input_dict = input_dict.get(dataset_id)
 
             policy_value_interval_dict = self._estimate_intervals(
                 input_dict,
@@ -938,8 +942,8 @@ class OffPolicyEvaluation:
 
         else:
             (
-                policy_value_df_dict_,
-                policy_value_interval_df_dict_,
+                policy_value_df_dict,
+                policy_value_interval_df_dict,
             ) = self._summarize_off_policy_estimates(
                 policy_value_dict=policy_value_dict,
                 policy_value_interval_dict=policy_value_interval_dict,
@@ -2605,8 +2609,10 @@ class CumulativeDistributionOffPolicyEvaluation:
                     raise ValueError(
                         "dataset_id must be given when using MultipleInputDict."
                     )
+                if isinstance(input_dict, MultipleInputDict):
+                    input_dict = input_dict.get(dataset_id)
+
                 self._register_logged_dataset(dataset_id)
-                input_dict = input_dict.get(dataset_id)
 
             cumulative_distribution_dict = (
                 self._estimate_cumulative_distribution_function(
@@ -2697,8 +2703,10 @@ class CumulativeDistributionOffPolicyEvaluation:
                     raise ValueError(
                         "dataset_id must be given when using MultipleInputDict."
                     )
+                if isinstance(input_dict, MultipleInputDict):
+                    input_dict = input_dict.get(dataset_id)
+
                 self._register_logged_dataset(dataset_id)
-                input_dict = input_dict.get(dataset_id)
 
             mean_dict = self._estimate_mean(
                 input_dict,
@@ -2787,8 +2795,10 @@ class CumulativeDistributionOffPolicyEvaluation:
                     raise ValueError(
                         "dataset_id must be given when using MultipleInputDict."
                     )
+                if isinstance(input_dict, MultipleInputDict):
+                    input_dict = input_dict.get(dataset_id)
+
                 self._register_logged_dataset(dataset_id)
-                input_dict = input_dict.get(dataset_id)
 
             variance_dict = self._estimate_variance(
                 input_dict,
@@ -2896,8 +2906,10 @@ class CumulativeDistributionOffPolicyEvaluation:
                     raise ValueError(
                         "dataset_id must be given when using MultipleInputDict."
                     )
+                if isinstance(input_dict, MultipleInputDict):
+                    input_dict = input_dict.get(dataset_id)
+
                 self._register_logged_dataset(dataset_id)
-                input_dict = input_dict.get(dataset_id)
 
             cvar_dict = self._estimate_conditional_value_at_risk(
                 input_dict,
@@ -2993,8 +3005,10 @@ class CumulativeDistributionOffPolicyEvaluation:
                     raise ValueError(
                         "dataset_id must be given when using MultipleInputDict."
                     )
+                if isinstance(input_dict, MultipleInputDict):
+                    input_dict = input_dict.get(dataset_id)
+
                 self._register_logged_dataset(dataset_id)
-                input_dict = input_dict.get(dataset_id)
 
             interquartile_range_dict = self._estimate_interquartile_range(
                 input_dict,

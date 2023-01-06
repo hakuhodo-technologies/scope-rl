@@ -2227,7 +2227,7 @@ class OffPolicySelection:
                 ops_result_ = self._select_by_policy_value(
                     input_dict_,
                     compared_estimators=compared_estimators,
-                    dataset_id=dataset_id,
+                    dataset_id=i,
                     return_true_values=return_true_values,
                     return_metrics=return_metrics,
                     return_by_dataframe=return_by_dataframe,
@@ -2399,12 +2399,12 @@ class OffPolicySelection:
                 "ope is not given. Please initialize the class with ope attribute"
             )
         if compared_estimators is None:
-            compared_estimators = self.estimators_name["standard_ope"]
+            compared_estimators = self.estimators_name["cumulative_distribution_ope"]
         elif not set(compared_estimators).issubset(
-            self.estimators_name["standard_ope"]
+            self.estimators_name["cumulative_distribution_ope"]
         ):
             raise ValueError(
-                "compared_estimators must be a subset of self.estimators_name['standard_ope'], but found False."
+                "compared_estimators must be a subset of self.estimators_name['cumulative_distribution_ope'], but found False."
             )
 
         if (
@@ -2432,7 +2432,7 @@ class OffPolicySelection:
                     self._select_by_policy_value_via_cumulative_distribution_ope(
                         input_dict_,
                         compared_estimators=compared_estimators,
-                        dataset_id=dataset_id,
+                        dataset_id=i,
                         return_true_values=return_true_values,
                         return_metrics=return_metrics,
                         return_by_dataframe=return_by_dataframe,
@@ -2645,7 +2645,7 @@ class OffPolicySelection:
                 ops_result_ = self._select_by_policy_value_lower_bound(
                     input_dict_,
                     compared_estimators=compared_estimators,
-                    dataset_id=dataset_id,
+                    dataset_id=i,
                     return_true_values=return_true_values,
                     return_metrics=return_metrics,
                     return_by_dataframe=return_by_dataframe,
@@ -2844,7 +2844,7 @@ class OffPolicySelection:
                 ops_result_ = self._select_by_lower_quartile(
                     input_dict_,
                     compared_estimators=compared_estimators,
-                    dataset_id=dataset_id,
+                    dataset_id=i,
                     alpha=alpha,
                     return_true_values=return_true_values,
                     return_metrics=return_metrics,
@@ -3035,7 +3035,7 @@ class OffPolicySelection:
                 ops_result_ = self._select_by_conditional_value_at_risk(
                     input_dict_,
                     compared_estimators=compared_estimators,
-                    dataset_id=dataset_id,
+                    dataset_id=i,
                     alpha=alpha,
                     return_true_values=return_true_values,
                     return_metrics=return_metrics,
@@ -3584,6 +3584,8 @@ class OffPolicySelection:
             else:
                 max_topk = min(max_topk, len(input_dict))
 
+        max_topk = int(max_topk)
+
         if "safety_violation_rate" in metrics:
             safety_criteria = 0.0 if safety_criteria is None else safety_criteria
 
@@ -3614,7 +3616,7 @@ class OffPolicySelection:
 
             for i, estimator in enumerate(compared_estimators):
                 for j, metric in enumerate(metrics):
-                    topk_metric = np.zeros(max_topk, n_datasets)
+                    topk_metric = np.zeros((max_topk, n_datasets))
 
                     for topk in range(max_topk):
                         for l in range(n_datasets):
@@ -3907,6 +3909,8 @@ class OffPolicySelection:
             else:
                 max_topk = min(max_topk, len(input_dict))
 
+        max_topk = int(max_topk)
+
         if "safety_violation_rate" in metrics:
             safety_criteria = 0.0 if safety_criteria is None else safety_criteria
 
@@ -3937,7 +3941,7 @@ class OffPolicySelection:
 
             for i, estimator in enumerate(compared_estimators):
                 for j, metric in enumerate(metrics):
-                    topk_metric = np.zeros(max_topk, n_datasets)
+                    topk_metric = np.zeros((max_topk, n_datasets))
 
                     for topk in range(max_topk):
                         for l in range(n_datasets):
@@ -4242,6 +4246,8 @@ class OffPolicySelection:
             else:
                 max_topk = min(max_topk, len(input_dict))
 
+        max_topk = int(max_topk)
+
         if "safety_violation_rate" in metrics:
             safety_criteria = 0.0 if safety_criteria is None else safety_criteria
 
@@ -4269,7 +4275,7 @@ class OffPolicySelection:
             random_state=random_state,
         )
 
-        metric_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(np.ndarray)))
+        metric_dict = defaultdict(lambda: defaultdict(dict))
 
         if dataset_id is None and isinstance(input_dict, MultipleInputDict):
             n_datasets = len(input_dict)
@@ -4277,7 +4283,7 @@ class OffPolicySelection:
             for ci in ope_cis:
                 for i, estimator in enumerate(compared_estimators):
                     for j, metric in enumerate(metrics):
-                        topk_metric = np.zeros(max_topk, n_datasets)
+                        topk_metric = np.zeros((max_topk, n_datasets))
 
                         for topk in range(max_topk):
                             for l in range(n_datasets):
@@ -4329,15 +4335,19 @@ class OffPolicySelection:
             max_vals = np.zeros(n_datasets)
 
             for l in range(n_datasets):
-                min_vals[l] = policy_value_dict[l][estimator]["true_policy_value"].min()
-                max_vals[l] = policy_value_dict[l][estimator]["true_policy_value"].max()
+                min_vals[l] = policy_value_dict[l][ci][estimator][
+                    "true_policy_value"
+                ].min()
+                max_vals[l] = policy_value_dict[l][ci][estimator][
+                    "true_policy_value"
+                ].max()
 
             min_val = min_vals.mean()
             max_val = max_vals.mean()
 
         else:
-            min_val = policy_value_dict[estimator]["true_policy_value"].min()
-            max_val = policy_value_dict[estimator]["true_policy_value"].max()
+            min_val = policy_value_dict[ci][estimator]["true_policy_value"].min()
+            max_val = policy_value_dict[ci][estimator]["true_policy_value"].max()
 
         yaxis_min_val = (
             min_val if safety_threshold is None else min(min_val, safety_threshold)
@@ -4361,14 +4371,14 @@ class OffPolicySelection:
         )
 
         if n_rows == 1:
-            ci = ope_cis[0]
+            ope_ci = ope_cis[0]
 
             for j, metric in enumerate(metrics):
                 for i, estimator in enumerate(compared_estimators):
                     if dataset_id is None and isinstance(input_dict, MultipleInputDict):
                         axes[j].plot(
                             np.arange(1, max_topk + 1),
-                            metric_dict[ci][estimator][metric].mean(axis=1),
+                            metric_dict[ope_ci][estimator][metric].mean(axis=1),
                             color=color[i % n_colors],
                             marker=markers[i],
                             label=estimator,
@@ -4380,7 +4390,7 @@ class OffPolicySelection:
 
                             for topk in range(max_topk):
                                 ci = self._estimate_confidence_interval[plot_ci](
-                                    metric_dict[ci][estimator][metric][topk],
+                                    metric_dict[ope_ci][estimator][metric][topk],
                                     alpha=plot_alpha,
                                     n_bootstrap_samples=plot_n_bootstrap_samples,
                                     random_state=random_state,
@@ -4403,7 +4413,7 @@ class OffPolicySelection:
                     else:
                         axes[j].plot(
                             np.arange(1, max_topk + 1),
-                            metric_dict[ci][estimator][metric],
+                            metric_dict[ope_ci][estimator][metric],
                             marker=markers[i],
                             label=estimator,
                         )
@@ -4446,7 +4456,7 @@ class OffPolicySelection:
                 # fig.legend(handles, labels, loc='upper center', bbox_to_anchor=(0.5, -0.1), n_cols=min(len(labels), 6))
 
         else:
-            for l, ci in enumerate(ope_cis):
+            for l, ope_ci in enumerate(ope_cis):
 
                 for j, metric in enumerate(metrics):
                     for i, estimator in enumerate(compared_estimators):
@@ -4455,7 +4465,7 @@ class OffPolicySelection:
                         ):
                             axes[l, j].plot(
                                 np.arange(1, max_topk + 1),
-                                metric_dict[ci][estimator][metric].mean(axis=1),
+                                metric_dict[ope_ci][estimator][metric].mean(axis=1),
                                 color=color[i % n_colors],
                                 marker=markers[i],
                                 label=estimator,
@@ -4467,7 +4477,7 @@ class OffPolicySelection:
 
                                 for topk in range(max_topk):
                                     ci = self._estimate_confidence_interval[plot_ci](
-                                        metric_dict[ci][estimator][metric][topk],
+                                        metric_dict[ope_ci][estimator][metric][topk],
                                         alpha=plot_alpha,
                                         n_bootstrap_samples=plot_n_bootstrap_samples,
                                         random_state=random_state,
@@ -4487,13 +4497,13 @@ class OffPolicySelection:
                                     alpha=0.3,
                                 )
 
-                    else:
-                        axes[j].plot(
-                            np.arange(1, max_topk + 1),
-                            metric_dict[ci][estimator][metric],
-                            marker=markers[i],
-                            label=estimator,
-                        )
+                        else:
+                            axes[l, j].plot(
+                                np.arange(1, max_topk + 1),
+                                metric_dict[ope_ci][estimator][metric],
+                                marker=markers[i],
+                                label=estimator,
+                            )
 
                     if metric in ["best", "worst", "mean"]:
                         if safety_threshold is not None:
@@ -4516,14 +4526,14 @@ class OffPolicySelection:
                                 linewidth=0.5,
                             )
 
-                        axes[l, j].set_title(f"{metric}, {ci}")
+                        axes[l, j].set_title(f"{metric}, {ope_ci}")
                         axes[l, j].set_ylabel(f"{metric} policy value")
                         axes[l, j].set_ylim(
                             yaxis_min_val - margin, yaxis_max_val + margin
                         )
 
                     else:
-                        axes[l, j].set_title(f"safety violation, {ci}")
+                        axes[l, j].set_title(f"safety violation, {ope_ci}")
                         axes[l, j].set_ylabel("safety violation rate")
                         axes[l, j].set_ylim(-0.05, 1.05)
 
@@ -4670,6 +4680,8 @@ class OffPolicySelection:
             else:
                 max_topk = min(max_topk, len(input_dict))
 
+        max_topk = int(max_topk)
+
         if "safety_violation_rate" in metrics:
             safety_threshold = 0.0 if safety_threshold is None else safety_threshold
 
@@ -4751,7 +4763,7 @@ class OffPolicySelection:
         if dataset_id is None and isinstance(input_dict, MultipleInputDict):
             for i, estimator in enumerate(compared_estimators):
                 for j, metric in enumerate(metrics):
-                    topk_metric = np.zeros(max_topk, n_datasets)
+                    topk_metric = np.zeros((max_topk, n_datasets))
 
                     for topk in range(max_topk):
                         for l in range(n_datasets):
@@ -5043,6 +5055,8 @@ class OffPolicySelection:
             else:
                 max_topk = min(max_topk, len(input_dict))
 
+        max_topk = int(max_topk)
+
         if "safety_violation_rate" in metrics:
             safety_threshold = 0.0 if safety_threshold is None else safety_threshold
 
@@ -5074,7 +5088,7 @@ class OffPolicySelection:
 
             for i, estimator in enumerate(compared_estimators):
                 for j, metric in enumerate(metrics):
-                    topk_metric = np.zeros(max_topk, n_datasets)
+                    topk_metric = np.zeros((max_topk, n_datasets))
 
                     for topk in range(max_topk):
                         for l in range(n_datasets):
@@ -5374,6 +5388,8 @@ class OffPolicySelection:
             else:
                 max_topk = min(max_topk, len(input_dict))
 
+        max_topk = int(max_topk)
+
         if "safety_violation_rate" in metrics:
             safety_threshold = 0.0 if safety_threshold is None else safety_threshold
 
@@ -5455,7 +5471,7 @@ class OffPolicySelection:
         if dataset_id is None and isinstance(input_dict, MultipleInputDict):
             for i, estimator in enumerate(compared_estimators):
                 for j, metric in enumerate(metrics):
-                    topk_metric = np.zeros(max_topk, n_datasets)
+                    topk_metric = np.zeros((max_topk, n_datasets))
 
                     for topk in range(max_topk):
                         for l in range(n_datasets):
@@ -5747,6 +5763,8 @@ class OffPolicySelection:
             else:
                 max_topk = min(max_topk, len(input_dict))
 
+        max_topk = int(max_topk)
+
         if "safety_violation_rate" in metrics:
             safety_threshold = 0.0 if safety_threshold is None else safety_threshold
 
@@ -5778,7 +5796,7 @@ class OffPolicySelection:
 
             for i, estimator in enumerate(compared_estimators):
                 for j, metric in enumerate(metrics):
-                    topk_metric = np.zeros(max_topk, n_datasets)
+                    topk_metric = np.zeros((max_topk, n_datasets))
 
                     for topk in range(max_topk):
                         for l in range(n_datasets):
@@ -6057,11 +6075,11 @@ class OffPolicySelection:
                     min_vals = np.zeros(n_datasets)
                     max_vals = np.zeros(n_datasets)
 
-                    for l in range(input_dict):
-                        true_policy_value = policy_value_dict[estimator][
+                    for l in range(len(input_dict)):
+                        true_policy_value = policy_value_dict[l][estimator][
                             "true_policy_value"
                         ]
-                        estimated_policy_value = policy_value_dict[estimator][
+                        estimated_policy_value = policy_value_dict[l][estimator][
                             "estimated_policy_value"
                         ]
 
@@ -6140,11 +6158,11 @@ class OffPolicySelection:
                     min_vals = np.zeros(n_datasets)
                     max_vals = np.zeros(n_datasets)
 
-                    for l in range(input_dict):
-                        true_policy_value = policy_value_dict[estimator][
+                    for l in range(len(input_dict)):
+                        true_policy_value = policy_value_dict[l][estimator][
                             "true_policy_value"
                         ]
-                        estimated_policy_value = policy_value_dict[estimator][
+                        estimated_policy_value = policy_value_dict[l][estimator][
                             "estimated_policy_value"
                         ]
 
@@ -6327,11 +6345,11 @@ class OffPolicySelection:
                     min_vals = np.zeros(n_datasets)
                     max_vals = np.zeros(n_datasets)
 
-                    for l in range(input_dict):
-                        true_policy_value = policy_value_dict[estimator][
+                    for l in range(len(input_dict)):
+                        true_policy_value = policy_value_dict[l][estimator][
                             "true_policy_value"
                         ]
-                        estimated_policy_value = policy_value_dict[estimator][
+                        estimated_policy_value = policy_value_dict[l][estimator][
                             "estimated_policy_value"
                         ]
 
@@ -6410,11 +6428,11 @@ class OffPolicySelection:
                     min_vals = np.zeros(n_datasets)
                     max_vals = np.zeros(n_datasets)
 
-                    for l in range(input_dict):
-                        true_policy_value = policy_value_dict[estimator][
+                    for l in range(len(input_dict)):
+                        true_policy_value = policy_value_dict[l][estimator][
                             "true_policy_value"
                         ]
-                        estimated_policy_value = policy_value_dict[estimator][
+                        estimated_policy_value = policy_value_dict[l][estimator][
                             "estimated_policy_value"
                         ]
 
@@ -6624,11 +6642,11 @@ class OffPolicySelection:
                             min_vals = np.zeros(n_datasets)
                             max_vals = np.zeros(n_datasets)
 
-                            for l in range(input_dict):
-                                true_policy_value = policy_value_dict[ci][estimator][
+                            for l in range(len(input_dict)):
+                                true_policy_value = policy_value_dict[l][ci][estimator][
                                     "true_policy_value"
                                 ]
-                                estimated_policy_value = policy_value_dict[ci][
+                                estimated_policy_value = policy_value_dict[l][ci][
                                     estimator
                                 ]["estimated_policy_value_lower_bound"]
 
@@ -6712,11 +6730,11 @@ class OffPolicySelection:
                             min_vals = np.zeros(n_datasets)
                             max_vals = np.zeros(n_datasets)
 
-                            for l in range(input_dict):
-                                true_policy_value = policy_value_dict[ci][estimator][
+                            for l in range(len(input_dict)):
+                                true_policy_value = policy_value_dict[l][ci][estimator][
                                     "true_policy_value"
                                 ]
-                                estimated_policy_value = policy_value_dict[ci][
+                                estimated_policy_value = policy_value_dict[l][ci][
                                     estimator
                                 ]["estimated_policy_value_lower_bound"]
 
@@ -6803,11 +6821,11 @@ class OffPolicySelection:
                             min_vals = np.zeros(n_datasets)
                             max_vals = np.zeros(n_datasets)
 
-                            for l in range(input_dict):
-                                true_policy_value = policy_value_dict[ci][estimator][
+                            for l in range(len(input_dict)):
+                                true_policy_value = policy_value_dict[l][ci][estimator][
                                     "true_policy_value"
                                 ]
-                                estimated_policy_value = policy_value_dict[ci][
+                                estimated_policy_value = policy_value_dict[l][ci][
                                     estimator
                                 ]["estimated_policy_value_lower_bound"]
 
@@ -6870,16 +6888,16 @@ class OffPolicySelection:
                         guide_min = min_val if guide_min > min_val else guide_min
                         guide_max = max_val if guide_max < max_val else guide_max
 
-            if share_axes:
-                margin = (guide_max - guide_min) * 0.05
-                guide = np.linspace(guide_min - margin, guide_max + margin)
-                for j, ci in enumerate(cis):
-                    axes[j].plot(
-                        guide,
-                        guide,
-                        color="black",
-                        linewidth=1.0,
-                    )
+                if share_axes:
+                    margin = (guide_max - guide_min) * 0.05
+                    guide = np.linspace(guide_min - margin, guide_max + margin)
+                    for j, ci in enumerate(cis):
+                        axes[j].plot(
+                            guide,
+                            guide,
+                            color="black",
+                            linewidth=1.0,
+                        )
 
             else:
                 for j, ci in enumerate(cis):
@@ -6891,11 +6909,11 @@ class OffPolicySelection:
                             min_vals = np.zeros(n_datasets)
                             max_vals = np.zeros(n_datasets)
 
-                            for l in range(input_dict):
-                                true_policy_value = policy_value_dict[ci][estimator][
+                            for l in range(len(input_dict)):
+                                true_policy_value = policy_value_dict[l][ci][estimator][
                                     "true_policy_value"
                                 ]
-                                estimated_policy_value = policy_value_dict[ci][
+                                estimated_policy_value = policy_value_dict[l][ci][
                                     estimator
                                 ]["estimated_policy_value_lower_bound"]
 
@@ -6958,16 +6976,16 @@ class OffPolicySelection:
                         guide_min = min_val if guide_min > min_val else guide_min
                         guide_max = max_val if guide_max < max_val else guide_max
 
-            if share_axes:
-                guide = np.linspace(guide_min, guide_max)
-                for j, ci in enumerate(cis):
-                    for i, estimator in enumerate(compared_estimators):
-                        axes[i, j].plot(
-                            guide,
-                            guide,
-                            color="black",
-                            linewidth=1.0,
-                        )
+                if share_axes:
+                    guide = np.linspace(guide_min, guide_max)
+                    for j, ci in enumerate(cis):
+                        for i, estimator in enumerate(compared_estimators):
+                            axes[i, j].plot(
+                                guide,
+                                guide,
+                                color="black",
+                                linewidth=1.0,
+                            )
 
         fig.tight_layout()
         plt.show()
@@ -7096,9 +7114,9 @@ class OffPolicySelection:
                     min_vals = np.zeros(n_datasets)
                     max_vals = np.zeros(n_datasets)
 
-                    for l in range(input_dict):
-                        estimated_variance = np.zeros(len(candidate_policy_names))
-                        for j, eval_policy in enumerate(candidate_policy_names):
+                    for l in range(len(input_dict)):
+                        estimated_variance = np.zeros(len(candidate_policy_names[l]))
+                        for j, eval_policy in enumerate(candidate_policy_names[l]):
                             estimated_variance[j] = estimated_variance_dict[l][
                                 eval_policy
                             ][estimator]
@@ -7177,7 +7195,7 @@ class OffPolicySelection:
                     min_vals = np.zeros(n_datasets)
                     max_vals = np.zeros(n_datasets)
 
-                    for l in range(input_dict):
+                    for l in range(len(input_dict)):
                         estimated_variance = np.zeros(len(candidate_policy_names))
                         for j, eval_policy in enumerate(candidate_policy_names):
                             estimated_variance[j] = estimated_variance_dict[l][
@@ -7367,11 +7385,11 @@ class OffPolicySelection:
                     min_vals = np.zeros(n_datasets)
                     max_vals = np.zeros(n_datasets)
 
-                    for l in range(input_dict):
-                        true_lower_quartile = lower_quartile_dict[estimator][
+                    for l in range(len(input_dict)):
+                        true_lower_quartile = lower_quartile_dict[l][estimator][
                             "true_lower_quartile"
                         ]
-                        estimated_lower_quartile = lower_quartile_dict[estimator][
+                        estimated_lower_quartile = lower_quartile_dict[l][estimator][
                             "estimated_lower_quartile"
                         ]
 
@@ -7452,11 +7470,11 @@ class OffPolicySelection:
                     min_vals = np.zeros(n_datasets)
                     max_vals = np.zeros(n_datasets)
 
-                    for l in range(input_dict):
-                        true_lower_quartile = lower_quartile_dict[estimator][
+                    for l in range(len(input_dict)):
+                        true_lower_quartile = lower_quartile_dict[l][estimator][
                             "true_lower_quartile"
                         ]
-                        estimated_lower_quartile = lower_quartile_dict[estimator][
+                        estimated_lower_quartile = lower_quartile_dict[l][estimator][
                             "estimated_lower_quartile"
                         ]
 
@@ -7646,11 +7664,11 @@ class OffPolicySelection:
                     min_vals = np.zeros(n_datasets)
                     max_vals = np.zeros(n_datasets)
 
-                    for l in range(input_dict):
-                        true_cvar = cvar_dict[estimator][
+                    for l in range(len(input_dict)):
+                        true_cvar = cvar_dict[l][estimator][
                             "true_conditional_value_at_risk"
                         ]
-                        estimated_cvar = cvar_dict[estimator][
+                        estimated_cvar = cvar_dict[l][estimator][
                             "estimated_conditional_value_at_risk"
                         ]
 
@@ -7729,11 +7747,11 @@ class OffPolicySelection:
                     min_vals = np.zeros(n_datasets)
                     max_vals = np.zeros(n_datasets)
 
-                    for l in range(input_dict):
-                        true_cvar = cvar_dict[estimator][
+                    for l in range(len(input_dict)):
+                        true_cvar = cvar_dict[l][estimator][
                             "true_conditional_value_at_risk"
                         ]
-                        estimated_cvar = cvar_dict[estimator][
+                        estimated_cvar = cvar_dict[l][estimator][
                             "estimated_conditional_value_at_risk"
                         ]
 

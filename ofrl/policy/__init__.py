@@ -1,3 +1,4 @@
+from ofrl.policy.opl import OffPolicyLearning
 from ofrl.policy.head import (
     BaseHead,
     OnlineHead,
@@ -14,6 +15,7 @@ from ofrl.policy.encoder import (
 
 
 __all__ = [
+    "OffPolicyLearning",
     "BaseHead",
     "OnlineHead",
     "DiscreteEpsilonGreedyHead",

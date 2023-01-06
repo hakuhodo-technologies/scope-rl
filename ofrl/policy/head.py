@@ -961,10 +961,14 @@ class ContinuousEvalHead(BaseHead):
     name: str
         Name of the policy.
 
+    random_state: int, default=None (>= 0)
+        Random state. (This is for API consistency.)
+
     """
 
     base_policy: AlgoBase
     name: str
+    random_state: Optional[int] = None
 
     def __post_init__(self):
         """Initialize class."""
