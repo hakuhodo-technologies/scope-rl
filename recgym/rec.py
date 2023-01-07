@@ -8,7 +8,6 @@ import numpy as np
 from sklearn.utils import check_scalar, check_random_state
 
 
-
 class RECEnv(gym.Env):
     """Class for recommend system (REC) environment for reinforcement learning (RL) agent to interact.
     Note
@@ -99,14 +98,16 @@ class RECEnv(gym.Env):
 
     def __init__(
         self,
+        reward_function,
+        state_transition_function,
         n_items: int = 100,
         n_users: int = 100,
         item_feature_dim: int = 5,
         user_feature_dim: int = 5,
         item_feature_vector: Optional[np.ndarray] = None,
         user_feature_vector: Optional[np.ndarray] = None,
-        reward_function = 'user_preference_dynamics',
-        state_transition_function = 'inner_reward_function',
+        # reward_function = inner_reward_function,
+        # state_transition_function = user_preference_dynamics,
         noise_std: float = 0,
         step_per_episode = 10,
     ):
@@ -139,7 +140,8 @@ class RECEnv(gym.Env):
         # define action space 
         self.action_type = "discrete"
         self.action_dim = 1
-        self.action_space = Discrete(self.n_items-1)
+        # self.action_space = Discrete(self.n_items-1, dtype=int)
+        self.action_space = Discrete(self.n_items - 1 )
 
         # define reward range
         self.reward_range = (0, np.inf)
@@ -155,7 +157,8 @@ class RECEnv(gym.Env):
 
     def step(
       self,
-      action: np.ndarray,  # selected item_feature_vector
+      action: int,  # selected item_feature_vector
+    #   action: np.ndarray,  # selected item_feature_vector
     ):
         """Rollout auctions arise during the timestep and return feedbacks to the agent.
 
@@ -192,8 +195,8 @@ class RECEnv(gym.Env):
 
 
         # state_transition_functionでstateを更新
-        # state = self.state_transition_function(self.state, action)
-        state =  eval("self."+ self.state_transition_function+"(self.state, action)")
+        state = self.state_transition_function(self.state, action, self.item_feature_vector)
+        # state =  eval("self."+ self.state_transition_function+"(self.state, action)")
 
         #step_per_episodeが決まっている場合の設定   
         done = self.t == self.step_per_episode - 1
@@ -204,22 +207,23 @@ class RECEnv(gym.Env):
         else:
             # update timestep
             self.t += 1
-            # obs = self._observation(state)
+            obs = self._observation(state)
             # obs = [0]*self.user_feature_dim
-            obs = np.ones(self.user_feature_dim)
+            # obs = np.ones(self.user_feature_dim)
             
 
 
 
         # 報酬を発生
-        # reward = reward_function(state, action)
-        reward = eval("self." + self.reward_function +"(self.state, action)")
+        reward = self.reward_function(state, action, self.item_feature_vector)
+        # reward = eval("self." + self.reward_function +"(self.state, action)")
+        
 
         info = {}
 
 
-        # return obs, reward, done, False, info
-        return obs, reward, done, info
+        return obs, reward, done, False, info
+        # return obs, reward, done, info
 
 
     def reset(self):
@@ -240,24 +244,25 @@ class RECEnv(gym.Env):
         #user_feature_vectorから選ばれた人のuser_featureをstateにする
         state = self.user_feature_vector[user_id]
         self.state = state
-        # obs = self._observation(self.state)
+        obs = self._observation(self.state)
         # obs = np.array([0]*self.user_feature_dim)
-        obs = np.ones(self.user_feature_dim)
+        # obs = np.ones(self.user_feature_dim)
         return obs
 
 
 
-    #実際のuser_transitionの関数、今回はuser_preference_dynamicsを使う
-    def user_preference_dynamics(self, state, action, alpha = 1):
-        state = state + alpha * state @ self.item_feature_vector[action] * self.item_feature_vector[action] 
-        state = state / np.linalg.norm(state, ord=2)
-        return state
+
+#実際のuser_transitionの関数、今回はuser_preference_dynamicsを使う
+def user_preference_dynamics(state, action, item_feature_vector, alpha = 1):
+    state = state + alpha * state @ item_feature_vector[action] * item_feature_vector[action] 
+    state = state / np.linalg.norm(state, ord=2)
+    return state
 
 
-    #rewardの関数を決定する
-    def inner_reward_function(self, state, action):
-        reward = state @ self.item_feature_vector[action]
-        return reward
+#rewardの関数を決定する
+def inner_reward_function(state, action, item_feature_vector):
+    reward = state @ item_feature_vector[action]
+    return reward
 
-    # def cos_similar_function(state, action):
-    #     reward = 
+# def cos_similar_function(state, action):
+#     reward = 
