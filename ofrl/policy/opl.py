@@ -387,8 +387,8 @@ class OffPolicyLearning:
 
         else:
             base_policies = self._learn_base_policy(
-                logged_dataset=logged_dataset_,
-                base_policies=base_policies,
+                logged_dataset=logged_dataset,
+                base_policies=algorithms,
                 random_state=random_state,
             )
 

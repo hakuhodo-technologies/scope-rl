@@ -893,7 +893,9 @@ class SyntheticDataset(BaseDataset):
 
         else:
             logged_dataset = MultipleLoggedDataset(
-                path=path, save_relative_path=save_relative_path
+                action_type=self.action_type,
+                path=path,
+                save_relative_path=save_relative_path,
             )
 
             for i in tqdm(
@@ -1086,7 +1088,9 @@ class SyntheticDataset(BaseDataset):
 
         else:
             logged_dataset = MultipleLoggedDataset(
-                path=path, save_relative_path=save_relative_path
+                action_type=self.action_type,
+                path=path,
+                save_relative_path=save_relative_path,
             )
             for i in tqdm(
                 np.arange(n_datasets),

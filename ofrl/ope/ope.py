@@ -9,8 +9,10 @@ import numpy as np
 from scipy.stats import norm
 from sklearn.utils import check_scalar
 
+import pandas as pd
 from pandas import DataFrame
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 from d3rlpy.preprocessing import ActionScaler
 
@@ -1360,7 +1362,7 @@ class OffPolicyEvaluation:
         if fig_dir:
             fig.savefig(str(fig_dir / fig_name), dpi=300, bbox_inches="tight")
 
-    def visualize_off_policy_estimates_with_multiple_estimates(
+    def visualize_policy_value_with_multiple_estimates(
         self,
         input_dict: MultipleInputDict,
         compared_estimators: Optional[List[str]] = None,
@@ -1370,11 +1372,12 @@ class OffPolicyEvaluation:
         n_bootstrap_samples: int = 100,
         random_state: Optional[int] = None,
         hue: str = "estimator",
+        legend: bool = True,
         sharey: bool = False,
         fig_dir: Optional[Path] = None,
-        fig_name: str = "estimated_policy_value.png",
+        fig_name: str = "estimated_policy_value_multiple.png",
     ) -> None:
-        """Visualize the average of policy value estimated by OPE estimators across multiple logged dataset.
+        """Visualize policy value estimated by OPE estimators across multiple logged dataset.
 
         Note
         -------
@@ -1407,7 +1410,7 @@ class OffPolicyEvaluation:
             Name of compared estimators.
             If `None` is given, all the estimators are compared.
 
-        plot_type: {"ci", "scatter"}, default="ci"
+        plot_type: {"ci", "scatter", "violin"}, default="ci"
             Type of plot.
             If "ci" is given, the method visualizes the average policy value and the confidence intervals based on the multiple estimate.
             If "scatter" is given, the method visualizes the individual estimation result.
@@ -1427,6 +1430,9 @@ class OffPolicyEvaluation:
         hue: {"estimator", "policy"}, default="estimator"
             Hue of the plot.
 
+        legend: bool, default=True
+            Whether to include a legend in the scatter plot.
+
         sharey: bool, default=False
             If `True`, the y-axis will be shared among different estimators or evaluation policies.
 
@@ -1434,7 +1440,7 @@ class OffPolicyEvaluation:
             Path to store the bar figure.
             If `None` is given, the figure will not be saved.
 
-        fig_name: str, default="estimated_policy_value.png"
+        fig_name: str, default="estimated_policy_value_multiple.png"
             Name of the bar figure.
 
         """
@@ -1481,7 +1487,7 @@ class OffPolicyEvaluation:
         for eval_policy in input_dict:
             for estimator in compared_estimators:
 
-                policy_value = np.zeros((len(self.logged_dataset),))
+                policy_value = np.zeros((len(self.multiple_logged_dataset),))
                 for i in range(len(self.multiple_logged_dataset)):
                     policy_value[i] = policy_value_dict_[i][eval_policy][estimator]
 
@@ -1495,13 +1501,19 @@ class OffPolicyEvaluation:
                     random_state=random_state,
                 )
 
+            on_policy = input_dict[eval_policy]["on_policy_policy_value"]
+
+            if on_policy is not None:
+                policy_value_dict[eval_policy]["on_policy"] = on_policy.mean()
+            else:
+                policy_value_dict[eval_policy]["on_policy"] = None
+
         plt.style.use("ggplot")
         color = plt.rcParams["axes.prop_cycle"].by_key()["color"]
         n_colors = len(color)
 
         n_policies = len(input_dict)
         n_estimators = len(compared_estimators)
-        n_datasets = len(self.logged_dataset)
 
         if plot_type == "ci":
             if hue == "estimator":
@@ -1538,19 +1550,14 @@ class OffPolicyEvaluation:
                         tick_label=compared_estimators,
                     )
 
-                    on_policy_interval = policy_value_interval_dict[eval_policy][
-                        "on_policy"
-                    ]
-                    if on_policy_interval is not None:
-                        ax.axhline(on_policy_interval["mean"])
-                        ax.axhspan(
-                            ymin=on_policy_interval[
-                                f"{100 * (1. - alpha)}% CI (lower)"
-                            ],
-                            ymax=on_policy_interval[
-                                f"{100 * (1. - alpha)}% CI (upper)"
-                            ],
-                            alpha=0.3,
+                    on_policy = policy_value_dict[eval_policy]["on_policy"]
+                    if on_policy is not None:
+                        ax.scatter(
+                            np.arange(n_estimators),
+                            np.full((n_estimators), on_policy),
+                            color="black",
+                            marker="*",
+                            s=150,
                         )
 
                     ax.set_title(eval_policy, fontsize=16)
@@ -1567,12 +1574,9 @@ class OffPolicyEvaluation:
                     if input_dict[eval_policy]["on_policy_policy_value"] is None:
                         visualize_on_policy = False
 
-                n_policies = len(input_dict)
-                n_estimators = (
-                    len(compared_estimators) + 1
-                    if visualize_on_policy
-                    else len(compared_estimators)
-                )
+                    on_policy = np.zeros(n_policies)
+                    for j, eval_policy in enumerate(input_dict.keys()):
+                        on_policy[j] = policy_value_dict[eval_policy]["on_policy"]
 
                 fig = plt.figure(figsize=(2 * n_policies, 4 * n_estimators))
 
@@ -1607,44 +1611,16 @@ class OffPolicyEvaluation:
                         tick_label=list(input_dict.keys()),
                     )
 
+                    if visualize_on_policy:
+                        ax.scatter(
+                            np.arange(n_policies),
+                            on_policy,
+                            color="black",
+                            marker="*",
+                            s=150,
+                        )
+
                     ax.set_title(estimator, fontsize=16)
-                    ax.set_ylabel(
-                        f"Estimated Policy Value (± {np.int(100*(1 - alpha))}% CI)",
-                        fontsize=12,
-                    )
-                    plt.yticks(fontsize=12)
-                    plt.xticks(fontsize=12)
-
-                if visualize_on_policy:
-                    if sharey:
-                        ax = fig.add_subplot(n_estimators, 1, i + 2, sharey=ax0)
-                    else:
-                        ax = fig.add_subplot(n_estimators, 1, i + 2)
-
-                    mean = np.zeros(n_policies)
-                    lower = np.zeros(n_policies)
-                    upper = np.zeros(n_policies)
-
-                    for j, eval_policy in enumerate(input_dict.keys()):
-                        mean[j] = policy_value_interval_dict[eval_policy]["on_policy"][
-                            "mean"
-                        ]
-                        lower[j] = policy_value_interval_dict[eval_policy]["on_policy"][
-                            f"{100 * (1. - alpha)}% CI (lower)"
-                        ]
-                        upper[j] = policy_value_interval_dict[eval_policy]["on_policy"][
-                            f"{100 * (1. - alpha)}% CI (upper)"
-                        ]
-
-                    ax.bar(
-                        np.arange(n_policies),
-                        mean,
-                        yerr=[upper - mean, mean - lower],
-                        color=color,
-                        tick_label=list(input_dict.keys()),
-                    )
-
-                    ax.set_title("on_policy", fontsize=16)
                     ax.set_ylabel(
                         f"Estimated Policy Value (± {np.int(100*(1 - alpha))}% CI)",
                         fontsize=12,
@@ -1664,26 +1640,61 @@ class OffPolicyEvaluation:
                     else:
                         ax = fig.add_subplot(n_policies, 1, i + 1)
 
+                    df = DataFrame()
                     for j, estimator in enumerate(compared_estimators):
-                        policy_value[j] = policy_value_dict[eval_policy][estimator]
+                        df[estimator] = policy_value_dict[eval_policy][estimator]
 
-                        ax.scatter(
-                            np.full((n_datasets,), j),
-                            policy_value_dict[eval_policy][estimator],
-                            color=color[j % n_colors],
+                    df["dataset_id"] = np.arange(len(self.multiple_logged_dataset))
+                    df = pd.melt(
+                        df,
+                        id_vars=["dataset_id"],
+                        var_name="estimator",
+                        value_name="policy_value",
+                    )
+
+                    palette = {}
+                    if plot_type == "violin":
+                        for j, estimator in enumerate(compared_estimators):
+                            palette[estimator] = color[j % n_colors]
+
+                        sns.violinplot(
+                            data=df,
+                            x="estimator",
+                            y="policy_value",
+                            scale="width",
+                            width=0.5,
+                            palette=palette,
+                            ax=ax,
                         )
 
-                    on_policy = input_dict[eval_policy]["on_policy_policy_value"]
+                    else:
+                        for j in range(len(self.multiple_logged_dataset)):
+                            palette[j] = color[j % n_colors]
+
+                        sns.swarmplot(
+                            data=df,
+                            x="estimator",
+                            y="policy_value",
+                            hue="dataset_id",
+                            palette=palette,
+                            ax=ax,
+                        )
+
+                    on_policy = policy_value_dict[eval_policy]["on_policy"]
                     if on_policy is not None:
                         ax.scatter(
                             np.arange(n_estimators),
                             np.full((n_estimators), on_policy),
-                            policy_value_dict[eval_policy][estimator],
                             color="black",
-                            marker="star",
+                            marker="*",
+                            s=150,
                         )
 
+                    if not legend:
+                        ax.get_legend().remove()
+
                     ax.set_title(eval_policy, fontsize=16)
+                    ax.set_xlabel("")
                     ax.set_ylabel(
                         f"Estimated Policy Value",
                         fontsize=12,
@@ -1698,12 +1709,9 @@ class OffPolicyEvaluation:
                     if input_dict[eval_policy]["on_policy_policy_value"] is None:
                         visualize_on_policy = False
 
-                n_policies = len(input_dict)
-                n_estimators = (
-                    len(compared_estimators) + 1
-                    if visualize_on_policy
-                    else len(compared_estimators)
-                )
+                    on_policy = np.zeros(n_policies)
+                    for j, eval_policy in enumerate(input_dict.keys()):
+                        on_policy[j] = policy_value_dict[eval_policy]["on_policy"]
 
                 fig = plt.figure(figsize=(2 * n_policies, 4 * n_estimators))
 
@@ -1715,37 +1723,57 @@ class OffPolicyEvaluation:
                     else:
                         ax = fig.add_subplot(n_estimators, 1, i + 1)
 
+                    df = DataFrame()
                     for j, eval_policy in enumerate(input_dict.keys()):
+                        df[eval_policy] = policy_value_dict[eval_policy][estimator]
+
+                    df["dataset_id"] = np.arange(len(self.multiple_logged_dataset))
+                    df = pd.melt(
+                        df,
+                        id_vars=["dataset_id"],
+                        var_name="eval_policy",
+                        value_name="policy_value",
+                    )
+
+                    palette = {}
+                    if plot_type == "violin":
+                        for j, estimator in enumerate(compared_estimators):
+                            palette[estimator] = color[j % n_colors]
+
+                        sns.violinplot(
+                            data=df,
+                            x="eval_policy",
+                            y="policy_value",
+                            scale="width",
+                            width=0.5,
+                            palette=palette,
+                            ax=ax,
+                        )
+
+                    else:
+                        for j in range(len(self.multiple_logged_dataset)):
+                            palette[j] = color[j % n_colors]
+
+                        sns.swarmplot(
+                            data=df,
+                            x="eval_policy",
+                            y="policy_value",
+                            hue="dataset_id",
+                            palette=palette,
+                            ax=ax,
+                        )
+
+                    if visualize_on_policy:
                         ax.scatter(
-                            np.full((n_datasets,), j),
-                            policy_value_dict[eval_policy][estimator],
-                            color=color[j % n_colors],
+                            np.arange(n_policies),
+                            on_policy,
+                            color="black",
+                            marker="*",
+                            s=150,
                         )
 
                     ax.set_title(estimator, fontsize=16)
-                    ax.set_ylabel(
-                        f"Estimated Policy Value",
-                        fontsize=12,
-                    )
-                    ax.set_xticks(np.arange(n_policies), list(input_dict.keys()))
-                    plt.yticks(fontsize=12)
-                    plt.xticks(fontsize=12)
-
-                if visualize_on_policy:
-                    if sharey:
-                        ax = fig.add_subplot(n_estimators, 1, i + 2, sharey=ax0)
-                    else:
-                        ax = fig.add_subplot(n_estimators, 1, i + 2)
-
-                    for j, eval_policy in enumerate(input_dict.keys()):
-                        ax.scatter(
-                            np.array([j]),
-                            input_dict[eval_policy]["on_policy_policy_value"],
-                            color="black",
-                            marker="star",
-                        )
-
-                    ax.set_title("on_policy", fontsize=16)
+                    ax.set_xlabel("")
                     ax.set_ylabel(
                         f"Estimated Policy Value",
                         fontsize=12,
@@ -2151,6 +2179,7 @@ class CumulativeDistributionOffPolicyEvaluation:
         self,
         input_dict: OPEInputDict,
         compared_estimators: Optional[List[str]] = None,
+        reward_scale: Optional[np.ndarray] = None,
     ):
         """Estimate the cumulative distribution of the trajectory wise reward of the evaluation policies.
 
@@ -2180,6 +2209,9 @@ class CumulativeDistributionOffPolicyEvaluation:
             Name of compared estimators.
             If `None` is given, all the estimators are compared.
 
+        reward_scale: array-like of shape (n_partition, ), default=None
+            Scale of the trajectory wise reward used for x-axis of CDF curve.
+
         Return
         -------
         cumulative_distribution_dict: dict
@@ -2190,7 +2222,9 @@ class CumulativeDistributionOffPolicyEvaluation:
         check_input_dict(input_dict)
 
         cumulative_distribution_dict = defaultdict(dict)
-        reward_scale = self.obtain_reward_scale()
+        reward_scale = (
+            self.obtain_reward_scale() if reward_scale is None else reward_scale
+        )
 
         for eval_policy in input_dict.keys():
             if input_dict[eval_policy]["on_policy_policy_value"] is not None:
@@ -2532,6 +2566,7 @@ class CumulativeDistributionOffPolicyEvaluation:
         input_dict: Union[OPEInputDict, MultipleInputDict],
         compared_estimators: Optional[List[str]] = None,
         dataset_id: Optional[Union[int, str]] = None,
+        reward_scale: Optional[np.ndarray] = None,
     ):
         """Estimate the cumulative distribution of the trajectory wise reward of the evaluation policies.
 
@@ -2565,6 +2600,9 @@ class CumulativeDistributionOffPolicyEvaluation:
             Id (or name) of the logged dataset.
             If `None`, the method returns the list of cumulative_distribution_dict.
 
+        reward_scale: array-like of shape (n_partition, ), default=None
+            Scale of the trajectory wise reward used for x-axis of CDF curve.
+
         Return
         -------
         cumulative_distribution_dict: dict (, list of dict)
@@ -2578,6 +2616,10 @@ class CumulativeDistributionOffPolicyEvaluation:
             raise ValueError(
                 "compared_estimators must be a subset of self.estimators_name, but found False."
             )
+
+        if reward_scale is not None:
+            check_array(reward_scale, name="reward_scale", expected_dim=1)
+            reward_scale = np.sort(reward_scale)
 
         if dataset_id is None and self.use_multiple_logged_dataset:
             if not isinstance(input_dict, MultipleInputDict):
@@ -2599,6 +2641,7 @@ class CumulativeDistributionOffPolicyEvaluation:
                     self._estimate_cumulative_distribution_function(
                         input_dict_,
                         compared_estimators=compared_estimators,
+                        reward_scale=reward_scale,
                     )
                 )
                 cumulative_distribution_dict.append(cumulative_distribution_dict_)
@@ -2618,6 +2661,7 @@ class CumulativeDistributionOffPolicyEvaluation:
                 self._estimate_cumulative_distribution_function(
                     input_dict,
                     compared_estimators=compared_estimators,
+                    reward_scale=reward_scale,
                 )
             )
 
@@ -4066,6 +4110,792 @@ class CumulativeDistributionOffPolicyEvaluation:
         if fig_dir:
             fig.savefig(str(fig_dir / fig_name), dpi=300, bbox_inches="tight")
 
+    def _visualize_off_policy_estimates_with_multiple_estimates(
+        self,
+        estimation_dict: Dict[str, Dict[str, np.ndarray]],
+        estimation_interval_dict: Dict[str, Dict[str, Dict[str, float]]],
+        compared_estimators: Optional[List[str]] = None,
+        plot_type: str = "ci",
+        alpha: float = 0.05,
+        hue: str = "estimator",
+        legend: bool = True,
+        sharey: bool = False,
+        fig_dir: Optional[Path] = None,
+        fig_name: Optional[str] = None,
+    ) -> None:
+        """Visualize values estimated by OPE estimators across multiple logged dataset.
+
+        Note
+        -------
+        This function is applicable only when MultipleLoggedDataset is used and
+        MultipleInputDict is collected by the same evaluation policy across logged datasets.
+
+        Parameters
+        -------
+        estimation_dict: dict
+            Dictionary containing estimation result of OPE. key: ``[eval_policy][estimator]``
+
+        estimation_interval_dict: dict
+            Dictionary containing confidence interval of multiple OPE estimate. key: ``[eval_policy][estimator]``
+
+        compared_estimators: list of str, default=None
+            Name of compared estimators.
+            If `None` is given, all the estimators are compared.
+
+        plot_type: {"ci", "scatter", "violin"}, default="ci"
+            Type of plot.
+            If "ci" is given, the method visualizes the average policy value and the confidence intervals based on the multiple estimate.
+            If "scatter" is given, the method visualizes the individual estimation result.
+
+        alpha: float, default=0.05
+            Significance level. The value should be within (0, 1].
+
+        hue: {"estimator", "policy"}, default="estimator"
+            Hue of the plot.
+
+        legend: bool, default=True
+            Whether to include a legend in the scatter plot.
+
+        sharey: bool, default=False
+            If `True`, the y-axis will be shared among different estimators or evaluation policies.
+
+        fig_dir: Path, default=None
+            Path to store the bar figure.
+            If `None` is given, the figure will not be saved.
+
+        fig_name: str, default=None
+            Name of the bar figure.
+
+        """
+        plt.style.use("ggplot")
+        color = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+        n_colors = len(color)
+
+        n_policies = len(estimation_dict)
+        n_estimators = len(compared_estimators)
+
+        if plot_type == "ci":
+            if hue == "estimator":
+                fig = plt.figure(figsize=(2 * n_estimators, 4 * n_policies))
+
+                for i, eval_policy in enumerate(estimation_dict.keys()):
+                    if i == 0:
+                        ax = ax0 = fig.add_subplot(n_policies, 1, i + 1)
+                    elif sharey:
+                        ax = fig.add_subplot(n_policies, 1, i + 1, sharey=ax0)
+                    else:
+                        ax = fig.add_subplot(n_policies, 1, i + 1)
+
+                    mean = np.zeros(n_estimators)
+                    lower = np.zeros(n_estimators)
+                    upper = np.zeros(n_estimators)
+
+                    for j, estimator in enumerate(compared_estimators):
+                        mean[j] = estimation_interval_dict[eval_policy][estimator][
+                            "mean"
+                        ]
+                        lower[j] = estimation_interval_dict[eval_policy][estimator][
+                            f"{100 * (1. - alpha)}% CI (lower)"
+                        ]
+                        upper[j] = estimation_interval_dict[eval_policy][estimator][
+                            f"{100 * (1. - alpha)}% CI (upper)"
+                        ]
+
+                    ax.bar(
+                        np.arange(n_estimators),
+                        mean,
+                        yerr=[upper - mean, mean - lower],
+                        color=color,
+                        tick_label=compared_estimators,
+                    )
+
+                    on_policy = estimation_dict[eval_policy]["on_policy"]
+                    if on_policy is not None:
+                        ax.scatter(
+                            np.arange(n_estimators),
+                            np.full((n_estimators), on_policy),
+                            color="black",
+                            marker="*",
+                            s=150,
+                        )
+
+                    ax.set_title(eval_policy, fontsize=16)
+                    ax.set_ylabel(
+                        f"Estimated Policy Value (± {np.int(100*(1 - alpha))}% CI)",
+                        fontsize=12,
+                    )
+                    plt.yticks(fontsize=12)
+                    plt.xticks(fontsize=12)
+
+            else:
+                visualize_on_policy = True
+                for eval_policy in estimation_dict.keys():
+                    if estimation_dict[eval_policy]["on_policy"] is None:
+                        visualize_on_policy = False
+
+                    on_policy = np.zeros(n_policies)
+                    for j, eval_policy in enumerate(estimation_dict.keys()):
+                        on_policy[j] = estimation_dict[eval_policy]["on_policy"]
+
+                fig = plt.figure(figsize=(2 * n_policies, 4 * n_estimators))
+
+                for i, estimator in enumerate(compared_estimators):
+                    if i == 0:
+                        ax = ax0 = fig.add_subplot(n_estimators, 1, i + 1)
+                    elif sharey:
+                        ax = fig.add_subplot(n_estimators, 1, i + 1, sharey=ax0)
+                    else:
+                        ax = fig.add_subplot(n_estimators, 1, i + 1)
+
+                    mean = np.zeros(n_policies)
+                    lower = np.zeros(n_policies)
+                    upper = np.zeros(n_policies)
+
+                    for j, eval_policy in enumerate(estimation_dict.keys()):
+                        mean[j] = estimation_interval_dict[eval_policy][estimator][
+                            "mean"
+                        ]
+                        lower[j] = estimation_interval_dict[eval_policy][estimator][
+                            f"{100 * (1. - alpha)}% CI (lower)"
+                        ]
+                        upper[j] = estimation_interval_dict[eval_policy][estimator][
+                            f"{100 * (1. - alpha)}% CI (upper)"
+                        ]
+
+                    ax.bar(
+                        np.arange(n_policies),
+                        mean,
+                        yerr=[upper - mean, mean - lower],
+                        color=color,
+                        tick_label=list(estimation_dict.keys()),
+                    )
+
+                    if visualize_on_policy:
+                        ax.scatter(
+                            np.arange(n_policies),
+                            on_policy,
+                            color="black",
+                            marker="*",
+                            s=150,
+                        )
+
+                    ax.set_title(estimator, fontsize=16)
+                    ax.set_ylabel(
+                        f"Estimated Policy Value (± {np.int(100*(1 - alpha))}% CI)",
+                        fontsize=12,
+                    )
+                    plt.yticks(fontsize=12)
+                    plt.xticks(fontsize=12)
+
+        else:
+            if hue == "estimator":
+                fig = plt.figure(figsize=(2 * n_estimators, 4 * n_policies))
+
+                for i, eval_policy in enumerate(estimation_dict.keys()):
+                    if i == 0:
+                        ax = ax0 = fig.add_subplot(n_policies, 1, i + 1)
+                    elif sharey:
+                        ax = fig.add_subplot(n_policies, 1, i + 1, sharey=ax0)
+                    else:
+                        ax = fig.add_subplot(n_policies, 1, i + 1)
+
+                    df = DataFrame()
+                    for j, estimator in enumerate(compared_estimators):
+                        df[estimator] = estimation_dict[eval_policy][estimator]
+
+                    df["dataset_id"] = np.arange(len(self.multiple_logged_dataset))
+                    df = pd.melt(
+                        df,
+                        id_vars=["dataset_id"],
+                        var_name="estimator",
+                        value_name="policy_value",
+                    )
+
+                    palette = {}
+                    if plot_type == "violin":
+                        for j, estimator in enumerate(compared_estimators):
+                            palette[estimator] = color[j % n_colors]
+
+                        sns.violinplot(
+                            data=df,
+                            x="estimator",
+                            y="policy_value",
+                            scale="width",
+                            width=0.5,
+                            palette=palette,
+                            ax=ax,
+                        )
+
+                    else:
+                        for j in range(len(self.multiple_logged_dataset)):
+                            palette[j] = color[j % n_colors]
+
+                        sns.swarmplot(
+                            data=df,
+                            x="estimator",
+                            y="policy_value",
+                            hue="dataset_id",
+                            palette=palette,
+                            ax=ax,
+                        )
+
+                    on_policy = estimation_dict[eval_policy]["on_policy"]
+                    if on_policy is not None:
+                        ax.scatter(
+                            np.arange(n_estimators),
+                            np.full((n_estimators), on_policy),
+                            color="black",
+                            marker="*",
+                            s=150,
+                        )
+
+                    if not legend:
+                        ax.get_legend().remove()
+
+                    ax.set_title(eval_policy, fontsize=16)
+                    ax.set_xlabel("")
+                    ax.set_ylabel(
+                        f"Estimated Policy Value",
+                        fontsize=12,
+                    )
+                    ax.set_xticks(np.arange(n_estimators), compared_estimators)
+                    plt.yticks(fontsize=12)
+                    plt.xticks(fontsize=12)
+
+            else:
+                visualize_on_policy = True
+                for eval_policy in estimation_dict.keys():
+                    if estimation_dict[eval_policy]["on_policy"] is None:
+                        visualize_on_policy = False
+
+                    on_policy = np.zeros(n_policies)
+                    for j, eval_policy in enumerate(estimation_dict.keys()):
+                        on_policy[j] = estimation_dict[eval_policy]["on_policy"]
+
+                fig = plt.figure(figsize=(2 * n_policies, 4 * n_estimators))
+
+                for i, estimator in enumerate(compared_estimators):
+                    if i == 0:
+                        ax = ax0 = fig.add_subplot(n_estimators, 1, i + 1)
+                    elif sharey:
+                        ax = fig.add_subplot(n_estimators, 1, i + 1, sharey=ax0)
+                    else:
+                        ax = fig.add_subplot(n_estimators, 1, i + 1)
+
+                    df = DataFrame()
+                    for j, eval_policy in enumerate(estimation_dict.keys()):
+                        df[eval_policy] = estimation_dict[eval_policy][estimator]
+
+                    df["dataset_id"] = np.arange(len(self.multiple_logged_dataset))
+                    df = pd.melt(
+                        df,
+                        id_vars=["dataset_id"],
+                        var_name="eval_policy",
+                        value_name="policy_value",
+                    )
+
+                    palette = {}
+                    if plot_type == "violin":
+                        for j, estimator in enumerate(compared_estimators):
+                            palette[estimator] = color[j % n_colors]
+
+                        sns.violinplot(
+                            data=df,
+                            x="eval_policy",
+                            y="policy_value",
+                            scale="width",
+                            width=0.5,
+                            palette=palette,
+                            ax=ax,
+                        )
+
+                    else:
+                        for j in range(len(self.multiple_logged_dataset)):
+                            palette[j] = color[j % n_colors]
+
+                        sns.swarmplot(
+                            data=df,
+                            x="eval_policy",
+                            y="policy_value",
+                            hue="dataset_id",
+                            palette=palette,
+                            ax=ax,
+                        )
+
+                    if visualize_on_policy:
+                        ax.scatter(
+                            np.arange(n_policies),
+                            on_policy,
+                            color="black",
+                            marker="*",
+                            s=150,
+                        )
+
+                    ax.set_title(estimator, fontsize=16)
+                    ax.set_xlabel("")
+                    ax.set_ylabel(
+                        f"Estimated Policy Value",
+                        fontsize=12,
+                    )
+                    ax.set_xticks(np.arange(n_policies), list(estimation_dict.keys()))
+                    plt.yticks(fontsize=12)
+                    plt.xticks(fontsize=12)
+
+        fig.subplots_adjust(top=1.0)
+        plt.show()
+
+        if fig_dir:
+            fig.savefig(str(fig_dir / fig_name), dpi=300, bbox_inches="tight")
+
+    def visualize_cumulative_distribution_function_with_multiple_estimates(
+        self,
+        input_dict: MultipleInputDict,
+        compared_estimators: Optional[List[str]] = None,
+        scale_min: Optional[float] = None,
+        scale_max: Optional[float] = None,
+        n_partition: Optional[int] = None,
+        plot_type: str = "ci",
+        hue: str = "estimator",
+        legend: bool = True,
+        n_cols: Optional[int] = None,
+        sharey: bool = False,
+        fig_dir: Optional[Path] = None,
+        fig_name: str = "estimated_policy_value_multiple.png",
+    ) -> None:
+        """Visualize policy value estimated by OPE estimators across multiple logged dataset.
+
+        Note
+        -------
+        This function is applicable only when MultipleLoggedDataset is used and
+        MultipleInputDict is collected by the same evaluation policy across logged datasets.
+
+        This function is not applicable when the data-driven reward scaler is used.
+        Please set ``scale_min``, ``scale_max``, and ``n_partition`` to use.
+
+        Parameters
+        -------
+        input_dict: OPEInputDict or MultipleInputDict
+            Dictionary of the OPE inputs for each evaluation policy.
+
+            .. code-block:: python
+
+                key: [evaluation_policy_name][
+                    evaluation_policy_action,
+                    evaluation_policy_action_dist,
+                    state_action_value_prediction,
+                    initial_state_value_prediction,
+                    state_action_marginal_importance_weight,
+                    state_marginal_importance_weight,
+                    on_policy_policy_value,
+                    gamma,
+                ]
+
+            .. seealso::
+
+                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+
+        compared_estimators: list of str, default=None
+            Name of compared estimators.
+            If `None` is given, all the estimators are compared.
+
+        plot_type: {"ci", "enumerate"}, default="ci"
+            Type of plot.
+            If "ci" is given, the method visualizes the average policy value and its 95% confidence intervals based on the multiple estimate.
+            If "enumerate" is given, the method visualizes the individual estimation result.
+
+        hue: {"estimator", "policy"}, default="estimator"
+            Hue of the plot.
+
+        legend: bool, default=True
+            Whether to include a legend in the scatter plot.
+
+        sharey: bool, default=False
+            If `True`, the y-axis will be shared among different estimators or evaluation policies.
+
+        fig_dir: Path, default=None
+            Path to store the bar figure.
+            If `None` is given, the figure will not be saved.
+
+        fig_name: str, default="estimated_policy_value_multiple.png"
+            Name of the bar figure.
+
+        """
+        if scale_min is None:
+            if self.scale_min is None:
+                raise ValueError(
+                    "scale_min must be specified when self.scale_min is None"
+                )
+            else:
+                scale_min = self.scale_min
+        if scale_max is None:
+            if self.scale_max is None:
+                raise ValueError(
+                    "scale_max must be specified when self.scale_max is None"
+                )
+            else:
+                scale_max = self.scale_max
+        if n_partition is None:
+            if self.n_partition is None:
+                raise ValueError(
+                    "n_partition must be specified when self.n_partition is None"
+                )
+            else:
+                n_partition = self.n_partition
+        check_scalar(scale_min, name="scale_min", target_type=float)
+        check_scalar(scale_max, name="scale_max", target_type=float)
+        check_scalar(n_partition, name="n_partition", target_type=int, min_val=1)
+
+        if not isinstance(input_dict, MultipleInputDict):
+            raise ValueError("input_dict must be an instance of MultipleInputDict.")
+        if (
+            not self.use_multiple_logged_dataset
+            or not input_dict.use_same_eval_policy_across_dataset
+        ):
+            raise RuntimeError(
+                "This function is applicable only when MultipleLoggedDataset is used "
+                "and MultipleInputDict is collected by the same evaluation policy across logged datasets, "
+                "but found False."
+            )
+        if len(self.multiple_logged_dataset) != len(input_dict):
+            raise ValueError(
+                "Expected `len(input_dict) == len(self.multiple_logged_dataset)`, but found False."
+            )
+
+        if compared_estimators is None:
+            compared_estimators = self.estimators_name
+        elif not set(compared_estimators).issubset(self.estimators_name):
+            raise ValueError(
+                "compared_estimators must be a subset of self.estimators_name, but found False."
+            )
+        if hue not in ["estimator", "policy"]:
+            raise ValueError(
+                f"hue must be either `estimator` or `policy`, but {hue} is given"
+            )
+        if fig_dir is not None and not isinstance(fig_dir, Path):
+            raise ValueError(f"fig_dir must be a Path, but {type(fig_dir)} is given")
+        if fig_name is not None and not isinstance(fig_name, str):
+            raise ValueError(f"fig_dir must be a string, but {type(fig_dir)} is given")
+
+        reward_scale = np.linspace(scale_min, scale_max, num=n_partition)
+
+        cdf_dict_ = self.estimate_cumulative_distribution_function(
+            input_dict=input_dict,
+            compared_estimators=compared_estimators,
+            reward_scale=reward_scale,
+        )
+
+        cdf_dict = defaultdict(dict)
+        input_dict = input_dict.get(0)
+        for eval_policy in input_dict:
+            for estimator in compared_estimators:
+
+                cdf = np.zeros((len(self.multiple_logged_dataset), n_partition))
+                for i in range(len(self.multiple_logged_dataset)):
+                    cdf[i] = cdf_dict_[i][eval_policy][estimator]
+
+                    if not (cdf[i][1:] - cdf[i][:-1]).all():
+                        print(i, eval_policy, estimator, cdf[i])
+
+                cdf_dict[eval_policy][estimator] = cdf
+
+            cdf_dict[eval_policy]["on_policy"] = cdf_dict_[0][eval_policy]["on_policy"]
+
+        plt.style.use("ggplot")
+        color = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+        n_colors = len(color)
+
+        if plot_type == "ci":
+            if hue == "estimator":
+                n_figs = len(input_dict)
+                n_cols = min(3, n_figs) if n_cols is None else n_cols
+                n_rows = (n_figs - 1) // n_cols + 1
+
+                fig, axes = plt.subplots(
+                    nrows=n_rows, ncols=n_cols, figsize=(6 * n_cols, 4 * n_rows)
+                )
+
+                if n_rows == 1:
+                    for i, eval_policy in enumerate(input_dict.keys()):
+                        for j, estimator in enumerate(compared_estimators):
+
+                            df = DataFrame()
+                            for l in range(len(self.multiple_logged_dataset)):
+                                df["xscale"] = reward_scale
+                                df[l] = cdf_dict[eval_policy][estimator][l]
+
+                            df = pd.melt(
+                                df,
+                                id_vars=["xscale"],
+                                var_name="dataset_id",
+                                value_name="cdf",
+                            )
+                            sns.lineplot(
+                                data=df,
+                                x="xscale",
+                                y="cdf",
+                                ax=axes[i],
+                                palette=[color[j % n_colors]],
+                                label="estimator",
+                            )
+
+                        on_policy = cdf_dict[eval_policy]["on_policy"]
+                        if on_policy is not None:
+                            axes[i].plot(
+                                reward_scale,
+                                on_policy,
+                                label="on_policy",
+                                color="black",
+                            )
+
+                        axes[i].set_title(eval_policy)
+                        axes[i].set_xlabel("trajectory wise reward")
+                        axes[i].set_ylabel("cumulative probability")
+                        if legend:
+                            axes[i].legend()
+
+                    if legend:
+                        handles, labels = axes[0].get_legend_handles_labels()
+                        # n_cols shows err
+                        # fig.legend(handles, labels, loc='upper center', bbox_to_anchor=(0.5, -0.1), n_cols=min(len(labels), 6))
+
+                else:
+                    for i, eval_policy in enumerate(input_dict.keys()):
+                        for j, estimator in enumerate(compared_estimators):
+                            df = DataFrame()
+                            for l in range(len(self.multiple_logged_dataset)):
+                                df["xscale"] = reward_scale
+                                df[l] = cdf_dict[eval_policy][estimator][l]
+
+                            df = pd.melt(
+                                df,
+                                id_vars=["xscale"],
+                                var_name="dataset_id",
+                                value_name="cdf",
+                            )
+                            sns.lineplot(
+                                data=df,
+                                x="xscale",
+                                y="cdf",
+                                ax=axes[i // n_cols, i % n_cols],
+                                palette=[color[j % n_colors]],
+                                label=estimator,
+                            )
+
+                        on_policy = cdf_dict[eval_policy]["on_policy"]
+                        if on_policy is not None:
+                            axes[i // n_cols, i % n_cols].plot(
+                                reward_scale,
+                                on_policy,
+                                label="on_policy",
+                                color="black",
+                            )
+
+                        axes[i // n_cols, i % n_cols].set_title(eval_policy)
+                        axes[i // n_cols, i % n_cols].set_xlabel(
+                            "trajectory wise reward"
+                        )
+                        axes[i // n_cols, i % n_cols].set_ylabel(
+                            "cumulative probability"
+                        )
+                        if legend:
+                            axes[i // n_cols, i % n_cols].legend()
+
+                    if legend:
+                        handles, labels = axes[0, 0].get_legend_handles_labels()
+                        # n_cols shows err
+                        # fig.legend(handles, labels, loc='upper center', bbox_to_anchor=(0.5, -0.1), n_cols=min(len(labels), 6))
+
+            else:
+                visualize_on_policy = True
+                for eval_policy in input_dict:
+                    if input_dict[eval_policy]["on_policy_policy_value"] is None:
+                        visualize_on_policy = False
+
+                n_figs = (
+                    len(compared_estimators) + 1
+                    if visualize_on_policy
+                    else len(compared_estimators)
+                )
+                n_cols = min(3, n_figs) if n_cols is None else n_cols
+                n_rows = (n_figs - 1) // n_cols + 1
+
+                fig, axes = plt.subplots(
+                    nrows=n_rows, ncols=n_cols, figsize=(6 * n_cols, 4 * n_rows)
+                )
+
+                if n_rows == 1:
+                    for i, estimator in enumerate(compared_estimators):
+                        for j, eval_policy in enumerate(input_dict.keys()):
+                            df = DataFrame()
+                            for l in range(len(self.multiple_logged_dataset)):
+                                df["xscale"] = reward_scale
+                                df[l] = cdf_dict[eval_policy][estimator][l]
+
+                            df = pd.melt(
+                                df,
+                                id_vars=["xscale"],
+                                var_name="dataset_id",
+                                value_name="cdf",
+                            )
+                            sns.lineplot(
+                                data=df,
+                                x="xscale",
+                                y="cdf",
+                                ax=axes[i],
+                                palette=[color[j % n_colors]],
+                                label=eval_policy,
+                            )
+
+                        axes[i].set_title(estimator)
+                        axes[i].set_xlabel("trajectory wise reward")
+                        axes[i].set_ylabel("cumulative probability")
+                        if legend:
+                            axes[i].legend()
+
+                    if visualize_on_policy:
+                        for j, eval_policy in enumerate(input_dict.keys()):
+                            axes[i + 1].plot(
+                                reward_scale,
+                                cdf_dict[eval_policy]["on_policy"],
+                                label=eval_policy,
+                            )
+
+                        axes[i + 1].set_title("on_policy")
+                        axes[i + 1].set_xlabel("trajectory wise reward")
+                        axes[i + 1].set_ylabel("cumulative probability")
+                        if legend:
+                            axes[i + 1].legend()
+
+                    if legend:
+                        handles, labels = axes[0].get_legend_handles_labels()
+                        # n_cols shows err
+                        # fig.legend(handles, labels, loc='upper center', bbox_to_anchor=(0.5, -0.1), n_cols=min(len(labels), 6))
+
+                else:
+                    for i, estimator in enumerate(compared_estimators):
+                        for j, eval_policy in enumerate(input_dict.keys()):
+                            df = DataFrame()
+                            for l in range(len(self.multiple_logged_dataset)):
+                                df["xscale"] = reward_scale
+                                df[l] = cdf_dict[eval_policy][estimator][l]
+
+                            df = pd.melt(
+                                df,
+                                id_vars=["xscale"],
+                                var_name="dataset_id",
+                                value_name="cdf",
+                            )
+                            sns.lineplot(
+                                data=df,
+                                x="xscale",
+                                y="cdf",
+                                ax=axes[i // n_cols, i % n_cols],
+                                palette=[color[j % n_colors]],
+                                label=eval_policy,
+                            )
+
+                        axes[i // n_cols, i % n_cols].set_title(estimator)
+                        axes[i // n_cols, i % n_cols].set_xlabel(
+                            "trajectory wise reward"
+                        )
+                        axes[i // n_cols, i % n_cols].set_ylabel(
+                            "cumulative probability"
+                        )
+                        if legend:
+                            axes[i // n_cols, i % n_cols].legend()
+
+                    if visualize_on_policy:
+                        for j, eval_policy in enumerate(input_dict.keys()):
+                            axes[(i + 1) // n_cols, (i + 1) % n_cols].plot(
+                                reward_scale,
+                                cdf_dict[eval_policy]["on_policy"],
+                                label=eval_policy,
+                            )
+
+                        axes[(i + 1) // n_cols, (i + 1) % n_cols].set_title("on_policy")
+                        axes[(i + 1) // n_cols, (i + 1) % n_cols].set_xlabel(
+                            "trajectory wise reward"
+                        )
+                        axes[(i + 1) // n_cols, (i + 1) % n_cols].set_ylabel(
+                            "cumulative probability"
+                        )
+                        if legend:
+                            axes[(i + 1) // n_cols, (i + 1) % n_cols].legend()
+
+                    if legend:
+                        handles, labels = axes[0, 0].get_legend_handles_labels()
+                        # n_cols shows err
+                        # fig.legend(handles, labels, loc='upper center', bbox_to_anchor=(0.5, -0.1), n_cols=min(len(labels), 6))
+
+        else:
+            if hue == "estimator":
+                n_cols = len(compared_estimators)
+                n_rows = len(input_dict)
+
+                fig, axes = plt.subplots(
+                    nrows=n_rows, ncols=n_cols, figsize=(6 * n_cols, 4 * n_rows)
+                )
+
+                for i, eval_policy in enumerate(input_dict.keys()):
+                    for j, estimator in enumerate(compared_estimators):
+                        for l in range(len(self.multiple_logged_dataset)):
+                            axes[i, j].plot(
+                                reward_scale,
+                                cdf_dict[eval_policy][estimator][l],
+                                label=l,
+                            )
+
+                        on_policy = cdf_dict[eval_policy]["on_policy"]
+                        if on_policy is not None:
+                            axes[i, j].plot(
+                                reward_scale,
+                                on_policy,
+                                color="black",
+                            )
+
+                        axes[i, j].set_title(f"{eval_policy}, {estimator}")
+                        axes[i, j].set_xlabel("trajectory wise reward")
+                        axes[i, j].set_ylabel("cumulative probability")
+                        if legend:
+                            axes[i, j].legend(title="dataset_id")
+
+            else:
+                n_cols = len(input_dict)
+                n_rows = len(compared_estimators)
+
+                fig, axes = plt.subplots(
+                    nrows=n_rows, ncols=n_cols, figsize=(6 * n_cols, 4 * n_rows)
+                )
+
+                for i, estimator in enumerate(compared_estimators):
+                    for j, eval_policy in enumerate(input_dict.keys()):
+                        for l in range(len(self.multiple_logged_dataset)):
+                            axes[i, j].plot(
+                                reward_scale,
+                                cdf_dict[eval_policy][estimator][l],
+                                label=l,
+                            )
+
+                        on_policy = cdf_dict[eval_policy]["on_policy"]
+                        if on_policy is not None:
+                            axes[i, j].plot(
+                                reward_scale,
+                                on_policy,
+                                color="black",
+                            )
+
+                        axes[i, j].set_title(f"{estimator}, {eval_policy}")
+                        axes[i, j].set_xlabel("trajectory wise reward")
+                        axes[i, j].set_ylabel("cumulative probability")
+                        if legend:
+                            axes[i, j].legend(title="dataset_id")
+
+            fig.subplots_adjust(hspace=0.35, wspace=0.2)
+            plt.show()
+
+            if fig_dir:
+                fig.savefig(str(fig_dir / fig_name), dpi=300, bbox_inches="tight")
+
     def visualize_policy_value_with_multiple_estimates(
         self,
         input_dict: MultipleInputDict,
@@ -4076,11 +4906,12 @@ class CumulativeDistributionOffPolicyEvaluation:
         n_bootstrap_samples: int = 100,
         random_state: Optional[int] = None,
         hue: str = "estimator",
+        legend: bool = True,
         sharey: bool = False,
         fig_dir: Optional[Path] = None,
-        fig_name: str = "estimated_policy_value.png",
+        fig_name: str = "estimated_policy_value_multiple.png",
     ) -> None:
-        """Visualize the average of policy value estimated by OPE estimators across multiple logged dataset.
+        """Visualize policy value estimated by OPE estimators across multiple logged dataset.
 
         Note
         -------
@@ -4113,7 +4944,7 @@ class CumulativeDistributionOffPolicyEvaluation:
             Name of compared estimators.
             If `None` is given, all the estimators are compared.
 
-        plot_type: {"ci", "scatter"}, default="ci"
+        plot_type: {"ci", "scatter", "violin"}, default="ci"
             Type of plot.
             If "ci" is given, the method visualizes the average policy value and the confidence intervals based on the multiple estimate.
             If "scatter" is given, the method visualizes the individual estimation result.
@@ -4133,6 +4964,9 @@ class CumulativeDistributionOffPolicyEvaluation:
         hue: {"estimator", "policy"}, default="estimator"
             Hue of the plot.
 
+        legend: bool, default=True
+            Whether to include a legend in the scatter plot.
+
         sharey: bool, default=False
             If `True`, the y-axis will be shared among different estimators or evaluation policies.
 
@@ -4140,7 +4974,7 @@ class CumulativeDistributionOffPolicyEvaluation:
             Path to store the bar figure.
             If `None` is given, the figure will not be saved.
 
-        fig_name: str, default="estimated_policy_value.png"
+        fig_name: str, default="estimated_policy_value_multiple.png"
             Name of the bar figure.
 
         """
@@ -4187,7 +5021,7 @@ class CumulativeDistributionOffPolicyEvaluation:
         for eval_policy in input_dict:
             for estimator in compared_estimators:
 
-                policy_value = np.zeros((len(self.logged_dataset),))
+                policy_value = np.zeros((len(self.multiple_logged_dataset),))
                 for i in range(len(self.multiple_logged_dataset)):
                     policy_value[i] = policy_value_dict_[i][eval_policy][estimator]
 
@@ -4201,269 +5035,520 @@ class CumulativeDistributionOffPolicyEvaluation:
                     random_state=random_state,
                 )
 
-        plt.style.use("ggplot")
-        color = plt.rcParams["axes.prop_cycle"].by_key()["color"]
-        n_colors = len(color)
+            on_policy = input_dict[eval_policy]["on_policy_policy_value"]
 
-        n_policies = len(input_dict)
-        n_estimators = len(compared_estimators)
-        n_datasets = len(self.logged_dataset)
+            if on_policy is not None:
+                policy_value_dict[eval_policy]["on_policy"] = on_policy.mean()
+            else:
+                policy_value_dict[eval_policy]["on_policy"] = None
 
-        if plot_type == "ci":
-            if hue == "estimator":
-                fig = plt.figure(figsize=(2 * n_estimators, 4 * n_policies))
+        self._visualize_off_policy_estimates_with_multiple_estimates(
+            estimation_dict=policy_value_dict,
+            estimation_interval_dict=policy_value_interval_dict,
+            compared_estimators=compared_estimators,
+            plot_type=plot_type,
+            alpha=alpha,
+            hue=hue,
+            legend=legend,
+            sharey=sharey,
+            fig_dir=fig_dir,
+            fig_name=fig_name,
+        )
 
-                for i, eval_policy in enumerate(input_dict.keys()):
-                    if i == 0:
-                        ax = ax0 = fig.add_subplot(n_policies, 1, i + 1)
-                    elif sharey:
-                        ax = fig.add_subplot(n_policies, 1, i + 1, sharey=ax0)
-                    else:
-                        ax = fig.add_subplot(n_policies, 1, i + 1)
+    def visualize_variance_with_multiple_estimates(
+        self,
+        input_dict: MultipleInputDict,
+        compared_estimators: Optional[List[str]] = None,
+        plot_type: str = "ci",
+        alpha: float = 0.05,
+        ci: str = "bootstrap",
+        n_bootstrap_samples: int = 100,
+        random_state: Optional[int] = None,
+        hue: str = "estimator",
+        legend: bool = True,
+        sharey: bool = False,
+        fig_dir: Optional[Path] = None,
+        fig_name: str = "estimated_variance_multiple.png",
+    ) -> None:
+        """Visualize variance estimated by OPE estimators across multiple logged dataset.
 
-                    mean = np.zeros(n_estimators)
-                    lower = np.zeros(n_estimators)
-                    upper = np.zeros(n_estimators)
+        Note
+        -------
+        This function is applicable only when MultipleLoggedDataset is used and
+        MultipleInputDict is collected by the same evaluation policy across logged datasets.
 
-                    for j, estimator in enumerate(compared_estimators):
-                        mean[j] = policy_value_interval_dict[eval_policy][estimator][
-                            "mean"
-                        ]
-                        lower[j] = policy_value_interval_dict[eval_policy][estimator][
-                            f"{100 * (1. - alpha)}% CI (lower)"
-                        ]
-                        upper[j] = policy_value_interval_dict[eval_policy][estimator][
-                            f"{100 * (1. - alpha)}% CI (upper)"
-                        ]
+        Parameters
+        -------
+        input_dict: OPEInputDict or MultipleInputDict
+            Dictionary of the OPE inputs for each evaluation policy.
 
-                    ax.bar(
-                        np.arange(n_estimators),
-                        mean,
-                        yerr=[upper - mean, mean - lower],
-                        color=color,
-                        tick_label=compared_estimators,
-                    )
+            .. code-block:: python
 
-                    on_policy_interval = policy_value_interval_dict[eval_policy][
-                        "on_policy"
+                key: [evaluation_policy_name][
+                    evaluation_policy_action,
+                    evaluation_policy_action_dist,
+                    state_action_value_prediction,
+                    initial_state_value_prediction,
+                    state_action_marginal_importance_weight,
+                    state_marginal_importance_weight,
+                    on_policy_policy_value,
+                    gamma,
+                ]
+
+            .. seealso::
+
+                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+
+        compared_estimators: list of str, default=None
+            Name of compared estimators.
+            If `None` is given, all the estimators are compared.
+
+        plot_type: {"ci", "scatter", "violin"}, default="ci"
+            Type of plot.
+            If "ci" is given, the method visualizes the average policy value and the confidence intervals based on the multiple estimate.
+            If "scatter" is given, the method visualizes the individual estimation result.
+
+        alpha: float, default=0.05
+            Significance level. The value should be within (0, 1].
+
+        ci: {"bootstrap", "hoeffding", "bernstein", "ttest"}, default="bootstrap"
+            Estimation method for confidence intervals.
+
+        n_bootstrap_samples: int, default=10000 (> 0)
+            Number of resampling performed in the bootstrap procedure.
+
+        random_state: int, default=None (>= 0)
+            Random state.
+
+        hue: {"estimator", "policy"}, default="estimator"
+            Hue of the plot.
+
+        legend: bool, default=True
+            Whether to include a legend in the scatter plot.
+
+        sharey: bool, default=False
+            If `True`, the y-axis will be shared among different estimators or evaluation policies.
+
+        fig_dir: Path, default=None
+            Path to store the bar figure.
+            If `None` is given, the figure will not be saved.
+
+        fig_name: str, default="estimated_variance_multiple.png"
+            Name of the bar figure.
+
+        """
+        if not isinstance(input_dict, MultipleInputDict):
+            raise ValueError("input_dict must be an instance of MultipleInputDict.")
+        if (
+            not self.use_multiple_logged_dataset
+            or not input_dict.use_same_eval_policy_across_dataset
+        ):
+            raise RuntimeError(
+                "This function is applicable only when MultipleLoggedDataset is used "
+                "and MultipleInputDict is collected by the same evaluation policy across logged datasets, "
+                "but found False."
+            )
+        if len(self.multiple_logged_dataset) != len(input_dict):
+            raise ValueError(
+                "Expected `len(input_dict) == len(self.multiple_logged_dataset)`, but found False."
+            )
+
+        if compared_estimators is None:
+            compared_estimators = self.estimators_name
+        elif not set(compared_estimators).issubset(self.estimators_name):
+            raise ValueError(
+                "compared_estimators must be a subset of self.estimators_name, but found False."
+            )
+        if hue not in ["estimator", "policy"]:
+            raise ValueError(
+                f"hue must be either `estimator` or `policy`, but {hue} is given"
+            )
+        if fig_dir is not None and not isinstance(fig_dir, Path):
+            raise ValueError(f"fig_dir must be a Path, but {type(fig_dir)} is given")
+        if fig_name is not None and not isinstance(fig_name, str):
+            raise ValueError(f"fig_dir must be a string, but {type(fig_dir)} is given")
+
+        variance_dict_ = self.estimate_variance(
+            input_dict=input_dict,
+            compared_estimators=compared_estimators,
+        )
+
+        variance_dict = defaultdict(dict)
+        variance_interval_dict = defaultdict(dict)
+
+        input_dict = input_dict.get(0)
+        for eval_policy in input_dict:
+            for estimator in compared_estimators:
+
+                variance = np.zeros((len(self.multiple_logged_dataset),))
+                for i in range(len(self.multiple_logged_dataset)):
+                    variance[i] = variance_dict_[i][eval_policy][estimator]
+
+                variance_dict[eval_policy][estimator] = variance
+                variance_interval_dict[eval_policy][
+                    estimator
+                ] = self._estimate_confidence_interval[ci](
+                    variance,
+                    alpha=alpha,
+                    n_bootstrap_samples=n_bootstrap_samples,
+                    random_state=random_state,
+                )
+
+            on_policy = input_dict[eval_policy]["on_policy_policy_value"]
+
+            if on_policy is not None:
+                variance_dict[eval_policy]["on_policy"] = on_policy.var(ddof=1)
+            else:
+                variance_dict[eval_policy]["on_policy"] = None
+
+        self._visualize_off_policy_estimates_with_multiple_estimates(
+            estimation_dict=variance_dict,
+            estimation_interval_dict=variance_interval_dict,
+            compared_estimators=compared_estimators,
+            plot_type=plot_type,
+            alpha=alpha,
+            hue=hue,
+            legend=legend,
+            sharey=sharey,
+            fig_dir=fig_dir,
+            fig_name=fig_name,
+        )
+
+    def visualize_conditional_value_at_risk_with_multiple_estimates(
+        self,
+        input_dict: MultipleInputDict,
+        compared_estimators: Optional[List[str]] = None,
+        ope_alpha: float = 0.05,
+        plot_type: str = "ci",
+        alpha: float = 0.05,
+        ci: str = "bootstrap",
+        n_bootstrap_samples: int = 100,
+        random_state: Optional[int] = None,
+        hue: str = "estimator",
+        legend: bool = True,
+        sharey: bool = False,
+        fig_dir: Optional[Path] = None,
+        fig_name: str = "estimated_conditional_value_at_risk_multiple.png",
+    ) -> None:
+        """Visualize conditional value at risk estimated by OPE estimators across multiple logged dataset.
+
+        Note
+        -------
+        This function is applicable only when MultipleLoggedDataset is used and
+        MultipleInputDict is collected by the same evaluation policy across logged datasets.
+
+        Parameters
+        -------
+        input_dict: OPEInputDict or MultipleInputDict
+            Dictionary of the OPE inputs for each evaluation policy.
+
+            .. code-block:: python
+
+                key: [evaluation_policy_name][
+                    evaluation_policy_action,
+                    evaluation_policy_action_dist,
+                    state_action_value_prediction,
+                    initial_state_value_prediction,
+                    state_action_marginal_importance_weight,
+                    state_marginal_importance_weight,
+                    on_policy_policy_value,
+                    gamma,
+                ]
+
+            .. seealso::
+
+                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+
+        compared_estimators: list of str, default=None
+            Name of compared estimators.
+            If `None` is given, all the estimators are compared.
+
+        ope_alpha: float = 0.05.
+            Proportion of the sided region in CVaR estimate. The value should be within `[0, 1)`.
+
+        plot_type: {"ci", "scatter", "violin"}, default="ci"
+            Type of plot.
+            If "ci" is given, the method visualizes the average policy value and the confidence intervals based on the multiple estimate.
+            If "scatter" is given, the method visualizes the individual estimation result.
+
+        alpha: float, default=0.05
+            Significance level. The value should be within (0, 1].
+
+        ci: {"bootstrap", "hoeffding", "bernstein", "ttest"}, default="bootstrap"
+            Estimation method for confidence intervals.
+
+        n_bootstrap_samples: int, default=10000 (> 0)
+            Number of resampling performed in the bootstrap procedure.
+
+        random_state: int, default=None (>= 0)
+            Random state.
+
+        hue: {"estimator", "policy"}, default="estimator"
+            Hue of the plot.
+
+        legend: bool, default=True
+            Whether to include a legend in the scatter plot.
+
+        sharey: bool, default=False
+            If `True`, the y-axis will be shared among different estimators or evaluation policies.
+
+        fig_dir: Path, default=None
+            Path to store the bar figure.
+            If `None` is given, the figure will not be saved.
+
+        fig_name: str, default="estimated_conditional_value_at_risk_multiple.png"
+            Name of the bar figure.
+
+        """
+        if not isinstance(input_dict, MultipleInputDict):
+            raise ValueError("input_dict must be an instance of MultipleInputDict.")
+        if (
+            not self.use_multiple_logged_dataset
+            or not input_dict.use_same_eval_policy_across_dataset
+        ):
+            raise RuntimeError(
+                "This function is applicable only when MultipleLoggedDataset is used "
+                "and MultipleInputDict is collected by the same evaluation policy across logged datasets, "
+                "but found False."
+            )
+        if len(self.multiple_logged_dataset) != len(input_dict):
+            raise ValueError(
+                "Expected `len(input_dict) == len(self.multiple_logged_dataset)`, but found False."
+            )
+
+        if compared_estimators is None:
+            compared_estimators = self.estimators_name
+        elif not set(compared_estimators).issubset(self.estimators_name):
+            raise ValueError(
+                "compared_estimators must be a subset of self.estimators_name, but found False."
+            )
+        if hue not in ["estimator", "policy"]:
+            raise ValueError(
+                f"hue must be either `estimator` or `policy`, but {hue} is given"
+            )
+        if fig_dir is not None and not isinstance(fig_dir, Path):
+            raise ValueError(f"fig_dir must be a Path, but {type(fig_dir)} is given")
+        if fig_name is not None and not isinstance(fig_name, str):
+            raise ValueError(f"fig_dir must be a string, but {type(fig_dir)} is given")
+
+        cvar_dict_ = self.estimate_conditional_value_at_risk(
+            input_dict=input_dict,
+            compared_estimators=compared_estimators,
+            alphas=ope_alpha,
+        )
+
+        cvar_dict = defaultdict(dict)
+        cvar_interval_dict = defaultdict(dict)
+
+        input_dict = input_dict.get(0)
+        for eval_policy in input_dict:
+            for estimator in compared_estimators:
+
+                cvar = np.zeros((len(self.multiple_logged_dataset),))
+                for i in range(len(self.multiple_logged_dataset)):
+                    cvar[i] = cvar_dict_[i][eval_policy][estimator]
+
+                cvar_dict[eval_policy][estimator] = cvar
+                cvar_interval_dict[eval_policy][
+                    estimator
+                ] = self._estimate_confidence_interval[ci](
+                    cvar,
+                    alpha=alpha,
+                    n_bootstrap_samples=n_bootstrap_samples,
+                    random_state=random_state,
+                )
+
+            on_policy = input_dict[eval_policy]["on_policy_policy_value"]
+
+            if on_policy is not None:
+                cvar_idx = int(ope_alpha * len(on_policy))
+                cvar_dict[eval_policy]["on_policy"] = np.partition(on_policy, cvar_idx)[
+                    :cvar_idx
+                ].mean()
+            else:
+                cvar_dict[eval_policy]["on_policy"] = None
+
+        self._visualize_off_policy_estimates_with_multiple_estimates(
+            estimation_dict=cvar_dict,
+            estimation_interval_dict=cvar_interval_dict,
+            compared_estimators=compared_estimators,
+            plot_type=plot_type,
+            alpha=alpha,
+            hue=hue,
+            legend=legend,
+            sharey=sharey,
+            fig_dir=fig_dir,
+            fig_name=fig_name,
+        )
+
+    def visualize_lower_quartile_with_multiple_estimates(
+        self,
+        input_dict: MultipleInputDict,
+        compared_estimators: Optional[List[str]] = None,
+        ope_alpha: float = 0.05,
+        plot_type: str = "ci",
+        alpha: float = 0.05,
+        ci: str = "bootstrap",
+        n_bootstrap_samples: int = 100,
+        random_state: Optional[int] = None,
+        hue: str = "estimator",
+        legend: bool = True,
+        sharey: bool = False,
+        fig_dir: Optional[Path] = None,
+        fig_name: str = "estimated_conditional_value_at_risk_multiple.png",
+    ) -> None:
+        """Visualize lower quartile estimated by OPE estimators across multiple logged dataset.
+
+        Note
+        -------
+        This function is applicable only when MultipleLoggedDataset is used and
+        MultipleInputDict is collected by the same evaluation policy across logged datasets.
+
+        Parameters
+        -------
+        input_dict: OPEInputDict or MultipleInputDict
+            Dictionary of the OPE inputs for each evaluation policy.
+
+            .. code-block:: python
+
+                key: [evaluation_policy_name][
+                    evaluation_policy_action,
+                    evaluation_policy_action_dist,
+                    state_action_value_prediction,
+                    initial_state_value_prediction,
+                    state_action_marginal_importance_weight,
+                    state_marginal_importance_weight,
+                    on_policy_policy_value,
+                    gamma,
+                ]
+
+            .. seealso::
+
+                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+
+        compared_estimators: list of str, default=None
+            Name of compared estimators.
+            If `None` is given, all the estimators are compared.
+
+        ope_alpha: float = 0.05.
+            Proportion of the sided region in CVaR estimate. The value should be within `[0, 1)`.
+
+        plot_type: {"ci", "scatter", "violin"}, default="ci"
+            Type of plot.
+            If "ci" is given, the method visualizes the average policy value and the confidence intervals based on the multiple estimate.
+            If "scatter" is given, the method visualizes the individual estimation result.
+
+        alpha: float, default=0.05
+            Significance level. The value should be within (0, 0.5].
+
+        ci: {"bootstrap", "hoeffding", "bernstein", "ttest"}, default="bootstrap"
+            Estimation method for confidence intervals.
+
+        n_bootstrap_samples: int, default=10000 (> 0)
+            Number of resampling performed in the bootstrap procedure.
+
+        random_state: int, default=None (>= 0)
+            Random state.
+
+        hue: {"estimator", "policy"}, default="estimator"
+            Hue of the plot.
+
+        legend: bool, default=True
+            Whether to include a legend in the scatter plot.
+
+        sharey: bool, default=False
+            If `True`, the y-axis will be shared among different estimators or evaluation policies.
+
+        fig_dir: Path, default=None
+            Path to store the bar figure.
+            If `None` is given, the figure will not be saved.
+
+        fig_name: str, default="estimated_conditional_value_at_risk_multiple.png"
+            Name of the bar figure.
+
+        """
+        if not isinstance(input_dict, MultipleInputDict):
+            raise ValueError("input_dict must be an instance of MultipleInputDict.")
+        if (
+            not self.use_multiple_logged_dataset
+            or not input_dict.use_same_eval_policy_across_dataset
+        ):
+            raise RuntimeError(
+                "This function is applicable only when MultipleLoggedDataset is used "
+                "and MultipleInputDict is collected by the same evaluation policy across logged datasets, "
+                "but found False."
+            )
+        if len(self.multiple_logged_dataset) != len(input_dict):
+            raise ValueError(
+                "Expected `len(input_dict) == len(self.multiple_logged_dataset)`, but found False."
+            )
+
+        if compared_estimators is None:
+            compared_estimators = self.estimators_name
+        elif not set(compared_estimators).issubset(self.estimators_name):
+            raise ValueError(
+                "compared_estimators must be a subset of self.estimators_name, but found False."
+            )
+        if hue not in ["estimator", "policy"]:
+            raise ValueError(
+                f"hue must be either `estimator` or `policy`, but {hue} is given"
+            )
+        if fig_dir is not None and not isinstance(fig_dir, Path):
+            raise ValueError(f"fig_dir must be a Path, but {type(fig_dir)} is given")
+        if fig_name is not None and not isinstance(fig_name, str):
+            raise ValueError(f"fig_dir must be a string, but {type(fig_dir)} is given")
+
+        lower_quartile_dict_ = self.estimate_interquartile_range(
+            input_dict=input_dict,
+            compared_estimators=compared_estimators,
+            alpha=ope_alpha,
+        )
+
+        lower_quartile_dict = defaultdict(dict)
+        lower_quartile_interval_dict = defaultdict(dict)
+
+        input_dict = input_dict.get(0)
+        for eval_policy in input_dict:
+            for estimator in compared_estimators:
+
+                lower_quartile = np.zeros((len(self.multiple_logged_dataset),))
+                for i in range(len(self.multiple_logged_dataset)):
+                    lower_quartile[i] = lower_quartile_dict_[i][eval_policy][estimator][
+                        f"{100 * (1. - ope_alpha)}% quartile (lower)"
                     ]
-                    if on_policy_interval is not None:
-                        ax.axhline(on_policy_interval["mean"])
-                        ax.axhspan(
-                            ymin=on_policy_interval[
-                                f"{100 * (1. - alpha)}% CI (lower)"
-                            ],
-                            ymax=on_policy_interval[
-                                f"{100 * (1. - alpha)}% CI (upper)"
-                            ],
-                            alpha=0.3,
-                        )
 
-                    ax.set_title(eval_policy, fontsize=16)
-                    ax.set_ylabel(
-                        f"Estimated Policy Value (± {np.int(100*(1 - alpha))}% CI)",
-                        fontsize=12,
-                    )
-                    plt.yticks(fontsize=12)
-                    plt.xticks(fontsize=12)
-
-            else:
-                visualize_on_policy = True
-                for eval_policy in input_dict.keys():
-                    if input_dict[eval_policy]["on_policy_policy_value"] is None:
-                        visualize_on_policy = False
-
-                n_policies = len(input_dict)
-                n_estimators = (
-                    len(compared_estimators) + 1
-                    if visualize_on_policy
-                    else len(compared_estimators)
+                lower_quartile_dict[eval_policy][estimator] = lower_quartile
+                lower_quartile_interval_dict[eval_policy][
+                    estimator
+                ] = self._estimate_confidence_interval[ci](
+                    lower_quartile,
+                    alpha=alpha,
+                    n_bootstrap_samples=n_bootstrap_samples,
+                    random_state=random_state,
                 )
 
-                fig = plt.figure(figsize=(2 * n_policies, 4 * n_estimators))
+            on_policy = input_dict[eval_policy]["on_policy_policy_value"]
 
-                for i, estimator in enumerate(compared_estimators):
-                    if i == 0:
-                        ax = ax0 = fig.add_subplot(n_estimators, 1, i + 1)
-                    elif sharey:
-                        ax = fig.add_subplot(n_estimators, 1, i + 1, sharey=ax0)
-                    else:
-                        ax = fig.add_subplot(n_estimators, 1, i + 1)
-
-                    mean = np.zeros(n_policies)
-                    lower = np.zeros(n_policies)
-                    upper = np.zeros(n_policies)
-
-                    for j, eval_policy in enumerate(input_dict.keys()):
-                        mean[j] = policy_value_interval_dict[eval_policy][estimator][
-                            "mean"
-                        ]
-                        lower[j] = policy_value_interval_dict[eval_policy][estimator][
-                            f"{100 * (1. - alpha)}% CI (lower)"
-                        ]
-                        upper[j] = policy_value_interval_dict[eval_policy][estimator][
-                            f"{100 * (1. - alpha)}% CI (upper)"
-                        ]
-
-                    ax.bar(
-                        np.arange(n_policies),
-                        mean,
-                        yerr=[upper - mean, mean - lower],
-                        color=color,
-                        tick_label=list(input_dict.keys()),
-                    )
-
-                    ax.set_title(estimator, fontsize=16)
-                    ax.set_ylabel(
-                        f"Estimated Policy Value (± {np.int(100*(1 - alpha))}% CI)",
-                        fontsize=12,
-                    )
-                    plt.yticks(fontsize=12)
-                    plt.xticks(fontsize=12)
-
-                if visualize_on_policy:
-                    if sharey:
-                        ax = fig.add_subplot(n_estimators, 1, i + 2, sharey=ax0)
-                    else:
-                        ax = fig.add_subplot(n_estimators, 1, i + 2)
-
-                    mean = np.zeros(n_policies)
-                    lower = np.zeros(n_policies)
-                    upper = np.zeros(n_policies)
-
-                    for j, eval_policy in enumerate(input_dict.keys()):
-                        mean[j] = policy_value_interval_dict[eval_policy]["on_policy"][
-                            "mean"
-                        ]
-                        lower[j] = policy_value_interval_dict[eval_policy]["on_policy"][
-                            f"{100 * (1. - alpha)}% CI (lower)"
-                        ]
-                        upper[j] = policy_value_interval_dict[eval_policy]["on_policy"][
-                            f"{100 * (1. - alpha)}% CI (upper)"
-                        ]
-
-                    ax.bar(
-                        np.arange(n_policies),
-                        mean,
-                        yerr=[upper - mean, mean - lower],
-                        color=color,
-                        tick_label=list(input_dict.keys()),
-                    )
-
-                    ax.set_title("on_policy", fontsize=16)
-                    ax.set_ylabel(
-                        f"Estimated Policy Value (± {np.int(100*(1 - alpha))}% CI)",
-                        fontsize=12,
-                    )
-                    plt.yticks(fontsize=12)
-                    plt.xticks(fontsize=12)
-
-        else:
-            if hue == "estimator":
-                fig = plt.figure(figsize=(2 * n_estimators, 4 * n_policies))
-
-                for i, eval_policy in enumerate(input_dict.keys()):
-                    if i == 0:
-                        ax = ax0 = fig.add_subplot(n_policies, 1, i + 1)
-                    elif sharey:
-                        ax = fig.add_subplot(n_policies, 1, i + 1, sharey=ax0)
-                    else:
-                        ax = fig.add_subplot(n_policies, 1, i + 1)
-
-                    for j, estimator in enumerate(compared_estimators):
-                        policy_value[j] = policy_value_dict[eval_policy][estimator]
-
-                        ax.scatter(
-                            np.full((n_datasets,), j),
-                            policy_value_dict[eval_policy][estimator],
-                            color=color[j % n_colors],
-                        )
-
-                    on_policy = input_dict[eval_policy]["on_policy_policy_value"]
-                    if on_policy is not None:
-                        ax.scatter(
-                            np.arange(n_estimators),
-                            np.full((n_estimators), on_policy),
-                            color="black",
-                            marker="star",
-                        )
-
-                    ax.set_title(eval_policy, fontsize=16)
-                    ax.set_ylabel(
-                        f"Estimated Policy Value",
-                        fontsize=12,
-                    )
-                    ax.set_xticks(np.arange(n_estimators), compared_estimators)
-                    plt.yticks(fontsize=12)
-                    plt.xticks(fontsize=12)
-
+            if on_policy is not None:
+                lower_idx = int(ope_alpha * len(on_policy))
+                lower_quartile_dict[eval_policy]["on_policy"] = np.partition(
+                    on_policy, lower_idx
+                )[lower_idx]
             else:
-                visualize_on_policy = True
-                for eval_policy in input_dict.keys():
-                    if input_dict[eval_policy]["on_policy_policy_value"] is None:
-                        visualize_on_policy = False
+                lower_quartile_dict[eval_policy]["on_policy"] = None
 
-                n_policies = len(input_dict)
-                n_estimators = (
-                    len(compared_estimators) + 1
-                    if visualize_on_policy
-                    else len(compared_estimators)
-                )
-
-                fig = plt.figure(figsize=(2 * n_policies, 4 * n_estimators))
-
-                for i, estimator in enumerate(compared_estimators):
-                    if i == 0:
-                        ax = ax0 = fig.add_subplot(n_estimators, 1, i + 1)
-                    elif sharey:
-                        ax = fig.add_subplot(n_estimators, 1, i + 1, sharey=ax0)
-                    else:
-                        ax = fig.add_subplot(n_estimators, 1, i + 1)
-
-                    for j, eval_policy in enumerate(input_dict.keys()):
-                        ax.scatter(
-                            np.full((n_datasets,), j),
-                            policy_value_dict[eval_policy][estimator],
-                            color=color[j % n_colors],
-                        )
-
-                    ax.set_title(estimator, fontsize=16)
-                    ax.set_ylabel(
-                        f"Estimated Policy Value",
-                        fontsize=12,
-                    )
-                    ax.set_xticks(np.arange(n_policies), list(input_dict.keys()))
-                    plt.yticks(fontsize=12)
-                    plt.xticks(fontsize=12)
-
-                if visualize_on_policy:
-                    if sharey:
-                        ax = fig.add_subplot(n_estimators, 1, i + 2, sharey=ax0)
-                    else:
-                        ax = fig.add_subplot(n_estimators, 1, i + 2)
-
-                    for j, eval_policy in enumerate(input_dict.keys()):
-                        ax.scatter(
-                            np.array([j]),
-                            input_dict[eval_policy]["on_policy_policy_value"],
-                            color="black",
-                            marker="star",
-                        )
-
-                    ax.set_title("on_policy", fontsize=16)
-                    ax.set_ylabel(
-                        f"Estimated Policy Value",
-                        fontsize=12,
-                    )
-                    ax.set_xticks(np.arange(n_policies), list(input_dict.keys()))
-                    plt.yticks(fontsize=12)
-                    plt.xticks(fontsize=12)
-
-        fig.subplots_adjust(top=1.0)
-        plt.show()
-
-        if fig_dir:
-            fig.savefig(str(fig_dir / fig_name), dpi=300, bbox_inches="tight")
+        self._visualize_off_policy_estimates_with_multiple_estimates(
+            estimation_dict=lower_quartile_dict,
+            estimation_interval_dict=lower_quartile_interval_dict,
+            compared_estimators=compared_estimators,
+            plot_type=plot_type,
+            alpha=alpha,
+            hue=hue,
+            legend=legend,
+            sharey=sharey,
+            fig_dir=fig_dir,
+            fig_name=fig_name,
+        )
 
     @property
     def estimators_name(self):

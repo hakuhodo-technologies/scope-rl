@@ -249,7 +249,6 @@ class CreateOPEInput:
         if self.model_args["hidden_dim"] is None:
             self.model_args["hidden_dim"] = 100
 
-        self.fqe = {}
         if self.model_args["fqe"] is None:
             self.model_args["fqe"] = {
                 "encoder_factory": VectorEncoderFactory(
@@ -260,31 +259,23 @@ class CreateOPEInput:
                 "use_gpu": torch.cuda.is_available(),
             }
 
-        self.state_action_dual_function = {}
         if self.model_args["state_action_dual"] is None:
             self.model_args["state_action_dual"] = {}
 
-        self.state_action_value_function = {}
         if self.model_args["state_action_value"] is None:
             self.model_args["state_action_value"] = {}
 
-        self.state_action_weight_function = {}
         if self.model_args["state_action_weight"] is None:
             self.model_args["state_action_weight"] = {}
 
-        self.state_dual_function = {}
         if self.model_args["state_dual"] is None:
             self.model_args["state_dual"] = {}
 
-        self.state_value_function = {}
         if self.model_args["state_value"] is None:
             self.model_args["state_value"] = {}
 
-        self.state_weight_function = {}
         if self.model_args["state_weight"] is None:
             self.model_args["state_weight"] = {}
-
-        self.initial_state_dict = {}
 
         check_scalar(
             self.gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0
@@ -302,6 +293,15 @@ class CreateOPEInput:
                 )
 
     def _register_logged_dataset(self, logged_dataset: LoggedDataset):
+        self.fqe = {}
+        self.state_action_dual_function = {}
+        self.state_action_value_function = {}
+        self.state_action_weight_function = {}
+        self.state_dual_function = {}
+        self.state_value_function = {}
+        self.state_weight_function = {}
+        self.initial_state_dict = {}
+
         self.logged_dataset = logged_dataset
         self.action_type = self.logged_dataset["action_type"]
         self.n_actions = self.logged_dataset["n_actions"]

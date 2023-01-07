@@ -2221,20 +2221,42 @@ class OffPolicySelection:
                     "Expected `len(input_dict) == len(self.ope.multiple_logged_dataset)`, but found False."
                 )
 
-            ops_result = []
-            for i in range(len(self.ope.multiple_logged_dataset)):
-                input_dict_ = input_dict.get(i)
-                ops_result_ = self._select_by_policy_value(
-                    input_dict_,
-                    compared_estimators=compared_estimators,
-                    dataset_id=i,
-                    return_true_values=return_true_values,
-                    return_metrics=return_metrics,
-                    return_by_dataframe=return_by_dataframe,
-                    top_k_in_eval_metrics=top_k_in_eval_metrics,
-                    safety_criteria=safety_criteria,
-                )
-                ops_result.append(ops_result_)
+            if return_metrics and return_by_dataframe:
+                ranking_df, metric_df = [], []
+
+                for i in range(len(self.ope.multiple_logged_dataset)):
+                    input_dict_ = input_dict.get(i)
+                    ops_result_ = self._select_by_policy_value(
+                        input_dict_,
+                        compared_estimators=compared_estimators,
+                        dataset_id=i,
+                        return_true_values=return_true_values,
+                        return_metrics=return_metrics,
+                        return_by_dataframe=return_by_dataframe,
+                        top_k_in_eval_metrics=top_k_in_eval_metrics,
+                        safety_criteria=safety_criteria,
+                    )
+                    ranking_df.append(ops_result_[0])
+                    metric_df.append(ops_result_[1])
+
+                ops_result = (ranking_df, metric_df)
+
+            else:
+                ops_result = []
+
+                for i in range(len(self.ope.multiple_logged_dataset)):
+                    input_dict_ = input_dict.get(i)
+                    ops_result_ = self._select_by_policy_value(
+                        input_dict_,
+                        compared_estimators=compared_estimators,
+                        dataset_id=i,
+                        return_true_values=return_true_values,
+                        return_metrics=return_metrics,
+                        return_by_dataframe=return_by_dataframe,
+                        top_k_in_eval_metrics=top_k_in_eval_metrics,
+                        safety_criteria=safety_criteria,
+                    )
+                    ops_result.append(ops_result_)
 
         else:
             if self.ope.use_multiple_logged_dataset:
@@ -2423,24 +2445,50 @@ class OffPolicySelection:
                     "Expected `len(input_dict) == len(self.cumulative_distribution_ope.multiple_logged_dataset)`, but found False."
                 )
 
-            ops_result = []
-            for i in range(
-                len(self.cumulative_distribution_ope.multiple_logged_dataset)
-            ):
-                input_dict_ = input_dict.get(i)
-                ops_result_ = (
-                    self._select_by_policy_value_via_cumulative_distribution_ope(
-                        input_dict_,
-                        compared_estimators=compared_estimators,
-                        dataset_id=i,
-                        return_true_values=return_true_values,
-                        return_metrics=return_metrics,
-                        return_by_dataframe=return_by_dataframe,
-                        top_k_in_eval_metrics=top_k_in_eval_metrics,
-                        safety_criteria=safety_criteria,
+            if return_metrics and return_by_dataframe:
+                ranking_df, metric_df = [], []
+
+                for i in range(
+                    len(self.cumulative_distribution_ope.multiple_logged_dataset)
+                ):
+                    input_dict_ = input_dict.get(i)
+                    ops_result_ = (
+                        self._select_by_policy_value_via_cumulative_distribution_ope(
+                            input_dict_,
+                            compared_estimators=compared_estimators,
+                            dataset_id=i,
+                            return_true_values=return_true_values,
+                            return_metrics=return_metrics,
+                            return_by_dataframe=return_by_dataframe,
+                            top_k_in_eval_metrics=top_k_in_eval_metrics,
+                            safety_criteria=safety_criteria,
+                        )
                     )
-                )
-                ops_result.append(ops_result_)
+                    ranking_df.append(ops_result_[0])
+                    metric_df.append(ops_result_[1])
+
+                ops_result = (ranking_df, metric_df)
+
+            else:
+                ops_result = []
+
+                for i in range(
+                    len(self.cumulative_distribution_ope.multiple_logged_dataset)
+                ):
+                    input_dict_ = input_dict.get(i)
+                    ops_result_ = (
+                        self._select_by_policy_value_via_cumulative_distribution_ope(
+                            input_dict_,
+                            compared_estimators=compared_estimators,
+                            dataset_id=i,
+                            return_true_values=return_true_values,
+                            return_metrics=return_metrics,
+                            return_by_dataframe=return_by_dataframe,
+                            top_k_in_eval_metrics=top_k_in_eval_metrics,
+                            safety_criteria=safety_criteria,
+                        )
+                    )
+                    ops_result.append(ops_result_)
 
         else:
             if self.cumulative_distribution_ope.use_multiple_logged_dataset:
@@ -2639,24 +2687,50 @@ class OffPolicySelection:
                     "Expected `len(input_dict) == len(self.ope.multiple_logged_dataset)`, but found False."
                 )
 
-            ops_result = []
-            for i in range(len(self.ope.multiple_logged_dataset)):
-                input_dict_ = input_dict.get(i)
-                ops_result_ = self._select_by_policy_value_lower_bound(
-                    input_dict_,
-                    compared_estimators=compared_estimators,
-                    dataset_id=i,
-                    return_true_values=return_true_values,
-                    return_metrics=return_metrics,
-                    return_by_dataframe=return_by_dataframe,
-                    top_k_in_eval_metrics=top_k_in_eval_metrics,
-                    safety_criteria=safety_criteria,
-                    cis=cis,
-                    alpha=alpha,
-                    n_bootstrap_samples=n_bootstrap_samples,
-                    random_state=random_state,
-                )
-                ops_result.append(ops_result_)
+            if return_metrics and return_by_dataframe:
+                ranking_df, metric_df = [], []
+
+                for i in range(len(self.ope.multiple_logged_dataset)):
+                    input_dict_ = input_dict.get(i)
+                    ops_result_ = self._select_by_policy_value_lower_bound(
+                        input_dict_,
+                        compared_estimators=compared_estimators,
+                        dataset_id=i,
+                        return_true_values=return_true_values,
+                        return_metrics=return_metrics,
+                        return_by_dataframe=return_by_dataframe,
+                        top_k_in_eval_metrics=top_k_in_eval_metrics,
+                        safety_criteria=safety_criteria,
+                        cis=cis,
+                        alpha=alpha,
+                        n_bootstrap_samples=n_bootstrap_samples,
+                        random_state=random_state,
+                    )
+                    ranking_df.append(ops_result_[0])
+                    metric_df.append(ops_result_[1])
+
+                ops_result = (ranking_df, metric_df)
+
+            else:
+                ops_result = []
+
+                for i in range(len(self.ope.multiple_logged_dataset)):
+                    input_dict_ = input_dict.get(i)
+                    ops_result_ = self._select_by_policy_value_lower_bound(
+                        input_dict_,
+                        compared_estimators=compared_estimators,
+                        dataset_id=i,
+                        return_true_values=return_true_values,
+                        return_metrics=return_metrics,
+                        return_by_dataframe=return_by_dataframe,
+                        top_k_in_eval_metrics=top_k_in_eval_metrics,
+                        safety_criteria=safety_criteria,
+                        cis=cis,
+                        alpha=alpha,
+                        n_bootstrap_samples=n_bootstrap_samples,
+                        random_state=random_state,
+                    )
+                    ops_result.append(ops_result_)
 
         else:
             if self.ope.use_multiple_logged_dataset:
@@ -2836,22 +2910,46 @@ class OffPolicySelection:
                     "Expected `len(input_dict) == len(self.cumulative_distribution_ope.multiple_logged_dataset)`, but found False."
                 )
 
-            ops_result = []
-            for i in range(
-                len(self.cumulative_distribution_ope.multiple_logged_dataset)
-            ):
-                input_dict_ = input_dict.get(i)
-                ops_result_ = self._select_by_lower_quartile(
-                    input_dict_,
-                    compared_estimators=compared_estimators,
-                    dataset_id=i,
-                    alpha=alpha,
-                    return_true_values=return_true_values,
-                    return_metrics=return_metrics,
-                    return_by_dataframe=return_by_dataframe,
-                    safety_threshold=safety_threshold,
-                )
-                ops_result.append(ops_result_)
+            if return_metrics and return_by_dataframe:
+                ranking_df, metric_df = [], []
+
+                for i in range(
+                    len(self.cumulative_distribution_ope.multiple_logged_dataset)
+                ):
+                    input_dict_ = input_dict.get(i)
+                    ops_result_ = self._select_by_lower_quartile(
+                        input_dict_,
+                        compared_estimators=compared_estimators,
+                        dataset_id=i,
+                        alpha=alpha,
+                        return_true_values=return_true_values,
+                        return_metrics=return_metrics,
+                        return_by_dataframe=return_by_dataframe,
+                        safety_threshold=safety_threshold,
+                    )
+                    ranking_df.append(ops_result_[0])
+                    metric_df.append(ops_result_[1])
+
+                ops_result = (ranking_df, metric_df)
+
+            else:
+                ops_result = []
+
+                for i in range(
+                    len(self.cumulative_distribution_ope.multiple_logged_dataset)
+                ):
+                    input_dict_ = input_dict.get(i)
+                    ops_result_ = self._select_by_lower_quartile(
+                        input_dict_,
+                        compared_estimators=compared_estimators,
+                        dataset_id=i,
+                        alpha=alpha,
+                        return_true_values=return_true_values,
+                        return_metrics=return_metrics,
+                        return_by_dataframe=return_by_dataframe,
+                        safety_threshold=safety_threshold,
+                    )
+                    ops_result.append(ops_result_)
 
         else:
             if self.cumulative_distribution_ope.use_multiple_logged_dataset:
@@ -3027,22 +3125,45 @@ class OffPolicySelection:
                     "Expected `len(input_dict) == len(self.cumulative_distribution_ope.multiple_logged_dataset)`, but found False."
                 )
 
-            ops_result = []
-            for i in range(
-                len(self.cumulative_distribution_ope.multiple_logged_dataset)
-            ):
-                input_dict_ = input_dict.get(i)
-                ops_result_ = self._select_by_conditional_value_at_risk(
-                    input_dict_,
-                    compared_estimators=compared_estimators,
-                    dataset_id=i,
-                    alpha=alpha,
-                    return_true_values=return_true_values,
-                    return_metrics=return_metrics,
-                    return_by_dataframe=return_by_dataframe,
-                    safety_threshold=safety_threshold,
-                )
-                ops_result.append(ops_result_)
+            if return_metrics and return_by_dataframe:
+                ranking_df, metric_df = [], []
+
+                for i in range(
+                    len(self.cumulative_distribution_ope.multiple_logged_dataset)
+                ):
+                    input_dict_ = input_dict.get(i)
+                    ops_result_ = self._select_by_conditional_value_at_risk(
+                        input_dict_,
+                        compared_estimators=compared_estimators,
+                        dataset_id=i,
+                        alpha=alpha,
+                        return_true_values=return_true_values,
+                        return_metrics=return_metrics,
+                        return_by_dataframe=return_by_dataframe,
+                        safety_threshold=safety_threshold,
+                    )
+                    ranking_df.append(ops_result_[0])
+                    metric_df.append(ops_result_[1])
+
+                ops_result = (ranking_df, metric_df)
+
+            else:
+                ops_result = []
+                for i in range(
+                    len(self.cumulative_distribution_ope.multiple_logged_dataset)
+                ):
+                    input_dict_ = input_dict.get(i)
+                    ops_result_ = self._select_by_conditional_value_at_risk(
+                        input_dict_,
+                        compared_estimators=compared_estimators,
+                        dataset_id=i,
+                        alpha=alpha,
+                        return_true_values=return_true_values,
+                        return_metrics=return_metrics,
+                        return_by_dataframe=return_by_dataframe,
+                        safety_threshold=safety_threshold,
+                    )
+                    ops_result.append(ops_result_)
 
         else:
             if self.cumulative_distribution_ope.use_multiple_logged_dataset:
@@ -3142,7 +3263,7 @@ class OffPolicySelection:
             Name of the bar figure.
 
         """
-        return self.ope.visualize_off_policy_estimates(
+        self.ope.visualize_off_policy_estimates(
             input_dict=input_dict,
             compared_estimators=compared_estimators,
             dataset_id=dataset_id,
@@ -3217,17 +3338,15 @@ class OffPolicySelection:
             Name of the bar figure.
 
         """
-        return (
-            self.cumulative_distribution_ope.visualize_cumulative_distribution_function(
-                input_dict=input_dict,
-                compared_estimators=compared_estimators,
-                dataset_id=dataset_id,
-                hue=hue,
-                legend=legend,
-                n_cols=n_cols,
-                fig_dir=fig_dir,
-                fig_name=fig_name,
-            )
+        self.cumulative_distribution_ope.visualize_cumulative_distribution_function(
+            input_dict=input_dict,
+            compared_estimators=compared_estimators,
+            dataset_id=dataset_id,
+            hue=hue,
+            legend=legend,
+            n_cols=n_cols,
+            fig_dir=fig_dir,
+            fig_name=fig_name,
         )
 
     def visualize_policy_value_of_cumulative_distribution_ope_for_selection(
@@ -3295,7 +3414,7 @@ class OffPolicySelection:
             Name of the bar figure.
 
         """
-        return self.cumulative_distribution_ope.visualize_policy_value(
+        self.cumulative_distribution_ope.visualize_policy_value(
             input_dict=input_dict,
             compared_estimators=compared_estimators,
             dataset_id=dataset_id,
@@ -3376,7 +3495,7 @@ class OffPolicySelection:
             Name of the bar figure.
 
         """
-        return self.cumulative_distribution_ope.visualize_conditional_value_at_risk(
+        self.cumulative_distribution_ope.visualize_conditional_value_at_risk(
             input_dict=input_dict,
             compared_estimators=compared_estimators,
             dataset_id=dataset_id,
@@ -3449,12 +3568,595 @@ class OffPolicySelection:
             Name of the bar figure.
 
         """
-        return self.cumulative_distribution_ope.visualize_interquartile_range(
+        self.cumulative_distribution_ope.visualize_interquartile_range(
             input_dict=input_dict,
             compared_estimators=compared_estimators,
             dataset_id=dataset_id,
             alpha=alpha,
             hue=hue,
+            sharey=sharey,
+            fig_dir=fig_dir,
+            fig_name=fig_name,
+        )
+
+    def visualize_policy_value_with_multiple_estimates_standard_ope(
+        self,
+        input_dict: MultipleInputDict,
+        compared_estimators: Optional[List[str]] = None,
+        plot_type: str = "ci",
+        alpha: float = 0.05,
+        ci: str = "bootstrap",
+        n_bootstrap_samples: int = 100,
+        random_state: Optional[int] = None,
+        hue: str = "estimator",
+        legend: bool = True,
+        sharey: bool = False,
+        fig_dir: Optional[Path] = None,
+        fig_name: str = "estimated_policy_value_multiple_standard_ope.png",
+    ) -> None:
+        """Visualize policy value estimated by OPE estimators across multiple logged dataset.
+
+        Note
+        -------
+        This function is applicable only when MultipleLoggedDataset is used and
+        MultipleInputDict is collected by the same evaluation policy across logged datasets.
+
+        Parameters
+        -------
+        input_dict: OPEInputDict or MultipleInputDict
+            Dictionary of the OPE inputs for each evaluation policy.
+
+            .. code-block:: python
+
+                key: [evaluation_policy_name][
+                    evaluation_policy_action,
+                    evaluation_policy_action_dist,
+                    state_action_value_prediction,
+                    initial_state_value_prediction,
+                    state_action_marginal_importance_weight,
+                    state_marginal_importance_weight,
+                    on_policy_policy_value,
+                    gamma,
+                ]
+
+            .. seealso::
+
+                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+
+        compared_estimators: list of str, default=None
+            Name of compared estimators.
+            If `None` is given, all the estimators are compared.
+
+        plot_type: {"ci", "scatter", "violin"}, default="ci"
+            Type of plot.
+            If "ci" is given, the method visualizes the average policy value and the confidence intervals based on the multiple estimate.
+            If "scatter" is given, the method visualizes the individual estimation result.
+
+        alpha: float, default=0.05
+            Significance level. The value should be within (0, 1].
+
+        ci: {"bootstrap", "hoeffding", "bernstein", "ttest"}, default="bootstrap"
+            Estimation method for confidence intervals.
+
+        n_bootstrap_samples: int, default=10000 (> 0)
+            Number of resampling performed in the bootstrap procedure.
+
+        random_state: int, default=None (>= 0)
+            Random state.
+
+        hue: {"estimator", "policy"}, default="estimator"
+            Hue of the plot.
+
+        legend: bool, default=True
+            Whether to include a legend in the scatter plot.
+
+        sharey: bool, default=False
+            If `True`, the y-axis will be shared among different estimators or evaluation policies.
+
+        fig_dir: Path, default=None
+            Path to store the bar figure.
+            If `None` is given, the figure will not be saved.
+
+        fig_name: str, default="estimated_policy_value_multiple.png"
+            Name of the bar figure.
+
+        """
+        self.ope.visualize_policy_value_with_multiple_estimates(
+            input_dict=input_dict,
+            compared_estimators=compared_estimators,
+            plot_type=plot_type,
+            alpha=alpha,
+            ci=ci,
+            n_bootstrap_samples=n_bootstrap_samples,
+            random_state=random_state,
+            hue=hue,
+            legend=legend,
+            sharey=sharey,
+            fig_dir=fig_dir,
+            fig_name=fig_name,
+        )
+
+    def visualize_cumulative_distribution_function_with_multiple_estimates(
+        self,
+        input_dict: MultipleInputDict,
+        compared_estimators: Optional[List[str]] = None,
+        scale_min: Optional[float] = None,
+        scale_max: Optional[float] = None,
+        n_partition: Optional[int] = None,
+        plot_type: str = "ci",
+        hue: str = "estimator",
+        legend: bool = True,
+        n_cols: Optional[int] = None,
+        sharey: bool = False,
+        fig_dir: Optional[Path] = None,
+        fig_name: str = "estimated_policy_value_multiple.png",
+    ) -> None:
+        """Visualize policy value estimated by OPE estimators across multiple logged dataset.
+
+        Note
+        -------
+        This function is applicable only when MultipleLoggedDataset is used and
+        MultipleInputDict is collected by the same evaluation policy across logged datasets.
+
+        This function is not applicable when the data-driven reward scaler is used.
+        Please set ``scale_min``, ``scale_max``, and ``n_partition`` to use.
+
+        Parameters
+        -------
+        input_dict: OPEInputDict or MultipleInputDict
+            Dictionary of the OPE inputs for each evaluation policy.
+
+            .. code-block:: python
+
+                key: [evaluation_policy_name][
+                    evaluation_policy_action,
+                    evaluation_policy_action_dist,
+                    state_action_value_prediction,
+                    initial_state_value_prediction,
+                    state_action_marginal_importance_weight,
+                    state_marginal_importance_weight,
+                    on_policy_policy_value,
+                    gamma,
+                ]
+
+            .. seealso::
+
+                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+
+        compared_estimators: list of str, default=None
+            Name of compared estimators.
+            If `None` is given, all the estimators are compared.
+
+        plot_type: {"ci", "enumerate"}, default="ci"
+            Type of plot.
+            If "ci" is given, the method visualizes the average policy value and its 95% confidence intervals based on the multiple estimate.
+            If "enumerate" is given, the method visualizes the individual estimation result.
+
+        hue: {"estimator", "policy"}, default="estimator"
+            Hue of the plot.
+
+        legend: bool, default=True
+            Whether to include a legend in the scatter plot.
+
+        sharey: bool, default=False
+            If `True`, the y-axis will be shared among different estimators or evaluation policies.
+
+        fig_dir: Path, default=None
+            Path to store the bar figure.
+            If `None` is given, the figure will not be saved.
+
+        fig_name: str, default="estimated_policy_value_multiple.png"
+            Name of the bar figure.
+
+        """
+        self.cumulative_distribution_ope.visualize_cumulative_distribution_function_with_multiple_estimates(
+            input_dict=input_dict,
+            compared_estimators=compared_estimators,
+            scale_min=scale_min,
+            scale_max=scale_max,
+            n_partition=n_partition,
+            plot_type=plot_type,
+            hue=hue,
+            legend=legend,
+            n_cols=n_cols,
+            sharey=sharey,
+            fig_dir=fig_dir,
+            fig_name=fig_name,
+        )
+
+    def visualize_policy_value_with_multiple_estimates_cumulative_distribution_ope(
+        self,
+        input_dict: MultipleInputDict,
+        compared_estimators: Optional[List[str]] = None,
+        plot_type: str = "ci",
+        alpha: float = 0.05,
+        ci: str = "bootstrap",
+        n_bootstrap_samples: int = 100,
+        random_state: Optional[int] = None,
+        hue: str = "estimator",
+        legend: bool = True,
+        sharey: bool = False,
+        fig_dir: Optional[Path] = None,
+        fig_name: str = "estimated_policy_value_multiple_cumulative_distribution_ope.png",
+    ) -> None:
+        """Visualize policy value estimated by OPE estimators across multiple logged dataset.
+
+        Note
+        -------
+        This function is applicable only when MultipleLoggedDataset is used and
+        MultipleInputDict is collected by the same evaluation policy across logged datasets.
+
+        Parameters
+        -------
+        input_dict: OPEInputDict or MultipleInputDict
+            Dictionary of the OPE inputs for each evaluation policy.
+
+            .. code-block:: python
+
+                key: [evaluation_policy_name][
+                    evaluation_policy_action,
+                    evaluation_policy_action_dist,
+                    state_action_value_prediction,
+                    initial_state_value_prediction,
+                    state_action_marginal_importance_weight,
+                    state_marginal_importance_weight,
+                    on_policy_policy_value,
+                    gamma,
+                ]
+
+            .. seealso::
+
+                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+
+        compared_estimators: list of str, default=None
+            Name of compared estimators.
+            If `None` is given, all the estimators are compared.
+
+        plot_type: {"ci", "scatter", "violin"}, default="ci"
+            Type of plot.
+            If "ci" is given, the method visualizes the average policy value and the confidence intervals based on the multiple estimate.
+            If "scatter" is given, the method visualizes the individual estimation result.
+
+        alpha: float, default=0.05
+            Significance level. The value should be within (0, 1].
+
+        ci: {"bootstrap", "hoeffding", "bernstein", "ttest"}, default="bootstrap"
+            Estimation method for confidence intervals.
+
+        n_bootstrap_samples: int, default=10000 (> 0)
+            Number of resampling performed in the bootstrap procedure.
+
+        random_state: int, default=None (>= 0)
+            Random state.
+
+        hue: {"estimator", "policy"}, default="estimator"
+            Hue of the plot.
+
+        legend: bool, default=True
+            Whether to include a legend in the scatter plot.
+
+        sharey: bool, default=False
+            If `True`, the y-axis will be shared among different estimators or evaluation policies.
+
+        fig_dir: Path, default=None
+            Path to store the bar figure.
+            If `None` is given, the figure will not be saved.
+
+        fig_name: str, default="estimated_policy_value_multiple.png"
+            Name of the bar figure.
+
+        """
+        self.cumulative_distribution_ope.visualize_policy_value_with_multiple_estimates(
+            input_dict=input_dict,
+            compared_estimators=compared_estimators,
+            plot_type=plot_type,
+            alpha=alpha,
+            ci=ci,
+            n_bootstrap_samples=n_bootstrap_samples,
+            random_state=random_state,
+            hue=hue,
+            legend=legend,
+            sharey=sharey,
+            fig_dir=fig_dir,
+            fig_name=fig_name,
+        )
+
+    def visualize_variance_with_multiple_estimates(
+        self,
+        input_dict: MultipleInputDict,
+        compared_estimators: Optional[List[str]] = None,
+        plot_type: str = "ci",
+        alpha: float = 0.05,
+        ci: str = "bootstrap",
+        n_bootstrap_samples: int = 100,
+        random_state: Optional[int] = None,
+        hue: str = "estimator",
+        legend: bool = True,
+        sharey: bool = False,
+        fig_dir: Optional[Path] = None,
+        fig_name: str = "estimated_variance_multiple.png",
+    ) -> None:
+        """Visualize variance estimated by OPE estimators across multiple logged dataset.
+
+        Note
+        -------
+        This function is applicable only when MultipleLoggedDataset is used and
+        MultipleInputDict is collected by the same evaluation policy across logged datasets.
+
+        Parameters
+        -------
+        input_dict: OPEInputDict or MultipleInputDict
+            Dictionary of the OPE inputs for each evaluation policy.
+
+            .. code-block:: python
+
+                key: [evaluation_policy_name][
+                    evaluation_policy_action,
+                    evaluation_policy_action_dist,
+                    state_action_value_prediction,
+                    initial_state_value_prediction,
+                    state_action_marginal_importance_weight,
+                    state_marginal_importance_weight,
+                    on_policy_policy_value,
+                    gamma,
+                ]
+
+            .. seealso::
+
+                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+
+        compared_estimators: list of str, default=None
+            Name of compared estimators.
+            If `None` is given, all the estimators are compared.
+
+        plot_type: {"ci", "scatter", "violin"}, default="ci"
+            Type of plot.
+            If "ci" is given, the method visualizes the average policy value and the confidence intervals based on the multiple estimate.
+            If "scatter" is given, the method visualizes the individual estimation result.
+
+        alpha: float, default=0.05
+            Significance level. The value should be within (0, 1].
+
+        ci: {"bootstrap", "hoeffding", "bernstein", "ttest"}, default="bootstrap"
+            Estimation method for confidence intervals.
+
+        n_bootstrap_samples: int, default=10000 (> 0)
+            Number of resampling performed in the bootstrap procedure.
+
+        random_state: int, default=None (>= 0)
+            Random state.
+
+        hue: {"estimator", "policy"}, default="estimator"
+            Hue of the plot.
+
+        legend: bool, default=True
+            Whether to include a legend in the scatter plot.
+
+        sharey: bool, default=False
+            If `True`, the y-axis will be shared among different estimators or evaluation policies.
+
+        fig_dir: Path, default=None
+            Path to store the bar figure.
+            If `None` is given, the figure will not be saved.
+
+        fig_name: str, default="estimated_variance_multiple.png"
+            Name of the bar figure.
+
+        """
+        self.cumulative_distribution_ope.visualize_variance_with_multiple_estimates(
+            input_dict=input_dict,
+            compared_estimators=compared_estimators,
+            plot_type=plot_type,
+            alpha=alpha,
+            ci=ci,
+            n_bootstrap_samples=n_bootstrap_samples,
+            random_state=random_state,
+            hue=hue,
+            legend=legend,
+            sharey=sharey,
+            fig_dir=fig_dir,
+            fig_name=fig_name,
+        )
+
+    def visualize_conditional_value_at_risk_with_multiple_estimates(
+        self,
+        input_dict: MultipleInputDict,
+        compared_estimators: Optional[List[str]] = None,
+        ope_alpha: float = 0.05,
+        plot_type: str = "ci",
+        alpha: float = 0.05,
+        ci: str = "bootstrap",
+        n_bootstrap_samples: int = 100,
+        random_state: Optional[int] = None,
+        hue: str = "estimator",
+        legend: bool = True,
+        sharey: bool = False,
+        fig_dir: Optional[Path] = None,
+        fig_name: str = "estimated_conditional_value_at_risk_multiple.png",
+    ) -> None:
+        """Visualize conditional value at risk estimated by OPE estimators across multiple logged dataset.
+
+        Note
+        -------
+        This function is applicable only when MultipleLoggedDataset is used and
+        MultipleInputDict is collected by the same evaluation policy across logged datasets.
+
+        Parameters
+        -------
+        input_dict: OPEInputDict or MultipleInputDict
+            Dictionary of the OPE inputs for each evaluation policy.
+
+            .. code-block:: python
+
+                key: [evaluation_policy_name][
+                    evaluation_policy_action,
+                    evaluation_policy_action_dist,
+                    state_action_value_prediction,
+                    initial_state_value_prediction,
+                    state_action_marginal_importance_weight,
+                    state_marginal_importance_weight,
+                    on_policy_policy_value,
+                    gamma,
+                ]
+
+            .. seealso::
+
+                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+
+        compared_estimators: list of str, default=None
+            Name of compared estimators.
+            If `None` is given, all the estimators are compared.
+
+        ope_alpha: float = 0.05.
+            Proportion of the sided region in CVaR estimate. The value should be within `[0, 1)`.
+
+        plot_type: {"ci", "scatter", "violin"}, default="ci"
+            Type of plot.
+            If "ci" is given, the method visualizes the average policy value and the confidence intervals based on the multiple estimate.
+            If "scatter" is given, the method visualizes the individual estimation result.
+
+        alpha: float, default=0.05
+            Significance level. The value should be within (0, 1].
+
+        ci: {"bootstrap", "hoeffding", "bernstein", "ttest"}, default="bootstrap"
+            Estimation method for confidence intervals.
+
+        n_bootstrap_samples: int, default=10000 (> 0)
+            Number of resampling performed in the bootstrap procedure.
+
+        random_state: int, default=None (>= 0)
+            Random state.
+
+        hue: {"estimator", "policy"}, default="estimator"
+            Hue of the plot.
+
+        legend: bool, default=True
+            Whether to include a legend in the scatter plot.
+
+        sharey: bool, default=False
+            If `True`, the y-axis will be shared among different estimators or evaluation policies.
+
+        fig_dir: Path, default=None
+            Path to store the bar figure.
+            If `None` is given, the figure will not be saved.
+
+        fig_name: str, default="estimated_conditional_value_at_risk_multiple.png"
+            Name of the bar figure.
+
+        """
+        self.cumulative_distribution_ope.visualize_conditional_value_at_risk_with_multiple_estimates(
+            input_dict=input_dict,
+            compared_estimators=compared_estimators,
+            ope_alpha=ope_alpha,
+            plot_type=plot_type,
+            alpha=alpha,
+            ci=ci,
+            n_bootstrap_samples=n_bootstrap_samples,
+            random_state=random_state,
+            hue=hue,
+            legend=legend,
+            sharey=sharey,
+            fig_dir=fig_dir,
+            fig_name=fig_name,
+        )
+
+    def visualize_lower_quartile_with_multiple_estimates(
+        self,
+        input_dict: MultipleInputDict,
+        compared_estimators: Optional[List[str]] = None,
+        ope_alpha: float = 0.05,
+        plot_type: str = "ci",
+        alpha: float = 0.05,
+        ci: str = "bootstrap",
+        n_bootstrap_samples: int = 100,
+        random_state: Optional[int] = None,
+        hue: str = "estimator",
+        legend: bool = True,
+        sharey: bool = False,
+        fig_dir: Optional[Path] = None,
+        fig_name: str = "estimated_conditional_value_at_risk_multiple.png",
+    ) -> None:
+        """Visualize lower quartile estimated by OPE estimators across multiple logged dataset.
+
+        Note
+        -------
+        This function is applicable only when MultipleLoggedDataset is used and
+        MultipleInputDict is collected by the same evaluation policy across logged datasets.
+
+        Parameters
+        -------
+        input_dict: OPEInputDict or MultipleInputDict
+            Dictionary of the OPE inputs for each evaluation policy.
+
+            .. code-block:: python
+
+                key: [evaluation_policy_name][
+                    evaluation_policy_action,
+                    evaluation_policy_action_dist,
+                    state_action_value_prediction,
+                    initial_state_value_prediction,
+                    state_action_marginal_importance_weight,
+                    state_marginal_importance_weight,
+                    on_policy_policy_value,
+                    gamma,
+                ]
+
+            .. seealso::
+
+                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+
+        compared_estimators: list of str, default=None
+            Name of compared estimators.
+            If `None` is given, all the estimators are compared.
+
+        ope_alpha: float = 0.05.
+            Proportion of the sided region in CVaR estimate. The value should be within `[0, 1)`.
+
+        plot_type: {"ci", "scatter", "violin"}, default="ci"
+            Type of plot.
+            If "ci" is given, the method visualizes the average policy value and the confidence intervals based on the multiple estimate.
+            If "scatter" is given, the method visualizes the individual estimation result.
+
+        alpha: float, default=0.05
+            Significance level. The value should be within (0, 0.5].
+
+        ci: {"bootstrap", "hoeffding", "bernstein", "ttest"}, default="bootstrap"
+            Estimation method for confidence intervals.
+
+        n_bootstrap_samples: int, default=10000 (> 0)
+            Number of resampling performed in the bootstrap procedure.
+
+        random_state: int, default=None (>= 0)
+            Random state.
+
+        hue: {"estimator", "policy"}, default="estimator"
+            Hue of the plot.
+
+        legend: bool, default=True
+            Whether to include a legend in the scatter plot.
+
+        sharey: bool, default=False
+            If `True`, the y-axis will be shared among different estimators or evaluation policies.
+
+        fig_dir: Path, default=None
+            Path to store the bar figure.
+            If `None` is given, the figure will not be saved.
+
+        fig_name: str, default="estimated_conditional_value_at_risk_multiple.png"
+            Name of the bar figure.
+
+        """
+        self.cumulative_distribution_ope.visualize_lower_quartile_with_multiple_estimates(
+            input_dict=input_dict,
+            compared_estimators=compared_estimators,
+            ope_alpha=ope_alpha,
+            plot_type=plot_type,
+            alpha=alpha,
+            ci=ci,
+            n_bootstrap_samples=n_bootstrap_samples,
+            random_state=random_state,
+            hue=hue,
+            legend=legend,
             sharey=sharey,
             fig_dir=fig_dir,
             fig_name=fig_name,
@@ -3772,7 +4474,7 @@ class OffPolicySelection:
             axes[j].set_xlabel("# of policies deployed")
 
             if legend:
-                axes[j].legend()
+                axes[j].legend(loc="upper right")
 
         if legend:
             handles, labels = axes[0].get_legend_handles_labels()
@@ -4097,7 +4799,7 @@ class OffPolicySelection:
             axes[j].set_xlabel("# of policies deployed")
 
             if legend:
-                axes[j].legend()
+                axes[j].legend(loc="upper right")
 
         if legend:
             handles, labels = axes[0].get_legend_handles_labels()
@@ -4540,7 +5242,7 @@ class OffPolicySelection:
                     axes[l, j].set_xlabel("# of policies deployed")
 
                     if legend:
-                        axes[l, j].legend()
+                        axes[l, j].legend(loc="upper right")
 
             if legend:
                 handles, labels = axes[0, 0].get_legend_handles_labels()
@@ -4915,7 +5617,7 @@ class OffPolicySelection:
             axes[j].set_xlabel("# of policies deployed")
 
             if legend:
-                axes[j].legend()
+                axes[j].legend(loc="upper right")
 
         if legend:
             handles, labels = axes[0].get_legend_handles_labels()
@@ -5248,7 +5950,7 @@ class OffPolicySelection:
             axes[j].set_xlabel("# of policies deployed")
 
             if legend:
-                axes[j].legend()
+                axes[j].legend(loc="upper right")
 
         if legend:
             handles, labels = axes[0].get_legend_handles_labels()
@@ -5623,7 +6325,7 @@ class OffPolicySelection:
             axes[j].set_xlabel("# of policies deployed")
 
             if legend:
-                axes[j].legend()
+                axes[j].legend(loc="upper right")
 
         if legend:
             handles, labels = axes[0].get_legend_handles_labels()
@@ -5956,7 +6658,7 @@ class OffPolicySelection:
             axes[j].set_xlabel("# of policies deployed")
 
             if legend:
-                axes[j].legend()
+                axes[j].legend(loc="upper right")
 
         fig.subplots_adjust(hspace=0.35, wspace=0.2)
         plt.show()
