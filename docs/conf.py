@@ -12,13 +12,15 @@
 #
 import os
 import sys
-sys.path.insert(0, os.path.abspath('..'))
+
+sys.path.insert(0, os.path.abspath(".."))
 
 
 # -- Project information -----------------------------------------------------
 
 project = "OFRL"
-copyright = "2023, Haruka Kiyohara, Yuta Saito, and negocia, Inc"
+copyright = "2023, Hakuhodo Technologies"
+# copyright = "2023, Haruka Kiyohara, Yuta Saito, and negocia, Inc"
 author = "Haruka Kiyohara, Kosuke Kawakami, Yuta Saito"
 
 # The full version, including alpha/beta/rc tags
@@ -33,7 +35,7 @@ release = "latest"
 # ones.
 extensions = [
     "sphinx.ext.autodoc",
-    'sphinx.ext.autodoc.typehints',
+    "sphinx.ext.autodoc.typehints",
     "sphinx.ext.autosummary",
     "sphinx.ext.doctest",
     "sphinx.ext.intersphinx",
@@ -52,7 +54,7 @@ extensions = [
 ]
 
 # bibtex
-bibtex_bibfiles = ['refs.bib']
+bibtex_bibfiles = ["refs.bib"]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -97,12 +99,14 @@ html_theme_options = {
 html_static_path = ["_static"]
 html_css_files = ["css/custom.css"]
 
+html_title = "OFRL"
+
 # whether to display to the source .rst file
 html_show_sourcelink = False
 html_show_sphinx = False
 
 autosummary_generate = True
-autodoc_typehints = 'description'
+autodoc_typehints = "description"
 autodoc_typehints_description_target = "documented"
 autodoc_default_options = {
     "members": None,
@@ -132,18 +136,19 @@ numpydoc_xref_aliases = {
 }
 
 intersphinx_mapping = {
-    'python': ('https://docs.python.org/3/', None),
-    'numpy': ('https://docs.scipy.org/doc/numpy/', None),
-    'd3rlpy': ('https://d3rlpy.readthedocs.io/en/v1.1.1/', None),
-    'gym': ('https://www.gymlibrary.dev/', None),
-    'gymnasium': ('https://gymnasium.farama.org/', None),
+    "python": ("https://docs.python.org/3/", None),
+    "numpy": ("https://docs.scipy.org/doc/numpy/", None),
+    "d3rlpy": ("https://d3rlpy.readthedocs.io/en/v1.1.1/", None),
+    "gym": ("https://www.gymlibrary.dev/", None),
+    "gymnasium": ("https://gymnasium.farama.org/", None),
 }
 
 # gallery example path
 from sphinx_gallery.sorting import ExplicitOrder
 from sphinx_gallery.sorting import FileNameSortKey
+
 sphinx_gallery_conf = {
-    "examples_dirs": "tutorial",   # path to your example scripts
+    "examples_dirs": "tutorial",  # path to your example scripts
     "gallery_dirs": "documentation/_autogallery",  # path to where to save gallery generated output
     "subsection_order": ExplicitOrder(
         [

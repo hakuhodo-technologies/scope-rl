@@ -25,6 +25,7 @@ policy module
     :template: module_head
 
     ofrl.policy.head
+    ofrl.policy.opl
 
 .. _ofrl_api_ope:
 
@@ -101,6 +102,10 @@ others
     :nosignatures:
 
     ofrl.utils
+
+.. raw:: html
+
+    <div class="white-space-20px"></div>
 
 .. grid::
     :margin: 0

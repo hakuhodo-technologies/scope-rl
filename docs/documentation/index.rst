@@ -250,6 +250,7 @@ Table of Contents
    frequently_asked_questions
    News <news>
    Release Notes <https://github.com/negocia-inc/ofrl/releases>
+   Proceedings <https://github.com/negocia-inc/ofrl/404>
    references
 
 .. grid::

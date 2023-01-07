@@ -1,4 +1,4 @@
-:notoc:
+:html_theme.sidebar_secondary.remove:
 
 .. card:: OFRL
     :class-title: top-page-title-title
@@ -262,10 +262,16 @@ Any contributions to OFRL are more than welcome!
 
 If you have any questions, feel free to contact: kiyohara.h.aa@m.titech.ac.jp
 
+.. raw:: html
+
+   <div style="visibility: hidden;">
+
+Welcome!
+========
 
 .. raw:: html
 
-    <div class="white-space-5px"></div>
+   </div>
 
 .. toctree::
     :maxdepth: 1
@@ -279,6 +285,7 @@ If you have any questions, feel free to contact: kiyohara.h.aa@m.titech.ac.jp
     News <documentation/news>
     Sub-packages <documentation/subpackages/index>
     Release Notes <https://github.com/negocia-inc/ofrl/releases>
+    Proceedings <https://github.com/negocia-inc/ofrl/404>
 
 .. grid::
 
