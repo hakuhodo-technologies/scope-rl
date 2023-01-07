@@ -1737,8 +1737,8 @@ class OffPolicyEvaluation:
 
                     palette = {}
                     if plot_type == "violin":
-                        for j, estimator in enumerate(compared_estimators):
-                            palette[estimator] = color[j % n_colors]
+                        for j, eval_policy in enumerate(input_dict.keys()):
+                            palette[eval_policy] = color[j % n_colors]
 
                         sns.violinplot(
                             data=df,
@@ -4396,8 +4396,8 @@ class CumulativeDistributionOffPolicyEvaluation:
 
                     palette = {}
                     if plot_type == "violin":
-                        for j, estimator in enumerate(compared_estimators):
-                            palette[estimator] = color[j % n_colors]
+                        for j, eval_policy in enumerate(estimation_dict.keys()):
+                            palette[eval_policy] = color[j % n_colors]
 
                         sns.violinplot(
                             data=df,
@@ -4593,7 +4593,7 @@ class CumulativeDistributionOffPolicyEvaluation:
                 for i in range(len(self.multiple_logged_dataset)):
                     cdf[i] = cdf_dict_[i][eval_policy][estimator]
 
-                    if not (cdf[i][1:] - cdf[i][:-1]).all():
+                    if not (cdf[i][1:] >= cdf[i][:-1]).all():
                         print(i, eval_policy, estimator, cdf[i])
 
                 cdf_dict[eval_policy][estimator] = cdf

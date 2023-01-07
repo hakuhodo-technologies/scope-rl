@@ -2703,7 +2703,9 @@ class CreateOPEInput:
                     ]
 
                 input_dict = MultipleInputDict(
-                    path=path, save_relative_path=save_relative_path
+                    action_type=self.action_type,
+                    path=path,
+                    save_relative_path=save_relative_path,
                 )
 
                 for i in tqdm(
