@@ -1556,7 +1556,7 @@ class DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSampli
         )[0]
 
         idx = histogram.cumsum().astype(int) - 1
-        idx[0] = 0
+        idx = np.where(idx < 0, 0, idx)
 
         cumulative_density = cumulative_density[idx]
 
