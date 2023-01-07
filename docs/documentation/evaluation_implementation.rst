@@ -77,6 +77,7 @@ The OPE class implements the following functions.
 (Visualization)
 
 * :class:`visualize_off_policy_estimates`
+* :class:`visualize_policy_value_with_multiple_estimates`
 
 Below, we describe the implemented OPE estimators.
 
@@ -532,10 +533,16 @@ It estimates the cumulative distribution of the trajectory wise reward and vario
 (Visualization)
 
 * :class:`visualize_policy_value`
-* :class:`visualize_policy_value_with_variance`
 * :class:`visualize_conditional_value_at_risk`
 * :class:`visualize_interquartile_range`
 * :class:`visualize_cumulative_distribution_function`
+
+* :class:`visualize_policy_value_with_multiple_estimates`
+* :class:`visualize_variance_with_multiple_estimates`
+* :class:`visualize_cumulative_distribution_function_with_multiple_estimates`
+* :class:`visualize_lower_quartile_with_multiple_estimates`
+* :class:`visualize_cumulative_distribution_function_with_multiple_estimates`
+
 
 (Others)
 
@@ -710,6 +717,15 @@ The OPS class implements the following functions.
 * :class:`visualize_conditional_value_at_risk_for_selection`
 * :class:`visualize_interquartile_range_for_selection`
 
+(Visualization with multiple estimates on multiple logged datasets)
+
+* :class:`visualize_policy_value_with_multiple_estimates_standard_ope`
+* :class:`visualize_policy_value_with_multiple_estimates_cumulative_distribution_ope`
+* :class:`visualize_variance_with_multiple_estimates`
+* :class:`visualize_cumulative_distribution_function_with_multiple_estimates`
+* :class:`visualize_lower_quartile_with_multiple_estimates`
+* :class:`visualize_cumulative_distribution_function_with_multiple_estimates`
+
 (Visualization of top k performance)
 
 * :class:`visualize_topk_policy_value_selected_by_standard_ope`
@@ -720,7 +736,7 @@ The OPS class implements the following functions.
 * :class:`visualize_topk_lower_quartile_selected_by_standard_ope`
 * :class:`visualize_topk_lower_quartile_selected_by_cumulative_distribution_ope`
 
-(Validation Visualization)
+(Visualization for validation)
 
 * :class:`visualize_policy_value_for_validation`
 * :class:`visualize_policy_value_of_cumulative_distribution_ope_for_validation`

@@ -16,26 +16,119 @@ It takes an RL environment and the behavior policy (i.e., data collection policy
 .. code-block:: python
 
     # initialize the dataset class
-    >>> from ofrl.dataset import SyntheticDataset
-    >>> dataset = SyntheticDataset(
-            env=env,
-            behavior_policy=behavior_policy,
-            max_episode_steps=env.step_per_episode,
-            random_state=random_state,
-        )
+    from ofrl.dataset import SyntheticDataset
+    dataset = SyntheticDataset(
+        env=env,
+        behavior_policy=behavior_policy,
+        max_episode_steps=env.step_per_episode,
+        random_state=random_state,
+    )
 
 Then, it collects logged data as follows.
 
 .. code-block:: python
 
     # collect logged data by a behavior policy
-    >>> logged_dataset = dataset.obtain_episodes(n_trajectories=10000)
+    logged_dataset = dataset.obtain_episodes(n_trajectories=10000)
 
 .. tip::
 
     .. dropdown:: How to customize the dataset class?
 
-        To customize the dataset class, use :class:`BaseDataset`. **TODO**
+        To customize the dataset class, use :class:`BaseDataset`. The obtained ``logged_dataset`` should contain the following keys for API consistency.
+
+        .. code-block:: python
+
+            key: [
+                size,
+                n_trajectories,
+                step_per_trajectory,
+                action_type,
+                n_actions,
+                action_dim,
+                action_keys,
+                action_meaning,
+                state_dim,
+                state_keys,
+                state,
+                action,
+                reward,
+                done,
+                terminal,
+                info,
+                pscore,
+            ]
+
+        .. note::
+            
+            ``logged_dataset`` can be used for OPE even if ``action_keys``, ``action_meaning``, ``state_keys``, ``info`` is not provided.
+            For API consistency, just leave ``None`` when these keys are unnecessary. 
+            
+            Moreover, offline RL algorithms, FQE (model-based OPE), and marginal OPE estimators 
+            can also work without ``pscore``. 
+
+        .. seealso::
+
+            :doc:`Package Reference <_autosummary/dataset/ofrl.dataset.base>` explains the meaning of each keys in detail.
+
+
+    .. dropdown:: How to handle multiple logged datasets at once?
+
+        :class:`MultipleLoggedDataset` enables us to smoothly handle multiple logged datasets. 
+
+        Specifically, :class:`MultipleLoggedDataset` saves the paths to each logged dataset and make each dataset accessible through the following command.
+        
+        .. code-block:: python
+
+            logged_dataset_0 = multiple_logged_dataset.get(0)
+        
+        There are two ways to obtain :class:`MultipleLoggedDataset`.
+
+        The first way is to directly get :class:`MultipleLoggedDataset` as the output of :class:`SyntheticDataset` as follows.
+
+        .. code-block:: python
+
+            synthetic_dataset = SyntheticDataset(
+                env=env,
+                behavior_policy=behavior_policy,
+                max_episode_steps=env.step_per_episode,
+                random_state=random_state,
+            )
+            multiple_logged_dataset = synthetic_dataset.obtain_episodes(
+                n_datasets=5,          # when n_datasets > 1, MultipleLoggedDataset is returned
+                n_trajectories=10000,
+            )
+
+        The second way to define :class:`MultipleLoggedDataset` manually as follows.
+
+        .. code-block:: python
+
+            multiple_logged_dataset = MultipleLoggedDataset(
+                action_type="discrete",
+                path="logged_dataset/",  # either absolute or relative path
+            )
+
+            for behavior_policy in behavior_policies:
+                synthetic_dataset = SyntheticDataset(
+                    env=env,
+                    behavior_policy=behavior_policy,
+                    max_episode_steps=env.step_per_episode,
+                    random_state=random_state,
+                )
+                single_logged_dataset = synthetic_dataset.obtain_episodes(
+                    n_trajectories=10000,
+                )
+
+                # add a single logged dataset to multiple_logged_dataset
+                multiple_logged_dataset.add(
+                    single_logged_dataset, 
+                    name=behavior_policy.name,
+                )
+
+        .. seealso::
+
+            * :doc:`Package Reference of MultipleLoggedDataset <_autosummary/ofrl.utils.MultipleLoggedDataset>`
+            * :doc:`TODO tutorial with MultipleLoggedDataset`
 
 .. seealso::
 
@@ -64,7 +157,7 @@ Here, we describe some useful wrapper tools to convert a `d3rlpy <https://github
 
     .. dropdown:: How to customize the policy head?
 
-        To customize the policy head, use :class:`BaseHead`. **TODO**
+        To customize the policy head, use :class:`BaseHead`.
 
 .. seealso::
 
