@@ -191,8 +191,8 @@ class RTBEnv(gym.Env):
 
     .. code-block:: python
 
-        >>> on_policy_performance  
-         
+        >>> on_policy_performance
+
         13.44
 
     References

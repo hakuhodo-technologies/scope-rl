@@ -18,7 +18,7 @@ from ...utils import check_array
 class WinningPriceDistribution(BaseWinningPriceDistribution):
     """Class to sample the winning price (i.e., second price) and compare with the given bid price.
 
-    Imported as: :class:`rtbgym.envs.simulator.WinningDistribution` 
+    Imported as: :class:`rtbgym.envs.simulator.WinningDistribution`
 
     Note
     -------

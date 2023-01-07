@@ -9,15 +9,15 @@ import numpy as np
 @dataclass
 class BaseSimulator(metaclass=ABCMeta):
     """Base class to calculate outcome probability and stochastically determine auction result.
-    
-    Imported as: :class:`rtbgym.envs.simulator.BaseSimulator`    
-    
+
+    Imported as: :class:`rtbgym.envs.simulator.BaseSimulator`
+
     """
 
     @abstractmethod
     def generate_auction(self, search_volume: int) -> Tuple[np.ndarray]:
         """Sample ad and user pair for each auction.
-        
+
         Parameters
         -------
         search_volume: int, default=None (> 0)
@@ -30,7 +30,7 @@ class BaseSimulator(metaclass=ABCMeta):
 
         user_ids: ndarray of shape (search_volume, )
             IDs of the users.
-        
+
         """
         raise NotImplementedError
 
@@ -39,7 +39,7 @@ class BaseSimulator(metaclass=ABCMeta):
         self, ad_ids: np.ndarray, user_ids: np.ndarray
     ) -> np.ndarray:
         """Map the ad and the user index into feature vectors.
-        
+
         Parameters
         -------
         ad_ids: array-like of shape (search_volume, )
@@ -57,7 +57,7 @@ class BaseSimulator(metaclass=ABCMeta):
 
         user_feature_vector: ndarray of shape (search_volume/n_samples, user_feature_dim)
             User feature vector for each auction.
-        
+
         """
         raise NotImplementedError
 
@@ -70,7 +70,7 @@ class BaseSimulator(metaclass=ABCMeta):
         bid_prices: np.ndarray,
     ) -> Tuple[np.ndarray]:
         """Simulate bidding auction for given queries.
-        
+
         Parameters
         -------
         timestep: int (> 0)
@@ -98,7 +98,7 @@ class BaseSimulator(metaclass=ABCMeta):
 
         conversions: ndarray of shape (search_volume, )
             Binary indicator of whether conversion occurred or not for each auction.
-        
+
         """
         raise NotImplementedError
 
@@ -106,9 +106,9 @@ class BaseSimulator(metaclass=ABCMeta):
 @dataclass
 class BaseWinningPriceDistribution(metaclass=ABCMeta):
     """Base class to sample the winning price (i.e., second price) and compare with the given bid price.
-    
-    Imported as: class:`rtbgym.BaseWinningPriceDistribution` 
-    
+
+    Imported as: class:`rtbgym.BaseWinningPriceDistribution`
+
     """
 
     @abstractmethod
@@ -150,7 +150,7 @@ class BaseWinningPriceDistribution(metaclass=ABCMeta):
 
         winning_prices: ndarray of shape (search_volume, )
             Sampled winning price for each auction.
-        
+
         """
         raise NotImplementedError
 
@@ -158,8 +158,8 @@ class BaseWinningPriceDistribution(metaclass=ABCMeta):
 @dataclass
 class BaseClickAndConversionRate(metaclass=ABCMeta):
     """Base class to Class to define ground-truth CTR/CVR.
-    
-    Imported as: class:`rtbgym.BaseClickAndConversionRate` 
+
+    Imported as: class:`rtbgym.BaseClickAndConversionRate`
 
     """
 
@@ -195,7 +195,7 @@ class BaseClickAndConversionRate(metaclass=ABCMeta):
         -------
         ctrs/cvrs: ndarray of shape (search_volume/n_samples, )
             Ground-truth CTR (i.e., click per impression) or CVR (i.e., conversion per click) for each auction.
-        
+
         """
         raise NotImplementedError
 
@@ -209,7 +209,7 @@ class BaseClickAndConversionRate(metaclass=ABCMeta):
         timestep: Union[int, np.ndarray],
     ) -> np.ndarray:
         """Stochastically determine whether click/conversion occurs or not.
-        
+
         Parameters
         -------
         ad_ids: array-like of shape (search_volume/n_samples, )
@@ -231,6 +231,6 @@ class BaseClickAndConversionRate(metaclass=ABCMeta):
         -------
         clicks/conversions: array-like of shape (search_volume/n_samples, )
             Whether click occurs in impression=True case or whether conversion occurs in click=True case.
-        
+
         """
         raise NotImplementedError
