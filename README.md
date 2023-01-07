@@ -24,7 +24,7 @@
 
 *OFRL* is an open-source Python Software for implementing the end-to-end procedure regarding **offline Reinforcement Learning (offline RL)**, from data collection to offline policy learning, performance evaluation, and policy selection. Our software includes a series of modules to implement synthetic dataset generation, dataset preprocessing, estimators for Off-Policy Evaluation (OPE), and Off-Policy Selection (OPS) methods.
 
-This software is also compatible with [d3rlpy](https://github.com/takuseno/d3rlpy), which implements a range of online and offline RL methods. OFRL enables an easy, transparent, and reliable experiment in offline RL research on any environment with [OpenAI Gym](https://gym.openai.com)-like interface and also facilitates implementation of offline RL in practice on a variety of customized datasets.
+This software is also compatible with [d3rlpy](https://github.com/takuseno/d3rlpy), which implements a range of online and offline RL methods. OFRL enables an easy, transparent, and reliable experiment in offline RL research on any environment with [OpenAI Gym](https://gym.openai.com) and [Gymnasium](https://gymnasium.farama.org/)-like interface and also facilitates implementation of offline RL in practice on a variety of customized datasets.
 
 Our software enables evaluation and algorithm comparison related to the following research topics:
 
@@ -282,7 +282,7 @@ ope.visualize_off_policy_estimates(
     sharey=True,
 )
 ```
-<div align="center"><img src=".docs/_static/images/ope_policy_value_basic.png" width="100%"/></div>
+<div align="center"><img src="./docs/_static/images/ope_policy_value_basic.png" width="100%"/></div>
 <figcaption>
 <p align="center">
   Policy Value Estimated by OPE Estimators
@@ -326,7 +326,7 @@ cvar_dict = cd_ope.estimate_conditional_value_at_risk(input_dict, alphas=0.3)
 # estimate and visualize the cumulative distribution function of the policy performance
 cd_ope.visualize_cumulative_distribution_function(input_dict, n_cols=4)
 ```
-<div align="center"><img src=".docs/_static/images/ope_cumulative_distribution_function.png" width="100%"/></div>
+<div align="center"><img src="./docs/_static/images/ope_cumulative_distribution_function.png" width="100%"/></div>
 <figcaption>
 <p align="center">
   Cumulative Distribution Function Estimated by OPE Estimators
@@ -362,10 +362,10 @@ ops.visualize_topk_policy_value_selected_by_standard_ope(
     safety_criteria=1.0,
 )
 ```
-<div align="center"><img src=".docs/_static/images/ops_topk_policy_value.png" width="100%"/></div>
+<div align="center"><img src="./docs/_static/images/ops_topk_lower_quartile.png" width="100%"/></div>
 <figcaption>
 <p align="center">
-  Comparison of the Top-k Statistics of Policy Value
+  Comparison of the Top-k Statistics of 10% Lower Quartile of Policy Value
 </p>
 </figcaption>
 
@@ -385,7 +385,7 @@ ops.visualize_cvar_for_validation(
     share_axes=True,
 )
 ```
-<div align="center"><img src=".docs/_static/images/ops_variance_validation.png" width="100%"/></div>
+<div align="center"><img src="./docs/_static/images/ops_variance_validation.png" width="100%"/></div>
 <figcaption>
 <p align="center">
   Validation of Estimated and Ground-truth Variance of Policy Value
