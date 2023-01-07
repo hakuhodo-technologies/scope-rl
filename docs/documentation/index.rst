@@ -148,10 +148,10 @@ Off-Policy Selection Metrics
 ----------
 
 .. card:: 
-    :img-top: ../_static/images/ops_topk_performance.png
+    :img-top: ../_static/images/ops_topk_lower_quartile.png
     :text-align: center
     
-    Comparison of the Top-k Statistics of Policy Value
+    Comparison of the Top-k Statistics of 10% Lower Quartile of Policy Value
 
 Finally, OFRL also standardizes the evaluation protocol of OPE in two axes, first by measuring the accuracy of OPE over the whole candidate policies, 
 and second by evaluating the gains and costs in top-k deployment (e.g., the best and worst performance in top-k deployment).

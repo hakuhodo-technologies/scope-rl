@@ -324,23 +324,23 @@ Finally, we provide the code to conduct OPS, which selects the "best" performing
         return_by_dataframe=True,
     )
     # visualize the top k deployment result
+    # compared estimators are also easily specified
     ops.visualize_topk_policy_value_selected_by_standard_ope(
         input_dict=input_dict,
-        compared_estimators=["dm", "tis", "pdis", "dr"],
+        compared_estimators=["cdf_dm", "cdf_is", "cdf_dr", "cdf_snis", "cdf_sndr"],
         safety_criteria=1.0,
     )
     # visualize the OPS results with the ground-truth metrics
-    ops.visualize_lower_quartile_for_validation(
+    ops.visualize_variance_for_validation(
         input_dict,
-        alpha=0.3,
         share_axes=True,
     )
 
 .. card:: 
-    :img-top: ../_static/images/ops_topk_performance.png
+    :img-top: ../_static/images/ops_topk_lower_quartile.png
     :text-align: center
     
-    Comparison of the Top-k Statistics of Policy Value
+    Comparison of the Top-k Statistics of 10% Lower Quartile of Policy Value
 
 .. card:: 
     :img-top: ../_static/images/ops_variance_validation.png

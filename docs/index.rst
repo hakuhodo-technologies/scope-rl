@@ -127,17 +127,17 @@
         cumulative_distribution_ope=cd_ope,
     )
     # visualize the top k deployment result
-    ops.visualize_topk_policy_value_selected_by_standard_ope(
+    ops.visualize_topk_lower_quartile_selected_by_cumulative_distribution_ope(
         input_dict=input_dict,
-        compared_estimators=["dm", "tis", "pdis", "dr"],
-        safety_criteria=1.0,
+        ope_alpha=0.10,
+        safety_threshold=9.0,
     )
 
 .. card:: 
-    :img-top: ../_static/images/ops_topk_performance.png
+    :img-top: ../_static/images/ops_topk_lower_quartile.png
     :text-align: center
     
-    Comparison of the Top-k Statistics of Policy Value
+    Comparison of the Top-k Statistics of 10% Lower Quartile of Policy Value
 
 .. raw:: html
 
@@ -162,9 +162,8 @@
         cumulative_distribution_ope=cd_ope,
     )
     # visualize the OPS results with the ground-truth metrics
-    ops.visualize_lower_quartile_for_validation(
+    ops.visualize_variance_for_validation(
         input_dict,
-        alpha=0.3,
         share_axes=True,
     )
 

@@ -74,18 +74,14 @@ html_theme = "pydata_sphinx_theme"
 html_theme_options = {
     "github_url": "https://github.com/negocia-inc/ofrl",
     # "twitter_url": "https://twitter.com/{account}",
-    # "icon_links": [
-    #         {
-    #             # Label for this link
-    #             "name": "GitHub",
-    #             # URL where the link will redirect
-    #             "url": "https://github.com/negocia-inc/ofrl",  # required
-    #             # Icon class (if "type": "fontawesome"), or path to local image (if "type": "local")
-    #             "icon": "fab fa-github-square",
-    #             # The type of image to be used (see below for details)
-    #             "type": "fontawesome",
-    #         }
-    # ],
+    "icon_links": [
+        {
+            "name": "Speaker Deck",
+            "url": "https://speakerdeck.com/aiueola/ofrl-designing-an-offline-reinforcement-learning-and-policy-evaluation-platform-from-practical-perspectives",
+            "icon": "fa-brands fa-speaker-deck",
+            "type": "fontawesome",
+        },
+    ],
     "header_links_before_dropdown": 6,
     # "navbar_start": ["navbar-logo", "version"],
     "footer_items": ["copyright"],
