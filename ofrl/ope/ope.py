@@ -4593,9 +4593,6 @@ class CumulativeDistributionOffPolicyEvaluation:
                 for i in range(len(self.multiple_logged_dataset)):
                     cdf[i] = cdf_dict_[i][eval_policy][estimator]
 
-                    if not (cdf[i][1:] >= cdf[i][:-1]).all():
-                        print(i, eval_policy, estimator, cdf[i])
-
                 cdf_dict[eval_policy][estimator] = cdf
 
             cdf_dict[eval_policy]["on_policy"] = cdf_dict_[0][eval_policy]["on_policy"]
@@ -4890,11 +4887,11 @@ class CumulativeDistributionOffPolicyEvaluation:
                         if legend:
                             axes[i, j].legend(title="dataset_id")
 
-            fig.subplots_adjust(hspace=0.35, wspace=0.2)
-            plt.show()
+        fig.subplots_adjust(hspace=0.35, wspace=0.2)
+        plt.show()
 
-            if fig_dir:
-                fig.savefig(str(fig_dir / fig_name), dpi=300, bbox_inches="tight")
+        if fig_dir:
+            fig.savefig(str(fig_dir / fig_name), dpi=300, bbox_inches="tight")
 
     def visualize_policy_value_with_multiple_estimates(
         self,

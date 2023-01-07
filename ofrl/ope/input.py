@@ -212,7 +212,6 @@ class CreateOPEInput:
     """
 
     env: Optional[gym.Env] = None
-    action_type: Optional[str] = None
     model_args: Optional[Dict[str, Any]] = None
     gamma: float = 1.0
     sigma: float = 1.0
@@ -2703,7 +2702,7 @@ class CreateOPEInput:
                     ]
 
                 input_dict = MultipleInputDict(
-                    action_type=self.action_type,
+                    action_type=logged_dataset.get(0)["action_type"],
                     path=path,
                     save_relative_path=save_relative_path,
                 )
