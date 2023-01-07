@@ -1,6 +1,9 @@
 # logs
 logs/
 d3rlpy_logs/
+fig/
+logged_dataset/
+input_dict/
 preview/
 .venv/
 _autosummary/
