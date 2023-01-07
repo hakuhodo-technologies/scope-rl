@@ -9,7 +9,7 @@ Our documentation relies on [Sphinx](https://github.com/sphinx-doc/sphinx). To u
 pip install Sphinx pydata-sphinx-theme numpydoc sphinx_design sphinx-gallery sphinx-tabs sphinx-copybutton sphinxemoji sphinxcontrib-bibtex
 ```
 
-Please also refer to `conf.py` for the list of extensions.
+Please also refer to `./conf.py` for the list of extensions.
 
 ```python
 extensions = [
