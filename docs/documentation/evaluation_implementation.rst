@@ -2,6 +2,159 @@
 Supported Implementation
 ==========
 
+.. _implementation_create_ope_input:
+
+Create OPE Input
+~~~~~~~~~~
+Before proceeding to OPE/OPS, we first create :class:`input_dict` to enable a smooth implementation.
+
+.. code-block:: python
+
+            # create input for OPE class
+            from ofrl.ope import CreateOPEInput
+            prep = CreateOPEInput(
+                env=env,
+            )
+            input_dict = prep.obtain_whole_inputs(
+                logged_dataset=logged_dataset,
+                evaluation_policies=evaluation_policies,
+                require_value_prediction=True,  # use model-based prediction
+                n_trajectories_on_policy_evaluation=100,
+                random_state=random_state,
+            )
+
+.. _tip_create_input_dict:
+
+.. tip:: 
+    
+    .. dropdown:: How to create input_dict for multiple logged datasets?
+
+        When obtaining :class:`input_dict` from the same evaluation policies across multiple datasets, try the following command.
+
+        .. code-block:: python
+
+            multiple_input_dict = prep.obtain_whole_inputs(
+                logged_dataset=logged_dataset,            # MultipleLoggedDataset
+                evaluation_policies=evaluation_policies,  # single list
+                ...,
+            )
+
+        When obtaining :class:`input_dict` from different evaluation policies for each logged dataset, try the following command.
+
+        .. code-block:: python
+
+            multiple_input_dict = prep.obtain_whole_inputs(
+                logged_dataset=logged_dataset,                                 # MultipleLoggedDataset (two logged dataset in this case)
+                evaluation_policies=[evaluation_policies_1, eval_policies_2],  # nested list
+                ...,
+            )
+
+        In both cases, :class:`MultipleInputDict` will be returned.
+
+        :class:`MultipleInputDict` saves the paths to each input_dict and make it accessible through the following command.
+            
+        .. code-block:: python
+
+            input_dict_0 = multiple_input_dict.get(0)
+
+        .. seealso::
+
+            * :ref:`How to obtain MultipleLoggedDataset? <tips_synthetic_dataset>`
+            * :ref:`How to handle OPL with MultipleLoggedDataset? <tip_opl>`
+            * :doc:`API reference of MultipleInputDict <_autosummary/ofrl.utils.MultipleInputDict>`
+            * :ref:`Tutorial with MultipleLoggedDataset <ofrl_multiple_tutorial>`
+
+    .. dropdown:: How to select models for value/weight learning methods?
+
+        To enable value prediction (for model-based estimators) and weight prediction (for marginal estimators), set ``True`` for the following arguments.
+
+        .. code-block:: python
+
+            input_dict = prep.obtain_whole_inputs(
+                ...,
+                require_value_prediction=True, 
+                require_weight_prediction=True, 
+                ...,
+            )
+
+        Then, we can customize the choice of weight and value functions using the following arguments.
+
+        .. code-block:: python
+
+            input_dict = prep.obtain_whole_inputs(
+                ...,
+                q_function_method="fqe",   # one of {"fqe", "dice", "mql"}, default="fqe"
+                v_function_method="fqe",   # one of {"fqe", "dice_q", "dice_v", "mql", "mvl"}, default="fqe"
+                w_function_method="dice",  # one of {"dice", "mwl"}, default="dice"
+                ...,
+            )
+
+        To further customize the models, please specify ``model_args`` when initializing :class:`CreateOPEInput` as follows.
+
+        .. code-block:: python
+
+            from d3rlpy.models.encoders import VectorEncoderFactory
+            from d3rlpy.models.q_functions import MeanQFunctionFactory
+
+            prep = CreateOPEInput(
+                env=env,
+                model_args={
+                    "fqe": {
+                        "encoder_factory": VectorEncoderFactory(hidden_units=[30, 30]),
+                        "q_func_factory": MeanQFunctionFactory(),
+                        "learning_rate": 1e-4,
+                    },
+                    "state_action_dual" : {  # "dice"
+                        "method": "dual_dice",
+                    },
+                    "state_action_value": {  # "mql"
+                        "batch_size": 64,
+                        "lr": 1e-4,
+                    },
+                }
+            )
+
+        where the keys of ``model_args`` are the following.
+
+        .. code-block:: python
+
+            key: [
+                "fqe",                  # fqe
+                "state_action_dual",    # dice_q
+                "state_action_value",   # mql
+                "state_action_weight",  # mwl
+                "state_dual",           # dice_v
+                "state_value",          # mvl
+                "state_weight",         # mwl
+                "hidden_dim",           # hidden dim of value/weight function, except FQE
+            ]
+
+        .. seealso::
+
+            * :doc:`API reference of CreateInputDict <_autosummary/ofrl.ope.input>`
+            * :ref:`API reference of value/weight learning methods <ofrl_api_ope_weight_and_value_learning>`
+            * :ref:`Logics behind value and weight learning methods (How to obtain state(-action) marginal importance weight?) <tip_mariginal_iw>`
+
+    .. dropdown:: How to collect input_dict in a non-episodic setting?
+
+        When the goal is to evaluate the policy under a stationary distribution (:math:`d^{\pi}(s)`) rather than in a episodic setting 
+        (i.e., cartpole or taxi used in :cite:`liu2018breaking` :cite:`uehara2020minimax`), we need to (re-)collect initial states from evaluation policies stationary distribution.
+
+        In this case, please turn the following options.
+
+        .. code-block:: python
+
+            input_dict = prep.obtain_whole_inputs(
+                ...,
+                resample_initial_state=True,
+                use_stationary_distribution_on_policy_evaluation=True,  # when env is provided
+                ...,
+            )
+
+.. seealso::
+        
+    :doc:`Supported Implementation (learning) <learning_implementation>` describes how to obtain :class:`logged_dataset` using a behavior policy in detail.
+
 .. _implementation_basic_ope:
 
 Basic Off-Policy Evaluation (OPE)
@@ -34,32 +187,101 @@ Using the OPE class, we can obtain the OPE results of various estimators at once
 
     ope_dict = ope.estimate_policy_value(input_dict)
 
+.. _tip_ope:
+
 .. tip::
 
-    .. dropdown:: How to obtain input_dict?
+    .. dropdown:: How to conduct OPE with multiple logged datasets?
 
-        :class:`input_dict` is generated by the :class:`CreateOPEInput` class prior to running the OPE class as follows.
+        Conducting OPE with multiple logged datasets requires no additional efforts.
+
+        First, the same command with the single logged dataset case also works with multiple logged datasets.
 
         .. code-block:: python
 
-            # create input for OPE class
-            from ofrl.ope import CreateOPEInput
-            prep = CreateOPEInput(
-                env=env,
-                logged_dataset=logged_dataset,
-                require_value_prediction=True,  # use model-based prediction
+            ope = OPE(
+                logged_dataset=logged_dataset,  # MultipleLoggedDataset
+                ope_estimators=[DM(), TIS(), PDIS(), DR()],
             )
-            input_dict = prep.obtain_whole_inputs(
-                evaluation_policies=evaluation_policies,
-                n_trajectories_on_policy_evaluation=100,
-                random_state=random_state,
+            multiple_ope_dict = ope.estimate_policy_value(
+                input_dict,  # MultipleInputDict
             )
 
-        :doc:`Supported Implementation (learning) <learning_implementation>` describes how to obtain :class:`logged_dataset` using a behavior policy in detail.
+        The returned value is list of dict containing the ope result.
+
+        In addition, we can specify which logged dataset and input_dict to use by setting ``dataset_id``.
+
+        .. code-block:: python
+
+            multiple_ope_dict = ope.estimate_policy_value(
+                input_dict,
+                dataset_id=0,  # specify which logged dataset and input_dict to use
+            )
+
+        The basic visualization function also work by specifying the dataset id.
+
+        .. code-block:: python
+
+            ope.visualize_off_policy_estimates(
+                input_dict,
+                dataset_id=0,  #
+                ...,
+            )
+
+        .. card:: 
+            :img-top: ../_static/images/ope_policy_value_basic.png
+            :text-align: center
+            
+            policy value estimated with the specified dataset
+
+        Moreover, we provide additional visualization function for the multiple logged dataset case.
+
+        .. code-block:: python
+
+            ope.visualize_policy_value_with_multiple_estimates(
+                input_dict,      # MultipleInputDict
+                plot_type="ci",  # one of {"ci", "violin", "scatter"}, default="ci"
+                ...,
+            )
+
+        When the ``plot_type`` is "ci", the plot is somewhat similar to the basic visualization. 
+        (The star indicates the ground-truth policy value and the confidence intervals are derived by multiple estimates across datasets.)
+
+        .. card:: 
+            :img-top: ../_static/images/ope_policy_value_basic_multiple.png
+            :text-align: center
+            
+            policy value estimated with the multiple datasets
+
+        When the ``plot_type`` is "violin", the plot visualizes the distribution of multiple estimates.
+        This is particularly useful to see how the estimation result can vary depending on different datasets or random seeds. 
+
+        .. card:: 
+            :img-top: ../_static/images/ope_policy_value_basic_multiple_violin.png
+            :text-align: center
+            
+            policy value estimated with the multiple datasets (violin)
+
+        Finally, when the ``plot_type`` is "scatter", the plot visualizes each estimation with its color specifying the dataset id.
+        This function is particularly useful to see how the choice of behavior policy (e.g., their stochasticity) affects the estimation result.
+
+        .. card:: 
+            :img-top: ../_static/images/ope_policy_value_basic_multiple_scatter.png
+            :text-align: center
+            
+            policy value estimated with the multiple datasets (scatter)
+
+        .. seealso::
+
+            * :ref:`How to obtain MultipleLoggedDataset? <tips_synthetic_dataset>`
+            * :ref:`How to handle OPL with MultipleLoggedDataset? <tip_opl>`
+            * :ref:`How to create input_dict for MultipleLoggedDataset? <tip_create_input_dict>`
+            * :ref:`Tutorial with MultipleLoggedDataset <ofrl_multiple_tutorial>`
+        
 
 .. seealso::
 
-    * :doc:`quickstart` and :doc:`related tutorials <_autogallery/basic_ope/index>`
+    * :doc:`quickstart` and :ref:`related tutorials <basic_ope_tutorial>`
 
 
 The OPE class implements the following functions.
@@ -77,6 +299,9 @@ The OPE class implements the following functions.
 (Visualization)
 
 * :class:`visualize_off_policy_estimates`
+
+(Visualization with multiple estimates on multiple logged datasets)
+
 * :class:`visualize_policy_value_with_multiple_estimates`
 
 Below, we describe the implemented OPE estimators.
@@ -113,9 +338,46 @@ Extensions
 
     .. dropdown:: How to define my own OPE estimator?
 
-        To define your own OPE estimator, use :class:`BaseOffPolicyEstimator`. **TODO**
+        To define your own OPE estimator, use :class:`BaseOffPolicyEstimator`.
 
-        (also about how to contribute)
+        Basically, the common inputs for each functions are the following keys from logged_dataset and input_dict.
+
+        (logged_dataset)
+
+        .. code-block:: python
+
+            key: [
+                size,
+                step_per_trajectory,
+                action,
+                reward,
+                pscore,
+            ]
+
+        (input_dict)
+
+        .. code-block:: python
+
+            key: [
+                evaluation_policy_action,
+                evaluation_policy_action_dist,
+                state_action_value_prediction,
+                initial_state_value_prediction,
+                state_action_marginal_importance_weight,
+                state_marginal_importance_weight,
+                on_policy_policy_value,
+                gamma,
+            ]
+        
+        ``n_step_pdis`` is also applicable to marginal estimators and ``action_scaler`` and ``sigma`` are added in the continuous-action case.
+
+        If you want to add other arguments, please add them in the initialization arguments for API consistency.
+
+        Finally, contribution to OFRL with a new OPE estimator is more than welcome! Please read `the guidelines for contribution (CONTRIBUTING.md) <>`_.
+
+        .. seealso::
+
+            :doc:`API reference of BaseOffPolicyEstimator <_autosummary/ofrl.ope.estimators_base>` explains the abstract methods.
 
 .. _implementation_dm:
 
@@ -248,6 +510,8 @@ where :math:`w_t(s_t, a_t) = \pi(a_t | s_t) / \pi_0(a_t | s_t)` is the immediate
 This estimator is particularly useful when policy visits the same or similar states among different trajectories or different timestep.
 (e.g., when the state transition is something like :math:`\cdots \rightarrow s_1 \rightarrow s_2 \rightarrow s_1 \rightarrow s_2 \rightarrow \cdots` or when the trajectories always visits some particular state as :math:`\cdots \rightarrow s_{*} \rightarrow s_{1} \rightarrow s_{*} \rightarrow \cdots`)
 
+.. _tip_mariginal_iw:
+
 .. tip::
 
     .. dropdown:: How to obtain state(-action) marginal importance weight?
@@ -273,11 +537,11 @@ This estimator is particularly useful when policy visits the same or similar sta
             This method assumes that one of the value function or weight function is expressed by a function class in a reproducing kernel Hilbert space (RKHS) 
             and optimizes only either value function or weight function. 
 
-        The implementation is available by specifying **TODO**..
+        .. seealso::
 
-        .. code-block:: python
-
-            aaa
+            * :ref:`How to select models for value/weight learning methods? <tip_create_input_dict>` describes how to enable weight learning and select weight learning methods.
+            * :ref:`API reference of value/weight learning methods <ofrl_api_ope_weight_and_value_learning>`
+            * :doc:`API reference of CreateInputDict <_autosummary/ofrl.ope.input>`
 
 We implement state marginal and state-action marginal OPE estimators in the following classes (both for :class:`Discrete-` and :class:`Continuous-` action spaces).
 
@@ -340,7 +604,22 @@ Cross-fitting trains :math:`w^j` and :math:`Q^j` on the subset of data used for 
 
     .. dropdown:: How to obtain Q-hat via cross-fitting?
 
-        To obtain :math:`\hat{Q}` via cross-fitting, please specify **TODO**
+        To obtain :math:`\hat{Q}` via cross-fitting, please specify ``k_fold`` of :class:`obtain_whole_inputs` of :class:`CreateOPEInput`.
+
+        .. code-block:: python
+
+            prep = CreateOPEInput(
+                env=env,
+            )
+            input_dict = prep.obtain_whole_inputs(
+                logged_dataset=logged_dataset,
+                evaluation_policies=evaluation_policies,
+                require_value_prediction=True,  # use model-based prediction
+                k_fold=3,                       # use 3-fold cross-fitting
+                random_state=random_state,
+            )
+
+        The default :class:`k_fold=1` trains :math:`\hat{Q}` and :math:`\hat{w}` without cross-fitting.
 
 .. _implementation_sope:
 
@@ -469,7 +748,39 @@ In our implementation, we use the (distance-based) Gaussian kernel :math:`K(x)=\
 
     .. dropdown:: How to control the bias-variance tradeoff with a kernel?
 
-        **TODO** action_scaler and bandwidth
+        The bandwidth parameter :math:`h` controls the bias-variance tradeoff. 
+        Specifically, a large value of :math:`h` leads to a low-variance but high-bias estimation,
+        while a small value of :math:`h` leads to a high-variance but low-bias estimation.
+
+        The bandwidth parameter corresponds to ``sigma`` in the :class:`OffPolicyEvaluation` class.
+
+        .. code-block:: python
+
+            ope = OPE(
+                logged_dataset=logged_dataset,
+                ope_estimators=[DM(), TIS(), PDIS(), DR()],
+                sigma=1.0,  # bandwidth hyperparameter
+            )
+
+        For multi-dimension actions, we define the kernel with dot product among actions as :math:`K(a, a') := K(a^T a')`.
+        To control the scale of each dimension, ``action_scaler``, which is speficied in :class:`OffPolicyEvaluation`, is also useful. 
+
+        .. code-block:: python
+
+            from d3rlpy.preprocessing import MinMaxActionScaler
+            ope = OPE(
+                logged_dataset=logged_dataset,
+                ope_estimators=[DM(), TIS(), PDIS(), DR()],
+                sigma=1.0,  # bandwidth hyperparameter
+                action_scaler=MinMaxActionScaler(
+                    minimum=env.action_space.low,
+                    maximum=env.action_space.high,
+                ),
+            )
+
+        .. seealso::
+
+            `(external) d3rlpy's documentation about action_scaler <https://d3rlpy.readthedocs.io/en/latest/references/generated/d3rlpy.preprocessing.MinMaxActionScaler.html#d3rlpy.preprocessing.MinMaxActionScaler>`_
 
 .. _implementation_cumulative_distribution_ope:
 
@@ -513,9 +824,118 @@ It estimates the cumulative distribution of the trajectory wise reward and vario
     cdf_dict = cd_ope.estimate_cumulative_distribution_function(input_dict)
     variance_dict = cd_ope.estimate_variance(input_dict)
 
+.. _tip_cumulative_distribution_ope:
+
+.. tip::
+
+    .. dropdown:: How to conduct Cumulative Distribution OPE with multiple logged datasets?
+
+        Conducting Cumulative Distribution OPE with multiple logged datasets requires no additional efforts.
+
+        First, the same command with the single logged dataset case also works with multiple logged datasets.
+
+        .. code-block:: python
+
+            ope = CumulativeDistributionOPE(
+                logged_dataset=logged_dataset,  # MultipleLoggedDataset
+                ope_estimators=[CD_DM(), CD_IS(), CD_DR()],
+            )
+            multiple_cdf_dict = ope.estimate_cumulative_distribution_function(
+                input_dict,  # MultipleInputDict
+            )
+
+        The returned value is list of dict containing the ope result.
+
+        In addition, we can specify which logged dataset and input_dict to use by setting ``dataset_id``.
+
+        .. code-block:: python
+
+            multiple_ope_dict = ope.estimate_cumulative_distribution_function(
+                input_dict,
+                dataset_id=0,  # specify which logged dataset and input_dict to use
+            )
+
+        The basic visualization function also work by specifying the dataset id.
+
+        .. code-block:: python
+
+            ope.visualize_cumulative_distribution_function(
+                input_dict,
+                dataset_id=0,  #
+                random_state=random_state,
+            )
+
+        .. card:: 
+            :img-top: ../_static/images/ope_cumulative_distribution_function.png
+            :text-align: center
+            
+            cumulative distribution function estimated with the specified dataset
+
+        Moreover, we provide additional visualization function for the multiple logged dataset case.
+
+        The following visualizes confidence intervals of cumulative distribution function.
+
+        .. code-block:: python
+
+            ope.visualize_cumulative_distribution_function_with_multiple_estimates(
+                input_dict,      # MultipleInputDict
+                random_state=random_state,
+            )
+
+        .. card:: 
+            :img-top: ../_static/images/ope_cumulative_distribution_function_multiple.png
+            :text-align: center
+            
+            cumulative distribution function estimated with the multiple datasets
+
+        On contrary, the following visualizes the distribution of multiple estimates of ponit-wise policy performance 
+        (e.g., policy value, variance, conditional value at risk, lower quartile). 
+
+        .. code-block:: python
+
+            ope.visualize_policy_value_with_multiple_estimates(
+                input_dict,      # MultipleInputDict
+                plot_type="ci",  # one of {"ci", "violin", "scatter"}, default="ci"
+                random_state=random_state,
+            )
+
+        When the ``plot_type`` is "ci", the plot is somewhat similar to the basic visualization. 
+        (The star indicates the ground-truth policy value and the confidence intervals are derived by multiple estimates across datasets.)
+
+        .. card:: 
+            :img-top: ../_static/images/ope_cumulative_policy_value_basic_multiple.png
+            :text-align: center
+            
+            policy value estimated with the multiple datasets
+
+        When the ``plot_type`` is "violin", the plot visualizes the distribution of multiple estimates.
+        This is particularly useful to see how the estimation result can vary depending on different datasets or random seeds. 
+
+        .. card:: 
+            :img-top: ../_static/images/ope_cumulative_policy_value_basic_multiple_violin.png
+            :text-align: center
+            
+            policy value estimated with the multiple datasets (violin)
+
+        Finally, when the ``plot_type`` is "scatter", the plot visualizes each estimation with its color specifying the dataset id.
+        This function is particularly useful to see how the choice of behavior policy (e.g., their stochasticity) affects the estimation result.
+
+        .. card:: 
+            :img-top: ../_static/images/ope_cumulative_policy_value_basic_multiple_scatter.png
+            :text-align: center
+            
+            policy value estimated with the multiple datasets (scatter)
+
+        .. seealso::
+
+            * :ref:`How to obtain MultipleLoggedDataset? <tips_synthetic_dataset>`
+            * :ref:`How to handle OPL with MultipleLoggedDataset? <tip_opl>`
+            * :ref:`How to create input_dict for MultipleLoggedDataset? <tip_create_input_dict>`
+            * :ref:`Tutorial with MultipleLoggedDataset <ofrl_multiple_tutorial>`
+
 .. seealso::
 
-    * :doc:`quickstart` and :doc:`related tutorials <_autogallery/cumulative_distribution_ope/index>`
+    * :doc:`quickstart` and :ref:`related tutorials <cumulative_distribution_ope_tutorial>`
 
 :class:`CumulativeDistributionOffPolicyEvaluation` implements the following functions.
 
@@ -536,6 +956,8 @@ It estimates the cumulative distribution of the trajectory wise reward and vario
 * :class:`visualize_conditional_value_at_risk`
 * :class:`visualize_interquartile_range`
 * :class:`visualize_cumulative_distribution_function`
+
+(Visualization with multiple estimates on multiple logged datasets)
 
 * :class:`visualize_policy_value_with_multiple_estimates`
 * :class:`visualize_variance_with_multiple_estimates`
@@ -562,9 +984,47 @@ Extension to the continuous action space
 
     .. dropdown:: How to define my own cumulative distribution OPE estimator?
 
-        To define your own OPE estimator, use :class:`BaseCumulativeDistributionOffPolicyEstimator`. **TODO**
+        To define your own OPE estimator, use :class:`BaseCumulativeDistributionOffPolicyEstimator`. 
 
-        (also about how to contribute)
+        Basically, the common inputs for each functions are ``reward_scale`` (np.ndarray indicating x-axis of cumulative distribution function) 
+        and the following keys from logged_dataset and input_dict.
+
+        (logged_dataset)
+
+        .. code-block:: python
+
+            key: [
+                size,
+                step_per_trajectory,
+                action,
+                reward,
+                pscore,
+            ]
+
+        (input_dict)
+
+        .. code-block:: python
+
+            key: [
+                evaluation_policy_action,
+                evaluation_policy_action_dist,
+                state_action_value_prediction,
+                initial_state_value_prediction,
+                state_action_marginal_importance_weight,
+                state_marginal_importance_weight,
+                on_policy_policy_value,
+                gamma,
+            ]
+        
+        ``action_scaler`` and ``sigma`` are also added in the continuous-action case.
+
+        If you want to add other arguments, please add them in the initialization arguments for API consistency.
+
+        Finally, contribution to OFRL with a new OPE estimator is more than welcome! Please read `the guidelines for contribution (CONTRIBUTING.md) <>`_.
+
+        .. seealso::
+
+            :doc:`API reference of BaseOffPolicyEstimator <_autosummary/ofrl.ope.estimators_base>` explains the abstract methods.
 
 .. _implementation_cd_dm:
 
@@ -693,9 +1153,75 @@ Finally, the OPS class also implements the modules to compare the OPE result and
         share_axes=True,
     )
 
+.. tip::
+
+    .. dropdown:: How to conduct OPS with multiple logged datasets?
+
+        Conducting OPS with multiple logged datasets requires no additional efforts.
+
+        First, the same command with the single logged dataset case also works with multiple logged datasets.
+
+        .. code-block:: python
+
+            ops = OffPolicySelection(
+                ope=ope,                             # initialized with MultipleLoggedDataset
+                cumulative_distribution_ope=cd_ope,  # initialized with MultipleLoggedDataset
+            )
+            ranking_df, metric_df = ops.select_by_policy_value(
+                input_dict,  # MultipleInputDict
+                return_metrics=True,
+                return_by_dataframe=True,
+            )
+
+        The returned value is list of dict containing the ops result.
+
+        Next, visualization functions for OPS demonstrate the aggregated ops result by default.
+        For example, the average topk performance and its confidence intervals is shown for topk visualization.
+
+        .. code-block:: python
+
+            ops.visualize_topk_policy_value_selected_by_standard_ope(
+                input_dict=input_dict,
+                safety_criteria=1.0,
+            )
+
+        .. card:: 
+            :img-top: ../_static/images/ops_topk_policy_value_multiple.png
+            :text-align: center
+            
+            top-k deployment result with multiple logged datasets
+
+        In the validation visualization, colors indicate the dataset ids. 
+        This function is particularly useful to see how the choice of behavior policy (e.g., their stochasticity) affects the estimation result.
+
+        .. code-block:: python
+
+            ops.visualize_policy_value_for_validation(
+                input_dict=input_dict,
+                n_cols=4,
+                share_axes=True,
+            )
+
+        .. card:: 
+            :img-top: ../_static/images/ops_validation_policy_value_multiple.png
+            :text-align: center
+            
+            validation results on multiple logged datasets
+
+        Note that, when the dataset_id is specified, the methods show the result on the specified dataset.
+
+        .. seealso::
+
+            * :ref:`How to obtain MultipleLoggedDataset? <tips_synthetic_dataset>`
+            * :ref:`How to handle OPL with MultipleLoggedDataset? <tip_opl>`
+            * :ref:`How to create input_dict for MultipleLoggedDataset? <tip_create_input_dict>`
+            * :ref:`How to conduct OPE with MultipleLoggedDataset? <tip_ope>`
+            * :ref:`How to conduct Cumulative Distribution OPE with MultipleLoggedDataset? <tip_cumulative_distribution_ope>`
+            * :ref:`Tutorial with MultipleLoggedDataset <ofrl_multiple_tutorial>`
+
 .. seealso::
 
-    * :doc:`quickstart` and :doc:`Related tutorials <_autogallery/ops/index>`
+    * :doc:`quickstart` and :ref:`related tutorials <ops_tutorial>`
 
 The OPS class implements the following functions.
 
@@ -744,6 +1270,10 @@ The OPS class implements the following functions.
 * :class:`visualize_variance_for_validation`
 * :class:`visualize_lower_quartile_for_validation`
 * :class:`visualize_conditional_value_at_risk_for_validation`
+
+.. raw:: html
+
+    <div class="white-space-20px"></div>
 
 .. grid::
     :margin: 0

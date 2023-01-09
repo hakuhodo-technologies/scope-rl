@@ -185,7 +185,7 @@
     <h2>Explore more with OFRL</h2>
 
     <div class="top-page-gallery-link">
-        <a href="documentation/tutorial/index.html">Tutorials</a>
+        <a href="documentation/_autogallery/index.html">Tutorials</a>
     </div>
 
 .. card-carousel:: 4
@@ -209,6 +209,15 @@
         :img-top: .png
 
     .. card:: Ablation with xxx
+        :img-top: .png
+
+    .. card:: Handling multiple datasets
+        :img-top: .png
+
+    .. card:: Evaluating with various behavior policies
+        :img-top: .png
+
+    .. card:: Evaluating on non-episodic setting
         :img-top: .png
 
 .. raw:: html

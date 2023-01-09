@@ -140,12 +140,12 @@ class CustomizedRTBEnv(gym.Env):
 
         # OpenAI Gym and Gymnasium-like interaction with agent
         for episode in range(1000):
-            obs = env.reset()
+            obs, info = env.reset()
             done = False
 
             while not done:
                 action = agent.predict_online(obs)
-                obs, reward, done, info = env.step(action)
+                obs, reward, done, truncated, info = env.step(action)
 
     Online Evaluation:
 

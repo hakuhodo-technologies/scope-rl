@@ -151,8 +151,14 @@ class RTBEnv(gym.Env):
         from d3rlpy.algos import RandomPolicy
         from d3rlpy.preprocessing import MinMaxActionScaler
 
-        # initialize environment and define (RL) agent (i.e., policy)
+        # initialize environment
         env = RTBEnv(random_state=12345)
+
+        # the following commands also work
+        # import gym
+        # env = gym.make("RTBEnv-continuous-v0")
+
+        # define (RL) agent (i.e., policy)
         agent = OnlineHead(
             RandomPolicy(
                 action_scaler=MinMaxActionScaler(
@@ -168,12 +174,12 @@ class RTBEnv(gym.Env):
 
         # OpenAI Gym and Gymnasium-like interaction with agent
         for episode in range(1000):
-            obs = env.reset()
+            obs, info = env.reset()
             done = False
 
             while not done:
                 action = agent.predict_online(obs)
-                obs, reward, done, info = env.step(action)
+                obs, reward, done, truncated, info = env.step(action)
 
     Online Evaluation:
 

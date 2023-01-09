@@ -19,7 +19,7 @@ It takes an RL environment and the behavior policy (i.e., data collection policy
     from ofrl.dataset import SyntheticDataset
     dataset = SyntheticDataset(
         env=env,
-        behavior_policy=behavior_policy,
+        behavior_policy=behavior_policy,  # BaseHead
         max_episode_steps=env.step_per_episode,
         random_state=random_state,
     )
@@ -31,7 +31,46 @@ Then, it collects logged data as follows.
     # collect logged data by a behavior policy
     logged_dataset = dataset.obtain_episodes(n_trajectories=10000)
 
+.. _tips_synthetic_dataset:
+
 .. tip::
+
+    .. dropdown:: How to obtain a behavior policy?
+
+        Our :class:`SyntheticDataset` class accepts an instance of :class:`BaseHead` as a behavior policy.
+
+        A policy head converts a `d3rlpy <https://github.com/takuseno/d3rlpy>`_'s deterministic behavior policy to 
+        either a deterministic or stochastic policy with functions to calculate propensity scores (i.e., action choice probabilities).
+
+        For example, :class:`DiscreteEpsilonGreedyHead` converts a discrete-action policy to a epsilon-greedy policy as follows.
+
+        .. code-block:: python
+
+            from ofrl.policy import DiscreteEpsilonGreedyHead
+            behavior_policy = DiscreteEpsilonGreedyHead(
+                base_policy,  # AlgoBase of d3rlpy
+                n_actions=env.action_space.n,
+                epsilon=0.3,
+                name="eps_03",
+                random_state=random_state,
+            )
+
+
+        :class:`ContinuousGaussianHead` converts a continuous-action policy to a stochastic policy as follows.
+
+        .. code-block:: python
+
+            from ofrl.policy import ContinuousGaussianHead
+            behavior_policy = ContinuousGaussianHead(
+                base_policy,  # AlgoBase of d3rlpy
+                sigma=1.0,
+                name="sigma_10",
+                random_state=random_state,
+            )
+
+        .. seealso::
+
+            For the detail descriptions and additional supported implementations, please refer to the :ref:`Policy Wrappers <implementation_policy_head>` section later in this page.
 
     .. dropdown:: How to customize the dataset class?
 
@@ -61,7 +100,7 @@ Then, it collects logged data as follows.
 
         .. note::
             
-            ``logged_dataset`` can be used for OPE even if ``action_keys``, ``action_meaning``, ``state_keys``, ``info`` is not provided.
+            ``logged_dataset`` can be used for OPE even if ``action_keys``, ``action_meaning``, ``state_keys``, and ``info`` are not provided.
             For API consistency, just leave ``None`` when these keys are unnecessary. 
             
             Moreover, offline RL algorithms, FQE (model-based OPE), and marginal OPE estimators 
@@ -69,7 +108,7 @@ Then, it collects logged data as follows.
 
         .. seealso::
 
-            :doc:`Package Reference <_autosummary/dataset/ofrl.dataset.base>` explains the meaning of each keys in detail.
+            :doc:`API reference of BaseDataset<_autosummary/dataset/ofrl.dataset.base>` explains the meaning of each keys in detail.
 
 
     .. dropdown:: How to handle multiple logged datasets at once?
@@ -91,8 +130,7 @@ Then, it collects logged data as follows.
             synthetic_dataset = SyntheticDataset(
                 env=env,
                 behavior_policy=behavior_policy,
-                max_episode_steps=env.step_per_episode,
-                random_state=random_state,
+                ...,
             )
             multiple_logged_dataset = synthetic_dataset.obtain_episodes(
                 n_datasets=5,          # when n_datasets > 1, MultipleLoggedDataset is returned
@@ -103,6 +141,7 @@ Then, it collects logged data as follows.
 
         .. code-block:: python
 
+            from ofrl.utils import MultipleLoggedDataset
             multiple_logged_dataset = MultipleLoggedDataset(
                 action_type="discrete",
                 path="logged_dataset/",  # either absolute or relative path
@@ -112,8 +151,7 @@ Then, it collects logged data as follows.
                 synthetic_dataset = SyntheticDataset(
                     env=env,
                     behavior_policy=behavior_policy,
-                    max_episode_steps=env.step_per_episode,
-                    random_state=random_state,
+                    ...,
                 )
                 single_logged_dataset = synthetic_dataset.obtain_episodes(
                     n_trajectories=10000,
@@ -127,17 +165,207 @@ Then, it collects logged data as follows.
 
         .. seealso::
 
-            * :doc:`Package Reference of MultipleLoggedDataset <_autosummary/ofrl.utils.MultipleLoggedDataset>`
-            * :doc:`TODO tutorial with MultipleLoggedDataset`
+            * :doc:`API reference of MultipleLoggedDataset <_autosummary/ofrl.utils.MultipleLoggedDataset>`
+            * :ref:`Tutorial with MultipleLoggedDataset <ofrl_multiple_tutorial>`
+
+    .. dropdown:: How to collect data in a non-episodic setting?
+
+        When the goal is to evaluate the policy under a stationary distribution (:math:`d^{\pi}(s)`) rather than in an episodic setting 
+        (i.e., cartpole or taxi used in :cite:`liu2018breaking` :cite:`uehara2020minimax`), we need to collect data from stationary distribution.
+
+        For this, please consider using :class:`obtain_step` instead of :class:`obtain_episodes` as follows.
+
+        .. code-block:: python
+
+            logged_dataset = dataset.obtain_steps(n_trajectories=10000)
 
 .. seealso::
 
-    * :doc:`quickstart` and :doc:`related tutorials <_autogallery/ofrl_others/index>`
+    * :doc:`quickstart` and :ref:`related tutorials <ofrl_others_tutorial>`
 
-The behavior policy can either be deterministic or stochastic when conducting offline policy learning.
-For OPE/OPS, the behavior policy should be a stochastic one.
+.. _implementation_opl:
 
-To convert the d3rlpy's deterministic policy to a stochastic one, we provide several wrapper classes to ease implementation as follows.
+Off-Policy Learning
+~~~~~~~~~~
+
+Once we obtain the logged dataset, it's time to learn a new policy in an offline manner. 
+For this, `d3rlpy <https://github.com/takuseno/d3rlpy>`_ provides various offline RL algorithms that work as follows.
+
+.. code-block:: python
+
+    # import modules
+    from d3rlpy.dataset import MDPDataset
+    from d3rlpy.algos import DiscreteCQL as CQL
+    from d3rlpy.models.encoders import VectorEncoderFactory
+    from d3rlpy.models.q_functions import MeanQFunctionFactory
+    
+    # convert a (single) logged dataset to d3rlpy dataset
+    offlinerl_dataset = MDPDataset(
+        observations=logged_dataset["state"],
+        actions=logged_dataset["action"],
+        rewards=logged_dataset["reward"],
+        terminals=logged_dataset["done"],
+        episode_terminals=logged_dataset["done"],
+        discrete_action=True,
+    )
+    train_episodes, test_episodes = train_test_split(
+        offlinerl_dataset, 
+        test_size=0.2, 
+        random_state=random_state,
+    )
+
+    # define an offline RL algorithm
+    cql = CQL(
+        encoder_factory=VectorEncoderFactory(hidden_units=[30, 30]),
+        q_func_factory=MeanQFunctionFactory(),
+    )
+
+    # fit algorithm in an offline manner
+    cql.fit(
+        train_episodes,
+        eval_episodes=test_episodes,
+        n_steps=10000,
+    )
+
+While the above procedure is alreaady simple and easy-to-use, 
+we also provide :class:`OffPolicyLearning` as a meta class to further smoothen the OPL procedure with various algorithms.
+
+.. code-block:: python
+
+    # prepare offline RL algorithms
+    cql_b1 = CQL(
+        encoder_factory=VectorEncoderFactory(hidden_units=[30, 30]),
+        q_func_factory=MeanQFunctionFactory(),
+    )
+    cql_b2 = CQL(
+        encoder_factory=VectorEncoderFactory(hidden_units=[100]),
+        q_func_factory=MeanQFunctionFactory(),
+    )
+    cql_b3 = CQL(
+        encoder_factory=VectorEncoderFactory(hidden_units=[50, 10]),
+        q_func_factory=MeanQFunctionFactory(),
+    )
+
+    # off-policy learning
+    from ofrl.policy import OffPolicyLearning
+    opl = OffPolicyLearning(
+        fitting_args={"n_steps": 10000},
+    )
+    base_policies = opl.learn_base_policy(
+        logged_dataset=logged_dataset,
+        algorithms=[cql_b1, cql_b2, cql_b3],
+        random_state=random_state,
+    )
+
+Using :class:`OffPolicyLearning`, we can also convert the deterministic base policies to stochastic (evaluation) policies as follows.
+
+.. code-block:: python
+
+    # policy wrapper
+    from ofrl.policy import DiscreteEpsilonGreedyHead as EpsilonGreedyHead
+    policy_wrappers = {
+        "eps_00": (
+            EpsilonGreedyHead, {
+                "epsilon": 0.0,
+                "n_actions": env.action_space.n,
+            }
+        ),
+        "eps_03": (
+            EpsilonGreedyHead, {
+                "epsilon": 0.3,
+                "n_actions": env.action_space.n,
+            }
+        ),
+        "eps_07": (
+            EpsilonGreedyHead, {
+                "epsilon": 0.7,
+                "n_actions": env.action_space.n,
+            }
+        ),
+        "softmax": (
+            SoftmaxHead, {
+                "tau": 1.0,
+                "n_actions": env.action_space.n,
+            }
+        )
+    }
+
+    # apply policy wrappers and convert deterministic base policies into stochastic evaluation policies
+    eval_policies = opl.apply_head(
+        base_policies=base_policies,
+        base_policies_name=["cql_b1", "cql_b2", "cql_b3"],
+        policy_wrappers=policy_wrappers,
+        random_state=random_state,
+    )
+
+where we describe the policy wrappers in detail :ref:`in the next section <implementation_policy_head>`.
+
+Also, it is possible to learn the base policy and apply policy wrappers at the same time as follows.
+
+.. code-block:: python
+
+    eval_policies = opl.obtain_evaluation_policy(
+        logged_dataset=logged_dataset,
+        algorithms=[cql_b1, cql_b2, cql_b3],
+        algorithms_name=["cql_b1", "cql_b2", "cql_b3"],
+        policy_wrappers=policy_wrappers,
+        random_state=random_state,
+    )
+
+The obtained evaluation policies are the following (both algorithms and policy wrappers are enumerated).
+
+.. code-block:: python
+
+    >>> [eval_policy.name for eval_policy in eval_policies[0]]
+
+    ['cql_b1_eps_00', 'cql_b1_eps_03', 'cql_b1_eps_07', 'cql_b1_softmax',
+     'cql_b2_eps_00', 'cql_b2_eps_03', 'cql_b2_eps_07', 'cql_b2_softmax',
+     'cql_b3_eps_00', 'cql_b3_eps_03', 'cql_b3_eps_07', 'cql_b3_softmax']
+
+.. _tip_opl:
+
+.. tip::
+
+    .. dropdown:: How to handle OPL with multiple logged datasets?
+
+        :class:`OffPolicyLearning` is particularly useful when fitting offline RL algorithms on multiple logged dataset.
+
+        When applying the same algorithms and policies wrappers across multiple datasets, try the following command.
+
+        .. code-block:: python
+
+            eval_policies = opl.obtain_evaluation_policy(
+                logged_dataset=logged_dataset,                   # MultipleLoggedDataset
+                algorithms=[cql_b1, cql_b2, cql_b3],             # single list
+                algorithms_name=["cql_b1", "cql_b2", "cql_b3"],  # single list
+                policy_wrappers=policy_wrappers,                 # single dict
+                random_state=random_state,
+            )
+
+        When applying different algorithms or policy wrappers to each datasets, try the following command.
+
+        .. code-block::
+
+            eval_policies = opl.obtain_evaluation_policy(
+                logged_dataset=logged_dataset,                           # MultipleLoggedDataset (two datasets in this case)
+                algorithms=[[cql_b1, cql_b2], [cql_b3]],                 # nested list
+                algorithms_name=[["cql_b1", "cql_b2"], ["cql_b3"]],      # nested list
+                policy_wrappers=[policy_wrappers_1, policy_wrappers_2],  # list of dict
+                random_state=random_state,
+            )
+
+        The evaluation policies are returned in a nested list.
+        
+        The other functions (i.e., :class:`learn_base_policy` and :class:`apply_head`) also work in a manner similar to the above examples.
+
+        .. seealso::
+
+            * :ref:`How to obtain MultipleLoggedDataset? <tips_synthetic_dataset>`
+            * :ref:`Tutorial with MultipleLoggedDataset <ofrl_multiple_tutorial>`
+
+.. seealso::
+
+    * :doc:`quickstart` and :ref:`related tutorials <ofrl_others_tutorial>`
 
 .. _implementation_policy_head:
 
@@ -157,11 +385,34 @@ Here, we describe some useful wrapper tools to convert a `d3rlpy <https://github
 
     .. dropdown:: How to customize the policy head?
 
-        To customize the policy head, use :class:`BaseHead`.
+        To customize the policy head, use :class:`BaseHead`. Basically, the policy head has two roles.
+
+        1. Enabling online interactions.
+        2. Converting a deterministic policy to a stochastic policy. 
+
+        For the first purpose, we already provide the following four functions in the base class:
+
+        * :class:`predict_online`
+        * :class:`predict_value_online`
+        * :class:`sample_action_online`
+        * :class:`stochastic_action_with_pscore_online`
+
+        Please just override these functions for online interactions. :class:`OnlineHead` is also useful for this purpose.
+
+        Next, for the second purpose, you can customize how to convert a deterministic policy to a stochastic policy using following functions.
+
+        * :class:`stochastic_action_with_pscore_online`
+        * :class:`calc_action_choice_probability`
+        * :class:`calc_pscore_given_action`
+
+        .. seealso::
+
+            * :doc:`Package Reference of BaseHead and implemented policy heads <_autosummary/ofrl.policy.head>`
+
 
 .. seealso::
 
-    * :doc:`Related tutorials <_autogallery/ofrl_others/index>`
+    * :ref:`Related tutorials <ofrl_others_tutorial>`
 
 
 .. _implementation_discrete_head:
@@ -205,7 +456,7 @@ Finally, we provide the series of functions to be used for online performance ev
 
 .. seealso::
 
-    * :doc:`Related tutorials <_autogallery/ofrl_others/index>`
+    * :ref:`Related tutorials <ofrl_others_tutorial>`
 
 (Rollout)
 
@@ -227,9 +478,9 @@ Finally, we provide the series of functions to be used for online performance ev
 * :class:`visualize_on_policy_conditional_value_at_risk`
 * :class:`visualize_on_policy_interquartile_range`
 
-.. seealso::
+.. raw:: html
 
-    * :doc:`Related tutorials <_autogallery/ofrl_others/index>`
+    <div class="white-space-20px"></div>
 
 .. grid::
     :margin: 0

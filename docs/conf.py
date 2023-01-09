@@ -96,6 +96,8 @@ html_static_path = ["_static"]
 html_css_files = ["css/custom.css"]
 
 html_title = "OFRL"
+# html_use_opensearch = "https://"
+
 
 # whether to display to the source .rst file
 html_show_sourcelink = False
@@ -152,6 +154,7 @@ sphinx_gallery_conf = {
             "tutorial/cumulative_distribution_ope",
             "tutorial/ops",
             "tutorial/ofrl_others",
+            "tutorial/multiple_datasets",
             "tutorial/rtbgym",
             "tutorial/footer",
         ]

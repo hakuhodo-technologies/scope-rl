@@ -128,6 +128,7 @@ class OffPolicyLearning:
             algorithms=algorithms,
             algorithms_name=algorithms_name,
             policy_wrappers=policy_wrappers,
+            random_state=12345,
         )
 
     **Output**:

@@ -358,6 +358,10 @@ Finally, we provide the code to conduct OPS, which selects the "best" performing
 
 More tutorials with a variety of environments and OPE estimators are available in the next page!
 
+.. raw:: html
+
+    <div class="white-space-5px"></div>
+
 .. grid::
 
     .. grid-item::

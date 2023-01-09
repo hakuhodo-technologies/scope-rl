@@ -189,11 +189,12 @@ class CreateOPEInput:
 
         # create input for off-policy evaluation (OPE)
         prep = CreateOPEInput(
-            logged_dataset=logged_dataset,
+            env=env,
         )
         input_dict = prep.obtain_whole_inputs(
+            logged_dataset=logged_dataset,
             evaluation_policies=[ddqn_, random_],
-            env=env,
+            require_value_prediction=True,
             n_trajectories_on_policy_evaluation=100,
             random_state=12345,
         )
