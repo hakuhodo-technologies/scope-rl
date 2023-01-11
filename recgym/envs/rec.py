@@ -43,6 +43,8 @@ class RECEnv(gym.Env):
         Functions that determine state update
     noise_std: float, default = 0 (>=0)
         Amount of noise an observation has
+    step_per_episode: int, default=10 (> 0)
+        Number of timesteps in an episode.
 
     Examples
     -------
@@ -134,7 +136,7 @@ class RECEnv(gym.Env):
         # define action space 
         self.action_type = "discrete"
         self.action_dim = 1
-        self.action_space = Discrete(self.n_items - 1 )
+        self.action_space = Discrete(self.n_items)
 
         # define reward range
         self.reward_range = (0, np.inf)
@@ -184,7 +186,6 @@ class RECEnv(gym.Env):
         # update state with state_transition_function
         state = self.state_transition_function(self.state, action, self.item_feature_vector)
 
-
         done = self.t == self.step_per_episode - 1
 
         if done:
@@ -201,7 +202,6 @@ class RECEnv(gym.Env):
         info = {}
 
         return obs, reward, done, False, info
-        # return obs, reward, done, info
 
 
     def reset(self):
@@ -213,6 +213,8 @@ class RECEnv(gym.Env):
         obs: ndarray of shape (1,)
                     Statistical feedbacks of recommendation
                         - add noise to state by _observation()
+        info: dict
+            Additional feedbacks for analysts.
         """
         # initialize internal env state
         # initialize timestep
@@ -221,6 +223,7 @@ class RECEnv(gym.Env):
         user_id = random.randint(0, self.n_users-1)
         #make state user_feature_vector of the selected user.
         state = self.user_feature_vector[user_id]
+        self.initial_state = state
         self.state = state
         obs = self._observation(self.state)
 
