@@ -1,15 +1,9 @@
 import gym
 from sklearn.linear_model import LogisticRegression
 
-from rtbgym.envs.rtb import RTBEnv
-from rtbgym.envs.wrapper_rtb import CustomizedRTBEnv
-from rtbgym.envs.simulator.function import (
-    BaseWinningPriceDistribution,
-    BaseClickAndConversionRate,
-)
-from recgym.env.function import inner_reward_function
-from recgym.env.function import user_preference_dynamics
-from recgym.env.rec import RECEnv
+from recgym.envs.rec import RECEnv
+from recgym.envs.function import inner_reward_function
+from recgym.envs.function import user_preference_dynamics
 
 
 __all__ = [
