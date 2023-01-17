@@ -4167,7 +4167,7 @@ class OffPolicySelection:
         input_dict: Union[OPEInputDict, MultipleInputDict],
         compared_estimators: Optional[List[str]] = None,
         dataset_id: Optional[Union[int, str]] = None,
-        metrics: List[str] = ["best", "worst", "mean", "safety_violation_rate"],
+        metrics: List[str] = ["k-th", "best", "worst", "mean", "safety_violation_rate"],
         max_topk: Optional[int] = None,
         safety_criteria: Optional[float] = None,
         visualize_ci: bool = False,
@@ -4211,8 +4211,9 @@ class OffPolicySelection:
             Id (or name) of the logged dataset.
             If `None`, the average of the result will be shown.
 
-        metrics: list of {"best", "worst", "mean", "safety_violation_rate"}, default=["best", "worst", "mean", "safety_violation_rate"]
+        metrics: list of {"k-th", "best", "worst", "mean", "safety_violation_rate"}, default=["k-th", "best", "worst", "mean", "safety_violation_rate"]
             Indicate which of the policy performance among {"best", "worst", "mean"} and safety violation rate to report.
+            For "k-th", it means that the policy performance of the (estimated) k-th policy will be visualized.
 
         max_topk: int, default=None
             Maximum number of policies to be deployed.
@@ -4260,12 +4261,10 @@ class OffPolicySelection:
             raise ValueError(
                 "compared_estimators must be a subset of self.estimators_name['standard_ope'], but found False."
             )
-        if metrics is None:
-            metrics = ["best", "worst", "mean", "safety_violation_rate"]
         for metric in metrics:
-            if metric not in ["best", "worst", "mean", "safety_violation_rate"]:
+            if metric not in ["k-th", "best", "worst", "mean", "safety_violation_rate"]:
                 raise ValueError(
-                    f"the elements of metrics must be one of 'best', 'worst', 'mean', or 'safety_violation_rate', but {metric} is given"
+                    f"The elements of metrics must be one of 'k-th', 'best', 'worst', 'mean', or 'safety_violation_rate', but {metric} is given."
                 )
 
         if max_topk is None:
@@ -4326,7 +4325,9 @@ class OffPolicySelection:
                                 "true_policy_value"
                             ][: topk + 1]
 
-                            if metric == "best":
+                            if metric == "k-th":
+                                topk_metric[topk, l] = topk_values[-1]
+                            elif metric == "best":
                                 topk_metric[topk, l] = topk_values.max()
                             elif metric == "worst":
                                 topk_metric[topk, l] = topk_values.min()
@@ -4349,7 +4350,9 @@ class OffPolicySelection:
                             : topk + 1
                         ]
 
-                        if metric == "best":
+                        if metric == "k-th":
+                            topk_metric[topk] = topk_values[-1]
+                        elif metric == "best":
                             topk_metric[topk] = topk_values.max()
                         elif metric == "worst":
                             topk_metric[topk] = topk_values.min()
@@ -4441,7 +4444,7 @@ class OffPolicySelection:
                         label=estimator,
                     )
 
-            if metric in ["best", "worst", "mean"]:
+            if metric in ["k-th", "best", "worst", "mean"]:
                 if safety_threshold is not None:
                     axes[j].plot(
                         np.arange(1, max_topk + 1),
@@ -4492,7 +4495,7 @@ class OffPolicySelection:
         input_dict: Union[OPEInputDict, MultipleInputDict],
         compared_estimators: Optional[List[str]] = None,
         dataset_id: Optional[Union[int, str]] = None,
-        metrics: Optional[List[str]] = None,
+        metrics: List[str] = ["k-th", "best", "worst", "mean", "safety_violation_rate"],
         max_topk: Optional[int] = None,
         safety_criteria: Optional[float] = None,
         visualize_ci: bool = False,
@@ -4536,8 +4539,9 @@ class OffPolicySelection:
             Id (or name) of the logged dataset.
             If `None`, the average of the result will be shown.
 
-        metrics: list of {"best", "worst", "mean", "safety_violation_rate"}, default=["best", "worst", "mean", "safety_violation_rate"]
+        metrics: list of {"k-th", "best", "worst", "mean", "safety_violation_rate"}, default=["k-th", "best", "worst", "mean", "safety_violation_rate"]
             Indicate which of the policy performance among {"best", "worst", "mean"} and safety violation rate to report.
+            For "k-th", it means that the policy performance of the (estimated) k-th policy will be visualized.
 
         max_topk: int, default=None
             Maximum number of policies to be deployed.
@@ -4585,12 +4589,10 @@ class OffPolicySelection:
             raise ValueError(
                 "compared_estimators must be a subset of self.estimators_name['cumulative_distribution_ope'], but found False."
             )
-        if metrics is None:
-            metrics = ["best", "worst", "mean", "safety_violation_rate"]
         for metric in metrics:
-            if metric not in ["best", "worst", "mean", "safety_violation_rate"]:
+            if metric not in ["k-th", "best", "worst", "mean", "safety_violation_rate"]:
                 raise ValueError(
-                    f"the elements of metrics must be one of 'best', 'worst', 'mean', or 'safety_violation_rate', but {metric} is given"
+                    f"the elements of metrics must be one of 'k-th', 'best', 'worst', 'mean', or 'safety_violation_rate', but {metric} is given"
                 )
 
         if max_topk is None:
@@ -4651,7 +4653,9 @@ class OffPolicySelection:
                                 "true_policy_value"
                             ][: topk + 1]
 
-                            if metric == "best":
+                            if metric == "k-th":
+                                topk_metric[topk, l] = topk_values[-1]
+                            elif metric == "best":
                                 topk_metric[topk, l] = topk_values.max()
                             elif metric == "worst":
                                 topk_metric[topk, l] = topk_values.min()
@@ -4674,7 +4678,9 @@ class OffPolicySelection:
                             : topk + 1
                         ]
 
-                        if metric == "best":
+                        if metric == "k-th":
+                            topk_metric[topk] = topk_values[-1]
+                        elif metric == "best":
                             topk_metric[topk] = topk_values.max()
                         elif metric == "worst":
                             topk_metric[topk] = topk_values.min()
@@ -4766,7 +4772,7 @@ class OffPolicySelection:
                         label=estimator,
                     )
 
-            if metric in ["best", "worst", "mean"]:
+            if metric in ["k-th", "best", "worst", "mean"]:
                 if safety_threshold is not None:
                     axes[j].plot(
                         np.arange(1, max_topk + 1),
@@ -4817,7 +4823,7 @@ class OffPolicySelection:
         input_dict: Union[OPEInputDict, MultipleInputDict],
         compared_estimators: Optional[List[str]] = None,
         dataset_id: Optional[Union[int, str]] = None,
-        metrics: Optional[List[str]] = None,
+        metrics: List[str] = ["k-th", "best", "worst", "mean", "safety_violation_rate"],
         max_topk: Optional[int] = None,
         safety_criteria: Optional[float] = None,
         ope_cis: List[str] = ["bootstrap"],
@@ -4864,8 +4870,9 @@ class OffPolicySelection:
             Id (or name) of the logged dataset.
             If `None`, the average of the result will be shown.
 
-        metrics: list of {"best", "worst", "mean", "safety_violation_rate"}, default=["best", "worst", "mean", "safety_violation_rate"]
+        metrics: list of {"k-th", "best", "worst", "mean", "safety_violation_rate"}, default=["k-th", "best", "worst", "mean", "safety_violation_rate"]
             Indicate which of the policy performance among {"best", "worst", "mean"} and safety violation rate to report.
+            For "k-th", it means that the policy performance of the (estimated) k-th policy will be visualized.
 
         max_topk: int, default=None
             Maximum number of policies to be deployed.
@@ -4922,12 +4929,10 @@ class OffPolicySelection:
             raise ValueError(
                 "compared_estimators must be a subset of self.estimators_name['standard_ope'], but found False."
             )
-        if metrics is None:
-            metrics = ["best", "worst", "mean", "safety_violation_rate"]
         for metric in metrics:
-            if metric not in ["best", "worst", "mean", "safety_violation_rate"]:
+            if metric not in ["k-th", "best", "worst", "mean", "safety_violation_rate"]:
                 raise ValueError(
-                    f"the elements of metrics must be one of 'best', 'worst', 'mean', or 'safety_violation_rate', but {metric} is given"
+                    f"the elements of metrics must be one of 'k-th', 'best', 'worst', 'mean', or 'safety_violation_rate', but {metric} is given"
                 )
 
         if max_topk is None:
@@ -4993,7 +4998,9 @@ class OffPolicySelection:
                                     "true_policy_value"
                                 ][: topk + 1]
 
-                                if metric == "best":
+                                if metric == "k-th":
+                                    topk_metric[topk, l] = topk_values[-1]
+                                elif metric == "best":
                                     topk_metric[topk, l] = topk_values.max()
                                 elif metric == "worst":
                                     topk_metric[topk, l] = topk_values.min()
@@ -5017,7 +5024,9 @@ class OffPolicySelection:
                                 "true_policy_value"
                             ][: topk + 1]
 
-                            if metric == "best":
+                            if metric == "k-th":
+                                topk_metric[topk] = topk_values[-1]
+                            elif metric == "best":
                                 topk_metric[topk] = topk_values.max()
                             elif metric == "worst":
                                 topk_metric[topk] = topk_values.min()
@@ -5120,7 +5129,7 @@ class OffPolicySelection:
                             label=estimator,
                         )
 
-                if metric in ["best", "worst", "mean"]:
+                if metric in ["k-th", "best", "worst", "mean"]:
                     if safety_threshold is not None:
                         axes[j].plot(
                             np.arange(1, max_topk + 1),
@@ -5207,7 +5216,7 @@ class OffPolicySelection:
                                 label=estimator,
                             )
 
-                    if metric in ["best", "worst", "mean"]:
+                    if metric in ["k-th", "best", "worst", "mean"]:
                         if safety_threshold is not None:
                             axes[l, j].plot(
                                 np.arange(1, max_topk + 1),
@@ -5261,7 +5270,7 @@ class OffPolicySelection:
         compared_estimators: Optional[List[str]] = None,
         dataset_id: Optional[Union[int, str]] = None,
         ope_alpha: float = 0.05,
-        metrics: List[str] = ["best", "worst", "mean", "safety_violation_rate"],
+        metrics: List[str] = ["k-th", "best", "worst", "mean", "safety_violation_rate"],
         max_topk: Optional[int] = None,
         safety_threshold: Optional[float] = None,
         visualize_ci: bool = False,
@@ -5308,8 +5317,9 @@ class OffPolicySelection:
         ope_alpha: float, default=0.05
             Proportion of the sided region. The value should be within `[0, 1]`.
 
-        metrics: list of {"best", "worst", "mean", "safety_violation_rate"}, default=["best", "worst", "mean", "safety_violation_rate"]
+        metrics: list of {"k-th", "best", "worst", "mean", "safety_violation_rate"}, default=["k-th", "best", "worst", "mean", "safety_violation_rate"]
             Indicate which of the policy performance among {"best", "worst", "mean"} and safety violation rate to report.
+            For "k-th", it means that the policy performance of the (estimated) k-th policy will be visualized.
 
         max_topk: int, default=None
             Maximum number of policies to be deployed.
@@ -5356,12 +5366,10 @@ class OffPolicySelection:
             raise ValueError(
                 "compared_estimators must be a subset of self.estimators_name['standard_ope'], but found False."
             )
-        if metrics is None:
-            metrics = ["best", "worst", "mean", "safety_violation_rate"]
         for metric in metrics:
-            if metric not in ["best", "worst", "mean", "safety_violation_rate"]:
+            if metric not in ["k-th", "best", "worst", "mean", "safety_violation_rate"]:
                 raise ValueError(
-                    f"the elements of metrics must be one of 'best', 'worst', 'mean', or 'safety_violation_rate', but {metric} is given"
+                    f"the elements of metrics must be one of 'k-th', 'best', 'worst', 'mean', or 'safety_violation_rate', but {metric} is given"
                 )
 
         if max_topk is None:
@@ -5471,7 +5479,9 @@ class OffPolicySelection:
                         for l in range(n_datasets):
                             topk_values = cvar_dict[l][estimator][: topk + 1]
 
-                            if metric == "best":
+                            if metric == "k-th":
+                                topk_metric[topk, l] = topk_values[-1]
+                            elif metric == "best":
                                 topk_metric[topk, l] = topk_values.max()
                             elif metric == "worst":
                                 topk_metric[topk, l] = topk_values.min()
@@ -5492,7 +5502,9 @@ class OffPolicySelection:
                     for topk in range(max_topk):
                         topk_values = cvar_dict[estimator][: topk + 1]
 
-                        if metric == "best":
+                        if metric == "k-th":
+                            topk_metric[topk] = topk_values[-1]
+                        elif metric == "best":
                             topk_metric[topk] = topk_values.max()
                         elif metric == "worst":
                             topk_metric[topk] = topk_values.min()
@@ -5584,7 +5596,7 @@ class OffPolicySelection:
                         label=estimator,
                     )
 
-            if metric in ["best", "worst", "mean"]:
+            if metric in ["k-th", "best", "worst", "mean"]:
                 if safety_threshold is not None:
                     axes[j].plot(
                         np.arange(1, max_topk + 1),
@@ -5636,7 +5648,7 @@ class OffPolicySelection:
         compared_estimators: Optional[List[str]] = None,
         dataset_id: Optional[Union[int, str]] = None,
         ope_alpha: float = 0.05,
-        metrics: Optional[List[str]] = None,
+        metrics: List[str] = ["k-th", "best", "worst", "mean", "safety_violation_rate"],
         max_topk: Optional[int] = None,
         safety_threshold: Optional[float] = None,
         visualize_ci: bool = False,
@@ -5683,8 +5695,9 @@ class OffPolicySelection:
         ope_alpha: float, default=0.05
             Proportion of the sided region. The value should be within `[0, 1]`.
 
-        metrics: list of {"best", "worst", "mean", "safety_violation_rate"}, default=["best", "worst", "mean", "safety_violation_rate"]
+        metrics: list of {"k-th", "best", "worst", "mean", "safety_violation_rate"}, default=["k-th", "best", "worst", "mean", "safety_violation_rate"]
             Indicate which of the policy performance among {"best", "worst", "mean"} and safety violation rate to report.
+            For "k-th", it means that the policy performance of the (estimated) k-th policy will be visualized.
 
         max_topk: int, default=None
             Maximum number of policies to be deployed.
@@ -5731,12 +5744,10 @@ class OffPolicySelection:
             raise ValueError(
                 "compared_estimators must be a subset of self.estimators_name['cumulative_distribution_ope'], but found False."
             )
-        if metrics is None:
-            metrics = ["best", "worst", "mean", "safety_violation_rate"]
         for metric in metrics:
-            if metric not in ["best", "worst", "mean", "safety_violation_rate"]:
+            if metric not in ["k-th", "best", "worst", "mean", "safety_violation_rate"]:
                 raise ValueError(
-                    f"the elements of metrics must be one of 'best', 'worst', 'mean', or 'safety_violation_rate', but {metric} is given"
+                    f"the elements of metrics must be one of 'k-th', 'best', 'worst', 'mean', or 'safety_violation_rate', but {metric} is given"
                 )
 
         if max_topk is None:
@@ -5798,7 +5809,9 @@ class OffPolicySelection:
                                 "true_conditional_value_at_risk"
                             ][: topk + 1]
 
-                            if metric == "best":
+                            if metric == "k-th":
+                                topk_metric[topk, l] = topk_values[-1]
+                            elif metric == "best":
                                 topk_metric[topk, l] = topk_values.max()
                             elif metric == "worst":
                                 topk_metric[topk, l] = topk_values.min()
@@ -5821,7 +5834,9 @@ class OffPolicySelection:
                             "true_conditional_value_at_risk"
                         ][: topk + 1]
 
-                        if metric == "best":
+                        if metric == "k-th":
+                            topk_metric[topk] = topk_values[-1]
+                        elif metric == "best":
                             topk_metric[topk] = topk_values.max()
                         elif metric == "worst":
                             topk_metric[topk] = topk_values.min()
@@ -5917,7 +5932,7 @@ class OffPolicySelection:
                         label=estimator,
                     )
 
-            if metric in ["best", "worst", "mean"]:
+            if metric in ["k-th", "best", "worst", "mean"]:
                 if safety_threshold is not None:
                     axes[j].plot(
                         np.arange(1, max_topk + 1),
@@ -5969,7 +5984,7 @@ class OffPolicySelection:
         compared_estimators: Optional[List[str]] = None,
         dataset_id: Optional[Union[int, str]] = None,
         ope_alpha: float = 0.05,
-        metrics: List[str] = ["best", "worst", "mean", "safety_violation_rate"],
+        metrics: List[str] = ["k-th", "best", "worst", "mean", "safety_violation_rate"],
         max_topk: Optional[int] = None,
         safety_threshold: Optional[float] = None,
         visualize_ci: bool = False,
@@ -6016,8 +6031,9 @@ class OffPolicySelection:
         alpha: float, default=0.05
             Proportion of the sided region. The value should be within `[0, 0.5]`.
 
-        metrics: list of {"best", "worst", "mean", "safety_violation_rate"}, default=["best", "worst", "mean", "safety_violation_rate"]
+        metrics: list of {"k-th", "best", "worst", "mean", "safety_violation_rate"}, default=["k-th", "best", "worst", "mean", "safety_violation_rate"]
             Indicate which of the policy performance among {"best", "worst", "mean"} and safety violation rate to report.
+            For "k-th", it means that the policy performance of the (estimated) k-th policy will be visualized.
 
         max_topk: int, default=None
             Maximum number of policies to be deployed.
@@ -6064,12 +6080,10 @@ class OffPolicySelection:
             raise ValueError(
                 "compared_estimators must be a subset of self.estimators_name['standard_ope'], but found False."
             )
-        if metrics is None:
-            metrics = ["best", "worst", "mean", "safety_violation_rate"]
         for metric in metrics:
-            if metric not in ["best", "worst", "mean", "safety_violation_rate"]:
+            if metric not in ["k-th", "best", "worst", "mean", "safety_violation_rate"]:
                 raise ValueError(
-                    f"the elements of metrics must be one of 'best', 'worst', 'mean', or 'safety_violation_rate', but {metric} is given"
+                    f"the elements of metrics must be one of 'k-th', 'best', 'worst', 'mean', or 'safety_violation_rate', but {metric} is given"
                 )
 
         if max_topk is None:
@@ -6179,7 +6193,9 @@ class OffPolicySelection:
                         for l in range(n_datasets):
                             topk_values = lower_quartile_dict[l][estimator][: topk + 1]
 
-                            if metric == "best":
+                            if metric == "k-th":
+                                topk_metric[topk, l] = topk_values[-1]
+                            elif metric == "best":
                                 topk_metric[topk, l] = topk_values.max()
                             elif metric == "worst":
                                 topk_metric[topk, l] = topk_values.min()
@@ -6200,7 +6216,9 @@ class OffPolicySelection:
                     for topk in range(max_topk):
                         topk_values = lower_quartile_dict[estimator][: topk + 1]
 
-                        if metric == "best":
+                        if metric == "k-th":
+                            topk_metric[topk] = topk_values[-1]
+                        elif metric == "best":
                             topk_metric[topk] = topk_values.max()
                         elif metric == "worst":
                             topk_metric[topk] = topk_values.min()
@@ -6292,7 +6310,7 @@ class OffPolicySelection:
                         label=estimator,
                     )
 
-            if metric in ["best", "worst", "mean"]:
+            if metric in ["k-th", "best", "worst", "mean"]:
                 if safety_threshold is not None:
                     axes[j].plot(
                         np.arange(1, max_topk + 1),
@@ -6344,7 +6362,7 @@ class OffPolicySelection:
         compared_estimators: Optional[List[str]] = None,
         dataset_id: Optional[Union[int, str]] = None,
         ope_alpha: float = 0.05,
-        metrics: Optional[List[str]] = None,
+        metrics: List[str] = ["k-th", "best", "worst", "mean", "safety_violation_rate"],
         max_topk: Optional[int] = None,
         safety_threshold: Optional[float] = None,
         visualize_ci: bool = False,
@@ -6391,8 +6409,9 @@ class OffPolicySelection:
         alpha: float, default=0.05
             Proportion of the sided region. The value should be within `[0, 0.5]`.
 
-        metrics: list of {"best", "worst", "mean", "safety_violation_rate"}, default=["best", "worst", "mean", "safety_violation_rate"]
+        metrics: list of {"k-th", "best", "worst", "mean", "safety_violation_rate"}, default=["k-th", "best", "worst", "mean", "safety_violation_rate"]
             Indicate which of the policy performance among {"best", "worst", "mean"} and safety violation rate to report.
+            For "k-th", it means that the policy performance of the (estimated) k-th policy will be visualized.
 
         max_topk: int, default=None
             Maximum number of policies to be deployed.
@@ -6439,12 +6458,10 @@ class OffPolicySelection:
             raise ValueError(
                 "compared_estimators must be a subset of self.estimators_name['cumulative_distribution_ope'], but found False."
             )
-        if metrics is None:
-            metrics = ["best", "worst", "mean", "safety_violation_rate"]
         for metric in metrics:
-            if metric not in ["best", "worst", "mean", "safety_violation_rate"]:
+            if metric not in ["k-th", "best", "worst", "mean", "safety_violation_rate"]:
                 raise ValueError(
-                    f"the elements of metrics must be one of 'best', 'worst', 'mean', or 'safety_violation_rate', but {metric} is given"
+                    f"the elements of metrics must be one of 'k-th', 'best', 'worst', 'mean', or 'safety_violation_rate', but {metric} is given"
                 )
 
         if max_topk is None:
@@ -6506,7 +6523,9 @@ class OffPolicySelection:
                                 "true_lower_quartile"
                             ][: topk + 1]
 
-                            if metric == "best":
+                            if metric == "k-th":
+                                topk_metric[topk, l] = topk_values[-1]
+                            elif metric == "best":
                                 topk_metric[topk, l] = topk_values.max()
                             elif metric == "worst":
                                 topk_metric[topk, l] = topk_values.min()
@@ -6529,7 +6548,9 @@ class OffPolicySelection:
                             "true_lower_quartile"
                         ][: topk + 1]
 
-                        if metric == "best":
+                        if metric == "k-th":
+                            topk_metric[topk] = topk_values[-1]
+                        elif metric == "best":
                             topk_metric[topk] = topk_values.max()
                         elif metric == "worst":
                             topk_metric[topk] = topk_values.min()
@@ -6625,7 +6646,7 @@ class OffPolicySelection:
                         label=estimator,
                     )
 
-            if metric in ["best", "worst", "mean"]:
+            if metric in ["k-th", "best", "worst", "mean"]:
                 if safety_threshold is not None:
                     axes[j].plot(
                         np.arange(1, max_topk + 1),
