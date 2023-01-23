@@ -21,8 +21,7 @@ class RECEnv(gym.Env):
     
     Markov Decision Process (MDP) definition are given as follows:
         state: array-like of shape (user_feature_dim, )
-            make the initial state the user_feature of the chosen user
-            user_feature is amplified/attenuated by the recommended item_feature
+            A vector representing user preference.  The preference changes over time in an episode by the actions presented by the RL agent.
 
         action: {int, array-like of shape (1, )} (>= 0)
             selected an item to recommendation from n_items
