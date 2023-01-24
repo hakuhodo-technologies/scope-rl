@@ -19,12 +19,12 @@ class RECEnv(gym.Env):
     -------
     RECGym works with OpenAI Gym and Gymnasium-like interface. See Examples below for the usage.
     
-    Markov Decision Process (MDP) definition are given as follows:
+    (Partially Observable) Markov Decision Process ((PO)MDP) definition are given as follows:
         state: array-like of shape (user_feature_dim, )
             A vector representing user preference.  The preference changes over time in an episode by the actions presented by the RL agent.
 
         action: {int, array-like of shape (1, )} (>= 0)
-            selected an item to recommendation from n_items
+            Index of an item to present to the user.
 
         reward: float 
             user engagement/click gained
@@ -32,17 +32,17 @@ class RECEnv(gym.Env):
     Parameters
     -------
 
-    reward_function: default = user_preference_dynamics
-        Functions that determine how reward is calculated
+    reward_function: Callable[[np.ndarray, ...], float], default = user_preference_dynamics
+        Reward function.
 
-    state_transition_function: default = inner_reward_function
-        Functions that determine state update
+    user_preference_dynamics: default = inner_reward_function
+        Function that determines how to update the state (i.e., user preference) based on the recommended item.
 
     n_items: int, default=100 (> 0)
-        Number of items used for recommendation system.
+        Number of items used in the recommendation system.
 
     n_users: int, default=100 (> 0)
-        Number of users used for recommendation system.
+        Number of users used in the recommendation system.
 
     item_feature_dim: int, default=5 (> 0)
         Dimensions of the item feature vectors.
@@ -50,11 +50,11 @@ class RECEnv(gym.Env):
     user_feature_dim: int, default=5 (> 0)
         Dimensions of the user feature vectors.
 
-    item_feature_vector: ndarray of shape (n_items, item_feature_dim), default=None
-        Feature vectors that characterizes each item.
+    item_feature_vector: array-like of shape (n_items, item_feature_dim), default=None
+        Feature vectors that characterize each item.
 
-    user_feature_vector: ndarray of shape (n_users, user_feature_dim), default=None
-        Feature vectors that characterizes each user.
+    user_feature_vector: array-like of shape (n_users, user_feature_dim), default=None
+        Feature vectors that characterize each user.
 
     noise_std: float, default = 0 (>=0)
         Amount of noise an observation has
@@ -71,8 +71,7 @@ class RECEnv(gym.Env):
 
         # import necessary module from recgym
         from recgym.rec import RECEnv
-        from recgym.function import inner_reward_function
-        from recgym.function import user_preference_dynamics
+        from recgym import inner_reward_function, user_preference_dynamics
 
         # import necessary module from other libraries
         from d3rlpy.algos import DiscreteRandomPolicy
@@ -102,7 +101,7 @@ class RECEnv(gym.Env):
 
         # OpenAI Gym and Gymnasium-like interaction with agent
         for episode in range(1000):
-            obs = env.reset()
+            obs, info = env.reset()
             done = False
             while not done:
                 action = .sample_action_online(obs)
@@ -196,24 +195,24 @@ class RECEnv(gym.Env):
       self,
       action: int,   #action: np.ndarray,  # selected from n_items
     ):
-        """return feedbacks to the agent.
+        """Simulate a recommender interaction with a user.
 
         Note
         -------
-        The rollout procedure is given as follows.
+        The simulation procedure is given as follows.
 
         1. update state with state_transition_function.
 
-        2. increase the number of step_per_episode.
 
-        3. generate reward.
+        2. Sample reward (i.e., feedback on user engagement) for the given item.
 
-        4. return feedbacks to the RL agent.
+        4. Return the user feedback to the RL agent.
 
         Parameters
         -------
         action: {int, array-like of shape (1, )} (>= 0)
-            selected an item to recommendation from n_items
+            Indicating which item to present to the user.
+            
         Returns
         -------
         feedbacks: Tuple
@@ -228,7 +227,7 @@ class RECEnv(gym.Env):
             info: dict
                 Additional feedbacks for analysts.
         """
-        # update state with state_transition_function
+        # 1. update state with state_transition_function
         state = self.state_transition_function(self.state, action, self.item_feature_vector)
 
         done = self.t == self.step_per_episode - 1
@@ -237,11 +236,10 @@ class RECEnv(gym.Env):
             obs, info = self.reset()
 
         else:
-            # update timestep
             self.t += 1
             obs = self._observation(state)
 
-        # generate reward
+        # 2. sample reward
         reward = self.reward_function(state, action, self.item_feature_vector)
         
         info = {}
@@ -252,8 +250,6 @@ class RECEnv(gym.Env):
     def reset(self):
         """Initialize the environment.
 
-        Note
-        -------
 
         Returns
         -------
@@ -267,7 +263,7 @@ class RECEnv(gym.Env):
         # initialize internal env state
         self.t = 0
         #select user at random
-        user_id = random.randint(0, self.n_users-1)
+        user_id = random.randint(0, self.n_users)
         #make state user_feature_vector of the selected user.
         state = self.user_feature_vector[user_id]
         self.state = state
