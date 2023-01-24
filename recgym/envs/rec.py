@@ -1,10 +1,9 @@
 """Reinforcement Learning (RL) Environment for recommend system (REC)."""
-from typing import Tuple, Optional, Any
+from typing import Optional
 
 import gym
 from gym.spaces import Box, Discrete
 import numpy as np
-from sklearn.utils import check_scalar, check_random_state
 import random
 
 
@@ -12,32 +11,32 @@ class RECEnv(gym.Env):
     """Class for recommend system (REC) environment for reinforcement learning (RL) agent to interact.
 
     Bases: :class:`gym.Env`
-    
+
     Imported as: :class:`recgym.RECEnv`
-    
+
     Note
     -------
     RECGym works with OpenAI Gym and Gymnasium-like interface. See Examples below for the usage.
-    
+
     Markov Decision Process (MDP) definition are given as follows:
         state: array-like of shape (user_feature_dim, )
-            make the initial state the user_feature of the chosen user
-            user_feature is amplified/attenuated by the recommended item_feature
+            make the initial state the user_feature of the chosen user.
+            user_feature is amplified/attenuated by the recommended item_feature.
 
         action: {int, array-like of shape (1, )} (>= 0)
-            selected an item to recommendation from n_items
+            selected an item to recommendation from n_items.
 
-        reward: float 
-            user engagement/click gained
+        reward: float
+            user engagement/click gained.
 
     Parameters
     -------
 
-    reward_function: default = user_preference_dynamics
-        Functions that determine how reward is calculated
+    reward_function: default = inner_reward_function
+        Functions that determine how reward is calculated.
 
-    state_transition_function: default = inner_reward_function
-        Functions that determine state update
+    state_transition_function: default = user_preference_dynamics
+        Functions that determine state update.
 
     n_items: int, default=100 (> 0)
         Number of items used for recommendation system.
@@ -58,7 +57,7 @@ class RECEnv(gym.Env):
         Feature vectors that characterizes each user.
 
     noise_std: float, default = 0 (>=0)
-        Amount of noise an observation has
+        Amount of noise an observation has.
 
     step_per_episode: int, default=10 (> 0)
         Number of timesteps in an episode.
@@ -68,7 +67,7 @@ class RECEnv(gym.Env):
 
     Setup:
 
-    .. codeblock:: python
+    .. code-block:: python
 
         # import necessary module from recgym
         from recgym.rec import RECEnv
@@ -80,7 +79,7 @@ class RECEnv(gym.Env):
 
         # initialize environment and define (RL) agent (i.e., policy)
         env = RECEnv(
-            reward_function = inner_reward_function, 
+            reward_function = inner_reward_function,
             state_transition_function = user_preference_dynamics,
         )
 
@@ -94,7 +93,7 @@ class RECEnv(gym.Env):
             name = 'random',
             n_actions = env.n_items,
             epsilon = 1. ,
-            random_state = random_state, 
+            random_state = random_state,
         )
 
     Interaction:
@@ -117,26 +116,25 @@ class RECEnv(gym.Env):
         on_policy_performance = calc_on_policy_policy_value(
             env,
             agent,
-            n_episodes=100,
+            n_trajectories=100,
             random_state=12345
         )
-    
+
     Output:
 
     .. code-block:: python
 
         >>> on_policy_performance
 
-        13.44
+        0.23269923657166344
 
     References
     -------
-    Takuma Seno and Michita Imai.
-
-    "d3rlpy: An Offline Deep Reinforcement Library.", 2021.
+    Sarah Dean, Jamie Morgenstern.
+    "Preference Dynamics Under Personalized Recommendations." 2022.
 
     Greg Brockman, Vicki Cheung, Ludwig Pettersson, Jonas Schneider, John Schulman, Jie Tang, and Wojciech Zaremba.
-    "OpenAI Gym.", 2016.
+    "OpenAI Gym." 2016.
 
     """
 
@@ -151,7 +149,7 @@ class RECEnv(gym.Env):
         item_feature_vector: Optional[np.ndarray] = None,
         user_feature_vector: Optional[np.ndarray] = None,
         noise_std: float = 0,
-        step_per_episode = 10,
+        step_per_episode=10,
     ):
         super().__init__()
         self.n_items = n_items
@@ -162,12 +160,16 @@ class RECEnv(gym.Env):
         self.state_transition_function = state_transition_function
         self.noise_std = noise_std
         self.step_per_episode = step_per_episode
-        #initialize user_feature_vector
+        # initialize user_feature_vector
         if user_feature_vector is None:
-            user_feature_vector = np.random.uniform(low=-1.0, high=1.0, size=(self.n_users, self.user_feature_dim))
-        #initialize item_feature_vector
+            user_feature_vector = np.random.uniform(
+                low=-1.0, high=1.0, size=(self.n_users, self.user_feature_dim)
+            )
+        # initialize item_feature_vector
         if item_feature_vector is None:
-            item_feature_vector = np.random.uniform(low=-1.0, high=1.0, size=(self.n_items, self.item_feature_dim))
+            item_feature_vector = np.random.uniform(
+                low=-1.0, high=1.0, size=(self.n_items, self.item_feature_dim)
+            )
         self.item_feature_vector = item_feature_vector
         self.user_feature_vector = user_feature_vector
 
@@ -178,24 +180,26 @@ class RECEnv(gym.Env):
             dtype=float,
         )
 
-        # define action space 
+        # define action space
         self.action_type = "discrete"
         self.action_dim = 1
         self.action_space = Discrete(self.n_items)
 
         # define reward range
         self.reward_range = (0, np.inf)
-    
+
     def _observation(self, state):
-        #add noise to state
-        obs = state + np.random.normal(loc=0.0, scale=self.noise_std, size=self.user_feature_dim)
-        #limit observation [-1, 1]
+        # add noise to state
+        obs = state + np.random.normal(
+            loc=0.0, scale=self.noise_std, size=self.user_feature_dim
+        )
+        # limit observation [-1, 1]
         obs = np.clip(obs, -1.0, 1.0)
         return obs
 
     def step(
-      self,
-      action: int,   #action: np.ndarray,  # selected from n_items
+        self,
+        action: int,  # action: np.ndarray,  # selected from n_items
     ):
         """return feedbacks to the agent.
 
@@ -213,24 +217,26 @@ class RECEnv(gym.Env):
 
         Parameters
         -------
+
         action: {int, array-like of shape (1, )} (>= 0)
-            selected an item to recommendation from n_items
+            selected an item to recommendation from n_items.
         Returns
         -------
         feedbacks: Tuple
             obs: ndarray of shape (1,)
-                        Statistical feedbacks of recommendation
+                        Statistical feedbacks of recommendation.
                             - add noise to state by _observation()
             reward: float
                 user engagement/click gained.
             done: bool
                 Wether the episode end or not.
-            truncated: False
             info: dict
                 Additional feedbacks for analysts.
         """
         # update state with state_transition_function
-        state = self.state_transition_function(self.state, action, self.item_feature_vector)
+        state = self.state_transition_function(
+            self.state, action, self.item_feature_vector
+        )
 
         done = self.t == self.step_per_episode - 1
 
@@ -244,13 +250,12 @@ class RECEnv(gym.Env):
 
         # generate reward
         reward = self.reward_function(state, action, self.item_feature_vector)
-        
+
         info = {}
 
         return obs, reward, done, False, info
 
-
-    def reset(self):
+    def reset(self, seed: Optional[int] = None):
         """Initialize the environment.
 
         Note
@@ -259,7 +264,7 @@ class RECEnv(gym.Env):
         Returns
         -------
         obs: ndarray of shape (1,)
-                    Statistical feedbacks of recommendation
+                    Statistical feedbacks of recommendation.
                         - add noise to state by _observation()
         info: dict
             Additional feedbacks for analysts.
@@ -267,9 +272,9 @@ class RECEnv(gym.Env):
         """
         # initialize internal env state
         self.t = 0
-        #select user at random
-        user_id = random.randint(0, self.n_users-1)
-        #make state user_feature_vector of the selected user.
+        # select user at random
+        user_id = random.randint(0, self.n_users - 1)
+        # make state user_feature_vector of the selected user.
         state = self.user_feature_vector[user_id]
         self.state = state
         obs = self._observation(self.state)
