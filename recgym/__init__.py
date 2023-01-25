@@ -1,22 +1,17 @@
 import gym
-from sklearn.linear_model import LogisticRegression
 
 from recgym.envs.rec import RECEnv
-from recgym.envs.function import inner_reward_function
-from recgym.envs.function import user_preference_dynamics
-
+from recgym.envs.function import UserModel
+from recgym.envs.base import BaseUserModel
 
 __all__ = [
     "RECEnv",
-    "inner_reward_function",
-    "user_preference_dynamics",
+    "UserModel"
+    "BaseUserModel"
 ]
 
 # register standard environment
-env = RECEnv(
-    reward_function = inner_reward_function,
-    state_transition_function = user_preference_dynamics,
-)
+env = RECEnv(random_state=12345)
 
 # environment
 gym.envs.register(
