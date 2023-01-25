@@ -1,7 +1,6 @@
 """Abstract Base Class for Simulation."""
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
-from typing import Tuple, Union
 
 import numpy as np
 
@@ -25,6 +24,7 @@ class BaseUserModel(metaclass=ABCMeta):
         state: array-like of shape (user_feature_dim, )
             A vector representing user preference.  The preference changes over time in an episode by the actions presented by the RL agent.
             When the true state is unobservable, you can gain observation instead of state.
+
         """
         raise NotImplementedError
 
@@ -38,5 +38,6 @@ class BaseUserModel(metaclass=ABCMeta):
         -------
         reward: float
             User engagement signal. Either binary or continuous.
+      
         """
         raise NotImplementedError

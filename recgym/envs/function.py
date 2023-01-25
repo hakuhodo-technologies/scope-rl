@@ -1,6 +1,6 @@
 """Mathematical Functions used in Recommendation System (REC) ."""
 from dataclasses import dataclass
-from typing import Tuple, Union, Optional
+from typing import Optional
 
 import numpy as np
 from sklearn.utils import check_scalar, check_random_state
@@ -78,6 +78,7 @@ class UserModel(BaseUserModel):
         state: array-like of shape (user_feature_dim, )
             A vector representing user preference.  The preference changes over time in an episode by the actions presented by the RL agent.
             When the true state is unobservable, you can gain observation instead of state.
+
         """
         self.state = (
             self.state
@@ -96,6 +97,7 @@ class UserModel(BaseUserModel):
         -------
         reward: float
             User engagement signal. Either binary or continuous.
+
         """
         reward = self.state @ self.item_feature_vector[self.action]
         return reward

@@ -58,7 +58,7 @@ class RECEnv(gym.Env):
         Standard deviation of the reward distribution. Applicable only when reward_type is "continuous".
 
     obs_std: float, default=0.0 (>=0)
-        Standard deviation of the observation distribution. 
+        Standard deviation of the observation distribution.
 
     item_feature_vector: array-like of shape (n_items, item_feature_dim), default=None
         Feature vectors that characterize each item.
@@ -148,7 +148,7 @@ class RECEnv(gym.Env):
     def __init__(
         self,
         UserModel: BaseUserModel = UserModel,
-        reward_type: str = "continuous",
+        reward_type: str = "continuous",  # "binary"
         n_items: int = 100,
         n_users: int = 100,
         item_feature_dim: int = 5,
@@ -168,7 +168,7 @@ class RECEnv(gym.Env):
         self.user_feature_dim = user_feature_dim
         self.reward_std = reward_std
         self.obs_std = obs_std
-        
+
         if reward_type is "continuous":
             self.reward_std = reward_std
         elif reward_type is "binary":
@@ -243,7 +243,6 @@ class RECEnv(gym.Env):
 
         Parameters
         -------
-
         action: {int, array-like of shape (1, )} (>= 0)
             Indicating which item to present to the user.
 
@@ -254,13 +253,13 @@ class RECEnv(gym.Env):
                 A vector representing user preference with added noise
                 A vector representing user preference.  The preference changes over time in an episode by the actions presented by the RL agent.
                 When the true state is unobservable, you can gain observation as a state with added noise.
-                
+
             reward: float
                 User engagement signal. Either binary or continuous.
 
             done: bool
                 Wether the episode end or not.
-            
+
             truncated: False
                 For API consistency.
 
@@ -269,12 +268,13 @@ class RECEnv(gym.Env):
                 Note that those feedbacks are unobservable to the agent.
 
         """
-        #1. sample reward for the given item.
+        # 1. sample reward for the given item.
         usermodel = self.UserModel(
             self.state, action, self.item_feature_vector, self.random_state
         )
         reward = usermodel.reward_model() + self.random_.normal(
-            loc=0.0, scale=self.reward_std)
+            loc=0.0, scale=self.reward_std
+        )
 
         # 2. update user state with user_preference_dynamics
         self.state = usermodel.user_preference_dynamics()
@@ -288,10 +288,7 @@ class RECEnv(gym.Env):
             self.t += 1
             obs = self._observation(self.state)
 
-        info = {
-            "user_id": self.user_id,
-            "state": self.state
-        }
+        info = {"user_id": self.user_id, "state": self.state}
 
         return obs, reward, done, False, info
 
@@ -312,6 +309,7 @@ class RECEnv(gym.Env):
         """
         if seed is not None:
             self.random_ = check_random_state(seed)
+
         # initialize internal env state
         self.t = 0
         # select user at random
@@ -321,9 +319,6 @@ class RECEnv(gym.Env):
         self.state = state
         obs = self._observation(self.state)
 
-        info = {
-            "user_id": self.user_id,
-            "state": self.state
-        }
+        info = {"user_id": self.user_id, "state": self.state}
 
         return obs, info
