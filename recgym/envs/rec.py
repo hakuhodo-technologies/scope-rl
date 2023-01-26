@@ -6,9 +6,10 @@ from gym.spaces import Box, Discrete
 import numpy as np
 from sklearn.utils import check_scalar, check_random_state
 
-from recgym.envs.base import BaseUserModel
-from recgym.envs.function import UserModel
+from recgym.envs.simulator.base import BaseUserModel
+from recgym.envs.simulator.function import UserModel
 
+from ..types import Action
 
 class RECEnv(gym.Env):
     """Class for recommend system (REC) environment for reinforcement learning (RL) agent to interact.
@@ -36,7 +37,7 @@ class RECEnv(gym.Env):
     -------
 
     UserModel: BaseUserModel
-        User model which defines user_prefecture_dynamics and reward_model.
+        User model which defines user_prefecture_dynamics and reward_function.
         Both class and instance are acceptable.
 
     reward_type: str = "continuous"
@@ -148,53 +149,63 @@ class RECEnv(gym.Env):
     def __init__(
         self,
         UserModel: BaseUserModel = UserModel,
-        reward_type: str = "continuous",  # "binary"
         n_items: int = 100,
         n_users: int = 100,
         item_feature_dim: int = 5,
         user_feature_dim: int = 5,
-        reward_std: float = 0.0,
-        obs_std: float = 0.0,
         item_feature_vector: Optional[np.ndarray] = None,
         user_feature_vector: Optional[np.ndarray] = None,
+        reward_type: str = "continuous",  # "binary"
+        reward_std: float = 0.0,
+        obs_std: float = 0.0,
         step_per_episode=10,
         random_state: Optional[int] = None,
     ):
         super().__init__()
-        self.UserModel = UserModel
-        self.n_items = n_items
-        self.n_users = n_users
-        self.item_feature_dim = item_feature_dim
-        self.user_feature_dim = user_feature_dim
-        self.reward_std = reward_std
-        self.obs_std = obs_std
-
-        if reward_type is "continuous":
-            self.reward_std = reward_std
-        elif reward_type is "binary":
-            self.reward_std = 0.0
-        else:
-            raise ValueError(
-                f'reward_type must be either "continuous" or "binary", but {reward_type} is given'
-            )
-
         if random_state is None:
             raise ValueError("random_state must be given")
         self.random_state = random_state
         self.random_ = check_random_state(random_state)
 
-        # initialize user_feature_vector
-        if user_feature_vector is None:
-            user_feature_vector = self.random_.uniform(
-                low=-1.0, high=1.0, size=(self.n_users, self.user_feature_dim)
-            )
-        # initialize item_feature_vector
-        if item_feature_vector is None:
-            item_feature_vector = self.random_.uniform(
-                low=-1.0, high=1.0, size=(self.n_items, self.item_feature_dim)
-            )
-        self.item_feature_vector = item_feature_vector
-        self.user_feature_vector = user_feature_vector
+        check_scalar(
+            n_items,
+            name="n_items",
+            target_type=int,
+            min_val=1,
+        )
+        self.n_items = n_items
+
+        check_scalar(
+            n_users,
+            name="n_users",
+            target_type=int,
+            min_val=1,
+        )
+        self.n_users = n_users
+
+        check_scalar(
+            item_feature_dim,
+            name="item_feature_dim",
+            target_type=int,
+            min_val=1,
+        )
+        self.item_feature_dim = item_feature_dim
+
+        check_scalar(
+            user_feature_dim,
+            name="user_feature_dim",
+            target_type=int,
+            min_val=1,
+        )
+        self.user_feature_dim = user_feature_dim
+
+        check_scalar(
+            obs_std,
+            name="obs_std",
+            target_type=float,
+            min_val=0.0,
+        )
+        self.obs_std = obs_std
 
         check_scalar(
             step_per_episode,
@@ -203,6 +214,32 @@ class RECEnv(gym.Env):
             min_val=1,
         )
         self.step_per_episode = step_per_episode
+
+        # initialize user_feature_vector
+        if user_feature_vector is None:
+            user_feature_vector = self.random_.uniform(
+                low=-1.0, high=1.0, size=(self.n_users, self.user_feature_dim)
+            )
+        check_scalar(
+            user_feature_vector,
+            name="user_feature_vector",
+            target_type=np.ndarray,
+        )
+        self.user_feature_vector = user_feature_vector
+
+        # initialize item_feature_vector
+        if item_feature_vector is None:
+            item_feature_vector = self.random_.uniform(
+                low=-1.0, high=1.0, size=(self.n_items, self.item_feature_dim)
+            )
+        check_scalar(
+            item_feature_vector,
+            name="item_feature_vector",
+            target_type=np.ndarray,
+        )
+        self.item_feature_vector = item_feature_vector
+
+        self.usermodel = UserModel(reward_type, reward_std, item_feature_vector, random_state)
 
         # define observation space
         self.observation_space = Box(
@@ -228,7 +265,7 @@ class RECEnv(gym.Env):
         obs = np.clip(obs, -1.0, 1.0)
         return obs
 
-    def step(self, action: int) -> Tuple[Any]:
+    def step(self, action: Action) -> Tuple[Any]:
         """Simulate a recommender interaction with a user.
 
         Note
@@ -250,9 +287,8 @@ class RECEnv(gym.Env):
         -------
         feedbacks: Tuple
             obs: ndarray of shape (1,)
-                A vector representing user preference with added noise
-                A vector representing user preference.  The preference changes over time in an episode by the actions presented by the RL agent.
-                When the true state is unobservable, you can gain observation as a state with added noise.
+                Generated based on state.
+                (e.g. complete with the state, noise added to the state, or only part of the state)
 
             reward: float
                 User engagement signal. Either binary or continuous.
@@ -269,15 +305,10 @@ class RECEnv(gym.Env):
 
         """
         # 1. sample reward for the given item.
-        usermodel = self.UserModel(
-            self.state, action, self.item_feature_vector, self.random_state
-        )
-        reward = usermodel.reward_model() + self.random_.normal(
-            loc=0.0, scale=self.reward_std
-        )
+        reward = self.usermodel.reward_function(self.state, action) 
 
         # 2. update user state with user_preference_dynamics
-        self.state = usermodel.user_preference_dynamics()
+        self.state = self.usermodel.user_preference_dynamics(self.state, action)
 
         done = self.t == self.step_per_episode - 1
 
@@ -298,9 +329,8 @@ class RECEnv(gym.Env):
         Returns
         -------
         obs: ndarray of shape (1,)
-            A vector representing user preference with added noise
-            A vector representing user preference.  The preference changes over time in an episode by the actions presented by the RL agent.
-            When the true state is unobservable, you can gain observation as a state with added noise.
+            Generated based on state.
+            (e.g. complete with the state, noise added to the state, or only part of the state)
 
         info: dict
             Additional feedbacks (user_id, state) for analysts.

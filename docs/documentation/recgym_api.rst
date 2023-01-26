@@ -10,10 +10,9 @@ env module
     :toctree: _autosummary/recgym/env
     :recursive:
     :nosignatures:
-    :template: module_rec_env
+    :template: 
 
     recgym.envs.rec
-    recgym.envs.wrapper_rec
     
 .. _recgym_api_simulation:
 
@@ -24,21 +23,10 @@ simulation module
     :recursive:
     :nosignatures:
 
-    recgym.envs.simulator.base
-    recgym.envs.simulator.function
-    recgym.envs.simulator.bidder
-    recgym.envs.simulator.rec_synthetic
+    recgym.envs.simulation.base
+    recgym.envs.simulation.function
 
 .. _recgym_api_utils:
-
-others
-----------
-.. autosummary::
-    :toctree: _autosummary/recgym/utils
-    :recursive:
-    :nosignatures:
-
-    recgym.utils
 
 .. grid::
     :margin: 0

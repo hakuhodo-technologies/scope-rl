@@ -1,13 +1,15 @@
 import gym
 
 from recgym.envs.rec import RECEnv
-from recgym.envs.function import UserModel
-from recgym.envs.base import BaseUserModel
+from recgym.envs.simulator.function import UserModel
+from recgym.envs.simulator.base import BaseUserModel
+from recgym.types import Action
 
 __all__ = [
     "RECEnv",
     "UserModel"
     "BaseUserModel"
+    "Action"
 ]
 
 # register standard environment
