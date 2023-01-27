@@ -25,7 +25,7 @@ class RECEnv(gym.Env):
     (Partially Observable) Markov Decision Process ((PO)MDP) definition are given as follows:
         state: array-like of shape (user_feature_dim, )
             A vector representing user preference.  The preference changes over time in an episode by the actions presented by the RL agent.
-            When the true state is unobservable, you can gain observation instead of state.
+            When the true state is unobservable, observation will be returned to the RL agent instead of state.
 
         action: {int, array-like of shape (1, )} (>= 0)
             Index of an item to present to the user.
@@ -36,12 +36,12 @@ class RECEnv(gym.Env):
     Parameters
     -------
 
-    UserModel: BaseUserModel
-        User model which defines user_prefecture_dynamics and reward_function.
+    UserModel: BaseUserModel, default=UserModel
+        User model that defines user_prefecture_dynamics (, which simulates how the user preference changes through item interaction) and reward_function (, which simulates how the user responds to the presented item).
         Both class and instance are acceptable.
 
-    reward_type: str = "continuous"
-        Reward type (i.e., countinuous / binary).
+    reward_type: {"continuous", "binary"}, default="continuous"
+        Reward type.
 
     n_items: int, default=100 (> 0)
         Number of items used in the recommendation system.
@@ -96,11 +96,11 @@ class RECEnv(gym.Env):
 
         # define (RL) agent (i.e., policy)
         agent = DiscreteEpsilonGreedyHead(
-            base_policy = DiscreteRandomPolicy(),
-            name = 'random',
-            n_actions = env.n_items,
-            epsilon = 1. ,
-            random_state = random_state,
+            base_policy=DiscreteRandomPolicy(),
+            name='random',
+            n_actions=env.n_items,
+            epsilon=1. ,
+            random_state=random_state,
         )
 
     Interaction:
@@ -158,7 +158,7 @@ class RECEnv(gym.Env):
         reward_type: str = "continuous",  # "binary"
         reward_std: float = 0.0,
         obs_std: float = 0.0,
-        step_per_episode=10,
+        step_per_episode = 10,
         random_state: Optional[int] = None,
     ):
         super().__init__()
@@ -239,7 +239,13 @@ class RECEnv(gym.Env):
         )
         self.item_feature_vector = item_feature_vector
 
-        self.usermodel = UserModel(reward_type, reward_std, item_feature_vector, random_state)
+        self.usermodel = UserModel(
+            reward_type=reward_type, 
+            reward_std=reward_std, 
+            user_feature_vector=user_feature_vector,
+            item_feature_vector=item_feature_vector, 
+            random_state=random_state,
+        )
 
         # define observation space
         self.observation_space = Box(
