@@ -3757,7 +3757,7 @@ class CumulativeDistributionOffPolicyEvaluation:
                         )
 
                     variance_dict = {}
-                    for behavior_policy_name in self.multiple_logged_dataset:
+                    for behavior_policy in input_dict.behavior_policy_names:
                         self._register_logged_dataset(
                             behavior_policy_name=behavior_policy, dataset_id=dataset_id
                         )

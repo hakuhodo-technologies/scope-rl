@@ -2571,7 +2571,7 @@ class OffPolicySelection:
                     input_dict_ = input_dict.get(
                         behavior_policy_name=behavior_policy_name, dataset_id=dataset_id
                     )
-                    ops_result_ = self._select_by_policy_value(
+                    ops_result = self._select_by_policy_value(
                         input_dict_,
                         compared_estimators=compared_estimators,
                         return_true_values=return_true_values,
@@ -2580,7 +2580,6 @@ class OffPolicySelection:
                         top_k_in_eval_metrics=top_k_in_eval_metrics,
                         safety_criteria=safety_criteria,
                     )
-                    ops_result.append(ops_result_)
 
             else:
                 ops_result = self._select_by_policy_value(
@@ -2865,7 +2864,7 @@ class OffPolicySelection:
                                 behavior_policy_name=behavior_policy,
                                 dataset_id=dataset_id,
                             )
-                            self._select_by_policy_value_via_cumulative_distribution_ope(
+                            ops_result_ = self._select_by_policy_value_via_cumulative_distribution_ope(
                                 input_dict_,
                                 compared_estimators=compared_estimators,
                                 return_true_values=return_true_values,
@@ -2936,7 +2935,7 @@ class OffPolicySelection:
                     input_dict_ = input_dict.get(
                         behavior_policy_name=behavior_policy_name, dataset_id=dataset_id
                     )
-                    ops_result_ = (
+                    ops_result = (
                         self._select_by_policy_value_via_cumulative_distribution_ope(
                             input_dict_,
                             compared_estimators=compared_estimators,
@@ -2947,7 +2946,6 @@ class OffPolicySelection:
                             safety_criteria=safety_criteria,
                         )
                     )
-                    ops_result.append(ops_result_)
 
             else:
                 ops_result = (
@@ -3342,10 +3340,10 @@ class OffPolicySelection:
 
                 else:
                     input_dict_ = input_dict.get(
-                        behavior_policy_name=behavior_policy,
+                        behavior_policy_name=behavior_policy_name,
                         dataset_id=dataset_id,
                     )
-                    ops_result_ = self._select_by_policy_value_lower_bound(
+                    ops_result = self._select_by_policy_value_lower_bound(
                         input_dict_,
                         compared_estimators=compared_estimators,
                         return_true_values=return_true_values,
@@ -3358,7 +3356,6 @@ class OffPolicySelection:
                         n_bootstrap_samples=n_bootstrap_samples,
                         random_state=random_state,
                     )
-                    ops_result.append(ops_result_)
 
             else:
                 ops_result = self._select_by_policy_value_lower_bound(
@@ -3711,7 +3708,7 @@ class OffPolicySelection:
                     input_dict_ = input_dict.get(
                         behavior_policy_name=behavior_policy_name, dataset_id=dataset_id
                     )
-                    ops_result_ = self._select_by_lower_quartile(
+                    ops_result = self._select_by_lower_quartile(
                         input_dict_,
                         compared_estimators=compared_estimators,
                         alpha=alpha,
@@ -3720,7 +3717,6 @@ class OffPolicySelection:
                         return_by_dataframe=return_by_dataframe,
                         safety_threshold=safety_threshold,
                     )
-                    ops_result.append(ops_result_)
 
             else:
                 ops_result = self._select_by_lower_quartile(
@@ -4063,7 +4059,7 @@ class OffPolicySelection:
                     input_dict_ = input_dict.get(
                         behavior_policy_name=behavior_policy_name, dataset_id=dataset_id
                     )
-                    ops_result_ = self._select_by_conditional_value_at_risk(
+                    ops_result = self._select_by_conditional_value_at_risk(
                         input_dict_,
                         compared_estimators=compared_estimators,
                         alpha=alpha,
@@ -4072,7 +4068,6 @@ class OffPolicySelection:
                         return_by_dataframe=return_by_dataframe,
                         safety_threshold=safety_threshold,
                     )
-                    ops_result.append(ops_result_)
 
             else:
                 ops_result = self._select_by_conditional_value_at_risk(
@@ -5371,9 +5366,9 @@ class OffPolicySelection:
                                 input_dict.behavior_policy_names
                             ):
 
-                                topk_values = ranking_dict[behavior_policy][dataset_id][
-                                    estimator
-                                ][: topk + 1]
+                                topk_values = ranking_dict[behavior_policy][estimator][
+                                    : topk + 1
+                                ]
 
                                 if metric == "k-th":
                                     topk_metric[topk, l] = topk_values[-1]
@@ -5530,10 +5525,9 @@ class OffPolicySelection:
             figsize=(6 * n_figs, 4),
         )
 
-        for j, metric in enumerate(metrics):
-
+        if len(metrics) == 1:
             for i, estimator in enumerate(compared_estimators):
-                axes[j].plot(
+                axes.plot(
                     np.arange(1, max_topk + 1),
                     metric_dict[estimator][metric].mean(axis=1),
                     color=color[i % n_colors],
@@ -5555,7 +5549,7 @@ class OffPolicySelection:
                         lower[topk] = ci_[f"{100 * (1. - alpha)}% CI (lower)"]
                         upper[topk] = ci_[f"{100 * (1. - alpha)}% CI (upper)"]
 
-                    axes[j].fill_between(
+                    axes.fill_between(
                         np.arange(1, max_topk + 1),
                         lower,
                         upper,
@@ -5565,43 +5559,112 @@ class OffPolicySelection:
 
             if metric in ["k-th", "best", "worst", "mean"]:
                 if safety_threshold is not None:
-                    axes[j].plot(
+                    axes.plot(
                         np.arange(1, max_topk + 1),
                         np.full(max_topk, safety_threshold),
                         color=dkred,
                         label="safety threshold",
                     )
-                    axes[j].plot(
+                    axes.plot(
                         np.arange(1, max_topk + 1),
                         np.full(max_topk, max_val),
                         color="black",
                         linewidth=0.5,
                     )
-                    axes[j].plot(
+                    axes.plot(
                         np.arange(1, max_topk + 1),
                         np.full(max_topk, min_val),
                         color="black",
                         linewidth=0.5,
                     )
 
-                axes[j].set_title(f"{metric}")
-                axes[j].set_ylabel(f"{metric} {ylabel}")
-                axes[j].set_ylim(yaxis_min_val - margin, yaxis_max_val + margin)
+                axes.set_title(f"{metric}")
+                axes.set_ylabel(f"{metric} {ylabel}")
+                axes.set_ylim(yaxis_min_val - margin, yaxis_max_val + margin)
 
             else:
-                axes[j].set_title("safety violation")
-                axes[j].set_ylabel("safety violation rate")
-                axes[j].set_ylim(-0.05, 1.05)
+                axes.set_title("safety violation")
+                axes.set_ylabel("safety violation rate")
+                axes.set_ylim(-0.05, 1.05)
 
-            axes[j].set_xlabel("# of policies deployed")
+            axes.set_xlabel("# of policies deployed")
 
             if legend:
-                axes[j].legend(loc="upper right")
+                axes.legend(loc="upper right")
 
-        if legend:
-            handles, labels = axes[0].get_legend_handles_labels()
-            # n_cols shows err
-            # fig.legend(handles, labels, loc='upper center', bbox_to_anchor=(0.5, -0.1), n_cols=min(len(labels), 6))
+        else:
+            for j, metric in enumerate(metrics):
+
+                for i, estimator in enumerate(compared_estimators):
+                    axes[j].plot(
+                        np.arange(1, max_topk + 1),
+                        metric_dict[estimator][metric].mean(axis=1),
+                        color=color[i % n_colors],
+                        marker=markers[i],
+                        label=estimator,
+                    )
+
+                    if visualize_ci:
+                        lower = np.zeros(max_topk)
+                        upper = np.zeros(max_topk)
+
+                        for topk in range(max_topk):
+                            ci_ = self._estimate_confidence_interval[ci](
+                                metric_dict[estimator][metric][topk],
+                                alpha=alpha,
+                                n_bootstrap_samples=n_bootstrap_samples,
+                                random_state=random_state,
+                            )
+                            lower[topk] = ci_[f"{100 * (1. - alpha)}% CI (lower)"]
+                            upper[topk] = ci_[f"{100 * (1. - alpha)}% CI (upper)"]
+
+                        axes[j].fill_between(
+                            np.arange(1, max_topk + 1),
+                            lower,
+                            upper,
+                            color=color[i % n_colors],
+                            alpha=0.3,
+                        )
+
+                if metric in ["k-th", "best", "worst", "mean"]:
+                    if safety_threshold is not None:
+                        axes[j].plot(
+                            np.arange(1, max_topk + 1),
+                            np.full(max_topk, safety_threshold),
+                            color=dkred,
+                            label="safety threshold",
+                        )
+                        axes[j].plot(
+                            np.arange(1, max_topk + 1),
+                            np.full(max_topk, max_val),
+                            color="black",
+                            linewidth=0.5,
+                        )
+                        axes[j].plot(
+                            np.arange(1, max_topk + 1),
+                            np.full(max_topk, min_val),
+                            color="black",
+                            linewidth=0.5,
+                        )
+
+                    axes[j].set_title(f"{metric}")
+                    axes[j].set_ylabel(f"{metric} {ylabel}")
+                    axes[j].set_ylim(yaxis_min_val - margin, yaxis_max_val + margin)
+
+                else:
+                    axes[j].set_title("safety violation")
+                    axes[j].set_ylabel("safety violation rate")
+                    axes[j].set_ylim(-0.05, 1.05)
+
+                axes[j].set_xlabel("# of policies deployed")
+
+                if legend:
+                    axes[j].legend(loc="upper right")
+
+            if legend:
+                handles, labels = axes[0].get_legend_handles_labels()
+                # n_cols shows err
+                # fig.legend(handles, labels, loc='upper center', bbox_to_anchor=(0.5, -0.1), n_cols=min(len(labels), 6))
 
         fig.subplots_adjust(hspace=0.35, wspace=0.2)
         plt.show()
@@ -6281,9 +6344,9 @@ class OffPolicySelection:
         if n_rows == 1:
             ope_ci = ope_cis[0]
 
-            for j, metric in enumerate(metrics):
+            if len(metrics) == 1:
                 for i, estimator in enumerate(compared_estimators):
-                    axes[j].plot(
+                    axes.plot(
                         np.arange(1, max_topk + 1),
                         metric_dict[ope_ci][estimator][metric].mean(axis=1),
                         color=color[i % n_colors],
@@ -6305,7 +6368,7 @@ class OffPolicySelection:
                             lower[topk] = ci[f"{100 * (1. - plot_alpha)}% CI (lower)"]
                             upper[topk] = ci[f"{100 * (1. - plot_alpha)}% CI (upper)"]
 
-                        axes[j].fill_between(
+                        axes.fill_between(
                             np.arange(1, max_topk + 1),
                             lower,
                             upper,
@@ -6315,45 +6378,48 @@ class OffPolicySelection:
 
                 if metric in ["k-th", "best", "worst", "mean"]:
                     if safety_threshold is not None:
-                        axes[j].plot(
+                        axes.plot(
                             np.arange(1, max_topk + 1),
                             np.full(max_topk, safety_threshold),
                             color=dkred,
                             label="safety threshold",
                         )
-                        axes[j].plot(
+                        axes.plot(
                             np.arange(1, max_topk + 1),
                             np.full(max_topk, max_val),
                             color="black",
                             linewidth=0.5,
                         )
-                        axes[j].plot(
+                        axes.plot(
                             np.arange(1, max_topk + 1),
                             np.full(max_topk, min_val),
                             color="black",
                             linewidth=0.5,
                         )
 
-                    axes[j].set_title(f"{metric}")
-                    axes[j].set_ylabel(f"{metric} policy value")
-                    axes[j].set_ylim(yaxis_min_val - margin, yaxis_max_val + margin)
+                    axes.set_title(f"{metric}")
+                    axes.set_ylabel(f"{metric} policy value")
+                    axes.set_ylim(yaxis_min_val - margin, yaxis_max_val + margin)
 
                 else:
-                    axes[j].set_title("safety violation")
-                    axes[j].set_ylabel("safety violation rate")
-                    axes[j].set_ylim(-0.05, 1.05)
+                    axes.set_title("safety violation")
+                    axes.set_ylabel("safety violation rate")
+                    axes.set_ylim(-0.05, 1.05)
 
-                axes[j].set_xlabel("# of policies deployed")
+                axes.set_xlabel("# of policies deployed")
 
                 if legend:
-                    axes[j].legend(loc="upper right")
+                    axes.legend(loc="upper right")
 
-        else:
-            for l, ope_ci in enumerate(ope_cis):
+            if legend:
+                handles, labels = axes.get_legend_handles_labels()
+                # n_cols shows err
+                # fig.legend(handles, labels, loc='upper center', bbox_to_anchor=(0.5, -0.1), n_cols=min(len(labels), 6))
 
+            else:
                 for j, metric in enumerate(metrics):
                     for i, estimator in enumerate(compared_estimators):
-                        axes[l, j].plot(
+                        axes[j].plot(
                             np.arange(1, max_topk + 1),
                             metric_dict[ope_ci][estimator][metric].mean(axis=1),
                             color=color[i % n_colors],
@@ -6379,7 +6445,7 @@ class OffPolicySelection:
                                     f"{100 * (1. - plot_alpha)}% CI (upper)"
                                 ]
 
-                            axes[l, j].fill_between(
+                            axes[j].fill_between(
                                 np.arange(1, max_topk + 1),
                                 lower,
                                 upper,
@@ -6389,45 +6455,201 @@ class OffPolicySelection:
 
                     if metric in ["k-th", "best", "worst", "mean"]:
                         if safety_threshold is not None:
-                            axes[l, j].plot(
+                            axes[j].plot(
                                 np.arange(1, max_topk + 1),
                                 np.full(max_topk, safety_threshold),
                                 color=dkred,
                                 label="safety threshold",
                             )
-                            axes[l, j].plot(
+                            axes[j].plot(
                                 np.arange(1, max_topk + 1),
                                 np.full(max_topk, max_val),
                                 color="black",
                                 linewidth=0.5,
                             )
-                            axes[l, j].plot(
+                            axes[j].plot(
                                 np.arange(1, max_topk + 1),
                                 np.full(max_topk, min_val),
                                 color="black",
                                 linewidth=0.5,
                             )
 
-                        axes[l, j].set_title(f"{metric}")
-                        axes[l, j].set_ylabel(f"{metric} policy value")
-                        axes[l, j].set_ylim(
-                            yaxis_min_val - margin, yaxis_max_val + margin
-                        )
+                        axes[j].set_title(f"{metric}")
+                        axes[j].set_ylabel(f"{metric} policy value")
+                        axes[j].set_ylim(yaxis_min_val - margin, yaxis_max_val + margin)
 
                     else:
-                        axes[l, j].set_title("safety violation")
-                        axes[l, j].set_ylabel("safety violation rate")
-                        axes[l, j].set_ylim(-0.05, 1.05)
+                        axes[j].set_title("safety violation")
+                        axes[j].set_ylabel("safety violation rate")
+                        axes[j].set_ylim(-0.05, 1.05)
 
-                    axes[l, j].set_xlabel("# of policies deployed")
+                    axes[j].set_xlabel("# of policies deployed")
 
                     if legend:
-                        axes[l, j].legend(loc="upper right")
+                        axes[j].legend(loc="upper right")
 
-        if legend:
-            handles, labels = axes[0, 0].get_legend_handles_labels()
-            # n_cols shows err
-            # fig.legend(handles, labels, loc='upper center', bbox_to_anchor=(0.5, -0.1), n_cols=min(len(labels), 6))
+                if legend:
+                    handles, labels = axes[0].get_legend_handles_labels()
+                    # n_cols shows err
+                    # fig.legend(handles, labels, loc='upper center', bbox_to_anchor=(0.5, -0.1), n_cols=min(len(labels), 6))
+
+        else:
+            if len(metrics) == 1:
+                for l, ope_ci in enumerate(ope_cis):
+                    for i, estimator in enumerate(compared_estimators):
+                        axes[l].plot(
+                            np.arange(1, max_topk + 1),
+                            metric_dict[ope_ci][estimator][metric].mean(axis=1),
+                            color=color[i % n_colors],
+                            marker=markers[i],
+                            label=estimator,
+                        )
+
+                        if visualize_ci:
+                            lower = np.zeros(max_topk)
+                            upper = np.zeros(max_topk)
+
+                            for topk in range(max_topk):
+                                ci = self._estimate_confidence_interval[plot_ci](
+                                    metric_dict[ope_ci][estimator][metric][topk],
+                                    alpha=plot_alpha,
+                                    n_bootstrap_samples=plot_n_bootstrap_samples,
+                                    random_state=random_state,
+                                )
+                                lower[topk] = ci[
+                                    f"{100 * (1. - plot_alpha)}% CI (lower)"
+                                ]
+                                upper[topk] = ci[
+                                    f"{100 * (1. - plot_alpha)}% CI (upper)"
+                                ]
+
+                            axes[l].fill_between(
+                                np.arange(1, max_topk + 1),
+                                lower,
+                                upper,
+                                color=color[i % n_colors],
+                                alpha=0.3,
+                            )
+
+                    if metric in ["k-th", "best", "worst", "mean"]:
+                        if safety_threshold is not None:
+                            axes[l].plot(
+                                np.arange(1, max_topk + 1),
+                                np.full(max_topk, safety_threshold),
+                                color=dkred,
+                                label="safety threshold",
+                            )
+                            axes[l].plot(
+                                np.arange(1, max_topk + 1),
+                                np.full(max_topk, max_val),
+                                color="black",
+                                linewidth=0.5,
+                            )
+                            axes[l].plot(
+                                np.arange(1, max_topk + 1),
+                                np.full(max_topk, min_val),
+                                color="black",
+                                linewidth=0.5,
+                            )
+
+                        axes[l].set_title(f"{metric}")
+                        axes[l].set_ylabel(f"{metric} policy value")
+                        axes[l].set_ylim(yaxis_min_val - margin, yaxis_max_val + margin)
+
+                    else:
+                        axes[l].set_title("safety violation")
+                        axes[l].set_ylabel("safety violation rate")
+                        axes[l].set_ylim(-0.05, 1.05)
+
+                    axes[l].set_xlabel("# of policies deployed")
+
+                    if legend:
+                        axes[l].legend(loc="upper right")
+
+                if legend:
+                    handles, labels = axes[0].get_legend_handles_labels()
+                    # n_cols shows err
+                    # fig.legend(handles, labels, loc='upper center', bbox_to_anchor=(0.5, -0.1), n_cols=min(len(labels), 6))
+
+            else:
+                for l, ope_ci in enumerate(ope_cis):
+                    for j, metric in enumerate(metrics):
+                        for i, estimator in enumerate(compared_estimators):
+                            axes[l, j].plot(
+                                np.arange(1, max_topk + 1),
+                                metric_dict[ope_ci][estimator][metric].mean(axis=1),
+                                color=color[i % n_colors],
+                                marker=markers[i],
+                                label=estimator,
+                            )
+
+                            if visualize_ci:
+                                lower = np.zeros(max_topk)
+                                upper = np.zeros(max_topk)
+
+                                for topk in range(max_topk):
+                                    ci = self._estimate_confidence_interval[plot_ci](
+                                        metric_dict[ope_ci][estimator][metric][topk],
+                                        alpha=plot_alpha,
+                                        n_bootstrap_samples=plot_n_bootstrap_samples,
+                                        random_state=random_state,
+                                    )
+                                    lower[topk] = ci[
+                                        f"{100 * (1. - plot_alpha)}% CI (lower)"
+                                    ]
+                                    upper[topk] = ci[
+                                        f"{100 * (1. - plot_alpha)}% CI (upper)"
+                                    ]
+
+                                axes[l, j].fill_between(
+                                    np.arange(1, max_topk + 1),
+                                    lower,
+                                    upper,
+                                    color=color[i % n_colors],
+                                    alpha=0.3,
+                                )
+
+                        if metric in ["k-th", "best", "worst", "mean"]:
+                            if safety_threshold is not None:
+                                axes[l, j].plot(
+                                    np.arange(1, max_topk + 1),
+                                    np.full(max_topk, safety_threshold),
+                                    color=dkred,
+                                    label="safety threshold",
+                                )
+                                axes[l, j].plot(
+                                    np.arange(1, max_topk + 1),
+                                    np.full(max_topk, max_val),
+                                    color="black",
+                                    linewidth=0.5,
+                                )
+                                axes[l, j].plot(
+                                    np.arange(1, max_topk + 1),
+                                    np.full(max_topk, min_val),
+                                    color="black",
+                                    linewidth=0.5,
+                                )
+
+                            axes[l, j].set_title(f"{metric}")
+                            axes[l, j].set_ylabel(f"{metric} policy value")
+                            axes[l, j].set_ylim(
+                                yaxis_min_val - margin, yaxis_max_val + margin
+                            )
+
+                        else:
+                            axes[l, j].set_title("safety violation")
+                            axes[l, j].set_ylabel("safety violation rate")
+                            axes[l, j].set_ylim(-0.05, 1.05)
+
+                        axes[l, j].set_xlabel("# of policies deployed")
+
+                        if legend:
+                            axes[l, j].legend(loc="upper right")
+
+                if legend:
+                    handles, labels = axes[0, 0].get_legend_handles_labels()
+                    # n_cols shows err
+                    # fig.legend(handles, labels, loc='upper center', bbox_to_anchor=(0.5, -0.1), n_cols=min(len(labels), 6))
 
         fig.subplots_adjust(hspace=0.35, wspace=0.2)
         plt.show()
@@ -7107,7 +7329,7 @@ class OffPolicySelection:
             Path to store the bar figure.
             If `None` is given, the figure will not be saved.
 
-        fig_name: str, default="validation_policy_value_standard_ope.png"
+        fig_name: str, default=None
             Name of the bar figure.
 
         """
@@ -7717,7 +7939,7 @@ class OffPolicySelection:
         cis: List[str] = ["bootstrap"],
         alpha: float = 0.05,
         n_bootstrap_samples: int = 100,
-        random_state: Optional[int] = 12345,
+        random_state: Optional[int] = None,
         n_cols: Optional[int] = None,
         share_axes: bool = False,
         legend: bool = True,
@@ -7830,7 +8052,7 @@ class OffPolicySelection:
 
         guide_min, guide_max = 1e5, -1e5
         if len(cis) == 1:
-            if n_cols == 1:
+            if n_rows == 1:
                 for ci in cis:
                     for i, estimator in enumerate(compared_estimators):
 
@@ -8143,7 +8365,7 @@ class OffPolicySelection:
                                         "estimated_policy_value_lower_bound"
                                     ]
 
-                                    axes[i].scatter(
+                                    axes[i // n_cols, i % n_cols].scatter(
                                         true_policy_value,
                                         estimated_policy_value,
                                         color=color[0],

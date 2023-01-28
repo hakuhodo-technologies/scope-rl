@@ -2676,7 +2676,7 @@ class CreateOPEInput:
 
             .. code-block:: python
 
-                input_dict_0 = input_dict.get(behavior_policy.name, 0)
+                input_dict_ = input_dict.get(behavior_policy_name=behavior_policy.name, dataset_id=0)
 
             Each input dict consists of the following.
 
@@ -2902,6 +2902,8 @@ class CreateOPEInput:
                             behavior_policy_name=behavior_policies[i],
                             dataset_id=dataset_id_,
                         )
+
+                    print(input_dict.behavior_policy_names)
 
             elif behavior_policy_name is None and dataset_id is not None:
                 behavior_policies = logged_dataset.behavior_policy_names

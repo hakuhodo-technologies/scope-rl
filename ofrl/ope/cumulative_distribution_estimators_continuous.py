@@ -487,7 +487,6 @@ class ContinuousCumulativeDistributionTrajectoryWiseImportanceSampling(
             name="pscore",
             expected_dim=2,
             min_val=0.0,
-            max_val=1.0,
         )
         check_array(
             evaluation_policy_action,
@@ -986,7 +985,6 @@ class ContinuousCumulativeDistributionTrajectoryWiseDoublyRobust(
             name="pscore",
             expected_dim=2,
             min_val=0.0,
-            max_val=1.0,
         )
         check_array(
             evaluation_policy_action,
@@ -1516,7 +1514,6 @@ class ContinuousCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSamp
             name="pscore",
             expected_dim=2,
             min_val=0.0,
-            max_val=1.0,
         )
         check_array(
             evaluation_policy_action,
@@ -1713,7 +1710,6 @@ class ContinuousCumulativeDistributionSelfNormalizedTrajectoryWiseDoublyRobust(
             name="pscore",
             expected_dim=2,
             min_val=0.0,
-            max_val=1.0,
         )
         check_array(
             evaluation_policy_action,
