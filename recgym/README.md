@@ -2,12 +2,10 @@
 <details>
 <summary><strong>Table of Contents </strong>(click to expand)</summary>
 
-- [RECGym: A reinforcement learning environment for recommendation system](#RECGym-a-reinforcement-learning-environment-for-real-time-bidding-research)
+- [RECGym: A reinforcement learning environment for recommendation system](#RECGym-a-reinforcement-learning-environment-for-recommender-system)
 - [Overview](#overview)
 - [Installation](#installation)
 - [Usage](#usage)
-  - [Discrete Control](#discrete-control)
-  - [Continuous Control](#continuous-control)
 - [Citation](#citation)
 - [Contribution](#contribution)
 - [License](#license)
@@ -71,7 +69,7 @@ Our standard RECEnv is available from `gym.make()`, following the [OpenAI Gym](h
 
 ```Python
 # import RECGym and gym
-import RECGym
+import recgym
 import gym
 
 # (1) standard environment for discrete action space
@@ -157,7 +155,7 @@ Next, we describe how to customize the environment by instantiating the environm
 </details>
 
 ```Python
-from RECGym import RECEnv
+from recgym import RECEnv
 env = RECEnv(
         UserModel = UserModel,
         n_items = 100,  # we use 100 items
@@ -178,7 +176,7 @@ Specifically, users can define their own `UserModel` as follows.
 
 #### Example of UserModel
 ```Python
-# import RECGym modules
+# import recgym modules
 from recgym import BaseUserModel
 from recgym.types import Action
 # import other necessary stuffs
