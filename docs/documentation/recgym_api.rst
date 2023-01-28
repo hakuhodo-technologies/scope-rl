@@ -23,10 +23,9 @@ simulation module
     :recursive:
     :nosignatures:
 
-    recgym.envs.simulation.base
-    recgym.envs.simulation.function
+    recgym.envs.simulator.base
+    recgym.envs.simulator.function
 
-.. _recgym_api_utils:
 
 .. grid::
     :margin: 0
