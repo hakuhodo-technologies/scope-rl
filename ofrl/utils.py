@@ -287,6 +287,7 @@ class MultipleInputDict:
     def n_datasets(self):
         return {key: len(value) for key, value in self.dataset_ids.items()}
 
+
 def gaussian_kernel(
     x: np.ndarray,
     y: np.ndarray,

@@ -144,12 +144,15 @@ class OffPolicySelection:
         # initialize dataset class
         dataset = SyntheticDataset(
             env=env,
-            behavior_policy=behavior_policy,
-            random_state=12345,
+            max_episode_steps=env.step_per_episode,
         )
 
         # data collection
-        logged_dataset = dataset.obtain_trajectories(n_trajectories=100)
+        logged_dataset = dataset.obtain_trajectories(
+            behavior_policies=behavior_policy,
+            n_trajectories=100,
+            random_state=12345,
+        )
 
     Create Input for OPE:
 
@@ -2523,7 +2526,9 @@ class OffPolicySelection:
                         ranking_df = []
                         metric_df = []
 
-                        for dataset_id_ in range(input_dict.n_datasets[behavior_policy_name]):
+                        for dataset_id_ in range(
+                            input_dict.n_datasets[behavior_policy_name]
+                        ):
                             input_dict_ = input_dict.get(
                                 behavior_policy_name=behavior_policy_name,
                                 dataset_id=dataset_id_,
@@ -2544,7 +2549,9 @@ class OffPolicySelection:
 
                     else:
                         ops_result = []
-                        for dataset_id_ in range(input_dict.n_datasets[behavior_policy_name]):
+                        for dataset_id_ in range(
+                            input_dict.n_datasets[behavior_policy_name]
+                        ):
                             input_dict_ = input_dict.get(
                                 behavior_policy_name=behavior_policy_name,
                                 dataset_id=dataset_id_,
@@ -2884,7 +2891,9 @@ class OffPolicySelection:
                         ranking_df = []
                         metric_df = []
 
-                        for dataset_id_ in range(input_dict.n_datasets[behavior_policy_name]):
+                        for dataset_id_ in range(
+                            input_dict.n_datasets[behavior_policy_name]
+                        ):
                             input_dict_ = input_dict.get(
                                 behavior_policy_name=behavior_policy_name,
                                 dataset_id=dataset_id_,
@@ -5392,9 +5401,7 @@ class OffPolicySelection:
                         for topk in range(max_topk):
                             for l in range(total_n_datasets):
 
-                                topk_values = ranking_dict[l][
-                                    estimator
-                                ][: topk + 1]
+                                topk_values = ranking_dict[l][estimator][: topk + 1]
 
                                 if metric == "k-th":
                                     topk_metric[topk, l] = topk_values[-1]
@@ -6109,7 +6116,9 @@ class OffPolicySelection:
                     for i, estimator in enumerate(compared_estimators):
                         for j, metric in enumerate(metrics):
 
-                            total_n_datasets = input_dict.n_datasets[behavior_policy_name]
+                            total_n_datasets = input_dict.n_datasets[
+                                behavior_policy_name
+                            ]
                             topk_metric = np.zeros((max_topk, total_n_datasets))
 
                             for topk in range(max_topk):
@@ -6213,12 +6222,12 @@ class OffPolicySelection:
 
             elif behavior_policy_name is None and dataset_id is not None:
                 for l, behavior_policy in enumerate(input_dict.behavior_policy_names):
-                    min_vals[l] = policy_value_dict[behavior_policy][
-                        ope_cis[0]
-                    ][estimator]["true_policy_value"].min()
-                    max_vals[l] = policy_value_dict[behavior_policy][
-                        ope_cis[0]
-                    ][estimator]["true_policy_value"].max()
+                    min_vals[l] = policy_value_dict[behavior_policy][ope_cis[0]][
+                        estimator
+                    ]["true_policy_value"].min()
+                    max_vals[l] = policy_value_dict[behavior_policy][ope_cis[0]][
+                        estimator
+                    ]["true_policy_value"].max()
 
             elif behavior_policy_name is not None and dataset_id is None:
                 for l in range(total_n_datasets):
@@ -7277,7 +7286,11 @@ class OffPolicySelection:
                 axes[i].set_xlabel(f"true {ylabel}")
                 axes[i].set_ylabel(f"estimated {ylabel}")
 
-                if legend and behavior_policy_name is None and isinstance(input_dict, MultipleInputDict):
+                if (
+                    legend
+                    and behavior_policy_name is None
+                    and isinstance(input_dict, MultipleInputDict)
+                ):
                     axes[i].legend(title="behavior_policy", loc="lower right")
 
                 if not share_axes:
@@ -7340,7 +7353,6 @@ class OffPolicySelection:
                                         estimated_policy_value,
                                         color=color[l % n_colors],
                                     )
-
 
                                 min_vals[dataset_id_] = np.minimum(
                                     np.nanmin(true_policy_value),
@@ -7463,8 +7475,14 @@ class OffPolicySelection:
                 axes[i // n_cols, i % n_cols].set_xlabel(f"true {ylabel}")
                 axes[i // n_cols, i % n_cols].set_ylabel(f"estimated {ylabel}")
 
-                if legend and behavior_policy_name is None and isinstance(input_dict, MultipleInputDict):
-                    axes[i // n_cols, i % n_cols].legend(title="behavior_policy", loc="lower right")
+                if (
+                    legend
+                    and behavior_policy_name is None
+                    and isinstance(input_dict, MultipleInputDict)
+                ):
+                    axes[i // n_cols, i % n_cols].legend(
+                        title="behavior_policy", loc="lower right"
+                    )
 
                 if not share_axes:
                     margin = (max_val - min_val) * 0.05
@@ -7987,7 +8005,11 @@ class OffPolicySelection:
                         axes[i].set_xlabel("true policy value")
                         axes[i].set_ylabel("estimated policy value lower bound")
 
-                        if legend and behavior_policy_name is None and isinstance(input_dict, MultipleInputDict):
+                        if (
+                            legend
+                            and behavior_policy_name is None
+                            and isinstance(input_dict, MultipleInputDict)
+                        ):
                             axes[i].legend(title="behavior_policy", loc="lower right")
 
                         if not share_axes:
@@ -8191,9 +8213,14 @@ class OffPolicySelection:
                             "estimated policy value lower bound"
                         )
 
-                        if legend and behavior_policy_name is None and isinstance(input_dict, MultipleInputDict):
+                        if (
+                            legend
+                            and behavior_policy_name is None
+                            and isinstance(input_dict, MultipleInputDict)
+                        ):
                             axes[i // n_cols, i % n_cols].legend(
-                                title="behavior_policy", loc="lower right",
+                                title="behavior_policy",
+                                loc="lower right",
                             )
 
                         if not share_axes:
@@ -8396,7 +8423,11 @@ class OffPolicySelection:
                         axes[j].set_xlabel("true policy value")
                         axes[j].set_ylabel("estimated policy value lower bound")
 
-                        if legend and behavior_policy_name is None and isinstance(input_dict, MultipleInputDict):
+                        if (
+                            legend
+                            and behavior_policy_name is None
+                            and isinstance(input_dict, MultipleInputDict)
+                        ):
                             axes[j].legend(title="behavior_policy", loc="lower right")
 
                         if not share_axes:
@@ -8598,8 +8629,14 @@ class OffPolicySelection:
                         axes[i, j].set_xlabel("true policy value")
                         axes[i, j].set_ylabel("estimated policy value lower bound")
 
-                        if legend and behavior_policy_name is None and isinstance(input_dict, MultipleInputDict):
-                            axes[i, j].legend(title="behavior_policy", loc="lower right")
+                        if (
+                            legend
+                            and behavior_policy_name is None
+                            and isinstance(input_dict, MultipleInputDict)
+                        ):
+                            axes[i, j].legend(
+                                title="behavior_policy", loc="lower right"
+                            )
 
                         if not share_axes:
                             margin = (max_val - min_val) * 0.05
@@ -8969,7 +9006,11 @@ class OffPolicySelection:
                 axes[i].set_xlabel("true variance")
                 axes[i].set_ylabel("estimated variance")
 
-                if legend and behavior_policy_name is None and isinstance(input_dict, MultipleInputDict):
+                if (
+                    legend
+                    and behavior_policy_name is None
+                    and isinstance(input_dict, MultipleInputDict)
+                ):
                     axes[i].legend(title="behavior_policy", loc="lower right")
 
                 if not share_axes:
@@ -9173,8 +9214,14 @@ class OffPolicySelection:
                 axes[i // n_cols, i % n_cols].set_xlabel("true variance")
                 axes[i // n_cols, i % n_cols].set_ylabel("estimated variance")
 
-                if legend and behavior_policy_name is None and isinstance(input_dict, MultipleInputDict):
-                    axes[i // n_cols, i % n_cols].legend(title="behavior_policy", loc="lower right")
+                if (
+                    legend
+                    and behavior_policy_name is None
+                    and isinstance(input_dict, MultipleInputDict)
+                ):
+                    axes[i // n_cols, i % n_cols].legend(
+                        title="behavior_policy", loc="lower right"
+                    )
 
                 if not share_axes:
                     margin = (max_val - min_val) * 0.05

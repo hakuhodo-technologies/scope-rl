@@ -11,7 +11,7 @@ import numpy as np
 from sklearn.utils import check_scalar, check_random_state
 
 import gym
-from gym.spaces import Box, Discrete
+from gym.spaces import Discrete
 
 from d3rlpy.dataset import MDPDataset
 from d3rlpy.ope import DiscreteFQE
@@ -161,12 +161,15 @@ class CreateOPEInput:
         # initialize dataset class
         dataset = SyntheticDataset(
             env=env,
-            behavior_policy=behavior_policy,
-            random_state=12345,
+            max_episode_steps=env.step_per_episode,
         )
 
         # data collection
-        logged_dataset = dataset.obtain_episodes(n_trajectories=100)
+        logged_dataset = dataset.obtain_episodes(
+            behavior_policies=behavior_policy,
+            n_trajectories=100,
+            random_state=12345,
+        )
 
     **Create Input**:
 
@@ -2131,7 +2134,7 @@ class CreateOPEInput:
                     terminal,
                     info,
                     pscore,
-                    behavior_policy_name,
+                    behavior_policy,
                     dataset_id,
                 ]
 
@@ -2211,8 +2214,8 @@ class CreateOPEInput:
                     state_marginal_importance_weight,
                     on_policy_policy_value,
                     gamma,
-                    behavior_policy_name,
-                    evaluation_policy_name,
+                    behavior_policy,
+                    evaluation_policy,
                     dataset_id,
                 ]
 
@@ -2260,13 +2263,13 @@ class CreateOPEInput:
             gamma: float
                 Discount factor.
 
-            behavior_policy_name: str
+            behavior_policy: str
                 Name of the behavior policy.
 
-            evaluation_policy_name: str
+            evaluation_policy: str
                 Name of the evaluation policy.
 
-            dataset_id: int or None
+            dataset_id: int
                 Id of the logged dataset.
 
         """
@@ -2570,7 +2573,7 @@ class CreateOPEInput:
                     terminal,
                     info,
                     pscore,
-                    behavior_policy_name,
+                    behavior_policy,
                     dataset_id,
                 ]
 
@@ -2688,8 +2691,8 @@ class CreateOPEInput:
                     state_marginal_importance_weight,
                     on_policy_policy_value,
                     gamma,
-                    behavior_policy_name,
-                    evaluation_policy_name,
+                    behavior_policy,
+                    evaluation_policy,
                     dataset_id,
                 ]
 
@@ -2737,13 +2740,13 @@ class CreateOPEInput:
             gamma: float
                 Discount factor.
 
-            behavior_policy_name: str
+            behavior_policy: str
                 Name of the behavior policy.
 
-            evaluation_policy_name: str
+            evaluation_policy: str
                 Name of the evaluation policy.
 
-            dataset_id: int or None
+            dataset_id: int
                 Id of the logged dataset.
 
         """

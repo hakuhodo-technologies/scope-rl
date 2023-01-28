@@ -45,7 +45,7 @@ Before proceeding to OPE/OPS, we first create :class:`input_dict` to enable a sm
 
             multiple_input_dict = prep.obtain_whole_inputs(
                 logged_dataset=logged_dataset,                                 # MultipleLoggedDataset (two logged dataset in this case)
-                evaluation_policies=[evaluation_policies_1, eval_policies_2],  # nested list
+                evaluation_policies=evaluation_policies,                       # nested list or dict that have the same keys with logged_datasets
                 ...,
             )
 
@@ -55,7 +55,7 @@ Before proceeding to OPE/OPS, we first create :class:`input_dict` to enable a sm
             
         .. code-block:: python
 
-            input_dict_0 = multiple_input_dict.get(0)
+            input_dict_ = multiple_input_dict.get(behavior_policy_name=behavior_policy.name, dataset_id=0)
 
         .. seealso::
 
@@ -207,14 +207,15 @@ Using the OPE class, we can obtain the OPE results of various estimators at once
                 input_dict,  # MultipleInputDict
             )
 
-        The returned value is list of dict containing the ope result.
+        The returned value is dictionary containing the ope result.
 
-        In addition, we can specify which logged dataset and input_dict to use by setting ``dataset_id``.
+        In addition, we can specify which logged dataset and input_dict to use by setting ``behavior_policy_name`` and ``dataset_id``.
 
         .. code-block:: python
 
             multiple_ope_dict = ope.estimate_policy_value(
                 input_dict,
+                behavior_policy_name=behavior_policy.name,  #
                 dataset_id=0,  # specify which logged dataset and input_dict to use
             )
 
@@ -224,6 +225,7 @@ Using the OPE class, we can obtain the OPE results of various estimators at once
 
             ope.visualize_off_policy_estimates(
                 input_dict,
+                behavior_policy_name=behavior_policy.name,
                 dataset_id=0,  #
                 ...,
             )
@@ -240,6 +242,8 @@ Using the OPE class, we can obtain the OPE results of various estimators at once
 
             ope.visualize_policy_value_with_multiple_estimates(
                 input_dict,      # MultipleInputDict
+                behavior_policy_name=None,                   # compare estimators with multiple behavior policies
+                # behavior_policy_name=behavior_policy.name  # compare estimators with a single behavior policy
                 plot_type="ci",  # one of {"ci", "violin", "scatter"}, default="ci"
                 ...,
             )
@@ -844,14 +848,15 @@ It estimates the cumulative distribution of the trajectory wise reward and vario
                 input_dict,  # MultipleInputDict
             )
 
-        The returned value is list of dict containing the ope result.
+        The returned value is the dictionary containing the ope result.
 
-        In addition, we can specify which logged dataset and input_dict to use by setting ``dataset_id``.
+        In addition, we can specify which logged dataset and input_dict to use by setting ``behavior_policy_name`` and ``dataset_id``.
 
         .. code-block:: python
 
             multiple_ope_dict = ope.estimate_cumulative_distribution_function(
                 input_dict,
+                behavior_policy_name=behavior_policy.name,  #
                 dataset_id=0,  # specify which logged dataset and input_dict to use
             )
 
@@ -861,6 +866,7 @@ It estimates the cumulative distribution of the trajectory wise reward and vario
 
             ope.visualize_cumulative_distribution_function(
                 input_dict,
+                behavior_policy_name=behavior_policy.name,  #
                 dataset_id=0,  #
                 random_state=random_state,
             )
@@ -879,6 +885,8 @@ It estimates the cumulative distribution of the trajectory wise reward and vario
 
             ope.visualize_cumulative_distribution_function_with_multiple_estimates(
                 input_dict,      # MultipleInputDict
+                behavior_policy_name=None,                   # compare estimators with multiple behavior policies
+                # behavior_policy_name=behavior_policy.name  # compare estimators with a single behavior policy
                 random_state=random_state,
             )
 
@@ -1173,7 +1181,7 @@ Finally, the OPS class also implements the modules to compare the OPE result and
                 return_by_dataframe=True,
             )
 
-        The returned value is list of dict containing the ops result.
+        The returned value is dictionary containing the ops result.
 
         Next, visualization functions for OPS demonstrate the aggregated ops result by default.
         For example, the average topk performance and its confidence intervals is shown for topk visualization.
@@ -1208,7 +1216,7 @@ Finally, the OPS class also implements the modules to compare the OPE result and
             
             validation results on multiple logged datasets
 
-        Note that, when the dataset_id is specified, the methods show the result on the specified dataset.
+        Note that, when the ``behavior_policy_name`` and ``dataset_id`` is specified, the methods show the result on the specified dataset.
 
         .. seealso::
 

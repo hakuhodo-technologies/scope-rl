@@ -11,7 +11,7 @@ Synthetic Dataset Generation
 ~~~~~~~~~~
 :class:`SyntheticDataset` is an easy-to-use data collection module which is compatible to any `OpenAI Gym <https://gym.openai.com>`_ and `Gymnasium <https://gymnasium.farama.org/>`_-like RL environment.
 
-It takes an RL environment and the behavior policy (i.e., data collection policy) as input to instantiate the class.
+It takes an RL environment as input to instantiate the class.
 
 .. code-block:: python
 
@@ -19,17 +19,19 @@ It takes an RL environment and the behavior policy (i.e., data collection policy
     from ofrl.dataset import SyntheticDataset
     dataset = SyntheticDataset(
         env=env,
-        behavior_policy=behavior_policy,  # BaseHead
         max_episode_steps=env.step_per_episode,
-        random_state=random_state,
     )
 
-Then, it collects logged data as follows.
+Then, it collects logged data by a behavior policy (i.e., data collection policy) as follows.
 
 .. code-block:: python
 
     # collect logged data by a behavior policy
-    logged_dataset = dataset.obtain_episodes(n_trajectories=10000)
+    logged_dataset = dataset.obtain_episodes(
+        behavior_policies=behavior_policy,  # BaseHead
+        n_trajectories=10000,
+        random_state=random_state,
+    )
 
 .. _tips_synthetic_dataset:
 
@@ -96,6 +98,8 @@ Then, it collects logged data as follows.
                 terminal,
                 info,
                 pscore,
+                behavior_policy,
+                dataset_id,
             ]
 
         .. note::
@@ -119,7 +123,7 @@ Then, it collects logged data as follows.
         
         .. code-block:: python
 
-            logged_dataset_0 = multiple_logged_dataset.get(0)
+            logged_dataset_ = multiple_logged_dataset.get(behavior_policy_name=behavior_policy.name, dataset_id=0)
         
         There are two ways to obtain :class:`MultipleLoggedDataset`.
 
@@ -129,12 +133,20 @@ Then, it collects logged data as follows.
 
             synthetic_dataset = SyntheticDataset(
                 env=env,
-                behavior_policy=behavior_policy,
+                max_episode_steps=env.step_per_episode,
                 ...,
             )
-            multiple_logged_dataset = synthetic_dataset.obtain_episodes(
-                n_datasets=5,          # when n_datasets > 1, MultipleLoggedDataset is returned
+            multiple_logged_dataset_1 = synthetic_dataset.obtain_episodes(
+                behavior_policies=[behavior_policy_1, behavior_policy_2],  # when using multiple logged datasets, MultipleLoggedDataset is returned
+                n_datasets=1,          
                 n_trajectories=10000,
+                ...,
+            )
+            multiple_logged_dataset_2 = synthetic_dataset.obtain_episodes(
+                behavior_policies=behavior_policy,
+                n_datasets=5,                       # when n_datasets > 1, MultipleLoggedDataset is returned
+                n_trajectories=10000,
+                ...,
             )
 
         The second way to define :class:`MultipleLoggedDataset` manually as follows.
@@ -142,25 +154,23 @@ Then, it collects logged data as follows.
         .. code-block:: python
 
             from ofrl.utils import MultipleLoggedDataset
+
             multiple_logged_dataset = MultipleLoggedDataset(
                 action_type="discrete",
                 path="logged_dataset/",  # either absolute or relative path
             )
 
             for behavior_policy in behavior_policies:
-                synthetic_dataset = SyntheticDataset(
-                    env=env,
-                    behavior_policy=behavior_policy,
+                single_logged_dataset = dataset.obtain_episodes(
+                    behavior_policies=behavior_policy,
+                    n_trajectories=10000,
                     ...,
                 )
-                single_logged_dataset = synthetic_dataset.obtain_episodes(
-                    n_trajectories=10000,
-                )
 
-                # add a single logged dataset to multiple_logged_dataset
+                # add a single_logged_dataset to multiple_logged_dataset
                 multiple_logged_dataset.add(
                     single_logged_dataset, 
-                    name=behavior_policy.name,
+                    behavior_policy_name=behavior_policy.name,
                 )
 
         .. seealso::
@@ -177,7 +187,11 @@ Then, it collects logged data as follows.
 
         .. code-block:: python
 
-            logged_dataset = dataset.obtain_steps(n_trajectories=10000)
+            logged_dataset = dataset.obtain_steps(
+                behavior_policies=behavior_policy,
+                n_trajectories=10000,
+                ...,
+            )
 
 .. seealso::
 
@@ -330,7 +344,7 @@ The obtained evaluation policies are the following (both algorithms and policy w
 
         :class:`OffPolicyLearning` is particularly useful when fitting offline RL algorithms on multiple logged dataset.
 
-        When applying the same algorithms and policies wrappers across multiple datasets, try the following command.
+        We can apply the same algorithms and policies wrappers across multiple datasets by the following command.
 
         .. code-block:: python
 
@@ -339,18 +353,6 @@ The obtained evaluation policies are the following (both algorithms and policy w
                 algorithms=[cql_b1, cql_b2, cql_b3],             # single list
                 algorithms_name=["cql_b1", "cql_b2", "cql_b3"],  # single list
                 policy_wrappers=policy_wrappers,                 # single dict
-                random_state=random_state,
-            )
-
-        When applying different algorithms or policy wrappers to each datasets, try the following command.
-
-        .. code-block::
-
-            eval_policies = opl.obtain_evaluation_policy(
-                logged_dataset=logged_dataset,                           # MultipleLoggedDataset (two datasets in this case)
-                algorithms=[[cql_b1, cql_b2], [cql_b3]],                 # nested list
-                algorithms_name=[["cql_b1", "cql_b2"], ["cql_b3"]],      # nested list
-                policy_wrappers=[policy_wrappers_1, policy_wrappers_2],  # list of dict
                 random_state=random_state,
             )
 

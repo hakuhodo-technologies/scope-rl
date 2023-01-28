@@ -118,7 +118,7 @@ class SyntheticDataset(BaseDataset):
         # initialize dataset class
         dataset = SyntheticDataset(
             env=env,
-            behavior_policy=behavior_policy,
+            max_episode_steps=env.step_per_episode,
             action_meaning=env.action_meaning,
             state_keys=env.obs_keys,
             info_keys={
@@ -128,11 +128,15 @@ class SyntheticDataset(BaseDataset):
                 "conversion": int,
                 "average_bid_price": float,
             },
-            random_state=12345,
         )
 
         # data collection
-        logged_datasets = dataset.obtain_trajectories(n_trajectories=100, obtain_info=True)
+        logged_datasets = dataset.obtain_trajectories(
+            behavior_policies=behavior_policy,
+            n_trajectories=100,
+            obtain_info=True,
+            random_state=12345,
+        )
 
     **Output**:
 
@@ -178,7 +182,9 @@ class SyntheticDataset(BaseDataset):
         'conversion': array([ 6.,  0.,  1., ..., 7.,  0.,  0.]),
         'average_bid_price': array([544.55223881,   8.24390244, 523.24423963, ..., 172.58706468,
                    4.2565445 , 458.76344086])},
-        'pscore': array([0.73, 0.73, 0.73, ..., 0.73, 0.03, 0.73])}
+        'pscore': array([0.73, 0.73, 0.73, ..., 0.73, 0.03, 0.73]),
+        'behavior_policy': 'ddqn_epsilon_0.3',
+        'dataset_id': 0}
 
     .. seealso::
 
@@ -299,7 +305,7 @@ class SyntheticDataset(BaseDataset):
                     terminal,
                     info,
                     pscore,
-                    behavior_policy_name,
+                    behavior_policy,
                     dataset_id,
                 ]
 
@@ -359,7 +365,7 @@ class SyntheticDataset(BaseDataset):
             pscore: ndarray of shape (size, )
                 Action choice probability of the behavior policy for the chosen action.
 
-            behavior_policy_name: str
+            behavior_policy: str
                 Name of the behavior policy.
 
             dataset_id: int
@@ -558,7 +564,7 @@ class SyntheticDataset(BaseDataset):
                     terminal,
                     info,
                     pscore,
-                    behavior_policy_name,
+                    behavior_policy,
                     dataset_id,
                 ]
 
@@ -618,7 +624,7 @@ class SyntheticDataset(BaseDataset):
             pscore: ndarray of shape (size, )
                 Action choice probability of the behavior policy for the chosen action.
 
-            behavior_policy_name: str
+            behavior_policy: str
                 Name of the behavior policy.
 
             dataset_id: int
@@ -757,7 +763,7 @@ class SyntheticDataset(BaseDataset):
             "terminal": terminals,
             "info": info,
             "pscore": action_probs,
-            "behavior_policy_name": behavior_policy.name,
+            "behavior_policy": behavior_policy.name,
             "dataset_id": dataset_id,
         }
         return logged_dataset
@@ -859,7 +865,7 @@ class SyntheticDataset(BaseDataset):
                     terminal,
                     info,
                     pscore,
-                    behavior_policy_name,
+                    behavior_policy,
                     dataset_id,
                 ]
 
@@ -919,7 +925,7 @@ class SyntheticDataset(BaseDataset):
             pscore: ndarray of shape (size, )
                 Action choice probability of the behavior policy for the chosen action.
 
-            behavior_policy_name: str
+            behavior_policy: str
                 Name of the behavior policy.
 
             dataset_id: int
@@ -949,9 +955,7 @@ class SyntheticDataset(BaseDataset):
                     total=n_datasets,
                 ):
                     random_state_ = (
-                        random_state
-                        if random_state is not None and i == 0
-                        else None
+                        random_state if random_state is not None and i == 0 else None
                     )
                     logged_dataset_ = self._obtain_episodes(
                         behavior_policy=behavior_policies,
@@ -1124,7 +1128,7 @@ class SyntheticDataset(BaseDataset):
                     terminal,
                     info,
                     pscore,
-                    behavior_policy_name,
+                    behavior_policy,
                     dataset_id,
                 ]
 
@@ -1184,7 +1188,7 @@ class SyntheticDataset(BaseDataset):
             pscore: ndarray of shape (size, )
                 Action choice probability of the behavior policy for the chosen action.
 
-            behavior_policy_name: str
+            behavior_policy: str
                 Name of the behavior policy.
 
             dataset_id: int
