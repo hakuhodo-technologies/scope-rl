@@ -24,7 +24,6 @@ Note that, RECGym is publicized under [OfflineGym](../) repository, which facili
 ### Basic Setting
 
 In recommendation, the objective of the RL agent is to maximize reward. \
-
 We often formulate this recommendation problem as the following (Partially Observable) Markov Decision Process ((PO)MDP):
 - `state`: 
    - A vector representing user preference.  The preference changes over time in an episode by the actions presented by the RL agent.
@@ -43,7 +42,7 @@ RECGym consists of the following a environments.
 RECGym is configurative about the following a module.
 - [UserModel](./envs/simulator/function.py#L13): Class to define the user model of the recommender system.
 
-Note that, users can customize the above modules by following the [abstract class](./envs/simulator/base.py). \
+Note that, users can customize the above modules by following the [abstract class](./envs/simulator/base.py).
 
 ## Installation
 RECGym can be installed as a part of [OfflineGym](../) using Python's package manager `pip`.
