@@ -182,12 +182,19 @@ behavior_policy = DiscreteEpsilonGreedyHead(
 # initialize the dataset class
 dataset = SyntheticDataset(
     env=env,
-    behavior_policy=behavior_policy,
     maximum_episode_steps=env.step_per_episode,
-    random_state=random_state,
 )
 # the behavior policy collects some logged data
-logged_dataset = dataset.obtain_trajectories(n_trajectories=10000)
+train_logged_dataset = dataset.obtain_trajectories(
+  behavior_policies=behavior_policy,
+  n_trajectories=10000,
+  random_state=random_state,
+)
+test_logged_dataset = dataset.obtain_trajectories(
+  behavior_policies=behavior_policy,
+  n_trajectories=10000,
+  random_state=random_state + 1,
+)
 ```
 
 ### Offline Reinforcement Learning
@@ -203,11 +210,11 @@ from d3rlpy.algos import DiscreteCQL
 # (3) Learning a new policy from offline logged data (using d3rlpy)
 # convert the logged dataset into d3rlpy's dataset format
 offlinerl_dataset = MDPDataset(
-    observations=logged_dataset["state"],
-    actions=logged_dataset["action"],
-    rewards=logged_dataset["reward"],
-    terminals=logged_dataset["done"],
-    episode_terminals=logged_dataset["done"],
+    observations=train_logged_dataset["state"],
+    actions=train_logged_dataset["action"],
+    rewards=train_logged_dataset["reward"],
+    terminals=train_logged_dataset["done"],
+    episode_terminals=train_logged_dataset["done"],
     discrete_action=True,
 )
 # initialize the algorithm
@@ -261,7 +268,7 @@ random_ = DiscreteEpsilonGreedyHead(
 evaluation_policies = [cql_, ddqn_, random_]
 # create input for the OPE class
 prep = CreateOPEInput(
-    logged_dataset=logged_dataset,
+    logged_dataset=test_logged_dataset,
     use_base_model=True,  # use model-based prediction
 )
 input_dict = prep.obtain_whole_inputs(
@@ -272,7 +279,7 @@ input_dict = prep.obtain_whole_inputs(
 )
 # initialize the OPE class
 ope = OPE(
-    logged_dataset=logged_dataset,
+    logged_dataset=test_logged_dataset,
     ope_estimators=[DM(), TIS(), PDIS(), DR()],
 )
 # perform OPE and visualize the result
@@ -310,7 +317,7 @@ from ofrl.ope import DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseD
 # we compare ddqn, cql, and random policy defined from the previous section (i.e., (3) of basic OPE procedure)
 # initialize the OPE class
 cd_ope = CumulativeDistributionOPE(
-    logged_dataset=logged_dataset,
+    logged_dataset=test_logged_dataset,
     ope_estimators=[
       CD_DM(estimator_name="cdf_dm"),
       CD_IS(estimator_name="cdf_is"),

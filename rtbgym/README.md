@@ -53,16 +53,16 @@ RTBGym provides two standardized RTB environment.
 - `"RTBEnv-continuous-v0"`: Standard RTB environment with continuous action space.
 
 RTBGym consists of the following two environments.
-- [RTBEnv](./env/rtb.py#L24): The basic configurative environment with continuous action space.
-- [CustomizedRTBEnv](./env/wrapper_rtb.py#L15): The customized environment given action space and reward predictor.
+- [RTBEnv](./envs/rtb.py#L24): The basic configurative environment with continuous action space.
+- [CustomizedRTBEnv](./envs/wrapper_rtb.py#L15): The customized environment given action space and reward predictor.
 
 RTBGym is configurative about the following three modules.
-- [WinningPriceDistribution](./env/simulator/function.py#L18): Class to define the winning price distribution of the auction bidding.
-- [ClickThroughRate](./env/simulator/function.py#L183): Class to define the click through rate of users.
-- [ConversionRate](./env/simulator/function.py#L393): Class to define the conversion rate of users.
+- [WinningPriceDistribution](./envs/simulator/function.py#L18): Class to define the winning price distribution of the auction bidding.
+- [ClickThroughRate](./envs/simulator/function.py#L183): Class to define the click through rate of users.
+- [ConversionRate](./envs/simulator/function.py#L393): Class to define the conversion rate of users.
 
-Note that, users can customize the above modules by following the [abstract class](./env/simulator/base.py). \
-We also define the bidding function in the [Bidder](./env/simulator/bidder.py#15) class and the auction simulation in the [Simulator](./env/simulator/rtb_synthetic.py#23) class, respectively.
+Note that, users can customize the above modules by following the [abstract class](./envs/simulator/base.py). \
+We also define the bidding function in the [Bidder](./envs/simulator/bidder.py#15) class and the auction simulation in the [Simulator](./envs/simulator/rtb_synthetic.py#23) class, respectively.
 
 ## Installation
 RTBGym can be installed as a part of [OfflineGym](../) using Python's package manager `pip`.
