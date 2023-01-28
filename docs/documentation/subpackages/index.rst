@@ -38,6 +38,41 @@ OFRL provides brbrbr...
 
 .. raw:: html
 
+    <div class="white-space-5px"></div>
+
+.. grid-item-card::
+    :columns: 8
+    :link: recgym_about
+    :link-type: doc
+
+    **RECGym**: Recommender Systems Environment
+
+    .. grid::
+        :gutter: 1
+
+        .. grid-item::
+            :columns: 4
+
+            .. grid:: 1
+                :gutter: 1
+
+                .. grid-item-card:: 
+                    :img-background: /_static/images/recgym.png
+                    :shadow: none
+
+        .. grid-item::
+            :columns: 8
+
+            .. grid:: 1
+                :gutter: 1
+                :padding: 1
+
+                .. grid-item:: 
+
+                    brief description
+
+.. raw:: html
+
     <div class="white-space-20px"></div>
 
 .. grid::

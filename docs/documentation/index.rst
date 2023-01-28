@@ -233,6 +233,7 @@ Table of Contents
 
    Gallery of Sub-packages <subpackages/index>
    subpackages/rtbgym_about
+   subpackages/recgym_about
 
 .. toctree::
    :maxdepth: 2
@@ -240,6 +241,7 @@ Table of Contents
 
    ofrl_api
    subpackages/rtbgym_api
+   subpackages/recgym_api
 
 .. toctree::
    :maxdepth: 1

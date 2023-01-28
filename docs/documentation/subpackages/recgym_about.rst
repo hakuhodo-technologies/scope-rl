@@ -84,10 +84,10 @@ Let's interact uniform random policy with a continuous action REC environment.
 
     # define a random agent
     agent = DiscreteEpsilonGreedyHead(
-        base_policy = DiscreteRandomPolicy(),
-        name = 'random',
-        n_actions = env.n_items,
-        epsilon = 1. ,
+        base_policy=DiscreteRandomPolicy(),
+        n_actions=env.n_items,
+        epsilon=1.0,
+        name='random',
         random_state = random_state, 
     )
 
@@ -110,14 +110,14 @@ Next, we describe how to customize the environment by instantiating the environm
 
 The list of arguments are given as follows.
 
-* :class:`UserModel`: User model which defines user_prefecture_dynamics and reward_function.
+* :class:`UserModel`: User model which defines ``user_prefecture_dynamics`` (e.g., :cite:`dean2022preference`) and ``reward_function``.
 * :class:`n_items`: Number of items used for recommendation.
 * :class:`n_users`: Number of users used for recommendation.
 * :class:`item_feature_dim`: Dimensions of the item feature vectors.
 * :class:`user_feature_dim`: Dimensions of the user feature vectors.
 * :class:`item_feature_vector`: Feature vectors that characterizes each item.
 * :class:`user_feature_vector`: Feature vectors that characterizes each user.
-* :class:`reward_type`: Reward type (i.e., countinuous / binary).
+* :class:`reward_type`: Reward type (i.e., continuous / binary).
 * :class:`reward_std`: Standard deviation of the reward distribution. Applicable only when reward_type is "continuous".
 * :class:`obs_std`: Standard deviation of the observation distribution.
 * :class:`step_per_episode`: Number of timesteps in an episode.
@@ -214,3 +214,57 @@ Contribution
 ~~~~~~~~~~
 Any contributions to RECGym are more than welcome!
 Please refer to `CONTRIBUTING.md <>`_ for general guidelines how to contribute to the project.
+
+.. grid::
+    :margin: 0
+
+    .. grid-item::
+        :columns: 3
+        :margin: 0
+        :padding: 0
+
+        .. grid::
+            :margin: 0
+
+            .. grid-item-card::
+                :link: /documentation/subpackages/index
+                :link-type: doc
+                :shadow: none
+                :margin: 0
+                :padding: 0
+
+                <<< Prev
+                **Sub_packages (Back to Top)**
+
+            .. grid-item-card::
+                :link: /documentation/subpackages/index
+                :link-type: doc
+                :shadow: none
+                :margin: 0
+                :padding: 0
+
+                <<< Prev
+                **Documentation (Back to Top)**
+
+    .. grid-item::
+        :columns: 6
+        :margin: 0
+        :padding: 0
+
+    .. grid-item::
+        :columns: 3
+        :margin: 0
+        :padding: 0
+
+        .. grid::
+            :margin: 0
+
+            .. grid-item-card::
+                :link: /documentation/subpackages/recgym_api
+                :link-type: doc
+                :shadow: none
+                :margin: 0
+                :padding: 0
+
+                Next >>>
+                **Package Reference**

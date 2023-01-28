@@ -19,7 +19,7 @@
 
 ## Overview
 
-*RTBGym* is an open-source simulation platform for Real-Time Bidding (RTB) of Display Advertising, which is written in Python. The simulator is particularly intended for reinforcement learning algorithms and follows [OpenAI Gym](https://gym.openai.com) interface. We design RTBGym as a configurative environment so that researchers and practitioner can customize the environmental modules including WinningPriceDistribution, ClickThroughRate, and ConversionRate.
+*RTBGym* is an open-source simulation platform for Real-Time Bidding (RTB) of Display Advertising, which is written in Python. The simulator is particularly intended for reinforcement learning algorithms and follows [OpenAI Gym](https://gym.openai.com) and [Gymnasium](https://gymnasium.farama.org/)-like interface. We design RTBGym as a configurative environment so that researchers and practitioner can customize the environmental modules including `WinningPriceDistribution`, `ClickThroughRate`, and `ConversionRate`.
 
 Note that, RTBGym is publicized under [OfflineGym](../) repository, which facilitates the implementation of offline reinforcement learning procedure.
 
@@ -84,7 +84,7 @@ The online/offlline RL and Off-Policy Evaluation examples are provides in [Offli
 
 ### Standard RTBEnv
 
-Our standard RTBEnv is available from `gym.make()`, following the [OpenAI Gym](https://gym.openai.com) interface.
+Our standard RTBEnv is available from `gym.make()`, following the [OpenAI Gym](https://gym.openai.com) and [Gymnasium](https://gymnasium.farama.org/)-like interface.
 
 ```Python
 # import rtbgym and gym
@@ -161,7 +161,7 @@ plt.show()
 </p>
 </figcaption>
 
-Note that, while we use [OfflineGym](../README.md) and [d3rlpy](https://github.com/takuseno/d3rlpy) here, RTBGym is compatible with any other libraries working on the [OpenAI Gym](https://gym.openai.com) interface.
+Note that, while we use [OfflineGym](../README.md) and [d3rlpy](https://github.com/takuseno/d3rlpy) here, RTBGym is compatible with any other libraries working on the [OpenAI Gym](https://gym.openai.com) and [Gymnasium](https://gymnasium.farama.org/)-like interface.
 
 ### Customized RTGEnv
 
@@ -410,6 +410,7 @@ For any question about the paper and software, feel free to contact: kiyohara.h.
 <summary><strong>Projects </strong>(click to expand)</summary>
 
 This project is inspired by the following three packages.
+- **AuctionGym** -- an RL environment for online advertising auctions: [[github](https://github.com/amzn/auction-gym)] [[paper](https://www.amazon.science/publications/learning-to-bid-with-auctiongym)]
 - **RecoGym**  -- an RL environment for recommender systems: [[github](https://github.com/criteo-research/reco-gym)] [[paper](https://arxiv.org/abs/1808.00720)]
 - **RecSim** -- a configurative RL environment for recommender systems: [[github](https://github.com/google-research/recsim)] [[paper](https://arxiv.org/abs/1909.04847)]
 - **FinRL** -- an RL environment for finance: [[github](https://github.com/AI4Finance-Foundation/FinRL)] [[paper](https://arxiv.org/abs/2011.09607)]
