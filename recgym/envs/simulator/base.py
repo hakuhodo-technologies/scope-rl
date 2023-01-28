@@ -1,7 +1,6 @@
 """Abstract Base Class for Simulation."""
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
-from typing import Optional
 
 import numpy as np
 from ...types import Action

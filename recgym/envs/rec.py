@@ -1,4 +1,4 @@
-"""Reinforcement Learning (RL) Environment for recommend system (REC)."""
+"""Reinforcement Learning (RL) Environment for recommender system (REC)."""
 from typing import Tuple, Optional, Any
 
 import gym
@@ -10,6 +10,7 @@ from recgym.envs.simulator.base import BaseUserModel
 from recgym.envs.simulator.function import UserModel
 
 from ..types import Action
+
 
 class RECEnv(gym.Env):
     """Class for recommend system (REC) environment for reinforcement learning (RL) agent to interact.
@@ -44,10 +45,10 @@ class RECEnv(gym.Env):
         Reward type.
 
     n_items: int, default=100 (> 0)
-        Number of items used in the recommendation system.
+        Number of items used in the recommender system.
 
     n_users: int, default=100 (> 0)
-        Number of users used in the recommendation system.
+        Number of users used in the recommender system.
 
     item_feature_dim: int, default=5 (> 0)
         Dimensions of the item feature vectors.
@@ -158,7 +159,7 @@ class RECEnv(gym.Env):
         reward_type: str = "continuous",  # "binary"
         reward_std: float = 0.0,
         obs_std: float = 0.0,
-        step_per_episode = 10,
+        step_per_episode=10,
         random_state: Optional[int] = None,
     ):
         super().__init__()
@@ -220,6 +221,10 @@ class RECEnv(gym.Env):
             user_feature_vector = self.random_.uniform(
                 low=-1.0, high=1.0, size=(self.n_users, self.user_feature_dim)
             )
+        user_feature_vector = user_feature_vector / np.linalg.norm(
+            user_feature_vector, ord=2
+        )
+
         check_scalar(
             user_feature_vector,
             name="user_feature_vector",
@@ -232,18 +237,20 @@ class RECEnv(gym.Env):
             item_feature_vector = self.random_.uniform(
                 low=-1.0, high=1.0, size=(self.n_items, self.item_feature_dim)
             )
+        item_feature_vector = item_feature_vector / np.linalg.norm(
+            item_feature_vector, ord=2
+        )
+
         check_scalar(
             item_feature_vector,
             name="item_feature_vector",
             target_type=np.ndarray,
         )
-        self.item_feature_vector = item_feature_vector
 
         self.usermodel = UserModel(
-            reward_type=reward_type, 
-            reward_std=reward_std, 
-            user_feature_vector=user_feature_vector,
-            item_feature_vector=item_feature_vector, 
+            reward_type=reward_type,
+            reward_std=reward_std,
+            item_feature_vector=item_feature_vector,
             random_state=random_state,
         )
 
@@ -311,7 +318,7 @@ class RECEnv(gym.Env):
 
         """
         # 1. sample reward for the given item.
-        reward = self.usermodel.reward_function(self.state, action) 
+        reward = self.usermodel.reward_function(self.state, action)
 
         # 2. update user state with user_preference_dynamics
         self.state = self.usermodel.user_preference_dynamics(self.state, action)
