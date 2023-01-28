@@ -47,10 +47,7 @@ class MultipleLoggedDataset:
     save_relative_path: bool = False
 
     def __post_init__(self):
-        self.n_datasets = 0
-        self.name_to_id_mapping = {}
-        self.id_to_name_mapping = []
-
+        self.dataset_ids = defaultdict(int)
         self.abs_path = None
         self.relative_path = None
 
@@ -68,10 +65,7 @@ class MultipleLoggedDataset:
         else:
             self.abs_path = self.path.resolve()
 
-    def __len__(self):
-        return self.n_datasets
-
-    def add(self, logged_dataset: LoggedDataset, name: Optional[str] = None):
+    def add(self, logged_dataset: LoggedDataset, behavior_policy_name: str):
         """Save logged dataset.
 
         Parameters
@@ -79,30 +73,31 @@ class MultipleLoggedDataset:
         logged_dataset: LoggedDataset.
             Logged dataset to save.
 
-        name: str, default=None
-            Name of the logged dataset.
+        behavior_policy_name: str
+            Name of the behavior policy which collected the logged dataset.
 
         """
-        id = self.n_datasets
-        self.n_datasets += 1
-
-        self.id_to_name_mapping.append(name)
-
-        if name is not None:
-            self.name_to_id_mapping[name] = id
+        dataset_id = self.dataset_ids[behavior_policy_name]
+        self.dataset_ids[behavior_policy_name] += 1
+        logged_dataset["dataset_id"] = dataset_id
 
         with open(
-            self.path / f"logged_dataset_{self.action_type}_{id}.pickle", "wb"
+            self.path
+            / f"logged_dataset_{self.action_type}_{behavior_policy_name}_{dataset_id}.pickle",
+            "wb",
         ) as f:
             pickle.dump(logged_dataset, f)
 
-    def get(self, id: Union[int, str]):
+    def get(self, behavior_policy_name: str, dataset_id: int):
         """Load logged dataset.
 
         Parameters
         -------
-        id: {int, str}
-            Id (or name) of the logged dataset.
+        behavior_policy_name: str
+            Name of the behavior policy which collected the logged dataset.
+
+        dataset_id: int
+            Id of the logged dataset.
 
         Returns
         -------
@@ -110,8 +105,6 @@ class MultipleLoggedDataset:
             Logged dataset.
 
         """
-        id = id if isinstance(id, (int, np.int64)) else self.id_to_name_mapping[id]
-
         if self.save_relative_path:
             abs_path = str(Path.cwd())
             abs_path = abs_path.split("ofrl/ofrl/")
@@ -124,10 +117,22 @@ class MultipleLoggedDataset:
         else:
             path = self.abs_path
 
-        with open(path / f"logged_dataset_{self.action_type}_{id}.pickle", "rb") as f:
+        with open(
+            path
+            / f"logged_dataset_{self.action_type}_{behavior_policy_name}_{dataset_id}.pickle",
+            "rb",
+        ) as f:
             logged_dataset = pickle.load(f)
 
         return logged_dataset
+
+    @property
+    def behavior_policy_names(self):
+        return list(self.dataset_ids.keys())
+
+    @property
+    def n_datasets(self):
+        return defaultdict_to_dict(self.dataset_ids)
 
 
 @dataclass
@@ -157,11 +162,8 @@ class MultipleInputDict:
     save_relative_path: bool = False
 
     def __post_init__(self):
-        self.n_datasets = 0
-        self.name_to_id_mapping = {}
-        self.id_to_name_mapping = []
-        self.eval_policy_name_list = []
-
+        self.dataset_ids = defaultdict(list)
+        self.eval_policy_name_list = defaultdict(list)
         self.abs_path = None
         self.relative_path = None
 
@@ -179,10 +181,7 @@ class MultipleInputDict:
         else:
             self.abs_path = self.path.resolve()
 
-    def __len__(self):
-        return self.n_datasets
-
-    def add(self, input_dict: OPEInputDict, name: Optional[str] = None):
+    def add(self, input_dict: OPEInputDict, behavior_policy_name: str, dataset_id: int):
         """Save input_dict.
 
         Parameters
@@ -190,38 +189,40 @@ class MultipleInputDict:
         input_dict: OPEInputDict.
             Input dictionary for OPE to save.
 
-        name: str, default=None
-            Name of the input_dict.
+        behavior_policy_name: str
+            Name of the behavior policy which collected the logged dataset.
+
+        dataset_id: int
+            Id of the logged dataset.
 
         """
-        id = self.n_datasets
-        self.n_datasets += 1
+        self.dataset_ids[behavior_policy_name].append(dataset_id)
+        self.eval_policy_name_list[behavior_policy_name].append(list(input_dict.keys()))
 
-        self.id_to_name_mapping.append(name)
-        self.eval_policy_name_list.append(list(input_dict.keys()))
-
-        if name is not None:
-            self.name_to_id_mapping[name] = id
-
-        with open(self.path / f"input_dict_{self.action_type}_{id}.pickle", "wb") as f:
+        with open(
+            self.path
+            / f"input_dict_{self.action_type}_{behavior_policy_name}_{dataset_id}.pickle",
+            "wb",
+        ) as f:
             pickle.dump(input_dict, f)
 
-    def get(self, id: Union[int, str]):
+    def get(self, behavior_policy_name: str, dataset_id: int):
         """Load input_dict.
 
-        Parameters
-        -------
-        id: {int, str}
-            Id (or name) of the input dictionary.
+         Parameters
+         -------
+        behavior_policy_name: str
+             Name of the behavior policy which collected the logged dataset.
 
-        Returns
-        -------
-        input_dict: OPEInputDict.
-            Input dictionary for OPE.
+         dataset_id: int
+             Id of the logged dataset.
+
+         Returns
+         -------
+         input_dict: OPEInputDict.
+             Input dictionary for OPE.
 
         """
-        id = id if isinstance(id, int) else self.id_to_name_mapping[id]
-
         if self.save_relative_path:
             abs_path = str(Path.cwd())
             abs_path = abs_path.split("ofrl/ofrl/")
@@ -234,7 +235,11 @@ class MultipleInputDict:
         else:
             path = self.abs_path
 
-        with open(path / f"input_dict_{self.action_type}_{id}.pickle", "rb") as f:
+        with open(
+            path
+            / f"input_dict_{self.action_type}_{behavior_policy_name}_{dataset_id}.pickle",
+            "rb",
+        ) as f:
             input_dict = pickle.load(f)
 
         return input_dict
@@ -242,26 +247,45 @@ class MultipleInputDict:
     @property
     def use_same_eval_policy_across_dataset(self):
         """Check if the contained logged datasets use the same evaluation policies."""
-        use_same_eval_policy = True
-        base_eval_policy_set = set(self.eval_policy_name_list[0])
+        use_same_eval_policy = defaultdict(lambda: True)
 
-        for i in range(1, self.n_datasets):
-            eval_policy_set = set(self.eval_policy_name_list[i])
+        for behavior_policy, dataset_ids in self.dataset_ids.items():
+            base_eval_policy_set = set(
+                self.eval_policy_name_list[behavior_policy][dataset_ids[0]]
+            )
 
-            if len(base_eval_policy_set.symmetric_difference(eval_policy_set)):
-                use_same_eval_policy = False
+            for dataset_id in dataset_ids:
+                eval_policy_set = set(
+                    self.eval_policy_name_list[behavior_policy][dataset_id]
+                )
 
-        return use_same_eval_policy
+                if len(base_eval_policy_set.symmetric_difference(eval_policy_set)):
+                    use_same_eval_policy[behavior_policy] = False
+
+        return defaultdict_to_dict(use_same_eval_policy)
 
     @property
     def n_eval_policies(self):
         """Check the number of evaluation policies of each input dict."""
-        n_eval_policies = np.zeros(self.n_datasets, dtype=int)
-        for i in range(self.n_datasets):
-            n_eval_policies[i] = len(self.eval_policy_name_list[i])
+        n_eval_policies = {}
+
+        for behavior_policy, eval_policy_names in self.eval_policy_name_list.items():
+            n_eval_policies[behavior_policy] = np.zeros(
+                len(eval_policy_names), dtype=int
+            )
+
+            for i in range(len(eval_policy_names)):
+                n_eval_policies[behavior_policy][i] = len(eval_policy_names[i])
 
         return n_eval_policies
 
+    @property
+    def behavior_policy_names(self):
+        return list(self.dataset_ids.keys())
+
+    @property
+    def n_datasets(self):
+        return {key: len(value) for key, value in self.dataset_ids.items()}
 
 def gaussian_kernel(
     x: np.ndarray,

@@ -299,6 +299,109 @@ class OffPolicySelection:
             "ttest": estimate_confidence_interval_by_t_test,
         }
 
+    def _check_compared_estimators(
+        self,
+        compared_estimators: Optional[List[str]] = None,
+        ope_type: str = "standard_ope",
+    ):
+        if ope_type == "standard_ope":
+            if self.ope is None:
+                raise RuntimeError(
+                    "ope is not given. Please initialize the class with ope attribute"
+                )
+        else:
+            if self.cumulative_distribution_ope is None:
+                raise RuntimeError(
+                    "cumulative_distribution_ope is not given. Please initialize the class with cumulative_distribution_ope attribute"
+                )
+
+        if compared_estimators is None:
+            compared_estimators = self.estimators_name[ope_type]
+        elif not set(compared_estimators).issubset(self.estimators_name[ope_type]):
+            raise ValueError(
+                f"compared_estimators must be a subset of self.estimators_name['{ope_type}'], but found False."
+            )
+        return compared_estimators
+
+    def _check_basic_visualization_inputs(
+        self,
+        n_cols: Optional[int] = None,
+        fig_dir: Optional[Path] = None,
+        fig_name: Optional[str] = None,
+    ):
+        if n_cols is not None:
+            check_scalar(n_cols, name="n_cols", target_type=int, min_val=1)
+        if fig_dir is not None and not isinstance(fig_dir, Path):
+            raise ValueError(f"fig_dir must be a Path, but {type(fig_dir)} is given")
+        if fig_name is not None and not isinstance(fig_name, str):
+            raise ValueError(f"fig_dir must be a string, but {type(fig_dir)} is given")
+
+    def _check_topk_visualization_inputs(
+        self,
+        input_dict: Union[OPEInputDict, MultipleInputDict],
+        behavior_policy_name: Optional[str] = None,
+        dataset_id: Optional[int] = None,
+        max_topk: Optional[int] = None,
+        metrics: List[str] = ["k-th", "best", "worst", "mean", "safety_violation_rate"],
+        safety_threshold: Optional[float] = None,
+        safety_criteria: Optional[float] = None,
+    ):
+        if isinstance(input_dict, MultipleInputDict):
+            max_topk_ = 100
+
+            if behavior_policy_name is None:
+                if dataset_id is None:
+                    for n_eval_policies in input_dict.n_eval_policies.values():
+                        max_topk_ = min(max_topk_, n_eval_policies.min())
+                else:
+                    for n_eval_policies in input_dict.n_eval_policies.values():
+                        max_topk_ = min(max_topk_, n_eval_policies[dataset_id])
+            else:
+                if dataset_id is None:
+                    max_topk_ = min(
+                        max_topk_,
+                        input_dict.n_eval_policies[behavior_policy_name].min(),
+                    )
+                else:
+                    max_topk_ = input_dict.n_eval_policies[behavior_policy_name][
+                        dataset_id
+                    ]
+        else:
+            max_topk_ = len(input_dict)
+
+        if max_topk is None:
+            max_topk = max_topk_
+        else:
+            check_scalar(max_topk, name="max_topk", target_type=int, min_val=1)
+            max_topk = min(max_topk, max_topk_)
+
+        for metric in metrics:
+            if metric not in ["k-th", "best", "worst", "mean", "safety_violation_rate"]:
+                raise ValueError(
+                    f"The elements of metrics must be one of 'k-th', 'best', 'worst', 'mean', or 'safety_violation_rate', but {metric} is given."
+                )
+
+        if safety_threshold is None:
+            if "safety_violation_rate" in metrics:
+                safety_criteria = 0.0 if safety_criteria is None else safety_criteria
+            if safety_criteria is not None:
+                check_scalar(
+                    safety_criteria,
+                    name="safety_criteria",
+                    target_type=float,
+                    min_val=0.0,
+                )
+                safety_threshold = safety_criteria * self.behavior_policy_value
+        else:
+            check_scalar(
+                safety_threshold,
+                name="safety_threshold",
+                target_type=float,
+                min_val=0.0,
+            )
+
+        return max_topk, safety_threshold
+
     def _obtain_true_selection_result(
         self,
         input_dict: OPEInputDict,
@@ -318,7 +421,7 @@ class OffPolicySelection:
 
             .. code-block:: python
 
-                key: [evaluation_policy_name][
+                key: [evaluation_policy][
                     evaluation_policy_action,
                     evaluation_policy_action_dist,
                     state_action_value_prediction,
@@ -327,6 +430,9 @@ class OffPolicySelection:
                     state_marginal_importance_weight,
                     on_policy_policy_value,
                     gamma,
+                    behavior_policy,
+                    evaluation_policy,
+                    dataset_id,
                 ]
 
             .. seealso::
@@ -494,7 +600,6 @@ class OffPolicySelection:
         self,
         input_dict: OPEInputDict,
         compared_estimators: Optional[List[str]] = None,
-        dataset_id: Optional[Union[int, str]] = None,
         return_true_values: bool = False,
         return_metrics: bool = False,
         return_by_dataframe: bool = False,
@@ -510,7 +615,7 @@ class OffPolicySelection:
 
             .. code-block:: python
 
-                key: [evaluation_policy_name][
+                key: [evaluation_policy][
                     evaluation_policy_action,
                     evaluation_policy_action_dist,
                     state_action_value_prediction,
@@ -519,6 +624,9 @@ class OffPolicySelection:
                     state_marginal_importance_weight,
                     on_policy_policy_value,
                     gamma,
+                    behavior_policy,
+                    evaluation_policy,
+                    dataset_id,
                 ]
 
             .. seealso::
@@ -528,10 +636,6 @@ class OffPolicySelection:
         compared_estimators: list of str, default=None
             Name of compared estimators.
             When `None` is given, all the estimators are compared.
-
-        dataset_id: int or str, default=None
-            Id (or name) of the logged dataset.
-            Required when using :class:`MultipleLoggedDataset`.
 
         return_true_values: bool, default=False
             Whether to return the true policy value and its ranking.
@@ -627,9 +731,13 @@ class OffPolicySelection:
                 The policy value required to be a safe policy.
 
         """
+        behavior_policy_name = list(input_dict.values())[0]["behavior_policy"]
+        dataset_id = list(input_dict.values())[0]["dataset_id"]
+
         estimated_policy_value_dict = self.ope.estimate_policy_value(
             input_dict,
             compared_estimators=compared_estimators,
+            behavior_policy_name=behavior_policy_name,
             dataset_id=dataset_id,
         )
 
@@ -785,7 +893,6 @@ class OffPolicySelection:
         self,
         input_dict: OPEInputDict,
         compared_estimators: Optional[List[str]] = None,
-        dataset_id: Optional[Union[int, str]] = None,
         return_true_values: bool = False,
         return_metrics: bool = False,
         return_by_dataframe: bool = False,
@@ -801,7 +908,7 @@ class OffPolicySelection:
 
             .. code-block:: python
 
-                key: [evaluation_policy_name][
+                key: [evaluation_policy][
                     evaluation_policy_action,
                     evaluation_policy_action_dist,
                     state_action_value_prediction,
@@ -810,6 +917,9 @@ class OffPolicySelection:
                     state_marginal_importance_weight,
                     on_policy_policy_value,
                     gamma,
+                    behavior_policy,
+                    evaluation_policy,
+                    dataset_id,
                 ]
 
             .. seealso::
@@ -819,10 +929,6 @@ class OffPolicySelection:
         compared_estimators: list of str, default=None
             Name of compared estimators.
             If `None` is given, all the estimators are compared.
-
-        dataset_id: int or str, default=None
-            Id (or name) of the logged dataset.
-            Required when using :class:`MultipleLoggedDataset`.
 
         return_true_values: bool, default=False
             Whether to return the true policy value and its ranking.
@@ -918,9 +1024,13 @@ class OffPolicySelection:
                 The policy value required to be a safe policy.
 
         """
+        behavior_policy_name = list(input_dict.values())[0]["behavior_policy"]
+        dataset_id = list(input_dict.values())[0]["dataset_id"]
+
         estimated_policy_value_dict = self.cumulative_distribution_ope.estimate_mean(
             input_dict,
             compared_estimators=compared_estimators,
+            behavior_policy_name=behavior_policy_name,
             dataset_id=dataset_id,
         )
 
@@ -1078,7 +1188,6 @@ class OffPolicySelection:
         self,
         input_dict: OPEInputDict,
         compared_estimators: Optional[List[str]] = None,
-        dataset_id: Optional[Union[int, str]] = None,
         return_true_values: bool = False,
         return_metrics: bool = False,
         return_by_dataframe: bool = False,
@@ -1098,7 +1207,7 @@ class OffPolicySelection:
 
             .. code-block:: python
 
-                key: [evaluation_policy_name][
+                key: [evaluation_policy][
                     evaluation_policy_action,
                     evaluation_policy_action_dist,
                     state_action_value_prediction,
@@ -1107,6 +1216,9 @@ class OffPolicySelection:
                     state_marginal_importance_weight,
                     on_policy_policy_value,
                     gamma,
+                    behavior_policy,
+                    evaluation_policy,
+                    dataset_id,
                 ]
 
             .. seealso::
@@ -1116,10 +1228,6 @@ class OffPolicySelection:
         compared_estimators: list of str, default=None
             Name of compared estimators.
             When `None` is given, all the estimators are compared.
-
-        dataset_id: int or str, default=None
-            Id (or name) of the logged dataset.
-            Required when using :class:`MultipleLoggedDataset`.
 
         return_true_values: bool, default=False
             Whether to return the true policy value and its ranking.
@@ -1230,6 +1338,9 @@ class OffPolicySelection:
         true_ranking = ground_truth_dict["ranking"]
         true_policy_value = ground_truth_dict["policy_value"]
 
+        behavior_policy_name = list(input_dict.values())[0]["behavior_policy"]
+        dataset_id = list(input_dict.values())[0]["dataset_id"]
+
         candidate_policy_names = (
             true_ranking if return_metrics else list(input_dict.keys())
         )
@@ -1240,6 +1351,7 @@ class OffPolicySelection:
             estimated_policy_value_interval_dict = self.ope.estimate_intervals(
                 input_dict,
                 compared_estimators=compared_estimators,
+                behavior_policy_name=behavior_policy_name,
                 dataset_id=dataset_id,
                 alpha=alpha,
                 ci=ci,
@@ -1408,7 +1520,6 @@ class OffPolicySelection:
         self,
         input_dict: OPEInputDict,
         compared_estimators: Optional[List[str]] = None,
-        dataset_id: Optional[Union[int, str]] = None,
         alpha: float = 0.05,
         return_true_values: bool = False,
         return_metrics: bool = False,
@@ -1424,7 +1535,7 @@ class OffPolicySelection:
 
             .. code-block:: python
 
-                key: [evaluation_policy_name][
+                key: [evaluation_policy][
                     evaluation_policy_action,
                     evaluation_policy_action_dist,
                     state_action_value_prediction,
@@ -1433,6 +1544,9 @@ class OffPolicySelection:
                     state_marginal_importance_weight,
                     on_policy_policy_value,
                     gamma,
+                    behavior_policy,
+                    evaluation_policy,
+                    dataset_id,
                 ]
 
             .. seealso::
@@ -1442,10 +1556,6 @@ class OffPolicySelection:
         compared_estimators: list of str, default=None
             Name of compared estimators.
             When `None` is given, all the estimators are compared.
-
-        dataset_id: int or str, default=None
-            Id (or name) of the logged dataset.
-            Required when using :class:`MultipleLoggedDataset`.
 
         alpha: float, default=0.05
             Proportion of the sided region. The value should be within `[0, 0.5]`.
@@ -1528,10 +1638,14 @@ class OffPolicySelection:
                 The lower quartile required to be a safe policy.
 
         """
+        behavior_policy_name = list(input_dict.values())[0]["behavior_policy"]
+        dataset_id = list(input_dict.values())[0]["dataset_id"]
+
         estimated_interquartile_range_dict = (
             self.cumulative_distribution_ope.estimate_interquartile_range(
                 input_dict,
                 compared_estimators=compared_estimators,
+                behavior_policy_name=behavior_policy_name,
                 dataset_id=dataset_id,
                 alpha=alpha,
             )
@@ -1664,7 +1778,6 @@ class OffPolicySelection:
         self,
         input_dict: OPEInputDict,
         compared_estimators: Optional[List[str]] = None,
-        dataset_id: Optional[Union[int, str]] = None,
         alpha: float = 0.05,
         return_true_values: bool = False,
         return_metrics: bool = False,
@@ -1680,7 +1793,7 @@ class OffPolicySelection:
 
             .. code-block:: python
 
-                key: [evaluation_policy_name][
+                key: [evaluation_policy][
                     evaluation_policy_action,
                     evaluation_policy_action_dist,
                     state_action_value_prediction,
@@ -1689,6 +1802,9 @@ class OffPolicySelection:
                     state_marginal_importance_weight,
                     on_policy_policy_value,
                     gamma,
+                    behavior_policy,
+                    evaluation_policy,
+                    dataset_id,
                 ]
 
             .. seealso::
@@ -1698,10 +1814,6 @@ class OffPolicySelection:
         compared_estimators: list of str, default=None
             Name of compared estimators.
             When `None` is given, all the estimators are compared.
-
-        dataset_id: int or str, default=None
-            Id (or name) of the logged dataset.
-            Required when using :class:`MultipleLoggedDataset`.
 
         alpha: float, default=0.05
             Proportion of the sided region. The value should be within `[0, 1]`.
@@ -1784,10 +1896,14 @@ class OffPolicySelection:
                 The conditional value at risk required to be a safe policy.
 
         """
+        behavior_policy_name = list(input_dict.values())[0]["behavior_policy"]
+        dataset_id = list(input_dict.values())[0]["dataset_id"]
+
         estimated_cvar_dict = (
             self.cumulative_distribution_ope.estimate_conditional_value_at_risk(
                 input_dict,
                 compared_estimators=compared_estimators,
+                behavior_policy_name=behavior_policy_name,
                 dataset_id=dataset_id,
                 alphas=alpha,
             )
@@ -1922,7 +2038,8 @@ class OffPolicySelection:
     def obtain_true_selection_result(
         self,
         input_dict: Union[OPEInputDict, MultipleInputDict],
-        dataset_id: Optional[Union[int, str]] = None,
+        behavior_policy_name: Optional[str] = None,
+        dataset_id: Optional[int] = None,
         return_variance: bool = False,
         return_lower_quartile: bool = False,
         return_conditional_value_at_risk: bool = False,
@@ -1939,7 +2056,7 @@ class OffPolicySelection:
 
             .. code-block:: python
 
-                key: [evaluation_policy_name][
+                key: [evaluation_policy][
                     evaluation_policy_action,
                     evaluation_policy_action_dist,
                     state_action_value_prediction,
@@ -1948,15 +2065,20 @@ class OffPolicySelection:
                     state_marginal_importance_weight,
                     on_policy_policy_value,
                     gamma,
+                    behavior_policy,
+                    evaluation_policy,
+                    dataset_id,
                 ]
 
             .. seealso::
 
                 :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
-        dataset_id: int or str, default=None
-            Id (or name) of the logged dataset.
-            If `None`, the method returns the list of ground_truth_dict/ground_truth_df.
+        behavior_policy_name: str, default=None
+            Name of the behavior policy.
+
+        dataset_id: int, default=None
+            Id of the logged dataset.
 
         return_variance: bool, default=False
             Whether to return the variance or not.
@@ -2029,11 +2151,77 @@ class OffPolicySelection:
                 If return_by_dataframe is `True`, parameters will not be returned.
 
         """
-        if dataset_id is None and isinstance(input_dict, MultipleInputDict):
-            ground_truth = []
-            for i in range(len(input_dict)):
-                input_dict_ = input_dict.get(i)
-                ground_truth_ = self._obtain_true_selection_result(
+        if isinstance(input_dict, MultipleInputDict):
+
+            if behavior_policy_name is None and dataset_id is None:
+
+                ground_truth = defaultdict(list)
+
+                for (
+                    behavior_policy,
+                    n_datasets,
+                ) in input_dict.n_datasets.items():
+
+                    for dataset_id_ in range(n_datasets):
+                        input_dict_ = input_dict.get(
+                            behavior_policy_name=behavior_policy,
+                            dataset_id=dataset_id_,
+                        )
+                        ground_truth_ = self._obtain_true_selection_result(
+                            input_dict_,
+                            return_variance=return_variance,
+                            return_lower_quartile=return_lower_quartile,
+                            return_conditional_value_at_risk=return_conditional_value_at_risk,
+                            return_by_dataframe=return_by_dataframe,
+                            quartile_alpha=quartile_alpha,
+                            cvar_alpha=cvar_alpha,
+                        )
+                        ground_truth[behavior_policy].append(ground_truth_)
+
+                ground_truth = defaultdict_to_dict(ground_truth)
+
+            elif behavior_policy_name is None and dataset_id is not None:
+
+                ground_truth = {}
+                for behavior_policy in input_dict.behavior_policy_names:
+                    input_dict_ = input_dict.get(
+                        behavior_policy_name=behavior_policy, dataset_id=dataset_id
+                    )
+                    ground_truth_ = self._obtain_true_selection_result(
+                        input_dict_,
+                        return_variance=return_variance,
+                        return_lower_quartile=return_lower_quartile,
+                        return_conditional_value_at_risk=return_conditional_value_at_risk,
+                        return_by_dataframe=return_by_dataframe,
+                        quartile_alpha=quartile_alpha,
+                        cvar_alpha=cvar_alpha,
+                    )
+                    ground_truth[behavior_policy] = ground_truth_
+
+            elif behavior_policy_name is not None and dataset_id is None:
+
+                ground_truth = []
+                for dataset_id_ in range(input_dict.n_datasets[behavior_policy_name]):
+                    input_dict_ = input_dict.get(
+                        behavior_policy_name=behavior_policy_name,
+                        dataset_id=dataset_id_,
+                    )
+                    ground_truth_ = self._obtain_true_selection_result(
+                        input_dict_,
+                        return_variance=return_variance,
+                        return_lower_quartile=return_lower_quartile,
+                        return_conditional_value_at_risk=return_conditional_value_at_risk,
+                        return_by_dataframe=return_by_dataframe,
+                        quartile_alpha=quartile_alpha,
+                        cvar_alpha=cvar_alpha,
+                    )
+                    ground_truth.append(ground_truth_)
+
+            else:
+                input_dict_ = input_dict.get(
+                    behavior_policy_name=behavior_policy_name, dataset_id=dataset_id
+                )
+                ground_truth = self._obtain_true_selection_result(
                     input_dict_,
                     return_variance=return_variance,
                     return_lower_quartile=return_lower_quartile,
@@ -2042,12 +2230,7 @@ class OffPolicySelection:
                     quartile_alpha=quartile_alpha,
                     cvar_alpha=cvar_alpha,
                 )
-                ground_truth.append(ground_truth_)
-
         else:
-            if isinstance(input_dict, MultipleInputDict):
-                input_dict = input_dict.get(dataset_id)
-
             ground_truth = self._obtain_true_selection_result(
                 input_dict,
                 return_variance=return_variance,
@@ -2064,7 +2247,8 @@ class OffPolicySelection:
         self,
         input_dict: Union[OPEInputDict, MultipleInputDict],
         compared_estimators: Optional[List[str]] = None,
-        dataset_id: Optional[Union[int, str]] = None,
+        behavior_policy_name: Optional[str] = None,
+        dataset_id: Optional[int] = None,
         return_true_values: bool = False,
         return_metrics: bool = False,
         return_by_dataframe: bool = False,
@@ -2080,7 +2264,7 @@ class OffPolicySelection:
 
             .. code-block:: python
 
-                key: [evaluation_policy_name][
+                key: [evaluation_policy][
                     evaluation_policy_action,
                     evaluation_policy_action_dist,
                     state_action_value_prediction,
@@ -2089,6 +2273,9 @@ class OffPolicySelection:
                     state_marginal_importance_weight,
                     on_policy_policy_value,
                     gamma,
+                    behavior_policy,
+                    evaluation_policy,
+                    dataset_id,
                 ]
 
             .. seealso::
@@ -2099,9 +2286,11 @@ class OffPolicySelection:
             Name of compared estimators.
             When `None` is given, all the estimators are compared.
 
-        dataset_id: int or str, default=None
-            Id (or name) of the logged dataset.
-            If `None`, the method returns the list of selection results.
+        behavior_policy_name: str, default=None
+            Name of the behavior policy.
+
+        dataset_id: int, default=None
+            Id of the logged dataset.
 
         return_true_values: bool, default=False
             Whether to return the true policy value and its ranking.
@@ -2197,59 +2386,187 @@ class OffPolicySelection:
                 The policy value required to be a safe policy.
 
         """
-        if self.ope is None:
-            raise RuntimeError(
-                "ope is not given. Please initialize the class with ope attribute"
-            )
-        if compared_estimators is None:
-            compared_estimators = self.estimators_name["standard_ope"]
-        elif not set(compared_estimators).issubset(
-            self.estimators_name["standard_ope"]
-        ):
-            raise ValueError(
-                "compared_estimators must be a subset of self.estimators_name['standard_ope'], but found False."
-            )
+        compared_estimators = self._check_compared_estimators(
+            compared_estimators, ope_type="standard_ope"
+        )
 
-        if dataset_id is None and self.ope.use_multiple_logged_dataset:
-            if not isinstance(input_dict, MultipleInputDict):
-                raise RuntimeError(
-                    "MultipleInputDict should be given for input_dict, when MultipleLoggedDataset is used and dataset_id is not specified"
-                    "Please pass MultipleInputDict or specify dataset_id."
-                )
-            if len(input_dict) != len(self.ope.multiple_logged_dataset):
-                raise ValueError(
-                    "Expected `len(input_dict) == len(self.ope.multiple_logged_dataset)`, but found False."
-                )
+        if self.ope.use_multiple_logged_dataset:
 
-            if return_metrics and return_by_dataframe:
-                ranking_df, metric_df = [], []
+            if isinstance(input_dict, MultipleInputDict):
 
-                for i in range(len(self.ope.multiple_logged_dataset)):
-                    input_dict_ = input_dict.get(i)
-                    ops_result_ = self._select_by_policy_value(
-                        input_dict_,
-                        compared_estimators=compared_estimators,
-                        dataset_id=i,
-                        return_true_values=return_true_values,
-                        return_metrics=return_metrics,
-                        return_by_dataframe=return_by_dataframe,
-                        top_k_in_eval_metrics=top_k_in_eval_metrics,
-                        safety_criteria=safety_criteria,
+                if behavior_policy_name is None and dataset_id is None:
+                    if (
+                        self.ope.multiple_logged_dataset.n_datasets
+                        != input_dict.n_datasets
+                    ):
+                        raise ValueError(
+                            "Expected that logged datasets and input dicts consists of the same behavior policies and dataset ids, but found False."
+                        )
+
+                    if return_metrics and return_by_dataframe:
+                        ranking_df = defaultdict(list)
+                        metric_df = defaultdict(list)
+
+                        for (
+                            behavior_policy,
+                            n_datasets,
+                        ) in input_dict.n_datasets.items():
+                            for dataset_id_ in range(n_datasets):
+                                input_dict_ = input_dict.get(
+                                    behavior_policy_name=behavior_policy,
+                                    dataset_id=dataset_id_,
+                                )
+                                ops_result_ = self._select_by_policy_value(
+                                    input_dict_,
+                                    compared_estimators=compared_estimators,
+                                    return_true_values=return_true_values,
+                                    return_metrics=return_metrics,
+                                    return_by_dataframe=return_by_dataframe,
+                                    top_k_in_eval_metrics=top_k_in_eval_metrics,
+                                    safety_criteria=safety_criteria,
+                                )
+                                ranking_df[behavior_policy].append(ops_result_[0])
+                                metric_df[behavior_policy].append(ops_result_[1])
+
+                            ops_result = (
+                                defaultdict_to_dict(ranking_df),
+                                defaultdict_to_dict(metric_df),
+                            )
+
+                    else:
+                        ops_result = defaultdict(list)
+
+                        for (
+                            behavior_policy,
+                            n_datasets,
+                        ) in input_dict.n_datasets.items():
+                            for dataset_id_ in range(n_datasets):
+                                input_dict_ = input_dict.get(
+                                    behavior_policy_name=behavior_policy,
+                                    dataset_id=dataset_id_,
+                                )
+                                ops_result_ = self._select_by_policy_value(
+                                    input_dict_,
+                                    compared_estimators=compared_estimators,
+                                    return_true_values=return_true_values,
+                                    return_metrics=return_metrics,
+                                    return_by_dataframe=return_by_dataframe,
+                                    top_k_in_eval_metrics=top_k_in_eval_metrics,
+                                    safety_criteria=safety_criteria,
+                                )
+                                ops_result[behavior_policy].append(ops_result_)
+
+                        ops_result = defaultdict_to_dict(ops_result)
+
+                elif behavior_policy_name is None and dataset_id is not None:
+                    if (
+                        self.ope.multiple_logged_dataset.behavior_policy_names
+                        != input_dict.behavior_policy_names
+                    ):
+                        raise ValueError(
+                            "Expected that logged datasets and input dicts consists of the same behavior policies, but found False."
+                        )
+
+                    if return_metrics and return_by_dataframe:
+                        ranking_df = {}
+                        metric_df = {}
+
+                        for behavior_policy in input_dict.behavior_policy_names:
+                            input_dict_ = input_dict.get(
+                                behavior_policy_name=behavior_policy,
+                                dataset_id=dataset_id,
+                            )
+                            ops_result_ = self._select_by_policy_value(
+                                input_dict_,
+                                compared_estimators=compared_estimators,
+                                return_true_values=return_true_values,
+                                return_metrics=return_metrics,
+                                return_by_dataframe=return_by_dataframe,
+                                top_k_in_eval_metrics=top_k_in_eval_metrics,
+                                safety_criteria=safety_criteria,
+                            )
+                            ranking_df[behavior_policy] = ops_result_[0]
+                            metric_df[behavior_policy] = ops_result_[1]
+
+                        ops_result = (ranking_df, metric_df)
+
+                    else:
+                        ops_result = {}
+                        for behavior_policy in input_dict.behavior_policy_names:
+                            input_dict_ = input_dict.get(
+                                behavior_policy_name=behavior_policy,
+                                dataset_id=dataset_id,
+                            )
+                            ops_result_ = self._select_by_policy_value(
+                                input_dict_,
+                                compared_estimators=compared_estimators,
+                                return_true_values=return_true_values,
+                                return_metrics=return_metrics,
+                                return_by_dataframe=return_by_dataframe,
+                                top_k_in_eval_metrics=top_k_in_eval_metrics,
+                                safety_criteria=safety_criteria,
+                            )
+                            ops_result[behavior_policy] = ops_result_
+
+                elif behavior_policy_name is not None and dataset_id is None:
+                    if (
+                        self.ope.multiple_logged_dataset.n_datasets[
+                            behavior_policy_name
+                        ]
+                        != input_dict.n_datasets[behavior_policy_name]
+                    ):
+                        raise ValueError(
+                            "Expected that logged datasets and input dicts consists of the same dataset ids, but found False."
+                        )
+
+                    if return_metrics and return_by_dataframe:
+                        ranking_df = []
+                        metric_df = []
+
+                        for dataset_id_ in range(input_dict.n_datasets[behavior_policy_name]):
+                            input_dict_ = input_dict.get(
+                                behavior_policy_name=behavior_policy_name,
+                                dataset_id=dataset_id_,
+                            )
+                            ops_result_ = self._select_by_policy_value(
+                                input_dict_,
+                                compared_estimators=compared_estimators,
+                                return_true_values=return_true_values,
+                                return_metrics=return_metrics,
+                                return_by_dataframe=return_by_dataframe,
+                                top_k_in_eval_metrics=top_k_in_eval_metrics,
+                                safety_criteria=safety_criteria,
+                            )
+                            ranking_df.append(ops_result_[0])
+                            metric_df.append(ops_result_[1])
+
+                        ops_result = (ranking_df, metric_df)
+
+                    else:
+                        ops_result = []
+                        for dataset_id_ in range(input_dict.n_datasets[behavior_policy_name]):
+                            input_dict_ = input_dict.get(
+                                behavior_policy_name=behavior_policy_name,
+                                dataset_id=dataset_id_,
+                            )
+                            ops_result_ = self._select_by_policy_value(
+                                input_dict_,
+                                compared_estimators=compared_estimators,
+                                return_true_values=return_true_values,
+                                return_metrics=return_metrics,
+                                return_by_dataframe=return_by_dataframe,
+                                top_k_in_eval_metrics=top_k_in_eval_metrics,
+                                safety_criteria=safety_criteria,
+                            )
+                            ops_result.append(ops_result_)
+
+                else:
+                    input_dict_ = input_dict.get(
+                        behavior_policy_name=behavior_policy_name, dataset_id=dataset_id
                     )
-                    ranking_df.append(ops_result_[0])
-                    metric_df.append(ops_result_[1])
-
-                ops_result = (ranking_df, metric_df)
-
-            else:
-                ops_result = []
-
-                for i in range(len(self.ope.multiple_logged_dataset)):
-                    input_dict_ = input_dict.get(i)
                     ops_result_ = self._select_by_policy_value(
                         input_dict_,
                         compared_estimators=compared_estimators,
-                        dataset_id=i,
                         return_true_values=return_true_values,
                         return_metrics=return_metrics,
                         return_by_dataframe=return_by_dataframe,
@@ -2258,18 +2575,26 @@ class OffPolicySelection:
                     )
                     ops_result.append(ops_result_)
 
+            else:
+                ops_result = self._select_by_policy_value(
+                    input_dict,
+                    compared_estimators=compared_estimators,
+                    return_true_values=return_true_values,
+                    return_metrics=return_metrics,
+                    return_by_dataframe=return_by_dataframe,
+                    top_k_in_eval_metrics=top_k_in_eval_metrics,
+                    safety_criteria=safety_criteria,
+                )
+
         else:
-            if self.ope.use_multiple_logged_dataset:
-                if dataset_id is None:
-                    raise ValueError(
-                        "dataset_id must be given when using MultipleInputDict."
-                    )
-                input_dict = input_dict.get(dataset_id)
+            if isinstance(input_dict, MultipleInputDict):
+                raise ValueError(
+                    "when using LoggedDataset, please use InputDict instead of MultipleInputDict"
+                )
 
             ops_result = self._select_by_policy_value(
                 input_dict,
                 compared_estimators=compared_estimators,
-                dataset_id=dataset_id,
                 return_true_values=return_true_values,
                 return_metrics=return_metrics,
                 return_by_dataframe=return_by_dataframe,
@@ -2283,7 +2608,8 @@ class OffPolicySelection:
         self,
         input_dict: Union[OPEInputDict, MultipleInputDict],
         compared_estimators: Optional[List[str]] = None,
-        dataset_id: Optional[Union[int, str]] = None,
+        behavior_policy_name: Optional[str] = None,
+        dataset_id: Optional[int] = None,
         return_true_values: bool = False,
         return_metrics: bool = False,
         return_by_dataframe: bool = False,
@@ -2299,7 +2625,7 @@ class OffPolicySelection:
 
             .. code-block:: python
 
-                key: [evaluation_policy_name][
+                key: [evaluation_policy][
                     evaluation_policy_action,
                     evaluation_policy_action_dist,
                     state_action_value_prediction,
@@ -2308,6 +2634,9 @@ class OffPolicySelection:
                     state_marginal_importance_weight,
                     on_policy_policy_value,
                     gamma,
+                    behavior_policy,
+                    evaluation_policy,
+                    dataset_id,
                 ]
 
             .. seealso::
@@ -2318,9 +2647,11 @@ class OffPolicySelection:
             Name of compared estimators.
             If `None` is given, all the estimators are compared.
 
-        dataset_id: int or str, default=None
-            Id (or name) of the logged dataset.
-            If `None`, the method returns the list of selection results.
+        behavior_policy_name: str, default=None
+            Name of the behavior policy.
+
+        dataset_id: int, default=None
+            Id of the logged dataset.
 
         return_true_values: bool, default=False
             Whether to return the true policy value and its ranking.
@@ -2416,71 +2747,190 @@ class OffPolicySelection:
                 The policy value required to be a safe policy.
 
         """
-        if self.cumulative_distribution_ope is None:
-            raise RuntimeError(
-                "ope is not given. Please initialize the class with ope attribute"
-            )
-        if compared_estimators is None:
-            compared_estimators = self.estimators_name["cumulative_distribution_ope"]
-        elif not set(compared_estimators).issubset(
-            self.estimators_name["cumulative_distribution_ope"]
-        ):
-            raise ValueError(
-                "compared_estimators must be a subset of self.estimators_name['cumulative_distribution_ope'], but found False."
-            )
+        compared_estimators = self._check_compared_estimators(
+            compared_estimators, ope_type="cumulative_distribution_ope"
+        )
 
-        if (
-            dataset_id is None
-            and self.cumulative_distribution_ope.use_multiple_logged_dataset
-        ):
-            if not isinstance(input_dict, MultipleInputDict):
-                raise RuntimeError(
-                    "MultipleInputDict should be given for input_dict, when MultipleLoggedDataset is used and dataset_id is not specified"
-                    "Please pass MultipleInputDict or specify dataset_id."
-                )
-            if len(input_dict) != len(
-                self.cumulative_distribution_ope.multiple_logged_dataset
-            ):
-                raise ValueError(
-                    "Expected `len(input_dict) == len(self.cumulative_distribution_ope.multiple_logged_dataset)`, but found False."
-                )
+        if self.cumulative_distribution_ope.use_multiple_logged_dataset:
 
-            if return_metrics and return_by_dataframe:
-                ranking_df, metric_df = [], []
+            if isinstance(input_dict, MultipleInputDict):
 
-                for i in range(
-                    len(self.cumulative_distribution_ope.multiple_logged_dataset)
-                ):
-                    input_dict_ = input_dict.get(i)
-                    ops_result_ = (
-                        self._select_by_policy_value_via_cumulative_distribution_ope(
-                            input_dict_,
-                            compared_estimators=compared_estimators,
-                            dataset_id=i,
-                            return_true_values=return_true_values,
-                            return_metrics=return_metrics,
-                            return_by_dataframe=return_by_dataframe,
-                            top_k_in_eval_metrics=top_k_in_eval_metrics,
-                            safety_criteria=safety_criteria,
+                if behavior_policy_name is None and dataset_id is None:
+                    if (
+                        self.cumulative_distribution_ope.multiple_logged_dataset.n_datasets
+                        != input_dict.n_datasets
+                    ):
+                        raise ValueError(
+                            "Expected that logged datasets and input dicts consists of the same behavior policies and dataset ids, but found False."
                         )
+
+                    if return_metrics and return_by_dataframe:
+                        ranking_df = defaultdict(list)
+                        metric_df = defaultdict(list)
+
+                        for (
+                            behavior_policy,
+                            n_datasets,
+                        ) in input_dict.n_datasets.items():
+                            for dataset_id_ in range(n_datasets):
+                                input_dict_ = input_dict.get(
+                                    behavior_policy_name=behavior_policy,
+                                    dataset_id=dataset_id_,
+                                )
+                                ops_result_ = self._select_by_policy_value_via_cumulative_distribution_ope(
+                                    input_dict_,
+                                    compared_estimators=compared_estimators,
+                                    return_true_values=return_true_values,
+                                    return_metrics=return_metrics,
+                                    return_by_dataframe=return_by_dataframe,
+                                    top_k_in_eval_metrics=top_k_in_eval_metrics,
+                                    safety_criteria=safety_criteria,
+                                )
+                                ranking_df[behavior_policy].append(ops_result_[0])
+                                metric_df[behavior_policy].append(ops_result_[1])
+
+                            ops_result = (
+                                defaultdict_to_dict(ranking_df),
+                                defaultdict_to_dict(metric_df),
+                            )
+
+                    else:
+                        ops_result = defaultdict(list)
+
+                        for (
+                            behavior_policy,
+                            n_datasets,
+                        ) in input_dict.n_datasets.items():
+                            for dataset_id_ in range(n_datasets):
+                                input_dict_ = input_dict.get(
+                                    behavior_policy_name=behavior_policy,
+                                    dataset_id=dataset_id_,
+                                )
+                                ops_result_ = self._select_by_policy_value_via_cumulative_distribution_ope(
+                                    input_dict_,
+                                    compared_estimators=compared_estimators,
+                                    return_true_values=return_true_values,
+                                    return_metrics=return_metrics,
+                                    return_by_dataframe=return_by_dataframe,
+                                    top_k_in_eval_metrics=top_k_in_eval_metrics,
+                                    safety_criteria=safety_criteria,
+                                )
+                                ops_result[behavior_policy].append(ops_result_)
+
+                        ops_result = defaultdict_to_dict(ops_result)
+
+                elif behavior_policy_name is None and dataset_id is not None:
+                    if (
+                        self.cumulative_distribution_ope.multiple_logged_dataset.behavior_policy_names
+                        != input_dict.behavior_policy_names
+                    ):
+                        raise ValueError(
+                            "Expected that logged datasets and input dicts consists of the same behavior policies, but found False."
+                        )
+
+                    if return_metrics and return_by_dataframe:
+                        ranking_df = {}
+                        metric_df = {}
+
+                        for behavior_policy in input_dict.behavior_policy_names:
+                            input_dict_ = input_dict.get(
+                                behavior_policy_name=behavior_policy,
+                                dataset_id=dataset_id,
+                            )
+                            ops_result_ = self._select_by_policy_value_via_cumulative_distribution_ope(
+                                input_dict_,
+                                compared_estimators=compared_estimators,
+                                return_true_values=return_true_values,
+                                return_metrics=return_metrics,
+                                return_by_dataframe=return_by_dataframe,
+                                top_k_in_eval_metrics=top_k_in_eval_metrics,
+                                safety_criteria=safety_criteria,
+                            )
+                            ranking_df[behavior_policy] = ops_result_[0]
+                            metric_df[behavior_policy] = ops_result_[1]
+
+                        ops_result = (ranking_df, metric_df)
+
+                    else:
+                        ops_result = {}
+                        for behavior_policy in input_dict.behavior_policy_names:
+                            input_dict_ = input_dict.get(
+                                behavior_policy_name=behavior_policy,
+                                dataset_id=dataset_id,
+                            )
+                            self._select_by_policy_value_via_cumulative_distribution_ope(
+                                input_dict_,
+                                compared_estimators=compared_estimators,
+                                return_true_values=return_true_values,
+                                return_metrics=return_metrics,
+                                return_by_dataframe=return_by_dataframe,
+                                top_k_in_eval_metrics=top_k_in_eval_metrics,
+                                safety_criteria=safety_criteria,
+                            )
+                            ops_result[behavior_policy] = ops_result_
+
+                elif behavior_policy_name is not None and dataset_id is None:
+                    if (
+                        self.cumulative_distribution_ope.multiple_logged_dataset.n_datasets[
+                            behavior_policy_name
+                        ]
+                        != input_dict.n_datasets[behavior_policy_name]
+                    ):
+                        raise ValueError(
+                            "Expected that logged datasets and input dicts consists of the same dataset ids, but found False."
+                        )
+
+                    if return_metrics and return_by_dataframe:
+                        ranking_df = []
+                        metric_df = []
+
+                        for dataset_id_ in range(input_dict.n_datasets[behavior_policy_name]):
+                            input_dict_ = input_dict.get(
+                                behavior_policy_name=behavior_policy_name,
+                                dataset_id=dataset_id_,
+                            )
+                            ops_result_ = self._select_by_policy_value_via_cumulative_distribution_ope(
+                                input_dict_,
+                                compared_estimators=compared_estimators,
+                                return_true_values=return_true_values,
+                                return_metrics=return_metrics,
+                                return_by_dataframe=return_by_dataframe,
+                                top_k_in_eval_metrics=top_k_in_eval_metrics,
+                                safety_criteria=safety_criteria,
+                            )
+                            ranking_df.append(ops_result_[0])
+                            metric_df.append(ops_result_[1])
+
+                        ops_result = (ranking_df, metric_df)
+
+                    else:
+                        ops_result = []
+                        for dataset_id_ in range(
+                            input_dict.n_datasets[behavior_policy_name]
+                        ):
+                            input_dict_ = input_dict.get(
+                                behavior_policy_name=behavior_policy_name,
+                                dataset_id=dataset_id_,
+                            )
+                            ops_result_ = self._select_by_policy_value_via_cumulative_distribution_ope(
+                                input_dict_,
+                                compared_estimators=compared_estimators,
+                                return_true_values=return_true_values,
+                                return_metrics=return_metrics,
+                                return_by_dataframe=return_by_dataframe,
+                                top_k_in_eval_metrics=top_k_in_eval_metrics,
+                                safety_criteria=safety_criteria,
+                            )
+                            ops_result.append(ops_result_)
+
+                else:
+                    input_dict_ = input_dict.get(
+                        behavior_policy_name=behavior_policy_name, dataset_id=dataset_id
                     )
-                    ranking_df.append(ops_result_[0])
-                    metric_df.append(ops_result_[1])
-
-                ops_result = (ranking_df, metric_df)
-
-            else:
-                ops_result = []
-
-                for i in range(
-                    len(self.cumulative_distribution_ope.multiple_logged_dataset)
-                ):
-                    input_dict_ = input_dict.get(i)
                     ops_result_ = (
                         self._select_by_policy_value_via_cumulative_distribution_ope(
                             input_dict_,
                             compared_estimators=compared_estimators,
-                            dataset_id=i,
                             return_true_values=return_true_values,
                             return_metrics=return_metrics,
                             return_by_dataframe=return_by_dataframe,
@@ -2490,18 +2940,28 @@ class OffPolicySelection:
                     )
                     ops_result.append(ops_result_)
 
-        else:
-            if self.cumulative_distribution_ope.use_multiple_logged_dataset:
-                if dataset_id is None:
-                    raise ValueError(
-                        "dataset_id must be given when using MultipleInputDict."
+            else:
+                ops_result = (
+                    self._select_by_policy_value_via_cumulative_distribution_ope(
+                        input_dict,
+                        compared_estimators=compared_estimators,
+                        return_true_values=return_true_values,
+                        return_metrics=return_metrics,
+                        return_by_dataframe=return_by_dataframe,
+                        top_k_in_eval_metrics=top_k_in_eval_metrics,
+                        safety_criteria=safety_criteria,
                     )
-                input_dict = input_dict.get(dataset_id)
+                )
+
+        else:
+            if isinstance(input_dict, MultipleInputDict):
+                raise ValueError(
+                    "when using LoggedDataset, please use InputDict instead of MultipleInputDict"
+                )
 
             ops_result = self._select_by_policy_value_via_cumulative_distribution_ope(
                 input_dict,
                 compared_estimators=compared_estimators,
-                dataset_id=dataset_id,
                 return_true_values=return_true_values,
                 return_metrics=return_metrics,
                 return_by_dataframe=return_by_dataframe,
@@ -2515,7 +2975,8 @@ class OffPolicySelection:
         self,
         input_dict: Union[OPEInputDict, MultipleInputDict],
         compared_estimators: Optional[List[str]] = None,
-        dataset_id: Optional[Union[int, str]] = None,
+        behavior_policy_name: Optional[str] = None,
+        dataset_id: Optional[int] = None,
         return_true_values: bool = False,
         return_metrics: bool = False,
         return_by_dataframe: bool = False,
@@ -2535,7 +2996,7 @@ class OffPolicySelection:
 
             .. code-block:: python
 
-                key: [evaluation_policy_name][
+                key: [evaluation_policy][
                     evaluation_policy_action,
                     evaluation_policy_action_dist,
                     state_action_value_prediction,
@@ -2544,6 +3005,9 @@ class OffPolicySelection:
                     state_marginal_importance_weight,
                     on_policy_policy_value,
                     gamma,
+                    behavior_policy,
+                    evaluation_policy,
+                    dataset_id,
                 ]
 
             .. seealso::
@@ -2554,9 +3018,11 @@ class OffPolicySelection:
             Name of compared estimators.
             When `None` is given, all the estimators are compared.
 
-        dataset_id: int or str, default=None
-            Id (or name) of the logged dataset.
-            If `None`, the method returns the list of selection results.
+        behavior_policy_name: str, default=None
+            Name of the behavior policy.
+
+        dataset_id: int, default=None
+            Id of the logged dataset.
 
         return_true_values: bool, default=False
             Whether to return the true policy value and its ranking.
@@ -2663,63 +3129,216 @@ class OffPolicySelection:
                 The policy value required to be a safe policy.
 
         """
-        if self.ope is None:
-            raise RuntimeError(
-                "ope is not given. Please initialize the class with ope attribute"
-            )
-        if compared_estimators is None:
-            compared_estimators = self.estimators_name["standard_ope"]
-        elif not set(compared_estimators).issubset(
-            self.estimators_name["standard_ope"]
-        ):
-            raise ValueError(
-                "compared_estimators must be a subset of self.estimators_name['standard_ope'], but found False."
-            )
+        compared_estimators = self._check_compared_estimators(
+            compared_estimators, ope_type="standard_ope"
+        )
 
-        if dataset_id is None and self.ope.use_multiple_logged_dataset:
-            if not isinstance(input_dict, MultipleInputDict):
-                raise RuntimeError(
-                    "MultipleInputDict should be given for input_dict, when MultipleLoggedDataset is used and dataset_id is not specified"
-                    "Please pass MultipleInputDict or specify dataset_id."
-                )
-            if len(input_dict) != len(self.ope.multiple_logged_dataset):
-                raise ValueError(
-                    "Expected `len(input_dict) == len(self.ope.multiple_logged_dataset)`, but found False."
-                )
+        if self.ope.use_multiple_logged_dataset:
 
-            if return_metrics and return_by_dataframe:
-                ranking_df, metric_df = [], []
+            if isinstance(input_dict, MultipleInputDict):
 
-                for i in range(len(self.ope.multiple_logged_dataset)):
-                    input_dict_ = input_dict.get(i)
-                    ops_result_ = self._select_by_policy_value_lower_bound(
-                        input_dict_,
-                        compared_estimators=compared_estimators,
-                        dataset_id=i,
-                        return_true_values=return_true_values,
-                        return_metrics=return_metrics,
-                        return_by_dataframe=return_by_dataframe,
-                        top_k_in_eval_metrics=top_k_in_eval_metrics,
-                        safety_criteria=safety_criteria,
-                        cis=cis,
-                        alpha=alpha,
-                        n_bootstrap_samples=n_bootstrap_samples,
-                        random_state=random_state,
+                if behavior_policy_name is None and dataset_id is None:
+                    if (
+                        self.ope.multiple_logged_dataset.n_datasets
+                        != input_dict.n_datasets
+                    ):
+                        raise ValueError(
+                            "Expected that logged datasets and input dicts consists of the same behavior policies and dataset ids, but found False."
+                        )
+
+                    if return_metrics and return_by_dataframe:
+                        ranking_df = defaultdict(list)
+                        metric_df = defaultdict(list)
+
+                        for (
+                            behavior_policy,
+                            n_datasets,
+                        ) in input_dict.n_datasets.items():
+                            for dataset_id_ in range(n_datasets):
+                                input_dict_ = input_dict.get(
+                                    behavior_policy_name=behavior_policy,
+                                    dataset_id=dataset_id_,
+                                )
+                                ops_result_ = self._select_by_policy_value_lower_bound(
+                                    input_dict_,
+                                    compared_estimators=compared_estimators,
+                                    return_true_values=return_true_values,
+                                    return_metrics=return_metrics,
+                                    return_by_dataframe=return_by_dataframe,
+                                    top_k_in_eval_metrics=top_k_in_eval_metrics,
+                                    safety_criteria=safety_criteria,
+                                    cis=cis,
+                                    alpha=alpha,
+                                    n_bootstrap_samples=n_bootstrap_samples,
+                                    random_state=random_state,
+                                )
+                                ranking_df[behavior_policy].append(ops_result_[0])
+                                metric_df[behavior_policy].append(ops_result_[1])
+
+                            ops_result = (
+                                defaultdict_to_dict(ranking_df),
+                                defaultdict_to_dict(metric_df),
+                            )
+
+                    else:
+                        ops_result = defaultdict(list)
+
+                        for (
+                            behavior_policy,
+                            n_datasets,
+                        ) in input_dict.n_datasets.items():
+                            for dataset_id_ in range(n_datasets):
+                                input_dict_ = input_dict.get(
+                                    behavior_policy_name=behavior_policy,
+                                    dataset_id=dataset_id_,
+                                )
+                                ops_result_ = self._select_by_policy_value_lower_bound(
+                                    input_dict_,
+                                    compared_estimators=compared_estimators,
+                                    return_true_values=return_true_values,
+                                    return_metrics=return_metrics,
+                                    return_by_dataframe=return_by_dataframe,
+                                    top_k_in_eval_metrics=top_k_in_eval_metrics,
+                                    safety_criteria=safety_criteria,
+                                    cis=cis,
+                                    alpha=alpha,
+                                    n_bootstrap_samples=n_bootstrap_samples,
+                                    random_state=random_state,
+                                )
+                                ops_result[behavior_policy].append(ops_result_)
+
+                        ops_result = defaultdict_to_dict(ops_result)
+
+                elif behavior_policy_name is None and dataset_id is not None:
+                    if (
+                        self.ope.multiple_logged_dataset.behavior_policy_names
+                        != input_dict.behavior_policy_names
+                    ):
+                        raise ValueError(
+                            "Expected that logged datasets and input dicts consists of the same behavior policies, but found False."
+                        )
+
+                    if return_metrics and return_by_dataframe:
+                        ranking_df = {}
+                        metric_df = {}
+
+                        for behavior_policy in input_dict.behavior_policy_names:
+                            input_dict_ = input_dict.get(
+                                behavior_policy_name=behavior_policy,
+                                dataset_id=dataset_id,
+                            )
+                            ops_result_ = self._select_by_policy_value_lower_bound(
+                                input_dict_,
+                                compared_estimators=compared_estimators,
+                                return_true_values=return_true_values,
+                                return_metrics=return_metrics,
+                                return_by_dataframe=return_by_dataframe,
+                                top_k_in_eval_metrics=top_k_in_eval_metrics,
+                                safety_criteria=safety_criteria,
+                                cis=cis,
+                                alpha=alpha,
+                                n_bootstrap_samples=n_bootstrap_samples,
+                                random_state=random_state,
+                            )
+                            ranking_df[behavior_policy] = ops_result_[0]
+                            metric_df[behavior_policy] = ops_result_[1]
+
+                        ops_result = (ranking_df, metric_df)
+
+                    else:
+                        ops_result = {}
+                        for behavior_policy in input_dict.behavior_policy_names:
+                            input_dict_ = input_dict.get(
+                                behavior_policy_name=behavior_policy,
+                                dataset_id=dataset_id,
+                            )
+                            ops_result_ = self._select_by_policy_value_lower_bound(
+                                input_dict_,
+                                compared_estimators=compared_estimators,
+                                return_true_values=return_true_values,
+                                return_metrics=return_metrics,
+                                return_by_dataframe=return_by_dataframe,
+                                top_k_in_eval_metrics=top_k_in_eval_metrics,
+                                safety_criteria=safety_criteria,
+                                cis=cis,
+                                alpha=alpha,
+                                n_bootstrap_samples=n_bootstrap_samples,
+                                random_state=random_state,
+                            )
+                            ops_result[behavior_policy] = ops_result_
+
+                elif behavior_policy_name is not None and dataset_id is None:
+                    if (
+                        self.ope.multiple_logged_dataset.n_datasets[
+                            behavior_policy_name
+                        ]
+                        != input_dict.n_datasets[behavior_policy_name]
+                    ):
+                        raise ValueError(
+                            "Expected that logged datasets and input dicts consists of the same dataset ids, but found False."
+                        )
+
+                    if return_metrics and return_by_dataframe:
+                        ranking_df = []
+                        metric_df = []
+
+                        for dataset_id_ in range(
+                            input_dict.n_datasets[behavior_policy_name]
+                        ):
+                            input_dict_ = input_dict.get(
+                                behavior_policy_name=behavior_policy,
+                                dataset_id=dataset_id_,
+                            )
+                            ops_result_ = self._select_by_policy_value_lower_bound(
+                                input_dict_,
+                                compared_estimators=compared_estimators,
+                                return_true_values=return_true_values,
+                                return_metrics=return_metrics,
+                                return_by_dataframe=return_by_dataframe,
+                                top_k_in_eval_metrics=top_k_in_eval_metrics,
+                                safety_criteria=safety_criteria,
+                                cis=cis,
+                                alpha=alpha,
+                                n_bootstrap_samples=n_bootstrap_samples,
+                                random_state=random_state,
+                            )
+                            ranking_df.append(ops_result_[0])
+                            metric_df.append(ops_result_[1])
+
+                        ops_result = (ranking_df, metric_df)
+
+                    else:
+                        ops_result = []
+                        for dataset_id_ in range(
+                            input_dict.n_datasets[behavior_policy_name]
+                        ):
+                            input_dict_ = input_dict.get(
+                                behavior_policy_name=behavior_policy_name,
+                                dataset_id=dataset_id_,
+                            )
+                            ops_result_ = self._select_by_policy_value_lower_bound(
+                                input_dict_,
+                                compared_estimators=compared_estimators,
+                                return_true_values=return_true_values,
+                                return_metrics=return_metrics,
+                                return_by_dataframe=return_by_dataframe,
+                                top_k_in_eval_metrics=top_k_in_eval_metrics,
+                                safety_criteria=safety_criteria,
+                                cis=cis,
+                                alpha=alpha,
+                                n_bootstrap_samples=n_bootstrap_samples,
+                                random_state=random_state,
+                            )
+                            ops_result.append(ops_result_)
+
+                else:
+                    input_dict_ = input_dict.get(
+                        behavior_policy_name=behavior_policy,
+                        dataset_id=dataset_id,
                     )
-                    ranking_df.append(ops_result_[0])
-                    metric_df.append(ops_result_[1])
-
-                ops_result = (ranking_df, metric_df)
-
-            else:
-                ops_result = []
-
-                for i in range(len(self.ope.multiple_logged_dataset)):
-                    input_dict_ = input_dict.get(i)
                     ops_result_ = self._select_by_policy_value_lower_bound(
                         input_dict_,
                         compared_estimators=compared_estimators,
-                        dataset_id=i,
                         return_true_values=return_true_values,
                         return_metrics=return_metrics,
                         return_by_dataframe=return_by_dataframe,
@@ -2732,18 +3351,30 @@ class OffPolicySelection:
                     )
                     ops_result.append(ops_result_)
 
+            else:
+                ops_result = self._select_by_policy_value_lower_bound(
+                    input_dict,
+                    compared_estimators=compared_estimators,
+                    return_true_values=return_true_values,
+                    return_metrics=return_metrics,
+                    return_by_dataframe=return_by_dataframe,
+                    top_k_in_eval_metrics=top_k_in_eval_metrics,
+                    safety_criteria=safety_criteria,
+                    cis=cis,
+                    alpha=alpha,
+                    n_bootstrap_samples=n_bootstrap_samples,
+                    random_state=random_state,
+                )
+
         else:
-            if self.ope.use_multiple_logged_dataset:
-                if dataset_id is None:
-                    raise ValueError(
-                        "dataset_id must be given when using MultipleInputDict."
-                    )
-                input_dict = input_dict.get(dataset_id)
+            if isinstance(input_dict, MultipleInputDict):
+                raise ValueError(
+                    "when using LoggedDataset, please use InputDict instead of MultipleInputDict"
+                )
 
             ops_result = self._select_by_policy_value_lower_bound(
                 input_dict,
                 compared_estimators=compared_estimators,
-                dataset_id=dataset_id,
                 return_true_values=return_true_values,
                 return_metrics=return_metrics,
                 return_by_dataframe=return_by_dataframe,
@@ -2761,7 +3392,8 @@ class OffPolicySelection:
         self,
         input_dict: Union[OPEInputDict, MultipleInputDict],
         compared_estimators: Optional[List[str]] = None,
-        dataset_id: Optional[Union[int, str]] = None,
+        behavior_policy_name: Optional[str] = None,
+        dataset_id: Optional[int] = None,
         alpha: float = 0.05,
         return_true_values: bool = False,
         return_metrics: bool = False,
@@ -2777,7 +3409,7 @@ class OffPolicySelection:
 
             .. code-block:: python
 
-                key: [evaluation_policy_name][
+                key: [evaluation_policy][
                     evaluation_policy_action,
                     evaluation_policy_action_dist,
                     state_action_value_prediction,
@@ -2786,6 +3418,9 @@ class OffPolicySelection:
                     state_marginal_importance_weight,
                     on_policy_policy_value,
                     gamma,
+                    behavior_policy,
+                    evaluation_policy,
+                    dataset_id,
                 ]
 
             .. seealso::
@@ -2796,9 +3431,11 @@ class OffPolicySelection:
             Name of compared estimators.
             When `None` is given, all the estimators are compared.
 
-        dataset_id: int or str, default=None
-            Id (or name) of the logged dataset.
-            If `None`, the method returns the list of selection results.
+        behavior_policy_name: str, default=None
+            Name of the behavior policy.
+
+        dataset_id: int, default=None
+            Id of the logged dataset.
 
         alpha: float, default=0.05
             Proportion of the sided region. The value should be within `[0, 0.5]`.
@@ -2881,68 +3518,193 @@ class OffPolicySelection:
                 The lower quartile required to be a safe policy.
 
         """
-        if self.cumulative_distribution_ope is None:
-            raise RuntimeError(
-                "cumulative_distribution_ope is not given. Please initialize the class with cumulative_distribution_ope attribute"
-            )
-        if compared_estimators is None:
-            compared_estimators = self.estimators_name["cumulative_distribution_ope"]
-        elif not set(compared_estimators).issubset(
-            self.estimators_name["cumulative_distribution_ope"]
-        ):
-            raise ValueError(
-                "compared_estimators must be a subset of self.estimators_name['cumulative_distribution_ope'], but found False."
-            )
+        compared_estimators = self._check_compared_estimators(
+            compared_estimators, ope_type="cumulative_distribution_ope"
+        )
 
-        if (
-            dataset_id is None
-            and self.cumulative_distribution_ope.use_multiple_logged_dataset
-        ):
-            if not isinstance(input_dict, MultipleInputDict):
-                raise RuntimeError(
-                    "MultipleInputDict should be given for input_dict, when MultipleLoggedDataset is used and dataset_id is not specified"
-                    "Please pass MultipleInputDict or specify dataset_id."
-                )
-            if len(input_dict) != len(
-                self.cumulative_distribution_ope.multiple_logged_dataset
-            ):
-                raise ValueError(
-                    "Expected `len(input_dict) == len(self.cumulative_distribution_ope.multiple_logged_dataset)`, but found False."
-                )
+        if self.cumulative_distribution_ope.use_multiple_logged_dataset:
 
-            if return_metrics and return_by_dataframe:
-                ranking_df, metric_df = [], []
+            if isinstance(input_dict, MultipleInputDict):
 
-                for i in range(
-                    len(self.cumulative_distribution_ope.multiple_logged_dataset)
-                ):
-                    input_dict_ = input_dict.get(i)
-                    ops_result_ = self._select_by_lower_quartile(
-                        input_dict_,
-                        compared_estimators=compared_estimators,
-                        dataset_id=i,
-                        alpha=alpha,
-                        return_true_values=return_true_values,
-                        return_metrics=return_metrics,
-                        return_by_dataframe=return_by_dataframe,
-                        safety_threshold=safety_threshold,
+                if behavior_policy_name is None and dataset_id is None:
+                    if (
+                        self.cumulative_distribution_ope.multiple_logged_dataset.n_datasets
+                        != input_dict.n_datasets
+                    ):
+                        raise ValueError(
+                            "Expected that logged datasets and input dicts consists of the same behavior policies and dataset ids, but found False."
+                        )
+
+                    if return_metrics and return_by_dataframe:
+                        ranking_df = defaultdict(list)
+                        metric_df = defaultdict(list)
+
+                        for (
+                            behavior_policy,
+                            n_datasets,
+                        ) in input_dict.n_datasets.items():
+                            for dataset_id_ in range(n_datasets):
+                                input_dict_ = input_dict.get(
+                                    behavior_policy_name=behavior_policy,
+                                    dataset_id=dataset_id_,
+                                )
+                                ops_result_ = self._select_by_lower_quartile(
+                                    input_dict_,
+                                    compared_estimators=compared_estimators,
+                                    alpha=alpha,
+                                    return_true_values=return_true_values,
+                                    return_metrics=return_metrics,
+                                    return_by_dataframe=return_by_dataframe,
+                                    safety_threshold=safety_threshold,
+                                )
+                                ranking_df[behavior_policy].append(ops_result_[0])
+                                metric_df[behavior_policy].append(ops_result_[1])
+
+                            ops_result = (
+                                defaultdict_to_dict(ranking_df),
+                                defaultdict_to_dict(metric_df),
+                            )
+
+                    else:
+                        ops_result = defaultdict(list)
+
+                        for (
+                            behavior_policy,
+                            n_datasets,
+                        ) in input_dict.n_datasets.items():
+                            for dataset_id_ in range(n_datasets):
+                                input_dict_ = input_dict.get(
+                                    behavior_policy_name=behavior_policy,
+                                    dataset_id=dataset_id_,
+                                )
+                                ops_result_ = (
+                                    ops_result_
+                                ) = self._select_by_lower_quartile(
+                                    input_dict_,
+                                    compared_estimators=compared_estimators,
+                                    alpha=alpha,
+                                    return_true_values=return_true_values,
+                                    return_metrics=return_metrics,
+                                    return_by_dataframe=return_by_dataframe,
+                                    safety_threshold=safety_threshold,
+                                )
+                                ops_result[behavior_policy].append(ops_result_)
+
+                        ops_result = defaultdict_to_dict(ops_result)
+
+                elif behavior_policy_name is None and dataset_id is not None:
+                    if (
+                        self.cumulative_distribution_ope.multiple_logged_dataset.behavior_policy_names
+                        != input_dict.behavior_policy_names
+                    ):
+                        raise ValueError(
+                            "Expected that logged datasets and input dicts consists of the same behavior policies, but found False."
+                        )
+
+                    if return_metrics and return_by_dataframe:
+                        ranking_df = {}
+                        metric_df = {}
+
+                        for behavior_policy in input_dict.behavior_policy_names:
+                            input_dict_ = input_dict.get(
+                                behavior_policy_name=behavior_policy,
+                                dataset_id=dataset_id,
+                            )
+                            ops_result_ = self._select_by_lower_quartile(
+                                input_dict_,
+                                compared_estimators=compared_estimators,
+                                alpha=alpha,
+                                return_true_values=return_true_values,
+                                return_metrics=return_metrics,
+                                return_by_dataframe=return_by_dataframe,
+                                safety_threshold=safety_threshold,
+                            )
+                            ranking_df[behavior_policy] = ops_result_[0]
+                            metric_df[behavior_policy] = ops_result_[1]
+
+                        ops_result = (ranking_df, metric_df)
+
+                    else:
+                        ops_result = {}
+                        for behavior_policy in input_dict.behavior_policy_names:
+                            input_dict_ = input_dict.get(
+                                behavior_policy_name=behavior_policy,
+                                dataset_id=dataset_id,
+                            )
+                            ops_result_ = self._select_by_lower_quartile(
+                                input_dict_,
+                                compared_estimators=compared_estimators,
+                                alpha=alpha,
+                                return_true_values=return_true_values,
+                                return_metrics=return_metrics,
+                                return_by_dataframe=return_by_dataframe,
+                                safety_threshold=safety_threshold,
+                            )
+                            ops_result[behavior_policy] = ops_result_
+
+                elif behavior_policy_name is not None and dataset_id is None:
+                    if (
+                        self.cumulative_distribution_ope.multiple_logged_dataset.n_datasets[
+                            behavior_policy_name
+                        ]
+                        != input_dict.n_datasets[behavior_policy_name]
+                    ):
+                        raise ValueError(
+                            "Expected that logged datasets and input dicts consists of the same dataset ids, but found False."
+                        )
+
+                    if return_metrics and return_by_dataframe:
+                        ranking_df = []
+                        metric_df = []
+
+                        for dataset_id_ in range(
+                            input_dict.n_datasets[behavior_policy]
+                        ):
+                            input_dict_ = input_dict.get(
+                                behavior_policy_name=behavior_policy,
+                                dataset_id=dataset_id_,
+                            )
+                            ops_result_ = self._select_by_lower_quartile(
+                                input_dict_,
+                                compared_estimators=compared_estimators,
+                                alpha=alpha,
+                                return_true_values=return_true_values,
+                                return_metrics=return_metrics,
+                                return_by_dataframe=return_by_dataframe,
+                                safety_threshold=safety_threshold,
+                            )
+                            ranking_df.append(ops_result_[0])
+                            metric_df.append(ops_result_[1])
+
+                        ops_result = (ranking_df, metric_df)
+
+                    else:
+                        ops_result = []
+                        for dataset_id_ in range(
+                            input_dict.n_datasets[behavior_policy_name]
+                        ):
+                            input_dict_ = input_dict.get(
+                                behavior_policy_name=behavior_policy_name,
+                                dataset_id=dataset_id_,
+                            )
+                            ops_result_ = self._select_by_lower_quartile(
+                                input_dict_,
+                                compared_estimators=compared_estimators,
+                                alpha=alpha,
+                                return_true_values=return_true_values,
+                                return_metrics=return_metrics,
+                                return_by_dataframe=return_by_dataframe,
+                                safety_threshold=safety_threshold,
+                            )
+                            ops_result.append(ops_result_)
+
+                else:
+                    input_dict_ = input_dict.get(
+                        behavior_policy_name=behavior_policy_name, dataset_id=dataset_id
                     )
-                    ranking_df.append(ops_result_[0])
-                    metric_df.append(ops_result_[1])
-
-                ops_result = (ranking_df, metric_df)
-
-            else:
-                ops_result = []
-
-                for i in range(
-                    len(self.cumulative_distribution_ope.multiple_logged_dataset)
-                ):
-                    input_dict_ = input_dict.get(i)
                     ops_result_ = self._select_by_lower_quartile(
                         input_dict_,
                         compared_estimators=compared_estimators,
-                        dataset_id=i,
                         alpha=alpha,
                         return_true_values=return_true_values,
                         return_metrics=return_metrics,
@@ -2951,18 +3713,26 @@ class OffPolicySelection:
                     )
                     ops_result.append(ops_result_)
 
+            else:
+                ops_result = self._select_by_lower_quartile(
+                    input_dict,
+                    compared_estimators=compared_estimators,
+                    alpha=alpha,
+                    return_true_values=return_true_values,
+                    return_metrics=return_metrics,
+                    return_by_dataframe=return_by_dataframe,
+                    safety_threshold=safety_threshold,
+                )
+
         else:
-            if self.cumulative_distribution_ope.use_multiple_logged_dataset:
-                if dataset_id is None:
-                    raise ValueError(
-                        "dataset_id must be given when using MultipleInputDict."
-                    )
-                input_dict = input_dict.get(dataset_id)
+            if isinstance(input_dict, MultipleInputDict):
+                raise ValueError(
+                    "when using LoggedDataset, please use InputDict instead of MultipleInputDict"
+                )
 
             ops_result = self._select_by_lower_quartile(
                 input_dict,
                 compared_estimators=compared_estimators,
-                dataset_id=dataset_id,
                 alpha=alpha,
                 return_true_values=return_true_values,
                 return_metrics=return_metrics,
@@ -2976,7 +3746,8 @@ class OffPolicySelection:
         self,
         input_dict: Union[OPEInputDict, MultipleInputDict],
         compared_estimators: Optional[List[str]] = None,
-        dataset_id: Optional[Union[int, str]] = None,
+        behavior_policy_name: Optional[str] = None,
+        dataset_id: Optional[int] = None,
         alpha: float = 0.05,
         return_true_values: bool = False,
         return_metrics: bool = False,
@@ -2992,7 +3763,7 @@ class OffPolicySelection:
 
             .. code-block:: python
 
-                key: [evaluation_policy_name][
+                key: [evaluation_policy][
                     evaluation_policy_action,
                     evaluation_policy_action_dist,
                     state_action_value_prediction,
@@ -3001,6 +3772,9 @@ class OffPolicySelection:
                     state_marginal_importance_weight,
                     on_policy_policy_value,
                     gamma,
+                    behavior_policy,
+                    evaluation_policy,
+                    dataset_id,
                 ]
 
             .. seealso::
@@ -3011,9 +3785,11 @@ class OffPolicySelection:
             Name of compared estimators.
             When `None` is given, all the estimators are compared.
 
-        dataset_id: int or str, default=None
-            Id (or name) of the logged dataset.
-            If `None`, the method returns the list of selection results.
+        behavior_policy_name: str, default=None
+            Name of the behavior policy.
+
+        dataset_id: int, default=None
+            Id of the logged dataset.
 
         alpha: float, default=0.05
             Proportion of the sided region. The value should be within `[0, 1]`.
@@ -3096,67 +3872,191 @@ class OffPolicySelection:
                 The conditional value at risk required to be a safe policy.
 
         """
-        if self.cumulative_distribution_ope is None:
-            raise RuntimeError(
-                "cumulative_distribution_ope is not given. Please initialize the class with cumulative_distribution_ope attribute"
-            )
-        if compared_estimators is None:
-            compared_estimators = self.estimators_name["cumulative_distribution_ope"]
-        elif not set(compared_estimators).issubset(
-            self.estimators_name["cumulative_distribution_ope"]
-        ):
-            raise ValueError(
-                "compared_estimators must be a subset of self.estimators_name['cumulative_distribution_ope'], but found False."
-            )
+        compared_estimators = self._check_compared_estimators(
+            compared_estimators, ope_type="cumulative_distribution_ope"
+        )
 
-        if (
-            dataset_id is None
-            and self.cumulative_distribution_ope.use_multiple_logged_dataset
-        ):
-            if not isinstance(input_dict, MultipleInputDict):
-                raise RuntimeError(
-                    "MultipleInputDict should be given for input_dict, when MultipleLoggedDataset is used and dataset_id is not specified"
-                    "Please pass MultipleInputDict or specify dataset_id."
-                )
-            if len(input_dict) != len(
-                self.cumulative_distribution_ope.multiple_logged_dataset
-            ):
-                raise ValueError(
-                    "Expected `len(input_dict) == len(self.cumulative_distribution_ope.multiple_logged_dataset)`, but found False."
-                )
+        if self.cumulative_distribution_ope.use_multiple_logged_dataset:
 
-            if return_metrics and return_by_dataframe:
-                ranking_df, metric_df = [], []
+            if isinstance(input_dict, MultipleInputDict):
 
-                for i in range(
-                    len(self.cumulative_distribution_ope.multiple_logged_dataset)
-                ):
-                    input_dict_ = input_dict.get(i)
-                    ops_result_ = self._select_by_conditional_value_at_risk(
-                        input_dict_,
-                        compared_estimators=compared_estimators,
-                        dataset_id=i,
-                        alpha=alpha,
-                        return_true_values=return_true_values,
-                        return_metrics=return_metrics,
-                        return_by_dataframe=return_by_dataframe,
-                        safety_threshold=safety_threshold,
+                if behavior_policy_name is None and dataset_id is None:
+                    if (
+                        self.cumulative_distribution_ope.multiple_logged_dataset.n_datasets
+                        != input_dict.n_datasets
+                    ):
+                        raise ValueError(
+                            "Expected that logged datasets and input dicts consists of the same behavior policies and dataset ids, but found False."
+                        )
+
+                    if return_metrics and return_by_dataframe:
+                        ranking_df = defaultdict(list)
+                        metric_df = defaultdict(list)
+
+                        for (
+                            behavior_policy,
+                            n_datasets,
+                        ) in input_dict.n_datasets.items():
+                            for dataset_id_ in range(n_datasets):
+                                input_dict_ = input_dict.get(
+                                    behavior_policy_name=behavior_policy,
+                                    dataset_id=dataset_id_,
+                                )
+                                ops_result_ = self._select_by_conditional_value_at_risk(
+                                    input_dict_,
+                                    compared_estimators=compared_estimators,
+                                    alpha=alpha,
+                                    return_true_values=return_true_values,
+                                    return_metrics=return_metrics,
+                                    return_by_dataframe=return_by_dataframe,
+                                    safety_threshold=safety_threshold,
+                                )
+                                ranking_df[behavior_policy].append(ops_result_[0])
+                                metric_df[behavior_policy].append(ops_result_[1])
+
+                            ops_result = (
+                                defaultdict_to_dict(ranking_df),
+                                defaultdict_to_dict(metric_df),
+                            )
+
+                    else:
+                        ops_result = defaultdict(list)
+
+                        for (
+                            behavior_policy,
+                            n_datasets,
+                        ) in input_dict.n_datasets.items():
+                            for dataset_id_ in range(n_datasets):
+                                input_dict_ = input_dict.get(
+                                    behavior_policy_name=behavior_policy,
+                                    dataset_id=dataset_id_,
+                                )
+                                ops_result_ = self._select_by_conditional_value_at_risk(
+                                    input_dict_,
+                                    compared_estimators=compared_estimators,
+                                    alpha=alpha,
+                                    return_true_values=return_true_values,
+                                    return_metrics=return_metrics,
+                                    return_by_dataframe=return_by_dataframe,
+                                    safety_threshold=safety_threshold,
+                                )
+                                ops_result[behavior_policy].append(ops_result_)
+
+                        ops_result = defaultdict_to_dict(ops_result)
+
+                elif behavior_policy_name is None and dataset_id is not None:
+                    if (
+                        self.cumulative_distribution_ope.multiple_logged_dataset.behavior_policy_names
+                        != input_dict.behavior_policy_names
+                    ):
+                        raise ValueError(
+                            "Expected that logged datasets and input dicts consists of the same behavior policies, but found False."
+                        )
+
+                    if return_metrics and return_by_dataframe:
+                        ranking_df = {}
+                        metric_df = {}
+
+                        for behavior_policy in input_dict.behavior_policy_names:
+                            input_dict_ = input_dict.get(
+                                behavior_policy_name=behavior_policy,
+                                dataset_id=dataset_id,
+                            )
+                            ops_result_ = self._select_by_conditional_value_at_risk(
+                                input_dict_,
+                                compared_estimators=compared_estimators,
+                                alpha=alpha,
+                                return_true_values=return_true_values,
+                                return_metrics=return_metrics,
+                                return_by_dataframe=return_by_dataframe,
+                                safety_threshold=safety_threshold,
+                            )
+                            ranking_df[behavior_policy] = ops_result_[0]
+                            metric_df[behavior_policy] = ops_result_[1]
+
+                        ops_result = (ranking_df, metric_df)
+
+                    else:
+                        ops_result = {}
+                        for behavior_policy in input_dict.behavior_policy_names:
+                            input_dict_ = input_dict.get(
+                                behavior_policy_name=behavior_policy,
+                                dataset_id=dataset_id,
+                            )
+                            ops_result_ = self._select_by_conditional_value_at_risk(
+                                input_dict_,
+                                compared_estimators=compared_estimators,
+                                alpha=alpha,
+                                return_true_values=return_true_values,
+                                return_metrics=return_metrics,
+                                return_by_dataframe=return_by_dataframe,
+                                safety_threshold=safety_threshold,
+                            )
+                            ops_result[behavior_policy] = ops_result_
+
+                elif behavior_policy_name is not None and dataset_id is None:
+                    if (
+                        self.cumulative_distribution_ope.multiple_logged_dataset.n_datasets[
+                            behavior_policy_name
+                        ]
+                        != input_dict.n_datasets[behavior_policy_name]
+                    ):
+                        raise ValueError(
+                            "Expected that logged datasets and input dicts consists of the same dataset ids, but found False."
+                        )
+
+                    if return_metrics and return_by_dataframe:
+                        ranking_df = []
+                        metric_df = []
+
+                        for dataset_id_ in range(
+                            input_dict.n_datasets[behavior_policy_name]
+                        ):
+                            input_dict_ = input_dict.get(
+                                behavior_policy_name=behavior_policy_name,
+                                dataset_id=dataset_id_,
+                            )
+                            ops_result_ = self._select_by_conditional_value_at_risk(
+                                input_dict_,
+                                compared_estimators=compared_estimators,
+                                alpha=alpha,
+                                return_true_values=return_true_values,
+                                return_metrics=return_metrics,
+                                return_by_dataframe=return_by_dataframe,
+                                safety_threshold=safety_threshold,
+                            )
+                            ranking_df.append(ops_result_[0])
+                            metric_df.append(ops_result_[1])
+
+                        ops_result = (ranking_df, metric_df)
+
+                    else:
+                        ops_result = []
+                        for dataset_id_ in range(
+                            input_dict.n_datasets[behavior_policy_name]
+                        ):
+                            input_dict_ = input_dict.get(
+                                behavior_policy_name=behavior_policy_name,
+                                dataset_id=dataset_id_,
+                            )
+                            ops_result_ = self._select_by_conditional_value_at_risk(
+                                input_dict_,
+                                compared_estimators=compared_estimators,
+                                alpha=alpha,
+                                return_true_values=return_true_values,
+                                return_metrics=return_metrics,
+                                return_by_dataframe=return_by_dataframe,
+                                safety_threshold=safety_threshold,
+                            )
+                            ops_result.append(ops_result_)
+
+                else:
+                    input_dict_ = input_dict.get(
+                        behavior_policy_name=behavior_policy_name, dataset_id=dataset_id
                     )
-                    ranking_df.append(ops_result_[0])
-                    metric_df.append(ops_result_[1])
-
-                ops_result = (ranking_df, metric_df)
-
-            else:
-                ops_result = []
-                for i in range(
-                    len(self.cumulative_distribution_ope.multiple_logged_dataset)
-                ):
-                    input_dict_ = input_dict.get(i)
                     ops_result_ = self._select_by_conditional_value_at_risk(
                         input_dict_,
                         compared_estimators=compared_estimators,
-                        dataset_id=i,
                         alpha=alpha,
                         return_true_values=return_true_values,
                         return_metrics=return_metrics,
@@ -3165,18 +4065,26 @@ class OffPolicySelection:
                     )
                     ops_result.append(ops_result_)
 
+            else:
+                ops_result = self._select_by_conditional_value_at_risk(
+                    input_dict,
+                    compared_estimators=compared_estimators,
+                    alpha=alpha,
+                    return_true_values=return_true_values,
+                    return_metrics=return_metrics,
+                    return_by_dataframe=return_by_dataframe,
+                    safety_threshold=safety_threshold,
+                )
+
         else:
-            if self.cumulative_distribution_ope.use_multiple_logged_dataset:
-                if dataset_id is None:
-                    raise ValueError(
-                        "dataset_id must be given when using MultipleInputDict."
-                    )
-                input_dict = input_dict.get(dataset_id)
+            if isinstance(input_dict, MultipleInputDict):
+                raise ValueError(
+                    "when using LoggedDataset, please use InputDict instead of MultipleInputDict"
+                )
 
             ops_result = self._select_by_conditional_value_at_risk(
                 input_dict,
                 compared_estimators=compared_estimators,
-                dataset_id=dataset_id,
                 alpha=alpha,
                 return_true_values=return_true_values,
                 return_metrics=return_metrics,
@@ -3190,7 +4098,8 @@ class OffPolicySelection:
         self,
         input_dict: Union[OPEInputDict, MultipleInputDict],
         compared_estimators: Optional[List[str]] = None,
-        dataset_id: Optional[Union[int, str]] = None,
+        behavior_policy_name: Optional[str] = None,
+        dataset_id: Optional[int] = None,
         alpha: float = 0.05,
         ci: str = "bootstrap",
         n_bootstrap_samples: int = 100,
@@ -3210,7 +4119,7 @@ class OffPolicySelection:
 
             .. code-block:: python
 
-                key: [evaluation_policy_name][
+                key: [evaluation_policy][
                     evaluation_policy_action,
                     evaluation_policy_action_dist,
                     state_action_value_prediction,
@@ -3219,6 +4128,9 @@ class OffPolicySelection:
                     state_marginal_importance_weight,
                     on_policy_policy_value,
                     gamma,
+                    behavior_policy,
+                    evaluation_policy,
+                    dataset_id,
                 ]
 
             .. seealso::
@@ -3229,9 +4141,11 @@ class OffPolicySelection:
             Name of compared estimators.
             When `None` is given, all the estimators are compared.
 
-        dataset_id: int or str, default=None
-            Id (or name) of the logged dataset.
-            RRequired when using :class:`MultipleLoggedDataset`.
+        behavior_policy_name: str, default=None
+            Name of the behavior policy.
+
+        dataset_id: int, default=None
+            Id of the logged dataset.
 
         alpha: float, default=0.05
             Significance level. The value should be within `[0, 1)`.
@@ -3266,6 +4180,7 @@ class OffPolicySelection:
         self.ope.visualize_off_policy_estimates(
             input_dict=input_dict,
             compared_estimators=compared_estimators,
+            behavior_policy_name=behavior_policy_name,
             dataset_id=dataset_id,
             alpha=alpha,
             ci=ci,
@@ -3282,7 +4197,8 @@ class OffPolicySelection:
         self,
         input_dict: Union[OPEInputDict, MultipleInputDict],
         compared_estimators: Optional[List[str]] = None,
-        dataset_id: Optional[Union[int, str]] = None,
+        behavior_policy_name: Optional[str] = None,
+        dataset_id: Optional[int] = None,
         hue: str = "estimator",
         legend: bool = True,
         n_cols: Optional[int] = None,
@@ -3298,7 +4214,7 @@ class OffPolicySelection:
 
             .. code-block:: python
 
-                key: [evaluation_policy_name][
+                key: [evaluation_policy][
                     evaluation_policy_action,
                     evaluation_policy_action_dist,
                     state_action_value_prediction,
@@ -3307,6 +4223,9 @@ class OffPolicySelection:
                     state_marginal_importance_weight,
                     on_policy_policy_value,
                     gamma,
+                    behavior_policy,
+                    evaluation_policy,
+                    dataset_id,
                 ]
 
             .. seealso::
@@ -3317,9 +4236,11 @@ class OffPolicySelection:
             Name of compared estimators.
             When `None` is given, all the estimators are compared.
 
-        dataset_id: int or str, default=None
-            Id (or name) of the logged dataset.
-            RRequired when using :class:`MultipleLoggedDataset`.
+        behavior_policy_name: str, default=None
+            Name of the behavior policy.
+
+        dataset_id: int, default=None
+            Id of the logged dataset.
 
         hue: {"estimator", "policy"}, default="estimator"
             Hue of the plot.
@@ -3341,6 +4262,7 @@ class OffPolicySelection:
         self.cumulative_distribution_ope.visualize_cumulative_distribution_function(
             input_dict=input_dict,
             compared_estimators=compared_estimators,
+            behavior_policy_name=behavior_policy_name,
             dataset_id=dataset_id,
             hue=hue,
             legend=legend,
@@ -3353,7 +4275,8 @@ class OffPolicySelection:
         self,
         input_dict: Union[OPEInputDict, MultipleInputDict],
         compared_estimators: Optional[List[str]] = None,
-        dataset_id: Optional[Union[int, str]] = None,
+        behavior_policy_name: Optional[str] = None,
+        dataset_id: Optional[int] = None,
         alpha: float = 0.05,
         is_relative: bool = False,
         hue: str = "estimator",
@@ -3370,7 +4293,7 @@ class OffPolicySelection:
 
             .. code-block:: python
 
-                key: [evaluation_policy_name][
+                key: [evaluation_policy][
                     evaluation_policy_action,
                     evaluation_policy_action_dist,
                     state_action_value_prediction,
@@ -3379,6 +4302,9 @@ class OffPolicySelection:
                     state_marginal_importance_weight,
                     on_policy_policy_value,
                     gamma,
+                    behavior_policy,
+                    evaluation_policy,
+                    dataset_id,
                 ]
 
             .. seealso::
@@ -3389,9 +4315,11 @@ class OffPolicySelection:
             Name of compared estimators.
             When `None` is given, all the estimators are compared.
 
-        dataset_id: int or str, default=None
-            Id (or name) of the logged dataset.
-            RRequired when using :class:`MultipleLoggedDataset`.
+        behavior_policy_name: str, default=None
+            Name of the behavior policy.
+
+        dataset_id: int, default=None
+            Id of the logged dataset.
 
         alpha: float, default=0.05
             Significance level. The value should bw within `[0, 1)`.
@@ -3417,6 +4345,7 @@ class OffPolicySelection:
         self.cumulative_distribution_ope.visualize_policy_value(
             input_dict=input_dict,
             compared_estimators=compared_estimators,
+            behavior_policy_name=behavior_policy_name,
             dataset_id=dataset_id,
             alpha=alpha,
             is_relative=is_relative,
@@ -3430,7 +4359,8 @@ class OffPolicySelection:
         self,
         input_dict: Union[OPEInputDict, MultipleInputDict],
         compared_estimators: Optional[List[str]] = None,
-        dataset_id: Optional[Union[int, str]] = None,
+        behavior_policy_name: Optional[str] = None,
+        dataset_id: Optional[int] = None,
         alphas: Optional[np.ndarray] = None,
         hue: str = "estimator",
         legend: bool = True,
@@ -3448,7 +4378,7 @@ class OffPolicySelection:
 
             .. code-block:: python
 
-                key: [evaluation_policy_name][
+                key: [evaluation_policy][
                     evaluation_policy_action,
                     evaluation_policy_action_dist,
                     state_action_value_prediction,
@@ -3457,6 +4387,9 @@ class OffPolicySelection:
                     state_marginal_importance_weight,
                     on_policy_policy_value,
                     gamma,
+                    behavior_policy,
+                    evaluation_policy,
+                    dataset_id,
                 ]
 
             .. seealso::
@@ -3467,9 +4400,11 @@ class OffPolicySelection:
             Name of compared estimators.
             When `None` is given, all the estimators are compared.
 
-        dataset_id: int or str, default=None
-            Id (or name) of the logged dataset.
-            RRequired when using :class:`MultipleLoggedDataset`.
+        behavior_policy_name: str, default=None
+            Name of the behavior policy.
+
+        dataset_id: int, default=None
+            Id of the logged dataset.
 
         alphas: array-like of shape (n_alpha, ), default=None
             Set of proportions of the sided region. The values should be within `[0, 1)`.
@@ -3498,6 +4433,7 @@ class OffPolicySelection:
         self.cumulative_distribution_ope.visualize_conditional_value_at_risk(
             input_dict=input_dict,
             compared_estimators=compared_estimators,
+            behavior_policy_name=behavior_policy_name,
             dataset_id=dataset_id,
             alphas=alphas,
             hue=hue,
@@ -3512,7 +4448,8 @@ class OffPolicySelection:
         self,
         input_dict: Union[OPEInputDict, MultipleInputDict],
         compared_estimators: Optional[List[str]] = None,
-        dataset_id: Optional[Union[int, str]] = None,
+        behavior_policy_name: Optional[str] = None,
+        dataset_id: Optional[int] = None,
         alpha: float = 0.05,
         hue: str = "estimator",
         sharey: bool = False,
@@ -3528,7 +4465,7 @@ class OffPolicySelection:
 
             .. code-block:: python
 
-                key: [evaluation_policy_name][
+                key: [evaluation_policy][
                     evaluation_policy_action,
                     evaluation_policy_action_dist,
                     state_action_value_prediction,
@@ -3537,6 +4474,9 @@ class OffPolicySelection:
                     state_marginal_importance_weight,
                     on_policy_policy_value,
                     gamma,
+                    behavior_policy,
+                    evaluation_policy,
+                    dataset_id,
                 ]
 
             .. seealso::
@@ -3547,9 +4487,11 @@ class OffPolicySelection:
             Name of compared estimators.
             When `None` is given, all the estimators are compared.
 
-        dataset_id: int or str, default=None
-            Id (or name) of the logged dataset.
-            RRequired when using :class:`MultipleLoggedDataset`.
+        behavior_policy_name: str, default=None
+            Name of the behavior policy.
+
+        dataset_id: int, default=None
+            Id of the logged dataset.
 
         alpha: float, default=0.05
             Significance level. The value should be within `[0, 1)`.
@@ -3571,6 +4513,7 @@ class OffPolicySelection:
         self.cumulative_distribution_ope.visualize_interquartile_range(
             input_dict=input_dict,
             compared_estimators=compared_estimators,
+            behavior_policy_name=behavior_policy_name,
             dataset_id=dataset_id,
             alpha=alpha,
             hue=hue,
@@ -3583,11 +4526,8 @@ class OffPolicySelection:
         self,
         input_dict: MultipleInputDict,
         compared_estimators: Optional[List[str]] = None,
+        behavior_policy_name: Optional[str] = None,
         plot_type: str = "ci",
-        alpha: float = 0.05,
-        ci: str = "bootstrap",
-        n_bootstrap_samples: int = 100,
-        random_state: Optional[int] = None,
         hue: str = "estimator",
         legend: bool = True,
         sharey: bool = False,
@@ -3608,7 +4548,7 @@ class OffPolicySelection:
 
             .. code-block:: python
 
-                key: [evaluation_policy_name][
+                key: [evaluation_policy][
                     evaluation_policy_action,
                     evaluation_policy_action_dist,
                     state_action_value_prediction,
@@ -3617,6 +4557,9 @@ class OffPolicySelection:
                     state_marginal_importance_weight,
                     on_policy_policy_value,
                     gamma,
+                    behavior_policy,
+                    evaluation_policy,
+                    dataset_id,
                 ]
 
             .. seealso::
@@ -3627,22 +4570,13 @@ class OffPolicySelection:
             Name of compared estimators.
             If `None` is given, all the estimators are compared.
 
+        behavior_policy_name: str, default=None
+            Name of the behavior policy.
+
         plot_type: {"ci", "scatter", "violin"}, default="ci"
             Type of plot.
             If "ci" is given, the method visualizes the average policy value and the confidence intervals based on the multiple estimate.
             If "scatter" is given, the method visualizes the individual estimation result.
-
-        alpha: float, default=0.05
-            Significance level. The value should be within (0, 1].
-
-        ci: {"bootstrap", "hoeffding", "bernstein", "ttest"}, default="bootstrap"
-            Estimation method for confidence intervals.
-
-        n_bootstrap_samples: int, default=10000 (> 0)
-            Number of resampling performed in the bootstrap procedure.
-
-        random_state: int, default=None (>= 0)
-            Random state.
 
         hue: {"estimator", "policy"}, default="estimator"
             Hue of the plot.
@@ -3664,11 +4598,8 @@ class OffPolicySelection:
         self.ope.visualize_policy_value_with_multiple_estimates(
             input_dict=input_dict,
             compared_estimators=compared_estimators,
+            behavior_policy_name=behavior_policy_name,
             plot_type=plot_type,
-            alpha=alpha,
-            ci=ci,
-            n_bootstrap_samples=n_bootstrap_samples,
-            random_state=random_state,
             hue=hue,
             legend=legend,
             sharey=sharey,
@@ -3680,10 +4611,11 @@ class OffPolicySelection:
         self,
         input_dict: MultipleInputDict,
         compared_estimators: Optional[List[str]] = None,
+        behavior_policy_name: Optional[str] = None,
         scale_min: Optional[float] = None,
         scale_max: Optional[float] = None,
         n_partition: Optional[int] = None,
-        plot_type: str = "ci",
+        plot_type: str = "ci_hue",
         hue: str = "estimator",
         legend: bool = True,
         n_cols: Optional[int] = None,
@@ -3708,7 +4640,7 @@ class OffPolicySelection:
 
             .. code-block:: python
 
-                key: [evaluation_policy_name][
+                key: [evaluation_policy][
                     evaluation_policy_action,
                     evaluation_policy_action_dist,
                     state_action_value_prediction,
@@ -3717,6 +4649,9 @@ class OffPolicySelection:
                     state_marginal_importance_weight,
                     on_policy_policy_value,
                     gamma,
+                    behavior_policy,
+                    evaluation_policy,
+                    dataset_id,
                 ]
 
             .. seealso::
@@ -3727,7 +4662,10 @@ class OffPolicySelection:
             Name of compared estimators.
             If `None` is given, all the estimators are compared.
 
-        plot_type: {"ci", "enumerate"}, default="ci"
+        behavior_policy_name: str, default=None
+            Name of the behavior policy.
+
+        plot_type: {"ci_hue", "ci_behavior_policy", "enumerate"}, default="ci_hue"
             Type of plot.
             If "ci" is given, the method visualizes the average policy value and its 95% confidence intervals based on the multiple estimate.
             If "enumerate" is given, the method visualizes the individual estimation result.
@@ -3752,6 +4690,7 @@ class OffPolicySelection:
         self.cumulative_distribution_ope.visualize_cumulative_distribution_function_with_multiple_estimates(
             input_dict=input_dict,
             compared_estimators=compared_estimators,
+            behavior_policy_name=behavior_policy_name,
             scale_min=scale_min,
             scale_max=scale_max,
             n_partition=n_partition,
@@ -3768,11 +4707,8 @@ class OffPolicySelection:
         self,
         input_dict: MultipleInputDict,
         compared_estimators: Optional[List[str]] = None,
+        behavior_policy_name: Optional[str] = None,
         plot_type: str = "ci",
-        alpha: float = 0.05,
-        ci: str = "bootstrap",
-        n_bootstrap_samples: int = 100,
-        random_state: Optional[int] = None,
         hue: str = "estimator",
         legend: bool = True,
         sharey: bool = False,
@@ -3793,7 +4729,7 @@ class OffPolicySelection:
 
             .. code-block:: python
 
-                key: [evaluation_policy_name][
+                key: [evaluation_policy][
                     evaluation_policy_action,
                     evaluation_policy_action_dist,
                     state_action_value_prediction,
@@ -3802,6 +4738,9 @@ class OffPolicySelection:
                     state_marginal_importance_weight,
                     on_policy_policy_value,
                     gamma,
+                    behavior_policy,
+                    evaluation_policy,
+                    dataset_id,
                 ]
 
             .. seealso::
@@ -3812,22 +4751,13 @@ class OffPolicySelection:
             Name of compared estimators.
             If `None` is given, all the estimators are compared.
 
+        behavior_policy_name: str, default=None
+            Name of the behavior policy.
+
         plot_type: {"ci", "scatter", "violin"}, default="ci"
             Type of plot.
             If "ci" is given, the method visualizes the average policy value and the confidence intervals based on the multiple estimate.
             If "scatter" is given, the method visualizes the individual estimation result.
-
-        alpha: float, default=0.05
-            Significance level. The value should be within (0, 1].
-
-        ci: {"bootstrap", "hoeffding", "bernstein", "ttest"}, default="bootstrap"
-            Estimation method for confidence intervals.
-
-        n_bootstrap_samples: int, default=10000 (> 0)
-            Number of resampling performed in the bootstrap procedure.
-
-        random_state: int, default=None (>= 0)
-            Random state.
 
         hue: {"estimator", "policy"}, default="estimator"
             Hue of the plot.
@@ -3849,11 +4779,8 @@ class OffPolicySelection:
         self.cumulative_distribution_ope.visualize_policy_value_with_multiple_estimates(
             input_dict=input_dict,
             compared_estimators=compared_estimators,
+            behavior_policy_name=behavior_policy_name,
             plot_type=plot_type,
-            alpha=alpha,
-            ci=ci,
-            n_bootstrap_samples=n_bootstrap_samples,
-            random_state=random_state,
             hue=hue,
             legend=legend,
             sharey=sharey,
@@ -3865,11 +4792,8 @@ class OffPolicySelection:
         self,
         input_dict: MultipleInputDict,
         compared_estimators: Optional[List[str]] = None,
+        behavior_policy_name: Optional[str] = None,
         plot_type: str = "ci",
-        alpha: float = 0.05,
-        ci: str = "bootstrap",
-        n_bootstrap_samples: int = 100,
-        random_state: Optional[int] = None,
         hue: str = "estimator",
         legend: bool = True,
         sharey: bool = False,
@@ -3890,7 +4814,7 @@ class OffPolicySelection:
 
             .. code-block:: python
 
-                key: [evaluation_policy_name][
+                key: [evaluation_policy][
                     evaluation_policy_action,
                     evaluation_policy_action_dist,
                     state_action_value_prediction,
@@ -3899,6 +4823,9 @@ class OffPolicySelection:
                     state_marginal_importance_weight,
                     on_policy_policy_value,
                     gamma,
+                    behavior_policy,
+                    evaluation_policy,
+                    dataset_id,
                 ]
 
             .. seealso::
@@ -3909,22 +4836,13 @@ class OffPolicySelection:
             Name of compared estimators.
             If `None` is given, all the estimators are compared.
 
+        behavior_policy_name: str, default=None
+            Name of the behavior policy.
+
         plot_type: {"ci", "scatter", "violin"}, default="ci"
             Type of plot.
             If "ci" is given, the method visualizes the average policy value and the confidence intervals based on the multiple estimate.
             If "scatter" is given, the method visualizes the individual estimation result.
-
-        alpha: float, default=0.05
-            Significance level. The value should be within (0, 1].
-
-        ci: {"bootstrap", "hoeffding", "bernstein", "ttest"}, default="bootstrap"
-            Estimation method for confidence intervals.
-
-        n_bootstrap_samples: int, default=10000 (> 0)
-            Number of resampling performed in the bootstrap procedure.
-
-        random_state: int, default=None (>= 0)
-            Random state.
 
         hue: {"estimator", "policy"}, default="estimator"
             Hue of the plot.
@@ -3946,11 +4864,8 @@ class OffPolicySelection:
         self.cumulative_distribution_ope.visualize_variance_with_multiple_estimates(
             input_dict=input_dict,
             compared_estimators=compared_estimators,
+            behavior_policy_name=behavior_policy_name,
             plot_type=plot_type,
-            alpha=alpha,
-            ci=ci,
-            n_bootstrap_samples=n_bootstrap_samples,
-            random_state=random_state,
             hue=hue,
             legend=legend,
             sharey=sharey,
@@ -3962,12 +4877,9 @@ class OffPolicySelection:
         self,
         input_dict: MultipleInputDict,
         compared_estimators: Optional[List[str]] = None,
-        ope_alpha: float = 0.05,
-        plot_type: str = "ci",
+        behavior_policy_name: Optional[str] = None,
         alpha: float = 0.05,
-        ci: str = "bootstrap",
-        n_bootstrap_samples: int = 100,
-        random_state: Optional[int] = None,
+        plot_type: str = "ci",
         hue: str = "estimator",
         legend: bool = True,
         sharey: bool = False,
@@ -3988,7 +4900,7 @@ class OffPolicySelection:
 
             .. code-block:: python
 
-                key: [evaluation_policy_name][
+                key: [evaluation_policy][
                     evaluation_policy_action,
                     evaluation_policy_action_dist,
                     state_action_value_prediction,
@@ -3997,6 +4909,9 @@ class OffPolicySelection:
                     state_marginal_importance_weight,
                     on_policy_policy_value,
                     gamma,
+                    behavior_policy,
+                    evaluation_policy,
+                    dataset_id,
                 ]
 
             .. seealso::
@@ -4007,25 +4922,16 @@ class OffPolicySelection:
             Name of compared estimators.
             If `None` is given, all the estimators are compared.
 
-        ope_alpha: float = 0.05.
+        behavior_policy_name: str, default=None
+            Name of the behavior policy.
+
+        alpha: float = 0.05.
             Proportion of the sided region in CVaR estimate. The value should be within `[0, 1)`.
 
         plot_type: {"ci", "scatter", "violin"}, default="ci"
             Type of plot.
             If "ci" is given, the method visualizes the average policy value and the confidence intervals based on the multiple estimate.
             If "scatter" is given, the method visualizes the individual estimation result.
-
-        alpha: float, default=0.05
-            Significance level. The value should be within (0, 1].
-
-        ci: {"bootstrap", "hoeffding", "bernstein", "ttest"}, default="bootstrap"
-            Estimation method for confidence intervals.
-
-        n_bootstrap_samples: int, default=10000 (> 0)
-            Number of resampling performed in the bootstrap procedure.
-
-        random_state: int, default=None (>= 0)
-            Random state.
 
         hue: {"estimator", "policy"}, default="estimator"
             Hue of the plot.
@@ -4047,12 +4953,9 @@ class OffPolicySelection:
         self.cumulative_distribution_ope.visualize_conditional_value_at_risk_with_multiple_estimates(
             input_dict=input_dict,
             compared_estimators=compared_estimators,
-            ope_alpha=ope_alpha,
-            plot_type=plot_type,
+            behavior_policy_name=behavior_policy_name,
             alpha=alpha,
-            ci=ci,
-            n_bootstrap_samples=n_bootstrap_samples,
-            random_state=random_state,
+            plot_type=plot_type,
             hue=hue,
             legend=legend,
             sharey=sharey,
@@ -4064,12 +4967,9 @@ class OffPolicySelection:
         self,
         input_dict: MultipleInputDict,
         compared_estimators: Optional[List[str]] = None,
-        ope_alpha: float = 0.05,
-        plot_type: str = "ci",
+        behavior_policy_name: Optional[str] = None,
         alpha: float = 0.05,
-        ci: str = "bootstrap",
-        n_bootstrap_samples: int = 100,
-        random_state: Optional[int] = None,
+        plot_type: str = "ci",
         hue: str = "estimator",
         legend: bool = True,
         sharey: bool = False,
@@ -4090,7 +4990,7 @@ class OffPolicySelection:
 
             .. code-block:: python
 
-                key: [evaluation_policy_name][
+                key: [evaluation_policy][
                     evaluation_policy_action,
                     evaluation_policy_action_dist,
                     state_action_value_prediction,
@@ -4099,6 +4999,9 @@ class OffPolicySelection:
                     state_marginal_importance_weight,
                     on_policy_policy_value,
                     gamma,
+                    behavior_policy,
+                    evaluation_policy,
+                    dataset_id,
                 ]
 
             .. seealso::
@@ -4109,25 +5012,16 @@ class OffPolicySelection:
             Name of compared estimators.
             If `None` is given, all the estimators are compared.
 
-        ope_alpha: float = 0.05.
+        behavior_policy_name: str, default=None
+            Name of the behavior policy.
+
+        alpha: float = 0.05.
             Proportion of the sided region in CVaR estimate. The value should be within `[0, 1)`.
 
         plot_type: {"ci", "scatter", "violin"}, default="ci"
             Type of plot.
             If "ci" is given, the method visualizes the average policy value and the confidence intervals based on the multiple estimate.
             If "scatter" is given, the method visualizes the individual estimation result.
-
-        alpha: float, default=0.05
-            Significance level. The value should be within (0, 0.5].
-
-        ci: {"bootstrap", "hoeffding", "bernstein", "ttest"}, default="bootstrap"
-            Estimation method for confidence intervals.
-
-        n_bootstrap_samples: int, default=10000 (> 0)
-            Number of resampling performed in the bootstrap procedure.
-
-        random_state: int, default=None (>= 0)
-            Random state.
 
         hue: {"estimator", "policy"}, default="estimator"
             Hue of the plot.
@@ -4149,12 +5043,9 @@ class OffPolicySelection:
         self.cumulative_distribution_ope.visualize_lower_quartile_with_multiple_estimates(
             input_dict=input_dict,
             compared_estimators=compared_estimators,
-            ope_alpha=ope_alpha,
-            plot_type=plot_type,
+            behavior_policy_name=behavior_policy_name,
             alpha=alpha,
-            ci=ci,
-            n_bootstrap_samples=n_bootstrap_samples,
-            random_state=random_state,
+            plot_type=plot_type,
             hue=hue,
             legend=legend,
             sharey=sharey,
@@ -4162,11 +5053,561 @@ class OffPolicySelection:
             fig_name=fig_name,
         )
 
+    def _visualize_topk_policy_performance(
+        self,
+        true_dict: Dict,
+        estimation_dict: Dict,
+        input_dict: Union[OPEInputDict, MultipleInputDict],
+        true_dict_ranking_arg: str,
+        true_dict_value_arg: str,
+        estimation_dict_ranking_arg: str,
+        compared_estimators: Optional[List[str]] = None,
+        behavior_policy_name: Optional[str] = None,
+        dataset_id: Optional[int] = None,
+        metrics: List[str] = ["k-th", "best", "worst", "mean", "safety_violation_rate"],
+        max_topk: Optional[int] = None,
+        safety_threshold: Optional[float] = None,
+        visualize_ci: bool = False,
+        ci: str = "bootstrap",
+        alpha: float = 0.05,
+        n_bootstrap_samples: int = 100,
+        random_state: Optional[int] = None,
+        legend: bool = True,
+        ylabel: str = "policy performance",
+        fig_dir: Optional[Path] = None,
+        fig_name: Optional[str] = None,
+    ):
+        """Visualize top-k policy deployment performances.
+
+        Parameters
+        -------
+        true_dict: dict
+            Dictionary containing the true policy performance.
+
+        estimation_dict: dict
+            Dictionary containing the estimated policy performance.
+
+        input_dict: OPEInputDict or MultipleInputDict
+            Dictionary of the OPE inputs for each evaluation policy.
+
+            .. code-block:: python
+
+                key: [evaluation_policy][
+                    evaluation_policy_action,
+                    evaluation_policy_action_dist,
+                    state_action_value_prediction,
+                    initial_state_value_prediction,
+                    state_action_marginal_importance_weight,
+                    state_marginal_importance_weight,
+                    on_policy_policy_value,
+                    gamma,
+                    behavior_policy,
+                    evaluation_policy,
+                    dataset_id,
+                ]
+
+            .. seealso::
+
+                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+
+        true_dict_ranking_arg: str
+            Name of the key indicating the ranked list of the candidate policies in true_dict.
+
+        true_dict_value_arg: str
+            Name of the key indicating the true policy performance of the candidate policies in true_dict.
+
+        estimation_dict_ranking_arg: str
+            Name of the ley indicaing the estimated ranking of the candidate policies in true_dict.
+
+        compared_estimators: list of str, default=None
+            Name of compared estimators.
+            If `None` is given, all the estimators are compared.
+
+        behavior_policy: str, default=None
+            Name of the behavior policy.
+
+        dataset_id: int, default=None
+            Id of the logged dataset.
+            If `None`, the average of the result will be shown.
+
+        metrics: list of {"k-th", "best", "worst", "mean", "safety_violation_rate"}, default=["k-th", "best", "worst", "mean", "safety_violation_rate"]
+            Indicate which of the policy performance among {"best", "worst", "mean"} and safety violation rate to report.
+            For "k-th", it means that the policy performance of the (estimated) k-th policy will be visualized.
+
+        max_topk: int, default=None
+            Maximum number of policies to be deployed.
+
+        safety_threshold: float, default=0.0 (>= 0)
+            The conditional value at risk required to be a safe policy.
+
+        visualize_ci: bool, default=False
+            Whether to visualize ci.
+
+        ci: {"bootstrap", "hoeffding", "bernstein", "ttest"}, default="bootstrap"
+            Estimation method for confidence intervals.
+
+        alpha: float, default=0.05
+            Significance level. The value should be within `[0, 1)`.
+
+        n_bootstrap_samples: int, default=10000 (> 0)
+            Number of resampling performed in the bootstrap procedure.
+
+        random_state: int, default=None (>= 0)
+            Random state.
+
+        legend: bool, default=True
+            Whether to include a legend in the figure.
+
+        ylabel: str, default="policy performance"
+            Label of the y-axis.
+
+        fig_dir: Path, default=None
+            Path to store the bar figure.
+            If `None` is given, the figure will not be saved.
+
+        fig_name: str, default="topk_policy_value_standard_ope.png"
+            Name of the bar figure.
+
+        """
+        if isinstance(input_dict, MultipleInputDict):
+
+            if behavior_policy_name is None and dataset_id is None:
+
+                ranking_dict = defaultdict(list)
+                for behavior_policy, n_datasets in input_dict.n_datasets.items():
+                    for dataset_id_ in range(n_datasets):
+                        true_dict[behavior_policy][dataset_id_] = dict(
+                            zip(
+                                true_dict[behavior_policy][dataset_id_][
+                                    true_dict_ranking_arg
+                                ],
+                                true_dict[behavior_policy][dataset_id_][
+                                    true_dict_value_arg
+                                ],
+                            )
+                        )
+
+                        tmp_ranking_dict = dict()
+                        for i, estimator in enumerate(compared_estimators):
+                            policy_performance = np.zeros(
+                                input_dict.n_eval_policies[behavior_policy][dataset_id_]
+                            )
+                            estimated_ranking = estimation_dict[behavior_policy][
+                                dataset_id_
+                            ][estimator]["estimated_ranking"]
+
+                            for i, eval_policy in enumerate(estimated_ranking):
+                                policy_performance[i] = true_dict[behavior_policy][
+                                    dataset_id_
+                                ][eval_policy]
+
+                            tmp_ranking_dict[estimator] = policy_performance
+
+                        ranking_dict[behavior_policy].append(tmp_ranking_dict)
+
+            elif behavior_policy_name is None and dataset_id is not None:
+
+                ranking_dict = {}
+                for behavior_policy in input_dict.behavior_policy_names:
+
+                    true_dict[behavior_policy] = dict(
+                        zip(
+                            true_dict[behavior_policy][true_dict_ranking_arg],
+                            true_dict[behavior_policy][true_dict_value_arg],
+                        )
+                    )
+
+                    tmp_ranking_dict = dict()
+                    for i, estimator in enumerate(compared_estimators):
+                        policy_performance = np.zeros(
+                            input_dict.n_eval_policies[behavior_policy][dataset_id]
+                        )
+                        estimated_ranking = estimation_dict[behavior_policy][estimator][
+                            estimation_dict_ranking_arg
+                        ]
+
+                        for i, eval_policy in enumerate(estimated_ranking):
+                            policy_performance[i] = true_dict[behavior_policy][
+                                eval_policy
+                            ]
+
+                        tmp_ranking_dict[estimator] = policy_performance
+
+                    ranking_dict[behavior_policy] = tmp_ranking_dict
+
+            elif behavior_policy_name is not None and dataset_id is None:
+
+                ranking_dict = []
+                for dataset_id_ in range(input_dict.n_datasets[behavior_policy_name]):
+                    true_dict[dataset_id_] = dict(
+                        zip(
+                            true_dict[dataset_id_][true_dict_ranking_arg],
+                            true_dict[dataset_id_][true_dict_value_arg],
+                        )
+                    )
+
+                    tmp_ranking_dict = dict()
+                    for i, estimator in enumerate(compared_estimators):
+                        policy_performance = np.zeros(
+                            input_dict.n_eval_policies[behavior_policy_name][
+                                dataset_id_
+                            ]
+                        )
+                        estimated_ranking = estimation_dict[dataset_id_][estimator][
+                            estimation_dict_ranking_arg
+                        ]
+
+                        for i, eval_policy in enumerate(estimated_ranking):
+                            policy_performance[i] = true_dict[dataset_id_][eval_policy]
+
+                        tmp_ranking_dict[estimator] = policy_performance
+
+                    ranking_dict.append(tmp_ranking_dict)
+
+            else:
+                true_dict = dict(
+                    zip(
+                        true_dict[true_dict_ranking_arg],
+                        true_dict[true_dict_value_arg],
+                    )
+                )
+
+                ranking_dict = dict()
+                for i, estimator in enumerate(compared_estimators):
+                    policy_performance = np.zeros(
+                        input_dict.n_eval_policies[behavior_policy_name][dataset_id]
+                    )
+                    estimated_ranking = estimation_dict[estimator][
+                        estimation_dict_ranking_arg
+                    ]
+
+                    for i, eval_policy in enumerate(estimated_ranking):
+                        policy_performance[i] = true_dict[eval_policy]
+
+                    ranking_dict[estimator] = policy_performance
+
+        else:
+            true_dict = dict(
+                zip(
+                    true_dict[true_dict_ranking_arg],
+                    true_dict[true_dict_value_arg],
+                )
+            )
+
+            ranking_dict = dict()
+            for i, estimator in enumerate(compared_estimators):
+                policy_performance = np.zeros((len(input_dict),))
+                estimated_ranking = estimation_dict[estimator][
+                    estimation_dict_ranking_arg
+                ]
+
+                for i, eval_policy in enumerate(estimated_ranking):
+                    policy_performance[i] = true_dict[eval_policy]
+
+                ranking_dict[estimator] = policy_performance
+
+        metric_dict = defaultdict(dict)
+        if isinstance(input_dict, MultipleInputDict):
+
+            if behavior_policy_name is None and dataset_id is None:
+
+                for i, estimator in enumerate(compared_estimators):
+                    for j, metric in enumerate(metrics):
+
+                        n_datasets = input_dict.n_datasets
+                        total_n_datasets = 0
+
+                        for n_datasets_ in n_datasets.values():
+                            total_n_datasets += n_datasets_
+
+                        topk_metric = np.zeros((max_topk, total_n_datasets))
+
+                        for topk in range(max_topk):
+
+                            l = 0
+                            for behavior_policy in input_dict.behavior_policy_names:
+                                for dataset_id_ in range(n_datasets[behavior_policy]):
+
+                                    topk_values = ranking_dict[behavior_policy][
+                                        dataset_id_
+                                    ][estimator][: topk + 1]
+
+                                    if metric == "k-th":
+                                        topk_metric[topk, l] = topk_values[-1]
+                                    elif metric == "best":
+                                        topk_metric[topk, l] = topk_values.max()
+                                    elif metric == "worst":
+                                        topk_metric[topk, l] = topk_values.min()
+                                    elif metric == "mean":
+                                        topk_metric[topk, l] = topk_values.mean()
+                                    else:
+                                        topk_metric[topk, l] = (
+                                            topk_values < safety_threshold
+                                        ).sum() / (topk + 1)
+
+                                    l += 1
+
+                        metric_dict[estimator][metric] = topk_metric
+
+            elif behavior_policy_name is None and dataset_id is not None:
+
+                for i, estimator in enumerate(compared_estimators):
+                    for j, metric in enumerate(metrics):
+
+                        total_n_datasets = len(input_dict.behavior_policy_names)
+                        topk_metric = np.zeros((max_topk, total_n_datasets))
+
+                        for topk in range(max_topk):
+                            for l, behavior_policy in enumerate(
+                                input_dict.behavior_policy_names
+                            ):
+
+                                topk_values = ranking_dict[behavior_policy][dataset_id][
+                                    estimator
+                                ][: topk + 1]
+
+                                if metric == "k-th":
+                                    topk_metric[topk, l] = topk_values[-1]
+                                elif metric == "best":
+                                    topk_metric[topk, l] = topk_values.max()
+                                elif metric == "worst":
+                                    topk_metric[topk, l] = topk_values.min()
+                                elif metric == "mean":
+                                    topk_metric[topk, l] = topk_values.mean()
+                                else:
+                                    topk_metric[topk, l] = (
+                                        topk_values < safety_threshold
+                                    ).sum() / (topk + 1)
+
+                        metric_dict[estimator][metric] = topk_metric
+
+            elif behavior_policy_name is not None and dataset_id is None:
+
+                for i, estimator in enumerate(compared_estimators):
+                    for j, metric in enumerate(metrics):
+
+                        total_n_datasets = input_dict.n_datasets[behavior_policy_name]
+                        topk_metric = np.zeros((max_topk, total_n_datasets))
+
+                        for topk in range(max_topk):
+                            for l in range(total_n_datasets):
+
+                                topk_values = ranking_dict[l][
+                                    estimator
+                                ][: topk + 1]
+
+                                if metric == "k-th":
+                                    topk_metric[topk, l] = topk_values[-1]
+                                elif metric == "best":
+                                    topk_metric[topk, l] = topk_values.max()
+                                elif metric == "worst":
+                                    topk_metric[topk, l] = topk_values.min()
+                                elif metric == "mean":
+                                    topk_metric[topk, l] = topk_values.mean()
+                                else:
+                                    topk_metric[topk, l] = (
+                                        topk_values < safety_threshold
+                                    ).sum() / (topk + 1)
+
+                        metric_dict[estimator][metric] = topk_metric
+
+            else:
+                for i, estimator in enumerate(compared_estimators):
+                    for j, metric in enumerate(metrics):
+
+                        total_n_datasets = 1
+                        topk_metric = np.zeros((max_topk, total_n_datasets))
+
+                        for topk in range(max_topk):
+
+                            topk_values = ranking_dict[estimator][: topk + 1]
+
+                            if metric == "k-th":
+                                topk_metric[topk, 0] = topk_values[-1]
+                            elif metric == "best":
+                                topk_metric[topk, 0] = topk_values.max()
+                            elif metric == "worst":
+                                topk_metric[topk, 0] = topk_values.min()
+                            elif metric == "mean":
+                                topk_metric[topk, 0] = topk_values.mean()
+                            else:
+                                topk_metric[topk, 0] = (
+                                    topk_values < safety_threshold
+                                ).sum() / (topk + 1)
+
+                        metric_dict[estimator][metric] = topk_metric
+
+        else:
+            for i, estimator in enumerate(compared_estimators):
+                for j, metric in enumerate(metrics):
+
+                    topk_metric = np.zeros((max_topk, 1))
+
+                    for topk in range(max_topk):
+
+                        topk_values = ranking_dict[estimator][: topk + 1]
+
+                        if metric == "k-th":
+                            topk_metric[topk, 0] = topk_values[-1]
+                        elif metric == "best":
+                            topk_metric[topk, 0] = topk_values.max()
+                        elif metric == "worst":
+                            topk_metric[topk, 0] = topk_values.min()
+                        elif metric == "mean":
+                            topk_metric[topk, 0] = topk_values.mean()
+                        else:
+                            topk_metric[topk, 0] = (
+                                topk_values < safety_threshold
+                            ).sum() / (topk + 1)
+
+                    metric_dict[estimator][metric] = topk_metric
+
+        metric_dict = defaultdict_to_dict(metric_dict)
+
+        if isinstance(input_dict, MultipleInputDict):
+
+            min_vals = np.zeros(total_n_datasets)
+            max_vals = np.zeros(total_n_datasets)
+
+            if behavior_policy_name is None and dataset_id is None:
+
+                l = 0
+                for behavior_policy, n_datasets in input_dict.n_datasets.items():
+                    for dataset_id_ in range(n_datasets):
+                        min_vals[l] = ranking_dict[behavior_policy][dataset_id_][
+                            estimator
+                        ].min()
+                        max_vals[l] = ranking_dict[behavior_policy][dataset_id_][
+                            estimator
+                        ].max()
+                        l += 1
+
+            elif behavior_policy_name is None and dataset_id is not None:
+                for l, behavior_policy in enumerate(input_dict.behavior_policy_names):
+                    min_vals[l] = ranking_dict[behavior_policy][estimator].min()
+                    max_vals[l] = ranking_dict[behavior_policy][estimator].max()
+
+            elif behavior_policy_name is not None and dataset_id is None:
+                for l in range(total_n_datasets):
+                    min_vals[l] = ranking_dict[l][estimator].min()
+                    max_vals[l] = ranking_dict[l][estimator].max()
+
+            else:
+                min_vals[0] = ranking_dict[estimator].min()
+                max_vals[0] = ranking_dict[estimator].max()
+
+            min_val = min_vals.mean()
+            max_val = max_vals.mean()
+
+        else:
+            min_val = ranking_dict[estimator].min()
+            max_val = ranking_dict[estimator].max()
+
+        yaxis_min_val = (
+            min_val if safety_threshold is None else min(min_val, safety_threshold)
+        )
+        yaxis_max_val = (
+            max_val if safety_threshold is None else max(max_val, safety_threshold)
+        )
+        margin = (yaxis_max_val - yaxis_min_val) * 0.05
+
+        plt.style.use("ggplot")
+        color = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+        n_colors = len(color)
+
+        n_figs = len(metrics)
+
+        fig, axes = plt.subplots(
+            nrows=1,
+            ncols=n_figs,
+            figsize=(6 * n_figs, 4),
+        )
+
+        for j, metric in enumerate(metrics):
+
+            for i, estimator in enumerate(compared_estimators):
+                axes[j].plot(
+                    np.arange(1, max_topk + 1),
+                    metric_dict[estimator][metric].mean(axis=1),
+                    color=color[i % n_colors],
+                    marker=markers[i],
+                    label=estimator,
+                )
+
+                if visualize_ci:
+                    lower = np.zeros(max_topk)
+                    upper = np.zeros(max_topk)
+
+                    for topk in range(max_topk):
+                        ci_ = self._estimate_confidence_interval[ci](
+                            metric_dict[estimator][metric][topk],
+                            alpha=alpha,
+                            n_bootstrap_samples=n_bootstrap_samples,
+                            random_state=random_state,
+                        )
+                        lower[topk] = ci_[f"{100 * (1. - alpha)}% CI (lower)"]
+                        upper[topk] = ci_[f"{100 * (1. - alpha)}% CI (upper)"]
+
+                    axes[j].fill_between(
+                        np.arange(1, max_topk + 1),
+                        lower,
+                        upper,
+                        color=color[i % n_colors],
+                        alpha=0.3,
+                    )
+
+            if metric in ["k-th", "best", "worst", "mean"]:
+                if safety_threshold is not None:
+                    axes[j].plot(
+                        np.arange(1, max_topk + 1),
+                        np.full(max_topk, safety_threshold),
+                        color=dkred,
+                        label="safety threshold",
+                    )
+                    axes[j].plot(
+                        np.arange(1, max_topk + 1),
+                        np.full(max_topk, max_val),
+                        color="black",
+                        linewidth=0.5,
+                    )
+                    axes[j].plot(
+                        np.arange(1, max_topk + 1),
+                        np.full(max_topk, min_val),
+                        color="black",
+                        linewidth=0.5,
+                    )
+
+                axes[j].set_title(f"{metric}")
+                axes[j].set_ylabel(f"{metric} {ylabel}")
+                axes[j].set_ylim(yaxis_min_val - margin, yaxis_max_val + margin)
+
+            else:
+                axes[j].set_title("safety violation")
+                axes[j].set_ylabel("safety violation rate")
+                axes[j].set_ylim(-0.05, 1.05)
+
+            axes[j].set_xlabel("# of policies deployed")
+
+            if legend:
+                axes[j].legend(loc="upper right")
+
+        if legend:
+            handles, labels = axes[0].get_legend_handles_labels()
+            # n_cols shows err
+            # fig.legend(handles, labels, loc='upper center', bbox_to_anchor=(0.5, -0.1), n_cols=min(len(labels), 6))
+
+        fig.subplots_adjust(hspace=0.35, wspace=0.2)
+        plt.show()
+
+        if fig_dir:
+            fig.savefig(str(fig_dir / fig_name), dpi=300, bbox_inches="tight")
+
     def visualize_topk_policy_value_selected_by_standard_ope(
         self,
         input_dict: Union[OPEInputDict, MultipleInputDict],
         compared_estimators: Optional[List[str]] = None,
-        dataset_id: Optional[Union[int, str]] = None,
+        behavior_policy_name: Optional[str] = None,
+        dataset_id: Optional[int] = None,
         metrics: List[str] = ["k-th", "best", "worst", "mean", "safety_violation_rate"],
         max_topk: Optional[int] = None,
         safety_criteria: Optional[float] = None,
@@ -4188,7 +5629,7 @@ class OffPolicySelection:
 
             .. code-block:: python
 
-                key: [evaluation_policy_name][
+                key: [evaluation_policy][
                     evaluation_policy_action,
                     evaluation_policy_action_dist,
                     state_action_value_prediction,
@@ -4197,6 +5638,9 @@ class OffPolicySelection:
                     state_marginal_importance_weight,
                     on_policy_policy_value,
                     gamma,
+                    behavior_policy,
+                    evaluation_policy,
+                    dataset_id,
                 ]
 
             .. seealso::
@@ -4207,8 +5651,11 @@ class OffPolicySelection:
             Name of compared estimators.
             When `None` is given, all the estimators are compared.
 
-        dataset_id: int or str, default=None
-            Id (or name) of the logged dataset.
+        behavior_policy_name: str, default=None
+            Name of the behavior policy.
+
+        dataset_id: int, default=None
+            Id of the logged dataset.
             If `None`, the average of the result will be shown.
 
         metrics: list of {"k-th", "best", "worst", "mean", "safety_violation_rate"}, default=["k-th", "best", "worst", "mean", "safety_violation_rate"]
@@ -4249,252 +5696,61 @@ class OffPolicySelection:
             Name of the bar figure.
 
         """
-        if self.ope is None:
-            raise RuntimeError(
-                "ope is not given. Please initialize the class with ope attribute"
-            )
-        if compared_estimators is None:
-            compared_estimators = self.estimators_name["standard_ope"]
-        elif not set(compared_estimators).issubset(
-            self.estimators_name["standard_ope"]
-        ):
-            raise ValueError(
-                "compared_estimators must be a subset of self.estimators_name['standard_ope'], but found False."
-            )
-        for metric in metrics:
-            if metric not in ["k-th", "best", "worst", "mean", "safety_violation_rate"]:
-                raise ValueError(
-                    f"The elements of metrics must be one of 'k-th', 'best', 'worst', 'mean', or 'safety_violation_rate', but {metric} is given."
-                )
+        compared_estimators = self._check_compared_estimators(
+            compared_estimators, ope_type="standard_ope"
+        )
+        max_topk, safety_threshold = self._check_topk_visualization_inputs(
+            input_dict=input_dict,
+            behavior_policy_name=behavior_policy_name,
+            dataset_id=dataset_id,
+            max_topk=max_topk,
+            metrics=metrics,
+            safety_criteria=safety_criteria,
+        )
+        self._check_basic_visualization_inputs(fig_dir=fig_dir, fig_name=fig_name)
 
-        if max_topk is None:
-            if isinstance(input_dict, MultipleInputDict):
-                if dataset_id is None:
-                    max_topk = input_dict.n_eval_policies.min()
-                else:
-                    max_topk = input_dict.n_eval_policies[dataset_id]
-            else:
-                max_topk = len(input_dict)
-        else:
-            check_scalar(max_topk, name="max_topk", target_type=int, min_val=1)
-            if isinstance(input_dict, MultipleInputDict):
-                if dataset_id is None:
-                    max_topk = min(max_topk, input_dict.n_eval_policies.min())
-                else:
-                    max_topk = min(max_topk, input_dict.n_eval_policies[dataset_id])
-            else:
-                max_topk = min(max_topk, len(input_dict))
-
-        max_topk = int(max_topk)
-
-        if "safety_violation_rate" in metrics:
-            safety_criteria = 0.0 if safety_criteria is None else safety_criteria
-
-        if safety_criteria is not None:
-            check_scalar(
-                safety_criteria, name="safety_criteria", target_type=float, min_val=0.0
-            )
-            safety_threshold = safety_criteria * self.behavior_policy_value
-        else:
-            safety_threshold = None
-
-        if fig_dir is not None and not isinstance(fig_dir, Path):
-            raise ValueError(f"fig_dir must be a Path, but {type(fig_dir)} is given")
-        if fig_name is not None and not isinstance(fig_name, str):
-            raise ValueError(f"fig_dir must be a string, but {type(fig_dir)} is given")
-
-        policy_value_dict = self.select_by_policy_value(
+        true_dict = self.obtain_true_selection_result(
+            input_dict,
+            behavior_policy_name=behavior_policy_name,
+            dataset_id=dataset_id,
+        )
+        estimation_dict = self.select_by_policy_value(
             input_dict,
             compared_estimators=compared_estimators,
+            behavior_policy_name=behavior_policy_name,
             dataset_id=dataset_id,
-            return_true_values=True,
         )
 
-        metric_dict = defaultdict(lambda: defaultdict(np.ndarray))
-
-        if dataset_id is None and isinstance(input_dict, MultipleInputDict):
-            n_datasets = len(input_dict)
-
-            for i, estimator in enumerate(compared_estimators):
-                for j, metric in enumerate(metrics):
-                    topk_metric = np.zeros((max_topk, n_datasets))
-
-                    for topk in range(max_topk):
-                        for l in range(n_datasets):
-                            topk_values = policy_value_dict[l][estimator][
-                                "true_policy_value"
-                            ][: topk + 1]
-
-                            if metric == "k-th":
-                                topk_metric[topk, l] = topk_values[-1]
-                            elif metric == "best":
-                                topk_metric[topk, l] = topk_values.max()
-                            elif metric == "worst":
-                                topk_metric[topk, l] = topk_values.min()
-                            elif metric == "mean":
-                                topk_metric[topk, l] = topk_values.mean()
-                            else:
-                                topk_metric[topk, l] = (
-                                    topk_values < safety_threshold
-                                ).sum() / (topk + 1)
-
-                    metric_dict[estimator][metric] = topk_metric
-
-        else:
-            for i, estimator in enumerate(compared_estimators):
-                for j, metric in enumerate(metrics):
-
-                    topk_metric = np.zeros(max_topk)
-                    for topk in range(max_topk):
-                        topk_values = policy_value_dict[estimator]["true_policy_value"][
-                            : topk + 1
-                        ]
-
-                        if metric == "k-th":
-                            topk_metric[topk] = topk_values[-1]
-                        elif metric == "best":
-                            topk_metric[topk] = topk_values.max()
-                        elif metric == "worst":
-                            topk_metric[topk] = topk_values.min()
-                        elif metric == "mean":
-                            topk_metric[topk] = topk_values.mean()
-                        else:
-                            topk_metric[topk] = (
-                                topk_values < safety_threshold
-                            ).sum() / (topk + 1)
-
-                    metric_dict[estimator][metric] = topk_metric
-
-        metric_dict = defaultdict_to_dict(metric_dict)
-
-        if dataset_id is None and isinstance(input_dict, MultipleInputDict):
-            min_vals = np.zeros(n_datasets)
-            max_vals = np.zeros(n_datasets)
-
-            for l in range(n_datasets):
-                min_vals[l] = policy_value_dict[l][estimator]["true_policy_value"].min()
-                max_vals[l] = policy_value_dict[l][estimator]["true_policy_value"].max()
-
-            min_val = min_vals.mean()
-            max_val = max_vals.mean()
-
-        else:
-            min_val = policy_value_dict[estimator]["true_policy_value"].min()
-            max_val = policy_value_dict[estimator]["true_policy_value"].max()
-
-        yaxis_min_val = (
-            min_val if safety_threshold is None else min(min_val, safety_threshold)
+        self._visualize_topk_policy_performance(
+            true_dict=true_dict,
+            estimation_dict=estimation_dict,
+            input_dict=input_dict,
+            true_dict_ranking_arg="ranking",
+            true_dict_value_arg="policy_value",
+            estimation_dict_ranking_arg="estimated_ranking",
+            compared_estimators=compared_estimators,
+            behavior_policy_name=behavior_policy_name,
+            dataset_id=dataset_id,
+            metrics=metrics,
+            max_topk=max_topk,
+            safety_threshold=safety_threshold,
+            visualize_ci=visualize_ci,
+            ci=plot_ci,
+            alpha=plot_alpha,
+            n_bootstrap_samples=plot_n_bootstrap_samples,
+            random_state=random_state,
+            legend=legend,
+            ylabel="policy value",
+            fig_dir=fig_dir,
+            fig_name=fig_name,
         )
-        yaxis_max_val = (
-            max_val if safety_threshold is None else max(max_val, safety_threshold)
-        )
-        margin = (yaxis_max_val - yaxis_min_val) * 0.05
-
-        plt.style.use("ggplot")
-        color = plt.rcParams["axes.prop_cycle"].by_key()["color"]
-        n_colors = len(color)
-
-        n_figs = len(metrics)
-
-        fig, axes = plt.subplots(
-            nrows=1,
-            ncols=n_figs,
-            figsize=(6 * n_figs, 4),
-        )
-
-        for j, metric in enumerate(metrics):
-
-            for i, estimator in enumerate(compared_estimators):
-                if dataset_id is None and isinstance(input_dict, MultipleInputDict):
-                    axes[j].plot(
-                        np.arange(1, max_topk + 1),
-                        metric_dict[estimator][metric].mean(axis=1),
-                        color=color[i % n_colors],
-                        marker=markers[i],
-                        label=estimator,
-                    )
-
-                    if visualize_ci:
-                        lower = np.zeros(max_topk)
-                        upper = np.zeros(max_topk)
-
-                        for topk in range(max_topk):
-                            ci = self._estimate_confidence_interval[plot_ci](
-                                metric_dict[estimator][metric][topk],
-                                alpha=plot_alpha,
-                                n_bootstrap_samples=plot_n_bootstrap_samples,
-                                random_state=random_state,
-                            )
-                            lower[topk] = ci[f"{100 * (1. - plot_alpha)}% CI (lower)"]
-                            upper[topk] = ci[f"{100 * (1. - plot_alpha)}% CI (upper)"]
-
-                        axes[j].fill_between(
-                            np.arange(1, max_topk + 1),
-                            lower,
-                            upper,
-                            color=color[i % n_colors],
-                            alpha=0.3,
-                        )
-
-                else:
-                    axes[j].plot(
-                        np.arange(1, max_topk + 1),
-                        metric_dict[estimator][metric],
-                        marker=markers[i],
-                        label=estimator,
-                    )
-
-            if metric in ["k-th", "best", "worst", "mean"]:
-                if safety_threshold is not None:
-                    axes[j].plot(
-                        np.arange(1, max_topk + 1),
-                        np.full(max_topk, safety_threshold),
-                        color=dkred,
-                        label="safety threshold",
-                    )
-                    axes[j].plot(
-                        np.arange(1, max_topk + 1),
-                        np.full(max_topk, max_val),
-                        color="black",
-                        linewidth=0.5,
-                    )
-                    axes[j].plot(
-                        np.arange(1, max_topk + 1),
-                        np.full(max_topk, min_val),
-                        color="black",
-                        linewidth=0.5,
-                    )
-
-                axes[j].set_title(f"{metric}")
-                axes[j].set_ylabel(f"{metric} policy value")
-                axes[j].set_ylim(yaxis_min_val - margin, yaxis_max_val + margin)
-
-            else:
-                axes[j].set_title("safety violation")
-                axes[j].set_ylabel("safety violation rate")
-                axes[j].set_ylim(-0.05, 1.05)
-
-            axes[j].set_xlabel("# of policies deployed")
-
-            if legend:
-                axes[j].legend(loc="upper right")
-
-        if legend:
-            handles, labels = axes[0].get_legend_handles_labels()
-            # n_cols shows err
-            # fig.legend(handles, labels, loc='upper center', bbox_to_anchor=(0.5, -0.1), n_cols=min(len(labels), 6))
-
-        fig.subplots_adjust(hspace=0.35, wspace=0.2)
-        plt.show()
-
-        if fig_dir:
-            fig.savefig(str(fig_dir / fig_name), dpi=300, bbox_inches="tight")
 
     def visualize_topk_policy_value_selected_by_cumulative_distribution_ope(
         self,
         input_dict: Union[OPEInputDict, MultipleInputDict],
         compared_estimators: Optional[List[str]] = None,
-        dataset_id: Optional[Union[int, str]] = None,
+        behavior_policy_name: Optional[str] = None,
+        dataset_id: Optional[int] = None,
         metrics: List[str] = ["k-th", "best", "worst", "mean", "safety_violation_rate"],
         max_topk: Optional[int] = None,
         safety_criteria: Optional[float] = None,
@@ -4516,7 +5772,7 @@ class OffPolicySelection:
 
             .. code-block:: python
 
-                key: [evaluation_policy_name][
+                key: [evaluation_policy][
                     evaluation_policy_action,
                     evaluation_policy_action_dist,
                     state_action_value_prediction,
@@ -4525,6 +5781,9 @@ class OffPolicySelection:
                     state_marginal_importance_weight,
                     on_policy_policy_value,
                     gamma,
+                    behavior_policy,
+                    evaluation_policy,
+                    dataset_id,
                 ]
 
             .. seealso::
@@ -4535,8 +5794,11 @@ class OffPolicySelection:
             Name of compared estimators.
             When `None` is given, all the estimators are compared.
 
-        dataset_id: int or str, default=None
-            Id (or name) of the logged dataset.
+        behavior_policy_name: str, default=None
+            Name of the behavior policy.
+
+        dataset_id: int, default=None
+            Id of the logged dataset.
             If `None`, the average of the result will be shown.
 
         metrics: list of {"k-th", "best", "worst", "mean", "safety_violation_rate"}, default=["k-th", "best", "worst", "mean", "safety_violation_rate"]
@@ -4577,252 +5839,61 @@ class OffPolicySelection:
             Name of the bar figure.
 
         """
-        if self.cumulative_distribution_ope is None:
-            raise RuntimeError(
-                "cumulative_distribution_ope is not given. Please initialize the class with cumulative_distribution_ope attribute"
-            )
-        if compared_estimators is None:
-            compared_estimators = self.estimators_name["cumulative_distribution_ope"]
-        elif not set(compared_estimators).issubset(
-            self.estimators_name["cumulative_distribution_ope"]
-        ):
-            raise ValueError(
-                "compared_estimators must be a subset of self.estimators_name['cumulative_distribution_ope'], but found False."
-            )
-        for metric in metrics:
-            if metric not in ["k-th", "best", "worst", "mean", "safety_violation_rate"]:
-                raise ValueError(
-                    f"the elements of metrics must be one of 'k-th', 'best', 'worst', 'mean', or 'safety_violation_rate', but {metric} is given"
-                )
+        compared_estimators = self._check_compared_estimators(
+            compared_estimators, ope_type="cumulative_distribution_ope"
+        )
+        max_topk, safety_threshold = self._check_topk_visualization_inputs(
+            input_dict=input_dict,
+            behavior_policy_name=behavior_policy_name,
+            dataset_id=dataset_id,
+            max_topk=max_topk,
+            metrics=metrics,
+            safety_criteria=safety_criteria,
+        )
+        self._check_basic_visualization_inputs(fig_dir=fig_dir, fig_name=fig_name)
 
-        if max_topk is None:
-            if isinstance(input_dict, MultipleInputDict):
-                if dataset_id is None:
-                    max_topk = input_dict.n_eval_policies.min()
-                else:
-                    max_topk = input_dict.n_eval_policies[dataset_id]
-            else:
-                max_topk = len(input_dict)
-        else:
-            check_scalar(max_topk, name="max_topk", target_type=int, min_val=1)
-            if isinstance(input_dict, MultipleInputDict):
-                if dataset_id is None:
-                    max_topk = min(max_topk, input_dict.n_eval_policies.min())
-                else:
-                    max_topk = min(max_topk, input_dict.n_eval_policies[dataset_id])
-            else:
-                max_topk = min(max_topk, len(input_dict))
-
-        max_topk = int(max_topk)
-
-        if "safety_violation_rate" in metrics:
-            safety_criteria = 0.0 if safety_criteria is None else safety_criteria
-
-        if safety_criteria is not None:
-            check_scalar(
-                safety_criteria, name="safety_criteria", target_type=float, min_val=0.0
-            )
-            safety_threshold = safety_criteria * self.behavior_policy_value
-        else:
-            safety_threshold = None
-
-        if fig_dir is not None and not isinstance(fig_dir, Path):
-            raise ValueError(f"fig_dir must be a Path, but {type(fig_dir)} is given")
-        if fig_name is not None and not isinstance(fig_name, str):
-            raise ValueError(f"fig_dir must be a string, but {type(fig_dir)} is given")
-
-        policy_value_dict = self.select_by_policy_value_via_cumulative_distribution_ope(
+        true_dict = self.obtain_true_selection_result(
+            input_dict,
+            behavior_policy_name=behavior_policy_name,
+            dataset_id=dataset_id,
+        )
+        estimation_dict = self.select_by_policy_value_via_cumulative_distribution_ope(
             input_dict,
             compared_estimators=compared_estimators,
+            behavior_policy_name=behavior_policy_name,
             dataset_id=dataset_id,
-            return_true_values=True,
         )
 
-        metric_dict = defaultdict(lambda: defaultdict(np.ndarray))
-
-        if dataset_id is None and isinstance(input_dict, MultipleInputDict):
-            n_datasets = len(input_dict)
-
-            for i, estimator in enumerate(compared_estimators):
-                for j, metric in enumerate(metrics):
-                    topk_metric = np.zeros((max_topk, n_datasets))
-
-                    for topk in range(max_topk):
-                        for l in range(n_datasets):
-                            topk_values = policy_value_dict[l][estimator][
-                                "true_policy_value"
-                            ][: topk + 1]
-
-                            if metric == "k-th":
-                                topk_metric[topk, l] = topk_values[-1]
-                            elif metric == "best":
-                                topk_metric[topk, l] = topk_values.max()
-                            elif metric == "worst":
-                                topk_metric[topk, l] = topk_values.min()
-                            elif metric == "mean":
-                                topk_metric[topk, l] = topk_values.mean()
-                            else:
-                                topk_metric[topk, l] = (
-                                    topk_values < safety_threshold
-                                ).sum() / (topk + 1)
-
-                    metric_dict[estimator][metric] = topk_metric
-
-        else:
-            for i, estimator in enumerate(compared_estimators):
-                for j, metric in enumerate(metrics):
-
-                    topk_metric = np.zeros(max_topk)
-                    for topk in range(max_topk):
-                        topk_values = policy_value_dict[estimator]["true_policy_value"][
-                            : topk + 1
-                        ]
-
-                        if metric == "k-th":
-                            topk_metric[topk] = topk_values[-1]
-                        elif metric == "best":
-                            topk_metric[topk] = topk_values.max()
-                        elif metric == "worst":
-                            topk_metric[topk] = topk_values.min()
-                        elif metric == "mean":
-                            topk_metric[topk] = topk_values.mean()
-                        else:
-                            topk_metric[topk] = (
-                                topk_values < safety_threshold
-                            ).sum() / (topk + 1)
-
-                    metric_dict[estimator][metric] = topk_metric
-
-        metric_dict = defaultdict_to_dict(metric_dict)
-
-        if dataset_id is None and isinstance(input_dict, MultipleInputDict):
-            min_vals = np.zeros(n_datasets)
-            max_vals = np.zeros(n_datasets)
-
-            for l in range(n_datasets):
-                min_vals[l] = policy_value_dict[l][estimator]["true_policy_value"].min()
-                max_vals[l] = policy_value_dict[l][estimator]["true_policy_value"].max()
-
-            min_val = min_vals.mean()
-            max_val = max_vals.mean()
-
-        else:
-            min_val = policy_value_dict[estimator]["true_policy_value"].min()
-            max_val = policy_value_dict[estimator]["true_policy_value"].max()
-
-        yaxis_min_val = (
-            min_val if safety_threshold is None else min(min_val, safety_threshold)
+        self._visualize_topk_policy_performance(
+            true_dict=true_dict,
+            estimation_dict=estimation_dict,
+            input_dict=input_dict,
+            true_dict_ranking_arg="ranking",
+            true_dict_value_arg="policy_value",
+            estimation_dict_ranking_arg="estimated_ranking",
+            compared_estimators=compared_estimators,
+            behavior_policy_name=behavior_policy_name,
+            dataset_id=dataset_id,
+            metrics=metrics,
+            max_topk=max_topk,
+            safety_threshold=safety_threshold,
+            visualize_ci=visualize_ci,
+            ci=plot_ci,
+            alpha=plot_alpha,
+            n_bootstrap_samples=plot_n_bootstrap_samples,
+            random_state=random_state,
+            legend=legend,
+            ylabel="policy value",
+            fig_dir=fig_dir,
+            fig_name=fig_name,
         )
-        yaxis_max_val = (
-            max_val if safety_threshold is None else max(max_val, safety_threshold)
-        )
-        margin = (yaxis_max_val - yaxis_min_val) * 0.05
-
-        plt.style.use("ggplot")
-        color = plt.rcParams["axes.prop_cycle"].by_key()["color"]
-        n_colors = len(color)
-
-        n_figs = len(metrics)
-
-        fig, axes = plt.subplots(
-            nrows=1,
-            ncols=n_figs,
-            figsize=(6 * n_figs, 4),
-        )
-
-        for j, metric in enumerate(metrics):
-
-            for i, estimator in enumerate(compared_estimators):
-                if dataset_id is None and isinstance(input_dict, MultipleInputDict):
-                    axes[j].plot(
-                        np.arange(1, max_topk + 1),
-                        metric_dict[estimator][metric].mean(axis=1),
-                        color=color[i % n_colors],
-                        marker=markers[i],
-                        label=estimator,
-                    )
-
-                    if visualize_ci:
-                        lower = np.zeros(max_topk)
-                        upper = np.zeros(max_topk)
-
-                        for topk in range(max_topk):
-                            ci = self._estimate_confidence_interval[plot_ci](
-                                metric_dict[estimator][metric][topk],
-                                alpha=plot_alpha,
-                                n_bootstrap_samples=plot_n_bootstrap_samples,
-                                random_state=random_state,
-                            )
-                            lower[topk] = ci[f"{100 * (1. - plot_alpha)}% CI (lower)"]
-                            upper[topk] = ci[f"{100 * (1. - plot_alpha)}% CI (upper)"]
-
-                        axes[j].fill_between(
-                            np.arange(1, max_topk + 1),
-                            lower,
-                            upper,
-                            color=color[i % n_colors],
-                            alpha=0.3,
-                        )
-
-                else:
-                    axes[j].plot(
-                        np.arange(1, max_topk + 1),
-                        metric_dict[estimator][metric],
-                        marker=markers[i],
-                        label=estimator,
-                    )
-
-            if metric in ["k-th", "best", "worst", "mean"]:
-                if safety_threshold is not None:
-                    axes[j].plot(
-                        np.arange(1, max_topk + 1),
-                        np.full(max_topk, safety_threshold),
-                        color=dkred,
-                        label="safety threshold",
-                    )
-                    axes[j].plot(
-                        np.arange(1, max_topk + 1),
-                        np.full(max_topk, max_val),
-                        color="black",
-                        linewidth=0.5,
-                    )
-                    axes[j].plot(
-                        np.arange(1, max_topk + 1),
-                        np.full(max_topk, min_val),
-                        color="black",
-                        linewidth=0.5,
-                    )
-
-                axes[j].set_title(f"{metric}")
-                axes[j].set_ylabel(f"{metric} policy value")
-                axes[j].set_ylim(yaxis_min_val - margin, yaxis_max_val + margin)
-
-            else:
-                axes[j].set_title("safety violation")
-                axes[j].set_ylabel("safety violation rate")
-                axes[j].set_ylim(-0.05, 1.05)
-
-            axes[j].set_xlabel("# of policies deployed")
-
-            if legend:
-                axes[j].legend(loc="upper right")
-
-        if legend:
-            handles, labels = axes[0].get_legend_handles_labels()
-            # n_cols shows err
-            # fig.legend(handles, labels, loc='upper center', bbox_to_anchor=(0.5, -0.1), n_cols=min(len(labels), 6))
-
-        fig.subplots_adjust(hspace=0.35, wspace=0.2)
-        plt.show()
-
-        if fig_dir:
-            fig.savefig(str(fig_dir / fig_name), dpi=300, bbox_inches="tight")
 
     def visualize_topk_policy_value_selected_by_lower_bound(
         self,
         input_dict: Union[OPEInputDict, MultipleInputDict],
         compared_estimators: Optional[List[str]] = None,
-        dataset_id: Optional[Union[int, str]] = None,
+        behavior_policy_name: Optional[str] = None,
+        dataset_id: Optional[int] = None,
         metrics: List[str] = ["k-th", "best", "worst", "mean", "safety_violation_rate"],
         max_topk: Optional[int] = None,
         safety_criteria: Optional[float] = None,
@@ -4847,7 +5918,7 @@ class OffPolicySelection:
 
             .. code-block:: python
 
-                key: [evaluation_policy_name][
+                key: [evaluation_policy][
                     evaluation_policy_action,
                     evaluation_policy_action_dist,
                     state_action_value_prediction,
@@ -4856,6 +5927,9 @@ class OffPolicySelection:
                     state_marginal_importance_weight,
                     on_policy_policy_value,
                     gamma,
+                    behavior_policy,
+                    evaluation_policy,
+                    dataset_id,
                 ]
 
             .. seealso::
@@ -4866,8 +5940,11 @@ class OffPolicySelection:
             Name of compared estimators.
             When `None` is given, all the estimators are compared.
 
-        dataset_id: int or str, default=None
-            Id (or name) of the logged dataset.
+        behavior_policy_name: str, default=None
+            Name of the behavior policy.
+
+        dataset_id: int, default=None
+            Id of the logged dataset.
             If `None`, the average of the result will be shown.
 
         metrics: list of {"k-th", "best", "worst", "mean", "safety_violation_rate"}, default=["k-th", "best", "worst", "mean", "safety_violation_rate"]
@@ -4917,63 +5994,23 @@ class OffPolicySelection:
             Name of the bar figure.
 
         """
-        if self.ope is None:
-            raise RuntimeError(
-                "ope is not given. Please initialize the class with ope attribute"
-            )
-        if compared_estimators is None:
-            compared_estimators = self.estimators_name["standard_ope"]
-        elif not set(compared_estimators).issubset(
-            self.estimators_name["standard_ope"]
-        ):
-            raise ValueError(
-                "compared_estimators must be a subset of self.estimators_name['standard_ope'], but found False."
-            )
-        for metric in metrics:
-            if metric not in ["k-th", "best", "worst", "mean", "safety_violation_rate"]:
-                raise ValueError(
-                    f"the elements of metrics must be one of 'k-th', 'best', 'worst', 'mean', or 'safety_violation_rate', but {metric} is given"
-                )
-
-        if max_topk is None:
-            if isinstance(input_dict, MultipleInputDict):
-                if dataset_id is None:
-                    max_topk = input_dict.n_eval_policies.min()
-                else:
-                    max_topk = input_dict.n_eval_policies[dataset_id]
-            else:
-                max_topk = len(input_dict)
-        else:
-            check_scalar(max_topk, name="max_topk", target_type=int, min_val=1)
-            if isinstance(input_dict, MultipleInputDict):
-                if dataset_id is None:
-                    max_topk = min(max_topk, input_dict.n_eval_policies.min())
-                else:
-                    max_topk = min(max_topk, input_dict.n_eval_policies[dataset_id])
-            else:
-                max_topk = min(max_topk, len(input_dict))
-
-        max_topk = int(max_topk)
-
-        if "safety_violation_rate" in metrics:
-            safety_criteria = 0.0 if safety_criteria is None else safety_criteria
-
-        if safety_criteria is not None:
-            check_scalar(
-                safety_criteria, name="safety_criteria", target_type=float, min_val=0.0
-            )
-            safety_threshold = safety_criteria * self.behavior_policy_value
-        else:
-            safety_threshold = None
-
-        if fig_dir is not None and not isinstance(fig_dir, Path):
-            raise ValueError(f"fig_dir must be a Path, but {type(fig_dir)} is given")
-        if fig_name is not None and not isinstance(fig_name, str):
-            raise ValueError(f"fig_dir must be a string, but {type(fig_dir)} is given")
+        compared_estimators = self._check_compared_estimators(
+            compared_estimators, ope_type="standard_ope"
+        )
+        max_topk, safety_threshold = self._check_topk_visualization_inputs(
+            input_dict=input_dict,
+            behavior_policy_name=behavior_policy_name,
+            dataset_id=dataset_id,
+            max_topk=max_topk,
+            metrics=metrics,
+            safety_criteria=safety_criteria,
+        )
+        self._check_basic_visualization_inputs(fig_dir=fig_dir, fig_name=fig_name)
 
         policy_value_dict = self.select_by_policy_value_lower_bound(
             input_dict,
             compared_estimators=compared_estimators,
+            behavior_policy_name=behavior_policy_name,
             dataset_id=dataset_id,
             return_true_values=True,
             cis=ope_cis,
@@ -4984,72 +6021,219 @@ class OffPolicySelection:
 
         metric_dict = defaultdict(lambda: defaultdict(dict))
 
-        if dataset_id is None and isinstance(input_dict, MultipleInputDict):
-            n_datasets = len(input_dict)
+        if isinstance(input_dict, MultipleInputDict):
 
-            for ci in ope_cis:
-                for i, estimator in enumerate(compared_estimators):
-                    for j, metric in enumerate(metrics):
-                        topk_metric = np.zeros((max_topk, n_datasets))
+            if behavior_policy_name is None and dataset_id is None:
 
-                        for topk in range(max_topk):
-                            for l in range(n_datasets):
-                                topk_values = policy_value_dict[l][ci][estimator][
+                for ope_ci in ope_cis:
+                    for i, estimator in enumerate(compared_estimators):
+                        for j, metric in enumerate(metrics):
+
+                            n_datasets = input_dict.n_datasets
+                            total_n_datasets = 0
+
+                            for n_datasets_ in n_datasets.values():
+                                total_n_datasets += n_datasets_
+
+                            topk_metric = np.zeros((max_topk, total_n_datasets))
+
+                            for topk in range(max_topk):
+
+                                l = 0
+                                for behavior_policy in input_dict.behavior_policy_names:
+                                    for dataset_id_ in range(
+                                        n_datasets[behavior_policy]
+                                    ):
+
+                                        topk_values = policy_value_dict[
+                                            behavior_policy
+                                        ][dataset_id_][ope_ci][estimator][
+                                            "true_policy_value"
+                                        ][
+                                            : topk + 1
+                                        ]
+
+                                        if metric == "k-th":
+                                            topk_metric[topk, l] = topk_values[-1]
+                                        elif metric == "best":
+                                            topk_metric[topk, l] = topk_values.max()
+                                        elif metric == "worst":
+                                            topk_metric[topk, l] = topk_values.min()
+                                        elif metric == "mean":
+                                            topk_metric[topk, l] = topk_values.mean()
+                                        else:
+                                            topk_metric[topk, l] = (
+                                                topk_values < safety_threshold
+                                            ).sum() / (topk + 1)
+
+                                        l += 1
+
+                            metric_dict[ope_ci][estimator][metric] = topk_metric
+
+            elif behavior_policy_name is None and dataset_id is not None:
+
+                for ope_ci in ope_cis:
+                    for i, estimator in enumerate(compared_estimators):
+                        for j, metric in enumerate(metrics):
+
+                            total_n_datasets = len(input_dict.behavior_policy_names)
+                            topk_metric = np.zeros((max_topk, total_n_datasets))
+
+                            for topk in range(max_topk):
+                                for l, behavior_policy in enumerate(
+                                    input_dict.behavior_policy_names
+                                ):
+
+                                    topk_values = policy_value_dict[behavior_policy][
+                                        ope_ci
+                                    ][estimator]["true_policy_value"][: topk + 1]
+
+                                    if metric == "k-th":
+                                        topk_metric[topk, l] = topk_values[-1]
+                                    elif metric == "best":
+                                        topk_metric[topk, l] = topk_values.max()
+                                    elif metric == "worst":
+                                        topk_metric[topk, l] = topk_values.min()
+                                    elif metric == "mean":
+                                        topk_metric[topk, l] = topk_values.mean()
+                                    else:
+                                        topk_metric[topk, l] = (
+                                            topk_values < safety_threshold
+                                        ).sum() / (topk + 1)
+
+                            metric_dict[ope_ci][estimator][metric] = topk_metric
+
+            elif behavior_policy_name is not None and dataset_id is None:
+
+                for ope_ci in ope_cis:
+                    for i, estimator in enumerate(compared_estimators):
+                        for j, metric in enumerate(metrics):
+
+                            total_n_datasets = input_dict.n_datasets[behavior_policy_name]
+                            topk_metric = np.zeros((max_topk, total_n_datasets))
+
+                            for topk in range(max_topk):
+                                for l in range(total_n_datasets):
+
+                                    topk_values = policy_value_dict[l][ope_ci][
+                                        estimator
+                                    ]["true_policy_value"][: topk + 1]
+
+                                    if metric == "k-th":
+                                        topk_metric[topk, l] = topk_values[-1]
+                                    elif metric == "best":
+                                        topk_metric[topk, l] = topk_values.max()
+                                    elif metric == "worst":
+                                        topk_metric[topk, l] = topk_values.min()
+                                    elif metric == "mean":
+                                        topk_metric[topk, l] = topk_values.mean()
+                                    else:
+                                        topk_metric[topk, l] = (
+                                            topk_values < safety_threshold
+                                        ).sum() / (topk + 1)
+
+                            metric_dict[ope_ci][estimator][metric] = topk_metric
+
+            else:
+                for ope_ci in ope_cis:
+                    for i, estimator in enumerate(compared_estimators):
+                        for j, metric in enumerate(metrics):
+
+                            total_n_datasets = 1
+                            topk_metric = np.zeros((max_topk, total_n_datasets))
+
+                            for topk in range(max_topk):
+
+                                topk_values = policy_value_dict[ope_ci][estimator][
                                     "true_policy_value"
                                 ][: topk + 1]
 
                                 if metric == "k-th":
-                                    topk_metric[topk, l] = topk_values[-1]
+                                    topk_metric[topk, 0] = topk_values[-1]
                                 elif metric == "best":
-                                    topk_metric[topk, l] = topk_values.max()
+                                    topk_metric[topk, 0] = topk_values.max()
                                 elif metric == "worst":
-                                    topk_metric[topk, l] = topk_values.min()
+                                    topk_metric[topk, 0] = topk_values.min()
                                 elif metric == "mean":
-                                    topk_metric[topk, l] = topk_values.mean()
+                                    topk_metric[topk, 0] = topk_values.mean()
                                 else:
-                                    topk_metric[topk, l] = (
+                                    topk_metric[topk, 0] = (
                                         topk_values < safety_threshold
                                     ).sum() / (topk + 1)
 
-                        metric_dict[ci][estimator][metric] = topk_metric
+                            metric_dict[ope_ci][estimator][metric] = topk_metric
 
         else:
-            for ci in ope_cis:
+            for ope_ci in ope_cis:
                 for i, estimator in enumerate(compared_estimators):
                     for j, metric in enumerate(metrics):
 
-                        topk_metric = np.zeros(max_topk)
+                        topk_metric = np.zeros((max_topk, 1))
+
                         for topk in range(max_topk):
-                            topk_values = policy_value_dict[ci][estimator][
+
+                            topk_values = policy_value_dict[ope_ci][estimator][
                                 "true_policy_value"
                             ][: topk + 1]
 
                             if metric == "k-th":
-                                topk_metric[topk] = topk_values[-1]
+                                topk_metric[topk, 0] = topk_values[-1]
                             elif metric == "best":
-                                topk_metric[topk] = topk_values.max()
+                                topk_metric[topk, 0] = topk_values.max()
                             elif metric == "worst":
-                                topk_metric[topk] = topk_values.min()
+                                topk_metric[topk, 0] = topk_values.min()
                             elif metric == "mean":
-                                topk_metric[topk] = topk_values.mean()
+                                topk_metric[topk, 0] = topk_values.mean()
                             else:
-                                topk_metric[topk] = (
+                                topk_metric[topk, 0] = (
                                     topk_values < safety_threshold
                                 ).sum() / (topk + 1)
 
-                        metric_dict[ci][estimator][metric] = topk_metric
+                        metric_dict[ope_ci][estimator][metric] = topk_metric
 
         metric_dict = defaultdict_to_dict(metric_dict)
 
-        if dataset_id is None and isinstance(input_dict, MultipleInputDict):
-            min_vals = np.zeros(n_datasets)
-            max_vals = np.zeros(n_datasets)
+        if isinstance(input_dict, MultipleInputDict):
 
-            for l in range(n_datasets):
-                min_vals[l] = policy_value_dict[l][ci][estimator][
+            min_vals = np.zeros(total_n_datasets)
+            max_vals = np.zeros(total_n_datasets)
+
+            if behavior_policy_name is None and dataset_id is None:
+
+                l = 0
+                for behavior_policy, n_datasets in input_dict.n_datasets.items():
+                    for dataset_id_ in range(n_datasets):
+                        min_vals[l] = policy_value_dict[behavior_policy][dataset_id_][
+                            ope_cis[0]
+                        ][estimator]["true_policy_value"].min()
+                        max_vals[l] = policy_value_dict[behavior_policy][dataset_id_][
+                            ope_cis[0]
+                        ][estimator]["true_policy_value"].max()
+                        l += 1
+
+            elif behavior_policy_name is None and dataset_id is not None:
+                for l, behavior_policy in enumerate(input_dict.behavior_policy_names):
+                    min_vals[l] = policy_value_dict[behavior_policy][
+                        ope_cis[0]
+                    ][estimator]["true_policy_value"].min()
+                    max_vals[l] = policy_value_dict[behavior_policy][
+                        ope_cis[0]
+                    ][estimator]["true_policy_value"].max()
+
+            elif behavior_policy_name is not None and dataset_id is None:
+                for l in range(total_n_datasets):
+                    min_vals[l] = policy_value_dict[l][ope_cis[0]][estimator][
+                        "true_policy_value"
+                    ].min()
+                    max_vals[l] = policy_value_dict[l][ope_cis[0]][estimator][
+                        "true_policy_value"
+                    ].max()
+
+            else:
+                min_vals[0] = policy_value_dict[ope_cis[0]][estimator][
                     "true_policy_value"
                 ].min()
-                max_vals[l] = policy_value_dict[l][ci][estimator][
+                max_vals[0] = policy_value_dict[ope_cis[0]][estimator][
                     "true_policy_value"
                 ].max()
 
@@ -5057,8 +6241,12 @@ class OffPolicySelection:
             max_val = max_vals.mean()
 
         else:
-            min_val = policy_value_dict[ci][estimator]["true_policy_value"].min()
-            max_val = policy_value_dict[ci][estimator]["true_policy_value"].max()
+            min_val = policy_value_dict[ope_cis[0]][estimator][
+                "true_policy_value"
+            ].min()
+            max_val = policy_value_dict[ope_cis[0]][estimator][
+                "true_policy_value"
+            ].max()
 
         yaxis_min_val = (
             min_val if safety_threshold is None else min(min_val, safety_threshold)
@@ -5086,47 +6274,34 @@ class OffPolicySelection:
 
             for j, metric in enumerate(metrics):
                 for i, estimator in enumerate(compared_estimators):
-                    if dataset_id is None and isinstance(input_dict, MultipleInputDict):
-                        axes[j].plot(
-                            np.arange(1, max_topk + 1),
-                            metric_dict[ope_ci][estimator][metric].mean(axis=1),
-                            color=color[i % n_colors],
-                            marker=markers[i],
-                            label=estimator,
-                        )
+                    axes[j].plot(
+                        np.arange(1, max_topk + 1),
+                        metric_dict[ope_ci][estimator][metric].mean(axis=1),
+                        color=color[i % n_colors],
+                        marker=markers[i],
+                        label=estimator,
+                    )
 
-                        if visualize_ci:
-                            lower = np.zeros(max_topk)
-                            upper = np.zeros(max_topk)
+                    if visualize_ci:
+                        lower = np.zeros(max_topk)
+                        upper = np.zeros(max_topk)
 
-                            for topk in range(max_topk):
-                                ci = self._estimate_confidence_interval[plot_ci](
-                                    metric_dict[ope_ci][estimator][metric][topk],
-                                    alpha=plot_alpha,
-                                    n_bootstrap_samples=plot_n_bootstrap_samples,
-                                    random_state=random_state,
-                                )
-                                lower[topk] = ci[
-                                    f"{100 * (1. - plot_alpha)}% CI (lower)"
-                                ]
-                                upper[topk] = ci[
-                                    f"{100 * (1. - plot_alpha)}% CI (upper)"
-                                ]
-
-                            axes[j].fill_between(
-                                np.arange(1, max_topk + 1),
-                                lower,
-                                upper,
-                                color=color[i % n_colors],
-                                alpha=0.3,
+                        for topk in range(max_topk):
+                            ci = self._estimate_confidence_interval[plot_ci](
+                                metric_dict[ope_ci][estimator][metric][topk],
+                                alpha=plot_alpha,
+                                n_bootstrap_samples=plot_n_bootstrap_samples,
+                                random_state=random_state,
                             )
+                            lower[topk] = ci[f"{100 * (1. - plot_alpha)}% CI (lower)"]
+                            upper[topk] = ci[f"{100 * (1. - plot_alpha)}% CI (upper)"]
 
-                    else:
-                        axes[j].plot(
+                        axes[j].fill_between(
                             np.arange(1, max_topk + 1),
-                            metric_dict[ope_ci][estimator][metric],
-                            marker=markers[i],
-                            label=estimator,
+                            lower,
+                            upper,
+                            color=color[i % n_colors],
+                            alpha=0.3,
                         )
 
                 if metric in ["k-th", "best", "worst", "mean"]:
@@ -5161,59 +6336,46 @@ class OffPolicySelection:
 
                 axes[j].set_xlabel("# of policies deployed")
 
-            if legend:
-                handles, labels = axes[0].get_legend_handles_labels()
-                # n_cols shows err
-                # fig.legend(handles, labels, loc='upper center', bbox_to_anchor=(0.5, -0.1), n_cols=min(len(labels), 6))
+                if legend:
+                    axes[j].legend(loc="upper right")
 
         else:
             for l, ope_ci in enumerate(ope_cis):
 
                 for j, metric in enumerate(metrics):
                     for i, estimator in enumerate(compared_estimators):
-                        if dataset_id is None and isinstance(
-                            input_dict, MultipleInputDict
-                        ):
-                            axes[l, j].plot(
-                                np.arange(1, max_topk + 1),
-                                metric_dict[ope_ci][estimator][metric].mean(axis=1),
-                                color=color[i % n_colors],
-                                marker=markers[i],
-                                label=estimator,
-                            )
+                        axes[l, j].plot(
+                            np.arange(1, max_topk + 1),
+                            metric_dict[ope_ci][estimator][metric].mean(axis=1),
+                            color=color[i % n_colors],
+                            marker=markers[i],
+                            label=estimator,
+                        )
 
-                            if visualize_ci:
-                                lower = np.zeros(max_topk)
-                                upper = np.zeros(max_topk)
+                        if visualize_ci:
+                            lower = np.zeros(max_topk)
+                            upper = np.zeros(max_topk)
 
-                                for topk in range(max_topk):
-                                    ci = self._estimate_confidence_interval[plot_ci](
-                                        metric_dict[ope_ci][estimator][metric][topk],
-                                        alpha=plot_alpha,
-                                        n_bootstrap_samples=plot_n_bootstrap_samples,
-                                        random_state=random_state,
-                                    )
-                                    lower[topk] = ci[
-                                        f"{100 * (1. - plot_alpha)}% CI (lower)"
-                                    ]
-                                    upper[topk] = ci[
-                                        f"{100 * (1. - plot_alpha)}% CI (upper)"
-                                    ]
-
-                                axes[l, j].fill_between(
-                                    np.arange(1, max_topk + 1),
-                                    lower,
-                                    upper,
-                                    color=color[i % n_colors],
-                                    alpha=0.3,
+                            for topk in range(max_topk):
+                                ci = self._estimate_confidence_interval[plot_ci](
+                                    metric_dict[ope_ci][estimator][metric][topk],
+                                    alpha=plot_alpha,
+                                    n_bootstrap_samples=plot_n_bootstrap_samples,
+                                    random_state=random_state,
                                 )
+                                lower[topk] = ci[
+                                    f"{100 * (1. - plot_alpha)}% CI (lower)"
+                                ]
+                                upper[topk] = ci[
+                                    f"{100 * (1. - plot_alpha)}% CI (upper)"
+                                ]
 
-                        else:
-                            axes[l, j].plot(
+                            axes[l, j].fill_between(
                                 np.arange(1, max_topk + 1),
-                                metric_dict[ope_ci][estimator][metric],
-                                marker=markers[i],
-                                label=estimator,
+                                lower,
+                                upper,
+                                color=color[i % n_colors],
+                                alpha=0.3,
                             )
 
                     if metric in ["k-th", "best", "worst", "mean"]:
@@ -5237,14 +6399,14 @@ class OffPolicySelection:
                                 linewidth=0.5,
                             )
 
-                        axes[l, j].set_title(f"{metric}, {ope_ci}")
+                        axes[l, j].set_title(f"{metric}")
                         axes[l, j].set_ylabel(f"{metric} policy value")
                         axes[l, j].set_ylim(
                             yaxis_min_val - margin, yaxis_max_val + margin
                         )
 
                     else:
-                        axes[l, j].set_title(f"safety violation, {ope_ci}")
+                        axes[l, j].set_title("safety violation")
                         axes[l, j].set_ylabel("safety violation rate")
                         axes[l, j].set_ylim(-0.05, 1.05)
 
@@ -5253,10 +6415,10 @@ class OffPolicySelection:
                     if legend:
                         axes[l, j].legend(loc="upper right")
 
-            if legend:
-                handles, labels = axes[0, 0].get_legend_handles_labels()
-                # n_cols shows err
-                # fig.legend(handles, labels, loc='upper center', bbox_to_anchor=(0.5, -0.1), n_cols=min(len(labels), 6))
+        if legend:
+            handles, labels = axes[0, 0].get_legend_handles_labels()
+            # n_cols shows err
+            # fig.legend(handles, labels, loc='upper center', bbox_to_anchor=(0.5, -0.1), n_cols=min(len(labels), 6))
 
         fig.subplots_adjust(hspace=0.35, wspace=0.2)
         plt.show()
@@ -5268,7 +6430,8 @@ class OffPolicySelection:
         self,
         input_dict: Union[OPEInputDict, MultipleInputDict],
         compared_estimators: Optional[List[str]] = None,
-        dataset_id: Optional[Union[int, str]] = None,
+        behavior_policy_name: Optional[str] = None,
+        dataset_id: Optional[int] = None,
         ope_alpha: float = 0.05,
         metrics: List[str] = ["k-th", "best", "worst", "mean", "safety_violation_rate"],
         max_topk: Optional[int] = None,
@@ -5291,7 +6454,7 @@ class OffPolicySelection:
 
             .. code-block:: python
 
-                key: [evaluation_policy_name][
+                key: [evaluation_policy][
                     evaluation_policy_action,
                     evaluation_policy_action_dist,
                     state_action_value_prediction,
@@ -5300,6 +6463,9 @@ class OffPolicySelection:
                     state_marginal_importance_weight,
                     on_policy_policy_value,
                     gamma,
+                    behavior_policy,
+                    evaluation_policy,
+                    dataset_id,
                 ]
 
             .. seealso::
@@ -5310,8 +6476,11 @@ class OffPolicySelection:
             Name of compared estimators.
             When `None` is given, all the estimators are compared.
 
-        dataset_id: int or str, default=None
-            Id (or name) of the logged dataset.
+        behavior_policy_name: str, default=None
+            Name of the behavior policy.
+
+        dataset_id: int, default=None
+            Id of the logged dataset.
             If `None`, the average of the result will be shown.
 
         ope_alpha: float, default=0.05
@@ -5354,299 +6523,63 @@ class OffPolicySelection:
             Name of the bar figure.
 
         """
-        if self.cumulative_distribution_ope is None:
-            raise RuntimeError(
-                "cumulative_distribution_ope is not given. Please initialize the class with cumulative_distribution_ope attribute"
-            )
-        if compared_estimators is None:
-            compared_estimators = self.estimators_name["standard_ope"]
-        elif not set(compared_estimators).issubset(
-            self.estimators_name["standard_ope"]
-        ):
-            raise ValueError(
-                "compared_estimators must be a subset of self.estimators_name['standard_ope'], but found False."
-            )
-        for metric in metrics:
-            if metric not in ["k-th", "best", "worst", "mean", "safety_violation_rate"]:
-                raise ValueError(
-                    f"the elements of metrics must be one of 'k-th', 'best', 'worst', 'mean', or 'safety_violation_rate', but {metric} is given"
-                )
-
-        if max_topk is None:
-            if isinstance(input_dict, MultipleInputDict):
-                if dataset_id is None:
-                    max_topk = input_dict.n_eval_policies.min()
-                else:
-                    max_topk = input_dict.n_eval_policies[dataset_id]
-            else:
-                max_topk = len(input_dict)
-        else:
-            check_scalar(max_topk, name="max_topk", target_type=int, min_val=1)
-            if isinstance(input_dict, MultipleInputDict):
-                if dataset_id is None:
-                    max_topk = min(max_topk, input_dict.n_eval_policies.min())
-                else:
-                    max_topk = min(max_topk, input_dict.n_eval_policies[dataset_id])
-            else:
-                max_topk = min(max_topk, len(input_dict))
-
-        max_topk = int(max_topk)
-
-        if "safety_violation_rate" in metrics:
-            safety_threshold = 0.0 if safety_threshold is None else safety_threshold
-
-        if safety_threshold is not None:
-            check_scalar(
-                safety_threshold,
-                name="safety_threshold",
-                target_type=float,
-                min_val=0.0,
-            )
-
-        if fig_dir is not None and not isinstance(fig_dir, Path):
-            raise ValueError(f"fig_dir must be a Path, but {type(fig_dir)} is given")
-        if fig_name is not None and not isinstance(fig_name, str):
-            raise ValueError(f"fig_dir must be a string, but {type(fig_dir)} is given")
-
-        policy_value_dict = self.select_by_policy_value(
-            input_dict,
-            compared_estimators=compared_estimators,
-            dataset_id=dataset_id,
+        compared_estimators = self._check_compared_estimators(
+            compared_estimators, ope_type="standard_ope"
         )
-        cvar_dict_ = self.obtain_true_selection_result(
+        max_topk, safety_threshold = self._check_topk_visualization_inputs(
+            input_dict=input_dict,
+            behavior_policy_name=behavior_policy_name,
+            dataset_id=dataset_id,
+            max_topk=max_topk,
+            metrics=metrics,
+            safety_threshold=safety_threshold,
+        )
+        self._check_basic_visualization_inputs(fig_dir=fig_dir, fig_name=fig_name)
+
+        true_dict = self.obtain_true_selection_result(
             input_dict,
             return_conditional_value_at_risk=True,
+            behavior_policy_name=behavior_policy_name,
             dataset_id=dataset_id,
             cvar_alpha=ope_alpha,
         )
-
-        if dataset_id is None and isinstance(input_dict, MultipleInputDict):
-            cvar_dict = []
-            n_datasets = len(input_dict)
-
-            for l in range(n_datasets):
-                cvar_dict_[l] = dict(
-                    zip(
-                        cvar_dict_[l]["ranking_by_conditional_value_at_risk"],
-                        cvar_dict_[l]["conditional_value_at_risk"],
-                    )
-                )
-
-                tmp_cvar_dict = dict()
-                for i, estimator in enumerate(compared_estimators):
-                    cvar = np.zeros(input_dict.n_eval_policies[i])
-                    estimated_ranking = policy_value_dict[l][estimator][
-                        "estimated_ranking"
-                    ]
-
-                    for i, eval_policy in enumerate(estimated_ranking):
-                        cvar[i] = cvar_dict_[l][eval_policy]
-
-                    tmp_cvar_dict[estimator] = cvar
-
-                cvar_dict.append(tmp_cvar_dict)
-
-        else:
-            cvar_dict = dict()
-            cvar_dict_ = dict(
-                zip(
-                    cvar_dict_["ranking_by_conditional_value_at_risk"],
-                    cvar_dict_["conditional_value_at_risk"],
-                )
-            )
-
-            for i, estimator in enumerate(compared_estimators):
-                if isinstance(input_dict, MultipleInputDict):
-                    cvar = np.zeros(input_dict.n_eval_policies[dataset_id])
-                else:
-                    cvar = np.zeros((len(input_dict)))
-
-                estimated_ranking = policy_value_dict[estimator]["estimated_ranking"]
-
-                for i, eval_policy in enumerate(estimated_ranking):
-                    cvar[i] = cvar_dict_[eval_policy]
-
-                cvar_dict[estimator] = cvar
-
-        metric_dict = defaultdict(lambda: defaultdict(np.ndarray))
-
-        if dataset_id is None and isinstance(input_dict, MultipleInputDict):
-            for i, estimator in enumerate(compared_estimators):
-                for j, metric in enumerate(metrics):
-                    topk_metric = np.zeros((max_topk, n_datasets))
-
-                    for topk in range(max_topk):
-                        for l in range(n_datasets):
-                            topk_values = cvar_dict[l][estimator][: topk + 1]
-
-                            if metric == "k-th":
-                                topk_metric[topk, l] = topk_values[-1]
-                            elif metric == "best":
-                                topk_metric[topk, l] = topk_values.max()
-                            elif metric == "worst":
-                                topk_metric[topk, l] = topk_values.min()
-                            elif metric == "mean":
-                                topk_metric[topk, l] = topk_values.mean()
-                            else:
-                                topk_metric[topk, l] = (
-                                    topk_values < safety_threshold
-                                ).sum() / (topk + 1)
-
-                    metric_dict[estimator][metric] = topk_metric
-
-        else:
-            for i, estimator in enumerate(compared_estimators):
-                for j, metric in enumerate(metrics):
-
-                    topk_metric = np.zeros(max_topk)
-                    for topk in range(max_topk):
-                        topk_values = cvar_dict[estimator][: topk + 1]
-
-                        if metric == "k-th":
-                            topk_metric[topk] = topk_values[-1]
-                        elif metric == "best":
-                            topk_metric[topk] = topk_values.max()
-                        elif metric == "worst":
-                            topk_metric[topk] = topk_values.min()
-                        elif metric == "mean":
-                            topk_metric[topk] = topk_values.mean()
-                        else:
-                            topk_metric[topk] = (
-                                topk_values < safety_threshold
-                            ).sum() / (topk + 1)
-
-                    metric_dict[estimator][metric] = topk_metric
-
-        metric_dict = defaultdict_to_dict(metric_dict)
-
-        if dataset_id is None and isinstance(input_dict, MultipleInputDict):
-            min_vals = np.zeros(n_datasets)
-            max_vals = np.zeros(n_datasets)
-
-            for l in range(n_datasets):
-                min_vals[l] = cvar_dict[l][estimator].min()
-                max_vals[l] = cvar_dict[l][estimator].max()
-
-            min_val = min_vals.mean()
-            max_val = max_vals.mean()
-
-        else:
-            min_val = cvar_dict[estimator].min()
-            max_val = cvar_dict[estimator].max()
-
-        yaxis_min_val = (
-            min_val if safety_threshold is None else min(min_val, safety_threshold)
-        )
-        yaxis_max_val = (
-            max_val if safety_threshold is None else max(max_val, safety_threshold)
-        )
-        margin = (yaxis_max_val - yaxis_min_val) * 0.05
-
-        plt.style.use("ggplot")
-        color = plt.rcParams["axes.prop_cycle"].by_key()["color"]
-        n_colors = len(color)
-
-        n_figs = len(metrics)
-
-        fig, axes = plt.subplots(
-            nrows=1,
-            ncols=n_figs,
-            figsize=(6 * n_figs, 4),
+        estimation_dict = self.select_by_policy_value(
+            input_dict,
+            compared_estimators=compared_estimators,
+            behavior_policy_name=behavior_policy_name,
+            dataset_id=dataset_id,
         )
 
-        for j, metric in enumerate(metrics):
-
-            for i, estimator in enumerate(compared_estimators):
-                if dataset_id is None and isinstance(input_dict, MultipleInputDict):
-                    axes[j].plot(
-                        np.arange(1, max_topk + 1),
-                        metric_dict[estimator][metric].mean(axis=1),
-                        color=color[i % n_colors],
-                        marker=markers[i],
-                        label=estimator,
-                    )
-
-                    if visualize_ci:
-                        lower = np.zeros(max_topk)
-                        upper = np.zeros(max_topk)
-
-                        for topk in range(max_topk):
-                            ci = self._estimate_confidence_interval[plot_ci](
-                                metric_dict[estimator][metric][topk],
-                                alpha=plot_alpha,
-                                n_bootstrap_samples=plot_n_bootstrap_samples,
-                                random_state=random_state,
-                            )
-                            lower[topk] = ci[f"{100 * (1. - plot_alpha)}% CI (lower)"]
-                            upper[topk] = ci[f"{100 * (1. - plot_alpha)}% CI (upper)"]
-
-                        axes[j].fill_between(
-                            np.arange(1, max_topk + 1),
-                            lower,
-                            upper,
-                            color=color[i % n_colors],
-                            alpha=0.3,
-                        )
-
-                else:
-                    axes[j].plot(
-                        np.arange(1, max_topk + 1),
-                        metric_dict[estimator][metric],
-                        marker=markers[i],
-                        label=estimator,
-                    )
-
-            if metric in ["k-th", "best", "worst", "mean"]:
-                if safety_threshold is not None:
-                    axes[j].plot(
-                        np.arange(1, max_topk + 1),
-                        np.full(max_topk, safety_threshold),
-                        color=dkred,
-                        label="safety threshold",
-                    )
-                    axes[j].plot(
-                        np.arange(1, max_topk + 1),
-                        np.full(max_topk, max_val),
-                        color="black",
-                        linewidth=0.5,
-                    )
-                    axes[j].plot(
-                        np.arange(1, max_topk + 1),
-                        np.full(max_topk, min_val),
-                        color="black",
-                        linewidth=0.5,
-                    )
-
-                axes[j].set_title(f"{metric}")
-                axes[j].set_ylabel(f"{metric} CVaR (lower {ope_alpha * 100}%)")
-                axes[j].set_ylim(yaxis_min_val - margin, yaxis_max_val + margin)
-
-            else:
-                axes[j].set_title("safety violation")
-                axes[j].set_ylabel("safety violation rate")
-                axes[j].set_ylim(-0.05, 1.05)
-
-            axes[j].set_xlabel("# of policies deployed")
-
-            if legend:
-                axes[j].legend(loc="upper right")
-
-        if legend:
-            handles, labels = axes[0].get_legend_handles_labels()
-            # n_cols shows err
-            # fig.legend(handles, labels, loc='upper center', bbox_to_anchor=(0.5, -0.1), n_cols=min(len(labels), 6))
-
-        fig.subplots_adjust(hspace=0.35, wspace=0.2)
-        plt.show()
-
-        if fig_dir:
-            fig.savefig(str(fig_dir / fig_name), dpi=300, bbox_inches="tight")
+        self._visualize_topk_policy_performance(
+            true_dict=true_dict,
+            estimation_dict=estimation_dict,
+            input_dict=input_dict,
+            true_dict_ranking_arg="ranking_by_conditional_value_at_risk",
+            true_dict_value_arg="conditional_value_at_risk",
+            estimation_dict_ranking_arg="estimated_ranking",
+            compared_estimators=compared_estimators,
+            behavior_policy_name=behavior_policy_name,
+            dataset_id=dataset_id,
+            metrics=metrics,
+            max_topk=max_topk,
+            safety_threshold=safety_threshold,
+            visualize_ci=visualize_ci,
+            ci=plot_ci,
+            alpha=plot_alpha,
+            n_bootstrap_samples=plot_n_bootstrap_samples,
+            random_state=random_state,
+            legend=legend,
+            ylabel=f"CVaR ({ope_alpha})",
+            fig_dir=fig_dir,
+            fig_name=fig_name,
+        )
 
     def visualize_topk_conditional_value_at_risk_selected_by_cumulative_distribution_ope(
         self,
         input_dict: Union[OPEInputDict, MultipleInputDict],
         compared_estimators: Optional[List[str]] = None,
-        dataset_id: Optional[Union[int, str]] = None,
+        behavior_policy_name: Optional[str] = None,
+        dataset_id: Optional[int] = None,
         ope_alpha: float = 0.05,
         metrics: List[str] = ["k-th", "best", "worst", "mean", "safety_violation_rate"],
         max_topk: Optional[int] = None,
@@ -5669,7 +6602,7 @@ class OffPolicySelection:
 
             .. code-block:: python
 
-                key: [evaluation_policy_name][
+                key: [evaluation_policy][
                     evaluation_policy_action,
                     evaluation_policy_action_dist,
                     state_action_value_prediction,
@@ -5678,6 +6611,9 @@ class OffPolicySelection:
                     state_marginal_importance_weight,
                     on_policy_policy_value,
                     gamma,
+                    behavior_policy,
+                    evaluation_policy,
+                    dataset_id,
                 ]
 
             .. seealso::
@@ -5688,8 +6624,11 @@ class OffPolicySelection:
             Name of compared estimators.
             When `None` is given, all the estimators are compared.
 
-        dataset_id: int or str, default=None
-            Id (or name) of the logged dataset.
+        behavior_policy_name: str, default=None
+            Name of the behavior policy.
+
+        dataset_id: int, default=None
+            Id of the logged dataset.
             If `None`, the average of the result will be shown.
 
         ope_alpha: float, default=0.05
@@ -5732,257 +6671,64 @@ class OffPolicySelection:
             Name of the bar figure.
 
         """
-        if self.cumulative_distribution_ope is None:
-            raise RuntimeError(
-                "cumulative_distribution_ope is not given. Please initialize the class with cumulative_distribution_ope attribute"
-            )
-        if compared_estimators is None:
-            compared_estimators = self.estimators_name["cumulative_distribution_ope"]
-        elif not set(compared_estimators).issubset(
-            self.estimators_name["cumulative_distribution_ope"]
-        ):
-            raise ValueError(
-                "compared_estimators must be a subset of self.estimators_name['cumulative_distribution_ope'], but found False."
-            )
-        for metric in metrics:
-            if metric not in ["k-th", "best", "worst", "mean", "safety_violation_rate"]:
-                raise ValueError(
-                    f"the elements of metrics must be one of 'k-th', 'best', 'worst', 'mean', or 'safety_violation_rate', but {metric} is given"
-                )
-
-        if max_topk is None:
-            if isinstance(input_dict, MultipleInputDict):
-                if dataset_id is None:
-                    max_topk = input_dict.n_eval_policies.min()
-                else:
-                    max_topk = input_dict.n_eval_policies[dataset_id]
-            else:
-                max_topk = len(input_dict)
-        else:
-            check_scalar(max_topk, name="max_topk", target_type=int, min_val=1)
-            if isinstance(input_dict, MultipleInputDict):
-                if dataset_id is None:
-                    max_topk = min(max_topk, input_dict.n_eval_policies.min())
-                else:
-                    max_topk = min(max_topk, input_dict.n_eval_policies[dataset_id])
-            else:
-                max_topk = min(max_topk, len(input_dict))
-
-        max_topk = int(max_topk)
-
-        if "safety_violation_rate" in metrics:
-            safety_threshold = 0.0 if safety_threshold is None else safety_threshold
-
-        if safety_threshold is not None:
-            check_scalar(
-                safety_threshold,
-                name="safety_threshold",
-                target_type=float,
-                min_val=0.0,
-            )
-
-        if fig_dir is not None and not isinstance(fig_dir, Path):
-            raise ValueError(f"fig_dir must be a Path, but {type(fig_dir)} is given")
-        if fig_name is not None and not isinstance(fig_name, str):
-            raise ValueError(f"fig_dir must be a string, but {type(fig_dir)} is given")
-
-        cvar_dict = self.select_by_conditional_value_at_risk(
+        compared_estimators = self._check_compared_estimators(
+            compared_estimators, ope_type="cumulative_distribution_ope"
+        )
+        max_topk, safety_threshold = self._check_topk_visualization_inputs(
             input_dict=input_dict,
+            behavior_policy_name=behavior_policy_name,
+            dataset_id=dataset_id,
+            max_topk=max_topk,
+            metrics=metrics,
+            safety_threshold=safety_threshold,
+        )
+        self._check_basic_visualization_inputs(fig_dir=fig_dir, fig_name=fig_name)
+
+        true_dict = self.obtain_true_selection_result(
+            input_dict,
+            return_conditional_value_at_risk=True,
+            behavior_policy_name=behavior_policy_name,
+            dataset_id=dataset_id,
+            cvar_alpha=ope_alpha,
+        )
+        estimation_dict = self.select_by_conditional_value_at_risk(
+            input_dict,
             compared_estimators=compared_estimators,
+            behavior_policy_name=behavior_policy_name,
             dataset_id=dataset_id,
             alpha=ope_alpha,
-            return_true_values=True,
         )
 
-        metric_dict = defaultdict(lambda: defaultdict(np.ndarray))
-
-        if dataset_id is None and isinstance(input_dict, MultipleInputDict):
-            n_datasets = len(input_dict)
-
-            for i, estimator in enumerate(compared_estimators):
-                for j, metric in enumerate(metrics):
-                    topk_metric = np.zeros((max_topk, n_datasets))
-
-                    for topk in range(max_topk):
-                        for l in range(n_datasets):
-                            topk_values = cvar_dict[l][estimator][
-                                "true_conditional_value_at_risk"
-                            ][: topk + 1]
-
-                            if metric == "k-th":
-                                topk_metric[topk, l] = topk_values[-1]
-                            elif metric == "best":
-                                topk_metric[topk, l] = topk_values.max()
-                            elif metric == "worst":
-                                topk_metric[topk, l] = topk_values.min()
-                            elif metric == "mean":
-                                topk_metric[topk, l] = topk_values.mean()
-                            else:
-                                topk_metric[topk, l] = (
-                                    topk_values < safety_threshold
-                                ).sum() / (topk + 1)
-
-                    metric_dict[estimator][metric] = topk_metric
-
-        else:
-            for i, estimator in enumerate(compared_estimators):
-                for j, metric in enumerate(metrics):
-
-                    topk_metric = np.zeros(max_topk)
-                    for topk in range(max_topk):
-                        topk_values = cvar_dict[estimator][
-                            "true_conditional_value_at_risk"
-                        ][: topk + 1]
-
-                        if metric == "k-th":
-                            topk_metric[topk] = topk_values[-1]
-                        elif metric == "best":
-                            topk_metric[topk] = topk_values.max()
-                        elif metric == "worst":
-                            topk_metric[topk] = topk_values.min()
-                        elif metric == "mean":
-                            topk_metric[topk] = topk_values.mean()
-                        else:
-                            topk_metric[topk] = (
-                                topk_values < safety_threshold
-                            ).sum() / (topk + 1)
-
-                    metric_dict[estimator][metric] = topk_metric
-
-        metric_dict = defaultdict_to_dict(metric_dict)
-
-        if dataset_id is None and isinstance(input_dict, MultipleInputDict):
-            min_vals = np.zeros(n_datasets)
-            max_vals = np.zeros(n_datasets)
-
-            for l in range(n_datasets):
-                min_vals[l] = cvar_dict[l][estimator][
-                    "true_conditional_value_at_risk"
-                ].min()
-                max_vals[l] = cvar_dict[l][estimator][
-                    "true_conditional_value_at_risk"
-                ].max()
-
-            min_val = min_vals.mean()
-            max_val = max_vals.mean()
-
-        else:
-            min_val = cvar_dict[estimator]["true_conditional_value_at_risk"].min()
-            max_val = cvar_dict[estimator]["true_conditional_value_at_risk"].max()
-
-        yaxis_min_val = (
-            min_val if safety_threshold is None else min(min_val, safety_threshold)
+        self._visualize_topk_policy_performance(
+            true_dict=true_dict,
+            estimation_dict=estimation_dict,
+            input_dict=input_dict,
+            true_dict_ranking_arg="ranking_by_conditional_value_at_risk",
+            true_dict_value_arg="conditional_value_at_risk",
+            estimation_dict_ranking_arg="estimated_ranking",
+            compared_estimators=compared_estimators,
+            behavior_policy_name=behavior_policy_name,
+            dataset_id=dataset_id,
+            metrics=metrics,
+            max_topk=max_topk,
+            safety_threshold=safety_threshold,
+            visualize_ci=visualize_ci,
+            ci=plot_ci,
+            alpha=plot_alpha,
+            n_bootstrap_samples=plot_n_bootstrap_samples,
+            random_state=random_state,
+            legend=legend,
+            ylabel=f"CVaR ({ope_alpha})",
+            fig_dir=fig_dir,
+            fig_name=fig_name,
         )
-        yaxis_max_val = (
-            max_val if safety_threshold is None else max(max_val, safety_threshold)
-        )
-        margin = (yaxis_max_val - yaxis_min_val) * 0.05
-
-        plt.style.use("ggplot")
-        color = plt.rcParams["axes.prop_cycle"].by_key()["color"]
-        n_colors = len(color)
-
-        n_figs = len(metrics)
-
-        fig, axes = plt.subplots(
-            nrows=1,
-            ncols=n_figs,
-            figsize=(6 * n_figs, 4),
-        )
-
-        for j, metric in enumerate(metrics):
-
-            for i, estimator in enumerate(compared_estimators):
-                if dataset_id is None and isinstance(input_dict, MultipleInputDict):
-                    axes[j].plot(
-                        np.arange(1, max_topk + 1),
-                        metric_dict[estimator][metric].mean(axis=1),
-                        color=color[i % n_colors],
-                        marker=markers[i],
-                        label=estimator,
-                    )
-
-                    if visualize_ci:
-                        lower = np.zeros(max_topk)
-                        upper = np.zeros(max_topk)
-
-                        for topk in range(max_topk):
-                            ci = self._estimate_confidence_interval[plot_ci](
-                                metric_dict[estimator][metric][topk],
-                                alpha=plot_alpha,
-                                n_bootstrap_samples=plot_n_bootstrap_samples,
-                                random_state=random_state,
-                            )
-                            lower[topk] = ci[f"{100 * (1. - plot_alpha)}% CI (lower)"]
-                            upper[topk] = ci[f"{100 * (1. - plot_alpha)}% CI (upper)"]
-
-                        axes[j].fill_between(
-                            np.arange(1, max_topk + 1),
-                            lower,
-                            upper,
-                            color=color[i % n_colors],
-                            alpha=0.3,
-                        )
-
-                else:
-                    axes[j].plot(
-                        np.arange(1, max_topk + 1),
-                        metric_dict[estimator][metric],
-                        marker=markers[i],
-                        label=estimator,
-                    )
-
-            if metric in ["k-th", "best", "worst", "mean"]:
-                if safety_threshold is not None:
-                    axes[j].plot(
-                        np.arange(1, max_topk + 1),
-                        np.full(max_topk, safety_threshold),
-                        color=dkred,
-                        label="safety threshold",
-                    )
-                    axes[j].plot(
-                        np.arange(1, max_topk + 1),
-                        np.full(max_topk, max_val),
-                        color="black",
-                        linewidth=0.5,
-                    )
-                    axes[j].plot(
-                        np.arange(1, max_topk + 1),
-                        np.full(max_topk, min_val),
-                        color="black",
-                        linewidth=0.5,
-                    )
-
-                axes[j].set_title(f"{metric}")
-                axes[j].set_ylabel(f"{metric} CVaR (lower {ope_alpha * 100}%)")
-                axes[j].set_ylim(yaxis_min_val - margin, yaxis_max_val + margin)
-
-            else:
-                axes[j].set_title("safety violation")
-                axes[j].set_ylabel("safety violation rate")
-                axes[j].set_ylim(-0.05, 1.05)
-
-            axes[j].set_xlabel("# of policies deployed")
-
-            if legend:
-                axes[j].legend(loc="upper right")
-
-        if legend:
-            handles, labels = axes[0].get_legend_handles_labels()
-            # n_cols shows err
-            # fig.legend(handles, labels, loc='upper center', bbox_to_anchor=(0.5, -0.1), n_cols=min(len(labels), 6))
-
-        fig.subplots_adjust(hspace=0.35, wspace=0.2)
-        plt.show()
-
-        if fig_dir:
-            fig.savefig(str(fig_dir / fig_name), dpi=300, bbox_inches="tight")
 
     def visualize_topk_lower_quartile_selected_by_standard_ope(
         self,
         input_dict: Union[OPEInputDict, MultipleInputDict],
         compared_estimators: Optional[List[str]] = None,
-        dataset_id: Optional[Union[int, str]] = None,
+        behavior_policy_name: Optional[str] = None,
+        dataset_id: Optional[int] = None,
         ope_alpha: float = 0.05,
         metrics: List[str] = ["k-th", "best", "worst", "mean", "safety_violation_rate"],
         max_topk: Optional[int] = None,
@@ -6005,7 +6751,7 @@ class OffPolicySelection:
 
             .. code-block:: python
 
-                key: [evaluation_policy_name][
+                key: [evaluation_policy][
                     evaluation_policy_action,
                     evaluation_policy_action_dist,
                     state_action_value_prediction,
@@ -6014,6 +6760,9 @@ class OffPolicySelection:
                     state_marginal_importance_weight,
                     on_policy_policy_value,
                     gamma,
+                    behavior_policy,
+                    evaluation_policy,
+                    dataset_id,
                 ]
 
             .. seealso::
@@ -6024,8 +6773,11 @@ class OffPolicySelection:
             Name of compared estimators.
             When `None` is given, all the estimators are compared.
 
-        dataset_id: int or str, default=None
-            Id (or name) of the logged dataset.
+        behavior_policy_name: str, default=None
+            Name of the behavior policy.
+
+        dataset_id: int, default=None
+            Id of the logged dataset.
             If `None`, the average of the result will be shown.
 
         alpha: float, default=0.05
@@ -6068,299 +6820,63 @@ class OffPolicySelection:
             Name of the bar figure.
 
         """
-        if self.ope is None:
-            raise RuntimeError(
-                "ope is not given. Please initialize the class with ope attribute"
-            )
-        if compared_estimators is None:
-            compared_estimators = self.estimators_name["standard_ope"]
-        elif not set(compared_estimators).issubset(
-            self.estimators_name["standard_ope"]
-        ):
-            raise ValueError(
-                "compared_estimators must be a subset of self.estimators_name['standard_ope'], but found False."
-            )
-        for metric in metrics:
-            if metric not in ["k-th", "best", "worst", "mean", "safety_violation_rate"]:
-                raise ValueError(
-                    f"the elements of metrics must be one of 'k-th', 'best', 'worst', 'mean', or 'safety_violation_rate', but {metric} is given"
-                )
-
-        if max_topk is None:
-            if isinstance(input_dict, MultipleInputDict):
-                if dataset_id is None:
-                    max_topk = input_dict.n_eval_policies.min()
-                else:
-                    max_topk = input_dict.n_eval_policies[dataset_id]
-            else:
-                max_topk = len(input_dict)
-        else:
-            check_scalar(max_topk, name="max_topk", target_type=int, min_val=1)
-            if isinstance(input_dict, MultipleInputDict):
-                if dataset_id is None:
-                    max_topk = min(max_topk, input_dict.n_eval_policies.min())
-                else:
-                    max_topk = min(max_topk, input_dict.n_eval_policies[dataset_id])
-            else:
-                max_topk = min(max_topk, len(input_dict))
-
-        max_topk = int(max_topk)
-
-        if "safety_violation_rate" in metrics:
-            safety_threshold = 0.0 if safety_threshold is None else safety_threshold
-
-        if safety_threshold is not None:
-            check_scalar(
-                safety_threshold,
-                name="safety_threshold",
-                target_type=float,
-                min_val=0.0,
-            )
-
-        if fig_dir is not None and not isinstance(fig_dir, Path):
-            raise ValueError(f"fig_dir must be a Path, but {type(fig_dir)} is given")
-        if fig_name is not None and not isinstance(fig_name, str):
-            raise ValueError(f"fig_dir must be a string, but {type(fig_dir)} is given")
-
-        policy_value_dict = self.select_by_policy_value(
-            input_dict,
-            compared_estimators=compared_estimators,
-            dataset_id=dataset_id,
+        compared_estimators = self._check_compared_estimators(
+            compared_estimators, ope_type="standard_ope"
         )
-        lower_quartile_dict_ = self.obtain_true_selection_result(
-            input_dict,
+        max_topk, safety_threshold = self._check_topk_visualization_inputs(
+            input_dict=input_dict,
+            behavior_policy_name=behavior_policy_name,
             dataset_id=dataset_id,
+            max_topk=max_topk,
+            metrics=metrics,
+            safety_threshold=safety_threshold,
+        )
+        self._check_basic_visualization_inputs(fig_dir=fig_dir, fig_name=fig_name)
+
+        true_dict = self.obtain_true_selection_result(
+            input_dict,
             return_lower_quartile=True,
+            behavior_policy_name=behavior_policy_name,
+            dataset_id=dataset_id,
             quartile_alpha=ope_alpha,
         )
-
-        if dataset_id is None and isinstance(input_dict, MultipleInputDict):
-            lower_quartile_dict = []
-            n_datasets = len(input_dict)
-
-            for l in range(n_datasets):
-                lower_quartile_dict_[l] = dict(
-                    zip(
-                        lower_quartile_dict_[l]["ranking_by_lower_quartile"],
-                        lower_quartile_dict_[l]["lower_quartile"],
-                    )
-                )
-
-                tmp_lower_quartile_dict = dict()
-                for i, estimator in enumerate(compared_estimators):
-                    lower_quartile = np.zeros(input_dict.n_eval_policies[i])
-                    estimated_ranking = policy_value_dict[l][estimator][
-                        "estimated_ranking"
-                    ]
-
-                    for i, eval_policy in enumerate(estimated_ranking):
-                        lower_quartile[i] = lower_quartile_dict_[l][eval_policy]
-
-                    tmp_lower_quartile_dict[estimator] = lower_quartile
-
-                lower_quartile_dict.append(tmp_lower_quartile_dict)
-
-        else:
-            lower_quartile_dict = dict()
-            lower_quartile_dict_ = dict(
-                zip(
-                    lower_quartile_dict_["ranking_by_lower_quartile"],
-                    lower_quartile_dict_["lower_quartile"],
-                )
-            )
-
-            for i, estimator in enumerate(compared_estimators):
-                if isinstance(input_dict, MultipleInputDict):
-                    lower_quartile = np.zeros(input_dict.n_eval_policies[dataset_id])
-                else:
-                    lower_quartile = np.zeros((len(input_dict)))
-
-                estimated_ranking = policy_value_dict[estimator]["estimated_ranking"]
-
-                for i, eval_policy in enumerate(estimated_ranking):
-                    lower_quartile[i] = lower_quartile_dict_[eval_policy]
-
-                lower_quartile_dict[estimator] = lower_quartile
-
-        metric_dict = defaultdict(lambda: defaultdict(np.ndarray))
-
-        if dataset_id is None and isinstance(input_dict, MultipleInputDict):
-            for i, estimator in enumerate(compared_estimators):
-                for j, metric in enumerate(metrics):
-                    topk_metric = np.zeros((max_topk, n_datasets))
-
-                    for topk in range(max_topk):
-                        for l in range(n_datasets):
-                            topk_values = lower_quartile_dict[l][estimator][: topk + 1]
-
-                            if metric == "k-th":
-                                topk_metric[topk, l] = topk_values[-1]
-                            elif metric == "best":
-                                topk_metric[topk, l] = topk_values.max()
-                            elif metric == "worst":
-                                topk_metric[topk, l] = topk_values.min()
-                            elif metric == "mean":
-                                topk_metric[topk, l] = topk_values.mean()
-                            else:
-                                topk_metric[topk, l] = (
-                                    topk_values < safety_threshold
-                                ).sum() / (topk + 1)
-
-                    metric_dict[estimator][metric] = topk_metric
-
-        else:
-            for i, estimator in enumerate(compared_estimators):
-                for j, metric in enumerate(metrics):
-
-                    topk_metric = np.zeros(max_topk)
-                    for topk in range(max_topk):
-                        topk_values = lower_quartile_dict[estimator][: topk + 1]
-
-                        if metric == "k-th":
-                            topk_metric[topk] = topk_values[-1]
-                        elif metric == "best":
-                            topk_metric[topk] = topk_values.max()
-                        elif metric == "worst":
-                            topk_metric[topk] = topk_values.min()
-                        elif metric == "mean":
-                            topk_metric[topk] = topk_values.mean()
-                        else:
-                            topk_metric[topk] = (
-                                topk_values < safety_threshold
-                            ).sum() / (topk + 1)
-
-                    metric_dict[estimator][metric] = topk_metric
-
-        metric_dict = defaultdict_to_dict(metric_dict)
-
-        if dataset_id is None and isinstance(input_dict, MultipleInputDict):
-            min_vals = np.zeros(n_datasets)
-            max_vals = np.zeros(n_datasets)
-
-            for l in range(n_datasets):
-                min_vals[l] = lower_quartile_dict[l][estimator].min()
-                max_vals[l] = lower_quartile_dict[l][estimator].max()
-
-            min_val = min_vals.mean()
-            max_val = max_vals.mean()
-
-        else:
-            min_val = lower_quartile_dict[estimator].min()
-            max_val = lower_quartile_dict[estimator].max()
-
-        yaxis_min_val = (
-            min_val if safety_threshold is None else min(min_val, safety_threshold)
-        )
-        yaxis_max_val = (
-            max_val if safety_threshold is None else max(max_val, safety_threshold)
-        )
-        margin = (yaxis_max_val - yaxis_min_val) * 0.05
-
-        plt.style.use("ggplot")
-        color = plt.rcParams["axes.prop_cycle"].by_key()["color"]
-        n_colors = len(color)
-
-        n_figs = len(metrics)
-
-        fig, axes = plt.subplots(
-            nrows=1,
-            ncols=n_figs,
-            figsize=(6 * n_figs, 4),
+        estimation_dict = self.select_by_policy_value(
+            input_dict,
+            compared_estimators=compared_estimators,
+            behavior_policy_name=behavior_policy_name,
+            dataset_id=dataset_id,
         )
 
-        for j, metric in enumerate(metrics):
-
-            for i, estimator in enumerate(compared_estimators):
-                if dataset_id is None and isinstance(input_dict, MultipleInputDict):
-                    axes[j].plot(
-                        np.arange(1, max_topk + 1),
-                        metric_dict[estimator][metric].mean(axis=1),
-                        color=color[i % n_colors],
-                        marker=markers[i],
-                        label=estimator,
-                    )
-
-                    if visualize_ci:
-                        lower = np.zeros(max_topk)
-                        upper = np.zeros(max_topk)
-
-                        for topk in range(max_topk):
-                            ci = self._estimate_confidence_interval[plot_ci](
-                                metric_dict[estimator][metric][topk],
-                                alpha=plot_alpha,
-                                n_bootstrap_samples=plot_n_bootstrap_samples,
-                                random_state=random_state,
-                            )
-                            lower[topk] = ci[f"{100 * (1. - plot_alpha)}% CI (lower)"]
-                            upper[topk] = ci[f"{100 * (1. - plot_alpha)}% CI (upper)"]
-
-                        axes[j].fill_between(
-                            np.arange(1, max_topk + 1),
-                            lower,
-                            upper,
-                            color=color[i % n_colors],
-                            alpha=0.3,
-                        )
-
-                else:
-                    axes[j].plot(
-                        np.arange(1, max_topk + 1),
-                        metric_dict[estimator][metric],
-                        marker=markers[i],
-                        label=estimator,
-                    )
-
-            if metric in ["k-th", "best", "worst", "mean"]:
-                if safety_threshold is not None:
-                    axes[j].plot(
-                        np.arange(1, max_topk + 1),
-                        np.full(max_topk, safety_threshold),
-                        color=dkred,
-                        label="safety threshold",
-                    )
-                    axes[j].plot(
-                        np.arange(1, max_topk + 1),
-                        np.full(max_topk, max_val),
-                        color="black",
-                        linewidth=0.5,
-                    )
-                    axes[j].plot(
-                        np.arange(1, max_topk + 1),
-                        np.full(max_topk, min_val),
-                        color="black",
-                        linewidth=0.5,
-                    )
-
-                axes[j].set_title(f"{metric}")
-                axes[j].set_ylabel(f"{metric} lower quartile ({ope_alpha * 100}%)")
-                axes[j].set_ylim(yaxis_min_val - margin, yaxis_max_val + margin)
-
-            else:
-                axes[j].set_title("safety violation")
-                axes[j].set_ylabel("safety violation rate")
-                axes[j].set_ylim(-0.05, 1.05)
-
-            axes[j].set_xlabel("# of policies deployed")
-
-            if legend:
-                axes[j].legend(loc="upper right")
-
-        if legend:
-            handles, labels = axes[0].get_legend_handles_labels()
-            # n_cols shows err
-            # fig.legend(handles, labels, loc='upper center', bbox_to_anchor=(0.5, -0.1), n_cols=min(len(labels), 6))
-
-        fig.subplots_adjust(hspace=0.35, wspace=0.2)
-        plt.show()
-
-        if fig_dir:
-            fig.savefig(str(fig_dir / fig_name), dpi=300, bbox_inches="tight")
+        self._visualize_topk_policy_performance(
+            true_dict=true_dict,
+            estimation_dict=estimation_dict,
+            input_dict=input_dict,
+            true_dict_ranking_arg="ranking_by_lower_quartile",
+            true_dict_value_arg="lower_quartile",
+            estimation_dict_ranking_arg="estimated_ranking",
+            compared_estimators=compared_estimators,
+            behavior_policy_name=behavior_policy_name,
+            dataset_id=dataset_id,
+            metrics=metrics,
+            max_topk=max_topk,
+            safety_threshold=safety_threshold,
+            visualize_ci=visualize_ci,
+            ci=plot_ci,
+            alpha=plot_alpha,
+            n_bootstrap_samples=plot_n_bootstrap_samples,
+            random_state=random_state,
+            legend=legend,
+            ylabel=f"lower quartile ({ope_alpha})",
+            fig_dir=fig_dir,
+            fig_name=fig_name,
+        )
 
     def visualize_topk_lower_quartile_selected_by_cumulative_distribution_ope(
         self,
         input_dict: Union[OPEInputDict, MultipleInputDict],
         compared_estimators: Optional[List[str]] = None,
-        dataset_id: Optional[Union[int, str]] = None,
+        behavior_policy_name: Optional[str] = None,
+        dataset_id: Optional[int] = None,
         ope_alpha: float = 0.05,
         metrics: List[str] = ["k-th", "best", "worst", "mean", "safety_violation_rate"],
         max_topk: Optional[int] = None,
@@ -6383,7 +6899,7 @@ class OffPolicySelection:
 
             .. code-block:: python
 
-                key: [evaluation_policy_name][
+                key: [evaluation_policy][
                     evaluation_policy_action,
                     evaluation_policy_action_dist,
                     state_action_value_prediction,
@@ -6392,6 +6908,9 @@ class OffPolicySelection:
                     state_marginal_importance_weight,
                     on_policy_policy_value,
                     gamma,
+                    behavior_policy,
+                    evaluation_policy,
+                    dataset_id,
                 ]
 
             .. seealso::
@@ -6402,8 +6921,11 @@ class OffPolicySelection:
             Name of compared estimators.
             When `None` is given, all the estimators are compared.
 
-        dataset_id: int or str, default=None
-            Id (or name) of the logged dataset.
+        behavior_policy_name: str, default=None
+            Name of the behavior policy.
+
+        dataset_id: int, default=None
+            Id of the logged dataset.
             If `None`, the average of the result will be shown.
 
         alpha: float, default=0.05
@@ -6446,242 +6968,529 @@ class OffPolicySelection:
             Name of the bar figure.
 
         """
-        if self.cumulative_distribution_ope is None:
-            raise RuntimeError(
-                "cumulative_distribution_ope is not given. Please initialize the class with cumulative_distribution_ope attribute"
-            )
-        if compared_estimators is None:
-            compared_estimators = self.estimators_name["cumulative_distribution_ope"]
-        elif not set(compared_estimators).issubset(
-            self.estimators_name["cumulative_distribution_ope"]
-        ):
-            raise ValueError(
-                "compared_estimators must be a subset of self.estimators_name['cumulative_distribution_ope'], but found False."
-            )
-        for metric in metrics:
-            if metric not in ["k-th", "best", "worst", "mean", "safety_violation_rate"]:
-                raise ValueError(
-                    f"the elements of metrics must be one of 'k-th', 'best', 'worst', 'mean', or 'safety_violation_rate', but {metric} is given"
-                )
+        compared_estimators = self._check_compared_estimators(
+            compared_estimators, ope_type="cumulative_distribution_ope"
+        )
+        max_topk, safety_threshold = self._check_topk_visualization_inputs(
+            input_dict=input_dict,
+            behavior_policy_name=behavior_policy_name,
+            dataset_id=dataset_id,
+            max_topk=max_topk,
+            metrics=metrics,
+            safety_threshold=safety_threshold,
+        )
+        self._check_basic_visualization_inputs(fig_dir=fig_dir, fig_name=fig_name)
 
-        if max_topk is None:
-            if isinstance(input_dict, MultipleInputDict):
-                if dataset_id is None:
-                    max_topk = input_dict.n_eval_policies.min()
-                else:
-                    max_topk = input_dict.n_eval_policies[dataset_id]
-            else:
-                max_topk = len(input_dict)
-        else:
-            check_scalar(max_topk, name="max_topk", target_type=int, min_val=1)
-            if isinstance(input_dict, MultipleInputDict):
-                if dataset_id is None:
-                    max_topk = min(max_topk, input_dict.n_eval_policies.min())
-                else:
-                    max_topk = min(max_topk, input_dict.n_eval_policies[dataset_id])
-            else:
-                max_topk = min(max_topk, len(input_dict))
-
-        max_topk = int(max_topk)
-
-        if "safety_violation_rate" in metrics:
-            safety_threshold = 0.0 if safety_threshold is None else safety_threshold
-
-        if safety_threshold is not None:
-            check_scalar(
-                safety_threshold,
-                name="safety_threshold",
-                target_type=float,
-                min_val=0.0,
-            )
-
-        if fig_dir is not None and not isinstance(fig_dir, Path):
-            raise ValueError(f"fig_dir must be a Path, but {type(fig_dir)} is given")
-        if fig_name is not None and not isinstance(fig_name, str):
-            raise ValueError(f"fig_dir must be a string, but {type(fig_dir)} is given")
-
-        lower_quartile_dict = self.select_by_lower_quartile(
+        true_dict = self.obtain_true_selection_result(
+            input_dict,
+            return_lower_quartile=True,
+            behavior_policy_name=behavior_policy_name,
+            dataset_id=dataset_id,
+            quartile_alpha=ope_alpha,
+        )
+        estimation_dict = self.select_by_lower_quartile(
             input_dict,
             compared_estimators=compared_estimators,
+            behavior_policy_name=behavior_policy_name,
             dataset_id=dataset_id,
             alpha=ope_alpha,
-            return_true_values=True,
         )
 
-        metric_dict = defaultdict(lambda: defaultdict(np.ndarray))
-
-        if dataset_id is None and isinstance(input_dict, MultipleInputDict):
-            n_datasets = len(input_dict)
-
-            for i, estimator in enumerate(compared_estimators):
-                for j, metric in enumerate(metrics):
-                    topk_metric = np.zeros((max_topk, n_datasets))
-
-                    for topk in range(max_topk):
-                        for l in range(n_datasets):
-                            topk_values = lower_quartile_dict[l][estimator][
-                                "true_lower_quartile"
-                            ][: topk + 1]
-
-                            if metric == "k-th":
-                                topk_metric[topk, l] = topk_values[-1]
-                            elif metric == "best":
-                                topk_metric[topk, l] = topk_values.max()
-                            elif metric == "worst":
-                                topk_metric[topk, l] = topk_values.min()
-                            elif metric == "mean":
-                                topk_metric[topk, l] = topk_values.mean()
-                            else:
-                                topk_metric[topk, l] = (
-                                    topk_values < safety_threshold
-                                ).sum() / (topk + 1)
-
-                    metric_dict[estimator][metric] = topk_metric
-
-        else:
-            for i, estimator in enumerate(compared_estimators):
-                for j, metric in enumerate(metrics):
-
-                    topk_metric = np.zeros(max_topk)
-                    for topk in range(max_topk):
-                        topk_values = lower_quartile_dict[estimator][
-                            "true_lower_quartile"
-                        ][: topk + 1]
-
-                        if metric == "k-th":
-                            topk_metric[topk] = topk_values[-1]
-                        elif metric == "best":
-                            topk_metric[topk] = topk_values.max()
-                        elif metric == "worst":
-                            topk_metric[topk] = topk_values.min()
-                        elif metric == "mean":
-                            topk_metric[topk] = topk_values.mean()
-                        else:
-                            topk_metric[topk] = (
-                                topk_values < safety_threshold
-                            ).sum() / (topk + 1)
-
-                    metric_dict[estimator][metric] = topk_metric
-
-        metric_dict = defaultdict_to_dict(metric_dict)
-
-        if dataset_id is None and isinstance(input_dict, MultipleInputDict):
-            min_vals = np.zeros(n_datasets)
-            max_vals = np.zeros(n_datasets)
-
-            for l in range(n_datasets):
-                min_vals[l] = lower_quartile_dict[l][estimator][
-                    "true_lower_quartile"
-                ].min()
-                max_vals[l] = lower_quartile_dict[l][estimator][
-                    "true_lower_quartile"
-                ].max()
-
-            min_val = min_vals.mean()
-            max_val = max_vals.mean()
-
-        else:
-            min_val = lower_quartile_dict[estimator]["true_lower_quartile"].min()
-            max_val = lower_quartile_dict[estimator]["true_lower_quartile"].max()
-
-        yaxis_min_val = (
-            min_val if safety_threshold is None else min(min_val, safety_threshold)
+        self._visualize_topk_policy_performance(
+            true_dict=true_dict,
+            estimation_dict=estimation_dict,
+            input_dict=input_dict,
+            true_dict_ranking_arg="ranking_by_lower_quartile",
+            true_dict_value_arg="lower_quartile",
+            estimation_dict_ranking_arg="estimated_ranking",
+            compared_estimators=compared_estimators,
+            behavior_policy_name=behavior_policy_name,
+            dataset_id=dataset_id,
+            metrics=metrics,
+            max_topk=max_topk,
+            safety_threshold=safety_threshold,
+            visualize_ci=visualize_ci,
+            ci=plot_ci,
+            alpha=plot_alpha,
+            n_bootstrap_samples=plot_n_bootstrap_samples,
+            random_state=random_state,
+            legend=legend,
+            ylabel=f"lower quartile ({ope_alpha})",
+            fig_dir=fig_dir,
+            fig_name=fig_name,
         )
-        yaxis_max_val = (
-            max_val if safety_threshold is None else max(max_val, safety_threshold)
-        )
-        margin = (yaxis_max_val - yaxis_min_val) * 0.05
 
+    def _visualize_policy_performance_for_validation(
+        self,
+        estimation_dict: Dict,
+        input_dict: Union[OPEInputDict, MultipleInputDict],
+        true_value_arg: str,
+        estimated_value_arg: str,
+        compared_estimators: Optional[List[str]] = None,
+        behavior_policy_name: Optional[str] = None,
+        dataset_id: Optional[int] = None,
+        n_cols: Optional[int] = None,
+        share_axes: bool = False,
+        legend: bool = True,
+        ylabel: str = "policy performance",
+        fig_dir: Optional[Path] = None,
+        fig_name: Optional[str] = None,
+    ):
+        """Visualize the correlation between the true and estimated policy performance.
+
+        Parameters
+        -------
+        estimation_dict: dict
+            Dictionary containing the estimated policy performance.
+
+        input_dict: OPEInputDict or MultipleInputDict
+            Dictionary of the OPE inputs for each evaluation policy.
+
+            .. code-block:: python
+
+                key: [evaluation_policy][
+                    evaluation_policy_action,
+                    evaluation_policy_action_dist,
+                    state_action_value_prediction,
+                    initial_state_value_prediction,
+                    state_action_marginal_importance_weight,
+                    state_marginal_importance_weight,
+                    on_policy_policy_value,
+                    gamma,
+                    behavior_policy,
+                    evaluation_policy,
+                    dataset_id,
+                ]
+
+            .. seealso::
+
+                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+
+        true_value_arg: str
+            Name of the key indicating the true policy performance in estimation_dict.
+
+        estimated_value_arg: str
+            Name of the key indicating the estimated policy performance in estimation_dict.
+
+        compared_estimators: list of str, default=None
+            Name of compared estimators.
+            When `None` is given, all the estimators are compared.
+
+        behavior_policy_name: str, default=None
+            Name of the behavior policy.
+
+        dataset_id: int, default=None
+            Id of the logged dataset.
+
+        n_cols: int, default=None (> 0)
+            Number of columns in the figure.
+
+        share_axes: bool, default=False
+            Whether to share x- and y-axes or not.
+
+        legend: bool, default=True
+            Whether to include a legend in the scatter plot.
+
+        ylabel: str, default="policy performance"
+            Label of the y-axis.
+
+        fig_dir: Path, default=None
+            Path to store the bar figure.
+            If `None` is given, the figure will not be saved.
+
+        fig_name: str, default="validation_policy_value_standard_ope.png"
+            Name of the bar figure.
+
+        """
         plt.style.use("ggplot")
         color = plt.rcParams["axes.prop_cycle"].by_key()["color"]
         n_colors = len(color)
 
-        n_figs = len(metrics)
+        n_figs = len(compared_estimators)
+        n_cols = min(5, n_figs) if n_cols is None else n_cols
+        n_rows = (n_figs - 1) // n_cols + 1
 
         fig, axes = plt.subplots(
-            nrows=1,
-            ncols=n_figs,
-            figsize=(6 * n_figs, 4),
+            nrows=n_rows,
+            ncols=n_cols,
+            figsize=(4 * n_cols, 3 * n_rows),
+            sharex=share_axes,
+            sharey=share_axes,
         )
 
-        for j, metric in enumerate(metrics):
-
+        guide_min, guide_max = 1e5, -1e5
+        if n_rows == 1:
             for i, estimator in enumerate(compared_estimators):
-                if dataset_id is None and isinstance(input_dict, MultipleInputDict):
-                    axes[j].plot(
-                        np.arange(1, max_topk + 1),
-                        metric_dict[estimator][metric].mean(axis=1),
-                        color=color[i % n_colors],
-                        marker=markers[i],
-                        label=estimator,
-                    )
 
-                    if visualize_ci:
-                        lower = np.zeros(max_topk)
-                        upper = np.zeros(max_topk)
+                if isinstance(input_dict, MultipleInputDict):
 
-                        for topk in range(max_topk):
-                            ci = self._estimate_confidence_interval[plot_ci](
-                                metric_dict[estimator][metric][topk],
-                                alpha=plot_alpha,
-                                n_bootstrap_samples=plot_n_bootstrap_samples,
-                                random_state=random_state,
+                    if behavior_policy_name is None and dataset_id is None:
+                        min_val, max_val = np.infty, -np.infty
+
+                        for l, behavior_policy in enumerate(
+                            input_dict.behavior_policy_names
+                        ):
+                            n_datasets = input_dict.n_datasets[behavior_policy]
+                            min_vals = np.zeros(n_datasets)
+                            max_vals = np.zeros(n_datasets)
+
+                            for dataset_id_ in range(n_datasets):
+                                true_policy_value = estimation_dict[behavior_policy][
+                                    dataset_id_
+                                ][estimator][true_value_arg]
+                                estimated_policy_value = estimation_dict[
+                                    behavior_policy
+                                ][dataset_id_][estimator][estimated_value_arg]
+
+                                if dataset_id_ == 0:
+                                    axes[i].scatter(
+                                        true_policy_value,
+                                        estimated_policy_value,
+                                        color=color[l % n_colors],
+                                        label=behavior_policy,
+                                    )
+                                else:  # to avoid duplicated labels
+                                    axes[i].scatter(
+                                        true_policy_value,
+                                        estimated_policy_value,
+                                        color=color[l % n_colors],
+                                    )
+
+                                min_vals[dataset_id_] = np.minimum(
+                                    np.nanmin(true_policy_value),
+                                    np.nanmin(estimated_policy_value),
+                                )
+                                max_vals[dataset_id_] = np.maximum(
+                                    np.nanmax(true_policy_value),
+                                    np.nanmax(estimated_policy_value),
+                                )
+
+                            min_val = min(min_val, min_vals.min())
+                            max_val = max(max_val, max_vals.max())
+
+                    elif behavior_policy_name is None and dataset_id is not None:
+                        min_val, max_val = np.infty, -np.infty
+
+                        for l, behavior_policy in enumerate(
+                            input_dict.behavior_policy_names
+                        ):
+                            true_policy_value = estimation_dict[behavior_policy][
+                                estimator
+                            ][true_value_arg]
+                            estimated_policy_value = estimation_dict[behavior_policy][
+                                estimator
+                            ][estimated_value_arg]
+
+                            axes[i].scatter(
+                                true_policy_value,
+                                estimated_policy_value,
+                                color=color[l % n_colors],
+                                label=behavior_policy,
                             )
-                            lower[topk] = ci[f"{100 * (1. - plot_alpha)}% CI (lower)"]
-                            upper[topk] = ci[f"{100 * (1. - plot_alpha)}% CI (upper)"]
 
-                        axes[j].fill_between(
-                            np.arange(1, max_topk + 1),
-                            lower,
-                            upper,
-                            color=color[i % n_colors],
-                            alpha=0.3,
+                            min_val_ = np.minimum(
+                                np.nanmin(true_policy_value),
+                                np.nanmin(estimated_policy_value),
+                            )
+                            max_val_ = np.maximum(
+                                np.nanmax(true_policy_value),
+                                np.nanmax(estimated_policy_value),
+                            )
+
+                        min_val = min(min_val, min_val_)
+                        max_val = max(max_val, max_val_)
+
+                    elif behavior_policy_name is not None and dataset_id is None:
+                        n_datasets = input_dict.n_datasets[behavior_policy_name]
+                        min_vals = np.zeros(n_datasets)
+                        max_vals = np.zeros(n_datasets)
+
+                        for dataset_id_ in range(n_datasets):
+                            true_policy_value = estimation_dict[dataset_id_][estimator][
+                                true_value_arg
+                            ]
+                            estimated_policy_value = estimation_dict[dataset_id_][
+                                estimator
+                            ][estimated_value_arg]
+
+                            axes[i].scatter(
+                                true_policy_value,
+                                estimated_policy_value,
+                                color=color[0],
+                            )
+
+                            min_vals[dataset_id_] = np.minimum(
+                                np.nanmin(true_policy_value),
+                                np.nanmin(estimated_policy_value),
+                            )
+                            max_vals[dataset_id_] = np.maximum(
+                                np.nanmax(true_policy_value),
+                                np.nanmax(estimated_policy_value),
+                            )
+
+                        min_val = min_vals.min()
+                        max_val = max_vals.max()
+
+                    else:
+                        true_policy_value = estimation_dict[estimator][true_value_arg]
+                        estimated_policy_value = estimation_dict[estimator][
+                            estimated_value_arg
+                        ]
+
+                        axes[i].scatter(
+                            true_policy_value,
+                            estimated_policy_value,
+                            color=color[0],
+                        )
+
+                        min_val = np.minimum(
+                            np.nanmin(true_policy_value),
+                            np.nanmin(estimated_policy_value),
+                        )
+                        max_val = np.maximum(
+                            np.nanmax(true_policy_value),
+                            np.nanmax(estimated_policy_value),
                         )
 
                 else:
-                    axes[j].plot(
-                        np.arange(1, max_topk + 1),
-                        metric_dict[estimator][metric],
-                        marker=markers[i],
-                        label=estimator,
+                    true_policy_value = estimation_dict[estimator][true_value_arg]
+                    estimated_policy_value = estimation_dict[estimator][
+                        estimated_value_arg
+                    ]
+
+                    axes[i].scatter(
+                        true_policy_value,
+                        estimated_policy_value,
+                        color=color[0],
                     )
 
-            if metric in ["k-th", "best", "worst", "mean"]:
-                if safety_threshold is not None:
-                    axes[j].plot(
-                        np.arange(1, max_topk + 1),
-                        np.full(max_topk, safety_threshold),
-                        color=dkred,
-                        label="safety threshold",
+                    min_val = np.minimum(
+                        np.nanmin(true_policy_value),
+                        np.nanmin(estimated_policy_value),
                     )
-                    axes[j].plot(
-                        np.arange(1, max_topk + 1),
-                        np.full(max_topk, max_val),
+                    max_val = np.maximum(
+                        np.nanmax(true_policy_value),
+                        np.nanmax(estimated_policy_value),
+                    )
+
+                axes[i].set_title(estimator)
+                axes[i].set_xlabel(f"true {ylabel}")
+                axes[i].set_ylabel(f"estimated {ylabel}")
+
+                if legend and behavior_policy_name is None and isinstance(input_dict, MultipleInputDict):
+                    axes[i].legend(title="behavior_policy", loc="lower right")
+
+                if not share_axes:
+                    margin = (max_val - min_val) * 0.05
+                    guide = np.linspace(min_val - margin, max_val + margin)
+                    axes[i].plot(
+                        guide,
+                        guide,
                         color="black",
-                        linewidth=0.5,
+                        linewidth=1.0,
                     )
-                    axes[j].plot(
-                        np.arange(1, max_topk + 1),
-                        np.full(max_topk, min_val),
+
+                guide_min = min_val if guide_min > min_val else guide_min
+                guide_max = max_val if guide_max < max_val else guide_max
+
+            if share_axes:
+                margin = (guide_max - guide_min) * 0.05
+                guide = np.linspace(guide_min - margin, guide_max + margin)
+                for i, estimator in enumerate(compared_estimators):
+                    axes[i].plot(
+                        guide,
+                        guide,
                         color="black",
-                        linewidth=0.5,
+                        linewidth=1.0,
                     )
 
-                axes[j].set_title(f"{metric}")
-                axes[j].set_ylabel(f"{metric} lower quartile ({ope_alpha * 100}%)")
-                axes[j].set_ylim(yaxis_min_val - margin, yaxis_max_val + margin)
+        else:
+            for i, estimator in enumerate(compared_estimators):
 
-            else:
-                axes[j].set_title("safety violation")
-                axes[j].set_ylabel("safety violation rate")
-                axes[j].set_ylim(-0.05, 1.05)
+                if isinstance(input_dict, MultipleInputDict):
 
-            axes[j].set_xlabel("# of policies deployed")
+                    if behavior_policy_name is None and dataset_id is None:
+                        min_val, max_val = np.infty, -np.infty
 
-            if legend:
-                axes[j].legend(loc="upper right")
+                        for l, behavior_policy in enumerate(
+                            input_dict.behavior_policy_names
+                        ):
+                            n_datasets = input_dict.n_datasets[behavior_policy]
+                            min_vals = np.zeros(n_datasets)
+                            max_vals = np.zeros(n_datasets)
 
-        fig.subplots_adjust(hspace=0.35, wspace=0.2)
+                            for dataset_id_ in range(n_datasets):
+                                true_policy_value = estimation_dict[behavior_policy][
+                                    dataset_id_
+                                ][estimator][true_value_arg]
+                                estimated_policy_value = estimation_dict[
+                                    behavior_policy
+                                ][dataset_id_][estimator][estimated_value_arg]
+
+                                if dataset_id_ == 0:
+                                    axes[i // n_cols, i % n_cols].scatter(
+                                        true_policy_value,
+                                        estimated_policy_value,
+                                        color=color[l % n_colors],
+                                        label=behavior_policy,
+                                    )
+                                else:  # to avoid duplicated labels
+                                    axes[i // n_cols, i % n_cols].scatter(
+                                        true_policy_value,
+                                        estimated_policy_value,
+                                        color=color[l % n_colors],
+                                    )
+
+
+                                min_vals[dataset_id_] = np.minimum(
+                                    np.nanmin(true_policy_value),
+                                    np.nanmin(estimated_policy_value),
+                                )
+                                max_vals[dataset_id_] = np.maximum(
+                                    np.nanmax(true_policy_value),
+                                    np.nanmax(estimated_policy_value),
+                                )
+
+                            min_val = min(min_val, min_vals.min())
+                            max_val = max(max_val, max_vals.max())
+
+                    elif behavior_policy_name is None and dataset_id is not None:
+                        min_val, max_val = np.infty, -np.infty
+
+                        for l, behavior_policy in enumerate(
+                            input_dict.behavior_policy_names
+                        ):
+                            true_policy_value = estimation_dict[behavior_policy][
+                                estimator
+                            ][true_value_arg]
+                            estimated_policy_value = estimation_dict[behavior_policy][
+                                estimator
+                            ][estimated_value_arg]
+
+                            axes[i // n_cols, i % n_cols].scatter(
+                                true_policy_value,
+                                estimated_policy_value,
+                                color=color[l % n_colors],
+                                label=behavior_policy,
+                            )
+
+                            min_val_ = np.minimum(
+                                np.nanmin(true_policy_value),
+                                np.nanmin(estimated_policy_value),
+                            )
+                            max_val_ = np.maximum(
+                                np.nanmax(true_policy_value),
+                                np.nanmax(estimated_policy_value),
+                            )
+
+                        min_val = min(min_val, min_val_)
+                        max_val = max(max_val, max_val_)
+
+                    elif behavior_policy_name is not None and dataset_id is None:
+                        n_datasets = input_dict.n_datasets[behavior_policy_name]
+                        min_vals = np.zeros(n_datasets)
+                        max_vals = np.zeros(n_datasets)
+
+                        for dataset_id_ in range(n_datasets):
+                            true_policy_value = estimation_dict[dataset_id_][estimator][
+                                true_value_arg
+                            ]
+                            estimated_policy_value = estimation_dict[dataset_id_][
+                                estimator
+                            ][estimated_value_arg]
+
+                            axes[i // n_cols, i % n_cols].scatter(
+                                true_policy_value,
+                                estimated_policy_value,
+                                color=color[0],
+                            )
+
+                            min_vals[dataset_id_] = np.minimum(
+                                np.nanmin(true_policy_value),
+                                np.nanmin(estimated_policy_value),
+                            )
+                            max_vals[dataset_id_] = np.maximum(
+                                np.nanmax(true_policy_value),
+                                np.nanmax(estimated_policy_value),
+                            )
+
+                        min_val = min_vals.min()
+                        max_val = max_vals.max()
+
+                    else:
+                        true_policy_value = estimation_dict[estimator][true_value_arg]
+                        estimated_policy_value = estimation_dict[estimator][
+                            estimated_value_arg
+                        ]
+
+                        axes[i // n_cols, i % n_cols].scatter(
+                            true_policy_value,
+                            estimated_policy_value,
+                            color=color[0],
+                        )
+
+                        min_val = np.minimum(
+                            np.nanmin(true_policy_value),
+                            np.nanmin(estimated_policy_value),
+                        )
+                        max_val = np.maximum(
+                            np.nanmax(true_policy_value),
+                            np.nanmax(estimated_policy_value),
+                        )
+
+                else:
+                    true_policy_value = estimation_dict[estimator][true_value_arg]
+                    estimated_policy_value = estimation_dict[estimator][
+                        estimated_value_arg
+                    ]
+
+                    axes[i // n_cols, i % n_cols].scatter(
+                        true_policy_value,
+                        estimated_policy_value,
+                        color=color[0],
+                    )
+
+                    min_val = np.minimum(
+                        np.nanmin(true_policy_value),
+                        np.nanmin(estimated_policy_value),
+                    )
+                    max_val = np.maximum(
+                        np.nanmax(true_policy_value),
+                        np.nanmax(estimated_policy_value),
+                    )
+
+                axes[i // n_cols, i % n_cols].set_title(estimator)
+                axes[i // n_cols, i % n_cols].set_xlabel(f"true {ylabel}")
+                axes[i // n_cols, i % n_cols].set_ylabel(f"estimated {ylabel}")
+
+                if legend and behavior_policy_name is None and isinstance(input_dict, MultipleInputDict):
+                    axes[i // n_cols, i % n_cols].legend(title="behavior_policy", loc="lower right")
+
+                if not share_axes:
+                    margin = (max_val - min_val) * 0.05
+                    guide = np.linspace(min_val - margin, max_val + margin)
+                    axes[i // n_cols, i % n_cols].plot(
+                        guide,
+                        guide,
+                        color="black",
+                        linewidth=1.0,
+                    )
+
+                guide_min = min_val if guide_min > min_val else guide_min
+                guide_max = max_val if guide_max < max_val else guide_max
+
+            if share_axes:
+                margin = (guide_max - guide_min) * 0.05
+                guide = np.linspace(guide_min - margin, guide_max + margin)
+                for i, estimator in enumerate(compared_estimators):
+                    axes[i // n_cols, i % n_cols].plot(
+                        guide,
+                        guide,
+                        color="black",
+                        linewidth=1.0,
+                    )
+
+        fig.tight_layout()
         plt.show()
 
         if fig_dir:
@@ -6691,10 +7500,11 @@ class OffPolicySelection:
         self,
         input_dict: Union[OPEInputDict, MultipleInputDict],
         compared_estimators: Optional[List[str]] = None,
-        dataset_id: Optional[Union[int, str]] = None,
+        behavior_policy_name: Optional[str] = None,
+        dataset_id: Optional[int] = None,
         n_cols: Optional[int] = None,
         share_axes: bool = False,
-        same_color_across_datasets: bool = False,
+        legend: bool = True,
         fig_dir: Optional[Path] = None,
         fig_name: str = "validation_policy_value_standard_ope.png",
     ):
@@ -6707,7 +7517,7 @@ class OffPolicySelection:
 
             .. code-block:: python
 
-                key: [evaluation_policy_name][
+                key: [evaluation_policy][
                     evaluation_policy_action,
                     evaluation_policy_action_dist,
                     state_action_value_prediction,
@@ -6716,6 +7526,9 @@ class OffPolicySelection:
                     state_marginal_importance_weight,
                     on_policy_policy_value,
                     gamma,
+                    behavior_policy,
+                    evaluation_policy,
+                    dataset_id,
                 ]
 
             .. seealso::
@@ -6726,9 +7539,11 @@ class OffPolicySelection:
             Name of compared estimators.
             When `None` is given, all the estimators are compared.
 
-        dataset_id: int or str, default=None
-            Id (or name) of the logged dataset.
-            If `None`, the average of the result will be shown.
+        behavior_policy_name: str, default=None
+            Name of the behavior policy.
+
+        dataset_id: int, default=None
+            Id of the logged dataset.
 
         n_cols: int, default=None (> 0)
             Number of columns in the figure.
@@ -6736,9 +7551,8 @@ class OffPolicySelection:
         share_axes: bool, default=False
             Whether to share x- and y-axes or not.
 
-        same_color_across_datasets: bool, default=False
-            Whether to use same color to plot results across logged datasets.
-            If `False`, the scatter plot uses different colors on each logged dataset.
+        legend: bool, default=True
+            Whether to include a legend in the scatter plot.
 
         fig_dir: Path, default=None
             Path to store the bar figure.
@@ -6748,229 +7562,46 @@ class OffPolicySelection:
             Name of the bar figure.
 
         """
-        if self.ope is None:
-            raise RuntimeError(
-                "ope is not given. Please initialize the class with ope attribute"
-            )
-        if compared_estimators is None:
-            compared_estimators = self.estimators_name["standard_ope"]
-        elif not set(compared_estimators).issubset(
-            self.estimators_name["standard_ope"]
-        ):
-            raise ValueError(
-                "compared_estimators must be a subset of self.estimators_name['standard_ope'], but found False."
-            )
-        if n_cols is not None:
-            check_scalar(n_cols, name="n_cols", target_type=int, min_val=1)
-        if fig_dir is not None and not isinstance(fig_dir, Path):
-            raise ValueError(f"fig_dir must be a Path, but {type(fig_dir)} is given")
-        if fig_name is not None and not isinstance(fig_name, str):
-            raise ValueError(f"fig_dir must be a string, but {type(fig_dir)} is given")
+        compared_estimators = self._check_compared_estimators(
+            compared_estimators, ope_type="standard_ope"
+        )
+        self._check_basic_visualization_inputs(
+            n_cols=n_cols, fig_dir=fig_dir, fig_name=fig_name
+        )
 
         policy_value_dict = self.select_by_policy_value(
             input_dict,
             compared_estimators=compared_estimators,
+            behavior_policy_name=behavior_policy_name,
             dataset_id=dataset_id,
             return_true_values=True,
         )
 
-        plt.style.use("ggplot")
-        color = plt.rcParams["axes.prop_cycle"].by_key()["color"]
-        n_colors = len(color)
-
-        n_figs = len(compared_estimators)
-        n_cols = min(5, n_figs) if n_cols is None else n_cols
-        n_rows = (n_figs - 1) // n_cols + 1
-
-        fig, axes = plt.subplots(
-            nrows=n_rows,
-            ncols=n_cols,
-            figsize=(4 * n_cols, 3 * n_rows),
-            sharex=share_axes,
-            sharey=share_axes,
+        self._visualize_policy_performance_for_validation(
+            estimation_dict=policy_value_dict,
+            input_dict=input_dict,
+            true_value_arg="true_policy_value",
+            estimated_value_arg="estimated_policy_value",
+            compared_estimators=compared_estimators,
+            behavior_policy_name=behavior_policy_name,
+            dataset_id=dataset_id,
+            n_cols=n_cols,
+            share_axes=share_axes,
+            legend=legend,
+            ylabel="policy value",
+            fig_dir=fig_dir,
+            fig_name=fig_name,
         )
-
-        guide_min, guide_max = 1e5, -1e5
-        if n_rows == 1:
-            for i, estimator in enumerate(compared_estimators):
-                if dataset_id is None and isinstance(input_dict, MultipleInputDict):
-                    n_datasets = len(input_dict)
-                    min_vals = np.zeros(n_datasets)
-                    max_vals = np.zeros(n_datasets)
-
-                    for l in range(len(input_dict)):
-                        true_policy_value = policy_value_dict[l][estimator][
-                            "true_policy_value"
-                        ]
-                        estimated_policy_value = policy_value_dict[l][estimator][
-                            "estimated_policy_value"
-                        ]
-
-                        axes[i].scatter(
-                            true_policy_value,
-                            estimated_policy_value,
-                            color=color[0]
-                            if same_color_across_datasets
-                            else color[l % n_colors],
-                        )
-
-                        min_vals[l] = np.minimum(
-                            np.nanmin(true_policy_value),
-                            np.nanmin(estimated_policy_value),
-                        )
-                        max_vals[l] = np.maximum(
-                            np.nanmax(true_policy_value),
-                            np.nanmax(estimated_policy_value),
-                        )
-
-                    min_val = min_vals.min()
-                    max_val = max_vals.max()
-
-                else:
-                    true_policy_value = policy_value_dict[estimator][
-                        "true_policy_value"
-                    ]
-                    estimated_policy_value = policy_value_dict[estimator][
-                        "estimated_policy_value"
-                    ]
-
-                    axes[i].scatter(
-                        true_policy_value,
-                        estimated_policy_value,
-                    )
-
-                    min_val = np.minimum(
-                        np.nanmin(true_policy_value), np.nanmin(estimated_policy_value)
-                    )
-                    max_val = np.maximum(
-                        np.nanmax(true_policy_value), np.nanmax(estimated_policy_value)
-                    )
-
-                axes[i].set_title(estimator)
-                axes[i].set_xlabel("true policy value")
-                axes[i].set_ylabel("estimated policy value")
-
-                if not share_axes:
-                    margin = (max_val - min_val) * 0.05
-                    guide = np.linspace(min_val - margin, max_val + margin)
-                    axes[i].plot(
-                        guide,
-                        guide,
-                        color="black",
-                        linewidth=1.0,
-                    )
-
-                guide_min = min_val if guide_min > min_val else guide_min
-                guide_max = max_val if guide_max < max_val else guide_max
-
-            if share_axes:
-                margin = (guide_max - guide_min) * 0.05
-                guide = np.linspace(guide_min - margin, guide_max + margin)
-                for i, estimator in enumerate(compared_estimators):
-                    axes[i].plot(
-                        guide,
-                        guide,
-                        color="black",
-                        linewidth=1.0,
-                    )
-
-        else:
-            for i, estimator in enumerate(compared_estimators):
-                if dataset_id is None and isinstance(input_dict, MultipleInputDict):
-                    n_datasets = len(input_dict)
-                    min_vals = np.zeros(n_datasets)
-                    max_vals = np.zeros(n_datasets)
-
-                    for l in range(len(input_dict)):
-                        true_policy_value = policy_value_dict[l][estimator][
-                            "true_policy_value"
-                        ]
-                        estimated_policy_value = policy_value_dict[l][estimator][
-                            "estimated_policy_value"
-                        ]
-
-                        axes[i // n_cols, i % n_cols].scatter(
-                            true_policy_value,
-                            estimated_policy_value,
-                            color=color[0]
-                            if same_color_across_datasets
-                            else color[l % n_colors],
-                        )
-
-                        min_vals[l] = np.minimum(
-                            np.nanmin(true_policy_value),
-                            np.nanmin(estimated_policy_value),
-                        )
-                        max_vals[l] = np.maximum(
-                            np.nanmax(true_policy_value),
-                            np.nanmax(estimated_policy_value),
-                        )
-
-                    min_val = min_vals.min()
-                    max_val = max_vals.max()
-
-                else:
-                    true_policy_value = policy_value_dict[estimator][
-                        "true_policy_value"
-                    ]
-                    estimated_policy_value = policy_value_dict[estimator][
-                        "estimated_policy_value"
-                    ]
-
-                    axes[i // n_cols, i % n_cols].scatter(
-                        true_policy_value,
-                        estimated_policy_value,
-                    )
-
-                    min_val = np.minimum(
-                        np.nanmin(true_policy_value), np.nanmin(estimated_policy_value)
-                    )
-                    max_val = np.maximum(
-                        np.nanmax(true_policy_value), np.nanmax(estimated_policy_value)
-                    )
-
-                axes[i // n_cols, i % n_cols].set_title(estimator)
-                axes[i // n_cols, i % n_cols].set_xlabel("true policy value")
-                axes[i // n_cols, i % n_cols].set_ylabel("estimated policy value")
-
-                if not share_axes:
-                    margin = (max_val - min_val) * 0.05
-                    guide = np.linspace(min_val - margin, max_val + margin)
-                    axes[i // n_cols, i % n_cols].plot(
-                        guide,
-                        guide,
-                        color="black",
-                        linewidth=1.0,
-                    )
-
-                guide_min = min_val if guide_min > min_val else guide_min
-                guide_max = max_val if guide_max < max_val else guide_max
-
-            if share_axes:
-                margin = (guide_max - guide_min) * 0.05
-                guide = np.linspace(guide_min - margin, guide_max + margin)
-                for i, estimator in enumerate(compared_estimators):
-                    axes[i // n_cols, i % n_cols].plot(
-                        guide,
-                        guide,
-                        color="black",
-                        linewidth=1.0,
-                    )
-
-        fig.tight_layout()
-        plt.show()
-
-        if fig_dir:
-            fig.savefig(str(fig_dir / fig_name), dpi=300, bbox_inches="tight")
 
     def visualize_policy_value_of_cumulative_distribution_ope_for_validation(
         self,
         input_dict: Union[OPEInputDict, MultipleInputDict],
         compared_estimators: Optional[List[str]] = None,
-        dataset_id: Optional[Union[int, str]] = None,
+        behavior_policy_name: Optional[str] = None,
+        dataset_id: Optional[int] = None,
         n_cols: Optional[int] = None,
         share_axes: bool = False,
-        same_color_across_datasets: bool = False,
+        legend: bool = True,
         fig_dir: Optional[Path] = None,
         fig_name: str = "validation_policy_value_cumulative_distribution_ope.png",
     ):
@@ -6983,7 +7614,7 @@ class OffPolicySelection:
 
             .. code-block:: python
 
-                key: [evaluation_policy_name][
+                key: [evaluation_policy][
                     evaluation_policy_action,
                     evaluation_policy_action_dist,
                     state_action_value_prediction,
@@ -6992,6 +7623,9 @@ class OffPolicySelection:
                     state_marginal_importance_weight,
                     on_policy_policy_value,
                     gamma,
+                    behavior_policy,
+                    evaluation_policy,
+                    dataset_id,
                 ]
 
             .. seealso::
@@ -7002,9 +7636,11 @@ class OffPolicySelection:
             Name of compared estimators.
             When `None` is given, all the estimators are compared.
 
-        dataset_id: int or str, default=None
-            Id (or name) of the logged dataset.
-            If `None`, the average of the result will be shown.
+        behavior_policy_name: str, default=None
+            Name of the behavior policy.
+
+        dataset_id: int, default=None
+            Id of the logged dataset.
 
         n_cols: int, default=None (> 0)
             Number of columns in the figure.
@@ -7012,9 +7648,8 @@ class OffPolicySelection:
         share_axes: bool, default=False
             Whether to share x- and y-axes or not.
 
-        same_color_across_datasets: bool, default=False
-            Whether to use same color to plot results across logged datasets.
-            If `False`, the scatter plot uses different colors on each logged dataset.
+        legend: bool, default=True
+            Whether to include a legend in the scatter plot.
 
         fig_dir: Path, default=None
             Path to store the bar figure.
@@ -7024,227 +7659,50 @@ class OffPolicySelection:
             Name of the bar figure.
 
         """
-        if self.cumulative_distribution_ope is None:
-            raise RuntimeError(
-                "cumulative_distribution_ope is not given. Please initialize the class with cumulative_distribution_ope attribute"
-            )
-        if compared_estimators is None:
-            compared_estimators = self.estimators_name["cumulative_distribution_ope"]
-        elif not set(compared_estimators).issubset(
-            self.estimators_name["cumulative_distribution_ope"]
-        ):
-            raise ValueError(
-                "compared_estimators must be a subset of self.estimators_name['cumulative_distribution_ope'], but found False."
-            )
+        compared_estimators = self._check_compared_estimators(
+            compared_estimators, ope_type="cumulative_distribution_ope"
+        )
+        self._check_basic_visualization_inputs(
+            n_cols=n_cols, fig_dir=fig_dir, fig_name=fig_name
+        )
 
         policy_value_dict = self.select_by_policy_value_via_cumulative_distribution_ope(
             input_dict,
             compared_estimators=compared_estimators,
+            behavior_policy_name=behavior_policy_name,
             dataset_id=dataset_id,
             return_true_values=True,
         )
 
-        plt.style.use("ggplot")
-        color = plt.rcParams["axes.prop_cycle"].by_key()["color"]
-        n_colors = len(color)
-
-        n_figs = len(compared_estimators)
-        n_cols = min(5, n_figs) if n_cols is None else n_cols
-        n_rows = (n_figs - 1) // n_cols + 1
-
-        fig, axes = plt.subplots(
-            nrows=n_rows,
-            ncols=n_cols,
-            figsize=(4 * n_cols, 3 * n_rows),
-            sharex=share_axes,
-            sharey=share_axes,
+        self._visualize_policy_performance_for_validation(
+            estimation_dict=policy_value_dict,
+            input_dict=input_dict,
+            true_value_arg="true_policy_value",
+            estimated_value_arg="estimated_policy_value",
+            compared_estimators=compared_estimators,
+            behavior_policy_name=behavior_policy_name,
+            dataset_id=dataset_id,
+            n_cols=n_cols,
+            share_axes=share_axes,
+            legend=legend,
+            ylabel="policy value",
+            fig_dir=fig_dir,
+            fig_name=fig_name,
         )
-
-        guide_min, guide_max = 1e5, -1e5
-        if n_rows == 1:
-            for i, estimator in enumerate(compared_estimators):
-                if dataset_id is None and isinstance(input_dict, MultipleInputDict):
-                    n_datasets = len(input_dict)
-                    min_vals = np.zeros(n_datasets)
-                    max_vals = np.zeros(n_datasets)
-
-                    for l in range(len(input_dict)):
-                        true_policy_value = policy_value_dict[l][estimator][
-                            "true_policy_value"
-                        ]
-                        estimated_policy_value = policy_value_dict[l][estimator][
-                            "estimated_policy_value"
-                        ]
-
-                        axes[i].scatter(
-                            true_policy_value,
-                            estimated_policy_value,
-                            color=color[0]
-                            if same_color_across_datasets
-                            else color[l % n_colors],
-                        )
-
-                        min_vals[l] = np.minimum(
-                            np.nanmin(true_policy_value),
-                            np.nanmin(estimated_policy_value),
-                        )
-                        max_vals[l] = np.maximum(
-                            np.nanmax(true_policy_value),
-                            np.nanmax(estimated_policy_value),
-                        )
-
-                    min_val = min_vals.min()
-                    max_val = max_vals.max()
-
-                else:
-                    true_policy_value = policy_value_dict[estimator][
-                        "true_policy_value"
-                    ]
-                    estimated_policy_value = policy_value_dict[estimator][
-                        "estimated_policy_value"
-                    ]
-
-                    axes[i].scatter(
-                        true_policy_value,
-                        estimated_policy_value,
-                    )
-
-                    min_val = np.minimum(
-                        np.nanmin(true_policy_value), np.nanmin(estimated_policy_value)
-                    )
-                    max_val = np.maximum(
-                        np.nanmax(true_policy_value), np.nanmax(estimated_policy_value)
-                    )
-
-                axes[i].set_title(estimator)
-                axes[i].set_xlabel("true policy value")
-                axes[i].set_ylabel("estimated policy value")
-
-                if not share_axes:
-                    margin = (max_val - min_val) * 0.05
-                    guide = np.linspace(min_val - margin, max_val + margin)
-                    axes[i].plot(
-                        guide,
-                        guide,
-                        color="black",
-                        linewidth=1.0,
-                    )
-
-                guide_min = min_val if guide_min > min_val else guide_min
-                guide_max = max_val if guide_max < max_val else guide_max
-
-            if share_axes:
-                margin = (guide_max - guide_min) * 0.05
-                guide = np.linspace(guide_min - margin, guide_max + margin)
-                for i, estimator in enumerate(compared_estimators):
-                    axes[i].plot(
-                        guide,
-                        guide,
-                        color="black",
-                        linewidth=1.0,
-                    )
-
-        else:
-            for i, estimator in enumerate(compared_estimators):
-                if dataset_id is None and isinstance(input_dict, MultipleInputDict):
-                    n_datasets = len(input_dict)
-                    min_vals = np.zeros(n_datasets)
-                    max_vals = np.zeros(n_datasets)
-
-                    for l in range(len(input_dict)):
-                        true_policy_value = policy_value_dict[l][estimator][
-                            "true_policy_value"
-                        ]
-                        estimated_policy_value = policy_value_dict[l][estimator][
-                            "estimated_policy_value"
-                        ]
-
-                        axes[i // n_cols, i % n_cols].scatter(
-                            true_policy_value,
-                            estimated_policy_value,
-                            color=color[0]
-                            if same_color_across_datasets
-                            else color[l % n_colors],
-                        )
-
-                        min_vals[l] = np.minimum(
-                            np.nanmin(true_policy_value),
-                            np.nanmin(estimated_policy_value),
-                        )
-                        max_vals[l] = np.maximum(
-                            np.nanmax(true_policy_value),
-                            np.nanmax(estimated_policy_value),
-                        )
-
-                    min_val = min_vals.min()
-                    max_val = max_vals.max()
-
-                else:
-                    true_policy_value = policy_value_dict[estimator][
-                        "true_policy_value"
-                    ]
-                    estimated_policy_value = policy_value_dict[estimator][
-                        "estimated_policy_value"
-                    ]
-
-                    axes[i // n_cols, i % n_cols].scatter(
-                        true_policy_value,
-                        estimated_policy_value,
-                    )
-
-                    min_val = np.minimum(
-                        np.nanmin(true_policy_value), np.nanmin(estimated_policy_value)
-                    )
-                    max_val = np.maximum(
-                        np.nanmax(true_policy_value), np.nanmax(estimated_policy_value)
-                    )
-
-                axes[i // n_cols, i % n_cols].set_title(estimator)
-                axes[i // n_cols, i % n_cols].set_xlabel("true policy value")
-                axes[i // n_cols, i % n_cols].set_ylabel("estimated policy value")
-
-                if not share_axes:
-                    margin = (max_val - min_val) * 0.05
-                    guide = np.linspace(min_val - margin, max_val + margin)
-                    axes[i // n_cols, i % n_cols].plot(
-                        guide,
-                        guide,
-                        color="black",
-                        linewidth=1.0,
-                    )
-
-                guide_min = min_val if guide_min > min_val else guide_min
-                guide_max = max_val if guide_max < max_val else guide_max
-
-            if share_axes:
-                margin = (guide_max - guide_min) * 0.05
-                guide = np.linspace(guide_min - margin, guide_max + margin)
-                for i, estimator in enumerate(compared_estimators):
-                    axes[i // n_cols, i % n_cols].plot(
-                        guide,
-                        guide,
-                        color="black",
-                        linewidth=1.0,
-                    )
-
-        fig.tight_layout()
-        plt.show()
-
-        if fig_dir:
-            fig.savefig(str(fig_dir / fig_name), dpi=300, bbox_inches="tight")
 
     def visualize_policy_value_lower_bound_for_validation(
         self,
         input_dict: Union[OPEInputDict, MultipleInputDict],
         compared_estimators: Optional[List[str]] = None,
-        dataset_id: Optional[Union[int, str]] = None,
+        behavior_policy_name: Optional[str] = None,
+        dataset_id: Optional[int] = None,
         cis: List[str] = ["bootstrap"],
         alpha: float = 0.05,
         n_bootstrap_samples: int = 100,
         random_state: Optional[int] = 12345,
         n_cols: Optional[int] = None,
         share_axes: bool = False,
-        same_color_across_datasets: bool = False,
+        legend: bool = True,
         fig_dir: Optional[Path] = None,
         fig_name: str = "validation_policy_value_lower_bound.png",
     ):
@@ -7257,7 +7715,7 @@ class OffPolicySelection:
 
             .. code-block:: python
 
-                key: [evaluation_policy_name][
+                key: [evaluation_policy][
                     evaluation_policy_action,
                     evaluation_policy_action_dist,
                     state_action_value_prediction,
@@ -7266,6 +7724,9 @@ class OffPolicySelection:
                     state_marginal_importance_weight,
                     on_policy_policy_value,
                     gamma,
+                    behavior_policy,
+                    evaluation_policy,
+                    dataset_id,
                 ]
 
             .. seealso::
@@ -7276,9 +7737,11 @@ class OffPolicySelection:
             Name of compared estimators.
             When `None` is given, all the estimators are compared.
 
-        dataset_id: int or str, default=None
-            Id (or name) of the logged dataset.
-            If `None`, the average of the result will be shown.
+        behavior_policy_name: str, default=None
+            Name of the behavior policy.
+
+        dataset_id: int, default=None
+            Id of the logged dataset.
 
         cis: list of {"bootstrap", "hoeffding", "bernstein", "ttest"}, default=["bootstrap"]
             Estimation methods for confidence intervals.
@@ -7298,9 +7761,8 @@ class OffPolicySelection:
         share_axes: bool, default=False
             Whether to share x- and y-axes or not.
 
-        same_color_across_datasets: bool, default=False
-            Whether to use same color to plot results across logged datasets.
-            If `False`, the scatter plot uses different colors on each logged dataset.
+        legend: bool, default=True
+            Whether to include a legend in the scatter plot.
 
         fig_dir: Path, default=None
             Path to store the bar figure.
@@ -7310,22 +7772,17 @@ class OffPolicySelection:
             Name of the bar figure.
 
         """
-        if self.ope is None:
-            raise RuntimeError(
-                "ope is not given. Please initialize the class with ope attribute"
-            )
-        if compared_estimators is None:
-            compared_estimators = self.estimators_name["standard_ope"]
-        elif not set(compared_estimators).issubset(
-            self.estimators_name["standard_ope"]
-        ):
-            raise ValueError(
-                "compared_estimators must be a subset of self.estimators_name['standard_ope'], but found False."
-            )
+        compared_estimators = self._check_compared_estimators(
+            compared_estimators, ope_type="standard_ope"
+        )
+        self._check_basic_visualization_inputs(
+            n_cols=n_cols, fig_dir=fig_dir, fig_name=fig_name
+        )
 
         policy_value_dict = self.select_by_policy_value_lower_bound(
             input_dict,
             compared_estimators=compared_estimators,
+            behavior_policy_name=behavior_policy_name,
             dataset_id=dataset_id,
             cis=cis,
             alpha=alpha,
@@ -7358,40 +7815,150 @@ class OffPolicySelection:
             if n_cols == 1:
                 for ci in cis:
                     for i, estimator in enumerate(compared_estimators):
-                        if dataset_id is None and isinstance(
-                            input_dict, MultipleInputDict
-                        ):
-                            n_datasets = len(input_dict)
-                            min_vals = np.zeros(n_datasets)
-                            max_vals = np.zeros(n_datasets)
 
-                            for l in range(len(input_dict)):
-                                true_policy_value = policy_value_dict[l][ci][estimator][
+                        if isinstance(input_dict, MultipleInputDict):
+
+                            if behavior_policy_name is None and dataset_id is None:
+                                min_val, max_val = np.infty, -np.infty
+
+                                for l, behavior_policy in enumerate(
+                                    input_dict.behavior_policy_names
+                                ):
+                                    n_datasets = input_dict.n_datasets[behavior_policy]
+                                    min_vals = np.zeros(n_datasets)
+                                    max_vals = np.zeros(n_datasets)
+
+                                    for dataset_id_ in range(n_datasets):
+                                        true_policy_value = policy_value_dict[
+                                            behavior_policy
+                                        ][dataset_id_][ci][estimator][
+                                            "true_policy_value"
+                                        ]
+                                        estimated_policy_value = policy_value_dict[
+                                            behavior_policy
+                                        ][dataset_id_][ci][estimator][
+                                            "estimated_policy_value_lower_bound"
+                                        ]
+
+                                        if dataset_id_ == 0:
+                                            axes[i].scatter(
+                                                true_policy_value,
+                                                estimated_policy_value,
+                                                color=color[l % n_colors],
+                                                label=behavior_policy,
+                                            )
+                                        else:  # to remove duplicated labels
+                                            axes[i].scatter(
+                                                true_policy_value,
+                                                estimated_policy_value,
+                                                color=color[l % n_colors],
+                                            )
+
+                                        min_vals[dataset_id_] = np.minimum(
+                                            np.nanmin(true_policy_value),
+                                            np.nanmin(estimated_policy_value),
+                                        )
+                                        max_vals[dataset_id_] = np.maximum(
+                                            np.nanmax(true_policy_value),
+                                            np.nanmax(estimated_policy_value),
+                                        )
+
+                                    min_val = min(min_val, min_vals.min())
+                                    max_val = max(max_val, max_vals.max())
+
+                            elif (
+                                behavior_policy_name is None and dataset_id is not None
+                            ):
+                                min_val, max_val = np.infty, -np.infty
+
+                                for l, behavior_policy in enumerate(
+                                    input_dict.behavior_policy_names
+                                ):
+                                    true_policy_value = policy_value_dict[
+                                        behavior_policy
+                                    ][ci][estimator]["true_policy_value"]
+                                    estimated_policy_value = policy_value_dict[
+                                        behavior_policy
+                                    ][ci][estimator][
+                                        "estimated_policy_value_lower_bound"
+                                    ]
+
+                                    axes[i].scatter(
+                                        true_policy_value,
+                                        estimated_policy_value,
+                                        color=color[l % n_colors],
+                                        label=behavior_policy,
+                                    )
+
+                                    min_val_ = np.minimum(
+                                        np.nanmin(true_policy_value),
+                                        np.nanmin(estimated_policy_value),
+                                    )
+                                    max_val_ = np.maximum(
+                                        np.nanmax(true_policy_value),
+                                        np.nanmax(estimated_policy_value),
+                                    )
+
+                                min_val = min(min_val, min_val_)
+                                max_val = max(max_val, max_val_)
+
+                            elif (
+                                behavior_policy_name is not None and dataset_id is None
+                            ):
+                                n_datasets = input_dict.n_datasets[behavior_policy_name]
+                                min_vals = np.zeros(n_datasets)
+                                max_vals = np.zeros(n_datasets)
+
+                                for dataset_id_ in range(n_datasets):
+                                    true_policy_value = policy_value_dict[dataset_id_][
+                                        ci
+                                    ][estimator]["true_policy_value"]
+                                    estimated_policy_value = policy_value_dict[
+                                        dataset_id_
+                                    ][ci][estimator][
+                                        "estimated_policy_value_lower_bound"
+                                    ]
+
+                                    axes[i].scatter(
+                                        true_policy_value,
+                                        estimated_policy_value,
+                                        color=color[0],
+                                    )
+
+                                    min_vals[dataset_id_] = np.minimum(
+                                        np.nanmin(true_policy_value),
+                                        np.nanmin(estimated_policy_value),
+                                    )
+                                    max_vals[dataset_id_] = np.maximum(
+                                        np.nanmax(true_policy_value),
+                                        np.nanmax(estimated_policy_value),
+                                    )
+
+                                min_val = min_vals.min()
+                                max_val = max_vals.max()
+
+                            else:
+                                true_policy_value = policy_value_dict[ci][estimator][
                                     "true_policy_value"
                                 ]
-                                estimated_policy_value = policy_value_dict[l][ci][
+                                estimated_policy_value = policy_value_dict[ci][
                                     estimator
                                 ]["estimated_policy_value_lower_bound"]
 
                                 axes[i].scatter(
                                     true_policy_value,
                                     estimated_policy_value,
-                                    color=color[0]
-                                    if same_color_across_datasets
-                                    else color[l % n_colors],
+                                    color=color[0],
                                 )
 
-                                min_vals[l] = np.minimum(
+                                min_val = np.minimum(
                                     np.nanmin(true_policy_value),
                                     np.nanmin(estimated_policy_value),
                                 )
-                                max_vals[l] = np.maximum(
+                                max_val = np.maximum(
                                     np.nanmax(true_policy_value),
                                     np.nanmax(estimated_policy_value),
                                 )
-
-                            min_val = min_vals.min()
-                            max_val = max_vals.max()
 
                         else:
                             true_policy_value = policy_value_dict[ci][estimator][
@@ -7404,6 +7971,7 @@ class OffPolicySelection:
                             axes[i].scatter(
                                 true_policy_value,
                                 estimated_policy_value,
+                                color=color[0],
                             )
 
                             min_val = np.minimum(
@@ -7419,6 +7987,9 @@ class OffPolicySelection:
                         axes[i].set_xlabel("true policy value")
                         axes[i].set_ylabel("estimated policy value lower bound")
 
+                        if legend and behavior_policy_name is None and isinstance(input_dict, MultipleInputDict):
+                            axes[i].legend(title="behavior_policy", loc="lower right")
+
                         if not share_axes:
                             margin = (max_val - min_val) * 0.05
                             guide = np.linspace(min_val - margin, max_val + margin)
@@ -7432,54 +8003,164 @@ class OffPolicySelection:
                         guide_min = min_val if guide_min > min_val else guide_min
                         guide_max = max_val if guide_max < max_val else guide_max
 
-                if share_axes:
-                    margin = (guide_max - guide_min) * 0.05
-                    guide = np.linspace(guide_min - margin, guide_max + margin)
-                    for i, estimator in enumerate(compared_estimators):
-                        axes[i].plot(
-                            guide,
-                            guide,
-                            color="black",
-                            linewidth=1.0,
-                        )
+                    if share_axes:
+                        margin = (guide_max - guide_min) * 0.05
+                        guide = np.linspace(guide_min - margin, guide_max + margin)
+                        for i, estimator in enumerate(compared_estimators):
+                            axes[i].plot(
+                                guide,
+                                guide,
+                                color="black",
+                                linewidth=1.0,
+                            )
 
             else:
-                for j in cis:
+                for ci in cis:
                     for i, estimator in enumerate(compared_estimators):
-                        if dataset_id is None and isinstance(
-                            input_dict, MultipleInputDict
-                        ):
-                            n_datasets = len(input_dict)
-                            min_vals = np.zeros(n_datasets)
-                            max_vals = np.zeros(n_datasets)
 
-                            for l in range(len(input_dict)):
-                                true_policy_value = policy_value_dict[l][ci][estimator][
+                        if isinstance(input_dict, MultipleInputDict):
+
+                            if behavior_policy_name is None and dataset_id is None:
+                                min_val, max_val = np.infty, -np.infty
+
+                                for l, behavior_policy in enumerate(
+                                    input_dict.behavior_policy_names
+                                ):
+                                    n_datasets = input_dict.n_datasets[behavior_policy]
+                                    min_vals = np.zeros(n_datasets)
+                                    max_vals = np.zeros(n_datasets)
+
+                                    for dataset_id_ in range(n_datasets):
+                                        true_policy_value = policy_value_dict[
+                                            behavior_policy
+                                        ][dataset_id_][ci][estimator][
+                                            "true_policy_value"
+                                        ]
+                                        estimated_policy_value = policy_value_dict[
+                                            behavior_policy
+                                        ][dataset_id_][ci][estimator][
+                                            "estimated_policy_value_lower_bound"
+                                        ]
+
+                                        if dataset_id_ == 0:
+                                            axes[i // n_cols, i % n_cols].scatter(
+                                                true_policy_value,
+                                                estimated_policy_value,
+                                                color=color[l % n_colors],
+                                                label=behavior_policy,
+                                            )
+                                        else:  # to remove duplicated labels
+                                            axes[i // n_cols, i % n_cols].scatter(
+                                                true_policy_value,
+                                                estimated_policy_value,
+                                                color=color[l % n_colors],
+                                            )
+
+                                        min_vals[dataset_id_] = np.minimum(
+                                            np.nanmin(true_policy_value),
+                                            np.nanmin(estimated_policy_value),
+                                        )
+                                        max_vals[dataset_id_] = np.maximum(
+                                            np.nanmax(true_policy_value),
+                                            np.nanmax(estimated_policy_value),
+                                        )
+
+                                    min_val = min(min_val, min_vals.min())
+                                    max_val = max(max_val, max_vals.max())
+
+                            elif (
+                                behavior_policy_name is None and dataset_id is not None
+                            ):
+                                min_val, max_val = np.infty, -np.infty
+
+                                for l, behavior_policy in enumerate(
+                                    input_dict.behavior_policy_names
+                                ):
+                                    true_policy_value = policy_value_dict[
+                                        behavior_policy
+                                    ][ci][estimator]["true_policy_value"]
+                                    estimated_policy_value = policy_value_dict[
+                                        behavior_policy
+                                    ][ci][estimator][
+                                        "estimated_policy_value_lower_bound"
+                                    ]
+
+                                    axes[i // n_cols, i % n_cols].scatter(
+                                        true_policy_value,
+                                        estimated_policy_value,
+                                        color=color[l % n_colors],
+                                        label=behavior_policy,
+                                    )
+
+                                    min_val_ = np.minimum(
+                                        np.nanmin(true_policy_value),
+                                        np.nanmin(estimated_policy_value),
+                                    )
+                                    max_val_ = np.maximum(
+                                        np.nanmax(true_policy_value),
+                                        np.nanmax(estimated_policy_value),
+                                    )
+
+                                min_val = min(min_val, min_val_)
+                                max_val = max(max_val, max_val_)
+
+                            elif (
+                                behavior_policy_name is not None and dataset_id is None
+                            ):
+                                n_datasets = input_dict.n_datasets[behavior_policy_name]
+                                min_vals = np.zeros(n_datasets)
+                                max_vals = np.zeros(n_datasets)
+
+                                for dataset_id_ in range(n_datasets):
+                                    true_policy_value = policy_value_dict[dataset_id_][
+                                        ci
+                                    ][estimator]["true_policy_value"]
+                                    estimated_policy_value = policy_value_dict[
+                                        dataset_id_
+                                    ][ci][estimator][
+                                        "estimated_policy_value_lower_bound"
+                                    ]
+
+                                    axes[i].scatter(
+                                        true_policy_value,
+                                        estimated_policy_value,
+                                        color=color[0],
+                                    )
+
+                                    min_vals[dataset_id_] = np.minimum(
+                                        np.nanmin(true_policy_value),
+                                        np.nanmin(estimated_policy_value),
+                                    )
+                                    max_vals[dataset_id_] = np.maximum(
+                                        np.nanmax(true_policy_value),
+                                        np.nanmax(estimated_policy_value),
+                                    )
+
+                                min_val = min_vals.min()
+                                max_val = max_vals.max()
+
+                            else:
+                                true_policy_value = policy_value_dict[ci][estimator][
                                     "true_policy_value"
                                 ]
-                                estimated_policy_value = policy_value_dict[l][ci][
+                                estimated_policy_value = policy_value_dict[ci][
                                     estimator
                                 ]["estimated_policy_value_lower_bound"]
 
-                                axes[i].scatter(
+                                axes[i // n_cols, i % n_cols].scatter(
                                     true_policy_value,
                                     estimated_policy_value,
-                                    color=color[0]
-                                    if same_color_across_datasets
-                                    else color[l % n_colors],
+                                    color=color[0],
                                 )
 
-                                min_vals[l] = np.minimum(
+                                min_val = np.minimum(
                                     np.nanmin(true_policy_value),
                                     np.nanmin(estimated_policy_value),
                                 )
-                                max_vals[l] = np.maximum(
+                                max_val = np.maximum(
                                     np.nanmax(true_policy_value),
                                     np.nanmax(estimated_policy_value),
                                 )
-
-                            min_val = min_vals.min()
-                            max_val = max_vals.max()
 
                         else:
                             true_policy_value = policy_value_dict[ci][estimator][
@@ -7492,6 +8173,7 @@ class OffPolicySelection:
                             axes[i // n_cols, i % n_cols].scatter(
                                 true_policy_value,
                                 estimated_policy_value,
+                                color=color[0],
                             )
 
                             min_val = np.minimum(
@@ -7503,16 +8185,21 @@ class OffPolicySelection:
                                 np.nanmax(estimated_policy_value),
                             )
 
-                        axes[i // n_cols, i % n_cols].set_title(f"({ci}, {estimator})")
+                        axes[i // n_cols, i % n_cols].set_title(f"{ci}, {estimator}")
                         axes[i // n_cols, i % n_cols].set_xlabel("true policy value")
                         axes[i // n_cols, i % n_cols].set_ylabel(
-                            "estimated policy value"
+                            "estimated policy value lower bound"
                         )
+
+                        if legend and behavior_policy_name is None and isinstance(input_dict, MultipleInputDict):
+                            axes[i // n_cols, i % n_cols].legend(
+                                title="behavior_policy", loc="lower right",
+                            )
 
                         if not share_axes:
                             margin = (max_val - min_val) * 0.05
                             guide = np.linspace(min_val - margin, max_val + margin)
-                            axes[i].plot(
+                            axes[i // n_cols, i % n_cols].plot(
                                 guide,
                                 guide,
                                 color="black",
@@ -7522,55 +8209,165 @@ class OffPolicySelection:
                         guide_min = min_val if guide_min > min_val else guide_min
                         guide_max = max_val if guide_max < max_val else guide_max
 
-                if share_axes:
-                    margin = (guide_max - guide_min) * 0.05
-                    guide = np.linspace(guide_min - margin, guide_max + margin)
-                    for i, estimator in enumerate(compared_estimators):
-                        axes[i].plot(
-                            guide,
-                            guide,
-                            color="black",
-                            linewidth=1.0,
-                        )
+                    if share_axes:
+                        margin = (guide_max - guide_min) * 0.05
+                        guide = np.linspace(guide_min - margin, guide_max + margin)
+                        for i, estimator in enumerate(compared_estimators):
+                            axes[i // n_cols, i % n_cols].plot(
+                                guide,
+                                guide,
+                                color="black",
+                                linewidth=1.0,
+                            )
 
         else:
             if n_cols == 1:
                 for j, ci in enumerate(cis):
-                    for estimator in enumerate(compared_estimators):
-                        if dataset_id is None and isinstance(
-                            input_dict, MultipleInputDict
-                        ):
-                            n_datasets = len(input_dict)
-                            min_vals = np.zeros(n_datasets)
-                            max_vals = np.zeros(n_datasets)
+                    for i, estimator in enumerate(compared_estimators):
 
-                            for l in range(len(input_dict)):
-                                true_policy_value = policy_value_dict[l][ci][estimator][
+                        if isinstance(input_dict, MultipleInputDict):
+
+                            if behavior_policy_name is None and dataset_id is None:
+                                min_val, max_val = np.infty, -np.infty
+
+                                for l, behavior_policy in enumerate(
+                                    input_dict.behavior_policy_names
+                                ):
+                                    n_datasets = input_dict.n_datasets[behavior_policy]
+                                    min_vals = np.zeros(n_datasets)
+                                    max_vals = np.zeros(n_datasets)
+
+                                    for dataset_id_ in range(n_datasets):
+                                        true_policy_value = policy_value_dict[
+                                            behavior_policy
+                                        ][dataset_id_][ci][estimator][
+                                            "true_policy_value"
+                                        ]
+                                        estimated_policy_value = policy_value_dict[
+                                            behavior_policy
+                                        ][dataset_id_][ci][estimator][
+                                            "estimated_policy_value_lower_bound"
+                                        ]
+
+                                        if dataset_id_ == 0:
+                                            axes[j].scatter(
+                                                true_policy_value,
+                                                estimated_policy_value,
+                                                color=color[l % n_colors],
+                                                label=behavior_policy,
+                                            )
+                                        else:  # to remove duplicated labels
+                                            axes[j].scatter(
+                                                true_policy_value,
+                                                estimated_policy_value,
+                                                color=color[l % n_colors],
+                                            )
+
+                                        min_vals[dataset_id_] = np.minimum(
+                                            np.nanmin(true_policy_value),
+                                            np.nanmin(estimated_policy_value),
+                                        )
+                                        max_vals[dataset_id_] = np.maximum(
+                                            np.nanmax(true_policy_value),
+                                            np.nanmax(estimated_policy_value),
+                                        )
+
+                                    min_val = min(min_val, min_vals.min())
+                                    max_val = max(max_val, max_vals.max())
+
+                            elif (
+                                behavior_policy_name is None and dataset_id is not None
+                            ):
+                                min_val, max_val = np.infty, -np.infty
+
+                                for l, behavior_policy in enumerate(
+                                    input_dict.behavior_policy_names
+                                ):
+                                    true_policy_value = policy_value_dict[ci][
+                                        behavior_policy
+                                    ][ci][estimator]["true_policy_value"]
+                                    estimated_policy_value = policy_value_dict[
+                                        behavior_policy
+                                    ][ci][estimator][
+                                        "estimated_policy_value_lower_bound"
+                                    ]
+
+                                    axes[j].scatter(
+                                        true_policy_value,
+                                        estimated_policy_value,
+                                        color=color[l % n_colors],
+                                        label=behavior_policy,
+                                    )
+
+                                    min_val_ = np.minimum(
+                                        np.nanmin(true_policy_value),
+                                        np.nanmin(estimated_policy_value),
+                                    )
+                                    max_val_ = np.maximum(
+                                        np.nanmax(true_policy_value),
+                                        np.nanmax(estimated_policy_value),
+                                    )
+
+                                min_val = min(min_val, min_val_)
+                                max_val = max(max_val, max_val_)
+
+                            elif (
+                                behavior_policy_name is not None and dataset_id is None
+                            ):
+                                n_datasets = input_dict.n_datasets[behavior_policy_name]
+                                min_vals = np.zeros(n_datasets)
+                                max_vals = np.zeros(n_datasets)
+
+                                for dataset_id_ in range(n_datasets):
+                                    true_policy_value = policy_value_dict[dataset_id_][
+                                        ci
+                                    ][estimator]["true_policy_value"]
+                                    estimated_policy_value = policy_value_dict[
+                                        dataset_id_
+                                    ][ci][estimator][
+                                        "estimated_policy_value_lower_bound"
+                                    ]
+
+                                    axes[j].scatter(
+                                        true_policy_value,
+                                        estimated_policy_value,
+                                        color=color[0],
+                                    )
+
+                                    min_vals[dataset_id_] = np.minimum(
+                                        np.nanmin(true_policy_value),
+                                        np.nanmin(estimated_policy_value),
+                                    )
+                                    max_vals[dataset_id_] = np.maximum(
+                                        np.nanmax(true_policy_value),
+                                        np.nanmax(estimated_policy_value),
+                                    )
+
+                                min_val = min_vals.min()
+                                max_val = max_vals.max()
+
+                            else:
+                                true_policy_value = policy_value_dict[ci][estimator][
                                     "true_policy_value"
                                 ]
-                                estimated_policy_value = policy_value_dict[l][ci][
+                                estimated_policy_value = policy_value_dict[ci][
                                     estimator
                                 ]["estimated_policy_value_lower_bound"]
 
                                 axes[j].scatter(
                                     true_policy_value,
                                     estimated_policy_value,
-                                    color=color[0]
-                                    if same_color_across_datasets
-                                    else color[l % n_colors],
+                                    color=color[0],
                                 )
 
-                                min_vals[l] = np.minimum(
+                                min_val = np.minimum(
                                     np.nanmin(true_policy_value),
                                     np.nanmin(estimated_policy_value),
                                 )
-                                max_vals[l] = np.maximum(
+                                max_val = np.maximum(
                                     np.nanmax(true_policy_value),
                                     np.nanmax(estimated_policy_value),
                                 )
-
-                            min_val = min_vals.min()
-                            max_val = max_vals.max()
 
                         else:
                             true_policy_value = policy_value_dict[ci][estimator][
@@ -7583,6 +8380,7 @@ class OffPolicySelection:
                             axes[j].scatter(
                                 true_policy_value,
                                 estimated_policy_value,
+                                color=color[0],
                             )
 
                             min_val = np.minimum(
@@ -7597,6 +8395,9 @@ class OffPolicySelection:
                         axes[j].set_title(f"{ci}, {estimator}")
                         axes[j].set_xlabel("true policy value")
                         axes[j].set_ylabel("estimated policy value lower bound")
+
+                        if legend and behavior_policy_name is None and isinstance(input_dict, MultipleInputDict):
+                            axes[j].legend(title="behavior_policy", loc="lower right")
 
                         if not share_axes:
                             margin = (max_val - min_val) * 0.05
@@ -7625,40 +8426,150 @@ class OffPolicySelection:
             else:
                 for j, ci in enumerate(cis):
                     for i, estimator in enumerate(compared_estimators):
-                        if dataset_id is None and isinstance(
-                            input_dict, MultipleInputDict
-                        ):
-                            n_datasets = len(input_dict)
-                            min_vals = np.zeros(n_datasets)
-                            max_vals = np.zeros(n_datasets)
 
-                            for l in range(len(input_dict)):
-                                true_policy_value = policy_value_dict[l][ci][estimator][
+                        if isinstance(input_dict, MultipleInputDict):
+
+                            if behavior_policy_name is None and dataset_id is None:
+                                min_val, max_val = np.infty, -np.infty
+
+                                for l, behavior_policy in enumerate(
+                                    input_dict.behavior_policy_names
+                                ):
+                                    n_datasets = input_dict.n_datasets[behavior_policy]
+                                    min_vals = np.zeros(n_datasets)
+                                    max_vals = np.zeros(n_datasets)
+
+                                    for dataset_id_ in range(n_datasets):
+                                        true_policy_value = policy_value_dict[
+                                            behavior_policy
+                                        ][dataset_id_][ci][estimator][
+                                            "true_policy_value"
+                                        ]
+                                        estimated_policy_value = policy_value_dict[
+                                            behavior_policy
+                                        ][dataset_id_][ci][estimator][
+                                            "estimated_policy_value_lower_bound"
+                                        ]
+
+                                        if dataset_id_ == 0:
+                                            axes[i, j].scatter(
+                                                true_policy_value,
+                                                estimated_policy_value,
+                                                color=color[l % n_colors],
+                                                label=behavior_policy,
+                                            )
+                                        else:  # to remove duplicated labels
+                                            axes[i, j].scatter(
+                                                true_policy_value,
+                                                estimated_policy_value,
+                                                color=color[l % n_colors],
+                                            )
+
+                                        min_vals[dataset_id_] = np.minimum(
+                                            np.nanmin(true_policy_value),
+                                            np.nanmin(estimated_policy_value),
+                                        )
+                                        max_vals[dataset_id_] = np.maximum(
+                                            np.nanmax(true_policy_value),
+                                            np.nanmax(estimated_policy_value),
+                                        )
+
+                                    min_val = min(min_val, min_vals.min())
+                                    max_val = max(max_val, max_vals.max())
+
+                            elif (
+                                behavior_policy_name is None and dataset_id is not None
+                            ):
+                                min_val, max_val = np.infty, -np.infty
+
+                                for l, behavior_policy in enumerate(
+                                    input_dict.behavior_policy_names
+                                ):
+                                    true_policy_value = policy_value_dict[
+                                        behavior_policy
+                                    ][ci][estimator]["true_policy_value"]
+                                    estimated_policy_value = policy_value_dict[
+                                        behavior_policy
+                                    ][ci][estimator][
+                                        "estimated_policy_value_lower_bound"
+                                    ]
+
+                                    axes[i, j].scatter(
+                                        true_policy_value,
+                                        estimated_policy_value,
+                                        color=color[l % n_colors],
+                                        label=behavior_policy,
+                                    )
+
+                                    min_val_ = np.minimum(
+                                        np.nanmin(true_policy_value),
+                                        np.nanmin(estimated_policy_value),
+                                    )
+                                    max_val_ = np.maximum(
+                                        np.nanmax(true_policy_value),
+                                        np.nanmax(estimated_policy_value),
+                                    )
+
+                                min_val = min(min_val, min_val_)
+                                max_val = max(max_val, max_val_)
+
+                            elif (
+                                behavior_policy_name is not None and dataset_id is None
+                            ):
+                                n_datasets = input_dict.n_datasets[behavior_policy_name]
+                                min_vals = np.zeros(n_datasets)
+                                max_vals = np.zeros(n_datasets)
+
+                                for dataset_id_ in range(n_datasets):
+                                    true_policy_value = policy_value_dict[dataset_id_][
+                                        ci
+                                    ][estimator]["true_policy_value"]
+                                    estimated_policy_value = policy_value_dict[
+                                        dataset_id_
+                                    ][ci][estimator][
+                                        "estimated_policy_value_lower_bound"
+                                    ]
+
+                                    axes[i, j].scatter(
+                                        true_policy_value,
+                                        estimated_policy_value,
+                                        color=color[0],
+                                    )
+
+                                    min_vals[dataset_id_] = np.minimum(
+                                        np.nanmin(true_policy_value),
+                                        np.nanmin(estimated_policy_value),
+                                    )
+                                    max_vals[dataset_id_] = np.maximum(
+                                        np.nanmax(true_policy_value),
+                                        np.nanmax(estimated_policy_value),
+                                    )
+
+                                min_val = min_vals.min()
+                                max_val = max_vals.max()
+
+                            else:
+                                true_policy_value = policy_value_dict[ci][estimator][
                                     "true_policy_value"
                                 ]
-                                estimated_policy_value = policy_value_dict[l][ci][
+                                estimated_policy_value = policy_value_dict[ci][
                                     estimator
                                 ]["estimated_policy_value_lower_bound"]
 
                                 axes[i, j].scatter(
                                     true_policy_value,
                                     estimated_policy_value,
-                                    color=color[0]
-                                    if same_color_across_datasets
-                                    else color[l % n_colors],
+                                    color=color[0],
                                 )
 
-                                min_vals[l] = np.minimum(
+                                min_val = np.minimum(
                                     np.nanmin(true_policy_value),
                                     np.nanmin(estimated_policy_value),
                                 )
-                                max_vals[l] = np.maximum(
+                                max_val = np.maximum(
                                     np.nanmax(true_policy_value),
                                     np.nanmax(estimated_policy_value),
                                 )
-
-                            min_val = min_vals.min()
-                            max_val = max_vals.max()
 
                         else:
                             true_policy_value = policy_value_dict[ci][estimator][
@@ -7671,6 +8582,7 @@ class OffPolicySelection:
                             axes[i, j].scatter(
                                 true_policy_value,
                                 estimated_policy_value,
+                                color=color[0],
                             )
 
                             min_val = np.minimum(
@@ -7686,6 +8598,9 @@ class OffPolicySelection:
                         axes[i, j].set_xlabel("true policy value")
                         axes[i, j].set_ylabel("estimated policy value lower bound")
 
+                        if legend and behavior_policy_name is None and isinstance(input_dict, MultipleInputDict):
+                            axes[i, j].legend(title="behavior_policy", loc="lower right")
+
                         if not share_axes:
                             margin = (max_val - min_val) * 0.05
                             guide = np.linspace(min_val - margin, max_val + margin)
@@ -7700,7 +8615,8 @@ class OffPolicySelection:
                         guide_max = max_val if guide_max < max_val else guide_max
 
                 if share_axes:
-                    guide = np.linspace(guide_min, guide_max)
+                    margin = (guide_max - guide_min) * 0.05
+                    guide = np.linspace(guide_min - margin, guide_max + margin)
                     for j, ci in enumerate(cis):
                         for i, estimator in enumerate(compared_estimators):
                             axes[i, j].plot(
@@ -7720,10 +8636,11 @@ class OffPolicySelection:
         self,
         input_dict: Union[OPEInputDict, MultipleInputDict],
         compared_estimators: Optional[List[str]] = None,
-        dataset_id: Optional[Union[int, str]] = None,
+        behavior_policy_name: Optional[str] = None,
+        dataset_id: Optional[int] = None,
         n_cols: Optional[int] = None,
         share_axes: bool = False,
-        same_color_across_datasets: bool = False,
+        legend: bool = True,
         fig_dir: Optional[Path] = None,
         fig_name: str = "validation_variance.png",
     ):
@@ -7736,7 +8653,7 @@ class OffPolicySelection:
 
             .. code-block:: python
 
-                key: [evaluation_policy_name][
+                key: [evaluation_policy][
                     evaluation_policy_action,
                     evaluation_policy_action_dist,
                     state_action_value_prediction,
@@ -7745,6 +8662,9 @@ class OffPolicySelection:
                     state_marginal_importance_weight,
                     on_policy_policy_value,
                     gamma,
+                    behavior_policy,
+                    evaluation_policy,
+                    dataset_id,
                 ]
 
             .. seealso::
@@ -7755,9 +8675,11 @@ class OffPolicySelection:
             Name of compared estimators.
             When `None` is given, all the estimators are compared.
 
-        dataset_id: int or str, default=None
-            Id (or name) of the logged dataset.
-            If `None`, the average of the result will be shown.
+        behavior_policy_name: str, default=None
+            Name of the behavior policy.
+
+        dataset_id: int, default=None
+            Id of the logged dataset.
 
         n_cols: int, default=None (> 0)
             Number of columns in the figure.
@@ -7765,9 +8687,8 @@ class OffPolicySelection:
         share_axes: bool, default=False
             Whether to share x- and y-axes or not.
 
-        same_color_across_datasets: bool, default=False
-            Whether to use same color to plot results across logged datasets.
-            If `False`, the scatter plot uses different colors on each logged dataset.
+        legend: bool, default=True
+            Whether to include a legend in the scatter plot.
 
         fig_dir: Path, default=None
             Path to store the bar figure.
@@ -7777,41 +8698,82 @@ class OffPolicySelection:
             Name of the bar figure.
 
         """
-        if self.cumulative_distribution_ope is None:
-            raise RuntimeError(
-                "cumulative_distribution_ope is not given. Please initialize the class with cumulative_distribution_ope attribute"
-            )
-        if compared_estimators is None:
-            compared_estimators = self.estimators_name["cumulative_distribution_ope"]
-        elif not set(compared_estimators).issubset(
-            self.estimators_name["cumulative_distribution_ope"]
-        ):
-            raise ValueError(
-                "compared_estimators must be a subset of self.estimators_name['cumulative_distribution_ope'], but found False."
-            )
+        compared_estimators = self._check_compared_estimators(
+            compared_estimators, ope_type="cumulative_distribution_ope"
+        )
+        self._check_basic_visualization_inputs(
+            n_cols=n_cols, fig_dir=fig_dir, fig_name=fig_name
+        )
+
         ground_truth_policy_value_dict = self.obtain_true_selection_result(
             input_dict=input_dict,
+            behavior_policy_name=behavior_policy_name,
             dataset_id=dataset_id,
             return_variance=True,
         )
-
-        if dataset_id is None and isinstance(input_dict, MultipleInputDict):
-            candidate_policy_names = []
-            true_variance = []
-            for l in range(len(input_dict)):
-                candidate_policy_names.append(
-                    ground_truth_policy_value_dict[l]["ranking"]
-                )
-                true_variance.append(ground_truth_policy_value_dict[l]["variance"])
-        else:
-            candidate_policy_names = ground_truth_policy_value_dict["ranking"]
-            true_variance = ground_truth_policy_value_dict["variance"]
-
         estimated_variance_dict = self.cumulative_distribution_ope.estimate_variance(
             input_dict,
             compared_estimators=compared_estimators,
+            behavior_policy_name=behavior_policy_name,
             dataset_id=dataset_id,
         )
+
+        if isinstance(input_dict, MultipleInputDict):
+
+            if behavior_policy_name is None and dataset_id is None:
+                candidate_policy_names = defaultdict(list)
+                true_variance = defaultdict(list)
+
+                for (
+                    behavior_policy,
+                    n_datasets,
+                ) in input_dict.n_datasets.items():
+                    for dataset_id_ in range(n_datasets):
+                        candidate_policy_names[behavior_policy].append(
+                            ground_truth_policy_value_dict[behavior_policy][
+                                dataset_id_
+                            ]["ranking"]
+                        )
+                        true_variance[behavior_policy].append(
+                            ground_truth_policy_value_dict[behavior_policy][
+                                dataset_id_
+                            ]["variance"]
+                        )
+
+                candidate_policy_names = defaultdict_to_dict(candidate_policy_names)
+                true_variance = defaultdict_to_dict(true_variance)
+
+            elif behavior_policy_name is None and dataset_id is not None:
+                candidate_policy_names = {}
+                true_variance = {}
+
+                for behavior_policy in input_dict.behavior_policy_names:
+                    candidate_policy_names[
+                        behavior_policy
+                    ] = ground_truth_policy_value_dict[behavior_policy]["ranking"]
+                    true_variance[behavior_policy] = ground_truth_policy_value_dict[
+                        behavior_policy
+                    ]["variance"]
+
+            elif behavior_policy_name is not None and dataset_id is None:
+                candidate_policy_names = []
+                true_variance = []
+
+                for dataset_id_ in range(input_dict.n_datasets[behavior_policy_name]):
+                    candidate_policy_names.append(
+                        ground_truth_policy_value_dict[dataset_id_]["ranking"]
+                    )
+                    true_variance.append(
+                        ground_truth_policy_value_dict[dataset_id_]["variance"]
+                    )
+
+            else:
+                candidate_policy_names = ground_truth_policy_value_dict["ranking"]
+                true_variance = ground_truth_policy_value_dict["variance"]
+
+        else:
+            candidate_policy_names = ground_truth_policy_value_dict["ranking"]
+            true_variance = ground_truth_policy_value_dict["variance"]
 
         plt.style.use("ggplot")
         color = plt.rcParams["axes.prop_cycle"].by_key()["color"]
@@ -7832,37 +8794,154 @@ class OffPolicySelection:
         guide_min, guide_max = 1e5, -1e5
         if n_rows == 1:
             for i, estimator in enumerate(compared_estimators):
-                if dataset_id is None and isinstance(input_dict, MultipleInputDict):
-                    n_datasets = len(input_dict)
-                    min_vals = np.zeros(n_datasets)
-                    max_vals = np.zeros(n_datasets)
 
-                    for l in range(len(input_dict)):
-                        estimated_variance = np.zeros(len(candidate_policy_names[l]))
-                        for j, eval_policy in enumerate(candidate_policy_names[l]):
-                            estimated_variance[j] = estimated_variance_dict[l][
+                if isinstance(input_dict, MultipleInputDict):
+
+                    if behavior_policy_name is None and dataset_id is None:
+                        min_val, max_val = np.infty, -np.infty
+
+                        for l, behavior_policy in enumerate(
+                            input_dict.behavior_policy_names
+                        ):
+                            n_datasets = input_dict.n_datasets[behavior_policy]
+                            min_vals = np.zeros(n_datasets)
+                            max_vals = np.zeros(n_datasets)
+
+                            for dataset_id_ in range(n_datasets):
+                                estimated_variance = np.zeros(
+                                    len(
+                                        candidate_policy_names[behavior_policy][
+                                            dataset_id_
+                                        ]
+                                    )
+                                )
+                                for j, eval_policy in enumerate(
+                                    candidate_policy_names[behavior_policy][dataset_id_]
+                                ):
+                                    estimated_variance[j] = estimated_variance_dict[
+                                        behavior_policy
+                                    ][dataset_id_][eval_policy][estimator]
+
+                                if dataset_id_ == 0:
+                                    axes[i].scatter(
+                                        true_variance[behavior_policy][dataset_id_],
+                                        estimated_variance,
+                                        color=color[l % n_colors],
+                                        label=behavior_policy,
+                                    )
+                                else:
+                                    axes[i].scatter(
+                                        true_variance[behavior_policy][dataset_id_],
+                                        estimated_variance,
+                                        color=color[l % n_colors],
+                                    )
+
+                                min_vals[dataset_id_] = np.minimum(
+                                    np.nanmin(
+                                        true_variance[behavior_policy][dataset_id_]
+                                    ),
+                                    np.nanmin(estimated_variance),
+                                )
+                                max_vals[dataset_id_] = np.maximum(
+                                    np.nanmax(
+                                        true_variance[behavior_policy][dataset_id_]
+                                    ),
+                                    np.nanmax(estimated_variance),
+                                )
+
+                            min_val = min(min_val, min_vals.min())
+                            max_val = max(max_val, max_vals.max())
+
+                    elif behavior_policy_name is None and dataset_id is not None:
+                        min_val, max_val = np.infty, -np.infty
+
+                        for l, behavior_policy in enumerate(
+                            input_dict.behavior_policy_names
+                        ):
+                            estimated_variance = np.zeros(
+                                len(candidate_policy_names[behavior_policy])
+                            )
+                            for j, eval_policy in enumerate(
+                                candidate_policy_names[behavior_policy]
+                            ):
+                                estimated_variance[j] = estimated_variance_dict[
+                                    behavior_policy
+                                ][eval_policy][estimator]
+
+                            axes[i].scatter(
+                                true_variance[behavior_policy],
+                                estimated_variance,
+                                color=color[l % n_colors],
+                                label=behavior_policy,
+                            )
+
+                            min_val_ = np.minimum(
+                                np.nanmin(true_variance[behavior_policy]),
+                                np.nanmin(estimated_variance),
+                            )
+                            max_val_ = np.maximum(
+                                np.nanmax(true_variance[behavior_policy]),
+                                np.nanmax(estimated_variance),
+                            )
+
+                        min_val = min(min_val, min_val_)
+                        max_val = max(max_val, max_val_)
+
+                    elif behavior_policy_name is not None and dataset_id is None:
+                        n_datasets = input_dict.n_datasets[behavior_policy_name]
+                        min_vals = np.zeros(n_datasets)
+                        max_vals = np.zeros(n_datasets)
+
+                        for dataset_id_ in range(n_datasets):
+                            estimated_variance = np.zeros(
+                                len(candidate_policy_names[dataset_id_])
+                            )
+                            for j, eval_policy in enumerate(
+                                candidate_policy_names[dataset_id_]
+                            ):
+                                estimated_variance[j] = estimated_variance_dict[
+                                    dataset_id_
+                                ][eval_policy][estimator]
+
+                            axes[i].scatter(
+                                true_variance[dataset_id_],
+                                estimated_variance,
+                                color=color[0],
+                            )
+
+                            min_vals[dataset_id_] = np.minimum(
+                                np.nanmin(true_variance[dataset_id_]),
+                                np.nanmin(estimated_variance[dataset_id_]),
+                            )
+                            max_vals[dataset_id_] = np.maximum(
+                                np.nanmax(true_variance[dataset_id_]),
+                                np.nanmax(estimated_variance[dataset_id_]),
+                            )
+
+                        min_val = min_vals.min()
+                        max_val = max_vals.max()
+
+                    else:
+                        estimated_variance = np.zeros(len(candidate_policy_names))
+                        for j, eval_policy in enumerate(candidate_policy_names):
+                            estimated_variance[j] = estimated_variance_dict[
                                 eval_policy
                             ][estimator]
 
                         axes[i].scatter(
-                            true_variance[l],
+                            true_variance,
                             estimated_variance,
-                            color=color[0]
-                            if same_color_across_datasets
-                            else color[l % n_colors],
+                            color=color[0],
                         )
 
-                        min_vals[l] = np.minimum(
+                        min_val = np.minimum(
                             np.nanmin(true_variance),
                             np.nanmin(estimated_variance),
                         )
-                        max_vals[l] = np.maximum(
+                        max_val = np.maximum(
                             np.nanmax(true_variance),
                             np.nanmax(estimated_variance),
                         )
-
-                    min_val = min_vals.min()
-                    max_val = max_vals.max()
 
                 else:
                     estimated_variance = np.zeros(len(candidate_policy_names))
@@ -7874,18 +8953,24 @@ class OffPolicySelection:
                     axes[i].scatter(
                         true_variance,
                         estimated_variance,
+                        color=color[0],
                     )
 
                     min_val = np.minimum(
-                        np.nanmin(true_variance), np.nanmin(estimated_variance)
+                        np.nanmin(true_variance),
+                        np.nanmin(estimated_variance),
                     )
                     max_val = np.maximum(
-                        np.nanmax(true_variance), np.nanmax(estimated_variance)
+                        np.nanmax(true_variance),
+                        np.nanmax(estimated_variance),
                     )
 
                 axes[i].set_title(estimator)
-                axes[i].set_xlabel("true policy value")
-                axes[i].set_ylabel("estimated policy value")
+                axes[i].set_xlabel("true variance")
+                axes[i].set_ylabel("estimated variance")
+
+                if legend and behavior_policy_name is None and isinstance(input_dict, MultipleInputDict):
+                    axes[i].legend(title="behavior_policy", loc="lower right")
 
                 if not share_axes:
                     margin = (max_val - min_val) * 0.05
@@ -7913,37 +8998,154 @@ class OffPolicySelection:
 
         else:
             for i, estimator in enumerate(compared_estimators):
-                if dataset_id is None and isinstance(input_dict, MultipleInputDict):
-                    n_datasets = len(input_dict)
-                    min_vals = np.zeros(n_datasets)
-                    max_vals = np.zeros(n_datasets)
 
-                    for l in range(len(input_dict)):
+                if isinstance(input_dict, MultipleInputDict):
+
+                    if behavior_policy_name is None and dataset_id is None:
+                        min_val, max_val = np.infty, -np.infty
+
+                        for l, behavior_policy in enumerate(
+                            input_dict.behavior_policy_names
+                        ):
+                            n_datasets = input_dict.n_datasets[behavior_policy]
+                            min_vals = np.zeros(n_datasets)
+                            max_vals = np.zeros(n_datasets)
+
+                            for dataset_id_ in range(n_datasets):
+                                estimated_variance = np.zeros(
+                                    len(
+                                        candidate_policy_names[behavior_policy][
+                                            dataset_id_
+                                        ]
+                                    )
+                                )
+                                for j, eval_policy in enumerate(
+                                    candidate_policy_names[behavior_policy][dataset_id_]
+                                ):
+                                    estimated_variance[j] = estimated_variance_dict[
+                                        behavior_policy
+                                    ][dataset_id_][eval_policy][estimator]
+
+                                if dataset_id_ == 0:
+                                    axes[i // n_cols, i % n_cols].scatter(
+                                        true_variance[behavior_policy][dataset_id_],
+                                        estimated_variance,
+                                        color=color[l % n_colors],
+                                        label=behavior_policy,
+                                    )
+                                else:
+                                    axes[i // n_cols, i % n_cols].scatter(
+                                        true_variance[behavior_policy][dataset_id_],
+                                        estimated_variance,
+                                        color=color[l % n_colors],
+                                    )
+
+                                min_vals[dataset_id_] = np.minimum(
+                                    np.nanmin(
+                                        true_variance[behavior_policy][dataset_id_]
+                                    ),
+                                    np.nanmin(estimated_variance),
+                                )
+                                max_vals[dataset_id_] = np.maximum(
+                                    np.nanmax(
+                                        true_variance[behavior_policy][dataset_id_]
+                                    ),
+                                    np.nanmax(estimated_variance),
+                                )
+
+                            min_val = min(min_val, min_vals.min())
+                            max_val = max(max_val, max_vals.max())
+
+                    elif behavior_policy_name is None and dataset_id is not None:
+                        min_val, max_val = np.infty, -np.infty
+
+                        for l, behavior_policy in enumerate(
+                            input_dict.behavior_policy_names
+                        ):
+                            estimated_variance = np.zeros(
+                                len(candidate_policy_names[behavior_policy])
+                            )
+                            for j, eval_policy in enumerate(
+                                candidate_policy_names[behavior_policy]
+                            ):
+                                estimated_variance[j] = estimated_variance_dict[
+                                    behavior_policy
+                                ][eval_policy][estimator]
+
+                            axes[i // n_cols, i % n_cols].scatter(
+                                true_variance[behavior_policy],
+                                estimated_variance,
+                                color=color[l % n_colors],
+                                label=behavior_policy,
+                            )
+
+                            min_val_ = np.minimum(
+                                np.nanmin(true_variance[behavior_policy]),
+                                np.nanmin(estimated_variance),
+                            )
+                            max_val_ = np.maximum(
+                                np.nanmax(true_variance[behavior_policy]),
+                                np.nanmax(estimated_variance),
+                            )
+
+                        min_val = min(min_val, min_val_)
+                        max_val = max(max_val, max_val_)
+
+                    elif behavior_policy_name is not None and dataset_id is None:
+                        n_datasets = input_dict.n_datasets[behavior_policy_name]
+                        min_vals = np.zeros(n_datasets)
+                        max_vals = np.zeros(n_datasets)
+
+                        for dataset_id_ in range(n_datasets):
+                            estimated_variance = np.zeros(
+                                len(candidate_policy_names[dataset_id_])
+                            )
+                            for j, eval_policy in enumerate(
+                                candidate_policy_names[dataset_id_]
+                            ):
+                                estimated_variance[j] = estimated_variance_dict[
+                                    dataset_id_
+                                ][eval_policy][estimator]
+
+                            axes[i // n_cols, i % n_cols].scatter(
+                                true_variance[dataset_id_],
+                                estimated_variance,
+                                color=color[0],
+                            )
+
+                            min_vals[dataset_id_] = np.minimum(
+                                np.nanmin(true_variance[dataset_id_]),
+                                np.nanmin(estimated_variance[dataset_id_]),
+                            )
+                            max_vals[dataset_id_] = np.maximum(
+                                np.nanmax(true_variance[dataset_id_]),
+                                np.nanmax(estimated_variance[dataset_id_]),
+                            )
+
+                        min_val = min_vals.min()
+                        max_val = max_vals.max()
+
+                    else:
                         estimated_variance = np.zeros(len(candidate_policy_names))
                         for j, eval_policy in enumerate(candidate_policy_names):
-                            estimated_variance[j] = estimated_variance_dict[l][
+                            estimated_variance[j] = estimated_variance_dict[
                                 eval_policy
                             ][estimator]
 
                         axes[i // n_cols, i % n_cols].scatter(
-                            true_variance[l],
+                            true_variance,
                             estimated_variance,
-                            color=color[0]
-                            if same_color_across_datasets
-                            else color[l % n_colors],
+                            color=color[0],
                         )
 
-                        min_vals[l] = np.minimum(
+                        min_val = np.minimum(
                             np.nanmin(true_variance),
                             np.nanmin(estimated_variance),
                         )
-                        max_vals[l] = np.maximum(
+                        max_val = np.maximum(
                             np.nanmax(true_variance),
                             np.nanmax(estimated_variance),
                         )
-
-                    min_val = min_vals.min()
-                    max_val = max_vals.max()
 
                 else:
                     estimated_variance = np.zeros(len(candidate_policy_names))
@@ -7955,18 +9157,24 @@ class OffPolicySelection:
                     axes[i // n_cols, i % n_cols].scatter(
                         true_variance,
                         estimated_variance,
+                        color=color[0],
                     )
 
                     min_val = np.minimum(
-                        np.nanmin(true_variance), np.nanmin(estimated_variance)
+                        np.nanmin(true_variance),
+                        np.nanmin(estimated_variance),
                     )
                     max_val = np.maximum(
-                        np.nanmax(true_variance), np.nanmax(estimated_variance)
+                        np.nanmax(true_variance),
+                        np.nanmax(estimated_variance),
                     )
 
                 axes[i // n_cols, i % n_cols].set_title(estimator)
-                axes[i // n_cols, i % n_cols].set_xlabel("true policy value")
-                axes[i // n_cols, i % n_cols].set_ylabel("estimated policy value")
+                axes[i // n_cols, i % n_cols].set_xlabel("true variance")
+                axes[i // n_cols, i % n_cols].set_ylabel("estimated variance")
+
+                if legend and behavior_policy_name is None and isinstance(input_dict, MultipleInputDict):
+                    axes[i // n_cols, i % n_cols].legend(title="behavior_policy", loc="lower right")
 
                 if not share_axes:
                     margin = (max_val - min_val) * 0.05
@@ -8002,11 +9210,12 @@ class OffPolicySelection:
         self,
         input_dict: Union[OPEInputDict, MultipleInputDict],
         compared_estimators: Optional[List[str]] = None,
-        dataset_id: Optional[Union[int, str]] = None,
+        behavior_policy_name: Optional[str] = None,
+        dataset_id: Optional[int] = None,
         alpha: float = 0.05,
         n_cols: Optional[int] = None,
         share_axes: bool = False,
-        same_color_across_datasets: bool = False,
+        legend: bool = True,
         fig_dir: Optional[Path] = None,
         fig_name: str = "validation_lower_quartile.png",
     ):
@@ -8019,7 +9228,7 @@ class OffPolicySelection:
 
             .. code-block:: python
 
-                key: [evaluation_policy_name][
+                key: [evaluation_policy][
                     evaluation_policy_action,
                     evaluation_policy_action_dist,
                     state_action_value_prediction,
@@ -8028,6 +9237,9 @@ class OffPolicySelection:
                     state_marginal_importance_weight,
                     on_policy_policy_value,
                     gamma,
+                    behavior_policy,
+                    evaluation_policy,
+                    dataset_id,
                 ]
 
             .. seealso::
@@ -8038,9 +9250,11 @@ class OffPolicySelection:
             Name of compared estimators.
             When `None` is given, all the estimators are compared.
 
-        dataset_id: int or str, default=None
-            Id (or name) of the logged dataset.
-            If `None`, the average of the result will be shown.
+        behavior_policy_name: str, default=None
+            Name of the behavior policy.
+
+        dataset_id: int, default=None
+            Id of the logged dataset.
 
         alpha: float, default=0.05
             Proportion of the sided region. The value should be within `[0, 0.5]`.
@@ -8051,9 +9265,8 @@ class OffPolicySelection:
         share_axes: bool, default=False
             Whether to share x- and y-axes or not.
 
-        same_color_across_datasets: bool, default=False
-            Whether to use same color to plot results across logged datasets.
-            If `False`, the scatter plot uses different colors on each logged dataset.
+        legend: bool, default=True
+            Whether to include a legend in the scatter plot.
 
         fig_dir: Path, default=None
             Path to store the bar figure.
@@ -8063,229 +9276,48 @@ class OffPolicySelection:
             Name of the bar figure.
 
         """
-        if self.cumulative_distribution_ope is None:
-            raise RuntimeError(
-                "cumulative_distribution_ope is not given. Please initialize the class with cumulative_distribution_ope attribute"
-            )
-        if compared_estimators is None:
-            compared_estimators = self.estimators_name["cumulative_distribution_ope"]
-        elif not set(compared_estimators).issubset(
-            self.estimators_name["cumulative_distribution_ope"]
-        ):
-            raise ValueError(
-                "compared_estimators must be a subset of self.estimators_name['cumulative_distribution_ope'], but found False."
-            )
+        compared_estimators = self._check_compared_estimators(
+            compared_estimators, ope_type="cumulative_distribution_ope"
+        )
+        self._check_basic_visualization_inputs(
+            n_cols=n_cols, fig_dir=fig_dir, fig_name=fig_name
+        )
 
         lower_quartile_dict = self.select_by_lower_quartile(
             input_dict,
             compared_estimators=compared_estimators,
+            behavior_policy_name=behavior_policy_name,
             dataset_id=dataset_id,
             alpha=alpha,
             return_true_values=True,
         )
 
-        plt.style.use("ggplot")
-        color = plt.rcParams["axes.prop_cycle"].by_key()["color"]
-        n_colors = len(color)
-
-        n_figs = len(compared_estimators)
-        n_cols = min(5, n_figs) if n_cols is None else n_cols
-        n_rows = (n_figs - 1) // n_cols + 1
-
-        fig, axes = plt.subplots(
-            nrows=n_rows,
-            ncols=n_cols,
-            figsize=(4 * n_cols, 3 * n_rows),
-            sharex=share_axes,
-            sharey=share_axes,
+        self._visualize_policy_performance_for_validation(
+            estimation_dict=lower_quartile_dict,
+            input_dict=input_dict,
+            true_value_arg="true_lower_quartile",
+            estimated_value_arg="estimated_lower_quartile",
+            compared_estimators=compared_estimators,
+            behavior_policy_name=behavior_policy_name,
+            dataset_id=dataset_id,
+            n_cols=n_cols,
+            share_axes=share_axes,
+            legend=legend,
+            ylabel=f"lower quartile ({alpha})",
+            fig_dir=fig_dir,
+            fig_name=fig_name,
         )
-
-        guide_min, guide_max = 1e5, -1e5
-        if n_rows == 1:
-            for i, estimator in enumerate(compared_estimators):
-                if dataset_id is None and isinstance(input_dict, MultipleInputDict):
-                    n_datasets = len(input_dict)
-                    min_vals = np.zeros(n_datasets)
-                    max_vals = np.zeros(n_datasets)
-
-                    for l in range(len(input_dict)):
-                        true_lower_quartile = lower_quartile_dict[l][estimator][
-                            "true_lower_quartile"
-                        ]
-                        estimated_lower_quartile = lower_quartile_dict[l][estimator][
-                            "estimated_lower_quartile"
-                        ]
-
-                        axes[i].scatter(
-                            true_lower_quartile,
-                            estimated_lower_quartile,
-                            color=color[0]
-                            if same_color_across_datasets
-                            else color[l % n_colors],
-                        )
-
-                        min_vals[l] = np.minimum(
-                            np.nanmin(true_lower_quartile),
-                            np.nanmin(estimated_lower_quartile),
-                        )
-                        max_vals[l] = np.maximum(
-                            np.nanmax(true_lower_quartile),
-                            np.nanmax(estimated_lower_quartile),
-                        )
-
-                    min_val = min_vals.min()
-                    max_val = max_vals.max()
-
-                else:
-                    true_lower_quartile = lower_quartile_dict[estimator][
-                        "true_lower_quartile"
-                    ]
-                    estimated_lower_quartile = lower_quartile_dict[estimator][
-                        "estimated_lower_quartile"
-                    ]
-
-                    axes[i].scatter(
-                        true_lower_quartile,
-                        estimated_lower_quartile,
-                    )
-
-                    min_val = np.minimum(
-                        np.nanmin(true_lower_quartile),
-                        np.nanmin(estimated_lower_quartile),
-                    )
-                    max_val = np.maximum(
-                        np.nanmax(true_lower_quartile),
-                        np.nanmax(estimated_lower_quartile),
-                    )
-
-                axes[i].set_title(estimator)
-                axes[i].set_xlabel("true lower quartile")
-                axes[i].set_ylabel("estimated lower quartile")
-
-                if not share_axes:
-                    margin = (max_val - min_val) * 0.05
-                    guide = np.linspace(min_val - margin, max_val + margin)
-                    axes[i].plot(
-                        guide,
-                        guide,
-                        color="black",
-                        linewidth=1.0,
-                    )
-
-                guide_min = min_val if guide_min > min_val else guide_min
-                guide_max = max_val if guide_max < max_val else guide_max
-
-            if share_axes:
-                margin = (guide_max - guide_min) * 0.05
-                guide = np.linspace(guide_min - margin, guide_max + margin)
-                for i, estimator in enumerate(compared_estimators):
-                    axes[i].plot(
-                        guide,
-                        guide,
-                        color="black",
-                        linewidth=1.0,
-                    )
-
-        else:
-            for i, estimator in enumerate(compared_estimators):
-                if dataset_id is None and isinstance(input_dict, MultipleInputDict):
-                    n_datasets = len(input_dict)
-                    min_vals = np.zeros(n_datasets)
-                    max_vals = np.zeros(n_datasets)
-
-                    for l in range(len(input_dict)):
-                        true_lower_quartile = lower_quartile_dict[l][estimator][
-                            "true_lower_quartile"
-                        ]
-                        estimated_lower_quartile = lower_quartile_dict[l][estimator][
-                            "estimated_lower_quartile"
-                        ]
-
-                        axes[i // n_cols, i % n_cols].scatter(
-                            true_lower_quartile,
-                            estimated_lower_quartile,
-                            color=color[0]
-                            if same_color_across_datasets
-                            else color[l % n_colors],
-                        )
-
-                        min_vals[l] = np.minimum(
-                            np.nanmin(true_lower_quartile),
-                            np.nanmin(estimated_lower_quartile),
-                        )
-                        max_vals[l] = np.maximum(
-                            np.nanmax(true_lower_quartile),
-                            np.nanmax(estimated_lower_quartile),
-                        )
-
-                    min_val = min_vals.min()
-                    max_val = max_vals.max()
-
-                else:
-                    true_lower_quartile = lower_quartile_dict[estimator][
-                        "true_lower_quartile"
-                    ]
-                    estimated_lower_quartile = lower_quartile_dict[estimator][
-                        "estimated_lower_quartile"
-                    ]
-
-                    axes[i // n_cols, i % n_cols].scatter(
-                        true_lower_quartile,
-                        estimated_lower_quartile,
-                    )
-
-                    min_val = np.minimum(
-                        np.nanmin(true_lower_quartile),
-                        np.nanmin(estimated_lower_quartile),
-                    )
-                    max_val = np.maximum(
-                        np.nanmax(true_lower_quartile),
-                        np.nanmax(estimated_lower_quartile),
-                    )
-
-                axes[i // n_cols, i % n_cols].set_title(estimator)
-                axes[i // n_cols, i % n_cols].set_xlabel("true lower quartile")
-                axes[i // n_cols, i % n_cols].set_ylabel("estimated lower quartile")
-
-                if not share_axes:
-                    margin = (max_val - min_val) * 0.05
-                    guide = np.linspace(min_val - margin, max_val + margin)
-                    axes[i // n_cols, i % n_cols].plot(
-                        guide,
-                        guide,
-                        color="black",
-                        linewidth=1.0,
-                    )
-
-                guide_min = min_val if guide_min > min_val else guide_min
-                guide_max = max_val if guide_max < max_val else guide_max
-
-            if share_axes:
-                margin = (guide_max - guide_min) * 0.05
-                guide = np.linspace(guide_min - margin, guide_max + margin)
-                for i, estimator in enumerate(compared_estimators):
-                    axes[i // n_cols, i % n_cols].plot(
-                        guide,
-                        guide,
-                        color="black",
-                        linewidth=1.0,
-                    )
-
-        fig.tight_layout()
-        plt.show()
-
-        if fig_dir:
-            fig.savefig(str(fig_dir / fig_name), dpi=300, bbox_inches="tight")
 
     def visualize_conditional_value_at_risk_for_validation(
         self,
         input_dict: Union[OPEInputDict, MultipleInputDict],
         compared_estimators: Optional[List[str]] = None,
-        dataset_id: Optional[Union[int, str]] = None,
+        behavior_policy_name: Optional[str] = None,
+        dataset_id: Optional[int] = None,
         alpha: float = 0.05,
         n_cols: Optional[int] = None,
         share_axes: bool = False,
-        same_color_across_datasets: bool = False,
+        legend: bool = True,
         fig_dir: Optional[Path] = None,
         fig_name: str = "validation_conditional_value_at_risk.png",
     ):
@@ -8298,7 +9330,7 @@ class OffPolicySelection:
 
             .. code-block:: python
 
-                key: [evaluation_policy_name][
+                key: [evaluation_policy][
                     evaluation_policy_action,
                     evaluation_policy_action_dist,
                     state_action_value_prediction,
@@ -8307,6 +9339,9 @@ class OffPolicySelection:
                     state_marginal_importance_weight,
                     on_policy_policy_value,
                     gamma,
+                    behavior_policy,
+                    evaluation_policy,
+                    dataset_id,
                 ]
 
             .. seealso::
@@ -8317,9 +9352,11 @@ class OffPolicySelection:
             Name of compared estimators.
             When `None` is given, all the estimators are compared.
 
-        dataset_id: int or str, default=None
-            Id (or name) of the logged dataset.
-            If `None`, the average of the result will be shown.
+        behavior_policy_name: str, default=None
+            Name of the behavior policy.
+
+        dataset_id: int, default=None
+            Id of the logged dataset.
 
         alpha: float, default=0.05
             Proportion of the sided region. The value should be within `[0, 1]`.
@@ -8330,9 +9367,8 @@ class OffPolicySelection:
         share_axes: bool, default=False
             Whether to share x- and y-axes or not.
 
-        same_color_across_datasets: bool, default=False
-            Whether to use same color to plot results across logged datasets.
-            If `False`, the scatter plot uses different colors on each logged dataset.
+        legend: bool, default=True
+            Whether to include a legend in the scatter plot.
 
         fig_dir: Path, default=None
             Path to store the bar figure.
@@ -8342,219 +9378,37 @@ class OffPolicySelection:
             Name of the bar figure.
 
         """
-        if self.cumulative_distribution_ope is None:
-            raise RuntimeError(
-                "cumulative_distribution_ope is not given. Please initialize the class with cumulative_distribution_ope attribute"
-            )
-        if compared_estimators is None:
-            compared_estimators = self.estimators_name["cumulative_distribution_ope"]
-        elif not set(compared_estimators).issubset(
-            self.estimators_name["cumulative_distribution_ope"]
-        ):
-            raise ValueError(
-                "compared_estimators must be a subset of self.estimators_name['cumulative_distribution_ope'], but found False."
-            )
+        compared_estimators = self._check_compared_estimators(
+            compared_estimators, ope_type="cumulative_distribution_ope"
+        )
+        self._check_basic_visualization_inputs(
+            n_cols=n_cols, fig_dir=fig_dir, fig_name=fig_name
+        )
 
         cvar_dict = self.select_by_conditional_value_at_risk(
             input_dict,
             compared_estimators=compared_estimators,
+            behavior_policy_name=behavior_policy_name,
             dataset_id=dataset_id,
             alpha=alpha,
             return_true_values=True,
         )
 
-        plt.style.use("ggplot")
-        color = plt.rcParams["axes.prop_cycle"].by_key()["color"]
-        n_colors = len(color)
-
-        n_figs = len(compared_estimators)
-        n_cols = min(5, n_figs) if n_cols is None else n_cols
-        n_rows = (n_figs - 1) // n_cols + 1
-
-        fig, axes = plt.subplots(
-            nrows=n_rows,
-            ncols=n_cols,
-            figsize=(4 * n_cols, 3 * n_rows),
-            sharex=share_axes,
-            sharey=share_axes,
+        self._visualize_policy_performance_for_validation(
+            estimation_dict=cvar_dict,
+            input_dict=input_dict,
+            true_value_arg="true_conditional_value_at_risk",
+            estimated_value_arg="estimated_conditional_value_at_risk",
+            compared_estimators=compared_estimators,
+            behavior_policy_name=behavior_policy_name,
+            dataset_id=dataset_id,
+            n_cols=n_cols,
+            share_axes=share_axes,
+            legend=legend,
+            ylabel=f"CVaR ({alpha})",
+            fig_dir=fig_dir,
+            fig_name=fig_name,
         )
-
-        guide_min, guide_max = 1e5, -1e5
-        if n_rows == 1:
-            for i, estimator in enumerate(compared_estimators):
-                if dataset_id is None and isinstance(input_dict, MultipleInputDict):
-                    n_datasets = len(input_dict)
-                    min_vals = np.zeros(n_datasets)
-                    max_vals = np.zeros(n_datasets)
-
-                    for l in range(len(input_dict)):
-                        true_cvar = cvar_dict[l][estimator][
-                            "true_conditional_value_at_risk"
-                        ]
-                        estimated_cvar = cvar_dict[l][estimator][
-                            "estimated_conditional_value_at_risk"
-                        ]
-
-                        axes[i].scatter(
-                            true_cvar,
-                            estimated_cvar,
-                            color=color[0]
-                            if same_color_across_datasets
-                            else color[l % n_colors],
-                        )
-
-                        min_vals[l] = np.minimum(
-                            np.nanmin(true_cvar),
-                            np.nanmin(estimated_cvar),
-                        )
-                        max_vals[l] = np.maximum(
-                            np.nanmax(true_cvar),
-                            np.nanmax(estimated_cvar),
-                        )
-
-                    min_val = min_vals.min()
-                    max_val = max_vals.max()
-
-                else:
-                    true_cvar = cvar_dict[estimator]["true_conditional_value_at_risk"]
-                    estimated_cvar = cvar_dict[estimator][
-                        "estimated_conditional_value_at_risk"
-                    ]
-
-                    axes[i].scatter(
-                        true_cvar,
-                        estimated_cvar,
-                    )
-
-                    min_val = np.minimum(
-                        np.nanmin(true_cvar),
-                        np.nanmin(estimated_cvar),
-                    )
-                    max_val = np.maximum(
-                        np.nanmax(true_cvar),
-                        np.nanmax(estimated_cvar),
-                    )
-
-                axes[i].set_title(estimator)
-                axes[i].set_xlabel(f"true CVaR (lower {alpha * 100}%)")
-                axes[i].set_ylabel(f"estimated CVaR (lower {alpha * 100}%)")
-
-                if not share_axes:
-                    margin = (max_val - min_val) * 0.05
-                    guide = np.linspace(min_val - margin, max_val + margin)
-                    axes[i].plot(
-                        guide,
-                        guide,
-                        color="black",
-                        linewidth=1.0,
-                    )
-
-                guide_min = min_val if guide_min > min_val else guide_min
-                guide_max = max_val if guide_max < max_val else guide_max
-
-            if share_axes:
-                margin = (guide_max - guide_min) * 0.05
-                guide = np.linspace(guide_min - margin, guide_max + margin)
-                for i, estimator in enumerate(compared_estimators):
-                    axes[i].plot(
-                        guide,
-                        guide,
-                        color="black",
-                        linewidth=1.0,
-                    )
-
-        else:
-            for i, estimator in enumerate(compared_estimators):
-                if dataset_id is None and isinstance(input_dict, MultipleInputDict):
-                    n_datasets = len(input_dict)
-                    min_vals = np.zeros(n_datasets)
-                    max_vals = np.zeros(n_datasets)
-
-                    for l in range(len(input_dict)):
-                        true_cvar = cvar_dict[l][estimator][
-                            "true_conditional_value_at_risk"
-                        ]
-                        estimated_cvar = cvar_dict[l][estimator][
-                            "estimated_conditional_value_at_risk"
-                        ]
-
-                        axes[i // n_cols, i % n_cols].scatter(
-                            true_cvar,
-                            estimated_cvar,
-                            color=color[0]
-                            if same_color_across_datasets
-                            else color[l % n_colors],
-                        )
-
-                        min_vals[l] = np.minimum(
-                            np.nanmin(true_cvar),
-                            np.nanmin(estimated_cvar),
-                        )
-                        max_vals[l] = np.maximum(
-                            np.nanmax(true_cvar),
-                            np.nanmax(estimated_cvar),
-                        )
-
-                    min_val = min_vals.min()
-                    max_val = max_vals.max()
-
-                else:
-                    true_cvar = cvar_dict[estimator]["true_conditional_value_at_risk"]
-                    estimated_cvar = cvar_dict[estimator][
-                        "estimated_conditional_value_at_risk"
-                    ]
-
-                    axes[i // n_cols, i % n_cols].scatter(
-                        true_cvar,
-                        estimated_cvar,
-                    )
-
-                    min_val = np.minimum(
-                        np.nanmin(true_cvar),
-                        np.nanmin(estimated_cvar),
-                    )
-                    max_val = np.maximum(
-                        np.nanmax(true_cvar),
-                        np.nanmax(estimated_cvar),
-                    )
-
-                axes[i // n_cols, i % n_cols].set_title(estimator)
-                axes[i // n_cols, i % n_cols].set_xlabel(
-                    f"true CVaR (lower {alpha * 100}%)"
-                )
-                axes[i // n_cols, i % n_cols].set_ylabel(
-                    f"estimated CVaR (lower {alpha * 100}%)"
-                )
-
-                if not share_axes:
-                    margin = (max_val - min_val) * 0.05
-                    guide = np.linspace(min_val - margin, max_val + margin)
-                    axes[i // n_cols, i % n_cols].plot(
-                        guide,
-                        guide,
-                        color="black",
-                        linewidth=1.0,
-                    )
-
-                guide_min = min_val if guide_min > min_val else guide_min
-                guide_max = max_val if guide_max < max_val else guide_max
-
-            if share_axes:
-                margin = (guide_max - guide_min) * 0.05
-                guide = np.linspace(guide_min - margin, guide_max + margin)
-                for i, estimator in enumerate(compared_estimators):
-                    axes[i // n_cols, i % n_cols].plot(
-                        guide,
-                        guide,
-                        color="black",
-                        linewidth=1.0,
-                    )
-
-        fig.tight_layout()
-        plt.show()
-
-        if fig_dir:
-            fig.savefig(str(fig_dir / fig_name), dpi=300, bbox_inches="tight")
 
     @property
     def estimators_name(self):

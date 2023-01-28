@@ -227,9 +227,13 @@ class OnlineHead(BaseHead):
     base_policy: AlgoBase
         Reinforcement learning (RL) policy.
 
+    name: str
+        Name of the policy.
+
     """
 
     base_policy: AlgoBase
+    name: str
 
     def stochastic_action_with_pscore(self, x: np.ndarray):
         """Only for API consistency."""

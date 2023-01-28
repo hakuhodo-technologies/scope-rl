@@ -1445,7 +1445,7 @@ def rollout_policy_online(
     env.reset(seed=random_state)
 
     if not isinstance(policy, BaseHead):
-        policy = OnlineHead(policy)
+        policy = OnlineHead(policy, name="tmp")
 
         if evaluate_on_stationary_distribution:
             done = True

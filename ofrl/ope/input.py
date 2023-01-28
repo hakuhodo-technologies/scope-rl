@@ -1,5 +1,6 @@
 """Meta class to create input for Off-Policy Evaluation (OPE)."""
 from dataclasses import dataclass
+from copy import deepcopy
 from typing import Dict, List, Optional, Any, Union
 
 from collections import defaultdict
@@ -303,6 +304,9 @@ class CreateOPEInput:
         self.initial_state_dict = {}
 
         self.logged_dataset = logged_dataset
+        self.behavior_policy_name = logged_dataset["behavior_policy"]
+        self.dataset_id = logged_dataset["dataset_id"]
+
         self.action_type = self.logged_dataset["action_type"]
         self.n_actions = self.logged_dataset["n_actions"]
         self.action_dim = self.logged_dataset["action_dim"]
@@ -2127,6 +2131,8 @@ class CreateOPEInput:
                     terminal,
                     info,
                     pscore,
+                    behavior_policy_name,
+                    dataset_id,
                 ]
 
                 .. seealso::
@@ -2205,6 +2211,9 @@ class CreateOPEInput:
                     state_marginal_importance_weight,
                     on_policy_policy_value,
                     gamma,
+                    behavior_policy_name,
+                    evaluation_policy_name,
+                    dataset_id,
                 ]
 
             evaluation_policy_action: ndarray of shape (n_trajectories * step_per_trajectories, action_dim)
@@ -2250,6 +2259,15 @@ class CreateOPEInput:
 
             gamma: float
                 Discount factor.
+
+            behavior_policy_name: str
+                Name of the behavior policy.
+
+            evaluation_policy_name: str
+                Name of the evaluation policy.
+
+            dataset_id: int or None
+                Id of the logged dataset.
 
         """
         check_logged_dataset(logged_dataset)
@@ -2401,7 +2419,7 @@ class CreateOPEInput:
 
         for i in tqdm(
             range(len(evaluation_policies)),
-            desc="[collect input data]",
+            desc="[collect input data: eval_policy]",
             total=len(evaluation_policies),
         ):
             # input for IPW, DR
@@ -2492,14 +2510,22 @@ class CreateOPEInput:
                 input_dict[evaluation_policies[i].name]["on_policy_policy_value"] = None
 
             input_dict[evaluation_policies[i].name]["gamma"] = self.gamma
+            input_dict[evaluation_policies[i].name][
+                "behavior_policy"
+            ] = self.behavior_policy_name
+            input_dict[evaluation_policies[i].name][
+                "evaluation_policy"
+            ] = evaluation_policies[i].name
+            input_dict[evaluation_policies[i].name]["dataset_id"] = self.dataset_id
 
         return defaultdict_to_dict(input_dict)
 
     def obtain_whole_inputs(
         self,
         logged_dataset: Union[LoggedDataset, MultipleLoggedDataset],
-        evaluation_policies: Union[List[BaseHead], List[List[BaseHead]]],
-        dataset_id: Optional[Union[int, str]] = None,
+        evaluation_policies: List[BaseHead],
+        behavior_policy_name: Optional[str] = None,
+        dataset_id: Optional[int] = None,
         require_value_prediction: bool = False,
         require_weight_prediction: bool = False,
         resample_initial_state: bool = False,
@@ -2544,21 +2570,35 @@ class CreateOPEInput:
                     terminal,
                     info,
                     pscore,
+                    behavior_policy_name,
+                    dataset_id,
                 ]
 
                 .. seealso::
 
                     :class:`ofrl.dataset.SyntheticDataset` describes the components of :class:`logged_dataset`.
 
-        evaluation_policies: {list of BaseHead, list of list of BaseHead}
+        evaluation_policies: list of BaseHead or BaseHead
             Evaluation policies.
-            If a nested list is given, different evaluation policies are applied for each logged dataset.
 
-            The length of a nested list (:class:`len(evaluation_policies)` must be equal to :class:`len(logged_datasets)`.)
+            .. tip::
 
-        dataset_id: int or str, default=None
-            Id (or name) of the logged dataset.
-            Required when logged_dataset is :class:`MultipleLoggedDataset`.
+                1. When using LoggedDataset, evaluation_policies should be ``List[BaseHead]`` (``[BaseHead, BaseHead, ..]``).
+
+                2. When using MultipleLoggedDataset and apply the same evaluation policies across behavior_policies and dataset_ids,
+                evaluation_policies should be ``List[BaseHead]``.
+
+                3. When using MultipleLoggedDataset and apply the same evaluation policies across dataset_ids but different evaluation_policies across behavior policies,
+                evaluation_policies should be ``Dict[str, List[BaseHead]]``. (key: ``[behavior_policy_name]``).
+
+                4. When using MultipleLoggedDataset and apply different evaluation policies across dataset_ids and behavior policies,
+                evaluation_policies should be ``Dict[str, List[BaseHead]]``. (key: ``[behavior_policy_name][dataset_id]``)
+
+        behavior_policy_name: str, default=None
+            Name of the behavior policy.
+
+        dataset_id: int, default=None
+            Id of the logged dataset.
 
         require_value_prediction: bool, default=False
             Whether to obtain value prediction.
@@ -2633,7 +2673,7 @@ class CreateOPEInput:
 
             .. code-block:: python
 
-                input_dict_0 = input_dict.get(0)
+                input_dict_0 = input_dict.get(behavior_policy.name, 0)
 
             Each input dict consists of the following.
 
@@ -2648,6 +2688,9 @@ class CreateOPEInput:
                     state_marginal_importance_weight,
                     on_policy_policy_value,
                     gamma,
+                    behavior_policy_name,
+                    evaluation_policy_name,
+                    dataset_id,
                 ]
 
             evaluation_policy_action: ndarray of shape (n_trajectories * step_per_trajectories, action_dim)
@@ -2694,29 +2737,183 @@ class CreateOPEInput:
             gamma: float
                 Discount factor.
 
+            behavior_policy_name: str
+                Name of the behavior policy.
+
+            evaluation_policy_name: str
+                Name of the evaluation policy.
+
+            dataset_id: int or None
+                Id of the logged dataset.
+
         """
+        apply_different_eval_policies_across_all_datasets = False
+        apply_different_eval_policies_across_behavior_policies = False
+        if isinstance(evaluation_policies, dict):
+            if isinstance(list(evaluation_policies.values())[0], BaseHead):
+                apply_different_eval_policies_across_behavior_policies = True
+            else:
+                apply_different_eval_policies_across_all_datasets = True
+
+        evaluation_policies_ = deepcopy(evaluation_policies)
         if isinstance(logged_dataset, MultipleLoggedDataset):
-            if dataset_id is None:
-                if isinstance(evaluation_policies[0], BaseHead):
-                    evaluation_policies = [
-                        evaluation_policies for _ in range(len(logged_dataset))
+
+            if behavior_policy_name is None and dataset_id is None:
+                evaluation_policies = defaultdict(list)
+
+                for behavior_policy, n_datasets in logged_dataset.n_datasets.items():
+                    for dataset_id_ in range(n_datasets):
+
+                        if apply_different_eval_policies_across_all_datasets:
+                            evaluation_policies[behavior_policy].append(
+                                evaluation_policies_[behavior_policy][dataset_id_]
+                            )
+
+                        elif apply_different_eval_policies_across_behavior_policies:
+                            evaluation_policies[behavior_policy].append(
+                                evaluation_policies_[behavior_policy]
+                            )
+
+                        else:
+                            evaluation_policies[behavior_policy].append(
+                                evaluation_policies_
+                            )
+
+            elif behavior_policy_name is None and dataset_id is not None:
+                evaluation_policies = {}
+
+                for behavior_policy, n_datasets in logged_dataset.n_datasets.items():
+
+                    if apply_different_eval_policies_across_all_datasets:
+                        evaluation_policies[behavior_policy] = evaluation_policies_[
+                            behavior_policy
+                        ][dataset_id]
+
+                    elif apply_different_eval_policies_across_behavior_policies:
+                        evaluation_policies[behavior_policy] = evaluation_policies_[
+                            behavior_policy
+                        ]
+
+                    else:
+                        evaluation_policies[behavior_policy] = evaluation_policies_
+
+            elif behavior_policy_name is not None and dataset_id is None:
+                evaluation_policies = []
+
+                for dataset_id_ in range(
+                    logged_dataset.n_datasets[behavior_policy_name]
+                ):
+
+                    if apply_different_eval_policies_across_all_datasets:
+                        evaluation_policies.append(
+                            evaluation_policies_[behavior_policy_name][dataset_id_]
+                        )
+
+                    elif apply_different_eval_policies_across_behavior_policies:
+                        evaluation_policies[behavior_policy].append(
+                            evaluation_policies_[behavior_policy_name]
+                        )
+
+                    else:
+                        evaluation_policies[behavior_policy].append(
+                            evaluation_policies_
+                        )
+
+            else:
+                if apply_different_eval_policies_across_all_datasets:
+                    evaluation_policies = evaluation_policies_[behavior_policy_name][
+                        dataset_id
                     ]
 
-                input_dict = MultipleInputDict(
-                    action_type=logged_dataset.get(0)["action_type"],
-                    path=path,
-                    save_relative_path=save_relative_path,
-                )
+                elif apply_different_eval_policies_across_behavior_policies:
+                    evaluation_policies = evaluation_policies_[behavior_policy_name]
+
+                else:
+                    evaluation_policies = evaluation_policies_
+
+        else:
+            behavior_policy_name = logged_dataset["behavior_policy"]
+            dataset_id = logged_dataset["dataset_id"]
+
+            if apply_different_eval_policies_across_all_datasets:
+                evaluation_policies = evaluation_policies_[behavior_policy_name][
+                    dataset_id
+                ]
+
+            elif apply_different_eval_policies_across_behavior_policies:
+                evaluation_policies = evaluation_policies_[behavior_policy_name]
+
+            else:
+                evaluation_policies = evaluation_policies_
+
+        if isinstance(logged_dataset, MultipleLoggedDataset):
+
+            input_dict = MultipleInputDict(
+                action_type=logged_dataset.action_type,
+                path=path,
+                save_relative_path=save_relative_path,
+            )
+
+            if behavior_policy_name is None and dataset_id is None:
+
+                behavior_policies = logged_dataset.behavior_policy_names
 
                 for i in tqdm(
-                    np.arange(len(logged_dataset)),
-                    desc="[collect input data: datasets]",
-                    total=len(logged_dataset),
+                    np.arange(len(behavior_policies)),
+                    desc="[collect input data: behavior_policy]",
+                    total=len(behavior_policies),
                 ):
-                    logged_dataset_ = logged_dataset.get(i)
+                    n_datasets = logged_dataset.n_datasets[behavior_policies[i]]
+
+                    for dataset_id_ in tqdm(
+                        np.arange(n_datasets),
+                        desc="[collect input data: dataset_id]",
+                        total=n_datasets,
+                    ):
+                        logged_dataset_ = logged_dataset.get(
+                            behavior_policy_name=behavior_policies[i],
+                            dataset_id=dataset_id_,
+                        )
+                        input_dict_ = self._obtain_whole_inputs(
+                            logged_dataset=logged_dataset_,
+                            evaluation_policies=evaluation_policies[
+                                behavior_policies[i]
+                            ][dataset_id_],
+                            require_value_prediction=require_value_prediction,
+                            require_weight_prediction=require_weight_prediction,
+                            resample_initial_state=resample_initial_state,
+                            q_function_method=q_function_method,
+                            v_function_method=v_function_method,
+                            w_function_method=w_function_method,
+                            k_fold=k_fold,
+                            n_epochs=n_epochs,
+                            n_steps_per_epoch=n_steps_per_epoch,
+                            n_trajectories_on_policy_evaluation=n_trajectories_on_policy_evaluation,
+                            use_stationary_distribution_on_policy_evaluation=use_stationary_distribution_on_policy_evaluation,
+                            minimum_rollout_length=minimum_rollout_length,
+                            maximum_rollout_length=maximum_rollout_length,
+                            random_state=random_state,
+                        )
+                        input_dict.add(
+                            input_dict_,
+                            behavior_policy_name=behavior_policies[i],
+                            dataset_id=dataset_id_,
+                        )
+
+            elif behavior_policy_name is None and dataset_id is not None:
+                behavior_policies = logged_dataset.behavior_policy_names
+
+                for i in tqdm(
+                    np.arange(len(behavior_policies)),
+                    desc="[collect input data: behavior_policy]",
+                    total=len(behavior_policies),
+                ):
+                    logged_dataset_ = logged_dataset.get(
+                        behavior_policy_name=behavior_policies[i], dataset_id=dataset_id
+                    )
                     input_dict_ = self._obtain_whole_inputs(
                         logged_dataset=logged_dataset_,
-                        evaluation_policies=evaluation_policies[i],
+                        evaluation_policies=evaluation_policies[behavior_policies[i]],
                         require_value_prediction=require_value_prediction,
                         require_weight_prediction=require_weight_prediction,
                         resample_initial_state=resample_initial_state,
@@ -2732,10 +2929,52 @@ class CreateOPEInput:
                         maximum_rollout_length=maximum_rollout_length,
                         random_state=random_state,
                     )
-                    input_dict.add(input_dict_)
+                    input_dict.add(
+                        input_dict_,
+                        behavior_policy_name=behavior_policies[i],
+                        dataset_id=dataset_id,
+                    )
+
+            elif behavior_policy_name is not None and dataset_id is None:
+                n_datasets = logged_dataset.n_datasets[behavior_policy_name]
+
+                for dataset_id_ in tqdm(
+                    np.arange(n_datasets),
+                    desc="[collect input data: dataset_id]",
+                    total=n_datasets,
+                ):
+                    logged_dataset_ = logged_dataset.get(
+                        behavior_policy_name=behavior_policy_name,
+                        dataset_id=dataset_id_,
+                    )
+                    input_dict_ = self._obtain_whole_inputs(
+                        logged_dataset=logged_dataset_,
+                        evaluation_policies=evaluation_policies[dataset_id_],
+                        require_value_prediction=require_value_prediction,
+                        require_weight_prediction=require_weight_prediction,
+                        resample_initial_state=resample_initial_state,
+                        q_function_method=q_function_method,
+                        v_function_method=v_function_method,
+                        w_function_method=w_function_method,
+                        k_fold=k_fold,
+                        n_epochs=n_epochs,
+                        n_steps_per_epoch=n_steps_per_epoch,
+                        n_trajectories_on_policy_evaluation=n_trajectories_on_policy_evaluation,
+                        use_stationary_distribution_on_policy_evaluation=use_stationary_distribution_on_policy_evaluation,
+                        minimum_rollout_length=minimum_rollout_length,
+                        maximum_rollout_length=maximum_rollout_length,
+                        random_state=random_state,
+                    )
+                    input_dict.add(
+                        input_dict_,
+                        behavior_policy_name=behavior_policy_name,
+                        dataset_id=dataset_id_,
+                    )
 
             else:
-                logged_dataset = logged_dataset.get(dataset_id)
+                logged_dataset = logged_dataset.get(
+                    behavior_policy_name=behavior_policy_name, dataset_id=dataset_id
+                )
                 input_dict = self._obtain_whole_inputs(
                     logged_dataset=logged_dataset,
                     evaluation_policies=evaluation_policies,

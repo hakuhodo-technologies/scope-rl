@@ -1,6 +1,6 @@
 """Class to handle synthetic dataset generation."""
 from dataclasses import dataclass
-from typing import Optional, Any, Dict, List
+from typing import Optional, Any, Dict, List, Union
 from tqdm.auto import tqdm
 
 import gym
@@ -47,9 +47,6 @@ class SyntheticDataset(BaseDataset):
     env: gym.Env
         Reinforcement learning (RL) environment.
 
-    behavior_policy: AlgoBase
-        RL policy that collects the logged data.
-
     max_episode_steps: int, default=None (> 0)
         Maximum number of timesteps in an episode.
 
@@ -66,9 +63,6 @@ class SyntheticDataset(BaseDataset):
 
     info_keys: Dict[str, type]
         Dictionary containing of key and the type of info components.
-
-    random_state: int, default=None (>= 0)
-        Random state.
 
     Examples
     -------
@@ -194,21 +188,17 @@ class SyntheticDataset(BaseDataset):
     """
 
     env: gym.Env
-    behavior_policy: BaseHead
     max_episode_steps: Optional[int] = None
     action_meaning: Optional[Dict[int, Any]] = None
     action_keys: Optional[List[str]] = None
     state_keys: Optional[List[str]] = None
     info_keys: Optional[Dict[str, type]] = None
-    random_state: Optional[int] = None
 
     def __post_init__(self):
         if not isinstance(self.env, gym.Env):
             raise ValueError(
                 "env must be a child class of gym.Env",
             )
-        if not isinstance(self.behavior_policy, BaseHead):
-            raise ValueError("behavior_policy must be a child class of BaseHead")
 
         self.state_dim = self.env.observation_space.shape[0]
 
@@ -236,16 +226,16 @@ class SyntheticDataset(BaseDataset):
             min_val=1,
         )
 
-        if self.random_state is None:
-            raise ValueError("random_state must be given")
-        self.random_ = check_random_state(self.random_state)
+        self.random_ = check_random_state(0)
 
     def _obtain_episodes(
         self,
+        behavior_policy: BaseHead,
+        dataset_id: int = 0,
         n_trajectories: int = 10000,
         step_per_trajectory: Optional[int] = None,
         obtain_info: bool = False,
-        seed_env: bool = False,
+        random_state: Optional[int] = None,
     ) -> LoggedDataset:
         """Rollout the behavior policy and obtain episodes.
 
@@ -266,6 +256,12 @@ class SyntheticDataset(BaseDataset):
 
         Parameters
         -------
+        behavior_policy: BaseHead
+            RL policy that collects the logged data.
+
+        dataset_id: int, default=0 (>= 0)
+            Id of the logged dataset.
+
         n_trajectories: int, default=10000 (> 0)
             Number of trajectories to rollout the behavior policy and collect data.
 
@@ -275,8 +271,8 @@ class SyntheticDataset(BaseDataset):
         obtain_info: bool, default=False
             Whether to gain info from the environment or not.
 
-        seed_env: bool, default=False
-            Whether to set seed on environment or not.
+        random_state: int, default=None (>= 0)
+            Random state.
 
         Returns
         -------
@@ -303,6 +299,8 @@ class SyntheticDataset(BaseDataset):
                     terminal,
                     info,
                     pscore,
+                    behavior_policy_name,
+                    dataset_id,
                 ]
 
             size: int (> 0)
@@ -361,7 +359,16 @@ class SyntheticDataset(BaseDataset):
             pscore: ndarray of shape (size, )
                 Action choice probability of the behavior policy for the chosen action.
 
+            behavior_policy_name: str
+                Name of the behavior policy.
+
+            dataset_id: int
+                Id of the logged dataset.
+
         """
+        if not isinstance(behavior_policy, BaseHead):
+            raise ValueError("behavior_policy must be a child class of BaseHead")
+
         if step_per_trajectory is None:
             step_per_trajectory = self.max_episode_steps
 
@@ -378,8 +385,8 @@ class SyntheticDataset(BaseDataset):
             min_val=1,
         )
 
-        if seed_env:
-            self.env.reset(self.random_state)
+        if random_state is not None:
+            self.env.reset(seed=random_state)
 
         states = np.zeros(
             (n_trajectories * step_per_trajectory, self.env.observation_space.shape[0])
@@ -411,7 +418,7 @@ class SyntheticDataset(BaseDataset):
                 (
                     action,
                     action_prob,
-                ) = self.behavior_policy.stochastic_action_with_pscore_online(state)
+                ) = behavior_policy.stochastic_action_with_pscore_online(state)
                 next_state, reward, done, truncated, info_ = self.env.step(action)
 
                 if (idx + 1) % step_per_trajectory == 0:
@@ -461,18 +468,22 @@ class SyntheticDataset(BaseDataset):
             "terminal": terminals,
             "info": info,
             "pscore": action_probs,
+            "behavior_policy": behavior_policy.name,
+            "dataset_id": dataset_id,
         }
         return logged_dataset
 
     def _obtain_steps(
         self,
+        behavior_policy: BaseHead,
+        dataset_id: int = 0,
         n_trajectories: int = 10000,
         step_per_trajectory: int = 10,
         minimum_rollout_length: int = 0,
         maximum_rollout_length: int = 100,
         obtain_info: bool = False,
         obtain_trajectories_from_single_interaction: bool = False,
-        seed_env: bool = False,
+        random_state: Optional[int] = None,
     ) -> LoggedDataset:
         """Rollout the behavior policy and obtain steps.
 
@@ -493,6 +504,12 @@ class SyntheticDataset(BaseDataset):
 
         Parameters
         -------
+        behavior_policy: BaseHead
+            RL policy that collects the logged data.
+
+        dataset_id: int, default=0 (>= 0)
+            Id of the logged dataset.
+
         n_trajectories: int, default=10000 (> 0)
             Number of trajectories to rollout the behavior policy and collect data.
 
@@ -513,8 +530,8 @@ class SyntheticDataset(BaseDataset):
             If `True`, the initial state of trajectory i is the next state of the trajectory (i-1)'s last state.
             If `False`, the initial state will be sampled by rolling out the behavior policy after resetting the environment.
 
-        seed_env: bool, default=False
-            Whether to set seed on environment or not.
+        random_state: int, default=None (>= 0)
+            Random state.
 
         Returns
         -------
@@ -541,6 +558,8 @@ class SyntheticDataset(BaseDataset):
                     terminal,
                     info,
                     pscore,
+                    behavior_policy_name,
+                    dataset_id,
                 ]
 
             size: int (> 0)
@@ -599,7 +618,16 @@ class SyntheticDataset(BaseDataset):
             pscore: ndarray of shape (size, )
                 Action choice probability of the behavior policy for the chosen action.
 
+            behavior_policy_name: str
+                Name of the behavior policy.
+
+            dataset_id: int
+                Id of the logged dataset.
+
         """
+        if not isinstance(behavior_policy, BaseHead):
+            raise ValueError("behavior_policy must be a child class of BaseHead")
+
         check_scalar(n_trajectories, name="n_trajectories", target_type=int, min_val=1)
         check_scalar(
             step_per_trajectory, name="step_per_trajectory", target_type=int, min_val=1
@@ -621,8 +649,9 @@ class SyntheticDataset(BaseDataset):
                 "maximum_rollout_length must be larger than minimum_rollout_length, but found False."
             )
 
-        if seed_env:
-            self.env.reset(self.random_state)
+        if random_state is not None:
+            self.env.reset(seed=random_state)
+            self.random_ = check_random_state(random_state)
 
         states = np.zeros(
             (n_trajectories * step_per_trajectory, self.env.observation_space.shape[0])
@@ -666,7 +695,7 @@ class SyntheticDataset(BaseDataset):
                         state, info_ = self.env.reset()
                         step = 0
 
-                    action = self.behavior_policy.sample_action_online(state)
+                    action = behavior_policy.sample_action_online(state)
                     state, reward, done, truncated, info_ = self.env.step(action)
                     step += 1
 
@@ -728,18 +757,21 @@ class SyntheticDataset(BaseDataset):
             "terminal": terminals,
             "info": info,
             "pscore": action_probs,
+            "behavior_policy_name": behavior_policy.name,
+            "dataset_id": dataset_id,
         }
         return logged_dataset
 
     def obtain_episodes(
         self,
+        behavior_policies: Union[BaseHead, List[BaseHead]],
         n_datasets: int = 1,
         n_trajectories: int = 10000,
         step_per_trajectory: Optional[int] = None,
         obtain_info: bool = False,
-        seed_env: bool = False,
         path: str = "logged_dataset/",
         save_relative_path: bool = False,
+        random_state: Optional[int] = None,
     ) -> LoggedDataset:
         """Rollout the behavior policy and obtain episodes.
 
@@ -764,6 +796,9 @@ class SyntheticDataset(BaseDataset):
 
         Parameters
         -------
+        behavior_policies: list of BaseHead or BaseHead
+            List of RL policies that collect the logged data.
+
         n_datasets: int, default=1 (> 0)
             Number of (independent) dataset.
             If the value is more than 1, the method returns :class:`MultipleLoggedDataset` instead of :class:`LoggedDataset`.
@@ -777,9 +812,6 @@ class SyntheticDataset(BaseDataset):
         obtain_info: bool, default=False
             Whether to gain info from the environment or not.
 
-        seed_env: bool, default=False
-            Whether to set seed on environment or not. (Only applicable to the first dataset.)
-
         path: str
             Path to the directory. Either absolute and relative path is acceptable.
 
@@ -791,6 +823,9 @@ class SyntheticDataset(BaseDataset):
             Note that, this option was added in order to run examples in the documentation properly.
             Otherwise, the default setting (`False`) is recommended.
 
+        random_state: int, default=None (>= 0)
+            Random state.
+
         Returns
         -------
         logged_dataset(s): LoggedDataset or MultipleLoggedDataset
@@ -800,7 +835,7 @@ class SyntheticDataset(BaseDataset):
 
             .. code-block:: python
 
-                logged_dataset_0 = logged_datasets.get(0)
+                logged_dataset_0 = logged_datasets.get(behavior_policy.name, 0)
 
             Each logged dataset consists of the following.
 
@@ -824,6 +859,8 @@ class SyntheticDataset(BaseDataset):
                     terminal,
                     info,
                     pscore,
+                    behavior_policy_name,
+                    dataset_id,
                 ]
 
             size: int (> 0)
@@ -882,14 +919,51 @@ class SyntheticDataset(BaseDataset):
             pscore: ndarray of shape (size, )
                 Action choice probability of the behavior policy for the chosen action.
 
+            behavior_policy_name: str
+                Name of the behavior policy.
+
+            dataset_id: int
+                Id of the logged dataset.
+
         """
-        if n_datasets == 1:
-            logged_dataset = self._obtain_episodes(
-                n_trajectories=n_trajectories,
-                step_per_trajectory=step_per_trajectory,
-                obtain_info=obtain_info,
-                seed_env=(seed_env and i == 0),
-            )
+        if isinstance(behavior_policies, BaseHead):
+
+            if n_datasets == 1:
+                logged_dataset = self._obtain_episodes(
+                    behavior_policy=behavior_policies,
+                    n_trajectories=n_trajectories,
+                    step_per_trajectory=step_per_trajectory,
+                    obtain_info=obtain_info,
+                    random_state=random_state,
+                )
+
+            else:
+                logged_dataset = MultipleLoggedDataset(
+                    action_type=self.action_type,
+                    path=path,
+                    save_relative_path=save_relative_path,
+                )
+                for i in tqdm(
+                    np.arange(n_datasets),
+                    desc="[obtain_datasets: dataset_id]",
+                    total=n_datasets,
+                ):
+                    random_state_ = (
+                        random_state
+                        if random_state is not None and i == 0
+                        else None
+                    )
+                    logged_dataset_ = self._obtain_episodes(
+                        behavior_policy=behavior_policies,
+                        n_trajectories=n_trajectories,
+                        step_per_trajectory=step_per_trajectory,
+                        obtain_info=obtain_info,
+                        random_state=random_state_,
+                    )
+                    logged_dataset.add(
+                        logged_dataset_,
+                        behavior_policy_name=behavior_policies.name,
+                    )
 
         else:
             logged_dataset = MultipleLoggedDataset(
@@ -898,23 +972,51 @@ class SyntheticDataset(BaseDataset):
                 save_relative_path=save_relative_path,
             )
 
-            for i in tqdm(
-                np.arange(n_datasets),
-                desc="[obtain_datasets]",
-                total=n_datasets,
+            for j in tqdm(
+                np.arange(len(behavior_policies)),
+                desc="[obtain_datasets: behavior_policy]",
+                total=len(behavior_policies),
             ):
-                logged_dataset_ = self._obtain_episodes(
-                    n_trajectories=n_trajectories,
-                    step_per_trajectory=step_per_trajectory,
-                    obtain_info=obtain_info,
-                    seed_env=(seed_env and i == 0),
-                )
-                logged_dataset.add(logged_dataset_)
+                if n_datasets == 1:
+                    logged_dataset = self._obtain_episodes(
+                        behavior_policy=behavior_policies[j],
+                        n_trajectories=n_trajectories,
+                        step_per_trajectory=step_per_trajectory,
+                        obtain_info=obtain_info,
+                        random_state=random_state,
+                    )
+                    logged_dataset.add(
+                        logged_dataset_, behavior_policy_name=behavior_policies[j].name
+                    )
+
+                else:
+                    for i in tqdm(
+                        np.arange(n_datasets),
+                        desc="[obtain_datasets: dataset_id]",
+                        total=n_datasets,
+                    ):
+                        random_state_ = (
+                            random_state
+                            if random_state is not None and i == 0
+                            else None
+                        )
+                        logged_dataset_ = self._obtain_episodes(
+                            behavior_policy=behavior_policies[j],
+                            n_trajectories=n_trajectories,
+                            step_per_trajectory=step_per_trajectory,
+                            obtain_info=obtain_info,
+                            random_state=random_state_,
+                        )
+                        logged_dataset.add(
+                            logged_dataset_,
+                            behavior_policy_name=behavior_policies[j].name,
+                        )
 
         return logged_dataset
 
     def obtain_steps(
         self,
+        behavior_policies: Union[BaseHead, List[BaseHead]],
         n_datasets: int = 1,
         n_trajectories: int = 10000,
         step_per_trajectory: int = 10,
@@ -922,9 +1024,9 @@ class SyntheticDataset(BaseDataset):
         maximum_rollout_length: int = 100,
         obtain_info: bool = False,
         obtain_trajectories_from_single_interaction: bool = False,
-        seed_env: bool = False,
         path: str = "logged_dataset/",
         save_relative_path: bool = False,
+        random_state: Optional[int] = None,
     ) -> LoggedDataset:
         """Rollout the behavior policy and obtain steps.
 
@@ -945,6 +1047,9 @@ class SyntheticDataset(BaseDataset):
 
         Parameters
         -------
+        behavior_policies: list of BaseHead or BaseHead
+            List of RL policies that collect the logged data.
+
         n_datasets: int, default=1 (> 0)
             Number of (independent) dataset.
             If the value is more than 1, the method returns :class:`MultiplLoggedeDataset` instead of :class:`LoggedDataset`.
@@ -983,6 +1088,9 @@ class SyntheticDataset(BaseDataset):
             Note that, this option was added in order to run examples in the documentation properly.
             Otherwise, the default setting (`False`) is recommended.
 
+        random_state: int, default=None (>= 0)
+            Random state.
+
         Returns
         -------
         logged_dataset(s): LoggedDataset or MultipleLoggedDataset
@@ -992,7 +1100,7 @@ class SyntheticDataset(BaseDataset):
 
             .. code-block:: python
 
-                logged_dataset_0 = logged_datasets.get(0)
+                logged_dataset_0 = logged_datasets.get(behavior_policy.name, 0)
 
             Each logged dataset consists the following.
 
@@ -1016,6 +1124,8 @@ class SyntheticDataset(BaseDataset):
                     terminal,
                     info,
                     pscore,
+                    behavior_policy_name,
+                    dataset_id,
                 ]
 
             size: int (> 0)
@@ -1074,17 +1184,29 @@ class SyntheticDataset(BaseDataset):
             pscore: ndarray of shape (size, )
                 Action choice probability of the behavior policy for the chosen action.
 
+            behavior_policy_name: str
+                Name of the behavior policy.
+
+            dataset_id: int
+                Id of the logged dataset.
+
         """
-        if n_datasets == 1:
-            logged_dataset = self._obtain_steps(
-                n_trajectories=n_trajectories,
-                step_per_trajectory=step_per_trajectory,
-                minimum_rollout_length=minimum_rollout_length,
-                maximum_rollout_length=maximum_rollout_length,
-                obtain_info=obtain_info,
-                obtain_trajectories_from_single_interaction=obtain_trajectories_from_single_interaction,
-                seed_env=(seed_env and i == 0),
-            )
+        if isinstance(behavior_policies, BaseHead):
+
+            if n_datasets == 1:
+                logged_dataset = self._obtain_steps(
+                    behavior_policy=behavior_policies,
+                    n_trajectories=n_trajectories,
+                    step_per_trajectory=step_per_trajectory,
+                    minimum_rollout_length=minimum_rollout_length,
+                    maximum_rollout_length=maximum_rollout_length,
+                    obtain_info=obtain_info,
+                    obtain_trajectories_from_single_interaction=obtain_trajectories_from_single_interaction,
+                    random_state=random_state,
+                )
+
+            else:
+                behavior_policies = [behavior_policies]
 
         else:
             logged_dataset = MultipleLoggedDataset(
@@ -1092,20 +1214,51 @@ class SyntheticDataset(BaseDataset):
                 path=path,
                 save_relative_path=save_relative_path,
             )
-            for i in tqdm(
-                np.arange(n_datasets),
-                desc="[obtain_datasets]",
-                total=n_datasets,
+
+            for j in tqdm(
+                np.arange(len(behavior_policies)),
+                desc="[obtain_datasets: behavior_policy]",
+                total=len(behavior_policies),
             ):
-                logged_dataset_ = self._obtain_steps(
-                    n_trajectories=n_trajectories,
-                    step_per_trajectory=step_per_trajectory,
-                    minimum_rollout_length=minimum_rollout_length,
-                    maximum_rollout_length=maximum_rollout_length,
-                    obtain_info=obtain_info,
-                    obtain_trajectories_from_single_interaction=obtain_trajectories_from_single_interaction,
-                    seed_env=(seed_env and i == 0),
-                )
-                logged_dataset.add(logged_dataset_)
+                if n_datasets == 1:
+                    logged_dataset = self._obtain_steps(
+                        behavior_policy=behavior_policies[j],
+                        n_trajectories=n_trajectories,
+                        step_per_trajectory=step_per_trajectory,
+                        minimum_rollout_length=minimum_rollout_length,
+                        maximum_rollout_length=maximum_rollout_length,
+                        obtain_info=obtain_info,
+                        obtain_trajectories_from_single_interaction=obtain_trajectories_from_single_interaction,
+                        random_state=random_state,
+                    )
+                    logged_dataset.add(
+                        logged_dataset_, behavior_policy_name=behavior_policies[j].name
+                    )
+
+                else:
+                    for i in tqdm(
+                        np.arange(n_datasets),
+                        desc="[obtain_datasets: dataset_id]",
+                        total=n_datasets,
+                    ):
+                        random_state_ = (
+                            random_state
+                            if random_state is not None and i == 0
+                            else None
+                        )
+                        logged_dataset_ = self._obtain_steps(
+                            behavior_policy=behavior_policies[j],
+                            n_trajectories=n_trajectories,
+                            step_per_trajectory=step_per_trajectory,
+                            minimum_rollout_length=minimum_rollout_length,
+                            maximum_rollout_length=maximum_rollout_length,
+                            obtain_info=obtain_info,
+                            obtain_trajectories_from_single_interaction=obtain_trajectories_from_single_interaction,
+                            random_state=random_state_,
+                        )
+                        logged_dataset.add(
+                            logged_dataset_,
+                            behavior_policy_name=behavior_policies[j].name,
+                        )
 
         return logged_dataset
