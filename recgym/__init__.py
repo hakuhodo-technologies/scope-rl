@@ -5,7 +5,7 @@ from recgym.envs.simulator.function import UserModel
 from recgym.envs.simulator.base import BaseUserModel
 from recgym.types import Action
 
-__all__ = ["RECEnv", "UserModel" "BaseUserModel" "Action"]
+__all__ = ["RECEnv", "UserModel", "BaseUserModel", "Action"]
 
 # register standard environment
 env = RECEnv(random_state=12345)
