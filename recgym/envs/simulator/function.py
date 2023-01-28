@@ -120,7 +120,7 @@ class UserModel(BaseUserModel):
         """
         reward = state @ self.item_feature_vector[action]
 
-        if self.reward_type is "continuous":
+        if self.reward_type == "continuous":
             reward = reward + self.random_.normal(loc=0.0, scale=self.reward_std)
 
         return reward

@@ -35,10 +35,10 @@ We often formulate this recommendation problem as the following (Partially Obser
 ### Implementation
 
 RECGym provides a recommender environment.
-- `"RECEnv-v0"`: Standard recommender environment with discrete action space.
+- `"RECEnv-v0"`: Standard recommender environment.
 
 RECGym consists of the following a environments.
-- [RECEnv](./envs/rec.py#L14): The basic configurative environment with discrete action space.
+- [RECEnv](./envs/rec.py#L14): The basic configurative environment.
 
 RECGym is configurative about the following a module.
 - [UserModel](./envs/simulator/function.py#L13): Class to define the user model of the recommender system.
@@ -72,7 +72,7 @@ Our standard RECEnv is available from `gym.make()`, following the [OpenAI Gym](h
 import recgym
 import gym
 
-# (1) standard environment for discrete action space
+# (1) standard environment 
 env = gym.make('RECEnv-v0')
 ```
 
@@ -101,7 +101,7 @@ agent = DiscreteEpsilonGreedyHead(
       random_state = random_state, 
 )
 
-# (2) basic interaction for discrete action case
+# (2) basic interaction 
 obs, info = env.reset()
 done = False
 # logs
@@ -185,7 +185,7 @@ from typing import Optional
 import numpy as np
 
 @dataclass
-class CustomizedWinningPriceDistribution(BaseWinningPriceDistribution):
+class UserModel(BaseUserModel):
     """Initialization."""
     reward_type: str = "continuous"  # "binary"
     reward_std: float = 0.0

@@ -6,8 +6,8 @@ from gym.spaces import Box, Discrete
 import numpy as np
 from sklearn.utils import check_scalar, check_random_state
 
-from recgym.envs.simulator.base import BaseUserModel
-from recgym.envs.simulator.function import UserModel
+from .simulator.base import BaseUserModel
+from .simulator.function import UserModel
 
 from ..types import Action
 
