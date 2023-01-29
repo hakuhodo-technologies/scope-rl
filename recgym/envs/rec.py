@@ -134,7 +134,7 @@ class RECEnv(gym.Env):
 
         >>> on_policy_performance
 
-        -0.11431378996045428
+        -0.02215019665822898
 
     References
     -------

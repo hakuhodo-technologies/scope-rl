@@ -30,11 +30,11 @@ Supported Implementation
 
 Standard Environment
 ----------
-    * :class:`RECEnv-v0`: Standard recommender environment with continuous action space.
+    * :class:`RECEnv-v0`: Standard recommender environment with discrete action space.
 
 Custom Environment
 ----------
-    * :class:`RECEnv`: The configurative environment with continuous action space.
+    * :class:`RECEnv`: The configurative environment with discrete action space.
 
 Configurative Modules
 ----------
@@ -72,7 +72,7 @@ The basic interaction is performed using only four lines of code as follows.
        action = agent.act(obs)
        obs, reward, done, truncated, info = env.step(action)
 
-Let's interact uniform random policy with a continuous action REC environment. 
+Let's interact uniform random policy with a discrete action REC environment. 
 
 .. code-block:: python
 
