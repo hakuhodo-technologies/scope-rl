@@ -12,8 +12,7 @@ Note that, RECGym is publicized as a sub-package of :doc:`OFRL <index>`, which s
 Basic Setting
 ~~~~~~~~~~
 In recommendation, the objective of the RL agent is to maximize reward.
-
-We often formulate this recommendation problem as the following Constrained Markov Decision Process (CMDP) as :math:`\langle \mathcal{S}, \mathcal{A}, \mathcal{T}, P_r \rangle`.
+We often formulate this recommendation problem as the following (Partially Observable) Markov Decision Process ((PO)MDP) as :math:`\langle \mathcal{S}, \mathcal{A}, \mathcal{T}, P_r \rangle`.
 
 * `state` (:math:`s \in \mathcal{S}`): 
     * A vector representing user preference.  The preference changes over time in an episode by the actions presented by the RL agent.
