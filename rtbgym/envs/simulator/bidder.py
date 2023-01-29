@@ -15,7 +15,7 @@ from ...types import Numeric
 class Bidder:
     """Class to determine bid price.
 
-    Imported as: :class:`rtbgym.envs.simulator.Bidder` 
+    Imported as: :class:`rtbgym.envs.simulator.Bidder`
 
     Note
     -------

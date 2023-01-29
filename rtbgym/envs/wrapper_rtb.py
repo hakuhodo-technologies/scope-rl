@@ -24,12 +24,12 @@ class CustomizedRTBEnv(gym.Env):
     Users can customize three following decision making using CustomizedEnv.
         - reward_predictor in Bidder class
             We use predicted rewards to calculate bid price as follows.
-            
+
             :math:`{bid price}_{t, i} = {adjust rate}_{t} \\times {predicted reward}_{t,i} ( \\times const.)`
 
         - scaler in Bidder class
             Scaler defines const.in the bid price calculation as follows.
-            
+
             :math:`const. = scaler \\times {standard bid price}`
 
             where standard_bid_price indicates the average of the standard bid price
@@ -140,16 +140,16 @@ class CustomizedRTBEnv(gym.Env):
 
         # OpenAI Gym and Gymnasium-like interaction with agent
         for episode in range(1000):
-            obs = env.reset()
+            obs, info = env.reset()
             done = False
 
             while not done:
                 action = agent.predict_online(obs)
-                obs, reward, done, info = env.step(action)
+                obs, reward, done, truncated, info = env.step(action)
 
     Online Evaluation:
 
-    .. code-block:: python 
+    .. code-block:: python
 
         # calculate on-policy policy value
         on_policy_performance = calc_on_policy_policy_value(
@@ -163,8 +163,8 @@ class CustomizedRTBEnv(gym.Env):
 
     .. code-block:: python
 
-        >>> on_policy_performance 
-        
+        >>> on_policy_performance
+
         11.75
 
     References

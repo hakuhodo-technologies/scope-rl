@@ -76,13 +76,19 @@ We start by collecting the logged data using DDQN :cite:`van2016deep` as a behav
     # initialize the dataset class
     dataset = SyntheticDataset(
         env=env,
-        behavior_policy=behavior_policy,
         max_episode_steps=env.step_per_episode,
-        random_state=random_state,
     )
     # collect logged data by a behavior policy
-    logged_dataset = dataset.obtain_episodes(n_trajectories=10000)
-    print(logged_dataset.keys())
+    train_logged_dataset = dataset.obtain_episodes(
+        behavior_policies=behavior_policy,
+        n_trajectories=10000,
+        random_state=random_state,
+    )
+    test_logged_dataset = dataset.obtain_episodes(
+        behavior_policies=behavior_policy,
+        n_trajectories=10000,
+        random_state= + 1,
+    )
 
 Users can collect logged data from any environment with `OpenAI Gym <https://gym.openai.com>`_ and `Gymnasium <https://github.com/Farama-Foundation/Gymnasium>`_-like interface using a variety of behavior policies.
 Moreover, by preprocessing the logged data, one can also handle their own logged data from real-world applications.
@@ -111,11 +117,11 @@ Note that, we use `d3rlpy <https://github.com/takuseno/d3rlpy>`_ for offline RL.
     # (3) Learning a new policy from offline logged data (using d3rlpy)
     # convert dataset into d3rlpy's dataset
     offlinerl_dataset = MDPDataset(
-        observations=logged_dataset["state"],
-        actions=logged_dataset["action"],
-        rewards=logged_dataset["reward"],
-        terminals=logged_dataset["done"],
-        episode_terminals=logged_dataset["done"],
+        observations=train_logged_dataset["state"],
+        actions=train_logged_dataset["action"],
+        rewards=train_logged_dataset["reward"],
+        terminals=train_logged_dataset["done"],
+        episode_terminals=train_logged_dataset["done"],
         discrete_action=True,
     )
     # initialize the algorithm
@@ -196,7 +202,7 @@ and Doubly Robust (DR) :cite:`jiang2016doubly` :cite:`thomas2016data`.
     # create input for OPE class
     prep = CreateOPEInput(
         env=env,
-        logged_dataset=logged_dataset,
+        logged_dataset=test_logged_dataset,
         use_base_model=True,  # use model-based prediction
     )
     input_dict = prep.obtain_whole_inputs(
@@ -206,7 +212,7 @@ and Doubly Robust (DR) :cite:`jiang2016doubly` :cite:`thomas2016data`.
     )
     # initialize the OPE class
     ope = OPE(
-        logged_dataset=logged_dataset,
+        logged_dataset=test_logged_dataset,
         ope_estimators=[DM(), TIS(), PDIS(), DR()],
     )
     # conduct OPE and visualize the result
@@ -261,7 +267,7 @@ using Cumulative Distribution OPE estimators :cite:`huang2021off` :cite:`huang20
     # we compare ddqn, cql, and random policy defined in the previous section (i.e., (3) of basic OPE procedure)
     # initialize the OPE class
     cd_ope = CumulativeDistributionOPE(
-        logged_dataset=logged_dataset,
+        logged_dataset=test_logged_dataset,
         ope_estimators=[
         CD_DM(estimator_name="cdf_dm"),
         CD_IS(estimator_name="cdf_is"),
@@ -324,23 +330,23 @@ Finally, we provide the code to conduct OPS, which selects the "best" performing
         return_by_dataframe=True,
     )
     # visualize the top k deployment result
+    # compared estimators are also easily specified
     ops.visualize_topk_policy_value_selected_by_standard_ope(
         input_dict=input_dict,
-        compared_estimators=["dm", "tis", "pdis", "dr"],
+        compared_estimators=["cdf_dm", "cdf_is", "cdf_dr", "cdf_snis", "cdf_sndr"],
         safety_criteria=1.0,
     )
     # visualize the OPS results with the ground-truth metrics
-    ops.visualize_lower_quartile_for_validation(
+    ops.visualize_variance_for_validation(
         input_dict,
-        alpha=0.3,
         share_axes=True,
     )
 
 .. card:: 
-    :img-top: ../_static/images/ops_topk_performance.png
+    :img-top: ../_static/images/ops_topk_lower_quartile.png
     :text-align: center
     
-    Comparison of the Top-k Statistics of Policy Value
+    Comparison of the Top-k Statistics of 10% Lower Quartile of Policy Value
 
 .. card:: 
     :img-top: ../_static/images/ops_variance_validation.png
@@ -357,6 +363,10 @@ Finally, we provide the code to conduct OPS, which selects the "best" performing
 ~~~~~
 
 More tutorials with a variety of environments and OPE estimators are available in the next page!
+
+.. raw:: html
+
+    <div class="white-space-5px"></div>
 
 .. grid::
 

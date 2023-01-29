@@ -599,7 +599,11 @@ class DiscreteCumulativeDistributionTrajectoryWiseImportanceSampling(
         histogram = np.histogram(
             trajectory_wise_reward, bins=reward_scale, density=False
         )[0]
-        cumulative_density = cumulative_density[histogram.cumsum().astype(int) - 1]
+
+        idx = histogram.cumsum().astype(int) - 1
+        idx = np.where(idx < 0, 0, idx)
+
+        cumulative_density = cumulative_density[idx]
 
         return np.insert(cumulative_density, 0, 0)
 
@@ -1550,7 +1554,11 @@ class DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSampli
         histogram = np.histogram(
             trajectory_wise_reward, bins=reward_scale, density=False
         )[0]
-        cumulative_density = cumulative_density[histogram.cumsum().astype(int) - 1]
+
+        idx = histogram.cumsum().astype(int) - 1
+        idx = np.where(idx < 0, 0, idx)
+
+        cumulative_density = cumulative_density[idx]
 
         return np.insert(cumulative_density, 0, 0)
 

@@ -1,5 +1,7 @@
 """Meta class to handle Off-Policy Learning (OPL)."""
 from dataclasses import dataclass
+from copy import deepcopy
+from collections import defaultdict
 from typing import Union, Optional, Any, Dict, List, Tuple
 from tqdm.auto import tqdm
 
@@ -10,7 +12,7 @@ from d3rlpy.dataset import MDPDataset
 from sklearn.model_selection import train_test_split
 
 from .head import BaseHead
-from ..utils import MultipleLoggedDataset
+from ..utils import MultipleLoggedDataset, defaultdict_to_dict
 from ..types import LoggedDataset
 
 
@@ -128,6 +130,7 @@ class OffPolicyLearning:
             algorithms=algorithms,
             algorithms_name=algorithms_name,
             policy_wrappers=policy_wrappers,
+            random_state=12345,
         )
 
     **Output**:
@@ -305,8 +308,9 @@ class OffPolicyLearning:
     def learn_base_policy(
         self,
         logged_dataset: Union[LoggedDataset, MultipleLoggedDataset],
-        algorithms: Union[List[AlgoBase], List[List[AlgoBase]]],
-        dataset_id: Optional[Union[int, str]] = None,
+        algorithms: List[AlgoBase],
+        behavior_policy_name: Optional[str] = None,
+        dataset_id: Optional[int] = None,
         random_state: Optional[int] = None,
     ):
         """Learn base policy.
@@ -336,6 +340,8 @@ class OffPolicyLearning:
                     terminal,
                     info,
                     pscore,
+                    behavior_policy,
+                    dataset_id,
                 ]
 
             .. seealso::
@@ -345,50 +351,85 @@ class OffPolicyLearning:
         algorithms: list of AlgoBase
             List of algorithms to fit.
 
-        dataset_id: int or str, default=None
-            Id (or name) of the logged dataset.
-            If `None`, the algorithms are trained on multiple logged datasets.
+        behavior_policy_name: str, default=None
+            Name of the behavior policy.
+
+        dataset_id: int, default=None
+            Id of the logged dataset.
 
         random_state: int, default=None (>= 0)
             Random state.
 
         Returns
         -------
-        base_policies: List of AlgoBase
+        base_policies: AlgoBase
             List of learned policies.
 
         """
         if isinstance(logged_dataset, MultipleLoggedDataset):
-            if dataset_id is None:
-                if isinstance(algorithms[0], AlgoBase):
-                    algorithms = [algorithms for _ in range(len(logged_dataset))]
 
-                base_policies = []
-                for i in tqdm(
-                    np.arange(len(logged_dataset)),
-                    desc="[learn_policies: logged_datasets]",
-                    total=len(logged_dataset),
-                ):
-                    logged_dataset_ = logged_dataset.get(i)
+            if behavior_policy_name is None and dataset_id is None:
+                base_policies = defaultdict(list)
+
+                for behavior_policy, n_datasets in logged_dataset.n_datasets.items():
+                    for dataset_id_ in range(n_datasets):
+                        logged_dataset_ = logged_dataset.get(
+                            behavior_policy_name=behavior_policy, dataset_id=dataset_id_
+                        )
+                        base_policies_ = self._learn_base_policy(
+                            logged_dataset=logged_dataset_,
+                            algorithms=algorithms,
+                            random_state=random_state,
+                        )
+                        base_policies[behavior_policy].append(base_policies_)
+
+                base_policies = defaultdict_to_dict(base_policies)
+
+            elif behavior_policy_name is None and dataset_id is not None:
+                base_policies = {}
+
+                for behavior_policy in logged_dataset.behavior_policy_names:
+                    logged_dataset_ = logged_dataset.get(
+                        behavior_policy_name=behavior_policy, dataset_id=dataset_id
+                    )
                     base_policies_ = self._learn_base_policy(
                         logged_dataset=logged_dataset_,
-                        algorithms=algorithms[i],
+                        algorithms=algorithms,
+                        random_state=random_state,
+                    )
+                    base_policies[behavior_policy] = base_policies_
+
+            elif behavior_policy_name is not None and dataset_id is None:
+                base_policies = []
+
+                for dataset_id_ in range(
+                    logged_dataset.n_datasets[behavior_policy_name]
+                ):
+                    logged_dataset_ = logged_dataset.get(
+                        behavior_policy_name=behavior_policy_name,
+                        dataset_id=dataset_id_,
+                    )
+                    base_policies_ = self._learn_base_policy(
+                        logged_dataset=logged_dataset_,
+                        algorithms=algorithms,
                         random_state=random_state,
                     )
                     base_policies.append(base_policies_)
 
             else:
-                logged_dataset = logged_dataset.get(dataset_id)
+                logged_dataset = logged_dataset.get(
+                    behavior_policy_name=behavior_policy_name, dataset_id=dataset_id_
+                )
                 base_policies = self._learn_base_policy(
-                    logged_dataset=logged_dataset_,
+                    logged_dataset=logged_dataset,
                     algorithms=algorithms,
                     random_state=random_state,
                 )
 
         else:
             base_policies = self._learn_base_policy(
-                logged_dataset=logged_dataset_,
-                base_policies=base_policies,
+                logged_dataset=logged_dataset,
+                algorithms=algorithms,
                 random_state=random_state,
             )
 
@@ -396,9 +437,9 @@ class OffPolicyLearning:
 
     def apply_head(
         self,
-        base_policies: Union[List[AlgoBase], List[List[AlgoBase]]],
-        base_policies_name: Union[List[str], List[List[str]]],
-        policy_wrappers: Union[HeadDict, List[HeadDict]],
+        base_policies: Union[List[AlgoBase], Dict[str, List[AlgoBase]]],
+        base_policies_name: List[str],
+        policy_wrappers: HeadDict,
         random_state: Optional[int] = None,
     ):
         """Apply policy wrappers to the (deterministic) base policies.
@@ -411,8 +452,8 @@ class OffPolicyLearning:
         base_policies_name: list of str
             List of the name of each base policy.
 
-        policy_wrappers: HeadDict or list of HeadDict.
-            List of dictionary containing information about policy wrappers.
+        policy_wrappers: HeadDict.
+            Dictionary containing information about policy wrappers.
             The HeadDict should follow the following format.
 
             .. code-block:: python
@@ -444,6 +485,12 @@ class OffPolicyLearning:
 
                 :doc:`/documentation/_autosummary/ofrl.policy.head` described various policy wrappers and their parameters.
 
+        behavior_policy_name: str, default=None
+            Name of the behavior policy.
+
+        dataset_id: int, default=None
+            Id of the logged dataset.
+
         random_state: int, default=None (>= 0)
             Random state.
 
@@ -453,41 +500,61 @@ class OffPolicyLearning:
             List of (stochastic) evaluation policies.
 
         """
-        if isinstance(base_policies[0], list):
-            if not isinstance(base_policies_name[0], list):
-                base_policies_name = [
-                    base_policies_name for _ in range(len(base_policies))
-                ]
-            if not isinstance(policy_wrappers, list):
-                policy_wrappers = [policy_wrappers for _ in range(len(base_policies))]
+        if isinstance(base_policies, dict):
 
-                eval_policies = []
-                for i in range(len(base_policies)):
-                    eval_policies_ = self._apply_head(
-                        base_policies=base_policies[i],
-                        base_policies_name=base_policies_name[i],
-                        policy_wrappers=policy_wrappers[i],
+            evaluation_policies = {}
+            for behavior_policy in base_policies.keys():
+
+                if isinstance(base_policies[behavior_policy][0], AlgoBase):
+                    evaluation_policies[behavior_policy] = self._apply_head(
+                        base_policies=base_policies[behavior_policy],
+                        base_policies_name=base_policies_name,
+                        policy_wrappers=policy_wrappers,
                         random_state=random_state,
                     )
-                    eval_policies.append(eval_policies_)
+
+                else:
+                    evaluation_policies[behavior_policy] = []
+                    for dataset_id_ in range(len(base_policies[behavior_policy])):
+                        evaluation_policies_ = self._apply_head(
+                            base_policies=base_policies[behavior_policy][dataset_id_],
+                            base_policies_name=base_policies_name,
+                            policy_wrappers=policy_wrappers,
+                            random_state=random_state,
+                        )
+                        evaluation_policies[behavior_policy].append(
+                            evaluation_policies_
+                        )
 
         else:
-            eval_policies_ = self._apply_head(
-                base_policies=base_policies,
-                base_policies_name=base_policies_name,
-                policy_wrappers=policy_wrappers,
-                random_state=random_state,
-            )
+            if isinstance(base_policies[0], AlgoBase):
+                evaluation_policies[behavior_policy] = self._apply_head(
+                    base_policies=base_policies,
+                    base_policies_name=base_policies_name,
+                    policy_wrappers=policy_wrappers,
+                    random_state=random_state,
+                )
+            else:
+                evaluation_policies = []
+                for dataset_id_ in range(len(base_policies)):
+                    evaluation_policies_ = self._apply_head(
+                        base_policies=base_policies[dataset_id_],
+                        base_policies_name=base_policies_name,
+                        policy_wrappers=policy_wrappers,
+                        random_state=random_state,
+                    )
+                    evaluation_policies.append(evaluation_policies_)
 
-        return eval_policies
+        return evaluation_policies
 
     def obtain_evaluation_policy(
         self,
         logged_dataset: Union[LoggedDataset, MultipleLoggedDataset],
-        algorithms: Union[List[AlgoBase], List[List[AlgoBase]]],
-        algorithms_name: Union[List[str], List[List[str]]],
-        policy_wrappers: Union[HeadDict, List[HeadDict]],
-        dataset_id: Optional[Union[int, str]] = None,
+        algorithms: List[AlgoBase],
+        algorithms_name: List[str],
+        policy_wrappers: HeadDict,
+        behavior_policy_name: Optional[str] = None,
+        dataset_id: Optional[int] = None,
         random_state: Optional[int] = None,
     ):
         """Obtain evaluation policies given base algorithms and policy wrappers.
@@ -529,8 +596,8 @@ class OffPolicyLearning:
         algorithms_name: list of str
             List of the name of each base policy.
 
-        policy_wrappers: HeadDict or list of HeadDict.
-            List of dictionary containing information about policy wrappers.
+        policy_wrappers: HeadDict
+            Dictionary containing information about policy wrappers.
             The HeadDict should follow the following format.
 
             .. code-block:: python
@@ -562,9 +629,11 @@ class OffPolicyLearning:
 
                 :doc:`/documentation/_autosummary/ofrl.policy.head` described various policy wrappers and their parameters.
 
-        dataset_id: int or str, default=None
-            Id (or name) of the logged dataset.
-            If `None`, the algorithms are trained on multiple logged datasets.
+        behavior_policy_name: str, default=None
+            Name of the behavior policy.
+
+        dataset_id: int, default=None
+            Id of the logged dataset.
 
         random_state: int, default=None (>= 0)
             Random state.
@@ -575,16 +644,101 @@ class OffPolicyLearning:
             List of (stochastic) evaluation policies.
 
         """
-        base_policies = self.learn_base_policy(
-            logged_dataset=logged_dataset,
-            algorithms=algorithms,
-            dataset_id=dataset_id,
-            random_state=random_state,
-        )
-        eval_policies = self.apply_head(
-            base_policies=base_policies,
-            base_policies_name=algorithms_name,
-            policy_wrappers=policy_wrappers,
-            random_state=random_state,
-        )
+        if isinstance(logged_dataset, MultipleLoggedDataset):
+
+            if behavior_policy_name is None and dataset_id is None:
+                eval_policies = defaultdict(list)
+
+                for behavior_policy, n_datasets in logged_dataset.n_datasets.items():
+                    for dataset_id_ in range(n_datasets):
+                        logged_dataset_ = logged_dataset.get(
+                            behavior_policy_name=behavior_policy, dataset_id=dataset_id_
+                        )
+                        base_policies_ = self._learn_base_policy(
+                            logged_dataset=logged_dataset_,
+                            algorithms=algorithms,
+                            random_state=random_state,
+                        )
+                        eval_policies_ = self._apply_head(
+                            base_policies=base_policies_,
+                            base_policies_name=algorithms_name,
+                            policy_wrappers=policy_wrappers,
+                            random_state=random_state,
+                        )
+                        eval_policies[behavior_policy].append(eval_policies_)
+
+                eval_policies = defaultdict_to_dict(eval_policies)
+
+            elif behavior_policy_name is None and dataset_id is not None:
+                eval_policies = {}
+
+                for behavior_policy in logged_dataset.behavior_policy_names:
+                    logged_dataset_ = logged_dataset.get(
+                        behavior_policy_name=behavior_policy, dataset_id=dataset_id
+                    )
+                    base_policies_ = self._learn_base_policy(
+                        logged_dataset=logged_dataset_,
+                        algorithms=algorithms,
+                        random_state=random_state,
+                    )
+                    eval_policies_ = self._apply_head(
+                        base_policies=base_policies_,
+                        base_policies_name=algorithms_name,
+                        policy_wrappers=policy_wrappers,
+                        random_state=random_state,
+                    )
+                    eval_policies[behavior_policy] = eval_policies_
+
+            elif behavior_policy_name is not None and dataset_id is None:
+                eval_policies = []
+
+                for dataset_id_ in range(
+                    logged_dataset.n_datasets[behavior_policy_name]
+                ):
+                    logged_dataset_ = logged_dataset.get(
+                        behavior_policy_name=behavior_policy_name,
+                        dataset_id=dataset_id_,
+                    )
+                    base_policies_ = self._learn_base_policy(
+                        logged_dataset=logged_dataset_,
+                        algorithms=algorithms,
+                        random_state=random_state,
+                    )
+                    eval_policies_ = self._apply_head(
+                        base_policies=base_policies_,
+                        base_policies_name=algorithms_name,
+                        policy_wrappers=policy_wrappers,
+                        random_state=random_state,
+                    )
+                    eval_policies.append(eval_policies_)
+
+            else:
+                logged_dataset = logged_dataset.get(
+                    behavior_policy_name=behavior_policy_name, dataset_id=dataset_id_
+                )
+                base_policies = self._learn_base_policy(
+                    logged_dataset=logged_dataset,
+                    algorithms=algorithms,
+                    random_state=random_state,
+                )
+                eval_policies = self._apply_head(
+                    base_policies=base_policies,
+                    base_policies_name=algorithms_name,
+                    policy_wrappers=policy_wrappers,
+                    random_state=random_state,
+                )
+
+        else:
+            base_policies = self._learn_base_policy(
+                logged_dataset=logged_dataset,
+                algorithms=algorithms,
+                random_state=random_state,
+            )
+            eval_policies = self._apply_head(
+                base_policies=base_policies,
+                base_policies_name=algorithms_name,
+                policy_wrappers=policy_wrappers,
+                random_state=random_state,
+            )
+
         return eval_policies

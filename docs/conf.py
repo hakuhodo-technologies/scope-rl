@@ -12,13 +12,15 @@
 #
 import os
 import sys
-sys.path.insert(0, os.path.abspath('..'))
+
+sys.path.insert(0, os.path.abspath(".."))
 
 
 # -- Project information -----------------------------------------------------
 
 project = "OFRL"
-copyright = "2023, Haruka Kiyohara, Yuta Saito, and negocia, Inc"
+copyright = "2023, Hakuhodo Technologies"
+# copyright = "2023, Haruka Kiyohara, Yuta Saito, and negocia, Inc"
 author = "Haruka Kiyohara, Kosuke Kawakami, Yuta Saito"
 
 # The full version, including alpha/beta/rc tags
@@ -33,7 +35,7 @@ release = "latest"
 # ones.
 extensions = [
     "sphinx.ext.autodoc",
-    'sphinx.ext.autodoc.typehints',
+    "sphinx.ext.autodoc.typehints",
     "sphinx.ext.autosummary",
     "sphinx.ext.doctest",
     "sphinx.ext.intersphinx",
@@ -52,7 +54,7 @@ extensions = [
 ]
 
 # bibtex
-bibtex_bibfiles = ['refs.bib']
+bibtex_bibfiles = ["refs.bib"]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -72,18 +74,14 @@ html_theme = "pydata_sphinx_theme"
 html_theme_options = {
     "github_url": "https://github.com/negocia-inc/ofrl",
     # "twitter_url": "https://twitter.com/{account}",
-    # "icon_links": [
-    #         {
-    #             # Label for this link
-    #             "name": "GitHub",
-    #             # URL where the link will redirect
-    #             "url": "https://github.com/negocia-inc/ofrl",  # required
-    #             # Icon class (if "type": "fontawesome"), or path to local image (if "type": "local")
-    #             "icon": "fab fa-github-square",
-    #             # The type of image to be used (see below for details)
-    #             "type": "fontawesome",
-    #         }
-    # ],
+    "icon_links": [
+        {
+            "name": "Speaker Deck",
+            "url": "https://speakerdeck.com/aiueola/ofrl-designing-an-offline-reinforcement-learning-and-policy-evaluation-platform-from-practical-perspectives",
+            "icon": "fa-brands fa-speaker-deck",
+            "type": "fontawesome",
+        },
+    ],
     "header_links_before_dropdown": 6,
     # "navbar_start": ["navbar-logo", "version"],
     "footer_items": ["copyright"],
@@ -97,12 +95,16 @@ html_theme_options = {
 html_static_path = ["_static"]
 html_css_files = ["css/custom.css"]
 
+html_title = "OFRL"
+# html_use_opensearch = "https://"
+
+
 # whether to display to the source .rst file
 html_show_sourcelink = False
 html_show_sphinx = False
 
 autosummary_generate = True
-autodoc_typehints = 'description'
+autodoc_typehints = "description"
 autodoc_typehints_description_target = "documented"
 autodoc_default_options = {
     "members": None,
@@ -132,18 +134,19 @@ numpydoc_xref_aliases = {
 }
 
 intersphinx_mapping = {
-    'python': ('https://docs.python.org/3/', None),
-    'numpy': ('https://docs.scipy.org/doc/numpy/', None),
-    'd3rlpy': ('https://d3rlpy.readthedocs.io/en/v1.1.1/', None),
-    'gym': ('https://www.gymlibrary.dev/', None),
-    'gymnasium': ('https://gymnasium.farama.org/', None),
+    "python": ("https://docs.python.org/3/", None),
+    "numpy": ("https://docs.scipy.org/doc/numpy/", None),
+    "d3rlpy": ("https://d3rlpy.readthedocs.io/en/v1.1.1/", None),
+    "gym": ("https://www.gymlibrary.dev/", None),
+    "gymnasium": ("https://gymnasium.farama.org/", None),
 }
 
 # gallery example path
 from sphinx_gallery.sorting import ExplicitOrder
 from sphinx_gallery.sorting import FileNameSortKey
+
 sphinx_gallery_conf = {
-    "examples_dirs": "tutorial",   # path to your example scripts
+    "examples_dirs": "tutorial",  # path to your example scripts
     "gallery_dirs": "documentation/_autogallery",  # path to where to save gallery generated output
     "subsection_order": ExplicitOrder(
         [
@@ -151,6 +154,7 @@ sphinx_gallery_conf = {
             "tutorial/cumulative_distribution_ope",
             "tutorial/ops",
             "tutorial/ofrl_others",
+            "tutorial/multiple_datasets",
             "tutorial/rtbgym",
             "tutorial/footer",
         ]

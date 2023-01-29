@@ -19,7 +19,7 @@
 
 ## Overview
 
-*RTBGym* is an open-source simulation platform for Real-Time Bidding (RTB) of Display Advertising, which is written in Python. The simulator is particularly intended for reinforcement learning algorithms and follows [OpenAI Gym](https://gym.openai.com) interface. We design RTBGym as a configurative environment so that researchers and practitioner can customize the environmental modules including WinningPriceDistribution, ClickThroughRate, and ConversionRate.
+*RTBGym* is an open-source simulation platform for Real-Time Bidding (RTB) of Display Advertising, which is written in Python. The simulator is particularly intended for reinforcement learning algorithms and follows [OpenAI Gym](https://gym.openai.com) and [Gymnasium](https://gymnasium.farama.org/)-like interface. We design RTBGym as a configurative environment so that researchers and practitioner can customize the environmental modules including `WinningPriceDistribution`, `ClickThroughRate`, and `ConversionRate`.
 
 Note that, RTBGym is publicized under [OfflineGym](../) repository, which facilitates the implementation of offline reinforcement learning procedure.
 
@@ -53,16 +53,16 @@ RTBGym provides two standardized RTB environment.
 - `"RTBEnv-continuous-v0"`: Standard RTB environment with continuous action space.
 
 RTBGym consists of the following two environments.
-- [RTBEnv](./env/rtb.py#L24): The basic configurative environment with continuous action space.
-- [CustomizedRTBEnv](./env/wrapper_rtb.py#L15): The customized environment given action space and reward predictor.
+- [RTBEnv](./envs/rtb.py#L24): The basic configurative environment with continuous action space.
+- [CustomizedRTBEnv](./envs/wrapper_rtb.py#L15): The customized environment given action space and reward predictor.
 
 RTBGym is configurative about the following three modules.
-- [WinningPriceDistribution](./env/simulator/function.py#L18): Class to define the winning price distribution of the auction bidding.
-- [ClickThroughRate](./env/simulator/function.py#L183): Class to define the click through rate of users.
-- [ConversionRate](./env/simulator/function.py#L393): Class to define the conversion rate of users.
+- [WinningPriceDistribution](./envs/simulator/function.py#L18): Class to define the winning price distribution of the auction bidding.
+- [ClickThroughRate](./envs/simulator/function.py#L183): Class to define the click through rate of users.
+- [ConversionRate](./envs/simulator/function.py#L393): Class to define the conversion rate of users.
 
-Note that, users can customize the above modules by following the [abstract class](./env/simulator/base.py). \
-We also define the bidding function in the [Bidder](./env/simulator/bidder.py#15) class and the auction simulation in the [Simulator](./env/simulator/rtb_synthetic.py#23) class, respectively.
+Note that, users can customize the above modules by following the [abstract class](./envs/simulator/base.py). \
+We also define the bidding function in the [Bidder](./envs/simulator/bidder.py#15) class and the auction simulation in the [Simulator](./envs/simulator/rtb_synthetic.py#23) class, respectively.
 
 ## Installation
 RTBGym can be installed as a part of [OfflineGym](../) using Python's package manager `pip`.
@@ -84,7 +84,7 @@ The online/offlline RL and Off-Policy Evaluation examples are provides in [Offli
 
 ### Standard RTBEnv
 
-Our standard RTBEnv is available from `gym.make()`, following the [OpenAI Gym](https://gym.openai.com) interface.
+Our standard RTBEnv is available from `gym.make()`, following the [OpenAI Gym](https://gym.openai.com) and [Gymnasium](https://gymnasium.farama.org/)-like interface.
 
 ```Python
 # import rtbgym and gym
@@ -161,7 +161,7 @@ plt.show()
 </p>
 </figcaption>
 
-Note that, while we use [OfflineGym](../README.md) and [d3rlpy](https://github.com/takuseno/d3rlpy) here, RTBGym is compatible with any other libraries working on the [OpenAI Gym](https://gym.openai.com) interface.
+Note that, while we use [OfflineGym](../README.md) and [d3rlpy](https://github.com/takuseno/d3rlpy) here, RTBGym is compatible with any other libraries working on the [OpenAI Gym](https://gym.openai.com) and [Gymnasium](https://gymnasium.farama.org/)-like interface.
 
 ### Customized RTGEnv
 
@@ -410,6 +410,7 @@ For any question about the paper and software, feel free to contact: kiyohara.h.
 <summary><strong>Projects </strong>(click to expand)</summary>
 
 This project is inspired by the following three packages.
+- **AuctionGym** -- an RL environment for online advertising auctions: [[github](https://github.com/amzn/auction-gym)] [[paper](https://www.amazon.science/publications/learning-to-bid-with-auctiongym)]
 - **RecoGym**  -- an RL environment for recommender systems: [[github](https://github.com/criteo-research/reco-gym)] [[paper](https://arxiv.org/abs/1808.00720)]
 - **RecSim** -- a configurative RL environment for recommender systems: [[github](https://github.com/google-research/recsim)] [[paper](https://arxiv.org/abs/1909.04847)]
 - **FinRL** -- an RL environment for finance: [[github](https://github.com/AI4Finance-Foundation/FinRL)] [[paper](https://arxiv.org/abs/2011.09607)]

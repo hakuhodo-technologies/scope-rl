@@ -17,7 +17,7 @@
 
 ## Overview
 
-*RECGym* is an open-source simulation platform for recommender system (REC), which is written in Python. The simulator is particularly intended for reinforcement learning algorithms and follows [OpenAI Gym](https://gym.openai.com) interface. We design RECGym as a configurative environment so that researchers and practitioner can customize the environmental modules including UserModel((i.e. user_preference_dynamics and reward_function)
+*RECGym* is an open-source simulation platform for recommender system (REC), which is written in Python. The simulator is particularly intended for reinforcement learning algorithms and follows [OpenAI Gym](https://gym.openai.com) and [Gymnasium](https://gymnasium.farama.org/)-like interface. We design RECGym as a configurative environment so that researchers and practitioner can customize the environmental modules including `UserModel`((i.e. `user_preference_dynamics` and `reward_function`).
 
 Note that, RECGym is publicized under [OfflineGym](../) repository, which facilitates the implementation of offline reinforcement learning procedure.
 
@@ -64,7 +64,7 @@ The online/offlline RL and Off-Policy Evaluation examples are provides in [Offli
 
 ### Standard RECEnv
 
-Our standard RECEnv is available from `gym.make()`, following the [OpenAI Gym](https://gym.openai.com) interface.
+Our standard RECEnv is available from `gym.make()`, following the [OpenAI Gym](https://gym.openai.com) and [Gymnasium](https://gymnasium.farama.org/)-like interface.
 
 ```Python
 # import RECGym and gym
@@ -129,7 +129,7 @@ plt.show()
 </p>
 </figcaption>
 
-Note that, while we use [OfflineGym](../README.md) and [d3rlpy](https://github.com/takuseno/d3rlpy) here, RECGym is compatible with any other libraries working on the [OpenAI Gym](https://gym.openai.com) interface.
+Note that, while we use [OfflineGym](../README.md) and [d3rlpy](https://github.com/takuseno/d3rlpy) here, RECGym is compatible with any other libraries working on the [OpenAI Gym](https://gym.openai.com) and [Gymnasium](https://gymnasium.farama.org/)-like interface.
 
 ### Customized RTGEnv
 
@@ -145,7 +145,7 @@ Next, we describe how to customize the environment by instantiating the environm
 - `user_feature_dim`: Dimensions of the user feature vectors.
 - `item_feature_vector`: Feature vectors that characterizes each item.
 - `user_feature_vector`: Feature vectors that characterizes each user.
-- `reward_type`: Reward type (i.e., countinuous / binary).
+- `reward_type`: Reward type (i.e., continuous / binary).
 - `reward_std`: Standard deviation of the reward distribution. Applicable only when reward_type is "continuous".
 - `obs_std`: Standard deviation of the observation distribution.
 - `step_per_episode`: Number of timesteps in an episode.
@@ -268,9 +268,7 @@ For any question about the paper and software, feel free to contact: kiyohara.h.
 
 2. Takuma Seno and Michita Imai. [d3rlpy: An Offline Deep Reinforcement Library](https://arxiv.org/abs/2111.03788), *arXiv preprint arXiv:2111.03788*, 2021.
 
-3. Sarah Dean, Jamie Morgenstern. [Preference Dynamics Under Personalized Recommendations](https://arxiv.org/abs/2205.13026). In *Proceedings of the 23rd ACM Conference on Economics and Computation*, 4503-9150, 2022.
-
-4. David Rohde, Stephen Bonner, Travis Dunlop, Flavian Vasile, Alexandros Karatzoglou. ["RecoGym: A Reinforcement Learning Environment for the Problem of Product Recommendation in Online Advertising](https://arxiv.org/abs/1808.00720). *arXiv preprint arXiv:1808.00720*, 2018.
+3. Sarah Dean and Jamie Morgenstern. [Preference Dynamics Under Personalized Recommendations](https://arxiv.org/abs/2205.13026). In *Proceedings of the 23rd ACM Conference on Economics and Computation*, 4503-9150, 2022.
 
 </details>
 
@@ -280,6 +278,7 @@ For any question about the paper and software, feel free to contact: kiyohara.h.
 This project is inspired by the following three packages.
 - **RecoGym**  -- an RL environment for recommender systems: [[github](https://github.com/criteo-research/reco-gym)] [[paper](https://arxiv.org/abs/1808.00720)]
 - **RecSim** -- a configurative RL environment for recommender systems: [[github](https://github.com/google-research/recsim)] [[paper](https://arxiv.org/abs/1909.04847)]
+- **AuctionGym** -- an RL environment for online advertising auctions: [[github](https://github.com/amzn/auction-gym)] [[paper](https://www.amazon.science/publications/learning-to-bid-with-auctiongym)]
 - **FinRL** -- an RL environment for finance: [[github](https://github.com/AI4Finance-Foundation/FinRL)] [[paper](https://arxiv.org/abs/2011.09607)]
 
 </details>
