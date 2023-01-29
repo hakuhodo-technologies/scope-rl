@@ -1,6 +1,9 @@
 """Useful tools."""
+from dataclasses import dataclass
 from collections import defaultdict
 from typing import DefaultDict, Dict, Union, Optional, Any, Tuple
+from pathlib import Path
+import pickle
 
 import gym
 import scipy
@@ -8,6 +11,239 @@ import numpy as np
 from sklearn.utils import check_scalar, check_random_state
 
 from .types import LoggedDataset, OPEInputDict
+
+
+@dataclass
+class MultipleLoggedDataset:
+    """This class contains paths to multiple logged datasets and returns logged_dataset.
+
+    Parameters
+    -------
+    path: str
+        Path to the directory. Either absolute and relative path is acceptable.
+
+    save_relative_path: bool, default=False.
+        Whether to save a relative path.
+        If `True`, a path relative to the ofrl directory will be saved.
+        If `False`, the absolute path will be saved.
+
+        Note that, this option was added in order to run examples in the documentation properly.
+        Otherwise, the default setting (`False`) is recommended.
+
+    """
+
+    path: str
+    save_relative_path: str
+
+    def __post_init__(self):
+        self.n_datasets = 0
+        self.name_to_id_mapping = {}
+        self.id_to_name_mapping = []
+
+        self.abs_path = None
+        self.relative_path = None
+
+        self.path = Path(self.path)
+        self.path.mkdir(parents=True, exist_ok=True)
+
+        if self.save_relative_path:
+            abs_path = str(self.path.resolve())
+            relative_path = abs_path.split("ofrl/ofrl/")
+
+            if len(relative_path) == 1:
+                self.relative_path = abs_path.split("ofrl/")
+            else:
+                self.relative_path = "ofrl/" + relative_path
+        else:
+            self.abs_path = self.path.resolve()
+
+    def __len__(self):
+        return self.n_datasets
+
+    def add(self, logged_dataset: LoggedDataset, name: Optional[str] = None):
+        """Save logged dataset.
+
+        Parameters
+        -------
+        logged_dataset: LoggedDataset.
+            Logged dataset to save.
+
+        name: str, default=None
+            Name of the logged dataset.
+
+        """
+        id = self.n_datasets
+        self.n_datasets += 1
+
+        self.id_to_name_mapping.append(name)
+
+        if name is not None:
+            self.name_to_id_mapping[name] = id
+
+        with open(self.path / f"logged_dataset_{id}.pickle", "wb") as f:
+            pickle.dump(logged_dataset, f)
+
+    def get(self, id: Union[int, str]):
+        """Load logged dataset.
+
+        Parameters
+        -------
+        id: {int, str}
+            Id (or name) of the logged dataset.
+
+        Returns
+        -------
+        logged_dataset: LoggedDataset.
+            Logged dataset.
+
+        """
+        id = id if isinstance(id, int) else self.id_to_name_mapping[id]
+
+        if self.save_relative_path:
+            abs_path = str(Path.cwd())
+            abs_path = abs_path.split("ofrl/ofrl/")
+
+            if len(abs_path) == 1:
+                abs_path = abs_path.split("ofrl/")
+                abs_path = Path(abs_path[0] + "ofrl/" + self.relative_path)
+            else:
+                abs_path = Path(abs_path[0] + "ofrl/ofrl/" + self.relative_path)
+        else:
+            path = self.abs_path
+
+        with open(path / f"logged_dataset_{id}.pickle", "rb") as f:
+            logged_dataset = pickle.load(f)
+
+        return logged_dataset
+
+
+@dataclass
+class MultipleInputDict:
+    """This class contains paths to multiple input dictionaries for OPE and returns input_dict.
+
+    Parameters
+    -------
+    path: str
+        Path to the directory. Either absolute and relative path is acceptable.
+
+    save_relative_path: bool, default=False.
+        Whether to save a relative path.
+        If `True`, a path relative to the ofrl directory will be saved.
+        If `False`, the absolute path will be saved.
+
+        Note that, this option was added in order to run examples in the documentation properly.
+        Otherwise, the default setting (`False`) is recommended.
+
+    """
+
+    path: str
+    save_relative_path: str
+
+    def __post_init__(self):
+        self.n_datasets = 0
+        self.name_to_id_mapping = {}
+        self.id_to_name_mapping = []
+        self.eval_policy_name_list = []
+
+        self.abs_path = None
+        self.relative_path = None
+
+        self.path = Path(self.path)
+        self.path.mkdir(parents=True, exist_ok=True)
+
+        if self.save_relative_path:
+            abs_path = str(self.path.resolve())
+            relative_path = abs_path.split("ofrl/ofrl/")
+
+            if len(relative_path) == 1:
+                self.relative_path = abs_path.split("ofrl/")
+            else:
+                self.relative_path = "ofrl/" + relative_path
+        else:
+            self.abs_path = self.path.resolve()
+
+    def __len__(self):
+        return self.n_datasets
+
+    def add(self, input_dict: OPEInputDict, name: Optional[str] = None):
+        """Save input_dict.
+
+        Parameters
+        -------
+        input_dict: OPEInputDict.
+            Input dictionary for OPE to save.
+
+        name: str, default=None
+            Name of the input_dict.
+
+        """
+        id = self.n_datasets
+        self.n_datasets += 1
+
+        self.id_to_name_mapping.append(name)
+        self.eval_policy_name_list.append(list(input_dict.keys()))
+
+        if name is not None:
+            self.name_to_id_mapping[name] = id
+
+        with open(self.path / f"input_dict_{id}.pickle", "wb") as f:
+            pickle.dump(input_dict, f)
+
+    def get(self, id: Union[int, str]):
+        """Load input_dict.
+
+        Parameters
+        -------
+        id: {int, str}
+            Id (or name) of the input dictionary.
+
+        Returns
+        -------
+        input_dict: OPEInputDict.
+            Input dictionary for OPE.
+
+        """
+        id = id if isinstance(id, int) else self.id_to_name_mapping[id]
+
+        if self.save_relative_path:
+            abs_path = str(Path.cwd())
+            abs_path = abs_path.split("ofrl/ofrl/")
+
+            if len(abs_path) == 1:
+                abs_path = abs_path.split("ofrl/")
+                abs_path = Path(abs_path[0] + "ofrl/" + self.relative_path)
+            else:
+                abs_path = Path(abs_path[0] + "ofrl/ofrl/" + self.relative_path)
+        else:
+            path = self.abs_path
+
+        with open(path / f"input_dict_{id}.pickle", "rb") as f:
+            input_dict = pickle.load(f)
+
+        return input_dict
+
+    @property
+    def use_same_eval_policy_across_dataset(self):
+        """Check if the contained logged datasets use the same evaluation policies."""
+        use_same_eval_policy = True
+        base_eval_policy_set = set(self.eval_policy_name_list[0])
+
+        for i in range(1, self.n_datasets):
+            eval_policy_set = set(self.eval_policy_name_list[i])
+
+            if len(base_eval_policy_set.symmetric_difference(eval_policy_set)):
+                use_same_eval_policy = False
+
+        return use_same_eval_policy
+
+    @property
+    def n_eval_policies(self):
+        """Check the number of evaluation policies of each input dict."""
+        n_eval_policies = np.zeros(self.n_datasets, dtype=int)
+        for i in range(self.n_datasets):
+            n_eval_policies[i] = len(self.eval_policy_name_list[i])
+
+        return n_eval_policies
 
 
 def gaussian_kernel(

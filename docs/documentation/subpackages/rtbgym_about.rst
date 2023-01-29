@@ -329,6 +329,9 @@ Citation
 ~~~~~~~~~~
 If you use our pipeline in your work, please cite our paper below.
 
+| **Accelerating Offline Reinforcement Learning Application in Real-Time Bidding and Recommendation: Potential Use of Simulation** [`arXiv <https://arxiv.org/abs/2109.08331>`_]
+| Haruka Kiyohara, Kosuke Kawakami, Yuta Saito.
+
 .. code-block::
 
     @article{kiyohara2021accelerating,
@@ -346,3 +349,57 @@ Contribution
 ~~~~~~~~~~
 Any contributions to RTBGym are more than welcome!
 Please refer to `CONTRIBUTING.md <>`_ for general guidelines how to contribute to the project.
+
+.. grid::
+    :margin: 0
+
+    .. grid-item::
+        :columns: 3
+        :margin: 0
+        :padding: 0
+
+        .. grid::
+            :margin: 0
+
+            .. grid-item-card::
+                :link: /documentation/subpackages/index
+                :link-type: doc
+                :shadow: none
+                :margin: 0
+                :padding: 0
+
+                <<< Prev
+                **Sub_packages (Back to Top)**
+
+            .. grid-item-card::
+                :link: /documentation/subpackages/index
+                :link-type: doc
+                :shadow: none
+                :margin: 0
+                :padding: 0
+
+                <<< Prev
+                **Documentation (Back to Top)**
+
+    .. grid-item::
+        :columns: 6
+        :margin: 0
+        :padding: 0
+
+    .. grid-item::
+        :columns: 3
+        :margin: 0
+        :padding: 0
+
+        .. grid::
+            :margin: 0
+
+            .. grid-item-card::
+                :link: /documentation/subpackages/rtbgym_api
+                :link-type: doc
+                :shadow: none
+                :margin: 0
+                :padding: 0
+
+                Next >>>
+                **Package Reference**

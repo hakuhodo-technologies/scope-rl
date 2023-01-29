@@ -22,7 +22,7 @@ class BaseOffPolicyEstimator(metaclass=ABCMeta):
     """Base class for (basic) OPE estimators.
 
     Imported as: :class:`ofrl.ope.BaseOffPolicyEstimator`
-    
+
     Note
     -------
     This abstract base class also implements the following private methods.
@@ -43,17 +43,17 @@ class BaseOffPolicyEstimator(metaclass=ABCMeta):
         Calculate similarity weight (for continuous action case) for the continuous action setup.
 
     *property* _estimate_confidence_interval:
-        Dictionary containing names and functions of ci methods. 
+        Dictionary containing names and functions of ci methods.
 
         .. code-block:: python
-        
+
             key: [
-                bootstrap, 
+                bootstrap,
                 hoeffding,
                 bernstein,
                 ttest,
             ]
-    
+
     """
 
     @abstractmethod
@@ -291,7 +291,7 @@ class BaseMarginalOffPolicyEstimator(BaseOffPolicyEstimator):
     Bases: :class:`ofrl.ope.BaseOffPolicyEstimator`
 
     Imported as: :class:`ofrl.ope.estimators_base.BaseMarginalOffPolicyEstimator`
-    
+
     Note
     -------
     This abstract base class also implements the following private methods.
@@ -312,21 +312,21 @@ class BaseMarginalOffPolicyEstimator(BaseOffPolicyEstimator):
         Calculate similarity weight (for continuous action case) for the continuous action setup.
 
     _calc_marginal_importance_weight(self):
-        Calculate marginal importance weight. 
+        Calculate marginal importance weight.
         (Specified either in :class:`BaseStateMarginalOffPolicyEstimator` or :class:`BaseStateActionMarginalOffPolicyEstimator`)
 
     *property* _estimate_confidence_interval:
-        Dictionary containing names and functions of ci methods. 
+        Dictionary containing names and functions of ci methods.
 
         .. code-block:: python
-        
+
             key: [
-                bootstrap, 
+                bootstrap,
                 hoeffding,
                 bernstein,
                 ttest,
             ]
-    
+
     """
 
     def _calc_behavior_policy_pscore_discrete(
@@ -516,7 +516,7 @@ class BaseStateMarginalOffPolicyEstimator(BaseMarginalOffPolicyEstimator):
     Bases: :class:`ofrl.ope.BaseMarginalOffPolicyEstimator` -> :class:`ofrl.ope.BaseOffPolicyEstimator`
 
     Imported as: :class:`ofrl.ope.BaseStateMarginalOffPolicyEstimator`
-    
+
     Note
     -------
     This abstract base class also implements the following private methods.
@@ -537,20 +537,20 @@ class BaseStateMarginalOffPolicyEstimator(BaseMarginalOffPolicyEstimator):
         Calculate similarity weight (for continuous action case) for the continuous action setup.
 
     _calc_marginal_importance_weight(self):
-        Calculate marginal importance weight. 
+        Calculate marginal importance weight.
 
     *property* _estimate_confidence_interval:
-        Dictionary containing names and functions of ci methods. 
+        Dictionary containing names and functions of ci methods.
 
         .. code-block:: python
-        
+
             key: [
-                bootstrap, 
+                bootstrap,
                 hoeffding,
                 bernstein,
                 ttest,
             ]
-    
+
     """
 
     def _calc_marginal_importance_weight(
@@ -596,7 +596,7 @@ class BaseStateActionMarginalOffPolicyEstimator(BaseMarginalOffPolicyEstimator):
     Bases: :class:`ofrl.ope.BaseMarginalOffPolicyEstimator` -> :class:`ofrl.ope.BaseOffPolicyEstimator`
 
     Imported as: :class:`ofrl.ope.BaseStateActionMarginalOffPolicyEstimator`
-    
+
     Note
     -------
     This abstract base class also implements the following private methods.
@@ -617,20 +617,20 @@ class BaseStateActionMarginalOffPolicyEstimator(BaseMarginalOffPolicyEstimator):
         Calculate similarity weight (for continuous action case) for the continuous action setup.
 
     _calc_marginal_importance_weight(self):
-        Calculate marginal importance weight. 
+        Calculate marginal importance weight.
 
     *property* _estimate_confidence_interval:
-        Dictionary containing names and functions of ci methods. 
+        Dictionary containing names and functions of ci methods.
 
         .. code-block:: python
-        
+
             key: [
-                bootstrap, 
+                bootstrap,
                 hoeffding,
                 bernstein,
                 ttest,
             ]
-    
+
     """
 
     def _calc_marginal_importance_weight(
@@ -674,7 +674,7 @@ class BaseCumulativeDistributionOffPolicyEstimator(metaclass=ABCMeta):
     """Base class for Cumulative Distribution OPE estimators.
 
     Imported as: :class:`ofrl.ope.BaseCumulativeDistributionOffPolicyEstimator`
-    
+
     Note
     -------
     This abstract base class also implements the following private methods.
@@ -687,7 +687,7 @@ class BaseCumulativeDistributionOffPolicyEstimator(metaclass=ABCMeta):
 
     _target_value_given_idx:
         Obtain target value in reward scale for cumulative distribution estimation.
-    
+
     """
 
     @abstractmethod

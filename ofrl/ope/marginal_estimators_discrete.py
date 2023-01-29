@@ -395,7 +395,7 @@ class DiscreteStateMarginalDirectMethod(BaseStateActionMarginalOffPolicyEstimato
 
     .. math::
 
-        \\hat{J}_{\\mathrm{DM}} (\\pi; \\mathcal{D}) 
+        \\hat{J}_{\\mathrm{DM}} (\\pi; \\mathcal{D})
         := \\mathbb{E}_n [\\mathbb{E}_{a_0 \\sim \\pi(a_0 | s_0)} [\\hat{Q}(s_0, a_0)] ]
         = \\mathbb{E}_n [\\hat{V}(s_0)],
 
@@ -405,7 +405,7 @@ class DiscreteStateMarginalDirectMethod(BaseStateActionMarginalOffPolicyEstimato
 
     DM has low variance, but can incur bias due to approximation errors.
 
-    There are several ways to estimate :math:`\\hat{Q}(s, a)` such as Fitted Q Evaluation (FQE) (Le et al., 2019), 
+    There are several ways to estimate :math:`\\hat{Q}(s, a)` such as Fitted Q Evaluation (FQE) (Le et al., 2019),
     Minimax Q-Function Learning (MQL) (Uehara et al., 2020), and Augmented Lagrangian Method (ALM) (Yang et al., 2020).
 
     .. seealso::
@@ -578,10 +578,10 @@ class DiscreteStateMarginalImportanceSampling(BaseStateMarginalOffPolicyEstimato
     where :math:`w_s(s) := d_{\\pi}(s) / d_{\\pi_0}(s)` and :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} (\\pi(a_t | s_t) / \\pi_0(a_t | s_t))`.
     When :math:`k=0`, this estimator is identical to the (pure) state marginal IS.
 
-    SM-IS is unbiased when the marginal importance weight is estimated correctly. 
+    SM-IS is unbiased when the marginal importance weight is estimated correctly.
     Moreover, SM-IS reduces the variance caused by trajectory-wise or per-decision importance weight by considering the marginal distribution across various timesteps.
 
-    There are several ways to estimate state(-action) marginal importance weight including Augmented Lagrangian Method (ALM) (Yang et al., 2020) 
+    There are several ways to estimate state(-action) marginal importance weight including Augmented Lagrangian Method (ALM) (Yang et al., 2020)
     and Minimax Weight Learning (MWL) (Uehara et al., 2020).
 
     .. seealso::
@@ -1542,16 +1542,16 @@ class DiscreteStateMarginalSelfNormalizedImportanceSampling(
     .. math::
 
         \\hat{J}_{\\mathrm{SM-SNIS}} (\\pi; \\mathcal{D})
-        := \\mathbb{E}_{n} \\left[\\sum_{t=0}^{k-1} \\gamma^t \\frac{w_{0:t}}{\\sum_{n} w_{0:t}} r_t \\right] 
+        := \\mathbb{E}_{n} \\left[\\sum_{t=0}^{k-1} \\gamma^t \\frac{w_{0:t}}{\\sum_{n} w_{0:t}} r_t \\right]
             + \\mathbb{E}_{n} \\left[\\sum_{t=k}^{T-1} \\gamma^t \\frac{w_s(s_{t-k}) w_{t-k:t}}{\\sum_n w_s(s_{t-k}) w_{t-k:t}} r_t \\right],
 
     where :math:`w_s(s) := d_{\\pi}(s) / d_{\\pi_0}(s)` and :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} (\\pi(a_t | s_t) / \\pi_0(a_t | s_t))`.
     When :math:`k=0`, this estimator is identical to the (pure) state marginal SNIS.
 
-    SM-SNIS is consistent when the marginal importance weight is estimated correctly. 
+    SM-SNIS is consistent when the marginal importance weight is estimated correctly.
     Moreover, SM-SNIS reduces the variance caused by trajectory-wise or per-decision importance weight by considering the marginal distribution across various timesteps.
 
-    There are several ways to estimate state(-action) marginal importance weight including Augmented Lagrangian Method (ALM) (Yang et al., 2020) 
+    There are several ways to estimate state(-action) marginal importance weight including Augmented Lagrangian Method (ALM) (Yang et al., 2020)
     and Minimax Weight Learning (MWL) (Uehara et al., 2020).
 
     .. seealso::
@@ -1860,10 +1860,10 @@ class DiscreteStateActionMarginalImportanceSampling(
     where :math:`w(s, a) := d_{\\pi}(s, a) / d_{\\pi_0}(s, a)` and :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} (\\pi(a_t | s_t) / \\pi_0(a_t | s_t))`.
     When :math:`k=0`, this estimator is identical to the (pure) state-action marginal IS.
 
-    SAM-IS is unbiased when the marginal importance weight is estimated correctly. 
+    SAM-IS is unbiased when the marginal importance weight is estimated correctly.
     Moreover, SAM-IS reduces the variance caused by trajectory-wise or per-decision importance weight by considering the marginal distribution across various timesteps.
 
-    There are several ways to estimate state(-action) marginal importance weight including Augmented Lagrangian Method (ALM) (Yang et al., 2020) 
+    There are several ways to estimate state(-action) marginal importance weight including Augmented Lagrangian Method (ALM) (Yang et al., 2020)
     and Minimax Weight Learning (MWL) (Uehara et al., 2020).
 
     .. seealso::

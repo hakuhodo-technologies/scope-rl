@@ -309,7 +309,7 @@ class ContinuousStateMarginalDirectMethod(BaseStateMarginalOffPolicyEstimator):
 
     .. math::
 
-        \\hat{J}_{\\mathrm{DM}} (\\pi; \\mathcal{D}) 
+        \\hat{J}_{\\mathrm{DM}} (\\pi; \\mathcal{D})
         := \\mathbb{E}_n [\\hat{Q}(s_0, \\pi(s_0))]]
         = \\mathbb{E}_n [\\hat{V}(s_0)],
 
@@ -319,7 +319,7 @@ class ContinuousStateMarginalDirectMethod(BaseStateMarginalOffPolicyEstimator):
 
     DM has low variance, but can incur bias due to approximation errors.
 
-    There are several ways to estimate :math:`\\hat{Q}(s, a)` such as Fitted Q Evaluation (FQE) (Le et al., 2019), 
+    There are several ways to estimate :math:`\\hat{Q}(s, a)` such as Fitted Q Evaluation (FQE) (Le et al., 2019),
     Minimax Q-Function Learning (MQL) (Uehara et al., 2020), and Augmented Lagrangian Method (ALM) (Yang et al., 2020).
 
     .. seealso::

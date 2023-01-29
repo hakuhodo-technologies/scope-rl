@@ -10,13 +10,13 @@ class BaseDataset(metaclass=ABCMeta):
     """Base class for logged dataset.
 
     Imported as: :class:`ofrl.dataset.BaseDataset`
-    
+
     """
 
     @abstractmethod
     def obtain_episodes(self, n_trajectories: int) -> LoggedDataset:
         """Rollout behavior policy and obtain episodes.
-        
+
         Parameters
         -------
         n_trajectories: int, default=10000 (> 0)
@@ -26,7 +26,7 @@ class BaseDataset(metaclass=ABCMeta):
         -------
         logged_dataset: LoggedDataset
             Logged dataset.
-        
+
         """
         raise NotImplementedError
 
@@ -43,6 +43,6 @@ class BaseDataset(metaclass=ABCMeta):
         -------
         logged_dataset: LoggedDataset
             Logged dataset.
-        
+
         """
         raise NotImplementedError

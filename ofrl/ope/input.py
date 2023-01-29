@@ -1,7 +1,6 @@
-"""Class to create input for Off-Policy Evaluation (OPE)."""
+"""Meta class to create input for Off-Policy Evaluation (OPE)."""
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Any
-from warnings import warn
+from typing import Dict, List, Optional, Any, Union
 
 from collections import defaultdict
 from tqdm.auto import tqdm
@@ -44,12 +43,14 @@ from .weight_value_learning.function import (
 )
 from .online import rollout_policy_online
 from ..policy.head import BaseHead
-from ..types import LoggedDataset, OPEInputDict
 from ..utils import (
+    MultipleLoggedDataset,
+    MultipleInputDict,
     defaultdict_to_dict,
     check_logged_dataset,
     check_array,
 )
+from ..types import LoggedDataset, OPEInputDict
 
 
 @dataclass
@@ -60,17 +61,14 @@ class CreateOPEInput:
 
     Parameters
     -------
-    logged_dataset: LoggedDataset
-        Logged dataset used to conduct OPE.
-
     env: gym.Env, default=None
         Reinforcement learning (RL) environment.
 
     model_args: dict of dict, default=None
         Arguments of the models.
-        
+
         .. code-block:: python
-        
+
             key: [
                 "fqe",
                 "state_action_dual",
@@ -83,7 +81,7 @@ class CreateOPEInput:
             ]
 
         .. note::
-        
+
             Please specify :class:`scaler` and :class:`action_scaler` when calling :class:`.obtain_whole_inputs()`
             (, as we will overwrite those specified by :class:`model_args[model]["scaler/action_scaler"]`).
 
@@ -104,7 +102,7 @@ class CreateOPEInput:
         Scaling factor of state.
 
     action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
-        Scaling factor of action.
+        Scaling factor of action. Only applicable in the continuous action case.
 
     device: str, default="cuda:0"
         Specifies device used for torch.
@@ -213,8 +211,8 @@ class CreateOPEInput:
 
     """
 
-    logged_dataset: LoggedDataset
     env: Optional[gym.Env] = None
+    action_type: Optional[str] = None
     model_args: Optional[Dict[str, Any]] = None
     gamma: float = 1.0
     sigma: float = 1.0
@@ -223,62 +221,6 @@ class CreateOPEInput:
     device: str = "cuda:0"
 
     def __post_init__(self) -> None:
-        "Initialize class."
-        check_logged_dataset(self.logged_dataset)
-        self.action_type = self.logged_dataset["action_type"]
-        self.n_actions = self.logged_dataset["n_actions"]
-        self.action_dim = self.logged_dataset["action_dim"]
-        self.state_dim = self.logged_dataset["state_dim"]
-        self.n_trajectories = self.logged_dataset["n_trajectories"]
-        self.step_per_trajectory = self.logged_dataset["step_per_trajectory"]
-        self.n_samples = self.n_trajectories * self.step_per_trajectory
-
-        self.state = self.logged_dataset["state"]
-        self.action = self.logged_dataset["action"]
-        self.reward = self.logged_dataset["reward"]
-        self.pscore = self.logged_dataset["pscore"]
-        self.done = self.logged_dataset["done"]
-        self.terminal = self.logged_dataset["terminal"]
-
-        self.state_2d = self.state.reshape(
-            (-1, self.step_per_trajectory, self.state_dim)
-        )
-        self.reward_2d = self.reward.reshape((-1, self.step_per_trajectory))
-        self.pscore_2d = self.pscore.reshape((-1, self.step_per_trajectory))
-        self.done_2d = self.done.reshape((-1, self.step_per_trajectory))
-        self.terminal_2d = self.terminal.reshape((-1, self.step_per_trajectory))
-        if self.action_type == "discrete":
-            self.action_2d = self.action.reshape((-1, self.step_per_trajectory))
-        else:
-            self.action_2d = self.action.reshape(
-                (-1, self.step_per_trajectory, self.action_dim)
-            )
-
-        self.mdp_dataset = MDPDataset(
-            observations=self.state,
-            actions=self.action,
-            rewards=self.reward,
-            terminals=self.done,
-            episode_terminals=self.terminal,
-            discrete_action=(self.action_type == "discrete"),
-        )
-
-        if self.env is not None:
-            if (
-                isinstance(self.env.action_space, Box)
-                and self.action_type == "discrete"
-            ):
-                raise RuntimeError(
-                    "Found mismatch in action_type between env and logged_dataset"
-                )
-            elif (
-                isinstance(self.env.action_space, Discrete)
-                and self.action_type == "continuous"
-            ):
-                raise RuntimeError(
-                    "Found mismatch in action_type between env and logged_dataset"
-                )
-
         if self.model_args is None:
             self.model_args = {
                 "fqe": None,
@@ -358,6 +300,46 @@ class CreateOPEInput:
                 raise ValueError(
                     "action_scaler must be an instance of d3rlpy.preprocessing.ActionScaler, but found False"
                 )
+
+    def _register_logged_dataset(self, logged_dataset: LoggedDataset):
+        self.logged_dataset = logged_dataset
+        self.action_type = self.logged_dataset["action_type"]
+        self.n_actions = self.logged_dataset["n_actions"]
+        self.action_dim = self.logged_dataset["action_dim"]
+        self.state_dim = self.logged_dataset["state_dim"]
+        self.n_trajectories = self.logged_dataset["n_trajectories"]
+        self.step_per_trajectory = self.logged_dataset["step_per_trajectory"]
+        self.n_samples = self.n_trajectories * self.step_per_trajectory
+
+        self.state = self.logged_dataset["state"]
+        self.action = self.logged_dataset["action"]
+        self.reward = self.logged_dataset["reward"]
+        self.pscore = self.logged_dataset["pscore"]
+        self.done = self.logged_dataset["done"]
+        self.terminal = self.logged_dataset["terminal"]
+
+        self.state_2d = self.state.reshape(
+            (-1, self.step_per_trajectory, self.state_dim)
+        )
+        self.reward_2d = self.reward.reshape((-1, self.step_per_trajectory))
+        self.pscore_2d = self.pscore.reshape((-1, self.step_per_trajectory))
+        self.done_2d = self.done.reshape((-1, self.step_per_trajectory))
+        self.terminal_2d = self.terminal.reshape((-1, self.step_per_trajectory))
+        if self.action_type == "discrete":
+            self.action_2d = self.action.reshape((-1, self.step_per_trajectory))
+        else:
+            self.action_2d = self.action.reshape(
+                (-1, self.step_per_trajectory, self.action_dim)
+            )
+
+        self.mdp_dataset = MDPDataset(
+            observations=self.state,
+            actions=self.action,
+            rewards=self.reward,
+            terminals=self.done,
+            episode_terminals=self.terminal,
+            discrete_action=(self.action_type == "discrete"),
+        )
 
     def build_and_fit_FQE(
         self,
@@ -2099,8 +2081,9 @@ class CreateOPEInput:
 
         return state_weight_prediction.flatten()
 
-    def obtain_whole_inputs(
+    def _obtain_whole_inputs(
         self,
+        logged_dataset: LoggedDataset,
         evaluation_policies: List[BaseHead],
         require_value_prediction: bool = False,
         require_weight_prediction: bool = False,
@@ -2121,6 +2104,35 @@ class CreateOPEInput:
 
         Parameters
         -------
+        logged_dataset: LoggedDataset or MultipleLoggedDataset
+            Logged dataset used to conduct OPE.
+
+            .. code-block:: python
+
+                key: [
+                    size,
+                    n_trajectories,
+                    step_per_trajectory,
+                    action_type,
+                    n_actions,
+                    action_dim,
+                    action_keys,
+                    action_meaning,
+                    state_dim,
+                    state_keys,
+                    state,
+                    action,
+                    reward,
+                    done,
+                    terminal,
+                    info,
+                    pscore,
+                ]
+
+                .. seealso::
+
+                    :class:`ofrl.dataset.SyntheticDataset` describes the components of :class:`logged_dataset`.
+
         evaluation_policies: list of BaseHead
             Evaluation policies.
 
@@ -2240,26 +2252,35 @@ class CreateOPEInput:
                 Discount factor.
 
         """
-        if resample_initial_state and self.env is None:
-            warn(
-                "resample_initial_state is True, but self.env is not given. Thus, initial_state will not be resampled."
-                "Please initialize CreateInput class with self.env to resample initial state."
-            )
+        check_logged_dataset(logged_dataset)
+        self._register_logged_dataset(logged_dataset)
+
+        if self.env is not None:
+            if isinstance(self.env.action_space, Discrete):
+                if logged_dataset["action_type"] != "discrete":
+                    raise RuntimeError(
+                        f"Detected mismatch between action_type of logged_dataset and env.action_space."
+                    )
+                elif logged_dataset["n_actions"] != self.env.action_space.n:
+                    raise RuntimeError(
+                        f"Detected mismatch between n_actions of logged_dataset and env.action_space.n."
+                    )
+            else:
+                if logged_dataset["action_type"] != "continuous":
+                    raise RuntimeError(
+                        f"Detected mismatch between action_type of logged_dataset and env.action_space."
+                    )
+                elif logged_dataset["action_dim"] != self.env.action_space.shape[0]:
+                    raise RuntimeError(
+                        f"Detected mismatch between action_dim of logged_dataset and env.action_space.shape[0]."
+                    )
 
         for eval_policy in evaluation_policies:
             if eval_policy.action_type != self.action_type:
                 raise RuntimeError(
                     f"One of the evaluation_policies, {eval_policy.name} does not match action_type in logged_dataset."
-                    " Please use {self.action_type} action type instead."
+                    " Please use {self.action_type} action_type instead."
                 )
-
-        if n_trajectories_on_policy_evaluation is not None:
-            check_scalar(
-                n_trajectories_on_policy_evaluation,
-                name="n_trajectories_on_policy_evaluation",
-                target_type=int,
-                min_val=1,
-            )
 
         if require_value_prediction:
 
@@ -2473,3 +2494,283 @@ class CreateOPEInput:
             input_dict[evaluation_policies[i].name]["gamma"] = self.gamma
 
         return defaultdict_to_dict(input_dict)
+
+    def obtain_whole_inputs(
+        self,
+        logged_dataset: Union[LoggedDataset, MultipleLoggedDataset],
+        evaluation_policies: Union[List[BaseHead], List[List[BaseHead]]],
+        dataset_id: Optional[Union[int, str]] = None,
+        require_value_prediction: bool = False,
+        require_weight_prediction: bool = False,
+        resample_initial_state: bool = False,
+        q_function_method: str = "fqe",
+        v_function_method: str = "fqe",
+        w_function_method: str = "mwl",
+        k_fold: int = 1,
+        n_epochs: int = 1,
+        n_steps_per_epoch: int = 10000,
+        n_trajectories_on_policy_evaluation: int = 100,
+        use_stationary_distribution_on_policy_evaluation: bool = False,
+        minimum_rollout_length: int = 0,
+        maximum_rollout_length: int = 100,
+        random_state: Optional[int] = None,
+        path: str = "input_dict/",
+        save_relative_path: bool = False,
+    ) -> OPEInputDict:
+        """Obtain input as a dictionary.
+
+        Parameters
+        -------
+        logged_dataset: LoggedDataset or MultipleLoggedDataset
+            Logged dataset containing the following.
+
+            .. code-block:: python
+
+                key: [
+                    size,
+                    n_trajectories,
+                    step_per_trajectory,
+                    action_type,
+                    n_actions,
+                    action_dim,
+                    action_keys,
+                    action_meaning,
+                    state_dim,
+                    state_keys,
+                    state,
+                    action,
+                    reward,
+                    done,
+                    terminal,
+                    info,
+                    pscore,
+                ]
+
+                .. seealso::
+
+                    :class:`ofrl.dataset.SyntheticDataset` describes the components of :class:`logged_dataset`.
+
+        evaluation_policies: {list of BaseHead, list of list of BaseHead}
+            Evaluation policies.
+            If a nested list is given, different evaluation policies are applied for each logged dataset.
+
+            The length of a nested list (:class:`len(evaluation_policies)` must be equal to :class:`len(logged_datasets)`.)
+
+        dataset_id: int or str, default=None
+            Id (or name) of the logged dataset.
+            Required when logged_dataset is :class:`MultipleLoggedDataset`.
+
+        require_value_prediction: bool, default=False
+            Whether to obtain value prediction.
+
+        require_weight_prediction: bool, default=False
+            Whether to obtain weight prediction.
+
+        resample_initial_state: bool, default=False
+            Whether to resample initial state distribution using the given evaluation policy.
+            If `False`, the initial state distribution of the behavior policy is used instead.
+
+            Note that, this parameter is applicable only when self.env is given.
+
+        q_function_method: {"fqe", "dice", "mql"}
+            Estimation method of :math:`Q(s, a)`.
+
+        v_function_method: {"fqe", "dice_q", "dice_v", "mql", "mvl"}
+            Estimation method of :math:`V(s)`.
+
+        w_function_method: {"dice", "mwl"}
+            Estimation method of :math:`w(s, a)` and :math:`w(s)`.
+
+        k_fold: int, default=1 (> 0)
+            Number of folds for cross-fitting.
+
+            If :math:`K>1`, we split the logged dataset into :math:`K` folds.
+            :math:`\\mathcal{D}_j` is the :math:`j`-th split of logged data consisting of :math:`n_k` samples.
+            Then, the value and weight functions (:math:`w^j` and :math:`Q^j`) are trained on the subset of data used for OPE,
+            i.e., :math:`\\mathcal{D} \\setminus \\mathcal{D}_j`.
+
+            If :math:`K=1`, the value and weight functions are trained on the entire data.
+
+        n_epochs: int, default=None (> 0)
+            Number of epochs to fit FQE.
+
+        n_steps_per_epoch: int, default=None (> 0)
+            Number of steps in an epoch.
+
+        n_trajectories_on_policy_evaluation: int, default=None (> 0)
+            Number of episodes to perform on-policy evaluation.
+
+        use_stationary_distribution_on_policy_evaluation: bool, default=False
+            Whether to evaluate policy on stationary distribution.
+            If `True`, evaluation policy is evaluated by rollout without resetting environment at each episode.
+
+        minimum_rollout_length: int, default=0 (>= 0)
+            Minimum length of rollout to collect initial state.
+
+        maximum_rollout_length: int, default=100 (>= minimum_rollout_length)
+            Maximum length of rollout to collect initial state.
+
+        random_state: int, default=None (>= 0)
+            Random state.
+
+        path: str
+            Path to the directory. Either absolute and relative path is acceptable.
+
+        save_relative_path: bool, default=False.
+            Whether to save a relative path.
+            If `True`, a path relative to the ofrl directory will be saved.
+            If `False`, the absolute path will be saved.
+
+            Note that, this option was added in order to run examples in the documentation properly.
+            Otherwise, the default setting (`False`) is recommended.
+
+        Return
+        -------
+        input_dicts: OPEInputDict or MultipleInputDict
+            MultipleInputDict is a instance containing (multiple) input dictionary for OPE.
+
+            Each input dict is accessible by the following command.
+
+            .. code-block:: python
+
+                input_dict_0 = input_dict.get(0)
+
+            Each input dict consists of the following.
+
+            .. code-block:: python
+
+                key: [evaluation_policy_name][
+                    evaluation_policy_action,
+                    evaluation_policy_action_dist,
+                    state_action_value_prediction,
+                    initial_state_value_prediction,
+                    state_action_marginal_importance_weight,
+                    state_marginal_importance_weight,
+                    on_policy_policy_value,
+                    gamma,
+                ]
+
+            evaluation_policy_action: ndarray of shape (n_trajectories * step_per_trajectories, action_dim)
+                Action chosen by the deterministic evaluation policy.
+                If action_type is "discrete", `None` is recorded.
+
+            evaluation_policy_action_dist: ndarray of shape (n_trajectories * step_per_trajectory, n_actions)
+                Conditional action distribution induced by the evaluation policy,
+                i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`.
+                If action_type is "continuous", `None` is recorded.
+
+            state_action_value_prediction: ndarray
+                If action_type is "discrete", :math:`\\hat{Q}` for all actions,
+                i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
+                shape (n_trajectories * step_per_trajectory, n_actions)
+
+                If action_type is "continuous", :math:`\\hat{Q}` for the observed action and action chosen evaluation policy,
+                i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a \\mid s_t))`.
+                shape (n_trajectories * step_per_trajectory, 2)
+
+                If require_value_prediction is `False`, `None` is recorded.
+
+            initial_state_value_prediction: ndarray of shape (n_trajectories, )
+                Estimated initial state value.
+
+                If use_base_model is `False`, `None` is recorded.
+
+            state_action_marginal_importance_weight: ndarray of shape (n_trajectories * step_per_trajectory, )
+                Estimated state-action marginal importance weight,
+                i.e., :math:`\\hat{w}(s_t, a_t) \\approx d^{\\pi}(s_t, a_t) / d^{\\pi_0}(s_t, a_t)`.
+
+                If require_weight_prediction is `False`, `None` is recorded.
+
+            state_marginal_importance_weight: ndarray of shape (n_trajectories * step_per_trajectory, )
+                Estimated state marginal importance weight,
+                i.e., :math:`\\hat{w}(s_t) \\approx d^{\\pi}(s_t) / d^{\\pi_0}(s_t)`.
+
+                If require_weight_prediction is `False`, `None` is recorded.
+
+            on_policy_policy_value: ndarray of shape (n_trajectories_on_policy_evaluation, )
+                On-policy policy value.
+                If self.env is `None`, `None` is recorded.
+
+            gamma: float
+                Discount factor.
+
+        """
+        if isinstance(logged_dataset, MultipleLoggedDataset):
+            if dataset_id is None:
+                if isinstance(evaluation_policies[0], BaseHead):
+                    evaluation_policies = [
+                        evaluation_policies for _ in range(len(logged_dataset))
+                    ]
+
+                input_dict = MultipleInputDict(
+                    path=path, save_relative_path=save_relative_path
+                )
+
+                for i in tqdm(
+                    np.arange(len(logged_dataset)),
+                    desc="[collect input data: datasets]",
+                    total=len(logged_dataset),
+                ):
+                    logged_dataset_ = logged_dataset.get(i)
+                    input_dict_ = self._obtain_whole_inputs(
+                        logged_dataset=logged_dataset_,
+                        evaluation_policies=evaluation_policies[i],
+                        require_value_prediction=require_value_prediction,
+                        require_weight_prediction=require_weight_prediction,
+                        resample_initial_state=resample_initial_state,
+                        q_function_method=q_function_method,
+                        v_function_method=v_function_method,
+                        w_function_method=w_function_method,
+                        k_fold=k_fold,
+                        n_epochs=n_epochs,
+                        n_steps_per_epoch=n_steps_per_epoch,
+                        n_trajectories_on_policy_evaluation=n_trajectories_on_policy_evaluation,
+                        use_stationary_distribution_on_policy_evaluation=use_stationary_distribution_on_policy_evaluation,
+                        minimum_rollout_length=minimum_rollout_length,
+                        maximum_rollout_length=maximum_rollout_length,
+                        random_state=random_state,
+                    )
+                    input_dict.add(input_dict_)
+
+            else:
+                logged_dataset = logged_dataset.get(dataset_id)
+                input_dict = self._obtain_whole_inputs(
+                    logged_dataset=logged_dataset,
+                    evaluation_policies=evaluation_policies,
+                    require_value_prediction=require_value_prediction,
+                    require_weight_prediction=require_weight_prediction,
+                    resample_initial_state=resample_initial_state,
+                    q_function_method=q_function_method,
+                    v_function_method=v_function_method,
+                    w_function_method=w_function_method,
+                    k_fold=k_fold,
+                    n_epochs=n_epochs,
+                    n_steps_per_epoch=n_steps_per_epoch,
+                    n_trajectories_on_policy_evaluation=n_trajectories_on_policy_evaluation,
+                    use_stationary_distribution_on_policy_evaluation=use_stationary_distribution_on_policy_evaluation,
+                    minimum_rollout_length=minimum_rollout_length,
+                    maximum_rollout_length=maximum_rollout_length,
+                    random_state=random_state,
+                )
+
+        else:
+            input_dict = self._obtain_whole_inputs(
+                logged_dataset=logged_dataset,
+                evaluation_policies=evaluation_policies,
+                require_value_prediction=require_value_prediction,
+                require_weight_prediction=require_weight_prediction,
+                resample_initial_state=resample_initial_state,
+                q_function_method=q_function_method,
+                v_function_method=v_function_method,
+                w_function_method=w_function_method,
+                k_fold=k_fold,
+                n_epochs=n_epochs,
+                n_steps_per_epoch=n_steps_per_epoch,
+                n_trajectories_on_policy_evaluation=n_trajectories_on_policy_evaluation,
+                use_stationary_distribution_on_policy_evaluation=use_stationary_distribution_on_policy_evaluation,
+                minimum_rollout_length=minimum_rollout_length,
+                maximum_rollout_length=maximum_rollout_length,
+                random_state=random_state,
+            )
+
+        return input_dict

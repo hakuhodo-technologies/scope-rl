@@ -20,19 +20,19 @@ class BaseHead(AlgoBase):
     """Base class to convert a greedy policy into a stochastic policy.
 
     Bases: :class:`d3rlpy.algos.AlgoBase`
-    
+
     Imported as: :class:`ofrl.policy.BaseHead`
 
     Note
     -------
     To ensure API compatibility with `d3rlpy <https://github.com/takuseno/d3rlpy>`_, :class:`BaseHead` inherits :class:`d3rlpy.algos.AlgoBase`.
-    This base class also has additional methods including :class:`fit`, :class:`predict`, and :class:`predict_value`. Please also refer to the 
+    This base class also has additional methods including :class:`fit`, :class:`predict`, and :class:`predict_value`. Please also refer to the
     following documentation for the methods which are not described in this API reference.
 
     .. seealso::
 
         (external) `d3rlpy's documentation about AlgoBase <https://d3rlpy.readthedocs.io/en/latest/references/algos.html>`_
-    
+
     """
 
     @abstractmethod
@@ -215,7 +215,7 @@ class OnlineHead(BaseHead):
     Note
     -------
     To ensure API compatibility with `d3rlpy <https://github.com/takuseno/d3rlpy>`_, :class:`BaseHead` inherits :class:`d3rlpy.algos.AlgoBase`.
-    This base class also has additional methods including :class:`fit`, :class:`predict`, and :class:`predict_value`. Please also refer to the 
+    This base class also has additional methods including :class:`fit`, :class:`predict`, and :class:`predict_value`. Please also refer to the
     following documentation for the methods which are not described in this API reference.
 
     .. seealso::
@@ -266,7 +266,7 @@ class DiscreteEpsilonGreedyHead(BaseHead):
     Note
     -------
     To ensure API compatibility with `d3rlpy <https://github.com/takuseno/d3rlpy>`_, :class:`BaseHead` inherits :class:`d3rlpy.algos.AlgoBase`.
-    This base class also has additional methods including :class:`fit`, :class:`predict`, and :class:`predict_value`. Please also refer to the 
+    This base class also has additional methods including :class:`fit`, :class:`predict`, and :class:`predict_value`. Please also refer to the
     following documentation for the methods which are not described in this API reference.
 
     .. seealso::
@@ -426,7 +426,7 @@ class DiscreteSoftmaxHead(BaseHead):
     Note
     -------
     To ensure API compatibility with `d3rlpy <https://github.com/takuseno/d3rlpy>`_, :class:`BaseHead` inherits :class:`d3rlpy.algos.AlgoBase`.
-    This base class also has additional methods including :class:`fit`, :class:`predict`, and :class:`predict_value`. Please also refer to the 
+    This base class also has additional methods including :class:`fit`, :class:`predict`, and :class:`predict_value`. Please also refer to the
     following documentation for the methods which are not described in this API reference.
 
     .. seealso::
@@ -637,7 +637,7 @@ class ContinuousGaussianHead(BaseHead):
     Note
     -------
     To ensure API compatibility with `d3rlpy <https://github.com/takuseno/d3rlpy>`_, :class:`BaseHead` inherits :class:`d3rlpy.algos.AlgoBase`.
-    This base class also has additional methods including :class:`fit`, :class:`predict`, and :class:`predict_value`. Please also refer to the 
+    This base class also has additional methods including :class:`fit`, :class:`predict`, and :class:`predict_value`. Please also refer to the
     following documentation for the methods which are not described in this API reference.
 
     .. seealso::
@@ -788,7 +788,7 @@ class ContinuousTruncatedGaussianHead(BaseHead):
     Note
     -------
     To ensure API compatibility with `d3rlpy <https://github.com/takuseno/d3rlpy>`_, :class:`BaseHead` inherits :class:`d3rlpy.algos.AlgoBase`.
-    This base class also has additional methods including :class:`fit`, :class:`predict`, and :class:`predict_value`. Please also refer to the 
+    This base class also has additional methods including :class:`fit`, :class:`predict`, and :class:`predict_value`. Please also refer to the
     following documentation for the methods which are not described in this API reference.
 
     .. seealso::
@@ -946,7 +946,7 @@ class ContinuousEvalHead(BaseHead):
     Note
     -------
     To ensure API compatibility with `d3rlpy <https://github.com/takuseno/d3rlpy>`_, :class:`BaseHead` inherits :class:`d3rlpy.algos.AlgoBase`.
-    This base class also has additional methods including :class:`fit`, :class:`predict`, and :class:`predict_value`. Please also refer to the 
+    This base class also has additional methods including :class:`fit`, :class:`predict`, and :class:`predict_value`. Please also refer to the
     following documentation for the methods which are not described in this API reference.
 
     .. seealso::
@@ -961,10 +961,14 @@ class ContinuousEvalHead(BaseHead):
     name: str
         Name of the policy.
 
+    random_state: int, default=None (>= 0)
+        Random state. (This is for API consistency.)
+
     """
 
     base_policy: AlgoBase
     name: str
+    random_state: Optional[int] = None
 
     def __post_init__(self):
         """Initialize class."""

@@ -88,6 +88,7 @@ html_theme_options = {
     # "navbar_start": ["navbar-logo", "version"],
     "footer_items": ["copyright"],
     "show_prev_next": False,
+    # "google_analytics_id": "UA-XXXXXXX",
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
