@@ -7,11 +7,11 @@ from recgym.types import Action
 
 __all__ = ["RECEnv", "UserModel", "BaseUserModel", "Action"]
 
-# register standard environment
-env = RECEnv(random_state=12345)
-
 # environment
 gym.envs.register(
     id="RECEnv-v0",
     entry_point="recgym.envs.rec:RECEnv",
+    kwargs={
+        "random_state": 12345,
+    },
 )

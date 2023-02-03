@@ -57,7 +57,7 @@ following the `OpenAI Gym <https://gym.openai.com>`_ and `Gymnasium <https://git
 .. code-block:: python
 
     # import recgym and gym
-    import recym
+    import recgym
     import gym
 
     # (1) standard environment for discrete action space

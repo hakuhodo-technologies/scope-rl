@@ -1,4 +1,4 @@
-"""Reinforcement Learning (RL) Environment for recommender system (REC)."""
+"""Reinforcement Learning (RL) Environment for Recommender System (REC)."""
 from typing import Tuple, Optional, Any
 
 import gym
@@ -38,7 +38,7 @@ class RECEnv(gym.Env):
     -------
 
     UserModel: BaseUserModel, default=UserModel
-        User model that defines user_prefecture_dynamics (, which simulates how the user preference changes through item interaction) and reward_function (, which simulates how the user responds to the presented item).
+        User model that duefines user_prefecture_dynamics (, which simulates how the user preference changes through item interaction) and reward_function (, which simulates how the user responds to the presented item).
         Both class and instance are acceptable.
 
     reward_type: {"continuous", "binary"}, default="continuous"
@@ -165,7 +165,6 @@ class RECEnv(gym.Env):
         super().__init__()
         if random_state is None:
             raise ValueError("random_state must be given")
-        self.random_state = random_state
         self.random_ = check_random_state(random_state)
 
         check_scalar(
@@ -365,3 +364,9 @@ class RECEnv(gym.Env):
         info = {"user_id": self.user_id, "state": self.state}
 
         return obs, info
+
+    def render(self) -> None:
+        pass
+
+    def close(self) -> None:
+        pass
