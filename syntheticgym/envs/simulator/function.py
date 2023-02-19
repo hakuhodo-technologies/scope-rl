@@ -39,6 +39,7 @@ class StateTransition(BaseStateTransition):
 
     """
     state_dim: int = 10
+    action_type: str = "continuous",  # "discrete"
     action_context_dim: int = 10
     action_context: Optional[np.ndarray] = (None,)
     random_state: Optional[int] = None
@@ -47,11 +48,11 @@ class StateTransition(BaseStateTransition):
         self.random_ = check_random_state(self.random_state)
 
         self.state_coef = self.random_.normal(loc=0.0, scale=1.0, size=(self.state_dim, self.state_dim))
-        self.action_coef = self.random_.normal(loc=0.0, scale=1.0, size=(self.action_context_dim, self.state_dim))
-        self.state_action_coef = self.random_.normal(loc=0.0, scale=1.0, size=(self.state_dim, self.action_context_dim))
+        self.action_coef = self.random_.normal(loc=0.0, scale=1.0, size=(self.state_dim, self.action_context_dim))
+        self.state_action_coef = self.random_.normal(loc=0.0, scale=1.0, size=(1, self.action_context_dim))
 
 
-    def state_transition(
+    def step(
         self,
         state: np.ndarray,
         action: Action,
@@ -74,8 +75,12 @@ class StateTransition(BaseStateTransition):
             When the true state is unobservable, you can gain observation instead of state.
 
         """
-        state = state @ self.state_coef + self.action_context[action] @ self.action_coef +  (state @ self.state_action_coef).T @ self.action_context[action].T
+        if self.action_type == "continuous":
+            state = self.state_coef @ state +  self.action_coef @ action+  state @ self.state_action_coef @ action
         
+        elif self.action_type == "discrete":
+            state = self.state_coef @ state + self.action_coef @ self.action_context[action] +  state @ self.state_action_coef.T @ self.action_context[action]
+            
         state = state / np.linalg.norm(state, ord=2)
 
         return state
@@ -115,6 +120,7 @@ class RewardFunction(BaseRewardFunction):
     reward_type: str = "continuous"  # "binary"
     reward_std: float = 0.0
     state_dim: int = 10
+    action_type: str = "continuous",  # "discrete"
     action_context_dim: int = 10
     action_context: Optional[np.ndarray] = (None,)
     random_state: Optional[int] = None
@@ -133,11 +139,11 @@ class RewardFunction(BaseRewardFunction):
 
         self.random_ = check_random_state(self.random_state)
 
-        self.state_coef = self.random_.normal(loc=0.0, scale=1.0, size=(self.state_dim))
-        self.action_coef = self.random_.normal(loc=0.0, scale=1.0, size=(self.action_context_dim))
+        self.state_coef = self.random_.normal(loc=0.0, scale=1.0, size=(1, self.state_dim))
+        self.action_coef = self.random_.normal(loc=0.0, scale=1.0, size=(1, self.action_context_dim))
         self.state_action_coef = self.random_.normal(loc=0.0, scale=1.0, size=(self.state_dim, self.action_context_dim))
 
-    def reward_function(
+    def sample(
         self,
         state: np.ndarray,
         action: Action,
@@ -159,9 +165,15 @@ class RewardFunction(BaseRewardFunction):
             User engagement signal. Either binary or continuous.
 
         """
-        reward = state @ self.state_coef + self.action_context[action] @ self.action_coef +  state @ self.state_action_coef @ self.action_context[action]
+        if self.action_type == "continuous":
+            reward = self.state_coef @ state + self.action_coef @ action +  (state.T @ self.state_action_coef) @ action
+        
+        elif self.action_type == "discrete":
+            reward = self.state_coef @ state + self.action_coef @ self.action_context[action] +  (state.T @ self.state_action_coef ) @ self.action_context[action]
 
         if self.reward_type == "continuous":
             reward = reward + self.random_.normal(loc=0.0, scale=self.reward_std)
+
+        reward = reward[0][0]
 
         return reward

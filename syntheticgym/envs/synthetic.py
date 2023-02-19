@@ -20,7 +20,8 @@ class SyntheticEnv(gym.Env):
         StateTransition: BaseStateTransition = StateTransition,
         RewardFunction: BaseRewardFunction = RewardFunction,
         state_dim: int = 10,
-        n_actions: int = 100,
+        action_type: str = "continuous",  # "discrete"
+        n_actions: int = 100, 
         action_context_dim: int = 10,
         action_context: Optional[np.ndarray] = None,
         reward_type: str = "continuous",  # "binary"
@@ -73,21 +74,47 @@ class SyntheticEnv(gym.Env):
             min_val=1,
         )
         self.step_per_episode = step_per_episode
-
-        # initialize action_context
-        if action_context is None:
-            action_context = self.random_.normal(
-            loc=0.0, scale=1.0, size=(self.n_actions, self.action_context_dim)
+        
+        # define observation space
+        self.observation_space = Box(
+            low=np.full(state_dim, -np.inf),
+            high=np.full(state_dim, np.inf),
+            dtype=float,
         )
 
-        check_scalar(
-            action_context,
-            name="action_context",
-            target_type=np.ndarray,
-        )
+        # action space
+        if action_type not in ["continuous", "discrete"]:
+            raise ValueError(
+                f'action_type must be either "continuous" or "discrete", but {action_type} is given'
+            )
 
+        if action_type == "continuous":
+            self.action_type = "continous"
+            self.action_space = Box(low=-np.inf, high=np.inf, shape=(action_context_dim,1), dtype=float)
+            # self.action_space = Box(
+            #     low=np.full(action_context_dim, -np.inf),
+            #     high=np.full(action_context_dim, np.inf),
+            #     dtype=float,
+            # )
+
+        elif action_type == "discrete":
+            self.action_type = "discrete"
+            self.n_actions = n_actions
+            self.action_space = Discrete(n_actions)
+
+            # initialize action_context
+            if action_context is None:
+                action_context = self.random_.normal(
+                loc=0.0, scale=1.0, size=(self.n_actions, self.action_context_dim))
+            check_scalar(
+                action_context,
+                name="action_context",
+                target_type=np.ndarray,
+            )
+        
         self.state_transition = StateTransition(
             state_dim=state_dim,
+            action_type=action_type,
             action_context_dim=action_context_dim,
             action_context=action_context,
             random_state=random_state,
@@ -97,22 +124,11 @@ class SyntheticEnv(gym.Env):
             reward_type=reward_type,
             reward_std=reward_std,
             state_dim=state_dim,
+            action_type=action_type,
             action_context_dim=action_context_dim,
             action_context=action_context,
             random_state=random_state,
         )   
-        
-        # define observation space
-        self.observation_space = Box(
-            low=np.full(self.state_dim, -np.inf),
-            high=np.full(self.state_dim, np.inf),
-            dtype=float,
-        )
-
-        # define action space
-        self.action_type = "discrete"
-        self.action_dim = 1
-        self.action_space = Discrete(self.n_actions)
 
         # define reward range
         self.reward_range = (-np.inf, np.inf)
@@ -164,10 +180,10 @@ class SyntheticEnv(gym.Env):
 
         """
         # 1. sample reward for the given item.
-        reward = self.reward_function.reward_function(self.state, action)
+        reward = self.reward_function.sample(self.state, action)
 
         # 2. update user state with state_transition
-        self.state = self.state_transition.state_transition(self.state, action)
+        self.state = self.state_transition.step(self.state, action)
 
         done = self.t == self.step_per_episode - 1
 
@@ -202,7 +218,7 @@ class SyntheticEnv(gym.Env):
         # initialize internal env state
         self.t = 0
         # initialize state
-        state = self.random_.normal(loc=0.0, scale=1.0, size=self.state_dim)
+        state = self.random_.normal(loc=0.0, scale=1.0, size=(self.state_dim, 1))
         self.state = state
         obs = self._observation(self.state)
 

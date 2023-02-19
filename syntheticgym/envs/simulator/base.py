@@ -15,7 +15,7 @@ class BaseStateTransition(metaclass=ABCMeta):
     """
 
     @abstractmethod
-    def state_transition(
+    def step(
         self,
         state: np.ndarray,
         action: Action,
@@ -49,7 +49,7 @@ class BaseRewardFunction(metaclass=ABCMeta):
     """
 
     @abstractmethod
-    def reward_function(
+    def sample(
         self,
         state: np.ndarray,
         action: Action,

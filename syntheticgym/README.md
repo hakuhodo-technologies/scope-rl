@@ -131,7 +131,7 @@ plt.show()
 
 Note that, while we use [OfflineGym](../README.md) and [d3rlpy](https://github.com/takuseno/d3rlpy) here, SyntheticGym is compatible with any other libraries working on the [OpenAI Gym](https://gym.openai.com) and [Gymnasium](https://gymnasium.farama.org/)-like interface.
 
-### Customized RTGEnv
+### Customized SyntheticEnv
 
 Next, we describe how to customize the environment by instantiating the environment.
 
