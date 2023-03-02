@@ -90,7 +90,7 @@ class SyntheticEnv(gym.Env):
 
         if action_type == "continuous":
             self.action_type = "continous"
-            self.action_space = Box(low=-np.inf, high=np.inf, shape=(action_context_dim,1), dtype=float)
+            self.action_space = Box(low=-np.inf, high=np.inf, shape=(action_context_dim,), dtype=float)
             # self.action_space = Box(
             #     low=np.full(action_context_dim, -np.inf),
             #     high=np.full(action_context_dim, np.inf),
