@@ -150,7 +150,7 @@ class RECEnv(gym.Env):
     def __init__(
         self,
         UserModel: BaseUserModel = UserModel,
-        n_items: int = 100,
+        n_items: int = 5,
         n_users: int = 100,
         item_feature_dim: int = 5,
         user_feature_dim: int = 5,
