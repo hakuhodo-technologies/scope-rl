@@ -185,7 +185,7 @@
     <h2>Explore more with OFRL</h2>
 
     <div class="top-page-gallery-link">
-        <a href="documentation/_autogallery/index.html">Tutorials</a>
+        <a href="documentation/tutorial.html">Tutorials</a>
     </div>
 
 .. card-carousel:: 4
@@ -287,7 +287,7 @@ Welcome!
 
     Installation <documentation/installation>
     Quickstart <documentation/quickstart>
-    Tutorial <documentation/_autogallery/index>
+    Tutorial <documentation/tutorial>
     Documentation <documentation/index>
     FAQs <documentation/frequently_asked_questions>
     News <documentation/news>
