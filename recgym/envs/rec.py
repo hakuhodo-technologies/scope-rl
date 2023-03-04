@@ -157,7 +157,7 @@ class RECEnv(gym.Env):
         item_feature_vector: Optional[np.ndarray] = None,
         user_feature_vector: Optional[np.ndarray] = None,
         reward_type: str = "continuous",  # "binary"
-        reward_std: float = 0.0,
+        reward_std: float = 0.0, #Applicable only when reward_type is "continuous"
         obs_std: float = 0.0,
         step_per_episode=10,
         random_state: Optional[int] = None,

@@ -49,7 +49,8 @@ class StateTransition(BaseStateTransition):
 
         self.state_coef = self.random_.normal(loc=0.0, scale=1.0, size=(self.state_dim, self.state_dim))
         self.action_coef = self.random_.normal(loc=0.0, scale=1.0, size=(self.state_dim, self.action_context_dim))
-        self.state_action_coef = self.random_.normal(loc=0.0, scale=1.0, size=(1, self.action_context_dim))
+        # self.state_action_coef = self.random_.normal(loc=0.0, scale=1.0, size=(1, self.action_context_dim))
+        self.state_action_coef = self.random_.normal(loc=0.0, scale=1.0, size=(self.action_context_dim,))
 
 
     def step(
@@ -76,7 +77,7 @@ class StateTransition(BaseStateTransition):
 
         """
         if self.action_type == "continuous":
-            state = self.state_coef @ state +  self.action_coef @ action+  state @ self.state_action_coef @ action
+            state = self.state_coef @ state +  self.action_coef @ action + state @ self.state_action_coef.T @ action
         
         elif self.action_type == "discrete":
             state = self.state_coef @ state + self.action_coef @ self.action_context[action] +  state @ self.state_action_coef.T @ self.action_context[action]
@@ -139,8 +140,10 @@ class RewardFunction(BaseRewardFunction):
 
         self.random_ = check_random_state(self.random_state)
 
-        self.state_coef = self.random_.normal(loc=0.0, scale=1.0, size=(1, self.state_dim))
-        self.action_coef = self.random_.normal(loc=0.0, scale=1.0, size=(1, self.action_context_dim))
+        self.state_coef = self.random_.normal(loc=0.0, scale=1.0, size=(self.state_dim, ))
+        # self.state_coef = self.random_.normal(loc=0.0, scale=1.0, size=(1, self.state_dim))
+        self.action_coef = self.random_.normal(loc=0.0, scale=1.0, size=(self.action_context_dim, ))
+        # self.action_coef = self.random_.normal(loc=0.0, scale=1.0, size=(1, self.action_context_dim))
         self.state_action_coef = self.random_.normal(loc=0.0, scale=1.0, size=(self.state_dim, self.action_context_dim))
 
     def sample(
@@ -166,10 +169,10 @@ class RewardFunction(BaseRewardFunction):
 
         """
         if self.action_type == "continuous":
-            reward = self.state_coef @ state + self.action_coef @ action +  (state.T @ self.state_action_coef) @ action
+            reward = self.state_coef.T @ state + self.action_coef.T @ action + (state.T @ self.state_action_coef) @ action
         
         elif self.action_type == "discrete":
-            reward = self.state_coef @ state + self.action_coef @ self.action_context[action] +  (state.T @ self.state_action_coef ) @ self.action_context[action]
+            reward = self.state_coef.T @ state + self.action_coef.T @ self.action_context[action] + (state.T @ self.state_action_coef ) @ self.action_context[action]
 
         if self.reward_type == "continuous":
             reward = reward + self.random_.normal(loc=0.0, scale=self.reward_std)

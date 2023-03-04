@@ -160,7 +160,6 @@ env = SyntheticEnv(
         RewardFunction = RewardFunction
         state_dim = 10, #each state has 5 dimensional features
         action_type = "continuous", #we use continuous action
-        n_actions = 100,  
         action_context_dim = 10,  #each action has 10 dimensional features
         action_context = None,  #determine action_context from n_actions and action_context_dim in SyntheticEnv
         reward_type = "continuous", #we use continuous reward
