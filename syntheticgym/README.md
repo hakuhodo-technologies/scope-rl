@@ -32,11 +32,11 @@ We often formulate this synthetic simulation problem as the following (Partially
 
 ### Implementation
 
-SyntheticGym provides a recommender environment.
-- `"SyntheticEnv-v0"`: Standard recommender environment.
+SyntheticGym provides a syntheticommender environment.
+- `"SyntheticEnv-v0"`: Standard syntheticommender environment.
 
 SyntheticGym consists of the following a environments.
-- [SyntheticEnv](./envs/rec.py#L14): The basic configurative environment.
+- [SyntheticEnv](./envs/synthetic.py#L14): The basic configurative environment.
 
 SyntheticGym is configurative about the following a module.
 - [StateTransition](./envs/simulator/function.py#L13): Class to define the state transition of the synthetic simulation.
@@ -80,7 +80,7 @@ The basic interaction is performed using only four lines of code as follows.
 ```Python
 obs, info = env.reset(), False
 while not done:
-    action = agent.act(obs)
+    action = agent.sample_action_online(obs)
     obs, reward, done, truncated, info = env.step(action)
 ```
 
@@ -138,11 +138,11 @@ Next, we describe how to customize the environment by instantiating the environm
 <details>
 <summary>List of environmental configurations: (click to expand)</summary>
 
-- `StateTransition`: 
-- `RewardFunction`: 
+- `StateTransition`: State transition of the synthetic simulation.
+- `RewardFunction`: Reward function of the synthetic simulation.
 - `state_dim`: Dimensions of state.
 - `action_type`: action type (i.e., continuous / discrete).
-- `n_actions`: Number of actions.
+- `n_actions`: Number of actions. Applicable only when reward_type is "discrete".
 - `action_context_dim`: Dimensions of the action context.
 - `action_context`: Feature vectors that characterizes each action.
 - `reward_type`: Reward type (i.e., continuous / binary).
@@ -276,22 +276,22 @@ class RewardFunction(BaseRewardFunction):
 
 ```
 
-<!-- More examples are available at [quickstart/rec_synthetic_customize_env.ipynb](./examples/quickstart/rec_synthetic_customize_env.ipynb). \
-The statistics of the environment is also visualized at [quickstart/rec_synthetic_data_collection.ipynb](./examples/quickstart/rec_synthetic_data_collection.ipynb). -->
+<!-- More examples are available at [quickstart/synthetic_synthetic_customize_env.ipynb](./examples/quickstart/synthetic_synthetic_customize_env.ipynb). \
+The statistics of the environment is also visualized at [quickstart/synthetic_synthetic_data_collection.ipynb](./examples/quickstart/synthetic_synthetic_data_collection.ipynb). -->
 
 ## Citation
 
 If you use our software in your work, please cite our paper:
 
 Haruka Kiyohara, Kosuke Kawakami, Yuta Saito.<br>
-**Accelerating Offline Reinforcement Learning Application in Real-Time Bidding and Recommendation: Potential Use of Simulation**<br>
-(RecSys'21 SimuRec workshop)<br>
+**Accelerating Offline Reinforcement Learning Application in Real-Time Bidding and syntheticommendation: Potential Use of Simulation**<br>
+(syntheticSys'21 Simusynthetic workshop)<br>
 [https://arxiv.org/abs/2109.08331](https://arxiv.org/abs/2109.08331)
 
 Bibtex:
 ```
 @article{kiyohara2021accelerating,
-  title={Accelerating Offline Reinforcement Learning Application in Real-Time Bidding and Recommendation: Potential Use of Simulation},
+  title={Accelerating Offline Reinforcement Learning Application in Real-Time Bidding and syntheticommendation: Potential Use of Simulation},
   author={Kiyohara, Haruka and Kawakami, Kosuke and Saito, Yuta},
   journal={arXiv preprint arXiv:2109.08331},
   year={2021}
@@ -325,7 +325,7 @@ For any question about the paper and software, feel free to contact: kiyohara.h.
 
 2. Takuma Seno and Michita Imai. [d3rlpy: An Offline Deep Reinforcement Library](https://arxiv.org/abs/2111.03788), *arXiv preprint arXiv:2111.03788*, 2021.
 
-3. Sarah Dean and Jamie Morgenstern. [Preference Dynamics Under Personalized Recommendations](https://arxiv.org/abs/2205.13026). In *Proceedings of the 23rd ACM Conference on Economics and Computation*, 4503-9150, 2022.
+3. Sarah Dean and Jamie Morgenstern. [Preference Dynamics Under Personalized syntheticommendations](https://arxiv.org/abs/2205.13026). In *Proceedings of the 23rd ACM Conference on Economics and Computation*, 4503-9150, 2022.
 
 </details>
 
@@ -333,8 +333,8 @@ For any question about the paper and software, feel free to contact: kiyohara.h.
 <summary><strong>Projects </strong>(click to expand)</summary>
 
 This project is inspired by the following three packages.
-- **RecoGym**  -- an RL environment for synthetic simulations: [[github](https://github.com/criteo-research/reco-gym)] [[paper](https://arxiv.org/abs/1808.00720)]
-- **RecSim** -- a configurative RL environment for synthetic simulations: [[github](https://github.com/google-research/recsim)] [[paper](https://arxiv.org/abs/1909.04847)]
+- **syntheticoGym**  -- an RL environment for synthetic simulations: [[github](https://github.com/criteo-research/synthetico-gym)] [[paper](https://arxiv.org/abs/1808.00720)]
+- **syntheticSim** -- a configurative RL environment for synthetic simulations: [[github](https://github.com/google-research/syntheticsim)] [[paper](https://arxiv.org/abs/1909.04847)]
 - **AuctionGym** -- an RL environment for online advertising auctions: [[github](https://github.com/amzn/auction-gym)] [[paper](https://www.amazon.science/publications/learning-to-bid-with-auctiongym)]
 - **FinRL** -- an RL environment for finance: [[github](https://github.com/AI4Finance-Foundation/FinRL)] [[paper](https://arxiv.org/abs/2011.09607)]
 

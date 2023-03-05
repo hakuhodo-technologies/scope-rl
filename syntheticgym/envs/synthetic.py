@@ -19,9 +19,9 @@ class SyntheticEnv(gym.Env):
         self,
         StateTransition: BaseStateTransition = StateTransition,
         RewardFunction: BaseRewardFunction = RewardFunction,
-        state_dim: int = 10,
+        state_dim: int = 5,
         action_type: str = "continuous",  # "discrete"
-        n_actions: int = 100, #Applicable only when action_type is "discrete"
+        n_actions: int = 10, #Applicable only when action_type is "discrete"
         action_context_dim: int = 10,
         action_context: Optional[np.ndarray] = None,
         reward_type: str = "continuous",  # "binary"
@@ -89,9 +89,9 @@ class SyntheticEnv(gym.Env):
             )
 
         if action_type == "continuous":
-            self.action_type = "continous"
+            self.action_type = "continuous"
+            self.action_space = Box(low=-0.1, high=10, shape=(action_context_dim,), dtype=float)
             # self.action_space = Box(low=-np.inf, high=np.inf, shape=(action_context_dim,), dtype=float)
-            self.action_space = Box(low=-np.inf, high=np.inf, shape=(action_context_dim, ), dtype=float)
             # self.action_space = Box(
             #     low=np.full(action_context_dim, -np.inf),
             #     high=np.full(action_context_dim, np.inf),
