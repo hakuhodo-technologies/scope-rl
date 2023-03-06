@@ -166,7 +166,7 @@ class RewardFunction(BaseRewardFunction):
 
         """
         if self.action_type == "continuous":
-            print('action=', action)
+            # print('action=', action)
 
             # reward = self.action_coef.T @ action
             reward = self.state_coef.T @ state + self.action_coef.T @ action + state.T @ (self.state_action_coef @ action)
