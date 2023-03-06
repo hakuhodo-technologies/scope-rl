@@ -766,7 +766,7 @@ class ContinuousGaussianHead(BaseHead):
         action = norm.rvs(
             loc=greedy_action,
             scale=self.sigma,
-        ).reshape((-1, 1))
+        ).reshape(greedy_action.shape)
         return action
 
 
@@ -935,7 +935,7 @@ class ContinuousTruncatedGaussianHead(BaseHead):
             b=(self.maximum - greedy_action) / self.sigma,
             loc=greedy_action,
             scale=self.sigma,
-        ).reshape((-1, 1))
+        ).reshape(greedy_action.shape)
         return action
 
 
