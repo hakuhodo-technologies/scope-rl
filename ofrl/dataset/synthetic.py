@@ -696,7 +696,6 @@ class SyntheticDataset(BaseDataset):
                 done = True
 
                 for rollout_step in rollout_lengths[i]:
-
                     if done:
                         state, info_ = self.env.reset()
                         step = 0
@@ -706,7 +705,6 @@ class SyntheticDataset(BaseDataset):
                     step += 1
 
             for t in range(step_per_trajectory):
-
                 if done:
                     state, info_ = self.env.reset()
                     done = False
@@ -933,7 +931,6 @@ class SyntheticDataset(BaseDataset):
 
         """
         if isinstance(behavior_policies, BaseHead):
-
             if n_datasets == 1:
                 logged_dataset = self._obtain_episodes(
                     behavior_policy=behavior_policies,
@@ -1196,7 +1193,6 @@ class SyntheticDataset(BaseDataset):
 
         """
         if isinstance(behavior_policies, BaseHead):
-
             if n_datasets == 1:
                 logged_dataset = self._obtain_steps(
                     behavior_policy=behavior_policies,

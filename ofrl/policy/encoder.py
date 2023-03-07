@@ -31,7 +31,6 @@ class StateEncoder(nn.Module):
 
 
 class _EmbeddingEncoder(nn.Module):  # type: ignore
-
     _observation_shape: Sequence[int]
     _n_unique_states: int
     _dim_emb: int
@@ -133,7 +132,6 @@ class EmbeddingEncoder(_EmbeddingEncoder, Encoder):
 
 
 class EmbeddingEncoderWithAction(_EmbeddingEncoder, EncoderWithAction):
-
     _action_size: int
     _discrete_action: bool
 

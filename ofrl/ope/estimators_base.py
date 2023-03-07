@@ -73,7 +73,7 @@ class BaseOffPolicyEstimator(metaclass=ABCMeta):
 
     @property
     def _estimate_confidence_interval(self) -> Dict[str, Callable]:
-        """Dictionary containing names and functions of ci methods. """
+        """Dictionary containing names and functions of ci methods."""
         return {
             "bootstrap": estimate_confidence_interval_by_bootstrap,
             "hoeffding": estimate_confidence_interval_by_hoeffding,
