@@ -907,8 +907,9 @@ class BaseCumulativeDistributionOffPolicyEstimator(metaclass=ABCMeta):
             and pscore is not None
             and evaluation_policy_action is not None
         ):
-            pscore = pscore.reshape((-1, step_per_trajectory))
-            behavior_policy_pscore = pscore.prod(axis=1)
+            action_dim = action.shape[1]
+            pscore = pscore.reshape((-1, step_per_trajectory, action_dim))
+            behavior_policy_pscore = pscore.prod(axis=1).prod(axis=1)
 
             if action_scaler is not None:
                 evaluation_policy_action = action_scaler.transform_numpy(

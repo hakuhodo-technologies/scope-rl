@@ -138,8 +138,8 @@ class ContinuousMinimaxStateActionWeightLearning(BaseWeightValueLearner):
             x1 = torch.cat((state_1, action_1), dim=1)
             x2 = torch.cat((state_2, action_2), dim=1)
             # (x - x') ** 2 = x ** 2 + x' ** 2 - 2 x x'
-            x1_2 = (x1**2).sum(dim=1)
-            x2_2 = (x2**2).sum(dim=1)
+            x1_2 = (x1 ** 2).sum(dim=1)
+            x2_2 = (x2 ** 2).sum(dim=1)
             x_y = x1 @ x2.T
             distance = x1_2[:, None] + x2_2[None, :] - 2 * x_y
             kernel = torch.exp(-distance / self.sigma)
@@ -622,8 +622,8 @@ class ContinuousMinimaxStateWeightLearning(BaseWeightValueLearner):
             x1 = torch.cat((state_1, action_1), dim=1)
             x2 = torch.cat((state_2, action_2), dim=1)
             # (x - x') ** 2 = x ** 2 + x' ** 2 - 2 x x'
-            x1_2 = (x1**2).sum(dim=1)
-            x2_2 = (x2**2).sum(dim=1)
+            x1_2 = (x1 ** 2).sum(dim=1)
+            x2_2 = (x2 ** 2).sum(dim=1)
             x_y = x1 @ x2.T
             distance = x1_2[:, None] + x2_2[None, :] - 2 * x_y
             kernel = torch.exp(-distance / self.sigma)

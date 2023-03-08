@@ -2000,11 +2000,18 @@ class OffPolicyEvaluation:
                         df.append(df_)
 
                     df = pd.concat(df, axis=0)
-                    if df["policy_value"].isin([np.inf, -np.inf]).sum() > 0:
+                    if (df["policy_value"] > 1e10).sum() + (
+                        df["policy_value"] < -1e10
+                    ).sum() > 0:
                         warn(
-                            "Found np.inf and/or -np.inf in the policy value estimate. np.inf and -np.inf are ignored in the plot."
+                            "Found a large absolute value in the policy value estimate. The value more than 1e10 and less than -1e10 will be replaced to np.nan."
                         )
-                        df = df.replace([np.inf, -np.inf], np.nan)
+                        df["policy_value"] = df["policy_value"].mask(
+                            df["policy_value"] > 1e-10, np.nan
+                        )
+                        df["policy_value"] = df["policy_value"].mask(
+                            df["policy_value"] < -1e-10, np.nan
+                        )
 
                     if plot_type == "ci":
                         sns.barplot(
@@ -2108,11 +2115,18 @@ class OffPolicyEvaluation:
                         df.append(df_)
 
                     df = pd.concat(df, axis=0)
-                    if df["policy_value"].isin([np.inf, -np.inf]).sum() > 0:
+                    if (df["policy_value"] > 1e10).sum() + (
+                        df["policy_value"] < -1e10
+                    ).sum() > 0:
                         warn(
-                            "Found np.inf and/or -np.inf in the policy value estimate. np.inf and -np.inf are ignored in the plot."
+                            "Found a large absolute value in the policy value estimate. The value more than 1e10 and less than -1e10 will be replaced to np.nan."
                         )
-                        df = df.replace([np.inf, -np.inf], np.nan)
+                        df["policy_value"] = df["policy_value"].mask(
+                            df["policy_value"] > 1e-10, np.nan
+                        )
+                        df["policy_value"] = df["policy_value"].mask(
+                            df["policy_value"] < -1e-10, np.nan
+                        )
 
                     if plot_type == "ci":
                         sns.barplot(
@@ -2200,11 +2214,18 @@ class OffPolicyEvaluation:
                         value_name="policy_value",
                     )
 
-                    if df["policy_value"].isin([np.inf, -np.inf]).sum() > 0:
+                    if (df["policy_value"] > 1e10).sum() + (
+                        df["policy_value"] < -1e10
+                    ).sum() > 0:
                         warn(
-                            "Found np.inf and/or -np.inf in the policy value estimate. np.inf and -np.inf are ignored in the plot."
+                            "Found a large absolute value in the policy value estimate. The value more than 1e10 and less than -1e10 will be replaced to np.nan."
                         )
-                        df = df.replace([np.inf, -np.inf], np.nan)
+                        df["policy_value"] = df["policy_value"].mask(
+                            df["policy_value"] > 1e-10, np.nan
+                        )
+                        df["policy_value"] = df["policy_value"].mask(
+                            df["policy_value"] < -1e-10, np.nan
+                        )
 
                     if plot_type == "ci":
                         sns.barplot(
@@ -5395,11 +5416,18 @@ class CumulativeDistributionOffPolicyEvaluation:
                         df.append(df_)
 
                     df = pd.concat(df, axis=0)
-                    if df["policy_value"].isin([np.inf, -np.inf]).sum() > 0:
+                    if (df["policy_value"] > 1e10).sum() + (
+                        df["policy_value"] < -1e10
+                    ).sum() > 0:
                         warn(
-                            "Found np.inf and/or -np.inf in the policy value estimate. np.inf and -np.inf are ignored in the plot."
+                            "Found a large absolute value in the policy value estimate. The value more than 1e10 and less than -1e10 will be replaced to np.nan."
                         )
-                        df = df.replace([np.inf, -np.inf], np.nan)
+                        df["policy_value"] = df["policy_value"].mask(
+                            df["policy_value"] > 1e-10, np.nan
+                        )
+                        df["policy_value"] = df["policy_value"].mask(
+                            df["policy_value"] < -1e-10, np.nan
+                        )
 
                     if plot_type == "ci":
                         sns.barplot(
@@ -5503,11 +5531,18 @@ class CumulativeDistributionOffPolicyEvaluation:
                         df.append(df_)
 
                     df = pd.concat(df, axis=0)
-                    if df["policy_value"].isin([np.inf, -np.inf]).sum() > 0:
+                    if (df["policy_value"] > 1e10).sum() + (
+                        df["policy_value"] < -1e10
+                    ).sum() > 0:
                         warn(
-                            "Found np.inf and/or -np.inf in the policy value estimate. np.inf and -np.inf are ignored in the plot."
+                            "Found a large absolute value in the policy value estimate. The value more than 1e10 and less than -1e10 will be replaced to np.nan."
                         )
-                        df = df.replace([np.inf, -np.inf], np.nan)
+                        df["policy_value"] = df["policy_value"].mask(
+                            df["policy_value"] > 1e-10, np.nan
+                        )
+                        df["policy_value"] = df["policy_value"].mask(
+                            df["policy_value"] < -1e-10, np.nan
+                        )
 
                     if plot_type == "ci":
                         sns.barplot(
@@ -5595,11 +5630,18 @@ class CumulativeDistributionOffPolicyEvaluation:
                         value_name="policy_value",
                     )
 
-                    if df["policy_value"].isin([np.inf, -np.inf]).sum() > 0:
+                    if (df["policy_value"] > 1e10).sum() + (
+                        df["policy_value"] < -1e10
+                    ).sum() > 0:
                         warn(
-                            "Found np.inf and/or -np.inf in the policy value estimate. np.inf and -np.inf are ignored in the plot."
+                            "Found a large absolute value in the policy value estimate. The value more than 1e10 and less than -1e10 will be replaced to np.nan."
                         )
-                        df = df.replace([np.inf, -np.inf], np.nan)
+                        df["policy_value"] = df["policy_value"].mask(
+                            df["policy_value"] > 1e-10, np.nan
+                        )
+                        df["policy_value"] = df["policy_value"].mask(
+                            df["policy_value"] < -1e-10, np.nan
+                        )
 
                     if plot_type == "ci":
                         sns.barplot(
@@ -5684,11 +5726,18 @@ class CumulativeDistributionOffPolicyEvaluation:
                         value_name="policy_value",
                     )
 
-                    if df["policy_value"].isin([np.inf, -np.inf]).sum() > 0:
+                    if (df["policy_value"] > 1e10).sum() + (
+                        df["policy_value"] < -1e10
+                    ).sum() > 0:
                         warn(
-                            "Found np.inf and/or -np.inf in the policy value estimate. np.inf and -np.inf are ignored in the plot."
+                            "Found a large absolute value in the policy value estimate. The value more than 1e10 and less than -1e10 will be replaced to np.nan."
                         )
-                        df = df.replace([np.inf, -np.inf], np.nan)
+                        df["policy_value"] = df["policy_value"].mask(
+                            df["policy_value"] > 1e-10, np.nan
+                        )
+                        df["policy_value"] = df["policy_value"].mask(
+                            df["policy_value"] < -1e-10, np.nan
+                        )
 
                     if plot_type == "ci":
                         sns.barplot(

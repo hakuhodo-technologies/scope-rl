@@ -862,14 +862,7 @@ class OffPolicySelection:
             ranking_df_dict = defaultdict_to_dict(ranking_df_dict)
 
             if return_metrics:
-                (
-                    mse,
-                    rankcorr,
-                    pvalue,
-                    regret,
-                    type_i,
-                    type_ii,
-                ) = (
+                (mse, rankcorr, pvalue, regret, type_i, type_ii,) = (
                     [],
                     [],
                     [],
@@ -1163,14 +1156,7 @@ class OffPolicySelection:
             ranking_df_dict = defaultdict_to_dict(ranking_df_dict)
 
             if return_metrics:
-                (
-                    mse,
-                    rankcorr,
-                    pvalue,
-                    regret,
-                    type_i,
-                    type_ii,
-                ) = (
+                (mse, rankcorr, pvalue, regret, type_i, type_ii,) = (
                     [],
                     [],
                     [],
@@ -1497,15 +1483,7 @@ class OffPolicySelection:
             ranking_df_dict = defaultdict_to_dict(ranking_df_dict)
 
         if return_metrics:
-            (
-                ci_,
-                estimator_,
-                rankcorr,
-                pvalue,
-                regret,
-                type_i,
-                type_ii,
-            ) = (
+            (ci_, estimator_, rankcorr, pvalue, regret, type_i, type_ii,) = (
                 [],
                 [],
                 [],
@@ -1768,13 +1746,7 @@ class OffPolicySelection:
             ranking_df_dict = defaultdict_to_dict(ranking_df_dict)
 
             if return_metrics:
-                (
-                    mse,
-                    rankcorr,
-                    pvalue,
-                    type_i,
-                    type_ii,
-                ) = (
+                (mse, rankcorr, pvalue, type_i, type_ii,) = (
                     [],
                     [],
                     [],
@@ -2034,13 +2006,7 @@ class OffPolicySelection:
             ranking_df_dict = defaultdict_to_dict(ranking_df_dict)
 
             if return_metrics:
-                (
-                    mse,
-                    rankcorr,
-                    pvalue,
-                    type_i,
-                    type_ii,
-                ) = (
+                (mse, rankcorr, pvalue, type_i, type_ii,) = (
                     [],
                     [],
                     [],

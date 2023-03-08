@@ -128,8 +128,8 @@ class DiscreteMinimaxStateActionWeightLearning(BaseWeightValueLearner):
         """Gaussian kernel for all input pairs."""
         with torch.no_grad():
             # (x - x') ** 2 = x ** 2 + x' ** 2 - 2 x x'
-            x_2 = (state_1**2).sum(dim=1)
-            y_2 = (state_2**2).sum(dim=1)
+            x_2 = (state_1 ** 2).sum(dim=1)
+            y_2 = (state_2 ** 2).sum(dim=1)
             x_y = state_1 @ state_2.T
             distance = x_2[:, None] + y_2[None, :] - 2 * x_y
 
@@ -631,8 +631,8 @@ class DiscreteMinimaxStateWeightLearning(BaseWeightValueLearner):
         """Gaussian kernel for all input pairs."""
         with torch.no_grad():
             # (x - x') ** 2 = x ** 2 + x' ** 2 - 2 x x'
-            x_2 = (state_1**2).sum(dim=1)
-            y_2 = (state_2**2).sum(dim=1)
+            x_2 = (state_1 ** 2).sum(dim=1)
+            y_2 = (state_2 ** 2).sum(dim=1)
             x_y = state_1 @ state_2.T
             distance = x_2[:, None] + y_2[None, :] - 2 * x_y
 
