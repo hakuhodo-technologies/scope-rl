@@ -2304,7 +2304,6 @@ class CreateOPEInput:
                 )
 
         if require_value_prediction:
-
             if q_function_method == "fqe" or v_function_method == "fqe":
                 for i in tqdm(
                     range(len(evaluation_policies)),
@@ -2375,7 +2374,6 @@ class CreateOPEInput:
                     )
 
         if require_weight_prediction:
-
             if w_function_method == "dice":
                 for i in tqdm(
                     range(len(evaluation_policies)),
@@ -2760,13 +2758,11 @@ class CreateOPEInput:
 
         evaluation_policies_ = deepcopy(evaluation_policies)
         if isinstance(logged_dataset, MultipleLoggedDataset):
-
             if behavior_policy_name is None and dataset_id is None:
                 evaluation_policies = defaultdict(list)
 
                 for behavior_policy, n_datasets in logged_dataset.n_datasets.items():
                     for dataset_id_ in range(n_datasets):
-
                         if apply_different_eval_policies_across_all_datasets:
                             evaluation_policies[behavior_policy].append(
                                 evaluation_policies_[behavior_policy][dataset_id_]
@@ -2786,7 +2782,6 @@ class CreateOPEInput:
                 evaluation_policies = {}
 
                 for behavior_policy, n_datasets in logged_dataset.n_datasets.items():
-
                     if apply_different_eval_policies_across_all_datasets:
                         evaluation_policies[behavior_policy] = evaluation_policies_[
                             behavior_policy
@@ -2806,7 +2801,6 @@ class CreateOPEInput:
                 for dataset_id_ in range(
                     logged_dataset.n_datasets[behavior_policy_name]
                 ):
-
                     if apply_different_eval_policies_across_all_datasets:
                         evaluation_policies.append(
                             evaluation_policies_[behavior_policy_name][dataset_id_]
@@ -2850,7 +2844,6 @@ class CreateOPEInput:
                 evaluation_policies = evaluation_policies_
 
         if isinstance(logged_dataset, MultipleLoggedDataset):
-
             input_dict = MultipleInputDict(
                 action_type=logged_dataset.action_type,
                 path=path,
@@ -2858,7 +2851,6 @@ class CreateOPEInput:
             )
 
             if behavior_policy_name is None and dataset_id is None:
-
                 behavior_policies = logged_dataset.behavior_policy_names
 
                 for i in tqdm(

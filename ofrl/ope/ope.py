@@ -2,6 +2,7 @@
 from dataclasses import dataclass
 from typing import Dict, List, Tuple, Optional, Union, Any
 from pathlib import Path
+from warnings import warn
 
 from collections import defaultdict
 
@@ -733,9 +734,7 @@ class OffPolicyEvaluation:
         compared_estimators = self._check_compared_estimators(compared_estimators)
 
         if self.use_multiple_logged_dataset:
-
             if isinstance(input_dict, MultipleInputDict):
-
                 if behavior_policy_name is None and dataset_id is None:
                     if self.multiple_logged_dataset.n_datasets != input_dict.n_datasets:
                         raise ValueError(
@@ -954,9 +953,7 @@ class OffPolicyEvaluation:
             )
 
         if self.use_multiple_logged_dataset:
-
             if isinstance(input_dict, MultipleInputDict):
-
                 if behavior_policy_name is None and dataset_id is None:
                     if self.multiple_logged_dataset.n_datasets != input_dict.n_datasets:
                         raise ValueError(
@@ -1219,11 +1216,8 @@ class OffPolicyEvaluation:
         policy_value_interval_df_dict = None
 
         if self.use_multiple_logged_dataset:
-
             if isinstance(input_dict, MultipleInputDict):
-
                 if behavior_policy_name is None and dataset_id is None:
-
                     policy_value_df_dict = defaultdict(list)
                     policy_value_interval_df_dict = defaultdict(list)
 
@@ -1256,7 +1250,6 @@ class OffPolicyEvaluation:
                     )
 
                 elif behavior_policy_name is None and dataset_id is not None:
-
                     policy_value_df_dict = {}
                     policy_value_interval_df_dict = {}
 
@@ -1276,7 +1269,6 @@ class OffPolicyEvaluation:
                         ] = policy_value_interval_df_dict_
 
                 elif behavior_policy_name is not None and dataset_id is None:
-
                     policy_value_df_dict = []
                     policy_value_interval_df_dict = []
 
@@ -1407,18 +1399,14 @@ class OffPolicyEvaluation:
         )
 
         if self.use_multiple_logged_dataset:
-
             if isinstance(input_dict, MultipleInputDict):
-
                 if behavior_policy_name is None and dataset_id is None:
-
                     eval_metric_ope = defaultdict(list)
 
                     for (
                         behavior_policy,
                         n_datasets,
                     ) in input_dict.n_datasets.items():
-
                         for dataset_id_ in range(n_datasets):
                             input_dict_ = input_dict.get(
                                 behavior_policy_name=behavior_policy,
@@ -1440,7 +1428,6 @@ class OffPolicyEvaluation:
                     eval_metric_ope = defaultdict_to_dict(eval_metric_ope)
 
                 elif behavior_policy_name is None and dataset_id is not None:
-
                     eval_metric_ope = {}
 
                     for behavior_policy in input_dict.behavior_policy_names:
@@ -1457,7 +1444,6 @@ class OffPolicyEvaluation:
                         eval_metric_ope[behavior_policy] = eval_metric_ope_
 
                 elif behavior_policy_name is not None and dataset_id is None:
-
                     eval_metric_ope = []
 
                     for dataset_id_ in range(
@@ -1921,7 +1907,6 @@ class OffPolicyEvaluation:
 
                 for eval_policy in input_dict_0.keys():
                     for estimator in compared_estimators:
-
                         policy_value = np.zeros((n_datasets,))
                         for dataset_id_ in range(n_datasets):
                             policy_value[dataset_id_] = policy_value_dict_[
@@ -1953,7 +1938,6 @@ class OffPolicyEvaluation:
 
             for eval_policy in input_dict_0.keys():
                 for estimator in compared_estimators:
-
                     policy_value = np.zeros((n_datasets,))
                     for dataset_id_ in range(n_datasets):
                         policy_value[dataset_id_] = policy_value_dict_[dataset_id_][
@@ -1980,7 +1964,6 @@ class OffPolicyEvaluation:
         behavior_policy_names = input_dict.behavior_policy_names
 
         if behavior_policy_name is None:
-
             palette = {}
             for j, behavior_policy in enumerate(behavior_policy_names):
                 palette[behavior_policy] = color[j % n_colors]
@@ -2017,6 +2000,12 @@ class OffPolicyEvaluation:
                         df.append(df_)
 
                     df = pd.concat(df, axis=0)
+                    if df["policy_value"].isin([np.inf, -np.inf]).sum() > 0:
+                        warn(
+                            "Found np.inf and/or -np.inf in the policy value estimate. np.inf and -np.inf are ignored in the plot."
+                        )
+                        df = df.replace([np.inf, -np.inf], np.nan)
+
                     if plot_type == "ci":
                         sns.barplot(
                             data=df,
@@ -2119,6 +2108,12 @@ class OffPolicyEvaluation:
                         df.append(df_)
 
                     df = pd.concat(df, axis=0)
+                    if df["policy_value"].isin([np.inf, -np.inf]).sum() > 0:
+                        warn(
+                            "Found np.inf and/or -np.inf in the policy value estimate. np.inf and -np.inf are ignored in the plot."
+                        )
+                        df = df.replace([np.inf, -np.inf], np.nan)
+
                     if plot_type == "ci":
                         sns.barplot(
                             data=df,
@@ -2204,6 +2199,12 @@ class OffPolicyEvaluation:
                         var_name="estimator",
                         value_name="policy_value",
                     )
+
+                    if df["policy_value"].isin([np.inf, -np.inf]).sum() > 0:
+                        warn(
+                            "Found np.inf and/or -np.inf in the policy value estimate. np.inf and -np.inf are ignored in the plot."
+                        )
+                        df = df.replace([np.inf, -np.inf], np.nan)
 
                     if plot_type == "ci":
                         sns.barplot(
@@ -3315,9 +3316,7 @@ class CumulativeDistributionOffPolicyEvaluation:
         reward_scale = self._check_reward_scale(reward_scale)
 
         if self.use_multiple_logged_dataset:
-
             if isinstance(input_dict, MultipleInputDict):
-
                 if behavior_policy_name is None and dataset_id is None:
                     if self.multiple_logged_dataset.n_datasets != input_dict.n_datasets:
                         raise ValueError(
@@ -3528,9 +3527,7 @@ class CumulativeDistributionOffPolicyEvaluation:
         compared_estimators = self._check_compared_estimators(compared_estimators)
 
         if self.use_multiple_logged_dataset:
-
             if isinstance(input_dict, MultipleInputDict):
-
                 if behavior_policy_name is None and dataset_id is None:
                     if self.multiple_logged_dataset.n_datasets != input_dict.n_datasets:
                         raise ValueError(
@@ -3715,9 +3712,7 @@ class CumulativeDistributionOffPolicyEvaluation:
         compared_estimators = self._check_compared_estimators(compared_estimators)
 
         if self.use_multiple_logged_dataset:
-
             if isinstance(input_dict, MultipleInputDict):
-
                 if behavior_policy_name is None and dataset_id is None:
                     if self.multiple_logged_dataset.n_datasets != input_dict.n_datasets:
                         raise ValueError(
@@ -3908,9 +3903,7 @@ class CumulativeDistributionOffPolicyEvaluation:
         alphas = self._check_cvar_alphas(alphas)
 
         if self.use_multiple_logged_dataset:
-
             if isinstance(input_dict, MultipleInputDict):
-
                 if behavior_policy_name is None and dataset_id is None:
                     if self.multiple_logged_dataset.n_datasets != input_dict.n_datasets:
                         raise ValueError(
@@ -4097,9 +4090,7 @@ class CumulativeDistributionOffPolicyEvaluation:
         check_scalar(alpha, name="alpha", target_type=float, min_val=0.0, max_val=0.5)
 
         if self.use_multiple_logged_dataset:
-
             if isinstance(input_dict, MultipleInputDict):
-
                 if behavior_policy_name is None and dataset_id is None:
                     if self.multiple_logged_dataset.n_datasets != input_dict.n_datasets:
                         raise ValueError(
@@ -5368,7 +5359,6 @@ class CumulativeDistributionOffPolicyEvaluation:
         n_estimators = len(compared_estimators)
 
         if behavior_policy_name is None:
-
             palette = {}
             for j, behavior_policy in enumerate(behavior_policy_names):
                 palette[behavior_policy] = color[j % n_colors]
@@ -5405,6 +5395,12 @@ class CumulativeDistributionOffPolicyEvaluation:
                         df.append(df_)
 
                     df = pd.concat(df, axis=0)
+                    if df["policy_value"].isin([np.inf, -np.inf]).sum() > 0:
+                        warn(
+                            "Found np.inf and/or -np.inf in the policy value estimate. np.inf and -np.inf are ignored in the plot."
+                        )
+                        df = df.replace([np.inf, -np.inf], np.nan)
+
                     if plot_type == "ci":
                         sns.barplot(
                             data=df,
@@ -5507,6 +5503,12 @@ class CumulativeDistributionOffPolicyEvaluation:
                         df.append(df_)
 
                     df = pd.concat(df, axis=0)
+                    if df["policy_value"].isin([np.inf, -np.inf]).sum() > 0:
+                        warn(
+                            "Found np.inf and/or -np.inf in the policy value estimate. np.inf and -np.inf are ignored in the plot."
+                        )
+                        df = df.replace([np.inf, -np.inf], np.nan)
+
                     if plot_type == "ci":
                         sns.barplot(
                             data=df,
@@ -5593,6 +5595,12 @@ class CumulativeDistributionOffPolicyEvaluation:
                         value_name="policy_value",
                     )
 
+                    if df["policy_value"].isin([np.inf, -np.inf]).sum() > 0:
+                        warn(
+                            "Found np.inf and/or -np.inf in the policy value estimate. np.inf and -np.inf are ignored in the plot."
+                        )
+                        df = df.replace([np.inf, -np.inf], np.nan)
+
                     if plot_type == "ci":
                         sns.barplot(
                             data=df,
@@ -5675,6 +5683,12 @@ class CumulativeDistributionOffPolicyEvaluation:
                         var_name="eval_policy",
                         value_name="policy_value",
                     )
+
+                    if df["policy_value"].isin([np.inf, -np.inf]).sum() > 0:
+                        warn(
+                            "Found np.inf and/or -np.inf in the policy value estimate. np.inf and -np.inf are ignored in the plot."
+                        )
+                        df = df.replace([np.inf, -np.inf], np.nan)
 
                     if plot_type == "ci":
                         sns.barplot(
@@ -5855,7 +5869,6 @@ class CumulativeDistributionOffPolicyEvaluation:
             for behavior_policy, n_datasets in input_dict.n_datasets.items():
                 for eval_policy in input_dict_0.keys():
                     for estimator in compared_estimators:
-
                         cdf = np.zeros((n_datasets, n_partition))
                         for dataset_id_ in range(n_datasets):
                             cdf[dataset_id_] = cdf_dict_[behavior_policy][dataset_id_][
@@ -5874,7 +5887,6 @@ class CumulativeDistributionOffPolicyEvaluation:
 
             for eval_policy in input_dict_0.keys():
                 for estimator in compared_estimators:
-
                     cdf = np.zeros((n_datasets, n_partition))
                     for dataset_id_ in range(n_datasets):
                         cdf[dataset_id_] = cdf_dict_[dataset_id_][eval_policy][
@@ -5904,7 +5916,6 @@ class CumulativeDistributionOffPolicyEvaluation:
                 if n_rows == 1:
                     for i, eval_policy in enumerate(input_dict_0.keys()):
                         for j, estimator in enumerate(compared_estimators):
-
                             df = DataFrame()
                             for l in range(input_dict.n_datasets[behavior_policy_name]):
                                 df["xscale"] = reward_scale
@@ -6125,7 +6136,6 @@ class CumulativeDistributionOffPolicyEvaluation:
 
                 for i, eval_policy in enumerate(input_dict_0.keys()):
                     for j, estimator in enumerate(compared_estimators):
-
                         for l, behavior_policy in enumerate(
                             input_dict.behavior_policy_names
                         ):
@@ -6184,7 +6194,6 @@ class CumulativeDistributionOffPolicyEvaluation:
                 if n_rows == 1:
                     for i, estimator in enumerate(compared_estimators):
                         for j, eval_policy in enumerate(input_dict_0.keys()):
-
                             for l, behavior_policy in enumerate(
                                 input_dict.behavior_policy_names
                             ):
@@ -6235,7 +6244,6 @@ class CumulativeDistributionOffPolicyEvaluation:
                 else:
                     for i, estimator in enumerate(compared_estimators):
                         for j, eval_policy in enumerate(input_dict_0.keys()):
-
                             for l, behavior_policy in enumerate(
                                 input_dict.behavior_policy_names
                             ):
@@ -6455,7 +6463,6 @@ class CumulativeDistributionOffPolicyEvaluation:
 
                 for eval_policy in input_dict_0.keys():
                     for estimator in compared_estimators:
-
                         policy_value = np.zeros((n_datasets,))
                         for dataset_id_ in range(n_datasets):
                             policy_value[dataset_id_] = policy_value_dict_[
@@ -6487,7 +6494,6 @@ class CumulativeDistributionOffPolicyEvaluation:
 
             for eval_policy in input_dict_0.keys():
                 for estimator in compared_estimators:
-
                     policy_value = np.zeros((n_datasets,))
                     for dataset_id_ in range(n_datasets):
                         policy_value[dataset_id_] = policy_value_dict_[dataset_id_][
@@ -6617,7 +6623,6 @@ class CumulativeDistributionOffPolicyEvaluation:
 
                 for eval_policy in input_dict_0.keys():
                     for estimator in compared_estimators:
-
                         variance = np.zeros((n_datasets,))
                         for dataset_id_ in range(n_datasets):
                             variance[dataset_id_] = variance_dict_[behavior_policy][
@@ -6647,7 +6652,6 @@ class CumulativeDistributionOffPolicyEvaluation:
 
             for eval_policy in input_dict_0.keys():
                 for estimator in compared_estimators:
-
                     variance = np.zeros((n_datasets,))
                     for dataset_id_ in range(n_datasets):
                         variance[dataset_id_] = variance_dict_[dataset_id_][
@@ -6782,7 +6786,6 @@ class CumulativeDistributionOffPolicyEvaluation:
 
                 for eval_policy in input_dict_0.keys():
                     for estimator in compared_estimators:
-
                         cvar = np.zeros((n_datasets,))
                         for dataset_id_ in range(n_datasets):
                             cvar[dataset_id_] = cvar_dict_[behavior_policy][
@@ -6811,7 +6814,6 @@ class CumulativeDistributionOffPolicyEvaluation:
 
             for eval_policy in input_dict_0.keys():
                 for estimator in compared_estimators:
-
                     cvar = np.zeros((n_datasets,))
                     for dataset_id_ in range(n_datasets):
                         cvar[dataset_id_] = cvar_dict_[dataset_id_][eval_policy][
@@ -6949,7 +6951,6 @@ class CumulativeDistributionOffPolicyEvaluation:
 
                 for eval_policy in input_dict_0.keys():
                     for estimator in compared_estimators:
-
                         lower_quartile = np.zeros((n_datasets,))
                         for dataset_id_ in range(n_datasets):
                             lower_quartile[dataset_id_] = lower_quartile_dict_[
@@ -6984,7 +6985,6 @@ class CumulativeDistributionOffPolicyEvaluation:
 
             for eval_policy in input_dict_0.keys():
                 for estimator in compared_estimators:
-
                     lower_quartile = np.zeros((n_datasets,))
                     for dataset_id_ in range(n_datasets):
                         lower_quartile[dataset_id_] = lower_quartile_dict_[dataset_id_][

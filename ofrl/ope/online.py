@@ -1464,7 +1464,7 @@ def rollout_policy_online(
                 for t in range(step_per_trajectory):
                     action = policy.predict_online(state)
                     state, reward, done, _, _ = env.step(action)
-                    cumulative_reward += gamma ** t * reward
+                    cumulative_reward += gamma**t * reward
 
                 on_policy_policy_values[i] = cumulative_reward
 
@@ -1484,7 +1484,7 @@ def rollout_policy_online(
                     state, reward, done, _, _ = env.step(action)
                     t += 1
 
-                    episode_reward += gamma ** t * reward
+                    episode_reward += gamma**t * reward
                     done = done or (t == step_per_trajectory)
 
                 on_policy_policy_values[i] = episode_reward
@@ -1507,7 +1507,7 @@ def rollout_policy_online(
                 for t in range(step_per_trajectory):
                     action = policy.sample_action_online(state)
                     state, reward, done, _, _ = env.step(action)
-                    cumulative_reward += gamma ** t * reward
+                    cumulative_reward += gamma**t * reward
 
                 on_policy_policy_values[i] = cumulative_reward
 
@@ -1527,7 +1527,7 @@ def rollout_policy_online(
                     state, reward, done, _, _ = env.step(action)
                     t += 1
 
-                    episode_reward += gamma ** t * reward
+                    episode_reward += gamma**t * reward
                     done = done or (t == step_per_trajectory)
 
                 on_policy_policy_values[i] = episode_reward

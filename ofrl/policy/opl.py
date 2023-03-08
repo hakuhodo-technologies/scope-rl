@@ -367,7 +367,6 @@ class OffPolicyLearning:
 
         """
         if isinstance(logged_dataset, MultipleLoggedDataset):
-
             if behavior_policy_name is None and dataset_id is None:
                 base_policies = defaultdict(list)
 
@@ -501,10 +500,8 @@ class OffPolicyLearning:
 
         """
         if isinstance(base_policies, dict):
-
             evaluation_policies = {}
             for behavior_policy in base_policies.keys():
-
                 if isinstance(base_policies[behavior_policy][0], AlgoBase):
                     evaluation_policies[behavior_policy] = self._apply_head(
                         base_policies=base_policies[behavior_policy],
@@ -645,7 +642,6 @@ class OffPolicyLearning:
 
         """
         if isinstance(logged_dataset, MultipleLoggedDataset):
-
             if behavior_policy_name is None and dataset_id is None:
                 eval_policies = defaultdict(list)
 
