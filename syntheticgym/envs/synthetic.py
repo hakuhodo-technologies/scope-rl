@@ -22,7 +22,7 @@ class SyntheticEnv(gym.Env):
         state_dim: int = 5,
         action_type: str = "continuous",  # "discrete"
         n_actions: int = 10, #Applicable only when action_type is "discrete"
-        action_context_dim: int = 10,
+        action_context_dim: int = 3,
         action_context: Optional[np.ndarray] = None,
         reward_type: str = "continuous",  # "binary"
         reward_std: float = 0.0,
@@ -220,6 +220,7 @@ class SyntheticEnv(gym.Env):
         self.t = 0
         # initialize state
         state = self.random_.normal(loc=0.0, scale=1.0, size=(self.state_dim,))
+        state = state / np.linalg.norm(state, ord=2)
         self.state = state
         obs = self._observation(self.state)
 
