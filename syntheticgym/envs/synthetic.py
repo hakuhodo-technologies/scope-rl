@@ -22,7 +22,7 @@ class SyntheticEnv(gym.Env):
         state_dim: int = 5,
         action_type: str = "continuous",  # "discrete"
         n_actions: int = 10, #Applicable only when action_type is "discrete"
-        action_context_dim: int = 10,
+        action_context_dim: int = 3,
         action_context: Optional[np.ndarray] = None,
         reward_type: str = "continuous",  # "binary"
         reward_std: float = 0.0,

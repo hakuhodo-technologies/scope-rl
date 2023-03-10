@@ -166,13 +166,10 @@ class RewardFunction(BaseRewardFunction):
 
         """
         if self.action_type == "continuous":
-            # print('action=', action)
-
-            # reward = self.action_coef.T @ action
-            reward = self.state_coef.T @ state + self.action_coef.T @ action + state.T @ (self.state_action_coef @ action)
+            reward = self.state_coef.T @ state / self.state_dim + self.action_coef.T @ action / self.action_context_dim + state.T @ (self.state_action_coef @ action) / self.state_dim / self.action_context_dim
         
         elif self.action_type == "discrete":
-            reward = self.state_coef.T @ state + self.action_coef.T @ self.action_context[action] + state.T @ (self.state_action_coef @ self.action_context[action])
+            reward = self.state_coef.T @ state / self.state_dim + self.action_coef.T @ self.action_context[action] / self.action_context_dim + state.T @ (self.state_action_coef @ self.action_context[action]) / self.state_dim / self.action_context_dim
 
         if self.reward_type == "continuous":
             reward = reward + self.random_.normal(loc=0.0, scale=self.reward_std)
