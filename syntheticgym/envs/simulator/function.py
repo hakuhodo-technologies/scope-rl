@@ -172,8 +172,8 @@ class RewardFunction(BaseRewardFunction):
 
         Returns
         -------
-        reward_type: str = "continuous"
-            Reward type (i.e., countinuous / binary).
+        reward: float
+            Either binary or continuous.
 
         """
         if self.action_type == "continuous":
