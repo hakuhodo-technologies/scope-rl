@@ -282,17 +282,6 @@ class RewardFunction(BaseRewardFunction):
 <!-- More examples are available at [quickstart/synthetic_synthetic_customize_env.ipynb](./examples/quickstart/synthetic_synthetic_customize_env.ipynb). \
 The statistics of the environment is also visualized at [quickstart/synthetic_synthetic_data_collection.ipynb](./examples/quickstart/synthetic_synthetic_data_collection.ipynb). -->
 
-## Citation
-
-Bibtex:
-```
-@article{kiyohara2021accelerating,
-  title={Accelerating Offline Reinforcement Learning Application in Real-Time Bidding and syntheticmmendation: Potential Use of Simulation},
-  author={Kiyohara, Haruka and Kawakami, Kosuke and Saito, Yuta},
-  journal={arXiv preprint arXiv:2109.08331},
-  year={2021}
-}
-```
 
 ## Contribution
 Any contributions to SyntheticGym are more than welcome!
