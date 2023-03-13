@@ -27,7 +27,7 @@ class StateTransition(BaseStateTransition):
 
     state_dim:
 
-    action_context_dim:
+    action_dim:
         
     random_state: int, default=None (>= 0)
         Random state.
@@ -40,7 +40,7 @@ class StateTransition(BaseStateTransition):
     """
     state_dim: int = 10
     action_type: str = "continuous",  # "discrete"
-    action_context_dim: int = 10
+    action_dim: int = 3
     action_context: Optional[np.ndarray] = (None,)
     random_state: Optional[int] = None
 
@@ -48,8 +48,8 @@ class StateTransition(BaseStateTransition):
         self.random_ = check_random_state(self.random_state)
 
         self.state_coef = self.random_.normal(loc=0.0, scale=1.0, size=(self.state_dim, self.state_dim))
-        self.action_coef = self.random_.normal(loc=0.0, scale=1.0, size=(self.state_dim, self.action_context_dim))
-        self.state_action_coef = self.random_.normal(loc=0.0, scale=1.0, size=(self.state_dim, self.action_context_dim))
+        self.action_coef = self.random_.normal(loc=0.0, scale=1.0, size=(self.state_dim, self.action_dim))
+        self.state_action_coef = self.random_.normal(loc=0.0, scale=1.0, size=(self.state_dim, self.action_dim))
 
 
     def step(
@@ -76,10 +76,10 @@ class StateTransition(BaseStateTransition):
 
         """
         if self.action_type == "continuous":
-            state = self.state_coef @ state +  self.action_coef @ action + (self.state_action_coef @ action).T @ state
+            state = self.state_coef @ state / self.state_dim +  self.action_coef @ action / self.action_dim + (self.state_action_coef @ action / self.action_dim).T @ state / self.state_dim
         
         elif self.action_type == "discrete":
-            state = self.state_coef @ state + self.action_coef @ self.action_context[action] +  (self.state_action_coef @ self.action_context[action]).T @ state
+            state = self.state_coef @ state / self.state_dim + self.action_coef @ self.action_context[action] / self.action_dim +  (self.state_action_coef @ self.action_context[action] / self.action_dim).T @ state / self.state_dim
             
         state = state / np.linalg.norm(state, ord=2)
 
@@ -121,7 +121,7 @@ class RewardFunction(BaseRewardFunction):
     reward_std: float = 0.0
     state_dim: int = 10
     action_type: str = "continuous",  # "discrete"
-    action_context_dim: int = 10
+    action_dim: int = 3
     action_context: Optional[np.ndarray] = (None,)
     random_state: Optional[int] = None
 
@@ -140,8 +140,8 @@ class RewardFunction(BaseRewardFunction):
         self.random_ = check_random_state(self.random_state)
 
         self.state_coef = self.random_.normal(loc=0.0, scale=1.0, size=(self.state_dim, ))
-        self.action_coef = self.random_.normal(loc=0.0, scale=1.0, size=(self.action_context_dim, ))
-        self.state_action_coef = self.random_.normal(loc=0.0, scale=1.0, size=(self.state_dim, self.action_context_dim))
+        self.action_coef = self.random_.normal(loc=0.0, scale=1.0, size=(self.action_dim, ))
+        self.state_action_coef = self.random_.normal(loc=0.0, scale=1.0, size=(self.state_dim, self.action_dim))
 
     def sample(
         self,
@@ -166,10 +166,10 @@ class RewardFunction(BaseRewardFunction):
 
         """
         if self.action_type == "continuous":
-            reward = self.state_coef.T @ state / self.state_dim + self.action_coef.T @ action / self.action_context_dim + state.T @ (self.state_action_coef @ action) / self.state_dim / self.action_context_dim
+            reward = self.state_coef.T @ state / self.state_dim + self.action_coef.T @ action / self.action_dim + state.T @ (self.state_action_coef @ action / self.action_dim) / self.state_dim
         
         elif self.action_type == "discrete":
-            reward = self.state_coef.T @ state / self.state_dim + self.action_coef.T @ self.action_context[action] / self.action_context_dim + state.T @ (self.state_action_coef @ self.action_context[action]) / self.state_dim / self.action_context_dim
+            reward = self.state_coef.T @ state / self.state_dim + self.action_coef.T @ self.action_context[action] / self.action_dim + state.T @ (self.state_action_coef @ self.action_context[action] / self.action_dim) / self.state_dim 
 
         if self.reward_type == "continuous":
             reward = reward + self.random_.normal(loc=0.0, scale=self.reward_std)

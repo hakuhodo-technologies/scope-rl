@@ -22,7 +22,7 @@ class SyntheticEnv(gym.Env):
         state_dim: int = 5,
         action_type: str = "continuous",  # "discrete"
         n_actions: int = 10, #Applicable only when action_type is "discrete"
-        action_context_dim: int = 3,
+        action_dim: int = 3,
         action_context: Optional[np.ndarray] = None,
         reward_type: str = "continuous",  # "binary"
         reward_std: float = 0.0,
@@ -49,15 +49,13 @@ class SyntheticEnv(gym.Env):
             target_type=int,
             min_val=1,
         )
-        self.n_actions = n_actions
 
         check_scalar(
-            action_context_dim,
-            name="action_context_dim",
+            action_dim,
+            name="action_dim",
             target_type=int,
             min_val=1,
         )
-        self.action_context_dim = action_context_dim
 
         check_scalar(
             obs_std,
@@ -90,23 +88,22 @@ class SyntheticEnv(gym.Env):
 
         if action_type == "continuous":
             self.action_type = "continuous"
-            self.action_space = Box(low=-0.1, high=10, shape=(action_context_dim,), dtype=float)
-            # self.action_space = Box(low=-np.inf, high=np.inf, shape=(action_context_dim,), dtype=float)
+            self.action_space = Box(low=-0.1, high=10, shape=(action_dim, ), dtype=float)
+            # self.action_space = Box(low=-np.inf, high=np.inf, shape=(action_dim,), dtype=float)
             # self.action_space = Box(
-            #     low=np.full(action_context_dim, -np.inf),
-            #     high=np.full(action_context_dim, np.inf),
+            #     low=np.full(action_dim, -np.inf),
+            #     high=np.full(action_dim, np.inf),
             #     dtype=float,
             # )
 
         elif action_type == "discrete":
             self.action_type = "discrete"
-            self.n_actions = n_actions
             self.action_space = Discrete(n_actions)
 
             # initialize action_context
             if action_context is None:
                 action_context = self.random_.normal(
-                loc=0.0, scale=1.0, size=(self.n_actions, self.action_context_dim))
+                loc=0.0, scale=1.0, size=(n_actions, action_dim))
             check_scalar(
                 action_context,
                 name="action_context",
@@ -116,7 +113,7 @@ class SyntheticEnv(gym.Env):
         self.state_transition = StateTransition(
             state_dim=state_dim,
             action_type=action_type,
-            action_context_dim=action_context_dim,
+            action_dim=action_dim,
             action_context=action_context,
             random_state=random_state,
         )   
@@ -126,7 +123,7 @@ class SyntheticEnv(gym.Env):
             reward_std=reward_std,
             state_dim=state_dim,
             action_type=action_type,
-            action_context_dim=action_context_dim,
+            action_dim=action_dim,
             action_context=action_context,
             random_state=random_state,
         )   
