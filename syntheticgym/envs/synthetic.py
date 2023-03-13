@@ -21,9 +21,11 @@ class SyntheticEnv(gym.Env):
         RewardFunction: BaseRewardFunction = RewardFunction,
         state_dim: int = 5,
         action_type: str = "continuous",  # "discrete"
-        n_actions: int = 10, #Applicable only when action_type is "discrete"
-        action_context_dim: int = 10,
-        action_context: Optional[np.ndarray] = None,
+        n_actions: int = 10,  # Applicable only when action_type is "discrete"
+        action_dim: int = 3,
+        action_context: Optional[
+            np.ndarray
+        ] = None,  # Applicable only when action_type is "discrete"
         reward_type: str = "continuous",  # "binary"
         reward_std: float = 0.0,
         obs_std: float = 0.0,
@@ -52,12 +54,12 @@ class SyntheticEnv(gym.Env):
         self.n_actions = n_actions
 
         check_scalar(
-            action_context_dim,
-            name="action_context_dim",
+            action_dim,
+            name="action_dim",
             target_type=int,
             min_val=1,
         )
-        self.action_context_dim = action_context_dim
+        self.action_dim = action_dim
 
         check_scalar(
             obs_std,
@@ -74,7 +76,7 @@ class SyntheticEnv(gym.Env):
             min_val=1,
         )
         self.step_per_episode = step_per_episode
-        
+
         # define observation space
         self.observation_space = Box(
             low=np.full(state_dim, -np.inf),
@@ -90,46 +92,40 @@ class SyntheticEnv(gym.Env):
 
         if action_type == "continuous":
             self.action_type = "continuous"
-            self.action_space = Box(low=-0.1, high=10, shape=(action_context_dim,), dtype=float)
-            # self.action_space = Box(low=-np.inf, high=np.inf, shape=(action_context_dim,), dtype=float)
-            # self.action_space = Box(
-            #     low=np.full(action_context_dim, -np.inf),
-            #     high=np.full(action_context_dim, np.inf),
-            #     dtype=float,
-            # )
+            self.action_space = Box(low=-0.1, high=10, shape=(action_dim,), dtype=float)
 
         elif action_type == "discrete":
             self.action_type = "discrete"
-            self.n_actions = n_actions
             self.action_space = Discrete(n_actions)
 
             # initialize action_context
             if action_context is None:
                 action_context = self.random_.normal(
-                loc=0.0, scale=1.0, size=(self.n_actions, self.action_context_dim))
+                    loc=0.0, scale=1.0, size=(n_actions, action_dim)
+                )
             check_scalar(
                 action_context,
                 name="action_context",
                 target_type=np.ndarray,
             )
-        
+
         self.state_transition = StateTransition(
             state_dim=state_dim,
             action_type=action_type,
-            action_context_dim=action_context_dim,
+            action_dim=action_dim,
             action_context=action_context,
             random_state=random_state,
-        )   
+        )
 
         self.reward_function = RewardFunction(
             reward_type=reward_type,
             reward_std=reward_std,
             state_dim=state_dim,
             action_type=action_type,
-            action_context_dim=action_context_dim,
+            action_dim=action_dim,
             action_context=action_context,
             random_state=random_state,
-        )   
+        )
 
         # define reward range
         self.reward_range = (-np.inf, np.inf)
@@ -142,32 +138,32 @@ class SyntheticEnv(gym.Env):
         return obs
 
     def step(self, action: Action) -> Tuple[Any]:
-        """Simulate a recommender interaction with a user.
+        """Simulate a action interaction with a context.
 
         Note
         -------
         The simulation procedure is given as follows.
 
-        1. Sample reward (i.e., feedback on user engagement) for the given item.
+        1. Sample reward for the given action.
 
-        2. Update user state with user_preference_dynamics
+        2. Update state with state_transition
 
-        3. Return the user feedback to the RL agent.
+        3. Return the feedback to the RL agent.
 
         Parameters
         -------
-        action: {int, array-like of shape (1, )} (>= 0)
-            Indicating which item to present to the user.
+        action: {int, array-like of shape (action_dim, )} (>= 0)
+            Indicating which action to present to the context.
 
         Returns
         -------
         feedbacks: Tuple
-            obs: ndarray of shape (1,)
+            obs: ndarray of shape (state_dim,)
                 Generated based on state.
                 (e.g. complete with the state, noise added to the state, or only part of the state)
 
             reward: float
-                User engagement signal. Either binary or continuous.
+                Either binary or continuous.
 
             done: bool
                 Wether the episode end or not.
@@ -176,14 +172,14 @@ class SyntheticEnv(gym.Env):
                 For API consistency.
 
             info: dict
-                Additional feedbacks (user_id, state) for analysts.
+                Additional feedbacks (state) for analysts.
                 Note that those feedbacks are unobservable to the agent.
 
         """
-        # 1. sample reward for the given item.
+        # 1. sample reward for the given action.
         reward = self.reward_function.sample(self.state, action)
 
-        # 2. update user state with state_transition
+        # 2. update state with state_transition
         self.state = self.state_transition.step(self.state, action)
 
         done = self.t == self.step_per_episode - 1
@@ -204,7 +200,7 @@ class SyntheticEnv(gym.Env):
 
         Returns
         -------
-        obs: ndarray of shape (1,)
+        obs: ndarray of shape (state_dim,)
             Generated based on state.
             (e.g. complete with the state, noise added to the state, or only part of the state)
 

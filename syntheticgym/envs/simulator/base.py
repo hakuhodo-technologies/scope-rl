@@ -20,25 +20,24 @@ class BaseStateTransition(metaclass=ABCMeta):
         state: np.ndarray,
         action: Action,
     ) -> np.ndarray:
-        """Function that determines how to update the state  based on the recommended item.
+        """Function that determines how to update the state based on the presented action.
 
         Parameters
         -------
-        state: array-like of shape (user_feature_dim, )
-            A vector representing user preference.  The preference changes over time in an episode by the actions presented by the RL agent.
+        state: array-like of shape (state_dim, )
             When the true state is unobservable, you can gain observation instead of state.
 
-        action: {int, array-like of shape (1, )} (>= 0)
-            selected an item to recommendation from n_items.
+        action: {int, array-like of shape (action_dim, )} (>= 0)
+            Indicating which action to present to the context.
 
         Returns
         -------
-        state: array-like of shape (user_feature_dim, )
-            A vector representing user preference.  The preference changes over time in an episode by the actions presented by the RL agent.
+        state: array-like of shape (state_dim, )
             When the true state is unobservable, you can gain observation instead of state.
 
         """
         raise NotImplementedError
+
 
 @dataclass
 class BaseRewardFunction(metaclass=ABCMeta):
@@ -58,17 +57,16 @@ class BaseRewardFunction(metaclass=ABCMeta):
 
         Parameters
         -------
-        state: array-like of shape (user_feature_dim, )
-            A vector representing user preference.  The preference changes over time in an episode by the actions presented by the RL agent.
+        state: array-like of shape (state_dim, )
             When the true state is unobservable, you can gain observation instead of state.
 
-        action: {int, array-like of shape (1, )} (>= 0)
-            selected an item to recommendation from n_items.
+        action: {int, array-like of shape (action_dim, )} (>= 0)
+            Indicating which action to present to the context.
 
         Returns
         -------
         reward: float
-            User engagement signal. Either binary or continuous.
+            Either binary or continuous.
 
         """
         raise NotImplementedError
