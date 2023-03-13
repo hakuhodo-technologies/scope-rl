@@ -22,13 +22,18 @@ class StateTransition(BaseStateTransition):
 
     Parameters
     -------
-    action_context: ndarray of shape (n_items, item_feature_dim), default=None
-        Feature vectors that characterizes each item.
-
-    state_dim:
-
-    action_dim:
+    state_dim: int = 5
+        Dimension of state
+    
+    action_type: str = "continuous"
+        Action type (i.e., countinuous / discrete).
         
+    action_dim: int = 3
+        Dimension of action.
+
+    action_context: ndarray of shape (n_actions, action_dim), default=None
+        Feature vectors that characterizes each action.
+
     random_state: int, default=None (>= 0)
         Random state.
 
@@ -38,7 +43,7 @@ class StateTransition(BaseStateTransition):
     "Preference Dynamics Under Personalized Recommendations." 2022.
 
     """
-    state_dim: int = 10
+    state_dim: int = 5
     action_type: str = "continuous",  # "discrete"
     action_dim: int = 3
     action_context: Optional[np.ndarray] = (None,)
@@ -57,21 +62,19 @@ class StateTransition(BaseStateTransition):
         state: np.ndarray,
         action: Action,
     ) -> np.ndarray:
-        """Function that determines how to update the state (i.e., user preference) based on the recommended item. user_feature is amplified by the recommended item_feature
+        """Function that determines how to update the state 
 
         Parameters
         -------
-        state: array-like of shape (user_feature_dim, )
-            A vector representing user preference.  The preference changes over time in an episode by the actions presented by the RL agent.
+        state: array-like of shape (state_dim, )
             When the true state is unobservable, you can gain observation instead of state.
 
-        action: {int, array-like of shape (1, )} (>= 0)
-            selected an item to recommendation from n_items.
+        action: {int, array-like of shape (action_dim, )} (>= 0)
+            Indicating which action to present to the context.
 
         Returns
         -------
-        state: array-like of shape (user_feature_dim, )
-            A vector representing user preference.  The preference changes over time in an episode by the actions presented by the RL agent.
+        state: array-like of shape (state_dim, )
             When the true state is unobservable, you can gain observation instead of state.
 
         """
@@ -103,9 +106,18 @@ class RewardFunction(BaseRewardFunction):
 
     reward_std: float, default=0.0 (>=0)
         Standard deviation of the reward distribution. Applicable only when reward_type is "continuous".
+    
+    state_dim: int = 5
+        Dimension of state
 
-    action_context: ndarray of shape (n_items, item_feature_dim), default=None
-        Feature vectors that characterizes each item.
+    action_type: str = "continuous"
+        Action type (i.e., countinuous / discrete).
+        
+    action_dim: int = 3
+        Dimension of action.
+
+    action_context: ndarray of shape (n_actions, action_dim), default=None
+        Feature vectors that characterizes each action.
 
     random_state: int, default=None (>= 0)
         Random state.
@@ -119,7 +131,7 @@ class RewardFunction(BaseRewardFunction):
 
     reward_type: str = "continuous"  # "binary"
     reward_std: float = 0.0
-    state_dim: int = 10
+    state_dim: int = 5
     action_type: str = "continuous",  # "discrete"
     action_dim: int = 3
     action_context: Optional[np.ndarray] = (None,)
@@ -148,21 +160,20 @@ class RewardFunction(BaseRewardFunction):
         state: np.ndarray,
         action: Action,
     ) -> float:
-        """Reward function. inner product of state and recommended item_feature
+        """Reward function.
 
         Parameters
         -------
-        state: array-like of shape (user_feature_dim, )
-            A vector representing user preference.  The preference changes over time in an episode by the actions presented by the RL agent.
+        state: array-like of shape (state_dim, )
             When the true state is unobservable, you can gain observation instead of state.
 
-        action: {int, array-like of shape (1, )} (>= 0)
-            selected an item to recommendation from n_items.
+        action: {int, array-like of shape (action_dim, )} (>= 0)
+            Indicating which action to present to the context.
 
         Returns
         -------
-        reward: float
-            User engagement signal. Either binary or continuous.
+        reward_type: str = "continuous"
+            Reward type (i.e., countinuous / binary).
 
         """
         if self.action_type == "continuous":

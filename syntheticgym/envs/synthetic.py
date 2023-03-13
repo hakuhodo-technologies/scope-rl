@@ -23,7 +23,7 @@ class SyntheticEnv(gym.Env):
         action_type: str = "continuous",  # "discrete"
         n_actions: int = 10, #Applicable only when action_type is "discrete"
         action_dim: int = 3,
-        action_context: Optional[np.ndarray] = None,
+        action_context: Optional[np.ndarray] = None, #Applicable only when action_type is "discrete"
         reward_type: str = "continuous",  # "binary"
         reward_std: float = 0.0,
         obs_std: float = 0.0,
@@ -49,6 +49,7 @@ class SyntheticEnv(gym.Env):
             target_type=int,
             min_val=1,
         )
+        self.n_actions = n_actions
 
         check_scalar(
             action_dim,
@@ -56,6 +57,7 @@ class SyntheticEnv(gym.Env):
             target_type=int,
             min_val=1,
         )
+        self.action_dim = action_dim
 
         check_scalar(
             obs_std,
@@ -89,12 +91,6 @@ class SyntheticEnv(gym.Env):
         if action_type == "continuous":
             self.action_type = "continuous"
             self.action_space = Box(low=-0.1, high=10, shape=(action_dim, ), dtype=float)
-            # self.action_space = Box(low=-np.inf, high=np.inf, shape=(action_dim,), dtype=float)
-            # self.action_space = Box(
-            #     low=np.full(action_dim, -np.inf),
-            #     high=np.full(action_dim, np.inf),
-            #     dtype=float,
-            # )
 
         elif action_type == "discrete":
             self.action_type = "discrete"
@@ -139,32 +135,32 @@ class SyntheticEnv(gym.Env):
         return obs
 
     def step(self, action: Action) -> Tuple[Any]:
-        """Simulate a recommender interaction with a user.
+        """Simulate a action interaction with a context.
 
         Note
         -------
         The simulation procedure is given as follows.
 
-        1. Sample reward (i.e., feedback on user engagement) for the given item.
+        1. Sample reward for the given action.
 
-        2. Update user state with user_preference_dynamics
+        2. Update state with state_transition
 
-        3. Return the user feedback to the RL agent.
+        3. Return the feedback to the RL agent.
 
         Parameters
         -------
-        action: {int, array-like of shape (1, )} (>= 0)
-            Indicating which item to present to the user.
+        action: {int, array-like of shape (action_dim, )} (>= 0)
+            Indicating which action to present to the context.
 
         Returns
         -------
         feedbacks: Tuple
-            obs: ndarray of shape (1,)
+            obs: ndarray of shape (state_dim,)
                 Generated based on state.
                 (e.g. complete with the state, noise added to the state, or only part of the state)
 
             reward: float
-                User engagement signal. Either binary or continuous.
+                Either binary or continuous.
 
             done: bool
                 Wether the episode end or not.
@@ -173,14 +169,14 @@ class SyntheticEnv(gym.Env):
                 For API consistency.
 
             info: dict
-                Additional feedbacks (user_id, state) for analysts.
+                Additional feedbacks (state) for analysts.
                 Note that those feedbacks are unobservable to the agent.
 
         """
-        # 1. sample reward for the given item.
+        # 1. sample reward for the given action.
         reward = self.reward_function.sample(self.state, action)
 
-        # 2. update user state with state_transition
+        # 2. update state with state_transition
         self.state = self.state_transition.step(self.state, action)
 
         done = self.t == self.step_per_episode - 1
@@ -201,7 +197,7 @@ class SyntheticEnv(gym.Env):
 
         Returns
         -------
-        obs: ndarray of shape (1,)
+        obs: ndarray of shape (state_dim,)
             Generated based on state.
             (e.g. complete with the state, noise added to the state, or only part of the state)
 
