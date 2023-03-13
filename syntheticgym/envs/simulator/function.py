@@ -128,6 +128,9 @@ class RewardFunction(BaseRewardFunction):
 
     reward_std: float, default=0.0 (>=0)
         Standard deviation of the reward distribution. Applicable only when reward_type is "continuous".
+    
+    state_dim: int = 5
+        Dimension of state
 
     state_dim: int = 5
         Dimension of state

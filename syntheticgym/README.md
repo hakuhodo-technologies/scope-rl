@@ -28,19 +28,21 @@ We often formulate this synthetic simulation problem as the following (Partially
 - `state`: 
    - When the true state is unobservable, you can gain observation instead of state.
 - `action`:  
-- `reward`: 
+   - Indicating which action to present to the context.
+- `reward`:
+   - Either binary or continuous.
 
 ### Implementation
 
-SyntheticGym provides a syntheticommender environment.
-- `"SyntheticEnv-v0"`: Standard syntheticommender environment.
+SyntheticGym provides a syntheticmmender environment.
+- `"SyntheticEnv-v0"`: Standard syntheticmmender environment.
 
 SyntheticGym consists of the following a environments.
-- [SyntheticEnv](./envs/synthetic.py#L14): The basic configurative environment.
+- [SyntheticEnv](./envs/synthetic.py#L17): The basic configurative environment.
 
 SyntheticGym is configurative about the following a module.
-- [StateTransition](./envs/simulator/function.py#L13): Class to define the state transition of the synthetic simulation.
-- [RewardFunction](./envs/simulator/function.py#L13): Class to define the reward function of the synthetic simulation.
+- [StateTransition](./envs/simulator/function.py#L14): Class to define the state transition of the synthetic simulation.
+- [RewardFunction](./envs/simulator/function.py#L93): Class to define the reward function of the synthetic simulation.
 
 Note that, users can customize the above modules by following the [abstract class](./envs/simulator/base.py).
 
@@ -92,13 +94,16 @@ from offlinegym.policy import DiscreteEpsilonGreedyHead
 from d3rlpy.algos import RandomPolicy as DiscreteRandomPolicy
 
 # define a random agent
-agent = DiscreteEpsilonGreedyHead(
-      base_policy = DiscreteRandomPolicy(),
-      name = 'random',
-      n_actions = env.n_items,
-      epsilon = 1. ,
-      random_state = random_state, 
+agent = OnlineHead(
+    ContinuousRandomPolicy(
+        action_scaler=MinMaxActionScaler(
+            minimum=0.1,  # minimum value that policy can take
+            maximum=10,  # maximum value that policy can take
+        )
+    ),
+    name="random",
 )
+agent.build_with_env(env)
 
 # (2) basic interaction 
 obs, info = env.reset()
@@ -143,8 +148,8 @@ Next, we describe how to customize the environment by instantiating the environm
 - `state_dim`: Dimensions of state.
 - `action_type`: action type (i.e., continuous / discrete).
 - `n_actions`: Number of actions. Applicable only when reward_type is "discrete".
-- `action_context_dim`: Dimensions of the action context.
-- `action_context`: Feature vectors that characterizes each action.
+- `action_dim`: Dimensions of the action context.
+- `action_context`: Feature vectors that characterizes each action. Applicable only when reward_type is "discrete".
 - `reward_type`: Reward type (i.e., continuous / binary).
 - `reward_std`: Standard deviation of the reward distribution. Applicable only when reward_type is "continuous".
 - `obs_std`: Standard deviation of the observation distribution.
@@ -158,10 +163,10 @@ from syntheticgym import SyntheticEnv
 env = SyntheticEnv(
         StateTransition = StateTransition
         RewardFunction = RewardFunction
-        state_dim = 10, #each state has 5 dimensional features
+        state_dim = 5, #each state has 5 dimensional features
         action_type = "continuous", #we use continuous action
-        action_context_dim = 10,  #each action has 10 dimensional features
-        action_context = None,  #determine action_context from n_actions and action_context_dim in SyntheticEnv
+        action_dim = 3,  #each action has 10 dimensional features
+        action_context = None,  #determine action_context from n_actions and action_dim in SyntheticEnv
         reward_type = "continuous", #we use continuous reward
         reward_std = 0.0,
         obs_std = 0.0, #not add noise to the observation
@@ -184,9 +189,9 @@ import numpy as np
 
 @dataclass
 class StateTransition(BaseStateTransition):
-    state_dim: int = 10
+    state_dim: int = 5
     action_type: str = "continuous",  # "binary"
-    action_context_dim: int = 10
+    action_dim: int = 3
     action_context: Optional[np.ndarray] = (None,)
     random_state: Optional[int] = None
 
@@ -194,8 +199,8 @@ class StateTransition(BaseStateTransition):
         self.random_ = check_random_state(self.random_state)
 
         self.state_coef = self.random_.normal(loc=0.0, scale=1.0, size=(self.state_dim, self.state_dim))
-        self.action_coef = self.random_.normal(loc=0.0, scale=1.0, size=(self.state_dim, self.action_context_dim))
-        self.state_action_coef = self.random_.normal(loc=0.0, scale=1.0, size=(1, self.action_context_dim))
+        self.action_coef = self.random_.normal(loc=0.0, scale=1.0, size=(self.state_dim, self.action_dim))
+        self.state_action_coef = self.random_.normal(loc=0.0, scale=1.0, size=(self.state_dim, self.action_dim))
 
 
     def step(
@@ -205,14 +210,13 @@ class StateTransition(BaseStateTransition):
     ) -> np.ndarray:
 
         if self.action_type == "continuous":
-            state = self.state_coef @ state +  self.action_coef @ action+  state @ self.state_action_coef @ action
+            state = self.state_coef @ state / self.state_dim +  self.action_coef @ action / self.action_dim + (self.state_action_coef @ action / self.action_dim).T @ state / self.state_dim
         
         elif self.action_type == "discrete":
-            state = self.state_coef @ state + self.action_coef @ self.action_context[action] +  state @ self.state_action_coef.T @ self.action_context[action]
+            state = self.state_coef @ state / self.state_dim + self.action_coef @ self.action_context[action] / self.action_dim +  (self.state_action_coef @ self.action_context[action] / self.action_dim).T @ state / self.state_dim
             
         state = state / np.linalg.norm(state, ord=2)
 
-        return state
 
 
 ```
@@ -232,9 +236,9 @@ import numpy as np
 class RewardFunction(BaseRewardFunction):
     reward_type: str = "continuous"  # "binary"
     reward_std: float = 0.0
-    state_dim: int = 10
+    state_dim: int = 5
     action_type: str = "continuous",  # "discrete"
-    action_context_dim: int = 10
+    action_dim: int = 3
     action_context: Optional[np.ndarray] = (None,)
     random_state: Optional[int] = None
 
@@ -252,9 +256,9 @@ class RewardFunction(BaseRewardFunction):
 
         self.random_ = check_random_state(self.random_state)
 
-        self.state_coef = self.random_.normal(loc=0.0, scale=1.0, size=(1, self.state_dim))
-        self.action_coef = self.random_.normal(loc=0.0, scale=1.0, size=(1, self.action_context_dim))
-        self.state_action_coef = self.random_.normal(loc=0.0, scale=1.0, size=(self.state_dim, self.action_context_dim))
+        self.state_coef = self.random_.normal(loc=0.0, scale=1.0, size=(self.state_dim, ))
+        self.action_coef = self.random_.normal(loc=0.0, scale=1.0, size=(self.action_dim, ))
+        self.state_action_coef = self.random_.normal(loc=0.0, scale=1.0, size=(self.state_dim, self.action_dim))
 
     def sample(
         self,
@@ -262,41 +266,22 @@ class RewardFunction(BaseRewardFunction):
         action: Action,
     ) -> float:
         if self.action_type == "continuous":
-            reward = self.state_coef @ state + self.action_coef @ action +  (state.T @ self.state_action_coef) @ action
+            reward = self.state_coef.T @ state / self.state_dim + self.action_coef.T @ action / self.action_dim + state.T @ (self.state_action_coef @ action / self.action_dim) / self.state_dim
         
         elif self.action_type == "discrete":
-            reward = self.state_coef @ state + self.action_coef @ self.action_context[action] +  (state.T @ self.state_action_coef ) @ self.action_context[action]
+            reward = self.state_coef.T @ state / self.state_dim + self.action_coef.T @ self.action_context[action] / self.action_dim + state.T @ (self.state_action_coef @ self.action_context[action] / self.action_dim) / self.state_dim 
 
         if self.reward_type == "continuous":
             reward = reward + self.random_.normal(loc=0.0, scale=self.reward_std)
 
-        reward = reward[0][0]
-
         return reward
+
 
 ```
 
 <!-- More examples are available at [quickstart/synthetic_synthetic_customize_env.ipynb](./examples/quickstart/synthetic_synthetic_customize_env.ipynb). \
 The statistics of the environment is also visualized at [quickstart/synthetic_synthetic_data_collection.ipynb](./examples/quickstart/synthetic_synthetic_data_collection.ipynb). -->
 
-## Citation
-
-If you use our software in your work, please cite our paper:
-
-Haruka Kiyohara, Kosuke Kawakami, Yuta Saito.<br>
-**Accelerating Offline Reinforcement Learning Application in Real-Time Bidding and syntheticommendation: Potential Use of Simulation**<br>
-(syntheticSys'21 Simusynthetic workshop)<br>
-[https://arxiv.org/abs/2109.08331](https://arxiv.org/abs/2109.08331)
-
-Bibtex:
-```
-@article{kiyohara2021accelerating,
-  title={Accelerating Offline Reinforcement Learning Application in Real-Time Bidding and syntheticommendation: Potential Use of Simulation},
-  author={Kiyohara, Haruka and Kawakami, Kosuke and Saito, Yuta},
-  journal={arXiv preprint arXiv:2109.08331},
-  year={2021}
-}
-```
 
 ## Contribution
 Any contributions to SyntheticGym are more than welcome!
@@ -325,7 +310,6 @@ For any question about the paper and software, feel free to contact: kiyohara.h.
 
 2. Takuma Seno and Michita Imai. [d3rlpy: An Offline Deep Reinforcement Library](https://arxiv.org/abs/2111.03788), *arXiv preprint arXiv:2111.03788*, 2021.
 
-3. Sarah Dean and Jamie Morgenstern. [Preference Dynamics Under Personalized syntheticommendations](https://arxiv.org/abs/2205.13026). In *Proceedings of the 23rd ACM Conference on Economics and Computation*, 4503-9150, 2022.
 
 </details>
 
@@ -333,7 +317,7 @@ For any question about the paper and software, feel free to contact: kiyohara.h.
 <summary><strong>Projects </strong>(click to expand)</summary>
 
 This project is inspired by the following three packages.
-- **syntheticoGym**  -- an RL environment for synthetic simulations: [[github](https://github.com/criteo-research/synthetico-gym)] [[paper](https://arxiv.org/abs/1808.00720)]
+- **syntheticGym**  -- an RL environment for synthetic simulations: [[github](https://github.com/criteo-research/synthetic-gym)] [[paper](https://arxiv.org/abs/1808.00720)]
 - **syntheticSim** -- a configurative RL environment for synthetic simulations: [[github](https://github.com/google-research/syntheticsim)] [[paper](https://arxiv.org/abs/1909.04847)]
 - **AuctionGym** -- an RL environment for online advertising auctions: [[github](https://github.com/amzn/auction-gym)] [[paper](https://www.amazon.science/publications/learning-to-bid-with-auctiongym)]
 - **FinRL** -- an RL environment for finance: [[github](https://github.com/AI4Finance-Foundation/FinRL)] [[paper](https://arxiv.org/abs/2011.09607)]
