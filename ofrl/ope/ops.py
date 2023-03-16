@@ -339,13 +339,13 @@ class OffPolicySelection:
         if fig_name is not None and not isinstance(fig_name, str):
             raise ValueError(f"fig_dir must be a string, but {type(fig_dir)} is given")
 
-    def _check_topk_visualization_inputs(
+    def _check_topk_inputs(
         self,
         input_dict: Union[OPEInputDict, MultipleInputDict],
         behavior_policy_name: Optional[str] = None,
         dataset_id: Optional[int] = None,
         max_topk: Optional[int] = None,
-        metrics: List[str] = ["k-th", "best", "worst", "mean", "safety_violation_rate"],
+        metrics: Optional[List[str]] = None,
         safety_threshold: Optional[float] = None,
         safety_criteria: Optional[float] = None,
     ):
@@ -378,11 +378,18 @@ class OffPolicySelection:
             check_scalar(max_topk, name="max_topk", target_type=int, min_val=1)
             max_topk = min(max_topk, max_topk_)
 
-        for metric in metrics:
-            if metric not in ["k-th", "best", "worst", "mean", "safety_violation_rate"]:
-                raise ValueError(
-                    f"The elements of metrics must be one of 'k-th', 'best', 'worst', 'mean', or 'safety_violation_rate', but {metric} is given."
-                )
+        if metrics is not None:
+            for metric in metrics:
+                if metric not in [
+                    "k-th",
+                    "best",
+                    "worst",
+                    "mean",
+                    "safety_violation_rate",
+                ]:
+                    raise ValueError(
+                        f"The elements of metrics must be one of 'k-th', 'best', 'worst', 'mean', or 'safety_violation_rate', but {metric} is given."
+                    )
 
         if safety_threshold is None:
             if "safety_violation_rate" in metrics:
@@ -5037,7 +5044,7 @@ class OffPolicySelection:
             fig_name=fig_name,
         )
 
-    def _visualize_topk_policy_performance(
+    def _obtain_topk_policy_performance(
         self,
         true_dict: Dict,
         estimation_dict: Dict,
@@ -5048,20 +5055,13 @@ class OffPolicySelection:
         compared_estimators: Optional[List[str]] = None,
         behavior_policy_name: Optional[str] = None,
         dataset_id: Optional[int] = None,
-        metrics: List[str] = ["k-th", "best", "worst", "mean", "safety_violation_rate"],
         max_topk: Optional[int] = None,
+        return_safety_violation_rate: bool = False,
         safety_threshold: Optional[float] = None,
-        visualize_ci: bool = False,
-        ci: str = "bootstrap",
-        alpha: float = 0.05,
-        n_bootstrap_samples: int = 100,
-        random_state: Optional[int] = None,
-        legend: bool = True,
-        ylabel: str = "policy performance",
-        fig_dir: Optional[Path] = None,
-        fig_name: Optional[str] = None,
+        rrt_alpha: float = 0.5,
+        return_by_dataframe: bool = False,
     ):
-        """Visualize top-k policy deployment performances.
+        """Calculate top-k policy deployment performances.
 
         Parameters
         -------
@@ -5114,45 +5114,28 @@ class OffPolicySelection:
             Id of the logged dataset.
             If `None`, the average of the result will be shown.
 
-        metrics: list of {"k-th", "best", "worst", "mean", "safety_violation_rate"}, default=["k-th", "best", "worst", "mean", "safety_violation_rate"]
-            Indicate which of the policy performance among {"best", "worst", "mean"} and safety violation rate to report.
-            For "k-th", it means that the policy performance of the (estimated) k-th policy will be visualized.
-
         max_topk: int, default=None
             Maximum number of policies to be deployed.
+
+        return_safety_violation_rate: bool, default=False.
+            Whether to calculate and return the safety violate.
 
         safety_threshold: float, default=0.0 (>= 0)
             The conditional value at risk required to be a safe policy.
 
-        visualize_ci: bool, default=False
-            Whether to visualize ci.
+        rrt_alpha: float, default=0.5.
+            The weight parameter of risk-return tradeoff metric. Specifically, weighted_rrt[k] will be calculated as
+            :math:`\\alpha` * best[k] + :math:`(1 - \\alpha)` * worst[k]. The value should be within [0, 1].
 
-        ci: {"bootstrap", "hoeffding", "bernstein", "ttest"}, default="bootstrap"
-            Estimation method for confidence intervals.
-
-        alpha: float, default=0.05
-            Significance level. The value should be within `[0, 1)`.
-
-        n_bootstrap_samples: int, default=10000 (> 0)
-            Number of resampling performed in the bootstrap procedure.
-
-        random_state: int, default=None (>= 0)
-            Random state.
-
-        legend: bool, default=True
-            Whether to include a legend in the figure.
-
-        ylabel: str, default="policy performance"
-            Label of the y-axis.
-
-        fig_dir: Path, default=None
-            Path to store the bar figure.
-            If `None` is given, the figure will not be saved.
-
-        fig_name: str, default="topk_policy_value_standard_ope.png"
-            Name of the bar figure.
+        return_by_dataframe: bool, default=False
+            Whether to return the result in a dataframe format.
 
         """
+        if return_safety_violation_rate:
+            metrics = ["k-th", "best", "worst", "mean", "safety_violation_rate"]
+        else:
+            metrics = ["k-th", "best", "worst", "mean"]
+
         if isinstance(input_dict, MultipleInputDict):
             if behavior_policy_name is None and dataset_id is None:
                 ranking_dict = defaultdict(list)
@@ -5288,14 +5271,11 @@ class OffPolicySelection:
         metric_dict = defaultdict(dict)
         if isinstance(input_dict, MultipleInputDict):
             if behavior_policy_name is None and dataset_id is None:
+                n_datasets = input_dict.n_datasets
+                total_n_datasets = np.array(list(n_datasets.values())).sum()
+
                 for i, estimator in enumerate(compared_estimators):
                     for j, metric in enumerate(metrics):
-                        n_datasets = input_dict.n_datasets
-                        total_n_datasets = 0
-
-                        for n_datasets_ in n_datasets.values():
-                            total_n_datasets += n_datasets_
-
                         topk_metric = np.zeros((max_topk, total_n_datasets))
 
                         for topk in range(max_topk):
@@ -5324,9 +5304,10 @@ class OffPolicySelection:
                         metric_dict[estimator][metric] = topk_metric
 
             elif behavior_policy_name is None and dataset_id is not None:
+                total_n_datasets = len(input_dict.behavior_policy_names)
+
                 for i, estimator in enumerate(compared_estimators):
                     for j, metric in enumerate(metrics):
-                        total_n_datasets = len(input_dict.behavior_policy_names)
                         topk_metric = np.zeros((max_topk, total_n_datasets))
 
                         for topk in range(max_topk):
@@ -5352,10 +5333,19 @@ class OffPolicySelection:
 
                         metric_dict[estimator][metric] = topk_metric
 
+                    metric_dict[estimator]["weighted_rrt"] = (
+                        rrt_alpha * metric_dict[estimator]["best"]
+                        + (1 - rrt_alpha) * metric_dict[estimator]["worst"]
+                    )
+                    metric_dict[estimator]["deviation_rrt"] = (
+                        metric_dict[estimator]["best"] - metric_dict[estimator]["worst"]
+                    )
+
             elif behavior_policy_name is not None and dataset_id is None:
+                total_n_datasets = input_dict.n_datasets[behavior_policy_name]
+
                 for i, estimator in enumerate(compared_estimators):
                     for j, metric in enumerate(metrics):
-                        total_n_datasets = input_dict.n_datasets[behavior_policy_name]
                         topk_metric = np.zeros((max_topk, total_n_datasets))
 
                         for topk in range(max_topk):
@@ -5377,10 +5367,18 @@ class OffPolicySelection:
 
                         metric_dict[estimator][metric] = topk_metric
 
+                    metric_dict[estimator]["weighted_rrt"] = (
+                        rrt_alpha * metric_dict[estimator]["best"]
+                        + (1 - rrt_alpha) * metric_dict[estimator]["worst"]
+                    )
+                    metric_dict[estimator]["deviation_rrt"] = (
+                        metric_dict[estimator]["best"] - metric_dict[estimator]["worst"]
+                    )
+
             else:
+                total_n_datasets = 1
                 for i, estimator in enumerate(compared_estimators):
                     for j, metric in enumerate(metrics):
-                        total_n_datasets = 1
                         topk_metric = np.zeros((max_topk, total_n_datasets))
 
                         for topk in range(max_topk):
@@ -5400,6 +5398,14 @@ class OffPolicySelection:
                                 ).sum() / (topk + 1)
 
                         metric_dict[estimator][metric] = topk_metric
+
+                    metric_dict[estimator]["weighted_rrt"] = (
+                        rrt_alpha * metric_dict[estimator]["best"]
+                        + (1 - rrt_alpha) * metric_dict[estimator]["worst"]
+                    )
+                    metric_dict[estimator]["deviation_rrt"] = (
+                        metric_dict[estimator]["best"] - metric_dict[estimator]["worst"]
+                    )
 
         else:
             for i, estimator in enumerate(compared_estimators):
@@ -5424,7 +5430,1129 @@ class OffPolicySelection:
 
                     metric_dict[estimator][metric] = topk_metric
 
+                metric_dict[estimator]["weighted_rrt"] = (
+                    rrt_alpha * metric_dict[estimator]["best"]
+                    + (1 - rrt_alpha) * metric_dict[estimator]["worst"]
+                )
+                metric_dict[estimator]["deviation_rrt"] = (
+                    metric_dict[estimator]["best"] - metric_dict[estimator]["worst"]
+                )
+
         metric_dict = defaultdict_to_dict(metric_dict)
+
+        if return_by_dataframe:
+            metrics.extend(["weighted_rrt", "deviation_rrt"])
+            metric_df = []
+
+            for i, estimator in enumerate(compared_estimators):
+                metric_df_ = pd.DataFrame()
+                metric_df_["estimator"] = estimator
+                metric_df_["topk"] = np.arange(max_topk)
+
+                for metric in metrics:
+                    metric_df_[metric] = metric_dict[estimator][metric].mean(axis=1)
+
+                metric_df.append(metric_df_)
+
+            metric = pd.concat(metric_df, axis=0)
+
+        else:
+            metric = metric_dict
+
+        return metric
+
+    def obtain_topk_policy_value_selected_by_standard_ope(
+        self,
+        input_dict: Union[OPEInputDict, MultipleInputDict],
+        compared_estimators: Optional[List[str]] = None,
+        behavior_policy_name: Optional[str] = None,
+        dataset_id: Optional[int] = None,
+        max_topk: Optional[int] = None,
+        return_safety_violation_rate: bool = False,
+        safety_threshold: Optional[float] = None,
+        safety_criteria: Optional[float] = None,
+        rrt_alpha: float = 0.5,
+        return_by_dataframe: bool = False,
+    ):
+        """Obtain the topk deployment result selected by standard OPE.
+
+        Parameters
+        -------
+        input_dict: OPEInputDict or MultipleInputDict
+            Dictionary of the OPE inputs for each evaluation policy.
+
+            .. code-block:: python
+
+                key: [evaluation_policy][
+                    evaluation_policy_action,
+                    evaluation_policy_action_dist,
+                    state_action_value_prediction,
+                    initial_state_value_prediction,
+                    state_action_marginal_importance_weight,
+                    state_marginal_importance_weight,
+                    on_policy_policy_value,
+                    gamma,
+                    behavior_policy,
+                    evaluation_policy,
+                    dataset_id,
+                ]
+
+            .. seealso::
+
+                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+
+        compared_estimators: list of str, default=None
+            Name of compared estimators.
+            When `None` is given, all the estimators are compared.
+
+        behavior_policy_name: str, default=None
+            Name of the behavior policy.
+
+        dataset_id: int, default=None
+            Id of the logged dataset.
+            If `None`, the average of the result will be shown.
+
+        max_topk: int, default=None
+            Maximum number of policies to be deployed.
+            If `None` is given, all the policies will be deployed.
+
+        return_safety_violation_rate: bool, default=False.
+            Whether to calculate and return the safety violate.
+
+        safety_threshold: float, default=None.
+            The policy value required to be a safe policy.
+
+        safety_criteria: float, default=None
+            The relative policy value required to be a safe policy.
+            For example, when 0.9 is given, candidate policy must exceed 90\\% of the behavior policy performance.
+            Only applicable when using a single behavior policy.
+
+        rrt_alpha: float, default=0.5.
+            The weight parameter of risk-return tradeoff metric. Specifically, weighted_rrt[k] will be calculated as
+            :math:`\\alpha` * best[k] + :math:`(1 - \\alpha)` * worst[k]. The value should be within [0, 1].
+
+        return_by_dataframe: bool, default=False
+            Whether to return the result in a dataframe format.
+
+        """
+        compared_estimators = self._check_compared_estimators(
+            compared_estimators, ope_type="standard_ope"
+        )
+        max_topk, safety_threshold = self._check_topk_inputs(
+            input_dict=input_dict,
+            behavior_policy_name=behavior_policy_name,
+            dataset_id=dataset_id,
+            max_topk=max_topk,
+            safety_threshold=safety_threshold,
+            safety_criteria=safety_criteria,
+        )
+
+        true_dict = self.obtain_true_selection_result(
+            input_dict,
+            behavior_policy_name=behavior_policy_name,
+            dataset_id=dataset_id,
+        )
+        estimation_dict = self.select_by_policy_value(
+            input_dict,
+            compared_estimators=compared_estimators,
+            behavior_policy_name=behavior_policy_name,
+            dataset_id=dataset_id,
+        )
+
+        return self._obtain_topk_policy_performance(
+            true_dict=true_dict,
+            estimation_dict=estimation_dict,
+            input_dict=input_dict,
+            true_dict_ranking_arg="ranking",
+            true_dict_value_arg="policy_value",
+            estimation_dict_ranking_arg="estimated_ranking",
+            compared_estimators=compared_estimators,
+            behavior_policy_name=behavior_policy_name,
+            dataset_id=dataset_id,
+            max_topk=max_topk,
+            return_safety_violation_rate=return_safety_violation_rate,
+            safety_threshold=safety_threshold,
+            rrt_alpha=rrt_alpha,
+            return_by_dataframe=return_by_dataframe,
+        )
+
+    def obtain_topk_policy_value_selected_by_cumulative_distribution_ope(
+        self,
+        input_dict: Union[OPEInputDict, MultipleInputDict],
+        compared_estimators: Optional[List[str]] = None,
+        behavior_policy_name: Optional[str] = None,
+        dataset_id: Optional[int] = None,
+        max_topk: Optional[int] = None,
+        return_safety_violation_rate: bool = False,
+        safety_threshold: Optional[float] = None,
+        safety_criteria: Optional[float] = None,
+        rrt_alpha: float = 0.5,
+        return_by_dataframe: bool = False,
+    ):
+        """Obtain the topk deployment result selected by standard OPE.
+
+        Parameters
+        -------
+        input_dict: OPEInputDict or MultipleInputDict
+            Dictionary of the OPE inputs for each evaluation policy.
+
+            .. code-block:: python
+
+                key: [evaluation_policy][
+                    evaluation_policy_action,
+                    evaluation_policy_action_dist,
+                    state_action_value_prediction,
+                    initial_state_value_prediction,
+                    state_action_marginal_importance_weight,
+                    state_marginal_importance_weight,
+                    on_policy_policy_value,
+                    gamma,
+                    behavior_policy,
+                    evaluation_policy,
+                    dataset_id,
+                ]
+
+            .. seealso::
+
+                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+
+        compared_estimators: list of str, default=None
+            Name of compared estimators.
+            When `None` is given, all the estimators are compared.
+
+        behavior_policy_name: str, default=None
+            Name of the behavior policy.
+
+        dataset_id: int, default=None
+            Id of the logged dataset.
+            If `None`, the average of the result will be shown.
+
+        max_topk: int, default=None
+            Maximum number of policies to be deployed.
+            If `None` is given, all the policies will be deployed.
+
+        return_safety_violation_rate: bool, default=False.
+            Whether to calculate and return the safety violate.
+
+        safety_threshold: float, default=None.
+            The policy value required to be a safe policy.
+
+        safety_criteria: float, default=None
+            The relative policy value required to be a safe policy.
+            For example, when 0.9 is given, candidate policy must exceed 90\\% of the behavior policy performance.
+            Only applicable when using a single behavior policy.
+
+        rrt_alpha: float, default=0.5.
+            The weight parameter of risk-return tradeoff metric. Specifically, weighted_rrt[k] will be calculated as
+            :math:`\\alpha` * best[k] + :math:`(1 - \\alpha)` * worst[k]. The value should be within [0, 1].
+
+        return_by_dataframe: bool, default=False
+            Whether to return the result in a dataframe format.
+
+        """
+        compared_estimators = self._check_compared_estimators(
+            compared_estimators, ope_type="cumulative_distribution_ope"
+        )
+        max_topk, safety_threshold = self._check_topk_inputs(
+            input_dict=input_dict,
+            behavior_policy_name=behavior_policy_name,
+            dataset_id=dataset_id,
+            max_topk=max_topk,
+            safety_threshold=safety_threshold,
+            safety_criteria=safety_criteria,
+        )
+
+        true_dict = self.obtain_true_selection_result(
+            input_dict,
+            behavior_policy_name=behavior_policy_name,
+            dataset_id=dataset_id,
+        )
+        estimation_dict = self.select_by_policy_value_via_cumulative_distribution_ope(
+            input_dict,
+            compared_estimators=compared_estimators,
+            behavior_policy_name=behavior_policy_name,
+            dataset_id=dataset_id,
+        )
+
+        return self._obtain_topk_policy_performance(
+            true_dict=true_dict,
+            estimation_dict=estimation_dict,
+            input_dict=input_dict,
+            true_dict_ranking_arg="ranking",
+            true_dict_value_arg="policy_value",
+            estimation_dict_ranking_arg="estimated_ranking",
+            compared_estimators=compared_estimators,
+            behavior_policy_name=behavior_policy_name,
+            dataset_id=dataset_id,
+            max_topk=max_topk,
+            return_safety_violation_rate=return_safety_violation_rate,
+            safety_threshold=safety_threshold,
+            rrt_alpha=rrt_alpha,
+            return_by_dataframe=return_by_dataframe,
+        )
+
+    def obtain_topk_policy_value_selected_by_lower_bound(
+        self,
+        input_dict: Union[OPEInputDict, MultipleInputDict],
+        compared_estimators: Optional[List[str]] = None,
+        behavior_policy_name: Optional[str] = None,
+        dataset_id: Optional[int] = None,
+        max_topk: Optional[int] = None,
+        return_safety_violation_rate: bool = False,
+        safety_threshold: Optional[float] = None,
+        safety_criteria: Optional[float] = None,
+        rrt_alpha: float = 0.5,
+        cis: List[str] = ["bootstrap"],
+        ope_alpha: float = 0.05,
+        n_bootstrap_samples: int = 100,
+        random_state: Optional[int] = None,
+        return_by_dataframe: bool = False,
+    ):
+        """Obtain the topk deployment result selected by standard OPE.
+
+        Parameters
+        -------
+        input_dict: OPEInputDict or MultipleInputDict
+            Dictionary of the OPE inputs for each evaluation policy.
+
+            .. code-block:: python
+
+                key: [evaluation_policy][
+                    evaluation_policy_action,
+                    evaluation_policy_action_dist,
+                    state_action_value_prediction,
+                    initial_state_value_prediction,
+                    state_action_marginal_importance_weight,
+                    state_marginal_importance_weight,
+                    on_policy_policy_value,
+                    gamma,
+                    behavior_policy,
+                    evaluation_policy,
+                    dataset_id,
+                ]
+
+            .. seealso::
+
+                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+
+        compared_estimators: list of str, default=None
+            Name of compared estimators.
+            When `None` is given, all the estimators are compared.
+
+        behavior_policy_name: str, default=None
+            Name of the behavior policy.
+
+        dataset_id: int, default=None
+            Id of the logged dataset.
+            If `None`, the average of the result will be shown.
+
+        max_topk: int, default=None
+            Maximum number of policies to be deployed.
+            If `None` is given, all the policies will be deployed.
+
+        return_safety_violation_rate: bool, default=False.
+            Whether to calculate and return the safety violate.
+
+        safety_threshold: float, default=None.
+            The policy value required to be a safe policy.
+
+        safety_criteria: float, default=None
+            The relative policy value required to be a safe policy.
+            For example, when 0.9 is given, candidate policy must exceed 90\\% of the behavior policy performance.
+            Only applicable when using a single behavior policy.
+
+        rrt_alpha: float, default=0.5.
+            The weight parameter of risk-return tradeoff metric. Specifically, weighted_rrt[k] will be calculated as
+            :math:`\\alpha` * best[k] + :math:`(1 - \\alpha)` * worst[k]. The value should be within [0, 1].
+
+        cis: list of {"bootstrap", "hoeffding", "bernstein", "ttest"}, default=["bootstrap"]
+            Estimation methods for confidence intervals.
+
+        ope_alpha: float, default=0.05
+            Significance level. The value should be within `[0, 1)`.
+
+        n_bootstrap_samples: int, default=100 (> 0)
+            Number of resampling performed in the bootstrap procedure.
+
+        random_state: int, default=None (>= 0)
+            Random state.
+
+        return_by_dataframe: bool, default=False
+            Whether to return the result in a dataframe format.
+
+        """
+        compared_estimators = self._check_compared_estimators(
+            compared_estimators, ope_type="standard_ope"
+        )
+        max_topk, safety_threshold = self._check_topk_inputs(
+            input_dict=input_dict,
+            behavior_policy_name=behavior_policy_name,
+            dataset_id=dataset_id,
+            max_topk=max_topk,
+            safety_threshold=safety_threshold,
+            safety_criteria=safety_criteria,
+        )
+        if return_safety_violation_rate:
+            metrics = ["k-th", "best", "worst", "mean", "safety_violation_rate"]
+        else:
+            metrics = ["k-th", "best", "worst", "mean"]
+
+        policy_value_dict = self.select_by_policy_value_lower_bound(
+            input_dict,
+            compared_estimators=compared_estimators,
+            behavior_policy_name=behavior_policy_name,
+            dataset_id=dataset_id,
+            return_true_values=True,
+            cis=cis,
+            alpha=ope_alpha,
+            n_bootstrap_samples=n_bootstrap_samples,
+            random_state=random_state,
+        )
+
+        metric_dict = defaultdict(lambda: defaultdict(dict))
+
+        if isinstance(input_dict, MultipleInputDict):
+            if behavior_policy_name is None and dataset_id is None:
+                n_datasets = input_dict.n_datasets
+                total_n_datasets = np.array(list(n_datasets.values())).sum()
+
+                for ci in cis:
+                    for i, estimator in enumerate(compared_estimators):
+                        for j, metric in enumerate(metrics):
+                            topk_metric = np.zeros((max_topk, total_n_datasets))
+
+                            for topk in range(max_topk):
+                                l = 0
+                                for behavior_policy in input_dict.behavior_policy_names:
+                                    for dataset_id_ in range(
+                                        n_datasets[behavior_policy]
+                                    ):
+                                        topk_values = policy_value_dict[
+                                            behavior_policy
+                                        ][dataset_id_][ci][estimator][
+                                            "true_policy_value"
+                                        ][
+                                            : topk + 1
+                                        ]
+
+                                        if metric == "k-th":
+                                            topk_metric[topk, l] = topk_values[-1]
+                                        elif metric == "best":
+                                            topk_metric[topk, l] = topk_values.max()
+                                        elif metric == "worst":
+                                            topk_metric[topk, l] = topk_values.min()
+                                        elif metric == "mean":
+                                            topk_metric[topk, l] = topk_values.mean()
+                                        else:
+                                            topk_metric[topk, l] = (
+                                                topk_values < safety_threshold
+                                            ).sum() / (topk + 1)
+
+                                        l += 1
+
+                            metric_dict[ci][estimator][metric] = topk_metric
+
+                        metric_dict[ci][estimator]["weighted_rrt"] = (
+                            rrt_alpha * metric_dict[ci][estimator]["best"]
+                            + (1 - rrt_alpha) * metric_dict[ci][estimator]["worst"]
+                        )
+                        metric_dict[ci][estimator]["deviation_rrt"] = (
+                            metric_dict[ci][estimator]["best"]
+                            - metric_dict[ci][estimator]["worst"]
+                        )
+
+            elif behavior_policy_name is None and dataset_id is not None:
+                total_n_datasets = len(input_dict.behavior_policy_names)
+
+                for ci in cis:
+                    for i, estimator in enumerate(compared_estimators):
+                        for j, metric in enumerate(metrics):
+                            topk_metric = np.zeros((max_topk, total_n_datasets))
+
+                            for topk in range(max_topk):
+                                for l, behavior_policy in enumerate(
+                                    input_dict.behavior_policy_names
+                                ):
+                                    topk_values = policy_value_dict[behavior_policy][
+                                        ci
+                                    ][estimator]["true_policy_value"][: topk + 1]
+
+                                    if metric == "k-th":
+                                        topk_metric[topk, l] = topk_values[-1]
+                                    elif metric == "best":
+                                        topk_metric[topk, l] = topk_values.max()
+                                    elif metric == "worst":
+                                        topk_metric[topk, l] = topk_values.min()
+                                    elif metric == "mean":
+                                        topk_metric[topk, l] = topk_values.mean()
+                                    else:
+                                        topk_metric[topk, l] = (
+                                            topk_values < safety_threshold
+                                        ).sum() / (topk + 1)
+
+                            metric_dict[ci][estimator][metric] = topk_metric
+
+                        metric_dict[ci][estimator]["weighted_rrt"] = (
+                            rrt_alpha * metric_dict[ci][estimator]["best"]
+                            + (1 - rrt_alpha) * metric_dict[ci][estimator]["worst"]
+                        )
+                        metric_dict[ci][estimator]["deviation_rrt"] = (
+                            metric_dict[ci][estimator]["best"]
+                            - metric_dict[ci][estimator]["worst"]
+                        )
+
+            elif behavior_policy_name is not None and dataset_id is None:
+                total_n_datasets = input_dict.n_datasets[behavior_policy_name]
+
+                for ci in cis:
+                    for i, estimator in enumerate(compared_estimators):
+                        for j, metric in enumerate(metrics):
+                            topk_metric = np.zeros((max_topk, total_n_datasets))
+
+                            for topk in range(max_topk):
+                                for l in range(total_n_datasets):
+                                    topk_values = policy_value_dict[l][ci][estimator][
+                                        "true_policy_value"
+                                    ][: topk + 1]
+
+                                    if metric == "k-th":
+                                        topk_metric[topk, l] = topk_values[-1]
+                                    elif metric == "best":
+                                        topk_metric[topk, l] = topk_values.max()
+                                    elif metric == "worst":
+                                        topk_metric[topk, l] = topk_values.min()
+                                    elif metric == "mean":
+                                        topk_metric[topk, l] = topk_values.mean()
+                                    else:
+                                        topk_metric[topk, l] = (
+                                            topk_values < safety_threshold
+                                        ).sum() / (topk + 1)
+
+                            metric_dict[ci][estimator][metric] = topk_metric
+
+                        metric_dict[ci][estimator]["weighted_rrt"] = (
+                            rrt_alpha * metric_dict[ci][estimator]["best"]
+                            + (1 - rrt_alpha) * metric_dict[ci][estimator]["worst"]
+                        )
+                        metric_dict[ci][estimator]["deviation_rrt"] = (
+                            metric_dict[ci][estimator]["best"]
+                            - metric_dict[ci][estimator]["worst"]
+                        )
+
+            else:
+                total_n_datasets = 1
+
+                for ci in cis:
+                    for i, estimator in enumerate(compared_estimators):
+                        for j, metric in enumerate(metrics):
+                            topk_metric = np.zeros((max_topk, total_n_datasets))
+
+                            for topk in range(max_topk):
+                                topk_values = policy_value_dict[ci][estimator][
+                                    "true_policy_value"
+                                ][: topk + 1]
+
+                                if metric == "k-th":
+                                    topk_metric[topk, 0] = topk_values[-1]
+                                elif metric == "best":
+                                    topk_metric[topk, 0] = topk_values.max()
+                                elif metric == "worst":
+                                    topk_metric[topk, 0] = topk_values.min()
+                                elif metric == "mean":
+                                    topk_metric[topk, 0] = topk_values.mean()
+                                else:
+                                    topk_metric[topk, 0] = (
+                                        topk_values < safety_threshold
+                                    ).sum() / (topk + 1)
+
+                            metric_dict[ci][estimator][metric] = topk_metric
+
+                        metric_dict[ci][estimator]["weighted_rrt"] = (
+                            rrt_alpha * metric_dict[ci][estimator]["best"]
+                            + (1 - rrt_alpha) * metric_dict[ci][estimator]["worst"]
+                        )
+                        metric_dict[ci][estimator]["deviation_rrt"] = (
+                            metric_dict[ci][estimator]["best"]
+                            - metric_dict[ci][estimator]["worst"]
+                        )
+
+        else:
+            for ci in cis:
+                for i, estimator in enumerate(compared_estimators):
+                    for j, metric in enumerate(metrics):
+                        topk_metric = np.zeros((max_topk, 1))
+
+                        for topk in range(max_topk):
+                            topk_values = policy_value_dict[ci][estimator][
+                                "true_policy_value"
+                            ][: topk + 1]
+
+                            if metric == "k-th":
+                                topk_metric[topk, 0] = topk_values[-1]
+                            elif metric == "best":
+                                topk_metric[topk, 0] = topk_values.max()
+                            elif metric == "worst":
+                                topk_metric[topk, 0] = topk_values.min()
+                            elif metric == "mean":
+                                topk_metric[topk, 0] = topk_values.mean()
+                            else:
+                                topk_metric[topk, 0] = (
+                                    topk_values < safety_threshold
+                                ).sum() / (topk + 1)
+
+                        metric_dict[ci][estimator][metric] = topk_metric
+
+                    metric_dict[ci][estimator]["weighted_rrt"] = (
+                        rrt_alpha * metric_dict[ci][estimator]["best"]
+                        + (1 - rrt_alpha) * metric_dict[ci][estimator]["worst"]
+                    )
+                    metric_dict[ci][estimator]["deviation_rrt"] = (
+                        metric_dict[ci][estimator]["best"]
+                        - metric_dict[ci][estimator]["worst"]
+                    )
+
+        metric_dict = defaultdict_to_dict(metric_dict)
+
+        if return_by_dataframe:
+            metrics.extend(["weighted_rrt", "deviation_rrt"])
+            metric_df = []
+
+            for ci in cis:
+                for estimator in compared_estimators:
+                    metric_df_ = pd.DataFrame()
+                    metric_df_["ci"] = ci
+                    metric_df_["estimator"] = estimator
+                    metric_df_["topk"] = np.arange(max_topk)
+
+                    for metric in metrics:
+                        metric_df_[metric] = metric_dict[estimator][metric].mean(axis=1)
+
+                    metric_df.append(metric_df_)
+
+            metric = pd.concat(metric_df, axis=0)
+
+        else:
+            metric = metric_dict
+
+        return metric
+
+    def obtain_topk_conditional_value_at_risk_selected_by_standard_ope(
+        self,
+        input_dict: Union[OPEInputDict, MultipleInputDict],
+        compared_estimators: Optional[List[str]] = None,
+        behavior_policy_name: Optional[str] = None,
+        dataset_id: Optional[int] = None,
+        ope_alpha: float = 0.05,
+        max_topk: Optional[int] = None,
+        return_safety_violation_rate: bool = False,
+        safety_threshold: Optional[float] = None,
+        rrt_alpha: float = 0.5,
+        return_by_dataframe: bool = False,
+    ):
+        """Obtain the topk deployment result selected by standard OPE.
+
+        Parameters
+        -------
+        input_dict: OPEInputDict
+            Dictionary of the OPE inputs for each evaluation policy.
+
+            .. code-block:: python
+
+                key: [evaluation_policy][
+                    evaluation_policy_action,
+                    evaluation_policy_action_dist,
+                    state_action_value_prediction,
+                    initial_state_value_prediction,
+                    state_action_marginal_importance_weight,
+                    state_marginal_importance_weight,
+                    on_policy_policy_value,
+                    gamma,
+                    behavior_policy,
+                    evaluation_policy,
+                    dataset_id,
+                ]
+
+            .. seealso::
+
+                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+
+        compared_estimators: list of str, default=None
+            Name of compared estimators.
+            When `None` is given, all the estimators are compared.
+
+        behavior_policy_name: str, default=None
+            Name of the behavior policy.
+
+        dataset_id: int, default=None
+            Id of the logged dataset.
+            If `None`, the average of the result will be shown.
+
+        ope_alpha: float, default=0.05
+            Proportion of the sided region. The value should be within `[0, 1]`.
+
+        max_topk: int, default=None
+            Maximum number of policies to be deployed.
+            If `None` is given, all the policies will be deployed.
+
+        return_safety_violation_rate: bool, default=False.
+            Whether to calculate and return the safety violate.
+
+        safety_threshold: float, default=None.
+            The policy value required to be a safe policy.
+
+        rrt_alpha: float, default=0.5.
+            The weight parameter of risk-return tradeoff metric. Specifically, weighted_rrt[k] will be calculated as
+            :math:`\\alpha` * best[k] + :math:`(1 - \\alpha)` * worst[k]. The value should be within [0, 1].
+
+        return_by_dataframe: bool, default=False
+            Whether to return the result in a dataframe format.
+
+        """
+        compared_estimators = self._check_compared_estimators(
+            compared_estimators, ope_type="standard_ope"
+        )
+        max_topk, safety_threshold = self._check_topk_inputs(
+            input_dict=input_dict,
+            behavior_policy_name=behavior_policy_name,
+            dataset_id=dataset_id,
+            max_topk=max_topk,
+            safety_threshold=safety_threshold,
+        )
+
+        true_dict = self.obtain_true_selection_result(
+            input_dict,
+            return_conditional_value_at_risk=True,
+            behavior_policy_name=behavior_policy_name,
+            dataset_id=dataset_id,
+            cvar_alpha=ope_alpha,
+        )
+        estimation_dict = self.select_by_policy_value(
+            input_dict,
+            compared_estimators=compared_estimators,
+            behavior_policy_name=behavior_policy_name,
+            dataset_id=dataset_id,
+        )
+
+        return self._obtain_topk_policy_performance(
+            true_dict=true_dict,
+            estimation_dict=estimation_dict,
+            input_dict=input_dict,
+            true_dict_ranking_arg="ranking_by_conditional_value_at_risk",
+            true_dict_value_arg="conditional_value_at_risk",
+            estimation_dict_ranking_arg="estimated_ranking",
+            compared_estimators=compared_estimators,
+            behavior_policy_name=behavior_policy_name,
+            dataset_id=dataset_id,
+            max_topk=max_topk,
+            return_safety_violation_rate=return_safety_violation_rate,
+            safety_threshold=safety_threshold,
+            rrt_alpha=rrt_alpha,
+            return_by_dataframe=return_by_dataframe,
+        )
+
+    def obtain_topk_conditional_value_at_risk_selected_by_cumulative_distribution_ope(
+        self,
+        input_dict: Union[OPEInputDict, MultipleInputDict],
+        compared_estimators: Optional[List[str]] = None,
+        behavior_policy_name: Optional[str] = None,
+        dataset_id: Optional[int] = None,
+        ope_alpha: float = 0.05,
+        max_topk: Optional[int] = None,
+        return_safety_violation_rate: bool = False,
+        safety_threshold: Optional[float] = None,
+        rrt_alpha: float = 0.5,
+        return_by_dataframe: bool = False,
+    ):
+        """Obtain the topk deployment result selected by standard OPE.
+
+        Parameters
+        -------
+        input_dict: OPEInputDict
+            Dictionary of the OPE inputs for each evaluation policy.
+
+            .. code-block:: python
+
+                key: [evaluation_policy][
+                    evaluation_policy_action,
+                    evaluation_policy_action_dist,
+                    state_action_value_prediction,
+                    initial_state_value_prediction,
+                    state_action_marginal_importance_weight,
+                    state_marginal_importance_weight,
+                    on_policy_policy_value,
+                    gamma,
+                    behavior_policy,
+                    evaluation_policy,
+                    dataset_id,
+                ]
+
+            .. seealso::
+
+                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+
+        compared_estimators: list of str, default=None
+            Name of compared estimators.
+            When `None` is given, all the estimators are compared.
+
+        behavior_policy_name: str, default=None
+            Name of the behavior policy.
+
+        dataset_id: int, default=None
+            Id of the logged dataset.
+            If `None`, the average of the result will be shown.
+
+        ope_alpha: float, default=0.05
+            Proportion of the sided region. The value should be within `[0, 1]`.
+
+        max_topk: int, default=None
+            Maximum number of policies to be deployed.
+            If `None` is given, all the policies will be deployed.
+
+        return_safety_violation_rate: bool, default=False.
+            Whether to calculate and return the safety violate.
+
+        safety_threshold: float, default=None.
+            The policy value required to be a safe policy.
+
+        rrt_alpha: float, default=0.5.
+            The weight parameter of risk-return tradeoff metric. Specifically, weighted_rrt[k] will be calculated as
+            :math:`\\alpha` * best[k] + :math:`(1 - \\alpha)` * worst[k]. The value should be within [0, 1].
+
+        return_by_dataframe: bool, default=False
+            Whether to return the result in a dataframe format.
+
+        """
+        compared_estimators = self._check_compared_estimators(
+            compared_estimators, ope_type="cumulative_distribution_ope"
+        )
+        max_topk, safety_threshold = self._check_topk_inputs(
+            input_dict=input_dict,
+            behavior_policy_name=behavior_policy_name,
+            dataset_id=dataset_id,
+            max_topk=max_topk,
+            safety_threshold=safety_threshold,
+        )
+
+        true_dict = self.obtain_true_selection_result(
+            input_dict,
+            return_conditional_value_at_risk=True,
+            behavior_policy_name=behavior_policy_name,
+            dataset_id=dataset_id,
+            cvar_alpha=ope_alpha,
+        )
+        estimation_dict = self.select_by_conditional_value_at_risk(
+            input_dict,
+            compared_estimators=compared_estimators,
+            behavior_policy_name=behavior_policy_name,
+            dataset_id=dataset_id,
+            alpha=ope_alpha,
+        )
+
+        return self._obtain_topk_policy_performance(
+            true_dict=true_dict,
+            estimation_dict=estimation_dict,
+            input_dict=input_dict,
+            true_dict_ranking_arg="ranking_by_conditional_value_at_risk",
+            true_dict_value_arg="conditional_value_at_risk",
+            estimation_dict_ranking_arg="estimated_ranking",
+            compared_estimators=compared_estimators,
+            behavior_policy_name=behavior_policy_name,
+            dataset_id=dataset_id,
+            max_topk=max_topk,
+            return_safety_violation_rate=return_safety_violation_rate,
+            safety_threshold=safety_threshold,
+            rrt_alpha=rrt_alpha,
+            return_by_dataframe=return_by_dataframe,
+        )
+
+    def obtain_topk_lower_quartile_selected_by_standard_ope(
+        self,
+        input_dict: Union[OPEInputDict, MultipleInputDict],
+        compared_estimators: Optional[List[str]] = None,
+        behavior_policy_name: Optional[str] = None,
+        dataset_id: Optional[int] = None,
+        ope_alpha: float = 0.05,
+        max_topk: Optional[int] = None,
+        return_safety_violation_rate: bool = False,
+        safety_threshold: Optional[float] = None,
+        rrt_alpha: float = 0.5,
+        return_by_dataframe: bool = False,
+    ):
+        """Obtain the topk deployment result selected by standard OPE.
+
+        Parameters
+        -------
+        input_dict: OPEInputDict or MultipleInputDict
+            Dictionary of the OPE inputs for each evaluation policy.
+
+            .. code-block:: python
+
+                key: [evaluation_policy][
+                    evaluation_policy_action,
+                    evaluation_policy_action_dist,
+                    state_action_value_prediction,
+                    initial_state_value_prediction,
+                    state_action_marginal_importance_weight,
+                    state_marginal_importance_weight,
+                    on_policy_policy_value,
+                    gamma,
+                    behavior_policy,
+                    evaluation_policy,
+                    dataset_id,
+                ]
+
+            .. seealso::
+
+                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+
+        compared_estimators: list of str, default=None
+            Name of compared estimators.
+            When `None` is given, all the estimators are compared.
+
+        behavior_policy_name: str, default=None
+            Name of the behavior policy.
+
+        dataset_id: int, default=None
+            Id of the logged dataset.
+            If `None`, the average of the result will be shown.
+
+        alpha: float, default=0.05
+            Proportion of the sided region. The value should be within `[0, 0.5]`.
+
+        max_topk: int, default=None
+            Maximum number of policies to be deployed.
+            If `None` is given, all the policies will be deployed.
+
+        return_safety_violation_rate: bool, default=False.
+            Whether to calculate and return the safety violate.
+
+        safety_threshold: float, default=None.
+            The policy value required to be a safe policy.
+
+        rrt_alpha: float, default=0.5.
+            The weight parameter of risk-return tradeoff metric. Specifically, weighted_rrt[k] will be calculated as
+            :math:`\\alpha` * best[k] + :math:`(1 - \\alpha)` * worst[k]. The value should be within [0, 1].
+
+        return_by_dataframe: bool, default=False
+            Whether to return the result in a dataframe format.
+
+        """
+        compared_estimators = self._check_compared_estimators(
+            compared_estimators, ope_type="standard_ope"
+        )
+        max_topk, safety_threshold = self._check_topk_inputs(
+            input_dict=input_dict,
+            behavior_policy_name=behavior_policy_name,
+            dataset_id=dataset_id,
+            max_topk=max_topk,
+            safety_threshold=safety_threshold,
+        )
+
+        true_dict = self.obtain_true_selection_result(
+            input_dict,
+            return_lower_quartile=True,
+            behavior_policy_name=behavior_policy_name,
+            dataset_id=dataset_id,
+            quartile_alpha=ope_alpha,
+        )
+        estimation_dict = self.select_by_policy_value(
+            input_dict,
+            compared_estimators=compared_estimators,
+            behavior_policy_name=behavior_policy_name,
+            dataset_id=dataset_id,
+        )
+
+        return self._obtain_topk_policy_performance(
+            true_dict=true_dict,
+            estimation_dict=estimation_dict,
+            input_dict=input_dict,
+            true_dict_ranking_arg="ranking_by_lower_quartile",
+            true_dict_value_arg="lower_quartile",
+            estimation_dict_ranking_arg="estimated_ranking",
+            compared_estimators=compared_estimators,
+            behavior_policy_name=behavior_policy_name,
+            dataset_id=dataset_id,
+            max_topk=max_topk,
+            return_safety_violation_rate=return_safety_violation_rate,
+            safety_threshold=safety_threshold,
+            rrt_alpha=rrt_alpha,
+            return_by_dataframe=return_by_dataframe,
+        )
+
+    def obtain_topk_lower_quartile_selected_by_cumulative_distribution_ope(
+        self,
+        input_dict: Union[OPEInputDict, MultipleInputDict],
+        compared_estimators: Optional[List[str]] = None,
+        behavior_policy_name: Optional[str] = None,
+        dataset_id: Optional[int] = None,
+        ope_alpha: float = 0.05,
+        max_topk: Optional[int] = None,
+        return_safety_violation_rate: bool = False,
+        safety_threshold: Optional[float] = None,
+        rrt_alpha: float = 0.5,
+        return_by_dataframe: bool = False,
+    ):
+        """Obtain the topk deployment result selected by cumulative distribution OPE.
+
+        Parameters
+        -------
+        input_dict: OPEInputDict
+            Dictionary of the OPE inputs for each evaluation policy.
+
+            .. code-block:: python
+
+                key: [evaluation_policy][
+                    evaluation_policy_action,
+                    evaluation_policy_action_dist,
+                    state_action_value_prediction,
+                    initial_state_value_prediction,
+                    state_action_marginal_importance_weight,
+                    state_marginal_importance_weight,
+                    on_policy_policy_value,
+                    gamma,
+                    behavior_policy,
+                    evaluation_policy,
+                    dataset_id,
+                ]
+
+            .. seealso::
+
+                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+
+        compared_estimators: list of str, default=None
+            Name of compared estimators.
+            When `None` is given, all the estimators are compared.
+
+        behavior_policy_name: str, default=None
+            Name of the behavior policy.
+
+        dataset_id: int, default=None
+            Id of the logged dataset.
+            If `None`, the average of the result will be shown.
+
+        alpha: float, default=0.05
+            Proportion of the sided region. The value should be within `[0, 0.5]`.
+
+        max_topk: int, default=None
+            Maximum number of policies to be deployed.
+            If `None` is given, all the policies will be deployed.
+
+        return_safety_violation_rate: bool, default=False.
+            Whether to calculate and return the safety violate.
+
+        safety_threshold: float, default=None.
+            The policy value required to be a safe policy.
+
+        rrt_alpha: float, default=0.5.
+            The weight parameter of risk-return tradeoff metric. Specifically, weighted_rrt[k] will be calculated as
+            :math:`\\alpha` * best[k] + :math:`(1 - \\alpha)` * worst[k]. The value should be within [0, 1].
+
+        return_by_dataframe: bool, default=False
+            Whether to return the result in a dataframe format.
+
+        """
+        compared_estimators = self._check_compared_estimators(
+            compared_estimators, ope_type="cumulative_distribution_ope"
+        )
+        max_topk, safety_threshold = self._check_topk_inputs(
+            input_dict=input_dict,
+            behavior_policy_name=behavior_policy_name,
+            dataset_id=dataset_id,
+            max_topk=max_topk,
+            safety_threshold=safety_threshold,
+        )
+
+        true_dict = self.obtain_true_selection_result(
+            input_dict,
+            return_lower_quartile=True,
+            behavior_policy_name=behavior_policy_name,
+            dataset_id=dataset_id,
+            quartile_alpha=ope_alpha,
+        )
+        estimation_dict = self.select_by_lower_quartile(
+            input_dict,
+            compared_estimators=compared_estimators,
+            behavior_policy_name=behavior_policy_name,
+            dataset_id=dataset_id,
+            alpha=ope_alpha,
+        )
+
+        return self._obtain_topk_policy_performance(
+            true_dict=true_dict,
+            estimation_dict=estimation_dict,
+            input_dict=input_dict,
+            true_dict_ranking_arg="ranking_by_lower_quartile",
+            true_dict_value_arg="lower_quartile",
+            estimation_dict_ranking_arg="estimated_ranking",
+            compared_estimators=compared_estimators,
+            behavior_policy_name=behavior_policy_name,
+            dataset_id=dataset_id,
+            max_topk=max_topk,
+            return_safety_violation_rate=return_safety_violation_rate,
+            safety_threshold=safety_threshold,
+            rrt_alpha=rrt_alpha,
+            return_by_dataframe=return_by_dataframe,
+        )
+
+    def _obtain_min_max_val_for_topk_visualization(
+        self,
+        true_dict: Dict,
+        input_dict: Union[OPEInputDict, MultipleInputDict],
+        true_dict_value_arg: str,
+        behavior_policy_name: Optional[str] = None,
+        dataset_id: Optional[int] = None,
+    ):
+        """Obtain minimum and maximum policy performance for topk visualization.
+
+        Parameters
+        -------
+        true_dict: dict
+            Dictionary containing the true deployment result.
+
+        input_dict: OPEInputDict or MultipleInputDict
+            Dictionary of the OPE inputs for each evaluation policy.
+
+            .. code-block:: python
+
+                key: [evaluation_policy][
+                    evaluation_policy_action,
+                    evaluation_policy_action_dist,
+                    state_action_value_prediction,
+                    initial_state_value_prediction,
+                    state_action_marginal_importance_weight,
+                    state_marginal_importance_weight,
+                    on_policy_policy_value,
+                    gamma,
+                    behavior_policy,
+                    evaluation_policy,
+                    dataset_id,
+                ]
+
+            .. seealso::
+
+                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+
+        true_dict_value_arg: str
+            Name of the key indicating the true policy performance of the candidate policies in true_dict.
+
+        behavior_policy_name: str, default=None
+            Name of the behavior policy.
+
+        dataset_id: int, default=None
+            Id of the logged dataset.
+            If `None`, the average of the result will be shown.
+
+        """
+        if isinstance(input_dict, MultipleInputDict):
+            if behavior_policy_name is None and dataset_id is None:
+                n_datasets = input_dict.n_datasets
+                total_n_datasets = np.array(list(n_datasets.values())).sum()
+            elif behavior_policy_name is None and dataset_id is not None:
+                total_n_datasets = len(input_dict.behavior_policy_names)
+            elif behavior_policy_name is not None and dataset_id is None:
+                total_n_datasets = input_dict.n_datasets[behavior_policy_name]
+            else:
+                total_n_datasets = 1
 
         if isinstance(input_dict, MultipleInputDict):
             min_vals = np.zeros(total_n_datasets)
@@ -5434,35 +6562,112 @@ class OffPolicySelection:
                 l = 0
                 for behavior_policy, n_datasets in input_dict.n_datasets.items():
                     for dataset_id_ in range(n_datasets):
-                        min_vals[l] = ranking_dict[behavior_policy][dataset_id_][
-                            estimator
+                        min_vals[l] = true_dict[behavior_policy][dataset_id_][
+                            true_dict_value_arg
                         ].min()
-                        max_vals[l] = ranking_dict[behavior_policy][dataset_id_][
-                            estimator
+                        max_vals[l] = true_dict[behavior_policy][dataset_id_][
+                            true_dict_value_arg
                         ].max()
                         l += 1
 
             elif behavior_policy_name is None and dataset_id is not None:
                 for l, behavior_policy in enumerate(input_dict.behavior_policy_names):
-                    min_vals[l] = ranking_dict[behavior_policy][estimator].min()
-                    max_vals[l] = ranking_dict[behavior_policy][estimator].max()
+                    min_vals[l] = true_dict[behavior_policy][true_dict_value_arg].min()
+                    max_vals[l] = true_dict[behavior_policy][true_dict_value_arg].max()
 
             elif behavior_policy_name is not None and dataset_id is None:
                 for l in range(total_n_datasets):
-                    min_vals[l] = ranking_dict[l][estimator].min()
-                    max_vals[l] = ranking_dict[l][estimator].max()
+                    min_vals[l] = true_dict[l][true_dict_value_arg].min()
+                    max_vals[l] = true_dict[l][true_dict_value_arg].max()
 
             else:
-                min_vals[0] = ranking_dict[estimator].min()
-                max_vals[0] = ranking_dict[estimator].max()
+                min_vals[0] = true_dict[true_dict_value_arg].min()
+                max_vals[0] = true_dict[true_dict_value_arg].max()
 
             min_val = min_vals.mean()
             max_val = max_vals.mean()
 
         else:
-            min_val = ranking_dict[estimator].min()
-            max_val = ranking_dict[estimator].max()
+            min_val = true_dict[true_dict_value_arg].min()
+            max_val = true_dict[true_dict_value_arg].max()
 
+        return min_val, max_val
+
+    def _visualize_topk_policy_performance(
+        self,
+        metric_dict: Dict,
+        min_val: float,
+        max_val: float,
+        compared_estimators: Optional[List[str]] = None,
+        metrics: List[str] = ["k-th", "best", "worst", "mean", "safety_violation_rate"],
+        max_topk: Optional[int] = None,
+        safety_threshold: Optional[float] = None,
+        visualize_ci: bool = False,
+        ci: str = "bootstrap",
+        alpha: float = 0.05,
+        n_bootstrap_samples: int = 100,
+        random_state: Optional[int] = None,
+        legend: bool = True,
+        ylabel: str = "policy performance",
+        fig_dir: Optional[Path] = None,
+        fig_name: Optional[str] = None,
+    ):
+        """Visualize top-k policy deployment performances.
+
+        Parameters
+        -------
+        metric_dict: dict
+            Dictionary containing the top-k risk return tradeoff metrics.
+
+        min_val: float
+            Minimum value in the plot.
+
+        max_val: float
+            Maximum value in the plot.
+
+        compared_estimators: list of str, default=None
+            Name of compared estimators.
+            If `None` is given, all the estimators are compared.
+
+        metrics: list of {"k-th", "best", "worst", "mean", "safety_violation_rate"}, default=["k-th", "best", "worst", "mean", "safety_violation_rate"]
+            Indicate which of the policy performance among {"best", "worst", "mean"} and safety violation rate to report.
+            For "k-th", it means that the policy performance of the (estimated) k-th policy will be visualized.
+
+        max_topk: int, default=None
+            Maximum number of policies to be deployed.
+
+        safety_threshold: float, default=None.
+            The policy value required to be a safe policy.
+
+        visualize_ci: bool, default=False
+            Whether to visualize ci.
+
+        ci: {"bootstrap", "hoeffding", "bernstein", "ttest"}, default="bootstrap"
+            Estimation method for confidence intervals.
+
+        alpha: float, default=0.05
+            Significance level. The value should be within `[0, 1)`.
+
+        n_bootstrap_samples: int, default=10000 (> 0)
+            Number of resampling performed in the bootstrap procedure.
+
+        random_state: int, default=None (>= 0)
+            Random state.
+
+        legend: bool, default=True
+            Whether to include a legend in the figure.
+
+        ylabel: str, default="policy performance"
+            Label of the y-axis.
+
+        fig_dir: Path, default=None
+            Path to store the bar figure.
+            If `None` is given, the figure will not be saved.
+
+        fig_name: str, default="topk_policy_value_standard_ope.png"
+            Name of the bar figure.
+
+        """
         yaxis_min_val = (
             min_val if safety_threshold is None else min(min_val, safety_threshold)
         )
@@ -5637,6 +6842,7 @@ class OffPolicySelection:
         dataset_id: Optional[int] = None,
         metrics: List[str] = ["k-th", "best", "worst", "mean", "safety_violation_rate"],
         max_topk: Optional[int] = None,
+        safety_threshold: Optional[float] = None,
         safety_criteria: Optional[float] = None,
         visualize_ci: bool = False,
         plot_ci: str = "bootstrap",
@@ -5693,9 +6899,13 @@ class OffPolicySelection:
             Maximum number of policies to be deployed.
             If `None` is given, all the policies will be deployed.
 
+        safety_threshold: float, default=None.
+            The policy value required to be a safe policy.
+
         safety_criteria: float, default=None
             The relative policy value required to be a safe policy.
             For example, when 0.9 is given, candidate policy must exceed 90\\% of the behavior policy performance.
+            Only applicable when using a single behavior policy.
 
         visualize_ci: bool, default=False
             Whether to visualize ci. (Only applicable when :class:`MultipleInputDict` is given.)
@@ -5726,12 +6936,13 @@ class OffPolicySelection:
         compared_estimators = self._check_compared_estimators(
             compared_estimators, ope_type="standard_ope"
         )
-        max_topk, safety_threshold = self._check_topk_visualization_inputs(
+        max_topk, safety_threshold = self._check_topk_inputs(
             input_dict=input_dict,
             behavior_policy_name=behavior_policy_name,
             dataset_id=dataset_id,
             max_topk=max_topk,
             metrics=metrics,
+            safety_threshold=safety_threshold,
             safety_criteria=safety_criteria,
         )
         self._check_basic_visualization_inputs(fig_dir=fig_dir, fig_name=fig_name)
@@ -5748,7 +6959,7 @@ class OffPolicySelection:
             dataset_id=dataset_id,
         )
 
-        self._visualize_topk_policy_performance(
+        metric_dict = self._obtain_topk_policy_performance(
             true_dict=true_dict,
             estimation_dict=estimation_dict,
             input_dict=input_dict,
@@ -5758,6 +6969,24 @@ class OffPolicySelection:
             compared_estimators=compared_estimators,
             behavior_policy_name=behavior_policy_name,
             dataset_id=dataset_id,
+            max_topk=max_topk,
+            return_safety_violation_rate=("safety_violation_rate" in metrics),
+            safety_threshold=safety_threshold,
+        )
+
+        min_val, max_val = self._obtain_min_max_val_for_topk_visualization(
+            true_dict=true_dict,
+            input_dict=input_dict,
+            true_dict_value_arg="policy_value",
+            behavior_policy_name=behavior_policy_name,
+            dataset_id=dataset_id,
+        )
+
+        self._visualize_topk_policy_performance(
+            metric_dict=metric_dict,
+            min_val=min_val,
+            max_val=max_val,
+            compared_estimators=compared_estimators,
             metrics=metrics,
             max_topk=max_topk,
             safety_threshold=safety_threshold,
@@ -5780,6 +7009,7 @@ class OffPolicySelection:
         dataset_id: Optional[int] = None,
         metrics: List[str] = ["k-th", "best", "worst", "mean", "safety_violation_rate"],
         max_topk: Optional[int] = None,
+        safety_threshold: Optional[float] = None,
         safety_criteria: Optional[float] = None,
         visualize_ci: bool = False,
         plot_ci: str = "bootstrap",
@@ -5836,6 +7066,9 @@ class OffPolicySelection:
             Maximum number of policies to be deployed.
             If `None` is given, all the policies will be deployed.
 
+        safety_threshold: float, default=None.
+            The policy value required to be a safe policy.
+
         safety_criteria: float, default=None
             The relative policy value required to be a safe policy.
             For example, when 0.9 is given, candidate policy must exceed 90\\% of the behavior policy performance.
@@ -5869,12 +7102,13 @@ class OffPolicySelection:
         compared_estimators = self._check_compared_estimators(
             compared_estimators, ope_type="cumulative_distribution_ope"
         )
-        max_topk, safety_threshold = self._check_topk_visualization_inputs(
+        max_topk, safety_threshold = self._check_topk_inputs(
             input_dict=input_dict,
             behavior_policy_name=behavior_policy_name,
             dataset_id=dataset_id,
             max_topk=max_topk,
             metrics=metrics,
+            safety_threshold=safety_threshold,
             safety_criteria=safety_criteria,
         )
         self._check_basic_visualization_inputs(fig_dir=fig_dir, fig_name=fig_name)
@@ -5891,7 +7125,7 @@ class OffPolicySelection:
             dataset_id=dataset_id,
         )
 
-        self._visualize_topk_policy_performance(
+        metric_dict = self._obtain_topk_policy_performance(
             true_dict=true_dict,
             estimation_dict=estimation_dict,
             input_dict=input_dict,
@@ -5901,6 +7135,24 @@ class OffPolicySelection:
             compared_estimators=compared_estimators,
             behavior_policy_name=behavior_policy_name,
             dataset_id=dataset_id,
+            max_topk=max_topk,
+            return_safety_violation_rate=("safety_violation_rate" in metrics),
+            safety_threshold=safety_threshold,
+        )
+
+        min_val, max_val = self._obtain_min_max_val_for_topk_visualization(
+            true_dict=true_dict,
+            input_dict=input_dict,
+            true_dict_value_arg="policy_value",
+            behavior_policy_name=behavior_policy_name,
+            dataset_id=dataset_id,
+        )
+
+        self._visualize_topk_policy_performance(
+            metric_dict=metric_dict,
+            min_val=min_val,
+            max_val=max_val,
+            compared_estimators=compared_estimators,
             metrics=metrics,
             max_topk=max_topk,
             safety_threshold=safety_threshold,
@@ -5923,6 +7175,7 @@ class OffPolicySelection:
         dataset_id: Optional[int] = None,
         metrics: List[str] = ["k-th", "best", "worst", "mean", "safety_violation_rate"],
         max_topk: Optional[int] = None,
+        safety_threshold: Optional[float] = None,
         safety_criteria: Optional[float] = None,
         ope_cis: List[str] = ["bootstrap"],
         ope_alpha: float = 0.05,
@@ -5982,6 +7235,9 @@ class OffPolicySelection:
             Maximum number of policies to be deployed.
             If `None` is given, all the policies will be deployed.
 
+        safety_threshold: float, default=None.
+            The policy value required to be a safe policy.
+
         safety_criteria: float, default=None
             The relative policy value required to be a safe policy.
             For example, when 0.9 is given, candidate policy must exceed 90\\% of the behavior policy performance.
@@ -6024,241 +7280,44 @@ class OffPolicySelection:
         compared_estimators = self._check_compared_estimators(
             compared_estimators, ope_type="standard_ope"
         )
-        max_topk, safety_threshold = self._check_topk_visualization_inputs(
+        max_topk, safety_threshold = self._check_topk_inputs(
             input_dict=input_dict,
             behavior_policy_name=behavior_policy_name,
             dataset_id=dataset_id,
             max_topk=max_topk,
             metrics=metrics,
+            safety_threshold=safety_threshold,
             safety_criteria=safety_criteria,
         )
         self._check_basic_visualization_inputs(fig_dir=fig_dir, fig_name=fig_name)
 
-        policy_value_dict = self.select_by_policy_value_lower_bound(
+        true_dict = self.obtain_true_selection_result(
             input_dict,
+            behavior_policy_name=behavior_policy_name,
+            dataset_id=dataset_id,
+        )
+        metric_dict = self.obtain_topk_policy_value_selected_by_lower_bound(
+            input_dict=input_dict,
             compared_estimators=compared_estimators,
             behavior_policy_name=behavior_policy_name,
             dataset_id=dataset_id,
-            return_true_values=True,
+            max_topk=max_topk,
+            return_safety_violation_rate=("safety_violation_rate" in metrics),
+            safety_threshold=safety_threshold,
+            safety_criteria=safety_criteria,
             cis=ope_cis,
             alpha=ope_alpha,
             n_bootstrap_samples=ope_n_bootstrap_samples,
             random_state=random_state,
         )
 
-        metric_dict = defaultdict(lambda: defaultdict(dict))
-
-        if isinstance(input_dict, MultipleInputDict):
-            if behavior_policy_name is None and dataset_id is None:
-                for ope_ci in ope_cis:
-                    for i, estimator in enumerate(compared_estimators):
-                        for j, metric in enumerate(metrics):
-                            n_datasets = input_dict.n_datasets
-                            total_n_datasets = 0
-
-                            for n_datasets_ in n_datasets.values():
-                                total_n_datasets += n_datasets_
-
-                            topk_metric = np.zeros((max_topk, total_n_datasets))
-
-                            for topk in range(max_topk):
-                                l = 0
-                                for behavior_policy in input_dict.behavior_policy_names:
-                                    for dataset_id_ in range(
-                                        n_datasets[behavior_policy]
-                                    ):
-                                        topk_values = policy_value_dict[
-                                            behavior_policy
-                                        ][dataset_id_][ope_ci][estimator][
-                                            "true_policy_value"
-                                        ][
-                                            : topk + 1
-                                        ]
-
-                                        if metric == "k-th":
-                                            topk_metric[topk, l] = topk_values[-1]
-                                        elif metric == "best":
-                                            topk_metric[topk, l] = topk_values.max()
-                                        elif metric == "worst":
-                                            topk_metric[topk, l] = topk_values.min()
-                                        elif metric == "mean":
-                                            topk_metric[topk, l] = topk_values.mean()
-                                        else:
-                                            topk_metric[topk, l] = (
-                                                topk_values < safety_threshold
-                                            ).sum() / (topk + 1)
-
-                                        l += 1
-
-                            metric_dict[ope_ci][estimator][metric] = topk_metric
-
-            elif behavior_policy_name is None and dataset_id is not None:
-                for ope_ci in ope_cis:
-                    for i, estimator in enumerate(compared_estimators):
-                        for j, metric in enumerate(metrics):
-                            total_n_datasets = len(input_dict.behavior_policy_names)
-                            topk_metric = np.zeros((max_topk, total_n_datasets))
-
-                            for topk in range(max_topk):
-                                for l, behavior_policy in enumerate(
-                                    input_dict.behavior_policy_names
-                                ):
-                                    topk_values = policy_value_dict[behavior_policy][
-                                        ope_ci
-                                    ][estimator]["true_policy_value"][: topk + 1]
-
-                                    if metric == "k-th":
-                                        topk_metric[topk, l] = topk_values[-1]
-                                    elif metric == "best":
-                                        topk_metric[topk, l] = topk_values.max()
-                                    elif metric == "worst":
-                                        topk_metric[topk, l] = topk_values.min()
-                                    elif metric == "mean":
-                                        topk_metric[topk, l] = topk_values.mean()
-                                    else:
-                                        topk_metric[topk, l] = (
-                                            topk_values < safety_threshold
-                                        ).sum() / (topk + 1)
-
-                            metric_dict[ope_ci][estimator][metric] = topk_metric
-
-            elif behavior_policy_name is not None and dataset_id is None:
-                for ope_ci in ope_cis:
-                    for i, estimator in enumerate(compared_estimators):
-                        for j, metric in enumerate(metrics):
-                            total_n_datasets = input_dict.n_datasets[
-                                behavior_policy_name
-                            ]
-                            topk_metric = np.zeros((max_topk, total_n_datasets))
-
-                            for topk in range(max_topk):
-                                for l in range(total_n_datasets):
-                                    topk_values = policy_value_dict[l][ope_ci][
-                                        estimator
-                                    ]["true_policy_value"][: topk + 1]
-
-                                    if metric == "k-th":
-                                        topk_metric[topk, l] = topk_values[-1]
-                                    elif metric == "best":
-                                        topk_metric[topk, l] = topk_values.max()
-                                    elif metric == "worst":
-                                        topk_metric[topk, l] = topk_values.min()
-                                    elif metric == "mean":
-                                        topk_metric[topk, l] = topk_values.mean()
-                                    else:
-                                        topk_metric[topk, l] = (
-                                            topk_values < safety_threshold
-                                        ).sum() / (topk + 1)
-
-                            metric_dict[ope_ci][estimator][metric] = topk_metric
-
-            else:
-                for ope_ci in ope_cis:
-                    for i, estimator in enumerate(compared_estimators):
-                        for j, metric in enumerate(metrics):
-                            total_n_datasets = 1
-                            topk_metric = np.zeros((max_topk, total_n_datasets))
-
-                            for topk in range(max_topk):
-                                topk_values = policy_value_dict[ope_ci][estimator][
-                                    "true_policy_value"
-                                ][: topk + 1]
-
-                                if metric == "k-th":
-                                    topk_metric[topk, 0] = topk_values[-1]
-                                elif metric == "best":
-                                    topk_metric[topk, 0] = topk_values.max()
-                                elif metric == "worst":
-                                    topk_metric[topk, 0] = topk_values.min()
-                                elif metric == "mean":
-                                    topk_metric[topk, 0] = topk_values.mean()
-                                else:
-                                    topk_metric[topk, 0] = (
-                                        topk_values < safety_threshold
-                                    ).sum() / (topk + 1)
-
-                            metric_dict[ope_ci][estimator][metric] = topk_metric
-
-        else:
-            for ope_ci in ope_cis:
-                for i, estimator in enumerate(compared_estimators):
-                    for j, metric in enumerate(metrics):
-                        topk_metric = np.zeros((max_topk, 1))
-
-                        for topk in range(max_topk):
-                            topk_values = policy_value_dict[ope_ci][estimator][
-                                "true_policy_value"
-                            ][: topk + 1]
-
-                            if metric == "k-th":
-                                topk_metric[topk, 0] = topk_values[-1]
-                            elif metric == "best":
-                                topk_metric[topk, 0] = topk_values.max()
-                            elif metric == "worst":
-                                topk_metric[topk, 0] = topk_values.min()
-                            elif metric == "mean":
-                                topk_metric[topk, 0] = topk_values.mean()
-                            else:
-                                topk_metric[topk, 0] = (
-                                    topk_values < safety_threshold
-                                ).sum() / (topk + 1)
-
-                        metric_dict[ope_ci][estimator][metric] = topk_metric
-
-        metric_dict = defaultdict_to_dict(metric_dict)
-
-        if isinstance(input_dict, MultipleInputDict):
-            min_vals = np.zeros(total_n_datasets)
-            max_vals = np.zeros(total_n_datasets)
-
-            if behavior_policy_name is None and dataset_id is None:
-                l = 0
-                for behavior_policy, n_datasets in input_dict.n_datasets.items():
-                    for dataset_id_ in range(n_datasets):
-                        min_vals[l] = policy_value_dict[behavior_policy][dataset_id_][
-                            ope_cis[0]
-                        ][estimator]["true_policy_value"].min()
-                        max_vals[l] = policy_value_dict[behavior_policy][dataset_id_][
-                            ope_cis[0]
-                        ][estimator]["true_policy_value"].max()
-                        l += 1
-
-            elif behavior_policy_name is None and dataset_id is not None:
-                for l, behavior_policy in enumerate(input_dict.behavior_policy_names):
-                    min_vals[l] = policy_value_dict[behavior_policy][ope_cis[0]][
-                        estimator
-                    ]["true_policy_value"].min()
-                    max_vals[l] = policy_value_dict[behavior_policy][ope_cis[0]][
-                        estimator
-                    ]["true_policy_value"].max()
-
-            elif behavior_policy_name is not None and dataset_id is None:
-                for l in range(total_n_datasets):
-                    min_vals[l] = policy_value_dict[l][ope_cis[0]][estimator][
-                        "true_policy_value"
-                    ].min()
-                    max_vals[l] = policy_value_dict[l][ope_cis[0]][estimator][
-                        "true_policy_value"
-                    ].max()
-
-            else:
-                min_vals[0] = policy_value_dict[ope_cis[0]][estimator][
-                    "true_policy_value"
-                ].min()
-                max_vals[0] = policy_value_dict[ope_cis[0]][estimator][
-                    "true_policy_value"
-                ].max()
-
-            min_val = min_vals.mean()
-            max_val = max_vals.mean()
-
-        else:
-            min_val = policy_value_dict[ope_cis[0]][estimator][
-                "true_policy_value"
-            ].min()
-            max_val = policy_value_dict[ope_cis[0]][estimator][
-                "true_policy_value"
-            ].max()
+        min_val, max_val = self._obtain_min_max_val_for_topk_visualization(
+            true_dict=true_dict,
+            input_dict=input_dict,
+            true_dict_value_arg="policy_value",
+            behavior_policy_name=behavior_policy_name,
+            dataset_id=dataset_id,
+        )
 
         yaxis_min_val = (
             min_val if safety_threshold is None else min(min_val, safety_threshold)
@@ -6697,7 +7756,7 @@ class OffPolicySelection:
         compared_estimators = self._check_compared_estimators(
             compared_estimators, ope_type="standard_ope"
         )
-        max_topk, safety_threshold = self._check_topk_visualization_inputs(
+        max_topk, safety_threshold = self._check_topk_inputs(
             input_dict=input_dict,
             behavior_policy_name=behavior_policy_name,
             dataset_id=dataset_id,
@@ -6721,7 +7780,7 @@ class OffPolicySelection:
             dataset_id=dataset_id,
         )
 
-        self._visualize_topk_policy_performance(
+        metric_dict = self._obtain_topk_policy_performance(
             true_dict=true_dict,
             estimation_dict=estimation_dict,
             input_dict=input_dict,
@@ -6731,6 +7790,24 @@ class OffPolicySelection:
             compared_estimators=compared_estimators,
             behavior_policy_name=behavior_policy_name,
             dataset_id=dataset_id,
+            max_topk=max_topk,
+            return_safety_violation_rate=("safety_violation_rate" in metrics),
+            safety_threshold=safety_threshold,
+        )
+
+        min_val, max_val = self._obtain_min_max_val_for_topk_visualization(
+            true_dict=true_dict,
+            input_dict=input_dict,
+            true_dict_value_arg="conditional_value_at_risk",
+            behavior_policy_name=behavior_policy_name,
+            dataset_id=dataset_id,
+        )
+
+        self._visualize_topk_policy_performance(
+            metric_dict=metric_dict,
+            min_val=min_val,
+            max_val=max_val,
+            compared_estimators=compared_estimators,
             metrics=metrics,
             max_topk=max_topk,
             safety_threshold=safety_threshold,
@@ -6845,7 +7922,7 @@ class OffPolicySelection:
         compared_estimators = self._check_compared_estimators(
             compared_estimators, ope_type="cumulative_distribution_ope"
         )
-        max_topk, safety_threshold = self._check_topk_visualization_inputs(
+        max_topk, safety_threshold = self._check_topk_inputs(
             input_dict=input_dict,
             behavior_policy_name=behavior_policy_name,
             dataset_id=dataset_id,
@@ -6870,7 +7947,7 @@ class OffPolicySelection:
             alpha=ope_alpha,
         )
 
-        self._visualize_topk_policy_performance(
+        metric_dict = self._obtain_topk_policy_performance(
             true_dict=true_dict,
             estimation_dict=estimation_dict,
             input_dict=input_dict,
@@ -6880,6 +7957,24 @@ class OffPolicySelection:
             compared_estimators=compared_estimators,
             behavior_policy_name=behavior_policy_name,
             dataset_id=dataset_id,
+            max_topk=max_topk,
+            return_safety_violation_rate=("safety_violation_rate" in metrics),
+            safety_threshold=safety_threshold,
+        )
+
+        min_val, max_val = self._obtain_min_max_val_for_topk_visualization(
+            true_dict=true_dict,
+            input_dict=input_dict,
+            true_dict_value_arg="conditional_value_at_risk",
+            behavior_policy_name=behavior_policy_name,
+            dataset_id=dataset_id,
+        )
+
+        self._visualize_topk_policy_performance(
+            metric_dict=metric_dict,
+            min_val=min_val,
+            max_val=max_val,
+            compared_estimators=compared_estimators,
             metrics=metrics,
             max_topk=max_topk,
             safety_threshold=safety_threshold,
@@ -6994,7 +8089,7 @@ class OffPolicySelection:
         compared_estimators = self._check_compared_estimators(
             compared_estimators, ope_type="standard_ope"
         )
-        max_topk, safety_threshold = self._check_topk_visualization_inputs(
+        max_topk, safety_threshold = self._check_topk_inputs(
             input_dict=input_dict,
             behavior_policy_name=behavior_policy_name,
             dataset_id=dataset_id,
@@ -7018,7 +8113,7 @@ class OffPolicySelection:
             dataset_id=dataset_id,
         )
 
-        self._visualize_topk_policy_performance(
+        metric_dict = self._obtain_topk_policy_performance(
             true_dict=true_dict,
             estimation_dict=estimation_dict,
             input_dict=input_dict,
@@ -7028,6 +8123,24 @@ class OffPolicySelection:
             compared_estimators=compared_estimators,
             behavior_policy_name=behavior_policy_name,
             dataset_id=dataset_id,
+            max_topk=max_topk,
+            return_safety_violation_rate=("safety_violation_rate" in metrics),
+            safety_threshold=safety_threshold,
+        )
+
+        min_val, max_val = self._obtain_min_max_val_for_topk_visualization(
+            true_dict=true_dict,
+            input_dict=input_dict,
+            true_dict_value_arg="lower_quartile",
+            behavior_policy_name=behavior_policy_name,
+            dataset_id=dataset_id,
+        )
+
+        self._visualize_topk_policy_performance(
+            metric_dict=metric_dict,
+            min_val=min_val,
+            max_val=max_val,
+            compared_estimators=compared_estimators,
             metrics=metrics,
             max_topk=max_topk,
             safety_threshold=safety_threshold,
@@ -7142,7 +8255,7 @@ class OffPolicySelection:
         compared_estimators = self._check_compared_estimators(
             compared_estimators, ope_type="cumulative_distribution_ope"
         )
-        max_topk, safety_threshold = self._check_topk_visualization_inputs(
+        max_topk, safety_threshold = self._check_topk_inputs(
             input_dict=input_dict,
             behavior_policy_name=behavior_policy_name,
             dataset_id=dataset_id,
@@ -7167,7 +8280,7 @@ class OffPolicySelection:
             alpha=ope_alpha,
         )
 
-        self._visualize_topk_policy_performance(
+        metric_dict = self._obtain_topk_policy_performance(
             true_dict=true_dict,
             estimation_dict=estimation_dict,
             input_dict=input_dict,
@@ -7177,6 +8290,24 @@ class OffPolicySelection:
             compared_estimators=compared_estimators,
             behavior_policy_name=behavior_policy_name,
             dataset_id=dataset_id,
+            max_topk=max_topk,
+            return_safety_violation_rate=("safety_violation_rate" in metrics),
+            safety_threshold=safety_threshold,
+        )
+
+        min_val, max_val = self._obtain_min_max_val_for_topk_visualization(
+            true_dict=true_dict,
+            input_dict=input_dict,
+            true_dict_value_arg="lower_quartile",
+            behavior_policy_name=behavior_policy_name,
+            dataset_id=dataset_id,
+        )
+
+        self._visualize_topk_policy_performance(
+            metric_dict=metric_dict,
+            min_val=min_val,
+            max_val=max_val,
+            compared_estimators=compared_estimators,
             metrics=metrics,
             max_topk=max_topk,
             safety_threshold=safety_threshold,
