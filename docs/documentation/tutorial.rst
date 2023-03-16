@@ -47,7 +47,8 @@ by dealing with the distribution shift between :math:`\pi_0` and :math:`\pi`.
     * :doc:`Quickstart <quickstart>` and :doc:`related tutorials <_autogallery/basic_ope/index>`
 
 
-
+Standard OPE estimators
+----------
 
 .. _implementation_dm:
 
@@ -62,16 +63,21 @@ It first learns the Q-function and then leverages the learned Q-function as foll
 
 where :math:`\mathcal{D}=\{\{(s_t, a_t, r_t)\}_{t=0}^T\}_{i=1}^n` is the logged dataset with :math:`n` trajectories of data.
 :math:`T` indicates step per episode. :math:`\hat{Q}(s_t, a_t)` is the estimated state-action value and :math:`\hat{V}(s_t)` is the estimated state value.
+DM has low variance, but can incur bias due to approximation errors.
 
 .. image:: ./images/bias_dm.png
-    :scale: 47%
-    :align: left
+    :scale: 45%
+    :align: center
+
+|
 
 .. image:: ./images/variance_dm.png
-    :scale: 47%
-    :align: right
+    :scale: 45%
+    :align: center
 
-DM has low variance, but can incur bias due to approximation errors.
+|
+The variance of DM is smaller than that of TIS. On the other hand, the bias of DM is larger than that of TIS.
+
 
     * :class:`DiscreteDirectMethod`
     * :class:`ContinuousDirectMethod`
@@ -97,14 +103,18 @@ TIS enables an unbiased estimation of the policy value. However, when the trajec
 due to the product of importance weights.
 
 .. image:: ./images/bias_tis.png
-    :scale: 47%
-    :align: left
+    :scale: 45%
+    :align: center
+
+|
 
 .. image:: ./images/variance_tis.png
-    :scale: 47%
-    :align: right
+    :scale: 45%
+    :align: center
 
-aaaaa
+|
+
+TIS tends to have less vias than DM, and the bias decreases as the number of trajectories increases. On the other hand, variance of TIS tends to be larger than that of DM, and the larger the number of trajectories, the larger the variance.
     
     * :class:`DiscreteTrajectoryWiseImportanceSampling`
     * :class:`ContinuousTrajectoryWiseImportanceSampling`
@@ -123,6 +133,8 @@ PDIS only considers the importance weight of the past interactions when estimati
 
 where :math:`w_{0:t} := \prod_{t'=0}^t (\pi_e(a_{t'} | s_{t'}) / \pi_b(a_{t'} | s_{t'}))` is the importance weight of past interactions.
 
+Variance Analysis
+
 .. math::
 
     \mathbb{V}_{t}[\hat{J}_{\mathrm{PDIS}}^{H+1-t}(\pi; \mathcal{D})] = \mathbb{V}[J(s_t)] + \mathbb{E}_t[{w_t}^2\mathbb{V}_{t+1}[r_t]] + \mathbb{E}_t[\gamma^2{w_t}^2\mathbb{V}_{t+1}[\hat{J}_{\mathrm{PDIS}}^{H-t}(\pi; \mathcal{D})]] + \mathbb{E}_t[\mathbb{V}_t[w_t]Q(s_t, a_t)]
@@ -140,10 +152,12 @@ where :math:`w_{t} := \pi_e(a_{t'} | s_{t'}) / \pi_b(a_{t'} | s_{t'})`
 PDIS remains unbiased while reducing the variance of TIS. However, when :math:`t` is large, PDIS still suffers from high variance.
 
 .. image:: ./images/variance_pdis.png
-    :scale: 50%
+    :scale: 45%
     :align: center
 
-aaaaa
+|
+
+The PDIS has less variance than the TIS. When the number of trajectories is large, it still suffers from variance.
 
     * :class:`DiscretePerDecisionImportanceSampling`
     * :class:`ContinuousPerDecisionWiseImportanceSampling`
@@ -160,7 +174,7 @@ It introduces :math:`\hat{Q}` as a baseline estimation in the recursive form of 
     \hat{J}_{\mathrm{DR}} (\pi; \mathcal{D})
     := \mathbb{E}_{n} \left[\sum_{t=0}^{T-1} \gamma^t (w_{0:t} (r_t - \hat{Q}(s_t, a_t)) + w_{0:t-1} \mathbb{E}_{a \sim \pi(a | s_t)}[\hat{Q}(s_t, a)])\right],
 
-variance
+Variance Analysis
 
 .. math::
 
@@ -173,10 +187,12 @@ DR is unbiased and DR reduces the variance of PDIS when :math:`\hat{Q}(\cdot)` i
 However, when the importance weight is quite large, it may still suffer from a high variance.
 
 .. image:: ./images/variance_dr.png
-    :scale: 50%
+    :scale: 45%
     :align: center
 
-aaaa
+|
+
+The DR has less variance than the PDIS. When the number of trajectories is large, it still suffers from variance. 
 
     * :class:`DiscreteDoublyRobust`
     * :class:`ContinuousDoublyRobust`
