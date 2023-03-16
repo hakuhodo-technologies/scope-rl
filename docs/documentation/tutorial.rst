@@ -63,6 +63,14 @@ It first learns the Q-function and then leverages the learned Q-function as foll
 where :math:`\mathcal{D}=\{\{(s_t, a_t, r_t)\}_{t=0}^T\}_{i=1}^n` is the logged dataset with :math:`n` trajectories of data.
 :math:`T` indicates step per episode. :math:`\hat{Q}(s_t, a_t)` is the estimated state-action value and :math:`\hat{V}(s_t)` is the estimated state value.
 
+.. image:: ./images/bias_dm.png
+    :scale: 47%
+    :align: left
+
+.. image:: ./images/variance_dm.png
+    :scale: 47%
+    :align: right
+
 DM has low variance, but can incur bias due to approximation errors.
 
     * :class:`DiscreteDirectMethod`
@@ -88,6 +96,16 @@ where :math:`w_{0:T-1} := \prod_{t=0}^{T-1} (\pi(a_t | s_t) / \pi_0(a_t | s_t))`
 TIS enables an unbiased estimation of the policy value. However, when the trajectory length :math:`T` is large, TIS suffers from high variance
 due to the product of importance weights.
 
+.. image:: ./images/bias_tis.png
+    :scale: 47%
+    :align: left
+
+.. image:: ./images/variance_tis.png
+    :scale: 47%
+    :align: right
+
+aaaaa
+    
     * :class:`DiscreteTrajectoryWiseImportanceSampling`
     * :class:`ContinuousTrajectoryWiseImportanceSampling`
 
@@ -121,6 +139,12 @@ where :math:`w_{t} := \pi_e(a_{t'} | s_{t'}) / \pi_b(a_{t'} | s_{t'})`
 
 PDIS remains unbiased while reducing the variance of TIS. However, when :math:`t` is large, PDIS still suffers from high variance.
 
+.. image:: ./images/variance_pdis.png
+    :scale: 50%
+    :align: center
+
+aaaaa
+
     * :class:`DiscretePerDecisionImportanceSampling`
     * :class:`ContinuousPerDecisionWiseImportanceSampling`
 
@@ -144,11 +168,15 @@ variance
 
 The first 3 terms are he same as PDIS, but 4th term differs from PDIS.
 
-DR reduces the variance of PDIS when :math:`\hat{Q}(\cdot)` is reasonably accurate to satisfy :math:`0 < \hat{Q}(\cdot) < 2 Q(\cdot)`. 
-
-DR is unbiased
+DR is unbiased and DR reduces the variance of PDIS when :math:`\hat{Q}(\cdot)` is reasonably accurate to satisfy :math:`0 < \hat{Q}(\cdot) < 2 Q(\cdot)`. 
 
 However, when the importance weight is quite large, it may still suffer from a high variance.
+
+.. image:: ./images/variance_dr.png
+    :scale: 50%
+    :align: center
+
+aaaa
 
     * :class:`DiscreteDoublyRobust`
     * :class:`ContinuousDoublyRobust`
