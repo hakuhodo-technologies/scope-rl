@@ -6,51 +6,50 @@ import numpy as np
 from sklearn.utils import check_scalar, check_random_state
 
 from .base import BaseRewardFunction
-from .base import BaseStateTransition
-from ...types import Action
+from .base import BaseStateTransitionFunction
+from ...utils import sigmoid
 
 
 @dataclass
-class StateTransition(BaseStateTransition):
-    """Class to define state_transition.
+class StateTransitionFunction(BaseStateTransitionFunction):
+    """Class to define the state transition function.
 
-    Imported as: :class:`syntheticgym.envs.`
+    Imported as: :class:`syntheticgym.envs.StateTransitionFunction`
 
     Tip
     -------
-    Use :class:`BaseStateTransition` to define custom StateTransition.
+    Use :class:`BaseStateTransitionFunction` to define custom StateTransitionFunction.
 
     Parameters
     -------
-    state_dim: int = 5
-        Dimension of state
+    state_dim: int
+        Dimension of the state.
 
-    action_type: str = "continuous"
-        Action type (i.e., countinuous / discrete).
-
-    action_dim: int = 3
-        Dimension of action.
-
-    action_context: ndarray of shape (n_actions, action_dim), default=None
-        Feature vectors that characterizes each action.
+    action_dim: int
+        Dimension of the action (context).
 
     random_state: int, default=None (>= 0)
         Random state.
 
-    References
-    -------
-    Sarah Dean, Jamie Morgenstern.
-    "Preference Dynamics Under Personalized Recommendations." 2022.
-
     """
 
-    state_dim: int = 5
-    action_type: str = "continuous"  # "discrete"
-    action_dim: int = 3
-    action_context: Optional[np.ndarray] = (None,)
+    state_dim: int
+    action_dim: int
     random_state: Optional[int] = None
 
     def __post_init__(self):
+        check_scalar(
+            self.state_dim,
+            name="state_dim",
+            target_type=int,
+            min_val=1,
+        )
+        check_scalar(
+            self.action_dim,
+            name="action_dim",
+            target_type=int,
+            min_val=1,
+        )
         self.random_ = check_random_state(self.random_state)
 
         self.state_coef = self.random_.normal(
@@ -66,54 +65,39 @@ class StateTransition(BaseStateTransition):
     def step(
         self,
         state: np.ndarray,
-        action: Action,
+        action: np.ndarray,
     ) -> np.ndarray:
-        """Function that determines how to update the state
+        """Update the state based on the presented action.
 
         Parameters
         -------
         state: array-like of shape (state_dim, )
-            When the true state is unobservable, you can gain observation instead of state.
+            Current state.
 
-        action: {int, array-like of shape (action_dim, )} (>= 0)
-            Indicating which action to present to the context.
+        action: array-like of shape (action_dim, )
+            Indicating the action presented by the agent.
 
-        Returns
+        Return
         -------
         state: array-like of shape (state_dim, )
-            When the true state is unobservable, you can gain observation instead of state.
+            Next state.
 
         """
-        if self.action_type == "continuous":
-            state = (
-                self.state_coef @ state / self.state_dim
-                + self.action_coef @ action / self.action_dim
-                + (self.state_action_coef @ action / self.action_dim).T
-                @ state
-                / self.state_dim
-            )
+        state = state / self.state_dim
+        action = action / self.action_dim
 
-        elif self.action_type == "discrete":
-            state = (
-                self.state_coef @ state / self.state_dim
-                + self.action_coef @ self.action_context[action] / self.action_dim
-                + (
-                    self.state_action_coef
-                    @ self.action_context[action]
-                    / self.action_dim
-                ).T
-                @ state
-                / self.state_dim
-            )
-
+        state = (
+            self.state_coef @ state
+            + self.action_coef @ action
+            + (self.state_action_coef @ action).T @ state
+        )
         state = state / np.linalg.norm(state, ord=2)
-
         return state
 
 
 @dataclass
 class RewardFunction(BaseRewardFunction):
-    """Class to define reward_function.
+    """Class to define the reward function.
 
     Imported as: :class:`syntheticgym.envs.RewardFunction`
 
@@ -123,57 +107,47 @@ class RewardFunction(BaseRewardFunction):
 
     Parameters
     -------
-    reward_type: str = "continuous"
-        Reward type (i.e., countinuous / binary).
+    state_dim: int
+        Dimension of the state.
+
+    action_dim: int
+        Dimension of the action (context).
+
+    reward_type: {"continuous", "binary"}, default="continuous"
+        Reward type.
 
     reward_std: float, default=0.0 (>=0)
         Standard deviation of the reward distribution. Applicable only when reward_type is "continuous".
-    
-    state_dim: int = 5
-        Dimension of state
-
-    state_dim: int = 5
-        Dimension of state
-
-    action_type: str = "continuous"
-        Action type (i.e., countinuous / discrete).
-
-    action_dim: int = 3
-        Dimension of action.
-
-    action_context: ndarray of shape (n_actions, action_dim), default=None
-        Feature vectors that characterizes each action.
 
     random_state: int, default=None (>= 0)
         Random state.
 
-    References
-    -------
-    Sarah Dean, Jamie Morgenstern.
-    "Preference Dynamics Under Personalized Recommendations." 2022.
-
     """
 
+    state_dim: int
+    action_dim: int
     reward_type: str = "continuous"  # "binary"
     reward_std: float = 0.0
-    state_dim: int = 5
-    action_type: str = "continuous"  # "discrete"
-    action_dim: int = 3
-    action_context: Optional[np.ndarray] = (None,)
     random_state: Optional[int] = None
 
     def __post_init__(self):
         check_scalar(
-            self.reward_std,
-            name="reward_std",
-            target_type=float,
+            self.state_dim,
+            name="state_dim",
+            target_type=int,
+            min_val=1,
         )
-
+        check_scalar(
+            self.action_dim,
+            name="action_dim",
+            target_type=int,
+            min_val=1,
+        )
+        check_scalar(self.reward_std, name="reward_std", target_type=float, min_val=0.0)
         if self.reward_type not in ["continuous", "binary"]:
             raise ValueError(
                 f'reward_type must be either "continuous" or "binary", but {self.reward_type} is given'
             )
-
         self.random_ = check_random_state(self.random_state)
 
         self.state_coef = self.random_.normal(
@@ -186,50 +160,36 @@ class RewardFunction(BaseRewardFunction):
             loc=0.0, scale=1.0, size=(self.state_dim, self.action_dim)
         )
 
-    def sample(
+    def mean_reward_function(
         self,
         state: np.ndarray,
-        action: Action,
+        action: np.ndarray,
     ) -> float:
-        """Reward function.
+        """Linear mean reward function.
 
         Parameters
         -------
         state: array-like of shape (state_dim, )
-            When the true state is unobservable, you can gain observation instead of state.
+            State in the RL environment.
 
-        action: {int, array-like of shape (action_dim, )} (>= 0)
-            Indicating which action to present to the context.
+        action: array-like of shape (action_dim, )
+            Indicating the action presented by the agent.
 
-        Returns
+        Return
         -------
-        reward: float
-            Either binary or continuous.
+        mean_reward_function: float
+            Mean reward function conditioned on the state and action.
 
         """
-        if self.action_type == "continuous":
-            reward = (
-                self.state_coef.T @ state / self.state_dim
-                + self.action_coef.T @ action / self.action_dim
-                + state.T
-                @ (self.state_action_coef @ action / self.action_dim)
-                / self.state_dim
-            )
+        state = state / self.state_dim
+        action = action / self.action_dim
 
-        elif self.action_type == "discrete":
-            reward = (
-                self.state_coef.T @ state / self.state_dim
-                + self.action_coef.T @ self.action_context[action] / self.action_dim
-                + state.T
-                @ (
-                    self.state_action_coef
-                    @ self.action_context[action]
-                    / self.action_dim
-                )
-                / self.state_dim
-            )
-
-        if self.reward_type == "continuous":
-            reward = reward + self.random_.normal(loc=0.0, scale=self.reward_std)
-
-        return reward
+        logit = (
+            self.state_coef.T @ state
+            + self.action_coef.T @ action
+            + state.T @ self.state_action_coef @ action
+        )
+        mean_reward_function = (
+            logit if self.reward_type == "continuous" else sigmoid(logit)
+        )
+        return mean_reward_function

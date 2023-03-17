@@ -3,14 +3,13 @@ from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
 
 import numpy as np
-from ...types import Action
 
 
 @dataclass
-class BaseStateTransition(metaclass=ABCMeta):
-    """Base class to define state_transition
+class BaseStateTransitionFunction(metaclass=ABCMeta):
+    """Base class to define the state transition function.
 
-    Imported as: :class:`syntheticgym.envs.`
+    Imported as: :class:`syntheticgym.envs.BaseStateTransitionFunction`
 
     """
 
@@ -18,22 +17,22 @@ class BaseStateTransition(metaclass=ABCMeta):
     def step(
         self,
         state: np.ndarray,
-        action: Action,
+        action: np.ndarray,
     ) -> np.ndarray:
-        """Function that determines how to update the state based on the presented action.
+        """Update the state based on the presented action.
 
         Parameters
         -------
         state: array-like of shape (state_dim, )
-            When the true state is unobservable, you can gain observation instead of state.
+            Current state.
 
-        action: {int, array-like of shape (action_dim, )} (>= 0)
-            Indicating which action to present to the context.
+        action: array-like of shape (action_dim, )
+            Indicating the action presented by the agent.
 
-        Returns
+        Return
         -------
         state: array-like of shape (state_dim, )
-            When the true state is unobservable, you can gain observation instead of state.
+            Next state.
 
         """
         raise NotImplementedError
@@ -41,32 +40,32 @@ class BaseStateTransition(metaclass=ABCMeta):
 
 @dataclass
 class BaseRewardFunction(metaclass=ABCMeta):
-    """Base class to define reward_function.
+    """Base class to define the mean reward function.
 
     Imported as: :class:`syntheticgym.envs.RewardFunction`
 
     """
 
     @abstractmethod
-    def sample(
+    def mean_reward_function(
         self,
         state: np.ndarray,
-        action: Action,
+        action: np.ndarray,
     ) -> float:
-        """Reward function.
+        """Mean reward function.
 
         Parameters
         -------
         state: array-like of shape (state_dim, )
-            When the true state is unobservable, you can gain observation instead of state.
+            State in the RL environment.
 
-        action: {int, array-like of shape (action_dim, )} (>= 0)
-            Indicating which action to present to the context.
+        action: array-like of shape (action_dim, )
+            Indicating the action presented by the agent.
 
-        Returns
+        Return
         -------
-        reward: float
-            Either binary or continuous.
+        mean_reward_function: float
+            Mean reward function conditioned on the state and action.
 
         """
         raise NotImplementedError

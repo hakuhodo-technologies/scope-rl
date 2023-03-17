@@ -1,17 +1,17 @@
 import gym
 
 from syntheticgym.envs.synthetic import SyntheticEnv
-from syntheticgym.envs.simulator.function import StateTransition
+from syntheticgym.envs.simulator.function import StateTransitionFunction
 from syntheticgym.envs.simulator.function import RewardFunction
-from syntheticgym.envs.simulator.base import BaseStateTransition
+from syntheticgym.envs.simulator.base import BaseStateTransitionFunction
 from syntheticgym.envs.simulator.base import BaseRewardFunction
 from syntheticgym.types import Action
 
 __all__ = [
     "SyntheticEnv",
-    "StateTransition",
+    "StateTransitionFunction",
     "RewardFunction",
-    "BaseStateTransition",
+    "BaseStateTransitionFunction",
     "BaseRewardFunction",
     "Action",
 ]
