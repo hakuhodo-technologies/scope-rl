@@ -22,7 +22,6 @@ from ..utils import (
     estimate_confidence_interval_by_empirical_bernstein,
     estimate_confidence_interval_by_t_test,
     defaultdict_to_dict,
-    check_array,
 )
 from ..types import OPEInputDict
 
