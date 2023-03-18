@@ -1,4 +1,4 @@
-"""Reinforcement Learning (RL) Environment for Simulation System."""
+"""Basic Reinforcement Learning (RL) Environment."""
 from typing import Tuple, Optional, Any
 
 import gym
@@ -16,10 +16,144 @@ from ..types import Action
 
 
 class SyntheticEnv(gym.Env):
+    """Class for a basic environment for reinforcement learning (RL) agent to interact.
+
+    Bases: :class:`gym.Env`
+
+    Imported as: :class:`syntheticgym.SyntheticEnv`
+
+    Note
+    -------
+    SyntheticGym works with OpenAI Gym and Gymnasium-like interface. See Examples below for the usage.
+
+    Markov Decision Process (CMDP) definition are given as follows:
+        timestep: int (> 0)
+
+        state: array-like of shape (state_dim, )
+
+        action: int, float, or array-like of shape (action_dim, )
+
+        reward: bool or continuous
+
+        discount_rate: float
+
+    Parameters
+    -------
+
+    step_per_episode: int, default=10 (> 0)
+        Number of timesteps in an episode.
+
+    state_dim: int, default=5 (> 0)
+        Dimension of the state.
+
+    action_type: {"discrete", "continuous"}, default="continuous"
+        Action type of the RL agent.
+
+    action_dim: int
+        Dimension of the action (context).
+
+    n_actions: int, default=10 (> 0)
+        Number of actions in the discrete action case.
+
+    action_context: array-like of shape (n_actions, action_dim), default=None
+        Feature vectors that characterizes each action. Applicable only when action_type is "discrete".
+
+    reward_type: {"continuous", "binary"}, default="continuous"
+        Reward type.
+
+    reward_std: float, default=0.0 (>=0)
+        Noise level of the reward. Applicable only when reward_type is "continuous".
+
+    obs_std: float, default=0.0 (>=0)
+        Noise level of the state observation.
+
+    StateTransitionFunction: BaseStateTransitionFunction, default=StateTransitionFunction
+        State transition function.
+
+    RewardFunction: BaseRewardFunction, default=RewardFunction
+        Mean reward function.
+
+    random_state: int, default=None (>= 0)
+        Random state.
+
+    Examples
+    -------
+
+    Setup:
+
+    .. code-block:: python
+
+        # import necessary module from syntheticgym
+        from syntheticgym import SyntheticEnv
+        from ofrl.policy import OnlineHead
+        from ofrl.ope.online import calc_on_policy_policy_value
+
+        # import necessary module from other libraries
+        from d3rlpy.algos import RandomPolicy
+        from d3rlpy.preprocessing import MinMaxActionScaler
+
+        # initialize environment
+        env = SyntheticEnv(random_state=12345)
+
+        # the following commands also work
+        # import gym
+        # env = gym.make("SyntheticEnv-continuous-v0")
+
+        # define (RL) agent (i.e., policy)
+        agent = OnlineHead(
+            RandomPolicy(
+                action_scaler=MinMaxActionScaler(
+                    minimum=0.1,
+                    maximum=10,
+                )
+            ),
+            name="random",
+        )
+        agent.build_with_env(env)
+
+    Interaction:
+
+    .. code-block:: python
+
+        # OpenAI Gym and Gymnasium-like interaction with agent
+        for episode in range(1000):
+            obs, info = env.reset()
+            done = False
+
+            while not done:
+                action = agent.predict_online(obs)
+                obs, reward, done, truncated, info = env.step(action)
+
+    Online Evaluation:
+
+    .. code-block:: python
+
+        # calculate on-policy policy value
+        on_policy_performance = calc_on_policy_policy_value(
+            env,
+            agent,
+            n_trajectories=100,
+            random_state=12345
+        )
+
+    Output:
+
+    .. code-block:: python
+
+        >>> on_policy_performance
+
+        27.59
+
+    References
+    -------
+    Greg Brockman, Vicki Cheung, Ludwig Pettersson, Jonas Schneider, John Schulman, Jie Tang, and Wojciech Zaremba.
+    "OpenAI Gym." 2016.
+
+    """
+
     def __init__(
         self,
-        StateTransitionFunction: BaseStateTransitionFunction = StateTransitionFunction,
-        RewardFunction: BaseRewardFunction = RewardFunction,
+        step_per_episode: int = 10,
         state_dim: int = 5,
         action_type: str = "continuous",  # "discrete"
         n_actions: int = 10,  # Applicable only when action_type is "discrete"
@@ -30,7 +164,8 @@ class SyntheticEnv(gym.Env):
         reward_type: str = "continuous",  # "binary"
         reward_std: float = 0.0,
         obs_std: float = 0.0,
-        step_per_episode=10,
+        StateTransitionFunction: BaseStateTransitionFunction = StateTransitionFunction,
+        RewardFunction: BaseRewardFunction = RewardFunction,
         random_state: Optional[int] = None,
     ):
         super().__init__()
@@ -159,10 +294,12 @@ class SyntheticEnv(gym.Env):
         self.reward_std = reward_std
 
     def _observation(self, state):
+        """Add a observation noise."""
         obs = self.random_.normal(loc=state, scale=self.obs_std)
         return obs
 
     def _sample_reward(self, mean_reward_function):
+        """Sample reward."""
         if self.reward_type == "continuous":
             reward = self.random_.normal(
                 loc=mean_reward_function, scale=self.reward_std
@@ -178,9 +315,9 @@ class SyntheticEnv(gym.Env):
         -------
         The simulation procedure is given as follows.
 
-        1. Sample reward for the given action.
+        1. Sample reward for the given state-action pair.
 
-        2. Update state with state_transition
+        2. Update state with state transition function.
 
         3. Return the feedback to the RL agent.
 
@@ -193,11 +330,10 @@ class SyntheticEnv(gym.Env):
         -------
         feedbacks: Tuple
             obs: ndarray of shape (state_dim,)
-                Generated based on state.
-                (e.g. complete with the state, noise added to the state, or only part of the state)
+                State observation, which may be noisy.
 
             reward: float
-                Either binary or continuous.
+                Reward observation.
 
             done: bool
                 Wether the episode end or not.
@@ -205,13 +341,22 @@ class SyntheticEnv(gym.Env):
             truncated: False
                 For API consistency.
 
-            info: dict
-                Additional feedbacks (state) for analysts.
-                Note that those feedbacks are unobservable to the agent.
+            info: (empty) dict
+                Additional feedback, which is unavailable to the agent.
 
         """
         if self.action_type == "discrete":
             action = self.action_context[action]
+
+        check_array(
+            action,
+            name="action",
+            expected_dim=1,
+        )
+        if action.shape[0] != self.action_dim:
+            raise ValueError(
+                "Dimension of action must be equal to action_dim, but found False."
+            )
 
         # 1. sample reward for the given action.
         mean_reward_function = self.reward_function.mean_reward_function(
@@ -239,12 +384,10 @@ class SyntheticEnv(gym.Env):
         Returns
         -------
         obs: ndarray of shape (state_dim,)
-            Generated based on state.
-            (e.g. complete with the state, noise added to the state, or only part of the state)
+            State observation, which may be noisy.
 
-        info: dict
-            Additional feedbacks (state) for analysts.
-            Note that those feedbacks are unobservable to the agent.
+        info: (empty) dict
+            Additional feedbacks, which is unavailable to the agent.
 
         """
         if seed is not None:

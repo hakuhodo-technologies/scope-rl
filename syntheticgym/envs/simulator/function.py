@@ -14,7 +14,9 @@ from ...utils import sigmoid
 class StateTransitionFunction(BaseStateTransitionFunction):
     """Class to define the state transition function.
 
-    Imported as: :class:`syntheticgym.envs.StateTransitionFunction`
+    Bases: :class:`syntheticgym.BaseStateTransitionFunction`
+
+    Imported as: :class:`syntheticgym.envs.simulator.StateTransitionFunction`
 
     Tip
     -------
@@ -99,7 +101,9 @@ class StateTransitionFunction(BaseStateTransitionFunction):
 class RewardFunction(BaseRewardFunction):
     """Class to define the reward function.
 
-    Imported as: :class:`syntheticgym.envs.RewardFunction`
+    Bases: :class:`syntheticgym.BaseRewardFunction`
+
+    Imported as: :class:`syntheticgym.envs.simulator.RewardFunction`
 
     Tip
     -------
@@ -117,7 +121,7 @@ class RewardFunction(BaseRewardFunction):
         Reward type.
 
     reward_std: float, default=0.0 (>=0)
-        Standard deviation of the reward distribution. Applicable only when reward_type is "continuous".
+        Noise level of the reward. Applicable only when reward_type is "continuous".
 
     random_state: int, default=None (>= 0)
         Random state.
