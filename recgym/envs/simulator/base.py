@@ -10,7 +10,7 @@ from ...types import Action
 class BaseUserModel(metaclass=ABCMeta):
     """Base class to define user_preference_dynamics and reward_function.
 
-    Imported as: class:`recgym.UserModel`
+    Imported as: class:`recgym.BaseUserModel`
 
     """
 
@@ -19,6 +19,7 @@ class BaseUserModel(metaclass=ABCMeta):
         self,
         state: np.ndarray,
         action: Action,
+        item_feature_vector: np.ndarray,
     ) -> np.ndarray:
         """Function that determines how to update the state (i.e., user preference) based on the recommended item.
 
@@ -28,8 +29,11 @@ class BaseUserModel(metaclass=ABCMeta):
             A vector representing user preference.  The preference changes over time in an episode by the actions presented by the RL agent.
             When the true state is unobservable, you can gain observation instead of state.
 
-        action: {int, array-like of shape (1, )} (>= 0)
-            selected an item to recommendation from n_items.
+        action: int or array-like of shape (1, )
+            Indicating which item to present to the user.
+
+        item_feature_vector: ndarray of shape (n_items, item_feature_dim), default=None
+            Feature vectors that characterizes each item.
 
         Returns
         -------
@@ -45,6 +49,7 @@ class BaseUserModel(metaclass=ABCMeta):
         self,
         state: np.ndarray,
         action: Action,
+        item_feature_vector: np.ndarray,
     ) -> float:
         """Reward function.
 
@@ -54,12 +59,15 @@ class BaseUserModel(metaclass=ABCMeta):
             A vector representing user preference.  The preference changes over time in an episode by the actions presented by the RL agent.
             When the true state is unobservable, you can gain observation instead of state.
 
-        action: {int, array-like of shape (1, )} (>= 0)
-            selected an item to recommendation from n_items.
+        action: int or array-like of shape (1, )
+            Indicating which item to present to the user.
+
+        item_feature_vector: ndarray of shape (n_items, item_feature_dim), default=None
+            Feature vectors that characterizes each item.
 
         Returns
         -------
-        reward: float
+        reward: bool or float
             User engagement signal. Either binary or continuous.
 
         """
