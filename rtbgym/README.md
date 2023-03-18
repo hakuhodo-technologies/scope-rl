@@ -107,7 +107,7 @@ while not done:
     obs, reward, done, truncated, info = env.step(action)
 ```
 
-Let's visualize case with uniform random policy (in continuous action case). The discrete case also works in a similar manner.
+Let's visualize the case with uniform random policy (in continuous action case). The discrete case also works in a similar manner.
 
 ```Python
 # import from other libraries

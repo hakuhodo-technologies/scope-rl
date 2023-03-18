@@ -20,7 +20,7 @@ class StateTransitionFunction(BaseStateTransitionFunction):
 
     Tip
     -------
-    Use :class:`BaseStateTransitionFunction` to define custom StateTransitionFunction.
+    Use :class:`BaseStateTransitionFunction` to define a custom StateTransitionFunction.
 
     Parameters
     -------
@@ -107,7 +107,7 @@ class RewardFunction(BaseRewardFunction):
 
     Tip
     -------
-    Use :class:`BaseRewardFunction` to define custom RewardFunction.
+    Use :class:`BaseRewardFunction` to define a custom RewardFunction.
 
     Parameters
     -------

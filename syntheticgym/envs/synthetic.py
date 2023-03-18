@@ -68,10 +68,10 @@ class SyntheticEnv(gym.Env):
         Noise level of the state observation.
 
     StateTransitionFunction: BaseStateTransitionFunction, default=StateTransitionFunction
-        State transition function.
+        State transition function. Both class and instance are acceptable.
 
     RewardFunction: BaseRewardFunction, default=RewardFunction
-        Mean reward function.
+        Mean reward function. Both class and instance are acceptable.
 
     random_state: int, default=None (>= 0)
         Random state.
@@ -271,6 +271,8 @@ class SyntheticEnv(gym.Env):
             self.reward_function = RewardFunction(
                 state_dim=state_dim,
                 action_dim=action_dim,
+                reward_type=reward_type,
+                reward_std=reward_std,
                 random_state=random_state,
             )
         else:
@@ -279,6 +281,10 @@ class SyntheticEnv(gym.Env):
             )
 
         # define reward range
+        if reward_type not in ["continuous", "binary"]:
+            raise ValueError(
+                f'reward_type must be either "continuous" or "binary", but {reward_type} is given'
+            )
         if reward_type == "continuous":
             self.reward_range = (-np.inf, np.inf)
         else:
@@ -293,20 +299,10 @@ class SyntheticEnv(gym.Env):
         self.reward_type = reward_type
         self.reward_std = reward_std
 
-    def _observation(self, state):
+    def _observation(self, state: np.ndarray):
         """Add a observation noise."""
         obs = self.random_.normal(loc=state, scale=self.obs_std)
         return obs
-
-    def _sample_reward(self, mean_reward_function):
-        """Sample reward."""
-        if self.reward_type == "continuous":
-            reward = self.random_.normal(
-                loc=mean_reward_function, scale=self.reward_std
-            )
-        else:
-            reward = self.random_.binominal(1, p=mean_reward_function)
-        return reward
 
     def step(self, action: Action) -> Tuple[Any]:
         """Simulate a action interaction with a context.
@@ -359,10 +355,7 @@ class SyntheticEnv(gym.Env):
             )
 
         # 1. sample reward for the given action.
-        mean_reward_function = self.reward_function.mean_reward_function(
-            self.state, action
-        )
-        reward = self._sample_reward(mean_reward_function)
+        reward = self.reward_function.sample_reward(self.state, action)
 
         # 2. update state with state_transition
         self.state = self.state_transition_function.step(self.state, action)

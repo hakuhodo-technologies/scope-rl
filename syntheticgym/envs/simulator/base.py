@@ -69,3 +69,20 @@ class BaseRewardFunction(metaclass=ABCMeta):
 
         """
         raise NotImplementedError
+
+    def sample_reward(
+        self,
+        state: np.ndarray,
+        action: np.ndarray,
+    ):
+        """Sample reward."""
+        mean_reward_function = self.mean_reward_function(state, action)
+
+        if self.reward_type == "continuous":
+            reward = self.random_.normal(
+                loc=mean_reward_function, scale=self.reward_std
+            )
+        else:
+            reward = self.random_.binominal(1, p=mean_reward_function)
+
+        return reward

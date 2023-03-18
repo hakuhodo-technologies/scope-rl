@@ -32,7 +32,7 @@ class WinningPriceDistribution(BaseWinningPriceDistribution):
 
     Tip
     -------
-    Use :class:`BaseWinningPriceDistribution` to define custom WinningPriceDistribution.
+    Use :class:`BaseWinningPriceDistribution` to define a custom WinningPriceDistribution.
 
     Parameters
     -------
@@ -201,7 +201,7 @@ class ClickThroughRate(BaseClickAndConversionRate):
 
     Tip
     -------
-    Use :class:`BaseClickAndConversionRate` to define custom ClickThroughRate.
+    Use :class:`BaseClickAndConversionRate` to define a custom ClickThroughRate.
 
     Parameters
     -------
@@ -415,7 +415,7 @@ class ConversionRate(BaseClickAndConversionRate):
 
     Tip
     -------
-    Use :class:`BaseClickAndConversionRate` to define custom ConversionRate.
+    Use :class:`BaseClickAndConversionRate` to define a custom ConversionRate.
 
     Parameters
     -------

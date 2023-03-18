@@ -39,11 +39,11 @@ SyntheticGym provides a standardize environment in both discrete and continuous 
 - `"SyntheticEnv-discrete-v0"`: Standard discrete environment.
 
 SyntheticGym consists of the following a environments.
-- [SyntheticEnv](./envs/synthetic.py#L17): The basic configurative environment.
+- [SyntheticEnv](./envs/synthetic.py#L18): The basic configurative environment.
 
 SyntheticGym is configurative about the following a module.
 - [StateTransitionFunction](./envs/simulator/function.py#L14): Class to define the state transition function.
-- [RewardFunction](./envs/simulator/function.py#L93): Class to define the reward function.
+- [RewardFunction](./envs/simulator/function.py#L101): Class to define the reward function.
 
 Note that, users can customize the above modules by following the [abstract class](./envs/simulator/base.py).
 
@@ -87,11 +87,11 @@ while not done:
     obs, reward, done, truncated, info = env.step(action)
 ```
 
-Let's visualize case with uniform random policy .
+Let's visualize the case with uniform random policy .
 
 ```Python
 # import from other libraries
-from offlinegym.policy import OnlineHead
+from ofrl.policy import OnlineHead
 from d3rlpy.algos import RandomPolicy as ContinuousRandomPolicy
 
 # define a random agent
@@ -238,7 +238,20 @@ class CustomizedRewardFunction(BaseRewardFunction):
 
 More examples are available at [quickstart/basic_synthetic_customize_env.ipynb](./examples/quickstart/basic_synthetic_customize_env.ipynb). 
 
+## Citation
+
+If you use our software in your work, please cite our paper:
+
+Haruka Kiyohara, Ren Kishimoto, Kosuke Kawakami, Ken Kobayashi, Kazuhide Nakata, Yuta Saito.<br>
+**Title**<br>
+[link]()
+
+Bibtex:
+```
+```
+
 ## Contribution
+
 Any contributions to SyntheticGym are more than welcome!
 Please refer to [CONTRIBUTING.md](../CONTRIBUTING.md) for general guidelines how to contribute the project.
 

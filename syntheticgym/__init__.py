@@ -11,6 +11,7 @@ __all__ = [
 ]
 
 
+# register standard environment
 # discrete environment
 gym.envs.register(
     id="SyntheticEnv-discrete-v0",
