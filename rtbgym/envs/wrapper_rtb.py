@@ -318,7 +318,7 @@ class CustomizedRTBEnv(gym.Env):
 
         info: dict
             Additional feedbacks (total impressions, clicks, and conversions) for analysts.
-            Note that those feedbacks are intended to be unobservable for the RL agent.
+            These are unavailable for the RL agent.
 
         """
         if self.action_type == "discrete":
@@ -366,6 +366,9 @@ class CustomizedRTBEnv(gym.Env):
                 - impression level features at the previous timestep
                 (budget consumption rate, cost per mille of impressions, auction winning rate, and reward)
                 - adjust rate (i.e., agent action) at the previous timestep
+
+        info: (empty) dict
+            Additional feedbacks, which is unavailable to the agent.
 
         """
         return self.env.reset(seed)
