@@ -129,7 +129,7 @@ plt.show()
 
 Note that, while we use [ofrl](../README.md) and [d3rlpy](https://github.com/takuseno/d3rlpy) here, RECGym is compatible with any other libraries working on the [OpenAI Gym](https://gym.openai.com) and [Gymnasium](https://gymnasium.farama.org/)-like interface.
 
-### Customized RTGEnv
+### Customized RECEnv
 
 Next, we describe how to customize the environment by instantiating the environment.
 
@@ -137,17 +137,17 @@ Next, we describe how to customize the environment by instantiating the environm
 <summary>List of environmental configurations: (click to expand)</summary>
 
 - `step_per_episode`: Number of timesteps in an episode.
-- `state_dim`: Dimension of the state.
-- `action_type`: Action type of the RL agent.
-- `n_actions`: Number of actions in the discrete action case.
-- `action_dim`: Dimension of the action (context).
-- `action_context`: Feature vectors that characterizes each action. Applicable only when action_type is "discrete".
+- `n_items`: Number of items used in the recommender system.
+- `n_users`: Number of users used in the recommender system.
+- `item_feature_dim`: Dimension of the item feature vectors.
+- `user_feature_dim`: Dimension of the user feature vectors.
+- `item_feature_vector`: Feature vectors that characterize each item.
+- `user_feature_vector`: Feature vectors that characterize each user.
 - `reward_type`: Reward type.
 - `reward_std`: Noise level of the reward. Applicable only when reward_type is "continuous".
 - `obs_std`: Noise level of the state observation.
-- `StateTransitionFunction`: State transition function.
-- `RewardFunction`: Mean reward function.
-- `random_state` : Random state.
+- `UserModel`: User model that defines the user prefecture dynamics and reward function.
+- `random_state`: Random state.
 
 </details>
 
