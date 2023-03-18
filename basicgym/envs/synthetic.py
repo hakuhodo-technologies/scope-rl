@@ -15,12 +15,12 @@ from ..utils import check_array
 from ..types import Action
 
 
-class SyntheticEnv(gym.Env):
+class BasicEnv(gym.Env):
     """Class for a basic environment for reinforcement learning (RL) agent to interact.
 
     Bases: :class:`gym.Env`
 
-    Imported as: :class:`syntheticgym.SyntheticEnv`
+    Imported as: :class:`basicgym.SyntheticEnv`
 
     Note
     -------

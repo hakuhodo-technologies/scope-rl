@@ -1,4 +1,4 @@
-from syntheticgym.envs.simulator.function import (
+from basicgym.envs.simulator.function import (
     StateTransitionFunction,
     RewardFunction,
 )

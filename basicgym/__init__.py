@@ -1,11 +1,11 @@
 import gym
 
-from syntheticgym.envs.synthetic import SyntheticEnv
-from syntheticgym.envs.simulator.base import BaseStateTransitionFunction
-from syntheticgym.envs.simulator.base import BaseRewardFunction
+from basicgym.envs.synthetic import BasicEnv
+from basicgym.envs.simulator.base import BaseStateTransitionFunction
+from basicgym.envs.simulator.base import BaseRewardFunction
 
 __all__ = [
-    "SyntheticEnv",
+    "BasicEnv",
     "BaseStateTransitionFunction",
     "BaseRewardFunction",
 ]
@@ -14,8 +14,8 @@ __all__ = [
 # register standard environment
 # discrete environment
 gym.envs.register(
-    id="SyntheticEnv-discrete-v0",
-    entry_point="syntheticgym.envs.synthetic:SyntheticEnv",
+    id="BasicEnv-discrete-v0",
+    entry_point="basicgym.envs.synthetic:BasicEnv",
     nondeterministic=True,
     kwargs={
         "action_type": "discrete",
@@ -24,8 +24,8 @@ gym.envs.register(
 )
 # continuous environment
 gym.envs.register(
-    id="SyntheticEnv-continuous-v0",
-    entry_point="syntheticgym.envs.synthetic:SyntheticEnv",
+    id="BasicEnv-continuous-v0",
+    entry_point="basicgym.envs.synthetic:BasicEnv",
     nondeterministic=True,
     kwargs={
         "action_type": "continuous",

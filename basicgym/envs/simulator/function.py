@@ -14,9 +14,9 @@ from ...utils import sigmoid
 class StateTransitionFunction(BaseStateTransitionFunction):
     """Class to define the state transition function.
 
-    Bases: :class:`syntheticgym.BaseStateTransitionFunction`
+    Bases: :class:`basicgym.BaseStateTransitionFunction`
 
-    Imported as: :class:`syntheticgym.envs.simulator.StateTransitionFunction`
+    Imported as: :class:`basicgym.envs.simulator.StateTransitionFunction`
 
     Tip
     -------
@@ -101,9 +101,9 @@ class StateTransitionFunction(BaseStateTransitionFunction):
 class RewardFunction(BaseRewardFunction):
     """Class to define the reward function.
 
-    Bases: :class:`syntheticgym.BaseRewardFunction`
+    Bases: :class:`basicgym.BaseRewardFunction`
 
-    Imported as: :class:`syntheticgym.envs.simulator.RewardFunction`
+    Imported as: :class:`basicgym.envs.simulator.RewardFunction`
 
     Tip
     -------

@@ -9,7 +9,7 @@ import numpy as np
 class BaseStateTransitionFunction(metaclass=ABCMeta):
     """Base class to define the state transition function.
 
-    Imported as: :class:`syntheticgym.BaseStateTransitionFunction`
+    Imported as: :class:`basicgym.BaseStateTransitionFunction`
 
     """
 
@@ -42,7 +42,7 @@ class BaseStateTransitionFunction(metaclass=ABCMeta):
 class BaseRewardFunction(metaclass=ABCMeta):
     """Base class to define the mean reward function.
 
-    Imported as: :class:`syntheticgym.BaseRewardFunction`
+    Imported as: :class:`basicgym.BaseRewardFunction`
 
     """
 

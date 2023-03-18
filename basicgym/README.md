@@ -1,8 +1,8 @@
-# SyntheticGym: A basic, configurative reinforcement learning environment
+# BasicGym: A basic, configurative reinforcement learning environment
 <details>
 <summary><strong>Table of Contents </strong>(click to expand)</summary>
 
-- [SyntheticGym: A basic reinforcement learning environment](#SyntheticGym-a-reinforcement-learning-environment-for-synthetic-simulation)
+- [BasicGym: A basic reinforcement learning environment](#BasicGym-a-reinforcement-learning-environment-for-synthetic-simulation)
 - [Overview](#overview)
 - [Installation](#installation)
 - [Usage](#usage)
@@ -17,7 +17,7 @@
 
 ## Overview
 
-*SyntheticGym* is an open-source simulation platform for synthetic simulation, which is written in Python. The simulator is particularly intended for reinforcement learning algorithms and follows [OpenAI Gym](https://gym.openai.com) and [Gymnasium](https://gymnasium.farama.org/)-like interface. We design SyntheticGym as a configurative environment so that researchers and practitioner can customize the environmental modules including `StateTransitionFunction` and `RewardFunction`
+*BasicGym* is an open-source simulation platform for synthetic simulation, which is written in Python. The simulator is particularly intended for reinforcement learning algorithms and follows [OpenAI Gym](https://gym.openai.com) and [Gymnasium](https://gymnasium.farama.org/)-like interface. We design SyntheticGym as a configurative environment so that researchers and practitioner can customize the environmental modules including `StateTransitionFunction` and `RewardFunction`
 
 Note that, SyntheticGym is publicized under [ofrl](../) repository, which facilitates the implementation of offline reinforcement learning procedure.
 
@@ -35,11 +35,11 @@ We often formulate this synthetic simulation problem as the following (Partially
 ### Implementation
 
 SyntheticGym provides a standardize environment in both discrete and continuous action settings.
-- `"SyntheticEnv-continuous-v0"`: Standard continuous environment.
-- `"SyntheticEnv-discrete-v0"`: Standard discrete environment.
+- `"BasicEnv-continuous-v0"`: Standard continuous environment.
+- `"BasicEnv-discrete-v0"`: Standard discrete environment.
 
 SyntheticGym consists of the following a environments.
-- [SyntheticEnv](./envs/synthetic.py#L18): The basic configurative environment.
+- [BasicEnv](./envs/basic.py#L18): The basic configurative environment.
 
 SyntheticGym is configurative about the following a module.
 - [StateTransitionFunction](./envs/simulator/function.py#L14): Class to define the state transition function.
@@ -71,11 +71,11 @@ Our standard SyntheticEnv is available from `gym.make()`, following the [OpenAI 
 
 ```Python
 # import SyntheticGym and gym
-import syntheticgym
+import basicgym
 import gym
 
 # (1) standard environment 
-env = gym.make('SyntheticEnv-continuous-v0')
+env = gym.make('BasicEnv-continuous-v0')
 ```
 
 The basic interaction is performed using only four lines of code as follows.
@@ -160,8 +160,8 @@ Next, we describe how to customize the environment by instantiating the environm
 </details>
 
 ```Python
-from syntheticgym import SyntheticEnv
-env = SyntheticEnv(
+from basicgym import BasicEnv
+env = BasicEnv(
     state_dim=10,
     action_type="continuous",  # "discrete"
     action_dim=5,
@@ -177,8 +177,8 @@ Specifically, users can define their own `StateTransitionFunction` and `RewardFu
 
 #### Example of Custom State Transition Function
 ```Python
-# import syntheticgym modules
-from syntheticgym import BaseStateTransitionFunction
+# import basicgym modules
+from basicgym import BaseStateTransitionFunction
 # import other necessary stuffs
 from dataclasses import dataclass
 from typing import Optional
@@ -207,8 +207,8 @@ class CustomizedStateTransitionFunction(BaseStateTransitionFunction):
 
 #### Example of RewardFunction
 ```Python
-# import syntheticgym modules
-from syntheticgym import BaseRewardFunction
+# import basicgym modules
+from basicgym import BaseRewardFunction
 # import other necessary stuffs
 from dataclasses import dataclass
 from typing import Optional
