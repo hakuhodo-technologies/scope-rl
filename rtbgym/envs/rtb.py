@@ -61,11 +61,11 @@ class RTBEnv(gym.Env):
         reward: int (>= 0)
             Total clicks/conversions gained during the timestep.
 
-        discount_rate: int
+        discount_rate: float
             Discount factor for cumulative reward calculation.
             Set discount_rate = 1 (i.e., no discount) in RTB.
 
-        constraint: int (> 0)
+        constraint: float (> 0)
             Total cost should not exceed the initial budget.
 
     Parameters
@@ -90,10 +90,10 @@ class RTBEnv(gym.Env):
         Number of (candidate) users used for auction bidding.
 
     ad_feature_dim: int, default=5 (> 0)
-        Dimensions of the ad feature vectors.
+        Dimension of the ad feature vectors.
 
     user_feature_dim: int, default=5 (> 0)
-        Dimensions of the user feature vectors.
+        Dimension of the user feature vectors.
 
     ad_feature_vector: ndarray of shape (n_ads, ad_feature_dim), default=None
         Feature vectors that characterizes each ad.
@@ -143,9 +143,9 @@ class RTBEnv(gym.Env):
     .. code-block:: python
 
         # import necessary module from rtbgym
-        from rtbgym.env import RTBEnv
-        from rtbgym.policy import OnlineHead
-        from rtbgym.ope.online import calc_on_policy_policy_value
+        from rtbgym import RTBEnv
+        from ofrl.policy import OnlineHead
+        from ofrl.ope.online import calc_on_policy_policy_value
 
         # import necessary module from other libraries
         from d3rlpy.algos import RandomPolicy
@@ -165,8 +165,10 @@ class RTBEnv(gym.Env):
                     minimum=0.1,
                     maximum=10,
                 )
-            )
+            ),
+            name="random",
         )
+        agent.build_with_env(env)
 
     Interaction:
 
@@ -372,7 +374,7 @@ class RTBEnv(gym.Env):
 
             info: dict
                 Additional feedbacks (total impressions, clicks, and conversions) for analysts.
-                Note that those feedbacks are unobservable to the agent.
+                These are unavailable to the agent.
 
         """
         err = False
@@ -490,6 +492,9 @@ class RTBEnv(gym.Env):
                 - impression level features at the previous timestep
                   (budget consumption rate, cost per mille of impressions, auction winning rate, and reward)
                 - adjust rate (i.e., agent action) at the previous timestep
+
+        info: (empty) dict
+            Additional feedbacks, which is unavailable to the agent.
 
         """
         if seed is not None:

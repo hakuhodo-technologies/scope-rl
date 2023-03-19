@@ -19,7 +19,7 @@
 
 *RECGym* is an open-source simulation platform for recommender system (REC), which is written in Python. The simulator is particularly intended for reinforcement learning algorithms and follows [OpenAI Gym](https://gym.openai.com) and [Gymnasium](https://gymnasium.farama.org/)-like interface. We design RECGym as a configurative environment so that researchers and practitioner can customize the environmental modules including `UserModel`((i.e. `user_preference_dynamics` and `reward_function`).
 
-Note that, RECGym is publicized under [OfflineGym](../) repository, which facilitates the implementation of offline reinforcement learning procedure.
+Note that, RECGym is publicized under [ofrl](../) repository, which facilitates the implementation of offline reinforcement learning procedure.
 
 ### Basic Setting
 
@@ -27,8 +27,8 @@ In recommendation, the objective of the RL agent is to maximize reward. \
 We often formulate this recommendation problem as the following (Partially Observable) Markov Decision Process ((PO)MDP):
 - `state`: 
    - A vector representing user preference.  The preference changes over time in an episode by the actions presented by the RL agent.
-   - When the true state is unobservable, you can gain observation instead of state.
-- `action`:  Index of an item to present to the user.
+   - When the true state is unobservable, the agent uses observation instead of state.
+- `action`: Indicating which item to present to the user.
 - `reward`: User engagement signal. Either binary or continuous.
 
 ### Implementation
@@ -45,22 +45,22 @@ RECGym is configurative about the following a module.
 Note that, users can customize the above modules by following the [abstract class](./envs/simulator/base.py).
 
 ## Installation
-RECGym can be installed as a part of [OfflineGym](../) using Python's package manager `pip`.
+RECGym can be installed as a part of [ofrl](../) using Python's package manager `pip`.
 ```
-pip install offlinegym
+pip install ofrl
 ```
 
 You can also install from source.
 ```bash
-git clone https://github.com/negocia-inc/offlinegym
-cd offlinegym
+git clone https://github.com/negocia-inc/ofrl
+cd ofrl
 python setup.py install
 ```
 
 ## Usage
 
 We provide an example usage of the standard and customized environment. \
-The online/offlline RL and Off-Policy Evaluation examples are provides in [OfflineGym's README](../README.md).
+The online/offlline RL and Off-Policy Evaluation examples are provides in [OFRL's README](../README.md).
 
 ### Standard RECEnv
 
@@ -78,27 +78,25 @@ env = gym.make('RECEnv-v0')
 The basic interaction is performed using only four lines of code as follows.
 
 ```Python
-obs, info = env.reset(), False
+obs, info = env.reset()
 while not done:
     action = agent.act(obs)
     obs, reward, done, truncated, info = env.step(action)
 ```
 
-Let's visualize case with uniform random policy .
+Let's visualize the case with uniform random policy .
 
 ```Python
 # import from other libraries
-from offlinegym.policy import DiscreteEpsilonGreedyHead
-from d3rlpy.algos import RandomPolicy as DiscreteRandomPolicy
+from ofrl.policy import OnlineHead
+from d3rlpy.algos import DiscreteRandomPolicy
 
 # define a random agent
-agent = DiscreteEpsilonGreedyHead(
-      base_policy = DiscreteRandomPolicy(),
-      name = 'random',
-      n_actions = env.n_items,
-      epsilon = 1. ,
-      random_state = random_state, 
+agent = OnlineHead(
+    DiscreteRandomPolicy(),
+    name="random",
 )
+agent.build_with_env(env)
 
 # (2) basic interaction 
 obs, info = env.reset()
@@ -129,45 +127,42 @@ plt.show()
 </p>
 </figcaption>
 
-Note that, while we use [OfflineGym](../README.md) and [d3rlpy](https://github.com/takuseno/d3rlpy) here, RECGym is compatible with any other libraries working on the [OpenAI Gym](https://gym.openai.com) and [Gymnasium](https://gymnasium.farama.org/)-like interface.
+Note that, while we use [ofrl](../README.md) and [d3rlpy](https://github.com/takuseno/d3rlpy) here, RECGym is compatible with any other libraries working on the [OpenAI Gym](https://gym.openai.com) and [Gymnasium](https://gymnasium.farama.org/)-like interface.
 
-### Customized RTGEnv
+### Customized RECEnv
 
 Next, we describe how to customize the environment by instantiating the environment.
 
 <details>
 <summary>List of environmental configurations: (click to expand)</summary>
 
-- `UserModel`: User model which defines user_prefecture_dynamics and reward_function.
-- `n_items`: Number of items used for recommendation.
-- `n_users`: Number of users used for recommendation.
-- `item_feature_dim`: Dimensions of the item feature vectors.
-- `user_feature_dim`: Dimensions of the user feature vectors.
-- `item_feature_vector`: Feature vectors that characterizes each item.
-- `user_feature_vector`: Feature vectors that characterizes each user.
-- `reward_type`: Reward type (i.e., continuous / binary).
-- `reward_std`: Standard deviation of the reward distribution. Applicable only when reward_type is "continuous".
-- `obs_std`: Standard deviation of the observation distribution.
 - `step_per_episode`: Number of timesteps in an episode.
-- `random_state` : Random state
+- `n_items`: Number of items used in the recommender system.
+- `n_users`: Number of users used in the recommender system.
+- `item_feature_dim`: Dimension of the item feature vectors.
+- `user_feature_dim`: Dimension of the user feature vectors.
+- `item_feature_vector`: Feature vectors that characterize each item.
+- `user_feature_vector`: Feature vectors that characterize each user.
+- `reward_type`: Reward type.
+- `reward_std`: Noise level of the reward. Applicable only when reward_type is "continuous".
+- `obs_std`: Noise level of the state observation.
+- `UserModel`: User model that defines the user prefecture dynamics and reward function.
+- `random_state`: Random state.
 
 </details>
 
 ```Python
 from recgym import RECEnv
 env = RECEnv(
-        UserModel = UserModel,
-        n_items = 100,  # we use 100 items
-        n_users = 100,  # 100 users exists
-        item_feature_dim = 5,  #each item has 5 dimensional features
-        user_feature_dim = 5,  #each user has 5 dimensional features
-        item_feature_vector = None,  #determine item_feature_vector from n_items and item_feature_dim in RECEnv
-        user_feature_vector = None,  #determine user_feature_vector from n_users and user_feature_dim in RECEnv
-        reward_type = "continuous", #we use continuous reward
-        reward_std = 0.0,
-        obs_std = 0.0, #not add noise to the observation
-        step_per_episode = 10,
-        random_state = 12345,
+    step_per_episode=10,
+    n_items=100,
+    n_users=100,
+    item_feature_dim=5,
+    user_feature_dim=5,
+    reward_type="continuous",  # "binary"
+    reward_std=0.3,
+    obs_std=0.3,
+    random_state=12345,
 )
 ```
 
@@ -184,25 +179,26 @@ from typing import Optional
 import numpy as np
 
 @dataclass
-class UserModel(BaseUserModel):
-    """Initialization."""
+class CustomizedUserModel(BaseUserModel):
+    user_feature_dim: int
+    item_feature_dim: int
     reward_type: str = "continuous"  # "binary"
     reward_std: float = 0.0
-    item_feature_vector: Optional[np.ndarray] = None,
     random_state: Optional[int] = None
 
     def __post_init__(self):
         self.random_ = check_random_state(self.random_state)
+        self.coef = self.random_.normal(size=(self.user_feature_dim, self.item_feature_dim))
 
     def user_preference_dynamics(
         self,
         state: np.ndarray,
         action: Action,
+        item_feature_vector: np.ndarray,
         alpha: float = 1.0,
-    )-> np.ndarray:
-        """Function that determines how to update the state (i.e., user preference) based on the recommended item. user_feature is amplified by the recommended item_feature
-        """
-        state = (state + alpha * state @ self.item_feature_vector[action] * self.item_feature_vector[action])
+    ) -> np.ndarray:
+        coefficient = state.T @ self.coef @ item_feature_vector[action]
+        state = state + alpha * coefficient * item_feature_vector[action]
         state = state / np.linalg.norm(state, ord=2)
         return state
 
@@ -210,12 +206,16 @@ class UserModel(BaseUserModel):
         self,
         state: np.ndarray,
         action: Action,
-    )-> float:
-        """Reward function. inner product of state and recommended item_feature
-        """
-        reward = state @ self.item_feature_vector[action]
-        if self.reward_type is "continuous":
-            reward = reward + self.random_.normal(loc=0.0, scale=self.reward_std)
+        item_feature_vector: np.ndarray,
+    ) -> float:
+        logit = state.T @ self.coef @ item_feature_vector[action]
+        reward = (
+            logit if self.reward_type == "continuous" else sigmoid(logit)
+        )
+
+        if self.reward_type == "discrete":
+            reward = self.random_.binominal(1, p=reward)
+
         return reward
 ```
 
@@ -242,6 +242,7 @@ Bibtex:
 ```
 
 ## Contribution
+
 Any contributions to RECGym are more than welcome!
 Please refer to [CONTRIBUTING.md](../CONTRIBUTING.md) for general guidelines how to contribute the project.
 
@@ -252,7 +253,10 @@ This project is licensed under Apache 2.0 license - see [LICENSE](../LICENSE) fi
 ## Project Team
 
 - [Haruka Kiyohara](https://sites.google.com/view/harukakiyohara) (**Main Contributor**; Tokyo Institute of Technology)
+- Ren Kishimoto (Tokyo Institute of Technology)
 - Kosuke Kawakami (negocia Inc.)
+- Ken Kobayashi (Tokyo Institute of Technology)
+- Kazuhide Nakata (Tokyo Institute of Technology)
 - [Yuta Saito](https://usait0.com/en/) (Cornell University)
 
 ## Contact
