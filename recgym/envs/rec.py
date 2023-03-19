@@ -1,4 +1,4 @@
-"""Reinforcement Learning (RL) Environment for recommender system (REC)."""
+"""Reinforcement Learning (RL) Environment for Recommender System (REC)."""
 from typing import Tuple, Optional, Any
 
 import gym
@@ -38,7 +38,7 @@ class RECEnv(gym.Env):
     -------
 
     UserModel: BaseUserModel, default=UserModel
-        User model that defines user_prefecture_dynamics (, which simulates how the user preference changes through item interaction) and reward_function (, which simulates how the user responds to the presented item).
+        User model that duefines user_prefecture_dynamics (, which simulates how the user preference changes through item interaction) and reward_function (, which simulates how the user responds to the presented item).
         Both class and instance are acceptable.
 
     reward_type: {"continuous", "binary"}, default="continuous"
@@ -134,7 +134,7 @@ class RECEnv(gym.Env):
 
         >>> on_policy_performance
 
-        -0.11431378996045428
+        -0.02215019665822898
 
     References
     -------
@@ -150,14 +150,14 @@ class RECEnv(gym.Env):
     def __init__(
         self,
         UserModel: BaseUserModel = UserModel,
-        n_items: int = 100,
+        n_items: int = 5,
         n_users: int = 100,
         item_feature_dim: int = 5,
         user_feature_dim: int = 5,
         item_feature_vector: Optional[np.ndarray] = None,
         user_feature_vector: Optional[np.ndarray] = None,
         reward_type: str = "continuous",  # "binary"
-        reward_std: float = 0.0,
+        reward_std: float = 0.0, #Applicable only when reward_type is "continuous"
         obs_std: float = 0.0,
         step_per_episode=10,
         random_state: Optional[int] = None,
@@ -165,7 +165,6 @@ class RECEnv(gym.Env):
         super().__init__()
         if random_state is None:
             raise ValueError("random_state must be given")
-        self.random_state = random_state
         self.random_ = check_random_state(random_state)
 
         check_scalar(
@@ -365,3 +364,9 @@ class RECEnv(gym.Env):
         info = {"user_id": self.user_id, "state": self.state}
 
         return obs, info
+
+    def render(self) -> None:
+        pass
+
+    def close(self) -> None:
+        pass

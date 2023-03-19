@@ -1715,7 +1715,6 @@ class ContinuousCumulativeDistributionSelfNormalizedTrajectoryWiseDoublyRobust(
             evaluation_policy_action,
             name="evaluation_policy_action",
             expected_dim=2,
-            min_val=0.0,
         )
         check_array(
             state_action_value_prediction,

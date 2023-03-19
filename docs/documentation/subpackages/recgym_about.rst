@@ -12,8 +12,7 @@ Note that, RECGym is publicized as a sub-package of :doc:`OFRL <index>`, which s
 Basic Setting
 ~~~~~~~~~~
 In recommendation, the objective of the RL agent is to maximize reward.
-
-We often formulate this recommendation problem as the following Constrained Markov Decision Process (CMDP) as :math:`\langle \mathcal{S}, \mathcal{A}, \mathcal{T}, P_r \rangle`.
+We often formulate this recommendation problem as the following (Partially Observable) Markov Decision Process ((PO)MDP) as :math:`\langle \mathcal{S}, \mathcal{A}, \mathcal{T}, P_r \rangle`.
 
 * `state` (:math:`s \in \mathcal{S}`): 
     * A vector representing user preference.  The preference changes over time in an episode by the actions presented by the RL agent.
@@ -31,11 +30,11 @@ Supported Implementation
 
 Standard Environment
 ----------
-    * :class:`RECEnv-v0`: Standard recommender environment with continuous action space.
+    * :class:`RECEnv-v0`: Standard recommender environment with discrete action space.
 
 Custom Environment
 ----------
-    * :class:`RECEnv`: The configurative environment with continuous action space.
+    * :class:`RECEnv`: The configurative environment with discrete action space.
 
 Configurative Modules
 ----------
@@ -58,7 +57,7 @@ following the `OpenAI Gym <https://gym.openai.com>`_ and `Gymnasium <https://git
 .. code-block:: python
 
     # import recgym and gym
-    import recym
+    import recgym
     import gym
 
     # (1) standard environment for discrete action space
@@ -73,7 +72,7 @@ The basic interaction is performed using only four lines of code as follows.
        action = agent.act(obs)
        obs, reward, done, truncated, info = env.step(action)
 
-Let's interact uniform random policy with a continuous action REC environment. 
+Let's interact uniform random policy with a discrete action REC environment. 
 
 .. code-block:: python
 

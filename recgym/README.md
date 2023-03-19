@@ -2,7 +2,7 @@
 <details>
 <summary><strong>Table of Contents </strong>(click to expand)</summary>
 
-- [RECGym: A reinforcement learning environment for recommendation system](#RECGym-a-reinforcement-learning-environment-for-recommender-system)
+- [RECGym: A reinforcement learning environment for recommender system](#RECGym-a-reinforcement-learning-environment-for-recommender-system)
 - [Overview](#overview)
 - [Installation](#installation)
 - [Usage](#usage)

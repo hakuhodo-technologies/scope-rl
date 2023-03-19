@@ -7,7 +7,7 @@ RECGym Package Reference
 env module
 ----------
 .. autosummary::
-    :toctree: _autosummary/recgym/env
+    :toctree: ../_autosummary/recgym/env
     :recursive:
     :nosignatures:
     :template: 
@@ -19,7 +19,7 @@ env module
 simulation module
 ----------
 .. autosummary::
-    :toctree: _autosummary/recgym/simulation
+    :toctree: ../_autosummary/recgym/simulation
     :recursive:
     :nosignatures:
 

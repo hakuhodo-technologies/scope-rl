@@ -755,7 +755,6 @@ class OffPolicySelection:
 
         ops_dict = {}
         for i, estimator in enumerate(compared_estimators):
-
             estimated_policy_value_ = np.zeros(n_policies)
             true_policy_value_ = np.zeros(n_policies)
             for j, eval_policy in enumerate(candidate_policy_names):
@@ -863,7 +862,7 @@ class OffPolicySelection:
             ranking_df_dict = defaultdict_to_dict(ranking_df_dict)
 
             if return_metrics:
-                mse, rankcorr, pvalue, regret, type_i, type_ii, = (
+                (mse, rankcorr, pvalue, regret, type_i, type_ii,) = (
                     [],
                     [],
                     [],
@@ -1048,7 +1047,6 @@ class OffPolicySelection:
 
         ops_dict = {}
         for i, estimator in enumerate(compared_estimators):
-
             estimated_policy_value_ = np.zeros(n_policies)
             true_policy_value_ = np.zeros(n_policies)
             for j, eval_policy in enumerate(candidate_policy_names):
@@ -1158,7 +1156,7 @@ class OffPolicySelection:
             ranking_df_dict = defaultdict_to_dict(ranking_df_dict)
 
             if return_metrics:
-                mse, rankcorr, pvalue, regret, type_i, type_ii, = (
+                (mse, rankcorr, pvalue, regret, type_i, type_ii,) = (
                     [],
                     [],
                     [],
@@ -1363,7 +1361,6 @@ class OffPolicySelection:
             )
 
             for i, estimator in enumerate(compared_estimators):
-
                 estimated_policy_value_lower_bound_ = np.zeros(n_policies)
                 true_policy_value_ = np.zeros(n_policies)
                 for j, eval_policy in enumerate(candidate_policy_names):
@@ -1486,7 +1483,7 @@ class OffPolicySelection:
             ranking_df_dict = defaultdict_to_dict(ranking_df_dict)
 
         if return_metrics:
-            ci_, estimator_, rankcorr, pvalue, regret, type_i, type_ii, = (
+            (ci_, estimator_, rankcorr, pvalue, regret, type_i, type_ii,) = (
                 [],
                 [],
                 [],
@@ -1669,7 +1666,6 @@ class OffPolicySelection:
 
         ops_dict = {}
         for i, estimator in enumerate(compared_estimators):
-
             estimated_lower_quartile_ = np.zeros(n_policies)
             true_lower_quartile_ = np.zeros(n_policies)
             for j, eval_policy in enumerate(candidate_policy_names):
@@ -1750,7 +1746,7 @@ class OffPolicySelection:
             ranking_df_dict = defaultdict_to_dict(ranking_df_dict)
 
             if return_metrics:
-                mse, rankcorr, pvalue, type_i, type_ii, = (
+                (mse, rankcorr, pvalue, type_i, type_ii,) = (
                     [],
                     [],
                     [],
@@ -1927,7 +1923,6 @@ class OffPolicySelection:
 
         ops_dict = {}
         for i, estimator in enumerate(compared_estimators):
-
             estimated_cvar_ = np.zeros(n_policies)
             true_cvar_ = np.zeros(n_policies)
             for j, eval_policy in enumerate(candidate_policy_names):
@@ -2011,7 +2006,7 @@ class OffPolicySelection:
             ranking_df_dict = defaultdict_to_dict(ranking_df_dict)
 
             if return_metrics:
-                mse, rankcorr, pvalue, type_i, type_ii, = (
+                (mse, rankcorr, pvalue, type_i, type_ii,) = (
                     [],
                     [],
                     [],
@@ -2155,16 +2150,13 @@ class OffPolicySelection:
 
         """
         if isinstance(input_dict, MultipleInputDict):
-
             if behavior_policy_name is None and dataset_id is None:
-
                 ground_truth = defaultdict(list)
 
                 for (
                     behavior_policy,
                     n_datasets,
                 ) in input_dict.n_datasets.items():
-
                     for dataset_id_ in range(n_datasets):
                         input_dict_ = input_dict.get(
                             behavior_policy_name=behavior_policy,
@@ -2184,7 +2176,6 @@ class OffPolicySelection:
                 ground_truth = defaultdict_to_dict(ground_truth)
 
             elif behavior_policy_name is None and dataset_id is not None:
-
                 ground_truth = {}
                 for behavior_policy in input_dict.behavior_policy_names:
                     input_dict_ = input_dict.get(
@@ -2202,7 +2193,6 @@ class OffPolicySelection:
                     ground_truth[behavior_policy] = ground_truth_
 
             elif behavior_policy_name is not None and dataset_id is None:
-
                 ground_truth = []
                 for dataset_id_ in range(input_dict.n_datasets[behavior_policy_name]):
                     input_dict_ = input_dict.get(
@@ -2394,9 +2384,7 @@ class OffPolicySelection:
         )
 
         if self.ope.use_multiple_logged_dataset:
-
             if isinstance(input_dict, MultipleInputDict):
-
                 if behavior_policy_name is None and dataset_id is None:
                     if (
                         self.ope.multiple_logged_dataset.n_datasets
@@ -2758,9 +2746,7 @@ class OffPolicySelection:
         )
 
         if self.cumulative_distribution_ope.use_multiple_logged_dataset:
-
             if isinstance(input_dict, MultipleInputDict):
-
                 if behavior_policy_name is None and dataset_id is None:
                     if (
                         self.cumulative_distribution_ope.multiple_logged_dataset.n_datasets
@@ -3141,9 +3127,7 @@ class OffPolicySelection:
         )
 
         if self.ope.use_multiple_logged_dataset:
-
             if isinstance(input_dict, MultipleInputDict):
-
                 if behavior_policy_name is None and dataset_id is None:
                     if (
                         self.ope.multiple_logged_dataset.n_datasets
@@ -3529,9 +3513,7 @@ class OffPolicySelection:
         )
 
         if self.cumulative_distribution_ope.use_multiple_logged_dataset:
-
             if isinstance(input_dict, MultipleInputDict):
-
                 if behavior_policy_name is None and dataset_id is None:
                     if (
                         self.cumulative_distribution_ope.multiple_logged_dataset.n_datasets
@@ -3882,9 +3864,7 @@ class OffPolicySelection:
         )
 
         if self.cumulative_distribution_ope.use_multiple_logged_dataset:
-
             if isinstance(input_dict, MultipleInputDict):
-
                 if behavior_policy_name is None and dataset_id is None:
                     if (
                         self.cumulative_distribution_ope.multiple_logged_dataset.n_datasets
@@ -5174,9 +5154,7 @@ class OffPolicySelection:
 
         """
         if isinstance(input_dict, MultipleInputDict):
-
             if behavior_policy_name is None and dataset_id is None:
-
                 ranking_dict = defaultdict(list)
                 for behavior_policy, n_datasets in input_dict.n_datasets.items():
                     for dataset_id_ in range(n_datasets):
@@ -5210,10 +5188,8 @@ class OffPolicySelection:
                         ranking_dict[behavior_policy].append(tmp_ranking_dict)
 
             elif behavior_policy_name is None and dataset_id is not None:
-
                 ranking_dict = {}
                 for behavior_policy in input_dict.behavior_policy_names:
-
                     true_dict[behavior_policy] = dict(
                         zip(
                             true_dict[behavior_policy][true_dict_ranking_arg],
@@ -5240,7 +5216,6 @@ class OffPolicySelection:
                     ranking_dict[behavior_policy] = tmp_ranking_dict
 
             elif behavior_policy_name is not None and dataset_id is None:
-
                 ranking_dict = []
                 for dataset_id_ in range(input_dict.n_datasets[behavior_policy_name]):
                     true_dict[dataset_id_] = dict(
@@ -5312,12 +5287,9 @@ class OffPolicySelection:
 
         metric_dict = defaultdict(dict)
         if isinstance(input_dict, MultipleInputDict):
-
             if behavior_policy_name is None and dataset_id is None:
-
                 for i, estimator in enumerate(compared_estimators):
                     for j, metric in enumerate(metrics):
-
                         n_datasets = input_dict.n_datasets
                         total_n_datasets = 0
 
@@ -5327,11 +5299,9 @@ class OffPolicySelection:
                         topk_metric = np.zeros((max_topk, total_n_datasets))
 
                         for topk in range(max_topk):
-
                             l = 0
                             for behavior_policy in input_dict.behavior_policy_names:
                                 for dataset_id_ in range(n_datasets[behavior_policy]):
-
                                     topk_values = ranking_dict[behavior_policy][
                                         dataset_id_
                                     ][estimator][: topk + 1]
@@ -5354,10 +5324,8 @@ class OffPolicySelection:
                         metric_dict[estimator][metric] = topk_metric
 
             elif behavior_policy_name is None and dataset_id is not None:
-
                 for i, estimator in enumerate(compared_estimators):
                     for j, metric in enumerate(metrics):
-
                         total_n_datasets = len(input_dict.behavior_policy_names)
                         topk_metric = np.zeros((max_topk, total_n_datasets))
 
@@ -5365,7 +5333,6 @@ class OffPolicySelection:
                             for l, behavior_policy in enumerate(
                                 input_dict.behavior_policy_names
                             ):
-
                                 topk_values = ranking_dict[behavior_policy][estimator][
                                     : topk + 1
                                 ]
@@ -5386,16 +5353,13 @@ class OffPolicySelection:
                         metric_dict[estimator][metric] = topk_metric
 
             elif behavior_policy_name is not None and dataset_id is None:
-
                 for i, estimator in enumerate(compared_estimators):
                     for j, metric in enumerate(metrics):
-
                         total_n_datasets = input_dict.n_datasets[behavior_policy_name]
                         topk_metric = np.zeros((max_topk, total_n_datasets))
 
                         for topk in range(max_topk):
                             for l in range(total_n_datasets):
-
                                 topk_values = ranking_dict[l][estimator][: topk + 1]
 
                                 if metric == "k-th":
@@ -5416,12 +5380,10 @@ class OffPolicySelection:
             else:
                 for i, estimator in enumerate(compared_estimators):
                     for j, metric in enumerate(metrics):
-
                         total_n_datasets = 1
                         topk_metric = np.zeros((max_topk, total_n_datasets))
 
                         for topk in range(max_topk):
-
                             topk_values = ranking_dict[estimator][: topk + 1]
 
                             if metric == "k-th":
@@ -5442,11 +5404,9 @@ class OffPolicySelection:
         else:
             for i, estimator in enumerate(compared_estimators):
                 for j, metric in enumerate(metrics):
-
                     topk_metric = np.zeros((max_topk, 1))
 
                     for topk in range(max_topk):
-
                         topk_values = ranking_dict[estimator][: topk + 1]
 
                         if metric == "k-th":
@@ -5467,12 +5427,10 @@ class OffPolicySelection:
         metric_dict = defaultdict_to_dict(metric_dict)
 
         if isinstance(input_dict, MultipleInputDict):
-
             min_vals = np.zeros(total_n_datasets)
             max_vals = np.zeros(total_n_datasets)
 
             if behavior_policy_name is None and dataset_id is None:
-
                 l = 0
                 for behavior_policy, n_datasets in input_dict.n_datasets.items():
                     for dataset_id_ in range(n_datasets):
@@ -5594,7 +5552,6 @@ class OffPolicySelection:
 
         else:
             for j, metric in enumerate(metrics):
-
                 for i, estimator in enumerate(compared_estimators):
                     axes[j].plot(
                         np.arange(1, max_topk + 1),
@@ -6092,13 +6049,10 @@ class OffPolicySelection:
         metric_dict = defaultdict(lambda: defaultdict(dict))
 
         if isinstance(input_dict, MultipleInputDict):
-
             if behavior_policy_name is None and dataset_id is None:
-
                 for ope_ci in ope_cis:
                     for i, estimator in enumerate(compared_estimators):
                         for j, metric in enumerate(metrics):
-
                             n_datasets = input_dict.n_datasets
                             total_n_datasets = 0
 
@@ -6108,13 +6062,11 @@ class OffPolicySelection:
                             topk_metric = np.zeros((max_topk, total_n_datasets))
 
                             for topk in range(max_topk):
-
                                 l = 0
                                 for behavior_policy in input_dict.behavior_policy_names:
                                     for dataset_id_ in range(
                                         n_datasets[behavior_policy]
                                     ):
-
                                         topk_values = policy_value_dict[
                                             behavior_policy
                                         ][dataset_id_][ope_ci][estimator][
@@ -6141,11 +6093,9 @@ class OffPolicySelection:
                             metric_dict[ope_ci][estimator][metric] = topk_metric
 
             elif behavior_policy_name is None and dataset_id is not None:
-
                 for ope_ci in ope_cis:
                     for i, estimator in enumerate(compared_estimators):
                         for j, metric in enumerate(metrics):
-
                             total_n_datasets = len(input_dict.behavior_policy_names)
                             topk_metric = np.zeros((max_topk, total_n_datasets))
 
@@ -6153,7 +6103,6 @@ class OffPolicySelection:
                                 for l, behavior_policy in enumerate(
                                     input_dict.behavior_policy_names
                                 ):
-
                                     topk_values = policy_value_dict[behavior_policy][
                                         ope_ci
                                     ][estimator]["true_policy_value"][: topk + 1]
@@ -6174,11 +6123,9 @@ class OffPolicySelection:
                             metric_dict[ope_ci][estimator][metric] = topk_metric
 
             elif behavior_policy_name is not None and dataset_id is None:
-
                 for ope_ci in ope_cis:
                     for i, estimator in enumerate(compared_estimators):
                         for j, metric in enumerate(metrics):
-
                             total_n_datasets = input_dict.n_datasets[
                                 behavior_policy_name
                             ]
@@ -6186,7 +6133,6 @@ class OffPolicySelection:
 
                             for topk in range(max_topk):
                                 for l in range(total_n_datasets):
-
                                     topk_values = policy_value_dict[l][ope_ci][
                                         estimator
                                     ]["true_policy_value"][: topk + 1]
@@ -6210,12 +6156,10 @@ class OffPolicySelection:
                 for ope_ci in ope_cis:
                     for i, estimator in enumerate(compared_estimators):
                         for j, metric in enumerate(metrics):
-
                             total_n_datasets = 1
                             topk_metric = np.zeros((max_topk, total_n_datasets))
 
                             for topk in range(max_topk):
-
                                 topk_values = policy_value_dict[ope_ci][estimator][
                                     "true_policy_value"
                                 ][: topk + 1]
@@ -6239,11 +6183,9 @@ class OffPolicySelection:
             for ope_ci in ope_cis:
                 for i, estimator in enumerate(compared_estimators):
                     for j, metric in enumerate(metrics):
-
                         topk_metric = np.zeros((max_topk, 1))
 
                         for topk in range(max_topk):
-
                             topk_values = policy_value_dict[ope_ci][estimator][
                                 "true_policy_value"
                             ][: topk + 1]
@@ -6266,12 +6208,10 @@ class OffPolicySelection:
         metric_dict = defaultdict_to_dict(metric_dict)
 
         if isinstance(input_dict, MultipleInputDict):
-
             min_vals = np.zeros(total_n_datasets)
             max_vals = np.zeros(total_n_datasets)
 
             if behavior_policy_name is None and dataset_id is None:
-
                 l = 0
                 for behavior_policy, n_datasets in input_dict.n_datasets.items():
                     for dataset_id_ in range(n_datasets):
@@ -7352,9 +7292,7 @@ class OffPolicySelection:
         guide_min, guide_max = 1e5, -1e5
         if n_rows == 1:
             for i, estimator in enumerate(compared_estimators):
-
                 if isinstance(input_dict, MultipleInputDict):
-
                     if behavior_policy_name is None and dataset_id is None:
                         min_val, max_val = np.infty, -np.infty
 
@@ -7541,9 +7479,7 @@ class OffPolicySelection:
 
         else:
             for i, estimator in enumerate(compared_estimators):
-
                 if isinstance(input_dict, MultipleInputDict):
-
                     if behavior_policy_name is None and dataset_id is None:
                         min_val, max_val = np.infty, -np.infty
 
@@ -8055,9 +7991,7 @@ class OffPolicySelection:
             if n_rows == 1:
                 for ci in cis:
                     for i, estimator in enumerate(compared_estimators):
-
                         if isinstance(input_dict, MultipleInputDict):
-
                             if behavior_policy_name is None and dataset_id is None:
                                 min_val, max_val = np.infty, -np.infty
 
@@ -8261,9 +8195,7 @@ class OffPolicySelection:
             else:
                 for ci in cis:
                     for i, estimator in enumerate(compared_estimators):
-
                         if isinstance(input_dict, MultipleInputDict):
-
                             if behavior_policy_name is None and dataset_id is None:
                                 min_val, max_val = np.infty, -np.infty
 
@@ -8473,9 +8405,7 @@ class OffPolicySelection:
             if n_cols == 1:
                 for j, ci in enumerate(cis):
                     for i, estimator in enumerate(compared_estimators):
-
                         if isinstance(input_dict, MultipleInputDict):
-
                             if behavior_policy_name is None and dataset_id is None:
                                 min_val, max_val = np.infty, -np.infty
 
@@ -8679,9 +8609,7 @@ class OffPolicySelection:
             else:
                 for j, ci in enumerate(cis):
                     for i, estimator in enumerate(compared_estimators):
-
                         if isinstance(input_dict, MultipleInputDict):
-
                             if behavior_policy_name is None and dataset_id is None:
                                 min_val, max_val = np.infty, -np.infty
 
@@ -8978,7 +8906,6 @@ class OffPolicySelection:
         )
 
         if isinstance(input_dict, MultipleInputDict):
-
             if behavior_policy_name is None and dataset_id is None:
                 candidate_policy_names = defaultdict(list)
                 true_variance = defaultdict(list)
@@ -9053,9 +8980,7 @@ class OffPolicySelection:
         guide_min, guide_max = 1e5, -1e5
         if n_rows == 1:
             for i, estimator in enumerate(compared_estimators):
-
                 if isinstance(input_dict, MultipleInputDict):
-
                     if behavior_policy_name is None and dataset_id is None:
                         min_val, max_val = np.infty, -np.infty
 
@@ -9261,9 +9186,7 @@ class OffPolicySelection:
 
         else:
             for i, estimator in enumerate(compared_estimators):
-
                 if isinstance(input_dict, MultipleInputDict):
-
                     if behavior_policy_name is None and dataset_id is None:
                         min_val, max_val = np.infty, -np.infty
 
