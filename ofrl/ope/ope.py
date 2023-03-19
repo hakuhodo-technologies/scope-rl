@@ -2924,13 +2924,14 @@ class CumulativeDistributionOffPolicyEvaluation:
 
         for eval_policy in input_dict.keys():
             if input_dict[eval_policy]["on_policy_policy_value"] is not None:
-                on_policy_density = np.histogram(
+                density = np.histogram(
                     input_dict[eval_policy]["on_policy_policy_value"],
                     bins=reward_scale,
                     density=True,
                 )[0]
+                probability_density_function = density * np.diff(reward_scale)
                 cumulative_distribution_dict[eval_policy]["on_policy"] = np.insert(
-                    on_policy_density, 0, 0
+                    probability_density_function, 0, 0
                 ).cumsum()
             else:
                 cumulative_distribution_dict[eval_policy]["on_policy"] = None
@@ -3002,7 +3003,10 @@ class CumulativeDistributionOffPolicyEvaluation:
                     bins=reward_scale,
                     density=True,
                 )[0]
-                mean_dict[eval_policy]["on_policy"] = (density * reward_scale[1:]).sum()
+                probability_density_function = density * np.diff(reward_scale)
+                mean_dict[eval_policy]["on_policy"] = (
+                    probability_density_function * reward_scale[1:]
+                ).sum()
             else:
                 mean_dict[eval_policy]["on_policy"] = None
 
@@ -3071,9 +3075,10 @@ class CumulativeDistributionOffPolicyEvaluation:
                     bins=reward_scale,
                     density=True,
                 )[0]
-                mean = (density * reward_scale[1:]).sum()
+                probability_density_function = density * np.diff(reward_scale)
+                mean = (probability_density_function * reward_scale[1:]).sum()
                 variance_dict[eval_policy]["on_policy"] = (
-                    density * (reward_scale[1:] - mean) ** 2
+                    probability_density_function * (reward_scale[1:] - mean) ** 2
                 ).sum()
             else:
                 variance_dict[eval_policy]["on_policy"] = None
@@ -3150,12 +3155,15 @@ class CumulativeDistributionOffPolicyEvaluation:
                     bins=reward_scale,
                     density=True,
                 )[0]
+                probability_density_function = density * np.diff(reward_scale)
 
                 cvar = np.zeros_like(alphas)
                 for i, alpha in enumerate(alphas):
-                    idx_ = np.nonzero(density.cumsum() > alpha)[0]
+                    idx_ = np.nonzero(probability_density_function.cumsum() > alpha)[0]
                     lower_idx_ = idx_[0] if len(idx_) else -2
-                    cvar[i] = (density * reward_scale[1:])[:lower_idx_].sum()
+                    cvar[i] = (probability_density_function * reward_scale[1:])[
+                        :lower_idx_
+                    ].sum()
 
                 conditional_value_at_risk_dict[eval_policy]["on_policy"] = cvar
 
@@ -3234,10 +3242,15 @@ class CumulativeDistributionOffPolicyEvaluation:
                     bins=reward_scale,
                     density=True,
                 )[0]
+                probability_density_function = density * np.diff(reward_scale)
 
-                lower_idx_ = np.nonzero(density.cumsum() > alpha)[0]
-                median_idx_ = np.nonzero(density.cumsum() > 0.5)[0]
-                upper_idx_ = np.nonzero(density.cumsum() > 1 - alpha)[0]
+                lower_idx_ = np.nonzero(probability_density_function.cumsum() > alpha)[
+                    0
+                ]
+                median_idx_ = np.nonzero(probability_density_function.cumsum() > 0.5)[0]
+                upper_idx_ = np.nonzero(
+                    probability_density_function.cumsum() > 1 - alpha
+                )[0]
 
                 interquartile_range_dict[eval_policy]["on_policy"] = {
                     "median": self._target_value_given_idx(

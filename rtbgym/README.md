@@ -21,7 +21,7 @@
 
 *RTBGym* is an open-source simulation platform for Real-Time Bidding (RTB) of Display Advertising, which is written in Python. The simulator is particularly intended for reinforcement learning algorithms and follows [OpenAI Gym](https://gym.openai.com) and [Gymnasium](https://gymnasium.farama.org/)-like interface. We design RTBGym as a configurative environment so that researchers and practitioner can customize the environmental modules including `WinningPriceDistribution`, `ClickThroughRate`, and `ConversionRate`.
 
-Note that, RTBGym is publicized under [OfflineGym](../) repository, which facilitates the implementation of offline reinforcement learning procedure.
+Note that, RTBGym is publicized under [ofrl](../) repository, which facilitates the implementation of offline reinforcement learning procedure.
 
 ### Basic Setting
 
@@ -65,22 +65,22 @@ Note that, users can customize the above modules by following the [abstract clas
 We also define the bidding function in the [Bidder](./envs/simulator/bidder.py#15) class and the auction simulation in the [Simulator](./envs/simulator/rtb_synthetic.py#23) class, respectively.
 
 ## Installation
-RTBGym can be installed as a part of [OfflineGym](../) using Python's package manager `pip`.
+RTBGym can be installed as a part of [ofrl](../) using Python's package manager `pip`.
 ```
-pip install offlinegym
+pip install ofrl
 ```
 
 You can also install from source.
 ```bash
-git clone https://github.com/negocia-inc/offlinegym
-cd offlinegym
+git clone https://github.com/negocia-inc/ofrl
+cd ofrl
 python setup.py install
 ```
 
 ## Usage
 
 We provide an example usage of the standard and customized environment. \
-The online/offlline RL and Off-Policy Evaluation examples are provides in [OfflineGym's README](../README.md).
+The online/offlline RL and Off-Policy Evaluation examples are provides in [OFRL's README](../README.md).
 
 ### Standard RTBEnv
 
@@ -107,7 +107,7 @@ while not done:
     obs, reward, done, truncated, info = env.step(action)
 ```
 
-Let's visualize case with uniform random policy (in continuous action case). The discrete case also works in a similar manner.
+Let's visualize the case with uniform random policy (in continuous action case). The discrete case also works in a similar manner.
 
 ```Python
 # import from other libraries
@@ -123,8 +123,10 @@ agent = OnlineHead(
             minimum=0.1,  # minimum value that policy can take
             maximum=10,  # maximum value that policy can take
         )
-    )
+    ),
+    name="random",
 )
+agent.build_with_env(env)
 
 # (3) basic interaction for continuous action case
 obs, info = env.reset()
@@ -161,7 +163,7 @@ plt.show()
 </p>
 </figcaption>
 
-Note that, while we use [OfflineGym](../README.md) and [d3rlpy](https://github.com/takuseno/d3rlpy) here, RTBGym is compatible with any other libraries working on the [OpenAI Gym](https://gym.openai.com) and [Gymnasium](https://gymnasium.farama.org/)-like interface.
+Note that, while we use [ofrl](../README.md) and [d3rlpy](https://github.com/takuseno/d3rlpy) here, RTBGym is compatible with any other libraries working on the [OpenAI Gym](https://gym.openai.com) and [Gymnasium](https://gymnasium.farama.org/)-like interface.
 
 ### Customized RTGEnv
 
@@ -176,8 +178,8 @@ Next, we describe how to customize the environment by instantiating the environm
 - `initial_budget`: Initial budget (i.e., constraint) for an episode.
 - `n_ads`: Number of ads used for auction bidding.
 - `n_users`: Number of users used for auction bidding.
-- `ad_feature_dim`: Dimensions of the ad feature vectors.
-- `user_feature_dim`: Dimensions of the user feature vectors.
+- `ad_feature_dim`: Dimension of the ad feature vectors.
+- `user_feature_dim`: Dimension of the user feature vectors.
 - `ad_feature_vector`: Feature vectors that characterizes each ad.
 - `user_feature_vector`: Feature vectors that characterizes each user.
 - `ad_sampling_rate`: Sampling probabilities to determine which ad (id) is used in each auction.
@@ -382,8 +384,12 @@ This project is licensed under Apache 2.0 license - see [LICENSE](../LICENSE) fi
 ## Project Team
 
 - [Haruka Kiyohara](https://sites.google.com/view/harukakiyohara) (**Main Contributor**; Tokyo Institute of Technology)
+- Ren Kishimoto (Tokyo Institute of Technology)
 - Kosuke Kawakami (negocia Inc.)
+- Ken Kobayashi (Tokyo Institute of Technology)
+- Kazuhide Nakata (Tokyo Institute of Technology)
 - [Yuta Saito](https://usait0.com/en/) (Cornell University)
+
 
 ## Contact
 

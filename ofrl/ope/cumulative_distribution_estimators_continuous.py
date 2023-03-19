@@ -149,8 +149,9 @@ class ContinuousCumulativeDistributionDirectMethod(
         density = np.histogram(
             initial_state_value_prediction, bins=reward_scale, density=True
         )[0]
+        probability_density_function = density * np.diff(reward_scale)
 
-        return np.insert(density, 0, 0).cumsum()
+        return np.insert(probability_density_function, 0, 0).cumsum()
 
     def estimate_mean(
         self,
@@ -1070,7 +1071,8 @@ class ContinuousCumulativeDistributionTrajectoryWiseDoublyRobust(
 
         histogram_baseline = np.histogram(
             initial_state_value_prediction, bins=reward_scale, density=True
-        )[0].cumsum()
+        )[0]
+        histogram_baseline = (histogram_baseline * np.diff(reward_scale)).cumsum()
         histogram_baseline = np.insert(histogram_baseline, 0, 0)
 
         cumulative_density = weighted_residual + histogram_baseline
@@ -1790,7 +1792,8 @@ class ContinuousCumulativeDistributionSelfNormalizedTrajectoryWiseDoublyRobust(
 
         histogram_baseline = np.histogram(
             initial_state_value_prediction, bins=reward_scale, density=True
-        )[0].cumsum()
+        )[0]
+        histogram_baseline = (histogram_baseline * np.diff(reward_scale)).cumsum()
         histogram_baseline = np.insert(histogram_baseline, 0, 0)
 
         cumulative_density = weighted_residual + histogram_baseline

@@ -32,7 +32,7 @@ class WinningPriceDistribution(BaseWinningPriceDistribution):
 
     Tip
     -------
-    Use :class:`BaseWinningPriceDistribution` to define custom WinningPriceDistribution.
+    Use :class:`BaseWinningPriceDistribution` to define a custom WinningPriceDistribution.
 
     Parameters
     -------
@@ -43,10 +43,10 @@ class WinningPriceDistribution(BaseWinningPriceDistribution):
         Number of users. (This is for API consistency)
 
     ad_feature_dim: int (> 0)
-        Dimensions of the ad feature vectors. (This is for API consistency)
+        Dimension of the ad feature vectors. (This is for API consistency)
 
     user_feature_dim: int (> 0)
-        Dimensions of the user feature vectors. (This is for API consistency)
+        Dimension of the user feature vectors. (This is for API consistency)
 
     step_per_episode: int (> 0)
         Length of the CTR trend cycle. (This is for API consistency)
@@ -201,7 +201,7 @@ class ClickThroughRate(BaseClickAndConversionRate):
 
     Tip
     -------
-    Use :class:`BaseClickAndConversionRate` to define custom ClickThroughRate.
+    Use :class:`BaseClickAndConversionRate` to define a custom ClickThroughRate.
 
     Parameters
     -------
@@ -212,10 +212,10 @@ class ClickThroughRate(BaseClickAndConversionRate):
         Number of users. (This is for API consistency)
 
     ad_feature_dim: int (> 0)
-        Dimensions of the ad feature vectors.
+        Dimension of the ad feature vectors.
 
     user_feature_dim: int (> 0)
-        Dimensions of the user feature vectors.
+        Dimension of the user feature vectors.
 
     step_per_episode: int (> 0)
         Length of the CTR trend cycle.
@@ -415,7 +415,7 @@ class ConversionRate(BaseClickAndConversionRate):
 
     Tip
     -------
-    Use :class:`BaseClickAndConversionRate` to define custom ConversionRate.
+    Use :class:`BaseClickAndConversionRate` to define a custom ConversionRate.
 
     Parameters
     -------
@@ -426,10 +426,10 @@ class ConversionRate(BaseClickAndConversionRate):
         Number of users. (This is for API consistency)
 
     ad_feature_dim: int (> 0)
-        Dimensions of the ad feature vectors.
+        Dimension of the ad feature vectors.
 
     user_feature_dim: int (> 0)
-        Dimensions of the user feature vectors.
+        Dimension of the user feature vectors.
 
     step_per_episode: int (> 0)
         Length of the CVR trend cycle.
