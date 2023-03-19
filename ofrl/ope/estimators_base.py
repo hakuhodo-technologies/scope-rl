@@ -4,8 +4,6 @@ from dataclasses import dataclass
 from typing import Callable, Optional, Tuple, Union, Dict, List
 
 import numpy as np
-from sklearn.utils import check_scalar
-
 from d3rlpy.preprocessing import ActionScaler
 
 from ..utils import (

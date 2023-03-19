@@ -310,11 +310,11 @@ def gaussian_kernel(
         kernel density of x given y.
 
     """
-    x_2 = (x ** 2).sum(axis=1)
-    y_2 = (y ** 2).sum(axis=1)
+    x_2 = (x**2).sum(axis=1)
+    y_2 = (y**2).sum(axis=1)
     x_y = (x[:, np.newaxis, :] @ y[:, :, np.newaxis]).flatten()
     distance = x_2 + y_2 - 2 * x_y
-    return np.exp(-distance / (2 * sigma ** 2))
+    return np.exp(-distance / (2 * sigma**2))
 
 
 def estimate_confidence_interval_by_bootstrap(

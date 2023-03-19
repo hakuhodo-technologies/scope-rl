@@ -359,7 +359,7 @@ class OffPolicySelection:
         max_topk: Optional[int] = None,
         metrics: Optional[List[str]] = None,
         safety_threshold: Optional[float] = None,
-        safety_criteria: Optional[float] = None,
+        relative_safety_criteria: Optional[float] = None,
     ):
         if isinstance(input_dict, MultipleInputDict):
             max_topk_ = 100
@@ -382,6 +382,9 @@ class OffPolicySelection:
                         dataset_id
                     ]
         else:
+            behavior_policy_name = input_dict[list(input_dict.keys())[0]][
+                "behavior_policy"
+            ]
             max_topk_ = len(input_dict)
 
         if max_topk is None:
@@ -406,15 +409,19 @@ class OffPolicySelection:
                     )
 
         if safety_threshold is None:
-            if behavior_policy_name is not None and safety_criteria is not None:
+            if (
+                behavior_policy_name is not None
+                and relative_safety_criteria is not None
+            ):
                 check_scalar(
-                    safety_criteria,
-                    name="safety_criteria",
+                    relative_safety_criteria,
+                    name="relative_safety_criteria",
                     target_type=float,
                     min_val=0.0,
                 )
                 safety_threshold = (
-                    safety_criteria * self.behavior_policy_value[behavior_policy_name]
+                    relative_safety_criteria
+                    * self.behavior_policy_value[behavior_policy_name]
                 )
             else:
                 safety_threshold = 0.0
@@ -423,7 +430,6 @@ class OffPolicySelection:
             safety_threshold,
             name="safety_threshold",
             target_type=float,
-            min_val=0.0,
         )
 
         return max_topk, safety_threshold
@@ -634,7 +640,7 @@ class OffPolicySelection:
         return_by_dataframe: bool = False,
         top_k_in_eval_metrics: int = 1,
         safety_threshold: Optional[float] = None,
-        safety_criteria: Optional[float] = None,
+        relative_safety_criteria: Optional[float] = None,
     ):
         """Rank the candidate policies by their estimated policy value.
 
@@ -683,7 +689,7 @@ class OffPolicySelection:
         safety_threshold: float, default=None.
             The policy value required to be a safe policy.
 
-        safety_criteria: float, default=None (>= 0)
+        relative_safety_criteria: float, default=None (>= 0)
             The relative policy value required to be a safe policy.
             For example, when 0.9 is given, candidate policy must exceed 90\\% of the behavior policy performance.
             Only applicable when using a single behavior policy.
@@ -769,11 +775,12 @@ class OffPolicySelection:
         dataset_id = list(input_dict.values())[0]["dataset_id"]
 
         if safety_threshold is None:
-            if safety_criteria is None:
+            if relative_safety_criteria is None:
                 safety_threshold = 0.0
             else:
                 safety_threshold = (
-                    safety_criteria * self.behavior_policy_value[behavior_policy_name]
+                    relative_safety_criteria
+                    * self.behavior_policy_value[behavior_policy_name]
                 )
 
         estimated_policy_value_dict = self.ope.estimate_policy_value(
@@ -895,7 +902,14 @@ class OffPolicySelection:
             ranking_df_dict = defaultdict_to_dict(ranking_df_dict)
 
             if return_metrics:
-                (mse, rankcorr, pvalue, regret, type_i, type_ii,) = (
+                (
+                    mse,
+                    rankcorr,
+                    pvalue,
+                    regret,
+                    type_i,
+                    type_ii,
+                ) = (
                     [],
                     [],
                     [],
@@ -933,7 +947,7 @@ class OffPolicySelection:
         return_by_dataframe: bool = False,
         top_k_in_eval_metrics: int = 1,
         safety_threshold: Optional[float] = None,
-        safety_criteria: Optional[float] = None,
+        relative_safety_criteria: Optional[float] = None,
     ):
         """Rank the candidate policies by their estimated policy value via cumulative distribution methods.
 
@@ -982,7 +996,7 @@ class OffPolicySelection:
         safety_threshold: float, default=None.
             The policy value required to be a safe policy.
 
-        safety_criteria: float, default=None (>= 0)
+        relative_safety_criteria: float, default=None (>= 0)
             The relative policy value required to be a safe policy.
             For example, when 0.9 is given, candidate policy must exceed 90\\% of the behavior policy performance.
             Only applicable when using a single behavior policy.
@@ -1068,11 +1082,12 @@ class OffPolicySelection:
         dataset_id = list(input_dict.values())[0]["dataset_id"]
 
         if safety_threshold is None:
-            if safety_criteria is None:
+            if relative_safety_criteria is None:
                 safety_threshold = 0.0
             else:
                 safety_threshold = (
-                    safety_criteria * self.behavior_policy_value[behavior_policy_name]
+                    relative_safety_criteria
+                    * self.behavior_policy_value[behavior_policy_name]
                 )
 
         estimated_policy_value_dict = self.cumulative_distribution_ope.estimate_mean(
@@ -1196,7 +1211,14 @@ class OffPolicySelection:
             ranking_df_dict = defaultdict_to_dict(ranking_df_dict)
 
             if return_metrics:
-                (mse, rankcorr, pvalue, regret, type_i, type_ii,) = (
+                (
+                    mse,
+                    rankcorr,
+                    pvalue,
+                    regret,
+                    type_i,
+                    type_ii,
+                ) = (
                     [],
                     [],
                     [],
@@ -1234,7 +1256,7 @@ class OffPolicySelection:
         return_by_dataframe: bool = False,
         top_k_in_eval_metrics: int = 1,
         safety_threshold: Optional[float] = None,
-        safety_criteria: Optional[float] = None,
+        relative_safety_criteria: Optional[float] = None,
         cis: List[str] = ["bootstrap"],
         alpha: float = 0.05,
         n_bootstrap_samples: int = 100,
@@ -1287,7 +1309,7 @@ class OffPolicySelection:
         safety_threshold: float, default=None.
             The policy value required to be a safe policy.
 
-        safety_criteria: float, default=None (>= 0)
+        relative_safety_criteria: float, default=None (>= 0)
             The relative policy value required to be a safe policy.
             For example, when 0.9 is given, candidate policy must exceed 90\\% of the behavior policy performance.
             Only applicable when using a single behavior policy.
@@ -1388,11 +1410,12 @@ class OffPolicySelection:
         dataset_id = list(input_dict.values())[0]["dataset_id"]
 
         if safety_threshold is None:
-            if safety_criteria is None:
+            if relative_safety_criteria is None:
                 safety_threshold = 0.0
             else:
                 safety_threshold = (
-                    safety_criteria * self.behavior_policy_value[behavior_policy_name]
+                    relative_safety_criteria
+                    * self.behavior_policy_value[behavior_policy_name]
                 )
 
         candidate_policy_names = (
@@ -1531,7 +1554,15 @@ class OffPolicySelection:
             ranking_df_dict = defaultdict_to_dict(ranking_df_dict)
 
         if return_metrics:
-            (ci_, estimator_, rankcorr, pvalue, regret, type_i, type_ii,) = (
+            (
+                ci_,
+                estimator_,
+                rankcorr,
+                pvalue,
+                regret,
+                type_i,
+                type_ii,
+            ) = (
                 [],
                 [],
                 [],
@@ -1794,7 +1825,13 @@ class OffPolicySelection:
             ranking_df_dict = defaultdict_to_dict(ranking_df_dict)
 
             if return_metrics:
-                (mse, rankcorr, pvalue, type_i, type_ii,) = (
+                (
+                    mse,
+                    rankcorr,
+                    pvalue,
+                    type_i,
+                    type_ii,
+                ) = (
                     [],
                     [],
                     [],
@@ -2054,7 +2091,13 @@ class OffPolicySelection:
             ranking_df_dict = defaultdict_to_dict(ranking_df_dict)
 
             if return_metrics:
-                (mse, rankcorr, pvalue, type_i, type_ii,) = (
+                (
+                    mse,
+                    rankcorr,
+                    pvalue,
+                    type_i,
+                    type_ii,
+                ) = (
                     [],
                     [],
                     [],
@@ -2295,7 +2338,7 @@ class OffPolicySelection:
         return_by_dataframe: bool = False,
         top_k_in_eval_metrics: int = 1,
         safety_threshold: Optional[float] = None,
-        safety_criteria: Optional[float] = None,
+        relative_safety_criteria: Optional[float] = None,
     ):
         """Rank the candidate policies by their estimated policy value.
 
@@ -2350,7 +2393,7 @@ class OffPolicySelection:
         safety_threshold: float, default=None.
             The policy value required to be a safe policy.
 
-        safety_criteria: float, default=None (>= 0)
+        relative_safety_criteria: float, default=None (>= 0)
             The relative policy value required to be a safe policy.
             For example, when 0.9 is given, candidate policy must exceed 90\\% of the behavior policy performance.
             Only applicable when using a single behavior policy.
@@ -2468,7 +2511,7 @@ class OffPolicySelection:
                                     return_by_dataframe=return_by_dataframe,
                                     top_k_in_eval_metrics=top_k_in_eval_metrics,
                                     safety_threshold=safety_threshold,
-                                    safety_criteria=safety_criteria,
+                                    relative_safety_criteria=relative_safety_criteria,
                                 )
                                 ranking_df[behavior_policy].append(ops_result_[0])
                                 metric_df[behavior_policy].append(ops_result_[1])
@@ -2498,7 +2541,7 @@ class OffPolicySelection:
                                     return_by_dataframe=return_by_dataframe,
                                     top_k_in_eval_metrics=top_k_in_eval_metrics,
                                     safety_threshold=safety_threshold,
-                                    safety_criteria=safety_criteria,
+                                    relative_safety_criteria=relative_safety_criteria,
                                 )
                                 ops_result[behavior_policy].append(ops_result_)
 
@@ -2530,7 +2573,7 @@ class OffPolicySelection:
                                 return_by_dataframe=return_by_dataframe,
                                 top_k_in_eval_metrics=top_k_in_eval_metrics,
                                 safety_threshold=safety_threshold,
-                                safety_criteria=safety_criteria,
+                                relative_safety_criteria=relative_safety_criteria,
                             )
                             ranking_df[behavior_policy] = ops_result_[0]
                             metric_df[behavior_policy] = ops_result_[1]
@@ -2552,7 +2595,7 @@ class OffPolicySelection:
                                 return_by_dataframe=return_by_dataframe,
                                 top_k_in_eval_metrics=top_k_in_eval_metrics,
                                 safety_threshold=safety_threshold,
-                                safety_criteria=safety_criteria,
+                                relative_safety_criteria=relative_safety_criteria,
                             )
                             ops_result[behavior_policy] = ops_result_
 
@@ -2586,7 +2629,7 @@ class OffPolicySelection:
                                 return_by_dataframe=return_by_dataframe,
                                 top_k_in_eval_metrics=top_k_in_eval_metrics,
                                 safety_threshold=safety_threshold,
-                                safety_criteria=safety_criteria,
+                                relative_safety_criteria=relative_safety_criteria,
                             )
                             ranking_df.append(ops_result_[0])
                             metric_df.append(ops_result_[1])
@@ -2610,7 +2653,7 @@ class OffPolicySelection:
                                 return_by_dataframe=return_by_dataframe,
                                 top_k_in_eval_metrics=top_k_in_eval_metrics,
                                 safety_threshold=safety_threshold,
-                                safety_criteria=safety_criteria,
+                                relative_safety_criteria=relative_safety_criteria,
                             )
                             ops_result.append(ops_result_)
 
@@ -2626,7 +2669,7 @@ class OffPolicySelection:
                         return_by_dataframe=return_by_dataframe,
                         top_k_in_eval_metrics=top_k_in_eval_metrics,
                         safety_threshold=safety_threshold,
-                        safety_criteria=safety_criteria,
+                        relative_safety_criteria=relative_safety_criteria,
                     )
 
             else:
@@ -2638,7 +2681,7 @@ class OffPolicySelection:
                     return_by_dataframe=return_by_dataframe,
                     top_k_in_eval_metrics=top_k_in_eval_metrics,
                     safety_threshold=safety_threshold,
-                    safety_criteria=safety_criteria,
+                    relative_safety_criteria=relative_safety_criteria,
                 )
 
         else:
@@ -2655,7 +2698,7 @@ class OffPolicySelection:
                 return_by_dataframe=return_by_dataframe,
                 top_k_in_eval_metrics=top_k_in_eval_metrics,
                 safety_threshold=safety_threshold,
-                safety_criteria=safety_criteria,
+                relative_safety_criteria=relative_safety_criteria,
             )
 
         return ops_result
@@ -2671,7 +2714,7 @@ class OffPolicySelection:
         return_by_dataframe: bool = False,
         top_k_in_eval_metrics: int = 1,
         safety_threshold: Optional[float] = None,
-        safety_criteria: Optional[float] = None,
+        relative_safety_criteria: Optional[float] = None,
     ):
         """Rank the candidate policies by their estimated policy value via cumulative distribution methods.
 
@@ -2726,7 +2769,7 @@ class OffPolicySelection:
         safety_threshold: float, default=None.
             The policy value required to be a safe policy.
 
-        safety_criteria: float, default=None (>= 0)
+        relative_safety_criteria: float, default=None (>= 0)
             The relative policy value required to be a safe policy.
             For example, when 0.9 is given, candidate policy must exceed 90\\% of the behavior policy performance.
             Only applicable when using a single behavior policy.
@@ -2844,7 +2887,7 @@ class OffPolicySelection:
                                     return_by_dataframe=return_by_dataframe,
                                     top_k_in_eval_metrics=top_k_in_eval_metrics,
                                     safety_threshold=safety_threshold,
-                                    safety_criteria=safety_criteria,
+                                    relative_safety_criteria=relative_safety_criteria,
                                 )
                                 ranking_df[behavior_policy].append(ops_result_[0])
                                 metric_df[behavior_policy].append(ops_result_[1])
@@ -2874,7 +2917,7 @@ class OffPolicySelection:
                                     return_by_dataframe=return_by_dataframe,
                                     top_k_in_eval_metrics=top_k_in_eval_metrics,
                                     safety_threshold=safety_threshold,
-                                    safety_criteria=safety_criteria,
+                                    relative_safety_criteria=relative_safety_criteria,
                                 )
                                 ops_result[behavior_policy].append(ops_result_)
 
@@ -2906,7 +2949,7 @@ class OffPolicySelection:
                                 return_by_dataframe=return_by_dataframe,
                                 top_k_in_eval_metrics=top_k_in_eval_metrics,
                                 safety_threshold=safety_threshold,
-                                safety_criteria=safety_criteria,
+                                relative_safety_criteria=relative_safety_criteria,
                             )
                             ranking_df[behavior_policy] = ops_result_[0]
                             metric_df[behavior_policy] = ops_result_[1]
@@ -2928,7 +2971,7 @@ class OffPolicySelection:
                                 return_by_dataframe=return_by_dataframe,
                                 top_k_in_eval_metrics=top_k_in_eval_metrics,
                                 safety_threshold=safety_threshold,
-                                safety_criteria=safety_criteria,
+                                relative_safety_criteria=relative_safety_criteria,
                             )
                             ops_result[behavior_policy] = ops_result_
 
@@ -2962,7 +3005,7 @@ class OffPolicySelection:
                                 return_by_dataframe=return_by_dataframe,
                                 top_k_in_eval_metrics=top_k_in_eval_metrics,
                                 safety_threshold=safety_threshold,
-                                safety_criteria=safety_criteria,
+                                relative_safety_criteria=relative_safety_criteria,
                             )
                             ranking_df.append(ops_result_[0])
                             metric_df.append(ops_result_[1])
@@ -2986,7 +3029,7 @@ class OffPolicySelection:
                                 return_by_dataframe=return_by_dataframe,
                                 top_k_in_eval_metrics=top_k_in_eval_metrics,
                                 safety_threshold=safety_threshold,
-                                safety_criteria=safety_criteria,
+                                relative_safety_criteria=relative_safety_criteria,
                             )
                             ops_result.append(ops_result_)
 
@@ -3003,7 +3046,7 @@ class OffPolicySelection:
                             return_by_dataframe=return_by_dataframe,
                             top_k_in_eval_metrics=top_k_in_eval_metrics,
                             safety_threshold=safety_threshold,
-                            safety_criteria=safety_criteria,
+                            relative_safety_criteria=relative_safety_criteria,
                         )
                     )
 
@@ -3017,7 +3060,7 @@ class OffPolicySelection:
                         return_by_dataframe=return_by_dataframe,
                         top_k_in_eval_metrics=top_k_in_eval_metrics,
                         safety_threshold=safety_threshold,
-                        safety_criteria=safety_criteria,
+                        relative_safety_criteria=relative_safety_criteria,
                     )
                 )
 
@@ -3035,7 +3078,7 @@ class OffPolicySelection:
                 return_by_dataframe=return_by_dataframe,
                 top_k_in_eval_metrics=top_k_in_eval_metrics,
                 safety_threshold=safety_threshold,
-                safety_criteria=safety_criteria,
+                relative_safety_criteria=relative_safety_criteria,
             )
 
         return ops_result
@@ -3051,7 +3094,7 @@ class OffPolicySelection:
         return_by_dataframe: bool = False,
         top_k_in_eval_metrics: int = 1,
         safety_threshold: Optional[float] = None,
-        safety_criteria: Optional[float] = None,
+        relative_safety_criteria: Optional[float] = None,
         cis: List[str] = ["bootstrap"],
         alpha: float = 0.05,
         n_bootstrap_samples: int = 100,
@@ -3110,7 +3153,7 @@ class OffPolicySelection:
         safety_threshold: float, default=None.
             The policy value required to be a safe policy.
 
-        safety_criteria: float, default=None (>= 0)
+        relative_safety_criteria: float, default=None (>= 0)
             The relative policy value required to be a safe policy.
             For example, when 0.9 is given, candidate policy must exceed 90\\% of the behavior policy performance.
             Only applicable when using a single behavior policy.
@@ -3239,7 +3282,7 @@ class OffPolicySelection:
                                     return_by_dataframe=return_by_dataframe,
                                     top_k_in_eval_metrics=top_k_in_eval_metrics,
                                     safety_threshold=safety_threshold,
-                                    safety_criteria=safety_criteria,
+                                    relative_safety_criteria=relative_safety_criteria,
                                     cis=cis,
                                     alpha=alpha,
                                     n_bootstrap_samples=n_bootstrap_samples,
@@ -3273,7 +3316,7 @@ class OffPolicySelection:
                                     return_by_dataframe=return_by_dataframe,
                                     top_k_in_eval_metrics=top_k_in_eval_metrics,
                                     safety_threshold=safety_threshold,
-                                    safety_criteria=safety_criteria,
+                                    relative_safety_criteria=relative_safety_criteria,
                                     cis=cis,
                                     alpha=alpha,
                                     n_bootstrap_samples=n_bootstrap_samples,
@@ -3309,7 +3352,7 @@ class OffPolicySelection:
                                 return_by_dataframe=return_by_dataframe,
                                 top_k_in_eval_metrics=top_k_in_eval_metrics,
                                 safety_threshold=safety_threshold,
-                                safety_criteria=safety_criteria,
+                                relative_safety_criteria=relative_safety_criteria,
                                 cis=cis,
                                 alpha=alpha,
                                 n_bootstrap_samples=n_bootstrap_samples,
@@ -3335,7 +3378,7 @@ class OffPolicySelection:
                                 return_by_dataframe=return_by_dataframe,
                                 top_k_in_eval_metrics=top_k_in_eval_metrics,
                                 safety_threshold=safety_threshold,
-                                safety_criteria=safety_criteria,
+                                relative_safety_criteria=relative_safety_criteria,
                                 cis=cis,
                                 alpha=alpha,
                                 n_bootstrap_samples=n_bootstrap_samples,
@@ -3373,7 +3416,7 @@ class OffPolicySelection:
                                 return_by_dataframe=return_by_dataframe,
                                 top_k_in_eval_metrics=top_k_in_eval_metrics,
                                 safety_threshold=safety_threshold,
-                                safety_criteria=safety_criteria,
+                                relative_safety_criteria=relative_safety_criteria,
                                 cis=cis,
                                 alpha=alpha,
                                 n_bootstrap_samples=n_bootstrap_samples,
@@ -3401,7 +3444,7 @@ class OffPolicySelection:
                                 return_by_dataframe=return_by_dataframe,
                                 top_k_in_eval_metrics=top_k_in_eval_metrics,
                                 safety_threshold=safety_threshold,
-                                safety_criteria=safety_criteria,
+                                relative_safety_criteria=relative_safety_criteria,
                                 cis=cis,
                                 alpha=alpha,
                                 n_bootstrap_samples=n_bootstrap_samples,
@@ -3422,7 +3465,7 @@ class OffPolicySelection:
                         return_by_dataframe=return_by_dataframe,
                         top_k_in_eval_metrics=top_k_in_eval_metrics,
                         safety_threshold=safety_threshold,
-                        safety_criteria=safety_criteria,
+                        relative_safety_criteria=relative_safety_criteria,
                         cis=cis,
                         alpha=alpha,
                         n_bootstrap_samples=n_bootstrap_samples,
@@ -3438,7 +3481,7 @@ class OffPolicySelection:
                     return_by_dataframe=return_by_dataframe,
                     top_k_in_eval_metrics=top_k_in_eval_metrics,
                     safety_threshold=safety_threshold,
-                    safety_criteria=safety_criteria,
+                    relative_safety_criteria=relative_safety_criteria,
                     cis=cis,
                     alpha=alpha,
                     n_bootstrap_samples=n_bootstrap_samples,
@@ -3459,7 +3502,7 @@ class OffPolicySelection:
                 return_by_dataframe=return_by_dataframe,
                 top_k_in_eval_metrics=top_k_in_eval_metrics,
                 safety_threshold=safety_threshold,
-                safety_criteria=safety_criteria,
+                relative_safety_criteria=relative_safety_criteria,
                 cis=cis,
                 alpha=alpha,
                 n_bootstrap_samples=n_bootstrap_samples,
@@ -5409,9 +5452,11 @@ class OffPolicySelection:
                             l = 0
                             for behavior_policy in input_dict.behavior_policy_names:
                                 for dataset_id_ in range(n_datasets[behavior_policy]):
-                                    baseline[l] = self.behavior_policy_value[
-                                        behavior_policy
-                                    ]
+                                    if i == 0:
+                                        baseline[l] = self.behavior_policy_value[
+                                            behavior_policy
+                                        ]
+
                                     topk_values = ranking_dict[behavior_policy][
                                         dataset_id_
                                     ][estimator][: topk + 1]
@@ -5454,9 +5499,11 @@ class OffPolicySelection:
                             for l, behavior_policy in enumerate(
                                 input_dict.behavior_policy_names
                             ):
-                                baseline[l] = self.behavior_policy_value[
-                                    behavior_policy
-                                ]
+                                if i == 0:
+                                    baseline[l] = self.behavior_policy_value[
+                                        behavior_policy
+                                    ]
+
                                 topk_values = ranking_dict[behavior_policy][estimator][
                                     : topk + 1
                                 ]
@@ -5615,7 +5662,7 @@ class OffPolicySelection:
         max_topk: Optional[int] = None,
         return_safety_violation_rate: bool = False,
         safety_threshold: Optional[float] = None,
-        safety_criteria: Optional[float] = None,
+        relative_safety_criteria: Optional[float] = None,
         return_by_dataframe: bool = False,
     ):
         """Obtain the topk deployment result (policy value) selected by standard OPE.
@@ -5666,7 +5713,7 @@ class OffPolicySelection:
         safety_threshold: float, default=None.
             The policy value required to be a safe policy.
 
-        safety_criteria: float, default=None
+        relative_safety_criteria: float, default=None
             The relative policy value required to be a safe policy.
             For example, when 0.9 is given, candidate policy must exceed 90\\% of the behavior policy performance.
             Only applicable when using a single behavior policy.
@@ -5723,7 +5770,7 @@ class OffPolicySelection:
             dataset_id=dataset_id,
             max_topk=max_topk,
             safety_threshold=safety_threshold,
-            safety_criteria=safety_criteria,
+            relative_safety_criteria=relative_safety_criteria,
         )
 
         true_dict = self.obtain_true_selection_result(
@@ -5763,7 +5810,7 @@ class OffPolicySelection:
         max_topk: Optional[int] = None,
         return_safety_violation_rate: bool = False,
         safety_threshold: Optional[float] = None,
-        safety_criteria: Optional[float] = None,
+        relative_safety_criteria: Optional[float] = None,
         return_by_dataframe: bool = False,
     ):
         """Obtain the topk deployment result (policy value) selected by cumulative distribution OPE.
@@ -5814,7 +5861,7 @@ class OffPolicySelection:
         safety_threshold: float, default=None.
             The policy value required to be a safe policy.
 
-        safety_criteria: float, default=None
+        relative_safety_criteria: float, default=None
             The relative policy value required to be a safe policy.
             For example, when 0.9 is given, candidate policy must exceed 90\\% of the behavior policy performance.
             Only applicable when using a single behavior policy.
@@ -5871,7 +5918,7 @@ class OffPolicySelection:
             dataset_id=dataset_id,
             max_topk=max_topk,
             safety_threshold=safety_threshold,
-            safety_criteria=safety_criteria,
+            relative_safety_criteria=relative_safety_criteria,
         )
 
         true_dict = self.obtain_true_selection_result(
@@ -5911,7 +5958,7 @@ class OffPolicySelection:
         max_topk: Optional[int] = None,
         return_safety_violation_rate: bool = False,
         safety_threshold: Optional[float] = None,
-        safety_criteria: Optional[float] = None,
+        relative_safety_criteria: Optional[float] = None,
         cis: List[str] = ["bootstrap"],
         ope_alpha: float = 0.05,
         n_bootstrap_samples: int = 100,
@@ -5966,7 +6013,7 @@ class OffPolicySelection:
         safety_threshold: float, default=None.
             The policy value required to be a safe policy.
 
-        safety_criteria: float, default=None
+        relative_safety_criteria: float, default=None
             The relative policy value required to be a safe policy.
             For example, when 0.9 is given, candidate policy must exceed 90\\% of the behavior policy performance.
             Only applicable when using a single behavior policy.
@@ -6035,7 +6082,7 @@ class OffPolicySelection:
             dataset_id=dataset_id,
             max_topk=max_topk,
             safety_threshold=safety_threshold,
-            safety_criteria=safety_criteria,
+            relative_safety_criteria=relative_safety_criteria,
         )
         if return_safety_violation_rate:
             metrics = ["k-th", "best", "worst", "mean", "std", "safety_violation_rate"]
@@ -6073,9 +6120,11 @@ class OffPolicySelection:
                                     for dataset_id_ in range(
                                         n_datasets[behavior_policy]
                                     ):
-                                        baseline[l] = self.behavior_policy_value[
-                                            behavior_policy
-                                        ]
+                                        if i == 0 and ci == cis[0]:
+                                            baseline[l] = self.behavior_policy_value[
+                                                behavior_policy
+                                            ]
+
                                         topk_values = policy_value_dict[
                                             behavior_policy
                                         ][dataset_id_][ci][estimator][
@@ -6125,6 +6174,11 @@ class OffPolicySelection:
                                 for l, behavior_policy in enumerate(
                                     input_dict.behavior_policy_names
                                 ):
+                                    if i == 0 and ci == cis[0]:
+                                        baseline[l] = self.behavior_policy_value[
+                                            behavior_policy
+                                        ]
+
                                     topk_values = policy_value_dict[behavior_policy][
                                         ci
                                     ][estimator]["true_policy_value"][: topk + 1]
@@ -6262,7 +6316,7 @@ class OffPolicySelection:
         metric_dict = defaultdict_to_dict(metric_dict)
 
         if return_by_dataframe:
-            metrics.extend(["weighted_rrt", "deviation_rrt"])
+            metrics.extend(["sharpe_ratio"])
             metric_df = []
 
             for ci in cis:
@@ -7022,8 +7076,8 @@ class OffPolicySelection:
             max_val = max_vals.mean()
 
         else:
-            min_val = true_dict.min()
-            max_val = true_dict.max()
+            min_val = np.array(list(true_dict.values())).min()
+            max_val = np.array(list(true_dict.values())).max()
 
         return min_val, max_val
 
@@ -7194,6 +7248,13 @@ class OffPolicySelection:
                 axes.set_ylabel("standard deviation")
 
             elif metric == "sharpe_ratio":
+                axes.plot(
+                    np.arange(2, max_topk + 1),
+                    np.zeros(max_topk - 1),
+                    color="black",
+                    linewidth=0.5,
+                )
+
                 axes.set_title("sharpe ratio")
                 axes.set_ylabel("sharpe ratio")
 
@@ -7270,6 +7331,13 @@ class OffPolicySelection:
                     axes[j].set_ylabel("standard deviation")
 
                 elif metric == "sharpe_ratio":
+                    axes[j].plot(
+                        np.arange(2, max_topk + 1),
+                        np.zeros(max_topk - 1),
+                        color="black",
+                        linewidth=0.5,
+                    )
+
                     axes[j].set_title("sharpe ratio")
                     axes[j].set_ylabel("sharpe ratio")
 
@@ -7311,7 +7379,7 @@ class OffPolicySelection:
         ],
         max_topk: Optional[int] = None,
         safety_threshold: Optional[float] = None,
-        safety_criteria: Optional[float] = None,
+        relative_safety_criteria: Optional[float] = None,
         visualize_ci: bool = False,
         plot_ci: str = "bootstrap",
         plot_alpha: float = 0.05,
@@ -7372,7 +7440,7 @@ class OffPolicySelection:
         safety_threshold: float, default=None.
             The policy value required to be a safe policy.
 
-        safety_criteria: float, default=None
+        relative_safety_criteria: float, default=None
             The relative policy value required to be a safe policy.
             For example, when 0.9 is given, candidate policy must exceed 90\\% of the behavior policy performance.
             Only applicable when using a single behavior policy.
@@ -7413,7 +7481,7 @@ class OffPolicySelection:
             max_topk=max_topk,
             metrics=metrics,
             safety_threshold=safety_threshold,
-            safety_criteria=safety_criteria,
+            relative_safety_criteria=relative_safety_criteria,
         )
         self._check_basic_visualization_inputs(fig_dir=fig_dir, fig_name=fig_name)
 
@@ -7428,7 +7496,7 @@ class OffPolicySelection:
             behavior_policy_name=behavior_policy_name,
             dataset_id=dataset_id,
         )
-
+        # note: true_dict is transformed in this function, as it is passed by reference
         metric_dict = self._obtain_topk_policy_performance(
             true_dict=true_dict,
             estimation_dict=estimation_dict,
@@ -7443,6 +7511,16 @@ class OffPolicySelection:
             return_safety_violation_rate=("safety_violation_rate" in metrics),
             safety_threshold=safety_threshold,
         )
+        # in the case with single input_dict, true_dict has not been transformed
+        if not isinstance(input_dict, MultipleInputDict) or (
+            behavior_policy_name is not None and dataset_id is not None
+        ):
+            true_dict = dict(
+                zip(
+                    true_dict["ranking"],
+                    true_dict["policy_value"],
+                )
+            )
 
         min_val, max_val = self._obtain_min_max_val_for_topk_visualization(
             true_dict=true_dict,
@@ -7487,7 +7565,7 @@ class OffPolicySelection:
         ],
         max_topk: Optional[int] = None,
         safety_threshold: Optional[float] = None,
-        safety_criteria: Optional[float] = None,
+        relative_safety_criteria: Optional[float] = None,
         visualize_ci: bool = False,
         plot_ci: str = "bootstrap",
         plot_alpha: float = 0.05,
@@ -7548,7 +7626,7 @@ class OffPolicySelection:
         safety_threshold: float, default=None.
             The policy value required to be a safe policy.
 
-        safety_criteria: float, default=None
+        relative_safety_criteria: float, default=None
             The relative policy value required to be a safe policy.
             For example, when 0.9 is given, candidate policy must exceed 90\\% of the behavior policy performance.
 
@@ -7588,7 +7666,7 @@ class OffPolicySelection:
             max_topk=max_topk,
             metrics=metrics,
             safety_threshold=safety_threshold,
-            safety_criteria=safety_criteria,
+            relative_safety_criteria=relative_safety_criteria,
         )
         self._check_basic_visualization_inputs(fig_dir=fig_dir, fig_name=fig_name)
 
@@ -7603,7 +7681,7 @@ class OffPolicySelection:
             behavior_policy_name=behavior_policy_name,
             dataset_id=dataset_id,
         )
-
+        # note: true_dict is transformed in this function, as it is passed by reference
         metric_dict = self._obtain_topk_policy_performance(
             true_dict=true_dict,
             estimation_dict=estimation_dict,
@@ -7618,6 +7696,16 @@ class OffPolicySelection:
             return_safety_violation_rate=("safety_violation_rate" in metrics),
             safety_threshold=safety_threshold,
         )
+        # in the case with single input_dict, true_dict has not been transformed
+        if not isinstance(input_dict, MultipleInputDict) or (
+            behavior_policy_name is not None and dataset_id is not None
+        ):
+            true_dict = dict(
+                zip(
+                    true_dict["ranking"],
+                    true_dict["policy_value"],
+                )
+            )
 
         min_val, max_val = self._obtain_min_max_val_for_topk_visualization(
             true_dict=true_dict,
@@ -7662,7 +7750,7 @@ class OffPolicySelection:
         ],
         max_topk: Optional[int] = None,
         safety_threshold: Optional[float] = None,
-        safety_criteria: Optional[float] = None,
+        relative_safety_criteria: Optional[float] = None,
         ope_cis: List[str] = ["bootstrap"],
         ope_alpha: float = 0.05,
         ope_n_bootstrap_samples: int = 100,
@@ -7726,7 +7814,7 @@ class OffPolicySelection:
         safety_threshold: float, default=None.
             The policy value required to be a safe policy.
 
-        safety_criteria: float, default=None
+        relative_safety_criteria: float, default=None
             The relative policy value required to be a safe policy.
             For example, when 0.9 is given, candidate policy must exceed 90\\% of the behavior policy performance.
 
@@ -7775,7 +7863,7 @@ class OffPolicySelection:
             max_topk=max_topk,
             metrics=metrics,
             safety_threshold=safety_threshold,
-            safety_criteria=safety_criteria,
+            relative_safety_criteria=relative_safety_criteria,
         )
         self._check_basic_visualization_inputs(fig_dir=fig_dir, fig_name=fig_name)
 
@@ -7792,7 +7880,7 @@ class OffPolicySelection:
             max_topk=max_topk,
             return_safety_violation_rate=("safety_violation_rate" in metrics),
             safety_threshold=safety_threshold,
-            safety_criteria=safety_criteria,
+            relative_safety_criteria=relative_safety_criteria,
             cis=ope_cis,
             ope_alpha=ope_alpha,
             n_bootstrap_samples=ope_n_bootstrap_samples,
@@ -7933,6 +8021,13 @@ class OffPolicySelection:
                     axes.set_ylabel("standard deviation")
 
                 elif metric == "sharpe_ratio":
+                    axes.plot(
+                        np.arange(2, max_topk + 1),
+                        np.zeros(max_topk - 1),
+                        color="black",
+                        linewidth=0.5,
+                    )
+
                     axes.set_title("sharpe ratio")
                     axes.set_ylabel("sharpe ratio")
 
@@ -8018,6 +8113,13 @@ class OffPolicySelection:
                         axes[j].set_ylabel("standard deviation")
 
                     elif metric == "sharpe_ratio":
+                        axes.plot(
+                            np.arange(2, max_topk + 1),
+                            np.zeros(max_topk - 1),
+                            color="black",
+                            linewidth=0.5,
+                        )
+
                         axes[j].set_title("sharpe ratio")
                         axes[j].set_ylabel("sharpe ratio")
 
@@ -8104,6 +8206,13 @@ class OffPolicySelection:
                         axes[l].set_ylabel("standard deviation")
 
                     elif metric == "sharpe_ratio":
+                        axes[l].plot(
+                            np.arange(2, max_topk + 1),
+                            np.zeros(max_topk - 1),
+                            color="black",
+                            linewidth=0.5,
+                        )
+
                         axes[l].set_title("sharpe ratio")
                         axes[l].set_ylabel("sharpe ratio")
 
@@ -8192,6 +8301,13 @@ class OffPolicySelection:
                             axes[l, j].set_ylabel("standard deviation")
 
                         elif metric == "sharpe_ratio":
+                            axes[l, j].plot(
+                                np.arange(2, max_topk + 1),
+                                np.zeros(max_topk - 1),
+                                color="black",
+                                linewidth=0.5,
+                            )
+
                             axes[l, j].set_title("sharpe ratio")
                             axes[l, j].set_ylabel("sharpe ratio")
 
@@ -8349,7 +8465,7 @@ class OffPolicySelection:
             behavior_policy_name=behavior_policy_name,
             dataset_id=dataset_id,
         )
-
+        # note: true_dict is transformed in this function, as it is passed by reference
         metric_dict = self._obtain_topk_policy_performance(
             true_dict=true_dict,
             estimation_dict=estimation_dict,
@@ -8364,6 +8480,16 @@ class OffPolicySelection:
             return_safety_violation_rate=("safety_violation_rate" in metrics),
             safety_threshold=safety_threshold,
         )
+        # in the case with single input_dict, true_dict has not been transformed
+        if not isinstance(input_dict, MultipleInputDict) or (
+            behavior_policy_name is not None and dataset_id is not None
+        ):
+            true_dict = dict(
+                zip(
+                    true_dict["ranking_by_conditional_value_at_risk"],
+                    true_dict["conditional_value_at_risk"],
+                )
+            )
 
         min_val, max_val = self._obtain_min_max_val_for_topk_visualization(
             true_dict=true_dict,
@@ -8525,7 +8651,7 @@ class OffPolicySelection:
             dataset_id=dataset_id,
             alpha=ope_alpha,
         )
-
+        # note: true_dict is transformed in this function, as it is passed by reference
         metric_dict = self._obtain_topk_policy_performance(
             true_dict=true_dict,
             estimation_dict=estimation_dict,
@@ -8540,6 +8666,16 @@ class OffPolicySelection:
             return_safety_violation_rate=("safety_violation_rate" in metrics),
             safety_threshold=safety_threshold,
         )
+        # in the case with single input_dict, true_dict has not been transformed
+        if not isinstance(input_dict, MultipleInputDict) or (
+            behavior_policy_name is not None and dataset_id is not None
+        ):
+            true_dict = dict(
+                zip(
+                    true_dict["ranking_by_conditional_value_at_risk"],
+                    true_dict["conditional_value_at_risk"],
+                )
+            )
 
         min_val, max_val = self._obtain_min_max_val_for_topk_visualization(
             true_dict=true_dict,
@@ -8700,7 +8836,7 @@ class OffPolicySelection:
             behavior_policy_name=behavior_policy_name,
             dataset_id=dataset_id,
         )
-
+        # note: true_dict is transformed in this function, as it is passed by reference
         metric_dict = self._obtain_topk_policy_performance(
             true_dict=true_dict,
             estimation_dict=estimation_dict,
@@ -8715,6 +8851,16 @@ class OffPolicySelection:
             return_safety_violation_rate=("safety_violation_rate" in metrics),
             safety_threshold=safety_threshold,
         )
+        # in the case with single input_dict, true_dict has not been transformed
+        if not isinstance(input_dict, MultipleInputDict) or (
+            behavior_policy_name is not None and dataset_id is not None
+        ):
+            true_dict = dict(
+                zip(
+                    true_dict["ranking_by_lower_quartile"],
+                    true_dict["lower_quartile"],
+                )
+            )
 
         min_val, max_val = self._obtain_min_max_val_for_topk_visualization(
             true_dict=true_dict,
@@ -8876,7 +9022,7 @@ class OffPolicySelection:
             dataset_id=dataset_id,
             alpha=ope_alpha,
         )
-
+        # note: true_dict is transformed in this function, as it is passed by reference
         metric_dict = self._obtain_topk_policy_performance(
             true_dict=true_dict,
             estimation_dict=estimation_dict,
@@ -8891,6 +9037,16 @@ class OffPolicySelection:
             return_safety_violation_rate=("safety_violation_rate" in metrics),
             safety_threshold=safety_threshold,
         )
+        # in the case with single input_dict, true_dict has not been transformed
+        if not isinstance(input_dict, MultipleInputDict) or (
+            behavior_policy_name is not None and dataset_id is not None
+        ):
+            true_dict = dict(
+                zip(
+                    true_dict["ranking_by_lower_quartile"],
+                    true_dict["lower_quartile"],
+                )
+            )
 
         min_val, max_val = self._obtain_min_max_val_for_topk_visualization(
             true_dict=true_dict,
