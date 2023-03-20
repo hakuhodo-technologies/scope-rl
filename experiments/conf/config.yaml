@@ -1,0 +1,10 @@
+defaults:
+  - setting: default
+  - ope_config: default
+
+hydra: 
+  run: 
+    dir: ./
+  sweep:
+    dir: ./
+    subdir: ./
