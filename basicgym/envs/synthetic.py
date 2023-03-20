@@ -20,7 +20,7 @@ class BasicEnv(gym.Env):
 
     Bases: :class:`gym.Env`
 
-    Imported as: :class:`basicgym.SyntheticEnv`
+    Imported as: :class:`basicgym.BasicEnv`
 
     Note
     -------
