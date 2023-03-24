@@ -129,18 +129,18 @@ hydra:
   runtime:
     version: 1.3.2
     version_base: '1.1'
-    cwd: /Users/haruka/Downloads/ofrl/experiments
+    cwd: /Users/ren/dev/ofrl/experiments
     config_sources:
     - path: hydra.conf
       schema: pkg
       provider: hydra
-    - path: /Users/haruka/Downloads/ofrl/experiments/conf
+    - path: /Users/ren/dev/ofrl/experiments/conf
       schema: file
       provider: main
     - path: ''
       schema: structured
       provider: schema
-    output_dir: /Users/haruka/Downloads/ofrl/experiments
+    output_dir: /Users/ren/dev/ofrl/experiments
     choices:
       ope_config: default
       setting: default
