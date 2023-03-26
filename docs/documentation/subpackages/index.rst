@@ -45,7 +45,7 @@ OFRL provides brbrbr...
     :link: recgym_about
     :link-type: doc
 
-    **RECGym**: Recommender Systems Environment
+    **RECGym**: Recommender Systems Environment for E-commerce
 
     .. grid::
         :gutter: 1
@@ -58,6 +58,41 @@ OFRL provides brbrbr...
 
                 .. grid-item-card:: 
                     :img-background: /_static/images/recgym.png
+                    :shadow: none
+
+        .. grid-item::
+            :columns: 8
+
+            .. grid:: 1
+                :gutter: 1
+                :padding: 1
+
+                .. grid-item:: 
+
+                    brief description
+
+.. raw:: html
+
+    <div class="white-space-5px"></div>
+
+.. grid-item-card::
+    :columns: 8
+    :link: basicgym_about
+    :link-type: doc
+
+    **BasicGym**: Basic Environment
+
+    .. grid::
+        :gutter: 1
+
+        .. grid-item::
+            :columns: 4
+
+            .. grid:: 1
+                :gutter: 1
+
+                .. grid-item-card:: 
+                    :img-background: /_static/images/basicgym.png
                     :shadow: none
 
         .. grid-item::
