@@ -284,6 +284,7 @@ class OffPolicySelection:
             min_val=1,
         )
 
+        self.behavior_policy_reward = {}
         self.behavior_policy_value = {}
         if self.ope.use_multiple_logged_dataset:
             for (
@@ -295,17 +296,23 @@ class OffPolicySelection:
                 behavior_policy_reward_ = logged_dataset_["reward"].reshape(
                     (-1, step_per_trajectory)
                 )
+                self.behavior_policy_reward[
+                    behavior_policy
+                ] = behavior_policy_reward_.sum(axis=1)
                 self.behavior_policy_value[
                     behavior_policy
-                ] = behavior_policy_reward_.sum(axis=1).mean()
+                ] = self.behavior_policy_reward[behavior_policy].mean()
         else:
             behavior_policy = self.ope.logged_dataset["behavior_policy"]
             behavior_policy_reward = self.ope.logged_dataset["reward"].reshape(
                 (-1, step_per_trajectory)
             )
-            self.behavior_policy_value[behavior_policy] = behavior_policy_reward.sum(
+            self.behavior_policy_reward[behavior_policy] = behavior_policy_reward.sum(
                 axis=1
-            ).mean()
+            )
+            self.behavior_policy_value[behavior_policy] = self.behavior_policy_reward[
+                behavior_policy
+            ].mean()
 
         self._estimate_confidence_interval = {
             "bootstrap": estimate_confidence_interval_by_bootstrap,
@@ -5191,6 +5198,7 @@ class OffPolicySelection:
         behavior_policy_name: Optional[str] = None,
         dataset_id: Optional[int] = None,
         max_topk: Optional[int] = None,
+        ope_alpha: Optional[float] = None,
         return_safety_violation_rate: bool = False,
         safety_threshold: Optional[float] = None,
         return_by_dataframe: bool = False,
@@ -5250,6 +5258,9 @@ class OffPolicySelection:
 
         max_topk: int, default=None
             Maximum number of policies to be deployed.
+
+        ope_alpha: float, default=None
+            Significance level. The value should be within `[0, 1)`.
 
         return_safety_violation_rate: bool, default=False.
             Whether to calculate and return the safety violate.
@@ -5453,9 +5464,32 @@ class OffPolicySelection:
                             for behavior_policy in input_dict.behavior_policy_names:
                                 for dataset_id_ in range(n_datasets[behavior_policy]):
                                     if i == 0:
-                                        baseline[l] = self.behavior_policy_value[
-                                            behavior_policy
-                                        ]
+                                        if true_dict_value_arg == "policy_value":
+                                            baseline[l] = self.behavior_policy_value[
+                                                behavior_policy
+                                            ]
+                                        elif (
+                                            true_dict_value_arg
+                                            == "conditional_value_at_risk"
+                                        ):
+                                            baseline_reward = (
+                                                self.behavior_policy_reward[
+                                                    behavior_policy
+                                                ]
+                                            )
+                                            baseline[l] = np.sort(baseline_reward)[
+                                                : int(len(baseline_reward) * ope_alpha)
+                                            ].mean()
+                                        elif true_dict_value_arg == "lower_quartile":
+                                            baseline_reward = (
+                                                self.behavior_policy_reward[
+                                                    behavior_policy
+                                                ]
+                                            )
+                                            baseline[l] = np.quantile(
+                                                baseline_reward,
+                                                q=ope_alpha,
+                                            )
 
                                     topk_values = ranking_dict[behavior_policy][
                                         dataset_id_
@@ -5484,8 +5518,9 @@ class OffPolicySelection:
                         baseline = np.tile(baseline, (max_topk, 1))
 
                     metric_dict[estimator]["sharpe_ratio"] = (
-                        metric_dict[estimator]["best"] - baseline
-                    ) / metric_dict[estimator]["std"]
+                        np.clip(metric_dict[estimator]["best"] - baseline, 0, None)
+                        / metric_dict[estimator]["std"]
+                    )
 
             elif behavior_policy_name is None and dataset_id is not None:
                 total_n_datasets = len(input_dict.behavior_policy_names)
@@ -5500,9 +5535,28 @@ class OffPolicySelection:
                                 input_dict.behavior_policy_names
                             ):
                                 if i == 0:
-                                    baseline[l] = self.behavior_policy_value[
-                                        behavior_policy
-                                    ]
+                                    if true_dict_value_arg == "policy_value":
+                                        baseline[l] = self.behavior_policy_value[
+                                            behavior_policy
+                                        ]
+                                    elif (
+                                        true_dict_value_arg
+                                        == "conditional_value_at_risk"
+                                    ):
+                                        baseline_reward = self.behavior_policy_reward[
+                                            behavior_policy
+                                        ]
+                                        baseline[l] = np.sort(baseline_reward)[
+                                            : int(len(baseline_reward) * ope_alpha)
+                                        ].mean()
+                                    elif true_dict_value_arg == "lower_quartile":
+                                        baseline_reward = self.behavior_policy_reward[
+                                            behavior_policy
+                                        ]
+                                        baseline[l] = np.quantile(
+                                            baseline_reward,
+                                            q=ope_alpha,
+                                        )
 
                                 topk_values = ranking_dict[behavior_policy][estimator][
                                     : topk + 1
@@ -5529,12 +5583,25 @@ class OffPolicySelection:
                         baseline = np.tile(baseline, (max_topk, 1))
 
                     metric_dict[estimator]["sharpe_ratio"] = (
-                        metric_dict[estimator]["best"] - baseline
-                    ) / metric_dict[estimator]["std"]
+                        np.clip(metric_dict[estimator]["best"] - baseline, 0, None)
+                        / metric_dict[estimator]["std"]
+                    )
 
             elif behavior_policy_name is not None and dataset_id is None:
                 total_n_datasets = input_dict.n_datasets[behavior_policy_name]
-                baseline = self.behavior_policy_value[behavior_policy_name]
+                if true_dict_value_arg == "policy_value":
+                    baseline = self.behavior_policy_value[behavior_policy_name]
+                elif true_dict_value_arg == "conditional_value_at_risk":
+                    baseline_reward = self.behavior_policy_reward[behavior_policy_name]
+                    baseline = np.sort(baseline_reward)[
+                        : int(len(baseline_reward) * ope_alpha)
+                    ].mean()
+                elif true_dict_value_arg == "lower_quartile":
+                    baseline_reward = self.behavior_policy_reward[behavior_policy_name]
+                    baseline = np.quantile(
+                        baseline_reward,
+                        q=ope_alpha,
+                    )
 
                 for i, estimator in enumerate(compared_estimators):
                     for j, metric in enumerate(metrics):
@@ -5562,12 +5629,25 @@ class OffPolicySelection:
                         metric_dict[estimator][metric] = topk_metric
 
                     metric_dict[estimator]["sharpe_ratio"] = (
-                        metric_dict[estimator]["best"] - baseline
-                    ) / metric_dict[estimator]["std"]
+                        np.clip(metric_dict[estimator]["best"] - baseline, 0, None)
+                        / metric_dict[estimator]["std"]
+                    )
 
             else:
                 total_n_datasets = 1
-                baseline = self.behavior_policy_value[behavior_policy_name]
+                if true_dict_value_arg == "policy_value":
+                    baseline = self.behavior_policy_value[behavior_policy_name]
+                elif true_dict_value_arg == "conditional_value_at_risk":
+                    baseline_reward = self.behavior_policy_reward[behavior_policy_name]
+                    baseline = np.sort(baseline_reward)[
+                        : int(len(baseline_reward) * ope_alpha)
+                    ].mean()
+                elif true_dict_value_arg == "lower_quartile":
+                    baseline_reward = self.behavior_policy_reward[behavior_policy_name]
+                    baseline = np.quantile(
+                        baseline_reward,
+                        q=ope_alpha,
+                    )
 
                 for i, estimator in enumerate(compared_estimators):
                     for j, metric in enumerate(metrics):
@@ -5594,12 +5674,25 @@ class OffPolicySelection:
                         metric_dict[estimator][metric] = topk_metric
 
                     metric_dict[estimator]["sharpe_ratio"] = (
-                        metric_dict[estimator]["best"] - baseline
-                    ) / metric_dict[estimator]["std"]
+                        np.clip(metric_dict[estimator]["best"] - baseline, 0, None)
+                        / metric_dict[estimator]["std"]
+                    )
 
         else:
             behavior_policy = input_dict[list(input_dict.keys())[0]]["behavior_policy"]
-            baseline = self.behavior_policy_value[behavior_policy]
+            if true_dict_value_arg == "policy_value":
+                baseline = self.behavior_policy_value[behavior_policy]
+            elif true_dict_value_arg == "conditional_value_at_risk":
+                baseline_reward = self.behavior_policy_reward[behavior_policy]
+                baseline = np.sort(baseline_reward)[
+                    : int(len(baseline_reward) * ope_alpha)
+                ].mean()
+            elif true_dict_value_arg == "lower_quartile":
+                baseline_reward = self.behavior_policy_reward[behavior_policy]
+                baseline = np.quantile(
+                    baseline_reward,
+                    q=ope_alpha,
+                )
 
             for i, estimator in enumerate(compared_estimators):
                 for j, metric in enumerate(metrics):
@@ -5626,8 +5719,9 @@ class OffPolicySelection:
                     metric_dict[estimator][metric] = topk_metric
 
                 metric_dict[estimator]["sharpe_ratio"] = (
-                    metric_dict[estimator]["best"] - baseline
-                ) / metric_dict[estimator]["std"]
+                    np.clip(metric_dict[estimator]["best"] - baseline, 0, None)
+                    / metric_dict[estimator]["std"]
+                )
 
         metric_dict = defaultdict_to_dict(metric_dict)
 
@@ -6158,8 +6252,11 @@ class OffPolicySelection:
                             baseline = np.tile(baseline, (max_topk, 1))
 
                         metric_dict[ci][estimator]["sharpe_ratio"] = (
-                            metric_dict[ci][estimator]["best"] - baseline
-                        ) / metric_dict[ci][estimator]["std"]
+                            np.clip(
+                                metric_dict[ci][estimator]["best"] - baseline, 0, None
+                            )
+                            / metric_dict[ci][estimator]["std"]
+                        )
 
             elif behavior_policy_name is None and dataset_id is not None:
                 total_n_datasets = len(input_dict.behavior_policy_names)
@@ -6204,8 +6301,11 @@ class OffPolicySelection:
                             baseline = np.tile(baseline, (max_topk, 1))
 
                         metric_dict[ci][estimator]["sharpe_ratio"] = (
-                            metric_dict[ci][estimator]["best"] - baseline
-                        ) / metric_dict[ci][estimator]["std"]
+                            np.clip(
+                                metric_dict[ci][estimator]["best"] - baseline, 0, None
+                            )
+                            / metric_dict[ci][estimator]["std"]
+                        )
 
             elif behavior_policy_name is not None and dataset_id is None:
                 total_n_datasets = input_dict.n_datasets[behavior_policy_name]
@@ -6240,8 +6340,11 @@ class OffPolicySelection:
                             metric_dict[ci][estimator][metric] = topk_metric
 
                         metric_dict[ci][estimator]["sharpe_ratio"] = (
-                            metric_dict[ci][estimator]["best"] - baseline
-                        ) / metric_dict[ci][estimator]["std"]
+                            np.clip(
+                                metric_dict[ci][estimator]["best"] - baseline, 0, None
+                            )
+                            / metric_dict[ci][estimator]["std"]
+                        )
 
             else:
                 total_n_datasets = 1
@@ -6275,8 +6378,11 @@ class OffPolicySelection:
                             metric_dict[ci][estimator][metric] = topk_metric
 
                         metric_dict[ci][estimator]["sharpe_ratio"] = (
-                            metric_dict[ci][estimator]["best"] - baseline
-                        ) / metric_dict[ci][estimator]["std"]
+                            np.clip(
+                                metric_dict[ci][estimator]["best"] - baseline, 0, None
+                            )
+                            / metric_dict[ci][estimator]["std"]
+                        )
 
         else:
             behavior_policy = input_dict[list(input_dict.keys())[0]]["behavior_policy"]
@@ -6310,8 +6416,9 @@ class OffPolicySelection:
                         metric_dict[ci][estimator][metric] = topk_metric
 
                     metric_dict[ci][estimator]["sharpe_ratio"] = (
-                        metric_dict[ci][estimator]["best"] - baseline
-                    ) / metric_dict[ci][estimator]["std"]
+                        np.clip(metric_dict[ci][estimator]["best"] - baseline, 0, None)
+                        / metric_dict[ci][estimator]["std"]
+                    )
 
         metric_dict = defaultdict_to_dict(metric_dict)
 
@@ -6483,6 +6590,7 @@ class OffPolicySelection:
             behavior_policy_name=behavior_policy_name,
             dataset_id=dataset_id,
             max_topk=max_topk,
+            ope_alpha=ope_alpha,
             return_safety_violation_rate=return_safety_violation_rate,
             safety_threshold=safety_threshold,
             return_by_dataframe=return_by_dataframe,
@@ -6635,6 +6743,7 @@ class OffPolicySelection:
             behavior_policy_name=behavior_policy_name,
             dataset_id=dataset_id,
             max_topk=max_topk,
+            ope_alpha=ope_alpha,
             return_safety_violation_rate=return_safety_violation_rate,
             safety_threshold=safety_threshold,
             return_by_dataframe=return_by_dataframe,
@@ -6786,6 +6895,7 @@ class OffPolicySelection:
             behavior_policy_name=behavior_policy_name,
             dataset_id=dataset_id,
             max_topk=max_topk,
+            ope_alpha=ope_alpha,
             return_safety_violation_rate=return_safety_violation_rate,
             safety_threshold=safety_threshold,
             return_by_dataframe=return_by_dataframe,
@@ -6938,6 +7048,7 @@ class OffPolicySelection:
             behavior_policy_name=behavior_policy_name,
             dataset_id=dataset_id,
             max_topk=max_topk,
+            ope_alpha=ope_alpha,
             return_safety_violation_rate=return_safety_violation_rate,
             safety_threshold=safety_threshold,
             return_by_dataframe=return_by_dataframe,
@@ -8477,6 +8588,7 @@ class OffPolicySelection:
             behavior_policy_name=behavior_policy_name,
             dataset_id=dataset_id,
             max_topk=max_topk,
+            ope_alpha=ope_alpha,
             return_safety_violation_rate=("safety_violation_rate" in metrics),
             safety_threshold=safety_threshold,
         )
@@ -8663,6 +8775,7 @@ class OffPolicySelection:
             behavior_policy_name=behavior_policy_name,
             dataset_id=dataset_id,
             max_topk=max_topk,
+            ope_alpha=ope_alpha,
             return_safety_violation_rate=("safety_violation_rate" in metrics),
             safety_threshold=safety_threshold,
         )
@@ -8848,6 +8961,7 @@ class OffPolicySelection:
             behavior_policy_name=behavior_policy_name,
             dataset_id=dataset_id,
             max_topk=max_topk,
+            ope_alpha=ope_alpha,
             return_safety_violation_rate=("safety_violation_rate" in metrics),
             safety_threshold=safety_threshold,
         )
@@ -9034,6 +9148,7 @@ class OffPolicySelection:
             behavior_policy_name=behavior_policy_name,
             dataset_id=dataset_id,
             max_topk=max_topk,
+            ope_alpha=ope_alpha,
             return_safety_violation_rate=("safety_violation_rate" in metrics),
             safety_threshold=safety_threshold,
         )
