@@ -7,6 +7,11 @@ from omegaconf import DictConfig
 
 
 from conf.behavior_policy import behavior_policy_model_confs
+from data_collection import data_collection
+from policy_learning_behavior import policy_learning_behavior
+from policy_learning_candidates import policy_learning_candidates
+from ops_topk_evaluation import ops_topk_evaluation
+
 from utils import format_runtime
 
 
@@ -17,8 +22,14 @@ def process(
     candidate_policy_params: Dict[str, List[float]],
     candidate_epsilons: List[float], 
     behavior_policy_model_confs: Dict[str, Any],
+    n_random_state,
 ):
-    pass
+    train_logged_dataset, test_logged_dataset = data_collection()
+    behavior_policys = policy_learning_behavior()
+    evalaction_policy = policy_learning_candidates()
+    ops_topk_evaluation()
+
+
 
 def assert_configuration(cfg: DictConfig):
 
@@ -41,7 +52,13 @@ def main(cfg: DictConfig):
         "candidate_policy_params": cfg.setting.behavior_policy_params,  # dict of list
         "candidate_epsilons": cfg.setting.candidate_policy_params.epsilon,  # list of float
         "behavior_policy_model_confs": behavior_policy_model_confs,  # dict of d3rlpy policy
+        "n_trajectories": cfg.setting.n_trajectories, # int
+        "n_random_state": cfg.n_random_state, # int
+        "sigma" : cfg.ope_config.sigma, # flaot
+        "state_scalar" : cfg.ope_config.state_scalar,
+        "action_scalar" : cfg.ope_config.action_scalar
     }
+
     process(**conf)
 
 

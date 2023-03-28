@@ -12,8 +12,9 @@ behavior_policy_model_confs = {
         "q_func_factory": MeanQFunctionFactory(),
     },
     "ddqn": {
-        "aaa": "..."
-    }
+        "encoder_factory": VectorEncoderFactory(hidden_units=[30, 30]),"q_func_factory" : MeanQFunctionFactory(),
+        "target_update_interval" : 100,
+    },
 }
 
 replay_buffer_confs = {

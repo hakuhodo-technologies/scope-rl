@@ -1,3 +1,21 @@
 # @package _group_
 write_here:
 reference: conf/setting/default.yaml
+
+# @package _group_
+fqe_params:
+  "encoder_factory": 
+  VectorEncoderFactory(hidden_units=[30, 30])
+  "q_func_factory": MeanQFunctionFactory()
+
+
+state_scalar:
+  minimum:
+  maximum:
+
+action_scalar:
+  minimum:
+  maximum:
+
+sigma: 0.1
+
