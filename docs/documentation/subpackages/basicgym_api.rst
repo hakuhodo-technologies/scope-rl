@@ -1,30 +1,30 @@
 ==========
-syntheticgym Package Reference
+BasicGym Package Reference
 ==========
 
-.. _syntheticgym_api_env:
+.. _basicgym_api_env:
 
 env module
 ----------
 .. autosummary::
-    :toctree: ../_autosummary/syntheticgym/env
+    :toctree: ../_autosummary/basicgym/env
     :recursive:
     :nosignatures:
     :template: 
 
-    syntheticgym.envs.synthetic
+    basicgym.envs.synthetic
     
-.. _syntheticgym_api_simulation:
+.. _basicgym_api_simulation:
 
 simulation module
 ----------
 .. autosummary::
-    :toctree: ../_autosummary/syntheticgym/simulation
+    :toctree: ../_autosummary/basicgym/simulation
     :recursive:
     :nosignatures:
 
-    syntheticgym.envs.simulator.base
-    syntheticgym.envs.simulator.function
+    basicgym.envs.simulator.base
+    basicgym.envs.simulator.function
 
 
 .. grid::
