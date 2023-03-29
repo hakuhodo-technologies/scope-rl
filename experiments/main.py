@@ -13,6 +13,7 @@ from policy_learning_candidates import policy_learning_candidates
 from ops_topk_evaluation import ops_topk_evaluation
 
 from utils import format_runtime
+from ofrl.utils import OldGymAPIWrapper
 
 
 def process(
@@ -22,12 +23,38 @@ def process(
     candidate_policy_params: Dict[str, List[float]],
     candidate_epsilons: List[float], 
     behavior_policy_model_confs: Dict[str, Any],
-    n_random_state,
+    n_trajectories: int,
+    random_state: int,
 ):
-    train_logged_dataset, test_logged_dataset = data_collection()
-    behavior_policys = policy_learning_behavior()
-    evalaction_policy = policy_learning_candidates()
-    ops_topk_evaluation()
+    env = OldGymAPIWrapper(env)
+    behavior_policy = policy_learning_behavior(
+        env, 
+        behavior_policy_params,
+        behavior_policy_model_confs, 
+        random_state,
+    )
+
+    train_logged_dataset, test_logged_dataset = data_collection(
+        env, 
+        behavior_policy,
+        n_trajectories,
+        random_state,
+    )
+
+    eval_policy = policy_learning_candidates(
+        env, 
+        candidate_policy_params, 
+        train_logged_dataset, 
+        random_state,
+    )
+
+    ops_topk_evaluation(
+        env,
+        test_logged_dataset,
+        behavior_policy,
+        eval_policy,
+        random_state,
+    )
 
 
 
@@ -53,10 +80,7 @@ def main(cfg: DictConfig):
         "candidate_epsilons": cfg.setting.candidate_policy_params.epsilon,  # list of float
         "behavior_policy_model_confs": behavior_policy_model_confs,  # dict of d3rlpy policy
         "n_trajectories": cfg.setting.n_trajectories, # int
-        "n_random_state": cfg.n_random_state, # int
-        "sigma" : cfg.ope_config.sigma, # flaot
-        "state_scalar" : cfg.ope_config.state_scalar,
-        "action_scalar" : cfg.ope_config.action_scalar
+        "random_state": cfg.random_state, # int
     }
 
     process(**conf)

@@ -1,6 +1,14 @@
 
+import pickle
+import torch
+from typing import Dict, List, Any
+
+from ofrl.utils import MinMaxScaler, MinMaxActionScaler
+from d3rlpy.models.encoders import VectorEncoderFactory
+from d3rlpy.models.q_functions import MeanQFunctionFactory
 
 # import ope modules from OFRL
+from ofrl.ope import CreateOPEInput
 from ofrl.ope import OffPolicyEvaluation as OPE
 from ofrl.ope import ContinuousDirectMethod as DM
 from ofrl.ope import ContinuousTrajectoryWiseImportanceSampling as TIS
@@ -18,7 +26,11 @@ from ofrl.ope import ContinuousCumulativeDistributionSelfNormalizedTrajectoryWis
 from ofrl.ope import OffPolicySelection
 
 def ops_topk_evaluation(
-        
+    env: str,
+    test_logged_dataset,
+    behavior_policy,
+    eval_policy,
+    random_state,
 ):
     # first, prepare OPE inputs
     prep = CreateOPEInput(
@@ -32,20 +44,21 @@ def ops_topk_evaluation(
             }
         },
         state_scaler=MinMaxScaler(
-            minimum=test_logged_dataset.get(behavior_policy_name=behavior_policies[0].name, dataset_id=0)["state"].min(axis=0),
-            maximum=test_logged_dataset.get(behavior_policy_name=behavior_policies[0].name, dataset_id=0)["state"].max(axis=0),
+            minimum=test_logged_dataset.get(behavior_policy_name=behavior_policy.name, dataset_id=0)["state"].min(axis=0),
+            maximum=test_logged_dataset.get(behavior_policy_name=behavior_policy.name, dataset_id=0)["state"].max(axis=0),
         ),
-        action_scaler=MinMaxActionScaler(
-            minimum=env.action_space.low,  # minimum value that policy can take
-            maximum=env.action_space.high,  # maximum value that policy can take
-        ),
-        sigma=0.1,
+        # if env.action_space == Box:
+            action_scaler=MinMaxActionScaler(
+                minimum=env.action_space.low,  # minimum value that policy can take
+                maximum=env.action_space.high,  # maximum value that policy can take
+            ),
+            sigma=0.1,
     )
 
     # takes time
     input_dict = prep.obtain_whole_inputs(
         logged_dataset=test_logged_dataset,
-        evaluation_policies=eval_policies,
+        evaluation_policies=eval_policy,
         require_value_prediction=True,
         n_trajectories_on_policy_evaluation=100,
         random_state=random_state,
@@ -62,20 +75,20 @@ def ops_topk_evaluation(
         ope_estimators=[DM(), PDIS(), DR(), MIS()],
     )
   
-    cd_ope = CumulativeDistributionOPE(
-        logged_dataset=test_logged_dataset,
-        ope_estimators=[
-            CD_DM(estimator_name="cdf_dm"), 
-            CD_IS(estimator_name="cdf_is"), 
-            CD_DR(estimator_name="cdf_dr"), 
-            CD_SNIS(estimator_name="cdf_snis"), 
-            CD_SNDR(estimator_name="cdf_sndr"),
-        ],
-    )
+    # cd_ope = CumulativeDistributionOPE(
+    #     logged_dataset=test_logged_dataset,
+    #     ope_estimators=[
+    #         CD_DM(estimator_name="cdf_dm"), 
+    #         CD_IS(estimator_name="cdf_is"), 
+    #         CD_DR(estimator_name="cdf_dr"), 
+    #         CD_SNIS(estimator_name="cdf_snis"), 
+    #         CD_SNDR(estimator_name="cdf_sndr"),
+    #     ],
+    # )
 
     ops = OffPolicySelection(
       ope=ope,
-      cumulative_distribution_ope=cd_ope,
+    #   cumulative_distribution_ope=cd_ope,
     )
 
     true_selection_result = ops.obtain_true_selection_result(
