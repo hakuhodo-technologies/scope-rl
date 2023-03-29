@@ -18,6 +18,7 @@ from ofrl.utils import MinMaxScaler, MinMaxActionScaler
 
 # import from other libraries
 import gym
+from gym.spaces import Box, Discrete
 import torch
 from sklearn.model_selection import train_test_split
 
