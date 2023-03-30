@@ -1,7 +1,10 @@
 # import modules
 from ofrl.policy.opl import OffPolicyLearning
+from ofrl.utils import OldGymAPIWrapper
+
 # import models from d3rlpy
 from d3rlpy.algos import CQL, IQL
+from d3rlpy.algos import DiscreteCQL
 
 from d3rlpy.models.encoders import VectorEncoderFactory
 from d3rlpy.models.q_functions import MeanQFunctionFactory
@@ -10,19 +13,25 @@ from ofrl.policy import DiscreteEpsilonGreedyHead as EpsilonGreedyHead
 from ofrl.policy import DiscreteSoftmaxHead as SoftmaxHead
 
 from typing import Dict, List, Any
+from gym.spaces import Box, Discrete
 from ofrl.utils import MinMaxActionScaler
 
 import pickle
 import torch
 import numpy as np
+import gym
+from typing import Optional
+
 
 def policy_learning_candidates(
-    env: str,
+    env: gym.Env,
     candidate_policy_params: Dict[str, List[float]],
-    train_logged_dataset,
-    random_state,
+    train_logged_dataset: Dict[str, Any],
+    random_state: Optional[int] = None,
 ):
-    if env.action_space == Box:
+    env_ = OldGymAPIWrapper(env)
+
+    if isinstance(env_.action_space, Box):
         # evaluation policies
         cql = CQL(
             actor_encoder_factory=VectorEncoderFactory(hidden_units=[30, 30]),
@@ -30,9 +39,9 @@ def policy_learning_candidates(
             q_func_factory=MeanQFunctionFactory(),
             use_gpu=torch.cuda.is_available(),
             action_scaler=MinMaxActionScaler(
-                minimum=env.action_space.low,  # minimum value that policy can take
-                maximum=env.action_space.high,  # maximum value that policy can take
-            )
+                minimum=env_.action_space.low,  # minimum value that policy can take
+                maximum=env_.action_space.high,  # maximum value that policy can take
+            ),
         )
 
         iql = IQL(
@@ -40,9 +49,9 @@ def policy_learning_candidates(
             critic_encoder_factory=VectorEncoderFactory(hidden_units=[30, 30]),
             use_gpu=torch.cuda.is_available(),
             action_scaler=MinMaxActionScaler(
-                minimum=env.action_space.low,  # minimum value that policy can take
-                maximum=env.action_space.high,  # maximum value that policy can take
-            )
+                minimum=env_.action_space.low,  # minimum value that policy can take
+                maximum=env_.action_space.high,  # maximum value that policy can take
+            ),
         )
 
         algorithms = [cql, iql]
@@ -71,34 +80,56 @@ def policy_learning_candidates(
 
         # policy wrapper
         policy_wrappers = {
-            "gauss": (
-                TruncatedGaussianHead, {
-                    "sigma": np.array([candidate_policy_params[sigma]]),
+            "gauss0": (
+                TruncatedGaussianHead,
+                {
+                    "sigma": np.array([candidate_policy_params["sigma"][0]]),
                     "minimum": env.action_space.low,
                     "maximum": env.action_space.high,
-                }
+                },
+            ),
+            "gauss1": (
+                TruncatedGaussianHead,
+                {
+                    "sigma": np.array([candidate_policy_params["sigma"][1]]),
+                    "minimum": env.action_space.low,
+                    "maximum": env.action_space.high,
+                },
+            ),
+            "gauss2": (
+                TruncatedGaussianHead,
+                {
+                    "sigma": np.array([candidate_policy_params["sigma"][2]]),
+                    "minimum": env.action_space.low,
+                    "maximum": env.action_space.high,
+                },
             )
-        } 
+        }
 
         eval_policy = opl.apply_head(
             base_policies=base_policies,
             base_policies_name=algorithms_name,
             policy_wrappers=policy_wrappers,
             random_state=random_state,
-        )   
+        )
 
-    elif env.action_space==Discrete:
+    elif isinstance(env_.action_space, Discrete):
 
         # evaluation policies
-        cql = CQL(
-            actor_encoder_factory=VectorEncoderFactory(hidden_units=[30, 30]),
-            critic_encoder_factory=VectorEncoderFactory(hidden_units=[30, 30]),
+        cql_b1 = DiscreteCQL(
+            encoder_factory=VectorEncoderFactory(hidden_units=[30, 30]),
             q_func_factory=MeanQFunctionFactory(),
             use_gpu=torch.cuda.is_available(),
         )
 
-        algorithms = [cql]
-        algorithms_name = ["cql"]
+        cql_b2 = DiscreteCQL(
+            encoder_factory=VectorEncoderFactory(hidden_units=[10, 30]),
+            q_func_factory=MeanQFunctionFactory(),
+            use_gpu=torch.cuda.is_available(),
+        )
+
+        algorithms = [cql_b1, cql_b2]
+        algorithms_name = ["cql_b1", "cql_b2"]
 
         # initialize OPL class
         opl = OffPolicyLearning(
@@ -123,19 +154,34 @@ def policy_learning_candidates(
 
         # policy wrapper
         policy_wrappers = {
-            "eps": (
-                EpsilonGreedyHead, {
-                    "epsilon": candidate_policy_params[epsilon],
+            "eps0": (
+                EpsilonGreedyHead,
+                {
+                    "epsilon": candidate_policy_params["epsilon"],
                     "n_actions": env.action_space.n,
-                }
+                },
             ),
-            
-            "softmax": (
-                SoftmaxHead, {
-                    "tau": candidate_policy_params[tau],
+            "eps1": (
+                EpsilonGreedyHead,
+                {
+                    "epsilon": candidate_policy_params["epsilon"],
                     "n_actions": env.action_space.n,
-                }
-            )
+                },
+            ),
+            "softmax0": (
+                SoftmaxHead,
+                {
+                    "tau": candidate_policy_params["tau"],
+                    "n_actions": env.action_space.n,
+                },
+            ),
+            "softmax1": (
+                SoftmaxHead,
+                {
+                    "tau": candidate_policy_params["tau"],
+                    "n_actions": env.action_space.n,
+                },
+            ),
         }
 
         eval_policy = opl.apply_head(
@@ -143,6 +189,6 @@ def policy_learning_candidates(
             base_policies_name=algorithms_name,
             policy_wrappers=policy_wrappers,
             random_state=random_state,
-        )   
+        )
 
     return eval_policy

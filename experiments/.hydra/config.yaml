@@ -12,14 +12,12 @@ setting:
     tau:
     - 0.5
     - 1.0
-    - 2.0
     sigma:
     - 0.5
     - 1.0
-    - 2.0
-  n_trajectories: 10000
-  n_random_state: 5
-  base_random_state: 12345
+  n_trajectories: 100
+  n_random_state: 2
+  random_state: 12345
 ope_config:
   write_here: null
   reference: conf/setting/default.yaml
