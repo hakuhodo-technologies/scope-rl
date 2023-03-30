@@ -110,7 +110,7 @@ def policy_learning_behavior(
             buffer,
             explorer=explorer,
             eval_env=env_,
-            n_steps=10000,
+            n_steps=100000,
             n_steps_per_epoch=100,
             update_start_step=100,
             # n_steps=100000,

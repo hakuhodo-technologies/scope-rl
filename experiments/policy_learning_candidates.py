@@ -83,27 +83,27 @@ def policy_learning_candidates(
             "gauss0": (
                 TruncatedGaussianHead,
                 {
-                    "sigma": np.array([candidate_policy_params["sigma"][0]]),
+                    "sigma": np.array([candidate_policy_params["sigma"]]),
                     "minimum": env.action_space.low,
                     "maximum": env.action_space.high,
                 },
             ),
-            "gauss1": (
-                TruncatedGaussianHead,
-                {
-                    "sigma": np.array([candidate_policy_params["sigma"][1]]),
-                    "minimum": env.action_space.low,
-                    "maximum": env.action_space.high,
-                },
-            ),
-            "gauss2": (
-                TruncatedGaussianHead,
-                {
-                    "sigma": np.array([candidate_policy_params["sigma"][2]]),
-                    "minimum": env.action_space.low,
-                    "maximum": env.action_space.high,
-                },
-            )
+            # "gauss1": (
+            #     TruncatedGaussianHead,
+            #     {
+            #         "sigma": np.array([candidate_policy_params["sigma"]]),
+            #         "minimum": env.action_space.low,
+            #         "maximum": env.action_space.high,
+            #     },
+            # ),
+            # "gauss2": (
+            #     TruncatedGaussianHead,
+            #     {
+            #         "sigma": np.array([candidate_policy_params["sigma"]]),
+            #         "minimum": env.action_space.low,
+            #         "maximum": env.action_space.high,
+            #     },
+            # ),
         }
 
         eval_policy = opl.apply_head(
@@ -161,13 +161,13 @@ def policy_learning_candidates(
                     "n_actions": env.action_space.n,
                 },
             ),
-            "eps1": (
-                EpsilonGreedyHead,
-                {
-                    "epsilon": candidate_policy_params["epsilon"],
-                    "n_actions": env.action_space.n,
-                },
-            ),
+            # "eps1": (
+            #     EpsilonGreedyHead,
+            #     {
+            #         "epsilon": candidate_policy_params["epsilon"],
+            #         "n_actions": env.action_space.n,
+            #     },
+            # ),
             "softmax0": (
                 SoftmaxHead,
                 {
@@ -175,13 +175,13 @@ def policy_learning_candidates(
                     "n_actions": env.action_space.n,
                 },
             ),
-            "softmax1": (
-                SoftmaxHead,
-                {
-                    "tau": candidate_policy_params["tau"],
-                    "n_actions": env.action_space.n,
-                },
-            ),
+            # "softmax1": (
+            #     SoftmaxHead,
+            #     {
+            #         "tau": candidate_policy_params["tau"],
+            #         "n_actions": env.action_space.n,
+            #     },
+            # ),
         }
 
         eval_policy = opl.apply_head(

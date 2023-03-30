@@ -1,5 +1,5 @@
 setting:
-  env: BasicEnv-discrete-v0
+  env: BasicEnv-continuous-v0
   behavior_policy_params:
     epsilon: 0.3
     tau: 1.0
@@ -15,7 +15,7 @@ setting:
     sigma:
     - 0.5
     - 1.0
-  n_trajectories: 100
+  n_trajectories: 10000
   n_random_state: 2
   random_state: 12345
 ope_config:

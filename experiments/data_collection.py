@@ -1,6 +1,4 @@
 import sys
-sys.path.append("../")
-sys.path.append("../../")
 
 from ofrl.dataset import SyntheticDataset
 from typing import Dict, Any

@@ -1,8 +1,13 @@
+import sys
+sys.path.append("../")
+sys.path.append("../../")
+
 import time
 from typing import Dict, List, Any
 from typing import Tuple, Optional
 from pathlib import Path
 import gym
+import basicgym
 
 import hydra
 from omegaconf import DictConfig
@@ -25,6 +30,7 @@ def process(
 ):
 
     env = gym.make(env)
+    # env = gym.make("BasicEnv-continuous-v0")
 
     behavior_policy = policy_learning_behavior(
         env,
@@ -59,6 +65,7 @@ def process(
 
 
 def assert_configuration(cfg: DictConfig):
+
     env = cfg.setting.env
     assert env in ["BasicEnv-discrete-v0"]
 
@@ -75,9 +82,9 @@ def main(cfg: DictConfig):
         "env": cfg.setting.env,  # str
         "behavior_policy_params": cfg.setting.behavior_policy_params,  # dict of float
         "candidate_policy_params": cfg.setting.behavior_policy_params,  # dict of list
-        "n_trajectories": cfg.setting.n_trajectories,  
-        "n_random_state": cfg.setting.n_random_state,  
-        "random_state": cfg.setting.random_state,  
+        "n_trajectories": cfg.setting.n_trajectories,
+        "n_random_state": cfg.setting.n_random_state,
+        "random_state": cfg.setting.random_state,
     }
 
     process(**conf)
