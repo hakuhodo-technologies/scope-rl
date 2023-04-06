@@ -99,7 +99,26 @@ TIS :cite:`precup2000eligibility` uses importance sampling technique to correct 
 
 where :math:`w_{0:T-1} := \prod_{t=0}^{T-1} (\pi(a_t | s_t) / \pi_0(a_t | s_t))` is the trajectory-wise importance weight.
 
-TIS enables an unbiased estimation of the policy value. However, when the trajectory length :math:`T` is large, TIS suffers from high variance
+TIS enables an unbiased estimation of the policy value. 
+
+Unbiased Estimator
+
+.. math::
+
+    \mathbb{E}_{\tau}[\hat{J}_{\mathrm{TIS}} (\pi; \mathcal{D})] = J
+
+.. dropdown:: proof
+
+    .. math::
+
+        \mathbb{E}_{\tau \sim q} \left[\sum_{t=0}^{T-1} \gamma^t w_{1:T-1} r_t \right] &= \mathbb{E}_{\tau \sim q}\left[\frac{\pi(a_1|s_1)\cdots \pi(a_{T-1}|s_{T-1})}
+        {\pi_0(a_1|s_1)\cdots \pi_0(a_{T-1}|s_{T-1})} \sum_{t=0}^{T-1} \gamma^{t}r_t \right]\\
+        &= \mathbb{E}_{\tau \sim q}\left[\frac{p(s_0)\pi(a_1|s_1)P_r(r_1|s_t, a_t)\mathcal{T}(s_{t+1}|s_t, a_t)\cdots \pi(a_{T-1}|s_{T-1})P_r(r_{T-1}|s_{T-1}, a_{T-1})}
+        {p(s_0)\pi_0(a_1|s_1)P_r(r_1|s_t, a_t)\mathcal{T}(s_{t+1}|s_t, a_t)\cdots \pi_0(a_{T-1}|s_{T-1})P_r(r_{T-1}|s_{T-1}, a_{T-1})} \sum_{t=0}^{T-1} \gamma^{t}r_t\right]\\
+        &= \mathbb{E}_{\tau \sim q}\left[\frac{p(\tau)}{q(\tau)}\sum_{t=0}^{T-1} \gamma^{t}r_t\right]\\
+        &= \mathbb{E}_{\tau \sim p}\left[\sum_{t=0}^{T-1} \gamma^{t}r_t\right]\\
+
+However, when the trajectory length :math:`T` is large, TIS suffers from high variance
 due to the product of importance weights.
 
 .. image:: ./images/bias_tis.png
@@ -133,13 +152,48 @@ PDIS only considers the importance weight of the past interactions when estimati
 
 where :math:`w_{0:t} := \prod_{t'=0}^t (\pi_e(a_{t'} | s_{t'}) / \pi_b(a_{t'} | s_{t'}))` is the importance weight of past interactions.
 
+Unbiased Estimator
+
+.. math::
+
+    \mathbb{E}_{\tau}[\hat{J}_{\mathrm{PDIS}} (\pi; \mathcal{D})] = J
+
+.. dropdown:: proof
+
+    .. math::
+
+        \mathbb{E}_{\tau}[\hat{J}_{\mathrm{PDIS}} (\pi; \mathcal{D})]
+        &= \mathbb{E}_{\tau \sim q}\left[\sum_{t=0}^{T-1}\frac{\pi(a_1|s_1)\cdots \pi(a_{t-1}|s_{t-1})}
+        {\pi_0(a_1|s_1)\cdots \pi_0(a_{t-1}|s_{t-1})} \gamma^{t}r_t \right]\\
+        &= \sum_{t=0}^{T-1} \mathbb{E}_{\tau \sim q} \left[ \frac{\pi(a_1|s_1)\cdots \pi(a_{t-1}|s_{t-1})}
+        {\pi_0(a_1|s_1)\cdots \pi_0(a_{t-1}|s_{t-1})} \gamma^{t}r_t  \right] \\
+        &= \sum_{t=0}^{T-1} \mathbb{E}_{\tau \sim q}\left[\frac{\pi(a_1|s_1)\cdots \pi(a_{t-1}|s_{t-1})}
+        {\pi_0(a_1|s_1)\cdots \pi_0(a_{t-1}|s_{t-1})} \gamma^{t}r_t \right]
+        \mathbb{E}\left[\frac{\pi(a_{t+1}|s_{t+1})\cdots \pi(a_{T-1}|s_{T-1})}
+        {\pi_0(a_{t+1}|s_{t+1})\cdots \pi_0(a_{T-1}|s_{T-1})}\right]\\
+        &= \mathbb{E}_{\tau \sim q}\left[\sum_{t=0}^{T-1}\frac{\pi(a_1|s_1)\cdots \pi(a_{T-1}|s_{T-1})}
+        {\pi_0(a_1|s_1)\cdots \pi_0(a_{T-1}|s_{T-1})} \gamma^{t}r_t \right]\\
+        &= \mathbb{E}_{\tau}[\hat{J}_{\mathrm{TIS}} (\pi; \mathcal{D})] \\
+        &= J
+
 Variance Analysis
 
 .. math::
 
-    \mathbb{V}_{t}[\hat{J}_{\mathrm{PDIS}}^{H+1-t}(\pi; \mathcal{D})] = \mathbb{V}[J(s_t)] + \mathbb{E}_t[{w_t}^2\mathbb{V}_{t+1}[r_t]] + \mathbb{E}_t[\gamma^2{w_t}^2\mathbb{V}_{t+1}[\hat{J}_{\mathrm{PDIS}}^{H-t}(\pi; \mathcal{D})]] + \mathbb{E}_t[\mathbb{V}_t[w_t]Q(s_t, a_t)]
+    \mathbb{V}_{t}[\hat{J}_{\mathrm{PDIS}}^{H+1-t}(\pi; \mathcal{D})] = \mathbb{V}[J(s_t)] + \mathbb{E}_t[{w_t}^2\mathbb{V}_{t+1}[r_t]] + \mathbb{E}_t[\gamma^2{w_t}^2\mathbb{V}_{t+1}[\hat{J}_{\mathrm{PDIS}}^{H-t}(\pi; \mathcal{D})]] + \mathbb{E}_t[\mathbb{V}_t[w_tQ(s_t, a_t)]]
 
 where :math:`w_{t} := \pi_e(a_{t'} | s_{t'}) / \pi_b(a_{t'} | s_{t'})`
+
+.. dropdown:: proof
+
+    .. math::
+
+        \mathbb{V}_{t}[\hat{J}_{\mathrm{PDIS}}^{H+1-t}(\pi; \mathcal{D})] = \mathbb{E}_{t}[(\hat{J)]
+        
+        
+        
+        
+        =\mathbb{V}[J(s_t)] + \mathbb{E}_t[{w_t}^2\mathbb{V}_{t+1}[r_t]] + \mathbb{E}_t[\gamma^2{w_t}^2\mathbb{V}_{t+1}[\hat{J}_{\mathrm{PDIS}}^{H-t}(\pi; \mathcal{D})]] + \mathbb{E}_t[\mathbb{V}_t[w_t]Q(s_t, a_t)]
 
 :math:`\mathbb{V}[J(s_t)]`: state transition randomness
 
@@ -174,11 +228,43 @@ It introduces :math:`\hat{Q}` as a baseline estimation in the recursive form of 
     \hat{J}_{\mathrm{DR}} (\pi; \mathcal{D})
     := \mathbb{E}_{n} \left[\sum_{t=0}^{T-1} \gamma^t (w_{0:t} (r_t - \hat{Q}(s_t, a_t)) + w_{0:t-1} \mathbb{E}_{a \sim \pi(a | s_t)}[\hat{Q}(s_t, a)])\right],
 
+Unbiased Estimator
+
+.. math::
+
+    \mathbb{E}_{\tau}[\hat{J}_{\mathrm{DR}} (\pi; \mathcal{D})] = J
+
+.. dropdown:: proof
+
+    .. math::
+
+        \mathbb{E}_{\tau}[\hat{J}_{\mathrm{DR}} (\pi; \mathcal{D})] &= \mathbb{E}_{\tau \sim p}\left[\sum_{t=0}^{T-1} \gamma^{t}r_t\right]\\
+        &= \mathbb{E}_{\tau \sim q}\left[\frac{p(\tau)}{q(\tau)}\sum_{t=0}^{T-1} \gamma^{t}r_t\right]\\
+        &= \mathbb{E}_{\tau \sim q}\left[\frac{p(s_0)\pi(a_1|s_1)P_r(r_1|s_t, a_t)\mathcal{T}(s_{t+1}|s_t, a_t)\cdots \pi(a_{T-1}|s_{T-1})P_r(r_{T-1}|s_{T-1}, a_{T-1})}
+        {p(s_0)\pi_0(a_1|s_1)P_r(r_1|s_t, a_t)\mathcal{T}(s_{t+1}|s_t, a_t)\cdots \pi_0(a_{T-1}|s_{T-1})P_r(r_{T-1}|s_{T-1}, a_{T-1})} \sum_{t=0}^{T-1} \gamma^{t}r_t\right]\\
+        &= \mathbb{E}_{\tau \sim q}\left[\frac{\pi(a_1|s_1)\cdots \pi(a_{T-1}|s_{T-1})}
+        {\pi_0(a_1|s_1)\cdots \pi_0(a_{T-1}|s_{T-1})} \sum_{t=0}^{T-1} \gamma^{t}r_t \right]\\
+        &= J
+
 Variance Analysis
 
 .. math::
 
-    \mathbb{V}_{t}[\hat{J}_{\mathrm{PDIS}}^{H+1-t}(\pi; \mathcal{D})] = \mathbb{V}[J(s_t)] + \mathbb{E}_t[{w_t}^2\mathbb{V}_{t+1}[r_t]] + \mathbb{E}_t[\gamma^2{w_t}^2\mathbb{V}_{t+1}[\hat{J}_{\mathrm{PDIS}}^{H-t}(\pi; \mathcal{D})]] + \mathbb{E}_t[\mathbb{V}_t[w_t](\hat{Q}(s_t, a_t)-Q(s_t, a_t))]
+    \mathbb{V}_{t}[\hat{J}_{\mathrm{DR}}^{H+1-t}(\pi; \mathcal{D})] = \mathbb{V}[J(s_t)] + \mathbb{E}_t\left[{w_t}^2\mathbb{V}_{t+1}[r_t]\right] + \mathbb{E}_t\left[\gamma^2{w_t}^2\mathbb{V}_{t+1}[\hat{J}_{\mathrm{DR}}^{H-t}(\pi; \mathcal{D})]\right] + \mathbb{E}_t\left[\mathbb{V}_t[w_t(\hat{Q}(s_t, a_t)-Q(s_t, a_t))]\right]
+
+.. dropdown:: proof
+
+    .. math::
+
+        \mathbb{V}_{t}[\hat{J}_{\mathrm{DR}}^{H+1-t}(\pi; \mathcal{D})]&=\mathbb{E}_{t}[\hat{J}_{\mathrm{DR}}^{H+1-t}]-(\mathbb{E}_{t}[V(s_t)])^2\\
+        &=\mathbb{E}_{t}\left[(\hat{V}(s_t)+w_t(r_t+\gamma V_{DR}^{H-t} - \hat{Q}(s_t, a_t)))^2\right]-\mathbb{E}_{t}[V(s_t)^2]+\mathbb{V}[V(s_t)]\\
+        &=\mathbb{E}_{t}\left[(w_tQ(s_t, a_t)-w_t\hat{Q}(s_t, a_t)+\hat{V}(s_t)+w_t(r_t+\gamma V_{DR}^{H-t}-Q(s_t, a_t))^2)-V(s_t)^2\right]+\mathbb{V}_{t}[V(s_t)]\\
+        &=\mathbb{E}_{t}\left[w_t(Q(s_t, a_t)-\hat{Q}(s_t, a_t))+\hat{V}(s_t)+w_t(r_t-R(s_t, a_t))+w_t\gamma (V_{DR}^{H-t} -\mathbb{E}_{t+1}[V(s_{t+1})])^2 -V(s_t)^2\right]+\mathbb{V}_{t}[V(s_t)]\\
+        &=\mathbb{E}_{t}\left[\mathbb{E}_{t}\left[
+        (-w_t(Q(s_t, a_t)-\hat{Q}(s_t, a_t))+\hat{V}(s_t))^2 - V(s_t)^2|s_t\right]\right]+\mathbb{E}_{t}\left[\mathbb{E}_{t+1}\left[w_{t}^2(r_t -R(s_t, a_t))^2\right]\right]\\
+        &+\mathbb{V}_{t}[V(s_t)]+\mathbb{E}_{t}\left[\mathbb{E}_{t+1}\left[w_t\gamma(V_{DR}^{H-t}(s_t, a_t)-\mathbb{E}_{t+1}[V(s_{t+1})])^2\right]\right]\\
+        &=\mathbb{V}[J(s_t)] + \mathbb{E}_t\left[{w_t}^2\mathbb{V}_{t+1}[r_t]\right] + \mathbb{E}_t\left[\gamma^2{w_t}^2\mathbb{V}_{t+1}[\hat{J}_{\mathrm{DR}}^{H-t}(\pi; \mathcal{D})]\right] + \mathbb{E}_t\left[\mathbb{V}_t[w_t(\hat{Q}(s_t, a_t)-Q(s_t, a_t))]\right]
+
 
 The first 3 terms are he same as PDIS, but 4th term differs from PDIS.
 
