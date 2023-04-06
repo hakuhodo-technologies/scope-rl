@@ -65,20 +65,6 @@ where :math:`\mathcal{D}=\{\{(s_t, a_t, r_t)\}_{t=0}^T\}_{i=1}^n` is the logged 
 :math:`T` indicates step per episode. :math:`\hat{Q}(s_t, a_t)` is the estimated state-action value and :math:`\hat{V}(s_t)` is the estimated state value.
 DM has low variance, but can incur bias due to approximation errors.
 
-.. image:: ./images/bias_dm.png
-    :scale: 45%
-    :align: center
-
-|
-
-.. image:: ./images/variance_dm.png
-    :scale: 45%
-    :align: center
-
-|
-The variance of DM is smaller than that of TIS. On the other hand, the bias of DM is larger than that of TIS.
-
-
     * :class:`DiscreteDirectMethod`
     * :class:`ContinuousDirectMethod`
 
@@ -121,6 +107,14 @@ Unbiased Estimator
 However, when the trajectory length :math:`T` is large, TIS suffers from high variance
 due to the product of importance weights.
 
+    
+    * :class:`DiscreteTrajectoryWiseImportanceSampling`
+    * :class:`ContinuousTrajectoryWiseImportanceSampling`
+
+
+Bias - Variance Trade-off 
+^^^^^
+
 .. image:: ./images/bias_tis.png
     :scale: 45%
     :align: center
@@ -133,10 +127,27 @@ due to the product of importance weights.
 
 |
 
-TIS tends to have less vias than DM, and the bias decreases as the number of trajectories increases. On the other hand, variance of TIS tends to be larger than that of DM, and the larger the number of trajectories, the larger the variance.
-    
-    * :class:`DiscreteTrajectoryWiseImportanceSampling`
-    * :class:`ContinuousTrajectoryWiseImportanceSampling`
+.. image:: ./images/mse_tis.png
+    :scale: 45%
+    :align: center
+
+|
+
+DM works well with small n_trajectries, TIS is getting better with large n_trajectries. 
+DM(high bias, low variance) and TIS(low bias, high variance) are a trade-off between bias and variance.
+
+
+Curse of Dimension
+^^^^^^
+
+
+.. image:: ./images/variance_trajectory_length.png
+    :scale: 45%
+    :align: center
+
+|
+
+TIS tends to have less bias than DM, and the bias decreases as the number of trajectories :math:`n` increases. On the other hand, variance of TIS tends to be larger than that of DM, and the larger the trajectory length :math:`T`, the larger the variance.
 
 .. _implementation_pdis:
 
@@ -203,7 +214,15 @@ where :math:`w_{t} := \pi_e(a_{t'} | s_{t'}) / \pi_b(a_{t'} | s_{t'})`
 
 :math:`\mathbb{E}_t[\mathbb{V}_t[w_t]Q(s_t, a_t)]` : reward randomness
 
-PDIS remains unbiased while reducing the variance of TIS. However, when :math:`t` is large, PDIS still suffers from high variance.
+PDIS remains unbiased while reducing the variance of TIS. However, when trajectory length :math:`T` is large, PDIS still suffers from high variance.
+
+    * :class:`DiscretePerDecisionImportanceSampling`
+    * :class:`ContinuousPerDecisionWiseImportanceSampling`
+
+
+TIS vs PDIS
+^^^^^^
+
 
 .. image:: ./images/variance_pdis.png
     :scale: 45%
@@ -211,10 +230,8 @@ PDIS remains unbiased while reducing the variance of TIS. However, when :math:`t
 
 |
 
-The PDIS has less variance than the TIS. When the number of trajectories is large, it still suffers from variance.
+The PDIS has less variance than the TIS. When the number of trajectories:math:`n` is large, it still suffers from variance.
 
-    * :class:`DiscretePerDecisionImportanceSampling`
-    * :class:`ContinuousPerDecisionWiseImportanceSampling`
 
 .. _implementation_dr:
 
@@ -257,12 +274,12 @@ Variance Analysis
     .. math::
 
         \mathbb{V}_{t}[\hat{J}_{\mathrm{DR}}^{H+1-t}(\pi; \mathcal{D})]&=\mathbb{E}_{t}[\hat{J}_{\mathrm{DR}}^{H+1-t}]-(\mathbb{E}_{t}[V(s_t)])^2\\
-        &=\mathbb{E}_{t}\left[(\hat{V}(s_t)+w_t(r_t+\gamma V_{DR}^{H-t} - \hat{Q}(s_t, a_t)))^2\right]-\mathbb{E}_{t}[V(s_t)^2]+\mathbb{V}[V(s_t)]\\
-        &=\mathbb{E}_{t}\left[(w_tQ(s_t, a_t)-w_t\hat{Q}(s_t, a_t)+\hat{V}(s_t)+w_t(r_t+\gamma V_{DR}^{H-t}-Q(s_t, a_t))^2)-V(s_t)^2\right]+\mathbb{V}_{t}[V(s_t)]\\
-        &=\mathbb{E}_{t}\left[w_t(Q(s_t, a_t)-\hat{Q}(s_t, a_t))+\hat{V}(s_t)+w_t(r_t-R(s_t, a_t))+w_t\gamma (V_{DR}^{H-t} -\mathbb{E}_{t+1}[V(s_{t+1})])^2 -V(s_t)^2\right]+\mathbb{V}_{t}[V(s_t)]\\
+        &=\mathbb{E}_{t}\left[(\hat{V}(s_t)+w_t(r_t+\gamma J_{DR}^{H-t} - \hat{Q}(s_t, a_t)))^2\right]-\mathbb{E}_{t}[V(s_t)^2]+\mathbb{V}[V(s_t)]\\
+        &=\mathbb{E}_{t}\left[(w_tQ(s_t, a_t)-w_t\hat{Q}(s_t, a_t)+\hat{V}(s_t)+w_t(r_t+\gamma J_{DR}^{H-t}-Q(s_t, a_t))^2)-V(s_t)^2\right]+\mathbb{V}_{t}[V(s_t)]\\
+        &=\mathbb{E}_{t}\left[w_t(Q(s_t, a_t)-\hat{Q}(s_t, a_t))+\hat{V}(s_t)+w_t(r_t-R(s_t, a_t))+w_t\gamma (J_{DR}^{H-t} -\mathbb{E}_{t+1}[V(s_{t+1})])^2 -V(s_t)^2\right]+\mathbb{V}_{t}[V(s_t)]\\
         &=\mathbb{E}_{t}\left[\mathbb{E}_{t}\left[
         (-w_t(Q(s_t, a_t)-\hat{Q}(s_t, a_t))+\hat{V}(s_t))^2 - V(s_t)^2|s_t\right]\right]+\mathbb{E}_{t}\left[\mathbb{E}_{t+1}\left[w_{t}^2(r_t -R(s_t, a_t))^2\right]\right]\\
-        &+\mathbb{V}_{t}[V(s_t)]+\mathbb{E}_{t}\left[\mathbb{E}_{t+1}\left[w_t\gamma(V_{DR}^{H-t}(s_t, a_t)-\mathbb{E}_{t+1}[V(s_{t+1})])^2\right]\right]\\
+        &+\mathbb{V}_{t}[V(s_t)]+\mathbb{E}_{t}\left[\mathbb{E}_{t+1}\left[w_t\gamma(J_{DR}^{H-t}(s_t, a_t)-\mathbb{E}_{t+1}[V(s_{t+1})])^2\right]\right]\\
         &=\mathbb{V}[J(s_t)] + \mathbb{E}_t\left[{w_t}^2\mathbb{V}_{t+1}[r_t]\right] + \mathbb{E}_t\left[\gamma^2{w_t}^2\mathbb{V}_{t+1}[\hat{J}_{\mathrm{DR}}^{H-t}(\pi; \mathcal{D})]\right] + \mathbb{E}_t\left[\mathbb{V}_t[w_t(\hat{Q}(s_t, a_t)-Q(s_t, a_t))]\right]
 
 
@@ -272,16 +289,46 @@ DR is unbiased and DR reduces the variance of PDIS when :math:`\hat{Q}(\cdot)` i
 
 However, when the importance weight is quite large, it may still suffer from a high variance.
 
+    * :class:`DiscreteDoublyRobust`
+    * :class:`ContinuousDoublyRobust`
+
+
+DR vs PDIS
+^^^^^^
+
+
 .. image:: ./images/variance_dr.png
     :scale: 45%
     :align: center
 
 |
 
-The DR has less variance than the PDIS. When the number of trajectories is large, it still suffers from variance. 
+The DR has less variance than the PDIS. When the number of trajectories:math:`n` is large, it still suffers from variance. 
 
-    * :class:`DiscreteDoublyRobust`
-    * :class:`ContinuousDoublyRobust`
+
+
+その他推定量の簡単な説明
+
+increasing number of actions
+^^^^^^
+
+
+.. image:: ./images/variance_n_actions.png
+    :scale: 45%
+    :align: center
+
+|
+
+.. image:: ./images/mse_dr.png
+    :scale: 45%
+    :align: center
+
+| 
+
+TIS, PDIS, and DR are getting worse as the number of actions increases and the variance increases.
+
+
+importace weightの変化による説明
 
 
 ~~~~~
