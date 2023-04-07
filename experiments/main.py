@@ -8,6 +8,7 @@ from omegaconf import DictConfig
 
 import gym
 from gym.spaces import Box
+import basicgym, rtbgym, recgym
 
 import numpy as np
 
@@ -81,8 +82,8 @@ def train_behavior_policy(
             q_func_factory=MeanQFunctionFactory(),
             use_gpu=(device == "cuda:0"),
             action_scaler=MinMaxActionScaler(
-                minimum=env_.action_space.low,
-                maximum=env_.action_space.high,
+                minimum=env.action_space.low,
+                maximum=env.action_space.high,
             ),
         )
     else:
@@ -118,8 +119,8 @@ def train_behavior_policy(
             )
             behavior_policy = TruncatedGaussianHead(
                 model,
-                minimum=env_.action_space.low,
-                maximum=env_.action_space.high,
+                minimum=env.action_space.low,
+                maximum=env.action_space.high,
                 sigma=np.full((action_dim,), behavior_sigma),
                 name=f"sac_gauss_{behavior_sigma}",
                 random_state=base_random_state,
@@ -136,7 +137,7 @@ def train_behavior_policy(
             )
             behavior_policy = SoftmaxHead(
                 model,
-                n_actions=env_.action_space.n,
+                n_actions=env.action_space.n,
                 tau=behavior_tau,
                 name=f"ddqn_softmax_{behavior_tau}",
                 random_state=base_random_state,
@@ -583,11 +584,10 @@ def assert_configuration(cfg: DictConfig):
 @hydra.main(config_path="conf/", config_name="config")
 def main(cfg: DictConfig):
     print(cfg)
+    assert_configuration(cfg)
     print(f"The current working directory is {Path().cwd()}")
     print(f"The original working directory is {hydra.utils.get_original_cwd()}")
     print()
-    # configurations
-    # assert_configuration(cfg)
     conf = {
         "env_name": cfg.setting.env_name,
         "behavior_sigma": cfg.setting.behavior_sigma,
