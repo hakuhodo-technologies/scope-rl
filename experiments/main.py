@@ -11,6 +11,7 @@ from gym.spaces import Box
 import basicgym, rtbgym, recgym
 
 import numpy as np
+import torch
 
 from d3rlpy.algos import SAC
 from d3rlpy.algos import DoubleDQN as DDQN
@@ -557,8 +558,8 @@ def process(
 
 
 def assert_configuration(cfg: DictConfig):
-    env_name = cfg.setting.env
-    assert env_name in ["BasicEnv-discrete-v0"]
+    env_name = cfg.setting.env_name
+    assert env_name in ["BasicEnv-discrete-v0", "BasicEnv-continuous-v0"]
 
     behavior_sigma = cfg.setting.behavior_sigma
     assert isinstance(behavior_sigma, float) and behavior_sigma > 0.0
@@ -597,6 +598,8 @@ def main(cfg: DictConfig):
         "n_trajectories": cfg.setting.n_trajectories,
         "n_random_state": cfg.setting.n_random_state,
         "base_random_state": cfg.setting.base_random_state,
+        "device": "cuda:0" if torch.cuda.is_available() else "cpu",
+        "log_dir": "logs/",
     }
     process(**conf)
 

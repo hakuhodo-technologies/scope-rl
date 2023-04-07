@@ -111,11 +111,13 @@ hydra:
   overrides:
     hydra:
     - hydra.mode=RUN
-    task: []
+    task:
+    - setting.n_random_state=2
+    - setting.candidate_sigmas=[1.0,2.0]
   job:
     name: main
     chdir: null
-    override_dirname: ''
+    override_dirname: setting.candidate_sigmas=[1.0,2.0],setting.n_random_state=2
     id: ???
     num: ???
     config_name: config
@@ -129,20 +131,19 @@ hydra:
   runtime:
     version: 1.3.2
     version_base: '1.1'
-    cwd: /Users/ren/dev/ofrl/experiments
+    cwd: /Users/haruka/Downloads/ofrl/experiments
     config_sources:
     - path: hydra.conf
       schema: pkg
       provider: hydra
-    - path: /Users/ren/dev/ofrl/experiments/conf
+    - path: /Users/haruka/Downloads/ofrl/experiments/conf
       schema: file
       provider: main
     - path: ''
       schema: structured
       provider: schema
-    output_dir: /Users/ren/dev/ofrl/experiments
+    output_dir: /Users/haruka/Downloads/ofrl/experiments
     choices:
-      ope_config: default
       setting: default
       hydra/env: default
       hydra/callbacks: null
