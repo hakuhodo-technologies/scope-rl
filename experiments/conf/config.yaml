@@ -1,6 +1,5 @@
 defaults:
   - setting: default
-  - ope_config: default
 
 hydra: 
   run: 

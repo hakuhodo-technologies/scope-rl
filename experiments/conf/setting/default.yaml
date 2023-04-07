@@ -1,27 +1,18 @@
-# @package _group_
-# env: BasicEnv-discrete-v0
-env: BasicEnv-continuous-v0
-
-behavior_policy_params:
-  epsilon: 0.3
-  tau: 1.0
-  sigma: 0.0
-
-candidate_policy_params:
-  epsilon:
-    - 0.0
-    - 0.3
-    - 0.5
-  tau:
-    - 0.5
-    - 1.0
-  sigma:
-    - 0.5
-    - 1.0
-
+env_name: BasicEnv-continuous-v0
+behavior_sigma: 1.0
+behavior_tau: 1.0
+candidate_sigmas: 
+  - 0.0
+  - 0.5
+  - 1.0
+  - 2.0
+  - 4.0
+candidate_epsilons: 
+  - 0.0
+  - 0.1
+  - 0.3
+  - 0.5
+  - 0.7
 n_trajectories: 10000
-
-n_random_state: 2
-
-random_state: 12345
-  
+n_random_state: 100
+base_random_state: 12345
