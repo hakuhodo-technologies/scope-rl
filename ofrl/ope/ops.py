@@ -430,10 +430,10 @@ class OffPolicySelection:
                         * self.behavior_policy_value[behavior_policy_name]
                     )
 
-                else:
+                elif len(self.behavior_policy_value) == 1:
                     safety_threshold = (
                         relative_safety_criteria
-                        * self.behavior_policy_value.values()[0]
+                        * list(self.behavior_policy_value.values())[0]
                     )
 
             else:
