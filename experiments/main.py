@@ -489,14 +489,21 @@ def off_policy_evaluation(
 
     path_ = Path(log_dir + f"/results/raw")
     path_.mkdir(exist_ok=True, parents=True)
-    path_topk_metrics = Path(path_ / f"topk_metrics_dict_{env_name}.pkl")
+
+    _, metric_dict = ops.select_by_policy_value(
+        input_dict=input_dict,
+        return_metrics=True,
+    )
+    path_metrics = Path(path_ / f"conventional_metrics_dict_{env_name}.pkl")
+    with open(path_metrics, "wb") as f:
+        pickle.dump(topk_metric_dict, f)
 
     topk_metric_dict = ops.obtain_topk_policy_value_selected_by_standard_ope(
         input_dict=input_dict,
         return_safety_violation_rate=True,
         relative_safety_criteria=1.0,
     )
-
+    path_topk_metrics = Path(path_ / f"topk_metrics_dict_{env_name}.pkl")
     with open(path_topk_metrics, "wb") as f:
         pickle.dump(topk_metric_dict, f)
 
