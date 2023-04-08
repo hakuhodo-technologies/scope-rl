@@ -496,7 +496,7 @@ def off_policy_evaluation(
     )
     path_metrics = Path(path_ / f"conventional_metrics_dict_{env_name}.pkl")
     with open(path_metrics, "wb") as f:
-        pickle.dump(topk_metric_dict, f)
+        pickle.dump(metric_dict, f)
 
     topk_metric_dict = ops.obtain_topk_policy_value_selected_by_standard_ope(
         input_dict=input_dict,
