@@ -9,6 +9,9 @@ from omegaconf import DictConfig
 import gym
 from gym.spaces import Box
 import basicgym, rtbgym, recgym
+from basicgym import BasicEnv
+from rtbgym import RTBEnv
+from recgym import RECEnv
 
 import numpy as np
 import torch
@@ -187,9 +190,14 @@ def obtain_logged_dataset(
             test_logged_dataset = pickle.load(f)
 
     else:
+        if isinstance(env, (BasicEnv, RTBEnv, RECEnv)):
+            max_episode_steps = env.step_per_episode
+        else:
+            max_episode_steps = env.spec.max_episode_steps
+
         dataset = SyntheticDataset(
             env=env,
-            max_episode_steps=env.step_per_episode,
+            max_episode_steps=max_episode_steps,
         )
 
         train_logged_dataset = dataset.obtain_episodes(
@@ -362,10 +370,10 @@ def train_candidate_policies(
                     "maximum": env.action_space.high,
                 },
             )
-    
+
     else:
         algorithms_name = ["cql_b1", "cql_b2", "cql_b3", "bcq_b1", "bcq_b2", "bcq_b3"]
-        
+
         policy_wrappers = {}
         for epsilon in candidate_epsilons:
             policy_wrappers[f"eps_{epsilon}"] = (
@@ -578,9 +586,37 @@ def process(
     )
 
 
+def register_small_envs(
+    max_episode_steps: int,
+):
+    # continuous control
+    gym.envs.register(
+        id="HalfCheetah-continuous-v0",
+        entry_point="gym.envs.mojoco:HalfCheetahEnv",
+        max_episode_steps=max_episode_steps,
+    )
+    gym.envs.register(
+        id="Hopper-continuous-v0",
+        entry_point="gym.envs.mojoco:HopperEnv",
+        max_episode_steps=max_episode_steps,
+    )
+    # discrete control
+    gym.envs.register(
+        id="CartPole-discrete-v0",
+        entry_point="gym.envs.classic_control:CartPoleEnv",
+        max_episode_steps=50,
+    )
+
+
 def assert_configuration(cfg: DictConfig):
     env_name = cfg.setting.env_name
-    assert env_name in ["BasicEnv-discrete-v0", "BasicEnv-continuous-v0"]
+    assert env_name in [
+        "BasicEnv-discrete-v0",
+        "BasicEnv-continuous-v0",
+        "CartPole-discrete-v0",
+        "HalfCheetah-continuous-v0",
+        "Hopper-continuous-v0",
+    ]
 
     behavior_sigma = cfg.setting.behavior_sigma
     assert isinstance(behavior_sigma, float) and behavior_sigma > 0.0
@@ -598,6 +634,9 @@ def assert_configuration(cfg: DictConfig):
 
     n_trajectories = cfg.setting.n_trajectories
     assert isinstance(n_trajectories, int) and n_trajectories > 0
+
+    max_episode_steps = cfg.setting.max_episode_steps
+    assert isinstance(max_episode_steps, int) and max_episode_steps > 0
 
     n_random_state = cfg.setting.n_random_state
     assert isinstance(n_random_state, int) and n_random_state > 0
@@ -622,6 +661,7 @@ def main(cfg: DictConfig):
         "device": "cuda:0" if torch.cuda.is_available() else "cpu",
         "log_dir": "logs/",
     }
+    register_small_envs(max_episode_steps=cfg.setting.max_episode_steps)
     process(**conf)
 
 

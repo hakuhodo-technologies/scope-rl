@@ -112,12 +112,14 @@ hydra:
     hydra:
     - hydra.mode=RUN
     task:
+    - setting.env_name=CartPole-discrete-v0
+    - setting.max_episode_steps=10
     - setting.n_random_state=2
     - setting.candidate_sigmas=[1.0,2.0]
   job:
     name: main
     chdir: null
-    override_dirname: setting.candidate_sigmas=[1.0,2.0],setting.n_random_state=2
+    override_dirname: setting.candidate_sigmas=[1.0,2.0],setting.env_name=CartPole-discrete-v0,setting.max_episode_steps=10,setting.n_random_state=2
     id: ???
     num: ???
     config_name: config
