@@ -597,7 +597,8 @@ DRL :cite:`kallus2020double` leverages the marginal importance sampling in the s
     & := \frac{1}{n} \sum_{k=1}^K \sum_{i=1}^{n_k} \sum_{t=0}^{T-1} (w_s^j(s_{i,t}, a_{i, t}) (r_{i, t} - Q^j(s_{i, t}, a_{i, t})) \\
     & \quad \quad + w_s^j(s_{i, t-1}, a_{i, t-1}) \mathbb{E}_{a \sim \pi(a | s_t)}[Q^j(s_{i, t}, a)] )
 
-Note that, DRL uses "cross-fitting" as an additional strategy to achieve a statistical efficiency.
+DRL achieves the semiparametric efficiency with a consistent value predictor :math:`Q`. 
+Therefore, to alleviate the potential bias introduced in :math:`Q`, DRL uses the "cross-fitting" technique to estimate the value function.
 Specifically, let :math:`K` is the number of folds and :math:`\mathcal{D}_j` is the :math:`j`-th split of logged data consisting of :math:`n_k` samples.
 Cross-fitting trains :math:`w^j` and :math:`Q^j` on the subset of data used for OPE, i.e., :math:`\mathcal{D} \setminus \mathcal{D}_j`.
 

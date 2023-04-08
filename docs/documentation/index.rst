@@ -174,6 +174,8 @@ OPS metrics (performance of top k deployment policies)
    We also provide configurative RL environments as sub-packages of this library.
 
    * :doc:`RTBGym <rtbgym_about>`: Real-Time Bidding (RTB) of online advertisement
+   * :doc:`RECGym <recgym_about>`: Recommendation in e-commerce
+   * :doc:`BasicGym <basicgym_about>`: Basic environment
 
 
 Citation
@@ -232,8 +234,6 @@ Table of Contents
    :caption: Sub-packages:
 
    Gallery of Sub-packages <subpackages/index>
-   subpackages/rtbgym_about
-   subpackages/recgym_about
 
 .. toctree::
    :maxdepth: 2
@@ -242,6 +242,7 @@ Table of Contents
    ofrl_api
    subpackages/rtbgym_api
    subpackages/recgym_api
+   subpackages/basicgym_api
 
 .. toctree::
    :maxdepth: 1

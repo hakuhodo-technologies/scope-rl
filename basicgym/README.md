@@ -23,8 +23,7 @@ Note that, SyntheticGym is publicized under [ofrl](../) repository, which facili
 
 ### Basic Setting
 
-In synthetic simulation, the objective of the RL agent is to maximize reward. \
-We often formulate this synthetic simulation problem as the following (Partially Observable) Markov Decision Process ((PO)MDP):
+We formulate the following (Partially Observable) Markov Decision Process ((PO)MDP):
 - `state`: 
    - State observation, which may be noisy in POMDPs.
 - `action`:  
