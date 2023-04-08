@@ -525,7 +525,7 @@ class OffPolicyLearning:
 
         else:
             if isinstance(base_policies[0], AlgoBase):
-                evaluation_policies[behavior_policy] = self._apply_head(
+                evaluation_policies = self._apply_head(
                     base_policies=base_policies,
                     base_policies_name=base_policies_name,
                     policy_wrappers=policy_wrappers,
