@@ -88,7 +88,7 @@ def train_behavior_policy(
             ),
         )
     else:
-        model = ddqn = DDQN(
+        model = DDQN(
             encoder_factory=VectorEncoderFactory(hidden_units=[30, 30]),
             q_func_factory=MeanQFunctionFactory(),
             target_update_interval=100,
@@ -118,14 +118,7 @@ def train_behavior_policy(
                 n_steps_per_epoch=100,
                 update_start_step=100,
             )
-            behavior_policy = TruncatedGaussianHead(
-                model,
-                minimum=env.action_space.low,
-                maximum=env.action_space.high,
-                sigma=np.full((action_dim,), behavior_sigma),
-                name=f"sac_gauss_{behavior_sigma}",
-                random_state=base_random_state,
-            )
+
         else:
             model.fit_online(
                 env_,
@@ -145,6 +138,24 @@ def train_behavior_policy(
             )
 
         model.save_model(path_behavior_policy)
+
+    if action_type == "continuous":
+        behavior_policy = TruncatedGaussianHead(
+            model,
+            minimum=env.action_space.low,
+            maximum=env.action_space.high,
+            sigma=np.full((action_dim,), behavior_sigma),
+            name=f"sac_gauss_{behavior_sigma}",
+            random_state=base_random_state,
+        )
+    else:
+        behavior_policy = SoftmaxHead(
+            model,
+            n_actions=env.action_space.n,
+            tau=behavior_tau,
+            name=f"ddqn_softmax_{behavior_tau}",
+            random_state=base_random_state,
+        )
 
     return behavior_policy
 
@@ -223,6 +234,13 @@ def train_candidate_policies(
     path_.mkdir(exist_ok=True, parents=True)
     path_candidate_policy = Path(path_ / f"candidate_policy_{env_name}.pkl")
 
+    opl = OffPolicyLearning(
+        fitting_args={
+            "n_steps": 10000,
+            "scorers": {},
+        }
+    )
+
     if path_candidate_policy.exists():
         with open(path_candidate_policy, "rb") as f:
             base_policies = pickle.load(f)
@@ -290,17 +308,6 @@ def train_candidate_policies(
             )
             algorithms = [cql_b1, cql_b2, cql_b3, iql_b1, iql_b2, iql_b3]
 
-            policy_wrappers = {}
-            for sigma in candidate_sigmas:
-                policy_wrappers[f"gauss_{sigma}"] = (
-                    TruncatedGaussianHead,
-                    {
-                        "sigma": np.full((action_dim,), sigma),
-                        "minimum": env.action_space.low,
-                        "maximum": env.action_space.high,
-                    },
-                )
-
         else:
             cql_b1 = DiscreteCQL(
                 encoder_factory=VectorEncoderFactory(hidden_units=[30, 30]),
@@ -334,22 +341,6 @@ def train_candidate_policies(
             )
             algorithms = [cql_b1, cql_b2, cql_b3, bcq_b1, bcq_b2, bcq_b3]
 
-            policy_wrappers = {}
-            for epsilon in candidate_epsilons:
-                policy_wrappers[f"eps_{epsilon}"] = (
-                    EpsilonGreedyHead,
-                    {
-                        "epsilon": epsilon,
-                        "n_actions": env.action_space.n,
-                    },
-                )
-
-        opl = OffPolicyLearning(
-            fitting_args={
-                "n_steps": 10000,
-                "scorers": {},
-            }
-        )
         base_policies = opl.learn_base_policy(
             logged_dataset=train_logged_dataset,
             algorithms=algorithms,
@@ -360,8 +351,30 @@ def train_candidate_policies(
 
     if action_type == "continuous":
         algorithms_name = ["cql_b1", "cql_b2", "cql_b3", "iql_b1", "iql_b2", "iql_b3"]
+
+        policy_wrappers = {}
+        for sigma in candidate_sigmas:
+            policy_wrappers[f"gauss_{sigma}"] = (
+                TruncatedGaussianHead,
+                {
+                    "sigma": np.full((action_dim,), sigma),
+                    "minimum": env.action_space.low,
+                    "maximum": env.action_space.high,
+                },
+            )
+    
     else:
         algorithms_name = ["cql_b1", "cql_b2", "cql_b3", "bcq_b1", "bcq_b2", "bcq_b3"]
+        
+        policy_wrappers = {}
+        for epsilon in candidate_epsilons:
+            policy_wrappers[f"eps_{epsilon}"] = (
+                EpsilonGreedyHead,
+                {
+                    "epsilon": epsilon,
+                    "n_actions": env.action_space.n,
+                },
+            )
 
     candidate_policies = opl.apply_head(
         base_policies=base_policies,
@@ -421,6 +434,7 @@ def off_policy_evaluation(
                     maximum=env.action_space.high,  # maximum value that policy can take
                 ),
                 sigma=0.1,
+                device=device,
             )
 
         else:
