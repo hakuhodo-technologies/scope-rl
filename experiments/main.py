@@ -508,7 +508,7 @@ def off_policy_evaluation(
         metrics=["best", "worst", "mean", "safety_violation_rate", "sharpe_ratio"],
         visualize_ci=True,
         relative_safety_criteria=1.0,
-        legend=True,
+        legend=False,
         random_state=base_random_state,
         fig_dir=path_,
         fig_name=f"topk_metrics_visualization_{env_name}.png",
