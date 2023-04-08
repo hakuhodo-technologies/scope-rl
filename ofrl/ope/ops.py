@@ -416,20 +416,21 @@ class OffPolicySelection:
                     )
 
         if safety_threshold is None:
-            if (
-                behavior_policy_name is not None
-                and relative_safety_criteria is not None
-            ):
-                check_scalar(
-                    relative_safety_criteria,
-                    name="relative_safety_criteria",
-                    target_type=float,
-                    min_val=0.0,
-                )
-                safety_threshold = (
-                    relative_safety_criteria
-                    * self.behavior_policy_value[behavior_policy_name]
-                )
+            if relative_safety_criteria is not None:
+                if (
+                    behavior_policy_name is not None
+                    or len(self.behavior_policy_value) == 1
+                ):
+                    check_scalar(
+                        relative_safety_criteria,
+                        name="relative_safety_criteria",
+                        target_type=float,
+                        min_val=0.0,
+                    )
+                    safety_threshold = (
+                        relative_safety_criteria
+                        * self.behavior_policy_value[behavior_policy_name]
+                    )
             else:
                 safety_threshold = 0.0
 
