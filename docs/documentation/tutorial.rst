@@ -107,6 +107,29 @@ Unbiased Estimator
 However, when the trajectory length :math:`T` is large, TIS suffers from high variance
 due to the product of importance weights.
 
+
+Variance Analysis
+
+.. math::
+
+    \mathbb{V}_{t}[\hat{J}_{\mathrm{PDIS}}^{H+1-t}(\pi; \mathcal{D})] = \mathbb{V}[J(s_t)] + \mathbb{E}_t[{w_t}^2\mathbb{V}_{t+1}[r_t]] + \mathbb{E}_t[\gamma^2{w_t}^2\mathbb{V}_{t+1}[\hat{J}_{\mathrm{PDIS}}^{H-t}(\pi; \mathcal{D})]] + \mathbb{E}_t[\mathbb{V}_t[w_tQ(s_t, a_t)]]
+
+where :math:`w_{t} := \pi_e(a_{t'} | s_{t'}) / \pi_b(a_{t'} | s_{t'})`
+
+.. dropdown:: proof
+
+    .. math::
+
+        \mathbb{V}[\hat{J}_{\mathrm{TIS}}(\pi; \mathcal{D})] 
+        &= \frac{1}{n}\mathbb{V}\left[w_{1:T-1}\sum_{t=0}^{T-1}r_t \right]\\ 
+        &= \mathbb{E}\left[ \mathbb{V}\left[ w_{1:T-1}\sum_{t=0}^{T-1}r_t | s_1, a_1, ... , s_{T-1}, a_{T-1}\right] \right]\\
+        &= \mathbb{V}\left[ \mathbb{E}\left[ w_{1:T-1}\sum_{t=0}^{T-1}r_t | s_1, a_1, ... , s_{T-1}, a_{T-1}\right] \right]\\
+        
+        
+        
+        
+        =\mathbb{V}[J(s_t)] + \mathbb{E}_t[{w_t}^2\mathbb{V}_{t+1}[r_t]] + \mathbb{E}_t[\gamma^2{w_t}^2\mathbb{V}_{t+1}[\hat{J}_{\mathrm{PDIS}}^{H-t}(\pi; \mathcal{D})]] + \mathbb{E}_t[\mathbb{V}_t[w_t]Q(s_t, a_t)]
+
     
     * :class:`DiscreteTrajectoryWiseImportanceSampling`
     * :class:`ContinuousTrajectoryWiseImportanceSampling`
