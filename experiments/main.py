@@ -8,10 +8,9 @@ from omegaconf import DictConfig
 
 import gym
 from gym.spaces import Box
-import basicgym, rtbgym, recgym
+
+import basicgym
 from basicgym import BasicEnv
-from rtbgym import RTBEnv
-from recgym import RECEnv
 
 import numpy as np
 import torch
@@ -190,7 +189,7 @@ def obtain_logged_dataset(
             test_logged_dataset = pickle.load(f)
 
     else:
-        if isinstance(env, (BasicEnv, RTBEnv, RECEnv)):
+        if isinstance(env, BasicEnv):
             max_episode_steps = env.step_per_episode
         else:
             max_episode_steps = env.spec.max_episode_steps
@@ -600,11 +599,31 @@ def register_small_envs(
         entry_point="gym.envs.mojoco:HopperEnv",
         max_episode_steps=max_episode_steps,
     )
+    gym.envs.register(
+        id="InvertedPendulum-continuous-v0",
+        entry_point="gym.envs.mojoco:InvertedPendulumEnv",
+        max_episode_steps=max_episode_steps,
+    )
+    gym.envs.register(
+        id="Reacher-continuous-v0",
+        entry_point="gym.envs.mojoco:ReacherEnv",
+        max_episode_steps=max_episode_steps,
+    )
+    gym.envs.register(
+        id="Swimmer-continuous-v0",
+        entry_point="gym.envs.mojoco:SwimmerEnv",
+        max_episode_steps=max_episode_steps,
+    )
     # discrete control
     gym.envs.register(
         id="CartPole-discrete-v0",
         entry_point="gym.envs.classic_control:CartPoleEnv",
-        max_episode_steps=50,
+        max_episode_steps=max_episode_steps,
+    )
+    gym.envs.register(
+        id="Pendulum-discrete-v0",
+        entry_point="gym.envs.classic_control:PendulumEnv",
+        max_episode_steps=max_episode_steps,
     )
 
 
@@ -616,6 +635,11 @@ def assert_configuration(cfg: DictConfig):
         "CartPole-discrete-v0",
         "HalfCheetah-continuous-v0",
         "Hopper-continuous-v0",
+        "InvertedPendulum-continuous-v0",
+        "Reacher-continuous-v0",
+        "Swimmer-continuous-v0",
+        "CartPole-discrete-v0",
+        "Pendulum-discrete-v0",
     ]
 
     behavior_sigma = cfg.setting.behavior_sigma
@@ -661,7 +685,7 @@ def main(cfg: DictConfig):
         "device": "cuda:0" if torch.cuda.is_available() else "cpu",
         "log_dir": "logs/",
     }
-    register_small_envs(max_episode_steps=cfg.setting.max_episode_steps)
+    register_small_envs(cfg.setting.max_episode_steps)
     process(**conf)
 
 
