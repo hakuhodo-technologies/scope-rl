@@ -494,7 +494,7 @@ def off_policy_evaluation(
     topk_metric_dict = ops.obtain_topk_policy_value_selected_by_standard_ope(
         input_dict=input_dict,
         return_safety_violation_rate=True,
-        safety_criteria=1.0,
+        relative_safety_criteria=1.0,
     )
 
     with open(path_topk_metrics, "wb") as f:
@@ -507,7 +507,7 @@ def off_policy_evaluation(
         input_dict=input_dict,
         metrics=["best", "worst", "mean", "safety_violation_rate", "sharpe_ratio"],
         visualize_ci=True,
-        safety_criteria=1.0,
+        relative_safety_criteria=1.0,
         legend=True,
         random_state=base_random_state,
         fig_dir=path_,
