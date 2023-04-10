@@ -189,7 +189,7 @@ def obtain_logged_dataset(
             test_logged_dataset = pickle.load(f)
 
     else:
-        if isinstance(env, BasicEnv):
+        if env_name == "BasicEnv-discrete-v0" or "BasicEnv-continuous-v0":
             max_episode_steps = env.step_per_episode
         else:
             max_episode_steps = env.spec.max_episode_steps
@@ -611,7 +611,7 @@ def register_small_envs(
     )
     gym.envs.register(
         id="Swimmer-continuous-v0",
-        entry_point="gym.envs.mojoco:SwimmerEnv",
+        entry_point="gym.envs.mujoco:SwimmerEnv",
         max_episode_steps=max_episode_steps,
     )
     # discrete control
