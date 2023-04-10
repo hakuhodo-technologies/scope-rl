@@ -632,7 +632,6 @@ def assert_configuration(cfg: DictConfig):
     assert env_name in [
         "BasicEnv-discrete-v0",
         "BasicEnv-continuous-v0",
-        "CartPole-discrete-v0",
         "HalfCheetah-continuous-v0",
         "Hopper-continuous-v0",
         "InvertedPendulum-continuous-v0",
