@@ -1,5 +1,5 @@
 setting:
-  env_name: CartPole-discrete-v0
+  env_name: Hopper-continuous-v0
   behavior_sigma: 1.0
   behavior_tau: 1.0
   candidate_sigmas:
@@ -11,7 +11,7 @@ setting:
   - 0.3
   - 0.5
   - 0.7
-  max_episode_steps: 10
+  max_episode_steps: 50
   n_trajectories: 10000
   n_random_state: 2
   base_random_state: 12345
