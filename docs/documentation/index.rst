@@ -16,6 +16,18 @@ The library is also compatible with `d3rlpy <https://github.com/takuseno/d3rlpy>
 
 Our software facilitates implementation, evaluation and algorithm comparison related to the following research topics:
 
+.. card:: 
+   :width: 75%
+   :margin: auto
+   :img-top: ../_static/images/offline_rl_workflow.png
+   :text-align: center
+
+   workflow of offline RL, OPE, and online A/B testing
+
+.. raw:: html
+
+    <div class="white-space-20px"></div>
+
 * **Offline Reinforcement Learning**: 
    Offline RL aims to learn a new policy from only offline logged data collected by a behavior policy. OFRL enables a flexible experiment using customized dataset on diverse environments collected by various behavior policies.
 
@@ -23,11 +35,8 @@ Our software facilitates implementation, evaluation and algorithm comparison rel
    OPE aims to evaluate the policies of a counterfactual policy using only offline logged data. OFRL supports the basic implementations of OPE estimators and streamline the experimental procedure to evaluate OPE estimators.
 
 * **Off-Policy Selection**: 
-   OPS aims to select the best policy from several candidate policies using offline logged data. OFRL supports the basic implementations of OPS methods and provide some metrics to evaluate OPS result.
-
-.. card:: workflow
-    :img-top: ../_static/images/workflow.png
-    :text-align: center
+   OPS aims to select the top-:math:`k` policies from several candidate policies using offline logged data. Typically, the final production policy is chosen based on the online A/B tests results of the selected top-$k$ policies.
+   OFRL supports the basic implementations of OPS methods and provide some metrics to evaluate OPS result.
 
 .. note::
 
@@ -37,7 +46,7 @@ Our software facilitates implementation, evaluation and algorithm comparison rel
    2. Provide a variety of examples of conducting offline RL and OPE/OPS in practical problem settings in :doc:`Quickstart <quickstart>` and :doc:`Tutorial <tutorial>`.
    3. Describe the algorithms and implementations in detail in :doc:`Supported Implementation <evaluation_implementation>` and :doc:`Package Reference <ofrl_api>`.
 
-   You can also find the distinctive features of OFRL in :doc:`distinctive_features`
+   **You can also find the distinctive features of OFRL here:** :doc:`distinctive_features`
 
 Implementation
 ~~~~~~~~~~
@@ -164,10 +173,11 @@ OPE metrics
 * Regret :cite:`paine2020hyperparameter` :cite:`fu2021benchmarks`
 * Type I and Type II Error Rates
 
-OPS metrics (performance of top k deployment policies)
+OPS metrics (performance of top :math:`k` deployment policies)
 ^^^^^^
-* {Best/Worst/Mean} of {policy value/conditional value at risk/lower quartile}
+* {Best/Worst/Mean/Std} of {policy value/conditional value at risk/lower quartile}
 * Safety violation rate
+* Sharpe ratio
 
 .. seealso::
 
@@ -228,6 +238,13 @@ Table of Contents
 
    ope_ops
    evaluation_implementation
+   visualization
+
+.. toctree::
+   :maxdepth: 3
+   :caption: Our Proposal:
+
+   topk_rrt
 
 .. toctree::
    :maxdepth: 1

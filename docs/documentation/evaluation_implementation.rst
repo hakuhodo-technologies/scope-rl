@@ -1296,7 +1296,7 @@ The OPS class implements the following functions.
             :margin: 0
 
             .. grid-item-card::
-                :link: online_offline_rl
+                :link: ope
                 :link-type: doc
                 :shadow: none
                 :margin: 0
@@ -1329,6 +1329,16 @@ The OPS class implements the following functions.
             :margin: 0
 
             .. grid-item-card::
+                :link: visualization
+                :link-type: doc
+                :shadow: none
+                :margin: 0
+                :padding: 0
+
+                Next >>>
+                **Visualization tools**
+
+            .. grid-item-card::
                 :link: ofrl_api
                 :link-type: doc
                 :shadow: none
@@ -1337,13 +1347,3 @@ The OPS class implements the following functions.
 
                 Next >>>
                 **Package Reference**
-
-            .. grid-item-card::
-                :link: quickstart
-                :link-type: doc
-                :shadow: none
-                :margin: 0
-                :padding: 0
-
-                Next >>>
-                **Quickstart**
