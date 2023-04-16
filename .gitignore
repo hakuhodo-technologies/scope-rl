@@ -9,7 +9,7 @@ preview/
 _autosummary/
 _autogallery/
 .npmrd
-.hydra
+.hydra/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
