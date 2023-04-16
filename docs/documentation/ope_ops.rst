@@ -90,10 +90,12 @@ Finally, OPS aims to select the best policy among several candidates as follows.
 where the :math:`\hat{J}(\cdot)` is the OPE estimate of the policy value, which can be substituted by some other metrics including CVaR.
 
 In OPS, how well the ranking of the candidate policy preserves and the safety of the chosen policy matters as well as the accuracy of OPE.
-We describe some evaluation metrics of OPE/OPS `here <>`_.
+In the next page, we provide a review of convensional evaluation metrics of OPE/OPS and describe our proposed metrics called Top-:math:`k` Risk-Return Tradeoff (RRT), 
+which are the main contribution of our research paper `"SCOPE-RL: Towards Risk-Return Assessments of Off-Policy Evaluation in Offline" <>`_. 
 
 .. seealso::
 
+    * :doc:`Conventional OPS metrics and top-k RRT metrics <topk_rrt>`
     * :doc:`OPS evaluation protocols <evaluation_implementation>` and :doc:`their API reference <_autosummary/ofrl.ope.ops>` 
     * :doc:`Quickstart <quickstart>` and :doc:`related tutorials <_autogallery/ops/index>`
 
@@ -139,6 +141,16 @@ We describe some evaluation metrics of OPE/OPS `here <>`_.
 
         .. grid::
             :margin: 0
+
+            .. grid-item-card::
+                :link: topk_rrt
+                :link-type: doc
+                :shadow: none
+                :margin: 0
+                :padding: 0
+
+                Next >>>
+                **Top-k RRT metrics**
 
             .. grid-item-card::
                 :link: evaluation_implementation

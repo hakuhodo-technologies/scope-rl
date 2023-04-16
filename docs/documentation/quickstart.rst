@@ -11,13 +11,17 @@ The workflow mainly consists of following three steps:
     Next, we now learn a new (and better) policy from only offline logged data, without any online interactions.
 
 * **Off-Policy Evaluation and Selection**: 
-    After learning several candidate policies in an offline manner, we validate their performance in an offline manner and choose the best policy.
+    After learning several candidate policies in an offline manner, we need to choose the production policy. 
+    We consider a typical workflow that starts from screening out promising candidate policies through Off-Policy Evaluation (OPE)
+    and then choosing the final production policy among the selected candidates based on more reliable online A/B tests result, as illustrated in the following figure.
 
-.. card:: workflow
-    :img-top: ../_static/images/workflow.png
-    :text-align: center
+    .. card:: 
+        :width: 75%
+        :margin: auto
+        :img-top: ../_static/images/ops_workflow.png
+        :text-align: center
 
-In this example, we use :doc:`RTBGym <rtbgym>` (a sub-package of OFRL) and `d3rlpy <https://github.com/takuseno/d3rlpy>`_. Please satisfy the `requirements <>`_ in advance.
+        Practical workflow of policy evaluation and selection
 
 .. seealso::
 
@@ -30,6 +34,8 @@ Synthetic Dataset Generation and Data Preprocessing
 ~~~~~~~~~~
 
 We start by collecting the logged data using DDQN :cite:`van2016deep` as a behavior policy.
+Note that, in the following example, we use :doc:`RTBGym <rtbgym>` (a sub-package of OFRL) and `d3rlpy <https://github.com/takuseno/d3rlpy>`_. Please satisfy the `requirements <>`_ in advance.
+
 
 .. code-block:: python
 

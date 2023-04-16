@@ -18,10 +18,10 @@ sys.path.insert(0, os.path.abspath(".."))
 
 # -- Project information -----------------------------------------------------
 
-project = "OFRL"
-copyright = "2023, Hakuhodo Technologies"
+project = "SCOPE-RL"
+copyright = "2023, Haruka Kiyohara, Ren Kishimoto, Yuta Saito, Hakuhodo Technologies"
 # copyright = "2023, Haruka Kiyohara, Yuta Saito, and negocia, Inc"
-author = "Haruka Kiyohara, Kosuke Kawakami, Yuta Saito"
+author = "Haruka Kiyohara, Ren Kishimoto, Kosuke Kawakami, Yuta Saito"
 
 # The full version, including alpha/beta/rc tags
 version = "latest"

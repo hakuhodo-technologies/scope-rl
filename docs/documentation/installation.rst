@@ -29,18 +29,23 @@ Citation
 
 If you use our pipeline in your work, please cite our paper below.
 
-| **Title** [`arXiv <>`_] [`Proceedings <>`_]
-| Authors.
+.. card::
 
-.. code-block::
+    | **Title** [`arXiv <>`_] [`Proceedings <>`_]
+    | Authors.
 
-   @article{kiyohara2023xxx
-      title={},
-      author={},
-      journal={},
-      year={},
-   }
- 
+    .. code-block::
+
+        @article{kiyohara2023xxx
+            title={},
+            author={},
+            journal={},
+            year={},
+        }
+
+.. raw:: html
+
+    <div class="white-space-20px"></div>
 
 .. grid::
 

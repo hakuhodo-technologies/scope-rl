@@ -1,6 +1,6 @@
 :html_theme.sidebar_secondary.remove:
 
-.. card:: OFRL
+.. card:: SCOPE-RL
     :class-title: top-page-title-title
     :class-body: top-page-title-desc
     :text-align: center
@@ -8,12 +8,17 @@
 
     one sentence to describe
 
-    .. button-ref:: documentation/installation
+    .. button-ref:: documentation/index
       :ref-type: doc
       :color: primary
       :shadow:
 
       Getting Started
+
+    .. button-ref:: documentation/installation
+      :ref-type: doc
+
+      Installation
 
 .. raw:: html
 
@@ -33,7 +38,7 @@
 .. raw:: html
 
     <div class="top-page-link">
-        <a href="documentation/index.html">>>> Explore!</a>
+        <a href="documentation/distinctive_features.html">>>> Explore!</a>
     </div>
 
 .. raw:: html
@@ -70,7 +75,7 @@
 .. raw:: html
 
     <div class="top-page-link">
-        <a href="documentation/index.html">>>> See more</a>
+        <a href="documentation/quickstart.html">>>> See more</a>
     </div>
     <div class="white-space-5px"></div>
 
@@ -107,7 +112,7 @@
 .. raw:: html
 
     <div class="top-page-link">
-        <a href="documentation/index.html">>>> See more</a>
+        <a href="documentation/quickstart.html">>>> See more</a>
     </div>
     <div class="white-space-5px"></div>
 
@@ -142,7 +147,7 @@
 .. raw:: html
 
     <div class="top-page-link">
-        <a href="documentation/index.html">>>> See more</a>
+        <a href="documentation/quickstart.html">>>> See more</a>
     </div>
     <div class="white-space-5px"></div>
 
@@ -176,7 +181,7 @@
 .. raw:: html
 
     <div class="top-page-link">
-        <a href="documentation/index.html">>>> See more</a>
+        <a href="documentation/quickstart.html">>>> See more</a>
     </div>
     <div class="white-space-5px"></div>
 
