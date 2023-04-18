@@ -48,8 +48,6 @@ from ofrl.ope import (
     DiscreteStateActionMarginalSelfNormalizedImportanceSampling as D_MIS,
 )
 from ofrl.ope import CreateOPEInput
-from ofrl.ope.online import calc_on_policy_policy_value
-
 
 from ofrl.utils import MinMaxScaler
 from ofrl.utils import MinMaxActionScaler
@@ -76,7 +74,7 @@ def train_behavior_policy(
 
     path_ = Path(log_dir + f"/behavior_policy")
     path_.mkdir(exist_ok=True, parents=True)
-    path_behavior_policy = Path(path_ / f"behavior_policy_{env_name}_{env.spec.max_episode_steps}.pt")
+    path_behavior_policy = Path(path_ / f"behavior_policy_{env_name}.pt")
 
     torch_seed(base_random_state, device=device)
 
@@ -140,10 +138,8 @@ def train_behavior_policy(
                 name=f"ddqn_softmax_{behavior_tau}",
                 random_state=base_random_state,
             )
-        
+
         model.save_model(path_behavior_policy)
-    
-    print('calc_on_policy_policy_value = ',  calc_on_policy_policy_value(env, model, n_trajectories=100, random_state=base_random_state))
 
     if action_type == "continuous":
         behavior_policy = TruncatedGaussianHead(
@@ -180,10 +176,10 @@ def obtain_logged_dataset(
     path_ = Path(log_dir + f"/logged_dataset")
     path_.mkdir(exist_ok=True, parents=True)
     path_train_logged_dataset = Path(
-        path_ / f"train_logged_dataset_{env_name}_{behavior_policy_name}_{env.spec.max_episode_steps}.pkl"
+        path_ / f"train_logged_dataset_{env_name}_{behavior_policy_name}.pkl"
     )
     path_test_logged_dataset = Path(
-        path_ / f"test_logged_dataset_{env_name}_{behavior_policy_name}_{env.spec.max_episode_steps}.pkl"
+        path_ / f"test_logged_dataset_{env_name}_{behavior_policy_name}.pkl"
     )
 
     if path_train_logged_dataset.exists():
@@ -193,7 +189,7 @@ def obtain_logged_dataset(
             test_logged_dataset = pickle.load(f)
 
     else:
-        if env_name in ["BasicEnv-discrete-v0",  "BasicEnv-continuous-v0"]:
+        if env_name in ["BasicEnv-discrete-v0", "BasicEnv-continuous-v0"]:
             max_episode_steps = env.step_per_episode
         else:
             max_episode_steps = env.spec.max_episode_steps
@@ -243,7 +239,7 @@ def train_candidate_policies(
 
     path_ = Path(log_dir + f"/candidate_policies")
     path_.mkdir(exist_ok=True, parents=True)
-    path_candidate_policy = Path(path_ / f"candidate_policy_{env_name}_{env.spec.max_episode_steps}.pkl")
+    path_candidate_policy = Path(path_ / f"candidate_policy_{env_name}.pkl")
 
     opl = OffPolicyLearning(
         fitting_args={
@@ -350,8 +346,7 @@ def train_candidate_policies(
                 q_func_factory=MeanQFunctionFactory(),
                 use_gpu=(device == "cuda:0"),
             )
-            algorithms = [cql_b1, cql_b2, bcq_b1, bcq_b2]
-            # algorithms = [cql_b1, cql_b2, cql_b3, bcq_b1, bcq_b2, bcq_b3]
+            algorithms = [cql_b1, cql_b2, cql_b3, bcq_b1, bcq_b2, bcq_b3]
 
         base_policies = opl.learn_base_policy(
             logged_dataset=train_logged_dataset,
@@ -394,7 +389,6 @@ def train_candidate_policies(
         policy_wrappers=policy_wrappers,
         random_state=base_random_state,
     )
- 
     return candidate_policies
 
 
@@ -411,7 +405,7 @@ def off_policy_evaluation(
 
     path_ = Path(log_dir + f"/input_dict")
     path_.mkdir(exist_ok=True, parents=True)
-    path_input_dict = Path(path_ / f"input_dict_{env_name}_{env.spec.max_episode_steps}.pkl")
+    path_input_dict = Path(path_ / f"input_dict_{env_name}.pkl")
 
     if path_input_dict.exists():
         with open(path_input_dict, "rb") as f:
@@ -480,21 +474,19 @@ def off_policy_evaluation(
         input_dict = prep.obtain_whole_inputs(
             logged_dataset=test_logged_dataset,
             evaluation_policies=candidate_policies,
-            # require_value_prediction=True,
-            # require_weight_prediction=True,
+            require_value_prediction=True,
+            require_weight_prediction=True,
             n_trajectories_on_policy_evaluation=100,
             path=log_dir + f"/input_dict/multiple",
             random_state=base_random_state,
         )
-        
         with open(path_input_dict, "wb") as f:
             pickle.dump(input_dict, f)
 
     if action_type == "continuous":
-        # ope_estimators = [C_DM(), C_PDIS(), C_DR(), C_MIS()]
-        ope_estimators = [C_PDIS()]
+        ope_estimators = [C_DM(), C_PDIS(), C_DR(), C_MIS()]
     else:
-        ope_estimators = [D_PDIS()]
+        ope_estimators = [D_DM(), D_PDIS(), D_DR(), D_MIS()]
 
     ope = OffPolicyEvaluation(
         logged_dataset=test_logged_dataset,
@@ -509,10 +501,7 @@ def off_policy_evaluation(
         input_dict=input_dict,
         return_metrics=True,
     )
-    print('ops_dict=', ops_dict)
-    print('estimate_policy_value=',ope.estimate_policy_value(input_dict))
-
-    path_metrics = Path(path_ / f"conventional_metrics_dict_{env_name}_{env.spec.max_episode_steps}.pkl")
+    path_metrics = Path(path_ / f"conventional_metrics_dict_{env_name}.pkl")
     with open(path_metrics, "wb") as f:
         pickle.dump(ops_dict, f)
 
@@ -521,7 +510,7 @@ def off_policy_evaluation(
         return_safety_violation_rate=True,
         relative_safety_criteria=1.0,
     )
-    path_topk_metrics = Path(path_ / f"topk_metrics_dict_{env_name}_{env.spec.max_episode_steps}.pkl")
+    path_topk_metrics = Path(path_ / f"topk_metrics_dict_{env_name}.pkl")
     with open(path_topk_metrics, "wb") as f:
         pickle.dump(topk_metric_dict, f)
 
@@ -538,7 +527,6 @@ def off_policy_evaluation(
         fig_dir=path_,
         fig_name=f"topk_metrics_visualization_{env_name}.png",
     )
-
 
 
 def process(
