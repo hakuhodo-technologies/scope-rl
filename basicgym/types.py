@@ -4,4 +4,3 @@ import numpy as np
 
 
 Action = Union[int, float, np.integer, np.ndarray]
-# Action = Union[int, float, np.integer, np.float, np.float32, np.ndarray]
