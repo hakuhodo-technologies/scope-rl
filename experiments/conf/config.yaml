@@ -1,0 +1,9 @@
+defaults:
+  - setting: default
+
+hydra: 
+  run: 
+    dir: ./
+  sweep:
+    dir: ./
+    subdir: ./
