@@ -189,7 +189,7 @@ def obtain_logged_dataset(
             test_logged_dataset = pickle.load(f)
 
     else:
-        if env_name == "BasicEnv-discrete-v0" or "BasicEnv-continuous-v0":
+        if env_name in ["BasicEnv-discrete-v0", "BasicEnv-continuous-v0"]:
             max_episode_steps = env.step_per_episode
         else:
             max_episode_steps = env.spec.max_episode_steps
@@ -591,22 +591,22 @@ def register_small_envs(
     # continuous control
     gym.envs.register(
         id="HalfCheetah-continuous-v0",
-        entry_point="gym.envs.mojoco:HalfCheetahEnv",
+        entry_point="gym.envs.mujoco:HalfCheetahEnv",
         max_episode_steps=max_episode_steps,
     )
     gym.envs.register(
         id="Hopper-continuous-v0",
-        entry_point="gym.envs.mojoco:HopperEnv",
+        entry_point="gym.envs.mujoco:HopperEnv",
         max_episode_steps=max_episode_steps,
     )
     gym.envs.register(
         id="InvertedPendulum-continuous-v0",
-        entry_point="gym.envs.mojoco:InvertedPendulumEnv",
+        entry_point="gym.envs.mujoco:InvertedPendulumEnv",
         max_episode_steps=max_episode_steps,
     )
     gym.envs.register(
         id="Reacher-continuous-v0",
-        entry_point="gym.envs.mojoco:ReacherEnv",
+        entry_point="gym.envs.mujoco:ReacherEnv",
         max_episode_steps=max_episode_steps,
     )
     gym.envs.register(
