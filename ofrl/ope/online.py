@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 import gym
-from gym import TimeLimit
+from gym.wrappers import TimeLimit
 from d3rlpy.algos import AlgoBase
 from sklearn.utils import check_scalar, check_random_state
 
