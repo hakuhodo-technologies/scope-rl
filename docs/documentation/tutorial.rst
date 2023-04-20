@@ -222,12 +222,14 @@ where :math:`w_{t} := \pi_e(a_{t'} | s_{t'}) / \pi_b(a_{t'} | s_{t'})`
 
     .. math::
 
-        \mathbb{V}_{t}[\hat{J}_{\mathrm{PDIS}}^{H+1-t}(\pi; \mathcal{D})] = \mathbb{E}_{t}[(\hat{J)]
-        
-        
-        
-        
-        =\mathbb{V}[J(s_t)] + \mathbb{E}_t[{w_t}^2\mathbb{V}_{t+1}[r_t]] + \mathbb{E}_t[\gamma^2{w_t}^2\mathbb{V}_{t+1}[\hat{J}_{\mathrm{PDIS}}^{H-t}(\pi; \mathcal{D})]] + \mathbb{E}_t[\mathbb{V}_t[w_t]Q(s_t, a_t)]
+        \mathbb{V}_{t}[\hat{J}_{\mathrm{PDIS}}^{H+1-t}(\pi; \mathcal{D})]&=\mathbb{E}_{t}[\hat{J}_{\mathrm{PDIS}}^{H+1-t}]-(\mathbb{E}_{t}[V(s_t)])^2\\
+        &=\mathbb{E}_{t}\left[(\hat{V}(s_t)+w_t(r_t+\gamma J_{PDIS}^{H-t} - \hat{Q}(s_t, a_t)))^2\right]-\mathbb{E}_{t}[V(s_t)^2]+\mathbb{V}[V(s_t)]\\
+        &=\mathbb{E}_{t}\left[(w_tQ(s_t, a_t)-w_t\hat{Q}(s_t, a_t)+\hat{V}(s_t)+w_t(r_t+\gamma J_{PDIS}^{H-t}-Q(s_t, a_t))^2)-V(s_t)^2\right]+\mathbb{V}_{t}[V(s_t)]\\
+        &=\mathbb{E}_{t}\left[w_t(Q(s_t, a_t)-\hat{Q}(s_t, a_t))+\hat{V}(s_t)+w_t(r_t-R(s_t, a_t))+w_t\gamma (J_{PDIS}^{H-t} -\mathbb{E}_{t+1}[V(s_{t+1})])^2 -V(s_t)^2\right]+\mathbb{V}_{t}[V(s_t)]\\
+        &=\mathbb{E}_{t}\left[\mathbb{E}_{t}\left[
+        (-w_t(Q(s_t, a_t)-\hat{Q}(s_t, a_t))+\hat{V}(s_t))^2 - V(s_t)^2|s_t\right]\right]+\mathbb{E}_{t}\left[\mathbb{E}_{t+1}\left[w_{t}^2(r_t -R(s_t, a_t))^2\right]\right]\\
+        &+\mathbb{V}_{t}[V(s_t)]+\mathbb{E}_{t}\left[\mathbb{E}_{t+1}\left[w_t\gamma(J_{PDIS}^{H-t}(s_t, a_t)-\mathbb{E}_{t+1}[V(s_{t+1})])^2\right]\right]\\
+        &=\mathbb{V}[J(s_t)] + \mathbb{E}_t\left[{w_t}^2\mathbb{V}_{t+1}[r_t]\right] + \mathbb{E}_t\left[\gamma^2{w_t}^2\mathbb{V}_{t+1}[\hat{J}_{\mathrm{PDIS}}^{H-t}(\pi; \mathcal{D})]\right] + \mathbb{E}_t\left[\mathbb{V}_t[w_t(\hat{Q}(s_t, a_t)-Q(s_t, a_t))]\right]
 
 :math:`\mathbb{V}[J(s_t)]`: state transition randomness
 
