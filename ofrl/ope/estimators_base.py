@@ -215,7 +215,6 @@ class BaseOffPolicyEstimator(metaclass=ABCMeta):
             evaluation_policy_pscore = np.tile(
                 evaluation_policy_pscore[:, -1], (step_per_trajectory, 1)
             ).T
-
         return evaluation_policy_pscore
 
     def _calc_similarity_weight(
@@ -356,12 +355,13 @@ class BaseMarginalOffPolicyEstimator(BaseOffPolicyEstimator):
 
         """
         pscore = pscore.reshape((-1, step_per_trajectory))
-        pscore_ = np.roll(pscore, n_step_pdis, axis=1)
-        pscore_[:, :n_step_pdis] = 1
 
-        numerator = np.cumprod(pscore, axis=1)
-        denominator = np.cumprod(pscore_, axis=1)
-        return numerator / denominator
+        n_step_pscore = np.zeros_like(pscore)
+        for t in range(step_per_trajectory):
+            start_id = max(t - n_step_pdis + 1, 0)
+            n_step_pscore[:, t] = pscore[:, start_id : t + 1].prod(axis=1)
+
+        return n_step_pscore
 
     def _calc_behavior_policy_pscore_continuous(
         self,
@@ -393,12 +393,13 @@ class BaseMarginalOffPolicyEstimator(BaseOffPolicyEstimator):
         """
         pscore = pscore.prod(axis=1)
         pscore = pscore.reshape((-1, step_per_trajectory))
-        pscore_ = np.roll(pscore, n_step_pdis, axis=1)
-        pscore_[:, :n_step_pdis] = 1
 
-        numerator = np.cumprod(pscore, axis=1)
-        denominator = np.cumprod(pscore_, axis=1)
-        return numerator / denominator
+        n_step_pscore = np.zeros_like(pscore)
+        for t in range(step_per_trajectory):
+            start_id = max(t - n_step_pdis + 1, 0)
+            n_step_pscore[:, t] = pscore[:, start_id : t + 1].prod(axis=1)
+
+        return n_step_pscore
 
     def _calc_evaluation_policy_pscore_discrete(
         self,
@@ -435,14 +436,15 @@ class BaseMarginalOffPolicyEstimator(BaseOffPolicyEstimator):
         evaluation_policy_pscore = evaluation_policy_action_dist[
             np.arange(len(action)), action
         ].reshape((-1, step_per_trajectory))
-        evaluation_policy_pscore_ = np.roll(
-            evaluation_policy_pscore, n_step_pdis + 1, axis=1
-        )
-        evaluation_policy_pscore_[:, : n_step_pdis + 1] = 1
 
-        numerator = np.cumprod(evaluation_policy_pscore, axis=1)
-        denominator = np.cumprod(evaluation_policy_pscore_, axis=1)
-        return numerator / denominator
+        n_step_pscore = np.zeros_like(evaluation_policy_pscore)
+        for t in range(step_per_trajectory):
+            start_id = max(t - n_step_pdis + 1, 0)
+            n_step_pscore[:, t] = evaluation_policy_pscore[:, start_id : t + 1].prod(
+                axis=1
+            )
+
+        return n_step_pscore
 
     def _calc_similarity_weight(
         self,
@@ -495,12 +497,14 @@ class BaseMarginalOffPolicyEstimator(BaseOffPolicyEstimator):
             sigma=sigma,
         ).reshape((-1, step_per_trajectory))
 
-        similarity_weight_ = np.roll(similarity_weight, n_step_pdis + 1, axis=1)
-        similarity_weight_[:, : n_step_pdis + 1] = 1
+        n_step_similarity_weight = np.zeros_like(similarity_weight)
+        for t in range(step_per_trajectory):
+            start_id = max(t - n_step_pdis + 1, 0)
+            n_step_similarity_weight[:, t] = similarity_weight[
+                :, start_id : t + 1
+            ].prod(axis=1)
 
-        numerator = np.cumprod(similarity_weight, axis=1)
-        denominator = np.cumprod(similarity_weight_, axis=1)
-        return numerator / denominator
+        return n_step_similarity_weight
 
     def _calc_marginal_importance_weight(self):
         """Calculate marginal importance weight."""

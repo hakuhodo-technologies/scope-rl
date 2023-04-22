@@ -7,6 +7,7 @@ from warnings import warn
 
 import torch
 from torch import optim
+from torch.nn.utils import clip_grad_norm_
 
 import numpy as np
 from sklearn.utils import check_scalar
@@ -91,16 +92,16 @@ class DiscreteAugmentedLagrangianStateActionWightValueLearning(BaseWeightValueLe
     method: {"dual_dice", "gen_dice", "algae_dice", "best_dice", "mql", "mwl", "custom"}, default="best_dice"
         Indicates which parameter set should be used. When, "custom" users can specify their own parameter.
 
-    batch_size: int, default=32 (> 0)
+    batch_size: int, default=128 (> 0)
         Batch size.
 
-    q_lr: float, default=1e-3 (> 0)
+    q_lr: float, default=1e-4 (> 0)
         Learning rate of q_function.
 
-    w_lr: float, default=1e-3 (> 0)
+    w_lr: float, default=1e-4 (> 0)
         Learning rate of w_function.
 
-    lambda_lr: float, default=1e-3 (> 0)
+    lambda_lr: float, default=1e-4 (> 0)
         Learning rate of lambda_.
 
     alpha_q: float, default=None (>= 0)
@@ -150,10 +151,10 @@ class DiscreteAugmentedLagrangianStateActionWightValueLearning(BaseWeightValueLe
     sigma: float = 1.0
     state_scaler: Optional[Scaler] = None
     method: str = "best_dice"
-    batch_size: int = 32
-    q_lr: float = 1e-3
-    w_lr: float = 1e-3
-    lambda_lr: float = 1e-3
+    batch_size: int = 128
+    q_lr: float = 1e-4
+    w_lr: float = 1e-4
+    lambda_lr: float = 1e-4
     alpha_q: Optional[float] = None
     alpha_w: Optional[float] = None
     alpha_r: Optional[bool] = None
@@ -291,7 +292,9 @@ class DiscreteAugmentedLagrangianStateActionWightValueLearning(BaseWeightValueLe
             )
         ).mean()
         q_regularization = self.alpha_q * (self.q_function(state, action) ** 2).mean()
-        w_regularization = self.alpha_w * (self.w_function(state, action) ** 2).mean()
+        w_regularization = (
+            self.alpha_w * ((self.w_function(state, action) - 1.0) ** 2).mean()
+        )
         return initial_value + td_value + q_regularization - w_regularization
 
     def fit(
@@ -419,7 +422,11 @@ class DiscreteAugmentedLagrangianStateActionWightValueLearning(BaseWeightValueLe
             desc="[fitting_weight_and_value_functions]",
             total=n_epochs,
         ):
-            for grad_step in range(n_steps_per_epoch):
+            for grad_step in tqdm(
+                np.arange(n_steps_per_epoch),
+                desc=f"[epoch: {epoch: >4}]",
+                total=n_steps_per_epoch,
+            ):
                 idx_ = torch.randint(n_trajectories, size=(self.batch_size,))
                 t_ = torch.randint(step_per_trajectory - 2, size=(self.batch_size,))
 
@@ -448,10 +455,19 @@ class DiscreteAugmentedLagrangianStateActionWightValueLearning(BaseWeightValueLe
 
                 objective_loss.backward()
 
+                clip_grad_norm_(self.q_function.parameters(), max_norm=10.0)
+                clip_grad_norm_(self.w_function.parameters(), max_norm=10.0)
+                if self.enable_lambda:
+                    clip_grad_norm_(self.lambda_, max_norm=10.0)
+
                 q_optimizer.step()
                 w_optimizer.step()
                 if self.enable_lambda:
                     lambda_optimizer.step()
+
+            print(
+                f"epoch={epoch: >4}, " f"objective_loss={objective_loss.item():.3f}, "
+            )
 
     def predict_q_function_for_all_actions(
         self,
@@ -807,16 +823,16 @@ class DiscreteAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearner)
     method: {"dual_dice", "gen_dice", "algae_dice", "best_dice", "mvl", "mwl", "custom"}, default="best_dice"
         Indicates which parameter set should be used. When, "custom" users can specify their own parameter.
 
-    batch_size: int, default=32 (> 0)
+    batch_size: int, default=128 (> 0)
         Batch size.
 
-    v_lr: float, default=1e-3 (> 0)
+    v_lr: float, default=1e-4 (> 0)
         Learning rate of v_function.
 
-    w_lr: float, default=1e-3 (> 0)
+    w_lr: float, default=1e-4 (> 0)
         Learning rate of w_function.
 
-    lambda_lr: float, default=1e-3 (> 0)
+    lambda_lr: float, default=1e-4 (> 0)
         Learning rate of lambda_.
 
     alpha_v: float, default=None (>= 0)
@@ -866,10 +882,10 @@ class DiscreteAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearner)
     sigma: float = 1.0
     state_scaler: Optional[Scaler] = None
     method: str = "best_dice"
-    batch_size: int = 32
-    v_lr: float = 1e-3
-    w_lr: float = 1e-3
-    lambda_lr: float = 1e-3
+    batch_size: int = 128
+    v_lr: float = 1e-4
+    w_lr: float = 1e-4
+    lambda_lr: float = 1e-4
     alpha_v: Optional[float] = None
     alpha_w: Optional[float] = None
     alpha_r: Optional[bool] = None
@@ -999,9 +1015,9 @@ class DiscreteAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearner)
                 - lambda_
             )
         ).mean()
-        q_regularization = self.alpha_v * (self.v_function(state) ** 2).mean()
-        w_regularization = self.alpha_w * (self.w_function(state) ** 2).mean()
-        return initial_value + td_value + q_regularization - w_regularization
+        v_regularization = self.alpha_v * (self.v_function(state) ** 2).mean()
+        w_regularization = self.alpha_w * ((self.w_function(state) - 1.0) ** 2).mean()
+        return initial_value + td_value + v_regularization - w_regularization
 
     def fit(
         self,
@@ -1137,7 +1153,11 @@ class DiscreteAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearner)
             desc="[fitting_weight_and_value_functions]",
             total=n_epochs,
         ):
-            for grad_step in range(n_steps_per_epoch):
+            for grad_step in tqdm(
+                np.arange(n_steps_per_epoch),
+                desc=f"[epoch: {epoch: >4}]",
+                total=n_steps_per_epoch,
+            ):
                 idx_ = torch.randint(n_trajectories, size=(self.batch_size,))
                 t_ = torch.randint(step_per_trajectory - 2, size=(self.batch_size,))
 
@@ -1157,10 +1177,19 @@ class DiscreteAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearner)
 
                 objective_loss.backward()
 
+                clip_grad_norm_(self.v_function.parameters(), max_norm=10.0)
+                clip_grad_norm_(self.w_function.parameters(), max_norm=10.0)
+                if self.enable_lambda:
+                    clip_grad_norm_(self.lambda_, max_norm=10.0)
+
                 v_optimizer.step()
                 w_optimizer.step()
                 if self.enable_lambda:
                     lambda_optimizer.step()
+
+            print(
+                f"epoch={epoch: >4}, " f"objective_loss={objective_loss.item():.3f}, "
+            )
 
     def predict_value(
         self,

@@ -2,6 +2,7 @@
 from tqdm.auto import tqdm
 from typing import List, Union, Optional
 from pathlib import Path
+from warnings import warn
 
 import numpy as np
 from scipy.stats import norm
@@ -11,6 +12,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 import gym
+from gym.wrappers import TimeLimit
 from d3rlpy.algos import AlgoBase
 from sklearn.utils import check_scalar, check_random_state
 
@@ -1438,8 +1440,13 @@ def rollout_policy_online(
         raise ValueError(
             "step_per_trajectory must be given when `evaluate_on_stationary_distribution == True`."
         )
+    elif isinstance(env, TimeLimit):
+        step_per_trajectory = env.spec.max_episode_steps
     else:
         step_per_trajectory = np.infty
+        warn(
+            "step_per_trajectory is currently set to np.infty. The evaluation may not end if the environment will not terminate by themselves."
+        )
 
     on_policy_policy_values = np.zeros(n_trajectories)
     env.reset(seed=random_state)

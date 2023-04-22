@@ -6,6 +6,7 @@ from pathlib import Path
 
 import torch
 from torch import optim
+from torch.nn.utils import clip_grad_norm_
 
 import numpy as np
 from sklearn.utils import check_scalar
@@ -67,16 +68,10 @@ class ContinuousMinimaxStateActionValueLearning(BaseWeightValueLearner):
     action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
         Scaling factor of action.
 
-    batch_size: int, default=32 (> 0)
+    batch_size: int, default=128 (> 0)
         Batch size.
 
-    alpha: float, default=1e-3 (> 0)
-        Regularization of Q-function.
-
-    lambda_: float, default=1e-3 (>= 0)
-        Stabilizer to obtain a fast convergence rate.
-
-    lr: float, default=1e-3 (> 0)
+    lr: float, default=1e-4 (> 0)
         Learning rate.
 
     device: str, default="cuda:0"
@@ -94,10 +89,8 @@ class ContinuousMinimaxStateActionValueLearning(BaseWeightValueLearner):
     sigma: float = 1.0
     state_scaler: Optional[Scaler] = None
     action_scaler: Optional[ActionScaler] = None
-    batch_size: int = 32
-    alpha: float = 1e-3
-    lambda_: float = 1e-3
-    lr: float = 1e-3
+    batch_size: int = 128
+    lr: float = 1e-4
     device: str = "cuda:0"
 
     def __post_init__(self):
@@ -119,8 +112,6 @@ class ContinuousMinimaxStateActionValueLearning(BaseWeightValueLearner):
             )
 
         check_scalar(self.batch_size, name="batch_size", target_type=int, min_val=1)
-        check_scalar(self.alpha, name="alpha", target_type=float, min_val=0.0)
-        check_scalar(self.lambda_, name="lambda_", target_type=float, min_val=0.0)
         check_scalar(self.lr, name="lr", target_type=float, min_val=0.0)
 
     def load(self, path: Path):
@@ -129,50 +120,25 @@ class ContinuousMinimaxStateActionValueLearning(BaseWeightValueLearner):
     def save(self, path: Path):
         torch.save(self.q_function.state_dict(), path)
 
-    def _inverse(
-        self,
-        symmetric_matrix: torch.Tensor,
-    ):
-        """Calculate inverse of a symmetric matrix."""
-        return torch.linalg.pinv(symmetric_matrix, hermitian=True)
-
-    def _sqrt(
-        self,
-        symmetric_matrix: torch.Tensor,
-    ):
-        """Calculate sqrt of a symmetric matrix."""
-        v, w = torch.linalg.eigh(symmetric_matrix)
-        return w @ torch.diag_embed(torch.sqrt(v))
-
     def _gaussian_kernel(
         self,
-        state: torch.Tensor,
-        action: torch.Tensor,
+        state_1: torch.Tensor,
+        action_1: torch.Tensor,
+        state_2: torch.Tensor,
+        action_2: torch.Tensor,
     ):
         """Gaussian kernel for all input pairs."""
         with torch.no_grad():
-            input = torch.cat((state, action), dim=1)
+            x1 = torch.cat((state_1, action_1), dim=1)
+            x2 = torch.cat((state_2, action_2), dim=1)
             # (x - x') ** 2 = x ** 2 + x' ** 2 - 2 x x'
-            x_2 = (input**2).sum(dim=1)
-            x_y = input @ input.T
-            distance = 2 * (x_2[:, None] - x_y)
+            x1_2 = (x1**2).sum(dim=1)
+            x2_2 = (x2**2).sum(dim=1)
+            x_y = x1 @ x2.T
+            distance = x1_2[:, None] + x2_2[None, :] - 2 * x_y
             kernel = torch.exp(-distance / self.sigma)
 
         return kernel  # shape (n_trajectories, n_trajectories)
-
-    def _kernel_term(
-        self,
-        kernel: torch.Tensor,
-    ):
-        """Kernel term in the objective function."""
-        n_trajectories = len(kernel)
-        sqrt_kernel = self._sqrt(kernel)
-        inverse_kernel = self._inverse(
-            self.alpha * torch.eye(n_trajectories) + self.lambda_ * kernel
-        )
-        return (
-            sqrt_kernel @ inverse_kernel @ sqrt_kernel
-        )  # shape (n_trajectories, n_trajectories)
 
     def _objective_function(
         self,
@@ -212,12 +178,17 @@ class ContinuousMinimaxStateActionValueLearning(BaseWeightValueLearner):
             Objective function of MQL.
 
         """
-        kernel = self._gaussian_kernel(state, action)
         current_q = self.q_function(state, action)
-        next_q = self.q_function(next_state, next_action)
 
-        td_error = importance_weight * (reward + self.gamma * next_q) - current_q
-        return td_error.T @ self._kernel_term(kernel) @ td_error
+        with torch.no_grad():
+            next_q = self.q_function(next_state, next_action)
+
+        td_error = importance_weight * (reward + self.gamma * next_q - current_q)
+        td_loss = (
+            td_error.T @ self._gaussian_kernel(state, action, state, action) @ td_error
+        )
+        regularization_loss = (current_q**2).mean()
+        return td_loss, regularization_loss
 
     def fit(
         self,
@@ -227,8 +198,9 @@ class ContinuousMinimaxStateActionValueLearning(BaseWeightValueLearner):
         reward: np.ndarray,
         pscore: np.ndarray,
         evaluation_policy_action: np.ndarray,
-        n_epochs: int = 100,
-        n_steps_per_epoch: int = 100,
+        n_epochs: int = 10,
+        n_steps_per_epoch: int = 1000,
+        regularization_weight: float = 1.0,
         random_state: Optional[int] = None,
         **kwargs,
     ):
@@ -254,11 +226,14 @@ class ContinuousMinimaxStateActionValueLearning(BaseWeightValueLearner):
         evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
 
-        n_epochs: int, default=100 (> 0)
+        n_epochs: int, default=10 (> 0)
             Number of epochs to train.
 
-        n_steps_per_epoch: int, default=100 (> 0)
+        n_steps_per_epoch: int, default=1000 (> 0)
             Number of gradient steps in a epoch.
+
+        regularization_weight: float, default=1.0 (> 0)
+            Scaling factor of the regularization weight.
 
         random_state: int, default=None (>= 0)
             Random state.
@@ -347,18 +322,22 @@ class ContinuousMinimaxStateActionValueLearning(BaseWeightValueLearner):
         if self.action_scaler is not None:
             action = self.action_scaler.transform(action)
 
-        optimizer = optim.SGD(self.q_function.parameters(), lr=self.lr, momentum=0.9)
+        optimizer = optim.Adam(self.q_function.parameters(), lr=self.lr)
 
         for epoch in tqdm(
             np.arange(n_epochs),
             desc="[fitting_value_function]",
             total=n_epochs,
         ):
-            for grad_step in range(n_steps_per_epoch):
+            for grad_step in tqdm(
+                np.arange(n_steps_per_epoch),
+                desc=f"[epoch: {epoch: >4}]",
+                total=n_steps_per_epoch,
+            ):
                 idx_ = torch.randint(n_trajectories, size=(self.batch_size,))
                 t_ = torch.randint(step_per_trajectory - 1, size=(self.batch_size,))
 
-                objective_loss = self._objective_function(
+                objective_loss_, regularization_loss_ = self._objective_function(
                     state=state[idx_, t_],
                     action=action[idx_, t_],
                     reward=reward[idx_, t_],
@@ -366,10 +345,18 @@ class ContinuousMinimaxStateActionValueLearning(BaseWeightValueLearner):
                     next_action=evaluation_policy_action[idx_, t_ + 1],
                     importance_weight=importance_weight[idx_, t_],
                 )
+                loss_ = objective_loss_ + regularization_weight * regularization_loss_
 
                 optimizer.zero_grad()
-                objective_loss.backward()
+                loss_.backward()
+                clip_grad_norm_(self.q_function.parameters(), max_norm=0.01)
                 optimizer.step()
+
+            print(
+                f"epoch={epoch: >4}, "
+                f"objective_loss={objective_loss_.item():.3f}, "
+                f"regularization_loss={regularization_loss_.item():.3f}, "
+            )
 
     def predict_q_function(
         self,
@@ -489,8 +476,9 @@ class ContinuousMinimaxStateActionValueLearning(BaseWeightValueLearner):
         reward: np.ndarray,
         pscore: np.ndarray,
         evaluation_policy_action: np.ndarray,
-        n_epochs: int = 100,
-        n_steps_per_epoch: int = 100,
+        n_epochs: int = 10,
+        n_steps_per_epoch: int = 1000,
+        regularization_weight: float = 1.0,
         random_state: Optional[int] = None,
         **kwargs,
     ):
@@ -516,11 +504,14 @@ class ContinuousMinimaxStateActionValueLearning(BaseWeightValueLearner):
         evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
 
-        n_epochs: int, default=100 (> 0)
+        n_epochs: int, default=10 (> 0)
             Number of epochs to train.
 
-        n_steps_per_epoch: int, default=100 (> 0)
+        n_steps_per_epoch: int, default=1000 (> 0)
             Number of gradient steps in a epoch.
+
+        regularization_weight: float, default=1.0 (> 0)
+            Scaling factor of the regularization weight.
 
         random_state: int, default=None (>= 0)
             Random state.
@@ -535,6 +526,7 @@ class ContinuousMinimaxStateActionValueLearning(BaseWeightValueLearner):
             evaluation_policy_action=evaluation_policy_action,
             n_epochs=n_epochs,
             n_steps_per_epoch=n_steps_per_epoch,
+            regularization_weight=regularization_weight,
             random_state=random_state,
         )
         return self.predict_value(state, action)
@@ -587,16 +579,10 @@ class ContinuousMinimaxStateValueLearning(BaseWeightValueLearner):
     action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
         Scaling factor of action.
 
-    batch_size: int, default=32 (> 0)
+    batch_size: int, default=128 (> 0)
         Batch size.
 
-    alpha: float, default=1e-3 (> 0)
-        Regularization of V-function.
-
-    lambda_: float, default=1e-3 (>= 0)
-        Stabilizer to obtain a fast convergence rate.
-
-    lr: float, default=1e-3 (> 0)
+    lr: float, default=1e-4 (> 0)
         Learning rate.
 
     device: str, default="cuda:0"
@@ -614,10 +600,8 @@ class ContinuousMinimaxStateValueLearning(BaseWeightValueLearner):
     sigma: float = 1.0
     state_scaler: Optional[Scaler] = None
     action_scaler: Optional[ActionScaler] = None
-    batch_size: int = 32
-    alpha: float = 1e-3
-    lambda_: float = 1e-3
-    lr: float = 1e-3
+    batch_size: int = 128
+    lr: float = 1e-4
     device: str = "cuda:0"
 
     def __post_init__(self):
@@ -639,8 +623,6 @@ class ContinuousMinimaxStateValueLearning(BaseWeightValueLearner):
             )
 
         check_scalar(self.batch_size, name="batch_size", target_type=int, min_val=1)
-        check_scalar(self.alpha, name="alpha", target_type=float, min_val=0.0)
-        check_scalar(self.lambda_, name="lambda_", target_type=float, min_val=0.0)
         check_scalar(self.lr, name="lr", target_type=float, min_val=0.0)
 
     def load(self, path: Path):
@@ -649,52 +631,26 @@ class ContinuousMinimaxStateValueLearning(BaseWeightValueLearner):
     def save(self, path: Path):
         torch.save(self.v_function.state_dict(), path)
 
-    def _inverse(
-        self,
-        symmetric_matrix: torch.Tensor,
-    ):
-        """Calculate inverse of a symmetric matrix."""
-        return torch.linalg.pinv(symmetric_matrix, hermitian=True)
-
-    def _sqrt(
-        self,
-        symmetric_matrix: torch.Tensor,
-    ):
-        """Calculate sqrt of a symmetric matrix."""
-        v, w = torch.linalg.eigh(symmetric_matrix)
-        return w @ torch.diag_embed(torch.sqrt(v))
-
     def _gaussian_kernel(
         self,
-        state: torch.Tensor,
-        action: torch.Tensor,
+        state_1: torch.Tensor,
+        state_2: torch.Tensor,
     ):
         """Gaussian kernel for all input pairs."""
         with torch.no_grad():
-            input = torch.cat((state, action), dim=1)
             # (x - x') ** 2 = x ** 2 + x' ** 2 - 2 x x'
-            x_2 = (input**2).sum(dim=1)
-            x_y = input @ input.T
-            distance = x_2[:, None] + x_2[None, :] - 2 * x_y
+            x_2 = (state_1**2).sum(dim=1)
+            y_2 = (state_2**2).sum(dim=1)
+            x_y = state_1 @ state_2.T
+            distance = x_2[:, None] + y_2[None, :] - 2 * x_y
+
             kernel = torch.exp(-distance / self.sigma)
 
         return kernel  # shape (n_trajectories, n_trajectories)
 
-    def _kernel_term(self, kernel: torch.Tensor):
-        """Kernel term in the objective function."""
-        n_trajectories = len(kernel)
-        sqrt_kernel = self._sqrt(kernel)
-        inverse_kernel = self._inverse(
-            self.alpha * torch.eye(n_trajectories) + self.lambda_ * kernel
-        )
-        return (
-            sqrt_kernel @ inverse_kernel @ sqrt_kernel
-        )  # shape (n_trajectories, n_trajectories)
-
     def _objective_function(
         self,
         state: torch.Tensor,
-        action: torch.Tensor,
         reward: torch.Tensor,
         next_state: torch.Tensor,
         importance_weight: torch.Tensor,
@@ -705,9 +661,6 @@ class ContinuousMinimaxStateValueLearning(BaseWeightValueLearner):
         -------
         state: array-like of shape (n_trajectories, state_dim)
             State observed by the behavior policy.
-
-        action: Tensor of shape (n_trajectories, action_dim)
-            Action chosen by the behavior policy.
 
         reward: Tensor of shape (n_trajectories, )
             Reward observed for each (state, action) pair.
@@ -725,12 +678,15 @@ class ContinuousMinimaxStateValueLearning(BaseWeightValueLearner):
             Objective function of MVL.
 
         """
-        kernel = self._gaussian_kernel(state, action)
         current_v = self.v_function(state)
-        next_v = self.v_function(next_state)
 
-        td_error = importance_weight * (reward + self.gamma * next_v) - current_v
-        return td_error.T @ self._kernel_term(kernel) @ td_error
+        with torch.no_grad():
+            next_v = self.v_function(next_state)
+
+        td_error = importance_weight * (reward + self.gamma * next_v - current_v)
+        td_loss = td_error.T @ self._gaussian_kernel(state, state) @ td_error
+        regularization_loss = (current_v**2).mean()
+        return td_loss, regularization_loss
 
     def fit(
         self,
@@ -740,8 +696,9 @@ class ContinuousMinimaxStateValueLearning(BaseWeightValueLearner):
         reward: np.ndarray,
         pscore: np.ndarray,
         evaluation_policy_action: np.ndarray,
-        n_epochs: int = 100,
-        n_steps_per_epoch: int = 100,
+        n_epochs: int = 10,
+        n_steps_per_epoch: int = 1000,
+        regularization_weight: float = 1.0,
         random_state: Optional[int] = None,
         **kwargs,
     ):
@@ -772,6 +729,9 @@ class ContinuousMinimaxStateValueLearning(BaseWeightValueLearner):
 
         n_steps_per_epoch: int, default=100 (> 0)
             Number of gradient steps in a epoch.
+
+        regularization_weight: float, default=1.0 (> 0)
+            Scaling factor of the regularization weight.
 
         random_state: int, default=None (>= 0)
             Random state.
@@ -848,37 +808,45 @@ class ContinuousMinimaxStateValueLearning(BaseWeightValueLearner):
 
         n_trajectories, step_per_trajectory, _ = state.shape
         state = torch.FloatTensor(state, device=self.device)
-        action = torch.FloatTensor(action, device=self.device)
         reward = torch.FloatTensor(reward, device=self.device)
         importance_weight = torch.FloatTensor(similarity_weight / pscore)
 
         if self.state_scaler is not None:
             state = self.state_scaler.transform(state)
-        if self.action_scaler is not None:
-            action = self.action_scaler.transform(action)
 
-        optimizer = optim.SGD(self.v_function.parameters(), lr=self.lr, momentum=0.9)
+        optimizer = optim.Adam(self.v_function.parameters(), lr=self.lr)
 
         for epoch in tqdm(
             np.arange(n_epochs),
             desc="[fitting_value_function]",
             total=n_epochs,
         ):
-            for grad_step in range(n_steps_per_epoch):
+            for grad_step in tqdm(
+                np.arange(n_steps_per_epoch),
+                desc=f"[epoch: {epoch: >4}]",
+                total=n_steps_per_epoch,
+            ):
                 idx_ = torch.randint(n_trajectories, size=(self.batch_size,))
                 t_ = torch.randint(step_per_trajectory - 1, size=(self.batch_size,))
 
-                objective_loss = self._objective_function(
+                objective_loss_, regularization_loss_ = self._objective_function(
                     state=state[idx_, t_],
-                    action=action[idx_, t_],
                     reward=reward[idx_, t_],
                     next_state=state[idx_, t_ + 1],
                     importance_weight=importance_weight[idx_, t_],
                 )
+                loss_ = objective_loss_ + regularization_weight * regularization_loss_
 
                 optimizer.zero_grad()
-                objective_loss.backward()
+                loss_.backward()
+                clip_grad_norm_(self.v_function.parameters(), max_norm=0.01)
                 optimizer.step()
+
+            print(
+                f"epoch={epoch: >4}, "
+                f"objective_loss={objective_loss_.item():.3f}, "
+                f"regularization_loss={regularization_loss_.item():.3f}, "
+            )
 
     def predict_v_function(
         self,
@@ -954,8 +922,9 @@ class ContinuousMinimaxStateValueLearning(BaseWeightValueLearner):
         reward: np.ndarray,
         pscore: np.ndarray,
         evaluation_policy_action: np.ndarray,
-        n_epochs: int = 100,
-        n_steps_per_epoch: int = 100,
+        n_epochs: int = 10,
+        n_steps_per_epoch: int = 1000,
+        regularization_weight: float = 1.0,
         random_state: Optional[int] = None,
         **kwargs,
     ):
@@ -981,14 +950,14 @@ class ContinuousMinimaxStateValueLearning(BaseWeightValueLearner):
         evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
 
-        n_epochs: int, default=100 (> 0)
+        n_epochs: int, default=10 (> 0)
             Number of epochs to train.
 
-        n_steps_per_epoch: int, default=100 (> 0)
+        n_steps_per_epoch: int, default=1000 (> 0)
             Number of gradient steps in a epoch.
 
-        action_scaler: {float, array-like of shape (action_dim, )}, default=None
-            Scaling factor of action.
+        regularization_weight: float, default=1.0 (> 0)
+            Scaling factor of the regularization weight.
 
         random_state: int, default=None (>= 0)
             Random state.
@@ -1003,6 +972,7 @@ class ContinuousMinimaxStateValueLearning(BaseWeightValueLearner):
             evaluation_policy_action=evaluation_policy_action,
             n_epochs=n_epochs,
             n_steps_per_epoch=n_steps_per_epoch,
+            regularization_weight=regularization_weight,
             random_state=random_state,
         )
         return self.predict_value(state)
