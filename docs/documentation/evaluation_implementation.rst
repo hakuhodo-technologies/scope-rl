@@ -466,7 +466,7 @@ However, when the importance weight is quite large, it may still suffer from a h
 
 Self-Normalized estimators
 ----------
-Self-normalized estimators :cite:`kallus2020optimal` aims to reduce the scale of importance weight for the variance reduction purpose.
+Self-normalized estimators :cite:`kallus2019intrinsically` aims to reduce the scale of importance weight for the variance reduction purpose.
 Specifically, it substitute importance weight :math:`w_{\ast}` as follows.
 
 .. math::

@@ -251,6 +251,9 @@
 
     <h2>Citation</h2>
 
+
+If you use our pipeline or the top-:math:`k` RRT metrics in your work, please cite our paper below.
+
 | **Title** [`arXiv <>`_] [`Proceedings <>`_]
 | Authors.
 
