@@ -15,7 +15,7 @@ Making most of these logged data to evaluate a counterfactual policy is particul
 .. card:: 
     :width: 75%
     :margin: auto
-    :img-top: ../_static/images/search_interaction.png
+    :img-top: ../_static/images/real_world_interaction.png
     :text-align: center
 
     An example of sequential decision makings in the real-world
@@ -75,7 +75,7 @@ Specifically, as shown in the bottom figure, our module mainly consists of the f
 .. card:: 
    :width: 75%
    :margin: auto
-   :img-top: ../_static/images/module.png
+   :img-top: ../_static/images/scope_workflow.png
    :text-align: center
 
    Workflow of offline RL and OPE streamlined by SCOPE-RL
@@ -117,7 +117,7 @@ These implementations are as comprehensive as the existing platforms for OPE inc
 .. card:: 
     :width: 75%
     :margin: auto
-    :img-top: ../_static/images/ope_policy_value_zoo.png
+    :img-top: ../_static/images/ope_policy_value_variety.png
     :text-align: center
 
     Example of estimating policy value using various OPE estimators
