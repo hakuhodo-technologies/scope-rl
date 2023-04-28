@@ -18,7 +18,7 @@ from d3rlpy.algos import CQL
 from d3rlpy.algos import IQL
 from d3rlpy.algos import DiscreteCQL
 from d3rlpy.algos import DiscreteBCQ
-from d3rlpy.online.explorers import LinearDecayEpsilonGreedy
+from d3rlpy.online.explorers import LinearDecayEpsilonGreedy, ConstantEpsilonGreedy
 from d3rlpy.models.encoders import VectorEncoderFactory
 from d3rlpy.models.q_functions import MeanQFunctionFactory
 from d3rlpy.online.buffers import ReplayBuffer
@@ -45,6 +45,7 @@ from ofrl.ope import (
     DiscreteStateActionMarginalSelfNormalizedImportanceSampling as D_MIS,
 )
 from ofrl.ope import CreateOPEInput
+from ofrl.ope.online import visualize_on_policy_policy_value
 
 from ofrl.utils import MinMaxScaler
 from ofrl.utils import MinMaxActionScaler
@@ -62,6 +63,7 @@ def train_behavior_policy(
     behavior_tau: float,
     device: str,
     base_random_state: int,
+    base_model_config: DictConfig,
     log_dir: str,
 ):
     env_ = OldGymAPIWrapper(env)
@@ -77,9 +79,13 @@ def train_behavior_policy(
 
     if action_type == "continuous":
         model = SAC(
-            actor_encoder_factory=VectorEncoderFactory(hidden_units=[30, 30]),
-            critic_encoder_factory=VectorEncoderFactory(hidden_units=[30, 30]),
+            actor_encoder_factory=VectorEncoderFactory(hidden_units=[100]),
+            critic_encoder_factory=VectorEncoderFactory(hidden_units=[100]),
             q_func_factory=MeanQFunctionFactory(),
+            actor_learning_rate=base_model_config.sac.actor_lr,
+            critic_learning_rate=base_model_config.sac.critic_lr,
+            temp_learning_rate=base_model_config.sac.temp_lr,
+            bstch_size=base_model_config.sac.batch_size,
             use_gpu=(device == "cuda:0"),
             action_scaler=MinMaxActionScaler(
                 minimum=env.action_space.low,
@@ -88,9 +94,11 @@ def train_behavior_policy(
         )
     else:
         model = DDQN(
-            encoder_factory=VectorEncoderFactory(hidden_units=[30, 30]),
+            encoder_factory=VectorEncoderFactory(hidden_units=[100]),
             q_func_factory=MeanQFunctionFactory(),
-            target_update_interval=100,
+            target_update_interval=base_model_config.ddqn.target_update_interval,
+            batch_size=base_model_config.ddqn.batch_size,
+            learning_rate=base_model_config.ddqn.lr,
             use_gpu=(device == "cuda:0"),
         )
 
@@ -103,19 +111,26 @@ def train_behavior_policy(
             maxlen=10000,
             env=env_,
         )
-        explorer = LinearDecayEpsilonGreedy(
-            start_epsilon=1.0,
-            end_epsilon=0.1,
-            duration=1000,
-        )
+
+        if base_model_config.ddqn.explorer.type == "linear":
+            explorer = LinearDecayEpsilonGreedy(
+                start_epsilon=1.0,
+                end_epsilon=base_model_config.ddqn.explorer.epsilon,
+                duration=base_model_config.ddqn.explorer.duration,
+            )
+        else:
+            explorer = ConstantEpsilonGreedy(
+                epsilon=base_model_config.ddqn.explorer.epsilon,
+            )
+
         if action_type == "continuous":
             model.fit_online(
                 env_,
                 buffer,
                 eval_env=env_,
-                n_steps=1000,
-                n_steps_per_epoch=100,
-                update_start_step=100,
+                n_steps=base_model_config.sac.n_steps,
+                n_steps_per_epoch=base_model_config.sac.n_steps // 100,
+                update_start_step=base_model_config.sac.update_start_step,
             )
 
         else:
@@ -124,9 +139,9 @@ def train_behavior_policy(
                 buffer,
                 explorer=explorer,
                 eval_env=env_,
-                n_steps=100000,
-                n_steps_per_epoch=100,
-                update_start_step=100,
+                n_steps=base_model_config.ddqn.n_steps,
+                n_steps_per_epoch=base_model_config.ddqn.n_steps // 100,
+                update_start_step=base_model_config.ddqn.update_start_step,
             )
             behavior_policy = SoftmaxHead(
                 model,
@@ -159,12 +174,11 @@ def train_behavior_policy(
     return behavior_policy
 
 
-def obtain_logged_dataset(
+def obtain_train_logged_dataset(
     env_name: str,
     env: gym.Env,
     behavior_policy: BaseHead,
     n_trajectories: int,
-    n_random_state: int,
     base_random_state: int,
     log_dir: str,
 ):
@@ -175,25 +189,15 @@ def obtain_logged_dataset(
     path_train_logged_dataset = Path(
         path_ / f"train_logged_dataset_{env_name}_{behavior_policy_name}.pkl"
     )
-    path_test_logged_dataset = Path(
-        path_ / f"test_logged_dataset_{env_name}_{behavior_policy_name}.pkl"
-    )
 
     if path_train_logged_dataset.exists():
         with open(path_train_logged_dataset, "rb") as f:
             train_logged_dataset = pickle.load(f)
-        with open(path_test_logged_dataset, "rb") as f:
-            test_logged_dataset = pickle.load(f)
 
     else:
-        if env_name == "BasicEnv-discrete-v0" or "BasicEnv-continuous-v0":
-            max_episode_steps = env.step_per_episode
-        else:
-            max_episode_steps = env.spec.max_episode_steps
-
         dataset = SyntheticDataset(
             env=env,
-            max_episode_steps=max_episode_steps,
+            max_episode_steps=env.spec.max_episode_steps,
         )
 
         train_logged_dataset = dataset.obtain_episodes(
@@ -203,21 +207,11 @@ def obtain_logged_dataset(
             obtain_info=False,
             random_state=base_random_state,
         )
-        test_logged_dataset = dataset.obtain_episodes(
-            behavior_policies=behavior_policy,
-            n_datasets=n_random_state,
-            n_trajectories=n_trajectories,
-            obtain_info=False,
-            path=log_dir + f"/logged_dataset/multiple",
-            random_state=base_random_state + 1,
-        )
 
         with open(path_train_logged_dataset, "wb") as f:
             pickle.dump(train_logged_dataset, f)
-        with open(path_test_logged_dataset, "wb") as f:
-            pickle.dump(test_logged_dataset, f)
 
-    return train_logged_dataset, test_logged_dataset
+    return train_logged_dataset
 
 
 def train_candidate_policies(
@@ -228,19 +222,24 @@ def train_candidate_policies(
     candidate_epsilons: List[float],
     device: str,
     base_random_state: int,
+    base_model_config: DictConfig,
     log_dir: str,
 ):
+    behavior_policy_name = train_logged_dataset["behavior_policy"]
+
     action_type = "continuous" if isinstance(env.action_space, Box) else "discrete"
     if action_type == "continuous":
         action_dim = env.action_space.shape[0]
 
     path_ = Path(log_dir + f"/candidate_policies")
     path_.mkdir(exist_ok=True, parents=True)
-    path_candidate_policy = Path(path_ / f"candidate_policy_{env_name}.pkl")
+    path_candidate_policy = Path(
+        path_ / f"candidate_policy_{env_name}_{behavior_policy_name}.pkl"
+    )
 
     opl = OffPolicyLearning(
         fitting_args={
-            "n_steps": 10000,
+            "n_steps": base_model_config.opl.fitting_steps,
             "scorers": {},
         }
     )
@@ -331,16 +330,31 @@ def train_candidate_policies(
             bcq_b1 = DiscreteBCQ(
                 encoder_factory=VectorEncoderFactory(hidden_units=[30, 30]),
                 q_func_factory=MeanQFunctionFactory(),
+                batch_size=base_model_config.bcq.batch_size,
+                learning_rate=base_model_config.bcq.lr,
+                target_update_interval=base_model_config.bcq.target_update_interval,
+                action_flexibility=base_model_config.bcq.action_flexibility,
+                beta=base_model_config.bcq.beta,
                 use_gpu=(device == "cuda:0"),
             )
             bcq_b2 = DiscreteBCQ(
                 encoder_factory=VectorEncoderFactory(hidden_units=[100]),
                 q_func_factory=MeanQFunctionFactory(),
+                batch_size=base_model_config.bcq.batch_size,
+                learning_rate=base_model_config.bcq.lr,
+                target_update_interval=base_model_config.bcq.target_update_interval,
+                action_flexibility=base_model_config.bcq.action_flexibility,
+                beta=base_model_config.bcq.beta,
                 use_gpu=(device == "cuda:0"),
             )
             bcq_b3 = DiscreteBCQ(
                 encoder_factory=VectorEncoderFactory(hidden_units=[50, 10]),
                 q_func_factory=MeanQFunctionFactory(),
+                batch_size=base_model_config.bcq.batch_size,
+                learning_rate=base_model_config.bcq.lr,
+                target_update_interval=base_model_config.bcq.target_update_interval,
+                action_flexibility=base_model_config.bcq.action_flexibility,
+                beta=base_model_config.bcq.beta,
                 use_gpu=(device == "cuda:0"),
             )
             algorithms = [cql_b1, cql_b2, cql_b3, bcq_b1, bcq_b2, bcq_b3]
@@ -396,6 +410,7 @@ def off_policy_evaluation(
     candidate_policies: List[BaseHead],
     device: str,
     base_random_state: int,
+    base_model_config: DictConfig,
     log_dir: str,
 ):
     action_type = "continuous" if isinstance(env.action_space, Box) else "discrete"
@@ -415,7 +430,7 @@ def off_policy_evaluation(
                     "fqe": {
                         "encoder_factory": VectorEncoderFactory(hidden_units=[30, 30]),
                         "q_func_factory": MeanQFunctionFactory(),
-                        "learning_rate": 1e-4,
+                        "learning_rate": base_model_config.fqe.lr,
                         "use_gpu": (device == "cuda:0"),
                     }
                 },
@@ -437,7 +452,7 @@ def off_policy_evaluation(
                     minimum=env.action_space.low,  # minimum value that policy can take
                     maximum=env.action_space.high,  # maximum value that policy can take
                 ),
-                sigma=0.1,
+                sigma=base_model_config.contiuous_ope.sigma,
                 device=device,
             )
 
@@ -533,12 +548,14 @@ def process(
     candidate_sigmas: List[float],
     candidate_epsilons: List[float],
     n_trajectories: int,
-    n_random_state: int,
     device: str,
     base_random_state: int,
     log_dir: str,
 ):
-    env = gym.make(env_name)
+    if env_name == "Acrobot":
+        env = gym.make(env_name + "-v1")
+    else:
+        env = gym.make(env_name + "-v0")
 
     behavior_policy = train_behavior_policy(
         env_name=env_name,
@@ -550,12 +567,11 @@ def process(
         log_dir=log_dir,
     )
 
-    train_logged_dataset, test_logged_dataset = obtain_logged_dataset(
+    train_logged_dataset = obtain_train_logged_dataset(
         env_name=env_name,
         env=env,
         behavior_policy=behavior_policy,
         n_trajectories=n_trajectories,
-        n_random_state=n_random_state,
         base_random_state=base_random_state,
         log_dir=log_dir,
     )
@@ -571,71 +587,25 @@ def process(
         log_dir=log_dir,
     )
 
-    off_policy_evaluation(
-        env_name=env_name,
+    visualize_on_policy_policy_value(
         env=env,
-        test_logged_dataset=test_logged_dataset,
-        candidate_policies=candidate_policies,
-        device=device,
-        base_random_state=base_random_state,
-        log_dir=log_dir,
-    )
-
-
-def register_small_envs(
-    max_episode_steps: int,
-):
-    # continuous control
-    gym.envs.register(
-        id="HalfCheetah-continuous-v0",
-        entry_point="gym.envs.mojoco:HalfCheetahEnv",
-        max_episode_steps=max_episode_steps,
-    )
-    gym.envs.register(
-        id="Hopper-continuous-v0",
-        entry_point="gym.envs.mojoco:HopperEnv",
-        max_episode_steps=max_episode_steps,
-    )
-    gym.envs.register(
-        id="InvertedPendulum-continuous-v0",
-        entry_point="gym.envs.mojoco:InvertedPendulumEnv",
-        max_episode_steps=max_episode_steps,
-    )
-    gym.envs.register(
-        id="Reacher-continuous-v0",
-        entry_point="gym.envs.mojoco:ReacherEnv",
-        max_episode_steps=max_episode_steps,
-    )
-    gym.envs.register(
-        id="Swimmer-continuous-v0",
-        entry_point="gym.envs.mujoco:SwimmerEnv",
-        max_episode_steps=max_episode_steps,
-    )
-    # discrete control
-    gym.envs.register(
-        id="CartPole-discrete-v0",
-        entry_point="gym.envs.classic_control:CartPoleEnv",
-        max_episode_steps=max_episode_steps,
-    )
-    gym.envs.register(
-        id="Pendulum-discrete-v0",
-        entry_point="gym.envs.classic_control:PendulumEnv",
-        max_episode_steps=max_episode_steps,
+        policies=[behavior_policy] + [candidate_policies],
+        policy_names=[behavior_policy.name]
+        + [candidate_policy.name for candidate_policy in candidate_policies],
+        fig_dir=log_dir + f"/results/on_policy",
     )
 
 
 def assert_configuration(cfg: DictConfig):
     env_name = cfg.setting.env_name
     assert env_name in [
-        "BasicEnv-discrete-v0",
-        "BasicEnv-continuous-v0",
-        "HalfCheetah-continuous-v0",
-        "Hopper-continuous-v0",
-        "InvertedPendulum-continuous-v0",
-        "Reacher-continuous-v0",
-        "Swimmer-continuous-v0",
-        "CartPole-discrete-v0",
-        "Pendulum-discrete-v0",
+        "HalfCheetah",
+        "Hopper",
+        "InvertedPendulum",
+        "Reacher",
+        "Swimmer",
+        "CartPole",
+        "Pendulum",
     ]
 
     behavior_sigma = cfg.setting.behavior_sigma
@@ -655,12 +625,6 @@ def assert_configuration(cfg: DictConfig):
     n_trajectories = cfg.setting.n_trajectories
     assert isinstance(n_trajectories, int) and n_trajectories > 0
 
-    max_episode_steps = cfg.setting.max_episode_steps
-    assert isinstance(max_episode_steps, int) and max_episode_steps > 0
-
-    n_random_state = cfg.setting.n_random_state
-    assert isinstance(n_random_state, int) and n_random_state > 0
-
 
 @hydra.main(config_path="conf/", config_name="config")
 def main(cfg: DictConfig):
@@ -676,12 +640,10 @@ def main(cfg: DictConfig):
         "candidate_sigmas": cfg.setting.candidate_sigmas,
         "candidate_epsilons": cfg.setting.candidate_epsilons,
         "n_trajectories": cfg.setting.n_trajectories,
-        "n_random_state": cfg.setting.n_random_state,
         "base_random_state": cfg.setting.base_random_state,
         "device": "cuda:0" if torch.cuda.is_available() else "cpu",
         "log_dir": "logs/",
     }
-    register_small_envs(cfg.setting.max_episode_steps)
     process(**conf)
 
 

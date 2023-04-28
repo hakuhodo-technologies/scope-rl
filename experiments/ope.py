@@ -12,16 +12,12 @@ from gym.spaces import Box
 import numpy as np
 import torch
 
+from sklearn.utils import check_random_state
+
 from d3rlpy.algos import SAC
 from d3rlpy.algos import DoubleDQN as DDQN
-from d3rlpy.algos import CQL
-from d3rlpy.algos import IQL
-from d3rlpy.algos import DiscreteCQL
-from d3rlpy.algos import DiscreteBCQ
-from d3rlpy.online.explorers import LinearDecayEpsilonGreedy
 from d3rlpy.models.encoders import VectorEncoderFactory
 from d3rlpy.models.q_functions import MeanQFunctionFactory
-from d3rlpy.online.buffers import ReplayBuffer
 
 from ofrl.dataset import SyntheticDataset
 from ofrl.policy import BaseHead
@@ -55,13 +51,14 @@ from ofrl.types import LoggedDataset
 from experiments.utils import torch_seed, format_runtime
 
 
-def train_behavior_policy(
+def load_behavior_policy(
     env_name: str,
     env: gym.Env,
     behavior_sigma: float,
     behavior_tau: float,
     device: str,
     base_random_state: int,
+    base_model_config: DictConfig,
     log_dir: str,
 ):
     env_ = OldGymAPIWrapper(env)
@@ -77,9 +74,13 @@ def train_behavior_policy(
 
     if action_type == "continuous":
         model = SAC(
-            actor_encoder_factory=VectorEncoderFactory(hidden_units=[30, 30]),
-            critic_encoder_factory=VectorEncoderFactory(hidden_units=[30, 30]),
+            actor_encoder_factory=VectorEncoderFactory(hidden_units=[100]),
+            critic_encoder_factory=VectorEncoderFactory(hidden_units=[100]),
             q_func_factory=MeanQFunctionFactory(),
+            actor_learning_rate=base_model_config.sac.actor_lr,
+            critic_learning_rate=base_model_config.sac.critic_lr,
+            temp_learning_rate=base_model_config.sac.temp_lr,
+            bstch_size=base_model_config.sac.batch_size,
             use_gpu=(device == "cuda:0"),
             action_scaler=MinMaxActionScaler(
                 minimum=env.action_space.low,
@@ -88,9 +89,11 @@ def train_behavior_policy(
         )
     else:
         model = DDQN(
-            encoder_factory=VectorEncoderFactory(hidden_units=[30, 30]),
+            encoder_factory=VectorEncoderFactory(hidden_units=[100]),
             q_func_factory=MeanQFunctionFactory(),
-            target_update_interval=100,
+            target_update_interval=base_model_config.ddqn.target_update_interval,
+            batch_size=base_model_config.ddqn.batch_size,
+            learning_rate=base_model_config.ddqn.lr,
             use_gpu=(device == "cuda:0"),
         )
 
@@ -99,44 +102,9 @@ def train_behavior_policy(
         model.load_model(path_behavior_policy)
 
     else:
-        buffer = ReplayBuffer(
-            maxlen=10000,
-            env=env_,
+        raise ValueError(
+            "behavior_policy not found. Please run policy_learning.py in advance."
         )
-        explorer = LinearDecayEpsilonGreedy(
-            start_epsilon=1.0,
-            end_epsilon=0.1,
-            duration=1000,
-        )
-        if action_type == "continuous":
-            model.fit_online(
-                env_,
-                buffer,
-                eval_env=env_,
-                n_steps=1000,
-                n_steps_per_epoch=100,
-                update_start_step=100,
-            )
-
-        else:
-            model.fit_online(
-                env_,
-                buffer,
-                explorer=explorer,
-                eval_env=env_,
-                n_steps=100000,
-                n_steps_per_epoch=100,
-                update_start_step=100,
-            )
-            behavior_policy = SoftmaxHead(
-                model,
-                n_actions=env.action_space.n,
-                tau=behavior_tau,
-                name=f"ddqn_softmax_{behavior_tau}",
-                random_state=base_random_state,
-            )
-
-        model.save_model(path_behavior_policy)
 
     if action_type == "continuous":
         behavior_policy = TruncatedGaussianHead(
@@ -159,7 +127,7 @@ def train_behavior_policy(
     return behavior_policy
 
 
-def obtain_logged_dataset(
+def obtain_test_logged_dataset(
     env_name: str,
     env: gym.Env,
     behavior_policy: BaseHead,
@@ -172,36 +140,18 @@ def obtain_logged_dataset(
 
     path_ = Path(log_dir + f"/logged_dataset")
     path_.mkdir(exist_ok=True, parents=True)
-    path_train_logged_dataset = Path(
-        path_ / f"train_logged_dataset_{env_name}_{behavior_policy_name}.pkl"
-    )
     path_test_logged_dataset = Path(
         path_ / f"test_logged_dataset_{env_name}_{behavior_policy_name}.pkl"
     )
 
-    if path_train_logged_dataset.exists():
-        with open(path_train_logged_dataset, "rb") as f:
-            train_logged_dataset = pickle.load(f)
+    if path_test_logged_dataset.exists():
         with open(path_test_logged_dataset, "rb") as f:
             test_logged_dataset = pickle.load(f)
 
     else:
-        if env_name == "BasicEnv-discrete-v0" or "BasicEnv-continuous-v0":
-            max_episode_steps = env.step_per_episode
-        else:
-            max_episode_steps = env.spec.max_episode_steps
-
         dataset = SyntheticDataset(
             env=env,
-            max_episode_steps=max_episode_steps,
-        )
-
-        train_logged_dataset = dataset.obtain_episodes(
-            behavior_policies=behavior_policy,
-            n_datasets=1,
-            n_trajectories=n_trajectories,
-            obtain_info=False,
-            random_state=base_random_state,
+            max_episode_steps=env.spec.max_episode_steps,
         )
         test_logged_dataset = dataset.obtain_episodes(
             behavior_policies=behavior_policy,
@@ -211,23 +161,20 @@ def obtain_logged_dataset(
             path=log_dir + f"/logged_dataset/multiple",
             random_state=base_random_state + 1,
         )
-
-        with open(path_train_logged_dataset, "wb") as f:
-            pickle.dump(train_logged_dataset, f)
         with open(path_test_logged_dataset, "wb") as f:
             pickle.dump(test_logged_dataset, f)
 
-    return train_logged_dataset, test_logged_dataset
+    return test_logged_dataset
 
 
-def train_candidate_policies(
+def load_candidate_policies(
     env_name: str,
     env: gym.Env,
-    train_logged_dataset: LoggedDataset,
+    behavior_policy_name: str,
     candidate_sigmas: List[float],
     candidate_epsilons: List[float],
-    device: str,
     base_random_state: int,
+    base_model_config: DictConfig,
     log_dir: str,
 ):
     action_type = "continuous" if isinstance(env.action_space, Box) else "discrete"
@@ -236,11 +183,13 @@ def train_candidate_policies(
 
     path_ = Path(log_dir + f"/candidate_policies")
     path_.mkdir(exist_ok=True, parents=True)
-    path_candidate_policy = Path(path_ / f"candidate_policy_{env_name}.pkl")
+    path_candidate_policy = Path(
+        path_ / f"candidate_policy_{env_name}_{behavior_policy_name}.pkl"
+    )
 
     opl = OffPolicyLearning(
         fitting_args={
-            "n_steps": 10000,
+            "n_steps": base_model_config.opl.fitting_steps,
             "scorers": {},
         }
     )
@@ -250,108 +199,9 @@ def train_candidate_policies(
             base_policies = pickle.load(f)
 
     else:
-        torch_seed(base_random_state, device=device)
-
-        if action_type == "continuous":
-            cql_b1 = CQL(
-                actor_encoder_factory=VectorEncoderFactory(hidden_units=[30, 30]),
-                critic_encoder_factory=VectorEncoderFactory(hidden_units=[30, 30]),
-                q_func_factory=MeanQFunctionFactory(),
-                use_gpu=(device == "cuda:0"),
-                action_scaler=MinMaxActionScaler(
-                    minimum=env.action_space.low,  # minimum value that policy can take
-                    maximum=env.action_space.high,  # maximum value that policy can take
-                ),
-            )
-            cql_b2 = CQL(
-                actor_encoder_factory=VectorEncoderFactory(hidden_units=[100]),
-                critic_encoder_factory=VectorEncoderFactory(hidden_units=[100]),
-                q_func_factory=MeanQFunctionFactory(),
-                use_gpu=(device == "cuda:0"),
-                action_scaler=MinMaxActionScaler(
-                    minimum=env.action_space.low,  # minimum value that policy can take
-                    maximum=env.action_space.high,  # maximum value that policy can take
-                ),
-            )
-            cql_b3 = CQL(
-                actor_encoder_factory=VectorEncoderFactory(hidden_units=[50, 10]),
-                critic_encoder_factory=VectorEncoderFactory(hidden_units=[50, 10]),
-                q_func_factory=MeanQFunctionFactory(),
-                use_gpu=(device == "cuda:0"),
-                action_scaler=MinMaxActionScaler(
-                    minimum=env.action_space.low,  # minimum value that policy can take
-                    maximum=env.action_space.high,  # maximum value that policy can take
-                ),
-            )
-            iql_b1 = IQL(
-                actor_encoder_factory=VectorEncoderFactory(hidden_units=[30, 30]),
-                critic_encoder_factory=VectorEncoderFactory(hidden_units=[30, 30]),
-                use_gpu=(device == "cuda:0"),
-                action_scaler=MinMaxActionScaler(
-                    minimum=env.action_space.low,  # minimum value that policy can take
-                    maximum=env.action_space.high,  # maximum value that policy can take
-                ),
-            )
-            iql_b2 = IQL(
-                actor_encoder_factory=VectorEncoderFactory(hidden_units=[100]),
-                critic_encoder_factory=VectorEncoderFactory(hidden_units=[100]),
-                use_gpu=(device == "cuda:0"),
-                action_scaler=MinMaxActionScaler(
-                    minimum=env.action_space.low,  # minimum value that policy can take
-                    maximum=env.action_space.high,  # maximum value that policy can take
-                ),
-            )
-            iql_b3 = IQL(
-                actor_encoder_factory=VectorEncoderFactory(hidden_units=[50, 10]),
-                critic_encoder_factory=VectorEncoderFactory(hidden_units=[50, 10]),
-                use_gpu=(device == "cuda:0"),
-                action_scaler=MinMaxActionScaler(
-                    minimum=env.action_space.low,  # minimum value that policy can take
-                    maximum=env.action_space.high,  # maximum value that policy can take
-                ),
-            )
-            algorithms = [cql_b1, cql_b2, cql_b3, iql_b1, iql_b2, iql_b3]
-
-        else:
-            cql_b1 = DiscreteCQL(
-                encoder_factory=VectorEncoderFactory(hidden_units=[30, 30]),
-                q_func_factory=MeanQFunctionFactory(),
-                use_gpu=(device == "cuda:0"),
-            )
-            cql_b2 = DiscreteCQL(
-                encoder_factory=VectorEncoderFactory(hidden_units=[100]),
-                q_func_factory=MeanQFunctionFactory(),
-                use_gpu=(device == "cuda:0"),
-            )
-            cql_b3 = DiscreteCQL(
-                encoder_factory=VectorEncoderFactory(hidden_units=[50, 10]),
-                q_func_factory=MeanQFunctionFactory(),
-                use_gpu=(device == "cuda:0"),
-            )
-            bcq_b1 = DiscreteBCQ(
-                encoder_factory=VectorEncoderFactory(hidden_units=[30, 30]),
-                q_func_factory=MeanQFunctionFactory(),
-                use_gpu=(device == "cuda:0"),
-            )
-            bcq_b2 = DiscreteBCQ(
-                encoder_factory=VectorEncoderFactory(hidden_units=[100]),
-                q_func_factory=MeanQFunctionFactory(),
-                use_gpu=(device == "cuda:0"),
-            )
-            bcq_b3 = DiscreteBCQ(
-                encoder_factory=VectorEncoderFactory(hidden_units=[50, 10]),
-                q_func_factory=MeanQFunctionFactory(),
-                use_gpu=(device == "cuda:0"),
-            )
-            algorithms = [cql_b1, cql_b2, cql_b3, bcq_b1, bcq_b2, bcq_b3]
-
-        base_policies = opl.learn_base_policy(
-            logged_dataset=train_logged_dataset,
-            algorithms=algorithms,
-            random_state=base_random_state,
+        raise ValueError(
+            "base_policies not found. Please run policy_learning.py in advance."
         )
-        with open(path_candidate_policy, "wb") as f:
-            pickle.dump(base_policies, f)
 
     if action_type == "continuous":
         algorithms_name = ["cql_b1", "cql_b2", "cql_b3", "iql_b1", "iql_b2", "iql_b3"]
@@ -396,13 +246,19 @@ def off_policy_evaluation(
     candidate_policies: List[BaseHead],
     device: str,
     base_random_state: int,
+    base_model_config: DictConfig,
     log_dir: str,
 ):
+    behavior_policy_name = test_logged_dataset.behavior_policy_names[0]
     action_type = "continuous" if isinstance(env.action_space, Box) else "discrete"
+    n_candidate_policies = len(candidate_policies)
 
     path_ = Path(log_dir + f"/input_dict")
     path_.mkdir(exist_ok=True, parents=True)
-    path_input_dict = Path(path_ / f"input_dict_{env_name}.pkl")
+    path_input_dict = Path(
+        path_
+        / f"input_dict_{env_name}_{behavior_policy_name}_{n_candidate_policies}.pkl"
+    )
 
     if path_input_dict.exists():
         with open(path_input_dict, "rb") as f:
@@ -413,9 +269,9 @@ def off_policy_evaluation(
                 env=env,
                 model_args={
                     "fqe": {
-                        "encoder_factory": VectorEncoderFactory(hidden_units=[30, 30]),
+                        "encoder_factory": VectorEncoderFactory(hidden_units=[100]),
                         "q_func_factory": MeanQFunctionFactory(),
-                        "learning_rate": 1e-4,
+                        "learning_rate": base_model_config.fqe.lr,
                         "use_gpu": (device == "cuda:0"),
                     }
                 },
@@ -437,7 +293,7 @@ def off_policy_evaluation(
                     minimum=env.action_space.low,  # minimum value that policy can take
                     maximum=env.action_space.high,  # maximum value that policy can take
                 ),
-                sigma=0.1,
+                sigma=base_model_config.contiuous_ope.sigma,
                 device=device,
             )
 
@@ -446,7 +302,7 @@ def off_policy_evaluation(
                 env=env,
                 model_args={
                     "fqe": {
-                        "encoder_factory": VectorEncoderFactory(hidden_units=[30, 30]),
+                        "encoder_factory": VectorEncoderFactory(hidden_units=[100]),
                         "q_func_factory": MeanQFunctionFactory(),
                         "learning_rate": 1e-4,
                         "use_gpu": (device == "cuda:0"),
@@ -498,7 +354,10 @@ def off_policy_evaluation(
         input_dict=input_dict,
         return_metrics=True,
     )
-    path_metrics = Path(path_ / f"conventional_metrics_dict_{env_name}.pkl")
+    path_metrics = Path(
+        path_
+        / f"conventional_metrics_dict_{env_name}_{behavior_policy_name}_{n_candidate_policies}.pkl"
+    )
     with open(path_metrics, "wb") as f:
         pickle.dump(ops_dict, f)
 
@@ -507,7 +366,10 @@ def off_policy_evaluation(
         return_safety_violation_rate=True,
         relative_safety_criteria=1.0,
     )
-    path_topk_metrics = Path(path_ / f"topk_metrics_dict_{env_name}.pkl")
+    path_topk_metrics = Path(
+        path_
+        / f"topk_metrics_dict_{env_name}_{behavior_policy_name}_{n_candidate_policies}.pkl"
+    )
     with open(path_topk_metrics, "wb") as f:
         pickle.dump(topk_metric_dict, f)
 
@@ -516,13 +378,13 @@ def off_policy_evaluation(
 
     ops.visualize_topk_policy_value_selected_by_standard_ope(
         input_dict=input_dict,
-        metrics=["best", "worst", "mean", "safety_violation_rate", "sharpe_ratio"],
+        metrics=["best", "worst", "mean", "std", "sharpe_ratio"],
         visualize_ci=True,
         relative_safety_criteria=1.0,
         legend=False,
         random_state=base_random_state,
         fig_dir=path_,
-        fig_name=f"topk_metrics_visualization_{env_name}.png",
+        fig_name=f"topk_metrics_visualization_{env_name}_{behavior_policy_name}_{n_candidate_policies}.png",
     )
 
 
@@ -534,13 +396,14 @@ def process(
     candidate_epsilons: List[float],
     n_trajectories: int,
     n_random_state: int,
+    n_candidate_policies: int,
     device: str,
     base_random_state: int,
     log_dir: str,
 ):
     env = gym.make(env_name)
 
-    behavior_policy = train_behavior_policy(
+    behavior_policy = load_behavior_policy(
         env_name=env_name,
         env=env,
         behavior_sigma=behavior_sigma,
@@ -550,7 +413,7 @@ def process(
         log_dir=log_dir,
     )
 
-    train_logged_dataset, test_logged_dataset = obtain_logged_dataset(
+    test_logged_dataset = obtain_test_logged_dataset(
         env_name=env_name,
         env=env,
         behavior_policy=behavior_policy,
@@ -560,16 +423,22 @@ def process(
         log_dir=log_dir,
     )
 
-    candidate_policies = train_candidate_policies(
+    candidate_policies = load_candidate_policies(
         env_name=env_name,
         env=env,
-        train_logged_dataset=train_logged_dataset,
+        bahavior_policy_name=behavior_policy.name,
         candidate_sigmas=candidate_sigmas,
         candidate_epsilons=candidate_epsilons,
         device=device,
         base_random_state=base_random_state,
         log_dir=log_dir,
     )
+
+    random_ = check_random_state(base_random_state)
+    candidate_policy_idx = random_.choice(
+        len(candidate_policies), size=n_candidate_policies, replace=False
+    )
+    candidate_policies = [candidate_policies[idx] for idx in candidate_policy_idx]
 
     off_policy_evaluation(
         env_name=env_name,
@@ -587,38 +456,38 @@ def register_small_envs(
 ):
     # continuous control
     gym.envs.register(
-        id="HalfCheetah-continuous-v0",
+        id="HalfCheetah",
         entry_point="gym.envs.mojoco:HalfCheetahEnv",
         max_episode_steps=max_episode_steps,
     )
     gym.envs.register(
-        id="Hopper-continuous-v0",
+        id="Hopper",
         entry_point="gym.envs.mojoco:HopperEnv",
         max_episode_steps=max_episode_steps,
     )
     gym.envs.register(
-        id="InvertedPendulum-continuous-v0",
+        id="InvertedPendulum",
         entry_point="gym.envs.mojoco:InvertedPendulumEnv",
         max_episode_steps=max_episode_steps,
     )
     gym.envs.register(
-        id="Reacher-continuous-v0",
+        id="Reacher",
         entry_point="gym.envs.mojoco:ReacherEnv",
         max_episode_steps=max_episode_steps,
     )
     gym.envs.register(
-        id="Swimmer-continuous-v0",
+        id="Swimmer",
         entry_point="gym.envs.mujoco:SwimmerEnv",
         max_episode_steps=max_episode_steps,
     )
     # discrete control
     gym.envs.register(
-        id="CartPole-discrete-v0",
+        id="CartPole",
         entry_point="gym.envs.classic_control:CartPoleEnv",
         max_episode_steps=max_episode_steps,
     )
     gym.envs.register(
-        id="Pendulum-discrete-v0",
+        id="Pendulum",
         entry_point="gym.envs.classic_control:PendulumEnv",
         max_episode_steps=max_episode_steps,
     )
@@ -627,15 +496,13 @@ def register_small_envs(
 def assert_configuration(cfg: DictConfig):
     env_name = cfg.setting.env_name
     assert env_name in [
-        "BasicEnv-discrete-v0",
-        "BasicEnv-continuous-v0",
-        "HalfCheetah-continuous-v0",
-        "Hopper-continuous-v0",
-        "InvertedPendulum-continuous-v0",
-        "Reacher-continuous-v0",
-        "Swimmer-continuous-v0",
-        "CartPole-discrete-v0",
-        "Pendulum-discrete-v0",
+        "HalfCheetah",
+        "Hopper",
+        "InvertedPendulum",
+        "Reacher",
+        "Swimmer",
+        "CartPole",
+        "Acrobot",
     ]
 
     behavior_sigma = cfg.setting.behavior_sigma

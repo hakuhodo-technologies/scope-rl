@@ -1,0 +1,34 @@
+- sac:
+  - actor_lr: 1e-3
+  - critic_lr: 1e-3
+  - temp_lr: 1e-3
+  - batch_size: 32
+  - n_steps: 10000
+  - update_start_step: 1000
+- ddqn:
+  - target_update_interval: 100
+  - batch_size: 32
+  - lr: 5e-5
+  - explorer:
+    - type: linear
+    - epsilon: 0.1
+    - duration: 10000
+  - n_steps: 20000
+  - update_start_step: 1000
+- cql:
+  - discrete:
+    - batch_size: 32
+    - lr: 6.25e-5
+- bcq:
+  - batch_size: 32
+  - lr: 5e-5
+  - target_update_interval: 1000
+  - action_flexibility: 0.1
+  - beta: 0.01
+- fqe:
+  - lr: 1e-3
+- continuous_ope:
+  - sigma: 0.5
+- opl:
+  - fitting_steps: 10000
+
