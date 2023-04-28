@@ -403,144 +403,6 @@ def train_candidate_policies(
     return candidate_policies
 
 
-def off_policy_evaluation(
-    env_name: str,
-    env: gym.Env,
-    test_logged_dataset: MultipleLoggedDataset,
-    candidate_policies: List[BaseHead],
-    device: str,
-    base_random_state: int,
-    base_model_config: DictConfig,
-    log_dir: str,
-):
-    action_type = "continuous" if isinstance(env.action_space, Box) else "discrete"
-
-    path_ = Path(log_dir + f"/input_dict")
-    path_.mkdir(exist_ok=True, parents=True)
-    path_input_dict = Path(path_ / f"input_dict_{env_name}.pkl")
-
-    if path_input_dict.exists():
-        with open(path_input_dict, "rb") as f:
-            input_dict = pickle.load(f)
-    else:
-        if action_type == "continuous":
-            prep = CreateOPEInput(
-                env=env,
-                model_args={
-                    "fqe": {
-                        "encoder_factory": VectorEncoderFactory(hidden_units=[30, 30]),
-                        "q_func_factory": MeanQFunctionFactory(),
-                        "learning_rate": base_model_config.fqe.lr,
-                        "use_gpu": (device == "cuda:0"),
-                    }
-                },
-                state_scaler=MinMaxScaler(
-                    minimum=test_logged_dataset.get(
-                        behavior_policy_name=test_logged_dataset.behavior_policy_names[
-                            0
-                        ],
-                        dataset_id=0,
-                    )["state"].min(axis=0),
-                    maximum=test_logged_dataset.get(
-                        behavior_policy_name=test_logged_dataset.behavior_policy_names[
-                            0
-                        ],
-                        dataset_id=0,
-                    )["state"].max(axis=0),
-                ),
-                action_scaler=MinMaxActionScaler(
-                    minimum=env.action_space.low,  # minimum value that policy can take
-                    maximum=env.action_space.high,  # maximum value that policy can take
-                ),
-                sigma=base_model_config.contiuous_ope.sigma,
-                device=device,
-            )
-
-        else:
-            prep = CreateOPEInput(
-                env=env,
-                model_args={
-                    "fqe": {
-                        "encoder_factory": VectorEncoderFactory(hidden_units=[30, 30]),
-                        "q_func_factory": MeanQFunctionFactory(),
-                        "learning_rate": 1e-4,
-                        "use_gpu": (device == "cuda:0"),
-                    }
-                },
-                state_scaler=MinMaxScaler(
-                    minimum=test_logged_dataset.get(
-                        behavior_policy_name=test_logged_dataset.behavior_policy_names[
-                            0
-                        ],
-                        dataset_id=0,
-                    )["state"].min(axis=0),
-                    maximum=test_logged_dataset.get(
-                        behavior_policy_name=test_logged_dataset.behavior_policy_names[
-                            0
-                        ],
-                        dataset_id=0,
-                    )["state"].max(axis=0),
-                ),
-            )
-
-        input_dict = prep.obtain_whole_inputs(
-            logged_dataset=test_logged_dataset,
-            evaluation_policies=candidate_policies,
-            require_value_prediction=True,
-            require_weight_prediction=True,
-            n_trajectories_on_policy_evaluation=100,
-            path=log_dir + f"/input_dict/multiple",
-            random_state=base_random_state,
-        )
-        with open(path_input_dict, "wb") as f:
-            pickle.dump(input_dict, f)
-
-    if action_type == "continuous":
-        ope_estimators = [C_DM(), C_PDIS(), C_DR(), C_MIS()]
-    else:
-        ope_estimators = [D_DM(), D_PDIS(), D_DR(), D_MIS()]
-
-    ope = OffPolicyEvaluation(
-        logged_dataset=test_logged_dataset,
-        ope_estimators=ope_estimators,
-    )
-    ops = OffPolicySelection(ope=ope)
-
-    path_ = Path(log_dir + f"/results/raw")
-    path_.mkdir(exist_ok=True, parents=True)
-
-    ops_dict = ops.select_by_policy_value(
-        input_dict=input_dict,
-        return_metrics=True,
-    )
-    path_metrics = Path(path_ / f"conventional_metrics_dict_{env_name}.pkl")
-    with open(path_metrics, "wb") as f:
-        pickle.dump(ops_dict, f)
-
-    topk_metric_dict = ops.obtain_topk_policy_value_selected_by_standard_ope(
-        input_dict=input_dict,
-        return_safety_violation_rate=True,
-        relative_safety_criteria=1.0,
-    )
-    path_topk_metrics = Path(path_ / f"topk_metrics_dict_{env_name}.pkl")
-    with open(path_topk_metrics, "wb") as f:
-        pickle.dump(topk_metric_dict, f)
-
-    path_ = Path(log_dir + f"/results/figs")
-    path_.mkdir(exist_ok=True, parents=True)
-
-    ops.visualize_topk_policy_value_selected_by_standard_ope(
-        input_dict=input_dict,
-        metrics=["best", "worst", "mean", "safety_violation_rate", "sharpe_ratio"],
-        visualize_ci=True,
-        relative_safety_criteria=1.0,
-        legend=False,
-        random_state=base_random_state,
-        fig_dir=path_,
-        fig_name=f"topk_metrics_visualization_{env_name}.png",
-    )
-
-
 def process(
     env_name: str,
     behavior_sigma: float,
@@ -550,6 +412,7 @@ def process(
     n_trajectories: int,
     device: str,
     base_random_state: int,
+    base_model_config: DictConfig,
     log_dir: str,
 ):
     if env_name == "Acrobot":
@@ -564,6 +427,7 @@ def process(
         behavior_tau=behavior_tau,
         device=device,
         base_random_state=base_random_state,
+        base_model_config=base_model_config,
         log_dir=log_dir,
     )
 
@@ -584,6 +448,7 @@ def process(
         candidate_epsilons=candidate_epsilons,
         device=device,
         base_random_state=base_random_state,
+        base_model_config=base_model_config,
         log_dir=log_dir,
     )
 
@@ -642,6 +507,7 @@ def main(cfg: DictConfig):
         "n_trajectories": cfg.setting.n_trajectories,
         "base_random_state": cfg.setting.base_random_state,
         "device": "cuda:0" if torch.cuda.is_available() else "cpu",
+        "base_model_config": cfg.base_model_config,
         "log_dir": "logs/",
     }
     process(**conf)

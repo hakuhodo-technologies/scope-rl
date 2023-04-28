@@ -112,13 +112,11 @@ hydra:
     hydra:
     - hydra.mode=RUN
     task:
-    - setting.n_random_state=2
-    - setting.candidate_sigmas=[1.0,2.0]
-    - setting.env_name=Hopper-continuous-v0
+    - base_model_config=cartpole
   job:
-    name: main
+    name: policy_learning
     chdir: null
-    override_dirname: setting.candidate_sigmas=[1.0,2.0],setting.env_name=Hopper-continuous-v0,setting.n_random_state=2
+    override_dirname: base_model_config=cartpole
     id: ???
     num: ???
     config_name: config
@@ -145,6 +143,7 @@ hydra:
       provider: schema
     output_dir: /Users/haruka/Downloads/ofrl/experiments
     choices:
+      base_model_config: cartpole
       setting: default
       hydra/env: default
       hydra/callbacks: null

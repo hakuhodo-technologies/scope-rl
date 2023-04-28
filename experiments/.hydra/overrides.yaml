@@ -1,3 +1,1 @@
-- setting.n_random_state=2
-- setting.candidate_sigmas=[1.0,2.0]
-- setting.env_name=Hopper-continuous-v0
+- base_model_config=cartpole
