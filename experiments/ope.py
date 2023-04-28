@@ -261,9 +261,12 @@ def off_policy_evaluation(
     )
 
     if path_input_dict.exists():
-        with open(path_input_dict, "rb") as f:
-            input_dict = pickle.load(f)
-    else:
+        pass
+        # with open(path_input_dict, "rb") as f:
+        #     input_dict = pickle.load(f)
+
+    # else:
+    if True:
         if action_type == "continuous":
             prep = CreateOPEInput(
                 env=env,
@@ -322,6 +325,7 @@ def off_policy_evaluation(
                         dataset_id=0,
                     )["state"].max(axis=0),
                 ),
+                device=device,
             )
 
         input_dict = prep.obtain_whole_inputs(
@@ -428,10 +432,9 @@ def process(
     candidate_policies = load_candidate_policies(
         env_name=env_name,
         env=env,
-        bahavior_policy_name=behavior_policy.name,
+        behavior_policy_name=behavior_policy.name,
         candidate_sigmas=candidate_sigmas,
         candidate_epsilons=candidate_epsilons,
-        device=device,
         base_random_state=base_random_state,
         base_model_config=base_model_config,
         log_dir=log_dir,
