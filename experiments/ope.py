@@ -399,6 +399,7 @@ def process(
     n_candidate_policies: int,
     device: str,
     base_random_state: int,
+    base_model_config: DictConfig,
     log_dir: str,
 ):
     env = gym.make(env_name)
@@ -410,6 +411,7 @@ def process(
         behavior_tau=behavior_tau,
         device=device,
         base_random_state=base_random_state,
+        base_model_config=base_model_config,
         log_dir=log_dir,
     )
 
@@ -431,12 +433,15 @@ def process(
         candidate_epsilons=candidate_epsilons,
         device=device,
         base_random_state=base_random_state,
+        base_model_config=base_model_config,
         log_dir=log_dir,
     )
 
     random_ = check_random_state(base_random_state)
     candidate_policy_idx = random_.choice(
-        len(candidate_policies), size=n_candidate_policies, replace=False
+        len(candidate_policies),
+        size=min(n_candidate_policies, len(candidate_policies)),
+        replace=False,
     )
     candidate_policies = [candidate_policies[idx] for idx in candidate_policy_idx]
 
@@ -447,6 +452,7 @@ def process(
         candidate_policies=candidate_policies,
         device=device,
         base_random_state=base_random_state,
+        base_model_config=base_model_config,
         log_dir=log_dir,
     )
 
@@ -522,8 +528,12 @@ def assert_configuration(cfg: DictConfig):
     n_trajectories = cfg.setting.n_trajectories
     assert isinstance(n_trajectories, int) and n_trajectories > 0
 
+    n_candidate_policies = cfg.setting.n_candidate_policies
+    assert isinstance(n_candidate_policies, int) and n_candidate_policies > 0
+
     max_episode_steps = cfg.setting.max_episode_steps
-    assert isinstance(max_episode_steps, int) and max_episode_steps > 0
+    if max_episode_steps != "None":
+        assert isinstance(max_episode_steps, int) and max_episode_steps > 0
 
     n_random_state = cfg.setting.n_random_state
     assert isinstance(n_random_state, int) and n_random_state > 0
@@ -543,12 +553,15 @@ def main(cfg: DictConfig):
         "candidate_sigmas": cfg.setting.candidate_sigmas,
         "candidate_epsilons": cfg.setting.candidate_epsilons,
         "n_trajectories": cfg.setting.n_trajectories,
+        "n_candidate_policies": cfg.setting.n_candidate_policies,
         "n_random_state": cfg.setting.n_random_state,
         "base_random_state": cfg.setting.base_random_state,
         "device": "cuda:0" if torch.cuda.is_available() else "cpu",
+        "base_model_config": cfg.base_model_config,
         "log_dir": "logs/",
     }
-    register_small_envs(cfg.setting.max_episode_steps)
+    if cfg.setting.max_episode_steps != "None":
+        register_small_envs(cfg.setting.max_episode_steps)
     process(**conf)
 
 

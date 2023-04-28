@@ -452,12 +452,16 @@ def process(
         log_dir=log_dir,
     )
 
+    path_ = Path(log_dir + f"/results/on_policy")
+    path_.mkdir(exist_ok=True, parents=True)
+
     visualize_on_policy_policy_value(
         env=env,
-        policies=[behavior_policy] + [candidate_policies],
+        policies=[behavior_policy] + candidate_policies,
         policy_names=[behavior_policy.name]
         + [candidate_policy.name for candidate_policy in candidate_policies],
-        fig_dir=log_dir + f"/results/on_policy",
+        random_state=base_random_state,
+        fig_dir=path_,
     )
 
 

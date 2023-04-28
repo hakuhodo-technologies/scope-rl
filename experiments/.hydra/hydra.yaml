@@ -113,10 +113,11 @@ hydra:
     - hydra.mode=RUN
     task:
     - base_model_config=cartpole
+    - setting.n_random_state=5
   job:
-    name: policy_learning
+    name: ope
     chdir: null
-    override_dirname: base_model_config=cartpole
+    override_dirname: base_model_config=cartpole,setting.n_random_state=5
     id: ???
     num: ???
     config_name: config

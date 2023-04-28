@@ -14,9 +14,10 @@ setting:
   - 0.3
   - 0.5
   - 0.7
-  max_episode_steps: 50
+  max_episode_steps: None
   n_trajectories: 10000
-  n_random_state: 100
+  n_candidate_policies: 10
+  n_random_state: 5
   base_random_state: 12345
 base_model_config:
   sac:
