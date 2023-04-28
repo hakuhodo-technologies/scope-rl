@@ -27,7 +27,7 @@ Installation
 Citation
 ==========
 
-If you use our pipeline in your work, please cite our paper below.
+If you use our pipeline or the top-:math:`k` RRT metrics in your work, please cite our paper below.
 
 .. card::
 

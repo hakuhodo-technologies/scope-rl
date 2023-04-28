@@ -84,9 +84,9 @@ Basic estimators
 * Trajectory-wise Importance Sampling (TIS) :cite:`precup2000eligibility`
 * Per-Decision Importance Sampling (PDIS) :cite:`precup2000eligibility`
 * Doubly Robust (DR) :cite:`jiang2016doubly` :cite:`thomas2016data`
-* Self-Normalized Trajectory-wise Importance Sampling (SNTIS) :cite:`precup2000eligibility` :cite:`kallus2020optimal`
-* Self-Normalized Per-Decision Importance Sampling (SNPDIS) :cite:`precup2000eligibility` :cite:`kallus2020optimal`
-* Self-Normalized Doubly Robust (SNDR) :cite:`jiang2016doubly` :cite:`thomas2016data` :cite:`kallus2020optimal`
+* Self-Normalized Trajectory-wise Importance Sampling (SNTIS) :cite:`precup2000eligibility` :cite:`kallus2019intrinsically`
+* Self-Normalized Per-Decision Importance Sampling (SNPDIS) :cite:`precup2000eligibility` :cite:`kallus2020intrinsically`
+* Self-Normalized Doubly Robust (SNDR) :cite:`jiang2016doubly` :cite:`thomas2016data` :cite:`kallus2020intrinsically`
 
 State Marginal Estimators
 ^^^^^^

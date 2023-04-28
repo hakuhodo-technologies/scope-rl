@@ -512,6 +512,7 @@ class CreateOPEInput:
                                 n_actions=self.n_actions,
                                 state_dim=self.state_dim,
                                 hidden_dim=self.model_args["hidden_dim"],
+                                enable_gradient_reversal=True,
                                 device=self.device,
                             ),
                             state_scaler=self.state_scaler,
@@ -531,6 +532,7 @@ class CreateOPEInput:
                                 action_dim=self.action_dim,
                                 state_dim=self.state_dim,
                                 hidden_dim=self.model_args["hidden_dim"],
+                                enable_gradient_reversal=True,
                             ),
                             state_scaler=self.state_scaler,
                             action_scaler=self.action_scaler,
@@ -558,6 +560,7 @@ class CreateOPEInput:
                         action=self.action,
                         reward=self.reward,
                         evaluation_policy_action_dist=evaluation_policy_action_dist,
+                        n_epochs=n_epochs,
                         random_state=random_state,
                     )
                 else:
@@ -567,6 +570,7 @@ class CreateOPEInput:
                         action=self.action,
                         reward=self.reward,
                         evaluation_policy_action=evaluation_policy_action,
+                        n_epochs=n_epochs,
                         random_state=random_state,
                     )
             else:
@@ -618,6 +622,7 @@ class CreateOPEInput:
                             action=action_,
                             reward=self.reward_2d[subset_idx_].flatten(),
                             evaluation_policy_action_dist=evaluation_policy_action_dist_,
+                            n_epochs=n_epochs,
                             random_state=random_state,
                         )
                     else:
@@ -629,6 +634,7 @@ class CreateOPEInput:
                             action=action_,
                             reward=self.reward_2d[subset_idx_].flatten(),
                             evaluation_policy_action=evaluation_policy_action_,
+                            n_epochs=n_epochs,
                             random_state=random_state,
                         )
 
@@ -724,6 +730,7 @@ class CreateOPEInput:
                         reward=self.reward,
                         pscore=self.pscore,
                         evaluation_policy_action_dist=evaluation_policy_action_dist,
+                        n_epochs=n_epochs,
                         random_state=random_state,
                     )
                 else:
@@ -734,6 +741,7 @@ class CreateOPEInput:
                         reward=self.reward,
                         pscore=self.pscore,
                         evaluation_policy_action=evaluation_policy_action,
+                        n_epochs=n_epochs,
                         random_state=random_state,
                     )
             else:
@@ -786,6 +794,7 @@ class CreateOPEInput:
                             reward=self.reward_2d[subset_idx_].flatten(),
                             pscore=self.pscore_2d[subset_idx_].flatten(),
                             evaluation_policy_action_dist=evaluation_policy_action_dist_,
+                            n_epochs=n_epochs,
                             random_state=random_state,
                         )
                     else:
@@ -800,6 +809,7 @@ class CreateOPEInput:
                                 (-1, self.action_dim)
                             ),
                             evaluation_policy_action=evaluation_policy_action_,
+                            n_epochs=n_epochs,
                             random_state=random_state,
                         )
 
@@ -856,6 +866,7 @@ class CreateOPEInput:
                                 n_actions=self.n_actions,
                                 state_dim=self.state_dim,
                                 hidden_dim=self.model_args["hidden_dim"],
+                                enable_gradient_reversal=True,
                                 device=self.device,
                             ),
                             state_scaler=self.state_scaler,
@@ -870,6 +881,7 @@ class CreateOPEInput:
                                 action_dim=self.action_dim,
                                 state_dim=self.state_dim,
                                 hidden_dim=self.model_args["hidden_dim"],
+                                enable_gradient_reversal=True,
                             ),
                             state_scaler=self.state_scaler,
                             action_scaler=self.action_scaler,
@@ -897,6 +909,7 @@ class CreateOPEInput:
                         action=self.action,
                         reward=self.reward,
                         evaluation_policy_action_dist=evaluation_policy_action_dist,
+                        n_epochs=n_epochs,
                         random_state=random_state,
                     )
                 else:
@@ -906,6 +919,7 @@ class CreateOPEInput:
                         action=self.action,
                         reward=self.reward,
                         evaluation_policy_action=evaluation_policy_action,
+                        n_epochs=n_epochs,
                         random_state=random_state,
                     )
             else:
@@ -959,6 +973,7 @@ class CreateOPEInput:
                             action=action_,
                             reward=self.reward_2d[subset_idx_].flatten(),
                             evaluation_policy_action_dist=evaluation_policy_action_dist_,
+                            n_epochs=n_epochs,
                             random_state=random_state,
                         )
                     else:
@@ -972,6 +987,7 @@ class CreateOPEInput:
                             action=action_,
                             reward=self.reward_2d[subset_idx_].flatten(),
                             evaluation_policy_action=evaluation_policy_action_,
+                            n_epochs=n_epochs,
                             random_state=random_state,
                         )
 
@@ -1028,6 +1044,7 @@ class CreateOPEInput:
                             w_function=StateWeightFunction(
                                 state_dim=self.state_dim,
                                 hidden_dim=self.model_args["hidden_dim"],
+                                enable_gradient_reversal=True,
                             ),
                             state_scaler=self.state_scaler,
                             device=self.device,
@@ -1044,6 +1061,7 @@ class CreateOPEInput:
                             w_function=StateWeightFunction(
                                 state_dim=self.state_dim,
                                 hidden_dim=self.model_args["hidden_dim"],
+                                enable_gradient_reversal=True,
                             ),
                             state_scaler=self.state_scaler,
                             action_scaler=self.action_scaler,
@@ -1072,6 +1090,7 @@ class CreateOPEInput:
                         reward=self.reward,
                         pscore=self.pscore,
                         evaluation_policy_action_dist=evaluation_policy_action_dist,
+                        n_epochs=n_epochs,
                         random_state=random_state,
                     )
                 else:
@@ -1082,6 +1101,7 @@ class CreateOPEInput:
                         reward=self.reward,
                         pscore=self.pscore,
                         evaluation_policy_action=evaluation_policy_action,
+                        n_epochs=n_epochs,
                         random_state=random_state,
                     )
             else:
@@ -1134,6 +1154,7 @@ class CreateOPEInput:
                             reward=self.reward_2d[subset_idx_].flatten(),
                             pscore=self.pscore_2d[subset_idx_].flatten(),
                             evaluation_policy_action_dist=evaluation_policy_action_dist_,
+                            n_epochs=n_epochs,
                             random_state=random_state,
                         )
                     else:
@@ -1148,6 +1169,7 @@ class CreateOPEInput:
                                 (-1, self.action_dim)
                             ),
                             evaluation_policy_action=evaluation_policy_action_,
+                            n_epochs=n_epochs,
                             random_state=random_state,
                         )
 
@@ -1240,6 +1262,7 @@ class CreateOPEInput:
                         reward=self.reward,
                         pscore=self.pscore,
                         evaluation_policy_action_dist=evaluation_policy_action_dist,
+                        n_epochs=n_epochs,
                         random_state=random_state,
                     )
                 else:
@@ -1250,6 +1273,7 @@ class CreateOPEInput:
                         reward=self.reward,
                         pscore=self.pscore,
                         evaluation_policy_action=evaluation_policy_action,
+                        n_epochs=n_epochs,
                         random_state=random_state,
                     )
             else:
@@ -1302,6 +1326,7 @@ class CreateOPEInput:
                             reward=self.reward_2d[subset_idx_].flatten(),
                             pscore=self.pscore_2d[subset_idx_].flatten(),
                             evaluation_policy_action_dist=evaluation_policy_action_dist_,
+                            n_epochs=n_epochs,
                             random_state=random_state,
                         )
                     else:
@@ -1316,6 +1341,7 @@ class CreateOPEInput:
                                 (-1, self.action_dim)
                             ),
                             evaluation_policy_action=evaluation_policy_action_,
+                            n_epochs=n_epochs,
                             random_state=random_state,
                         )
 
@@ -1368,6 +1394,7 @@ class CreateOPEInput:
                             w_function=StateWeightFunction(
                                 state_dim=self.state_dim,
                                 hidden_dim=self.model_args["hidden_dim"],
+                                enable_gradient_reversal=True,
                             ),
                             state_scaler=self.state_scaler,
                             device=self.device,
@@ -1380,6 +1407,7 @@ class CreateOPEInput:
                             w_function=StateWeightFunction(
                                 state_dim=self.state_dim,
                                 hidden_dim=self.model_args["hidden_dim"],
+                                enable_gradient_reversal=True,
                             ),
                             state_scaler=self.state_scaler,
                             action_scaler=self.action_scaler,
@@ -1408,6 +1436,7 @@ class CreateOPEInput:
                         reward=self.reward,
                         pscore=self.pscore,
                         evaluation_policy_action_dist=evaluation_policy_action_dist,
+                        n_epochs=n_epochs,
                         random_state=random_state,
                     )
                 else:
@@ -1418,6 +1447,7 @@ class CreateOPEInput:
                         reward=self.reward,
                         pscore=self.pscore,
                         evaluation_policy_action=evaluation_policy_action,
+                        n_epochs=n_epochs,
                         random_state=random_state,
                     )
             else:
@@ -1470,6 +1500,7 @@ class CreateOPEInput:
                                 reward=self.reward_2d[subset_idx_].flatten(),
                                 pscore=self.pscore_2d[subset_idx_].flatten(),
                                 evaluation_policy_action_dist=evaluation_policy_action_dist_,
+                                n_epochs=n_epochs,
                                 random_state=random_state,
                             )
                         else:
@@ -1484,6 +1515,7 @@ class CreateOPEInput:
                                     (-1, self.action_dim)
                                 ),
                                 evaluation_policy_action=evaluation_policy_action_,
+                                n_epochs=n_epochs,
                                 random_state=random_state,
                             )
 
@@ -1675,7 +1707,7 @@ class CreateOPEInput:
 
         Parameters
         -------
-        method: {"fqe", "dice", "mql"}
+        method: {"fqe", "dice_q", "mql"}
             Estimation method.
 
         evaluation_policy: BaseHead
@@ -1694,9 +1726,9 @@ class CreateOPEInput:
             i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(s_t))`.
 
         """
-        if method not in ["fqe", "dice", "mql"]:
+        if method not in ["fqe", "dice_q", "mql"]:
             raise ValueError(
-                f"method must be either 'fqe', 'dice', or 'mql', but {method} is given"
+                f"method must be either 'fqe', 'dice_q', or 'mql', but {method} is given"
             )
         if not isinstance(evaluation_policy, BaseHead):
             raise ValueError("evaluation_policy must be a child class of BaseHead")
@@ -1725,7 +1757,7 @@ class CreateOPEInput:
                         k
                     ].predict_value(x_, a_)
 
-                elif method == "dice":
+                elif method == "dice_q":
                     state_action_value_prediction_ = self.state_action_dual_function[
                         evaluation_policy.name
                     ][k].predict_value(x_, a_)
@@ -1770,7 +1802,7 @@ class CreateOPEInput:
                         evaluation_policy.name
                     ][k].predict_value(state_, evaluation_policy_action_)
 
-                elif method == "dice":
+                elif method == "dice_q":
                     state_action_value_prediction_behavior_ = (
                         self.state_action_dual_function[evaluation_policy.name][
                             k
@@ -1888,7 +1920,7 @@ class CreateOPEInput:
                         0
                     ].predict_value(x_, a_)
 
-                elif method == "dice":
+                elif method == "dice_q":
                     state_action_value = self.state_action_dual_function[
                         evaluation_policy.name
                     ][0].predict_value(x_, a_)
@@ -2097,7 +2129,7 @@ class CreateOPEInput:
         resample_initial_state: bool = False,
         q_function_method: str = "fqe",
         v_function_method: str = "fqe",
-        w_function_method: str = "mwl",
+        w_function_method: str = "dice",
         k_fold: int = 1,
         n_epochs: int = 1,
         n_steps_per_epoch: int = 10000,
@@ -2157,13 +2189,13 @@ class CreateOPEInput:
 
             Note that, this parameter is applicable only when self.env is given.
 
-        q_function_method: {"fqe", "dice", "mql"}
+        q_function_method: {"fqe", "dice_q", "mql"}, default="fqe"
             Estimation method of :math:`Q(s, a)`.
 
-        v_function_method: {"fqe", "dice_q", "dice_v", "mql", "mvl"}
+        v_function_method: {"fqe", "dice_q", "dice_v", "mql", "mvl"}, default="fqe"
             Estimation method of :math:`V(s)`.
 
-        w_function_method: {"dice", "mwl"}
+        w_function_method: {"dice", "mwl"}, default="dice"
             Estimation method of :math:`w(s, a)` and :math:`w(s)`.
 
         k_fold: int, default=1 (> 0)
@@ -2317,7 +2349,7 @@ class CreateOPEInput:
                         n_steps_per_epoch=n_steps_per_epoch,
                     )
 
-            if q_function_method == "dice" or v_function_method == "dice_q":
+            if q_function_method == "dice_q" or v_function_method == "dice_q":
                 for i in tqdm(
                     range(len(evaluation_policies)),
                     desc="[fit Augmented Lagrangian model]",
@@ -2532,7 +2564,7 @@ class CreateOPEInput:
         resample_initial_state: bool = False,
         q_function_method: str = "fqe",
         v_function_method: str = "fqe",
-        w_function_method: str = "mwl",
+        w_function_method: str = "dice",
         k_fold: int = 1,
         n_epochs: int = 1,
         n_steps_per_epoch: int = 10000,
@@ -2613,13 +2645,13 @@ class CreateOPEInput:
 
             Note that, this parameter is applicable only when self.env is given.
 
-        q_function_method: {"fqe", "dice", "mql"}
+        q_function_method: {"fqe", "dice_q", "mql"}, default="fqe"
             Estimation method of :math:`Q(s, a)`.
 
-        v_function_method: {"fqe", "dice_q", "dice_v", "mql", "mvl"}
+        v_function_method: {"fqe", "dice_q", "dice_v", "mql", "mvl"}, default="fqe"
             Estimation method of :math:`V(s)`.
 
-        w_function_method: {"dice", "mwl"}
+        w_function_method: {"dice", "mwl"}, default="dice"
             Estimation method of :math:`w(s, a)` and :math:`w(s)`.
 
         k_fold: int, default=1 (> 0)
@@ -2894,8 +2926,6 @@ class CreateOPEInput:
                             behavior_policy_name=behavior_policies[i],
                             dataset_id=dataset_id_,
                         )
-
-                    print(input_dict.behavior_policy_names)
 
             elif behavior_policy_name is None and dataset_id is not None:
                 behavior_policies = logged_dataset.behavior_policy_names

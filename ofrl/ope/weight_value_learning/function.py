@@ -2,6 +2,7 @@
 import torch
 from torch import nn
 import torch.nn.functional as F
+from pytorch_revgrad import RevGrad
 
 
 class VFunction(nn.Module):
@@ -53,23 +54,35 @@ class StateWeightFunction(nn.Module):
     hidden_dim: int, default=100 (> 0)
         Hidden dimension of the network.
 
+    enable_gradient_reversal: bool = False
+        Whether to enable gradient reversal layer (for loss maximization).
+
     """
 
     def __init__(
         self,
         state_dim: int,
         hidden_dim: int = 100,
+        enable_gradient_reversal: bool = False,
     ):
         super().__init__()
+        self.enable_gradient_reversal = enable_gradient_reversal
+
         self.fc1 = nn.Linear(state_dim, hidden_dim)
         self.fc2 = nn.Linear(hidden_dim, 1)
+        self.grl = RevGrad()
 
     def forward(
         self,
         state: torch.Tensor,
     ):
         x = F.relu(self.fc1(state))
-        return F.relu(self.fc2(x)).flatten()
+        x = F.softplus(self.fc2(x))
+
+        if self.enable_gradient_reversal:
+            x = self.grl(x)
+
+        return x.flatten()
 
 
 class DiscreteQFunction(nn.Module):
@@ -209,6 +222,9 @@ class DiscreteStateActionWeightFunction(nn.Module):
     hidden_dim: int, default=100 (> 0)
         Hidden dimension of the network.
 
+    enable_gradient_reversal: bool = False
+        Whether to enable gradient reversal layer (for loss maximization).
+
     device: str, default="cuda:0"
         Specifies device used for torch.
 
@@ -219,12 +235,16 @@ class DiscreteStateActionWeightFunction(nn.Module):
         n_actions: int,
         state_dim: int,
         hidden_dim: int = 100,
+        enable_gradient_reversal: bool = False,
         device: str = "cuda:0",
     ):
         super().__init__()
+        self.enable_gradient_reversal = enable_gradient_reversal
+
         self.fc1 = nn.Linear(state_dim, hidden_dim)
         self.fc2 = nn.Linear(hidden_dim, n_actions)
         self.action_onehot = torch.eye(n_actions, device=device)
+        self.grl = RevGrad()
 
     def forward(
         self,
@@ -233,7 +253,11 @@ class DiscreteStateActionWeightFunction(nn.Module):
     ):
         action = self.action_onehot[action]
         x = F.relu(self.fc1(state))
-        values = F.relu(self.fc2(x))
+        values = F.softplus(self.fc2(x))
+
+        if self.enable_gradient_reversal:
+            values = self.grl(values)
+
         return (values * action).sum(axis=1)
 
 
@@ -255,6 +279,9 @@ class ContinuousStateActionWeightFunction(nn.Module):
     hidden_dim: int, default=100 (> 0)
         Hidden dimension of the network.
 
+    enable_gradient_reversal: bool = False
+        Whether to enable gradient reversal layer (for loss maximization).
+
     """
 
     def __init__(
@@ -262,10 +289,14 @@ class ContinuousStateActionWeightFunction(nn.Module):
         action_dim: int,
         state_dim: int,
         hidden_dim: int = 100,
+        enable_gradient_reversal: bool = False,
     ):
         super().__init__()
+        self.enable_gradient_reversal = enable_gradient_reversal
+
         self.fc1 = nn.Linear(state_dim + action_dim, hidden_dim)
         self.fc2 = nn.Linear(hidden_dim, 1)
+        self.grl = RevGrad()
 
     def forward(
         self,
@@ -274,4 +305,9 @@ class ContinuousStateActionWeightFunction(nn.Module):
     ):
         x = torch.cat((state, action), dim=1)
         x = F.relu(self.fc1(x))
-        return F.relu(self.fc2(x))
+        x = F.softplus(self.fc2(x))
+
+        if self.enable_gradient_reversal:
+            x = self.grl(x)
+
+        return x.squeeze()

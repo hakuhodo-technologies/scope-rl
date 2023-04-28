@@ -652,7 +652,7 @@ class OldGymAPIWrapper:
 
     def step(self, action: Any) -> Tuple[Any]:
         state, action, done, truncated, info = self.env.step(action)
-        return state, action, done, info
+        return state, action, done or truncated, info
 
     def render(self, mode: str = "human"):
         self.env.render()
