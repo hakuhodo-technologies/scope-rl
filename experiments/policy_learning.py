@@ -25,7 +25,7 @@ from d3rlpy.online.buffers import ReplayBuffer
 
 from ofrl.dataset import SyntheticDataset
 from ofrl.policy import BaseHead
-from ofrl.policy import ContinuousTruncatedGaussianHead as TruncatedGaussianHead
+from ofrl.policy import ContinuousGaussianHead as GaussianHead
 from ofrl.policy import DiscreteEpsilonGreedyHead as EpsilonGreedyHead
 from ofrl.policy import DiscreteSoftmaxHead as SoftmaxHead
 from ofrl.policy import OffPolicyLearning
@@ -154,7 +154,7 @@ def train_behavior_policy(
         model.save_model(path_behavior_policy)
 
     if action_type == "continuous":
-        behavior_policy = TruncatedGaussianHead(
+        behavior_policy = GaussianHead(
             model,
             minimum=env.action_space.low,
             maximum=env.action_space.high,
@@ -373,7 +373,7 @@ def train_candidate_policies(
         policy_wrappers = {}
         for sigma in candidate_sigmas:
             policy_wrappers[f"gauss_{sigma}"] = (
-                TruncatedGaussianHead,
+                GaussianHead,
                 {
                     "sigma": np.full((action_dim,), sigma),
                     "minimum": env.action_space.low,

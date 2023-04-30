@@ -21,7 +21,7 @@ from d3rlpy.models.q_functions import MeanQFunctionFactory
 
 from ofrl.dataset import SyntheticDataset
 from ofrl.policy import BaseHead
-from ofrl.policy import ContinuousTruncatedGaussianHead as TruncatedGaussianHead
+from ofrl.policy import ContinuousGaussianHead as GaussianHead
 from ofrl.policy import DiscreteEpsilonGreedyHead as EpsilonGreedyHead
 from ofrl.policy import DiscreteSoftmaxHead as SoftmaxHead
 from ofrl.policy import OffPolicyLearning
@@ -107,10 +107,8 @@ def load_behavior_policy(
         )
 
     if action_type == "continuous":
-        behavior_policy = TruncatedGaussianHead(
+        behavior_policy = GaussianHead(
             model,
-            minimum=env.action_space.low,
-            maximum=env.action_space.high,
             sigma=np.full((action_dim,), behavior_sigma),
             name=f"sac_gauss_{behavior_sigma}",
             random_state=base_random_state,
@@ -158,6 +156,7 @@ def obtain_test_logged_dataset(
             n_datasets=n_random_state,
             n_trajectories=n_trajectories,
             obtain_info=False,
+            record_unclipped_action=True,
             path=log_dir + f"/logged_dataset/multiple",
             random_state=base_random_state + 1,
         )
@@ -209,11 +208,9 @@ def load_candidate_policies(
         policy_wrappers = {}
         for sigma in candidate_sigmas:
             policy_wrappers[f"gauss_{sigma}"] = (
-                TruncatedGaussianHead,
+                GaussianHead,
                 {
                     "sigma": np.full((action_dim,), sigma),
-                    "minimum": env.action_space.low,
-                    "maximum": env.action_space.high,
                 },
             )
 

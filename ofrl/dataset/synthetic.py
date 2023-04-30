@@ -724,7 +724,9 @@ class SyntheticDataset(BaseDataset):
 
                     if self.action_type == "continuous":
                         if record_unclipped_action:
-                            val_action = np.clip(action, self.action_min, self.action_max)
+                            val_action = np.clip(
+                                action, self.action_min, self.action_max
+                            )
                         else:
                             action = np.clip(action, self.action_min, self.action_max)
                             val_action = action
