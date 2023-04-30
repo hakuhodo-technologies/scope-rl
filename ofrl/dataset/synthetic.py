@@ -216,6 +216,8 @@ class SyntheticDataset(BaseDataset):
             self.action_type = "continuous"
             self.n_actions = None
             self.action_dim = self.env.action_space.shape[0]
+            self.action_min = self.env.action_space.low + 1e-10
+            self.action_max = self.env.action_space.high - 1e-10
 
         if self.max_episode_steps is None:
             if self.env.spec.max_episode_steps is None:
@@ -241,6 +243,7 @@ class SyntheticDataset(BaseDataset):
         n_trajectories: int = 10000,
         step_per_trajectory: Optional[int] = None,
         obtain_info: bool = False,
+        record_unclipped_action: bool = False,
         random_state: Optional[int] = None,
     ) -> LoggedDataset:
         """Rollout the behavior policy and obtain episodes.
@@ -276,6 +279,9 @@ class SyntheticDataset(BaseDataset):
 
         obtain_info: bool, default=False
             Whether to gain info from the environment or not.
+
+        record_unclipped_action: bool, default=False
+            Whether to record unclipped action in the logged dataset. Only applicable when action_type is continuous.
 
         random_state: int, default=None (>= 0)
             Random state.
@@ -425,7 +431,17 @@ class SyntheticDataset(BaseDataset):
                     action,
                     action_prob,
                 ) = behavior_policy.stochastic_action_with_pscore_online(state)
-                next_state, reward, done, truncated, info_ = self.env.step(action)
+
+                if self.action_type == "continuous":
+                    if record_unclipped_action:
+                        val_action = np.clip(action, self.action_min, self.action_max)
+                    else:
+                        action = np.clip(action, self.action_min, self.action_max)
+                        val_action = action
+                else:
+                    val_action = action
+
+                next_state, reward, done, truncated, info_ = self.env.step(val_action)
 
                 if (idx + 1) % step_per_trajectory == 0:
                     done = terminal = True
@@ -489,6 +505,7 @@ class SyntheticDataset(BaseDataset):
         maximum_rollout_length: int = 100,
         obtain_info: bool = False,
         obtain_trajectories_from_single_interaction: bool = False,
+        record_unclipped_action: bool = False,
         random_state: Optional[int] = None,
     ) -> LoggedDataset:
         """Rollout the behavior policy and obtain steps.
@@ -535,6 +552,9 @@ class SyntheticDataset(BaseDataset):
             Whether to collect whole data from a single trajectory.
             If `True`, the initial state of trajectory i is the next state of the trajectory (i-1)'s last state.
             If `False`, the initial state will be sampled by rolling out the behavior policy after resetting the environment.
+
+        record_unclipped_action: bool, default=False
+            Whether to record unclipped action in the logged dataset. Only applicable when action_type is continuous.
 
         random_state: int, default=None (>= 0)
             Random state.
@@ -701,7 +721,17 @@ class SyntheticDataset(BaseDataset):
                         step = 0
 
                     action = behavior_policy.sample_action_online(state)
-                    state, reward, done, truncated, info_ = self.env.step(action)
+
+                    if self.action_type == "continuous":
+                        if record_unclipped_action:
+                            val_action = np.clip(action, self.action_min, self.action_max)
+                        else:
+                            action = np.clip(action, self.action_min, self.action_max)
+                            val_action = action
+                    else:
+                        val_action = action
+
+                    state, reward, done, truncated, info_ = self.env.step(val_action)
                     step += 1
 
             for t in range(step_per_trajectory):
@@ -773,6 +803,7 @@ class SyntheticDataset(BaseDataset):
         n_trajectories: int = 10000,
         step_per_trajectory: Optional[int] = None,
         obtain_info: bool = False,
+        record_unclipped_action: bool = False,
         path: str = "logged_dataset/",
         save_relative_path: bool = False,
         random_state: Optional[int] = None,
@@ -815,6 +846,9 @@ class SyntheticDataset(BaseDataset):
 
         obtain_info: bool, default=False
             Whether to gain info from the environment or not.
+
+        record_unclipped_action: bool, default=False
+            Whether to record unclipped action in the logged dataset. Only applicable when action_type is continuous.
 
         path: str
             Path to the directory. Either absolute and relative path is acceptable.
@@ -937,6 +971,7 @@ class SyntheticDataset(BaseDataset):
                     n_trajectories=n_trajectories,
                     step_per_trajectory=step_per_trajectory,
                     obtain_info=obtain_info,
+                    record_unclipped_action=record_unclipped_action,
                     random_state=random_state,
                 )
 
@@ -959,6 +994,7 @@ class SyntheticDataset(BaseDataset):
                         n_trajectories=n_trajectories,
                         step_per_trajectory=step_per_trajectory,
                         obtain_info=obtain_info,
+                        record_unclipped_action=record_unclipped_action,
                         random_state=random_state_,
                     )
                     logged_dataset.add(
@@ -984,6 +1020,7 @@ class SyntheticDataset(BaseDataset):
                         n_trajectories=n_trajectories,
                         step_per_trajectory=step_per_trajectory,
                         obtain_info=obtain_info,
+                        record_unclipped_action=record_unclipped_action,
                         random_state=random_state,
                     )
                     logged_dataset.add(
@@ -1006,6 +1043,7 @@ class SyntheticDataset(BaseDataset):
                             n_trajectories=n_trajectories,
                             step_per_trajectory=step_per_trajectory,
                             obtain_info=obtain_info,
+                            record_unclipped_action=record_unclipped_action,
                             random_state=random_state_,
                         )
                         logged_dataset.add(
@@ -1025,6 +1063,7 @@ class SyntheticDataset(BaseDataset):
         maximum_rollout_length: int = 100,
         obtain_info: bool = False,
         obtain_trajectories_from_single_interaction: bool = False,
+        record_unclipped_action: bool = False,
         path: str = "logged_dataset/",
         save_relative_path: bool = False,
         random_state: Optional[int] = None,
@@ -1074,6 +1113,9 @@ class SyntheticDataset(BaseDataset):
             Whether to collect whole data from a single trajectory.
             If `True`, the initial state of trajectory i is the next state of the trajectory (i-1)'s last state.
             If `False`, the initial state will be sampled by rolling out the behavior policy after resetting the environment.
+
+        record_unclipped_action: bool, default=False
+            Whether to record unclipped action in the logged dataset. Only applicable when action_type is continuous.
 
         seed_env: bool, default=False
             Whether to set seed on environment or not.
@@ -1202,6 +1244,7 @@ class SyntheticDataset(BaseDataset):
                     maximum_rollout_length=maximum_rollout_length,
                     obtain_info=obtain_info,
                     obtain_trajectories_from_single_interaction=obtain_trajectories_from_single_interaction,
+                    record_unclipped_action=record_unclipped_action,
                     random_state=random_state,
                 )
 
@@ -1229,6 +1272,7 @@ class SyntheticDataset(BaseDataset):
                         maximum_rollout_length=maximum_rollout_length,
                         obtain_info=obtain_info,
                         obtain_trajectories_from_single_interaction=obtain_trajectories_from_single_interaction,
+                        record_unclipped_action=record_unclipped_action,
                         random_state=random_state,
                     )
                     logged_dataset.add(
@@ -1254,6 +1298,7 @@ class SyntheticDataset(BaseDataset):
                             maximum_rollout_length=maximum_rollout_length,
                             obtain_info=obtain_info,
                             obtain_trajectories_from_single_interaction=obtain_trajectories_from_single_interaction,
+                            record_unclipped_action=record_unclipped_action,
                             random_state=random_state_,
                         )
                         logged_dataset.add(
