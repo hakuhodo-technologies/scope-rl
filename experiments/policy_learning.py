@@ -410,15 +410,16 @@ def process(
     candidate_sigmas: List[float],
     candidate_epsilons: List[float],
     n_trajectories: int,
+    use_small_env: bool,
     device: str,
     base_random_state: int,
     base_model_config: DictConfig,
     log_dir: str,
 ):
-    if env_name == "Acrobot":
-        env = gym.make(env_name + "-v1")
+    if use_small_env:
+        env = gym.make(env_name + "Env")
     else:
-        env = gym.make(env_name + "-v0")
+        env = gym.make(env_name)
 
     behavior_policy = train_behavior_policy(
         env_name=env_name,
@@ -465,6 +466,48 @@ def process(
     )
 
 
+def register_small_envs(
+    max_episode_steps: int,
+):
+    # continuous control
+    gym.envs.register(
+        id="HalfCheetah",
+        entry_point="gym.envs.mojoco:HalfCheetahEnv",
+        max_episode_steps=max_episode_steps,
+    )
+    gym.envs.register(
+        id="Hopper",
+        entry_point="gym.envs.mojoco:HopperEnv",
+        max_episode_steps=max_episode_steps,
+    )
+    gym.envs.register(
+        id="InvertedPendulum",
+        entry_point="gym.envs.mojoco:InvertedPendulumEnv",
+        max_episode_steps=max_episode_steps,
+    )
+    gym.envs.register(
+        id="Reacher",
+        entry_point="gym.envs.mojoco:ReacherEnv",
+        max_episode_steps=max_episode_steps,
+    )
+    gym.envs.register(
+        id="Swimmer",
+        entry_point="gym.envs.mujoco:SwimmerEnv",
+        max_episode_steps=max_episode_steps,
+    )
+    # discrete control
+    gym.envs.register(
+        id="CartPoleEnv",
+        entry_point="gym.envs.classic_control:CartPoleEnv",
+        max_episode_steps=max_episode_steps,
+    )
+    gym.envs.register(
+        id="AcrobotEnv",
+        entry_point="gym.envs.classic_control:AcrobotEnv",
+        max_episode_steps=max_episode_steps,
+    )
+
+
 def assert_configuration(cfg: DictConfig):
     env_name = cfg.setting.env_name
     assert env_name in [
@@ -474,7 +517,7 @@ def assert_configuration(cfg: DictConfig):
         "Reacher",
         "Swimmer",
         "CartPole",
-        "Pendulum",
+        "Acrobot",
     ]
 
     behavior_sigma = cfg.setting.behavior_sigma
@@ -512,8 +555,11 @@ def main(cfg: DictConfig):
         "base_random_state": cfg.setting.base_random_state,
         "device": "cuda:0" if torch.cuda.is_available() else "cpu",
         "base_model_config": cfg.base_model_config,
+        "use_small_env": cfg.setting.max_episode_steps != "None",
         "log_dir": "logs/",
     }
+    if cfg.setting.max_episode_steps != "None":
+        register_small_envs(cfg.setting.max_episode_steps)
     process(**conf)
 
 

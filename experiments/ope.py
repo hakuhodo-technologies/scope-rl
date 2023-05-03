@@ -157,7 +157,7 @@ def obtain_test_logged_dataset(
             n_trajectories=n_trajectories,
             obtain_info=False,
             record_unclipped_action=True,
-            path=log_dir + f"/logged_dataset/multiple",
+            path=log_dir + f"/logged_dataset/multiple/{env_name}",
             random_state=base_random_state + 1,
         )
         with open(path_test_logged_dataset, "wb") as f:
@@ -331,7 +331,7 @@ def off_policy_evaluation(
             require_value_prediction=True,
             require_weight_prediction=True,
             n_trajectories_on_policy_evaluation=100,
-            path=log_dir + f"/input_dict/multiple",
+            path=log_dir + f"/input_dict/multiple/{env_name}",
             random_state=base_random_state,
         )
         with open(path_input_dict, "wb") as f:
@@ -398,12 +398,16 @@ def process(
     n_trajectories: int,
     n_random_state: int,
     n_candidate_policies: int,
+    use_small_env: bool,
     device: str,
     base_random_state: int,
     base_model_config: DictConfig,
     log_dir: str,
 ):
-    env = gym.make(env_name)
+    if use_small_env:
+        env = gym.make(env_name + "Env")
+    else:
+        env = gym.make(env_name)
 
     behavior_policy = load_behavior_policy(
         env_name=env_name,
@@ -462,39 +466,39 @@ def register_small_envs(
 ):
     # continuous control
     gym.envs.register(
-        id="HalfCheetah",
+        id="HalfCheetahEnv",
         entry_point="gym.envs.mojoco:HalfCheetahEnv",
         max_episode_steps=max_episode_steps,
     )
     gym.envs.register(
-        id="Hopper",
+        id="HopperEnv",
         entry_point="gym.envs.mojoco:HopperEnv",
         max_episode_steps=max_episode_steps,
     )
     gym.envs.register(
-        id="InvertedPendulum",
+        id="InvertedPendulumEnv",
         entry_point="gym.envs.mojoco:InvertedPendulumEnv",
         max_episode_steps=max_episode_steps,
     )
     gym.envs.register(
-        id="Reacher",
+        id="ReacherEnv",
         entry_point="gym.envs.mojoco:ReacherEnv",
         max_episode_steps=max_episode_steps,
     )
     gym.envs.register(
-        id="Swimmer",
+        id="SwimmerEnv",
         entry_point="gym.envs.mujoco:SwimmerEnv",
         max_episode_steps=max_episode_steps,
     )
     # discrete control
     gym.envs.register(
-        id="CartPole",
+        id="CartPoleEnv",
         entry_point="gym.envs.classic_control:CartPoleEnv",
         max_episode_steps=max_episode_steps,
     )
     gym.envs.register(
-        id="Pendulum",
-        entry_point="gym.envs.classic_control:PendulumEnv",
+        id="AcrobotEnv",
+        entry_point="gym.envs.classic_control:AcrobotEnv",
         max_episode_steps=max_episode_steps,
     )
 
@@ -558,6 +562,7 @@ def main(cfg: DictConfig):
         "base_random_state": cfg.setting.base_random_state,
         "device": "cuda:0" if torch.cuda.is_available() else "cpu",
         "base_model_config": cfg.base_model_config,
+        "use_small_env": cfg.setting.max_episode_steps != "None",
         "log_dir": "logs/",
     }
     if cfg.setting.max_episode_steps != "None":
