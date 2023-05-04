@@ -41,12 +41,12 @@ from ofrl.ope import (
     DiscreteStateActionMarginalSelfNormalizedImportanceSampling as D_MIS,
 )
 from ofrl.ope import CreateOPEInput
+from ofrl.ope.online import visualize_on_policy_policy_value
 
 from ofrl.utils import MinMaxScaler
 from ofrl.utils import MinMaxActionScaler
 from ofrl.utils import OldGymAPIWrapper
 from ofrl.utils import MultipleLoggedDataset
-from ofrl.types import LoggedDataset
 
 from experiments.utils import torch_seed, format_runtime
 
@@ -143,10 +143,12 @@ def obtain_test_logged_dataset(
     )
 
     if path_test_logged_dataset.exists():
-        with open(path_test_logged_dataset, "rb") as f:
-            test_logged_dataset = pickle.load(f)
+        pass
+        # with open(path_test_logged_dataset, "rb") as f:
+        #     test_logged_dataset = pickle.load(f)
 
-    else:
+    # else:
+    if True:
         dataset = SyntheticDataset(
             env=env,
             max_episode_steps=env.spec.max_episode_steps,

@@ -112,12 +112,12 @@ hydra:
     hydra:
     - hydra.mode=RUN
     task:
-    - setting.env_name=Acrobot
+    - setting=acrobot
     - base_model_config=acrobot
   job:
-    name: policy_learning
+    name: ope
     chdir: null
-    override_dirname: base_model_config=acrobot,setting.env_name=Acrobot
+    override_dirname: base_model_config=acrobot,setting=acrobot
     id: ???
     num: ???
     config_name: config
@@ -145,7 +145,7 @@ hydra:
     output_dir: /Users/haruka/Downloads/ofrl/experiments
     choices:
       base_model_config: acrobot
-      setting: default
+      setting: acrobot
       hydra/env: default
       hydra/callbacks: null
       hydra/job_logging: default

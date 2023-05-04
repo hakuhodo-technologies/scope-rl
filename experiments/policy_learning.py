@@ -30,27 +30,10 @@ from ofrl.policy import DiscreteEpsilonGreedyHead as EpsilonGreedyHead
 from ofrl.policy import DiscreteSoftmaxHead as SoftmaxHead
 from ofrl.policy import OffPolicyLearning
 
-from ofrl.ope import OffPolicyEvaluation
-from ofrl.ope import OffPolicySelection
-from ofrl.ope import ContinuousDirectMethod as C_DM
-from ofrl.ope import ContinuousSelfNormalizedPerDecisionImportanceSampling as C_PDIS
-from ofrl.ope import ContinuousSelfNormalizedDoublyRobust as C_DR
-from ofrl.ope import (
-    ContinuousStateActionMarginalSelfNormalizedImportanceSampling as C_MIS,
-)
-from ofrl.ope import DiscreteDirectMethod as D_DM
-from ofrl.ope import DiscreteSelfNormalizedPerDecisionImportanceSampling as D_PDIS
-from ofrl.ope import DiscreteSelfNormalizedDoublyRobust as D_DR
-from ofrl.ope import (
-    DiscreteStateActionMarginalSelfNormalizedImportanceSampling as D_MIS,
-)
-from ofrl.ope import CreateOPEInput
 from ofrl.ope.online import visualize_on_policy_policy_value
 
-from ofrl.utils import MinMaxScaler
 from ofrl.utils import MinMaxActionScaler
 from ofrl.utils import OldGymAPIWrapper
-from ofrl.utils import MultipleLoggedDataset
 from ofrl.types import LoggedDataset
 
 from experiments.utils import torch_seed, format_runtime
@@ -463,6 +446,7 @@ def process(
         + [candidate_policy.name for candidate_policy in candidate_policies],
         random_state=base_random_state,
         fig_dir=path_,
+        fig_name=f"on_policy_policy_value_{env_name}.png",
     )
 
 
