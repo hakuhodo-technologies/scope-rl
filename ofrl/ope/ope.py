@@ -304,12 +304,9 @@ class OffPolicyEvaluation:
                 behavior_policy_name=behavior_policy_name, dataset_id=dataset_id
             )
 
-        self.behavior_policy_value = (
-            self.logged_dataset["reward"]
-            .reshape((-1, self.step_per_trajectory))
-            .sum(axis=1)
-            .mean()
-        ) + 1e-10  # to avoid devision by zero
+        self.behavior_policy_reward = self.logged_dataset["reward"].reshape(
+            (-1, self.step_per_trajectory)
+        )
 
         if self.action_type == "discrete":
             self.input_dict_ = {
@@ -1610,6 +1607,15 @@ class OffPolicyEvaluation:
             random_state=random_state,
         )
 
+        if is_relative:
+            gamma = input_dict["gamma"]
+            discount = np.full(self.step_per_trajectory, gamma).cumprod() / gamma
+            behavior_policy_value = (
+                discount[np.newaxis, :] * self.behavior_policy_reward
+            ).sum(
+                axis=1
+            ).mean() + 1e-10  # to avoid zero division
+
         plt.style.use("ggplot")
         color = plt.rcParams["axes.prop_cycle"].by_key()["color"]
 
@@ -1641,9 +1647,9 @@ class OffPolicyEvaluation:
                     ]
 
                 if is_relative:
-                    mean = mean / self.behavior_policy_value
-                    lower = lower / self.behavior_policy_value
-                    upper = upper / self.behavior_policy_value
+                    mean = mean / behavior_policy_value
+                    lower = lower / behavior_policy_value
+                    upper = upper / behavior_policy_value
 
                 ax.bar(
                     np.arange(n_estimators),
@@ -1658,14 +1664,12 @@ class OffPolicyEvaluation:
                 ]
                 if on_policy_interval is not None:
                     if is_relative:
-                        ax.axhline(
-                            on_policy_interval["mean"] / self.behavior_policy_value
-                        )
+                        ax.axhline(on_policy_interval["mean"] / behavior_policy_value)
                         ax.axhspan(
                             ymin=on_policy_interval[f"{100 * (1. - alpha)}% CI (lower)"]
-                            / self.behavior_policy_value,
+                            / behavior_policy_value,
                             ymax=on_policy_interval[f"{100 * (1. - alpha)}% CI (upper)"]
-                            / self.behavior_policy_value,
+                            / behavior_policy_value,
                             alpha=0.3,
                         )
 
@@ -1726,9 +1730,9 @@ class OffPolicyEvaluation:
                     ]
 
                 if is_relative:
-                    mean = mean / self.behavior_policy_value
-                    lower = lower / self.behavior_policy_value
-                    upper = upper / self.behavior_policy_value
+                    mean = mean / behavior_policy_value
+                    lower = lower / behavior_policy_value
+                    upper = upper / behavior_policy_value
 
                 ax.bar(
                     np.arange(n_policies),
@@ -1768,9 +1772,9 @@ class OffPolicyEvaluation:
                     ]
 
                 if is_relative:
-                    mean = mean / self.behavior_policy_value
-                    lower = lower / self.behavior_policy_value
-                    upper = upper / self.behavior_policy_value
+                    mean = mean / behavior_policy_value
+                    lower = lower / behavior_policy_value
+                    upper = upper / behavior_policy_value
 
                 ax.bar(
                     np.arange(n_policies),
@@ -2796,12 +2800,9 @@ class CumulativeDistributionOffPolicyEvaluation:
                 behavior_policy_name=behavior_policy_name, dataset_id=dataset_id
             )
 
-        self.behavior_policy_value = (
-            self.logged_dataset["reward"]
-            .reshape((-1, self.step_per_trajectory))
-            .sum(axis=1)
-            .mean()
-        ) + 1e-10  # to avoid devision by zero
+        self.behavior_policy_reward = self.logged_dataset["reward"].reshape(
+            (-1, self.step_per_trajectory)
+        )
 
         if self.action_type == "discrete":
             self.input_dict_ = {
@@ -4630,6 +4631,15 @@ class CumulativeDistributionOffPolicyEvaluation:
             dataset_id=dataset_id,
         )
 
+        if is_relative:
+            gamma = input_dict["gamma"]
+            discount = np.full(self.step_per_trajectory, gamma).cumprod() / gamma
+            behavior_policy_value = (
+                discount[np.newaxis, :] * self.behavior_policy_reward
+            ).sum(
+                axis=1
+            ).mean() + 1e-10  # to avoid zero division
+
         plt.style.use("ggplot")
         color = plt.rcParams["axes.prop_cycle"].by_key()["color"]
         n_colors = len(color)
@@ -4666,13 +4676,13 @@ class CumulativeDistributionOffPolicyEvaluation:
 
                 if is_relative:
                     if on_policy_mean is not None:
-                        on_policy_mean = on_policy_mean / self.behavior_policy_value
-                        on_policy_upper = on_policy_upper / self.behavior_policy_value
-                        on_policy_lower = on_policy_lower / self.behavior_policy_value
+                        on_policy_mean = on_policy_mean / behavior_policy_value
+                        on_policy_upper = on_policy_upper / behavior_policy_value
+                        on_policy_lower = on_policy_lower / behavior_policy_value
 
-                    mean = mean / self.behavior_policy_value
-                    upper = upper / self.behavior_policy_value
-                    lower = lower / self.behavior_policy_value
+                    mean = mean / behavior_policy_value
+                    upper = upper / behavior_policy_value
+                    lower = lower / behavior_policy_value
 
                 for j in range(n_estimators):
                     ax.errorbar(
@@ -4744,9 +4754,9 @@ class CumulativeDistributionOffPolicyEvaluation:
                 )
 
                 if is_relative:
-                    mean = mean / self.behavior_policy_value
-                    upper = upper / self.behavior_policy_value
-                    lower = lower / self.behavior_policy_value
+                    mean = mean / behavior_policy_value
+                    upper = upper / behavior_policy_value
+                    lower = lower / behavior_policy_value
 
                 for j in range(n_policies):
                     ax.errorbar(
@@ -4790,9 +4800,9 @@ class CumulativeDistributionOffPolicyEvaluation:
                 )
 
                 if is_relative:
-                    on_policy_mean = on_policy_mean / self.behavior_policy_value
-                    on_policy_upper = on_policy_upper / self.behavior_policy_value
-                    on_policy_lower = on_policy_lower / self.behavior_policy_value
+                    on_policy_mean = on_policy_mean / behavior_policy_value
+                    on_policy_upper = on_policy_upper / behavior_policy_value
+                    on_policy_lower = on_policy_lower / behavior_policy_value
 
                 for j in range(n_policies):
                     ax.errorbar(
