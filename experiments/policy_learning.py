@@ -16,6 +16,7 @@ from d3rlpy.algos import SAC
 from d3rlpy.algos import DoubleDQN as DDQN
 from d3rlpy.algos import CQL
 from d3rlpy.algos import IQL
+from d3rlpy.algos import BCQ
 from d3rlpy.algos import DiscreteCQL
 from d3rlpy.algos import DiscreteBCQ
 from d3rlpy.online.explorers import LinearDecayEpsilonGreedy, ConstantEpsilonGreedy
@@ -66,6 +67,7 @@ def train_behavior_policy(
     base_model_config: DictConfig,
     log_dir: str,
 ):
+    print('behavior_policy', env.spec.max_episode_steps)
     env_ = OldGymAPIWrapper(env)
     action_type = "continuous" if isinstance(env.action_space, Box) else "discrete"
     if action_type == "continuous":
@@ -156,8 +158,6 @@ def train_behavior_policy(
     if action_type == "continuous":
         behavior_policy = GaussianHead(
             model,
-            minimum=env.action_space.low,
-            maximum=env.action_space.high,
             sigma=np.full((action_dim,), behavior_sigma),
             name=f"sac_gauss_{behavior_sigma}",
             random_state=base_random_state,
@@ -211,6 +211,7 @@ def obtain_train_logged_dataset(
         with open(path_train_logged_dataset, "wb") as f:
             pickle.dump(train_logged_dataset, f)
 
+    print('train,' ,env.spec.max_episode_steps)
     return train_logged_dataset
 
 
@@ -282,6 +283,33 @@ def train_candidate_policies(
                     maximum=env.action_space.high,  # maximum value that policy can take
                 ),
             )
+            # bcq_b1 = BCQ(
+            #     actor_encoder_factory=VectorEncoderFactory(hidden_units=[30, 30]),
+            #     critic_encoder_factory=VectorEncoderFactory(hidden_units=[30, 30]),
+            #     use_gpu=(device == "cuda:0"),
+            #     action_scaler=MinMaxActionScaler(
+            #         minimum=env.action_space.low,  # minimum value that policy can take
+            #         maximum=env.action_space.high,  # maximum value that policy can take
+            #     ),
+            # )
+            # bcq_b2 = BCQ(
+            #     actor_encoder_factory=VectorEncoderFactory(hidden_units=[100]),
+            #     critic_encoder_factory=VectorEncoderFactory(hidden_units=[100]),
+            #     use_gpu=(device == "cuda:0"),
+            #     action_scaler=MinMaxActionScaler(
+            #         minimum=env.action_space.low,  # minimum value that policy can take
+            #         maximum=env.action_space.high,  # maximum value that policy can take
+            #     ),
+            # )
+            # bcq_b3 = BCQ(
+            #     actor_encoder_factory=VectorEncoderFactory(hidden_units=[50, 10]),
+            #     critic_encoder_factory=VectorEncoderFactory(hidden_units=[50, 10]),
+            #     use_gpu=(device == "cuda:0"),
+            #     action_scaler=MinMaxActionScaler(
+            #         minimum=env.action_space.low,  # minimum value that policy can take
+            #         maximum=env.action_space.high,  # maximum value that policy can take
+            #     ),
+            # )
             iql_b1 = IQL(
                 actor_encoder_factory=VectorEncoderFactory(hidden_units=[30, 30]),
                 critic_encoder_factory=VectorEncoderFactory(hidden_units=[30, 30]),
@@ -309,6 +337,7 @@ def train_candidate_policies(
                     maximum=env.action_space.high,  # maximum value that policy can take
                 ),
             )
+            # algorithms = [cql_b1, cql_b2, cql_b3, bcq_b1, bcq_b2, bcq_b3]
             algorithms = [cql_b1, cql_b2, cql_b3, iql_b1, iql_b2, iql_b3]
 
         else:
@@ -368,6 +397,7 @@ def train_candidate_policies(
             pickle.dump(base_policies, f)
 
     if action_type == "continuous":
+        # algorithms_name = ["cql_b1", "cql_b2", "cql_b3", "bcql_b1", "bcq_b2", "bcq_b3"]
         algorithms_name = ["cql_b1", "cql_b2", "cql_b3", "iql_b1", "iql_b2", "iql_b3"]
 
         policy_wrappers = {}
@@ -376,8 +406,8 @@ def train_candidate_policies(
                 GaussianHead,
                 {
                     "sigma": np.full((action_dim,), sigma),
-                    "minimum": env.action_space.low,
-                    "maximum": env.action_space.high,
+                    # "minimum": env.action_space.low,
+                    # "maximum": env.action_space.high,
                 },
             )
 
@@ -415,11 +445,15 @@ def process(
     base_model_config: DictConfig,
     log_dir: str,
 ):
-    if env_name == "Acrobot":
-        env = gym.make(env_name + "-v1")
-    else:
-        env = gym.make(env_name + "-v0")
-
+    # if env_name == "Acrobot":
+    #     env = gym.make(env_name + "-v1")
+    # elif env_name == "Hopper":
+    #     env = gym.make(env_name + "-v3")
+    # elif env_name in ["Reacher", "InvertedPendulum", "HalfCheetah"]:
+    #     env = gym.make(env_name + "-v4")
+    # else:
+    #     env = gym.make(env_name + "-v0")
+    env = gym.make(env_name)
     behavior_policy = train_behavior_policy(
         env_name=env_name,
         env=env,
@@ -461,18 +495,74 @@ def process(
         policy_names=[behavior_policy.name]
         + [candidate_policy.name for candidate_policy in candidate_policies],
         random_state=base_random_state,
+        step_per_trajectory=env.spec.max_episode_steps,
         fig_dir=path_,
+        # fig_name=f'{env_name}_30_on_policy_policy_value.png'
+        fig_name=f'{env_name}_{env.spec.max_episode_steps}_on_policy_policy_value.png'
     )
+
+    # path_ = Path(log_dir + f"/results/on_policy")
+    # path_.mkdir(exist_ok=True, parents=True)
+    # visualize_on_policy_policy_value(
+    #     env=env,
+    #     policies=[behavior_policy],
+    #     policy_names=[behavior_policy.name],
+    #     random_state=base_random_state,
+    #     fig_dir=path_,
+    #     fig_name=f'sigma0.5_{env_name}_{env.spec.max_episode_steps}_behavior_policy.png'
+    # )
+
+
+def register_small_envs(
+    max_episode_steps: int,
+):
+    # continuous control
+    gym.envs.register(
+        id="HalfCheetah-v4",
+        entry_point="gym.envs.mujoco:HalfCheetahEnv",
+        max_episode_steps=max_episode_steps,
+    )
+    gym.envs.register(
+        id="Hopper-v4",
+        entry_point="gym.envs.mujoco:HopperEnv",
+        max_episode_steps=max_episode_steps,
+    )
+    gym.envs.register(
+        id="InvertedPendulum-v4",
+        entry_point="gym.envs.mujoco:InvertedPendulumEnv",
+        max_episode_steps=max_episode_steps,
+    )
+    gym.envs.register(
+        id="Reacher-v4",
+        entry_point="gym.envs.mujoco:ReacherEnv",
+        max_episode_steps=max_episode_steps,
+    )
+    # gym.envs.register(
+    #     id="Swimmer",
+    #     entry_point="gym.envs.mujoco:SwimmerEnv",
+    #     max_episode_steps=max_episode_steps,
+    # )
+    # # discrete control
+    # gym.envs.register(
+    #     id="CartPole",
+    #     entry_point="gym.envs.classic_control:CartPoleEnv",
+    #     max_episode_steps=max_episode_steps,
+    # )
+    # gym.envs.register(
+    #     id="Pendulum",
+    #     entry_point="gym.envs.classic_control:PendulumEnv",
+    #     max_episode_steps=max_episode_steps,
+    # )
 
 
 def assert_configuration(cfg: DictConfig):
     env_name = cfg.setting.env_name
     assert env_name in [
-        "HalfCheetah",
-        "Hopper",
-        "InvertedPendulum",
-        "Reacher",
-        "Swimmer",
+        "HalfCheetah-v4",
+        "Hopper-v4",
+        "InvertedPendulum-v4",
+        "Reacher-v4",
+        "Swimmer-v4",
         "CartPole",
         "Pendulum",
     ]
@@ -514,6 +604,7 @@ def main(cfg: DictConfig):
         "base_model_config": cfg.base_model_config,
         "log_dir": "logs/",
     }
+    register_small_envs(cfg.setting.max_episode_steps)
     process(**conf)
 
 

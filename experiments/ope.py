@@ -157,7 +157,7 @@ def obtain_test_logged_dataset(
             n_trajectories=n_trajectories,
             obtain_info=False,
             record_unclipped_action=True,
-            path=log_dir + f"/logged_dataset/multiple",
+            path=log_dir + f"/logged_dataset/multiple/{env_name}",
             random_state=base_random_state + 1,
         )
         with open(path_test_logged_dataset, "wb") as f:
@@ -258,12 +258,12 @@ def off_policy_evaluation(
     )
 
     if path_input_dict.exists():
-        pass
-        # with open(path_input_dict, "rb") as f:
-        #     input_dict = pickle.load(f)
+        # pass
+        with open(path_input_dict, "rb") as f:
+            input_dict = pickle.load(f)
 
-    # else:
-    if True:
+    else:
+    # if True:
         if action_type == "continuous":
             prep = CreateOPEInput(
                 env=env,
@@ -293,7 +293,7 @@ def off_policy_evaluation(
                     minimum=env.action_space.low,  # minimum value that policy can take
                     maximum=env.action_space.high,  # maximum value that policy can take
                 ),
-                sigma=base_model_config.contiuous_ope.sigma,
+                # sigma=base_model_config.contiuous_ope.sigma,
                 device=device,
             )
 
@@ -331,7 +331,7 @@ def off_policy_evaluation(
             require_value_prediction=True,
             require_weight_prediction=True,
             n_trajectories_on_policy_evaluation=100,
-            path=log_dir + f"/input_dict/multiple",
+            path=log_dir + f"/input_dict/multiple/{env_name}",
             random_state=base_random_state,
         )
         with open(path_input_dict, "wb") as f:
@@ -346,6 +346,18 @@ def off_policy_evaluation(
         logged_dataset=test_logged_dataset,
         ope_estimators=ope_estimators,
     )
+
+    
+    # estimated_policy_value_dict = ope.estimate_policy_value(
+    #     input_dict,
+    #     compared_estimators=ope_estimators,
+    #     behavior_policy_name=behavior_policy_name,
+    #     dataset_id=0,
+    # )
+    # print(estimated_policy_value_dict)
+
+
+
     ops = OffPolicySelection(ope=ope)
 
     path_ = Path(log_dir + f"/results/raw")
@@ -462,51 +474,51 @@ def register_small_envs(
 ):
     # continuous control
     gym.envs.register(
-        id="HalfCheetah",
-        entry_point="gym.envs.mojoco:HalfCheetahEnv",
+        id="HalfCheetah-v4",
+        entry_point="gym.envs.mujoco:HalfCheetahEnv",
         max_episode_steps=max_episode_steps,
     )
     gym.envs.register(
-        id="Hopper",
-        entry_point="gym.envs.mojoco:HopperEnv",
+        id="Hopper-v4",
+        entry_point="gym.envs.mujoco:HopperEnv",
         max_episode_steps=max_episode_steps,
     )
     gym.envs.register(
-        id="InvertedPendulum",
-        entry_point="gym.envs.mojoco:InvertedPendulumEnv",
+        id="InvertedPendulum-v4",
+        entry_point="gym.envs.mujoco:InvertedPendulumEnv",
         max_episode_steps=max_episode_steps,
     )
     gym.envs.register(
-        id="Reacher",
-        entry_point="gym.envs.mojoco:ReacherEnv",
+        id="Reacher-v4",
+        entry_point="gym.envs.mujoco:ReacherEnv",
         max_episode_steps=max_episode_steps,
     )
     gym.envs.register(
-        id="Swimmer",
+        id="Swimmer-v4",
         entry_point="gym.envs.mujoco:SwimmerEnv",
         max_episode_steps=max_episode_steps,
     )
-    # discrete control
-    gym.envs.register(
-        id="CartPole",
-        entry_point="gym.envs.classic_control:CartPoleEnv",
-        max_episode_steps=max_episode_steps,
-    )
-    gym.envs.register(
-        id="Pendulum",
-        entry_point="gym.envs.classic_control:PendulumEnv",
-        max_episode_steps=max_episode_steps,
-    )
+    # # discrete control
+    # gym.envs.register(
+    #     id="CartPole",
+    #     entry_point="gym.envs.classic_control:CartPoleEnv",
+    #     max_episode_steps=max_episode_steps,
+    # )
+    # gym.envs.register(
+    #     id="Pendulum",
+    #     entry_point="gym.envs.classic_control:PendulumEnv",
+    #     max_episode_steps=max_episode_steps,
+    # )
 
 
 def assert_configuration(cfg: DictConfig):
     env_name = cfg.setting.env_name
     assert env_name in [
-        "HalfCheetah",
-        "Hopper",
-        "InvertedPendulum",
-        "Reacher",
-        "Swimmer",
+        "HalfCheetah-v4",
+        "Hopper-v4",
+        "InvertedPendulum-v4",
+        "Reacher-v4",
+        "Swimmer-v4",
         "CartPole",
         "Acrobot",
     ]
