@@ -276,16 +276,15 @@ class OffPolicySelection:
                 "cumulative_distribution_ope must be the instance of CumulativeDistributionOffPolicyEvaluation"
             )
 
-        step_per_trajectory = self.ope.logged_dataset["step_per_trajectory"]
+        self.step_per_trajectory = self.ope.logged_dataset["step_per_trajectory"]
         check_scalar(
-            step_per_trajectory,
+            self.step_per_trajectory,
             name="ope.logged_dataset['step_per_trajectory']",
             target_type=int,
             min_val=1,
         )
 
         self.behavior_policy_reward = {}
-        self.behavior_policy_value = {}
         if self.ope.use_multiple_logged_dataset:
             for (
                 behavior_policy
@@ -293,26 +292,14 @@ class OffPolicySelection:
                 logged_dataset_ = self.ope.multiple_logged_dataset.get(
                     behavior_policy_name=behavior_policy, dataset_id=0
                 )
-                behavior_policy_reward_ = logged_dataset_["reward"].reshape(
-                    (-1, step_per_trajectory)
-                )
-                self.behavior_policy_reward[
-                    behavior_policy
-                ] = behavior_policy_reward_.sum(axis=1)
-                self.behavior_policy_value[
-                    behavior_policy
-                ] = self.behavior_policy_reward[behavior_policy].mean()
+                self.behavior_policy_reward[behavior_policy] = logged_dataset_[
+                    "reward"
+                ].reshape((-1, self.step_per_trajectory))
         else:
             behavior_policy = self.ope.logged_dataset["behavior_policy"]
-            behavior_policy_reward = self.ope.logged_dataset["reward"].reshape(
-                (-1, step_per_trajectory)
-            )
-            self.behavior_policy_reward[behavior_policy] = behavior_policy_reward.sum(
-                axis=1
-            )
-            self.behavior_policy_value[behavior_policy] = self.behavior_policy_reward[
-                behavior_policy
-            ].mean()
+            self.behavior_policy_reward[behavior_policy] = self.ope.logged_dataset[
+                "reward"
+            ].reshape((-1, self.step_per_trajectory))
 
         self._estimate_confidence_interval = {
             "bootstrap": estimate_confidence_interval_by_bootstrap,
@@ -367,6 +354,7 @@ class OffPolicySelection:
         metrics: Optional[List[str]] = None,
         safety_threshold: Optional[float] = None,
         relative_safety_criteria: Optional[float] = None,
+        gamma: Optional[float] = None,
     ):
         if isinstance(input_dict, MultipleInputDict):
             max_topk_ = 100
@@ -424,17 +412,36 @@ class OffPolicySelection:
                     min_val=0.0,
                 )
 
-                if behavior_policy_name is not None:
-                    safety_threshold = (
-                        relative_safety_criteria
-                        * self.behavior_policy_value[behavior_policy_name]
-                    )
+                discount = np.full(self.step_per_trajectory, gamma).cumprod() / gamma
 
-                elif len(self.behavior_policy_value) == 1:
-                    safety_threshold = (
-                        relative_safety_criteria
-                        * list(self.behavior_policy_value.values())[0]
-                    )
+                if behavior_policy_name is not None:
+                    behavior_policy_reward = self.behavior_policy_reward[
+                        behavior_policy_name
+                    ]
+                    behavior_policy_value = (
+                        discount[np.newaxis, :] * behavior_policy_reward
+                    ).sum(
+                        axis=1
+                    ).mean() + 1e-10  # to avoid zero division
+
+                    safety_threshold = relative_safety_criteria * behavior_policy_value
+                    safety_threshold = float(safety_threshold)
+
+                elif len(self.behavior_policy_reward) == 1:
+                    behavior_policy_reward = list(self.behavior_policy_reward.values())[
+                        0
+                    ]
+                    behavior_policy_value = (
+                        discount[np.newaxis, :] * behavior_policy_reward
+                    ).sum(
+                        axis=1
+                    ).mean() + 1e-10  # to avoid zero division
+
+                    safety_threshold = relative_safety_criteria * behavior_policy_value
+                    safety_threshold = float(safety_threshold)
+
+                else:
+                    safety_threshold = 0.0
 
             else:
                 safety_threshold = 0.0
@@ -573,10 +580,16 @@ class OffPolicySelection:
         ranking_index = np.argsort(policy_value)[::-1]
         ranking = [candidate_policy_names[ranking_index[i]] for i in range(n_policies)]
 
+        gamma = input_dict[eval_policy]["gamma"]
+        discount = np.full(self.step_per_trajectory, gamma).cumprod() / gamma
+
+        behavior_policy_reward = self.behavior_policy_reward[behavior_policy]
+        behavior_policy_value = (discount[np.newaxis, :] * behavior_policy_reward).sum(
+            axis=1
+        ).mean() + 1e-10  # to avoid zero division
+
         policy_value = np.sort(policy_value)[::-1]
-        relative_policy_value = (
-            policy_value / self.behavior_policy_value[behavior_policy]
-        )
+        relative_policy_value = policy_value / behavior_policy_value
 
         if return_variance:
             variance = np.zeros(n_policies)
@@ -786,15 +799,20 @@ class OffPolicySelection:
         """
         behavior_policy_name = list(input_dict.values())[0]["behavior_policy"]
         dataset_id = list(input_dict.values())[0]["dataset_id"]
+        gamma = list(input_dict.values())[0]["gamma"]
+
+        discount = np.full(self.step_per_trajectory, gamma).cumprod() / gamma
+        behavior_policy_reward = self.behavior_policy_reward[behavior_policy_name]
+
+        behavior_policy_value = (discount[np.newaxis, :] * behavior_policy_reward).sum(
+            axis=1
+        ).mean() + 1e-10  # to avoid zero division
 
         if safety_threshold is None:
             if relative_safety_criteria is None:
                 safety_threshold = 0.0
             else:
-                safety_threshold = (
-                    relative_safety_criteria
-                    * self.behavior_policy_value[behavior_policy_name]
-                )
+                safety_threshold = relative_safety_criteria * behavior_policy_value
 
         estimated_policy_value_dict = self.ope.estimate_policy_value(
             input_dict,
@@ -831,8 +849,7 @@ class OffPolicySelection:
             ]
             estimated_policy_value = np.sort(estimated_policy_value_)[::-1]
             estimated_relative_policy_value = (
-                estimated_policy_value
-                / self.behavior_policy_value[behavior_policy_name]
+                estimated_policy_value / behavior_policy_value
             )
 
             if return_metrics:
@@ -875,8 +892,7 @@ class OffPolicySelection:
                     estimated_ranking_index_
                 ]
                 ops_dict[estimator]["true_relative_policy_value"] = (
-                    true_policy_value_[estimated_ranking_index_]
-                    / self.behavior_policy_value[behavior_policy_name]
+                    true_policy_value_[estimated_ranking_index_] / behavior_policy_value
                 )
             if return_metrics:
                 ops_dict[estimator]["mean_squared_error"] = mse
@@ -1093,15 +1109,20 @@ class OffPolicySelection:
         """
         behavior_policy_name = list(input_dict.values())[0]["behavior_policy"]
         dataset_id = list(input_dict.values())[0]["dataset_id"]
+        gamma = list(input_dict.values())[0]["gamma"]
+
+        discount = np.full(self.step_per_trajectory, gamma).cumprod() / gamma
+        behavior_policy_reward = self.behavior_policy_reward[behavior_policy_name]
+
+        behavior_policy_value = (discount[np.newaxis, :] * behavior_policy_reward).sum(
+            axis=1
+        ).mean() + 1e-10  # to avoid zero division
 
         if safety_threshold is None:
             if relative_safety_criteria is None:
                 safety_threshold = 0.0
             else:
-                safety_threshold = (
-                    relative_safety_criteria
-                    * self.behavior_policy_value[behavior_policy_name]
-                )
+                safety_threshold = relative_safety_criteria * behavior_policy_value
 
         estimated_policy_value_dict = self.cumulative_distribution_ope.estimate_mean(
             input_dict,
@@ -1138,8 +1159,7 @@ class OffPolicySelection:
             ]
             estimated_policy_value = np.sort(estimated_policy_value_)[::-1]
             estimated_relative_policy_value = (
-                estimated_policy_value
-                / self.behavior_policy_value[behavior_policy_name]
+                estimated_policy_value / behavior_policy_value
             )
 
             if return_metrics:
@@ -1184,8 +1204,7 @@ class OffPolicySelection:
                     estimated_ranking_index_
                 ]
                 ops_dict[estimator]["true_relative_policy_value"] = (
-                    true_policy_value_[estimated_ranking_index_]
-                    / self.behavior_policy_value[behavior_policy_name]
+                    true_policy_value_[estimated_ranking_index_] / behavior_policy_value
                 )
             if return_metrics:
                 ops_dict[estimator]["mean_squared_error"] = mse
@@ -1421,15 +1440,20 @@ class OffPolicySelection:
 
         behavior_policy_name = list(input_dict.values())[0]["behavior_policy"]
         dataset_id = list(input_dict.values())[0]["dataset_id"]
+        gamma = list(input_dict.values())[0]["gamma"]
+
+        discount = np.full(self.step_per_trajectory, gamma).cumprod() / gamma
+        behavior_policy_reward = self.behavior_policy_reward[behavior_policy_name]
+
+        behavior_policy_value = (discount[np.newaxis, :] * behavior_policy_reward).sum(
+            axis=1
+        ).mean() + 1e-10  # to avoid zero division
 
         if safety_threshold is None:
             if relative_safety_criteria is None:
                 safety_threshold = 0.0
             else:
-                safety_threshold = (
-                    relative_safety_criteria
-                    * self.behavior_policy_value[behavior_policy_name]
-                )
+                safety_threshold = relative_safety_criteria * behavior_policy_value
 
         candidate_policy_names = (
             true_ranking if return_metrics else list(input_dict.keys())
@@ -1473,8 +1497,7 @@ class OffPolicySelection:
                     estimated_policy_value_lower_bound_
                 )[::-1]
                 estimated_relative_policy_value_lower_bound = (
-                    estimated_policy_value_lower_bound
-                    / self.behavior_policy_value[behavior_policy_name]
+                    estimated_policy_value_lower_bound / behavior_policy_value
                 )
 
                 if return_metrics:
@@ -1521,7 +1544,7 @@ class OffPolicySelection:
                     ]
                     ops_dict[ci][estimator]["true_relative_policy_value"] = (
                         true_policy_value_[estimated_ranking_index_]
-                        / self.behavior_policy_value[behavior_policy_name]
+                        / behavior_policy_value
                     )
                 if return_metrics:
                     ops_dict[ci][estimator]["mean_squared_error"] = None
@@ -5454,6 +5477,62 @@ class OffPolicySelection:
 
                 ranking_dict[estimator] = policy_performance
 
+        if isinstance(input_dict, MultipleInputDict):
+            input_dict_ = input_dict.get(
+                behavior_policy_name=input_dict.behavior_policy_names[0], dataset_id=0
+            )
+            gamma = list(input_dict_.values())[0]["gamma"]
+        else:
+            gamma = list(input_dict.values())[0]["gamma"]
+
+        discount = np.full(self.step_per_trajectory, gamma).cumprod() / gamma
+
+        behavior_policy_cum_reward = {}
+        behavior_policy_value = {}
+        if isinstance(input_dict, MultipleInputDict):
+            if behavior_policy_name is None:
+                for behavior_policy in input_dict.behavior_policy_names:
+                    behavior_policy_reward = self.behavior_policy_reward[
+                        behavior_policy
+                    ]
+                    behavior_policy_cum_reward[behavior_policy] = (
+                        discount[np.newaxis, :] * behavior_policy_reward
+                    ).sum(
+                        axis=1
+                    ) + 1e-10  # to avoid zero division
+                    behavior_policy_value[behavior_policy] = (
+                        discount[np.newaxis, :] * behavior_policy_reward
+                    ).sum(
+                        axis=1
+                    ).mean() + 1e-10  # to avoid zero division
+            else:
+                behavior_policy_reward = self.behavior_policy_reward[
+                    behavior_policy_name
+                ]
+                behavior_policy_cum_reward[behavior_policy_name] = (
+                    discount[np.newaxis, :] * behavior_policy_reward
+                ).sum(
+                    axis=1
+                ) + 1e-10  # to avoid zero division
+                behavior_policy_value[behavior_policy_name] = (
+                    discount[np.newaxis, :] * behavior_policy_reward
+                ).sum(
+                    axis=1
+                ).mean() + 1e-10  # to avoid zero division
+        else:
+            behavior_policy = input_dict[list(input_dict.keys())[0]]["behavior_policy"]
+            behavior_policy_reward = self.behavior_policy_reward[behavior_policy]
+            behavior_policy_cum_reward[behavior_policy] = (
+                discount[np.newaxis, :] * behavior_policy_reward
+            ).sum(
+                axis=1
+            ) + 1e-10  # to avoid zero division
+            behavior_policy_value[behavior_policy] = (
+                discount[np.newaxis, :] * behavior_policy_reward
+            ).sum(
+                axis=1
+            ).mean() + 1e-10  # to avoid zero division
+
         metric_dict = defaultdict(dict)
         if isinstance(input_dict, MultipleInputDict):
             if behavior_policy_name is None and dataset_id is None:
@@ -5471,7 +5550,7 @@ class OffPolicySelection:
                                 for dataset_id_ in range(n_datasets[behavior_policy]):
                                     if i == 0:
                                         if true_dict_value_arg == "policy_value":
-                                            baseline[l] = self.behavior_policy_value[
+                                            baseline[l] = behavior_policy_value[
                                                 behavior_policy
                                             ]
                                         elif (
@@ -5479,7 +5558,7 @@ class OffPolicySelection:
                                             == "conditional_value_at_risk"
                                         ):
                                             baseline_reward = (
-                                                self.behavior_policy_reward[
+                                                behavior_policy_cum_reward[
                                                     behavior_policy
                                                 ]
                                             )
@@ -5488,7 +5567,7 @@ class OffPolicySelection:
                                             ].mean()
                                         elif true_dict_value_arg == "lower_quartile":
                                             baseline_reward = (
-                                                self.behavior_policy_reward[
+                                                behavior_policy_cum_reward[
                                                     behavior_policy
                                                 ]
                                             )
@@ -5542,21 +5621,21 @@ class OffPolicySelection:
                             ):
                                 if i == 0:
                                     if true_dict_value_arg == "policy_value":
-                                        baseline[l] = self.behavior_policy_value[
+                                        baseline[l] = behavior_policy_value[
                                             behavior_policy
                                         ]
                                     elif (
                                         true_dict_value_arg
                                         == "conditional_value_at_risk"
                                     ):
-                                        baseline_reward = self.behavior_policy_reward[
+                                        baseline_reward = behavior_policy_cum_reward[
                                             behavior_policy
                                         ]
                                         baseline[l] = np.sort(baseline_reward)[
                                             : int(len(baseline_reward) * ope_alpha)
                                         ].mean()
                                     elif true_dict_value_arg == "lower_quartile":
-                                        baseline_reward = self.behavior_policy_reward[
+                                        baseline_reward = behavior_policy_cum_reward[
                                             behavior_policy
                                         ]
                                         baseline[l] = np.quantile(
@@ -5596,14 +5675,14 @@ class OffPolicySelection:
             elif behavior_policy_name is not None and dataset_id is None:
                 total_n_datasets = input_dict.n_datasets[behavior_policy_name]
                 if true_dict_value_arg == "policy_value":
-                    baseline = self.behavior_policy_value[behavior_policy_name]
+                    baseline = behavior_policy_value[behavior_policy_name]
                 elif true_dict_value_arg == "conditional_value_at_risk":
-                    baseline_reward = self.behavior_policy_reward[behavior_policy_name]
+                    baseline_reward = behavior_policy_cum_reward[behavior_policy_name]
                     baseline = np.sort(baseline_reward)[
                         : int(len(baseline_reward) * ope_alpha)
                     ].mean()
                 elif true_dict_value_arg == "lower_quartile":
-                    baseline_reward = self.behavior_policy_reward[behavior_policy_name]
+                    baseline_reward = behavior_policy_cum_reward[behavior_policy_name]
                     baseline = np.quantile(
                         baseline_reward,
                         q=ope_alpha,
@@ -5642,14 +5721,14 @@ class OffPolicySelection:
             else:
                 total_n_datasets = 1
                 if true_dict_value_arg == "policy_value":
-                    baseline = self.behavior_policy_value[behavior_policy_name]
+                    baseline = behavior_policy_value[behavior_policy_name]
                 elif true_dict_value_arg == "conditional_value_at_risk":
-                    baseline_reward = self.behavior_policy_reward[behavior_policy_name]
+                    baseline_reward = behavior_policy_cum_reward[behavior_policy_name]
                     baseline = np.sort(baseline_reward)[
                         : int(len(baseline_reward) * ope_alpha)
                     ].mean()
                 elif true_dict_value_arg == "lower_quartile":
-                    baseline_reward = self.behavior_policy_reward[behavior_policy_name]
+                    baseline_reward = behavior_policy_cum_reward[behavior_policy_name]
                     baseline = np.quantile(
                         baseline_reward,
                         q=ope_alpha,
@@ -5687,14 +5766,14 @@ class OffPolicySelection:
         else:
             behavior_policy = input_dict[list(input_dict.keys())[0]]["behavior_policy"]
             if true_dict_value_arg == "policy_value":
-                baseline = self.behavior_policy_value[behavior_policy]
+                baseline = behavior_policy_value[behavior_policy]
             elif true_dict_value_arg == "conditional_value_at_risk":
-                baseline_reward = self.behavior_policy_reward[behavior_policy]
+                baseline_reward = behavior_policy_cum_reward[behavior_policy]
                 baseline = np.sort(baseline_reward)[
                     : int(len(baseline_reward) * ope_alpha)
                 ].mean()
             elif true_dict_value_arg == "lower_quartile":
-                baseline_reward = self.behavior_policy_reward[behavior_policy]
+                baseline_reward = behavior_policy_cum_reward[behavior_policy]
                 baseline = np.quantile(
                     baseline_reward,
                     q=ope_alpha,
@@ -5861,6 +5940,14 @@ class OffPolicySelection:
                 Risk-return tradeoff metrics defined as follows: :math:`S(\\hat{V}) := (\\mathrm{Best@k} - V(\\pi_0)) / \\mathrm{Std@k}`.
 
         """
+        if isinstance(input_dict, MultipleInputDict):
+            input_dict_ = input_dict.get(
+                behavior_policy_name=input_dict.behavior_policy_names[0], dataset_id=0
+            )
+            gamma = list(input_dict_.values())[0]["gamma"]
+        else:
+            gamma = list(input_dict.values())[0]["gamma"]
+
         compared_estimators = self._check_compared_estimators(
             compared_estimators, ope_type="standard_ope"
         )
@@ -5871,6 +5958,7 @@ class OffPolicySelection:
             max_topk=max_topk,
             safety_threshold=safety_threshold,
             relative_safety_criteria=relative_safety_criteria,
+            gamma=gamma,
         )
 
         true_dict = self.obtain_true_selection_result(
@@ -6009,6 +6097,14 @@ class OffPolicySelection:
                 Risk-return tradeoff metrics defined as follows: :math:`S(\\hat{V}) := (\\mathrm{Best@k} - V(\\pi_0)) / \\mathrm{Std@k}`.
 
         """
+        if isinstance(input_dict, MultipleInputDict):
+            input_dict_ = input_dict.get(
+                behavior_policy_name=input_dict.behavior_policy_names[0], dataset_id=0
+            )
+            gamma = list(input_dict_.values())[0]["gamma"]
+        else:
+            gamma = list(input_dict.values())[0]["gamma"]
+
         compared_estimators = self._check_compared_estimators(
             compared_estimators, ope_type="cumulative_distribution_ope"
         )
@@ -6019,6 +6115,7 @@ class OffPolicySelection:
             max_topk=max_topk,
             safety_threshold=safety_threshold,
             relative_safety_criteria=relative_safety_criteria,
+            gamma=gamma,
         )
 
         true_dict = self.obtain_true_selection_result(
@@ -6173,6 +6270,14 @@ class OffPolicySelection:
                 Risk-return tradeoff metrics defined as follows: :math:`S(\\hat{V}) := (\\mathrm{Best@k} - V(\\pi_0)) / \\mathrm{Std@k}`.
 
         """
+        if isinstance(input_dict, MultipleInputDict):
+            input_dict_ = input_dict.get(
+                behavior_policy_name=input_dict.behavior_policy_names[0], dataset_id=0
+            )
+            gamma = list(input_dict_.values())[0]["gamma"]
+        else:
+            gamma = list(input_dict.values())[0]["gamma"]
+
         compared_estimators = self._check_compared_estimators(
             compared_estimators, ope_type="standard_ope"
         )
@@ -6183,6 +6288,7 @@ class OffPolicySelection:
             max_topk=max_topk,
             safety_threshold=safety_threshold,
             relative_safety_criteria=relative_safety_criteria,
+            gamma=gamma,
         )
         if return_safety_violation_rate:
             metrics = ["k-th", "best", "worst", "mean", "std", "safety_violation_rate"]
@@ -6200,6 +6306,54 @@ class OffPolicySelection:
             n_bootstrap_samples=n_bootstrap_samples,
             random_state=random_state,
         )
+
+        discount = np.full(self.step_per_trajectory, gamma).cumprod() / gamma
+
+        behavior_policy_cum_reward = {}
+        behavior_policy_value = {}
+        if isinstance(input_dict, MultipleInputDict):
+            if behavior_policy_name is None:
+                for behavior_policy in input_dict.behavior_policy_names:
+                    behavior_policy_reward = self.behavior_policy_reward[
+                        behavior_policy
+                    ]
+                    behavior_policy_cum_reward[behavior_policy] = (
+                        discount[np.newaxis, :] * behavior_policy_reward
+                    ).sum(
+                        axis=1
+                    ) + 1e-10  # to avoid zero division
+                    behavior_policy_value[behavior_policy] = (
+                        discount[np.newaxis, :] * behavior_policy_reward
+                    ).sum(
+                        axis=1
+                    ).mean() + 1e-10  # to avoid zero division
+            else:
+                behavior_policy_reward = self.behavior_policy_reward[
+                    behavior_policy_name
+                ]
+                behavior_policy_cum_reward[behavior_policy_name] = (
+                    discount[np.newaxis, :] * behavior_policy_reward
+                ).sum(
+                    axis=1
+                ) + 1e-10  # to avoid zero division
+                behavior_policy_value[behavior_policy_name] = (
+                    discount[np.newaxis, :] * behavior_policy_reward
+                ).sum(
+                    axis=1
+                ).mean() + 1e-10  # to avoid zero division
+        else:
+            behavior_policy = input_dict[list(input_dict.keys())[0]]["behavior_policy"]
+            behavior_policy_reward = self.behavior_policy_reward[behavior_policy]
+            behavior_policy_cum_reward[behavior_policy] = (
+                discount[np.newaxis, :] * behavior_policy_reward
+            ).sum(
+                axis=1
+            ) + 1e-10  # to avoid zero division
+            behavior_policy_value[behavior_policy] = (
+                discount[np.newaxis, :] * behavior_policy_reward
+            ).sum(
+                axis=1
+            ).mean() + 1e-10  # to avoid zero division
 
         metric_dict = defaultdict(lambda: defaultdict(dict))
 
@@ -6221,7 +6375,7 @@ class OffPolicySelection:
                                         n_datasets[behavior_policy]
                                     ):
                                         if i == 0 and ci == cis[0]:
-                                            baseline[l] = self.behavior_policy_value[
+                                            baseline[l] = behavior_policy_value[
                                                 behavior_policy
                                             ]
 
@@ -6278,7 +6432,7 @@ class OffPolicySelection:
                                     input_dict.behavior_policy_names
                                 ):
                                     if i == 0 and ci == cis[0]:
-                                        baseline[l] = self.behavior_policy_value[
+                                        baseline[l] = behavior_policy_value[
                                             behavior_policy
                                         ]
 
@@ -6315,7 +6469,7 @@ class OffPolicySelection:
 
             elif behavior_policy_name is not None and dataset_id is None:
                 total_n_datasets = input_dict.n_datasets[behavior_policy_name]
-                baseline = self.behavior_policy_value[behavior_policy_name]
+                baseline = behavior_policy_value[behavior_policy_name]
 
                 for ci in cis:
                     for i, estimator in enumerate(compared_estimators):
@@ -6354,7 +6508,7 @@ class OffPolicySelection:
 
             else:
                 total_n_datasets = 1
-                baseline = self.behavior_policy_value[behavior_policy_name]
+                baseline = behavior_policy_value[behavior_policy_name]
 
                 for ci in cis:
                     for i, estimator in enumerate(compared_estimators):
@@ -6392,7 +6546,7 @@ class OffPolicySelection:
 
         else:
             behavior_policy = input_dict[list(input_dict.keys())[0]]["behavior_policy"]
-            baseline = self.behavior_policy_value[behavior_policy]
+            baseline = behavior_policy_value[behavior_policy]
 
             for ci in cis:
                 for i, estimator in enumerate(compared_estimators):
@@ -6560,6 +6714,14 @@ class OffPolicySelection:
                 Risk-return tradeoff metrics defined as follows: :math:`S(\\hat{V}) := (\\mathrm{Best@k} - V(\\pi_0)) / \\mathrm{Std@k}`.
 
         """
+        if isinstance(input_dict, MultipleInputDict):
+            input_dict_ = input_dict.get(
+                behavior_policy_name=input_dict.behavior_policy_names[0], dataset_id=0
+            )
+            gamma = list(input_dict_.values())[0]["gamma"]
+        else:
+            gamma = list(input_dict.values())[0]["gamma"]
+
         compared_estimators = self._check_compared_estimators(
             compared_estimators, ope_type="standard_ope"
         )
@@ -6569,6 +6731,7 @@ class OffPolicySelection:
             dataset_id=dataset_id,
             max_topk=max_topk,
             safety_threshold=safety_threshold,
+            gamma=gamma,
         )
 
         true_dict = self.obtain_true_selection_result(
@@ -6712,6 +6875,14 @@ class OffPolicySelection:
                 Risk-return tradeoff metrics defined as follows: :math:`S(\\hat{V}) := (\\mathrm{Best@k} - V(\\pi_0)) / \\mathrm{Std@k}`.
 
         """
+        if isinstance(input_dict, MultipleInputDict):
+            input_dict_ = input_dict.get(
+                behavior_policy_name=input_dict.behavior_policy_names[0], dataset_id=0
+            )
+            gamma = list(input_dict_.values())[0]["gamma"]
+        else:
+            gamma = list(input_dict.values())[0]["gamma"]
+
         compared_estimators = self._check_compared_estimators(
             compared_estimators, ope_type="cumulative_distribution_ope"
         )
@@ -6721,6 +6892,7 @@ class OffPolicySelection:
             dataset_id=dataset_id,
             max_topk=max_topk,
             safety_threshold=safety_threshold,
+            gamma=gamma,
         )
 
         true_dict = self.obtain_true_selection_result(
@@ -6865,6 +7037,14 @@ class OffPolicySelection:
                 Risk-return tradeoff metrics defined as follows: :math:`S(\\hat{V}) := (\\mathrm{Best@k} - V(\\pi_0)) / \\mathrm{Std@k}`.
 
         """
+        if isinstance(input_dict, MultipleInputDict):
+            input_dict_ = input_dict.get(
+                behavior_policy_name=input_dict.behavior_policy_names[0], dataset_id=0
+            )
+            gamma = list(input_dict_.values())[0]["gamma"]
+        else:
+            gamma = list(input_dict.values())[0]["gamma"]
+
         compared_estimators = self._check_compared_estimators(
             compared_estimators, ope_type="standard_ope"
         )
@@ -6874,6 +7054,7 @@ class OffPolicySelection:
             dataset_id=dataset_id,
             max_topk=max_topk,
             safety_threshold=safety_threshold,
+            gamma=gamma,
         )
 
         true_dict = self.obtain_true_selection_result(
@@ -7017,6 +7198,14 @@ class OffPolicySelection:
                 Risk-return tradeoff metrics defined as follows: :math:`S(\\hat{V}) := (\\mathrm{Best@k} - V(\\pi_0)) / \\mathrm{Std@k}`.
 
         """
+        if isinstance(input_dict, MultipleInputDict):
+            input_dict_ = input_dict.get(
+                behavior_policy_name=input_dict.behavior_policy_names[0], dataset_id=0
+            )
+            gamma = list(input_dict_.values())[0]["gamma"]
+        else:
+            gamma = list(input_dict.values())[0]["gamma"]
+
         compared_estimators = self._check_compared_estimators(
             compared_estimators, ope_type="cumulative_distribution_ope"
         )
@@ -7026,6 +7215,7 @@ class OffPolicySelection:
             dataset_id=dataset_id,
             max_topk=max_topk,
             safety_threshold=safety_threshold,
+            gamma=gamma,
         )
 
         true_dict = self.obtain_true_selection_result(
@@ -7588,6 +7778,14 @@ class OffPolicySelection:
             Name of the bar figure.
 
         """
+        if isinstance(input_dict, MultipleInputDict):
+            input_dict_ = input_dict.get(
+                behavior_policy_name=input_dict.behavior_policy_names[0], dataset_id=0
+            )
+            gamma = list(input_dict_.values())[0]["gamma"]
+        else:
+            gamma = list(input_dict.values())[0]["gamma"]
+
         compared_estimators = self._check_compared_estimators(
             compared_estimators, ope_type="standard_ope"
         )
@@ -7599,6 +7797,7 @@ class OffPolicySelection:
             metrics=metrics,
             safety_threshold=safety_threshold,
             relative_safety_criteria=relative_safety_criteria,
+            gamma=gamma,
         )
         self._check_basic_visualization_inputs(fig_dir=fig_dir, fig_name=fig_name)
 
@@ -7773,6 +7972,14 @@ class OffPolicySelection:
             Name of the bar figure.
 
         """
+        if isinstance(input_dict, MultipleInputDict):
+            input_dict_ = input_dict.get(
+                behavior_policy_name=input_dict.behavior_policy_names[0], dataset_id=0
+            )
+            gamma = list(input_dict_.values())[0]["gamma"]
+        else:
+            gamma = list(input_dict.values())[0]["gamma"]
+
         compared_estimators = self._check_compared_estimators(
             compared_estimators, ope_type="cumulative_distribution_ope"
         )
@@ -7784,6 +7991,7 @@ class OffPolicySelection:
             metrics=metrics,
             safety_threshold=safety_threshold,
             relative_safety_criteria=relative_safety_criteria,
+            gamma=gamma,
         )
         self._check_basic_visualization_inputs(fig_dir=fig_dir, fig_name=fig_name)
 
@@ -7970,6 +8178,14 @@ class OffPolicySelection:
             Name of the bar figure.
 
         """
+        if isinstance(input_dict, MultipleInputDict):
+            input_dict_ = input_dict.get(
+                behavior_policy_name=input_dict.behavior_policy_names[0], dataset_id=0
+            )
+            gamma = list(input_dict_.values())[0]["gamma"]
+        else:
+            gamma = list(input_dict.values())[0]["gamma"]
+
         compared_estimators = self._check_compared_estimators(
             compared_estimators, ope_type="standard_ope"
         )
@@ -7981,6 +8197,7 @@ class OffPolicySelection:
             metrics=metrics,
             safety_threshold=safety_threshold,
             relative_safety_criteria=relative_safety_criteria,
+            gamma=gamma,
         )
         self._check_basic_visualization_inputs(fig_dir=fig_dir, fig_name=fig_name)
 
@@ -8556,6 +8773,14 @@ class OffPolicySelection:
             Name of the bar figure.
 
         """
+        if isinstance(input_dict, MultipleInputDict):
+            input_dict_ = input_dict.get(
+                behavior_policy_name=input_dict.behavior_policy_names[0], dataset_id=0
+            )
+            gamma = list(input_dict_.values())[0]["gamma"]
+        else:
+            gamma = list(input_dict.values())[0]["gamma"]
+
         compared_estimators = self._check_compared_estimators(
             compared_estimators, ope_type="standard_ope"
         )
@@ -8566,6 +8791,7 @@ class OffPolicySelection:
             max_topk=max_topk,
             metrics=metrics,
             safety_threshold=safety_threshold,
+            gamma=gamma,
         )
         self._check_basic_visualization_inputs(fig_dir=fig_dir, fig_name=fig_name)
 
@@ -8742,6 +8968,14 @@ class OffPolicySelection:
             Name of the bar figure.
 
         """
+        if isinstance(input_dict, MultipleInputDict):
+            input_dict_ = input_dict.get(
+                behavior_policy_name=input_dict.behavior_policy_names[0], dataset_id=0
+            )
+            gamma = list(input_dict_.values())[0]["gamma"]
+        else:
+            gamma = list(input_dict.values())[0]["gamma"]
+
         compared_estimators = self._check_compared_estimators(
             compared_estimators, ope_type="cumulative_distribution_ope"
         )
@@ -8752,6 +8986,7 @@ class OffPolicySelection:
             max_topk=max_topk,
             metrics=metrics,
             safety_threshold=safety_threshold,
+            gamma=gamma,
         )
         self._check_basic_visualization_inputs(fig_dir=fig_dir, fig_name=fig_name)
 
@@ -8929,6 +9164,14 @@ class OffPolicySelection:
             Name of the bar figure.
 
         """
+        if isinstance(input_dict, MultipleInputDict):
+            input_dict_ = input_dict.get(
+                behavior_policy_name=input_dict.behavior_policy_names[0], dataset_id=0
+            )
+            gamma = list(input_dict_.values())[0]["gamma"]
+        else:
+            gamma = list(input_dict.values())[0]["gamma"]
+
         compared_estimators = self._check_compared_estimators(
             compared_estimators, ope_type="standard_ope"
         )
@@ -8939,6 +9182,7 @@ class OffPolicySelection:
             max_topk=max_topk,
             metrics=metrics,
             safety_threshold=safety_threshold,
+            gamma=gamma,
         )
         self._check_basic_visualization_inputs(fig_dir=fig_dir, fig_name=fig_name)
 
@@ -9115,6 +9359,14 @@ class OffPolicySelection:
             Name of the bar figure.
 
         """
+        if isinstance(input_dict, MultipleInputDict):
+            input_dict_ = input_dict.get(
+                behavior_policy_name=input_dict.behavior_policy_names[0], dataset_id=0
+            )
+            gamma = list(input_dict_.values())[0]["gamma"]
+        else:
+            gamma = list(input_dict.values())[0]["gamma"]
+
         compared_estimators = self._check_compared_estimators(
             compared_estimators, ope_type="cumulative_distribution_ope"
         )
@@ -9125,6 +9377,7 @@ class OffPolicySelection:
             max_topk=max_topk,
             metrics=metrics,
             safety_threshold=safety_threshold,
+            gamma=gamma,
         )
         self._check_basic_visualization_inputs(fig_dir=fig_dir, fig_name=fig_name)
 

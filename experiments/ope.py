@@ -41,12 +41,12 @@ from ofrl.ope import (
     DiscreteStateActionMarginalSelfNormalizedImportanceSampling as D_MIS,
 )
 from ofrl.ope import CreateOPEInput
+from ofrl.ope.online import visualize_on_policy_policy_value
 
 from ofrl.utils import MinMaxScaler
 from ofrl.utils import MinMaxActionScaler
 from ofrl.utils import OldGymAPIWrapper
 from ofrl.utils import MultipleLoggedDataset
-from ofrl.types import LoggedDataset
 
 from experiments.utils import torch_seed, format_runtime
 
@@ -143,10 +143,12 @@ def obtain_test_logged_dataset(
     )
 
     if path_test_logged_dataset.exists():
-        with open(path_test_logged_dataset, "rb") as f:
-            test_logged_dataset = pickle.load(f)
+        pass
+        # with open(path_test_logged_dataset, "rb") as f:
+        #     test_logged_dataset = pickle.load(f)
 
-    else:
+    # else:
+    if True:
         dataset = SyntheticDataset(
             env=env,
             max_episode_steps=env.spec.max_episode_steps,
@@ -410,12 +412,16 @@ def process(
     n_trajectories: int,
     n_random_state: int,
     n_candidate_policies: int,
+    use_small_env: bool,
     device: str,
     base_random_state: int,
     base_model_config: DictConfig,
     log_dir: str,
 ):
-    env = gym.make(env_name)
+    if use_small_env:
+        env = gym.make(env_name + "Env")
+    else:
+        env = gym.make(env_name)
 
     behavior_policy = load_behavior_policy(
         env_name=env_name,
@@ -472,55 +478,84 @@ def process(
 def register_small_envs(
     max_episode_steps: int,
 ):
+    # # continuous control
+    # gym.envs.register(
+    #     id="HalfCheetah-v4",
+    #     entry_point="gym.envs.mujoco:HalfCheetahEnv",
+    #     max_episode_steps=max_episode_steps,
+    # )
+    # gym.envs.register(
+    #     id="Hopper-v4",
+    #     entry_point="gym.envs.mujoco:HopperEnv",
+    #     max_episode_steps=max_episode_steps,
+    # )
+    # gym.envs.register(
+    #     id="InvertedPendulum-v4",
+    #     entry_point="gym.envs.mujoco:InvertedPendulumEnv",
+    #     max_episode_steps=max_episode_steps,
+    # )
+    # gym.envs.register(
+    #     id="Reacher-v4",
+    #     entry_point="gym.envs.mujoco:ReacherEnv",
+    #     max_episode_steps=max_episode_steps,
+    # )
+    # gym.envs.register(
+    #     id="Swimmer-v4",
+    #     entry_point="gym.envs.mujoco:SwimmerEnv",
+    #     max_episode_steps=max_episode_steps,
+    # )
     # continuous control
     gym.envs.register(
-        id="HalfCheetah-v4",
+        id="HalfCheetahEnv",
         entry_point="gym.envs.mujoco:HalfCheetahEnv",
         max_episode_steps=max_episode_steps,
     )
     gym.envs.register(
-        id="Hopper-v4",
+        id="HopperEnv",
         entry_point="gym.envs.mujoco:HopperEnv",
         max_episode_steps=max_episode_steps,
     )
     gym.envs.register(
-        id="InvertedPendulum-v4",
-        entry_point="gym.envs.mujoco:InvertedPendulumEnv",
+        id="InvertedPendulumEnv",
+        entry_point="gym.envs.mujco:InvertedPendulumEnv",
         max_episode_steps=max_episode_steps,
     )
     gym.envs.register(
-        id="Reacher-v4",
+        id="ReacherEnv",
         entry_point="gym.envs.mujoco:ReacherEnv",
         max_episode_steps=max_episode_steps,
     )
     gym.envs.register(
-        id="Swimmer-v4",
+        id="SwimmerEnv",
         entry_point="gym.envs.mujoco:SwimmerEnv",
         max_episode_steps=max_episode_steps,
     )
-    # # discrete control
-    # gym.envs.register(
-    #     id="CartPole",
-    #     entry_point="gym.envs.classic_control:CartPoleEnv",
-    #     max_episode_steps=max_episode_steps,
-    # )
-    # gym.envs.register(
-    #     id="Pendulum",
-    #     entry_point="gym.envs.classic_control:PendulumEnv",
-    #     max_episode_steps=max_episode_steps,
-    # )
-
+    # discrete control
+    gym.envs.register(
+        id="CartPoleEnv",
+        entry_point="gym.envs.classic_control:CartPoleEnv",
+        max_episode_steps=max_episode_steps,
+    )
+    gym.envs.register(
+        id="AcrobotEnv",
+        entry_point="gym.envs.classic_control:AcrobotEnv",
+        max_episode_steps=max_episode_steps,
+    )
 
 def assert_configuration(cfg: DictConfig):
     env_name = cfg.setting.env_name
     assert env_name in [
-        "HalfCheetah-v4",
-        "Hopper-v4",
-        "InvertedPendulum-v4",
-        "Reacher-v4",
-        "Swimmer-v4",
-        "CartPole",
-        "Acrobot",
+        "HalfCheetah",
+        "Hopper",
+        "InvertedPendulum",
+        "Reacher",
+        # "HalfCheetah-v4",
+        # "Hopper-v4",
+        # "InvertedPendulum-v4",
+        # "Reacher-v4",
+        # "Swimmer-v4",
+        # "CartPole",
+        # "Acrobot",
     ]
 
     behavior_sigma = cfg.setting.behavior_sigma
@@ -570,6 +605,7 @@ def main(cfg: DictConfig):
         "base_random_state": cfg.setting.base_random_state,
         "device": "cuda:0" if torch.cuda.is_available() else "cpu",
         "base_model_config": cfg.base_model_config,
+        "use_small_env": cfg.setting.max_episode_steps != "None",
         "log_dir": "logs/",
     }
     if cfg.setting.max_episode_steps != "None":
