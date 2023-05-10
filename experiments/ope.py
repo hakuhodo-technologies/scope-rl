@@ -42,6 +42,8 @@ from ofrl.ope import (
 )
 from ofrl.ope import CreateOPEInput
 from ofrl.ope.online import visualize_on_policy_policy_value
+from ofrl.ope.online import calc_on_policy_policy_value
+from ofrl.ope.online import visualize_on_policy_cumulative_distribution_function
 
 from ofrl.utils import MinMaxScaler
 from ofrl.utils import MinMaxActionScaler
@@ -143,12 +145,12 @@ def obtain_test_logged_dataset(
     )
 
     if path_test_logged_dataset.exists():
-        pass
-        # with open(path_test_logged_dataset, "rb") as f:
-        #     test_logged_dataset = pickle.load(f)
+        # pass
+        with open(path_test_logged_dataset, "rb") as f:
+            test_logged_dataset = pickle.load(f)
 
-    # else:
-    if True:
+    else:
+        # if True:
         dataset = SyntheticDataset(
             env=env,
             max_episode_steps=env.spec.max_episode_steps,
@@ -158,6 +160,7 @@ def obtain_test_logged_dataset(
             n_datasets=n_random_state,
             n_trajectories=n_trajectories,
             obtain_info=False,
+            is_ope_dataset=True,
             record_unclipped_action=True,
             path=log_dir + f"/logged_dataset/multiple/{env_name}",
             random_state=base_random_state + 1,
@@ -260,12 +263,12 @@ def off_policy_evaluation(
     )
 
     if path_input_dict.exists():
-        pass
-        # with open(path_input_dict, "rb") as f:
-        #     input_dict = pickle.load(f)
+        # pass
+        with open(path_input_dict, "rb") as f:
+            input_dict = pickle.load(f)
 
-    # else:
-    if True:
+    else:
+        # if True:
         if action_type == "continuous":
             prep = CreateOPEInput(
                 env=env,
@@ -355,6 +358,7 @@ def off_policy_evaluation(
 
     ops_dict = ops.select_by_policy_value(
         input_dict=input_dict,
+        return_true_values=True,
         return_metrics=True,
     )
     path_metrics = Path(
@@ -431,6 +435,14 @@ def process(
         base_random_state=base_random_state,
         log_dir=log_dir,
     )
+
+    logged_data_ = test_logged_dataset.get(
+        behavior_policy_name=behavior_policy.name,
+        dataset_id=0,
+    )
+    step_per_trad = logged_data_["step_per_trajectory"]
+    on_policy = logged_data_["reward"].reshape((-1, step_per_trad)).sum(axis=1).mean()
+    print(on_policy)
 
     candidate_policies = load_candidate_policies(
         env_name=env_name,
