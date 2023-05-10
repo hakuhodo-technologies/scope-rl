@@ -243,7 +243,6 @@ class SyntheticDataset(BaseDataset):
         n_trajectories: int = 10000,
         step_per_trajectory: Optional[int] = None,
         obtain_info: bool = False,
-        apply_zero_reward_once_done: bool = False,
         record_unclipped_action: bool = False,
         random_state: Optional[int] = None,
     ) -> LoggedDataset:
@@ -280,12 +279,6 @@ class SyntheticDataset(BaseDataset):
 
         obtain_info: bool, default=False
             Whether to gain info from the environment or not.
-
-        apply_zero_reward_once_done: bool, default=False.
-            Apply zero reward once `done` is returned by the environment during an episode. 
-
-            Recommendation: When obtaining a dataset for training, please use False. 
-            When obtaining a dataset for OPE, please use True.
 
         record_unclipped_action: bool, default=False
             Whether to record unclipped action in the logged dataset. Only applicable when action_type is continuous.
@@ -432,7 +425,6 @@ class SyntheticDataset(BaseDataset):
         ):
             state, info_ = self.env.reset()
             terminal = False
-            once_done = False
 
             for t in range(step_per_trajectory):
                 (
@@ -450,12 +442,6 @@ class SyntheticDataset(BaseDataset):
                     val_action = action
 
                 next_state, reward, done, truncated, info_ = self.env.step(val_action)
-
-                if once_done:
-                    reward = 0.0
-
-                if done:
-                    once_done = True
 
                 if (idx + 1) % step_per_trajectory == 0:
                     done = terminal = True
@@ -819,7 +805,6 @@ class SyntheticDataset(BaseDataset):
         n_trajectories: int = 10000,
         step_per_trajectory: Optional[int] = None,
         obtain_info: bool = False,
-        is_ope_dataset: bool = False,
         record_unclipped_action: bool = False,
         path: str = "logged_dataset/",
         save_relative_path: bool = False,
@@ -863,9 +848,6 @@ class SyntheticDataset(BaseDataset):
 
         obtain_info: bool, default=False
             Whether to gain info from the environment or not.
-
-        is_ope_dataset: bool, default=False
-            When True, the reward is converted to zero once `done` is returned by the environment.
 
         record_unclipped_action: bool, default=False
             Whether to record unclipped action in the logged dataset. Only applicable when action_type is continuous.
@@ -991,7 +973,6 @@ class SyntheticDataset(BaseDataset):
                     n_trajectories=n_trajectories,
                     step_per_trajectory=step_per_trajectory,
                     obtain_info=obtain_info,
-                    apply_zero_reward_once_done=is_ope_dataset,
                     record_unclipped_action=record_unclipped_action,
                     random_state=random_state,
                 )
@@ -1015,7 +996,6 @@ class SyntheticDataset(BaseDataset):
                         n_trajectories=n_trajectories,
                         step_per_trajectory=step_per_trajectory,
                         obtain_info=obtain_info,
-                        apply_zero_reward_once_done=is_ope_dataset,
                         record_unclipped_action=record_unclipped_action,
                         random_state=random_state_,
                     )
@@ -1042,7 +1022,6 @@ class SyntheticDataset(BaseDataset):
                         n_trajectories=n_trajectories,
                         step_per_trajectory=step_per_trajectory,
                         obtain_info=obtain_info,
-                        apply_zero_reward_once_done=is_ope_dataset,
                         record_unclipped_action=record_unclipped_action,
                         random_state=random_state,
                     )
@@ -1066,7 +1045,6 @@ class SyntheticDataset(BaseDataset):
                             n_trajectories=n_trajectories,
                             step_per_trajectory=step_per_trajectory,
                             obtain_info=obtain_info,
-                            apply_zero_reward_once_done=is_ope_dataset,
                             record_unclipped_action=record_unclipped_action,
                             random_state=random_state_,
                         )

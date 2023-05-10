@@ -160,7 +160,6 @@ def obtain_test_logged_dataset(
             n_datasets=n_random_state,
             n_trajectories=n_trajectories,
             obtain_info=False,
-            is_ope_dataset=True,
             record_unclipped_action=True,
             path=log_dir + f"/logged_dataset/multiple/{env_name}",
             random_state=base_random_state + 1,
@@ -435,14 +434,6 @@ def process(
         base_random_state=base_random_state,
         log_dir=log_dir,
     )
-
-    logged_data_ = test_logged_dataset.get(
-        behavior_policy_name=behavior_policy.name,
-        dataset_id=0,
-    )
-    step_per_trad = logged_data_["step_per_trajectory"]
-    on_policy = logged_data_["reward"].reshape((-1, step_per_trad)).sum(axis=1).mean()
-    print(on_policy)
 
     candidate_policies = load_candidate_policies(
         env_name=env_name,
