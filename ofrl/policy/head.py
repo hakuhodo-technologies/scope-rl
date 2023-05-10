@@ -500,7 +500,7 @@ class DiscreteSoftmaxHead(BaseHead):
             Sampled action.
 
         """
-        gumble_variable = -np.log(-np.log(self.random_.rand(len(x), self.n_actions)))
+        gumble_variable = self.random_.gumbel(size=(len(x), self.n_actions))
         return np.argmax(x / self.tau + gumble_variable, axis=1).astype(int)
 
     def _predict_value(self, x: np.ndarray):

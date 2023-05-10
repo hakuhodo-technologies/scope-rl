@@ -745,6 +745,7 @@ def calc_on_policy_statistics(
         bins=reward_scale,
         density=True,
     )[0]
+    density = density * np.diff(reward_scale)
 
     idx = np.nonzero(density.cumsum() > cvar_alpha)[0]
     lower_idx = idx[0] if len(idx) else -2
@@ -1104,6 +1105,7 @@ def calc_on_policy_conditional_value_at_risk(
         bins=reward_scale,
         density=True,
     )[0]
+    density = density * np.diff(reward_scale)
 
     cvar = np.zeros_like(alphas)
     for i, alpha in enumerate(alphas):
@@ -1237,6 +1239,7 @@ def calc_on_policy_interquartile_range(
         bins=reward_scale,
         density=True,
     )[0]
+    density = density * np.diff(reward_scale)
 
     lower_idx = np.nonzero(density.cumsum() > alpha)[0]
     median_idx = np.nonzero(density.cumsum() > 0.5)[0]
@@ -1366,9 +1369,9 @@ def calc_on_policy_cumulative_distribution_function(
         bins=reward_scale,
         density=True,
     )[0]
+    density = density * np.diff(reward_scale)
 
     cumulative_distribution_function = np.insert(density, 0, 0).cumsum()
-
     return cumulative_distribution_function, reward_scale
 
 

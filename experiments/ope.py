@@ -42,6 +42,8 @@ from ofrl.ope import (
 )
 from ofrl.ope import CreateOPEInput
 from ofrl.ope.online import visualize_on_policy_policy_value
+from ofrl.ope.online import calc_on_policy_policy_value
+from ofrl.ope.online import visualize_on_policy_cumulative_distribution_function
 
 from ofrl.utils import MinMaxScaler
 from ofrl.utils import MinMaxActionScaler
@@ -143,12 +145,12 @@ def obtain_test_logged_dataset(
     )
 
     if path_test_logged_dataset.exists():
-        pass
-        # with open(path_test_logged_dataset, "rb") as f:
-        #     test_logged_dataset = pickle.load(f)
+        # pass
+        with open(path_test_logged_dataset, "rb") as f:
+            test_logged_dataset = pickle.load(f)
 
-    # else:
-    if True:
+    else:
+        # if True:
         dataset = SyntheticDataset(
             env=env,
             max_episode_steps=env.spec.max_episode_steps,
@@ -265,7 +267,7 @@ def off_policy_evaluation(
             input_dict = pickle.load(f)
 
     else:
-    # if True:
+        # if True:
         if action_type == "continuous":
             prep = CreateOPEInput(
                 env=env,
@@ -367,6 +369,7 @@ def off_policy_evaluation(
 
     ops_dict = ops.select_by_policy_value(
         input_dict=input_dict,
+        return_true_values=True,
         return_metrics=True,
     )
     path_metrics = Path(

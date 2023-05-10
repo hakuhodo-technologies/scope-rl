@@ -100,6 +100,9 @@ class OffPolicyEvaluation:
     action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
         Scaling factor of action.
 
+    disable_reward_after_done: bool, default=True
+        Whether to apply :math:`r = 0` once done is observed in an episode.
+
     Examples
     ----------
 
@@ -229,6 +232,7 @@ class OffPolicyEvaluation:
     n_step_pdis: int = 0
     sigma: float = 1.0
     action_scaler: Optional[ActionScaler] = None
+    disable_reward_after_done: bool = True
 
     def __post_init__(self) -> None:
         self.use_multiple_logged_dataset = False
@@ -308,11 +312,18 @@ class OffPolicyEvaluation:
             (-1, self.step_per_trajectory)
         )
 
+        if self.disable_reward_after_done:
+            done = self.logged_dataset["done"].reshape((-1, self.step_per_trajectory))
+            self.behavior_policy_reward = self.behavior_policy_reward * (
+                1 - done
+            ).cumprod(axis=1)
+
         if self.action_type == "discrete":
             self.input_dict_ = {
                 "step_per_trajectory": self.step_per_trajectory,
                 "action": self.logged_dataset["action"].astype(int),
-                "reward": self.logged_dataset["reward"],
+                "reward": self.behavior_policy_reward.flatten(),
+                "done": self.logged_dataset["done"],
                 "pscore": self.logged_dataset["pscore"],
             }
         else:
@@ -327,7 +338,8 @@ class OffPolicyEvaluation:
             self.input_dict_ = {
                 "step_per_trajectory": self.step_per_trajectory,
                 "action": self.logged_dataset["action"].astype(int),
-                "reward": self.logged_dataset["reward"],
+                "reward": self.behavior_policy_reward.flatten(),
+                "done": self.logged_dataset["done"],
                 "pscore": self.logged_dataset["pscore"],
                 "action_scaler": self.action_scaler,
                 "sigma": self.sigma,
@@ -395,6 +407,7 @@ class OffPolicyEvaluation:
                     **input_dict[eval_policy],
                     **self.input_dict_,
                     n_step_pdis=self.n_step_pdis,
+                    disable_reward_after_done=self.disable_reward_after_done,
                 )
         return defaultdict_to_dict(policy_value_dict)
 
@@ -492,6 +505,7 @@ class OffPolicyEvaluation:
                     **input_dict[eval_policy],
                     **self.input_dict_,
                     n_step_pdis=self.n_step_pdis,
+                    disable_reward_after_done=self.disable_reward_after_done,
                     alpha=alpha,
                     ci=ci,
                     n_bootstrap_samples=n_bootstrap_samples,
@@ -2462,6 +2476,9 @@ class CumulativeDistributionOffPolicyEvaluation:
     action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
         Scaling factor of action.
 
+    disable_reward_after_done: bool, default=True
+        Whether to apply :math:`r = 0` once done is observed in an episode.
+
     Examples
     ----------
 
@@ -2605,6 +2622,7 @@ class CumulativeDistributionOffPolicyEvaluation:
     n_partition: Optional[int] = None
     sigma: float = 1.0
     action_scaler: Optional[ActionScaler] = None
+    disable_reward_after_done: bool = True
 
     def __post_init__(self) -> None:
         "Initialize class."
@@ -2804,18 +2822,26 @@ class CumulativeDistributionOffPolicyEvaluation:
             (-1, self.step_per_trajectory)
         )
 
+        if self.disable_reward_after_done:
+            done = self.logged_dataset["done"].reshape((-1, self.step_per_trajectory))
+            self.behavior_policy_reward = self.behavior_policy_reward * (
+                1 - done
+            ).cumprod(axis=1)
+
         if self.action_type == "discrete":
             self.input_dict_ = {
                 "step_per_trajectory": self.step_per_trajectory,
                 "action": self.logged_dataset["action"].astype(int),
-                "reward": self.logged_dataset["reward"],
+                "reward": self.behavior_policy_reward.flatten(),
+                "done": self.logged_dataset["done"],
                 "pscore": self.logged_dataset["pscore"],
             }
         else:
             self.input_dict_ = {
                 "step_per_trajectory": self.step_per_trajectory,
                 "action": self.logged_dataset["action"].astype(int),
-                "reward": self.logged_dataset["reward"],
+                "reward": self.behavior_policy_reward.flatten(),
+                "done": self.logged_dataset["done"],
                 "pscore": self.logged_dataset["pscore"],
                 "action_scaler": self.action_scaler,
                 "sigma": self.sigma,
@@ -2860,13 +2886,11 @@ class CumulativeDistributionOffPolicyEvaluation:
             reward_scale = np.linspace(
                 self.scale_min, self.scale_max, num=self.n_partition
             )
+
         else:
-            reward = (
-                self.logged_dataset["reward"]
-                .reshape((-1, self.step_per_trajectory))
-                .sum(axis=1)
-            )
+            reward = self.behavior_policy_reward.sum(axis=1)
             reward_scale = np.sort(np.unique(reward))
+
         return reward_scale
 
     def _estimate_cumulative_distribution_function(
@@ -2945,6 +2969,7 @@ class CumulativeDistributionOffPolicyEvaluation:
                     **input_dict[eval_policy],
                     **self.input_dict_,
                     reward_scale=reward_scale,
+                    disable_reward_after_done=self.disable_reward_after_done,
                 )
 
         return defaultdict_to_dict(cumulative_distribution_dict)
@@ -3017,6 +3042,7 @@ class CumulativeDistributionOffPolicyEvaluation:
                     **input_dict[eval_policy],
                     **self.input_dict_,
                     reward_scale=reward_scale,
+                    disable_reward_after_done=self.disable_reward_after_done,
                 )
 
         return defaultdict_to_dict(mean_dict)
@@ -3180,6 +3206,7 @@ class CumulativeDistributionOffPolicyEvaluation:
                     **self.input_dict_,
                     reward_scale=reward_scale,
                     alphas=alphas,
+                    disable_reward_after_done=self.disable_reward_after_done,
                 )
 
         return defaultdict_to_dict(conditional_value_at_risk_dict)
@@ -3279,6 +3306,7 @@ class CumulativeDistributionOffPolicyEvaluation:
                     **self.input_dict_,
                     reward_scale=reward_scale,
                     alpha=alpha,
+                    disable_reward_after_done=self.disable_reward_after_done,
                 )
 
         return defaultdict_to_dict(interquartile_range_dict)
