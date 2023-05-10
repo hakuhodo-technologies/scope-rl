@@ -295,11 +295,34 @@ class OffPolicySelection:
                 self.behavior_policy_reward[behavior_policy] = logged_dataset_[
                     "reward"
                 ].reshape((-1, self.step_per_trajectory))
+
+                if self.ope.disable_reward_after_done:
+                    done = logged_dataset_["done"].reshape(
+                        (-1, self.step_per_trajectory)
+                    )
+                    self.behavior_policy_reward[
+                        behavior_policy
+                    ] = self.behavior_policy_reward[behavior_policy] * (
+                        1 - done
+                    ).cumprod(
+                        axis=1
+                    )
+
         else:
             behavior_policy = self.ope.logged_dataset["behavior_policy"]
             self.behavior_policy_reward[behavior_policy] = self.ope.logged_dataset[
                 "reward"
             ].reshape((-1, self.step_per_trajectory))
+
+            if self.ope.disable_reward_after_done:
+                done = self.ope.logged_dataset["done"].shape(
+                    (-1, self.step_per_trajectory)
+                )
+                self.behavior_policy_reward[
+                    behavior_policy
+                ] = self.behavior_policy_reward[behavior_policy] * (1 - done).cumprod(
+                    axis=1
+                )
 
         self._estimate_confidence_interval = {
             "bootstrap": estimate_confidence_interval_by_bootstrap,
