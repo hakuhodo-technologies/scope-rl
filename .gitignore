@@ -12,6 +12,7 @@ _autogallery/
 .hydra/
 tmp/
 debug.ipynb
+debug2.ipynb
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
