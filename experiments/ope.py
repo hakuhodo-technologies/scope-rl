@@ -296,7 +296,7 @@ def off_policy_evaluation(
                     minimum=env.action_space.low,  # minimum value that policy can take
                     maximum=env.action_space.high,  # maximum value that policy can take
                 ),
-                sigma=base_model_config.contiuous_ope.sigma,
+                # sigma=base_model_config.contiuous_ope.sigma,
                 device=device,
             )
 
@@ -349,6 +349,18 @@ def off_policy_evaluation(
         logged_dataset=test_logged_dataset,
         ope_estimators=ope_estimators,
     )
+
+    
+    # estimated_policy_value_dict = ope.estimate_policy_value(
+    #     input_dict,
+    #     compared_estimators=ope_estimators,
+    #     behavior_policy_name=behavior_policy_name,
+    #     dataset_id=0,
+    # )
+    # print(estimated_policy_value_dict)
+
+
+
     ops = OffPolicySelection(ope=ope)
 
     path_ = Path(log_dir + f"/results/raw")
@@ -473,22 +485,22 @@ def register_small_envs(
     # continuous control
     # gym.envs.register(
     #     id="HalfCheetahEnv",
-    #     entry_point="gym.envs.mojoco:HalfCheetahEnv",
+    #     entry_point="gym.envs.mujoco:HalfCheetahEnv",
     #     max_episode_steps=max_episode_steps,
     # )
     # gym.envs.register(
     #     id="HopperEnv",
-    #     entry_point="gym.envs.mojoco:HopperEnv",
+    #     entry_point="gym.envs.mujoco:HopperEnv",
     #     max_episode_steps=max_episode_steps,
     # )
     # gym.envs.register(
     #     id="InvertedPendulumEnv",
-    #     entry_point="gym.envs.mojoco:InvertedPendulumEnv",
+    #     entry_point="gym.envs.mujco:InvertedPendulumEnv",
     #     max_episode_steps=max_episode_steps,
     # )
     # gym.envs.register(
     #     id="ReacherEnv",
-    #     entry_point="gym.envs.mojoco:ReacherEnv",
+    #     entry_point="gym.envs.mujoco:ReacherEnv",
     #     max_episode_steps=max_episode_steps,
     # )
     # gym.envs.register(
@@ -512,7 +524,6 @@ def register_small_envs(
         entry_point="gym.envs.classic_control:AcrobotEnv",
         max_episode_steps=max_episode_steps,
     )
-
 
 def assert_configuration(cfg: DictConfig):
     env_name = cfg.setting.env_name
