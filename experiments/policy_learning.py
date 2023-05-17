@@ -31,6 +31,7 @@ from ofrl.policy import DiscreteSoftmaxHead as SoftmaxHead
 from ofrl.policy import OffPolicyLearning
 
 from ofrl.ope.online import visualize_on_policy_policy_value
+from ofrl.ope.online import calc_on_policy_policy_value
 
 from ofrl.utils import MinMaxActionScaler
 from ofrl.utils import OldGymAPIWrapper
@@ -239,6 +240,8 @@ def train_candidate_policies(
                 actor_encoder_factory=VectorEncoderFactory(hidden_units=[30, 30]),
                 critic_encoder_factory=VectorEncoderFactory(hidden_units=[30, 30]),
                 q_func_factory=MeanQFunctionFactory(),
+                learning_rate=base_model_config.cql.lr,
+                alpha=base_model_config.cql.alpha,
                 use_gpu=(device == "cuda:0"),
                 action_scaler=MinMaxActionScaler(
                     minimum=env.action_space.low,  # minimum value that policy can take
@@ -249,6 +252,8 @@ def train_candidate_policies(
                 actor_encoder_factory=VectorEncoderFactory(hidden_units=[100]),
                 critic_encoder_factory=VectorEncoderFactory(hidden_units=[100]),
                 q_func_factory=MeanQFunctionFactory(),
+                learning_rate=base_model_config.cql.lr,
+                alpha=base_model_config.cql.alpha,
                 use_gpu=(device == "cuda:0"),
                 action_scaler=MinMaxActionScaler(
                     minimum=env.action_space.low,  # minimum value that policy can take
@@ -259,6 +264,8 @@ def train_candidate_policies(
                 actor_encoder_factory=VectorEncoderFactory(hidden_units=[50, 10]),
                 critic_encoder_factory=VectorEncoderFactory(hidden_units=[50, 10]),
                 q_func_factory=MeanQFunctionFactory(),
+                learning_rate=base_model_config.cql.lr,
+                alpha=base_model_config.cql.alpha,
                 use_gpu=(device == "cuda:0"),
                 action_scaler=MinMaxActionScaler(
                     minimum=env.action_space.low,  # minimum value that policy can take
@@ -298,16 +305,22 @@ def train_candidate_policies(
             cql_b1 = DiscreteCQL(
                 encoder_factory=VectorEncoderFactory(hidden_units=[30, 30]),
                 q_func_factory=MeanQFunctionFactory(),
+                learning_rate=base_model_config.cql.discrete.lr,
+                alpha=base_model_config.cql.discrete.alpha,
                 use_gpu=(device == "cuda:0"),
             )
             cql_b2 = DiscreteCQL(
                 encoder_factory=VectorEncoderFactory(hidden_units=[100]),
                 q_func_factory=MeanQFunctionFactory(),
+                learning_rate=base_model_config.cql.discrete.lr,
+                alpha=base_model_config.cql.discrete.alpha,
                 use_gpu=(device == "cuda:0"),
             )
             cql_b3 = DiscreteCQL(
                 encoder_factory=VectorEncoderFactory(hidden_units=[50, 10]),
                 q_func_factory=MeanQFunctionFactory(),
+                learning_rate=base_model_config.cql.discrete.lr,
+                alpha=base_model_config.cql.discrete.alpha,
                 use_gpu=(device == "cuda:0"),
             )
             bcq_b1 = DiscreteBCQ(
@@ -442,47 +455,67 @@ def process(
     visualize_on_policy_policy_value(
         env=env,
         policies=[behavior_policy] + candidate_policies,
+        # policies=[behavior_policy],
         policy_names=[behavior_policy.name]
         + [candidate_policy.name for candidate_policy in candidate_policies],
+        # policy_names=[behavior_policy.name],
         random_state=base_random_state,
         fig_dir=path_,
         fig_name=f"on_policy_policy_value_{env_name}.png",
     )
+
+    path_ = Path(log_dir + f"/results/raw")
+    path_.mkdir(exist_ok=True, parents=True)
+    path_behavior_on_policy = Path(
+        path_ / f"behavior_on_policy_{env_name}_{behavior_policy.name}.pkl"
+    )
+
+    behavior_on_policy = calc_on_policy_policy_value(
+        env=env,
+        policy=behavior_policy,
+    )
+    with open(path_behavior_on_policy, "wb") as f:
+        pickle.dump(behavior_on_policy, f)
 
 
 def register_small_envs(
     max_episode_steps: int,
 ):
     # continuous control
-    gym.envs.register(
-        id="HalfCheetah",
-        entry_point="gym.envs.mojoco:HalfCheetahEnv",
-        max_episode_steps=max_episode_steps,
-    )
-    gym.envs.register(
-        id="Hopper",
-        entry_point="gym.envs.mojoco:HopperEnv",
-        max_episode_steps=max_episode_steps,
-    )
-    gym.envs.register(
-        id="InvertedPendulum",
-        entry_point="gym.envs.mojoco:InvertedPendulumEnv",
-        max_episode_steps=max_episode_steps,
-    )
-    gym.envs.register(
-        id="Reacher",
-        entry_point="gym.envs.mojoco:ReacherEnv",
-        max_episode_steps=max_episode_steps,
-    )
-    gym.envs.register(
-        id="Swimmer",
-        entry_point="gym.envs.mujoco:SwimmerEnv",
-        max_episode_steps=max_episode_steps,
-    )
+    # gym.envs.register(
+    #     id="HalfCheetahEnv",
+    #     entry_point="gym.envs.mojoco:HalfCheetahEnv",
+    #     max_episode_steps=max_episode_steps,
+    # )
+    # gym.envs.register(
+    #     id="HopperEnv",
+    #     entry_point="gym.envs.mojoco:HopperEnv",
+    #     max_episode_steps=max_episode_steps,
+    # )
+    # gym.envs.register(
+    #     id="InvertedPendulumEnv",
+    #     entry_point="gym.envs.mojoco:InvertedPendulumEnv",
+    #     max_episode_steps=max_episode_steps,
+    # )
+    # gym.envs.register(
+    #     id="ReacherEnv",
+    #     entry_point="gym.envs.mojoco:ReacherEnv",
+    #     max_episode_steps=max_episode_steps,
+    # )
+    # gym.envs.register(
+    #     id="SwimmerEnv",
+    #     entry_point="gym.envs.mujoco:SwimmerEnv",
+    #     max_episode_steps=max_episode_steps,
+    # )
     # discrete control
     gym.envs.register(
         id="CartPoleEnv",
         entry_point="gym.envs.classic_control:CartPoleEnv",
+        max_episode_steps=max_episode_steps,
+    )
+    gym.envs.register(
+        id="MountainCarEnv",
+        entry_point="gym.envs.classic_control:MountainCarEnv",
         max_episode_steps=max_episode_steps,
     )
     gym.envs.register(
@@ -501,6 +534,7 @@ def assert_configuration(cfg: DictConfig):
         "Reacher",
         "Swimmer",
         "CartPole",
+        "MountainCar",
         "Acrobot",
     ]
 
