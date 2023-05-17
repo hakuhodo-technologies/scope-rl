@@ -10,15 +10,16 @@ ddqn:
   batch_size: 32
   lr: 1e-3
   explorer:
-    type: constant
-    epsilon: 0.3
-    duration: 10000
-  n_steps: 20000
+    type: linear
+    epsilon: 0.01
+    duration: 8000
+  n_steps: 8000
   update_start_step: 1000
 cql:
   discrete:
     batch_size: 32
     lr: 6.25e-5
+    alpha: 1.0
 bcq:
   batch_size: 32
   lr: 1e-3

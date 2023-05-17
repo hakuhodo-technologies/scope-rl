@@ -112,12 +112,13 @@ hydra:
     hydra:
     - hydra.mode=RUN
     task:
-    - setting=acrobot
-    - base_model_config=acrobot
+    - setting=cartpole
+    - base_model_config=cartpole
+    - setting.n_candidate_policies=20
   job:
     name: ope
     chdir: null
-    override_dirname: base_model_config=acrobot,setting=acrobot
+    override_dirname: base_model_config=cartpole,setting.n_candidate_policies=20,setting=cartpole
     id: ???
     num: ???
     config_name: config
@@ -144,8 +145,8 @@ hydra:
       provider: schema
     output_dir: /Users/haruka/Downloads/ofrl/experiments
     choices:
-      base_model_config: acrobot
-      setting: acrobot
+      base_model_config: cartpole
+      setting: cartpole
       hydra/env: default
       hydra/callbacks: null
       hydra/job_logging: default

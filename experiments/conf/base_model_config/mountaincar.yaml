@@ -11,14 +11,14 @@ ddqn:
   lr: 1e-3
   explorer:
     type: linear
-    epsilon: 0.3
-    duration: 10000
-  n_steps: 10000
+    epsilon: 0.01
+    duration: 20000
+  n_steps: 100000
   update_start_step: 1000
 cql:
   discrete:
     batch_size: 32
-    lr: 6.25e-5
+    lr: 1e-3
     alpha: 1.0
 bcq:
   batch_size: 32
