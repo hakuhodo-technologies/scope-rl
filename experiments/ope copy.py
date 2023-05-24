@@ -267,7 +267,7 @@ def off_policy_evaluation(
     path_.mkdir(exist_ok=True, parents=True)
     path_input_dict = Path(
         path_
-        / f"input_dict_{env_name}_{behavior_policy_name}_{n_candidate_policies}_{env.spec.max_episode_steps}_{candidate_sigmas}_{n_random_state}_{base_model_config.continuous_ope.sigma}.pkl"
+        / f"input_dict_{env_name}_{behavior_policy_name}_{n_candidate_policies}_{env.spec.max_episode_steps}_{candidate_sigmas}_{n_random_state}_{base_model_config.contiuous_ope.sigma}.pkl"
     )
 
     if path_input_dict.exists():
@@ -306,7 +306,7 @@ def off_policy_evaluation(
                     minimum=env.action_space.low,  # minimum value that policy can take
                     maximum=env.action_space.high,  # maximum value that policy can take
                 ),
-                sigma=base_model_config.continuous_ope.sigma,
+                sigma=base_model_config.contiuous_ope.sigma,
                 device=device,
             )
 
@@ -344,7 +344,7 @@ def off_policy_evaluation(
             require_value_prediction=True,
             require_weight_prediction=True,
             n_trajectories_on_policy_evaluation=100,
-            path=log_dir + f"/input_dict/multiple/{env_name}/{env.spec.max_episode_steps}_{n_random_state}_{base_model_config.continuous_ope.sigma}",
+            path=log_dir + f"/input_dict/multiple/{env_name}/{env.spec.max_episode_steps}_{n_random_state}_{base_model_config.contiuous_ope.sigma}",
             random_state=base_random_state,
         )
         with open(path_input_dict, "wb") as f:
@@ -379,7 +379,7 @@ def off_policy_evaluation(
     )
     path_metrics = Path(
         path_
-        / f"conventional_metrics_dict_{env_name}_{behavior_policy_name}_{n_candidate_policies}_{env.spec.max_episode_steps}_{candidate_sigmas}_{n_random_state}_{base_model_config.continuous_ope.sigma}.pkl"
+        / f"conventional_metrics_dict_{env_name}_{behavior_policy_name}_{n_candidate_policies}_{env.spec.max_episode_steps}_{candidate_sigmas}_{n_random_state}_{base_model_config.contiuous_ope.sigma}.pkl"
     )
     with open(path_metrics, "wb") as f:
         pickle.dump(ops_dict, f)
@@ -391,7 +391,7 @@ def off_policy_evaluation(
     )
     path_topk_metrics = Path(
         path_
-        / f"topk_metrics_dict_{env_name}_{behavior_policy_name}_{n_candidate_policies}_{env.spec.max_episode_steps}_{candidate_sigmas}_{n_random_state}_{base_model_config.continuous_ope.sigma}.pkl"
+        / f"topk_metrics_dict_{env_name}_{behavior_policy_name}_{n_candidate_policies}_{env.spec.max_episode_steps}_{candidate_sigmas}_{n_random_state}_{base_model_config.contiuous_ope.sigma}.pkl"
     )
     with open(path_topk_metrics, "wb") as f:
         pickle.dump(topk_metric_dict, f)
@@ -407,7 +407,7 @@ def off_policy_evaluation(
         legend=False,
         random_state=base_random_state,
         fig_dir=path_,
-        fig_name=f"topk_metrics_visualization_{env_name}_{behavior_policy_name}_{n_candidate_policies}_{env.spec.max_episode_steps}_{candidate_sigmas}_{n_random_state}_{base_model_config.continuous_ope.sigma}.png",
+        fig_name=f"topk_metrics_visualization_{env_name}_{behavior_policy_name}_{n_candidate_policies}_{env.spec.max_episode_steps}_{candidate_sigmas}_{n_random_state}_{base_model_config.contiuous_ope.sigma}.png",
     )
 
 
