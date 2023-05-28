@@ -115,7 +115,7 @@ def visualize_on_policy_policy_value(
         seed=random_state,
     )
 
-    plt.ylabel(f"On-Policy Policy Value (± {np.int(100*(1 - alpha))}% CI)", fontsize=12)
+    plt.ylabel(f"On-Policy Policy Value (± {np.int64(100*(1 - alpha))}% CI)", fontsize=12)
     plt.xticks(fontsize=12)
     plt.yticks(fontsize=12)
     if fig_dir:
@@ -227,7 +227,7 @@ def visualize_on_policy_policy_value_with_variance(
     ax.set_xticks(np.arange(n_policies))
     ax.set_xticklabels(policy_names)
     ax.set_ylabel(
-        f"On-Policy Policy Value (± {np.int(100*(1 - alpha))}% CI)",
+        f"On-Policy Policy Value (± {np.int64(100*(1 - alpha))}% CI)",
         fontsize=12,
     )
     plt.yticks(fontsize=12)
@@ -601,7 +601,7 @@ def visualize_on_policy_interquartile_range(
 
         ax.set_title("interquartile range")
         ax.set_ylabel(
-            f"{np.int(100*(1 - alpha))}% range",
+            f"{np.int64(100*(1 - alpha))}% range",
             fontsize=12,
         )
         plt.yticks(fontsize=12)

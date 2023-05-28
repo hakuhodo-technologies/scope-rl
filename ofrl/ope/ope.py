@@ -1701,7 +1701,7 @@ class OffPolicyEvaluation:
 
                 ax.set_title(eval_policy, fontsize=16)
                 ax.set_ylabel(
-                    f"Estimated Policy Value (± {np.int(100*(1 - alpha))}% CI)",
+                    f"Estimated Policy Value (± {np.int64(100*(1 - alpha))}% CI)",
                     fontsize=12,
                 )
                 plt.yticks(fontsize=12)
@@ -1758,7 +1758,7 @@ class OffPolicyEvaluation:
 
                 ax.set_title(estimator, fontsize=16)
                 ax.set_ylabel(
-                    f"Estimated Policy Value (± {np.int(100*(1 - alpha))}% CI)",
+                    f"Estimated Policy Value (± {np.int64(100*(1 - alpha))}% CI)",
                     fontsize=12,
                 )
                 plt.yticks(fontsize=12)
@@ -1800,7 +1800,7 @@ class OffPolicyEvaluation:
 
                 ax.set_title("on_policy", fontsize=16)
                 ax.set_ylabel(
-                    f"Estimated Policy Value (± {np.int(100*(1 - alpha))}% CI)",
+                    f"Estimated Policy Value (± {np.int64(100*(1 - alpha))}% CI)",
                     fontsize=12,
                 )
                 plt.yticks(fontsize=12)
@@ -4741,7 +4741,7 @@ class CumulativeDistributionOffPolicyEvaluation:
                 ax.set_xticks(np.arange(n_estimators))
                 ax.set_xticklabels(compared_estimators)
                 ax.set_ylabel(
-                    f"Estimated Policy Value (± {np.int(100*(1 - alpha))}% CI)",
+                    f"Estimated Policy Value (± {np.int64(100*(1 - alpha))}% CI)",
                     fontsize=12,
                 )
                 plt.yticks(fontsize=12)
@@ -4808,7 +4808,7 @@ class CumulativeDistributionOffPolicyEvaluation:
                 ax.set_xticks(np.arange(n_policies))
                 ax.set_xticklabels(list(input_dict.keys()))
                 ax.set_ylabel(
-                    f"Estimated Policy Value (± {np.int(100*(1 - alpha))}% CI)",
+                    f"Estimated Policy Value (± {np.int64(100*(1 - alpha))}% CI)",
                     fontsize=12,
                 )
                 plt.yticks(fontsize=12)
@@ -4854,7 +4854,7 @@ class CumulativeDistributionOffPolicyEvaluation:
                 ax.set_xticks(np.arange(n_policies))
                 ax.set_xticklabels(list(input_dict.keys()))
                 ax.set_ylabel(
-                    f"Estimated Policy Value (± {np.int(100*(1 - alpha))}% CI)",
+                    f"Estimated Policy Value (± {np.int64(100*(1 - alpha))}% CI)",
                     fontsize=12,
                 )
                 plt.yticks(fontsize=12)
@@ -5254,7 +5254,7 @@ class CumulativeDistributionOffPolicyEvaluation:
 
                 ax.set_title(eval_policy, fontsize=16)
                 ax.set_ylabel(
-                    f"Estimated {np.int(100*(1 - alpha))}% Interquartile Range",
+                    f"Estimated {np.int64(100*(1 - alpha))}% Interquartile Range",
                     fontsize=12,
                 )
                 plt.yticks(fontsize=12)
@@ -5319,7 +5319,7 @@ class CumulativeDistributionOffPolicyEvaluation:
 
                 ax.set_title(estimator, fontsize=16)
                 ax.set_ylabel(
-                    f"Estimated {np.int(100*(1 - alpha))}% Interquartile Range",
+                    f"Estimated {np.int64(100*(1 - alpha))}% Interquartile Range",
                     fontsize=12,
                 )
                 plt.yticks(fontsize=12)
