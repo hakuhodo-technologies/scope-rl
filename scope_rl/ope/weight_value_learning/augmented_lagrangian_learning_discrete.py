@@ -25,12 +25,12 @@ from ...utils import check_array
 
 
 @dataclass
-class DiscreteAugmentedLagrangianStateActionWightValueLearning(BaseWeightValueLearner):
+class DiscreteDiceStateActionWightValueLearning(BaseWeightValueLearner):
     """Augmented Lagrangian method for weight/value function of marginal OPE estimators (for discrete action space).
 
-    Bases: :class:`ofrl.ope.weight_value_learning.BaseWeightValueLearner`
+    Bases: :class:`scope_rl.ope.weight_value_learning.BaseWeightValueLearner`
 
-    Imported as: :class:`ofrl.ope.weight_value_learning.DiscreteAugmentedLagrangianStateActionWightValueLearning`
+    Imported as: :class:`scope_rl.ope.DiscreteAugmentedLagrangianStateActionWightValueLearning`
 
     Note
     -------
@@ -70,7 +70,7 @@ class DiscreteAugmentedLagrangianStateActionWightValueLearning(BaseWeightValueLe
 
     .. seealso::
 
-        :class:`ofrl.ope.weight_value_learning.function`
+        :class:`scope_rl.ope.weight_value_learning.function`
 
     Parameters
     -------
@@ -752,12 +752,12 @@ class DiscreteAugmentedLagrangianStateActionWightValueLearning(BaseWeightValueLe
 
 
 @dataclass
-class DiscreteAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearner):
+class DiscreteDiceStateWightValueLearning(BaseWeightValueLearner):
     """Augmented Lagrangian method for weight/value function of marginal OPE estimators (for discrete action space).
 
-    Bases: :class:`ofrl.ope.weight_value_learning.BaseWeightValueLearner`
+    Bases: :class:`scope_rl.ope.weight_value_learning.BaseWeightValueLearner`
 
-    Imported as: :class:`ofrl.ope.weight_value_learning.DiscreteAugmentedLagrangianStateWightValueLearning`
+    Imported as: :class:`scope_rl.ope.DiscreteAugmentedLagrangianStateWightValueLearning`
 
     Note
     -------
@@ -801,7 +801,7 @@ class DiscreteAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearner)
 
     .. seealso::
 
-        :class:`ofrl.ope.weight_value_learning.function`
+        :class:`scope_rl.ope.weight_value_learning.function`
 
     Parameters
     -------

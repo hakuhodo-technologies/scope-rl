@@ -9,7 +9,7 @@ from ..types import LoggedDataset
 class BaseDataset(metaclass=ABCMeta):
     """Base class for logged dataset.
 
-    Imported as: :class:`ofrl.dataset.BaseDataset`
+    Imported as: :class:`scope_rl.dataset.BaseDataset`
 
     """
 

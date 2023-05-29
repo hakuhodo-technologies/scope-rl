@@ -18,9 +18,9 @@ from ..types import LoggedDataset
 class SyntheticDataset(BaseDataset):
     """Class for synthetic data generation.
 
-    Bases: :class:`ofrl.dataset.BaseDataset`
+    Bases: :class:`scope_rl.dataset.BaseDataset`
 
-    Imported as: :class:`ofrl.dataset.SyntheticDataset`
+    Imported as: :class:`scope_rl.dataset.SyntheticDataset`
 
     Note
     -------
@@ -71,9 +71,9 @@ class SyntheticDataset(BaseDataset):
 
     .. code-block:: python
 
-        # import necessary module from OFRL
-        from ofrl.dataset import SyntheticDataset
-        from ofrl.policy import DiscreteEpsilonGreedyHead
+        # import necessary module from SCOPE-RL
+        from scope_rl.dataset import SyntheticDataset
+        from scope_rl.policy import DiscreteEpsilonGreedyHead
 
         # import necessary module from other libraries
         import gym
@@ -189,7 +189,7 @@ class SyntheticDataset(BaseDataset):
     .. seealso::
 
         * :doc:`Quickstart </documentation/quickstart>`
-        * :doc:`Related tutorials </documentation/_autogallery/ofrl_others/index>`
+        * :doc:`Related tutorials </documentation/_autogallery/scope_rl_others/index>`
 
     """
 
@@ -857,7 +857,7 @@ class SyntheticDataset(BaseDataset):
 
         save_relative_path: bool, default=False.
             Whether to save a relative path.
-            If `True`, a path relative to the ofrl directory will be saved.
+            If `True`, a path relative to the scope-rl directory will be saved.
             If `False`, the absolute path will be saved.
 
             Note that, this option was added in order to run examples in the documentation properly.
@@ -1127,7 +1127,7 @@ class SyntheticDataset(BaseDataset):
 
         save_relative_path: bool, default=False.
             Whether to save a relative path.
-            If `True`, a path relative to the ofrl directory will be saved.
+            If `True`, a path relative to the scope-rl directory will be saved.
             If `False`, the absolute path will be saved.
 
             Note that, this option was added in order to run examples in the documentation properly.

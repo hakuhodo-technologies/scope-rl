@@ -306,12 +306,12 @@ We can also estimate various performance statics including variance and conditio
 # implement a cumulative distribution estimation procedure using SCOPE-RL
 
 # import SCOPE-RL modules
-from scope_rl.ope import DiscreteCumulativeDistributionOffPolicyEvaluation as CumulativeDistributionOPE
-from scope_rl.ope import DiscreteCumulativeDistributionDirectMethod as CD_DM
-from scope_rl.ope import DiscreteCumulativeDistributionTrajectoryWiseImportanceSampling as CD_IS
-from scope_rl.ope import DiscreteCumulativeDistributionTrajectoryWiseDoublyRobust as CD_DR
-from scope_rl.ope import DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSampling as CD_SNIS
-from scope_rl.ope import DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseDoublyRobust as CD_SNDR
+from scope_rl.ope import CumulativeDistributionOPE
+from scope_rl.ope import DiscreteCumulativeDistributionDM as CD_DM
+from scope_rl.ope import DiscreteCumulativeDistributionTIS as CD_IS
+from scope_rl.ope import DiscreteCumulativeDistributionTDR as CD_DR
+from scope_rl.ope import DiscreteCumulativeDistributionSNTIS as CD_SNIS
+from scope_rl.ope import DiscreteCumulativeDistributionSNTDR as CD_SNDR
 
 # (4) Evaluate the cumulative distribution function of the learned policy (in an offline manner)
 # we compare ddqn, cql, and random policy defined from the previous section (i.e., (3) of basic OPE procedure)
@@ -319,11 +319,11 @@ from scope_rl.ope import DiscreteCumulativeDistributionSelfNormalizedTrajectoryW
 cd_ope = CumulativeDistributionOPE(
     logged_dataset=test_logged_dataset,
     ope_estimators=[
-      CD_DM(estimator_name="cdf_dm"),
-      CD_IS(estimator_name="cdf_is"),
-      CD_DR(estimator_name="cdf_dr"),
-      CD_SNIS(estimator_name="cdf_snis"),
-      CD_SNDR(estimator_name="cdf_sndr"),
+      CD_DM(estimator_name="cd_dm"),
+      CD_IS(estimator_name="cd_is"),
+      CD_DR(estimator_name="cd_dr"),
+      CD_SNIS(estimator_name="cd_snis"),
+      CD_SNDR(estimator_name="cd_sndr"),
     ],
 )
 # estimate the variance
@@ -407,14 +407,14 @@ For more examples, please refer to [quickstart/rtb_synthetic_discrete_advanced.i
 If you use our software in your work, please cite our paper:
 
 Haruka Kiyohara, Ren Kishimoto, Kosuke Kawakami, Ken Kobayashi, Kazuhide Nakata, Yuta Saito.<br>
-**SCOPE-RL: Towards Risk-Return Assessments of Off-Policy Evaluation in Reinforcement Learning**<br>
+**Risk-Return Assessments of Off-Policy Evaluation in Reinforcement Learning**<br>
 [link]() (a preprint coming soon..)
 
 Bibtex:
 ```
 @article{kiyohara2023scope,
   author = {Kiyohara, Haruka and Kishimoto, Ren and Kawakami, Kosuke and Kobayashi, Ken and Nataka, Kazuhide and Saito, Yuta},
-  title = {SCOPE-RL: Towards Risk-Return Assessments of Off-Policy Evaluation in Reinforcement Learning},
+  title = {Risk-Return Assessments of Off-Policy Evaluation in Reinforcement Learning},
   journal = {A github repository},
   pages = {xxx--xxx},
   year = {2023},

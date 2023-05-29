@@ -13,9 +13,9 @@ from ..utils import check_array
 class DiscreteDirectMethod(BaseOffPolicyEstimator):
     """Direct Method (DM) for discrete-action OPE.
 
-    Bases: :class:`ofrl.ope.BaseOffPolicyEstimator`
+    Bases: :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
-    Imported as: :class:`ofrl.ope.DiscreteDirectMethod`
+    Imported as: :class:`scope_rl.ope.DiscreteDirectMethod`
 
     Note
     -------
@@ -39,7 +39,7 @@ class DiscreteDirectMethod(BaseOffPolicyEstimator):
     .. seealso::
 
         The implementation of FQE is provided by `d3rlpy <https://d3rlpy.readthedocs.io/en/latest/references/off_policy_evaluation.html>`_.
-        The implementations of Minimax Learning is available at :class:`ofrl.ope.weight_value_learning`.
+        The implementations of Minimax Learning is available at :class:`scope_rl.ope.weight_value_learning`.
 
     Parameters
     -------
@@ -298,9 +298,9 @@ class DiscreteDirectMethod(BaseOffPolicyEstimator):
 class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
     """Trajectory-wise Important Sampling (TIS) for discrete-action OPE.
 
-    Bases: :class:`ofrl.ope.BaseOffPolicyEstimator`
+    Bases: :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
-    Imported as: :class:`ofrl.ope.DiscreteTrajectoryWiseImportanceSampling`
+    Imported as: :class:`scope_rl.ope.DiscreteTrajectoryWiseImportanceSampling`
 
     Note
     -------
@@ -644,9 +644,9 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 class DiscretePerDecisionImportanceSampling(BaseOffPolicyEstimator):
     """Per-Decision Importance Sampling (PDIS) for discrete-action OPE.
 
-    Bases: :class:`ofrl.ope.BaseOffPolicyEstimator`
+    Bases: :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
-    Imported as: :class:`ofrl.ope.DiscretePerDecisionImportanceSampling`
+    Imported as: :class:`scope_rl.ope.DiscretePerDecisionImportanceSampling`
 
     Note
     -------
@@ -990,9 +990,9 @@ class DiscretePerDecisionImportanceSampling(BaseOffPolicyEstimator):
 class DiscreteDoublyRobust(BaseOffPolicyEstimator):
     """Doubly Robust (DR) for discrete-action OPE.
 
-    Bases: :class:`ofrl.ope.BaseOffPolicyEstimator`
+    Bases: :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
-    Imported as: :class:`ofrl.ope.DiscreteDoublyRobust`
+    Imported as: :class:`scope_rl.ope.DiscreteDoublyRobust`
 
     Note
     -------
@@ -1400,14 +1400,14 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
 
 
 @dataclass
-class DiscreteSelfNormalizedTrajectoryWiseImportanceSampling(
+class DiscreteSelfNormalizedTIS(
     DiscreteTrajectoryWiseImportanceSampling
 ):
     """Self-Normalized Trajectory-wise Important Sampling (SNTIS) for discrete-action OPE.
 
-    Bases: :class:`ofrl.ope.DiscreteTrajectoryWiseImportanceSampling` -> :class:`ofrl.ope.BaseOffPolicyEstimator`
+    Bases: :class:`scope_rl.ope.DiscreteTrajectoryWiseImportanceSampling` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
-    Imported as: :class:`ofrl.ope.DiscreteSelfNormalizedTrajectoryWiseImportanceSampling`
+    Imported as: :class:`scope_rl.ope.DiscreteSelfNormalizedTIS`
 
     Note
     -------
@@ -1509,14 +1509,14 @@ class DiscreteSelfNormalizedTrajectoryWiseImportanceSampling(
 
 
 @dataclass
-class DiscreteSelfNormalizedPerDecisionImportanceSampling(
+class DiscreteSelfNormalizedPDIS(
     DiscretePerDecisionImportanceSampling
 ):
     """Self-Normalized Per-Decision Importance Sampling (SNPDIS) for discrete-action OPE.
 
-    Bases: :class:`ofrl.ope.DiscretePerDecisionImportanceSampling` -> :class:`ofrl.ope.BaseOffPolicyEstimator`
+    Bases: :class:`scope_rl.ope.DiscretePerDecisionImportanceSampling` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
-    Imported as: :class:`ofrl.ope.DiscreteSelfNormalizedPerDecisionImportanceSampling`
+    Imported as: :class:`scope_rl.ope.DiscreteSelfNormalizedPDIS`
 
     Note
     -------
@@ -1615,12 +1615,12 @@ class DiscreteSelfNormalizedPerDecisionImportanceSampling(
 
 
 @dataclass
-class DiscreteSelfNormalizedDoublyRobust(DiscreteDoublyRobust):
+class DiscreteSelfNormalizedDR(DiscreteDoublyRobust):
     """Self-Normalized Doubly Robust (SNDR) for discrete-action OPE.
 
-    Bases: :class:`ofrl.ope.DiscreteDoublyRobust` -> :class:`ofrl.ope.BaseOffPolicyEstimator`
+    Bases: :class:`scope_rl.ope.DiscreteDoublyRobust` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
-    Imported as: :class:`ofrl.ope.DiscreteSelfNormalizedDoublyRobust`
+    Imported as: :class:`scope_rl.ope.DiscreteSelfNormalizedDR`
 
     Note
     -------

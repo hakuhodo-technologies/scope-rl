@@ -9,8 +9,8 @@ from d3rlpy.preprocessing import ActionScaler
 
 from .estimators_base import (
     BaseOffPolicyEstimator,
-    BaseStateMarginalOffPolicyEstimator,
-    BaseStateActionMarginalOffPolicyEstimator,
+    BaseStateMarginalOPEEstimator,
+    BaseStateActionMarginalOPEEstimator,
 )
 from ..utils import check_array
 
@@ -19,9 +19,9 @@ from ..utils import check_array
 class ContinuousDoubleReinforcementLearning(BaseOffPolicyEstimator):
     """Double Reinforcement Learning (DRL) estimator for continuous action space.
 
-    Bases: :class:`ofrl.ope.BaseOffPolicyEstimator`
+    Bases: :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
-    Imported as: :class:`ofrl.ope.ContinuousDoubleReinforcementLearning`
+    Imported as: :class:`scope_rl.ope.ContinuousDoubleReinforcementLearning`
 
     Note
     -------
@@ -37,14 +37,14 @@ class ContinuousDoubleReinforcementLearning(BaseOffPolicyEstimator):
     :math:`K` is the number of folds and :math:`\\mathcal{D}_j` is the :math:`j`-th split of logged data consisting of :math:`n_k` samples.
     :math:`w^j` and :math:`Q^j` are trained on the subset of data used for OPE, i.e., :math:`\\mathcal{D} \\setminus \\mathcal{D}_j`.
 
-    **TODO** statistical efficiency
+    DRL achieves the semiparametric efficiency with a consistent value predictor.
 
     There are several ways to estimate state(-action) marginal importance weight including Augmented Lagrangian Method (ALM) (Yang et al., 2020) 
     and Minimax Weight Learning (MWL) (Uehara et al., 2020).
 
     .. seealso::
 
-        The implementations of such weight learning methods are available at :class:`ofrl.ope.weight_value_learning`.
+        The implementations of such weight learning methods are available at :class:`scope_rl.ope.weight_value_learning`.
 
     Parameters
     -------
@@ -296,12 +296,12 @@ class ContinuousDoubleReinforcementLearning(BaseOffPolicyEstimator):
 
 
 @dataclass
-class ContinuousStateMarginalDirectMethod(BaseStateMarginalOffPolicyEstimator):
+class ContinuousStateMarginalDM(BaseStateMarginalOPEEstimator):
     """Direct Method (DM) for continuous-action and stationary OPE (designed for deterministic policies).
 
-    Bases: :class:`ofrl.ope.BaseStateMarginalOffPolicyEstimator` -> :class:`ofrl.ope.BaseOffPolicyEstimator`
+    Bases: :class:`scope_rl.ope.BaseStateMarginalOPEEstimator` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
-    Imported as: :class:`ofrl.ope.ContinuousStateMarginalDirectMethod`
+    Imported as: :class:`scope_rl.ope.ContinuousStateMarginalDM`
 
     Note
     -------
@@ -325,7 +325,7 @@ class ContinuousStateMarginalDirectMethod(BaseStateMarginalOffPolicyEstimator):
     .. seealso::
 
         The implementation of FQE is provided by `d3rlpy <https://d3rlpy.readthedocs.io/en/latest/references/off_policy_evaluation.html>`_.
-        The implementations of Minimax Weight and Value Learning (including ALM) is available at :class:`ofrl.ope.weight_value_learning`.
+        The implementations of Minimax Weight and Value Learning (including ALM) is available at :class:`scope_rl.ope.weight_value_learning`.
 
     Note
     -------
@@ -465,12 +465,12 @@ class ContinuousStateMarginalDirectMethod(BaseStateMarginalOffPolicyEstimator):
 
 
 @dataclass
-class ContinuousStateMarginalImportanceSampling(BaseStateMarginalOffPolicyEstimator):
+class ContinuousStateMarginalIS(BaseStateMarginalOPEEstimator):
     """State Marginal Importance Sampling (SM-IS) for continuous-action OPE.
 
-    Bases: :class:`ofrl.ope.BaseStateMarginalOffPolicyEstimator` -> :class:`ofrl.ope.BaseOffPolicyEstimator`
+    Bases: :class:`scope_rl.ope.BaseStateMarginalOPEEstimator` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
-    Imported as: :class:`ofrl.ope.ContinuousStateMarginalImportanceSampling`
+    Imported as: :class:`scope_rl.ope.ContinuousStateMarginalIS`
 
     Note
     -------
@@ -496,7 +496,7 @@ class ContinuousStateMarginalImportanceSampling(BaseStateMarginalOffPolicyEstima
 
     .. seealso::
 
-        The implementations of such weight learning methods are available at :class:`ofrl.ope.weight_value_learning`.
+        The implementations of such weight learning methods are available at :class:`scope_rl.ope.weight_value_learning`.
 
     Parameters
     -------
@@ -923,12 +923,12 @@ class ContinuousStateMarginalImportanceSampling(BaseStateMarginalOffPolicyEstima
 
 
 @dataclass
-class ContinuousStateMarginalDoublyRobust(BaseStateMarginalOffPolicyEstimator):
+class ContinuousStateMarginalDR(BaseStateMarginalOPEEstimator):
     """State Marginal Doubly Robust (SM-DR) for continuous-action OPE.
 
-    Bases: :class:`ofrl.ope.BaseStateMarginalOffPolicyEstimator` -> :class:`ofrl.ope.BaseOffPolicyEstimator`
+    Bases: :class:`scope_rl.ope.BaseStateMarginalOPEEstimator` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
-    Imported as: :class:`ofrl.ope.ContinuousStateMarginalDoublyRobust`
+    Imported as: :class:`scope_rl.ope.ContinuousStateMarginalDR`
 
     Note
     -------
@@ -955,7 +955,7 @@ class ContinuousStateMarginalDoublyRobust(BaseStateMarginalOffPolicyEstimator):
 
     .. seealso::
 
-        The implementations of such weight learning methods are available at :class:`ofrl.ope.weight_value_learning`.
+        The implementations of such weight learning methods are available at :class:`scope_rl.ope.weight_value_learning`.
 
     Parameters
     -------
@@ -1454,14 +1454,14 @@ class ContinuousStateMarginalDoublyRobust(BaseStateMarginalOffPolicyEstimator):
 
 
 @dataclass
-class ContinuousStateMarginalSelfNormalizedImportanceSampling(
-    ContinuousStateMarginalImportanceSampling
+class ContinuousStateMarginalSNIS(
+    ContinuousStateMarginalIS
 ):
     """State Marginal Self-Normalized Importance Sampling (SM-SNIS) for continuous-action OPE.
 
-    Bases: :class:`ofrl.ope.ContinuousStateMarginalImportanceSampling` :class:`ofrl.ope.BaseStateMarginalOffPolicyEstimator` -> :class:`ofrl.ope.BaseOffPolicyEstimator`
+    Bases: :class:`scope_rl.ope.ContinuousStateMarginalIS` :class:`scope_rl.ope.BaseStateMarginalOPEEstimator` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
-    Imported as: :class:`ofrl.ope.ContinuousStateMarginalSelfNormalizedImportanceSampling`
+    Imported as: :class:`scope_rl.ope.ContinuousStateMarginalSNIS`
 
     Note
     -------
@@ -1487,7 +1487,7 @@ class ContinuousStateMarginalSelfNormalizedImportanceSampling(
 
     .. seealso::
 
-        The implementations of such weight learning methods are available at :class:`ofrl.ope.weight_value_learning`.
+        The implementations of such weight learning methods are available at :class:`scope_rl.ope.weight_value_learning`.
 
     Parameters
     -------
@@ -1610,14 +1610,14 @@ class ContinuousStateMarginalSelfNormalizedImportanceSampling(
 
 
 @dataclass
-class ContinuousStateMarginalSelfNormalizedDoublyRobust(
-    ContinuousStateMarginalDoublyRobust
+class ContinuousStateMarginalSNDR(
+    ContinuousStateMarginalDR
 ):
     """State Marginal Self-Normalized Doubly Robust (SM-SNDR) for continuous-action OPE.
 
-    Bases: :class:`ofrl.ContinuousStateMarginalDoublyRobust` :class:`ofrl.BaseStateMarginalOffPolicyEstimator` -> :class:`ofrl.ope.BaseOffPolicyEstimator`
+    Bases: :class:`scope_rl.ContinuousStateMarginalDR` :class:`scope_rl.BaseStateMarginalOPEEstimator` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
-    Imported as: :class:`ofrl.ope.ContinuousStateMarginalSelfNormalizedDoublyRobust`
+    Imported as: :class:`scope_rl.ope.ContinuousStateMarginalSNDR`
 
     Note
     -------
@@ -1644,7 +1644,7 @@ class ContinuousStateMarginalSelfNormalizedDoublyRobust(
 
     .. seealso::
 
-        The implementations of such weight learning methods are available at :class:`ofrl.ope.weight_value_learning`.
+        The implementations of such weight learning methods are available at :class:`scope_rl.ope.weight_value_learning`.
 
     Parameters
     -------
@@ -1788,14 +1788,14 @@ class ContinuousStateMarginalSelfNormalizedDoublyRobust(
 
 
 @dataclass
-class ContinuousStateActionMarginalImportanceSampling(
-    BaseStateActionMarginalOffPolicyEstimator
+class ContinuousStateActionMarginalIS(
+    BaseStateActionMarginalOPEEstimator
 ):
     """State-Action Marginal Importance Sampling (SAM-IS) for continuous-action OPE.
 
-    Bases: :class:`ofrl.ope.BaseStateActionMarginalOffPolicyEstimator` -> :class:`ofrl.ope.BaseOffPolicyEstimator`
+    Bases: :class:`scope_rl.ope.BaseStateActionMarginalOPEEstimator` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
-    Imported as: :class:`ofrl.ope.ContinuousStateActionMarginalImportanceSampling`
+    Imported as: :class:`scope_rl.ope.ContinuousStateActionMarginalIS`
 
     Note
     -------
@@ -1821,7 +1821,7 @@ class ContinuousStateActionMarginalImportanceSampling(
 
     .. seealso::
 
-        The implementations of such weight learning methods are available at :class:`ofrl.ope.weight_value_learning`.
+        The implementations of such weight learning methods are available at :class:`scope_rl.ope.weight_value_learning`.
 
     Parameters
     -------
@@ -2244,14 +2244,14 @@ class ContinuousStateActionMarginalImportanceSampling(
 
 
 @dataclass
-class ContinuousStateActionMarginalDoublyRobust(
-    BaseStateActionMarginalOffPolicyEstimator
+class ContinuousStateActionMarginalDR(
+    BaseStateActionMarginalOPEEstimator
 ):
     """State-Action Marginal Doubly Robust (SAM-DR) for continuous-action OPE.
 
-    Bases: :class:`ofrl.ope.BaseStateActionMarginalOffPolicyEstimator` -> :class:`ofrl.ope.BaseOffPolicyEstimator`
+    Bases: :class:`scope_rl.ope.BaseStateActionMarginalOPEEstimator` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
-    Imported as: :class:`ofrl.ope.ContinuousStateActionMarginalDoublyRobust`
+    Imported as: :class:`scope_rl.ope.ContinuousStateActionMarginalDR`
 
     Note
     -------
@@ -2278,7 +2278,7 @@ class ContinuousStateActionMarginalDoublyRobust(
 
     .. seealso::
 
-        The implementations of such weight learning methods are available at :class:`ofrl.ope.weight_value_learning`.
+        The implementations of such weight learning methods are available at :class:`scope_rl.ope.weight_value_learning`.
 
     Parameters
     -------
@@ -2774,14 +2774,14 @@ class ContinuousStateActionMarginalDoublyRobust(
 
 
 @dataclass
-class ContinuousStateActionMarginalSelfNormalizedImportanceSampling(
-    ContinuousStateActionMarginalImportanceSampling
+class ContinuousStateActionMarginalSNIS(
+    ContinuousStateActionMarginalIS
 ):
     """State-Action Marginal Self-Normalized Importance Sampling (SAM-SNIS) for continuous-action OPE.
 
-    Bases: :class:`ofrl.ope.ContinuousStateActionMarginalImportanceSampling` :class:`ofrl.ope.BaseStateActionMarginalOffPolicyEstimator` -> :class:`ofrl.ope.BaseOffPolicyEstimator`
+    Bases: :class:`scope_rl.ope.ContinuousStateActionMarginalIS` :class:`scope_rl.ope.BaseStateActionMarginalOPEEstimator` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
-    Imported as: :class:`ofrl.ope.ContinuousStateActionMarginalSelfNormalizedImportanceSampling`
+    Imported as: :class:`scope_rl.ope.ContinuousStateActionMarginalSNIS`
 
     Note
     -------
@@ -2807,7 +2807,7 @@ class ContinuousStateActionMarginalSelfNormalizedImportanceSampling(
 
     .. seealso::
 
-        The implementations of such weight learning methods are available at :class:`ofrl.ope.weight_value_learning`.
+        The implementations of such weight learning methods are available at :class:`scope_rl.ope.weight_value_learning`.
 
     Parameters
     -------
@@ -2927,14 +2927,14 @@ class ContinuousStateActionMarginalSelfNormalizedImportanceSampling(
 
 
 @dataclass
-class ContinuousStateActionMarginalSelfNormalizedDoublyRobust(
-    ContinuousStateActionMarginalDoublyRobust
+class ContinuousStateActionMarginalSNDR(
+    ContinuousStateActionMarginalDR
 ):
     """State-Action Marginal Self-Normalized Doubly Robust (SAM-SNDR) for continuous-action OPE.
 
-    Bases: :class:`ofrl.ope.ContinuousStateActionMarginalDoublyRobust` :class:`ofrl.ope.BaseStateActionMarginalOffPolicyEstimator` -> :class:`ofrl.ope.BaseOffPolicyEstimator`
+    Bases: :class:`scope_rl.ope.ContinuousStateActionMarginalDR` :class:`scope_rl.ope.BaseStateActionMarginalOPEEstimator` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
-    Imported as: :class:`ofrl.ope.ContinuousStateActionMarginalSelfNormalizedIDoublyRobust`
+    Imported as: :class:`scope_rl.ope.ContinuousStateActionMarginalSNDR`
 
     Note
     -------
@@ -2961,7 +2961,7 @@ class ContinuousStateActionMarginalSelfNormalizedDoublyRobust(
 
     .. seealso::
 
-        The implementations of such weight learning methods are available at :class:`ofrl.ope.weight_value_learning`.
+        The implementations of such weight learning methods are available at :class:`scope_rl.ope.weight_value_learning`.
 
     Parameters
     -------

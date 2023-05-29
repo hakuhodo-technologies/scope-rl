@@ -585,8 +585,6 @@ Comparing DR in the standard and marginal OPE, we notice that their formulation 
     &:= \mathbb{E}_{n} [\mathbb{E}_{a_0 \sim \pi(a_0 | s_0)} \hat{Q}(s_0, a_0)] \\
     & \quad \quad + \mathbb{E}_{n} \left[\sum_{t=0}^{T-1} \gamma^t w_{s, a}(s_t, a_t) (r_t + \gamma \mathbb{E}_{a \sim \pi(a | s_t)}[\hat{Q}(s_{t+1}, a)] - \hat{Q}(s_t, a_t)) \right],
 
-**TODO** (brief discussion about statistical efficiency)
-
 Then, a natural question arises, would it be possible to use marginal importance weight in DR in the standard formulation?
 
 DRL :cite:`kallus2020double` leverages the marginal importance sampling in the standard OPE formulation as follows.

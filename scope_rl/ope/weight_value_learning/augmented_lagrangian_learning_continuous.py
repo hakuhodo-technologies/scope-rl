@@ -25,14 +25,14 @@ from ...utils import check_array, gaussian_kernel
 
 
 @dataclass
-class ContinuousAugmentedLagrangianStateActionWightValueLearning(
+class ContinuousDiceStateActionWightValueLearning(
     BaseWeightValueLearner
 ):
     """Augmented Lagrangian method for weight/value function of marginal OPE estimators (for continuous action space).
 
-    Bases: :class:`ofrl.ope.weight_value_learning.BaseWeightValueLearner`
+    Bases: :class:`scope_rl.ope.weight_value_learning.BaseWeightValueLearner`
 
-    Imported as: :class:`ofrl.ope.weight_value_learning.ContinuousAugmentedLagrangianStateActionWightValueLearning`
+    Imported as: :class:`scope_rl.ope.ContinuousDiceStateActionWightValueLearning`
 
     Note
     -------
@@ -72,7 +72,7 @@ class ContinuousAugmentedLagrangianStateActionWightValueLearning(
 
     .. seealso::
 
-        :class:`ofrl.ope.weight_value_learning.function`
+        :class:`scope_rl.ope.weight_value_learning.function`
 
     Parameters
     -------
@@ -688,12 +688,12 @@ class ContinuousAugmentedLagrangianStateActionWightValueLearning(
 
 
 @dataclass
-class ContinuousAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearner):
+class ContinuousDiceStateWightValueLearning(BaseWeightValueLearner):
     """Augmented Lagrangian method for weight/value function of marginal OPE estimators (for continuous action space).
 
-    Bases: :class:`ofrl.ope.weight_value_learning.BaseWeightValueLearner`
+    Bases: :class:`scope_rl.ope.weight_value_learning.BaseWeightValueLearner`
 
-    Imported as: :class:`ofrl.ope.weight_value_learning.ContinuousAugmentedLagrangianStateWightValueLearning`
+    Imported as: :class:`scope_rl.ope.ContinuousDiceStateWightValueLearning`
 
     Note
     -------
@@ -737,7 +737,7 @@ class ContinuousAugmentedLagrangianStateWightValueLearning(BaseWeightValueLearne
 
     .. seealso::
 
-        :class:`ofrl.ope.weight_value_learning.function`
+        :class:`scope_rl.ope.weight_value_learning.function`
 
     Parameters
     -------

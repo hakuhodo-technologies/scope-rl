@@ -32,7 +32,7 @@ If you use our pipeline or the SharpRatio@k metric in your work, please cite our
 .. card::
 
     | Haruka Kiyohara, Ren Kishimoto, Kosuke Kawakami, Ken Kobayashi, Kazuhide Nakata, Yuta Saito.
-    | **SCOPE-RL: Towards Risk-Return Assessments of Off-Policy Evaluation in Reinforcement Learning** [`arXiv <>`_] [`Proceedings <>`_]
+    | **Risk-Return Assessments of Off-Policy Evaluation in Reinforcement Learning** [`arXiv <>`_] [`Proceedings <>`_]
     | (a preprint coming soon..)
 
     .. code-block::

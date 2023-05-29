@@ -6,20 +6,20 @@ import numpy as np
 from sklearn.utils import check_scalar
 
 from .estimators_base import (
-    BaseCumulativeDistributionOffPolicyEstimator,
+    BaseCumulativeDistributionOPEEstimator,
 )
 from ..utils import check_array
 
 
 @dataclass
-class DiscreteCumulativeDistributionDirectMethod(
-    BaseCumulativeDistributionOffPolicyEstimator,
+class DiscreteCumulativeDistributionDM(
+    BaseCumulativeDistributionOPEEstimator,
 ):
     """Direct Method (DM) for estimating cumulative distribution function (CDF) in discrete-action OPE.
 
-    Bases: :class:`ofrl.ope.BaseCumulativeDistributionOffPolicyEstimator`
+    Bases: :class:`scope_rl.ope.BaseCumulativeDistributionOPEEstimator`
 
-    Imported as: :class:`ofrl.ope.DiscreteCumulativeDistributionDirectMethod`
+    Imported as: :class:`scope_rl.ope.DiscreteCumulativeDistributionDM`
 
     Note
     -------
@@ -39,7 +39,7 @@ class DiscreteCumulativeDistributionDirectMethod(
     .. seealso::
 
         The implementation of FQE is provided by `d3rlpy <https://d3rlpy.readthedocs.io/en/latest/references/off_policy_evaluation.html>`_.
-        The implementations of Minimax Learning is available at :class:`ofrl.ope.weight_value_learning`.
+        The implementations of Minimax Learning is available at :class:`scope_rl.ope.weight_value_learning`.
 
     Parameters
     -------
@@ -433,14 +433,14 @@ class DiscreteCumulativeDistributionDirectMethod(
 
 
 @dataclass
-class DiscreteCumulativeDistributionTrajectoryWiseImportanceSampling(
-    BaseCumulativeDistributionOffPolicyEstimator,
+class DiscreteCumulativeDistributionTIS(
+    BaseCumulativeDistributionOPEEstimator,
 ):
     """Trajectory-wise Importance Sampling (TIS) for estimating cumulative distribution function (CDF) in discrete-action OPE.
 
-    Bases: :class:`ofrl.ope.BaseCumulativeDistributionOffPolicyEstimator`
+    Bases: :class:`scope_rl.ope.BaseCumulativeDistributionOPEEstimator`
 
-    Imported as: :class:`ofrl.ope.DiscreteCumulativeDistributionTrajectoryWiseImportanceSampling`
+    Imported as: :class:`scope_rl.ope.DiscreteCumulativeDistributionTIS`
 
     Note
     -------
@@ -885,14 +885,14 @@ class DiscreteCumulativeDistributionTrajectoryWiseImportanceSampling(
 
 
 @dataclass
-class DiscreteCumulativeDistributionTrajectoryWiseDoublyRobust(
-    BaseCumulativeDistributionOffPolicyEstimator,
+class DiscreteCumulativeDistributionTDR(
+    BaseCumulativeDistributionOPEEstimator,
 ):
     """Trajectory-wise Doubly Robust (TDR) for estimating cumulative distribution function (CDF) in discrete-action OPE.
 
-    Bases: :class:`ofrl.ope.BaseCumulativeDistributionOffPolicyEstimator`
+    Bases: :class:`scope_rl.ope.BaseCumulativeDistributionOPEEstimator`
 
-    Imported as: :class:`ofrl.ope.DiscreteCumulativeDistributionTrajectoryWiseDoublyRobust`
+    Imported as: :class:`scope_rl.ope.DiscreteCumulativeDistributionTrajectoryWiseDR`
 
     Note
     -------
@@ -1386,14 +1386,14 @@ class DiscreteCumulativeDistributionTrajectoryWiseDoublyRobust(
 
 
 @dataclass
-class DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSampling(
-    DiscreteCumulativeDistributionTrajectoryWiseImportanceSampling,
+class DiscreteCumulativeDistributionSNTIS(
+    DiscreteCumulativeDistributionTIS,
 ):
     """Self Normalized Trajectory-wise Importance Sampling (SNTIS) for estimating cumulative distribution function (CDF) in discrete-action OPE.
 
-    Bases: :class:`ofrl.ope.DiscreteCumulativeDistributionTrajectoryWiseImportanceSampling` :class:`ofrl.ope.BaseCumulativeDistributionOffPolicyEstimator`
+    Bases: :class:`scope_rl.ope.DiscreteCumulativeDistributionTIS` :class:`scope_rl.ope.BaseCumulativeDistributionOPEEstimator`
 
-    Imported as: :class:`ofrl.ope.DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSampling`
+    Imported as: :class:`scope_rl.ope.DiscreteCumulativeDistributionSNTIS`
 
     Note
     -------
@@ -1566,14 +1566,14 @@ class DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSampli
 
 
 @dataclass
-class DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseDoublyRobust(
-    DiscreteCumulativeDistributionTrajectoryWiseDoublyRobust,
+class DiscreteCumulativeDistributionSNTDR(
+    DiscreteCumulativeDistributionTDR,
 ):
     """Self Normalized Trajectory-wise Doubly Robust (SNTDR) for estimating cumulative distribution function (CDF) in discrete-action OPE.
 
-    Bases: :class:`ofrl.ope.DiscreteCumulativeDistributionTrajectoryWiseDoublyRobust` :class:`ofrl.ope.BaseCumulativeDistributionOffPolicyEstimator`
+    Bases: :class:`scope_rl.ope.DiscreteCumulativeDistributionTDR` :class:`scope_rl.ope.BaseCumulativeDistributionOPEEstimator`
 
-    Imported as: :class:`ofrl.ope.DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseDoublyRobust`
+    Imported as: :class:`scope_rl.ope.DiscreteCumulativeDistributionSNTDR`
 
     Note
     -------

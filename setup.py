@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 from os import path
 import sys
 
-from ofrl.version import __version__
+from scope_rl.version import __version__
 
 
 here = path.abspath(path.dirname(__file__))

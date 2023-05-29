@@ -19,7 +19,7 @@ from d3rlpy.preprocessing import ActionScaler
 
 from .estimators_base import (
     BaseOffPolicyEstimator,
-    BaseCumulativeDistributionOffPolicyEstimator,
+    BaseCumulativeDistributionOPEEstimator,
 )
 from ..utils import (
     MultipleLoggedDataset,
@@ -40,7 +40,7 @@ from ..types import LoggedDataset, OPEInputDict
 class OffPolicyEvaluation:
     """Class to perform OPE by multiple estimators simultaneously (applicable to both discrete/continuous action cases).
 
-    Imported as: :class:`ofrl.ope.OffPolicyEvaluation`
+    Imported as: :class:`scope_rl.ope.OffPolicyEvaluation`
 
     Note
     -----------
@@ -84,11 +84,11 @@ class OffPolicyEvaluation:
 
             .. seealso::
 
-                :class:`ofrl.dataset.SyntheticDataset` describes the components of :class:`logged_dataset`.
+                :class:`scope_rl.dataset.SyntheticDataset` describes the components of :class:`logged_dataset`.
 
     ope_estimators: list of BaseOffPolicyEstimator
         List of OPE estimators used to evaluate the policy value of the evaluation policies.
-        Estimators must follow the interface of :class:`ofrl.ope.BaseOffPolicyEstimator`.
+        Estimators must follow the interface of :class:`scope_rl.ope.BaseOffPolicyEstimator`.
 
     n_step_pdis: int, default=0 (>= 0)
         Number of previous steps to use per-decision importance weight in marginal OPE estimators.
@@ -110,13 +110,13 @@ class OffPolicyEvaluation:
 
     .. code-block:: python
 
-        # import necessary module from OFRL
-        from ofrl.dataset import SyntheticDataset
-        from ofrl.policy import DiscreteEpsilonGreedyHead
-        from ofrl.ope import CreateOPEInput
-        from ofrl.ope import DiscreteOffPolicyEvaluation as OPE
-        from ofrl.ope import DiscreteTrajectoryWiseImportanceSampling as TIS
-        from ofrl.ope import DiscretePerDecisionImportanceSampling as PDIS
+        # import necessary module from SCOPE-RL
+        from scope_rl.dataset import SyntheticDataset
+        from scope_rl.policy import DiscreteEpsilonGreedyHead
+        from scope_rl.ope import CreateOPEInput
+        from scope_rl.ope import DiscreteOffPolicyEvaluation as OPE
+        from scope_rl.ope import DiscreteTrajectoryWiseImportanceSampling as TIS
+        from scope_rl.ope import DiscretePerDecisionImportanceSampling as PDIS
 
         # import necessary module from other libraries
         import gym
@@ -375,7 +375,7 @@ class OffPolicyEvaluation:
 
             .. seealso::
 
-                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+                :class:`scope_rl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
@@ -445,7 +445,7 @@ class OffPolicyEvaluation:
 
             .. seealso::
 
-                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+                :class:`scope_rl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
@@ -619,7 +619,7 @@ class OffPolicyEvaluation:
 
             .. seealso::
 
-                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+                :class:`scope_rl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         policy_value_dict: dict
             Dictionary containing the policy value of each evaluation policy estimated by OPE estimators.
@@ -714,7 +714,7 @@ class OffPolicyEvaluation:
 
             .. seealso::
 
-                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+                :class:`scope_rl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
@@ -905,7 +905,7 @@ class OffPolicyEvaluation:
 
             .. seealso::
 
-                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+                :class:`scope_rl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
@@ -1153,7 +1153,7 @@ class OffPolicyEvaluation:
 
             .. seealso::
 
-                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+                :class:`scope_rl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
@@ -1361,7 +1361,7 @@ class OffPolicyEvaluation:
 
             .. seealso::
 
-                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+                :class:`scope_rl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
@@ -1552,7 +1552,7 @@ class OffPolicyEvaluation:
 
             .. seealso::
 
-                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+                :class:`scope_rl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
@@ -1853,7 +1853,7 @@ class OffPolicyEvaluation:
 
             .. seealso::
 
-                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+                :class:`scope_rl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
@@ -2388,10 +2388,10 @@ class OffPolicyEvaluation:
 
 
 @dataclass
-class CumulativeDistributionOffPolicyEvaluation:
+class CumulativeDistributionOPE:
     """Class to conduct cumulative distribution OPE by multiple estimators simultaneously (applicable to both discrete/continuous action cases).
 
-    Imported as: :class:`ofrl.ope.CumutiveDistributionOffPolicyEvaluation`
+    Imported as: :class:`scope_rl.ope.CumutiveDistributionOPE`
 
     Note
     -----------
@@ -2445,11 +2445,11 @@ class CumulativeDistributionOffPolicyEvaluation:
 
             .. seealso::
 
-                :class:`ofrl.dataset.SyntheticDataset` describes the components of :class:`logged_dataset`.
+                :class:`scope_rl.dataset.SyntheticDataset` describes the components of :class:`logged_dataset`.
 
     ope_estimators: list of BaseOffPolicyEstimator
         List of OPE estimators used to evaluate the policy value of the evaluation policies.
-        Estimators must follow the interface of `ofrl.ope.BaseCumulativeDistributionOffPolicyEstimator`.
+        Estimators must follow the interface of `scope_rl.ope.BaseCumulativeDistributionOPEEstimator`.
 
     use_custom_reward_scale: bool, default=False
         Whether to use the custom reward scale or the reward observed by the behavior policy.
@@ -2486,13 +2486,13 @@ class CumulativeDistributionOffPolicyEvaluation:
 
     .. code-block:: python
 
-        # import necessary module from OFRL
-        from ofrl.dataset import SyntheticDataset
-        from ofrl.policy import DiscreteEpsilonGreedyHead
-        from ofrl.ope import CreateOPEInput
-        from ofrl.ope import DiscreteCumulativeDistributionOffPolicyEvaluation as CumulativeDistributionOPE
-        from ofrl.ope import DiscreteCumulativeDistributionTrajectoryWiseImportanceSampling as CDIS
-        from ofrl.ope import DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSampling as CDSIS
+        # import necessary module from SCOPE-RL
+        from scope_rl.dataset import SyntheticDataset
+        from scope_rl.policy import DiscreteEpsilonGreedyHead
+        from scope_rl.ope import CreateOPEInput
+        from scope_rl.ope import CumulativeDistributionOPE
+        from scope_rl.ope import DiscreteCumulativeDistributionTIS as CD_IS
+        from scope_rl.ope import DiscreteCumulativeDistributionSNTIS as CD_SNIS
 
         # import necessary module from other libraries
         import gym
@@ -2579,8 +2579,8 @@ class CumulativeDistributionOffPolicyEvaluation:
         cd_ope = CumulativeDistributionOPE(
             logged_dataset=logged_dataset,
             ope_estimators=[
-                CDIS(estimator_name="cdf_is"),
-                CDSIS(estimator_name="cdf_sis"),
+                CD_IS(estimator_name="cd_is"),
+                CD_SNIS(estimator_name="cd_snis"),
             ],
         )
         variance_dict = cd_ope.estimate_variance(
@@ -2653,9 +2653,9 @@ class CumulativeDistributionOffPolicyEvaluation:
                     f"One of the ope_estimators, {estimator.estimator_name} does not match the action_type of logged_dataset (`{self.action_type}`)"
                 )
 
-            if not isinstance(estimator, BaseCumulativeDistributionOffPolicyEstimator):
+            if not isinstance(estimator, BaseCumulativeDistributionOPEEstimator):
                 raise RuntimeError(
-                    f"ope_estimators must be child classes of BaseCumulativeDistributionOffPolicyEstimator, but one of them, {estimator.estimator_name} is not"
+                    f"ope_estimators must be child classes of BaseCumulativeDistributionOPEEstimator, but one of them, {estimator.estimator_name} is not"
                 )
 
         if self.use_custom_reward_scale:
@@ -2924,7 +2924,7 @@ class CumulativeDistributionOffPolicyEvaluation:
 
             .. seealso::
 
-                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+                :class:`scope_rl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
@@ -3004,7 +3004,7 @@ class CumulativeDistributionOffPolicyEvaluation:
 
             .. seealso::
 
-                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+                :class:`scope_rl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
@@ -3077,7 +3077,7 @@ class CumulativeDistributionOffPolicyEvaluation:
 
             .. seealso::
 
-                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+                :class:`scope_rl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
@@ -3153,7 +3153,7 @@ class CumulativeDistributionOffPolicyEvaluation:
 
             .. seealso::
 
-                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+                :class:`scope_rl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
@@ -3242,7 +3242,7 @@ class CumulativeDistributionOffPolicyEvaluation:
 
             .. seealso::
 
-                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+                :class:`scope_rl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
@@ -3344,7 +3344,7 @@ class CumulativeDistributionOffPolicyEvaluation:
 
             .. seealso::
 
-                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+                :class:`scope_rl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
@@ -3559,7 +3559,7 @@ class CumulativeDistributionOffPolicyEvaluation:
 
             .. seealso::
 
-                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+                :class:`scope_rl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
@@ -3744,7 +3744,7 @@ class CumulativeDistributionOffPolicyEvaluation:
 
             .. seealso::
 
-                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+                :class:`scope_rl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
@@ -3930,7 +3930,7 @@ class CumulativeDistributionOffPolicyEvaluation:
 
             .. seealso::
 
-                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+                :class:`scope_rl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
@@ -4127,7 +4127,7 @@ class CumulativeDistributionOffPolicyEvaluation:
 
             .. seealso::
 
-                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+                :class:`scope_rl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
@@ -4326,7 +4326,7 @@ class CumulativeDistributionOffPolicyEvaluation:
 
             .. seealso::
 
-                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+                :class:`scope_rl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
@@ -4596,7 +4596,7 @@ class CumulativeDistributionOffPolicyEvaluation:
 
             .. seealso::
 
-                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+                :class:`scope_rl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
@@ -4906,7 +4906,7 @@ class CumulativeDistributionOffPolicyEvaluation:
 
             .. seealso::
 
-                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+                :class:`scope_rl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
@@ -5118,7 +5118,7 @@ class CumulativeDistributionOffPolicyEvaluation:
 
             .. seealso::
 
-                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+                :class:`scope_rl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
@@ -5376,7 +5376,7 @@ class CumulativeDistributionOffPolicyEvaluation:
 
             .. seealso::
 
-                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+                :class:`scope_rl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         estimation_dict: dict
             Dictionary containing estimation result of OPE. key: ``[eval_policy][estimator]``
@@ -5893,7 +5893,7 @@ class CumulativeDistributionOffPolicyEvaluation:
 
             .. seealso::
 
-                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+                :class:`scope_rl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
@@ -6507,7 +6507,7 @@ class CumulativeDistributionOffPolicyEvaluation:
 
             .. seealso::
 
-                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+                :class:`scope_rl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
@@ -6667,7 +6667,7 @@ class CumulativeDistributionOffPolicyEvaluation:
 
             .. seealso::
 
-                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+                :class:`scope_rl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
@@ -6826,7 +6826,7 @@ class CumulativeDistributionOffPolicyEvaluation:
 
             .. seealso::
 
-                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+                :class:`scope_rl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.
@@ -6991,7 +6991,7 @@ class CumulativeDistributionOffPolicyEvaluation:
 
             .. seealso::
 
-                :class:`ofrl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
+                :class:`scope_rl.ope.input.CreateOPEInput` describes the components of :class:`input_dict`.
 
         compared_estimators: list of str, default=None
             Name of compared estimators.

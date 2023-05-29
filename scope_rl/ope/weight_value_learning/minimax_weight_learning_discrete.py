@@ -26,9 +26,9 @@ from ...utils import check_array
 class DiscreteMinimaxStateActionWeightLearning(BaseWeightValueLearner):
     """Minimax Weight Learning for marginal OPE estimators (for discrete action space).
 
-    Bases: :class:`ofrl.ope.weight_value_learning.BaseWeightValueLearner`
+    Bases: :class:`scope_rl.ope.weight_value_learning.BaseWeightValueLearner`
 
-    Imported as: :class:`ofrl.ope.weight_value_learning.DiscreteMinimaxStateActionWightLearning`
+    Imported as: :class:`scope_rl.ope.DiscreteMinimaxStateActionWightLearning`
 
     Note
     -------
@@ -554,9 +554,9 @@ class DiscreteMinimaxStateActionWeightLearning(BaseWeightValueLearner):
 class DiscreteMinimaxStateWeightLearning(BaseWeightValueLearner):
     """Minimax Weight Learning for marginal OPE estimators (for discrete action space).
 
-    Bases: :class:`ofrl.ope.weight_value_learning.BaseWeightValueLearner`
+    Bases: :class:`scope_rl.ope.weight_value_learning.BaseWeightValueLearner`
 
-    Imported as: :class:`ofrl.ope.weight_value_learning.DiscreteMinimaxStateWightLearning`
+    Imported as: :class:`scope_rl.ope.DiscreteMinimaxStateWightLearning`
 
     Note
     -------

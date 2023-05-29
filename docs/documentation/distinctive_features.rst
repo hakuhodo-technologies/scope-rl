@@ -313,7 +313,7 @@ the top-:math:`k` risk-return tradeoff (RRT) metrics measure risk, return, and e
 .. seealso::
 
     Top-:math:`k` RRT metrics are the main propossal of our research paper 
-    `"SCOPE-RL: Towards Risk-Return Assessments of Off-Policy Evaluation in Offline" <>`_. 
+    `"Towards Risk-Return Assessments of Off-Policy Evaluation in Offline" <>`_. 
     We describe the motivation and contributions of the top-:math:`k` RRT metrics in :doc:`this page <topk_rrt>`.
 
 

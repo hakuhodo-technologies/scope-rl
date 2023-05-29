@@ -19,7 +19,7 @@ from ..utils import (
 class BaseOffPolicyEstimator(metaclass=ABCMeta):
     """Base class for (basic) OPE estimators.
 
-    Imported as: :class:`ofrl.ope.BaseOffPolicyEstimator`
+    Imported as: :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
     Note
     -------
@@ -282,12 +282,12 @@ class BaseOffPolicyEstimator(metaclass=ABCMeta):
 
 
 @dataclass
-class BaseMarginalOffPolicyEstimator(BaseOffPolicyEstimator):
+class BaseMarginalOPEEstimator(BaseOffPolicyEstimator):
     """Base class for OPE estimators with marginal importance sampling.
 
-    Bases: :class:`ofrl.ope.BaseOffPolicyEstimator`
+    Bases: :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
-    Imported as: :class:`ofrl.ope.estimators_base.BaseMarginalOffPolicyEstimator`
+    Imported as: :class:`scope_rl.ope.estimators_base.BaseMarginalOPEEstimator`
 
     Note
     -------
@@ -512,12 +512,12 @@ class BaseMarginalOffPolicyEstimator(BaseOffPolicyEstimator):
 
 
 @dataclass
-class BaseStateMarginalOffPolicyEstimator(BaseMarginalOffPolicyEstimator):
+class BaseStateMarginalOPEEstimator(BaseMarginalOPEEstimator):
     """Base class for State Marginal OPE estimators.
 
-    Bases: :class:`ofrl.ope.BaseMarginalOffPolicyEstimator` -> :class:`ofrl.ope.BaseOffPolicyEstimator`
+    Bases: :class:`scope_rl.ope.BaseMarginalOPEEstimator` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
-    Imported as: :class:`ofrl.ope.BaseStateMarginalOffPolicyEstimator`
+    Imported as: :class:`scope_rl.ope.BaseStateMarginalOPEEstimator`
 
     Note
     -------
@@ -592,12 +592,12 @@ class BaseStateMarginalOffPolicyEstimator(BaseMarginalOffPolicyEstimator):
 
 
 @dataclass
-class BaseStateActionMarginalOffPolicyEstimator(BaseMarginalOffPolicyEstimator):
+class BaseStateActionMarginalOPEEstimator(BaseMarginalOPEEstimator):
     """Base class for State-Action Marginal OPE estimators.
 
-    Bases: :class:`ofrl.ope.BaseMarginalOffPolicyEstimator` -> :class:`ofrl.ope.BaseOffPolicyEstimator`
+    Bases: :class:`scope_rl.ope.BaseMarginalOPEEstimator` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
-    Imported as: :class:`ofrl.ope.BaseStateActionMarginalOffPolicyEstimator`
+    Imported as: :class:`scope_rl.ope.BaseStateActionMarginalOPEEstimator`
 
     Note
     -------
@@ -672,10 +672,10 @@ class BaseStateActionMarginalOffPolicyEstimator(BaseMarginalOffPolicyEstimator):
 
 
 @dataclass
-class BaseCumulativeDistributionOffPolicyEstimator(metaclass=ABCMeta):
+class BaseCumulativeDistributionOPEEstimator(metaclass=ABCMeta):
     """Base class for Cumulative Distribution OPE estimators.
 
-    Imported as: :class:`ofrl.ope.BaseCumulativeDistributionOffPolicyEstimator`
+    Imported as: :class:`scope_rl.ope.BaseCumulativeDistributionOPEEstimator`
 
     Note
     -------

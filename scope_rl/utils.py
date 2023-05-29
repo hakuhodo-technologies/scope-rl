@@ -34,7 +34,7 @@ class MultipleLoggedDataset:
 
     save_relative_path: bool, default=False.
         Whether to save a relative path.
-        If `True`, a path relative to the ofrl directory will be saved.
+        If `True`, a path relative to the scope-rl directory will be saved.
         If `False`, the absolute path will be saved.
 
         Note that, this option was added in order to run examples in the documentation properly.
@@ -56,12 +56,12 @@ class MultipleLoggedDataset:
 
         if self.save_relative_path:
             abs_path = str(self.path.resolve())
-            relative_path = abs_path.split("ofrl/ofrl/")
+            relative_path = abs_path.split("scope-rlrl/scope_rl/")
 
             if len(relative_path) == 1:
-                self.relative_path = abs_path.split("ofrl/")
+                self.relative_path = abs_path.split("scope_rl/")
             else:
-                self.relative_path = "ofrl/" + relative_path
+                self.relative_path = "scope_rl/" + relative_path
         else:
             self.abs_path = self.path.resolve()
 
@@ -107,13 +107,13 @@ class MultipleLoggedDataset:
         """
         if self.save_relative_path:
             abs_path = str(Path.cwd())
-            abs_path = abs_path.split("ofrl/ofrl/")
+            abs_path = abs_path.split("scope-rl/scope_rl/")
 
             if len(abs_path) == 1:
-                abs_path = abs_path.split("ofrl/")
-                abs_path = Path(abs_path[0] + "ofrl/" + self.relative_path)
+                abs_path = abs_path.split("scope_rl/")
+                abs_path = Path(abs_path[0] + "scope_rl/" + self.relative_path)
             else:
-                abs_path = Path(abs_path[0] + "ofrl/ofrl/" + self.relative_path)
+                abs_path = Path(abs_path[0] + "scope-rl/scope_rl/" + self.relative_path)
         else:
             path = self.abs_path
 
@@ -149,7 +149,7 @@ class MultipleInputDict:
 
     save_relative_path: bool, default=False.
         Whether to save a relative path.
-        If `True`, a path relative to the ofrl directory will be saved.
+        If `True`, a path relative to the scope-rl directory will be saved.
         If `False`, the absolute path will be saved.
 
         Note that, this option was added in order to run examples in the documentation properly.
@@ -172,12 +172,12 @@ class MultipleInputDict:
 
         if self.save_relative_path:
             abs_path = str(self.path.resolve())
-            relative_path = abs_path.split("ofrl/ofrl/")
+            relative_path = abs_path.split("scope-rl/scope_rl/")
 
             if len(relative_path) == 1:
-                self.relative_path = abs_path.split("ofrl/")
+                self.relative_path = abs_path.split("scope_rl/")
             else:
-                self.relative_path = "ofrl/" + relative_path
+                self.relative_path = "scope_rl/" + relative_path
         else:
             self.abs_path = self.path.resolve()
 
@@ -225,13 +225,13 @@ class MultipleInputDict:
         """
         if self.save_relative_path:
             abs_path = str(Path.cwd())
-            abs_path = abs_path.split("ofrl/ofrl/")
+            abs_path = abs_path.split("scope-rl/scope_rl/")
 
             if len(abs_path) == 1:
-                abs_path = abs_path.split("ofrl/")
-                abs_path = Path(abs_path[0] + "ofrl/" + self.relative_path)
+                abs_path = abs_path.split("scope_rl/")
+                abs_path = Path(abs_path[0] + "scope_rl/" + self.relative_path)
             else:
-                abs_path = Path(abs_path[0] + "ofrl/ofrl/" + self.relative_path)
+                abs_path = Path(abs_path[0] + "scope-rl/scope_rl/" + self.relative_path)
         else:
             path = self.abs_path
 

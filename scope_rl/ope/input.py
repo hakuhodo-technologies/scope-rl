@@ -21,10 +21,10 @@ from d3rlpy.models.q_functions import MeanQFunctionFactory
 from d3rlpy.preprocessing import Scaler, ActionScaler
 
 from .weight_value_learning import (
-    DiscreteAugmentedLagrangianStateActionWightValueLearning,
-    DiscreteAugmentedLagrangianStateWightValueLearning,
-    ContinuousAugmentedLagrangianStateActionWightValueLearning,
-    ContinuousAugmentedLagrangianStateWightValueLearning,
+    DiscreteDiceStateActionWightValueLearning,
+    DiscreteDiceStateWightValueLearning,
+    ContinuousDiceStateActionWightValueLearning,
+    ContinuousDiceStateWightValueLearning,
     DiscreteMinimaxStateActionValueLearning,
     DiscreteMinimaxStateValueLearning,
     ContinuousMinimaxStateActionValueLearning,
@@ -58,7 +58,7 @@ from ..types import LoggedDataset, OPEInputDict
 class CreateOPEInput:
     """Class to prepare OPE inputs.
 
-    Imported as: :class:`ofrl.ope.CreateOPEInput`
+    Imported as: :class:`scope_rl.ope.CreateOPEInput`
 
     Parameters
     -------
@@ -91,7 +91,7 @@ class CreateOPEInput:
             The followings describe the parameters of each model.
 
             * (external) `d3rlpy's documentation about FQE <https://d3rlpy.readthedocs.io/en/latest/references/off_policy_evaluation.html>`_
-            * (API reference) :class:`ofrl.ope.weight_value_learning`
+            * (API reference) :class:`scope_rl.ope.weight_value_learning`
 
     gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
@@ -114,13 +114,13 @@ class CreateOPEInput:
 
     .. code-block:: python
 
-        # import necessary module from OFRL
-        from ofrl.dataset import SyntheticDataset
-        from ofrl.policy import DiscreteEpsilonGreedyHead
-        from ofrl.ope import CreateOPEInput
-        from ofrl.ope import DiscreteOffPolicyEvaluation as OPE
-        from ofrl.ope import DiscreteTrajectoryWiseImportanceSampling as TIS
-        from ofrl.ope import DiscretePerDecisionImportanceSampling as PDIS
+        # import necessary module from SCOPE-RL
+        from scope_rl.dataset import SyntheticDataset
+        from scope_rl.policy import DiscreteEpsilonGreedyHead
+        from scope_rl.ope import CreateOPEInput
+        from scope_rl.ope import DiscreteOffPolicyEvaluation as OPE
+        from scope_rl.ope import DiscreteTrajectoryWiseImportanceSampling as TIS
+        from scope_rl.ope import DiscretePerDecisionImportanceSampling as PDIS
 
         # import necessary module from other libraries
         import gym
@@ -212,7 +212,7 @@ class CreateOPEInput:
     .. seealso::
 
         * :doc:`Quickstart </documentation/quickstart>`
-        * :doc:`Related tutorials </documentation/_autogallery/ofrl_others/index>`
+        * :doc:`Related tutorials </documentation/_autogallery/scope_rl_others/index>`
 
     """
 
@@ -501,7 +501,7 @@ class CreateOPEInput:
             for k in range(k_fold):
                 if self.action_type == "discrete":
                     self.state_action_dual_function[evaluation_policy.name].append(
-                        DiscreteAugmentedLagrangianStateActionWightValueLearning(
+                        DiscreteDiceStateActionWightValueLearning(
                             q_function=DiscreteQFunction(
                                 n_actions=self.n_actions,
                                 state_dim=self.state_dim,
@@ -522,7 +522,7 @@ class CreateOPEInput:
                     )
                 else:
                     self.state_action_dual_function[evaluation_policy.name].append(
-                        ContinuousAugmentedLagrangianStateActionWightValueLearning(
+                        ContinuousDiceStateActionWightValueLearning(
                             q_function=ContinuousQFunction(
                                 action_dim=self.action_dim,
                                 state_dim=self.state_dim,
@@ -1036,7 +1036,7 @@ class CreateOPEInput:
             for k in range(k_fold):
                 if self.action_type == "discrete":
                     self.state_dual_function[evaluation_policy.name].append(
-                        DiscreteAugmentedLagrangianStateWightValueLearning(
+                        DiscreteDiceStateWightValueLearning(
                             v_function=VFunction(
                                 state_dim=self.state_dim,
                                 hidden_dim=self.model_args["hidden_dim"],
@@ -1053,7 +1053,7 @@ class CreateOPEInput:
                     )
                 else:
                     self.state_dual_function[evaluation_policy.name].append(
-                        ContinuousAugmentedLagrangianStateWightValueLearning(
+                        ContinuousDiceStateWightValueLearning(
                             v_function=VFunction(
                                 state_dim=self.state_dim,
                                 hidden_dim=self.model_args["hidden_dim"],
@@ -2172,7 +2172,7 @@ class CreateOPEInput:
 
                 .. seealso::
 
-                    :class:`ofrl.dataset.SyntheticDataset` describes the components of :class:`logged_dataset`.
+                    :class:`scope_rl.dataset.SyntheticDataset` describes the components of :class:`logged_dataset`.
 
         evaluation_policies: list of BaseHead
             Evaluation policies.
@@ -2609,7 +2609,7 @@ class CreateOPEInput:
 
                 .. seealso::
 
-                    :class:`ofrl.dataset.SyntheticDataset` describes the components of :class:`logged_dataset`.
+                    :class:`scope_rl.dataset.SyntheticDataset` describes the components of :class:`logged_dataset`.
 
         evaluation_policies: list of BaseHead or BaseHead
             Evaluation policies.
@@ -2691,7 +2691,7 @@ class CreateOPEInput:
 
         save_relative_path: bool, default=False.
             Whether to save a relative path.
-            If `True`, a path relative to the ofrl directory will be saved.
+            If `True`, a path relative to the scope-rl directory will be saved.
             If `False`, the absolute path will be saved.
 
             Note that, this option was added in order to run examples in the documentation properly.

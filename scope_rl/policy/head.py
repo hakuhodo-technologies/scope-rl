@@ -21,7 +21,7 @@ class BaseHead(AlgoBase):
 
     Bases: :class:`d3rlpy.algos.AlgoBase`
 
-    Imported as: :class:`ofrl.policy.BaseHead`
+    Imported as: :class:`scope_rl.policy.BaseHead`
 
     Note
     -------
@@ -204,9 +204,9 @@ class BaseHead(AlgoBase):
 class OnlineHead(BaseHead):
     """Class to enable online interaction.
 
-    Bases: :class:`ofrl.policy.BaseHead`
+    Bases: :class:`scope_rl.policy.BaseHead`
 
-    Imported as: :class:`ofrl.policy.OnlineHead`
+    Imported as: :class:`scope_rl.policy.OnlineHead`
 
     Note
     -------
@@ -252,9 +252,9 @@ class OnlineHead(BaseHead):
 class DiscreteEpsilonGreedyHead(BaseHead):
     """Class to convert a deterministic policy into an epsilon-greedy policy.
 
-    Bases: :class:`ofrl.policy.BaseHead`
+    Bases: :class:`scope_rl.policy.BaseHead`
 
-    Imported as: :class:`ofrl.policy.DiscreteEpsilonGreedyHead`
+    Imported as: :class:`scope_rl.policy.DiscreteEpsilonGreedyHead`
 
     Note
     -------
@@ -412,9 +412,9 @@ class DiscreteEpsilonGreedyHead(BaseHead):
 class DiscreteSoftmaxHead(BaseHead):
     """Class to convert a Q-learning based policy into a softmax policy.
 
-    Bases: :class:`ofrl.policy.BaseHead`
+    Bases: :class:`scope_rl.policy.BaseHead`
 
-    Imported as: :class:`ofrl.policy.DiscreteSoftmaxHead`
+    Imported as: :class:`scope_rl.policy.DiscreteSoftmaxHead`
 
     Note
     -------
@@ -620,9 +620,9 @@ class DiscreteSoftmaxHead(BaseHead):
 class ContinuousGaussianHead(BaseHead):
     """Class to sample action from Gaussian distribution.
 
-    Bases: :class:`ofrl.policy.BaseHead`
+    Bases: :class:`scope_rl.policy.BaseHead`
 
-    Imported as: :class:`ofrl.policy.ContinuousGaussianHead`
+    Imported as: :class:`scope_rl.policy.ContinuousGaussianHead`
 
     Note
     -------
@@ -774,9 +774,9 @@ class ContinuousGaussianHead(BaseHead):
 class ContinuousTruncatedGaussianHead(BaseHead):
     """Class to sample action from Truncated Gaussian distribution.
 
-    Bases: :class:`ofrl.policy.BaseHead`
+    Bases: :class:`scope_rl.policy.BaseHead`
 
-    Imported as: :class:`ofrl.policy.ContinuousTruncatedGaussianHead`
+    Imported as: :class:`scope_rl.policy.ContinuousTruncatedGaussianHead`
 
     Note
     -------
@@ -943,9 +943,9 @@ class ContinuousTruncatedGaussianHead(BaseHead):
 class ContinuousEvalHead(BaseHead):
     """Class to transform the base policy into a deterministic evaluation policy.
 
-    Bases: :class:`ofrl.policy.BaseHead`
+    Bases: :class:`scope_rl.policy.BaseHead`
 
-    Imported as: :class:`ofrl.policy.ContinuousEvalHead`
+    Imported as: :class:`scope_rl.policy.ContinuousEvalHead`
 
     Note
     -------

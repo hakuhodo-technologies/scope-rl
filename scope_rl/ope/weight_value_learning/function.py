@@ -10,7 +10,7 @@ class VFunction(nn.Module):
 
     Bases: :class:`torch.nn.Module`
 
-    Imported as: :class:`ofrl.ope.weight_value_learning.function.VFunction`
+    Imported as: :class:`scope_rl.ope.weight_value_learning.function.VFunction`
 
     Parameters
     -------
@@ -44,7 +44,7 @@ class StateWeightFunction(nn.Module):
 
     Bases: :class:`torch.nn.Module`
 
-    Imported as: :class:`ofrl.ope.weight_value_learning.function.StateWeightFunction`
+    Imported as: :class:`scope_rl.ope.weight_value_learning.function.StateWeightFunction`
 
     Parameters
     -------
@@ -90,7 +90,7 @@ class DiscreteQFunction(nn.Module):
 
     Bases: :class:`torch.nn.Module`
 
-    Imported as: :class:`ofrl.ope.weight_value_learning.function.DiscreteQFunction`
+    Imported as: :class:`scope_rl.ope.weight_value_learning.function.DiscreteQFunction`
 
     Parameters
     -------
@@ -168,7 +168,7 @@ class ContinuousQFunction(nn.Module):
 
     Bases: :class:`torch.nn.Module`
 
-    Imported as: :class:`ofrl.ope.weight_value_learning.function.ContinuousQFunction`
+    Imported as: :class:`scope_rl.ope.weight_value_learning.function.ContinuousQFunction`
 
     Parameters
     -------
@@ -209,7 +209,7 @@ class DiscreteStateActionWeightFunction(nn.Module):
 
     Bases: :class:`torch.nn.Module`
 
-    Imported as: :class:`ofrl.ope.weight_value_learning.function.DiscreteStateActionWeightFunction`
+    Imported as: :class:`scope_rl.ope.weight_value_learning.function.DiscreteStateActionWeightFunction`
 
     Parameters
     -------
@@ -266,7 +266,7 @@ class ContinuousStateActionWeightFunction(nn.Module):
 
     Bases: :class:`torch.nn.Module`
 
-    Imported as: :class:`ofrl.ope.weight_value_learning.function.ContinuousStateActionWeightFunction`
+    Imported as: :class:`scope_rl.ope.weight_value_learning.function.ContinuousStateActionWeightFunction`
 
     Parameters
     -------

@@ -1,6 +1,6 @@
 """Off-Policy Estimators for continuous action cases (designed for deterministic policies)."""
 from dataclasses import dataclass
-from typing import Dict, Union, Optional
+from typing import Dict, Optional
 
 import numpy as np
 from sklearn.utils import check_scalar
@@ -15,9 +15,9 @@ from ..utils import check_array
 class ContinuousDirectMethod(BaseOffPolicyEstimator):
     """Direct Method (DM) for continuous-action OPE (designed for deterministic policies).
 
-    Bases: :class:`ofrl.ope.BaseOffPolicyEstimator`
+    Bases: :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
-    Imported as: :class:`ofrl.ope.ContinuousDirectMethod`
+    Imported as: :class:`scope_rl.ope.ContinuousDirectMethod`
 
     Note
     -------
@@ -41,7 +41,7 @@ class ContinuousDirectMethod(BaseOffPolicyEstimator):
     .. seealso::
 
         The implementation of FQE is provided by `d3rlpy <https://d3rlpy.readthedocs.io/en/latest/references/off_policy_evaluation.html>`_.
-        The implementations of Minimax Learning is available at :class:`ofrl.ope.weight_value_learning`.
+        The implementations of Minimax Learning is available at :class:`scope_rl.ope.weight_value_learning`.
 
     Parameters
     -------
@@ -224,9 +224,9 @@ class ContinuousDirectMethod(BaseOffPolicyEstimator):
 class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
     """Trajectory-wise Importance Sampling (TIS) for continuous-action OPE (designed for deterministic policies).
 
-    Bases: :class:`ofrl.ope.BaseOffPolicyEstimator`
+    Bases: :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
-    Imported as: :class:`ofrl.ope.ContinuousTrajectoryWiseImportanceSampling`
+    Imported as: :class:`scope_rl.ope.ContinuousTrajectoryWiseImportanceSampling`
 
     Note
     -------
@@ -602,9 +602,9 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
     """Per-Decision Importance Sampling (PDIS) for continuous-action OPE (designed for deterministic policies).
 
-    Bases: :class:`ofrl.ope.BaseOffPolicyEstimator`
+    Bases: :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
-    Imported as: :class:`ofrl.ope.ContinuousPerDecisionImportanceSampling`
+    Imported as: :class:`scope_rl.ope.ContinuousPerDecisionImportanceSampling`
 
     Note
     -------
@@ -981,9 +981,9 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
 class ContinuousDoublyRobust(BaseOffPolicyEstimator):
     """Doubly Robust (DR) for continuous-action OPE (designed for deterministic policies).
 
-    Bases: :class:`ofrl.ope.BaseOffPolicyEstimator`
+    Bases: :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
-    Imported as: :class:`ofrl.ope.ContinuousDoublyRobust`
+    Imported as: :class:`scope_rl.ope.ContinuousDoublyRobust`
 
     Note
     -------
@@ -1408,14 +1408,14 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
 
 
 @dataclass
-class ContinuousSelfNormalizedTrajectoryWiseImportanceSampling(
+class ContinuousSelfNormalizedTIS(
     ContinuousTrajectoryWiseImportanceSampling
 ):
     """Self-Normalized Trajectory-wise Importance Sampling (SNTIS) for continuous-action OPE (designed for deterministic policies).
 
-    Bases: :class:`ofrl.ope.ContinuousTrajectoryWiseImportanceSampling` -> :class:`ofrl.ope.BaseOffPolicyEstimator`
+    Bases: :class:`scope_rl.ope.ContinuousTrajectoryWiseImportanceSampling` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
-    Imported as: :class:`ofrl.ope.ContinuousSelfNormalizedTrajectoryWiseImportanceSampling`
+    Imported as: :class:`scope_rl.ope.ContinuousSelfNormalizedTIS`
 
     Note
     -------
@@ -1529,14 +1529,14 @@ class ContinuousSelfNormalizedTrajectoryWiseImportanceSampling(
 
 
 @dataclass
-class ContinuousSelfNormalizedPerDecisionImportanceSampling(
+class ContinuousSelfNormalizedPDIS(
     ContinuousPerDecisionImportanceSampling
 ):
     """Self-Normalized Per-Decision Importance Sampling (SNPDIS) for continuous-action OPE (designed for deterministic policies).
 
-    Bases: :class:`ofrl.ope.ContinuousPerDecisionImportanceSampling` -> :class:`ofrl.ope.BaseOffPolicyEstimator`
+    Bases: :class:`scope_rl.ope.ContinuousPerDecisionImportanceSampling` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
-    Imported as: :class:`ofrl.ope.ContinuousSelfNormalizedPerDecisionImportanceSampling`
+    Imported as: :class:`scope_rl.ope.ContinuousSelfNormalizedPDIS`
 
     Note
     -------
@@ -1650,12 +1650,12 @@ class ContinuousSelfNormalizedPerDecisionImportanceSampling(
 
 
 @dataclass
-class ContinuousSelfNormalizedDoublyRobust(ContinuousDoublyRobust):
+class ContinuousSelfNormalizedDR(ContinuousDoublyRobust):
     """Self-Normalized Doubly Robust (SNDR) for continuous-action OPE (designed for deterministic policies).
 
-    Bases: :class:`ofrl.ope.ContinuousDoublyRobust` -> :class:`ofrl.ope.BaseOffPolicyEstimator`
+    Bases: :class:`scope_rl.ope.ContinuousDoublyRobust` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
-    Imported as: :class:`ofrl.ope.ContinuousSelfNormalizedDoublyRobust`
+    Imported as: :class:`scope_rl.ope.ContinuousSelfNormalizedDR`
 
     Note
     -------

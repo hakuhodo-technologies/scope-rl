@@ -1,11 +1,11 @@
 from scope_rl.ope.weight_value_learning.base import BaseWeightValueLearner
 from scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_discrete import (
-    DiscreteAugmentedLagrangianStateActionWightValueLearning,
-    DiscreteAugmentedLagrangianStateWightValueLearning,
+    DiscreteDiceStateActionWightValueLearning,
+    DiscreteDiceStateWightValueLearning,
 )
 from scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_continuous import (
-    ContinuousAugmentedLagrangianStateActionWightValueLearning,
-    ContinuousAugmentedLagrangianStateWightValueLearning,
+    ContinuousDiceStateActionWightValueLearning,
+    ContinuousDiceStateWightValueLearning,
 )
 from scope_rl.ope.weight_value_learning.minimax_value_learning_discrete import (
     DiscreteMinimaxStateActionValueLearning,
@@ -27,10 +27,10 @@ from scope_rl.ope.weight_value_learning.minimax_weight_learning_continuous impor
 
 __all__ = [
     "BaseWeightValueLearner",
-    "DiscreteAugmentedLagrangianStateActionWightValueLearning",
-    "DiscreteAugmentedLagrangianStateWightValueLearning",
-    "ContinuousAugmentedLagrangianStateActionWightValueLearning",
-    "ContinuousAugmentedLagrangianStateWightValueLearning",
+    "DiscreteDiceStateActionWightValueLearning",
+    "DiscreteDiceStateWightValueLearning",
+    "ContinuousDiceStateActionWightValueLearning",
+    "ContinuousDiceStateWightValueLearning",
     "DiscreteMinimaxStateActionValueLearning",
     "DiscreteMinimaxStateValueLearning",
     "ContinuousMinimaxStateActionValueLearning",
@@ -43,8 +43,8 @@ __all__ = [
 
 
 __discrete__ = [
-    "DiscreteAugmentedLagrangianStateActionWightValueLearning",
-    "DiscreteAugmentedLagrangianStateWightValueLearning",
+    "DiscreteDiceStateActionWightValueLearning",
+    "DiscreteDiceianStateWightValueLearning",
     "DiscreteMinimaxStateActionValueLearning",
     "DiscreteMinimaxStateValueLearning",
     "DiscreteMinimaxStateActionWeightLearning",
@@ -53,8 +53,8 @@ __discrete__ = [
 
 
 __continuous__ = [
-    "ContinuousAugmentedLagrangianStateActionWightValueLearning",
-    "ContinuousAugmentedLagrangianStateWightValueLearning",
+    "ContinuousDiceStateActionWightValueLearning",
+    "ContinuousDiceStateWightValueLearning",
     "ContinuousMinimaxStateActionValueLearning",
     "ContinuousMinimaxStateValueLearning",
     "ContinuousMinimaxStateActionWeightLearning",

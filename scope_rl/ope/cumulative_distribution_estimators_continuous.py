@@ -8,20 +8,20 @@ from sklearn.utils import check_scalar
 from d3rlpy.preprocessing import ActionScaler
 
 from .estimators_base import (
-    BaseCumulativeDistributionOffPolicyEstimator,
+    BaseCumulativeDistributionOPEEstimator,
 )
 from ..utils import check_array
 
 
 @dataclass
-class ContinuousCumulativeDistributionDirectMethod(
-    BaseCumulativeDistributionOffPolicyEstimator,
+class ContinuousCumulativeDistributionDM(
+    BaseCumulativeDistributionOPEEstimator,
 ):
     """Direct Method (DM) for estimating cumulative distribution function (CDF) in continuous-action OPE.
 
-    Bases: :class:`ofrl.ope.BaseCumulativeDistributionOffPolicyEstimator`
+    Bases: :class:`scope_rl.ope.BaseCumulativeDistributionOPEEstimator`
 
-    Imported as: :class:`ofrl.ope.ContinuousCumulativeDistributionDirectMethod`
+    Imported as: :class:`scope_rl.ope.ContinuousCumulativeDistributionDM`
 
     Note
     -------
@@ -41,7 +41,7 @@ class ContinuousCumulativeDistributionDirectMethod(
     .. seealso::
 
         The implementation of FQE is provided by `d3rlpy <https://d3rlpy.readthedocs.io/en/latest/references/off_policy_evaluation.html>`_.
-        The implementations of Minimax Learning is available at :class:`ofrl.ope.weight_value_learning`.
+        The implementations of Minimax Learning is available at :class:`scope_rl.ope.weight_value_learning`.
 
     Parameters
     -------
@@ -378,14 +378,14 @@ class ContinuousCumulativeDistributionDirectMethod(
 
 
 @dataclass
-class ContinuousCumulativeDistributionTrajectoryWiseImportanceSampling(
-    BaseCumulativeDistributionOffPolicyEstimator,
+class ContinuousCumulativeDistributionTIS(
+    BaseCumulativeDistributionOPEEstimator,
 ):
     """Trajectory-wise Importance Sampling (TIS) for estimating cumulative distribution function (CDF) in continuous-action OPE.
 
-    Bases: :class:`ofrl.ope.BaseCumulativeDistributionOffPolicyEstimator`
+    Bases: :class:`scope_rl.ope.BaseCumulativeDistributionOPEyEstimator`
 
-    Imported as: :class:`ofrl.ope.ContinuousCumulativeTrajectoryWiseImportanceSampling`
+    Imported as: :class:`scope_rl.ope.ContinuousCumulativeTIS`
 
     Note
     -------
@@ -871,14 +871,14 @@ class ContinuousCumulativeDistributionTrajectoryWiseImportanceSampling(
 
 
 @dataclass
-class ContinuousCumulativeDistributionTrajectoryWiseDoublyRobust(
-    BaseCumulativeDistributionOffPolicyEstimator,
+class ContinuousCumulativeDistributionTDR(
+    BaseCumulativeDistributionOPEEstimator,
 ):
     """Trajectory-wise Doubly Robust (TDR) for estimating cumulative distribution function (CDF) in continuous-action OPE.
 
-    Bases: :class:`ofrl.ope.BaseCumulativeDistributionOffPolicyEstimator`
+    Bases: :class:`scope_rl.ope.BaseCumulativeDistributionOPEEstimator`
 
-    Imported as: :class:`ofrl.ope.ContinuousCumulativeTrajectoryWiseDoublyRobust`
+    Imported as: :class:`scope_rl.ope.ContinuousCumulativeTDR`
 
 
     Note
@@ -1407,14 +1407,14 @@ class ContinuousCumulativeDistributionTrajectoryWiseDoublyRobust(
 
 
 @dataclass
-class ContinuousCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSampling(
-    ContinuousCumulativeDistributionTrajectoryWiseImportanceSampling,
+class ContinuousCumulativeDistributionSNTIS(
+    ContinuousCumulativeDistributionTIS,
 ):
     """Self Normalized Trajectory-wise Importance Sampling (SNTIS) for estimating cumulative distribution function (CDF) in continuous-action OPE.
 
-    Bases: :class:`ofrl.ope.ContinuousCumulativeTrajectoryWiseImportanceSampling` -> :class:`ofrl.ope.BaseCumulativeDistributionOffPolicyEstimator`
+    Bases: :class:`scope_rl.ope.ContinuousCumulativeTIS` -> :class:`scope_rl.ope.BaseCumulativeDistributionOPEEstimator`
 
-    Imported as: :class:`ofrl.ope.ContinuousCumulativeSelfNormalizedTrajectoryWiseImportanceSampling`
+    Imported as: :class:`scope_rl.ope.ContinuousCumulativeSNTIS`
 
 
     Note
@@ -1598,14 +1598,14 @@ class ContinuousCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSamp
 
 
 @dataclass
-class ContinuousCumulativeDistributionSelfNormalizedTrajectoryWiseDoublyRobust(
-    ContinuousCumulativeDistributionTrajectoryWiseDoublyRobust,
+class ContinuousCumulativeDistributionSNTDR(
+    ContinuousCumulativeDistributionTDR,
 ):
     """Self Normalized Trajectory-wise Doubly Robust (SNTDR) for estimating cumulative distribution function (CDF) in continuous-action OPE.
 
-    Bases: :class:`ofrl.ope.ContinuousCumulativeTrajectoryWiseDoublyRobust` -> :class:`ofrl.ope.BaseCumulativeDistributionOffPolicyEstimator`
+    Bases: :class:`scope_rl.ope.ContinuousCumulativeTDR` -> :class:`scope_rl.ope.BaseCumulativeDistributionOPEEstimator`
 
-    Imported as: :class:`ofrl.ope.ContinuousCumulativeSelfNormalizedTrajectoryWiseDoublyRobust`
+    Imported as: :class:`scope_rl.ope.ContinuousCumulativeSNTDR`
 
     Note
     -------

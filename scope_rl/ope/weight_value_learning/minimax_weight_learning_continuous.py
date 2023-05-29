@@ -25,9 +25,9 @@ from ...utils import check_array, gaussian_kernel
 class ContinuousMinimaxStateActionWeightLearning(BaseWeightValueLearner):
     """Minimax Weight Learning for marginal OPE estimators (for continuous action space).
 
-    Bases: :class:`ofrl.ope.weight_value_learning.BaseWeightValueLearner`
+    Bases: :class:`scope_rl.ope.weight_value_learning.BaseWeightValueLearner`
 
-    Imported as: :class:`ofrl.ope.weight_value_learning.ContinuousMinimaxStateActionWightLearning`
+    Imported as: :class:`scope_rl.ope.ContinuousMinimaxStateActionWightLearning`
 
     Note
     -------
@@ -537,9 +537,9 @@ class ContinuousMinimaxStateActionWeightLearning(BaseWeightValueLearner):
 class ContinuousMinimaxStateWeightLearning(BaseWeightValueLearner):
     """Minimax Weight Learning for marginal OPE estimators (for continuous action space).
 
-    Bases: :class:`ofrl.ope.weight_value_learning.BaseWeightValueLearner`
+    Bases: :class:`scope_rl.ope.weight_value_learning.BaseWeightValueLearner`
 
-    Imported as: :class:`ofrl.ope.weight_value_learning.ContinuousMinimaxStateWightLearning`
+    Imported as: :class:`scope_rl.ope.ContinuousMinimaxStateWightLearning`
     
     Note
     -------

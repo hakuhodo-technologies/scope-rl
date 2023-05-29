@@ -23,7 +23,7 @@ HeadDict = Dict[str, Tuple[BaseHead, Dict[str, Any]]]
 class OffPolicyLearning:
     """Class to handle OPL by multiple algorithms simultaneously. (applicable to both discrete/continuous action cases)
 
-    Imported as: :class:`ofrl.policy.OffPolicyLearning`
+    Imported as: :class:`scope_rl.policy.OffPolicyLearning`
 
     Parameters
     -------
@@ -37,10 +37,10 @@ class OffPolicyLearning:
 
     .. code-block:: python
 
-        # import necessary module from OFRL
-        from ofrl.dataset import SyntheticDataset
-        from ofrl.policy import OffPolicyLearning
-        from ofrl.policy import DiscreteEpsilonGreedyHead, DiscreteSoftmaxHead
+        # import necessary module from SCOPE-RL
+        from scope_rl.dataset import SyntheticDataset
+        from scope_rl.policy import OffPolicyLearning
+        from scope_rl.policy import DiscreteEpsilonGreedyHead, DiscreteSoftmaxHead
 
         # import necessary module from other libraries
         import gym
@@ -190,7 +190,7 @@ class OffPolicyLearning:
 
             .. seealso::
 
-                :class:`ofrl.dataset.SyntheticDataset` describes the components of :class:`logged_dataset`.
+                :class:`scope_rl.dataset.SyntheticDataset` describes the components of :class:`logged_dataset`.
 
         algorithms: list of AlgoBase
             List of algorithms to fit.
@@ -279,7 +279,7 @@ class OffPolicyLearning:
 
             .. seealso::
 
-                :doc:`/documentation/_autosummary/ofrl.policy.head` described various policy wrappers and their parameters.
+                :doc:`/documentation/_autosummary/scope_rl.policy.head` described various policy wrappers and their parameters.
 
         random_state: int, default=None (>= 0)
             Random state.
@@ -346,7 +346,7 @@ class OffPolicyLearning:
 
             .. seealso::
 
-                :class:`ofrl.dataset.SyntheticDataset` describes the components of :class:`logged_dataset`.
+                :class:`scope_rl.dataset.SyntheticDataset` describes the components of :class:`logged_dataset`.
 
         algorithms: list of AlgoBase
             List of algorithms to fit.
@@ -482,7 +482,7 @@ class OffPolicyLearning:
 
             .. seealso::
 
-                :doc:`/documentation/_autosummary/ofrl.policy.head` described various policy wrappers and their parameters.
+                :doc:`/documentation/_autosummary/scope_rl.policy.head` described various policy wrappers and their parameters.
 
         behavior_policy_name: str, default=None
             Name of the behavior policy.
@@ -585,7 +585,7 @@ class OffPolicyLearning:
 
             .. seealso::
 
-                :class:`ofrl.dataset.SyntheticDataset` describes the components of :class:`logged_dataset`.
+                :class:`scope_rl.dataset.SyntheticDataset` describes the components of :class:`logged_dataset`.
 
         algorithms: list of AlgoBase
             List of algorithms to fit.
@@ -624,7 +624,7 @@ class OffPolicyLearning:
 
             .. seealso::
 
-                :doc:`/documentation/_autosummary/ofrl.policy.head` described various policy wrappers and their parameters.
+                :doc:`/documentation/_autosummary/scope_rl.policy.head` described various policy wrappers and their parameters.
 
         behavior_policy_name: str, default=None
             Name of the behavior policy.

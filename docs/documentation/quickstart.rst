@@ -263,11 +263,11 @@ using Cumulative Distribution OPE estimators :cite:`huang2021off` :cite:`huang20
 
     # import SCOPE-RL modules
     from scope_rl.ope import DiscreteCumulativeDistributionOffPolicyEvaluation as CumulativeDistributionOPE
-    from scope_rl.ope import DiscreteCumulativeDistributionDirectMethod as CD_DM
-    from scope_rl.ope import DiscreteCumulativeDistributionTrajectoryWiseImportanceSampling as CD_IS
-    from scope_rl.ope import DiscreteCumulativeDistributionTrajectoryWiseDoublyRobust as CD_DR
-    from scope_rl.ope import DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSampling as CD_SNIS
-    from scope_rl.ope import DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseDoublyRobust as CD_SNDR
+    from scope_rl.ope import DiscreteCumulativeDistributionDM as CD_DM
+    from scope_rl.ope import DiscreteCumulativeDistributionTIS as CD_IS
+    from scope_rl.ope import DiscreteCumulativeDistributionTDR as CD_DR
+    from scope_rl.ope import DiscreteCumulativeDistributionSNIS as CD_SNIS
+    from scope_rl.ope import DiscreteCumulativeDistributionSNDR as CD_SNDR
 
     # (4) Evaluate the learned policy using cumulative distribution function (in an offline manner)
     # we compare ddqn, cql, and random policy defined in the previous section (i.e., (3) of basic OPE procedure)
@@ -275,11 +275,11 @@ using Cumulative Distribution OPE estimators :cite:`huang2021off` :cite:`huang20
     cd_ope = CumulativeDistributionOPE(
         logged_dataset=test_logged_dataset,
         ope_estimators=[
-        CD_DM(estimator_name="cdf_dm"),
-        CD_IS(estimator_name="cdf_is"),
-        CD_DR(estimator_name="cdf_dr"),
-        CD_SNIS(estimator_name="cdf_snis"),
-        CD_SNDR(estimator_name="cdf_sndr"),
+        CD_DM(estimator_name="cd_dm"),
+        CD_IS(estimator_name="cd_is"),
+        CD_DR(estimator_name="cd_dr"),
+        CD_SNIS(estimator_name="cd_snis"),
+        CD_SNDR(estimator_name="cd_sndr"),
         ],
     )
     # estimate variance

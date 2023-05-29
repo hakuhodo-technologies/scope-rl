@@ -7,7 +7,7 @@ from dataclasses import dataclass
 class BaseWeightValueLearner(metaclass=ABCMeta):
     """Base class for weight/value learning.
 
-    Imported as: :class:`ofrl.ope.weight_value_learning.BaseWeightValueLearner`
+    Imported as: :class:`scope_rl.ope.weight_value_learning.BaseWeightValueLearner`
 
     """
 
