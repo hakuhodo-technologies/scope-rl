@@ -1,8 +1,8 @@
-# OFRL: A pipeline for offline reinforcement learning research and applications
+# SCOPE-RL: A pipeline for offline reinforcement learning research and applications
 <details>
 <summary><strong>Table of Contents </strong>(click to expand)</summary>
 
-- [OFRL: A pipeline for offline reinforcement learning research and applications](#OFRL-a-pipeline-for-offline-reinforcement-learning-research-and-applications)
+- [SCOPE-RL: A pipeline for offline reinforcement learning research and applications](#SCOPE-RL-a-pipeline-for-offline-reinforcement-learning-research-and-applications)
 - [Overview](#overview)
 - [Installation](#installation)
 - [Usage](#usage)
@@ -22,23 +22,23 @@
 
 ## Overview
 
-*OFRL* is an open-source Python Software for implementing the end-to-end procedure regarding **offline Reinforcement Learning (offline RL)**, from data collection to offline policy learning, performance evaluation, and policy selection. Our software includes a series of modules to implement synthetic dataset generation, dataset preprocessing, estimators for Off-Policy Evaluation (OPE), and Off-Policy Selection (OPS) methods.
+*SCOPE-RL* is an open-source Python Software for implementing the end-to-end procedure regarding **offline Reinforcement Learning (offline RL)**, from data collection to offline policy learning, performance evaluation, and policy selection. Our software includes a series of modules to implement synthetic dataset generation, dataset preprocessing, estimators for Off-Policy Evaluation (OPE), and Off-Policy Selection (OPS) methods.
 
-This software is also compatible with [d3rlpy](https://github.com/takuseno/d3rlpy), which implements a range of online and offline RL methods. OFRL enables an easy, transparent, and reliable experiment in offline RL research on any environment with [OpenAI Gym](https://gym.openai.com) and [Gymnasium](https://gymnasium.farama.org/)-like interface and also facilitates implementation of offline RL in practice on a variety of customized datasets.
+This software is also compatible with [d3rlpy](https://github.com/takuseno/d3rlpy), which implements a range of online and offline RL methods. SCOPE-RL enables an easy, transparent, and reliable experiment in offline RL research on any environment with [OpenAI Gym](https://gym.openai.com) and [Gymnasium](https://gymnasium.farama.org/)-like interface and also facilitates implementation of offline RL in practice on a variety of customized datasets.
 
 Our software enables evaluation and algorithm comparison related to the following research topics:
 
-- **Offline Reinforcement Learning**: Offline RL aims at learning a new policy from only offline logged data collected by a behavior policy. OFRL enables flexible experiment using customized dataset collected by various behavior policies and on a variety of environment.
+- **Offline Reinforcement Learning**: Offline RL aims at learning a new policy from only offline logged data collected by a behavior policy. SCOPE-RL enables flexible experiment using customized dataset collected by various behavior policies and on a variety of environment.
 
-- **Off-Policy Evaluation**: OPE aims at evaluating the performance of a counterfactual policy using only offline logged data. OFRL supports many OPE estimators and streamlines the experimental procedure to evaluate OPE estimators. Moreover, we also implement advanced OPE, such as cumulative distribution estimation.
+- **Off-Policy Evaluation**: OPE aims at evaluating the performance of a counterfactual policy using only offline logged data. SCOPE-RL supports many OPE estimators and streamlines the experimental procedure to evaluate OPE estimators. Moreover, we also implement advanced OPE, such as cumulative distribution estimation.
 
-- **Off-Policy Selection**: OPS aims at identifying the best-performing policy from a pool of several candidate policies using offline logged data. OFRL supports some basic OPS methods and provides some metrics to evaluate the OPS accuracy.
+- **Off-Policy Selection**: OPS aims at identifying the best-performing policy from a pool of several candidate policies using offline logged data. SCOPE-RL supports some basic OPS methods and provides some metrics to evaluate the OPS accuracy.
 
 This software is intended for the episodic RL setup. For those interested in the contextual bandit setup, we'd recommend [Open Bandit Pipeline](https://github.com/st-tech/zr-obp).
 
 ### Implementations
 
-*OFRL* mainly consists of the following three modules.
+*SCOPE-RL* mainly consists of the following three modules.
 - [**dataset module**](./_gym/dataset): This module provides tools to generate synthetic data from any environment on top of [OpenAI Gym](http://gym.openai.com/) and [Gymnasium](https://gymnasium.farama.org/)-like interface. It also provides tools to preprocess the logged data.
 - [**policy module**](./_gym/policy): This module provides a wrapper class for [d3rlpy](https://github.com/takuseno/d3rlpy) to enable a flexible data collection.
 - [**ope module**](./_gym/ope): This module provides a generic abstract class to implement an OPE estimator and some popular estimators. It also provides some tools useful for performing OPS.
@@ -115,19 +115,19 @@ To provide an example of performing a customized experiment imitating a practica
 
 ## Installation
 
-You can install OFRL using Python's package manager `pip`.
+You can install SCOPE-RL using Python's package manager `pip`.
 ```
-pip install ofrl
+pip install scope-rl
 ```
 
-You can also install OFRL from source.
+You can also install SCOPE-RL from source.
 ```bash
-git clone https://github.com/negocia-inc/ofrl
-cd ofrl
+git clone https://github.com/negocia-inc/scope-rl
+cd scope-rl
 python setup.py install
 ```
 
-OFRL supports Python 3.7 or newer. See [pyproject.toml](./pyproject.toml) for other requirements.
+SCOPE-RL supports Python 3.7 or newer. See [pyproject.toml](./pyproject.toml) for other requirements.
 
 ## Usage
 
@@ -140,9 +140,9 @@ Let's start by collecting some logged data useful for offline RL.
 ```Python
 # implement a data collection procedure on the RTBGym environment
 
-# import OFRL modules
-from ofrl.dataset import SyntheticDataset
-from ofrl.policy import DiscreteEpsilonGreedyHead
+# import SCOPE-RL modules
+from scope_rl.dataset import SyntheticDataset
+from scope_rl.policy import DiscreteEpsilonGreedyHead
 # import d3rlpy algorithms
 from d3rlpy.algos import DoubleDQN
 from d3rlpy.online.buffers import ReplayBuffer
@@ -201,7 +201,7 @@ test_logged_dataset = dataset.obtain_trajectories(
 We are now ready to learn a new policy from the logged data using [d3rlpy](https://github.com/takuseno/d3rlpy).
 
 ```Python
-# implement an offline RL procedure using OFRL and d3rlpy
+# implement an offline RL procedure using SCOPE-RL and d3rlpy
 
 # import d3rlpy algorithms
 from d3rlpy.dataset import MDPDataset
@@ -232,15 +232,15 @@ cql.fit(
 Then, we evaluate the performance of the learned policy using offline logged data. Specifically, we compare the estimation results of various OPE estimators, including Direct Method (DM), Trajectory-wise Importance Sampling (TIS), Per-Decision Importance Sampling (PDIS), and Doubly Robust (DR).
 
 ```Python
-# implement a basic OPE procedure using OFRL
+# implement a basic OPE procedure using SCOPE-RL
 
-# import OFRL modules
-from ofrl.ope import CreateOPEInput
-from ofrl.ope import DiscreteOffPolicyEvaluation as OPE
-from ofrl.ope import DiscreteDirectMethod as DM
-from ofrl.ope import DiscreteTrajectoryWiseImportanceSampling as TIS
-from ofrl.ope import DiscretePerDecisionImportanceSampling as PDIS
-from ofrl.ope import DiscreteDoublyRobust as DR
+# import SCOPE-RL modules
+from scope_rl.ope import CreateOPEInput
+from scope_rl.ope import DiscreteOffPolicyEvaluation as OPE
+from scope_rl.ope import DiscreteDirectMethod as DM
+from scope_rl.ope import DiscreteTrajectoryWiseImportanceSampling as TIS
+from scope_rl.ope import DiscretePerDecisionImportanceSampling as PDIS
+from scope_rl.ope import DiscreteDoublyRobust as DR
 
 # (4) Evaluate the learned policy in an offline manner
 # we compare ddqn, cql, and random policy
@@ -303,15 +303,15 @@ A formal quickstart example with RTBGym is available at [quickstart/rtb_syntheti
 We can also estimate various performance statics including variance and conditional value at risk (CVaR) by using estimators of cumulative distribution function.
 
 ```Python
-# implement a cumulative distribution estimation procedure using OFRL
+# implement a cumulative distribution estimation procedure using SCOPE-RL
 
-# import OFRL modules
-from ofrl.ope import DiscreteCumulativeDistributionOffPolicyEvaluation as CumulativeDistributionOPE
-from ofrl.ope import DiscreteCumulativeDistributionDirectMethod as CD_DM
-from ofrl.ope import DiscreteCumulativeDistributionTrajectoryWiseImportanceSampling as CD_IS
-from ofrl.ope import DiscreteCumulativeDistributionTrajectoryWiseDoublyRobust as CD_DR
-from ofrl.ope import DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSampling as CD_SNIS
-from ofrl.ope import DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseDoublyRobust as CD_SNDR
+# import SCOPE-RL modules
+from scope_rl.ope import DiscreteCumulativeDistributionOffPolicyEvaluation as CumulativeDistributionOPE
+from scope_rl.ope import DiscreteCumulativeDistributionDirectMethod as CD_DM
+from scope_rl.ope import DiscreteCumulativeDistributionTrajectoryWiseImportanceSampling as CD_IS
+from scope_rl.ope import DiscreteCumulativeDistributionTrajectoryWiseDoublyRobust as CD_DR
+from scope_rl.ope import DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSampling as CD_SNIS
+from scope_rl.ope import DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseDoublyRobust as CD_SNDR
 
 # (4) Evaluate the cumulative distribution function of the learned policy (in an offline manner)
 # we compare ddqn, cql, and random policy defined from the previous section (i.e., (3) of basic OPE procedure)
@@ -349,8 +349,8 @@ Finally, we select the best-performing policy based on the OPE results using the
 ```Python
 # perform off-policy selection based on the OPE results
 
-# import OFRL modules
-from ofrl.ope import OffPolicySelection
+# import SCOPE-RL modules
+from scope_rl.ope import OffPolicySelection
 
 # (5) Conduct Off-Policy Selection
 # Initialize the OPS class
@@ -407,15 +407,22 @@ For more examples, please refer to [quickstart/rtb_synthetic_discrete_advanced.i
 If you use our software in your work, please cite our paper:
 
 Haruka Kiyohara, Ren Kishimoto, Kosuke Kawakami, Ken Kobayashi, Kazuhide Nakata, Yuta Saito.<br>
-**Title**<br>
-[link]()
+**SCOPE-RL: Towards Risk-Return Assessments of Off-Policy Evaluation in Reinforcement Learning**<br>
+[link]() (a preprint coming soon..)
 
 Bibtex:
 ```
+@article{kiyohara2023scope,
+  author = {Kiyohara, Haruka and Kishimoto, Ren and Kawakami, Kosuke and Kobayashi, Ken and Nataka, Kazuhide and Saito, Yuta},
+  title = {SCOPE-RL: Towards Risk-Return Assessments of Off-Policy Evaluation in Reinforcement Learning},
+  journal = {A github repository},
+  pages = {xxx--xxx},
+  year = {2023},
+}
 ```
 
 ## Contribution
-Any contributions to OFRL are more than welcome!
+Any contributions to SCOPE-RL are more than welcome!
 Please refer to [CONTRIBUTING.md](./CONTRIBUTING.md) for general guidelines how to contribute the project.
 
 ## License
@@ -424,7 +431,7 @@ This project is licensed under Apache 2.0 license - see [LICENSE](LICENSE) file 
 
 ## Project Team
 
-- [Haruka Kiyohara](https://sites.google.com/view/harukakiyohara) (**Main Contributor**; Tokyo Institute of Technology)
+- [Haruka Kiyohara](https://sites.google.com/view/harukakiyohara) (**Main Contributor**)
 - Ren Kishimoto (Tokyo Institute of Technology)
 - Kosuke Kawakami (negocia, Inc.)
 - Ken Kobayashi (Tokyo Institute of Technology)
@@ -433,7 +440,7 @@ This project is licensed under Apache 2.0 license - see [LICENSE](LICENSE) file 
 
 ## Contact
 
-For any question about the paper and software, feel free to contact: kiyohara.h.aa@m.titech.ac.jp
+For any question about the paper and software, feel free to contact: hk844 [at] cornell.edu
 
 ## References
 

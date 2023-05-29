@@ -12,7 +12,7 @@ Papers
 Projects
 ----------
 
-This project and the main package of OFRL is strongly inspired by the following three packages.
+This project and the main package of SCOPE-RL is strongly inspired by the following three packages.
 
 * **Open Bandit Pipeline** :cite:`saito2021open` -- a pipeline implementation of OPE in contextual bandit setup: `[github] <https://github.com/st-tech/zr-obp>`_ `[documentation] <https://zr-obp.readthedocs.io/en/latest/>`_ `[paper] <https://arxiv.org/abs/2008.07146>`_.  
 * **d3rlpy** :cite:`seno2021d3rlpy` -- a set of implementations of offline RL algorithms: `[github] <https://github.com/takuseno/d3rlpy>`_ `[documentation] <https://d3rlpy.readthedocs.io/en/v0.91/>`_ `[paper] <https://arxiv.org/abs/2111.03788>`_.  

@@ -21,7 +21,7 @@
 
 *RTBGym* is an open-source simulation platform for Real-Time Bidding (RTB) of Display Advertising, which is written in Python. The simulator is particularly intended for reinforcement learning algorithms and follows [OpenAI Gym](https://gym.openai.com) and [Gymnasium](https://gymnasium.farama.org/)-like interface. We design RTBGym as a configurative environment so that researchers and practitioner can customize the environmental modules including `WinningPriceDistribution`, `ClickThroughRate`, and `ConversionRate`.
 
-Note that, RTBGym is publicized under [ofrl](../) repository, which facilitates the implementation of offline reinforcement learning procedure.
+Note that, RTBGym is publicized under [SCOPE-RL](../) repository, which facilitates the implementation of offline reinforcement learning procedure.
 
 ### Basic Setting
 
@@ -65,22 +65,22 @@ Note that, users can customize the above modules by following the [abstract clas
 We also define the bidding function in the [Bidder](./envs/simulator/bidder.py#15) class and the auction simulation in the [Simulator](./envs/simulator/rtb_synthetic.py#23) class, respectively.
 
 ## Installation
-RTBGym can be installed as a part of [ofrl](../) using Python's package manager `pip`.
+RTBGym can be installed as a part of [SCOPE-RL](../) using Python's package manager `pip`.
 ```
-pip install ofrl
+pip install scope-rl
 ```
 
 You can also install from source.
 ```bash
-git clone https://github.com/negocia-inc/ofrl
-cd ofrl
+git clone https://github.com/negocia-inc/scope-rl
+cd scope-rl
 python setup.py install
 ```
 
 ## Usage
 
 We provide an example usage of the standard and customized environment. \
-The online/offlline RL and Off-Policy Evaluation examples are provides in [OFRL's README](../README.md).
+The online/offlline RL and Off-Policy Evaluation examples are provides in [SCOPE-RL's README](../README.md).
 
 ### Standard RTBEnv
 
@@ -163,7 +163,7 @@ plt.show()
 </p>
 </figcaption>
 
-Note that, while we use [ofrl](../README.md) and [d3rlpy](https://github.com/takuseno/d3rlpy) here, RTBGym is compatible with any other libraries working on the [OpenAI Gym](https://gym.openai.com) and [Gymnasium](https://gymnasium.farama.org/)-like interface.
+Note that, while we use [SCOPE-RL](../README.md) and [d3rlpy](https://github.com/takuseno/d3rlpy) here, RTBGym is compatible with any other libraries working on the [OpenAI Gym](https://gym.openai.com) and [Gymnasium](https://gymnasium.farama.org/)-like interface.
 
 ### Customized RTGEnv
 

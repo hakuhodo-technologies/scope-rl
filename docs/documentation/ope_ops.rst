@@ -54,8 +54,8 @@ by dealing with the distribution shift between :math:`\pi_0` and :math:`\pi`.
 
 .. seealso::
 
-    * :doc:`Supported OPE estimators <evaluation_implementation>` and :doc:`their API reference <_autosummary/ofrl.ope.basic_estimators_discrete>` 
-    * (advanced) :doc:`Marginal OPE estimators <evaluation_implementation>`, and their :doc:`API reference <_autosummary/ofrl.ope.marginal_ope_discrete>`
+    * :doc:`Supported OPE estimators <evaluation_implementation>` and :doc:`their API reference <_autosummary/scope_rl.ope.basic_estimators_discrete>` 
+    * (advanced) :doc:`Marginal OPE estimators <evaluation_implementation>`, and their :doc:`API reference <_autosummary/scope_rl.ope.marginal_ope_discrete>`
     * :doc:`Quickstart <quickstart>` and :doc:`related tutorials <_autogallery/basic_ope/index>`
 
 .. _overview_cumulative_distribution_ope:
@@ -82,7 +82,7 @@ and :math:`dF(G) := \mathrm{lim}_{\Delta \rightarrow 0} F(G) - F(G- \Delta)`.
 
 .. seealso::
 
-    * :doc:`Supported OPE estimators <evaluation_implementation>` and :doc:`their API reference <_autosummary/ofrl.ope.cumulative_distribution_estimators_discrete>` 
+    * :doc:`Supported OPE estimators <evaluation_implementation>` and :doc:`their API reference <_autosummary/scope_rl.ope.cumulative_distribution_estimators_discrete>` 
     * :doc:`Quickstart <quickstart>` and :doc:`related tutorials <_autogallery/cumulative_distribution_ope/index>`
 
 .. _overview_ops:
@@ -105,7 +105,7 @@ which are the main contribution of our research paper `"SCOPE-RL: Towards Risk-R
 .. seealso::
 
     * :doc:`Conventional OPS metrics and top-k RRT metrics <topk_rrt>`
-    * :doc:`OPS evaluation protocols <evaluation_implementation>` and :doc:`their API reference <_autosummary/ofrl.ope.ops>` 
+    * :doc:`OPS evaluation protocols <evaluation_implementation>` and :doc:`their API reference <_autosummary/scope_rl.ope.ops>` 
     * :doc:`Quickstart <quickstart>` and :doc:`related tutorials <_autogallery/ops/index>`
 
 .. seealso::

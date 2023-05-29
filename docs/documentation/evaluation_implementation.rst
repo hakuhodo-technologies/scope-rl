@@ -11,7 +11,7 @@ Before proceeding to OPE/OPS, we first create :class:`input_dict` to enable a sm
 .. code-block:: python
 
             # create input for OPE class
-            from ofrl.ope import CreateOPEInput
+            from scope_rl.ope import CreateOPEInput
             prep = CreateOPEInput(
                 env=env,
             )
@@ -61,8 +61,8 @@ Before proceeding to OPE/OPS, we first create :class:`input_dict` to enable a sm
 
             * :ref:`How to obtain MultipleLoggedDataset? <tips_synthetic_dataset>`
             * :ref:`How to handle OPL with MultipleLoggedDataset? <tip_opl>`
-            * :doc:`API reference of MultipleInputDict <_autosummary/ofrl.utils.MultipleInputDict>`
-            * :ref:`Tutorial with MultipleLoggedDataset <ofrl_multiple_tutorial>`
+            * :doc:`API reference of MultipleInputDict <_autosummary/scope_rl.utils.MultipleInputDict>`
+            * :ref:`Tutorial with MultipleLoggedDataset <scope_rl_multiple_tutorial>`
 
     .. dropdown:: How to select models for value/weight learning methods?
 
@@ -131,8 +131,8 @@ Before proceeding to OPE/OPS, we first create :class:`input_dict` to enable a sm
 
         .. seealso::
 
-            * :doc:`API reference of CreateInputDict <_autosummary/ofrl.ope.input>`
-            * :ref:`API reference of value/weight learning methods <ofrl_api_ope_weight_and_value_learning>`
+            * :doc:`API reference of CreateInputDict <_autosummary/scope_rl.ope.input>`
+            * :ref:`API reference of value/weight learning methods <scope_rl_api_ope_weight_and_value_learning>`
             * :ref:`Logics behind value and weight learning methods (How to obtain state(-action) marginal importance weight?) <tip_mariginal_iw>`
 
     .. dropdown:: How to collect input_dict in a non-episodic setting?
@@ -175,7 +175,7 @@ We begin with the :class:`OffPolicyEvaluation` class to streamline the OPE proce
 .. code-block:: python
 
     # initialize the OPE class
-    from ofrl.ope import OffPolicyEvaluation as OPE
+    from scope_rl.ope import OffPolicyEvaluation as OPE
     ope = OPE(
         logged_dataset=logged_dataset,
         ope_estimators=[DM(), TIS(), PDIS(), DR()],
@@ -280,7 +280,7 @@ Using the OPE class, we can obtain the OPE results of various estimators at once
             * :ref:`How to obtain MultipleLoggedDataset? <tips_synthetic_dataset>`
             * :ref:`How to handle OPL with MultipleLoggedDataset? <tip_opl>`
             * :ref:`How to create input_dict for MultipleLoggedDataset? <tip_create_input_dict>`
-            * :ref:`Tutorial with MultipleLoggedDataset <ofrl_multiple_tutorial>`
+            * :ref:`Tutorial with MultipleLoggedDataset <scope_rl_multiple_tutorial>`
         
 
 .. seealso::
@@ -377,11 +377,11 @@ Extensions
 
         If you want to add other arguments, please add them in the initialization arguments for API consistency.
 
-        Finally, contribution to OFRL with a new OPE estimator is more than welcome! Please read `the guidelines for contribution (CONTRIBUTING.md) <>`_.
+        Finally, contribution to SCOPE-RL with a new OPE estimator is more than welcome! Please read `the guidelines for contribution (CONTRIBUTING.md) <>`_.
 
         .. seealso::
 
-            :doc:`API reference of BaseOffPolicyEstimator <_autosummary/ofrl.ope.estimators_base>` explains the abstract methods.
+            :doc:`API reference of BaseOffPolicyEstimator <_autosummary/scope_rl.ope.estimators_base>` explains the abstract methods.
 
 .. _implementation_dm:
 
@@ -544,8 +544,8 @@ This estimator is particularly useful when policy visits the same or similar sta
         .. seealso::
 
             * :ref:`How to select models for value/weight learning methods? <tip_create_input_dict>` describes how to enable weight learning and select weight learning methods.
-            * :ref:`API reference of value/weight learning methods <ofrl_api_ope_weight_and_value_learning>`
-            * :doc:`API reference of CreateInputDict <_autosummary/ofrl.ope.input>`
+            * :ref:`API reference of value/weight learning methods <scope_rl_api_ope_weight_and_value_learning>`
+            * :doc:`API reference of CreateInputDict <_autosummary/scope_rl.ope.input>`
 
 We implement state marginal and state-action marginal OPE estimators in the following classes (both for :class:`Discrete-` and :class:`Continuous-` action spaces).
 
@@ -816,7 +816,7 @@ To estimate both CDF and various risk functions, we provide the following :class
 .. code-block:: python
 
     # initialize the OPE class
-    from ofrl.ope import CumulativeDistributionOffPolicyEvaluation as CumulativeDistributionOPE
+    from scope_rl.ope import CumulativeDistributionOffPolicyEvaluation as CumulativeDistributionOPE
     cd_ope = CumulativeDistributionOPE(
         logged_dataset=logged_dataset,
         ope_estimators=[CD_DM(), CD_IS(), CD_DR()],
@@ -940,7 +940,7 @@ It estimates the cumulative distribution of the trajectory wise reward and vario
             * :ref:`How to obtain MultipleLoggedDataset? <tips_synthetic_dataset>`
             * :ref:`How to handle OPL with MultipleLoggedDataset? <tip_opl>`
             * :ref:`How to create input_dict for MultipleLoggedDataset? <tip_create_input_dict>`
-            * :ref:`Tutorial with MultipleLoggedDataset <ofrl_multiple_tutorial>`
+            * :ref:`Tutorial with MultipleLoggedDataset <scope_rl_multiple_tutorial>`
 
 .. seealso::
 
@@ -1029,11 +1029,11 @@ Extension to the continuous action space
 
         If you want to add other arguments, please add them in the initialization arguments for API consistency.
 
-        Finally, contribution to OFRL with a new OPE estimator is more than welcome! Please read `the guidelines for contribution (CONTRIBUTING.md) <>`_.
+        Finally, contribution to SCOPE-RL with a new OPE estimator is more than welcome! Please read `the guidelines for contribution (CONTRIBUTING.md) <>`_.
 
         .. seealso::
 
-            :doc:`API reference of BaseOffPolicyEstimator <_autosummary/ofrl.ope.estimators_base>` explains the abstract methods.
+            :doc:`API reference of BaseOffPolicyEstimator <_autosummary/scope_rl.ope.estimators_base>` explains the abstract methods.
 
 .. _implementation_cd_dm:
 
@@ -1127,7 +1127,7 @@ To ease the comparison of candidate (evaluation) policies and the OPE estimators
 .. code-block:: python
 
     # Initialize the OPS class
-    from ofrl.ope import OffPolicySelection
+    from scope_rl.ope import OffPolicySelection
     ops = OffPolicySelection(
         ope=ope,
         cumulative_distribution_ope=cd_ope,
@@ -1226,7 +1226,7 @@ Finally, the OPS class also implements the modules to compare the OPE result and
             * :ref:`How to create input_dict for MultipleLoggedDataset? <tip_create_input_dict>`
             * :ref:`How to conduct OPE with MultipleLoggedDataset? <tip_ope>`
             * :ref:`How to conduct Cumulative Distribution OPE with MultipleLoggedDataset? <tip_cumulative_distribution_ope>`
-            * :ref:`Tutorial with MultipleLoggedDataset <ofrl_multiple_tutorial>`
+            * :ref:`Tutorial with MultipleLoggedDataset <scope_rl_multiple_tutorial>`
 
 .. seealso::
 
@@ -1339,7 +1339,7 @@ The OPS class implements the following functions.
                 **Visualization tools**
 
             .. grid-item-card::
-                :link: ofrl_api
+                :link: scope_rl_api
                 :link-type: doc
                 :shadow: none
                 :margin: 0

@@ -7,7 +7,7 @@ Overview
 The simulator is particularly intended for reinforcement learning algorithms and follows `OpenAI Gym <https://gym.openai.com>`_ and `Gymnasium <https://github.com/Farama-Foundation/Gymnasium>`_ interface.
 We design BasicGym as a configurative environment so that researchers and practitioner can customize the environmental modules including UserModel.
 
-Note that, BasicGym is publicized as a sub-package of :doc:`OFRL <index>`, which streamlines the implementation of offline reinforcement learning (offline RL) and off-policy evaluation and selection (OPE/OPS) procedures.
+Note that, BasicGym is publicized as a sub-package of :doc:`SCOPE-RL <index>`, which streamlines the implementation of offline reinforcement learning (offline RL) and off-policy evaluation and selection (OPE/OPS) procedures.
 
 Basic Setting
 ~~~~~~~~~~
@@ -45,7 +45,7 @@ Quickstart and Configurations
 ~~~~~~~~~~
 
 We provide an example usage of the standard and customized environment. 
-The online/offlline RL and OPE/OPS examples are provides in :doc:`OFRL's quickstart <quickstart>`.
+The online/offlline RL and OPE/OPS examples are provides in :doc:`SCOPE-RL's quickstart <quickstart>`.
 
 Standard BasicEnv
 ----------
@@ -75,7 +75,7 @@ Let's interact with a uniform random policy.
 
 .. code-block:: python
 
-    #from ofrl.policy import OnlineHead
+    from scope_rl.policy import OnlineHead
     from d3rlpy.algos import RandomPolicy as ContinuousRandomPolicy
 
     # (1) define a random agent
@@ -98,7 +98,7 @@ Let's interact with a uniform random policy.
         action = agent.predict_online(obs)
         obs, reward, done, truncated, info = env.step(action)
 
-Note that, while we use :doc:`OFRL <index>` and `d3rlpy <https://github.com/takuseno/d3rlpy>`_ here,
+Note that, while we use :doc:`SCOPE-RL <index>` and `d3rlpy <https://github.com/takuseno/d3rlpy>`_ here,
 BasicGym is compatible with any other libraries that is compatible to the `OpenAI Gym <https://gym.openai.com>`_ 
 and `Gymnasium <https://github.com/Farama-Foundation/Gymnasium>`_ interface.
 

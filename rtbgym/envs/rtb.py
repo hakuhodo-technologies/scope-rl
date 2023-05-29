@@ -144,8 +144,8 @@ class RTBEnv(gym.Env):
 
         # import necessary module from rtbgym
         from rtbgym import RTBEnv
-        from ofrl.policy import OnlineHead
-        from ofrl.ope.online import calc_on_policy_policy_value
+        from scope_rl.policy import OnlineHead
+        from scope_rl.ope.online import calc_on_policy_policy_value
 
         # import necessary module from other libraries
         from d3rlpy.algos import RandomPolicy

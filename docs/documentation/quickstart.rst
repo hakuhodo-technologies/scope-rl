@@ -25,7 +25,7 @@ The workflow mainly consists of following three steps:
 
 .. seealso::
 
-    * :doc:`distinctive_features` describes the distinctive features of OFRL in detail.
+    * :doc:`distinctive_features` describes the distinctive features of SCOPE-RL in detail.
     * :doc:`Overview (online/offline RL) <online_offline_rl>` and :doc:`Overview (OPE/OPS) <ope_ops>` describe the problem settings.
 
 .. _quickstart_dataset:
@@ -34,16 +34,16 @@ Synthetic Dataset Generation and Data Preprocessing
 ~~~~~~~~~~
 
 We start by collecting the logged data using DDQN :cite:`van2016deep` as a behavior policy.
-Note that, in the following example, we use :doc:`RTBGym <rtbgym>` (a sub-package of OFRL) and `d3rlpy <https://github.com/takuseno/d3rlpy>`_. Please satisfy the `requirements <>`_ in advance.
+Note that, in the following example, we use :doc:`RTBGym <rtbgym>` (a sub-package of SCOPE-RL) and `d3rlpy <https://github.com/takuseno/d3rlpy>`_. Please satisfy the `requirements <>`_ in advance.
 
 
 .. code-block:: python
 
     # implement data collection procedure on the RTBGym environment
 
-    # import ofrl modules
-    from ofrl.dataset import SyntheticDataset
-    from ofrl.policy import DiscreteEpsilonGreedyHead
+    # import SCOPE-RL modules
+    from scope_rl.dataset import SyntheticDataset
+    from scope_rl.policy import DiscreteEpsilonGreedyHead
     # import d3rlpy algorithms
     from d3rlpy.algos import DoubleDQN
     from d3rlpy.online.buffers import ReplayBuffer
@@ -101,8 +101,8 @@ Moreover, by preprocessing the logged data, one can also handle their own logged
 
 .. seealso::
 
-    * :doc:`Related tutorials <_autogallery/ofrl_others/index>`
-    * API references of :ref:`dataset modules <ofrl_api_dataset>` and :ref:`policy wrapper (Head) <ofrl_api_policy>`
+    * :doc:`Related tutorials <_autogallery/scope_rl_others/index>`
+    * API references of :ref:`dataset modules <scope_rl_api_dataset>` and :ref:`policy wrapper (Head) <scope_rl_api_policy>`
 
 .. _quickstart_offlinerl:
 
@@ -114,7 +114,7 @@ Note that, we use `d3rlpy <https://github.com/takuseno/d3rlpy>`_ for offline RL.
 
 .. code-block:: python
 
-    # implement offline RL procedure using ofrl and d3rlpy
+    # implement offline RL procedure using scope_rl and d3rlpy
 
     # import d3rlpy algorithms
     from d3rlpy.dataset import MDPDataset
@@ -141,7 +141,7 @@ Note that, we use `d3rlpy <https://github.com/takuseno/d3rlpy>`_ for offline RL.
 
 .. seealso::
 
-    * :doc:`Related tutorials <_autogallery/ofrl_others/index>`
+    * :doc:`Related tutorials <_autogallery/scope_rl_others/index>`
     * :ref:`Problem setting <overview_offline_rl>`
     * :doc:`Supported implementations and useful tools <learning_implementation>` 
     * (external) `d3rlpy's documentation <https://d3rlpy.readthedocs.io/en/latest/>`_
@@ -171,15 +171,15 @@ and Doubly Robust (DR) :cite:`jiang2016doubly` :cite:`thomas2016data`.
 
 .. code-block:: python
 
-    # implement OPE procedure using OFRL
+    # implement OPE procedure using SCOPE-RL
 
-    # import OFRL modules
-    from ofrl.ope import CreateOPEInput
-    from ofrl.ope import DiscreteOffPolicyEvaluation as OPE
-    from ofrl.ope import DiscreteDirectMethod as DM
-    from ofrl.ope import DiscreteTrajectoryWiseImportanceSampling as TIS
-    from ofrl.ope import DiscretePerDecisionImportanceSampling as PDIS
-    from ofrl.ope import DiscreteDoublyRobust as DR
+    # import SCOPE-RL modules
+    from scope_rl.ope import CreateOPEInput
+    from scope_rl.ope import DiscreteOffPolicyEvaluation as OPE
+    from scope_rl.ope import DiscreteDirectMethod as DM
+    from scope_rl.ope import DiscreteTrajectoryWiseImportanceSampling as TIS
+    from scope_rl.ope import DiscretePerDecisionImportanceSampling as PDIS
+    from scope_rl.ope import DiscreteDoublyRobust as DR
 
     # (4) Evaluate the learned policy in an offline manner
     # we compare ddqn, cql, and random policy
@@ -234,15 +234,15 @@ and Doubly Robust (DR) :cite:`jiang2016doubly` :cite:`thomas2016data`.
     
     Policy Value Estimated by OPE Estimators
 
-Users can implement their own OPE estimators by following the interface of :class:`ofrl.ope.BaseOffPolicyEstimator`.
-In addition, :class:`ofrl.ope.OffPolicyEvaluation` summarizes and compares the estimation results of various OPE estimators.
+Users can implement their own OPE estimators by following the interface of :class:`scope_rl.ope.BaseOffPolicyEstimator`.
+In addition, :class:`scope_rl.ope.OffPolicyEvaluation` summarizes and compares the estimation results of various OPE estimators.
 
 .. seealso::
 
     * :doc:`Related tutorials <_autogallery/basic_ope/index>`
     * :doc:`Problem setting <ope_ops>`
-    * :doc:`Supported OPE estimators <evaluation_implementation>` and :doc:`their API reference <_autosummary/ofrl.ope.basic_estimators_discrete>` 
-    * (advanced) :ref:`Marginal OPE estimators <implementation_marginal_ope>`, and their :doc:`API reference <_autosummary/ofrl.ope.marginal_ope_discrete>`
+    * :doc:`Supported OPE estimators <evaluation_implementation>` and :doc:`their API reference <_autosummary/scope_rl.ope.basic_estimators_discrete>` 
+    * (advanced) :ref:`Marginal OPE estimators <implementation_marginal_ope>`, and their :doc:`API reference <_autosummary/scope_rl.ope.marginal_ope_discrete>`
 
 .. _quickstart_cumulative_distribution_ope:
 
@@ -261,13 +261,13 @@ using Cumulative Distribution OPE estimators :cite:`huang2021off` :cite:`huang20
 
 .. code-block:: python
 
-    # import OFRL modules
-    from ofrl.ope import DiscreteCumulativeDistributionOffPolicyEvaluation as CumulativeDistributionOPE
-    from ofrl.ope import DiscreteCumulativeDistributionDirectMethod as CD_DM
-    from ofrl.ope import DiscreteCumulativeDistributionTrajectoryWiseImportanceSampling as CD_IS
-    from ofrl.ope import DiscreteCumulativeDistributionTrajectoryWiseDoublyRobust as CD_DR
-    from ofrl.ope import DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSampling as CD_SNIS
-    from ofrl.ope import DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseDoublyRobust as CD_SNDR
+    # import SCOPE-RL modules
+    from scope_rl.ope import DiscreteCumulativeDistributionOffPolicyEvaluation as CumulativeDistributionOPE
+    from scope_rl.ope import DiscreteCumulativeDistributionDirectMethod as CD_DM
+    from scope_rl.ope import DiscreteCumulativeDistributionTrajectoryWiseImportanceSampling as CD_IS
+    from scope_rl.ope import DiscreteCumulativeDistributionTrajectoryWiseDoublyRobust as CD_DR
+    from scope_rl.ope import DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSampling as CD_SNIS
+    from scope_rl.ope import DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseDoublyRobust as CD_SNDR
 
     # (4) Evaluate the learned policy using cumulative distribution function (in an offline manner)
     # we compare ddqn, cql, and random policy defined in the previous section (i.e., (3) of basic OPE procedure)
@@ -295,15 +295,15 @@ using Cumulative Distribution OPE estimators :cite:`huang2021off` :cite:`huang20
     
     Cumulative Distribution Function Estimated by OPE Estimators
 
-Users can implement their own OPE estimators by following the interface of :class:`ofrl.ope.BaseCumulativeDistributionOffPolicyEstimator`.
-In addition, :class:`ofrl.ope.DiscreteCumulativeDistributionOffPolicyEvaluation` summarizes and compares the estimation results of various OPE estimators.
+Users can implement their own OPE estimators by following the interface of :class:`scope_rl.ope.BaseCumulativeDistributionOffPolicyEstimator`.
+In addition, :class:`scope_rl.ope.DiscreteCumulativeDistributionOffPolicyEvaluation` summarizes and compares the estimation results of various OPE estimators.
 
 .. seealso::
 
     * :doc:`Related tutorials <_autogallery/cumulative_distribution_ope/index>`
     * :ref:`Problem setting <overview_cumulative_distribution_ope>`
     * :ref:`Supported cumulative distribution OPE estimators <implementation_cumulative_distribution_ope>` 
-    and :doc:`their API reference <_autosummary/ofrl.ope.cumulative_distribution_ope_discrete>` 
+    and :doc:`their API reference <_autosummary/scope_rl.ope.cumulative_distribution_ope_discrete>` 
 
 .. _quickstart_ops:
 
@@ -313,8 +313,8 @@ Finally, we provide the code to conduct OPS, which selects the "best" performing
 
 .. code-block:: python
 
-    # import OFRL modules
-    from ofrl.ope import OffPolicySelection
+    # import SCOPE-RL modules
+    from scope_rl.ope import OffPolicySelection
 
     # (5) Conduct Off-Policy Selection
     # Initialize the OPS class
@@ -364,7 +364,7 @@ Finally, we provide the code to conduct OPS, which selects the "best" performing
 
     * :doc:`Related tutorials <_autogallery/ops/index>`
     * :ref:`Problem setting <overview_ops>`
-    * :ref:`OPS evaluation protocols <implementation_eval_ope_ops>` and :doc:`their API reference <_autosummary/ofrl.ope.ops>` 
+    * :ref:`OPS evaluation protocols <implementation_eval_ope_ops>` and :doc:`their API reference <_autosummary/scope_rl.ope.ops>` 
 
 ~~~~~
 

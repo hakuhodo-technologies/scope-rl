@@ -1,8 +1,8 @@
 ==========
-OFRL Package Reference
+SCOPR-RL Package Reference
 ==========
 
-.. _ofrl_api_dataset:
+.. _scope_rl_api_dataset:
 
 dataset module
 ----------
@@ -11,10 +11,10 @@ dataset module
     :recursive:
     :nosignatures:
 
-    ofrl.dataset.base
-    ofrl.dataset.synthetic
+    scope_rl.dataset.base
+    scope_rl.dataset.synthetic
 
-.. _ofrl_api_policy:
+.. _scope_rl_api_policy:
 
 policy module
 ----------
@@ -24,15 +24,15 @@ policy module
     :nosignatures:
     :template: module_head
 
-    ofrl.policy.head
-    ofrl.policy.opl
+    scope_rl.policy.head
+    scope_rl.policy.opl
 
-.. _ofrl_api_ope:
+.. _scope_rl_api_ope:
 
 ope module
 ----------
 
-.. _ofrl_api_ope_pipeline:
+.. _scope_rl_api_ope_pipeline:
 
 pipeline
 ^^^^^^
@@ -41,11 +41,11 @@ pipeline
     :recursive:
     :nosignatures:
 
-    ofrl.ope.input
-    ofrl.ope.ope
-    ofrl.ope.ops
+    scope_rl.ope.input
+    scope_rl.ope.ope
+    scope_rl.ope.ops
 
-.. _ofrl_api_ope_estimators:
+.. _scope_rl_api_ope_estimators:
 
 OPE estimators
 ^^^^^^
@@ -54,15 +54,15 @@ OPE estimators
     :recursive:
     :nosignatures:
 
-    ofrl.ope.estimators_base
-    ofrl.ope.basic_estimators_discrete
-    ofrl.ope.basic_estimators_continuous
-    ofrl.ope.marginal_estimators_discrete
-    ofrl.ope.marginal_estimators_continuous
-    ofrl.ope.cumulative_distribution_estimators_discrete
-    ofrl.ope.cumulative_distribution_estimators_continuous
+    scope_rl.ope.estimators_base
+    scope_rl.ope.basic_estimators_discrete
+    scope_rl.ope.basic_estimators_continuous
+    scope_rl.ope.marginal_estimators_discrete
+    scope_rl.ope.marginal_estimators_continuous
+    scope_rl.ope.cumulative_distribution_estimators_discrete
+    scope_rl.ope.cumulative_distribution_estimators_continuous
 
-.. _ofrl_api_ope_weight_and_value_learning:
+.. _scope_rl_api_ope_weight_and_value_learning:
 
 weight and value learning methods
 ^^^^^^
@@ -72,16 +72,16 @@ weight and value learning methods
     :nosignatures:
     :template: module_weight_value_learning
 
-    ofrl.ope.weight_value_learning.base
-    ofrl.ope.weight_value_learning.function
-    ofrl.ope.weight_value_learning.augmented_lagrangian_learning_discrete
-    ofrl.ope.weight_value_learning.augmented_lagrangian_learning_continuous
-    ofrl.ope.weight_value_learning.minimax_weight_learning_discrete
-    ofrl.ope.weight_value_learning.minimax_weight_learning_continuous
-    ofrl.ope.weight_value_learning.minimax_value_learning_discrete
-    ofrl.ope.weight_value_learning.minimax_value_learning_continuous
+    scope_rl.ope.weight_value_learning.base
+    scope_rl.ope.weight_value_learning.function
+    scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_discrete
+    scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_continuous
+    scope_rl.ope.weight_value_learning.minimax_weight_learning_discrete
+    scope_rl.ope.weight_value_learning.minimax_weight_learning_continuous
+    scope_rl.ope.weight_value_learning.minimax_value_learning_discrete
+    scope_rl.ope.weight_value_learning.minimax_value_learning_continuous
 
-.. _ofrl_api_ope_utils:
+.. _scope_rl_api_ope_utils:
 
 others
 ^^^^^^
@@ -90,9 +90,9 @@ others
     :recursive:
     :nosignatures:
 
-    ofrl.ope.online
+    scope_rl.ope.online
 
-.. _ofrl_api_utils:
+.. _scope_rl_api_utils:
 
 others
 ----------
@@ -101,7 +101,7 @@ others
     :recursive:
     :nosignatures:
 
-    ofrl.utils
+    scope_rl.utils
 
 .. raw:: html
 

@@ -292,7 +292,7 @@ This prevents the propagation of the overestimation bias, even when the basic TD
 .. seealso::
 
     * :doc:`Supported implementations and useful tools <learning_implementation>` 
-    * :doc:`Quickstart <quickstart>` and :doc:`related tutorials <_autogallery/ofrl_others/index>`
+    * :doc:`Quickstart <quickstart>` and :doc:`related tutorials <_autogallery/scope_rl_others/index>`
 
 .. seealso::
 

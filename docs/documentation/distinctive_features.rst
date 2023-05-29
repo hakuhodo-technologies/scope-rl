@@ -1,7 +1,7 @@
 :html_theme.sidebar_secondary.remove:
 
 ==========
-Why OFRL?
+Why SCOPE-RL?
 ==========
 
 Motivation
@@ -348,7 +348,7 @@ In summary, **our unique contribution is
 (1) to provide the first end-to-end platform for offline RL, OPE, and OPS,
 (2) to support cumulative distribution ope for the first time, and
 (3) to implement (the proposed) top-** :math:`k` **risk-return tradeoff metics for the risk assessments of OPS.**
-Additionally, we provide a user-friendly :doc:`visualization tools <visualization>`, :doc:`documentation <index>`, and `quickstart examples <https://github.com/negocia-inc/ofrl/tree/main/examples/quickstart>`_ to facilitate a quick benckmarking and practical application. 
+Additionally, we provide a user-friendly :doc:`visualization tools <visualization>`, :doc:`documentation <index>`, and `quickstart examples <https://github.com/negocia-inc/scope-rl/tree/main/examples/quickstart>`_ to facilitate a quick benckmarking and practical application. 
 We also provide an :doc:`OPE tutorial <_autogallery/index>` with SCOPE-RL experiments for educational purpose. We hope that SCOPE-RL will serve as a important milestone for the future development of OPE research.
 
 

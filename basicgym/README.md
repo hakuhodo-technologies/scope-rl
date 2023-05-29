@@ -19,7 +19,7 @@
 
 *BasicGym* is an open-source simulation platform for synthetic simulation, which is written in Python. The simulator is particularly intended for reinforcement learning algorithms and follows [OpenAI Gym](https://gym.openai.com) and [Gymnasium](https://gymnasium.farama.org/)-like interface. We design SyntheticGym as a configurative environment so that researchers and practitioner can customize the environmental modules including `StateTransitionFunction` and `RewardFunction`
 
-Note that, SyntheticGym is publicized under [ofrl](../) repository, which facilitates the implementation of offline reinforcement learning procedure.
+Note that, SyntheticGym is publicized under [scope-rl](../) repository, which facilitates the implementation of offline reinforcement learning procedure.
 
 ### Basic Setting
 
@@ -47,22 +47,22 @@ SyntheticGym is configurative about the following a module.
 Note that, users can customize the above modules by following the [abstract class](./envs/simulator/base.py).
 
 ## Installation
-SyntheticGym can be installed as a part of [ofrl](../) using Python's package manager `pip`.
+SyntheticGym can be installed as a part of [scope-rl](../) using Python's package manager `pip`.
 ```
-pip install ofrl
+pip install scope-rl
 ```
 
 You can also install from source.
 ```bash
-git clone https://github.com/negocia-inc/ofrl
-cd ofrl
+git clone https://github.com/negocia-inc/scope-rl
+cd scope-rl
 python setup.py install
 ```
 
 ## Usage
 
 We provide an example usage of the standard and customized environment. \
-The online/offlline RL and Off-Policy Evaluation examples are provides in [OFRL's README](../README.md).
+The online/offlline RL and Off-Policy Evaluation examples are provides in [SCOPE-RL's README](../README.md).
 
 ### Standard SyntheticEnv
 
@@ -90,7 +90,7 @@ Let's visualize the case with uniform random policy .
 
 ```Python
 # import from other libraries
-from ofrl.policy import OnlineHead
+from scope_rl.policy import OnlineHead
 from d3rlpy.algos import RandomPolicy as ContinuousRandomPolicy
 
 # define a random agent
@@ -134,7 +134,7 @@ plt.show()
 </p>
 </figcaption>
 
-Note that, while we use [ofrl](../README.md) and [d3rlpy](https://github.com/takuseno/d3rlpy) here, SyntheticGym is compatible with any other libraries working on the [OpenAI Gym](https://gym.openai.com) and [Gymnasium](https://gymnasium.farama.org/)-like interface.
+Note that, while we use [SCOPE-RL](../README.md) and [d3rlpy](https://github.com/takuseno/d3rlpy) here, SyntheticGym is compatible with any other libraries working on the [OpenAI Gym](https://gym.openai.com) and [Gymnasium](https://gymnasium.farama.org/)-like interface.
 
 ### Customized SyntheticEnv
 

@@ -1,4 +1,4 @@
-OFRL docstring
+SCOPE-RL docstring
 ========
 
 ### Prerequisite

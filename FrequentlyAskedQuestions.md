@@ -18,17 +18,17 @@ while not done:
     obs, reward, done, info = env.step(action)
 ```
 
-To solve this incompatibility, please use `NewGymAPIWrapper` provided in `ofrl/utils.py`. It should be used as follows.
+To solve this incompatibility, please use `NewGymAPIWrapper` provided in `scope_rl/utils.py`. It should be used as follows.
 ```Python
-from ofrl.utils import NewGymAPIWrapper
+from scope_rl.utils import NewGymAPIWrapper
 env = NewGymAPIWrapper(env)
 ```
 
 Q. xxx environment does not work on d3rlpy, which is used for model training. How should we fix it? (d3rlpy and OFRL is compatible to different version of Open AI Gym.)
 
-A. While OFRL is compatible to the latest API of Open AI Gym, d3rlpy is not. Therefore, please use `OldGymAPIWrapper` provided in `ofrl/utils.py` to make the environment work for d3rlpy.
+A. While OFRL is compatible to the latest API of Open AI Gym, d3rlpy is not. Therefore, please use `OldGymAPIWrapper` provided in `scope_rl/utils.py` to make the environment work for d3rlpy.
 ```Python
-from ofrl.utils import OldGymAPIWrapper
+from scope_rl.utils import OldGymAPIWrapper
 env = gym.make("xxx_v0")  # compatible to gym>=0.26.2 and OFRL
 env_ = OldGymAPIWrapper(env)  # compatible to gym<0.26.2 and d3rlpy
 ```

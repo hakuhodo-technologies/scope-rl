@@ -1,11 +1,11 @@
 News
 ==========
 
-Follow us on `Google Group <>`_!
+Follow us on `Google Group (scope-rl@googlegroups.com) <https://groups.google.com/g/scope-rl>`_!
 
 2023
 ~~~~~~~~~~
 
 **2023.xx.xx** xxx
 
-**2023.xx.xx** Released :class:`v0.0.0` of OFRL! [`PyPI <>`_] [`Release Note <>`_]
+**2023.xx.xx** Released :class:`v0.0.0` of SCOPE-RL! [`PyPI <>`_] [`Release Note <>`_]

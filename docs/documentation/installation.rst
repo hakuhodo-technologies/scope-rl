@@ -3,7 +3,7 @@
 Installation
 ==========
 
-``ofrl`` is available on PyPI, and can be installed from ``pip`` or source as follows.
+``scope-rl`` is available on PyPI, and can be installed from ``pip`` or source as follows.
 
 .. card::
     
@@ -11,12 +11,12 @@ Installation
 
         .. code-tab:: bash From :class:`pip`
 
-            pip install ofrl
+            pip install scope-rl
 
         .. code-tab:: bash From source
 
-            git clone https://github.com/negocia-inc/ofrl
-            cd ofrl
+            git clone https://github.com/negocia-inc/scope-rl
+            cd scope-rl
             python setup.py install
 
 
@@ -27,20 +27,22 @@ Installation
 Citation
 ==========
 
-If you use our pipeline or the top-:math:`k` RRT metrics in your work, please cite our paper below.
+If you use our pipeline or the SharpRatio@k metric in your work, please cite our paper below.
 
 .. card::
 
-    | **Title** [`arXiv <>`_] [`Proceedings <>`_]
-    | Authors.
+    | Haruka Kiyohara, Ren Kishimoto, Kosuke Kawakami, Ken Kobayashi, Kazuhide Nakata, Yuta Saito.
+    | **SCOPE-RL: Towards Risk-Return Assessments of Off-Policy Evaluation in Reinforcement Learning** [`arXiv <>`_] [`Proceedings <>`_]
+    | (a preprint coming soon..)
 
     .. code-block::
 
-        @article{kiyohara2023xxx
-            title={},
-            author={},
-            journal={},
-            year={},
+        @article{kiyohara2023scope,
+            author = {Kiyohara, Haruka and Kishimoto, Ren and Kawakami, Kosuke and Kobayashi, Ken and Nataka, Kazuhide and Saito, Yuta},
+            title = {SCOPE-RL: Towards Risk-Return Assessments of Off-Policy Evaluation in Reinforcement Learning},
+            journal = {A github repository},
+            pages = {xxx--xxx},
+            year = {2023},
         }
 
 .. raw:: html
