@@ -1,5 +1,5 @@
-from ofrl.policy.opl import OffPolicyLearning
-from ofrl.policy.head import (
+from scope_rl.policy.opl import OffPolicyLearning
+from scope_rl.policy.head import (
     BaseHead,
     OnlineHead,
     DiscreteEpsilonGreedyHead,
@@ -8,7 +8,7 @@ from ofrl.policy.head import (
     ContinuousTruncatedGaussianHead,
     ContinuousEvalHead,
 )
-from ofrl.policy.encoder import (
+from scope_rl.policy.encoder import (
     StateEncoder,
     EmbeddingEncoderFactory,
 )

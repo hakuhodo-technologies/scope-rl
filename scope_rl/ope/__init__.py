@@ -1,16 +1,16 @@
-from ofrl.ope.ops import OffPolicySelection
-from ofrl.ope.input import CreateOPEInput
-from ofrl.ope.estimators_base import (
+from scope_rl.ope.ops import OffPolicySelection
+from scope_rl.ope.input import CreateOPEInput
+from scope_rl.ope.estimators_base import (
     BaseOffPolicyEstimator,
     BaseStateMarginalOffPolicyEstimator,
     BaseStateActionMarginalOffPolicyEstimator,
     BaseCumulativeDistributionOffPolicyEstimator,
 )
-from ofrl.ope.ope import (
+from scope_rl.ope.ope import (
     OffPolicyEvaluation,
     CumulativeDistributionOffPolicyEvaluation,
 )
-from ofrl.ope.basic_estimators_discrete import (
+from scope_rl.ope.basic_estimators_discrete import (
     DiscreteDirectMethod,
     DiscreteTrajectoryWiseImportanceSampling,
     DiscretePerDecisionImportanceSampling,
@@ -19,7 +19,7 @@ from ofrl.ope.basic_estimators_discrete import (
     DiscreteSelfNormalizedPerDecisionImportanceSampling,
     DiscreteSelfNormalizedDoublyRobust,
 )
-from ofrl.ope.marginal_estimators_discrete import (
+from scope_rl.ope.marginal_estimators_discrete import (
     DiscreteDoubleReinforcementLearning,
     DiscreteStateMarginalImportanceSampling,
     DiscreteStateMarginalDoublyRobust,
@@ -30,26 +30,26 @@ from ofrl.ope.marginal_estimators_discrete import (
     DiscreteStateActionMarginalSelfNormalizedImportanceSampling,
     DiscreteStateMarginalSelfNormalizedDoublyRobust,
 )
-from ofrl.ope.cumulative_distribution_estimators_discrete import (
+from scope_rl.ope.cumulative_distribution_estimators_discrete import (
     DiscreteCumulativeDistributionDirectMethod,
     DiscreteCumulativeDistributionTrajectoryWiseImportanceSampling,
     DiscreteCumulativeDistributionTrajectoryWiseDoublyRobust,
     DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSampling,
     DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseDoublyRobust,
 )
-from ofrl.ope.weight_value_learning.augmented_lagrangian_learning_discrete import (
+from scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_discrete import (
     DiscreteAugmentedLagrangianStateActionWightValueLearning,
     DiscreteAugmentedLagrangianStateWightValueLearning,
 )
-from ofrl.ope.weight_value_learning.minimax_value_learning_discrete import (
+from scope_rl.ope.weight_value_learning.minimax_value_learning_discrete import (
     DiscreteMinimaxStateActionValueLearning,
     DiscreteMinimaxStateValueLearning,
 )
-from ofrl.ope.weight_value_learning.minimax_weight_learning_discrete import (
+from scope_rl.ope.weight_value_learning.minimax_weight_learning_discrete import (
     DiscreteMinimaxStateActionWeightLearning,
     DiscreteMinimaxStateWeightLearning,
 )
-from ofrl.ope.basic_estimators_continuous import (
+from scope_rl.ope.basic_estimators_continuous import (
     ContinuousDirectMethod,
     ContinuousTrajectoryWiseImportanceSampling,
     ContinuousPerDecisionImportanceSampling,
@@ -58,7 +58,7 @@ from ofrl.ope.basic_estimators_continuous import (
     ContinuousSelfNormalizedPerDecisionImportanceSampling,
     ContinuousSelfNormalizedDoublyRobust,
 )
-from ofrl.ope.marginal_estimators_continuous import (
+from scope_rl.ope.marginal_estimators_continuous import (
     ContinuousDoubleReinforcementLearning,
     ContinuousStateMarginalImportanceSampling,
     ContinuousStateMarginalDoublyRobust,
@@ -69,22 +69,22 @@ from ofrl.ope.marginal_estimators_continuous import (
     ContinuousStateActionMarginalSelfNormalizedImportanceSampling,
     ContinuousStateMarginalSelfNormalizedDoublyRobust,
 )
-from ofrl.ope.cumulative_distribution_estimators_continuous import (
+from scope_rl.ope.cumulative_distribution_estimators_continuous import (
     ContinuousCumulativeDistributionDirectMethod,
     ContinuousCumulativeDistributionTrajectoryWiseImportanceSampling,
     ContinuousCumulativeDistributionTrajectoryWiseDoublyRobust,
     ContinuousCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSampling,
     ContinuousCumulativeDistributionSelfNormalizedTrajectoryWiseDoublyRobust,
 )
-from ofrl.ope.weight_value_learning.augmented_lagrangian_learning_continuous import (
+from scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_continuous import (
     ContinuousAugmentedLagrangianStateActionWightValueLearning,
     ContinuousAugmentedLagrangianStateWightValueLearning,
 )
-from ofrl.ope.weight_value_learning.minimax_value_learning_continuous import (
+from scope_rl.ope.weight_value_learning.minimax_value_learning_continuous import (
     ContinuousMinimaxStateActionValueLearning,
     ContinuousMinimaxStateValueLearning,
 )
-from ofrl.ope.weight_value_learning.minimax_weight_learning_continuous import (
+from scope_rl.ope.weight_value_learning.minimax_weight_learning_continuous import (
     ContinuousMinimaxStateActionWeightLearning,
     ContinuousMinimaxStateWeightLearning,
 )
