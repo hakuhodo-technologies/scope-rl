@@ -1,0 +1,4 @@
+env_name: Acrobot
+behavior_sigma: 2.0
+behavior_tau: 5.0
+random_state: 12345

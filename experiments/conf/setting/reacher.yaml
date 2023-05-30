@@ -12,7 +12,7 @@ candidate_epsilons:
   - 0.3
   - 0.5
   - 0.7
-max_episode_steps: 50
+max_episode_steps: 30
 n_trajectories: 10000
 n_candidate_policies: 10
 n_random_state: 10

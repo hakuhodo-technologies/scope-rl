@@ -1,0 +1,4 @@
+env_name: Swimmer
+behavior_sigma: 1.0
+behavior_tau: 1.0
+random_state: 12345
