@@ -1,36 +1,18 @@
 import time
-
-# from typing import List
 from pathlib import Path
 import pickle
+from typing import Optional
 
-import hydra
-from omegaconf import DictConfig
-
-# import gym
-# from gym.spaces import Box
-
-# import torch
-import numpy as np
-
-from sklearn.utils import check_random_state
-
-from cycler import cycler
-
-# from collections import defaultdict
-# from glob import glob
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-
-# import seaborn as sns
-import pickle
-import matplotlib.gridspec as gridspec
 from sklearn.utils import check_random_state
+from cycler import cycler
 
-# from experiments.utils import torch_seed, format_runtime
+import hydra
+from omegaconf import DictConfig
+import matplotlib.gridspec as gridspec
 from experiments.utils import format_runtime
-from typing import Optional
 
 plt.style.use("ggplot")
 
@@ -412,16 +394,6 @@ def app_benchmark_results(
     env_name,
     normalized_conventional_total_df,
     topk_metrics_dict,
-    # xmin_id_mse: np.ndarray = np.arange(1),
-    # xmin_id_rankcorr: np.ndarray = np.arange(1),
-    # xmin_id_regret: np.ndarray = np.arange(1),
-    # xmin_id_sharpe_4: np.ndarray = np.arange(1),
-    # xmin_id_sharpe_7: np.ndarray = np.arange(1),
-    # yloc_mse: float = 0.0,
-    # yloc_rankcorr: float = 0.0,
-    # yloc_regret: float = 0.0,
-    # yloc_sharpe_4: float = 0.0,
-    # yloc_sharpe_7: float = 0.0,
     ymax_mse: Optional[float] = None,
     ymin_rankcorr: float = -1.0,
     ymax_rankcorr: float = 1.0,
@@ -492,41 +464,6 @@ def app_benchmark_results(
         axes[4].set_xticks(np.arange(5), [""] * 5)
         axes[4].tick_params(axis="y", labelsize=12)
 
-    # axes[0].scatter(
-    #     # xmin_id_mse,
-    #     # np.full((len(xmin_id_mse),), yloc_mse),
-    #     # marker="*",
-    #     s=150,
-    #     color="black",
-    # )
-    # axes[1].scatter(
-    #     # xmin_id_rankcorr,
-    #     # np.full((len(xmin_id_rankcorr),), yloc_rankcorr),
-    #     # marker="*",
-    #     s=150,
-    #     color="black",
-    # )
-    # axes[2].scatter(
-    #     # xmin_id_regret,
-    #     # np.full((len(xmin_id_regret),), yloc_regret),
-    #     # marker="*",
-    #     s=150,
-    #     color="black",
-    # )
-    # axes[3].scatter(
-    #     # xmin_id_sharpe_4,
-    #     # np.full((len(xmin_id_sharpe_4),), yloc_sharpe_4),
-    #     # marker="*",
-    #     s=150,
-    #     color="black",
-    # )
-    # axes[4].scatter(
-    #     # xmin_id_sharpe_7,
-    #     # np.full((len(xmin_id_sharpe_7),), yloc_sharpe_7),
-    #     # marker="*",
-    #     s=150,
-    #     color="black",
-    # )
     axes[0].set_ylim(0.0, ymax_mse)
     axes[1].set_ylim(ymin_rankcorr, ymax_rankcorr)
     axes[2].set_ylim(0.0, None)
@@ -640,18 +577,6 @@ def process(
         topk_metrics_dict,
         random_state=random_state,
         log_dir=log_dir,
-        # # star の位置 (x)
-        # xmin_id_mse=np.arange(1),
-        # xmin_id_rankcorr=np.arange(2, 3),
-        # xmin_id_regret=np.arange(2, 3),
-        # xmin_id_sharpe_4=np.arange(2, 3),
-        # xmin_id_sharpe_7=np.arange(2),
-        # # star の位置 (y)
-        # yloc_mse=0.23,
-        # yloc_rankcorr=1.0,
-        # yloc_regret=0.20,
-        # yloc_sharpe_4=3.35,
-        # yloc_sharpe_7=2.0,
         # # ylim
         ymin_rankcorr=-0.65,
         ymax_rankcorr=1.1,
