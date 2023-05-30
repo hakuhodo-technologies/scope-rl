@@ -1,8 +1,8 @@
-# SCOPE-RL: A pipeline for offline reinforcement learning research and applications
+# SCOPE-RL: A Python library for offline reinforcement learning, off-policy evaluation, and selection
 <details>
 <summary><strong>Table of Contents </strong>(click to expand)</summary>
 
-- [SCOPE-RL: A pipeline for offline reinforcement learning research and applications](#SCOPE-RL-a-pipeline-for-offline-reinforcement-learning-research-and-applications)
+- [SCOPE-RL: A Python library for offline reinforcement learning, off-policy evaluation, and selection](#SCOPE-RL-a-python-library-for-offline-reinforcement-learning-off-policy-evaluation-and-selection)
 - [Overview](#overview)
 - [Installation](#installation)
 - [Usage](#usage)
@@ -122,7 +122,7 @@ pip install scope-rl
 
 You can also install SCOPE-RL from source.
 ```bash
-git clone https://github.com/negocia-inc/scope-rl
+git clone https://github.com/hakuhodo-technologies/scope-rl
 cd scope-rl
 python setup.py install
 ```
@@ -407,14 +407,14 @@ For more examples, please refer to [quickstart/rtb_synthetic_discrete_advanced.i
 If you use our software in your work, please cite our paper:
 
 Haruka Kiyohara, Ren Kishimoto, Kosuke Kawakami, Ken Kobayashi, Kazuhide Nakata, Yuta Saito.<br>
-**Risk-Return Assessments of Off-Policy Evaluation in Reinforcement Learning**<br>
+**Towards Risk-Return Assessments of Off-Policy Evaluation in Reinforcement Learning**<br>
 [link]() (a preprint coming soon..)
 
 Bibtex:
 ```
-@article{kiyohara2023scope,
+@article{kiyohara2023risk,
   author = {Kiyohara, Haruka and Kishimoto, Ren and Kawakami, Kosuke and Kobayashi, Ken and Nataka, Kazuhide and Saito, Yuta},
-  title = {Risk-Return Assessments of Off-Policy Evaluation in Reinforcement Learning},
+  title = {Towards Risk-Return Assessments of Off-Policy Evaluation in Reinforcement Learning},
   journal = {A github repository},
   pages = {xxx--xxx},
   year = {2023},
@@ -440,7 +440,7 @@ This project is licensed under Apache 2.0 license - see [LICENSE](LICENSE) file 
 
 ## Contact
 
-For any question about the paper and software, feel free to contact: hk844 [at] cornell.edu
+For any question about the paper and software, feel free to contact: hk844@cornell.edu
 
 ## References
 

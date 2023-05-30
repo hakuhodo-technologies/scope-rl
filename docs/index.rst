@@ -6,7 +6,9 @@
     :text-align: center
     :shadow: none
 
-    Towards Risk-Return Assessments of Off-Policy Evaluation in Reinforcement Learning
+    | Towards Risk-Return Assessments of Off-Policy Evaluation in Reinforcement Learning
+    | 
+    | 
 
     .. button-ref:: documentation/index
       :ref-type: doc
@@ -252,19 +254,19 @@
     <h2>Citation</h2>
 
 
-If you use our pipeline or the SharpRatio@k metric in your work, please cite our paper below.
+If you use our pipeline or the proposed metric (SharpRatio@k) metric in your work, please cite our paper below.
 
 .. card::
 
     | Haruka Kiyohara, Ren Kishimoto, Kosuke Kawakami, Ken Kobayashi, Kazuhide Nakata, Yuta Saito.
-    | **SCOPE-RL: Towards Risk-Return Assessments of Off-Policy Evaluation in Reinforcement Learning** [`arXiv <>`_] [`Proceedings <>`_]
+    | **Towards Risk-Return Assessments of Off-Policy Evaluation in Reinforcement Learning**
     | (a preprint coming soon..)
 
     .. code-block::
 
-        @article{kiyohara2023scope,
+        @article{kiyohara2023towards,
             author = {Kiyohara, Haruka and Kishimoto, Ren and Kawakami, Kosuke and Kobayashi, Ken and Nataka, Kazuhide and Saito, Yuta},
-            title = {SCOPE-RL: Towards Risk-Return Assessments of Off-Policy Evaluation in Reinforcement Learning},
+            title = {Towards Risk-Return Assessments of Off-Policy Evaluation in Reinforcement Learning},
             journal = {A github repository},
             pages = {xxx--xxx},
             year = {2023},
@@ -277,10 +279,10 @@ If you use our pipeline or the SharpRatio@k metric in your work, please cite our
 
 Any contributions to SCOPE-RL are more than welcome!
 
-* `Guidelines for contribution (CONTRIBUTING.md) <>`_
-* `Google Group (scope-rl@googlegroups.com) <https://groups.google.com/g/scope-rl>`_!
+* `Guidelines for contribution (CONTRIBUTING.md) <https://github.com/hakuhodo-technologies/scope-rl/blob/main/CONTRIBUTING.md>`_
+* `Google Group (scope-rl@googlegroups.com) <https://groups.google.com/g/scope-rl>`_
 
-If you have any questions, feel free to contact: hk844 [at] cornell.edu
+If you have any questions, feel free to contact: hk844@cornell.edu
 
 .. raw:: html
 
@@ -299,13 +301,12 @@ Welcome!
 
     Installation <documentation/installation>
     Quickstart <documentation/quickstart>
-    .. Tutorial <documentation/_autogallery/index>
     Documentation <documentation/index>
     FAQs <documentation/frequently_asked_questions>
     News <documentation/news>
     Sub-packages <documentation/subpackages/index>
-    Release Notes <https://github.com/negocia-inc/scope-rl/releases>
-    Proceedings <https://github.com/negocia-inc/scope-rl/404>
+    Release Notes <https://github.com/hakuhodo-technologies/scope-rl/releases>
+    Proceedings <https://github.com/hakuhodo-technologies/scope-rl/404>
 
 .. grid::
 

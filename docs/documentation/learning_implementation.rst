@@ -176,7 +176,7 @@ Then, it collects logged data by a behavior policy (i.e., data collection policy
         .. seealso::
 
             * :doc:`API reference of MultipleLoggedDataset <_autosummary/scope_rl.utils.MultipleLoggedDataset>`
-            * :ref:`Tutorial with MultipleLoggedDataset <scope_rl_multiple_tutorial>`
+            .. * :ref:`Tutorial with MultipleLoggedDataset <scope_rl_multiple_tutorial>`
 
     .. dropdown:: How to collect data in a non-episodic setting?
 
@@ -195,7 +195,8 @@ Then, it collects logged data by a behavior policy (i.e., data collection policy
 
 .. seealso::
 
-    * :doc:`quickstart` and :ref:`related tutorials <scope_rl_others_tutorial>`
+    * :doc:`quickstart` 
+    .. * and :ref:`related tutorials <scope_rl_others_tutorial>`
 
 .. _implementation_opl:
 
@@ -277,6 +278,7 @@ Using :class:`OffPolicyLearning`, we can also convert the deterministic base pol
 
     # policy wrapper
     from scope_rl.policy import DiscreteEpsilonGreedyHead as EpsilonGreedyHead
+
     policy_wrappers = {
         "eps_00": (
             EpsilonGreedyHead, {
@@ -363,11 +365,12 @@ The obtained evaluation policies are the following (both algorithms and policy w
         .. seealso::
 
             * :ref:`How to obtain MultipleLoggedDataset? <tips_synthetic_dataset>`
-            * :ref:`Tutorial with MultipleLoggedDataset <scope_rl_multiple_tutorial>`
+            .. * :ref:`Tutorial with MultipleLoggedDataset <scope_rl_multiple_tutorial>`
 
 .. seealso::
 
-    * :doc:`quickstart` and :ref:`related tutorials <scope_rl_others_tutorial>`
+    * :doc:`quickstart` 
+    .. * and :ref:`related tutorials <scope_rl_others_tutorial>`
 
 .. _implementation_policy_head:
 
@@ -412,29 +415,29 @@ Here, we describe some useful wrapper tools to convert a `d3rlpy <https://github
             * :doc:`Package Reference of BaseHead and implemented policy heads <_autosummary/scope_rl.policy.head>`
 
 
-.. seealso::
+.. .. seealso::
 
-    * :ref:`Related tutorials <scope_rl_others_tutorial>`
+..     * :ref:`Related tutorials <scope_rl_others_tutorial>`
 
 
 .. _implementation_discrete_head:
 
 DiscreteHead
 ----------
-This module transforms a deterministic policy to a stochastic one in discrete action case.
+This module transforms a deterministic policy to a stochastic one in discrete action cases.
 Specifically, we have two stochastic policies.
 
     * :class:`DiscreteEpsilonGreedyHead`: :math:`\pi(a | s) := (1 - \epsilon) * \pi_{\mathrm{det}}(a | s) + \epsilon / |\mathcal{A}|`.
     * :class:`DiscreteSoftmaxHead`: :math:`\pi(a | s) := \displaystyle \frac{\exp(Q^{(\pi_{\mathrm{det}})}(s, a) / \tau)}{\sum_{a' \in \mathcal{A}} \exp(Q^{(\pi_{\mathrm{det}})}(s, a') / \tau)}`.
 
-Note that :math:`\mathbb{I}(\cdot)` is the indicator function and :math:`\tau` is the temperature parameter.
-DiscreteEpsilonGreedyHead is also used to construct a deterministic evaluation policy in OPE/OPS.
+Note that :math:`\epsilon \in [0, 1]` is the degree of exploration :math:`\tau` is the temperature hyperparameter.
+DiscreteEpsilonGreedyHead is also used to construct a deterministic evaluation policy in OPE/OPS by setting :math:`\epsilon=0.0`.
 
 .. _implementation_continuous_head:
 
 ContinuousHead
 ----------
-This module transforms a deterministic policy to a stochastic one in discrete action case.
+This module transforms a deterministic policy to a stochastic one in continuous action cases.
 Specifically, we have two stochastic policies.
 
     * :class:`ContinuousGaussianHead`: :math:`\pi(a | s) := \mathrm{Normal}(\pi_{\mathrm{det}}(s), \sigma)`.
@@ -448,7 +451,7 @@ We also provide the wrapper class of deterministic policy to be used in OPE.
 
 OnlineHead
 ----------
-This module enables step-wise interaction of the policy.
+This module enables online interaction of the policy (note: `d3rlpy <https://github.com/takuseno/d3rlpy>`_'s policy is particularly designed for batch interactions).
 
     * :class:`OnlineHead`
 
@@ -456,9 +459,9 @@ Online Evaluation
 ~~~~~~~~~~
 Finally, we provide the series of functions to be used for online performance evaluation in :doc:`scope_rl/ope/online.py <_autosummary/scope_rl.ope.online>`.
 
-.. seealso::
+.. .. seealso::
 
-    * :ref:`Related tutorials <scope_rl_others_tutorial>`
+..     * :ref:`Related tutorials <scope_rl_others_tutorial>`
 
 (Rollout)
 

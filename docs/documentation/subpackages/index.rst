@@ -3,7 +3,7 @@
 Sub-packages
 ==========
 
-SCOPE-RL provides three sub-packages to simulate RL interactions in various situations
+SCOPE-RL provides three sub-packages to simulate RL interactions in various situations.
 
 .. grid-item-card::
     :columns: 8

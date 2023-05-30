@@ -71,7 +71,7 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 #
 html_theme = "pydata_sphinx_theme"
 html_theme_options = {
-    "github_url": "https://github.com/negocia-inc/scope_rl",
+    "github_url": "https://github.com/hakuhodo-technologies/scope-rl",
     # "twitter_url": "https://twitter.com/{account}",
     "icon_links": [
         {
@@ -81,7 +81,7 @@ html_theme_options = {
             "type": "fontawesome",
         },
     ],
-    "header_links_before_dropdown": 6,
+    "header_links_before_dropdown": 5,
     # "navbar_start": ["navbar-logo", "version"],
     "footer_items": ["copyright"],
     "show_prev_next": False,
@@ -94,7 +94,7 @@ html_theme_options = {
 html_static_path = ["_static"]
 html_css_files = ["css/custom.css"]
 
-html_title = "OFRL"
+html_title = "SCOPE-RL"
 # html_use_opensearch = "https://"
 
 

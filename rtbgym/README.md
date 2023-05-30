@@ -72,7 +72,7 @@ pip install scope-rl
 
 You can also install from source.
 ```bash
-git clone https://github.com/negocia-inc/scope-rl
+git clone https://github.com/hakuhodo-technologies/scope-rl
 cd scope-rl
 python setup.py install
 ```
@@ -383,7 +383,7 @@ This project is licensed under Apache 2.0 license - see [LICENSE](../LICENSE) fi
 
 ## Project Team
 
-- [Haruka Kiyohara](https://sites.google.com/view/harukakiyohara) (**Main Contributor**; Tokyo Institute of Technology)
+- [Haruka Kiyohara](https://sites.google.com/view/harukakiyohara) (**Main Contributor**)
 - Ren Kishimoto (Tokyo Institute of Technology)
 - Kosuke Kawakami (negocia Inc.)
 - Ken Kobayashi (Tokyo Institute of Technology)
@@ -393,7 +393,7 @@ This project is licensed under Apache 2.0 license - see [LICENSE](../LICENSE) fi
 
 ## Contact
 
-For any question about the paper and software, feel free to contact: kiyohara.h.aa@m.titech.ac.jp
+For any question about the paper and software, feel free to contact: hk844@cornell.edu
 
 ## References
 

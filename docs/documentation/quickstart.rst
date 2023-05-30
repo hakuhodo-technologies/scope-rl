@@ -1,14 +1,14 @@
 Quickstart
 ==========
 
-We show an example workflow of synthetic dataset collection, offline Reinforcement Learning (RL) to Off-Policy Evaluation (OPE).
+We show an example workflow of synthetic dataset collection, offline Reinforcement Learning (RL), to Off-Policy Evaluation (OPE).
 The workflow mainly consists of following three steps:
 
 * **Synthetic Dataset Generation and Data Preprocessing**: 
     The initial step is to collect logged data using a behavior policy. In synthetic setup, we first train the behavior policy through online interaction and then generate dataset with the behavior policy. In practical situation, we can also utilize the preprocessed logged data from real-world applications.
 
 * **Offline Reinforcement Learning**: 
-    Next, we now learn a new (and better) policy from only offline logged data, without any online interactions.
+    We then learn new policies (, which hopefully perform better than the behavior policy) from only offline logged data, without any online interactions.
 
 * **Off-Policy Evaluation and Selection**: 
     After learning several candidate policies in an offline manner, we need to choose the production policy. 
@@ -34,7 +34,7 @@ Synthetic Dataset Generation and Data Preprocessing
 ~~~~~~~~~~
 
 We start by collecting the logged data using DDQN :cite:`van2016deep` as a behavior policy.
-Note that, in the following example, we use :doc:`RTBGym <rtbgym>` (a sub-package of SCOPE-RL) and `d3rlpy <https://github.com/takuseno/d3rlpy>`_. Please satisfy the `requirements <>`_ in advance.
+Note that, in the following example, we use :doc:`RTBGym <subpackages/rtbgym_about>` (a sub-package of SCOPE-RL) and `d3rlpy <https://github.com/takuseno/d3rlpy>`_. Please satisfy the `requirements <https://github.com/hakuhodo-technologies/scope-rl/blob/main/requirements.txt>`_ in advance.
 
 
 .. code-block:: python
@@ -96,12 +96,12 @@ Note that, in the following example, we use :doc:`RTBGym <rtbgym>` (a sub-packag
         random_state= + 1,
     )
 
-Users can collect logged data from any environment with `OpenAI Gym <https://gym.openai.com>`_ and `Gymnasium <https://github.com/Farama-Foundation/Gymnasium>`_-like interface using a variety of behavior policies.
+Users can collect logged data from any environment with `OpenAI Gym <https://github.com/openai/gym>`_ and `Gymnasium <https://github.com/Farama-Foundation/Gymnasium>`_-like interface using a variety of behavior policies.
 Moreover, by preprocessing the logged data, one can also handle their own logged data from real-world applications.
 
 .. seealso::
 
-    * :doc:`Related tutorials <_autogallery/scope_rl_others/index>`
+    .. * :doc:`Related tutorials <_autogallery/scope_rl_others/index>`
     * API references of :ref:`dataset modules <scope_rl_api_dataset>` and :ref:`policy wrapper (Head) <scope_rl_api_policy>`
 
 .. _quickstart_offlinerl:
@@ -141,7 +141,7 @@ Note that, we use `d3rlpy <https://github.com/takuseno/d3rlpy>`_ for offline RL.
 
 .. seealso::
 
-    * :doc:`Related tutorials <_autogallery/scope_rl_others/index>`
+    .. * :doc:`Related tutorials <_autogallery/scope_rl_others/index>`
     * :ref:`Problem setting <overview_offline_rl>`
     * :doc:`Supported implementations and useful tools <learning_implementation>` 
     * (external) `d3rlpy's documentation <https://d3rlpy.readthedocs.io/en/latest/>`_
@@ -239,10 +239,10 @@ In addition, :class:`scope_rl.ope.OffPolicyEvaluation` summarizes and compares t
 
 .. seealso::
 
-    * :doc:`Related tutorials <_autogallery/basic_ope/index>`
+    .. * :doc:`Related tutorials <_autogallery/basic_ope/index>`
     * :doc:`Problem setting <ope_ops>`
     * :doc:`Supported OPE estimators <evaluation_implementation>` and :doc:`their API reference <_autosummary/scope_rl.ope.basic_estimators_discrete>` 
-    * (advanced) :ref:`Marginal OPE estimators <implementation_marginal_ope>`, and their :doc:`API reference <_autosummary/scope_rl.ope.marginal_ope_discrete>`
+    * (advanced) :ref:`Marginal OPE estimators <implementation_marginal_ope>`, and :doc:`their API reference <_autosummary/scope_rl.ope.marginal_estimators_discrete>`
 
 .. _quickstart_cumulative_distribution_ope:
 
@@ -275,11 +275,11 @@ using Cumulative Distribution OPE estimators :cite:`huang2021off` :cite:`huang20
     cd_ope = CumulativeDistributionOPE(
         logged_dataset=test_logged_dataset,
         ope_estimators=[
-        CD_DM(estimator_name="cd_dm"),
-        CD_IS(estimator_name="cd_is"),
-        CD_DR(estimator_name="cd_dr"),
-        CD_SNIS(estimator_name="cd_snis"),
-        CD_SNDR(estimator_name="cd_sndr"),
+        CD_DM(estimator_name="cdf_dm"),
+        CD_IS(estimator_name="cdf_is"),
+        CD_DR(estimator_name="cdf_dr"),
+        CD_SNIS(estimator_name="cdf_snis"),
+        CD_SNDR(estimator_name="cdf_sndr"),
         ],
     )
     # estimate variance
@@ -295,15 +295,14 @@ using Cumulative Distribution OPE estimators :cite:`huang2021off` :cite:`huang20
     
     Cumulative Distribution Function Estimated by OPE Estimators
 
-Users can implement their own OPE estimators by following the interface of :class:`scope_rl.ope.BaseCumulativeDistributionOffPolicyEstimator`.
-In addition, :class:`scope_rl.ope.DiscreteCumulativeDistributionOffPolicyEvaluation` summarizes and compares the estimation results of various OPE estimators.
+Users can implement their own OPE estimators by following the interface of :class:`scope_rl.ope.BaseCumulativeDistributionOPEEstimator`.
+In addition, :class:`scope_rl.ope.DiscreteCumulativeDistributionOPE` summarizes and compares the estimation results of various OPE estimators.
 
 .. seealso::
 
-    * :doc:`Related tutorials <_autogallery/cumulative_distribution_ope/index>`
+    .. * :doc:`Related tutorials <_autogallery/cumulative_distribution_ope/index>`
     * :ref:`Problem setting <overview_cumulative_distribution_ope>`
-    * :ref:`Supported cumulative distribution OPE estimators <implementation_cumulative_distribution_ope>` 
-    and :doc:`their API reference <_autosummary/scope_rl.ope.cumulative_distribution_ope_discrete>` 
+    * :ref:`Supported cumulative distribution OPE estimators <implementation_cumulative_distribution_ope>` and :doc:`their API reference <_autosummary/scope_rl.ope.cumulative_distribution_estimators_discrete>` 
 
 .. _quickstart_ops:
 
@@ -362,7 +361,7 @@ Finally, we provide the code to conduct OPS, which selects the "best" performing
 
 .. seealso::
 
-    * :doc:`Related tutorials <_autogallery/ops/index>`
+    .. * :doc:`Related tutorials <_autogallery/ops/index>`
     * :ref:`Problem setting <overview_ops>`
     * :ref:`OPS evaluation protocols <implementation_eval_ope_ops>` and :doc:`their API reference <_autosummary/scope_rl.ope.ops>` 
 
@@ -395,27 +394,27 @@ More tutorials with a variety of environments and OPE estimators are available i
                 **Quickstart**
 
     .. grid-item::
-        :columns: 8
+        :columns: 7
         :margin: 0
         :padding: 0
 
     .. grid-item::
-        :columns: 2
+        :columns: 3
         :margin: 0
         :padding: 0
 
         .. grid::
             :margin: 0
 
-            .. grid-item-card::
-                :link: _autogallery/index
-                :link-type: doc
-                :shadow: none
-                :margin: 0
-                :padding: 0
+            .. .. grid-item-card::
+            ..     :link: _autogallery/index
+            ..     :link-type: doc
+            ..     :shadow: none
+            ..     :margin: 0
+            ..     :padding: 0
 
-                Next >>>
-                **Tutorial**
+            ..     Next >>>
+            ..     **Tutorial**
 
             .. grid-item-card::
                 :link: index

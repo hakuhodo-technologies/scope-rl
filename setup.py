@@ -17,7 +17,7 @@ setup(
     name="scope-rl", 
     version=__version__, 
     description="SCOPE-RL: A pipeline for offline reinforcement learning research and applications",
-    url="https://github.com/negocia-inc/scope-rl",  # [TODO]
+    url="https://github.com/hakuhodo-technologies/scope-rl",  # [TODO]
     author="Haruka Kiyohara",
     author_email="scope-rl@googlegroups.com",
     keywords=["off-policy evaluation", "offline reinforcement learning", "risk assessment"],

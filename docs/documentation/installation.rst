@@ -15,7 +15,7 @@ Installation
 
         .. code-tab:: bash From source
 
-            git clone https://github.com/negocia-inc/scope-rl
+            git clone https://github.com/hakuhodo-technologies/scope-rl
             cd scope-rl
             python setup.py install
 
@@ -27,19 +27,19 @@ Installation
 Citation
 ==========
 
-If you use our pipeline or the SharpRatio@k metric in your work, please cite our paper below.
+If you use our pipeline or the proposed metric (SharpRatio@k) in your work, please cite our paper below.
 
 .. card::
 
     | Haruka Kiyohara, Ren Kishimoto, Kosuke Kawakami, Ken Kobayashi, Kazuhide Nakata, Yuta Saito.
-    | **Risk-Return Assessments of Off-Policy Evaluation in Reinforcement Learning** [`arXiv <>`_] [`Proceedings <>`_]
+    | **Towards Risk-Return Assessments of Off-Policy Evaluation in Reinforcement Learning**
     | (a preprint coming soon..)
 
     .. code-block::
 
-        @article{kiyohara2023scope,
+        @article{kiyohara2023towards,
             author = {Kiyohara, Haruka and Kishimoto, Ren and Kawakami, Kosuke and Kobayashi, Ken and Nataka, Kazuhide and Saito, Yuta},
-            title = {SCOPE-RL: Towards Risk-Return Assessments of Off-Policy Evaluation in Reinforcement Learning},
+            title = {Towards Risk-Return Assessments of Off-Policy Evaluation in Reinforcement Learning},
             journal = {A github repository},
             pages = {xxx--xxx},
             year = {2023},

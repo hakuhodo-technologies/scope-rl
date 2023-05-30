@@ -1,10 +1,14 @@
-RECGym; a Python-based configurative simulation environment for recommender system (REC)
+RECGym
 ===================================
+
+.. raw:: html
+
+    <h3>A Python-based configurative simulation environment for recommender systems</h3>
 
 Overview
 ~~~~~~~~~~
 *RECGym* is an open-source simulation platform for recommender system(REC)
-The simulator is particularly intended for reinforcement learning algorithms and follows `OpenAI Gym <https://gym.openai.com>`_ and `Gymnasium <https://github.com/Farama-Foundation/Gymnasium>`_ interface.
+The simulator is particularly intended for reinforcement learning algorithms and follows `OpenAI Gym <https://github.com/openai/gym>`_ and `Gymnasium <https://github.com/Farama-Foundation/Gymnasium>`_ interface.
 We design RECGym as a configurative environment so that researchers and practitioner can customize the environmental modules including UserModel.
 
 Note that, RECGym is publicized as a sub-package of :doc:`SCOPE-RL <index>`, which streamlines the implementation of offline reinforcement learning (offline RL) and off-policy evaluation and selection (OPE/OPS) procedures.
@@ -207,12 +211,12 @@ If you use our pipeline in your work, please cite our paper below.
 
 Contact
 ~~~~~~~~~~
-For any question about the paper and pipeline, feel free to contact: kiyohara.h.aa@m.titech.ac.jp
+For any question about the paper and pipeline, feel free to contact: hk844 [at] cornell.edu
 
 Contribution
 ~~~~~~~~~~
 Any contributions to RECGym are more than welcome!
-Please refer to `CONTRIBUTING.md <>`_ for general guidelines how to contribute to the project.
+Please refer to `CONTRIBUTING.md <https://github.com/hakuhodo-technologies/scope-rl/CONTRIBUTING.md>`_ for general guidelines how to contribute to the project.
 
 .. grid::
     :margin: 0

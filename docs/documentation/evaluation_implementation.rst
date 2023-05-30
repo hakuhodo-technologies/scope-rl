@@ -62,7 +62,7 @@ Before proceeding to OPE/OPS, we first create :class:`input_dict` to enable a sm
             * :ref:`How to obtain MultipleLoggedDataset? <tips_synthetic_dataset>`
             * :ref:`How to handle OPL with MultipleLoggedDataset? <tip_opl>`
             * :doc:`API reference of MultipleInputDict <_autosummary/scope_rl.utils.MultipleInputDict>`
-            * :ref:`Tutorial with MultipleLoggedDataset <scope_rl_multiple_tutorial>`
+            .. * :ref:`Tutorial with MultipleLoggedDataset <scope_rl_multiple_tutorial>`
 
     .. dropdown:: How to select models for value/weight learning methods?
 
@@ -280,12 +280,13 @@ Using the OPE class, we can obtain the OPE results of various estimators at once
             * :ref:`How to obtain MultipleLoggedDataset? <tips_synthetic_dataset>`
             * :ref:`How to handle OPL with MultipleLoggedDataset? <tip_opl>`
             * :ref:`How to create input_dict for MultipleLoggedDataset? <tip_create_input_dict>`
-            * :ref:`Tutorial with MultipleLoggedDataset <scope_rl_multiple_tutorial>`
+            .. * :ref:`Tutorial with MultipleLoggedDataset <scope_rl_multiple_tutorial>`
         
 
 .. seealso::
 
-    * :doc:`quickstart` and :ref:`related tutorials <basic_ope_tutorial>`
+    * :doc:`quickstart` 
+    .. * and :ref:`related tutorials <basic_ope_tutorial>`
 
 
 The OPE class implements the following functions.
@@ -344,7 +345,7 @@ Extensions
 
         To define your own OPE estimator, use :class:`BaseOffPolicyEstimator`.
 
-        Basically, the common inputs for each functions are the following keys from logged_dataset and input_dict.
+        Basically, the common inputs for each functions are the following keys from ``logged_dataset`` and ``input_dict``.
 
         (logged_dataset)
 
@@ -377,7 +378,7 @@ Extensions
 
         If you want to add other arguments, please add them in the initialization arguments for API consistency.
 
-        Finally, contribution to SCOPE-RL with a new OPE estimator is more than welcome! Please read `the guidelines for contribution (CONTRIBUTING.md) <>`_.
+        Finally, contribution to SCOPE-RL with a new OPE estimator is more than welcome! Please read `the guidelines for contribution (CONTRIBUTING.md) <https://github.com/hakuhodo-technologies/scope-rl/blob/main/CONTRIBUTING.md>`_.
 
         .. seealso::
 
@@ -466,7 +467,7 @@ However, when the importance weight is quite large, it may still suffer from a h
 
 Self-Normalized estimators
 ----------
-Self-normalized estimators :cite:`kallus2019intrinsically` aims to reduce the scale of importance weight for the variance reduction purpose.
+Self-normalized estimators :cite:`kallus2019intrinsically` aim to reduce the scale of importance weight for the variance reduction purpose.
 Specifically, it substitute importance weight :math:`w_{\ast}` as follows.
 
 .. math::
@@ -532,7 +533,7 @@ This estimator is particularly useful when policy visits the same or similar sta
         The objective of weight learning is to minimize the difference between the middle term and the last term of the above equation when Q-function adversarially maximizes the difference.
         In particular, we provide the following algorithms to estimate state marginal and state-action marginal importance weights (and corresponding state-action value function) via minimax learning.
 
-        * Augmented Lagrangian Method (ALM) :cite:`yang2020off`: 
+        * Augmented Lagrangian Method (ALM/DICE) :cite:`yang2020off`: 
             This method simultaneously optimize both :math:`w(s, a)` and :math:`Q(s, a)`. By setting different hyperparameters, 
             ALM can be identical to BestDICE :cite:`yang2020off`, DualDICE :cite:`nachum2019dualdice`, GenDICE :cite:`zhang2020gendice`, 
             AlgaeDICE :cite:`nachum2019algaedice`, and MQL/MWL :cite:`uehara2020minimax`. 
@@ -728,8 +729,8 @@ On the other hand, T-test is based on the assumption that each sample of :math:`
 
 Extension to the Continuous Action Space
 ----------
-When the action space is continuous, the naive importance weight :math:`w_t = \pi(a_t|s_t) / \pi_0(a_t|s_t) = (\pi(a |s_t) / \pi_0(a_t|s_t)) \cdot \mathbb{I}(a = a_t)` rejects almost every actions,
-as :math:`\mathbb{I}(a = a_t)` filters only the action observed in the logged data.
+When the action space is continuous, the naive importance weight :math:`w_t = \pi(a_t|s_t) / \pi_0(a_t|s_t) = (\pi(a |s_t) / \pi_0(a_t|s_t)) \cdot \mathbb{I} \{a = a_t \}` rejects almost every actions,
+as the indicator function :math:`\mathbb{I}\{a = a_t\}` filters only the action observed in the logged data.
 
 To address this issue, continuous-action OPE estimators apply kernel density estimation technique to smooth the importance weight :cite:`kallus2018policy` :cite:`lee2022local`.
 
@@ -938,11 +939,12 @@ It estimates the cumulative distribution of the trajectory wise reward and vario
             * :ref:`How to obtain MultipleLoggedDataset? <tips_synthetic_dataset>`
             * :ref:`How to handle OPL with MultipleLoggedDataset? <tip_opl>`
             * :ref:`How to create input_dict for MultipleLoggedDataset? <tip_create_input_dict>`
-            * :ref:`Tutorial with MultipleLoggedDataset <scope_rl_multiple_tutorial>`
+            .. * :ref:`Tutorial with MultipleLoggedDataset <scope_rl_multiple_tutorial>`
 
 .. seealso::
 
-    * :doc:`quickstart` and :ref:`related tutorials <cumulative_distribution_ope_tutorial>`
+    * :doc:`quickstart` 
+    .. * and :ref:`related tutorials <cumulative_distribution_ope_tutorial>`
 
 :class:`CumulativeDistributionOffPolicyEvaluation` implements the following functions.
 
@@ -994,7 +996,7 @@ Extension to the continuous action space
         To define your own OPE estimator, use :class:`BaseCumulativeDistributionOffPolicyEstimator`. 
 
         Basically, the common inputs for each functions are ``reward_scale`` (np.ndarray indicating x-axis of cumulative distribution function) 
-        and the following keys from logged_dataset and input_dict.
+        and the following keys from ``logged_dataset`` and ``input_dict``.
 
         (logged_dataset)
 
@@ -1027,7 +1029,7 @@ Extension to the continuous action space
 
         If you want to add other arguments, please add them in the initialization arguments for API consistency.
 
-        Finally, contribution to SCOPE-RL with a new OPE estimator is more than welcome! Please read `the guidelines for contribution (CONTRIBUTING.md) <>`_.
+        Finally, contribution to SCOPE-RL with a new OPE estimator is more than welcome! Please read `the guidelines for contribution (CONTRIBUTING.md) <https://github.com/hakuhodo-technologies/scope-rl/blob/main/CONTRIBUTING.md>`_.
 
         .. seealso::
 
@@ -1224,11 +1226,12 @@ Finally, the OPS class also implements the modules to compare the OPE result and
             * :ref:`How to create input_dict for MultipleLoggedDataset? <tip_create_input_dict>`
             * :ref:`How to conduct OPE with MultipleLoggedDataset? <tip_ope>`
             * :ref:`How to conduct Cumulative Distribution OPE with MultipleLoggedDataset? <tip_cumulative_distribution_ope>`
-            * :ref:`Tutorial with MultipleLoggedDataset <scope_rl_multiple_tutorial>`
+            .. * :ref:`Tutorial with MultipleLoggedDataset <scope_rl_multiple_tutorial>`
 
 .. seealso::
 
-    * :doc:`quickstart` and :ref:`related tutorials <ops_tutorial>`
+    * :doc:`quickstart` 
+    .. * and :ref:`related tutorials <ops_tutorial>`
 
 The OPS class implements the following functions.
 

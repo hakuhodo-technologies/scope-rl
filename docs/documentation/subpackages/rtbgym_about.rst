@@ -1,5 +1,9 @@
-RTBGym; a Python-based configurative simulation environment for Real-Time Bidding (RTB)
+RTBGym
 ===================================
+
+.. raw:: html
+
+    <h3> Python-based configurative simulation environment for Real-Time Bidding (RTB)</h3>
 
 Overview
 ~~~~~~~~~~
@@ -134,7 +138,7 @@ Let's interact uniform random policy with a continuous action RTB environment. T
         obs, reward, done, truncated, info = env.step(action)
 
 Note that, while we use :doc:`SCOPE-RL <index>` and `d3rlpy <https://github.com/takuseno/d3rlpy>`_ here,
-RTBGym is compatible with any other libraries that is compatible to the `OpenAI Gym <https://gym.openai.com>`_ 
+RTBGym is compatible with any other libraries that is compatible to the `OpenAI Gym <https://github.com/openai/gym>`_ 
 and `Gymnasium <https://github.com/Farama-Foundation/Gymnasium>`_ interface.
 
 Customized RTBEnv
@@ -343,12 +347,12 @@ If you use our pipeline in your work, please cite our paper below.
 
 Contact
 ~~~~~~~~~~
-For any question about the paper and pipeline, feel free to contact: kiyohara.h.aa@m.titech.ac.jp
+For any question about the paper and pipeline, feel free to contact: hk844 [at] cornell.edu
 
 Contribution
 ~~~~~~~~~~
 Any contributions to RTBGym are more than welcome!
-Please refer to `CONTRIBUTING.md <>`_ for general guidelines how to contribute to the project.
+Please refer to `CONTRIBUTING.md <https://github.com/hakuhodo-technologies/scope-rl/CONTRIBUTING.md>`_ for general guidelines how to contribute to the project.
 
 .. grid::
     :margin: 0

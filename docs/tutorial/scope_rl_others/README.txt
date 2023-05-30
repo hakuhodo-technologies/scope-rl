@@ -1,4 +1,4 @@
-.. _ofrl_others_tutorial:
+.. _scope_rl_others_tutorial:
 
 Data Collection and Integration with d3rlpy:
 ~~~~~~~~~~

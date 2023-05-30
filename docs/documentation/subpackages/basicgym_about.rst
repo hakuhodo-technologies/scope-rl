@@ -1,10 +1,14 @@
-BasicGym; a Python-based configurative basic simulation environment for RL
+BasicGym
 ===================================
+
+.. raw:: html
+
+    <h3>A Python-based configurative basic simulation environment for RL</h3>
 
 Overview
 ~~~~~~~~~~
 *BasicGym* is a basic simulation platform for RL.
-The simulator is particularly intended for reinforcement learning algorithms and follows `OpenAI Gym <https://gym.openai.com>`_ and `Gymnasium <https://github.com/Farama-Foundation/Gymnasium>`_ interface.
+The simulator is particularly intended for reinforcement learning algorithms and follows `OpenAI Gym <https://github.com/openai/gym>`_ and `Gymnasium <https://github.com/Farama-Foundation/Gymnasium>`_ interface.
 We design BasicGym as a configurative environment so that researchers and practitioner can customize the environmental modules including UserModel.
 
 Note that, BasicGym is publicized as a sub-package of :doc:`SCOPE-RL <index>`, which streamlines the implementation of offline reinforcement learning (offline RL) and off-policy evaluation and selection (OPE/OPS) procedures.
@@ -208,26 +212,28 @@ Citation
 ~~~~~~~~~~
 If you use our pipeline in your work, please cite our paper below.
 
-| **Title** [`arXiv <>`_] [`Proceedings <>`_]
-| Authors.
+| Haruka Kiyohara, Ren Kishimoto, Kosuke Kawakami, Ken Kobayashi, Kazuhide Nakata, Yuta Saito.
+| **Towards Risk-Return Assessments of Off-Policy Evaluation in Reinforcement Learning**
+| (a preprint coming soon..)
 
 .. code-block::
 
-   @article{kiyohara2023xxx
-      title={},
-      author={},
-      journal={},
-      year={},
+   @article{kiyohara2023towards,
+      author = {Kiyohara, Haruka and Kishimoto, Ren and Kawakami, Kosuke and Kobayashi, Ken and Nataka, Kazuhide and Saito, Yuta},
+      title = {Towards Risk-Return Assessments of Off-Policy Evaluation in Reinforcement Learning},
+      journal = {A github repository},
+      pages = {xxx--xxx},
+      year = {2023},
    }
 
 Contact
 ~~~~~~~~~~
-For any question about the paper and pipeline, feel free to contact: kiyohara.h.aa@m.titech.ac.jp
+For any question about the paper and pipeline, feel free to contact: hk844@cornell.edu
 
 Contribution
 ~~~~~~~~~~
 Any contributions to BasicGym are more than welcome!
-Please refer to `CONTRIBUTING.md <>`_ for general guidelines how to contribute to the project.
+Please refer to `CONTRIBUTING.md <https://github.com/hakuhodo-technologies/scope-rl/CONTRIBUTING.md>`_ for general guidelines how to contribute to the project.
 
 .. grid::
     :margin: 0
