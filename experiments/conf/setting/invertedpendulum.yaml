@@ -1,4 +1,5 @@
-env_name: InvertedPendulum-v4
+env_name: InvertedPendulum
+env_version: None
 behavior_sigma: 2.0
 behavior_tau: 1.0
 candidate_sigmas: 

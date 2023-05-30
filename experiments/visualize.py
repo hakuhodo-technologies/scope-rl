@@ -67,7 +67,7 @@ def sharpe_ratio(
     estimators = ["dm", "snpdis", "sndr", "sam_snis", "sam_sndr"]
     ESTIMATORS = ["DM", "PDIS", "DR", "MIS", "MDR"]
     random_ = check_random_state(random_state)
-    path_ = Path(log_dir + f"results/sharpe_ratio/{env_name}")
+    path_ = Path(log_dir + "results/sharpe_ratio")
     path_.mkdir(exist_ok=True, parents=True)
     save_path = Path(path_ / f"sharpe_ratio_{env_name}.png")
 
@@ -216,8 +216,7 @@ def sharpe_ratio(
 
     fig.tight_layout()
     fig.savefig(save_path, dpi=300, bbox_inches="tight")
-    # fig.savefig(save_path + f'sharpe_ratio_{env_name}.png', dpi=300, bbox_inches="tight")
-
+    
 
 # best worst mean stdのみを表示する
 def four_metrics(
@@ -240,7 +239,7 @@ def four_metrics(
         metrics = ["best", "worst", "mean", "std"]
 
     random_ = check_random_state(random_state)
-    path_ = Path(log_dir + f"results/topk_others/{env_name}")
+    path_ = Path(log_dir + "results/topk_others")
     path_.mkdir(exist_ok=True, parents=True)
 
     if is_main_fig:
@@ -447,7 +446,7 @@ def app_benchmark_results(
     }
 
     random_ = check_random_state(random_state)
-    path_ = Path(log_dir + f"results/benchmark/{env_name}")
+    path_ = Path(log_dir + "results/benchmark")
     path_.mkdir(exist_ok=True, parents=True)
     save_path = Path(path_ / f"benchmark_{env_name}.png")
 
@@ -551,21 +550,21 @@ def process(
     if env_name in ["Hopper", "Reacher", "InvertedPendulum", "Swimmer"]:
         with open(
             path_
-            / f"topk/{env_name}/topk_metrics_dict_{env_name}_sac_gauss_{behavior_sigma}_10.pkl",
+            / f"topk/topk_metrics_dict_{env_name}_sac_gauss_{behavior_sigma}.pkl",
             "rb",
         ) as f:
             topk_metrics_dict = pickle.load(f)
 
         with open(
             path_
-            / f"behavior/{env_name}/behavior_on_policy_{env_name}_sac_gauss_{behavior_sigma}.pkl",
+            / f"behavior/behavior_on_policy_{env_name}_sac_gauss_{behavior_sigma}.pkl",
             "rb",
         ) as f:
             on_policy = pickle.load(f)
 
         with open(
             path_
-            / f"conventional/{env_name}/conventional_metrics_dict_{env_name}_sac_gauss_{behavior_sigma}_10.pkl",
+            / f"conventional/conventional_metrics_dict_{env_name}_sac_gauss_{behavior_sigma}.pkl",
             "rb",
         ) as f:
             conventional_metrics_dict = pickle.load(f)
@@ -582,21 +581,21 @@ def process(
     else:
         with open(
             path_
-            / f"topk/{env_name}/topk_metrics_dict_{env_name}_ddqn_softmax_{behavior_tau}_10.pkl",
+            / f"topk/topk_metrics_dict_{env_name}_ddqn_softmax_{behavior_tau}.pkl",
             "rb",
         ) as f:
             topk_metrics_dict = pickle.load(f)
 
         with open(
             path_
-            / f"behavior/{env_name}/behavior_on_policy_{env_name}_ddqn_softmax_{behavior_tau}.pkl",
+            / f"behavior/behavior_on_policy_{env_name}_ddqn_softmax_{behavior_tau}.pkl",
             "rb",
         ) as f:
             on_policy = pickle.load(f)
 
         with open(
             path_
-            / f"conventional/{env_name}/conventional_metrics_dict_{env_name}_ddqn_softmax_{behavior_tau}_10.pkl",
+            / f"conventional/conventional_metrics_dict_{env_name}_ddqn_softmax_{behavior_tau}.pkl",
             "rb",
         ) as f:
             conventional_metrics_dict = pickle.load(f)

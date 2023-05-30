@@ -107,16 +107,11 @@ hydra:
   callbacks: {}
   output_subdir: .hydra
   overrides:
-    hydra:
-    - hydra.mode=RUN
-    task:
-    - setting=cartpole
-    - base_model_config=cartpole
-    - setting.n_candidate_policies=20
+    hydra: []
+    task: []
   job:
-    name: ope
-    chdir: null
-    override_dirname: base_model_config=cartpole,setting.n_candidate_policies=20,setting=cartpole
+    name: visualize
+    override_dirname: ''
     id: ???
     num: ???
     config_name: config
@@ -141,14 +136,9 @@ hydra:
       schema: structured
       provider: schema
     choices:
-<<<<<<< HEAD
-      visualize: acrobot
-      base_model_config: default
-      setting: default
-=======
+      visualize: cartpole
       base_model_config: cartpole
       setting: cartpole
->>>>>>> c71df4189b9f0b9bf88fb7b1fc5847683149de25
       hydra/env: default
       hydra/callbacks: null
       hydra/job_logging: default

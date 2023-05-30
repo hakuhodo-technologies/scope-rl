@@ -48,9 +48,9 @@ This repository supports Python 3.7 or newer.
 If you use CartPoleEnv, you change conf/config.yaml as shown below
 ```bash
 defaults:
-  - setting: CartPole
-  - base_model_config: CartPole
-  - visualize: CartPole
+  - setting: cartpole
+  - base_model_config: cartpole
+  - visualize: cartpole
 
 
 hydra: 

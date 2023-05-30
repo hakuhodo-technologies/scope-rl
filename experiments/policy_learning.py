@@ -409,6 +409,7 @@ def train_candidate_policies(
 
 def process(
     env_name: str,
+    env_version: str,
     behavior_sigma: float,
     behavior_tau: float,
     candidate_sigmas: List[float],
@@ -421,8 +422,7 @@ def process(
     log_dir: str,
 ):
     if use_small_env:
-        env = gym.make(env_name + '-v4')
-        # env = gym.make(env_name + "Env")
+        env = gym.make(env_name + f'-{env_version}')
     else:
         env = gym.make(env_name)
 
@@ -474,7 +474,7 @@ def process(
         fig_name=f"on_policy_policy_value_{env_name}.png",
     )
 
-    path_ = Path(log_dir + f"/results/raw")
+    path_ = Path(log_dir + f"/results/behavior")
     path_.mkdir(exist_ok=True, parents=True)
     path_behavior_on_policy = Path(
         path_ / f"behavior_on_policy_{env_name}_{behavior_policy.name}.pkl"
@@ -490,49 +490,94 @@ def process(
 
 def register_small_envs(
     max_episode_steps: int,
+    env_version,
 ):
-    # continuous control
-    gym.envs.register(
-        id="HalfCheetah-v4",
-        entry_point="gym.envs.mujoco:HalfCheetahEnv",
-        max_episode_steps=max_episode_steps,
-    )
-    gym.envs.register(
-        id="Hopper-v4",
-        entry_point="gym.envs.mujoco:HopperEnv",
-        max_episode_steps=max_episode_steps,
-    )
-    gym.envs.register(
-        id="InvertedPendulum-v4",
-        entry_point="gym.envs.mujoco:InvertedPendulumEnv",
-        max_episode_steps=max_episode_steps,
-    )
-    gym.envs.register(
-        id="Reacher-v4",
-        entry_point="gym.envs.mujoco:ReacherEnv",
-        max_episode_steps=max_episode_steps,
-    )
-    gym.envs.register(
-        id="Swimmer-v4",
-        entry_point="gym.envs.mujoco:SwimmerEnv",
-        max_episode_steps=max_episode_steps,
-    )
-    # discrete control
-    gym.envs.register(
-        id="CartPole-v0",
-        entry_point="gym.envs.classic_control:CartPoleEnv",
-        max_episode_steps=max_episode_steps,
-    )
-    gym.envs.register(
-        id="MountainCar-v0",
-        entry_point="gym.envs.classic_control:MountainCarEnv",
-        max_episode_steps=max_episode_steps,
-    )
-    gym.envs.register(
-        id="Acrobot-v0",
-        entry_point="gym.envs.classic_control:AcrobotEnv",
-        max_episode_steps=max_episode_steps,
-    )
+    if env_version == None:
+        # continuous control
+        gym.envs.register(
+            id="HalfCheetah-v4",
+            entry_point="gym.envs.mujoco:HalfCheetahEnv",
+            max_episode_steps=max_episode_steps,
+        )
+        gym.envs.register(
+            id="Hopper-v4",
+            entry_point="gym.envs.mujoco:HopperEnv",
+            max_episode_steps=max_episode_steps,
+        )
+        gym.envs.register(
+            id="InvertedPendulum-v4",
+            entry_point="gym.envs.mujoco:InvertedPendulumEnv",
+            max_episode_steps=max_episode_steps,
+        )
+        gym.envs.register(
+            id="Reacher-v4",
+            entry_point="gym.envs.mujoco:ReacherEnv",
+            max_episode_steps=max_episode_steps,
+        )
+        gym.envs.register(
+            id="Swimmer-v4",
+            entry_point="gym.envs.mujoco:SwimmerEnv",
+            max_episode_steps=max_episode_steps,
+        )
+        # discrete control
+        gym.envs.register(
+            id="CartPole-v1",
+            entry_point="gym.envs.classic_control:CartPoleEnv",
+            max_episode_steps=max_episode_steps,
+        )
+        gym.envs.register(
+            id="MountainCar-v0",
+            entry_point="gym.envs.classic_control:MountainCarEnv",
+            max_episode_steps=max_episode_steps,
+        )
+        gym.envs.register(
+            id="Acrobot-v1",
+            entry_point="gym.envs.classic_control:AcrobotEnv",
+            max_episode_steps=max_episode_steps,
+        )
+    else:
+        # continuous control
+        gym.envs.register(
+            id=f"HalfCheetah-{env_version}",
+            entry_point="gym.envs.mujoco:HalfCheetahEnv",
+            max_episode_steps=max_episode_steps,
+        )
+        gym.envs.register(
+            id=f"Hopper-{env_version}",
+            entry_point="gym.envs.mujoco:HopperEnv",
+            max_episode_steps=max_episode_steps,
+        )
+        gym.envs.register(
+            id=f"InvertedPendulum-{env_version}",
+            entry_point="gym.envs.mujoco:InvertedPendulumEnv",
+            max_episode_steps=max_episode_steps,
+        )
+        gym.envs.register(
+            id=f"Reacher-{env_version}",
+            entry_point="gym.envs.mujoco:ReacherEnv",
+            max_episode_steps=max_episode_steps,
+        )
+        gym.envs.register(
+            id=f"Swimmer-{env_version}",
+            entry_point="gym.envs.mujoco:SwimmerEnv",
+            max_episode_steps=max_episode_steps,
+        )
+        # discrete control
+        gym.envs.register(
+            id=f"CartPole-{env_version}",
+            entry_point="gym.envs.classic_control:CartPoleEnv",
+            max_episode_steps=max_episode_steps,
+        )
+        gym.envs.register(
+            id=f"MountainCar-{env_version}",
+            entry_point="gym.envs.classic_control:MountainCarEnv",
+            max_episode_steps=max_episode_steps,
+        )
+        gym.envs.register(
+            id=f"Acrobot-{env_version}",
+            entry_point="gym.envs.classic_control:AcrobotEnv",
+            max_episode_steps=max_episode_steps,
+        )
 
 
 def assert_configuration(cfg: DictConfig):
@@ -573,8 +618,10 @@ def main(cfg: DictConfig):
     print(f"The current working directory is {Path().cwd()}")
     print(f"The original working directory is {hydra.utils.get_original_cwd()}")
     print()
+    print(cfg.setting.env_version)
     conf = {
         "env_name": cfg.setting.env_name,
+        "env_version": cfg.setting.env_version,
         "behavior_sigma": cfg.setting.behavior_sigma,
         "behavior_tau": cfg.setting.behavior_tau,
         "candidate_sigmas": cfg.setting.candidate_sigmas,
@@ -587,7 +634,7 @@ def main(cfg: DictConfig):
         "log_dir": "logs/",
     }
     if cfg.setting.max_episode_steps != "None":
-        register_small_envs(cfg.setting.max_episode_steps)
+        register_small_envs(cfg.setting.max_episode_steps, cfg.setting.env_version)
     process(**conf)
 
 

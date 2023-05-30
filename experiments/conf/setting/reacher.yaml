@@ -1,4 +1,5 @@
-env_name: Reacher-v4
+env_name: Reacher
+env_version: None
 behavior_sigma: 0.7
 behavior_tau: 1.0
 candidate_sigmas: 

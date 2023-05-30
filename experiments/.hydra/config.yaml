@@ -1,5 +1,6 @@
 setting:
   env_name: CartPole
+  env_version: None
   behavior_sigma: 1.0
   behavior_tau: 1.0
   candidate_sigmas:
@@ -15,7 +16,7 @@ setting:
   - 0.7
   max_episode_steps: 200
   n_trajectories: 10000
-  n_candidate_policies: 20
+  n_candidate_policies: 10
   n_random_state: 10
   base_random_state: 12345
 base_model_config:
@@ -54,7 +55,7 @@ base_model_config:
   opl:
     fitting_steps: 10000
 visualize:
-  env_name: Acrobot
+  env_name: CartPole
   behavior_sigma: 2.0
-  behavior_tau: 5.0
+  behavior_tau: 1.0
   random_state: 12345
