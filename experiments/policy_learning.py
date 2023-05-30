@@ -315,16 +315,22 @@ def train_candidate_policies(
             cql_b1 = DiscreteCQL(
                 encoder_factory=VectorEncoderFactory(hidden_units=[30, 30]),
                 q_func_factory=MeanQFunctionFactory(),
+                learning_rate=base_model_config.cql.discrete.lr,
+                alpha=base_model_config.cql.discrete.alpha,
                 use_gpu=(device == "cuda:0"),
             )
             cql_b2 = DiscreteCQL(
                 encoder_factory=VectorEncoderFactory(hidden_units=[100]),
                 q_func_factory=MeanQFunctionFactory(),
+                learning_rate=base_model_config.cql.discrete.lr,
+                alpha=base_model_config.cql.discrete.alpha,
                 use_gpu=(device == "cuda:0"),
             )
             cql_b3 = DiscreteCQL(
                 encoder_factory=VectorEncoderFactory(hidden_units=[50, 10]),
                 q_func_factory=MeanQFunctionFactory(),
+                learning_rate=base_model_config.cql.discrete.lr,
+                alpha=base_model_config.cql.discrete.alpha,
                 use_gpu=(device == "cuda:0"),
             )
             bcq_b1 = DiscreteBCQ(
@@ -458,8 +464,10 @@ def process(
     visualize_on_policy_policy_value(
         env=env,
         policies=[behavior_policy] + candidate_policies,
+        # policies=[behavior_policy],
         policy_names=[behavior_policy.name]
         + [candidate_policy.name for candidate_policy in candidate_policies],
+        # policy_names=[behavior_policy.name],
         random_state=base_random_state,
         step_per_trajectory=env.spec.max_episode_steps,
         fig_dir=path_,
@@ -469,8 +477,7 @@ def process(
     path_ = Path(log_dir + f"/results/raw")
     path_.mkdir(exist_ok=True, parents=True)
     path_behavior_on_policy = Path(
-        path_
-        / f"behavior_on_policy_{env_name}_{behavior_policy.name}.pkl"
+        path_ / f"behavior_on_policy_{env_name}_{behavior_policy.name}.pkl"
     )
 
     behavior_on_policy = calc_on_policy_policy_value(

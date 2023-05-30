@@ -19,6 +19,7 @@ cql:
   discrete:
     batch_size: 32
     lr: 6.25e-5
+    alpha: 1.0
 bcq:
   batch_size: 32
   lr: 5e-5

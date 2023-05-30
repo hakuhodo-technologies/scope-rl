@@ -34,19 +34,15 @@ from ofrl.ope import ContinuousSelfNormalizedDoublyRobust as C_DR
 from ofrl.ope import (
     ContinuousStateActionMarginalSelfNormalizedImportanceSampling as C_MIS,
 )
-
 from ofrl.ope import ContinuousStateActionMarginalSelfNormalizedDoublyRobust as C_MDR
-
 from ofrl.ope import DiscreteDirectMethod as D_DM
 from ofrl.ope import DiscreteSelfNormalizedPerDecisionImportanceSampling as D_PDIS
 from ofrl.ope import DiscreteSelfNormalizedDoublyRobust as D_DR
 from ofrl.ope import (
     DiscreteStateActionMarginalSelfNormalizedImportanceSampling as D_MIS,
 )
+from ofrl.ope import DiscreteStateActionMarginalSelfNormalizedDoublyRobust as D_MDR
 from ofrl.ope import CreateOPEInput
-from ofrl.ope.online import visualize_on_policy_policy_value
-from ofrl.ope.online import calc_on_policy_policy_value
-from ofrl.ope.online import visualize_on_policy_cumulative_distribution_function
 
 from ofrl.utils import MinMaxScaler
 from ofrl.utils import MinMaxActionScaler
@@ -344,7 +340,7 @@ def off_policy_evaluation(
             require_value_prediction=True,
             require_weight_prediction=True,
             n_trajectories_on_policy_evaluation=100,
-            path=log_dir + f"/input_dict/multiple/{env_name}/{env.spec.max_episode_steps}_{n_random_state}_{base_model_config.continuous_ope.sigma}",
+            path=log_dir + f"/input_dict/multiple/{env_name}/{n_candidate_policies}",
             random_state=base_random_state,
         )
         with open(path_input_dict, "wb") as f:
@@ -353,7 +349,7 @@ def off_policy_evaluation(
     if action_type == "continuous":
         ope_estimators = [C_DM(), C_PDIS(), C_DR(), C_MIS(), C_MDR()]
     else:
-        ope_estimators = [D_DM(), D_PDIS(), D_DR(), D_MIS()]
+        ope_estimators = [D_DM(), D_PDIS(), D_DR(), D_MIS(), D_MDR()]
 
     ope = OffPolicyEvaluation(
         logged_dataset=test_logged_dataset,
@@ -425,6 +421,8 @@ def process(
 
     else:
         env = gym.make(env_name)
+
+    print(env.spec.max_episode_steps)
 
     behavior_policy = load_behavior_policy(
         env_name=env_name,

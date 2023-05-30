@@ -9,14 +9,13 @@ setting:
   - 2.0
   - 4.0
   candidate_epsilons:
-  - 0.0
   - 0.1
   - 0.3
   - 0.5
   - 0.7
-  max_episode_steps: None
+  max_episode_steps: 200
   n_trajectories: 10000
-  n_candidate_policies: 10
+  n_candidate_policies: 20
   n_random_state: 10
   base_random_state: 12345
 base_model_config:
@@ -33,23 +32,19 @@ base_model_config:
     lr: 0.001
     explorer:
       type: linear
-      epsilon: 0.3
-      duration: 10000
-    n_steps: 10000
+      epsilon: 0.01
+      duration: 8000
+    n_steps: 8000
     update_start_step: 1000
   cql:
     discrete:
       batch_size: 32
       lr: 6.25e-05
-    continuous:
-      actor_lr: 0.0001
-      critic_lr: 0.0003
-      temp_lr: 0.0001
-      alpha_lr: 0.0001
+      alpha: 1.0
   bcq:
     batch_size: 32
     lr: 0.001
-    target_update_interval: 100
+    target_update_interval: 1000
     action_flexibility: 0.3
     beta: 0.01
   fqe:
