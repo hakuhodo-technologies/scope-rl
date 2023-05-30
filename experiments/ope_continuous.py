@@ -267,7 +267,7 @@ def off_policy_evaluation(
     path_.mkdir(exist_ok=True, parents=True)
     path_input_dict = Path(
         path_
-        / f"input_dict_{env_name}_{behavior_policy_name}_{n_candidate_policies}_{env.spec.max_episode_steps}_{candidate_sigmas}_{n_random_state}_{base_model_config.contiuous_ope.sigma}.pkl"
+        / f"input_dict_{env_name}_{behavior_policy_name}_{n_candidate_policies}_{env.spec.max_episode_steps}_{candidate_sigmas}_{n_random_state}_{base_model_config.continuous_ope.sigma}.pkl"
     )
 
     if path_input_dict.exists():
@@ -288,25 +288,25 @@ def off_policy_evaluation(
                         "use_gpu": (device == "cuda:0"),
                     }
                 },
-                state_scaler=MinMaxScaler(
-                    minimum=test_logged_dataset.get(
-                        behavior_policy_name=test_logged_dataset.behavior_policy_names[
-                            0
-                        ],
-                        dataset_id=0,
-                    )["state"].min(axis=0),
-                    maximum=test_logged_dataset.get(
-                        behavior_policy_name=test_logged_dataset.behavior_policy_names[
-                            0
-                        ],
-                        dataset_id=0,
-                    )["state"].max(axis=0),
-                ),
+                # state_scaler=MinMaxScaler(
+                #     minimum=test_logged_dataset.get(
+                #         behavior_policy_name=test_logged_dataset.behavior_policy_names[
+                #             0
+                #         ],
+                #         dataset_id=0,
+                #     )["state"].min(axis=0),
+                #     maximum=test_logged_dataset.get(
+                #         behavior_policy_name=test_logged_dataset.behavior_policy_names[
+                #             0
+                #         ],
+                #         dataset_id=0,
+                #     )["state"].max(axis=0),
+                # ),
                 action_scaler=MinMaxActionScaler(
                     minimum=env.action_space.low,  # minimum value that policy can take
                     maximum=env.action_space.high,  # maximum value that policy can take
                 ),
-                sigma=base_model_config.contiuous_ope.sigma,
+                sigma=base_model_config.continuous_ope.sigma,
                 device=device,
             )
 
@@ -344,11 +344,14 @@ def off_policy_evaluation(
             require_value_prediction=True,
             require_weight_prediction=True,
             n_trajectories_on_policy_evaluation=100,
-            path=log_dir + f"/input_dict/multiple/{env_name}/{env.spec.max_episode_steps}_{n_random_state}_{base_model_config.contiuous_ope.sigma}",
+            path=log_dir + f"/input_dict/multiple/{env_name}/{env.spec.max_episode_steps}_{n_random_state}_{base_model_config.continuous_ope.sigma}",
             random_state=base_random_state,
         )
         with open(path_input_dict, "wb") as f:
             pickle.dump(input_dict, f)
+
+    # input_dict_ = input_dict.get(behavior_policy_name='sac_gauss_2.0', dataset_id=0)
+    # print(input_dict_['iql_b2_gauss_2.25']['on_policy_policy_value'])
 
     if action_type == "continuous":
         ope_estimators = [C_DM(), C_PDIS(), C_DR(), C_MIS(), C_MDR()]
@@ -367,6 +370,39 @@ def off_policy_evaluation(
     # )
     # print(estimated_policy_value_dict)
 
+    # from ofrl.ope import CumulativeDistributionOffPolicyEvaluation as CumulativeDistributionOPE
+    # from ofrl.ope import ContinuousCumulativeDistributionDirectMethod as CD_DM
+    # from ofrl.ope import ContinuousCumulativeDistributionTrajectoryWiseImportanceSampling as CD_IS
+    # from ofrl.ope import ContinuousCumulativeDistributionTrajectoryWiseDoublyRobust as CD_DR
+    # from ofrl.ope import ContinuousCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSampling as CD_SNIS
+    # from ofrl.ope import ContinuousCumulativeDistributionSelfNormalizedTrajectoryWiseDoublyRobust as CD_SNDR
+
+    # cd_ope = CumulativeDistributionOPE(
+    #     logged_dataset=test_logged_dataset,
+    #     ope_estimators=[
+    #         CD_DM(estimator_name="cdf_dm"), 
+    #         CD_IS(estimator_name="cdf_is"), 
+    #         CD_DR(estimator_name="cdf_dr"), 
+    #         CD_SNIS(estimator_name="cdf_snis"), 
+    #         CD_SNDR(estimator_name="cdf_sndr"),
+    #     ],
+    # )
+
+    # path_ = Path(log_dir + f"/results/cumulative")
+    # path_.mkdir(exist_ok=True, parents=True)
+
+    # cd_ope.visualize_cumulative_distribution_function(
+    #     input_dict, 
+    #     behavior_policy_name="sac_gauss_2.0",
+    #     dataset_id = 0,
+    #     fig_dir=path_,
+    #     fig_name=f"cumulative_distribution_{env_name}_{behavior_policy_name}_{n_candidate_policies}_{env.spec.max_episode_steps}_{candidate_sigmas}_{n_random_state}_{base_model_config.continuous_ope.sigma}.png",
+
+    # )
+
+
+    ###---------------------------------------
+
     ops = OffPolicySelection(ope=ope)
 
     path_ = Path(log_dir + f"/results/raw")
@@ -379,7 +415,7 @@ def off_policy_evaluation(
     )
     path_metrics = Path(
         path_
-        / f"conventional_metrics_dict_{env_name}_{behavior_policy_name}_{n_candidate_policies}_{env.spec.max_episode_steps}_{candidate_sigmas}_{n_random_state}_{base_model_config.contiuous_ope.sigma}.pkl"
+        / f"conventional_metrics_dict_{env_name}_{behavior_policy_name}_{n_candidate_policies}_{env.spec.max_episode_steps}_{candidate_sigmas}_{n_random_state}_{base_model_config.continuous_ope.sigma}.pkl"
     )
     with open(path_metrics, "wb") as f:
         pickle.dump(ops_dict, f)
@@ -391,7 +427,7 @@ def off_policy_evaluation(
     )
     path_topk_metrics = Path(
         path_
-        / f"topk_metrics_dict_{env_name}_{behavior_policy_name}_{n_candidate_policies}_{env.spec.max_episode_steps}_{candidate_sigmas}_{n_random_state}_{base_model_config.contiuous_ope.sigma}.pkl"
+        / f"topk_metrics_dict_{env_name}_{behavior_policy_name}_{n_candidate_policies}_{env.spec.max_episode_steps}_{candidate_sigmas}_{n_random_state}_{base_model_config.continuous_ope.sigma}.pkl"
     )
     with open(path_topk_metrics, "wb") as f:
         pickle.dump(topk_metric_dict, f)
@@ -407,7 +443,7 @@ def off_policy_evaluation(
         legend=False,
         random_state=base_random_state,
         fig_dir=path_,
-        fig_name=f"topk_metrics_visualization_{env_name}_{behavior_policy_name}_{n_candidate_policies}_{env.spec.max_episode_steps}_{candidate_sigmas}_{n_random_state}_{base_model_config.contiuous_ope.sigma}.png",
+        fig_name=f"topk_metrics_visualization_{env_name}_{behavior_policy_name}_{n_candidate_policies}_{env.spec.max_episode_steps}_{candidate_sigmas}_{n_random_state}_{base_model_config.continuous_ope.sigma}.png",
     )
 
 
@@ -443,6 +479,12 @@ def process(
         log_dir=log_dir,
     )
 
+    # behavior_on_policy = calc_on_policy_policy_value(
+    #     env=env,
+    #     policy=behavior_policy,
+    # )
+    # print(behavior_on_policy)
+
     test_logged_dataset = obtain_test_logged_dataset(
         env_name=env_name,
         env=env,
@@ -471,6 +513,19 @@ def process(
         replace=False,
     )
     candidate_policies = [candidate_policies[idx] for idx in candidate_policy_idx]
+
+    # from ofrl.ope.online import visualize_on_policy_policy_value
+    # path_ = Path(log_dir + f"/behavior_policy")
+    # visualize_on_policy_policy_value(
+    #     env=env,
+    #     policies=[behavior_policy] + candidate_policies,
+    #     policy_names=[behavior_policy.name]
+    #     + [candidate_policy.name for candidate_policy in candidate_policies],
+    #     random_state=base_random_state,
+    #     step_per_trajectory=env.spec.max_episode_steps,
+    #     fig_dir=path_,
+    #     fig_name=f"check_state_scalar_off.png",
+    # )
 
     off_policy_evaluation(
         env_name=env_name,

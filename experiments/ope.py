@@ -74,7 +74,7 @@ def load_behavior_policy(
     path_ = Path(log_dir + f"/behavior_policy")
     path_.mkdir(exist_ok=True, parents=True)
     path_behavior_policy = Path(
-        path_ / f"behavior_policy_{env_name}_{env.spec.max_episode_steps}.pt"
+        path_ / f"behavior_policy_{env_name}.pt"
     )
 
     torch_seed(base_random_state, device=device)
@@ -147,7 +147,7 @@ def obtain_test_logged_dataset(
     path_.mkdir(exist_ok=True, parents=True)
     path_test_logged_dataset = Path(
         path_
-        / f"test_logged_dataset_{env_name}_{behavior_policy_name}_{env.spec.max_episode_steps}_{n_random_state}.pkl"
+        / f"test_logged_dataset_{env_name}_{behavior_policy_name}.pkl"
     )
 
     if path_test_logged_dataset.exists():
@@ -167,7 +167,7 @@ def obtain_test_logged_dataset(
             n_trajectories=n_trajectories,
             obtain_info=False,
             record_unclipped_action=True,
-            path=log_dir + f"/logged_dataset/multiple/{env_name}/{env.spec.max_episode_steps}_{n_random_state}",
+            path=log_dir + f"/logged_dataset/multiple/{env_name}",
             random_state=base_random_state + 1,
         )
         with open(path_test_logged_dataset, "wb") as f:
@@ -194,7 +194,7 @@ def load_candidate_policies(
     path_.mkdir(exist_ok=True, parents=True)
     path_candidate_policy = Path(
         path_
-        / f"candidate_policy_{env_name}_{behavior_policy_name}_{env.spec.max_episode_steps}_{candidate_sigmas}.pkl"
+        / f"candidate_policy_{env_name}_{behavior_policy_name}.pkl"
     )
 
     opl = OffPolicyLearning(
@@ -267,7 +267,7 @@ def off_policy_evaluation(
     path_.mkdir(exist_ok=True, parents=True)
     path_input_dict = Path(
         path_
-        / f"input_dict_{env_name}_{behavior_policy_name}_{n_candidate_policies}_{env.spec.max_episode_steps}_{candidate_sigmas}_{n_random_state}_{base_model_config.continuous_ope.sigma}.pkl"
+        / f"input_dict_{env_name}_{behavior_policy_name}.pkl"
     )
 
     if path_input_dict.exists():
@@ -360,13 +360,6 @@ def off_policy_evaluation(
         ope_estimators=ope_estimators,
     )
 
-    # estimated_policy_value_dict = ope.estimate_policy_value(
-    #     input_dict,
-    #     behavior_policy_name=behavior_policy_name,
-    #     dataset_id=0,
-    # )
-    # print(estimated_policy_value_dict)
-
     ops = OffPolicySelection(ope=ope)
 
     path_ = Path(log_dir + f"/results/raw")
@@ -379,7 +372,7 @@ def off_policy_evaluation(
     )
     path_metrics = Path(
         path_
-        / f"conventional_metrics_dict_{env_name}_{behavior_policy_name}_{n_candidate_policies}_{env.spec.max_episode_steps}_{candidate_sigmas}_{n_random_state}_{base_model_config.continuous_ope.sigma}.pkl"
+        / f"conventional_metrics_dict_{env_name}_{behavior_policy_name}.pkl"
     )
     with open(path_metrics, "wb") as f:
         pickle.dump(ops_dict, f)
@@ -391,7 +384,7 @@ def off_policy_evaluation(
     )
     path_topk_metrics = Path(
         path_
-        / f"topk_metrics_dict_{env_name}_{behavior_policy_name}_{n_candidate_policies}_{env.spec.max_episode_steps}_{candidate_sigmas}_{n_random_state}_{base_model_config.continuous_ope.sigma}.pkl"
+        / f"topk_metrics_dict_{env_name}_{behavior_policy_name}.pkl"
     )
     with open(path_topk_metrics, "wb") as f:
         pickle.dump(topk_metric_dict, f)
@@ -407,7 +400,7 @@ def off_policy_evaluation(
         legend=False,
         random_state=base_random_state,
         fig_dir=path_,
-        fig_name=f"topk_metrics_visualization_{env_name}_{behavior_policy_name}_{n_candidate_policies}_{env.spec.max_episode_steps}_{candidate_sigmas}_{n_random_state}_{base_model_config.continuous_ope.sigma}.png",
+        fig_name=f"topk_metrics_visualization_{env_name}_{behavior_policy_name}.png",
     )
 
 
@@ -428,7 +421,8 @@ def process(
 ):
     if use_small_env:
         # env = gym.make(env_name + "Env")
-        env = gym.make(env_name)
+        env = gym.make(env_name + '-v4')
+
     else:
         env = gym.make(env_name)
 
@@ -515,58 +509,36 @@ def register_small_envs(
         entry_point="gym.envs.mujoco:SwimmerEnv",
         max_episode_steps=max_episode_steps,
     )
-    # continuous control
-    # gym.envs.register(
-    #     id="HalfCheetahEnv",
-    #     entry_point="gym.envs.mujoco:HalfCheetahEnv",
-    #     max_episode_steps=max_episode_steps,
-    # )
-    # gym.envs.register(
-    #     id="HopperEnv",
-    #     entry_point="gym.envs.mujoco:HopperEnv",
-    #     max_episode_steps=max_episode_steps,
-    # )
-    # gym.envs.register(
-    #     id="InvertedPendulumEnv",
-    #     entry_point="gym.envs.mujoco:InvertedPendulumEnv",
-    #     max_episode_steps=max_episode_steps,
-    # )
-    # gym.envs.register(
-    #     id="ReacherEnv",
-    #     entry_point="gym.envs.mujoco:ReacherEnv",
-    #     max_episode_steps=max_episode_steps,
-    # )
-    # gym.envs.register(
-    #     id="SwimmerEnv",
-    #     entry_point="gym.envs.mujoco:SwimmerEnv",
-    #     max_episode_steps=max_episode_steps,
-    # )
-    # # discrete control
-    # gym.envs.register(
-    #     id="CartPoleEnv",
-    #     entry_point="gym.envs.classic_control:CartPoleEnv",
-    #     max_episode_steps=max_episode_steps,
-    # )
-    # gym.envs.register(
-    #     id="AcrobotEnv",
-    #     entry_point="gym.envs.classic_control:AcrobotEnv",
-    #     max_episode_steps=max_episode_steps,
-    # )
+    
+    # discrete control
+    gym.envs.register(
+        id="CartPole-v0",
+        entry_point="gym.envs.classic_control:CartPoleEnv",
+        max_episode_steps=max_episode_steps,
+    )
+    gym.envs.register(
+        id="MountainCar-v0",
+        entry_point="gym.envs.classic_control:MountainCarEnv",
+        max_episode_steps=max_episode_steps,
+    )
+    gym.envs.register(
+        id="Acrobot-v0",
+        entry_point="gym.envs.classic_control:AcrobotEnv",
+        max_episode_steps=max_episode_steps,
+    )
+
 
 
 def assert_configuration(cfg: DictConfig):
     env_name = cfg.setting.env_name
     assert env_name in [
-        # "HalfCheetah",
-        # "Hopper",
-        # "InvertedPendulum",
-        # "Reacher",
-        "HalfCheetah-v4",
-        "Hopper-v4",
-        "InvertedPendulum-v4",
-        "Reacher-v4",
-        "Swimmer-v4",
+        "HalfCheetah",
+        "Hopper",
+        "InvertedPendulum",
+        "Reacher",
+        "Swimmer",
         "CartPole",
+        "MountainCar",
         "Acrobot",
     ]
 

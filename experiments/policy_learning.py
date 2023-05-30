@@ -51,7 +51,6 @@ def train_behavior_policy(
     base_model_config: DictConfig,
     log_dir: str,
 ):
-    print("behavior_policy", env.spec.max_episode_steps)
     env_ = OldGymAPIWrapper(env)
     action_type = "continuous" if isinstance(env.action_space, Box) else "discrete"
     if action_type == "continuous":
@@ -60,7 +59,7 @@ def train_behavior_policy(
     path_ = Path(log_dir + f"/behavior_policy")
     path_.mkdir(exist_ok=True, parents=True)
     path_behavior_policy = Path(
-        path_ / f"behavior_policy_{env_name}_{env.spec.max_episode_steps}.pt"
+        path_ / f"behavior_policy_{env_name}.pt"
     )
 
     torch_seed(base_random_state, device=device)
@@ -174,7 +173,7 @@ def obtain_train_logged_dataset(
     path_.mkdir(exist_ok=True, parents=True)
     path_train_logged_dataset = Path(
         path_
-        / f"train_logged_dataset_{env_name}_{behavior_policy_name}_{env.spec.max_episode_steps}.pkl"
+        / f"train_logged_dataset_{env_name}_{behavior_policy_name}.pkl"
     )
 
     if path_train_logged_dataset.exists():
@@ -198,7 +197,6 @@ def obtain_train_logged_dataset(
         with open(path_train_logged_dataset, "wb") as f:
             pickle.dump(train_logged_dataset, f)
 
-    print("train,", env.spec.max_episode_steps)
     return train_logged_dataset
 
 
@@ -223,7 +221,7 @@ def train_candidate_policies(
     path_.mkdir(exist_ok=True, parents=True)
     path_candidate_policy = Path(
         path_
-        / f"candidate_policy_{env_name}_{behavior_policy_name}_{env.spec.max_episode_steps}_{candidate_sigmas}.pkl"
+        / f"candidate_policy_{env_name}_{behavior_policy_name}.pkl"
     )
 
     opl = OffPolicyLearning(
@@ -283,33 +281,7 @@ def train_candidate_policies(
                     maximum=env.action_space.high,  # maximum value that policy can take
                 ),
             )
-            # bcq_b1 = BCQ(
-            #     actor_encoder_factory=VectorEncoderFactory(hidden_units=[30, 30]),
-            #     critic_encoder_factory=VectorEncoderFactory(hidden_units=[30, 30]),
-            #     use_gpu=(device == "cuda:0"),
-            #     action_scaler=MinMaxActionScaler(
-            #         minimum=env.action_space.low,  # minimum value that policy can take
-            #         maximum=env.action_space.high,  # maximum value that policy can take
-            #     ),
-            # )
-            # bcq_b2 = BCQ(
-            #     actor_encoder_factory=VectorEncoderFactory(hidden_units=[100]),
-            #     critic_encoder_factory=VectorEncoderFactory(hidden_units=[100]),
-            #     use_gpu=(device == "cuda:0"),
-            #     action_scaler=MinMaxActionScaler(
-            #         minimum=env.action_space.low,  # minimum value that policy can take
-            #         maximum=env.action_space.high,  # maximum value that policy can take
-            #     ),
-            # )
-            # bcq_b3 = BCQ(
-            #     actor_encoder_factory=VectorEncoderFactory(hidden_units=[50, 10]),
-            #     critic_encoder_factory=VectorEncoderFactory(hidden_units=[50, 10]),
-            #     use_gpu=(device == "cuda:0"),
-            #     action_scaler=MinMaxActionScaler(
-            #         minimum=env.action_space.low,  # minimum value that policy can take
-            #         maximum=env.action_space.high,  # maximum value that policy can take
-            #     ),
-            # )
+        
             iql_b1 = IQL(
                 actor_encoder_factory=VectorEncoderFactory(hidden_units=[30, 30]),
                 critic_encoder_factory=VectorEncoderFactory(hidden_units=[30, 30]),
@@ -337,7 +309,6 @@ def train_candidate_policies(
                     maximum=env.action_space.high,  # maximum value that policy can take
                 ),
             )
-            # algorithms = [cql_b1, cql_b2, cql_b3, bcq_b1, bcq_b2, bcq_b3]
             algorithms = [cql_b1, cql_b2, cql_b3, iql_b1, iql_b2, iql_b3]
 
         else:
@@ -397,7 +368,6 @@ def train_candidate_policies(
             pickle.dump(base_policies, f)
 
     if action_type == "continuous":
-        # algorithms_name = ["cql_b1", "cql_b2", "cql_b3", "bcql_b1", "bcq_b2", "bcq_b3"]
         algorithms_name = ["cql_b1", "cql_b2", "cql_b3", "iql_b1", "iql_b2", "iql_b3"]
 
         policy_wrappers = {}
@@ -406,8 +376,6 @@ def train_candidate_policies(
                 GaussianHead,
                 {
                     "sigma": np.full((action_dim,), sigma),
-                    # "minimum": env.action_space.low,
-                    # "maximum": env.action_space.high,
                 },
             )
 
@@ -447,7 +415,7 @@ def process(
     log_dir: str,
 ):
     if use_small_env:
-        env = gym.make(env_name)
+        env = gym.make(env_name + '-v4')
         # env = gym.make(env_name + "Env")
     else:
         env = gym.make(env_name)
@@ -495,14 +463,14 @@ def process(
         random_state=base_random_state,
         step_per_trajectory=env.spec.max_episode_steps,
         fig_dir=path_,
-        fig_name=f"on_policy_policy_value_{env_name}_{env.spec.max_episode_steps}_{behavior_sigma}_{candidate_sigmas}.png",
+        fig_name=f"on_policy_policy_value_{env_name}.png",
     )
 
     path_ = Path(log_dir + f"/results/raw")
     path_.mkdir(exist_ok=True, parents=True)
     path_behavior_on_policy = Path(
         path_
-        / f"behavior_on_policy_{env_name}_{behavior_policy.name}_{env.spec.max_episode_steps}.pkl"
+        / f"behavior_on_policy_{env_name}_{behavior_policy.name}.pkl"
     )
 
     behavior_on_policy = calc_on_policy_policy_value(
@@ -511,59 +479,6 @@ def process(
     )
     with open(path_behavior_on_policy, "wb") as f:
         pickle.dump(behavior_on_policy, f)
-
-
-# def register_small_envs(
-#     max_episode_steps: int,
-# ):
-#     # continuous control
-#     gym.envs.register(
-#         id="HalfCheetah",
-#         entry_point="gym.envs.mojoco:HalfCheetahEnv",
-#         max_episode_steps=max_episode_steps,
-#     )
-#     gym.envs.register(
-#         id="Hopper",
-#         entry_point="gym.envs.mojoco:HopperEnv",
-#         max_episode_steps=max_episode_steps,
-#     )
-#     gym.envs.register(
-#         id="InvertedPendulum",
-#         entry_point="gym.envs.mojoco:InvertedPendulumEnv",
-#         max_episode_steps=max_episode_steps,
-#     )
-#     gym.envs.register(
-#         id="Reacher",
-#         entry_point="gym.envs.mojoco:ReacherEnv",
-#         max_episode_steps=max_episode_steps,
-#     )
-#     gym.envs.register(
-#         id="Swimmer",
-#         entry_point="gym.envs.mujoco:SwimmerEnv",
-#         max_episode_steps=max_episode_steps,
-#     )
-#     # discrete control
-#     gym.envs.register(
-#         id="CartPoleEnv",
-#         entry_point="gym.envs.classic_control:CartPoleEnv",
-#         max_episode_steps=max_episode_steps,
-#     )
-#     gym.envs.register(
-#         id="AcrobotEnv",
-#         entry_point="gym.envs.classic_control:AcrobotEnv",
-#         max_episode_steps=max_episode_steps,
-#     )
-
-# path_ = Path(log_dir + f"/results/on_policy")
-# path_.mkdir(exist_ok=True, parents=True)
-# visualize_on_policy_policy_value(
-#     env=env,
-#     policies=[behavior_policy],
-#     policy_names=[behavior_policy.name],
-#     random_state=base_random_state,
-#     fig_dir=path_,
-#     fig_name=f'sigma0.5_{env_name}_{env.spec.max_episode_steps}_behavior_policy.png'
-# )
 
 
 def register_small_envs(
@@ -595,42 +510,36 @@ def register_small_envs(
         entry_point="gym.envs.mujoco:SwimmerEnv",
         max_episode_steps=max_episode_steps,
     )
-    # # discrete control
-    # gym.envs.register(
-    #     id="CartPole",
-    #     entry_point="gym.envs.classic_control:CartPoleEnv",
-    #     max_episode_steps=max_episode_steps,
-    # )
-    # gym.envs.register(
-    #     id="Pendulum",
-    #     entry_point="gym.envs.classic_control:PendulumEnv",
-    #     max_episode_steps=max_episode_steps,
-    # )
+    # discrete control
+    gym.envs.register(
+        id="CartPole-v0",
+        entry_point="gym.envs.classic_control:CartPoleEnv",
+        max_episode_steps=max_episode_steps,
+    )
+    gym.envs.register(
+        id="MountainCar-v0",
+        entry_point="gym.envs.classic_control:MountainCarEnv",
+        max_episode_steps=max_episode_steps,
+    )
+    gym.envs.register(
+        id="Acrobot-v0",
+        entry_point="gym.envs.classic_control:AcrobotEnv",
+        max_episode_steps=max_episode_steps,
+    )
 
 
 def assert_configuration(cfg: DictConfig):
     env_name = cfg.setting.env_name
     assert env_name in [
-        "HalfCheetah-v4",
-        "Hopper-v4",
-        "InvertedPendulum-v4",
-        "Reacher-v4",
-        "Swimmer-v4",
+        "HalfCheetah",
+        "Hopper",
+        "InvertedPendulum",
+        "Reacher",
+        "Swimmer",
         "CartPole",
+        "MountainCar",
         "Acrobot",
     ]
-
-    # def assert_configuration(cfg: DictConfig):
-    #     env_name = cfg.setting.env_name
-    #     assert env_name in [
-    #         "HalfCheetah",
-    #         "Hopper",
-    #         "InvertedPendulum",
-    #         "Reacher",
-    #         "Swimmer",
-    #         "CartPole",
-    #         "Acrobot",
-    #     ]
 
     behavior_sigma = cfg.setting.behavior_sigma
     assert isinstance(behavior_sigma, float) and behavior_sigma > 0.0

@@ -9,7 +9,6 @@ hydra:
   sweeper:
     _target_: hydra._internal.core_plugins.basic_sweeper.BasicSweeper
     max_batch_size: null
-    params: null
   help:
     app_name: ${hydra.job.name}
     header: '${hydra.help.app_name} is powered by Hydra.
@@ -96,7 +95,7 @@ hydra:
       file:
         class: logging.FileHandler
         formatter: simple
-        filename: ${hydra.runtime.output_dir}/${hydra.job.name}.log
+        filename: ${hydra.job.name}.log
     root:
       level: INFO
       handlers:
@@ -104,20 +103,15 @@ hydra:
       - file
     disable_existing_loggers: false
   env: {}
-  mode: RUN
   searchpath: []
   callbacks: {}
   output_subdir: .hydra
   overrides:
-    hydra:
-    - hydra.mode=RUN
-    task:
-    - setting=acrobot
-    - base_model_config=acrobot
+    hydra: []
+    task: []
   job:
-    name: ope
-    chdir: null
-    override_dirname: base_model_config=acrobot,setting=acrobot
+    name: visualize
+    override_dirname: ''
     id: ???
     num: ???
     config_name: config
@@ -129,23 +123,22 @@ hydra:
         item_sep: ','
         exclude_keys: []
   runtime:
-    version: 1.3.2
-    version_base: '1.1'
-    cwd: /Users/haruka/Downloads/ofrl/experiments
+    version: 1.1.2
+    cwd: /Users/ren/dev/ofrl/experiments
     config_sources:
     - path: hydra.conf
       schema: pkg
       provider: hydra
-    - path: /Users/haruka/Downloads/ofrl/experiments/conf
+    - path: /Users/ren/dev/ofrl/experiments/conf
       schema: file
       provider: main
     - path: ''
       schema: structured
       provider: schema
-    output_dir: /Users/haruka/Downloads/ofrl/experiments
     choices:
-      base_model_config: acrobot
-      setting: acrobot
+      visualize: acrobot
+      base_model_config: default
+      setting: default
       hydra/env: default
       hydra/callbacks: null
       hydra/job_logging: default

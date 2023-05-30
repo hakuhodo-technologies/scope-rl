@@ -245,6 +245,10 @@ def train_candidate_policies(
                 actor_encoder_factory=VectorEncoderFactory(hidden_units=[30, 30]),
                 critic_encoder_factory=VectorEncoderFactory(hidden_units=[30, 30]),
                 q_func_factory=MeanQFunctionFactory(),
+                action_learning_rate=base_model_config.cql.continuous.actor_lr,
+                critic_learning_rate=base_model_config.cql.continuous.critic_lr,
+                temp_learning_rate=base_model_config.cql.continuous.temp_lr,
+                alpha_learning_rate=base_model_config.cql.continuous.alpha_lr,
                 use_gpu=(device == "cuda:0"),
                 action_scaler=MinMaxActionScaler(
                     minimum=env.action_space.low,  # minimum value that policy can take
@@ -255,6 +259,10 @@ def train_candidate_policies(
                 actor_encoder_factory=VectorEncoderFactory(hidden_units=[100]),
                 critic_encoder_factory=VectorEncoderFactory(hidden_units=[100]),
                 q_func_factory=MeanQFunctionFactory(),
+                action_learning_rate=base_model_config.cql.continuous.actor_lr,
+                critic_learning_rate=base_model_config.cql.continuous.critic_lr,
+                temp_learning_rate=base_model_config.cql.continuous.temp_lr,
+                alpha_learning_rate=base_model_config.cql.continuous.alpha_lr,
                 use_gpu=(device == "cuda:0"),
                 action_scaler=MinMaxActionScaler(
                     minimum=env.action_space.low,  # minimum value that policy can take
@@ -265,6 +273,10 @@ def train_candidate_policies(
                 actor_encoder_factory=VectorEncoderFactory(hidden_units=[50, 10]),
                 critic_encoder_factory=VectorEncoderFactory(hidden_units=[50, 10]),
                 q_func_factory=MeanQFunctionFactory(),
+                action_learning_rate=base_model_config.cql.continuous.actor_lr,
+                critic_learning_rate=base_model_config.cql.continuous.critic_lr,
+                temp_learning_rate=base_model_config.cql.continuous.temp_lr,
+                alpha_learning_rate=base_model_config.cql.continuous.alpha_lr,
                 use_gpu=(device == "cuda:0"),
                 action_scaler=MinMaxActionScaler(
                     minimum=env.action_space.low,  # minimum value that policy can take
@@ -499,6 +511,7 @@ def process(
     )
     with open(path_behavior_on_policy, "wb") as f:
         pickle.dump(behavior_on_policy, f)
+    print(behavior_on_policy)
 
 
 # def register_small_envs(
