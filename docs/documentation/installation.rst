@@ -32,14 +32,14 @@ If you use our pipeline or the proposed metric (SharpRatio@k) in your work, plea
 .. card::
 
     | Haruka Kiyohara, Ren Kishimoto, Kosuke Kawakami, Ken Kobayashi, Kazuhide Nakata, Yuta Saito.
-    | **Towards Risk-Return Assessments of Off-Policy Evaluation in Reinforcement Learning**
+    | **Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation in Reinforcement Learning**
     | (a preprint coming soon..)
 
     .. code-block::
 
         @article{kiyohara2023towards,
             author = {Kiyohara, Haruka and Kishimoto, Ren and Kawakami, Kosuke and Kobayashi, Ken and Nataka, Kazuhide and Saito, Yuta},
-            title = {Towards Risk-Return Assessments of Off-Policy Evaluation in Reinforcement Learning},
+            title = {Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation in Reinforcement Learning},
             journal = {A github repository},
             pages = {xxx--xxx},
             year = {2023},

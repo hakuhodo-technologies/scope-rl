@@ -407,14 +407,14 @@ For more examples, please refer to [quickstart/rtb_synthetic_discrete_advanced.i
 If you use our software in your work, please cite our paper:
 
 Haruka Kiyohara, Ren Kishimoto, Kosuke Kawakami, Ken Kobayashi, Kazuhide Nakata, Yuta Saito.<br>
-**Towards Risk-Return Assessments of Off-Policy Evaluation in Reinforcement Learning**<br>
+**Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation in Reinforcement Learning**<br>
 [link]() (a preprint coming soon..)
 
 Bibtex:
 ```
-@article{kiyohara2023risk,
+@article{kiyohara2023towards,
   author = {Kiyohara, Haruka and Kishimoto, Ren and Kawakami, Kosuke and Kobayashi, Ken and Nataka, Kazuhide and Saito, Yuta},
-  title = {Towards Risk-Return Assessments of Off-Policy Evaluation in Reinforcement Learning},
+  title = {Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation in Reinforcement Learning},
   journal = {A github repository},
   pages = {xxx--xxx},
   year = {2023},
