@@ -1,3 +1,6 @@
+# Copyright (c) 2023, Haruka Kiyohara, Ren Kishimoto, Hakuhodo Techonologies, and Hanjuku-kaso Co., Ltd. All rights reserved.
+# Licensed under the Apache 2.0 License.
+
 from scope_rl.ope.weight_value_learning.base import BaseWeightValueLearner
 from scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_discrete import (
     DiscreteDiceStateActionWightValueLearning,

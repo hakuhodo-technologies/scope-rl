@@ -1,3 +1,6 @@
+# Copyright (c) 2023, Haruka Kiyohara, Ren Kishimoto, Hakuhodo Techonologies, and Hanjuku-kaso Co., Ltd. All rights reserved.
+# Licensed under the Apache 2.0 License.
+
 from scope_rl.ope.ops import OffPolicySelection
 from scope_rl.ope.input import CreateOPEInput
 from scope_rl.ope.estimators_base import (

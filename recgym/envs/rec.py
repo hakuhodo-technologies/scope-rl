@@ -1,3 +1,6 @@
+# Copyright (c) 2023, Haruka Kiyohara, Ren Kishimoto, Hakuhodo Techonologies, and Hanjuku-kaso Co., Ltd. All rights reserved.
+# Licensed under the Apache 2.0 License.
+
 """Reinforcement Learning (RL) Environment for Recommender System (REC)."""
 from typing import Tuple, Optional, Any
 
