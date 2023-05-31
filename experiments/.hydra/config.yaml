@@ -54,8 +54,3 @@ base_model_config:
     sigma: 0.5
   opl:
     fitting_steps: 10000
-visualize:
-  env_name: CartPole
-  behavior_sigma: 2.0
-  behavior_tau: 1.0
-  random_state: 12345

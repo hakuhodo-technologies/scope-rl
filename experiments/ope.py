@@ -144,12 +144,10 @@ def obtain_test_logged_dataset(
     )
 
     if path_test_logged_dataset.exists():
-        # pass
         with open(path_test_logged_dataset, "rb") as f:
             test_logged_dataset = pickle.load(f)
 
     else:
-        # if True:
         dataset = SyntheticDataset(
             env=env,
             max_episode_steps=env.spec.max_episode_steps,
@@ -260,12 +258,10 @@ def off_policy_evaluation(
     path_input_dict = Path(path_ / f"input_dict_{env_name}_{behavior_policy_name}.pkl")
 
     if path_input_dict.exists():
-        # pass
         with open(path_input_dict, "rb") as f:
             input_dict = pickle.load(f)
 
     else:
-        # if True:
         if action_type == "continuous":
             prep = CreateOPEInput(
                 env=env,
@@ -353,6 +349,12 @@ def off_policy_evaluation(
 
     path_ = Path(log_dir + f"/results")
     path_.mkdir(exist_ok=True, parents=True)
+
+    path_conventional_ = Path(log_dir + f"/results/conventional/")
+    path_conventional_.mkdir(exist_ok=True, parents=True)
+
+    path_topk_ = Path(log_dir + f"/results/topk/")
+    path_topk_.mkdir(exist_ok=True, parents=True)
 
     ops_dict = ops.select_by_policy_value(
         input_dict=input_dict,
