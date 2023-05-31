@@ -433,7 +433,7 @@ This project is licensed under Apache 2.0 license - see [LICENSE](LICENSE) file 
 
 - [Haruka Kiyohara](https://sites.google.com/view/harukakiyohara) (**Main Contributor**)
 - Ren Kishimoto (Tokyo Institute of Technology)
-- Kosuke Kawakami (Hakuhodo Technologies)
+- Kosuke Kawakami (HAKUHODO Technologies Inc.)
 - Ken Kobayashi (Tokyo Institute of Technology)
 - Kazuhide Nakata (Tokyo Institute of Technology)
 - [Yuta Saito](https://usait0.com/en/) (Cornell University)
