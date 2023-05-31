@@ -1528,9 +1528,7 @@ class DiscreteStateMarginalDR(BaseStateMarginalOPEEstimator):
 
 
 @dataclass
-class DiscreteStateMarginalSNIS(
-    DiscreteStateMarginalIS
-):
+class DiscreteStateMarginalSNIS(DiscreteStateMarginalIS):
     """State Marginal Self-Normalized Importance Sampling (SM-SNIS) for discrete-action OPE.
 
     Bases: :class:`scope_rl.ope.DiscreteStateMarginalIS` -> :class:`scope_rl.ope.BaseStateMarginalOPEEstimator` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
@@ -1671,9 +1669,7 @@ class DiscreteStateMarginalSNIS(
 
 
 @dataclass
-class DiscreteStateMarginalSNDR(
-    DiscreteStateMarginalDR
-):
+class DiscreteStateMarginalSNDR(DiscreteStateMarginalDR):
     """State Marginal Self-Normalized Doubly Robust (SM-SNDR) for discrete-action OPE.
 
     Bases: :class:`scope_rl.ope.DiscreteStateMarginalDR` -> :class:`scope_rl.ope.BaseStateMarginalOPEEstimator` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
@@ -1841,9 +1837,7 @@ class DiscreteStateMarginalSNDR(
 
 
 @dataclass
-class DiscreteStateActionMarginalIS(
-    BaseStateActionMarginalOPEEstimator
-):
+class DiscreteStateActionMarginalIS(BaseStateActionMarginalOPEEstimator):
     """State-Action Marginal Importance Sampling (SAM-IS) for discrete-action OPE.
 
     Bases: :class:`scope_rl.ope.BaseStateActionMarginalOPEEstimator` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
@@ -2272,9 +2266,7 @@ class DiscreteStateActionMarginalIS(
 
 
 @dataclass
-class DiscreteStateActionMarginalDR(
-    BaseStateActionMarginalOPEEstimator
-):
+class DiscreteStateActionMarginalDR(BaseStateActionMarginalOPEEstimator):
     """State-Action Marginal Doubly Robust (SAM-DR) for discrete-action OPE.
 
     Bases: :class:`scope_rl.ope.BaseStateActionMarginalOPEEstimator` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
@@ -2798,9 +2790,7 @@ class DiscreteStateActionMarginalDR(
 
 
 @dataclass
-class DiscreteStateActionMarginalSNIS(
-    DiscreteStateActionMarginalIS
-):
+class DiscreteStateActionMarginalSNIS(DiscreteStateActionMarginalIS):
     """State-Action Marginal Self-Normalized Importance Sampling (SAM-SNIS) for discrete-action OPE.
 
     Bases: :class:`scope_rl.ope.DiscreteStateActionMarginalIS` -> :class:`scope_rl.ope.BaseStateActionMarginalOPEEstimator` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
@@ -2940,9 +2930,7 @@ class DiscreteStateActionMarginalSNIS(
 
 
 @dataclass
-class DiscreteStateActionMarginalSNDR(
-    DiscreteStateActionMarginalDR
-):
+class DiscreteStateActionMarginalSNDR(DiscreteStateActionMarginalDR):
     """State-Action Marginal Self-Normalized Doubly Robust (SAM-SNDR) for discrete-action OPE.
 
     Bases: :class:`scope_rl.ope.DiscreteStateActionMarginalDR` -> :class:`scope_rl.ope.BaseStateActionMarginalOPEEstimator` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`

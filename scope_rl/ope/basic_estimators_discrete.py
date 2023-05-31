@@ -1403,9 +1403,7 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
 
 
 @dataclass
-class DiscreteSelfNormalizedTIS(
-    DiscreteTrajectoryWiseImportanceSampling
-):
+class DiscreteSelfNormalizedTIS(DiscreteTrajectoryWiseImportanceSampling):
     """Self-Normalized Trajectory-wise Important Sampling (SNTIS) for discrete-action OPE.
 
     Bases: :class:`scope_rl.ope.DiscreteTrajectoryWiseImportanceSampling` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
@@ -1512,9 +1510,7 @@ class DiscreteSelfNormalizedTIS(
 
 
 @dataclass
-class DiscreteSelfNormalizedPDIS(
-    DiscretePerDecisionImportanceSampling
-):
+class DiscreteSelfNormalizedPDIS(DiscretePerDecisionImportanceSampling):
     """Self-Normalized Per-Decision Importance Sampling (SNPDIS) for discrete-action OPE.
 
     Bases: :class:`scope_rl.ope.DiscretePerDecisionImportanceSampling` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`

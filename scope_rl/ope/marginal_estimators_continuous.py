@@ -1457,9 +1457,7 @@ class ContinuousStateMarginalDR(BaseStateMarginalOPEEstimator):
 
 
 @dataclass
-class ContinuousStateMarginalSNIS(
-    ContinuousStateMarginalIS
-):
+class ContinuousStateMarginalSNIS(ContinuousStateMarginalIS):
     """State Marginal Self-Normalized Importance Sampling (SM-SNIS) for continuous-action OPE.
 
     Bases: :class:`scope_rl.ope.ContinuousStateMarginalIS` :class:`scope_rl.ope.BaseStateMarginalOPEEstimator` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
@@ -1613,9 +1611,7 @@ class ContinuousStateMarginalSNIS(
 
 
 @dataclass
-class ContinuousStateMarginalSNDR(
-    ContinuousStateMarginalDR
-):
+class ContinuousStateMarginalSNDR(ContinuousStateMarginalDR):
     """State Marginal Self-Normalized Doubly Robust (SM-SNDR) for continuous-action OPE.
 
     Bases: :class:`scope_rl.ContinuousStateMarginalDR` :class:`scope_rl.BaseStateMarginalOPEEstimator` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
@@ -1791,9 +1787,7 @@ class ContinuousStateMarginalSNDR(
 
 
 @dataclass
-class ContinuousStateActionMarginalIS(
-    BaseStateActionMarginalOPEEstimator
-):
+class ContinuousStateActionMarginalIS(BaseStateActionMarginalOPEEstimator):
     """State-Action Marginal Importance Sampling (SAM-IS) for continuous-action OPE.
 
     Bases: :class:`scope_rl.ope.BaseStateActionMarginalOPEEstimator` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
@@ -2247,9 +2241,7 @@ class ContinuousStateActionMarginalIS(
 
 
 @dataclass
-class ContinuousStateActionMarginalDR(
-    BaseStateActionMarginalOPEEstimator
-):
+class ContinuousStateActionMarginalDR(BaseStateActionMarginalOPEEstimator):
     """State-Action Marginal Doubly Robust (SAM-DR) for continuous-action OPE.
 
     Bases: :class:`scope_rl.ope.BaseStateActionMarginalOPEEstimator` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
@@ -2777,9 +2769,7 @@ class ContinuousStateActionMarginalDR(
 
 
 @dataclass
-class ContinuousStateActionMarginalSNIS(
-    ContinuousStateActionMarginalIS
-):
+class ContinuousStateActionMarginalSNIS(ContinuousStateActionMarginalIS):
     """State-Action Marginal Self-Normalized Importance Sampling (SAM-SNIS) for continuous-action OPE.
 
     Bases: :class:`scope_rl.ope.ContinuousStateActionMarginalIS` :class:`scope_rl.ope.BaseStateActionMarginalOPEEstimator` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
@@ -2930,9 +2920,7 @@ class ContinuousStateActionMarginalSNIS(
 
 
 @dataclass
-class ContinuousStateActionMarginalSNDR(
-    ContinuousStateActionMarginalDR
-):
+class ContinuousStateActionMarginalSNDR(ContinuousStateActionMarginalDR):
     """State-Action Marginal Self-Normalized Doubly Robust (SAM-SNDR) for continuous-action OPE.
 
     Bases: :class:`scope_rl.ope.ContinuousStateActionMarginalDR` :class:`scope_rl.ope.BaseStateActionMarginalOPEEstimator` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`

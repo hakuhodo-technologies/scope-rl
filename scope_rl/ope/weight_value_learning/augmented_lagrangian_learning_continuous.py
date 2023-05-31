@@ -28,9 +28,7 @@ from ...utils import check_array, gaussian_kernel
 
 
 @dataclass
-class ContinuousDiceStateActionWightValueLearning(
-    BaseWeightValueLearner
-):
+class ContinuousDiceStateActionWightValueLearning(BaseWeightValueLearner):
     """Augmented Lagrangian method for weight/value function of marginal OPE estimators (for continuous action space).
 
     Bases: :class:`scope_rl.ope.weight_value_learning.BaseWeightValueLearner`

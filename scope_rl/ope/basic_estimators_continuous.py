@@ -1411,9 +1411,7 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
 
 
 @dataclass
-class ContinuousSelfNormalizedTIS(
-    ContinuousTrajectoryWiseImportanceSampling
-):
+class ContinuousSelfNormalizedTIS(ContinuousTrajectoryWiseImportanceSampling):
     """Self-Normalized Trajectory-wise Importance Sampling (SNTIS) for continuous-action OPE (designed for deterministic policies).
 
     Bases: :class:`scope_rl.ope.ContinuousTrajectoryWiseImportanceSampling` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
@@ -1532,9 +1530,7 @@ class ContinuousSelfNormalizedTIS(
 
 
 @dataclass
-class ContinuousSelfNormalizedPDIS(
-    ContinuousPerDecisionImportanceSampling
-):
+class ContinuousSelfNormalizedPDIS(ContinuousPerDecisionImportanceSampling):
     """Self-Normalized Per-Decision Importance Sampling (SNPDIS) for continuous-action OPE (designed for deterministic policies).
 
     Bases: :class:`scope_rl.ope.ContinuousPerDecisionImportanceSampling` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`

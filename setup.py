@@ -14,13 +14,17 @@ with open(path.join(here, "README.md"), encoding="utf-8") as f:
 
 # setup SCOPE-RL
 setup(
-    name="scope-rl", 
-    version=__version__, 
+    name="scope-rl",
+    version=__version__,
     description="SCOPE-RL: A pipeline for offline reinforcement learning research and applications",
     url="https://github.com/hakuhodo-technologies/scope-rl",  # [TODO]
     author="Haruka Kiyohara",
     author_email="scope-rl@googlegroups.com",
-    keywords=["off-policy evaluation", "offline reinforcement learning", "risk assessment"],
+    keywords=[
+        "off-policy evaluation",
+        "offline reinforcement learning",
+        "risk assessment",
+    ],
     long_description=long_description,
     long_description_content_type="text/markdown",
     install_requires=[

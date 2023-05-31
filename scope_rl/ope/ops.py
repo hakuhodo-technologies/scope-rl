@@ -260,9 +260,7 @@ class OffPolicySelection:
     """
 
     ope: Optional[OffPolicyEvaluation] = None
-    cumulative_distribution_ope: Optional[
-        CumulativeDistributionOPE
-    ] = None
+    cumulative_distribution_ope: Optional[CumulativeDistributionOPE] = None
 
     def __post_init__(self):
         if self.ope is None and self.cumulative_distribution_ope is None:
@@ -7438,6 +7436,7 @@ class OffPolicySelection:
         random_state: Optional[int] = None,
         legend: bool = True,
         ylabel: str = "policy performance",
+        ymax_sharpe_ratio: Optional[float] = None,
         fig_dir: Optional[Path] = None,
         fig_name: Optional[str] = None,
     ):
@@ -7490,6 +7489,9 @@ class OffPolicySelection:
 
         ylabel: str, default="policy performance"
             Label of the y-axis.
+
+        ymax_sharp_ratio: float, default=None
+            Maximum value in y-axis of the plot of SharpRatio.
 
         fig_dir: Path, default=None
             Path to store the bar figure.
@@ -7590,6 +7592,7 @@ class OffPolicySelection:
 
                 axes.set_title("sharpe ratio")
                 axes.set_ylabel("sharpe ratio")
+                axes.set_ylim(None, ymax_sharpe_ratio)
 
             else:
                 axes.set_title("safety violation")
@@ -7673,6 +7676,7 @@ class OffPolicySelection:
 
                     axes[j].set_title("sharpe ratio")
                     axes[j].set_ylabel("sharpe ratio")
+                    axes[j].set_ylim(None, ymax_sharpe_ratio)
 
                 else:
                     axes[j].set_title("safety violation")
@@ -7718,6 +7722,7 @@ class OffPolicySelection:
         plot_alpha: float = 0.05,
         plot_n_bootstrap_samples: int = 100,
         random_state: Optional[int] = None,
+        ymax_sharpe_ratio: Optional[float] = None,
         legend: bool = True,
         fig_dir: Optional[Path] = None,
         fig_name: str = "topk_policy_value_standard_ope.png",
@@ -7792,6 +7797,9 @@ class OffPolicySelection:
 
         random_state: int, default=None (>= 0)
             Random state.
+
+        ymax_sharp_ratio: float, default=None
+            Maximum value in y-axis of the plot of SharpRatio.
 
         legend: bool, default=True
             Whether to include a legend in the figure.
@@ -7886,6 +7894,7 @@ class OffPolicySelection:
             random_state=random_state,
             legend=legend,
             ylabel="policy value",
+            ymax_sharpe_ratio=ymax_sharpe_ratio,
             fig_dir=fig_dir,
             fig_name=fig_name,
         )
@@ -7913,6 +7922,7 @@ class OffPolicySelection:
         plot_alpha: float = 0.05,
         plot_n_bootstrap_samples: int = 100,
         random_state: Optional[int] = None,
+        ymax_sharpe_ratio: Optional[float] = None,
         legend: bool = True,
         fig_dir: Optional[Path] = None,
         fig_name: str = "topk_policy_value_cumulative_distribution_ope.png",
@@ -7986,6 +7996,9 @@ class OffPolicySelection:
 
         random_state: int, default=None (>= 0)
             Random state.
+
+        ymax_sharp_ratio: float, default=None
+            Maximum value in y-axis of the plot of SharpRatio.
 
         legend: bool, default=True
             Whether to include a legend in the figure.
@@ -8080,6 +8093,7 @@ class OffPolicySelection:
             random_state=random_state,
             legend=legend,
             ylabel="policy value",
+            ymax_sharpe_ratio=ymax_sharpe_ratio,
             fig_dir=fig_dir,
             fig_name=fig_name,
         )
@@ -8110,6 +8124,7 @@ class OffPolicySelection:
         plot_alpha: float = 0.05,
         plot_n_bootstrap_samples: int = 100,
         random_state: Optional[int] = None,
+        ymax_sharpe_ratio: Optional[float] = None,
         legend: bool = True,
         fig_dir: Optional[Path] = None,
         fig_name: str = "topk_policy_value_standard_ope_lower_bound.png",
@@ -8192,6 +8207,9 @@ class OffPolicySelection:
 
         random_state: int, default=None (>= 0)
             Random state.
+
+        ymax_sharp_ratio: float, default=None
+            Maximum value in y-axis of the plot of SharpRatio.
 
         legend: bool, default=True
             Whether to include a legend in the figure.
@@ -8390,6 +8408,7 @@ class OffPolicySelection:
 
                     axes.set_title("sharpe ratio")
                     axes.set_ylabel("sharpe ratio")
+                    axes.set_ylim(None, ymax_sharpe_ratio)
 
                 else:
                     axes.set_title("safety violation")
@@ -8482,6 +8501,7 @@ class OffPolicySelection:
 
                         axes[j].set_title("sharpe ratio")
                         axes[j].set_ylabel("sharpe ratio")
+                        axes[j].set_ylim(None, ymax_sharpe_ratio)
 
                     else:
                         axes[j].set_title("safety violation")
@@ -8575,6 +8595,7 @@ class OffPolicySelection:
 
                         axes[l].set_title("sharpe ratio")
                         axes[l].set_ylabel("sharpe ratio")
+                        axes[l].set_ylim(None, ymax_sharpe_ratio)
 
                     else:
                         axes[l].set_title("safety violation")
@@ -8670,6 +8691,7 @@ class OffPolicySelection:
 
                             axes[l, j].set_title("sharpe ratio")
                             axes[l, j].set_ylabel("sharpe ratio")
+                            axes[l, j].set_ylim(None, ymax_sharpe_ratio)
 
                         else:
                             axes[l, j].set_title("safety violation")
@@ -8715,6 +8737,7 @@ class OffPolicySelection:
         plot_alpha: float = 0.05,
         plot_n_bootstrap_samples: int = 100,
         random_state: Optional[int] = None,
+        ymax_sharpe_ratio: Optional[float] = None,
         legend: bool = True,
         fig_dir: Optional[Path] = None,
         fig_name: str = "topk_cvar_standard_ope.png",
@@ -8787,6 +8810,9 @@ class OffPolicySelection:
 
         random_state: int, default=None (>= 0)
             Random state.
+
+        ymax_sharp_ratio: float, default=None
+            Maximum value in y-axis of the plot of SharpRatio.
 
         legend: bool, default=True
             Whether to include a legend in the figure.
@@ -8881,6 +8907,7 @@ class OffPolicySelection:
             alpha=plot_alpha,
             n_bootstrap_samples=plot_n_bootstrap_samples,
             random_state=random_state,
+            ymax_sharpe_ratio=ymax_sharpe_ratio,
             legend=legend,
             ylabel=f"CVaR ({ope_alpha})",
             fig_dir=fig_dir,
@@ -8910,6 +8937,7 @@ class OffPolicySelection:
         plot_alpha: float = 0.05,
         plot_n_bootstrap_samples: int = 100,
         random_state: Optional[int] = None,
+        ymax_sharpe_ratio: Optional[float] = None,
         legend: bool = True,
         fig_dir: Optional[Path] = None,
         fig_name: str = "topk_cvar_cumulative_distribution_ope.png",
@@ -8982,6 +9010,9 @@ class OffPolicySelection:
 
         random_state: int, default=None (>= 0)
             Random state.
+
+        ymax_sharp_ratio: float, default=None
+            Maximum value in y-axis of the plot of SharpRatio.
 
         legend: bool, default=True
             Whether to include a legend in the figure.
@@ -9079,6 +9110,7 @@ class OffPolicySelection:
             random_state=random_state,
             legend=legend,
             ylabel=f"CVaR ({ope_alpha})",
+            ymax_sharpe_ratio=ymax_sharpe_ratio,
             fig_dir=fig_dir,
             fig_name=fig_name,
         )
@@ -9106,6 +9138,7 @@ class OffPolicySelection:
         plot_alpha: float = 0.05,
         plot_n_bootstrap_samples: int = 100,
         random_state: Optional[int] = None,
+        ymax_sharpe_ratio: Optional[float] = None,
         legend: bool = True,
         fig_dir: Optional[Path] = None,
         fig_name: str = "topk_lower_quartile_standard_ope.png",
@@ -9178,6 +9211,9 @@ class OffPolicySelection:
 
         random_state: int, default=None (>= 0)
             Random state.
+
+        ymax_sharp_ratio: float, default=None
+            Maximum value in y-axis of the plot of SharpRatio.
 
         legend: bool, default=True
             Whether to include a legend in the figure.
@@ -9274,6 +9310,7 @@ class OffPolicySelection:
             random_state=random_state,
             legend=legend,
             ylabel=f"lower quartile ({ope_alpha})",
+            ymax_sharpe_ratio=ymax_sharpe_ratio,
             fig_dir=fig_dir,
             fig_name=fig_name,
         )
@@ -9301,6 +9338,7 @@ class OffPolicySelection:
         plot_alpha: float = 0.05,
         plot_n_bootstrap_samples: int = 100,
         random_state: Optional[int] = None,
+        ymax_sharpe_ratio: Optional[float] = None,
         legend: bool = True,
         fig_dir: Optional[Path] = None,
         fig_name: str = "topk_lower_quartile_cumulative_distribution_ope.png",
@@ -9373,6 +9411,9 @@ class OffPolicySelection:
 
         random_state: int, default=None (>= 0)
             Random state.
+
+        ymax_sharp_ratio: float, default=None
+            Maximum value in y-axis of the plot of SharpRatio.
 
         legend: bool, default=True
             Whether to include a legend in the figure.
@@ -9470,6 +9511,7 @@ class OffPolicySelection:
             random_state=random_state,
             legend=legend,
             ylabel=f"lower quartile ({ope_alpha})",
+            ymax_sharpe_ratio=ymax_sharpe_ratio,
             fig_dir=fig_dir,
             fig_name=fig_name,
         )
