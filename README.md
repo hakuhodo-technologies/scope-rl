@@ -127,7 +127,7 @@ cd scope-rl
 python setup.py install
 ```
 
-SCOPE-RL supports Python 3.7 or newer. See [pyproject.toml](./pyproject.toml) for other requirements.
+SCOPE-RL supports Python 3.7 or newer. See [requirements.txt](./requirements.txt) for other requirements.
 
 ## Usage
 
