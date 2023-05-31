@@ -1,4 +1,0 @@
-env_name: Reacher
-behavior_sigma: 0.7
-behavior_tau: 1.0
-random_state: 12345

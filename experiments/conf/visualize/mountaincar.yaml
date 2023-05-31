@@ -1,4 +1,0 @@
-env_name: MountainCar
-behavior_sigma: 2.0
-behavior_tau: 3.0
-random_state: 12345

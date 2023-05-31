@@ -58,9 +58,7 @@ def train_behavior_policy(
 
     path_ = Path(log_dir + f"/behavior_policy")
     path_.mkdir(exist_ok=True, parents=True)
-    path_behavior_policy = Path(
-        path_ / f"behavior_policy_{env_name}.pt"
-    )
+    path_behavior_policy = Path(path_ / f"behavior_policy_{env_name}.pt")
 
     torch_seed(base_random_state, device=device)
 
@@ -172,8 +170,7 @@ def obtain_train_logged_dataset(
     path_ = Path(log_dir + f"/logged_dataset")
     path_.mkdir(exist_ok=True, parents=True)
     path_train_logged_dataset = Path(
-        path_
-        / f"train_logged_dataset_{env_name}_{behavior_policy_name}.pkl"
+        path_ / f"train_logged_dataset_{env_name}_{behavior_policy_name}.pkl"
     )
 
     if path_train_logged_dataset.exists():
@@ -220,8 +217,7 @@ def train_candidate_policies(
     path_ = Path(log_dir + f"/candidate_policies")
     path_.mkdir(exist_ok=True, parents=True)
     path_candidate_policy = Path(
-        path_
-        / f"candidate_policy_{env_name}_{behavior_policy_name}.pkl"
+        path_ / f"candidate_policy_{env_name}_{behavior_policy_name}.pkl"
     )
 
     opl = OffPolicyLearning(
@@ -281,7 +277,7 @@ def train_candidate_policies(
                     maximum=env.action_space.high,  # maximum value that policy can take
                 ),
             )
-        
+
             iql_b1 = IQL(
                 actor_encoder_factory=VectorEncoderFactory(hidden_units=[30, 30]),
                 critic_encoder_factory=VectorEncoderFactory(hidden_units=[30, 30]),
@@ -422,7 +418,7 @@ def process(
     log_dir: str,
 ):
     if use_small_env:
-        env = gym.make(env_name + f'-{env_version}')
+        env = gym.make(env_name + f"-{env_version}")
     else:
         env = gym.make(env_name)
 

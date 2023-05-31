@@ -69,9 +69,7 @@ def load_behavior_policy(
 
     path_ = Path(log_dir + f"/behavior_policy")
     path_.mkdir(exist_ok=True, parents=True)
-    path_behavior_policy = Path(
-        path_ / f"behavior_policy_{env_name}.pt"
-    )
+    path_behavior_policy = Path(path_ / f"behavior_policy_{env_name}.pt")
 
     torch_seed(base_random_state, device=device)
 
@@ -142,8 +140,7 @@ def obtain_test_logged_dataset(
     path_ = Path(log_dir + f"/logged_dataset")
     path_.mkdir(exist_ok=True, parents=True)
     path_test_logged_dataset = Path(
-        path_
-        / f"test_logged_dataset_{env_name}_{behavior_policy_name}.pkl"
+        path_ / f"test_logged_dataset_{env_name}_{behavior_policy_name}.pkl"
     )
 
     if path_test_logged_dataset.exists():
@@ -189,8 +186,7 @@ def load_candidate_policies(
     path_ = Path(log_dir + f"/candidate_policies")
     path_.mkdir(exist_ok=True, parents=True)
     path_candidate_policy = Path(
-        path_
-        / f"candidate_policy_{env_name}_{behavior_policy_name}.pkl"
+        path_ / f"candidate_policy_{env_name}_{behavior_policy_name}.pkl"
     )
 
     opl = OffPolicyLearning(
@@ -261,10 +257,7 @@ def off_policy_evaluation(
 
     path_ = Path(log_dir + f"/input_dict")
     path_.mkdir(exist_ok=True, parents=True)
-    path_input_dict = Path(
-        path_
-        / f"input_dict_{env_name}_{behavior_policy_name}.pkl"
-    )
+    path_input_dict = Path(path_ / f"input_dict_{env_name}_{behavior_policy_name}.pkl")
 
     if path_input_dict.exists():
         # pass
@@ -379,8 +372,7 @@ def off_policy_evaluation(
         relative_safety_criteria=1.0,
     )
     path_topk_metrics = Path(
-        path_
-        / f"topk/topk_metrics_dict_{env_name}_{behavior_policy_name}.pkl"
+        path_ / f"topk/topk_metrics_dict_{env_name}_{behavior_policy_name}.pkl"
     )
     with open(path_topk_metrics, "wb") as f:
         pickle.dump(topk_metric_dict, f)
@@ -417,7 +409,7 @@ def process(
     log_dir: str,
 ):
     if use_small_env:
-        env = gym.make(env_name + f'-{env_version}')
+        env = gym.make(env_name + f"-{env_version}")
     else:
         env = gym.make(env_name)
 

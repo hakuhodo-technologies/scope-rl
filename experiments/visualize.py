@@ -1,7 +1,6 @@
-import time
 from pathlib import Path
 import pickle
-from typing import Optional
+from typing import Dict, Optional, Any
 
 import numpy as np
 import pandas as pd
@@ -12,9 +11,7 @@ from cycler import cycler
 import hydra
 from omegaconf import DictConfig
 import matplotlib.gridspec as gridspec
-from experiments.utils import format_runtime
 
-plt.style.use("ggplot")
 
 color_dict = {
     "red": "#E24A33",
@@ -26,25 +23,84 @@ color_dict = {
     "pink": "#FFB5B8",
 }
 cd = color_dict
+
 plt.style.use("ggplot")
 colors = [cd["red"], cd["blue"], cd["purple"], cd["gray"], cd["yellow"]]
 plt.rcParams["axes.prop_cycle"] = cycler(color=colors)
 markers = ["o", "v", "^", "s", "p", "P", "*", "h", "X", "D", "d"]
 
 
-def sharpe_ratio(
-    env_name,
-    topk_metrics_dict,
-    sharpe_log_scale=False,
-    best_log_scale=False,
-    std_log_scale=False,
-    behavior_on_policy=0,
-    max_topk=10,
-    alpha=0.05,
-    plot_ymin=-0.2,
-    plot_ymax=5.0,
-    random_state=None,
-    log_dir=None,
+def normalized_conventional_metrics(
+    env_name: str,
+    conventional_metrics_dict: Dict[str, Any],
+    behavior_name: str,
+):
+    n_dataset = 10
+    estimators = ["dm", "snpdis", "sndr", "sam_snis", "sam_sndr"]
+    ESTIMATORS = ["DM", "PDIS", "DR", "MIS", "MDR"]
+
+    regret = {j: {k: 0 for k in ESTIMATORS} for j in range(n_dataset)}
+    mse = {j: {k: 0 for k in ESTIMATORS} for j in range(n_dataset)}
+    rank_cc = {j: {k: 0 for k in ESTIMATORS} for j in range(n_dataset)}
+    best_true_policy_value = np.max(
+        conventional_metrics_dict[behavior_name][0][estimators[0]]["true_policy_value"]
+    )
+    mean_true_policy_value = np.mean(
+        conventional_metrics_dict[behavior_name][0][estimators[0]]["true_policy_value"]
+        ** 2
+    )
+
+    for i in range(n_dataset):
+        for j, estimator in enumerate(estimators):
+            regret[i][ESTIMATORS[j]] = conventional_metrics_dict[behavior_name][i][
+                estimator
+            ]["regret"][0] / abs(best_true_policy_value)
+            mse[i][ESTIMATORS[j]] = (
+                conventional_metrics_dict[behavior_name][i][estimator][
+                    "mean_squared_error"
+                ]
+                / mean_true_policy_value
+            )
+            rank_cc[i][ESTIMATORS[j]] = conventional_metrics_dict[behavior_name][i][
+                estimator
+            ]["rank_correlation"][0]
+
+    regret_df = pd.DataFrame(regret)
+    regret_df["mean"] = regret_df.mean(axis=1)
+    regret_df["std"] = regret_df.std(axis=1)
+
+    rank_cc_df = pd.DataFrame(rank_cc)
+    rank_cc_df["mean"] = rank_cc_df.mean(axis=1)
+    rank_cc_df["std"] = rank_cc_df.std(axis=1)
+
+    mse_df = pd.DataFrame(mse)
+    mse_df["mean"] = mse_df.mean(axis=1)
+    mse_df["std"] = mse_df.std(axis=1)
+
+    conventional_total_df = pd.concat(
+        [
+            mse_df[["mean", "std"]],
+            rank_cc_df[["mean", "std"]],
+            regret_df[["mean", "std"]],
+        ],
+        axis=1,
+        keys=["rMSE", "Rank_cc", "rRegret"],
+    ).round(3)
+
+    return conventional_total_df, regret_df, rank_cc_df, mse_df
+
+
+def visualize_sharpe_ratio(
+    env_name: str,
+    topk_metrics_dict: Dict[str, Any],
+    sharpe_log_scale: bool = False,
+    behavior_on_policy: float = 0.0,
+    max_topk: int = 10,
+    alpha: float = 0.05,
+    plot_ymin: float = -0.2,
+    plot_ymax: float = 5.0,
+    random_state: Optional[int] = None,
+    log_dir: Optional[str] = None,
 ):
     estimators = ["dm", "snpdis", "sndr", "sam_snis", "sam_sndr"]
     ESTIMATORS = ["DM", "PDIS", "DR", "MIS", "MDR"]
@@ -181,53 +237,36 @@ def sharpe_ratio(
             alpha=0.3,
         )
 
-    if best_log_scale:
-        ax01.set_yscale("log")
     ax01.set_title(f"numerator (best@$k$ - $J(\pi_b)$)")
     ax01.set_xlabel("# of policies deployed", fontsize=14)
     ax01.set_ylabel(f"best@$k$ - $J(\pi_b)$", fontsize=14)
     # ax01.legend(loc=best_legend)
 
-    if std_log_scale:
-        ax02.set_yscale("log")
     ax02.set_title(f"denominator (std@$k$)")
     ax02.set_xlabel("# of policies deployed", fontsize=14)
     ax02.set_ylabel(f"std@$k$", fontsize=14)
-    # ax02.set_ylim(10, 30)
     # ax02.legend(loc=std_legend)
 
     fig.tight_layout()
     fig.savefig(save_path, dpi=300, bbox_inches="tight")
-    
 
-# best worst mean stdのみを表示する
-def four_metrics(
-    env_name,
-    topk_metrics_dict,
-    behavior_on_policy=0,
-    sharpe_log_scale=False,
-    best_log_scale=False,
-    std_log_scale=False,
-    max_topk=10,
-    alpha=0.05,
-    is_main_fig=False,
-    random_state=None,
-    log_dir=None,
+
+def visualize_topk_statistics(
+    env_name: str,
+    topk_metrics_dict: Dict[str, Any],
+    behavior_on_policy: float = 0.0,
+    max_topk: int = 10,
+    alpha: float = 0.05,
+    random_state: Optional[int] = None,
+    log_dir: Optional[str] = None,
 ):
     estimators = ["dm", "snpdis", "sndr", "sam_snis", "sam_sndr"]
-    if is_main_fig:
-        metrics = ["best", "std", "worst", "mean"]
-    else:
-        metrics = ["best", "worst", "mean", "std"]
+    metrics = ["best", "worst", "mean", "std"]
 
     random_ = check_random_state(random_state)
-    path_ = Path(log_dir + "results/topk_others")
+    path_ = Path(log_dir + "results/topk_statistics")
     path_.mkdir(exist_ok=True, parents=True)
-
-    if is_main_fig:
-        save_path = log_dir + f"/topk_others/topk_metrics_main.png"
-    else:
-        save_path = Path(path_ / f"topk_metrics_{env_name}.png")
+    save_path = Path(path_ / f"topk_metrics_{env_name}.png")
 
     lower = np.zeros(max_topk)
     upper = np.zeros(max_topk)
@@ -311,13 +350,7 @@ def four_metrics(
                 )
 
             axes[j].set_xlabel("# of policies deployed", fontsize=14)
-
-            if metric == "best" and is_main_fig:
-                axes[j].set_title(f"{metric} (numerator)", fontsize=16)
-            elif metric == "std" and is_main_fig:
-                axes[j].set_title(f"{metric} (denominator)", fontsize=16)
-            else:
-                axes[j].set_title(f"{metric}", fontsize=16)
+            axes[j].set_title(f"{metric}", fontsize=16)
 
             if metric == "std":
                 axes[j].set_ylabel(f"{metric} of policy values", fontsize=14)
@@ -327,79 +360,22 @@ def four_metrics(
             if metric != "std":
                 axes[j].set_ylim(yaxis_min_val - margin, yaxis_max_val + margin)
 
-            # axes[j].set_ylim(0, 13)
             # axes[j].legend(loc="lower right")
 
     fig.tight_layout()
     fig.savefig(save_path, dpi=300, bbox_inches="tight")
 
 
-def normalized_conventional_metrics(env_name, conventional_metrics_dict, behavior_name):
-    n_dataset = 10
-    estimators = ["dm", "snpdis", "sndr", "sam_snis", "sam_sndr"]
-    ESTIMATORS = ["DM", "PDIS", "DR", "MIS", "MDR"]
-
-    regret = {j: {k: 0 for k in ESTIMATORS} for j in range(n_dataset)}
-    mse = {j: {k: 0 for k in ESTIMATORS} for j in range(n_dataset)}
-    rank_cc = {j: {k: 0 for k in ESTIMATORS} for j in range(n_dataset)}
-    best_true_policy_value = np.max(
-        conventional_metrics_dict[behavior_name][0][estimators[0]]["true_policy_value"]
-    )
-    mean_true_policy_value = np.mean(
-        conventional_metrics_dict[behavior_name][0][estimators[0]]["true_policy_value"]
-        ** 2
-    )
-
-    for i in range(n_dataset):
-        for j, estimator in enumerate(estimators):
-            regret[i][ESTIMATORS[j]] = conventional_metrics_dict[behavior_name][i][
-                estimator
-            ]["regret"][0] / abs(best_true_policy_value)
-            mse[i][ESTIMATORS[j]] = (
-                conventional_metrics_dict[behavior_name][i][estimator][
-                    "mean_squared_error"
-                ]
-                / mean_true_policy_value
-            )
-            rank_cc[i][ESTIMATORS[j]] = conventional_metrics_dict[behavior_name][i][
-                estimator
-            ]["rank_correlation"][0]
-
-    regret_df = pd.DataFrame(regret)
-    regret_df["mean"] = regret_df.mean(axis=1)
-    regret_df["std"] = regret_df.std(axis=1)
-
-    rank_cc_df = pd.DataFrame(rank_cc)
-    rank_cc_df["mean"] = rank_cc_df.mean(axis=1)
-    rank_cc_df["std"] = rank_cc_df.std(axis=1)
-
-    mse_df = pd.DataFrame(mse)
-    mse_df["mean"] = mse_df.mean(axis=1)
-    mse_df["std"] = mse_df.std(axis=1)
-
-    conventional_total_df = pd.concat(
-        [
-            mse_df[["mean", "std"]],
-            rank_cc_df[["mean", "std"]],
-            regret_df[["mean", "std"]],
-        ],
-        axis=1,
-        keys=["rMSE", "Rank_cc", "rRegret"],
-    ).round(3)
-
-    return conventional_total_df, regret_df, rank_cc_df, mse_df
-
-
-def app_benchmark_results(
-    env_name,
-    normalized_conventional_total_df,
-    topk_metrics_dict,
+def visualize_benchmark_results(
+    env_name: str,
+    normalized_conventional_total_df: pd.DataFrame,
+    topk_metrics_dict: Dict[str, Any],
     ymax_mse: Optional[float] = None,
     ymin_rankcorr: float = -1.0,
     ymax_rankcorr: float = 1.0,
     ymax_sharpe: float = 5.0,
-    random_state=None,
-    log_dir=None,
+    random_state: Optional[int] = None,
+    log_dir: Optional[str] = None,
 ):
     fig, axes = plt.subplots(
         nrows=1,
@@ -417,7 +393,6 @@ def app_benchmark_results(
         "sam_sndr": "MDR",
     }
 
-    random_ = check_random_state(random_state)
     path_ = Path(log_dir + "results/benchmark")
     path_.mkdir(exist_ok=True, parents=True)
     save_path = Path(path_ / f"benchmark_{env_name}.png")
@@ -482,12 +457,11 @@ def process(
     log_dir: str,
 ):
     path_ = Path(log_dir + f"/results")
-    # path_.mkdir(exist_ok=True, parents=True)
+    path_.mkdir(exist_ok=True, parents=True)
 
     if env_name in ["Hopper", "Reacher", "InvertedPendulum", "Swimmer"]:
         with open(
-            path_
-            / f"topk/topk_metrics_dict_{env_name}_sac_gauss_{behavior_sigma}.pkl",
+            path_ / f"topk/topk_metrics_dict_{env_name}_sac_gauss_{behavior_sigma}.pkl",
             "rb",
         ) as f:
             topk_metrics_dict = pickle.load(f)
@@ -545,8 +519,9 @@ def process(
         ) = normalized_conventional_metrics(
             env_name, conventional_metrics_dict, f"ddqn_softmax_{behavior_tau}"
         )
+
     if env_name in ["Hopper", "Swimmer", "Acrobot"]:
-        sharpe_ratio(
+        visualize_sharpe_ratio(
             env_name,
             topk_metrics_dict,
             behavior_on_policy=on_policy,
@@ -555,7 +530,7 @@ def process(
             plot_ymax=2.5,
         )
     else:
-        sharpe_ratio(
+        visualize_sharpe_ratio(
             env_name,
             topk_metrics_dict,
             behavior_on_policy=on_policy,
@@ -563,7 +538,7 @@ def process(
             log_dir=log_dir,
         )
 
-    four_metrics(
+    visualize_topk_statistics(
         env_name,
         topk_metrics_dict,
         behavior_on_policy=on_policy,
@@ -571,13 +546,12 @@ def process(
         log_dir=log_dir,
     )
 
-    app_benchmark_results(
+    visualize_benchmark_results(
         env_name,
         normalized_conventional_total_df,
         topk_metrics_dict,
         random_state=random_state,
         log_dir=log_dir,
-        # # ylim
         ymin_rankcorr=-0.65,
         ymax_rankcorr=1.1,
         ymax_sharpe=3.6,
@@ -585,7 +559,7 @@ def process(
 
 
 def assert_configuration(cfg: DictConfig):
-    env_name = cfg.visualize.env_name
+    env_name = cfg.setting.env_name
     assert env_name in [
         "HalfCheetah",
         "Hopper",
@@ -597,13 +571,13 @@ def assert_configuration(cfg: DictConfig):
         "Acrobot",
     ]
 
-    behavior_sigma = cfg.visualize.behavior_sigma
+    behavior_sigma = cfg.setting.behavior_sigma
     assert isinstance(behavior_sigma, float) and behavior_sigma > 0.0
 
-    behavior_tau = cfg.visualize.behavior_tau
+    behavior_tau = cfg.setting.behavior_tau
     assert isinstance(behavior_tau, float) and behavior_tau != 0.0
 
-    random_state = cfg.visualize.random_state
+    random_state = cfg.setting.base_random_state
     assert isinstance(random_state, int) and random_state > 0
 
 
@@ -615,17 +589,14 @@ def main(cfg: DictConfig):
     print(f"The original working directory is {hydra.utils.get_original_cwd()}")
     print()
     conf = {
-        "env_name": cfg.visualize.env_name,
-        "behavior_sigma": cfg.visualize.behavior_sigma,
-        "behavior_tau": cfg.visualize.behavior_tau,
-        "random_state": cfg.visualize.random_state,
+        "env_name": cfg.setting.env_name,
+        "behavior_sigma": cfg.setting.behavior_sigma,
+        "behavior_tau": cfg.setting.behavior_tau,
+        "random_state": cfg.setting.base_random_state,
         "log_dir": "logs/",
     }
     process(**conf)
 
 
 if __name__ == "__main__":
-    start = time.time()
     main()
-    finish = time.time()
-    print("total runtime:", format_runtime(start, finish))

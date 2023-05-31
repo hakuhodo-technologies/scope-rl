@@ -1,5 +1,0 @@
-env_name: InvertedPendulum
-
-behavior_sigma: 2.0
-behavior_tau: 1.0
-random_state: 12345
