@@ -1,0 +1,20 @@
+env_name: Acrobot
+env_version: None
+behavior_sigma: 1.0
+behavior_tau: 5.0
+candidate_sigmas: 
+  - 0.0
+  - 0.5
+  - 1.0
+  - 2.0
+  - 4.0
+candidate_epsilons: 
+  - 0.10
+  - 0.15
+  - 0.20
+  - 0.25
+max_episode_steps: None
+n_trajectories: 10000
+n_candidate_policies: 10
+n_random_state: 10
+base_random_state: 12345

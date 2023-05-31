@@ -1,0 +1,20 @@
+env_name: Reacher
+env_version: None
+behavior_sigma: 0.7
+behavior_tau: 1.0
+candidate_sigmas: 
+  - 0.3
+  - 0.5
+  - 0.7
+  - 0.9
+candidate_epsilons: 
+  - 0.0
+  - 0.1
+  - 0.3
+  - 0.5
+  - 0.7
+max_episode_steps: 30
+n_trajectories: 10000
+n_candidate_policies: 10
+n_random_state: 10
+base_random_state: 12345

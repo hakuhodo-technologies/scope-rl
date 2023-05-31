@@ -1,0 +1,20 @@
+env_name: Hopper
+env_version: None
+behavior_sigma: 1.5
+behavior_tau: 1.0
+candidate_sigmas: 
+  - 0.5
+  - 1.0
+  - 1.5
+  - 2.0
+candidate_epsilons: 
+  - 0.0
+  - 0.1
+  - 0.3
+  - 0.5
+  - 0.7
+max_episode_steps: 30
+n_trajectories: 10000
+n_candidate_policies: 10
+n_random_state: 10
+base_random_state: 12345
