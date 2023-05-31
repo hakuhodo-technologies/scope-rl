@@ -614,7 +614,6 @@ def main(cfg: DictConfig):
     print(f"The current working directory is {Path().cwd()}")
     print(f"The original working directory is {hydra.utils.get_original_cwd()}")
     print()
-    print(cfg.setting.env_version)
     conf = {
         "env_name": cfg.setting.env_name,
         "env_version": cfg.setting.env_version,
