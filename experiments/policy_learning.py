@@ -24,19 +24,19 @@ from d3rlpy.models.encoders import VectorEncoderFactory
 from d3rlpy.models.q_functions import MeanQFunctionFactory
 from d3rlpy.online.buffers import ReplayBuffer
 
-from ofrl.dataset import SyntheticDataset
-from ofrl.policy import BaseHead
-from ofrl.policy import ContinuousGaussianHead as GaussianHead
-from ofrl.policy import DiscreteEpsilonGreedyHead as EpsilonGreedyHead
-from ofrl.policy import DiscreteSoftmaxHead as SoftmaxHead
-from ofrl.policy import OffPolicyLearning
+from scope_rl.dataset import SyntheticDataset
+from scope_rl.policy import BaseHead
+from scope_rl.policy import ContinuousGaussianHead as GaussianHead
+from scope_rl.policy import DiscreteEpsilonGreedyHead as EpsilonGreedyHead
+from scope_rl.policy import DiscreteSoftmaxHead as SoftmaxHead
+from scope_rl.policy import OffPolicyLearning
 
-from ofrl.ope.online import visualize_on_policy_policy_value
-from ofrl.ope.online import calc_on_policy_policy_value
+from scope_rl.ope.online import visualize_on_policy_policy_value
+from scope_rl.ope.online import calc_on_policy_policy_value
 
-from ofrl.utils import MinMaxActionScaler
-from ofrl.utils import OldGymAPIWrapper
-from ofrl.types import LoggedDataset
+from scope_rl.utils import MinMaxActionScaler
+from scope_rl.utils import OldGymAPIWrapper
+from scope_rl.types import LoggedDataset
 
 from experiments.utils import torch_seed, format_runtime
 

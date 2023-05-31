@@ -48,7 +48,7 @@ This repository supports Python 3.7 or newer.
 - hydra-core==1.3.2
 
 ## Running the code
-To conduct the synthetic experiment, run the following commands.
+To conduct the synthetic experiment, run the following commands. Note that, make sure that the path is connected to `scope-rl` and `scope-rl/experiments` directories.
 
 (i) learning a behavior policy and candidate policies.
 ```bash
