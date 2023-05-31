@@ -43,5 +43,11 @@ A. While SCOPE-RL is compatible to the latest API of Open AI Gym, d3rlpy is not.
     env_ = OldGymAPIWrapper(env)  # compatible to gym<0.26.2 and d3rlpy
 
 
-RTBGym
-~~~~~~~~~~
+.. BasicGym
+.. ~~~~~~~~~~
+
+.. RTBGym
+.. ~~~~~~~~~~
+
+.. RECGym
+.. ~~~~~~~~~~
