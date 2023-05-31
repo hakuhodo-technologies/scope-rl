@@ -16,5 +16,6 @@ candidate_epsilons:
 max_episode_steps: None
 n_trajectories: 10000
 n_candidate_policies: 10
+state_scaler: True
 n_random_state: 10
 base_random_state: 12345

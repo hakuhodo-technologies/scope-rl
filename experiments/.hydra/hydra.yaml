@@ -9,7 +9,6 @@ hydra:
   sweeper:
     _target_: hydra._internal.core_plugins.basic_sweeper.BasicSweeper
     max_batch_size: null
-    params: null
   help:
     app_name: ${hydra.job.name}
     header: '${hydra.help.app_name} is powered by Hydra.
@@ -96,7 +95,7 @@ hydra:
       file:
         class: logging.FileHandler
         formatter: simple
-        filename: ${hydra.runtime.output_dir}/${hydra.job.name}.log
+        filename: ${hydra.job.name}.log
     root:
       level: INFO
       handlers:
@@ -104,19 +103,17 @@ hydra:
       - file
     disable_existing_loggers: false
   env: {}
-  mode: RUN
   searchpath: []
   callbacks: {}
   output_subdir: .hydra
   overrides:
-    hydra:
-    - hydra.mode=RUN
+    hydra: []
     task:
-    - setting=CartPole
+    - setting=cartpole
+    - base_model_config=cartpole
   job:
-    name: visualize
-    chdir: null
-    override_dirname: setting=CartPole
+    name: policy_learning
+    override_dirname: base_model_config=cartpole,setting=cartpole
     id: ???
     num: ???
     config_name: config
@@ -128,23 +125,21 @@ hydra:
         item_sep: ','
         exclude_keys: []
   runtime:
-    version: 1.3.2
-    version_base: '1.1'
-    cwd: /Users/haruka/Downloads/ofrl/experiments
+    version: 1.1.2
+    cwd: /Users/ren/dev/ofrl/experiments
     config_sources:
     - path: hydra.conf
       schema: pkg
       provider: hydra
-    - path: /Users/haruka/Downloads/ofrl/experiments/conf
+    - path: /Users/ren/dev/ofrl/experiments/conf
       schema: file
       provider: main
     - path: ''
       schema: structured
       provider: schema
-    output_dir: /Users/haruka/Downloads/ofrl/experiments
     choices:
       base_model_config: cartpole
-      setting: CartPole
+      setting: cartpole
       hydra/env: default
       hydra/callbacks: null
       hydra/job_logging: default
