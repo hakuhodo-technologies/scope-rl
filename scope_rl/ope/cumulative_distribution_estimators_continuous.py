@@ -300,13 +300,22 @@ class ContinuousCumulativeDistributionDM(
 
         cvar = np.zeros_like(alphas)
         for i, alpha in enumerate(alphas):
-            idx_ = np.nonzero(cumulative_density > alpha)[0]
-            lower_idx_ = (
-                -2 if len(idx_) == 0 or idx_[0] == len(reward_scale) - 1 else idx_[0]
-            )
-            cvar[i] = (np.diff(cumulative_density) * reward_scale[1:])[
-                : lower_idx_ + 1
-            ].sum()
+            idx_ = np.nonzero(cumulative_density[1:] > alpha)[0]
+            if len(idx_) == 0:
+                cvar[i] = (
+                    np.diff(cumulative_density) * reward_scale[1:]
+                ).sum() / cumulative_density[-1]
+            elif idx_[0] == 0:
+                cvar[i] = reward_scale[1]
+            else:
+                lower_idx_ = idx_[0]
+                relative_probability_density = (
+                    np.diff(cumulative_density)[: lower_idx_ + 1]
+                    / cumulative_density[lower_idx_ + 1]
+                )
+                cvar[i] = (
+                    relative_probability_density * reward_scale[1 : lower_idx_ + 2]
+                ).sum()
 
         return cvar
 
@@ -773,13 +782,22 @@ class ContinuousCumulativeDistributionTIS(
 
         cvar = np.zeros_like(alphas)
         for i, alpha in enumerate(alphas):
-            idx_ = np.nonzero(cumulative_density > alpha)[0]
-            lower_idx_ = (
-                -2 if len(idx_) == 0 or idx_[0] == len(reward_scale) - 1 else idx_[0]
-            )
-            cvar[i] = (np.diff(cumulative_density) * reward_scale[1:])[
-                : lower_idx_ + 1
-            ].sum()
+            idx_ = np.nonzero(cumulative_density[1:] > alpha)[0]
+            if len(idx_) == 0:
+                cvar[i] = (
+                    np.diff(cumulative_density) * reward_scale[1:]
+                ).sum() / cumulative_density[-1]
+            elif idx_[0] == 0:
+                cvar[i] = reward_scale[1]
+            else:
+                lower_idx_ = idx_[0]
+                relative_probability_density = (
+                    np.diff(cumulative_density)[: lower_idx_ + 1]
+                    / cumulative_density[lower_idx_ + 1]
+                )
+                cvar[i] = (
+                    relative_probability_density * reward_scale[1 : lower_idx_ + 2]
+                ).sum()
 
         return cvar
 
@@ -1303,14 +1321,22 @@ class ContinuousCumulativeDistributionTDR(
 
         cvar = np.zeros_like(alphas)
         for i, alpha in enumerate(alphas):
-            idx_ = np.nonzero(cumulative_density > alpha)[0]
-            lower_idx_ = (
-                -2 if len(idx_) == 0 or idx_[0] == len(reward_scale) - 1 else idx_[0]
-            )
-            cvar[i] = (np.diff(cumulative_density) * reward_scale[1:])[
-                : lower_idx_ + 1
-            ].sum()
-
+            idx_ = np.nonzero(cumulative_density[1:] > alpha)[0]
+            if len(idx_) == 0:
+                cvar[i] = (
+                    np.diff(cumulative_density) * reward_scale[1:]
+                ).sum() / cumulative_density[-1]
+            elif idx_[0] == 0:
+                cvar[i] = reward_scale[1]
+            else:
+                lower_idx_ = idx_[0]
+                relative_probability_density = (
+                    np.diff(cumulative_density)[: lower_idx_ + 1]
+                    / cumulative_density[lower_idx_ + 1]
+                )
+                cvar[i] = (
+                    relative_probability_density * reward_scale[1 : lower_idx_ + 2]
+                ).sum()
         return cvar
 
     def estimate_interquartile_range(

@@ -750,11 +750,25 @@ def calc_on_policy_statistics(
         bins=reward_scale,
         density=True,
     )[0]
-    density = density * np.diff(reward_scale)
+    probability_density_function = density * np.diff(reward_scale)
+    cumulative_distribution_function = np.insert(
+        probability_density_function, 0, 0
+    ).cumsum()
 
-    idx = np.nonzero(density.cumsum() > cvar_alpha)[0]
-    lower_idx = idx[0] if len(idx) else -2
-    cvar = (density * reward_scale[1:])[:lower_idx].sum()
+    idx = np.nonzero(cumulative_distribution_function[1:] > cvar_alpha)[0]
+    if len(idx) == 0:
+        cvar = (
+            np.diff(cumulative_distribution_function) * reward_scale[1:]
+        ).sum() / cumulative_distribution_function[-1]
+    elif idx[0] == 0:
+        cvar = reward_scale[1]
+    else:
+        lower_idx = idx[0]
+        relative_probability_density = (
+            np.diff(cumulative_distribution_function)[: lower_idx + 1]
+            / cumulative_distribution_function[lower_idx + 1]
+        )
+        cvar = (relative_probability_density * reward_scale[1 : lower_idx + 2]).sum()
 
     def target_value_given_idx(idx):
         if len(idx):
@@ -1110,13 +1124,29 @@ def calc_on_policy_conditional_value_at_risk(
         bins=reward_scale,
         density=True,
     )[0]
-    density = density * np.diff(reward_scale)
+    probability_density_function = density * np.diff(reward_scale)
+    cumulative_distribution_function = np.insert(
+        probability_density_function, 0, 0
+    ).cumsum()
 
     cvar = np.zeros_like(alphas)
     for i, alpha in enumerate(alphas):
-        idx_ = np.nonzero(density.cumsum() > alpha)[0]
-        lower_idx_ = idx_[0] if len(idx_) else -2
-        cvar[i] = (density * reward_scale[1:])[:lower_idx_].sum()
+        idx_ = np.nonzero(cumulative_distribution_function[1:] > alpha)[0]
+        if len(idx_) == 0:
+            cvar[i] = (
+                np.diff(cumulative_distribution_function) * reward_scale[1:]
+            ).sum() / cumulative_distribution_function[-1]
+        elif idx_[0] == 0:
+            cvar[i] = reward_scale[1]
+        else:
+            lower_idx_ = idx_[0]
+            relative_probability_density = (
+                np.diff(cumulative_distribution_function)[: lower_idx_ + 1]
+                / cumulative_distribution_function[lower_idx_ + 1]
+            )
+            cvar[i] = (
+                relative_probability_density * reward_scale[1 : lower_idx_ + 2]
+            ).sum()
 
     return cvar
 
