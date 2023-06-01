@@ -1,1 +1,2 @@
-- setting=CartPole
+- setting=cartpole
+- base_model_config=cartpole

@@ -239,6 +239,7 @@ def off_policy_evaluation(
     test_logged_dataset: MultipleLoggedDataset,
     candidate_sigmas: List[float],
     candidate_policies: List[BaseHead],
+    state_scaler: bool,
     device: str,
     n_random_state: int,
     base_random_state: int,
@@ -282,7 +283,9 @@ def off_policy_evaluation(
                         ],
                         dataset_id=0,
                     )["state"].max(axis=0),
-                ),
+                )
+                if state_scaler
+                else None,
                 action_scaler=MinMaxActionScaler(
                     minimum=env.action_space.low,  # minimum value that policy can take
                     maximum=env.action_space.high,  # maximum value that policy can take
@@ -315,7 +318,9 @@ def off_policy_evaluation(
                         ],
                         dataset_id=0,
                     )["state"].max(axis=0),
-                ),
+                )
+                if state_scaler
+                else None,
                 device=device,
             )
 
@@ -325,7 +330,7 @@ def off_policy_evaluation(
             require_value_prediction=True,
             require_weight_prediction=True,
             n_trajectories_on_policy_evaluation=100,
-            path=log_dir + f"/input_dict/multiple/{env_name}/{n_candidate_policies}",
+            path=log_dir + f"/input_dict/multiple/{env_name}",
             random_state=base_random_state,
         )
         with open(path_input_dict, "wb") as f:
@@ -343,9 +348,6 @@ def off_policy_evaluation(
 
     ops = OffPolicySelection(ope=ope)
 
-    path_ = Path(log_dir + f"/results")
-    path_.mkdir(exist_ok=True, parents=True)
-
     path_conventional_ = Path(log_dir + f"/results/conventional/")
     path_conventional_.mkdir(exist_ok=True, parents=True)
 
@@ -358,8 +360,8 @@ def off_policy_evaluation(
         return_metrics=True,
     )
     path_metrics = Path(
-        path_
-        / f"conventional/conventional_metrics_dict_{env_name}_{behavior_policy_name}.pkl"
+        path_conventional_
+        / f"conventional_metrics_dict_{env_name}_{behavior_policy_name}.pkl"
     )
     with open(path_metrics, "wb") as f:
         pickle.dump(ops_dict, f)
@@ -370,7 +372,7 @@ def off_policy_evaluation(
         relative_safety_criteria=1.0,
     )
     path_topk_metrics = Path(
-        path_ / f"topk/topk_metrics_dict_{env_name}_{behavior_policy_name}.pkl"
+        path_topk_ / f"topk_metrics_dict_{env_name}_{behavior_policy_name}.pkl"
     )
     with open(path_topk_metrics, "wb") as f:
         pickle.dump(topk_metric_dict, f)
@@ -400,6 +402,7 @@ def process(
     n_trajectories: int,
     n_random_state: int,
     n_candidate_policies: int,
+    state_scaler: bool,
     use_small_env: bool,
     device: str,
     base_random_state: int,
@@ -457,6 +460,7 @@ def process(
         test_logged_dataset=test_logged_dataset,
         candidate_sigmas=candidate_sigmas,
         candidate_policies=candidate_policies,
+        state_scaler=state_scaler,
         device=device,
         n_random_state=n_random_state,
         base_random_state=base_random_state,
@@ -594,6 +598,10 @@ def assert_configuration(cfg: DictConfig):
     if max_episode_steps != "None":
         assert isinstance(max_episode_steps, int) and max_episode_steps > 0
 
+    state_scaler = cfg.setting.state_scaler
+    if state_scaler != "None":
+        assert isinstance(state_scaler, bool)
+
     n_random_state = cfg.setting.n_random_state
     assert isinstance(n_random_state, int) and n_random_state > 0
 
@@ -614,6 +622,7 @@ def main(cfg: DictConfig):
         "candidate_epsilons": cfg.setting.candidate_epsilons,
         "n_trajectories": cfg.setting.n_trajectories,
         "n_candidate_policies": cfg.setting.n_candidate_policies,
+        "state_scaler": cfg.setting.state_scaler,
         "n_random_state": cfg.setting.n_random_state,
         "base_random_state": cfg.setting.base_random_state,
         "device": "cuda:0" if torch.cuda.is_available() else "cpu",
