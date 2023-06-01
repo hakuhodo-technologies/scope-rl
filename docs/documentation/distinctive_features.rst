@@ -1,15 +1,15 @@
 :html_theme.sidebar_secondary.remove:
 
 ==========
-Why OFRL?
+Why SCOPE-RL?
 ==========
 
 Motivation
 ~~~~~~~~~~
 
-Sequential decision making is ubiquitous in many real-world recommender, search, and advertising systems. 
+Sequential decision making is ubiquitous in many real-world applications including recommender, search, and advertising systems. 
 While a *logging* or *behavior* policy interacts with users to optimize such sequential decision making, it also produces logged data valuable for learning and evaluating future policies.
-For example, a search engine often records a user's search query (state), the document presented by the behavior policy (action), the user response such as a click on the presented document (reward), and the next user behavior including a more specific search query (next state). 
+For example, a search engine often records a user's search query (state), the document presented by the behavior policy (action), the user response such as a click observed for the presented document (reward), and the next user behavior including a more specific search query (next state). 
 Making most of these logged data to evaluate a counterfactual policy is particularly beneficial in practice, as it can be a safe and cost-effective substitute for online A/B tests. 
 
 .. card:: 
@@ -38,9 +38,9 @@ Most *offline RL* plaforms:
 
 Existing *OPE* platforms:
 
-* ... have a limited flexibly of environment and the choice of offline RL methods (i.e., limited **compatibility with gym/gymnasium and offline RL libraries**).
-* ... support only the standard OPE framework and lacks the implementation of **cumulative distribution OPE**.
-* ... only focus on the accuracy of OPE/OPS and do not take the **risk-return tradeoff** in the policy selection into account.
+* ... have a limited flexibly of environment and the choice of offline RL methods (i.e., **limited compatibility with gym/gymnasium and offline RL libraries**).
+* ... support only the standard OPE framework and lack the implementation of **cumulative distribution OPE**.
+* ... only focus on the accuracy of OPE/OPS and do not take the **risk-return tradeoff** of the policy selection into account.
 * ... do not support user-friendly **visualization tools** to interpret the OPE results.
 * ... do not provide well-described **documentations**.
 
@@ -59,7 +59,7 @@ The distinctive features of our SCOPE-RL platform are summarized as follows.
 
 * :ref:`feature_cd_ope`
 
-* :ref:`feature_topk_rrt`
+* :ref:`feature_sharpe_ratio`
 
 Below, we describe each advantage one by one. 
 Note that, for a quick comparison with the exising platforms, please refer to :ref:`the following section <feature_comparison>`.
@@ -90,14 +90,15 @@ Specifically, as shown in the bottom figure, our module mainly consists of the f
 * Off-Policy Selection (OPS) module
 
 First, the *Dataset* module handles the data collection from RL environments.
-Since our Dataset module is compatible with `OpenAI Gym <https://gym.openai.com>`_ or `Gymnasium <https://github.com/Farama-Foundation/Gymnasium>`_-like environments, SCOPE-RL is applicable to a variety of environmental settings.
+Since our Dataset module is compatible with `OpenAI Gym <https://github.com/openai/gym>`_ or `Gymnasium <https://github.com/Farama-Foundation/Gymnasium>`_-like environments, SCOPE-RL is applicable to a variety of environmental settings.
 Moreover, SCOPE-RL supports compatibility with `d3rlpy <https://github.com/takuseno/d3rlpy>`_, which provides implementations of various online and offline RL algorithms. 
 This also allows us test the performance of offline RL and OPE with various behavior policies or other experimental settings.
 
 Next, the *OPL* module provides an easy-to-handle wrapper for learning new policies with various offline RL algorithms.
 While `d3rlpy <https://github.com/takuseno/d3rlpy>`_ has already supported user-friedly API, their implementation is basically intended to use offline RL algorithms one by one.
 Therefore, to further make the end-to-end offline RL and OPE process smoothly connected, our OPL wrapper enables to handle multiple datasets and multiple algorithms in a single class.
-Please refer to :ref:`this page <>` for the details. 
+
+.. Please refer to :ref:`this page <>` for the details. 
 
 Finally, the *OPE* and *OPS* modules are particularly our focus. 
 As we will review in the following sub-sections, we implement a variety of OPE estimators from the basic choices :cite:`le2019batch, precup2000eligibility, jiang2016doubly, thomas2016data`, 
@@ -189,7 +190,7 @@ These implementations are as comprehensive as the existing platforms for OPE inc
 
 **Weight and Value Learning Methods**
 
-* Augmented Lagrangian Method (ALM) :cite:`yang2020off`
+* Augmented Lagrangian Method (ALM/DICE) :cite:`yang2020off`
    BestDICE :cite:`yang2020off` / GradientDICE :cite:`zhang2020gradientdice` / GenDICE :cite:`zhang2020gendice` / AlgaeDICE :cite:`nachum2019algaedice` / DualDICE :cite:`nachum2019dualdice` / MQL/MWL :cite:`uehara2020minimax`
 * Minimax Q-Learning and Weight Learning (MQL/MWL) :cite:`uehara2020minimax`
 
@@ -226,11 +227,11 @@ Moreover, we streamline the evaluation protocol of OPE/OPS with the following me
 
 * {Best/Worst/Mean/Std} of policy performance
 * Safety violation rate
-* Sharpe ratio
+* Sharpe ratio (our proposal)
 
-Note that, the above top-:math:`k` metrics are the proposal in our research paper `"SCOPE-RL: Towards Risk-Return Assessments of
-Off-Policy Evaluation in Offline RL" <>`_.  
-:doc:`topk_rrt` describe these metrics in details, and we also discuss about these metrics briefly in the later sub-section.
+Note that, the above top-:math:`k` metrics are the proposal in our research paper "Risk-Return Assessments of
+Off-Policy Evaluation in Offline RL".  
+:doc:`sharpe_ratio` describe these metrics in details, and we also discuss about these metrics briefly in the later sub-section.
 
 .. _feature_cd_ope:
 
@@ -265,7 +266,7 @@ Moreover, in the self-diriving cars, the catastrophic accidents should be avoide
 We believe that the release of cumulative distribution OPE implementations will boost the applicability of OPE in practical situations.
 
 
-.. _feature_topk_rrt:
+.. _feature_sharpe_ratio:
 
 Risk-Return Assessments of OPS
 ----------
@@ -275,7 +276,7 @@ Our SCOPE-RL is also unique in that it provides risk-return assessments of Off-P
 While OPE is useful for estimating the policy performance of a new policy using offline logged data, 
 OPE sometimes produces erroneous estimation due to *counterfactual estimation* and *distribution shift* between the behavior and evaluation policies.
 Therefore, in practical situations, we cannot solely rely on OPE results to choose the production policy, but instead, combine OPE results and online A/B tests for policy evaluation and selection :cite:`kurenkov2022showing`.
-Specifically, the practical workflow often begins by filtering out poor-performing policies based on OPE results, then conducting A/B tests on the remaining top-k88
+Specifically, the practical workflow often begins by filtering out poor-performing policies based on OPE results, then conducting A/B tests on the remaining top-:math:`k`
 policies to identify the best policy based on reliable online evaluation, as illustrated in the following figure.
 
 .. card:: 
@@ -291,7 +292,7 @@ policies to identify the best policy based on reliable online evaluation, as ill
     <div class="white-space-20px"></div>
 
 While the conventional metrics of OPE focus on the "accuracy" of OPE and OPS measured by mean-squared error (MSE) :cite:`uehara2022review, voloshin2021empirical`, rank correlation :cite:`paine2020hyperparameter, fu2021benchmarks`, and regret :cite:`doroudi2017importance, tang2021model`, 
-the top-:math:`k` risk-return tradeoff (RRT) metrics measure risk, return, and efficiency of the selected top-:math:`k` policy with the following metrics.
+we measure risk, return, and efficiency of the selected top-:math:`k` policy with the following metrics.
 
 .. card:: 
     :width: 75%
@@ -308,13 +309,13 @@ the top-:math:`k` risk-return tradeoff (RRT) metrics measure risk, return, and e
 * best @ :math:`k` (*return*)
 * worsk @ :math:`k`, mean @ :math:`k` (*risk*)
 * safety violation rate @ :math:`k` (*risk*)
-* Sharpe ratio @ :math:`k` (*efficiency*)
+* Sharpe ratio @ :math:`k` (*efficiency*, our proposal)
 
 .. seealso::
 
-    Top-:math:`k` RRT metrics are the main propossal of our research paper 
-    `"SCOPE-RL: Towards Risk-Return Assessments of Off-Policy Evaluation in Offline" <>`_. 
-    We describe the motivation and contributions of the top-:math:`k` RRT metrics in :doc:`this page <topk_rrt>`.
+    Among the top-:math:`k` risk-return tradeoff metrics, SharpRatio is the main propossal of our research paper 
+    "Risk-Return Assessments of Off-Policy Evaluation in Reinforcement Learning". 
+    We describe the motivation and contributions of the SharpRatio metric in :doc:`this page <sharpe_ratio>`.
 
 
 .. _feature_comparison:
@@ -348,9 +349,11 @@ In summary, **our unique contribution is
 (1) to provide the first end-to-end platform for offline RL, OPE, and OPS,
 (2) to support cumulative distribution ope for the first time, and
 (3) to implement (the proposed) top-** :math:`k` **risk-return tradeoff metics for the risk assessments of OPS.**
-Additionally, we provide a user-friendly :doc:`visualization tools <visualization>`, :doc:`documentation <index>`, and `quickstart examples <https://github.com/negocia-inc/ofrl/tree/main/examples/quickstart>`_ to facilitate a quick benckmarking and practical application. 
-We also provide an :doc:`OPE tutorial <_autogallery/index>` with SCOPE-RL experiments for educational purpose. We hope that SCOPE-RL will serve as a important milestone for the future development of OPE research.
+Additionally, we provide a user-friendly :doc:`visualization tools <visualization>`, :doc:`documentation <index>`, and `quickstart examples <https://github.com/hakuhodo-technologies/scope-rl/tree/main/examples/quickstart>`_ to facilitate a quick benckmarking and practical application. 
+We hope that SCOPE-RL will serve as a important milestone for the future development of OPE research.
 
+.. We also provide an :doc:`OPE tutorial <_autogallery/index>` with SCOPE-RL experiments for educational purpose. 
+.. We hope that SCOPE-RL will serve as a important milestone for the future development of OPE research.
 
 Note that, the compared platforms include the following:
 

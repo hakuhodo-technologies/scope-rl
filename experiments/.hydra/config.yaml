@@ -1,0 +1,57 @@
+setting:
+  env_name: CartPole
+  env_version: None
+  behavior_sigma: 1.0
+  behavior_tau: 1.0
+  candidate_sigmas:
+  - 0.0
+  - 0.5
+  - 1.0
+  - 2.0
+  - 4.0
+  candidate_epsilons:
+  - 0.1
+  - 0.3
+  - 0.5
+  - 0.7
+  max_episode_steps: 200
+  n_trajectories: 10000
+  n_candidate_policies: 10
+  state_scaler: true
+  n_random_state: 10
+  base_random_state: 12345
+base_model_config:
+  sac:
+    actor_lr: 0.001
+    critic_lr: 0.001
+    temp_lr: 0.001
+    batch_size: 32
+    n_steps: 10000
+    update_start_step: 1000
+  ddqn:
+    target_update_interval: 100
+    batch_size: 32
+    lr: 0.001
+    explorer:
+      type: linear
+      epsilon: 0.01
+      duration: 8000
+    n_steps: 8000
+    update_start_step: 1000
+  cql:
+    discrete:
+      batch_size: 32
+      lr: 6.25e-05
+      alpha: 1.0
+  bcq:
+    batch_size: 32
+    lr: 0.001
+    target_update_interval: 1000
+    action_flexibility: 0.3
+    beta: 0.01
+  fqe:
+    lr: 0.001
+  continuous_ope:
+    sigma: 0.5
+  opl:
+    fitting_steps: 10000

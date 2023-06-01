@@ -6,7 +6,9 @@
     :text-align: center
     :shadow: none
 
-    one sentence to describe
+    | Towards Risk-Return Assessments of Off-Policy Evaluation in Reinforcement Learning
+    | 
+    | 
 
     .. button-ref:: documentation/index
       :ref-type: doc
@@ -22,7 +24,7 @@
 
 .. raw:: html
 
-    <h2>Why OFRL?</h2>
+    <h2>Why SCOPE-RL?</h2>
 
 .. grid-item::
     :class: top-page-list
@@ -43,7 +45,7 @@
 
 .. raw:: html
 
-    <h2>Try OFRL in two lines of code!</h2>
+    <h2>Try SCOPE-RL in two lines of code!</h2>
 
     <div class="top-page-list">
         <ul>
@@ -185,66 +187,66 @@
     </div>
     <div class="white-space-5px"></div>
 
-.. raw:: html
+.. .. raw:: html
 
-    <h2>Explore more with OFRL</h2>
+..     <h2>Explore more with SCOPE-RL</h2>
 
-    <div class="top-page-gallery-link">
-        <a href="documentation/_autogallery/index.html">Tutorials</a>
-    </div>
+..     <div class="top-page-gallery-link">
+..         <a href="documentation/_autogallery/index.html">Tutorials</a>
+..     </div>
 
-.. card-carousel:: 4
+.. .. card-carousel:: 4
 
-    .. card:: Basic Off-Policy Evaluation
-        :img-top: .png
+..     .. card:: Basic Off-Policy Evaluation
+..         :img-top: .png
 
-    .. card:: Marginal Off-Policy Evaluation
-        :img-top: .png
+..     .. card:: Marginal Off-Policy Evaluation
+..         :img-top: .png
 
-    .. card:: Cumulative Distribution Off-Policy Evaluation
-        :img-top: .png
+..     .. card:: Cumulative Distribution Off-Policy Evaluation
+..         :img-top: .png
 
-    .. card:: Off-Policy Selection
-        :img-top: .png
+..     .. card:: Off-Policy Selection
+..         :img-top: .png
 
-    .. card:: Evaluation of OPE/OPS
-        :img-top: .png
+..     .. card:: Evaluation of OPE/OPS
+..         :img-top: .png
 
-    .. card:: Ablation with various value functions
-        :img-top: .png
+..     .. card:: Ablation with various value functions
+..         :img-top: .png
 
-    .. card:: Ablation with xxx
-        :img-top: .png
+..     .. card:: Ablation with xxx
+..         :img-top: .png
 
-    .. card:: Handling multiple datasets
-        :img-top: .png
+..     .. card:: Handling multiple datasets
+..         :img-top: .png
 
-    .. card:: Evaluating with various behavior policies
-        :img-top: .png
+..     .. card:: Evaluating with various behavior policies
+..         :img-top: .png
 
-    .. card:: Evaluating on non-episodic setting
-        :img-top: .png
+..     .. card:: Evaluating on non-episodic setting
+..         :img-top: .png
 
-.. raw:: html
+.. .. raw:: html
 
-    <div class="top-page-gallery-link">
-        <a href="documentation/subpackages/index.html">Applications</a>
-    </div>
+..     <div class="top-page-gallery-link">
+..         <a href="documentation/subpackages/index.html">Applications</a>
+..     </div>
 
 
-.. card-carousel:: 4
+.. .. card-carousel:: 4
 
-    .. card:: Example on Real-Time Bidding
-        :img-top: .png
+..     .. card:: Example on Real-Time Bidding
+..         :img-top: .png
 
-    .. card:: Example on Recommendation
-        :img-top: .png
+..     .. card:: Example on Recommendation
+..         :img-top: .png
 
-    .. card:: Example on xxx
-        :img-top: .png
+..     .. card:: Example on xxx
+..         :img-top: .png
 
-    .. card:: Example on xxx
-        :img-top: .png
+..     .. card:: Example on xxx
+..         :img-top: .png
 
 
 .. raw:: html
@@ -252,31 +254,35 @@
     <h2>Citation</h2>
 
 
-If you use our pipeline or the top-:math:`k` RRT metrics in your work, please cite our paper below.
+If you use our pipeline or the proposed metric (SharpRatio@k) metric in your work, please cite our paper below.
 
-| **Title** [`arXiv <>`_] [`Proceedings <>`_]
-| Authors.
+.. card::
 
-.. code-block::
+    | Haruka Kiyohara, Ren Kishimoto, Kosuke Kawakami, Ken Kobayashi, Kazuhide Nakata, Yuta Saito.
+    | **Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation in Reinforcement Learning**
+    | (a preprint coming soon..)
 
-   @article{kiyohara2023xxx
-      title={},
-      author={},
-      journal={},
-      year={},
-   }
+    .. code-block::
+
+        @article{kiyohara2023towards,
+            author = {Kiyohara, Haruka and Kishimoto, Ren and Kawakami, Kosuke and Kobayashi, Ken and Nataka, Kazuhide and Saito, Yuta},
+            title = {Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation in Reinforcement Learning},
+            journal = {A github repository},
+            pages = {xxx--xxx},
+            year = {2023},
+        }
 
 .. raw:: html
 
     <div class="white-space-5px"></div>
     <h2>Join us!</h2>
 
-Any contributions to OFRL are more than welcome!
+Any contributions to SCOPE-RL are more than welcome!
 
-* `Guidelines for contribution (CONTRIBUTING.md) <>`_
-* `Google Group <>`_
+* `Guidelines for contribution (CONTRIBUTING.md) <https://github.com/hakuhodo-technologies/scope-rl/blob/main/CONTRIBUTING.md>`_
+* `Google Group (scope-rl@googlegroups.com) <https://groups.google.com/g/scope-rl>`_
 
-If you have any questions, feel free to contact: kiyohara.h.aa@m.titech.ac.jp
+If you have any questions, feel free to contact: hk844@cornell.edu
 
 .. raw:: html
 
@@ -295,13 +301,12 @@ Welcome!
 
     Installation <documentation/installation>
     Quickstart <documentation/quickstart>
-    Tutorial <documentation/_autogallery/index>
     Documentation <documentation/index>
     FAQs <documentation/frequently_asked_questions>
     News <documentation/news>
     Sub-packages <documentation/subpackages/index>
-    Release Notes <https://github.com/negocia-inc/ofrl/releases>
-    Proceedings <https://github.com/negocia-inc/ofrl/404>
+    Release Notes <https://github.com/hakuhodo-technologies/scope-rl/releases>
+    Proceedings <https://github.com/hakuhodo-technologies/scope-rl/404>
 
 .. grid::
 

@@ -1,3 +1,6 @@
+# Copyright (c) 2023, Haruka Kiyohara, Ren Kishimoto, HAKUHODO Technologies Inc., and Hanjuku-kaso Co., Ltd. All rights reserved.
+# Licensed under the Apache 2.0 License.
+
 """Basic Reinforcement Learning (RL) Environment."""
 from typing import Tuple, Optional, Any
 
@@ -85,8 +88,8 @@ class BasicEnv(gym.Env):
 
         # import necessary module from syntheticgym
         from syntheticgym import SyntheticEnv
-        from ofrl.policy import OnlineHead
-        from ofrl.ope.online import calc_on_policy_policy_value
+        from scope_rl.policy import OnlineHead
+        from scope_rl.ope.online import calc_on_policy_policy_value
 
         # import necessary module from other libraries
         from d3rlpy.algos import RandomPolicy

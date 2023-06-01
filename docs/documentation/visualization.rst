@@ -219,7 +219,7 @@ This kind of visualization is again available for all point-wise estimates inclu
             :margin: 0
 
             .. grid-item-card::
-                :link: ofrl_api
+                :link: scope_rl_api
                 :link-type: doc
                 :shadow: none
                 :margin: 0

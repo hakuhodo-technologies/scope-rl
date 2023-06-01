@@ -16,7 +16,7 @@ It takes an RL environment as input to instantiate the class.
 .. code-block:: python
 
     # initialize the dataset class
-    from ofrl.dataset import SyntheticDataset
+    from scope_rl.dataset import SyntheticDataset
     dataset = SyntheticDataset(
         env=env,
         max_episode_steps=env.step_per_episode,
@@ -48,7 +48,7 @@ Then, it collects logged data by a behavior policy (i.e., data collection policy
 
         .. code-block:: python
 
-            from ofrl.policy import DiscreteEpsilonGreedyHead
+            from scope_rl.policy import DiscreteEpsilonGreedyHead
             behavior_policy = DiscreteEpsilonGreedyHead(
                 base_policy,  # AlgoBase of d3rlpy
                 n_actions=env.action_space.n,
@@ -62,7 +62,7 @@ Then, it collects logged data by a behavior policy (i.e., data collection policy
 
         .. code-block:: python
 
-            from ofrl.policy import ContinuousGaussianHead
+            from scope_rl.policy import ContinuousGaussianHead
             behavior_policy = ContinuousGaussianHead(
                 base_policy,  # AlgoBase of d3rlpy
                 sigma=1.0,
@@ -112,7 +112,7 @@ Then, it collects logged data by a behavior policy (i.e., data collection policy
 
         .. seealso::
 
-            :doc:`API reference of BaseDataset<_autosummary/dataset/ofrl.dataset.base>` explains the meaning of each keys in detail.
+            :doc:`API reference of BaseDataset<_autosummary/dataset/scope_rl.dataset.base>` explains the meaning of each keys in detail.
 
 
     .. dropdown:: How to handle multiple logged datasets at once?
@@ -153,7 +153,7 @@ Then, it collects logged data by a behavior policy (i.e., data collection policy
 
         .. code-block:: python
 
-            from ofrl.utils import MultipleLoggedDataset
+            from scope_rl.utils import MultipleLoggedDataset
 
             multiple_logged_dataset = MultipleLoggedDataset(
                 action_type="discrete",
@@ -175,8 +175,8 @@ Then, it collects logged data by a behavior policy (i.e., data collection policy
 
         .. seealso::
 
-            * :doc:`API reference of MultipleLoggedDataset <_autosummary/ofrl.utils.MultipleLoggedDataset>`
-            * :ref:`Tutorial with MultipleLoggedDataset <ofrl_multiple_tutorial>`
+            * :doc:`API reference of MultipleLoggedDataset <_autosummary/scope_rl.utils.MultipleLoggedDataset>`
+            .. * :ref:`Tutorial with MultipleLoggedDataset <scope_rl_multiple_tutorial>`
 
     .. dropdown:: How to collect data in a non-episodic setting?
 
@@ -195,7 +195,8 @@ Then, it collects logged data by a behavior policy (i.e., data collection policy
 
 .. seealso::
 
-    * :doc:`quickstart` and :ref:`related tutorials <ofrl_others_tutorial>`
+    * :doc:`quickstart` 
+    .. * and :ref:`related tutorials <scope_rl_others_tutorial>`
 
 .. _implementation_opl:
 
@@ -261,7 +262,7 @@ we also provide :class:`OffPolicyLearning` as a meta class to further smoothen t
     )
 
     # off-policy learning
-    from ofrl.policy import OffPolicyLearning
+    from scope_rl.policy import OffPolicyLearning
     opl = OffPolicyLearning(
         fitting_args={"n_steps": 10000},
     )
@@ -276,7 +277,8 @@ Using :class:`OffPolicyLearning`, we can also convert the deterministic base pol
 .. code-block:: python
 
     # policy wrapper
-    from ofrl.policy import DiscreteEpsilonGreedyHead as EpsilonGreedyHead
+    from scope_rl.policy import DiscreteEpsilonGreedyHead as EpsilonGreedyHead
+
     policy_wrappers = {
         "eps_00": (
             EpsilonGreedyHead, {
@@ -363,11 +365,12 @@ The obtained evaluation policies are the following (both algorithms and policy w
         .. seealso::
 
             * :ref:`How to obtain MultipleLoggedDataset? <tips_synthetic_dataset>`
-            * :ref:`Tutorial with MultipleLoggedDataset <ofrl_multiple_tutorial>`
+            .. * :ref:`Tutorial with MultipleLoggedDataset <scope_rl_multiple_tutorial>`
 
 .. seealso::
 
-    * :doc:`quickstart` and :ref:`related tutorials <ofrl_others_tutorial>`
+    * :doc:`quickstart` 
+    .. * and :ref:`related tutorials <scope_rl_others_tutorial>`
 
 .. _implementation_policy_head:
 
@@ -409,32 +412,32 @@ Here, we describe some useful wrapper tools to convert a `d3rlpy <https://github
 
         .. seealso::
 
-            * :doc:`Package Reference of BaseHead and implemented policy heads <_autosummary/ofrl.policy.head>`
+            * :doc:`Package Reference of BaseHead and implemented policy heads <_autosummary/scope_rl.policy.head>`
 
 
-.. seealso::
+.. .. seealso::
 
-    * :ref:`Related tutorials <ofrl_others_tutorial>`
+..     * :ref:`Related tutorials <scope_rl_others_tutorial>`
 
 
 .. _implementation_discrete_head:
 
 DiscreteHead
 ----------
-This module transforms a deterministic policy to a stochastic one in discrete action case.
+This module transforms a deterministic policy to a stochastic one in discrete action cases.
 Specifically, we have two stochastic policies.
 
     * :class:`DiscreteEpsilonGreedyHead`: :math:`\pi(a | s) := (1 - \epsilon) * \pi_{\mathrm{det}}(a | s) + \epsilon / |\mathcal{A}|`.
     * :class:`DiscreteSoftmaxHead`: :math:`\pi(a | s) := \displaystyle \frac{\exp(Q^{(\pi_{\mathrm{det}})}(s, a) / \tau)}{\sum_{a' \in \mathcal{A}} \exp(Q^{(\pi_{\mathrm{det}})}(s, a') / \tau)}`.
 
-Note that :math:`\mathbb{I}(\cdot)` is the indicator function and :math:`\tau` is the temperature parameter.
-DiscreteEpsilonGreedyHead is also used to construct a deterministic evaluation policy in OPE/OPS.
+Note that :math:`\epsilon \in [0, 1]` is the degree of exploration :math:`\tau` is the temperature hyperparameter.
+DiscreteEpsilonGreedyHead is also used to construct a deterministic evaluation policy in OPE/OPS by setting :math:`\epsilon=0.0`.
 
 .. _implementation_continuous_head:
 
 ContinuousHead
 ----------
-This module transforms a deterministic policy to a stochastic one in discrete action case.
+This module transforms a deterministic policy to a stochastic one in continuous action cases.
 Specifically, we have two stochastic policies.
 
     * :class:`ContinuousGaussianHead`: :math:`\pi(a | s) := \mathrm{Normal}(\pi_{\mathrm{det}}(s), \sigma)`.
@@ -448,17 +451,17 @@ We also provide the wrapper class of deterministic policy to be used in OPE.
 
 OnlineHead
 ----------
-This module enables step-wise interaction of the policy.
+This module enables online interaction of the policy (note: `d3rlpy <https://github.com/takuseno/d3rlpy>`_'s policy is particularly designed for batch interactions).
 
     * :class:`OnlineHead`
 
 Online Evaluation
 ~~~~~~~~~~
-Finally, we provide the series of functions to be used for online performance evaluation in :doc:`ofrl/ope/online.py <_autosummary/ofrl.ope.online>`.
+Finally, we provide the series of functions to be used for online performance evaluation in :doc:`scope_rl/ope/online.py <_autosummary/scope_rl.ope.online>`.
 
-.. seealso::
+.. .. seealso::
 
-    * :ref:`Related tutorials <ofrl_others_tutorial>`
+..     * :ref:`Related tutorials <scope_rl_others_tutorial>`
 
 (Rollout)
 
@@ -529,7 +532,7 @@ Finally, we provide the series of functions to be used for online performance ev
                 **Off_policy Evaluation**
 
             .. grid-item-card::
-                :link: ofrl_api
+                :link: scope_rl_api
                 :link-type: doc
                 :shadow: none
                 :margin: 0

@@ -19,9 +19,8 @@ sys.path.insert(0, os.path.abspath(".."))
 # -- Project information -----------------------------------------------------
 
 project = "SCOPE-RL"
-copyright = "2023, Haruka Kiyohara, Ren Kishimoto, Yuta Saito, Hakuhodo Technologies"
-# copyright = "2023, Haruka Kiyohara, Yuta Saito, and negocia, Inc"
-author = "Haruka Kiyohara, Ren Kishimoto, Kosuke Kawakami, Yuta Saito"
+copyright = "2023, Haruka Kiyohara, Ren Kishimoto, HAKUHODO Technologies Inc., Hanjuku-kaso Co., Ltd"
+author = "Haruka Kiyohara"
 
 # The full version, including alpha/beta/rc tags
 version = "latest"
@@ -72,17 +71,17 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 #
 html_theme = "pydata_sphinx_theme"
 html_theme_options = {
-    "github_url": "https://github.com/negocia-inc/ofrl",
+    "github_url": "https://github.com/hakuhodo-technologies/scope-rl",
     # "twitter_url": "https://twitter.com/{account}",
     "icon_links": [
         {
             "name": "Speaker Deck",
-            "url": "https://speakerdeck.com/aiueola/ofrl-designing-an-offline-reinforcement-learning-and-policy-evaluation-platform-from-practical-perspectives",
+            "url": "https://speakerdeck.com/aiueola/scope_rl-designing-an-offline-reinforcement-learning-and-policy-evaluation-platform-from-practical-perspectives",
             "icon": "fa-brands fa-speaker-deck",
             "type": "fontawesome",
         },
     ],
-    "header_links_before_dropdown": 6,
+    "header_links_before_dropdown": 5,
     # "navbar_start": ["navbar-logo", "version"],
     "footer_items": ["copyright"],
     "show_prev_next": False,
@@ -95,7 +94,7 @@ html_theme_options = {
 html_static_path = ["_static"]
 html_css_files = ["css/custom.css"]
 
-html_title = "OFRL"
+html_title = "SCOPE-RL"
 # html_use_opensearch = "https://"
 
 
@@ -115,19 +114,19 @@ autodoc_default_options = {
 # mapping between class methods and its abbreviation
 numpydoc_member_order = "bysource"
 numpydoc_show_inherited_class_members = {
-    "ofrl.policy.head.BaseHead": False,
-    "ofrl.policy.head.ContinuousEvalHead": False,
-    "ofrl.policy.head.ContinuousGaussianHead": False,
-    "ofrl.policy.head.ContinuousTruncatedGaussianHead": False,
-    "ofrl.policy.head.DiscreteEpsilonGreedyHead": False,
-    "ofrl.policy.head.DiscreteSoftmaxHead": False,
-    "ofrl.policy.head.OnlineHead": False,
-    "ofrl.ope.weight_value_learning.function.VFunction": False,
-    "ofrl.ope.weight_value_learning.function.StateWeightFunction": False,
-    "ofrl.ope.weight_value_learning.function.DiscreteQFunction": False,
-    "ofrl.ope.weight_value_learning.function.ContinuousQFunction": False,
-    "ofrl.ope.weight_value_learning.function.DiscreteStateActionWeightFunction": False,
-    "ofrl.ope.weight_value_learning.function.ContinuousStateActionWeightFunction": False,
+    "scope_rl.policy.head.BaseHead": False,
+    "scope_rl.policy.head.ContinuousEvalHead": False,
+    "scope_rl.policy.head.ContinuousGaussianHead": False,
+    "scope_rl.policy.head.ContinuousTruncatedGaussianHead": False,
+    "scope_rl.policy.head.DiscreteEpsilonGreedyHead": False,
+    "scope_rl.policy.head.DiscreteSoftmaxHead": False,
+    "scope_rl.policy.head.OnlineHead": False,
+    "scope_rl.ope.weight_value_learning.function.VFunction": False,
+    "scope_rl.ope.weight_value_learning.function.StateWeightFunction": False,
+    "scope_rl.ope.weight_value_learning.function.DiscreteQFunction": False,
+    "scope_rl.ope.weight_value_learning.function.ContinuousQFunction": False,
+    "scope_rl.ope.weight_value_learning.function.DiscreteStateActionWeightFunction": False,
+    "scope_rl.ope.weight_value_learning.function.ContinuousStateActionWeightFunction": False,
 }
 numpydoc_xref_aliases = {
     # 'LeaveOneOut': 'sklearn.model_selection.LeaveOneOut',
@@ -153,7 +152,7 @@ sphinx_gallery_conf = {
             "tutorial/basic_ope",
             "tutorial/cumulative_distribution_ope",
             "tutorial/ops",
-            "tutorial/ofrl_others",
+            "tutorial/scope_rl_others",
             "tutorial/multiple_datasets",
             "tutorial/rtbgym",
             "tutorial/footer",

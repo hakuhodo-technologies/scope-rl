@@ -1,5 +1,9 @@
-RTBGym; a Python-based configurative simulation environment for Real-Time Bidding (RTB)
+RTBGym
 ===================================
+
+.. raw:: html
+
+    <h3> Python-based configurative simulation environment for Real-Time Bidding (RTB)</h3>
 
 Overview
 ~~~~~~~~~~
@@ -7,7 +11,7 @@ Overview
 The simulator is particularly intended for reinforcement learning algorithms and follows `OpenAI Gym <https://gym.openai.com>`_ and `Gymnasium <https://github.com/Farama-Foundation/Gymnasium>`_ interface.
 We design RTBGym as a configurative environment so that researchers and practitioner can customize the environmental modules including WinningPriceDistribution, ClickThroughRate, and ConversionRate.
 
-Note that, RTBGym is publicized as a sub-package of :doc:`OFRL <index>`, which streamlines the implementation of offline reinforcement learning (offline RL) and off-policy evaluation and selection (OPE/OPS) procedures.
+Note that, RTBGym is publicized as a sub-package of :doc:`SCOPE-RL <index>`, which streamlines the implementation of offline reinforcement learning (offline RL) and off-policy evaluation and selection (OPE/OPS) procedures.
 
 Basic Setting
 ~~~~~~~~~~
@@ -76,7 +80,7 @@ Quickstart and Configurations
 ~~~~~~~~~~
 
 We provide an example usage of the standard and customized environment. 
-The online/offlline RL and OPE/OPS examples are provides in :doc:`OFRL's quickstart <quickstart>`.
+The online/offlline RL and OPE/OPS examples are provides in :doc:`SCOPE-RL's quickstart <quickstart>`.
 
 Standard RTBEnv
 ----------
@@ -110,7 +114,7 @@ Let's interact uniform random policy with a continuous action RTB environment. T
 .. code-block:: python
 
     # import from other libraries
-    from ofrl.policy import OnlineHead
+    from scope_rl.policy import OnlineHead
     from d3rlpy.algos import RandomPolicy as ContinuousRandomPolicy
     from d3rlpy.preprocessing import MinMaxActionScaler
     import matplotlib.pyplot as plt
@@ -133,8 +137,8 @@ Let's interact uniform random policy with a continuous action RTB environment. T
         action = agent.predict_online(obs)
         obs, reward, done, truncated, info = env.step(action)
 
-Note that, while we use :doc:`OFRL <index>` and `d3rlpy <https://github.com/takuseno/d3rlpy>`_ here,
-RTBGym is compatible with any other libraries that is compatible to the `OpenAI Gym <https://gym.openai.com>`_ 
+Note that, while we use :doc:`SCOPE-RL <index>` and `d3rlpy <https://github.com/takuseno/d3rlpy>`_ here,
+RTBGym is compatible with any other libraries that is compatible to the `OpenAI Gym <https://github.com/openai/gym>`_ 
 and `Gymnasium <https://github.com/Farama-Foundation/Gymnasium>`_ interface.
 
 Customized RTBEnv
@@ -343,12 +347,12 @@ If you use our pipeline in your work, please cite our paper below.
 
 Contact
 ~~~~~~~~~~
-For any question about the paper and pipeline, feel free to contact: kiyohara.h.aa@m.titech.ac.jp
+For any question about the paper and pipeline, feel free to contact: hk844@cornell.edu
 
 Contribution
 ~~~~~~~~~~
 Any contributions to RTBGym are more than welcome!
-Please refer to `CONTRIBUTING.md <>`_ for general guidelines how to contribute to the project.
+Please refer to `CONTRIBUTING.md <https://github.com/hakuhodo-technologies/scope-rl/CONTRIBUTING.md>`_ for general guidelines how to contribute to the project.
 
 .. grid::
     :margin: 0

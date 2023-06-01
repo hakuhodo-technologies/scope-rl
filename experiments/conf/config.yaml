@@ -1,0 +1,11 @@
+defaults:
+  - setting: CartPole
+  - base_model_config: CartPole
+
+
+hydra: 
+  run: 
+    dir: ./
+  sweep:
+    dir: ./
+    subdir: ./

@@ -1,17 +1,24 @@
-OFRL; a Python library for offline reinforcement learning, off-policy evaluation, and selection
+:html_theme.sidebar_secondary.remove:
+
+SCOPE-RL
 ===================================
 
-.. card:: logo
-    :img-top: ../_static/images/logo.png
-    :text-align: center
+.. raw:: html
+
+    <h3>A Python library for offline reinforcement learning, off-policy evaluation, and selection</h3>
+
+
+.. .. card:: logo
+..     :img-top: ../_static/images/logo.png
+..     :text-align: center
     
 Overview
 ~~~~~~~~~~
-*OFRL* is an open-source Python library for offline Reinforcement Learning (RL) and Off-Policy Evaluation and Selection (OPE/OPS).
+*SCOPE-RL* is an open-source Python library for offline Reinforcement Learning (RL) and Off-Policy Evaluation and Selection (OPE/OPS).
 This library aims to facilitate an easy, flexible and reliable experiment in offline RL research, as well as to provide a streamlined implementation for practitioners.
-OFRL includes a series of modules to implement synthetic dataset generation and dataset preprocessing and methods for conducting and evaluating OPE/OPS.
+SCOPE-RL includes a series of modules to implement synthetic dataset generation and dataset preprocessing and methods for conducting and evaluating OPE/OPS.
 
-OFRL is applicable to any RL environment with `OpenAI Gym <https://gym.openai.com>`_ or `Gymnasium <https://github.com/Farama-Foundation/Gymnasium>`_-like interface.
+SCOPE-RL is applicable to any RL environment with `OpenAI Gym <https://github.com/openai/gym>`_ or `Gymnasium <https://github.com/Farama-Foundation/Gymnasium>`_-like interface.
 The library is also compatible with `d3rlpy <https://github.com/takuseno/d3rlpy>`_, which provides the algorithm implementation of both online and offline RL methods.
 
 Our software facilitates implementation, evaluation and algorithm comparison related to the following research topics:
@@ -29,32 +36,39 @@ Our software facilitates implementation, evaluation and algorithm comparison rel
     <div class="white-space-20px"></div>
 
 * **Offline Reinforcement Learning**: 
-   Offline RL aims to learn a new policy from only offline logged data collected by a behavior policy. OFRL enables a flexible experiment using customized dataset on diverse environments collected by various behavior policies.
+   Offline RL aims to learn a new policy from only offline logged data collected by a behavior policy. SCOPE-RL enables a flexible experiment using customized dataset on diverse environments collected by various behavior policies.
 
 * **Off-Policy Evaluation**: 
-   OPE aims to evaluate the policies of a counterfactual policy using only offline logged data. OFRL supports the basic implementations of OPE estimators and streamline the experimental procedure to evaluate OPE estimators.
+   OPE aims to evaluate the policies of a counterfactual policy using only offline logged data. SCOPE-RL supports the basic implementations of OPE estimators and streamline the experimental procedure to evaluate OPE estimators.
 
 * **Off-Policy Selection**: 
-   OPS aims to select the top-:math:`k` policies from several candidate policies using offline logged data. Typically, the final production policy is chosen based on the online A/B tests results of the selected top-$k$ policies.
-   OFRL supports the basic implementations of OPS methods and provide some metrics to evaluate OPS result.
+   OPS aims to select the top-:math:`k` policies from several candidate policies using offline logged data. Typically, the final production policy is chosen based on the online A/B tests results of the selected top-:math:`k` policies.
+   SCOPE-RL supports the basic implementations of OPS methods and provide some metrics to evaluate OPS result.
 
 .. note::
 
    This documentation aims to provide a gentle introduction to offline RL and OPE/OPS in the following steps.
 
+   .. 2. Provide a variety of examples of conducting offline RL and OPE/OPS in practical problem settings in :doc:`Quickstart <quickstart>` and :doc:`Tutorial <tutorial>`.
    1. Explain the basic concepts in :doc:`Overview (online/offline RL) <online_offline_rl>` and :doc:`Overview (OPE/OPS) <ope_ops>`.
-   2. Provide a variety of examples of conducting offline RL and OPE/OPS in practical problem settings in :doc:`Quickstart <quickstart>` and :doc:`Tutorial <tutorial>`.
-   3. Describe the algorithms and implementations in detail in :doc:`Supported Implementation <evaluation_implementation>` and :doc:`Package Reference <ofrl_api>`.
+   2. Provide a variety of examples of conducting offline RL and OPE/OPS in practical problem settings in :doc:`Quickstart <quickstart>`.
+   3. Describe the algorithms and implementations in detail in :doc:`Supported Implementation <evaluation_implementation>` and :doc:`Package Reference <scope_rl_api>`.
 
-   **You can also find the distinctive features of OFRL here:** :doc:`distinctive_features`
+   **You can also find the distinctive features of SCOPE-RL here:** :doc:`distinctive_features`
 
 Implementation
 ~~~~~~~~~~
 
 Data Collection Policy and Offline RL
 ----------
-OFRL override `d3rlpy <https://github.com/takuseno/d3rlpy>`_'s implementation for the base algorithm.
-We provide a wrapper class for transforming the policy into a stochastic policy as follows.
+SCOPE-RL override `d3rlpy <https://github.com/takuseno/d3rlpy>`_'s implementation for the base algorithms.
+We provide a class to handle synthetic dataset deneration, off-policy learning with multiple algorithms, and
+wrapper classes for transforming the policy into a stochastic policy as follows.
+
+Meta class
+^^^^^^
+* SyntheticDataset
+* OffPolicyLearning
 
 Discrete
 ^^^^^^
@@ -75,8 +89,8 @@ Basic OPE
     
     Policy Value Estimated by OPE Estimators
 
-OPRL provides a variety of OPE estimators both in discrete and continuous action spaces.
-Moreover, OFRL also implements meta class to handle OPE with multiple estimators at once and provide generic classes of OPE estimators to facilitate research development.
+SCOPE-RL provides a variety of OPE estimators both in discrete and continuous action spaces.
+Moreover, SCOPE-RL also implements meta class to handle OPE with multiple estimators at once and provide generic classes of OPE estimators to facilitate research development.
 
 Basic estimators
 ^^^^^^
@@ -85,8 +99,8 @@ Basic estimators
 * Per-Decision Importance Sampling (PDIS) :cite:`precup2000eligibility`
 * Doubly Robust (DR) :cite:`jiang2016doubly` :cite:`thomas2016data`
 * Self-Normalized Trajectory-wise Importance Sampling (SNTIS) :cite:`precup2000eligibility` :cite:`kallus2019intrinsically`
-* Self-Normalized Per-Decision Importance Sampling (SNPDIS) :cite:`precup2000eligibility` :cite:`kallus2020intrinsically`
-* Self-Normalized Doubly Robust (SNDR) :cite:`jiang2016doubly` :cite:`thomas2016data` :cite:`kallus2020intrinsically`
+* Self-Normalized Per-Decision Importance Sampling (SNPDIS) :cite:`precup2000eligibility` :cite:`kallus2019intrinsically`
+* Self-Normalized Doubly Robust (SNDR) :cite:`jiang2016doubly` :cite:`thomas2016data` :cite:`kallus2019intrinsically`
 
 State Marginal Estimators
 ^^^^^^
@@ -109,7 +123,7 @@ Double Reinforcement Learning
 
 Weight and Value Learning Methods
 ^^^^^^
-* Augmented Lagrangian Method (ALM) :cite:`yang2020off`
+* Augmented Lagrangian Method (ALM/DICE) :cite:`yang2020off`
    * BestDICE :cite:`yang2020off`
    * GradientDICE :cite:`zhang2020gradientdice`
    * GenDICE :cite:`zhang2020gendice`
@@ -134,7 +148,7 @@ Cumulative Distribution OPE
 
     Cumulative Distribution Function Estimated by OPE Estimators
 
-OFRL also provides cumulative distribution OPE estimators, which enables practitioners to evaluate various risk metrics (e.g., conditional value at risk) for safety assessment.
+SCOPE-RL also provides cumulative distribution OPE estimators, which enables practitioners to evaluate various risk metrics (e.g., conditional value at risk) for safety assessment.
 Meta class and generic abstract class are available also for cumulative distribution OPE.
 
 Estimators
@@ -162,7 +176,7 @@ Off-Policy Selection Metrics
     
     Comparison of the Top-k Statistics of 10% Lower Quartile of Policy Value
 
-Finally, OFRL also standardizes the evaluation protocol of OPE in two axes, first by measuring the accuracy of OPE over the whole candidate policies, 
+Finally, SCOPE-RL also standardizes the evaluation protocol of OPE in two axes, first by measuring the accuracy of OPE over the whole candidate policies, 
 and second by evaluating the gains and costs in top-k deployment (e.g., the best and worst performance in top-k deployment).
 The streamlined implementations and visualization of OPS class provide informative insights on offline RL and OPE performance.
 
@@ -177,41 +191,47 @@ OPS metrics (performance of top :math:`k` deployment policies)
 ^^^^^^
 * {Best/Worst/Mean/Std} of {policy value/conditional value at risk/lower quartile}
 * Safety violation rate
-* Sharpe ratio
+* Sharpe ratio (our proposal)
 
 .. seealso::
 
    We also provide configurative RL environments as sub-packages of this library.
 
-   * :doc:`RTBGym <rtbgym_about>`: Real-Time Bidding (RTB) of online advertisement
-   * :doc:`RECGym <recgym_about>`: Recommendation in e-commerce
-   * :doc:`BasicGym <basicgym_about>`: Basic environment
+   * :doc:`RTBGym <subpackages/rtbgym_about>`: Real-Time Bidding (RTB) of online advertisement
+   * :doc:`RECGym <subpackages/recgym_about>`: Recommendation in e-commerce
+   * :doc:`BasicGym <subpackages/basicgym_about>`: Basic environment
 
 
 Citation
 ~~~~~~~~~~
 If you use our pipeline in your work, please cite our paper below.
 
-| **Title** [`arXiv <>`_] [`Proceedings <>`_]
-| Authors.
+| Haruka Kiyohara, Ren Kishimoto, Kosuke Kawakami, Ken Kobayashi, Kazuhide Nakata, Yuta Saito.
+| **Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation in Reinforcement Learning**
+| (a preprint coming soon..)
 
 .. code-block::
 
-   @article{kiyohara2023xxx
-      title={},
-      author={},
-      journal={},
-      year={},
+   @article{kiyohara2023towards,
+      author = {Kiyohara, Haruka and Kishimoto, Ren and Kawakami, Kosuke and Kobayashi, Ken and Nataka, Kazuhide and Saito, Yuta},
+      title = {Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation in Reinforcement Learning},
+      journal = {A github repository},
+      pages = {xxx--xxx},
+      year = {2023},
    }
+
+Google Group
+~~~~~~~~~~
+Feel free to follow our updates from our google group: `scope-rl@googlegroups.com <https://groups.google.com/g/scope-rl>`_.
 
 Contact
 ~~~~~~~~~~
-For any question about the paper and pipeline, feel free to contact: kiyohara.h.aa@m.titech.ac.jp
+For any question about the paper and pipeline, feel free to contact: hk844@cornell.edu
 
 Contribution
 ~~~~~~~~~~
-Any contributions to OFRL are more than welcome!
-Please refer to `CONTRIBUTING.md <>`_ for general guidelines how to contribute to the project.
+Any contributions to SCOPE-RL are more than welcome!
+Please refer to `CONTRIBUTING.md <https://github.com/hakuhodo-technologies/scope-rl/CONTRIBUTING.md>`_ for general guidelines how to contribute to the project.
 
 Table of Contents
 ~~~~~~~~~~
@@ -222,7 +242,7 @@ Table of Contents
 
    installation
    quickstart
-   _autogallery/index
+   .. _autogallery/index
    distinctive_features
 
 .. toctree::
@@ -244,7 +264,7 @@ Table of Contents
    :maxdepth: 3
    :caption: Our Proposal:
 
-   topk_rrt
+   sharpe_ratio
 
 .. toctree::
    :maxdepth: 1
@@ -256,7 +276,7 @@ Table of Contents
    :maxdepth: 2
    :caption: Package References:
 
-   ofrl_api
+   scope_rl_api
    subpackages/rtbgym_api
    subpackages/recgym_api
    subpackages/basicgym_api
@@ -265,12 +285,12 @@ Table of Contents
    :maxdepth: 1
    :caption: See also:
 
-   Github <https://github.com/negocia-inc/ofrl>
-   LICENSE <https://github.com/negocia-inc/ofrl/blob/main/LICENSE>
+   Github <https://github.com/hakuhodo-technologies/scope-rl>
+   LICENSE <https://github.com/hakuhodo-technologies/scope-rl/blob/main/LICENSE>
    frequently_asked_questions
    News <news>
-   Release Notes <https://github.com/negocia-inc/ofrl/releases>
-   Proceedings <https://github.com/negocia-inc/ofrl/404>
+   Release Notes <https://github.com/hakuhodo-technologies/scope-rl/releases>
+   Proceedings <https://github.com/hakuhodo-technologies/scope-rl/404>
    references
 
 .. grid::
@@ -302,10 +322,10 @@ Table of Contents
                 :padding: 0
 
                 Next >>>
-                **Why_OFRL?**
+                **Why SCOPE-RL?**
 
             .. grid-item-card::
-                :link: /documentation/index
+                :link: /documentation/quickstart
                 :link-type: doc
                 :shadow: none
                 :margin: 0

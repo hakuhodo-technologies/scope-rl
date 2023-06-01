@@ -1,0 +1,35 @@
+sac:
+  actor_lr: 1e-3
+  critic_lr: 1e-3
+  temp_lr: 1e-3
+  batch_size: 32
+  n_steps: 10000
+  update_start_step: 1000
+ddqn:
+  target_update_interval: 100
+  batch_size: 32
+  lr: 1e-3
+  explorer:
+    type: linear
+    epsilon: 0.01
+    duration: 20000
+  n_steps: 100000
+  update_start_step: 1000
+cql:
+  discrete:
+    batch_size: 32
+    lr: 1e-3
+    alpha: 1.0
+bcq:
+  batch_size: 32
+  lr: 1e-3
+  target_update_interval: 100
+  action_flexibility: 0.3
+  beta: 0.01
+fqe:
+  lr: 1e-3
+continuous_ope:
+  sigma: 0.5
+opl:
+  fitting_steps: 10000
+
