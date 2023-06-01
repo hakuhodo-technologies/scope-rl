@@ -1,6 +1,6 @@
 defaults:
-  - setting: Cartpole
-  - base_model_config: Cartpole
+  - setting: CartPole
+  - base_model_config: CartPole
 
 
 hydra: 
