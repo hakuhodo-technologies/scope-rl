@@ -316,7 +316,7 @@ class OffPolicySelection:
             ].reshape((-1, self.step_per_trajectory))
 
             if self.ope.disable_reward_after_done:
-                done = self.ope.logged_dataset["done"].shape(
+                done = self.ope.logged_dataset["done"].reshape(
                     (-1, self.step_per_trajectory)
                 )
                 self.behavior_policy_reward[
