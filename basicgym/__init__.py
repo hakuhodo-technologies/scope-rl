@@ -3,9 +3,9 @@
 
 import gym
 
-from .envs.synthetic import BasicEnv
-from .envs.simulator.base import BaseStateTransitionFunction
-from .envs.simulator.base import BaseRewardFunction
+from basicgym.envs.synthetic import BasicEnv
+from basicgym.envs.simulator.base import BaseStateTransitionFunction
+from basicgym.envs.simulator.base import BaseRewardFunction
 
 __all__ = [
     "BasicEnv",
