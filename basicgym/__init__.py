@@ -7,6 +7,9 @@ from basicgym.envs.synthetic import BasicEnv
 from basicgym.envs.simulator.base import BaseStateTransitionFunction
 from basicgym.envs.simulator.base import BaseRewardFunction
 
+from .version import __version__  # noqa
+
+
 __all__ = [
     "BasicEnv",
     "BaseStateTransitionFunction",

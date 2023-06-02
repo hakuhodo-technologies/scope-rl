@@ -6,6 +6,9 @@ import gym
 from recgym.envs.rec import RECEnv
 from recgym.envs.simulator.base import BaseUserModel
 
+from .version import __version__  # noqa
+
+
 __all__ = ["RECEnv", "BaseUserModel"]
 
 # register standard environment

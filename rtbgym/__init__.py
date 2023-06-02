@@ -11,6 +11,8 @@ from rtbgym.envs.simulator.function import (
     BaseClickAndConversionRate,
 )
 
+from .version import __version__  # noqa
+
 
 __all__ = [
     "RTBEnv",
