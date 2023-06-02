@@ -31,7 +31,7 @@ setup(
     ],
     long_description=long_description,
     long_description_content_type="text/markdown",
-    install_requires=_requirements_from_text('requirements.txt'),
+    install_requires=_requirements_from_text("requirements.txt"),
     license="Apache License",
     packages=find_packages(
         exclude=[".github", "docs", "examples", "images", "tests"],

@@ -6481,7 +6481,9 @@ class OffPolicySelection:
                         )
 
                         if clip_sharpe_ratio:
-                            sharpe_ratio[1:] = np.nan_to_num(sharpe_ratio[1:], posinf=1e2)
+                            sharpe_ratio[1:] = np.nan_to_num(
+                                sharpe_ratio[1:], posinf=1e2
+                            )
                             sharpe_ratio[1:] = np.clip(sharpe_ratio[1:], 0.0, 1e2)
 
                         metric_dict[ci][estimator]["sharpe_ratio"] = sharpe_ratio
@@ -6536,7 +6538,9 @@ class OffPolicySelection:
                         )
 
                         if clip_sharpe_ratio:
-                            sharpe_ratio[1:] = np.nan_to_num(sharpe_ratio[1:], posinf=1e2)
+                            sharpe_ratio[1:] = np.nan_to_num(
+                                sharpe_ratio[1:], posinf=1e2
+                            )
                             sharpe_ratio[1:] = np.clip(sharpe_ratio[1:], 0.0, 1e2)
 
                         metric_dict[ci][estimator]["sharpe_ratio"] = sharpe_ratio
@@ -6581,7 +6585,9 @@ class OffPolicySelection:
                         )
 
                         if clip_sharpe_ratio:
-                            sharpe_ratio[1:] = np.nan_to_num(sharpe_ratio[1:], posinf=1e2)
+                            sharpe_ratio[1:] = np.nan_to_num(
+                                sharpe_ratio[1:], posinf=1e2
+                            )
                             sharpe_ratio[1:] = np.clip(sharpe_ratio[1:], 0.0, 1e2)
 
                         metric_dict[ci][estimator]["sharpe_ratio"] = sharpe_ratio
@@ -6625,7 +6631,9 @@ class OffPolicySelection:
                         )
 
                         if clip_sharpe_ratio:
-                            sharpe_ratio[1:] = np.nan_to_num(sharpe_ratio[1:], posinf=1e2)
+                            sharpe_ratio[1:] = np.nan_to_num(
+                                sharpe_ratio[1:], posinf=1e2
+                            )
                             sharpe_ratio[1:] = np.clip(sharpe_ratio[1:], 0.0, 1e2)
 
                         metric_dict[ci][estimator]["sharpe_ratio"] = sharpe_ratio
