@@ -5,6 +5,10 @@ import sys
 from scope_rl.version import __version__
 
 
+def _requirements_from_text(filename):
+    return open(filename).read().splitlines()
+
+
 here = path.abspath(path.dirname(__file__))
 sys.path.insert(0, path.join(here, "scope_rl"))
 
@@ -17,7 +21,7 @@ setup(
     name="scope-rl",
     version=__version__,
     description="SCOPE-RL: A pipeline for offline reinforcement learning research and applications",
-    url="https://github.com/hakuhodo-technologies/scope-rl",  # [TODO]
+    url="https://github.com/hakuhodo-technologies/scope-rl",
     author="Haruka Kiyohara",
     author_email="scope-rl@googlegroups.com",
     keywords=[
@@ -27,19 +31,7 @@ setup(
     ],
     long_description=long_description,
     long_description_content_type="text/markdown",
-    install_requires=[
-        "scipy>=1.10.1",
-        "numpy==1.22.4",  # [TODO]
-        "pandas>=1.5.3",
-        "scikit-learn>=1.0.2",
-        "matplotlib>=3.7.1",
-        "seaborn==0.11.2",  # [TODO]
-        "torch>=2.0.0",
-        "d3rlpy>=1.1.1",
-        "gym>=0.26.2",
-        "gymnasium>=0.28.1",
-        "hydra-core>=1.3.2",
-    ],
+    install_requires=_requirements_from_text('requirements.txt'),
     license="Apache License",
     packages=find_packages(
         exclude=[".github", "docs", "examples", "images", "tests"],
