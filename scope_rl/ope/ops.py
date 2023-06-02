@@ -316,7 +316,7 @@ class OffPolicySelection:
             ].reshape((-1, self.step_per_trajectory))
 
             if self.ope.disable_reward_after_done:
-                done = self.ope.logged_dataset["done"].shape(
+                done = self.ope.logged_dataset["done"].reshape(
                     (-1, self.step_per_trajectory)
                 )
                 self.behavior_policy_reward[
@@ -5254,6 +5254,7 @@ class OffPolicySelection:
         ope_alpha: Optional[float] = None,
         return_safety_violation_rate: bool = False,
         safety_threshold: Optional[float] = None,
+        clip_sharpe_ratio: bool = False,
         return_by_dataframe: bool = False,
     ):
         """Calculate top-k policy deployment performances.
@@ -5320,6 +5321,9 @@ class OffPolicySelection:
 
         safety_threshold: float, default=0.0 (>= 0)
             The conditional value at risk required to be a safe policy.
+
+        clip_sharpe_ratio: bool, default=False
+            Whether to clip a large value of SharpRatio with 1e2.
 
         return_by_dataframe: bool, default=False
             Whether to return the result in a dataframe format.
@@ -5626,10 +5630,16 @@ class OffPolicySelection:
                     if i == 0:
                         baseline = np.tile(baseline, (max_topk, 1))
 
-                    metric_dict[estimator]["sharpe_ratio"] = (
+                    sharpe_ratio = (
                         np.clip(metric_dict[estimator]["best"] - baseline, 0, None)
                         / metric_dict[estimator]["std"]
                     )
+
+                    if clip_sharpe_ratio:
+                        sharpe_ratio[1:] = np.nan_to_num(sharpe_ratio[1:], posinf=1e2)
+                        sharpe_ratio[1:] = np.clip(sharpe_ratio[1:], 0.0, 1e2)
+
+                    metric_dict[estimator]["sharpe_ratio"] = sharpe_ratio
 
             elif behavior_policy_name is None and dataset_id is not None:
                 total_n_datasets = len(input_dict.behavior_policy_names)
@@ -5691,10 +5701,16 @@ class OffPolicySelection:
                     if i == 0:
                         baseline = np.tile(baseline, (max_topk, 1))
 
-                    metric_dict[estimator]["sharpe_ratio"] = (
+                    sharpe_ratio = (
                         np.clip(metric_dict[estimator]["best"] - baseline, 0, None)
                         / metric_dict[estimator]["std"]
                     )
+
+                    if clip_sharpe_ratio:
+                        sharpe_ratio[1:] = np.nan_to_num(sharpe_ratio[1:], posinf=1e2)
+                        sharpe_ratio[1:] = np.clip(sharpe_ratio[1:], 0.0, 1e2)
+
+                    metric_dict[estimator]["sharpe_ratio"] = sharpe_ratio
 
             elif behavior_policy_name is not None and dataset_id is None:
                 total_n_datasets = input_dict.n_datasets[behavior_policy_name]
@@ -5737,10 +5753,16 @@ class OffPolicySelection:
 
                         metric_dict[estimator][metric] = topk_metric
 
-                    metric_dict[estimator]["sharpe_ratio"] = (
+                    sharpe_ratio = (
                         np.clip(metric_dict[estimator]["best"] - baseline, 0, None)
                         / metric_dict[estimator]["std"]
                     )
+
+                    if clip_sharpe_ratio:
+                        sharpe_ratio[1:] = np.nan_to_num(sharpe_ratio[1:], posinf=1e2)
+                        sharpe_ratio[1:] = np.clip(sharpe_ratio[1:], 0.0, 1e2)
+
+                    metric_dict[estimator]["sharpe_ratio"] = sharpe_ratio
 
             else:
                 total_n_datasets = 1
@@ -5782,10 +5804,16 @@ class OffPolicySelection:
 
                         metric_dict[estimator][metric] = topk_metric
 
-                    metric_dict[estimator]["sharpe_ratio"] = (
+                    sharpe_ratio = (
                         np.clip(metric_dict[estimator]["best"] - baseline, 0, None)
                         / metric_dict[estimator]["std"]
                     )
+
+                    if clip_sharpe_ratio:
+                        sharpe_ratio[1:] = np.nan_to_num(sharpe_ratio[1:], posinf=1e2)
+                        sharpe_ratio[1:] = np.clip(sharpe_ratio[1:], 0.0, 1e2)
+
+                    metric_dict[estimator]["sharpe_ratio"] = sharpe_ratio
 
         else:
             behavior_policy = input_dict[list(input_dict.keys())[0]]["behavior_policy"]
@@ -5827,10 +5855,16 @@ class OffPolicySelection:
 
                     metric_dict[estimator][metric] = topk_metric
 
-                metric_dict[estimator]["sharpe_ratio"] = (
+                sharpe_ratio = (
                     np.clip(metric_dict[estimator]["best"] - baseline, 0, None)
                     / metric_dict[estimator]["std"]
                 )
+
+                if clip_sharpe_ratio:
+                    sharpe_ratio[1:] = np.nan_to_num(sharpe_ratio[1:], posinf=1e2)
+                    sharpe_ratio[1:] = np.clip(sharpe_ratio[1:], 0.0, 1e2)
+
+                metric_dict[estimator]["sharpe_ratio"] = sharpe_ratio
 
         metric_dict = defaultdict_to_dict(metric_dict)
 
@@ -6180,6 +6214,7 @@ class OffPolicySelection:
         return_safety_violation_rate: bool = False,
         safety_threshold: Optional[float] = None,
         relative_safety_criteria: Optional[float] = None,
+        clip_sharpe_ratio: bool = False,
         cis: List[str] = ["bootstrap"],
         ope_alpha: float = 0.05,
         n_bootstrap_samples: int = 100,
@@ -6238,6 +6273,9 @@ class OffPolicySelection:
             The relative policy value required to be a safe policy.
             For example, when 0.9 is given, candidate policy must exceed 90\\% of the behavior policy performance.
             Only applicable when using a single behavior policy.
+
+        clip_sharpe_ratio: bool, default=False
+            Whether to clip a large value of SharpRatio with 1e2.
 
         cis: list of {"bootstrap", "hoeffding", "bernstein", "ttest"}, default=["bootstrap"]
             Estimation methods for confidence intervals.
@@ -6435,12 +6473,18 @@ class OffPolicySelection:
                         if i == 0 and ci == cis[0]:
                             baseline = np.tile(baseline, (max_topk, 1))
 
-                        metric_dict[ci][estimator]["sharpe_ratio"] = (
+                        sharpe_ratio = (
                             np.clip(
                                 metric_dict[ci][estimator]["best"] - baseline, 0, None
                             )
                             / metric_dict[ci][estimator]["std"]
                         )
+
+                        if clip_sharpe_ratio:
+                            sharpe_ratio[1:] = np.nan_to_num(sharpe_ratio[1:], posinf=1e2)
+                            sharpe_ratio[1:] = np.clip(sharpe_ratio[1:], 0.0, 1e2)
+
+                        metric_dict[ci][estimator]["sharpe_ratio"] = sharpe_ratio
 
             elif behavior_policy_name is None and dataset_id is not None:
                 total_n_datasets = len(input_dict.behavior_policy_names)
@@ -6484,12 +6528,18 @@ class OffPolicySelection:
                         if i == 0 and ci == cis[0]:
                             baseline = np.tile(baseline, (max_topk, 1))
 
-                        metric_dict[ci][estimator]["sharpe_ratio"] = (
+                        sharpe_ratio = (
                             np.clip(
                                 metric_dict[ci][estimator]["best"] - baseline, 0, None
                             )
                             / metric_dict[ci][estimator]["std"]
                         )
+
+                        if clip_sharpe_ratio:
+                            sharpe_ratio[1:] = np.nan_to_num(sharpe_ratio[1:], posinf=1e2)
+                            sharpe_ratio[1:] = np.clip(sharpe_ratio[1:], 0.0, 1e2)
+
+                        metric_dict[ci][estimator]["sharpe_ratio"] = sharpe_ratio
 
             elif behavior_policy_name is not None and dataset_id is None:
                 total_n_datasets = input_dict.n_datasets[behavior_policy_name]
@@ -6523,12 +6573,18 @@ class OffPolicySelection:
 
                             metric_dict[ci][estimator][metric] = topk_metric
 
-                        metric_dict[ci][estimator]["sharpe_ratio"] = (
+                        sharpe_ratio = (
                             np.clip(
                                 metric_dict[ci][estimator]["best"] - baseline, 0, None
                             )
                             / metric_dict[ci][estimator]["std"]
                         )
+
+                        if clip_sharpe_ratio:
+                            sharpe_ratio[1:] = np.nan_to_num(sharpe_ratio[1:], posinf=1e2)
+                            sharpe_ratio[1:] = np.clip(sharpe_ratio[1:], 0.0, 1e2)
+
+                        metric_dict[ci][estimator]["sharpe_ratio"] = sharpe_ratio
 
             else:
                 total_n_datasets = 1
@@ -6561,12 +6617,18 @@ class OffPolicySelection:
 
                             metric_dict[ci][estimator][metric] = topk_metric
 
-                        metric_dict[ci][estimator]["sharpe_ratio"] = (
+                        sharpe_ratio = (
                             np.clip(
                                 metric_dict[ci][estimator]["best"] - baseline, 0, None
                             )
                             / metric_dict[ci][estimator]["std"]
                         )
+
+                        if clip_sharpe_ratio:
+                            sharpe_ratio[1:] = np.nan_to_num(sharpe_ratio[1:], posinf=1e2)
+                            sharpe_ratio[1:] = np.clip(sharpe_ratio[1:], 0.0, 1e2)
+
+                        metric_dict[ci][estimator]["sharpe_ratio"] = sharpe_ratio
 
         else:
             behavior_policy = input_dict[list(input_dict.keys())[0]]["behavior_policy"]
@@ -6599,10 +6661,16 @@ class OffPolicySelection:
 
                         metric_dict[ci][estimator][metric] = topk_metric
 
-                    metric_dict[ci][estimator]["sharpe_ratio"] = (
+                    sharpe_ratio = (
                         np.clip(metric_dict[ci][estimator]["best"] - baseline, 0, None)
                         / metric_dict[ci][estimator]["std"]
                     )
+
+                    if clip_sharpe_ratio:
+                        sharpe_ratio[1:] = np.nan_to_num(sharpe_ratio[1:], posinf=1e2)
+                        sharpe_ratio[1:] = np.clip(sharpe_ratio[1:], 0.0, 1e2)
+
+                    metric_dict[ci][estimator]["sharpe_ratio"] = sharpe_ratio
 
         metric_dict = defaultdict_to_dict(metric_dict)
 
@@ -6642,6 +6710,7 @@ class OffPolicySelection:
         max_topk: Optional[int] = None,
         return_safety_violation_rate: bool = False,
         safety_threshold: Optional[float] = None,
+        clip_sharpe_ratio: bool = False,
         return_by_dataframe: bool = False,
     ):
         """Obtain the topk deployment result (CVaR) selected by standard OPE.
@@ -6694,6 +6763,9 @@ class OffPolicySelection:
 
         safety_threshold: float, default=None.
             The policy value required to be a safe policy.
+
+        clip_sharpe_ratio: bool, default=False
+            Whether to clip a large value of SharpRatio with 1e2.
 
         return_by_dataframe: bool, default=False
             Whether to return the result in a dataframe format.
@@ -6786,6 +6858,7 @@ class OffPolicySelection:
             ope_alpha=ope_alpha,
             return_safety_violation_rate=return_safety_violation_rate,
             safety_threshold=safety_threshold,
+            clip_sharpe_ratio=clip_sharpe_ratio,
             return_by_dataframe=return_by_dataframe,
         )
 
@@ -6799,6 +6872,7 @@ class OffPolicySelection:
         max_topk: Optional[int] = None,
         return_safety_violation_rate: bool = False,
         safety_threshold: Optional[float] = None,
+        clip_sharpe_ratio: bool = False,
         return_by_dataframe: bool = False,
     ):
         """Obtain the topk deployment result (CVaR) selected by cumulative distribution OPE.
@@ -6852,9 +6926,8 @@ class OffPolicySelection:
         safety_threshold: float, default=None.
             The policy value required to be a safe policy.
 
-        rrt_alpha: float, default=0.5.
-            The weight parameter of risk-return tradeoff metric. Specifically, weighted_rrt[k] will be calculated as
-            :math:`\\alpha` * best[k] + :math:`(1 - \\alpha)` * worst[k]. The value should be within [0, 1].
+        clip_sharpe_ratio: bool, default=False
+            Whether to clip a large value of SharpRatio with 1e2.
 
         return_by_dataframe: bool, default=False
             Whether to return the result in a dataframe format.
@@ -6948,6 +7021,7 @@ class OffPolicySelection:
             ope_alpha=ope_alpha,
             return_safety_violation_rate=return_safety_violation_rate,
             safety_threshold=safety_threshold,
+            clip_sharpe_ratio=clip_sharpe_ratio,
             return_by_dataframe=return_by_dataframe,
         )
 
@@ -6961,6 +7035,7 @@ class OffPolicySelection:
         max_topk: Optional[int] = None,
         return_safety_violation_rate: bool = False,
         safety_threshold: Optional[float] = None,
+        clip_sharpe_ratio: bool = False,
         return_by_dataframe: bool = False,
     ):
         """Obtain the topk deployment result (lower quartile) selected by standard OPE.
@@ -7014,9 +7089,8 @@ class OffPolicySelection:
         safety_threshold: float, default=None.
             The policy value required to be a safe policy.
 
-        rrt_alpha: float, default=0.5.
-            The weight parameter of risk-return tradeoff metric. Specifically, weighted_rrt[k] will be calculated as
-            :math:`\\alpha` * best[k] + :math:`(1 - \\alpha)` * worst[k]. The value should be within [0, 1].
+        clip_sharpe_ratio: bool, default=False
+            Whether to clip a large value of SharpRatio with 1e2.
 
         return_by_dataframe: bool, default=False
             Whether to return the result in a dataframe format.
@@ -7109,6 +7183,7 @@ class OffPolicySelection:
             ope_alpha=ope_alpha,
             return_safety_violation_rate=return_safety_violation_rate,
             safety_threshold=safety_threshold,
+            clip_sharpe_ratio=clip_sharpe_ratio,
             return_by_dataframe=return_by_dataframe,
         )
 
@@ -7122,6 +7197,7 @@ class OffPolicySelection:
         max_topk: Optional[int] = None,
         return_safety_violation_rate: bool = False,
         safety_threshold: Optional[float] = None,
+        clip_sharpe_ratio: bool = False,
         return_by_dataframe: bool = False,
     ):
         """Obtain the topk deployment result (lower quartile) selected by cumulative distribution OPE.
@@ -7175,9 +7251,8 @@ class OffPolicySelection:
         safety_threshold: float, default=None.
             The policy value required to be a safe policy.
 
-        rrt_alpha: float, default=0.5.
-            The weight parameter of risk-return tradeoff metric. Specifically, weighted_rrt[k] will be calculated as
-            :math:`\\alpha` * best[k] + :math:`(1 - \\alpha)` * worst[k]. The value should be within [0, 1].
+        clip_sharpe_ratio: bool, default=False
+            Whether to clip a large value of SharpRatio with 1e2.
 
         return_by_dataframe: bool, default=False
             Whether to return the result in a dataframe format.
@@ -7271,6 +7346,7 @@ class OffPolicySelection:
             ope_alpha=ope_alpha,
             return_safety_violation_rate=return_safety_violation_rate,
             safety_threshold=safety_threshold,
+            clip_sharpe_ratio=clip_sharpe_ratio,
             return_by_dataframe=return_by_dataframe,
         )
 
@@ -7592,7 +7668,7 @@ class OffPolicySelection:
 
                 axes.set_title("sharpe ratio")
                 axes.set_ylabel("sharpe ratio")
-                axes.set_ylim(None, ymax_sharpe_ratio)
+                axes.set_ylim(0.0, ymax_sharpe_ratio)
 
             else:
                 axes.set_title("safety violation")
@@ -7676,7 +7752,7 @@ class OffPolicySelection:
 
                     axes[j].set_title("sharpe ratio")
                     axes[j].set_ylabel("sharpe ratio")
-                    axes[j].set_ylim(None, ymax_sharpe_ratio)
+                    axes[j].set_ylim(0.0, ymax_sharpe_ratio)
 
                 else:
                     axes[j].set_title("safety violation")
@@ -7717,12 +7793,13 @@ class OffPolicySelection:
         max_topk: Optional[int] = None,
         safety_threshold: Optional[float] = None,
         relative_safety_criteria: Optional[float] = None,
+        clip_sharpe_ratio: bool = False,
+        ymax_sharpe_ratio: Optional[float] = None,
         visualize_ci: bool = False,
         plot_ci: str = "bootstrap",
         plot_alpha: float = 0.05,
         plot_n_bootstrap_samples: int = 100,
         random_state: Optional[int] = None,
-        ymax_sharpe_ratio: Optional[float] = None,
         legend: bool = True,
         fig_dir: Optional[Path] = None,
         fig_name: str = "topk_policy_value_standard_ope.png",
@@ -7783,6 +7860,12 @@ class OffPolicySelection:
             For example, when 0.9 is given, candidate policy must exceed 90\\% of the behavior policy performance.
             Only applicable when using a single behavior policy.
 
+        clip_sharpe_ratio: bool, default=False
+            Whether to clip a large value of SharpRatio with 1e2.
+
+        ymax_sharp_ratio: float, default=None
+            Maximum value in y-axis of the plot of SharpRatio.
+
         visualize_ci: bool, default=False
             Whether to visualize ci. (Only applicable when :class:`MultipleInputDict` is given.)
 
@@ -7797,9 +7880,6 @@ class OffPolicySelection:
 
         random_state: int, default=None (>= 0)
             Random state.
-
-        ymax_sharp_ratio: float, default=None
-            Maximum value in y-axis of the plot of SharpRatio.
 
         legend: bool, default=True
             Whether to include a legend in the figure.
@@ -7860,6 +7940,7 @@ class OffPolicySelection:
             max_topk=max_topk,
             return_safety_violation_rate=("safety_violation_rate" in metrics),
             safety_threshold=safety_threshold,
+            clip_sharpe_ratio=clip_sharpe_ratio,
         )
         # in the case with single input_dict, true_dict has not been transformed
         if not isinstance(input_dict, MultipleInputDict) or (
@@ -7917,12 +7998,13 @@ class OffPolicySelection:
         max_topk: Optional[int] = None,
         safety_threshold: Optional[float] = None,
         relative_safety_criteria: Optional[float] = None,
+        clip_sharpe_ratio: bool = False,
+        ymax_sharpe_ratio: Optional[float] = None,
         visualize_ci: bool = False,
         plot_ci: str = "bootstrap",
         plot_alpha: float = 0.05,
         plot_n_bootstrap_samples: int = 100,
         random_state: Optional[int] = None,
-        ymax_sharpe_ratio: Optional[float] = None,
         legend: bool = True,
         fig_dir: Optional[Path] = None,
         fig_name: str = "topk_policy_value_cumulative_distribution_ope.png",
@@ -7982,6 +8064,12 @@ class OffPolicySelection:
             The relative policy value required to be a safe policy.
             For example, when 0.9 is given, candidate policy must exceed 90\\% of the behavior policy performance.
 
+        clip_sharpe_ratio: bool, default=False
+            Whether to clip a large value of SharpRatio with 1e2.
+
+        ymax_sharp_ratio: float, default=None
+            Maximum value in y-axis of the plot of SharpRatio.
+
         visualize_ci: bool, default=False
             Whether to visualize ci. (Only applicable when :class:`MultipleInputDict` is given.)
 
@@ -7996,9 +8084,6 @@ class OffPolicySelection:
 
         random_state: int, default=None (>= 0)
             Random state.
-
-        ymax_sharp_ratio: float, default=None
-            Maximum value in y-axis of the plot of SharpRatio.
 
         legend: bool, default=True
             Whether to include a legend in the figure.
@@ -8059,6 +8144,7 @@ class OffPolicySelection:
             max_topk=max_topk,
             return_safety_violation_rate=("safety_violation_rate" in metrics),
             safety_threshold=safety_threshold,
+            clip_sharpe_ratio=clip_sharpe_ratio,
         )
         # in the case with single input_dict, true_dict has not been transformed
         if not isinstance(input_dict, MultipleInputDict) or (
@@ -8116,6 +8202,8 @@ class OffPolicySelection:
         max_topk: Optional[int] = None,
         safety_threshold: Optional[float] = None,
         relative_safety_criteria: Optional[float] = None,
+        clip_sharpe_ratio: bool = False,
+        ymax_sharpe_ratio: Optional[float] = None,
         ope_cis: List[str] = ["bootstrap"],
         ope_alpha: float = 0.05,
         ope_n_bootstrap_samples: int = 100,
@@ -8124,7 +8212,6 @@ class OffPolicySelection:
         plot_alpha: float = 0.05,
         plot_n_bootstrap_samples: int = 100,
         random_state: Optional[int] = None,
-        ymax_sharpe_ratio: Optional[float] = None,
         legend: bool = True,
         fig_dir: Optional[Path] = None,
         fig_name: str = "topk_policy_value_standard_ope_lower_bound.png",
@@ -8184,6 +8271,12 @@ class OffPolicySelection:
             The relative policy value required to be a safe policy.
             For example, when 0.9 is given, candidate policy must exceed 90\\% of the behavior policy performance.
 
+        clip_sharpe_ratio: bool, default=False
+            Whether to clip a large value of SharpRatio with 1e2.
+
+        ymax_sharp_ratio: float, default=None
+            Maximum value in y-axis of the plot of SharpRatio.
+
         ope_cis: list of {"bootstrap", "hoeffding", "bernstein", "ttest"}, default=["bootstrap"]
             Estimation methods for confidence intervals.
 
@@ -8207,9 +8300,6 @@ class OffPolicySelection:
 
         random_state: int, default=None (>= 0)
             Random state.
-
-        ymax_sharp_ratio: float, default=None
-            Maximum value in y-axis of the plot of SharpRatio.
 
         legend: bool, default=True
             Whether to include a legend in the figure.
@@ -8259,6 +8349,7 @@ class OffPolicySelection:
             return_safety_violation_rate=("safety_violation_rate" in metrics),
             safety_threshold=safety_threshold,
             relative_safety_criteria=relative_safety_criteria,
+            clip_sharpe_ratio=clip_sharpe_ratio,
             cis=ope_cis,
             ope_alpha=ope_alpha,
             n_bootstrap_samples=ope_n_bootstrap_samples,
@@ -8408,7 +8499,7 @@ class OffPolicySelection:
 
                     axes.set_title("sharpe ratio")
                     axes.set_ylabel("sharpe ratio")
-                    axes.set_ylim(None, ymax_sharpe_ratio)
+                    axes.set_ylim(0.0, ymax_sharpe_ratio)
 
                 else:
                     axes.set_title("safety violation")
@@ -8501,7 +8592,7 @@ class OffPolicySelection:
 
                         axes[j].set_title("sharpe ratio")
                         axes[j].set_ylabel("sharpe ratio")
-                        axes[j].set_ylim(None, ymax_sharpe_ratio)
+                        axes[j].set_ylim(0.0, ymax_sharpe_ratio)
 
                     else:
                         axes[j].set_title("safety violation")
@@ -8595,7 +8686,7 @@ class OffPolicySelection:
 
                         axes[l].set_title("sharpe ratio")
                         axes[l].set_ylabel("sharpe ratio")
-                        axes[l].set_ylim(None, ymax_sharpe_ratio)
+                        axes[l].set_ylim(0.0, ymax_sharpe_ratio)
 
                     else:
                         axes[l].set_title("safety violation")
@@ -8691,7 +8782,7 @@ class OffPolicySelection:
 
                             axes[l, j].set_title("sharpe ratio")
                             axes[l, j].set_ylabel("sharpe ratio")
-                            axes[l, j].set_ylim(None, ymax_sharpe_ratio)
+                            axes[l, j].set_ylim(0.0, ymax_sharpe_ratio)
 
                         else:
                             axes[l, j].set_title("safety violation")
@@ -8732,12 +8823,13 @@ class OffPolicySelection:
         ],
         max_topk: Optional[int] = None,
         safety_threshold: Optional[float] = None,
+        clip_sharpe_ratio: bool = False,
+        ymax_sharpe_ratio: Optional[float] = None,
         visualize_ci: bool = False,
         plot_ci: str = "bootstrap",
         plot_alpha: float = 0.05,
         plot_n_bootstrap_samples: int = 100,
         random_state: Optional[int] = None,
-        ymax_sharpe_ratio: Optional[float] = None,
         legend: bool = True,
         fig_dir: Optional[Path] = None,
         fig_name: str = "topk_cvar_standard_ope.png",
@@ -8795,6 +8887,12 @@ class OffPolicySelection:
 
         safety_threshold: float, default=0.0 (>= 0)
             The conditional value at risk required to be a safe policy.
+
+        clip_sharpe_ratio: bool, default=False
+            Whether to clip a large value of SharpRatio with 1e2.
+
+        ymax_sharp_ratio: float, default=None
+            Maximum value in y-axis of the plot of SharpRatio.
 
         visualize_ci: bool, default=False
             Whether to visualize ci. (Only applicable when :class:`MultipleInputDict` is given.)
@@ -8875,6 +8973,7 @@ class OffPolicySelection:
             ope_alpha=ope_alpha,
             return_safety_violation_rate=("safety_violation_rate" in metrics),
             safety_threshold=safety_threshold,
+            clip_sharpe_ratio=clip_sharpe_ratio,
         )
         # in the case with single input_dict, true_dict has not been transformed
         if not isinstance(input_dict, MultipleInputDict) or (
@@ -8932,12 +9031,13 @@ class OffPolicySelection:
         ],
         max_topk: Optional[int] = None,
         safety_threshold: Optional[float] = None,
+        clip_sharpe_ratio: bool = False,
+        ymax_sharpe_ratio: Optional[float] = None,
         visualize_ci: bool = False,
         plot_ci: str = "bootstrap",
         plot_alpha: float = 0.05,
         plot_n_bootstrap_samples: int = 100,
         random_state: Optional[int] = None,
-        ymax_sharpe_ratio: Optional[float] = None,
         legend: bool = True,
         fig_dir: Optional[Path] = None,
         fig_name: str = "topk_cvar_cumulative_distribution_ope.png",
@@ -8996,6 +9096,12 @@ class OffPolicySelection:
         safety_threshold: float, default=0.0 (>= 0)
             The conditional value at risk required to be a safe policy.
 
+        clip_sharpe_ratio: bool, default=False
+            Whether to clip a large value of SharpRatio with 1e2.
+
+        ymax_sharp_ratio: float, default=None
+            Maximum value in y-axis of the plot of SharpRatio.
+
         visualize_ci: bool, default=False
             Whether to visualize ci. (Only applicable when :class:`MultipleInputDict` is given.)
 
@@ -9010,9 +9116,6 @@ class OffPolicySelection:
 
         random_state: int, default=None (>= 0)
             Random state.
-
-        ymax_sharp_ratio: float, default=None
-            Maximum value in y-axis of the plot of SharpRatio.
 
         legend: bool, default=True
             Whether to include a legend in the figure.
@@ -9076,6 +9179,7 @@ class OffPolicySelection:
             ope_alpha=ope_alpha,
             return_safety_violation_rate=("safety_violation_rate" in metrics),
             safety_threshold=safety_threshold,
+            clip_sharpe_ratio=clip_sharpe_ratio,
         )
         # in the case with single input_dict, true_dict has not been transformed
         if not isinstance(input_dict, MultipleInputDict) or (
@@ -9133,12 +9237,13 @@ class OffPolicySelection:
         ],
         max_topk: Optional[int] = None,
         safety_threshold: Optional[float] = None,
+        clip_sharpe_ratio: bool = False,
+        ymax_sharpe_ratio: Optional[float] = None,
         visualize_ci: bool = False,
         plot_ci: str = "bootstrap",
         plot_alpha: float = 0.05,
         plot_n_bootstrap_samples: int = 100,
         random_state: Optional[int] = None,
-        ymax_sharpe_ratio: Optional[float] = None,
         legend: bool = True,
         fig_dir: Optional[Path] = None,
         fig_name: str = "topk_lower_quartile_standard_ope.png",
@@ -9197,6 +9302,12 @@ class OffPolicySelection:
         safety_threshold: float, default=0.0 (>= 0)
             The conditional value at risk required to be a safe policy.
 
+        clip_sharpe_ratio: bool, default=False
+            Whether to clip a large value of SharpRatio with 1e2.
+
+        ymax_sharp_ratio: float, default=None
+            Maximum value in y-axis of the plot of SharpRatio.
+
         visualize_ci: bool, default=False
             Whether to visualize ci. (Only applicable when :class:`MultipleInputDict` is given.)
 
@@ -9211,9 +9322,6 @@ class OffPolicySelection:
 
         random_state: int, default=None (>= 0)
             Random state.
-
-        ymax_sharp_ratio: float, default=None
-            Maximum value in y-axis of the plot of SharpRatio.
 
         legend: bool, default=True
             Whether to include a legend in the figure.
@@ -9276,6 +9384,7 @@ class OffPolicySelection:
             ope_alpha=ope_alpha,
             return_safety_violation_rate=("safety_violation_rate" in metrics),
             safety_threshold=safety_threshold,
+            clip_sharpe_ratio=clip_sharpe_ratio,
         )
         # in the case with single input_dict, true_dict has not been transformed
         if not isinstance(input_dict, MultipleInputDict) or (
@@ -9333,12 +9442,13 @@ class OffPolicySelection:
         ],
         max_topk: Optional[int] = None,
         safety_threshold: Optional[float] = None,
+        clip_sharpe_ratio: bool = False,
+        ymax_sharpe_ratio: Optional[float] = None,
         visualize_ci: bool = False,
         plot_ci: str = "bootstrap",
         plot_alpha: float = 0.05,
         plot_n_bootstrap_samples: int = 100,
         random_state: Optional[int] = None,
-        ymax_sharpe_ratio: Optional[float] = None,
         legend: bool = True,
         fig_dir: Optional[Path] = None,
         fig_name: str = "topk_lower_quartile_cumulative_distribution_ope.png",
@@ -9396,6 +9506,12 @@ class OffPolicySelection:
 
         safety_threshold: float, default=0.0 (>= 0)
             The conditional value at risk required to be a safe policy.
+
+        clip_sharpe_ratio: bool, default=False
+            Whether to clip a large value of SharpRatio with 1e2.
+
+        ymax_sharp_ratio: float, default=None
+            Maximum value in y-axis of the plot of SharpRatio.
 
         visualize_ci: bool, default=False
             Whether to visualize ci. (Only applicable when :class:`MultipleInputDict` is given.)
@@ -9477,6 +9593,7 @@ class OffPolicySelection:
             ope_alpha=ope_alpha,
             return_safety_violation_rate=("safety_violation_rate" in metrics),
             safety_threshold=safety_threshold,
+            clip_sharpe_ratio=clip_sharpe_ratio,
         )
         # in the case with single input_dict, true_dict has not been transformed
         if not isinstance(input_dict, MultipleInputDict) or (

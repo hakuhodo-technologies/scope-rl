@@ -10,7 +10,7 @@ If you find this code useful in your research then please cite:
 ```
 @article{kiyohara2023towards,
   title={Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation in Reinforcement Learning},
-  author={Haruka Kiyohara, Ren Kishimoto, Kousuke Kawakami, Ken Kobayashi, Kazuhide Nakata, Yuta Saito},
+  author={Kiyohara, Haruka and Kishimoto, Ren and Kawakami, Kosuke and Kobayashi, Ken and Nataka, Kazuhide and Saito, Yuta},
   journal = {A github repository},
   pages = {xxx--xxx},
   year = {2023},
