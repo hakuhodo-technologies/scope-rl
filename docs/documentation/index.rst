@@ -193,6 +193,13 @@ OPS metrics (performance of top :math:`k` deployment policies)
 * Safety violation rate
 * Sharpe ratio (our proposal)
 
+
+.. seealso::
+
+    Among the top-:math:`k` risk-return tradeoff metrics, **SharpRatio** is the main propossal of our research paper 
+    **"Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation in Reinforcement Learning"**. 
+    We describe the motivation and contributions of the SharpRatio metric in :doc:`sharpe_ratio`.
+
 .. seealso::
 
    We also provide configurative RL environments as sub-packages of this library.
@@ -265,6 +272,12 @@ Table of Contents
    :caption: Our Proposal:
 
    sharpe_ratio
+
+.. toctree::
+   :max_depth: 1
+   :caption: Usages:
+
+   Gallery of Example Codes <examples/index>
 
 .. toctree::
    :maxdepth: 1

@@ -45,7 +45,7 @@ extensions = [
     "sphinx.ext.viewcode",
     "sphinxcontrib.bibtex",
     "sphinx_copybutton",
-    "sphinx_gallery.gen_gallery",
+    # "sphinx_gallery.gen_gallery",
     "numpydoc",
     "sphinx_design",
     "sphinx_tabs.tabs",
@@ -81,7 +81,7 @@ html_theme_options = {
             "type": "fontawesome",
         },
     ],
-    "header_links_before_dropdown": 5,
+    "header_links_before_dropdown": 4,
     # "navbar_start": ["navbar-logo", "version"],
     "footer_items": ["copyright"],
     "show_prev_next": False,
@@ -128,9 +128,16 @@ numpydoc_show_inherited_class_members = {
     "scope_rl.ope.weight_value_learning.function.DiscreteStateActionWeightFunction": False,
     "scope_rl.ope.weight_value_learning.function.ContinuousStateActionWeightFunction": False,
 }
-numpydoc_xref_aliases = {
-    # 'LeaveOneOut': 'sklearn.model_selection.LeaveOneOut',
-}
+# numpydoc_xref_param_type = True
+# numpydoc_xref_aliases = {
+#     "OffPolicyEvaluation": "scope\_rl.ope.ope.OffPolicyEvaluation",
+#     "CumulativeDistributionOPE": "scope\_rl.ope.ope.CumulativeDistributionOPE",
+#     "OffPolicySelection": "scope\_rl.ope.ops.OffPolicySelection",
+#     "BaseOffPolicyEstimator": "scope\_rl.ope.estimators_base.BaseOffPolicyEstimator",
+#     "BaseCumulativeDistributionOPEEstimator": "scope\_rl.ope.estimators\_base.BaseCumulativeDistributionOPEEstimator",
+#     "SyntheticDataset": "scope\_rl.dataset.synthetic.SyntheticDataset",
+#     "OffPolicyLearning": "scope\_rl.policy.opl.OffPolicyLearning",
+# }
 
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3/", None),
@@ -140,27 +147,27 @@ intersphinx_mapping = {
     "gymnasium": ("https://gymnasium.farama.org/", None),
 }
 
-# gallery example path
-from sphinx_gallery.sorting import ExplicitOrder
-from sphinx_gallery.sorting import FileNameSortKey
+# # gallery example path
+# from sphinx_gallery.sorting import ExplicitOrder
+# from sphinx_gallery.sorting import FileNameSortKey
 
-sphinx_gallery_conf = {
-    "examples_dirs": "tutorial",  # path to your example scripts
-    "gallery_dirs": "documentation/_autogallery",  # path to where to save gallery generated output
-    "subsection_order": ExplicitOrder(
-        [
-            "tutorial/basic_ope",
-            "tutorial/cumulative_distribution_ope",
-            "tutorial/ops",
-            "tutorial/scope_rl_others",
-            "tutorial/multiple_datasets",
-            "tutorial/rtbgym",
-            "tutorial/footer",
-        ]
-    ),
-    "within_subsection_order": FileNameSortKey,
-    "download_all_examples": False,
-}
+# sphinx_gallery_conf = {
+#     "examples_dirs": "example",  # path to your example scripts
+#     "gallery_dirs": "documentation/_autogallery",  # path to where to save gallery generated output
+#     "subsection_order": ExplicitOrder(
+#         [
+#             "example/basic_ope",
+#             "example/cumulative_distribution_ope",
+#             "example/ops",
+#             "example/scope_rl_others",
+#             "example/multiple_datasets",
+#             "example/rtbgym",
+#             "example/footer",
+#         ]
+#     ),
+#     "within_subsection_order": FileNameSortKey,
+#     "download_all_examples": False,
+# }
 # gallery thumbnail
 # nbsphinx_thumbnails = {
 #     'gallery/thumbnail-from-conf-py': 'gallery/a-local-file.png',

@@ -234,8 +234,8 @@ and Doubly Robust (DR) :cite:`jiang2016doubly` :cite:`thomas2016data`.
     
     Policy Value Estimated by OPE Estimators
 
-Users can implement their own OPE estimators by following the interface of :class:`scope_rl.ope.BaseOffPolicyEstimator`.
-In addition, :class:`scope_rl.ope.OffPolicyEvaluation` summarizes and compares the estimation results of various OPE estimators.
+Users can implement their own OPE estimators by following the interface of :class:`BaseOffPolicyEstimator`.
+In addition, :class:`OffPolicyEvaluation` summarizes and compares the estimation results of various OPE estimators.
 
 .. seealso::
 
@@ -295,8 +295,8 @@ using Cumulative Distribution OPE estimators :cite:`huang2021off` :cite:`huang20
     
     Cumulative Distribution Function Estimated by OPE Estimators
 
-Users can implement their own OPE estimators by following the interface of :class:`scope_rl.ope.BaseCumulativeDistributionOPEEstimator`.
-In addition, :class:`scope_rl.ope.DiscreteCumulativeDistributionOPE` summarizes and compares the estimation results of various OPE estimators.
+Users can implement their own OPE estimators by following the interface of :class:`BaseCumulativeDistributionOPEEstimator`.
+In addition, :class:`CumulativeDistributionOPE` summarizes and compares the estimation results of various OPE estimators.
 
 .. seealso::
 

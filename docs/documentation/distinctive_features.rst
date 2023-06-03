@@ -229,9 +229,9 @@ Moreover, we streamline the evaluation protocol of OPE/OPS with the following me
 * Safety violation rate
 * Sharpe ratio (our proposal)
 
-Note that, the above top-:math:`k` metrics are the proposal in our research paper "Risk-Return Assessments of
-Off-Policy Evaluation in Offline RL".  
-:doc:`sharpe_ratio` describe these metrics in details, and we also discuss about these metrics briefly in the later sub-section.
+Note that, the above top-:math:`k` metrics are the proposal in our research paper **"
+Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation in Reinforcement Learning"**.  
+:doc:`sharpe_ratio` describe these metrics in details, and we also discuss about these metrics briefly in :ref:`the later sub-section <feature_sharpe_ratio>`.
 
 .. _feature_cd_ope:
 
@@ -314,8 +314,8 @@ we measure risk, return, and efficiency of the selected top-:math:`k` policy wit
 .. seealso::
 
     Among the top-:math:`k` risk-return tradeoff metrics, SharpRatio is the main propossal of our research paper 
-    "Risk-Return Assessments of Off-Policy Evaluation in Reinforcement Learning". 
-    We describe the motivation and contributions of the SharpRatio metric in :doc:`this page <sharpe_ratio>`.
+    **"Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation in Reinforcement Learning"**. 
+    We describe the motivation and contributions of the SharpRatio metric in :doc:`sharpe_ratio`.
 
 
 .. _feature_comparison:
