@@ -112,7 +112,7 @@ Then, it collects logged data by a behavior policy (i.e., data collection policy
 
         .. seealso::
 
-            :doc:`API reference of BaseDataset<_autosummary/dataset/scope_rl.dataset.base>` explains the meaning of each keys in detail.
+            :doc:`API reference of BaseDataset<_autosummary/dataset/scope_rl.dataset.base>` and :doc:`</documentation/examples/real_world>` explain the meaning of each keys in detail.
 
 
     .. dropdown:: How to handle multiple logged datasets at once?
@@ -176,7 +176,7 @@ Then, it collects logged data by a behavior policy (i.e., data collection policy
         .. seealso::
 
             * :doc:`API reference of MultipleLoggedDataset <_autosummary/scope_rl.utils.MultipleLoggedDataset>`
-            .. * :ref:`Tutorial with MultipleLoggedDataset <scope_rl_multiple_tutorial>`
+            * :ref:`Example codes with MultipleLoggedDataset </documentation/examples/multiple>`
 
     .. dropdown:: How to collect data in a non-episodic setting?
 

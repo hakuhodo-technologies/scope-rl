@@ -9,7 +9,7 @@ Here, we show example codes for conducting basic off-policy evaluation (OPE).
 
     * :doc:`What is Off-Policy Evaluation? </documentation/ope_ops>`
     * :doc:`Supported OPE estimators </documentation/evaluation_implementation>`
-    * :doc:`Example codes for data collection and Offline RL </documentation/examples/data_collection_and_opl>`
+    * :doc:`Supported implementations for data collection and Offline RL </documentation/learning_implementation>`
 
 Logged Dataset
 ~~~~~~~~~~
@@ -359,3 +359,61 @@ Finally, OPE class also provides a function to calculate the estimation accuracy
 .. seealso::
 
     For other metrics to assess OPE results, please also refer to :doc:`/documentation/examples/assessments`.
+
+.. raw:: html
+
+    <div class="white-space-20px"></div>
+
+.. grid::
+    :margin: 0
+
+    .. grid-item::
+        :columns: 2
+        :margin: 0
+        :padding: 0
+
+        .. grid::
+            :margin: 0
+
+            .. grid-item-card::
+                :link: /documentation/examples/index
+                :link-type: doc
+                :shadow: none
+                :margin: 0
+                :padding: 0
+
+                <<< Prev
+                **Usage**
+
+    .. grid-item::
+        :columns: 8
+        :margin: 0
+        :padding: 0
+
+    .. grid-item::
+        :columns: 2
+        :margin: 0
+        :padding: 0
+
+        .. grid::
+            :margin: 0
+
+            .. grid-item-card::
+                :link: /documentation/subpackages/cumulative_dist_ope
+                :link-type: doc
+                :shadow: none
+                :margin: 0
+                :padding: 0
+
+                Next >>>
+                **CD_OPE**
+
+            .. grid-item-card::
+                :link: /documentation/subpackages/assessments
+                :link-type: doc
+                :shadow: none
+                :margin: 0
+                :padding: 0
+
+                Next >>>
+                **Assessments**

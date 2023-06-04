@@ -101,7 +101,7 @@ Moreover, by preprocessing the logged data, one can also handle their own logged
 
 .. seealso::
 
-    .. * :doc:`Related tutorials <_autogallery/scope_rl_others/index>`
+    * Example codes and guidelines for using :doc:`multiple logged datasets </documentation/examples/multiple>` and :doc:`real-world datasets </documentation/examples/real_world>`
     * API references of :ref:`dataset modules <scope_rl_api_dataset>` and :ref:`policy wrapper (Head) <scope_rl_api_policy>`
 
 .. _quickstart_offlinerl:
@@ -141,7 +141,6 @@ Note that, we use `d3rlpy <https://github.com/takuseno/d3rlpy>`_ for offline RL.
 
 .. seealso::
 
-    .. * :doc:`Related tutorials <_autogallery/scope_rl_others/index>`
     * :ref:`Problem setting <overview_offline_rl>`
     * :doc:`Supported implementations and useful tools <learning_implementation>` 
     * (external) `d3rlpy's documentation <https://d3rlpy.readthedocs.io/en/latest/>`_
@@ -239,7 +238,7 @@ In addition, :class:`OffPolicyEvaluation` summarizes and compares the estimation
 
 .. seealso::
 
-    .. * :doc:`Related tutorials <_autogallery/basic_ope/index>`
+    * :doc:`Related example codes </documentation/examples/basic_ope>`
     * :doc:`Problem setting <ope_ops>`
     * :doc:`Supported OPE estimators <evaluation_implementation>` and :doc:`their API reference <_autosummary/scope_rl.ope.basic_estimators_discrete>` 
     * (advanced) :ref:`Marginal OPE estimators <implementation_marginal_ope>`, and :doc:`their API reference <_autosummary/scope_rl.ope.marginal_estimators_discrete>`
@@ -300,7 +299,7 @@ In addition, :class:`CumulativeDistributionOPE` summarizes and compares the esti
 
 .. seealso::
 
-    .. * :doc:`Related tutorials <_autogallery/cumulative_distribution_ope/index>`
+    * :doc:`Related example codes <documentation/examples/cumulative_dist_ope>`
     * :ref:`Problem setting <overview_cumulative_distribution_ope>`
     * :ref:`Supported cumulative distribution OPE estimators <implementation_cumulative_distribution_ope>` and :doc:`their API reference <_autosummary/scope_rl.ope.cumulative_distribution_estimators_discrete>` 
 
@@ -361,13 +360,10 @@ Finally, we provide the code to conduct OPS, which selects the "best" performing
 
 .. seealso::
 
-    .. * :doc:`Related tutorials <_autogallery/ops/index>`
+    * :doc:`Related example codes </documentation/examples/assessments>`
     * :ref:`Problem setting <overview_ops>`
     * :ref:`OPS evaluation protocols <implementation_eval_ope_ops>` and :doc:`their API reference <_autosummary/scope_rl.ope.ops>` 
 
-~~~~~
-
-More tutorials with a variety of environments and OPE estimators are available in the next page!
 
 .. raw:: html
 
@@ -391,30 +387,30 @@ More tutorials with a variety of environments and OPE estimators are available i
                 :padding: 0
 
                 <<< Prev
-                **Quickstart**
+                **Installation**
 
     .. grid-item::
-        :columns: 7
+        :columns: 8
         :margin: 0
         :padding: 0
 
     .. grid-item::
-        :columns: 3
+        :columns: 2
         :margin: 0
         :padding: 0
 
         .. grid::
             :margin: 0
 
-            .. .. grid-item-card::
-            ..     :link: _autogallery/index
-            ..     :link-type: doc
-            ..     :shadow: none
-            ..     :margin: 0
-            ..     :padding: 0
+            .. grid-item-card::
+                :link: distinctive_features
+                :link-type: doc
+                :shadow: none
+                :margin: 0
+                :padding: 0
 
-            ..     Next >>>
-            ..     **Tutorial**
+                Next >>>
+                **Why SCOPE-RL?**
 
             .. grid-item-card::
                 :link: index

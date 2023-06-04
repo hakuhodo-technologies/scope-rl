@@ -123,6 +123,10 @@ We also feature SharpRatio@k, which is the main contribution of our research pap
 
     :doc:`Overview (online/offline RL) <online_offline_rl>` describes the problem setting of the policy learning (offline RL) part.
 
+.. raw:: html
+
+    <div class="white-space-5px"></div>
+
 .. grid::
     :margin: 0
 

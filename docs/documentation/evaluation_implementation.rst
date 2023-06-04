@@ -280,13 +280,12 @@ Using the OPE class, we can obtain the OPE results of various estimators at once
             * :ref:`How to obtain MultipleLoggedDataset? <tips_synthetic_dataset>`
             * :ref:`How to handle OPL with MultipleLoggedDataset? <tip_opl>`
             * :ref:`How to create input_dict for MultipleLoggedDataset? <tip_create_input_dict>`
-            .. * :ref:`Tutorial with MultipleLoggedDataset <scope_rl_multiple_tutorial>`
+            * :ref:`Example codes with MultipleLoggedDataset </documentation/examples/multiple>`
         
 
 .. seealso::
 
-    * :doc:`quickstart` 
-    .. * and :ref:`related tutorials <basic_ope_tutorial>`
+    * :doc:`quickstart` and :ref:`Related Example Codes </documentation/examples/basic_ope>`
 
 
 The OPE class implements the following functions.
@@ -382,7 +381,7 @@ Extensions
 
         .. seealso::
 
-            :doc:`API reference of BaseOffPolicyEstimator <_autosummary/scope_rl.ope.estimators_base>` explains the abstract methods.
+            :doc:`API reference of BaseOffPolicyEstimator <_autosummary/scope_rl.ope.estimators_base>` and :doc:`example codes for implementing custom OPE estimators </documentation/examples/custom_estimators>` explain the abstract methods.
 
 .. _implementation_dm:
 
@@ -943,8 +942,7 @@ It estimates the cumulative distribution of the trajectory wise reward and vario
 
 .. seealso::
 
-    * :doc:`quickstart` 
-    .. * and :ref:`related tutorials <cumulative_distribution_ope_tutorial>`
+    * :doc:`quickstart` and :ref:`related example codes </documentation/examples/cumulative_dist_ope>`
 
 :class:`CumulativeDistributionOffPolicyEvaluation` implements the following functions.
 
@@ -1226,12 +1224,11 @@ Finally, the OPS class also implements the modules to compare the OPE result and
             * :ref:`How to create input_dict for MultipleLoggedDataset? <tip_create_input_dict>`
             * :ref:`How to conduct OPE with MultipleLoggedDataset? <tip_ope>`
             * :ref:`How to conduct Cumulative Distribution OPE with MultipleLoggedDataset? <tip_cumulative_distribution_ope>`
-            .. * :ref:`Tutorial with MultipleLoggedDataset <scope_rl_multiple_tutorial>`
+            * :ref:`Example codes with MultipleLoggedDataset </documentation/examples/multiple>`
 
 .. seealso::
 
-    * :doc:`quickstart` 
-    .. * and :ref:`related tutorials <ops_tutorial>`
+    * :doc:`quickstart` and :ref:`related example codes </documentation/examples/assessments>`
 
 The OPS class implements the following functions.
 

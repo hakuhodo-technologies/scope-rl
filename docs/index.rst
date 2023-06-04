@@ -241,10 +241,6 @@
         :link: /documentation/examples/assessments
         :link-type: doc
 
-    .. card:: Dataset and Integration with d3rlpy
-        :link: /documentation/examples/data_collection_and_opl
-        :link-type: doc
-
     .. card:: Implementing Custom Estimators
         :link: /documentation/examples/custom_estimators
         :link-type: doc
@@ -255,6 +251,10 @@
 
     .. card:: Handling Real-World Dataset
         :link: /documentation/examples/real_world
+        :link-type: doc
+
+    .. card:: Dataset and Integration with d3rlpy
+        :link: /documentation/learning_implementation
         :link-type: doc
 
 .. raw:: html

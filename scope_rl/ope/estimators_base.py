@@ -28,7 +28,7 @@ class BaseOffPolicyEstimator(metaclass=ABCMeta):
     -------
     This abstract base class also implements the following private methods.
 
-    *abstract* _estimate_policy_value:
+    *abstract* _estimate_trajectory_value:
         Estimate the trajectory-wise expected reward.
 
     _calc_behavior_policy_pscore_discrete:
@@ -296,7 +296,7 @@ class BaseMarginalOPEEstimator(BaseOffPolicyEstimator):
     -------
     This abstract base class also implements the following private methods.
 
-    *abstract* _estimate_policy_value:
+    *abstract* _estimate_trajectory_value:
         Estimate the trajectory-wise expected reward.
 
     _calc_behavior_policy_pscore_discrete:
@@ -526,7 +526,7 @@ class BaseStateMarginalOPEEstimator(BaseMarginalOPEEstimator):
     -------
     This abstract base class also implements the following private methods.
 
-    *abstract* _estimate_policy_value:
+    *abstract* _estimate_trajectory_value:
         Estimate the trajectory-wise expected reward.
 
     _calc_behavior_policy_pscore_discrete:
@@ -606,7 +606,7 @@ class BaseStateActionMarginalOPEEstimator(BaseMarginalOPEEstimator):
     -------
     This abstract base class also implements the following private methods.
 
-    *abstract* _estimate_policy_value:
+    *abstract* _estimate_trajectory_value:
         Estimate the trajectory-wise expected reward.
 
     _calc_behavior_policy_pscore_discrete:

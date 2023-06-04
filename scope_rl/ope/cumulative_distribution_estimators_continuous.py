@@ -3,7 +3,7 @@
 
 """Cumulative Distribution Off-Policy Estimators for continuous action cases (designed for deterministic policies)."""
 from dataclasses import dataclass
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Dict
 
 import numpy as np
 from sklearn.utils import check_scalar
@@ -328,7 +328,7 @@ class ContinuousCumulativeDistributionDM(
         gamma: float = 1.0,
         alpha: float = 0.05,
         **kwargs,
-    ) -> float:
+    ) -> Dict[str, float]:
         """Estimate interquartile range.
 
         Parameters
@@ -814,7 +814,7 @@ class ContinuousCumulativeDistributionTIS(
         action_scaler: Optional[ActionScaler] = None,
         alpha: float = 0.05,
         **kwargs,
-    ) -> float:
+    ) -> Dict[str, float]:
         """Estimate interquartile range.
 
         Parameters
@@ -1353,7 +1353,7 @@ class ContinuousCumulativeDistributionTDR(
         action_scaler: Optional[ActionScaler] = None,
         alpha: float = 0.05,
         **kwargs,
-    ) -> float:
+    ) -> Dict[str, float]:
         """Estimate interquartile range.
 
         Parameters

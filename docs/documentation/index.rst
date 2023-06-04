@@ -49,9 +49,8 @@ Our software facilitates implementation, evaluation and algorithm comparison rel
 
    This documentation aims to provide a gentle introduction to offline RL and OPE/OPS in the following steps.
 
-   .. 2. Provide a variety of examples of conducting offline RL and OPE/OPS in practical problem settings in :doc:`Quickstart <quickstart>` and :doc:`Tutorial <tutorial>`.
    1. Explain the basic concepts in :doc:`Overview (online/offline RL) <online_offline_rl>` and :doc:`Overview (OPE/OPS) <ope_ops>`.
-   2. Provide a variety of examples of conducting offline RL and OPE/OPS in practical problem settings in :doc:`Quickstart <quickstart>`.
+   2. Provide a variety of examples of conducting offline RL and OPE/OPS in practical problem settings in :doc:`Quickstart <quickstart>` and :doc:`Example Codes <examples/index>`.
    3. Describe the algorithms and implementations in detail in :doc:`Supported Implementation <evaluation_implementation>` and :doc:`Package Reference <scope_rl_api>`.
 
    **You can also find the distinctive features of SCOPE-RL here:** :doc:`distinctive_features`

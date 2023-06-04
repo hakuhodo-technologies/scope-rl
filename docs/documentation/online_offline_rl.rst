@@ -296,12 +296,16 @@ We describe the problem formulation of Off-Policy Evaluation (OPE) and Selection
 .. seealso::
 
     * :doc:`Supported implementations and useful tools <learning_implementation>` 
-    * :doc:`Quickstart <quickstart>`.
+    * :doc:`Quickstart <quickstart>`
 
 .. seealso::
 
     For further taxonomies, algorithms, and descriptions, we refer readers to survey papers :cite:`levine2020offline` :cite:`prudencio2022survey`. 
     `awesome-offline-rl <https://github.com/hanjuku-kaso/awesome-offline-rl>`_ also provides a comprehensive list of literature.
+
+.. raw:: html
+
+    <div class="white-space-5px"></div>
 
 .. grid::
     :margin: 0

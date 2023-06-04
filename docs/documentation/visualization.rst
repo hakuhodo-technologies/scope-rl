@@ -182,7 +182,15 @@ This kind of visualization is again available for all point-wise estimates inclu
 
 .. raw:: html
 
-    <div class="white-space-20px"></div>
+    <div class="white-space-5px"></div>
+
+.. seealso:: 
+
+    * :doc:`quickstart` and :doc:`related example codes </documentation/examples/multiple>`
+
+.. raw:: html
+
+    <div class="white-space-5px"></div>
 
 .. grid::
     :margin: 0

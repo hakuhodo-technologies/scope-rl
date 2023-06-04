@@ -9,8 +9,8 @@ Here, we show example codes for assessing OPE/OPS results.
 
     * :doc:`What are Off-Policy Evaluation and Selection? </documentation/ope_ops>`
     * :doc:`Supported Evaluation Protococols for OPE/OPS </documentation/evaluation_implementation>`
-    * :doc:`</documentation/sharpe_ratio>`
-    * :doc:`Example codes for data collection and Offline RL </documentation/examples/data_collection_and_opl>`
+    * :doc:`/documentation/sharpe_ratio`
+    * :doc:`Supported Implementations for data collection and Offline RL </documentation/learning_implementation>`
     * :doc:`Example codes for basic OPE </documentation/examples/basic_ope>`
     * :doc:`Example codes for cumulative distribution OPE </documentation/examples/cumulative_dist_ope>`
     * :doc:`Example codes for OPS </documentation/examples/ops>`
@@ -241,3 +241,52 @@ Similar evaluations are available in the following functions.
 * :class:`visualize_variance_for_validation`
 * :class:`visualize_lower_quartile_for_validation`
 * :class:`visualize_conditional_value_at_risk_for_validation`
+
+.. raw:: html
+
+    <div class="white-space-20px"></div>
+
+.. grid::
+    :margin: 0
+
+    .. grid-item::
+        :columns: 2
+        :margin: 0
+        :padding: 0
+
+        .. grid::
+            :margin: 0
+
+            .. grid-item-card::
+                :link: /documentation/examples/index
+                :link-type: doc
+                :shadow: none
+                :margin: 0
+                :padding: 0
+
+                <<< Prev
+                **Usage**
+
+    .. grid-item::
+        :columns: 8
+        :margin: 0
+        :padding: 0
+
+    .. grid-item::
+        :columns: 2
+        :margin: 0
+        :padding: 0
+
+        .. grid::
+            :margin: 0
+
+            .. grid-item-card::
+                :link: /documentation/subpackages/multiple
+                :link-type: doc
+                :shadow: none
+                :margin: 0
+                :padding: 0
+
+                Next >>>
+                **Multiple Datasets**
+

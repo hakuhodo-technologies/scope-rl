@@ -182,7 +182,7 @@ As shown here, SharpeRatio@k effectively provides valuable guidance on selecting
 
 OPE benchmarks with SharpRatio@k
 ~~~~~~~~~~
-We conduct OPE benchmark using four continuous control benchmarks including Reacher, InvertedPendulum, Hopper, and Swimmer from Gym-Mujuco :cite:`brockman2016openai` :cite:`todorov2012mujoco` and discrete controls such as CartPole, MountainCar, and Acrobot from Gym-Classic Control :cite:`brockman2016openai`.
+We conduct OPE benchmark using four continuous control benchmarks including Reacher, InvertedPendulum, Hopper, and Swimmer from Gym-Mujuco :cite:`brockman2016openai` and discrete controls such as CartPole, MountainCar, and Acrobot from Gym-Classic Control :cite:`brockman2016openai`.
 For the detailed settings, please refer to Section 4.1 of our paper.
 
 **Result 1: SharpeRatio@k is more appropriate and informative than conventional accuracy metrics.**

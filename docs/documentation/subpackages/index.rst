@@ -12,29 +12,29 @@ SCOPE-RL provides three sub-packages to simulate RL interactions in various situ
 
     **RTBGym**: Real-Time Bedding Environment for Online Advertising
 
-    .. .. grid::
-    ..     :gutter: 1
+    .. grid::
+        :gutter: 1
 
-    ..     .. grid-item::
-    ..         :columns: 4
+        .. grid-item::
+            :columns: 4
 
-    ..         .. grid:: 1
-    ..             :gutter: 1
+            .. grid:: 1
+                :gutter: 1
 
-    ..             .. grid-item-card:: 
-    ..                 :img-background: /_static/images/rtbgym.png
-    ..                 :shadow: none
+                .. grid-item-card:: 
+                    :img-background: /_static/images/rtbgym.png
+                    :shadow: none
 
-    ..     .. grid-item::
-    ..         :columns: 8
+        .. grid-item::
+            :columns: 8
 
-    ..         .. grid:: 1
-    ..             :gutter: 1
-    ..             :padding: 1
+            .. grid:: 1
+                :gutter: 1
+                :padding: 1
 
-    ..             .. grid-item:: 
+                .. grid-item:: 
 
-    ..                 brief description
+                    brief description
 
 .. raw:: html
 
@@ -47,29 +47,29 @@ SCOPE-RL provides three sub-packages to simulate RL interactions in various situ
 
     **RECGym**: Recommender Systems Environment for E-commerce
 
-    .. .. grid::
-    ..     :gutter: 1
+    .. grid::
+        :gutter: 1
 
-    ..     .. grid-item::
-    ..         :columns: 4
+        .. grid-item::
+            :columns: 4
 
-    ..         .. grid:: 1
-    ..             :gutter: 1
+            .. grid:: 1
+                :gutter: 1
 
-    ..             .. grid-item-card:: 
-    ..                 :img-background: /_static/images/recgym.png
-    ..                 :shadow: none
+                .. grid-item-card:: 
+                    :img-background: /_static/images/recgym.png
+                    :shadow: none
 
-    ..     .. grid-item::
-    ..         :columns: 8
+        .. grid-item::
+            :columns: 8
 
-    ..         .. grid:: 1
-    ..             :gutter: 1
-    ..             :padding: 1
+            .. grid:: 1
+                :gutter: 1
+                :padding: 1
 
-    ..             .. grid-item:: 
+                .. grid-item:: 
 
-    ..                 brief description
+                    brief description
 
 .. raw:: html
 
@@ -82,29 +82,29 @@ SCOPE-RL provides three sub-packages to simulate RL interactions in various situ
 
     **BasicGym**: Basic Environment
 
-    .. .. grid::
-    ..     :gutter: 1
+    .. grid::
+        :gutter: 1
 
-    ..     .. grid-item::
-    ..         :columns: 4
+        .. grid-item::
+            :columns: 4
 
-    ..         .. grid:: 1
-    ..             :gutter: 1
+            .. grid:: 1
+                :gutter: 1
 
-    ..             .. grid-item-card:: 
-    ..                 :img-background: /_static/images/basicgym.png
-    ..                 :shadow: none
+                .. grid-item-card:: 
+                    :img-background: /_static/images/basicgym.png
+                    :shadow: none
 
-    ..     .. grid-item::
-    ..         :columns: 8
+        .. grid-item::
+            :columns: 8
 
-    ..         .. grid:: 1
-    ..             :gutter: 1
-    ..             :padding: 1
+            .. grid:: 1
+                :gutter: 1
+                :padding: 1
 
-    ..             .. grid-item:: 
+                .. grid-item:: 
 
-    ..                 brief description
+                    brief description
 
 .. raw:: html
 

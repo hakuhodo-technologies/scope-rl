@@ -9,7 +9,7 @@ Here, we show example codes for conducting policy selection via OPE (i.e., Off-P
 
     * :doc:`What are Off-Policy Evaluation and Selection? </documentation/ope_ops>`
     * :doc:`Supported OPE estimators and OPS methods </documentation/evaluation_implementation>`
-    * :doc:`Example codes for data collection and Offline RL </documentation/examples/data_collection_and_opl>`
+    * :doc:`Supported implementations for data collection and Offline RL </documentation/learning_implementation>`
     * :doc:`Example codes for basic OPE </documentation/examples/basic_ope>`
     * :doc:`Example codes for cumulative distribution OPE </documentation/examples/cumulative_dist_ope>`
 
@@ -194,3 +194,51 @@ Finally, we should also note that the functions of ope and cd_ope instances are 
 .. seealso::
 
     For the evaluation of OPS results, please also refer to :doc:`/documentation/examples/assessments`.
+
+.. raw:: html
+
+    <div class="white-space-20px"></div>
+
+.. grid::
+    :margin: 0
+
+    .. grid-item::
+        :columns: 2
+        :margin: 0
+        :padding: 0
+
+        .. grid::
+            :margin: 0
+
+            .. grid-item-card::
+                :link: /documentation/examples/index
+                :link-type: doc
+                :shadow: none
+                :margin: 0
+                :padding: 0
+
+                <<< Prev
+                **Usage**
+
+    .. grid-item::
+        :columns: 8
+        :margin: 0
+        :padding: 0
+
+    .. grid-item::
+        :columns: 2
+        :margin: 0
+        :padding: 0
+
+        .. grid::
+            :margin: 0
+
+            .. grid-item-card::
+                :link: /documentation/subpackages/assessments
+                :link-type: doc
+                :shadow: none
+                :margin: 0
+                :padding: 0
+
+                Next >>>
+                **Assessments**

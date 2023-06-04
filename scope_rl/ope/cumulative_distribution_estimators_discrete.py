@@ -3,7 +3,7 @@
 
 """Cumulative Distribution Off-Policy Estimators for discrete action cases."""
 from dataclasses import dataclass
-from typing import Tuple, Optional
+from typing import Tuple, Optional, Dict
 
 import numpy as np
 from sklearn.utils import check_scalar
@@ -370,7 +370,7 @@ class DiscreteCumulativeDistributionDM(
         gamma: float = 1.0,
         alpha: float = 0.05,
         **kwargs,
-    ) -> float:
+    ) -> Dict[str, float]:
         """Estimate interquartile range.
 
         Parameters
@@ -827,7 +827,7 @@ class DiscreteCumulativeDistributionTIS(
         gamma: float = 1.0,
         alpha: float = 0.05,
         **kwargs,
-    ) -> float:
+    ) -> Dict[str, float]:
         """Estimate interquartile range.
 
         Parameters
@@ -1332,7 +1332,7 @@ class DiscreteCumulativeDistributionTDR(
         gamma: float = 1.0,
         alpha: float = 0.05,
         **kwargs,
-    ) -> float:
+    ) -> Dict[str, float]:
         """Estimate interquartile range.
 
         Parameters

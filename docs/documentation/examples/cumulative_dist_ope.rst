@@ -9,7 +9,7 @@ Here, we show example codes for conducting cumulative distribution OPE (CD-OPE).
 
     * :doc:`What is Cumulative Distribution OPE? </documentation/ope_ops>`
     * :doc:`Supported CD_OPE estimators </documentation/evaluation_implementation>`
-    * :doc:`Example codes for data collection and Offline RL </documentation/examples/data_collection_and_opl>`
+    * :doc:`Supported implementations for data collection and Offline RL </documentation/learning_implementation>`
     * :doc:`Example codes for basic OPE </documentation/examples/basic_ope>`
 
 Logged Dataset
@@ -311,3 +311,61 @@ Finally, SCOPE-RL estimates and visualizes the Interquartile range as follows.
 .. seealso::
 
     For the evaluation of CD-OPE estimators, please also refer to :doc:`/documentation/examples/assessments`.
+
+.. raw:: html
+
+    <div class="white-space-20px"></div>
+
+.. grid::
+    :margin: 0
+
+    .. grid-item::
+        :columns: 2
+        :margin: 0
+        :padding: 0
+
+        .. grid::
+            :margin: 0
+
+            .. grid-item-card::
+                :link: /documentation/examples/index
+                :link-type: doc
+                :shadow: none
+                :margin: 0
+                :padding: 0
+
+                <<< Prev
+                **Usage**
+
+    .. grid-item::
+        :columns: 8
+        :margin: 0
+        :padding: 0
+
+    .. grid-item::
+        :columns: 2
+        :margin: 0
+        :padding: 0
+
+        .. grid::
+            :margin: 0
+
+            .. grid-item-card::
+                :link: /documentation/subpackages/ops
+                :link-type: doc
+                :shadow: none
+                :margin: 0
+                :padding: 0
+
+                Next >>>
+                **Off_policy Selection**
+
+            .. grid-item-card::
+                :link: /documentation/subpackages/assessments
+                :link-type: doc
+                :shadow: none
+                :margin: 0
+                :padding: 0
+
+                Next >>>
+                **Assessments**
