@@ -205,6 +205,10 @@ Next, to compare the OPE result for some specific logged dataset, use the follow
         random_state=random_state, 
     )
 
+.. card:: 
+   :img-top: ../../_static/images/multiple_ope_single_policy_value.png
+   :text-align: center
+
 We can also compare results with multiple datasets as follows.
 
 .. code-block:: python
@@ -215,6 +219,10 @@ We can also compare results with multiple datasets as follows.
         hue="policy",
     )
 
+.. card:: 
+   :img-top: ../../_static/images/multiple_ope_hist_policy_value.png
+   :text-align: center
+
 .. code-block:: python
 
     ope.visualize_policy_value_with_multiple_estimates(
@@ -223,6 +231,10 @@ We can also compare results with multiple datasets as follows.
         hue="policy",
     )
 
+.. card:: 
+   :img-top: ../../_static/images/multiple_ope_violin_policy_value.png
+   :text-align: center
+
 .. code-block:: python
 
     ope.visualize_policy_value_with_multiple_estimates(
@@ -230,6 +242,10 @@ We can also compare results with multiple datasets as follows.
         plot_type="scatter",  # 
         hue="policy",
     )
+
+.. card:: 
+   :img-top: ../../_static/images/multiple_ope_scatter_policy_value.png
+   :text-align: center
 
 Cumulative Distribution Off-Policy Evaluation
 ~~~~~~~~~~
@@ -281,8 +297,11 @@ The following code compares the OPE result for some specific logged dataset.
         input_dict,  # either multiple or single input dict
         behavior_policy_name=behavior_policies[0].name,  # specify behavior policy name
         dataset_id=0,  # specify dataset id
-        random_state=random_state, 
     )
+
+.. card:: 
+   :img-top: ../../_static/images/multiple_ope_single_cdf.png
+   :text-align: center
 
 Similar codes also work for the following functions.
 
@@ -298,14 +317,18 @@ The first example shows the case of using a single behavior policy and multiple 
 .. code-block:: python
 
     cd_ope.visualize_cumulative_distribution_function_with_multiple_estimates(
-    multiple_input_dict, 
-    behavior_policy_name=behavior_policies[0],  # specify behavior policy name
-    plot_type="ci_hue",  #
-    scale_min=0.0,  # set reward scale (i.e., x-axis or bins of CDF)
-    scale_max=12.0, 
-    n_partition=20, 
-    n_cols=4,
-)
+        multiple_input_dict, 
+        behavior_policy_name=behavior_policies[0].name,  # specify behavior policy name
+        plot_type="ci_hue",  #
+        scale_min=0.0,  # set reward scale (i.e., x-axis or bins of CDF)
+        scale_max=10.0, 
+        n_partition=20, 
+        n_cols=4,
+    )
+
+.. card:: 
+   :img-top: ../../_static/images/multiple_ope_single_behavior_cdf.png
+   :text-align: center
 
 The next examples compare the results across multiple behavior policies.
 
@@ -316,9 +339,13 @@ The next examples compare the results across multiple behavior policies.
         plot_type="ci_behavior_policy",  #
         hue="policy",  #
         scale_min=0.0,
-        scale_max=12.0, 
+        scale_max=10.0, 
         n_partition=20, 
     )
+
+.. card:: 
+   :img-top: ../../_static/images/multiple_ope_all_cdf.png
+   :text-align: center
 
 The final example shows CDF for each logged dataset of a single behavior policy.
 
@@ -330,19 +357,27 @@ The final example shows CDF for each logged dataset of a single behavior policy.
         plot_type="enumerate",  #
         hue="policy",  #
         scale_min=0.0, 
-        scale_max=12.0, 
+        scale_max=10.0, 
         n_partition=20, 
     )
+
+.. card:: 
+   :img-top: ../../_static/images/multiple_ope_enum_cdf.png
+   :text-align: center
 
 To compare the point-wise estimation result across multiple logged datasets, the following code works.
 
 .. code-block:: python
 
     ope.visualize_policy_value_with_multiple_estimates(
-        input_dict=multiple_input_dict,
+        multiple_input_dict,
         plot_type="ci",  # "violin", "scatter"
         hue="policy",
     )
+
+.. card:: 
+   :img-top: ../../_static/images/multiple_cdope_hist_policy_value.png
+   :text-align: center
 
 Similar codes also work for the following functions.
 
@@ -366,7 +401,7 @@ SCOPE-RL also enables OPS with multiple logged datasets without any additional e
     )
     # OPS based on estimated policy value
     ranking_df_dict, metric_df_dict = ops.select_by_policy_value(
-        input_dict=multiple_input_dict,
+        multiple_input_dict,
         return_metrics=True,
         return_by_dataframe=True,
     )
@@ -443,7 +478,7 @@ Visualization functions also works in a similar manner.
 .. code-block:: python
 
     ops.visualize_topk_policy_value_selected_by_standard_ope(
-        input_dict=multiple_input_dict,
+        multiple_input_dict,
         compared_estimators=["dm", "tis", "pdis", "dr"],
         visualize_ci=True,
         safety_threshold=6.0,  # please specify this option instead of `relative_safety_criteria`
@@ -451,12 +486,16 @@ Visualization functions also works in a similar manner.
         random_state=random_state,
     )
 
-When using a single behavior policy, `relative_safety_criteria` option becomes available.
+.. card:: 
+   :img-top: ../../_static/images/multiple_topk_policy_value.png
+   :text-align: center
+
+When using a single behavior policy, ``relative_safety_criteria`` option becomes available.
 
 .. code-block:: python
 
     ops.visualize_topk_policy_value_selected_by_standard_ope(
-        input_dict=multiple_input_dict,
+        multiple_input_dict,
         behavior_policy_name=behavior_policies[0].name,
         compared_estimators=["dm", "tis", "pdis", "dr"],
         visualize_ci=True,
@@ -470,7 +509,7 @@ When using a single logged dataset, specify both behavior policy name and datase
 .. code-block:: python
 
     ops.visualize_topk_policy_value_selected_by_standard_ope(
-        input_dict=input_dict,  # either multiple or single input dict
+        input_dict,  # either multiple or single input dict
         behavior_policy_name=behavior_policies[0].name,  # specify behavior policy name
         dataset_id=0,  # specify dataset id
         compared_estimators=["dm", "tis", "pdis", "dr"],
@@ -497,17 +536,21 @@ Finally, we also provide the codes to compare the true and estimated policy perf
 .. code-block:: python
 
     ops.visualize_policy_value_for_validation(
-        input_dict=multiple_input_dict,
+        multiple_input_dict,
         n_cols=4,
         share_axes=True,
     )
+
+.. card:: 
+   :img-top: ../../_static/images/multiple_validation_policy_value.png
+   :text-align: center
 
 When using a single behavior policy, specify behavipr policy name.
 
 .. code-block:: python
 
     ops.visualize_policy_value_for_validation(
-        input_dict=input_dict,  # either multiple or single input dict
+        input_dict,  # either multiple or single input dict
         behavior_policy_name=behavior_policies[0].name,  # specify behavior policy name
         n_cols=4,
         share_axes=True,
@@ -518,7 +561,7 @@ When using a single logged dataset, specify both behavior policy name and datase
 .. code-block:: python
 
     ops.visualize_policy_value_for_validation(
-        input_dict=input_dict,  # either multiple or single input dict
+        input_dict,  # either multiple or single input dict
         behavior_policy_name=behavior_policies[0].name,  # specify behavior policy name
         dataset_id=0,  # specify dataset id
         n_cols=4,

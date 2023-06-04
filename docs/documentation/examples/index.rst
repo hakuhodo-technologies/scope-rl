@@ -70,7 +70,7 @@ Cumulative Distribution OPE (CD-OPE):
                 :gutter: 1
 
                 .. grid-item-card:: 
-                    :img-background: /_static/images/ope_policy_value_basic.png
+                    :img-background: /_static/images/cd_ope_interquartile_range.png
                     :shadow: none
 
         .. grid-item::
@@ -110,7 +110,7 @@ Off-Policy Selection
                 :gutter: 1
 
                 .. grid-item-card:: 
-                    :img-background: /_static/images/ope_policy_value_basic.png
+                    :img-background: /_static/images/ops_topk_thumbnail.png
                     :shadow: none
 
         .. grid-item::
@@ -150,7 +150,7 @@ Assessing OPE Estimators
                 :gutter: 1
 
                 .. grid-item-card:: 
-                    :img-background: /_static/images/ope_policy_value_basic.png
+                    :img-background: /_static/images/ops_validation_thumbnail.png
                     :shadow: none
 
         .. grid-item::
@@ -230,7 +230,7 @@ Handling Multiple Datasets:
                 :gutter: 1
 
                 .. grid-item-card:: 
-                    :img-background: /_static/images/ope_policy_value_basic.png
+                    :img-background: /_static/images/multiple_topk_thumbnail.png
                     :shadow: none
 
         .. grid-item::

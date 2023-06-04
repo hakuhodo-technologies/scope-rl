@@ -158,10 +158,14 @@ The following code visualizes the results to compare OPE estimators.
 .. code-block:: python
 
     cd_ope.visualize_cumulative_distribution_function(
-        input_dict=input_dict, .
+        input_dict=input_dict,
         hue="estimator",  # (default)
         n_cols=4,  # specify number of columns (optional)
     )
+
+.. card:: 
+   :img-top: ../../_static/images/cd_ope_cdf_hue_estimator.png
+   :text-align: center
 
 The following code visualizes the results to compare policies.
 
@@ -170,8 +174,13 @@ The following code visualizes the results to compare policies.
     cd_ope.visualize_cumulative_distribution_function(
         input_dict=input_dict,
         hue="policy",  # (optional)
+        legend=False,
         n_cols=4,  # specify number of columns (optional)
     )
+
+.. card:: 
+   :img-top: ../../_static/images/cd_ope_cdf_hue_policy.png
+   :text-align: center
 
 Users can also specify the compared OPE estimators as follows.
 
@@ -183,17 +192,7 @@ Users can also specify the compared OPE estimators as follows.
     )
 
 Note that, the x-axis (bins) of CDF is by default set to the reward observed by the behavior policy.
-To use the custom bins, you can either set the `reward_scale` when calling the functions as follows,
-
-.. code-block:: python
-
-    cdf_dict = cd_ope.estimate_cumulative_distribution_function(
-        input_dict=input_dict,
-        reward_scale=np.linspace(0., 10., 20)  # setting bins for cdf
-    )
-
-
-or specify the reward scale when initializing the class.
+To use the custom bins, specify the reward scale when initializing the class.
 
 .. code-block:: python
 
@@ -224,10 +223,13 @@ The visualization function also has simular arguments.
     cd_ope.visualize_policy_value(
         input_dict=input_dict,
         hue="estimator",  # (default)
-        n_cols=4,  # specify number of columns (optional)
     )
 
-For the policy value estimate, we additionally provide `is_relative` option to visualize the policy value that is relative to that of behavior policy.
+.. card:: 
+   :img-top: ../../_static/images/cd_ope_mean_hue_estimator.png
+   :text-align: center
+
+For the policy value estimate, we additionally provide ``is_relative`` option to visualize the policy value that is relative to that of behavior policy.
 
 .. code-block:: python
 
@@ -235,8 +237,11 @@ For the policy value estimate, we additionally provide `is_relative` option to v
         input_dict=input_dict,
         hue="policy",  # (optional)
         is_relative=True,  # enable this option
-        n_cols=4,  # specify the number of columns (optional)
     )
+
+.. card:: 
+   :img-top: ../../_static/images/cd_ope_mean_hue_policy.png
+   :text-align: center
 
 Note that, the visualization function of policy value accompanies with the visualization of the variance, which we discuss in the following.
 
@@ -257,7 +262,6 @@ Specifically, the confidence intervals of the trajectory-wise reward is estimate
 
     cd_ope.visualize_policy_value(
         input_dict=input_dict,
-        n_cols=4,  # (optional)
     )
 
 Estimating Conditional Value at Risk (CVaR)
@@ -290,6 +294,10 @@ The visualization function depicts CVaR across range of alphas as follows.
         n_cols=4,  # (optional)
     )
 
+.. card:: 
+   :img-top: ../../_static/images/cd_ope_cvar.png
+   :text-align: center
+
 Estimating Interquartile Range
 ----------
 Finally, SCOPE-RL estimates and visualizes the Interquartile range as follows.
@@ -302,11 +310,14 @@ Finally, SCOPE-RL estimates and visualizes the Interquartile range as follows.
         alpha=0.3,  # specify the proportion of the sided region
     )
     # visualize the interquartile range
-    cd_ope.visualize_conditional_value_at_risk(
+    cd_ope.visualize_interquartile_range(
         input_dict=input_dict,
         alpha=0.3,  # specify the proportion of the sided region
-        n_cols=4,  # (optional)
     )
+
+.. card:: 
+   :img-top: ../../_static/images/cd_ope_interquartile_range.png
+   :text-align: center
 
 .. seealso::
 

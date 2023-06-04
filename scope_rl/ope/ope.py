@@ -1625,7 +1625,7 @@ class OffPolicyEvaluation:
         )
 
         if is_relative:
-            gamma = input_dict["gamma"]
+            gamma = input_dict[list(input_dict.keys())[0]]["gamma"]
             discount = np.full(self.step_per_trajectory, gamma).cumprod() / gamma
             behavior_policy_value = (
                 discount[np.newaxis, :] * self.behavior_policy_reward
@@ -4678,7 +4678,7 @@ class CumulativeDistributionOPE:
         )
 
         if is_relative:
-            gamma = input_dict["gamma"]
+            gamma = input_dict[list(input_dict.keys())[0]]["gamma"]
             discount = np.full(self.step_per_trajectory, gamma).cumprod() / gamma
             behavior_policy_value = (
                 discount[np.newaxis, :] * self.behavior_policy_reward
@@ -4745,8 +4745,8 @@ class CumulativeDistributionOPE:
 
                 elines = ax.get_children()
                 for j in range(n_estimators):
-                    elines[2 * j + 1].set_color("black")
-                    elines[2 * j + 1].set_linewidth(2.0)
+                    elines[3 * j + 2].set_color("black")
+                    elines[3 * j + 2].set_linewidth(2.0)
 
                 if on_policy_mean is not None:
                     ax.axhline(on_policy_mean)

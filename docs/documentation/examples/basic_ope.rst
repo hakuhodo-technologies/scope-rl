@@ -39,7 +39,7 @@ Then, we use the behavior policy to collect logged dataset as follows.
     )
 
 Note that, in the following example, we use a single logged dataset for simplicity. 
-For the case of using multiple behavior policies or multiple logged datasets, refer to :doc:`/documentation/ecamples/multiple`.
+For the case of using multiple behavior policies or multiple logged datasets, refer to :doc:`/documentation/examples/multiple`.
 
 Inputs
 ~~~~~~~~~~
@@ -60,7 +60,7 @@ Then, when only using importance sampling estimators, the minimal sufficient cod
     prep = CreateOPEInput(
         env=env,  # unecessary when using real-world dataset
     )
-    # create inputs (e.g., calculating )
+    # create inputs
     input_dict = prep.obtain_whole_inputs(
         logged_dataset=logged_dataset,
         evaluation_policies=evaluation_policies,
@@ -86,7 +86,7 @@ When using the model based estimator (DM) or hybrid methods, we need to addition
             },
         },
     )
-    # create inputs (e.g., calculating )
+    # create inputs
     input_dict = prep.obtain_whole_inputs(
         logged_dataset=logged_dataset,
         evaluation_policies=evaluation_policies,
@@ -115,7 +115,7 @@ Marginal importance sampling estimators (e.g., SAMIS, SAMDR, ..) requires the es
             },
         },
     )
-    # create inputs (e.g., calculating )
+    # create inputs
     input_dict = prep.obtain_whole_inputs(
         logged_dataset=logged_dataset,
         evaluation_policies=evaluation_policies,
@@ -247,6 +247,10 @@ SCOPE-RL also offers an easy-to-use visualization function. The following code v
         random_state=random_state, 
     )
 
+.. card:: 
+   :img-top: ../../_static/images/basic_ope_hue_estimator.png
+   :text-align: center
+
 The following code visualizes the results to compare candidate (evaluation) policies.
 
 .. code-block:: python
@@ -256,6 +260,10 @@ The following code visualizes the results to compare candidate (evaluation) poli
         hue="policy",  #
         random_state=random_state, 
     )
+
+.. card:: 
+   :img-top: ../../_static/images/basic_ope_hue_policy.png
+   :text-align: center
 
 It is also possible to visualize the policy value that is relative to the behavior policy.
 
@@ -268,17 +276,21 @@ It is also possible to visualize the policy value that is relative to the behavi
         random_state=random_state, 
     )
 
+.. card:: 
+   :img-top: ../../_static/images/basic_ope_is_relative.png
+   :text-align: center
+
 Users can also specify the compared OPE estimators as follows.
 
 .. code-block:: python
 
     ope.visualize_off_policy_estimates(
         input_dict, 
-        compared_estimators=["dm", "snpdis", "sndr"],  # names are assessible by `evaluation_policy.name`
+        compared_estimators=["dm", "snpdis", "sndr"],  # names are accessible by `evaluation_policy.name`
         random_state=random_state, 
     )
 
-When `legend` is unecessary, just disable this option.
+When ``legend`` is unecessary, just disable this option.
 
 .. code-block:: python
 
@@ -308,7 +320,7 @@ This is done by specifying `n_step_pdis` when initializing the class.
 
 .. code-block:: python
 
-        ope = OPE(
+    ope = OPE(
         logged_dataset=logged_dataset,
         ope_estimators=estimators,
         n_step_pdis=5,

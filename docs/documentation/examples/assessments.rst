@@ -186,6 +186,10 @@ SCOPE-RL also provides functions to visualize the above top-:math:`k` policy per
         legend=True,  # (optional)
     )
 
+.. card:: 
+   :img-top: ../../_static/images/ops_topk_policy_value.png
+   :text-align: center
+
 Similar evaluations are available in the following functions.
 
 * :class:`visualize_topk_policy_value_selected_by_standard_ope`
@@ -223,6 +227,10 @@ Finally, SCOPE-RL also implements functions to compare the true and estimated po
         input_dict=input_dict,
         n_cols=4,  # (optional)
     )
+
+.. card:: 
+   :img-top: ../../_static/images/ops_validation_policy_value.png
+   :text-align: center
 
 Note that, the same y-axes are used with ``sharey`` option.
 
