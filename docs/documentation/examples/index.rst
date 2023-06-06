@@ -42,9 +42,11 @@ Basic and High-Confidence Off-Policy Evaluation (OPE):
 
                 .. grid-item:: 
 
-                    * Direct Method
-                    * Per-Decision Importance Sampling
-                    * ...
+                    * Logged datasets and inputs
+                    * Basic Off-Policy Evaluation (DM, PDIS, DR, ..)
+                    * Marginal Off-Policy Evaluation (SMIS, SMDR, SAMIS, SAMDR, ..)
+                    * High-Confidence Off-Policy Evaluation (Hoeffding, Bernstein, ..)
+                    * Extention to continuous action space
 
 .. _cumulative_distribution_ope_example:
 
@@ -82,9 +84,9 @@ Cumulative Distribution OPE (CD-OPE):
 
                 .. grid-item:: 
 
-                    * Direct Method
-                    * Per-Decision Importance Sampling
-                    * ...
+                    * Logged datasets and inputs
+                    * Estimating Cumulative Distribution Function
+                    * Estimating risk-functions (mean, variance, CVaR, ..)
 
 .. _off_policy_selection_example:
 
@@ -122,9 +124,9 @@ Off-Policy Selection
 
                 .. grid-item:: 
 
-                    * Direct Method
-                    * Per-Decision Importance Sampling
-                    * ...
+                    * OPS via Basic OPE
+                    * OPS via Cumulative Distribution OPE
+                    * Obtaining oracle selection results
 
 .. _assessment_example:
 
@@ -162,9 +164,9 @@ Assessing OPE Estimators
 
                 .. grid-item:: 
 
-                    * Direct Method
-                    * Per-Decision Importance Sampling
-                    * ...
+                    * Conventional "accuracy" metrics
+                    * Top-:math:`k` risk-return tradeoff metrics
+                    * Validation visualization
 
 .. _custom_estimator_example
 
@@ -202,9 +204,8 @@ Implementing Custom OPE Estimators:
 
                 .. grid-item:: 
 
-                    * Direct Method
-                    * Per-Decision Importance Sampling
-                    * ...
+                    * Custom Basic OPE estimators
+                    * Custom Cumulative Distribution OPE estimators
 
 .. _multiple_dataset_example:
 
@@ -242,9 +243,11 @@ Handling Multiple Datasets:
 
                 .. grid-item:: 
 
-                    * Direct Method
-                    * Per-Decision Importance Sampling
-                    * ...
+                    * Logged datasets and inputs
+                    * (Basic) Off-Policy Evaluation
+                    * Cumulative Distribution Off-Policy Evaluation
+                    * Off-Policy Selection
+                    * Assessments of OPE and OPS
 
 Handling Real-World Datasets:
 ~~~~~~~~~~
@@ -280,9 +283,8 @@ Handling Real-World Datasets:
 
                 .. grid-item:: 
 
-                    * Direct Method
-                    * Per-Decision Importance Sampling
-                    * ...
+                    * Logged dataset
+                    * Input dict
 
 .. raw:: html
 

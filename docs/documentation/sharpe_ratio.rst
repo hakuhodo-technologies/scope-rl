@@ -84,7 +84,7 @@ This motivates the development of a new evaluation protocol that can quantify th
 Evaluating the top-:math:`k` risk-return tradeoff in policy deployment
 ~~~~~~~~~~
 Motivated by the lack of comprehensive risk-return assessment in OPE in existing literature, we propose a new evaluation metric called SharpeRatio@k. 
-The key idea behind it is to regard the set of top-$k$ candidate policies selected by an OPE estimator as its *policy portfolio*, drawing inspiration from risk-return assessments in finance :cite:`sharpe1998sharpe`. 
+The key idea behind it is to regard the set of top-:math:`k` candidate policies selected by an OPE estimator as its *policy portfolio*, drawing inspiration from risk-return assessments in finance :cite:`sharpe1998sharpe`. 
 Specifically, we measure the risk, return, and efficiency of an OPE estimator using the following novel metric:
 
 .. math::

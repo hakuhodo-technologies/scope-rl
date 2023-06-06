@@ -5,7 +5,7 @@ We show an example workflow of synthetic dataset collection, offline Reinforceme
 The workflow mainly consists of following three steps:
 
 * **Synthetic Dataset Generation and Data Preprocessing**: 
-    The initial step is to collect logged data using a behavior policy. In synthetic setup, we first train the behavior policy through online interaction and then generate dataset with the behavior policy. In practical situation, we can also utilize the preprocessed logged data from real-world applications.
+    The initial step is to collect logged data using a behavior policy. In a synthetic setup, we first train the behavior policy through online interaction and then generate dataset with the behavior policy. In a practical situation, we should use the preprocessed logged data from real-world applications.
 
 * **Offline Reinforcement Learning**: 
     We then learn new policies (, which hopefully perform better than the behavior policy) from only offline logged data, without any online interactions.
@@ -109,7 +109,7 @@ Moreover, by preprocessing the logged data, one can also handle their own logged
 Offline Reinforcement Learning
 ~~~~~~~~~~
 
-Now we are ready to learn a new policy only from logged data. Specifically, we learn CQL :cite:`kumar2020conservative` policy here. (Please also refer to :ref:`overview_offline_rl` about the problem setting and the algorithms.)
+Now we are ready to learn a new policy only from logged data. Specifically, we learn a CQL :cite:`kumar2020conservative` policy here. (Please also refer to :ref:`overview_offline_rl` about the problem setting and the algorithms.)
 Note that, we use `d3rlpy <https://github.com/takuseno/d3rlpy>`_ for offline RL.
 
 .. code-block:: python
@@ -164,9 +164,9 @@ The goal of (basic) OPE is to accurately estimate the expected performance (i.e.
 where :math:`\pi` is the evaluation policy and :math:`\sum_{t=0}^{T-1} \gamma^t r_{t}` is the trajectory-wise reward. 
 (See :doc:`problem setting <ope_ops>` for the detailed notations).
 
-We compare the estimation results from various OPE estimators, Direct Method (DM) :cite:`beygelzimer2009offset` :cite:`le2019batch`, 
+We compare the estimation results from various OPE estimators, Direct Method (DM) :cite:`beygelzimer2009offset, le2019batch`, 
 Trajectory-wise Importance Sampling (TIS) :cite:`precup2000eligibility`, Step-wise Importance Sampling (SIS) :cite:`precup2000eligibility`, 
-and Doubly Robust (DR) :cite:`jiang2016doubly` :cite:`thomas2016data`.
+and Doubly Robust (DR) :cite:`jiang2016doubly, thomas2016data`.
 
 .. code-block:: python
 
@@ -174,7 +174,7 @@ and Doubly Robust (DR) :cite:`jiang2016doubly` :cite:`thomas2016data`.
 
     # import SCOPE-RL modules
     from scope_rl.ope import CreateOPEInput
-    from scope_rl.ope import DiscreteOffPolicyEvaluation as OPE
+    from scope_rl.ope import OffPolicyEvaluation as OPE
     from scope_rl.ope import DiscreteDirectMethod as DM
     from scope_rl.ope import DiscreteTrajectoryWiseImportanceSampling as TIS
     from scope_rl.ope import DiscretePerDecisionImportanceSampling as PDIS
@@ -256,12 +256,12 @@ Cumulative distribution OPE enables to estimate the following cumulative distrib
     F(m, \pi) := \mathbb{E} \left[ \mathbb{I} \left \{ \sum_{t=0}^{T-1} \gamma^t r_t \leq m \right \} \mid \pi \right]
 
 The following shows the example of estimating cumulative distribution function of the trajectory-wise rewards and its statistics 
-using Cumulative Distribution OPE estimators :cite:`huang2021off` :cite:`huang2022off` :cite:`chandak2021universal`.
+using Cumulative Distribution OPE estimators :cite:`huang2021off, huang2022off, chandak2021universal`.
 
 .. code-block:: python
 
     # import SCOPE-RL modules
-    from scope_rl.ope import DiscreteCumulativeDistributionOffPolicyEvaluation as CumulativeDistributionOPE
+    from scope_rl.ope import CumulativeDistributionOPE
     from scope_rl.ope import DiscreteCumulativeDistributionDM as CD_DM
     from scope_rl.ope import DiscreteCumulativeDistributionTIS as CD_IS
     from scope_rl.ope import DiscreteCumulativeDistributionTDR as CD_DR
@@ -299,7 +299,7 @@ In addition, :class:`CumulativeDistributionOPE` summarizes and compares the esti
 
 .. seealso::
 
-    * :doc:`Related example codes <documentation/examples/cumulative_dist_ope>`
+    * :doc:`Related example codes </documentation/examples/cumulative_dist_ope>`
     * :ref:`Problem setting <overview_cumulative_distribution_ope>`
     * :ref:`Supported cumulative distribution OPE estimators <implementation_cumulative_distribution_ope>` and :doc:`their API reference <_autosummary/scope_rl.ope.cumulative_distribution_estimators_discrete>` 
 
@@ -320,13 +320,13 @@ Finally, we provide the code to conduct OPS, which selects the "best" performing
         ope=ope,
         cumulative_distribution_ope=cd_ope,
     )
-    # rank candidate policy by policy value estimated by (basic) OPE
+    # rank candidate policies by policy value estimated by (basic) OPE
     ranking_dict = ops.select_by_policy_value(input_dict)
-    # rank candidate policy by policy value estimated by cumulative distribution OPE
+    # rank candidate policies by policy value estimated by cumulative distribution OPE
     ranking_dict_ = ops.select_by_policy_value_via_cumulative_distribution_ope(input_dict)
 
     # (6) Evaluate OPS/OPE results
-    # rank candidate policy by estimated lower quartile and evaluate the selection results
+    # rank candidate policies by estimated lower quartile and evaluate the selection results
     ranking_df, metric_df = ops.select_by_lower_quartile(
         input_dict,
         alpha=0.3,

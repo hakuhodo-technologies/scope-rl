@@ -22,7 +22,7 @@ Here, we assume that an RL environment, a behavior policy, and evaluation polici
 * ``evaluation_policies``: a list of instance(s) of :class:`BaseHead`
 * ``env``: a gym environment (unecessary when using real-world datasets)
 
-Additionally, we assume that the logged datasets, inputs, and either ope or cd_ope instances are ready to use.
+Additionally, we assume that the logged datasets, inputs, and either ope or cd_ope instance are ready to use.
 For initializing the ope and cd_ope instances, please refer to :doc:`this page </documentation/examples/basic_ope>` 
 and :doc:`this page </documentation/examples/cumulative_dist_ope>` as references, respectively.
 
@@ -32,7 +32,7 @@ and :doc:`this page </documentation/examples/cumulative_dist_ope>` as references
 * ``cd_ope``: an instance of :class:`CumulativeDistributionOPE`
 
 Note that, in the following example, we use a single logged dataset for simplicity.
-For the case of using multiple behavior policies or multiple logged datasets, refer to :doc:`/documentation/ecamples/multiple`.
+For the case of using multiple behavior policies or multiple logged datasets, refer to :doc:`/documentation/examples/multiple`.
 
 Off-Policy Selection
 ~~~~~~~~~~
@@ -121,7 +121,7 @@ OPS is also conducted by CVaR and lower quartile as follows.
 Obtaining oracle selection results
 ----------
 By default, the following function returns the ranking of evaluation policies with their (ground-truth) policy value as follows.
-Note that, this function is only applicable when the on-policy policy value of evaluation policies are recorded in input_dict.
+Note that, this function is only applicable when the on-policy policy value of evaluation policies are recorded in ``input_dict``.
 
 .. code-block:: python
 
@@ -159,7 +159,7 @@ To return CVaR and the ranking of candidate policies based on CVaR, enable the f
         return_by_dataframe=True,
     )
 
-To return lower quartile and the ranking of candidate policies based on lower quartile, enable the following option.
+To return the lower quartile and the ranking of candidate policies based on lower quartile, enable the following option.
 
 .. code-block:: python
 
@@ -234,7 +234,7 @@ Finally, we should also note that the functions of ope and cd_ope instances are 
             :margin: 0
 
             .. grid-item-card::
-                :link: /documentation/subpackages/assessments
+                :link: /documentation/examples/assessments
                 :link-type: doc
                 :shadow: none
                 :margin: 0

@@ -62,7 +62,7 @@ Before proceeding to OPE/OPS, we first create :class:`input_dict` to enable a sm
             * :ref:`How to obtain MultipleLoggedDataset? <tips_synthetic_dataset>`
             * :ref:`How to handle OPL with MultipleLoggedDataset? <tip_opl>`
             * :doc:`API reference of MultipleInputDict <_autosummary/scope_rl.utils.MultipleInputDict>`
-            .. * :ref:`Tutorial with MultipleLoggedDataset <scope_rl_multiple_tutorial>`
+            * :doc:`Examples with MultipleLoggedDataset </documentation/examples/multiple>`
 
     .. dropdown:: How to select models for value/weight learning methods?
 
@@ -138,7 +138,7 @@ Before proceeding to OPE/OPS, we first create :class:`input_dict` to enable a sm
     .. dropdown:: How to collect input_dict in a non-episodic setting?
 
         When the goal is to evaluate the policy under a stationary distribution (:math:`d^{\pi}(s)`) rather than in a episodic setting 
-        (i.e., cartpole or taxi used in :cite:`liu2018breaking` :cite:`uehara2020minimax`), we need to (re-)collect initial states from evaluation policies stationary distribution.
+        (i.e., cartpole or taxi used in :cite:`liu2018breaking, uehara2020minimax`), we need to (re-)collect initial states from evaluation policies stationary distribution.
 
         In this case, please turn the following options.
 
@@ -236,7 +236,7 @@ Using the OPE class, we can obtain the OPE results of various estimators at once
             
             policy value estimated with the specified dataset
 
-        Moreover, we provide additional visualization function for the multiple logged dataset case.
+        Moreover, we provide additional visualization functions for the multiple logged dataset case.
 
         .. code-block:: python
 
@@ -266,7 +266,7 @@ Using the OPE class, we can obtain the OPE results of various estimators at once
             
             policy value estimated with the multiple datasets (violin)
 
-        Finally, when the ``plot_type`` is "scatter", the plot visualizes each estimation with its color specifying the dataset id.
+        Finally, when the ``plot_type`` is "scatter", the plot visualizes each estimation with its color specifying the behavior policy.
         This function is particularly useful to see how the choice of behavior policy (e.g., their stochasticity) affects the estimation result.
 
         .. card:: 
@@ -280,7 +280,7 @@ Using the OPE class, we can obtain the OPE results of various estimators at once
             * :ref:`How to obtain MultipleLoggedDataset? <tips_synthetic_dataset>`
             * :ref:`How to handle OPL with MultipleLoggedDataset? <tip_opl>`
             * :ref:`How to create input_dict for MultipleLoggedDataset? <tip_create_input_dict>`
-            * :ref:`Example codes with MultipleLoggedDataset </documentation/examples/multiple>`
+            * :doc:`Examples with MultipleLoggedDataset </documentation/examples/multiple>`
         
 
 .. seealso::
@@ -448,7 +448,7 @@ PDIS remains unbiased while reducing the variance of TIS. However, when :math:`t
 
 Doubly Robust (DR)
 ----------
-DR :cite:`jiang2016doubly` :cite:`thomas2016data` is a hybrid of model-based estimation and importance sampling.
+DR :cite:`jiang2016doubly, thomas2016data` is a hybrid of model-based estimation and importance sampling.
 It introduces :math:`\hat{Q}` as a baseline estimation in the recursive form of PDIS and applies importance weighting only on its residual.
 
 .. math::
@@ -494,7 +494,7 @@ Self-normalized estimators are no longer unbiased, but has variance bounded by :
 Marginalized Importance Sampling Estimators
 ----------
 When the length of trajectory (:math:`T`) is large, even per-decision importance weights can exponentially large in the latter part of the trajectory.
-To alleviate this, state marginal or state-action marginal importance weights can be used instead of the per-decision importance weight as follows :cite:`liu2018breaking` :cite:`uehara2020minimax`.
+To alleviate this, state marginal or state-action marginal importance weights can be used instead of the per-decision importance weight as follows :cite:`uehara2020minimax, liu2018breaking`.
 
 .. math::
 
@@ -543,7 +543,7 @@ This estimator is particularly useful when policy visits the same or similar sta
 
         .. seealso::
 
-            * :ref:`How to select models for value/weight learning methods? <tip_create_input_dict>` describes how to enable weight learning and select weight learning methods.
+            * :ref:`How to select models for value/weight learning methods? <tip_create_input_dict>`
             * :ref:`API reference of value/weight learning methods <scope_rl_api_ope_weight_and_value_learning>`
             * :doc:`API reference of CreateInputDict <_autosummary/scope_rl.ope.input>`
 
@@ -657,10 +657,10 @@ where SOPE uses per-decision importance weight :math:`w_t(s_t, a_t) := \pi(a_t |
             ope = OPE(
                 logged_dataset=logged_dataset,
                 ope_estimators=[SMIS(), SMDR(), SAMIS(), SAMDR()],  # any marginal estimators
+                n_step_pdis=5,  # number of recent timesteps using per-decision importance sampling
             )
             estimation_dict = ope.estimate_policy_value(
                 input_dict, 
-                n_step_pdis=5,  # number of recent timesteps using per-decision importance sampling
             )
 
         :class:`n_step_pdis=0` is equivalent to the original marginal OPE estimators.
@@ -669,8 +669,8 @@ where SOPE uses per-decision importance weight :math:`w_t(s_t, a_t) := \pi(a_t |
 
 High Confidence Off-Policy Evaluation (HCOPE)
 ----------
-To alleviate the risk of optimistic estimation, we are often interested in the confidence intervals and the lower bound of the estimated policy value.
-We implement four methods to estimate the confidence intervals :cite:`thomas2015evaluation` :cite:`thomas2015improvement`.
+To alleviate the risk of optimistically overestimating the policy value, we are sometimes interested in the confidence intervals and the lower bound of the estimated policy value.
+We implement four methods to estimate the confidence intervals :cite:`thomas2015improvement, hanna2017bootstrapping, thomas2015evaluation`.
 
 * Hoeffding :cite:`thomas2015evaluation`: 
 
@@ -678,7 +678,7 @@ We implement four methods to estimate the confidence intervals :cite:`thomas2015
 
     |\hat{J}(\pi; \mathcal{D}) - \mathbb{E}_{\mathcal{D}}[\hat{J}(\pi; \mathcal{D})]| \leq \hat{J}_{\max} \displaystyle \sqrt{\frac{\log(1 / \alpha)}{2 n}}.
 
-* Empirical Bernstein :cite:`thomas2015evaluation` :cite:`thomas2015improvement`: 
+* Empirical Bernstein :cite:`thomas2015improvement, thomas2015evaluation`: 
 
 .. math::
 
@@ -690,7 +690,7 @@ We implement four methods to estimate the confidence intervals :cite:`thomas2015
 
     |\hat{J}(\pi; \mathcal{D}) - \mathbb{E}_{\mathcal{D}}[\hat{J}(\pi; \mathcal{D})]| \leq \displaystyle \frac{T_{\mathrm{test}}(1 - \alpha, n-1)}{\sqrt{n} / \hat{\sigma}}.
 
-* Bootstrapping :cite:`thomas2015improvement` :cite:`hanna2017bootstrapping`: 
+* Bootstrapping :cite:`thomas2015improvement, hanna2017bootstrapping`: 
 
 .. math::
 
@@ -731,7 +731,7 @@ Extension to the Continuous Action Space
 When the action space is continuous, the naive importance weight :math:`w_t = \pi(a_t|s_t) / \pi_0(a_t|s_t) = (\pi(a |s_t) / \pi_0(a_t|s_t)) \cdot \mathbb{I} \{a = a_t \}` rejects almost every actions,
 as the indicator function :math:`\mathbb{I}\{a = a_t\}` filters only the action observed in the logged data.
 
-To address this issue, continuous-action OPE estimators apply kernel density estimation technique to smooth the importance weight :cite:`kallus2018policy` :cite:`lee2022local`.
+To address this issue, continuous-action OPE estimators apply kernel density estimation technique to smooth the importance weight :cite:`kallus2018policy, lee2022local`.
 
 .. math::
 
@@ -791,7 +791,7 @@ Cumulative Distribution Off-Policy Evaluation (CD-OPE)
 ~~~~~~~~~~
 
 While the basic OPE aims to estimate the average policy performance, we are often also interested in the performance distribution of the evaluation policy.
-Cumulative distribution OPE enables flexible estimation of various risk functions such as variance and conditional value at risk (CVaR) using the cumulative distribution function (CDF) :cite:`huang2021off` :cite:`huang2022off` :cite:`chandak2021universal`.
+Cumulative distribution OPE enables flexible estimation of various risk functions such as variance and conditional value at risk (CVaR) using the cumulative distribution function (CDF) :cite:`huang2021off, huang2022off, chandak2021universal`.
 
 (Cumulative Distribution Function)
 
@@ -924,7 +924,7 @@ It estimates the cumulative distribution of the trajectory wise reward and vario
             
             policy value estimated with the multiple datasets (violin)
 
-        Finally, when the ``plot_type`` is "scatter", the plot visualizes each estimation with its color specifying the dataset id.
+        Finally, when the ``plot_type`` is "scatter", the plot visualizes each estimation with its color specifying the behavior policy.
         This function is particularly useful to see how the choice of behavior policy (e.g., their stochasticity) affects the estimation result.
 
         .. card:: 
@@ -938,11 +938,11 @@ It estimates the cumulative distribution of the trajectory wise reward and vario
             * :ref:`How to obtain MultipleLoggedDataset? <tips_synthetic_dataset>`
             * :ref:`How to handle OPL with MultipleLoggedDataset? <tip_opl>`
             * :ref:`How to create input_dict for MultipleLoggedDataset? <tip_create_input_dict>`
-            .. * :ref:`Tutorial with MultipleLoggedDataset <scope_rl_multiple_tutorial>`
+            * :doc:`Examples with MultipleLoggedDataset </documentation/examples/multiple>`
 
 .. seealso::
 
-    * :doc:`quickstart` and :ref:`related example codes </documentation/examples/cumulative_dist_ope>`
+    * :doc:`quickstart` and :doc:`related example codes </documentation/examples/cumulative_dist_ope>`
 
 :class:`CumulativeDistributionOffPolicyEvaluation` implements the following functions.
 
@@ -991,7 +991,7 @@ Extension to the continuous action space
 
     .. dropdown:: How to define my own cumulative distribution OPE estimator?
 
-        To define your own OPE estimator, use :class:`BaseCumulativeDistributionOffPolicyEstimator`. 
+        To define your own OPE estimator, use :class:`BaseCumulativeDistributionOPEEstimator`. 
 
         Basically, the common inputs for each functions are ``reward_scale`` (np.ndarray indicating x-axis of cumulative distribution function) 
         and the following keys from ``logged_dataset`` and ``input_dict``.
@@ -1038,7 +1038,7 @@ Extension to the continuous action space
 Direct Method (DM)
 ----------
 
-DM adopts model-based approach to estimate the cumulative distribution function.
+DM adopts a model-based approach to estimate the cumulative distribution function.
 
 .. math::
 
@@ -1063,8 +1063,14 @@ TIS corrects the distribution shift by applying importance sampling technique on
         \hat{F}_{\mathrm{TIS}}(m, \pi; \mathcal{D}) := \mathbb{E}_{n} \left[ w_{0:T-1} \mathbb{I} \left \{\sum_{t=0}^{T-1} \gamma^t r_t \leq m \right \} \right]
 
 TIS is unbiased but can suffer from high variance.
-In particular, :math:`\hat{F}_{\mathrm{TIS}}(\cdot)` sometimes becomes more than one when the variance is high.
-Therefore, we correct CDF as :math:`\hat{F}^{\ast}_{\mathrm{TIS}}(m, \pi; \mathcal{D}) := \min(\max_{m' \leq m} \hat{F}_{\mathrm{TIS}}(m', \pi; \mathcal{D}), 1)` :cite:`huang2021off`.
+As a consequence, :math:`\hat{F}_{\mathrm{TIS}}(\cdot)` sometimes becomes more than 1.0 when the variance is high.
+Therefore, we correct CDF as follows :cite:`huang2021off`.
+
+.. math::
+    
+    \hat{F}^{\ast}_{\mathrm{TIS}}(m, \pi; \mathcal{D}) := \min(\max_{m' \leq m} \hat{F}_{\mathrm{TIS}}(m', \pi; \mathcal{D}), 1)
+
+.
 
     * :class:`DiscreteCumulativeDistributionTrajectoryWiseImportanceSampling`
     * :class:`ContinuousCumulativeDistributionTrajectoryWiseImportanceSampling`
@@ -1106,15 +1112,15 @@ They use the self-normalized importance weight :math:`\tilde{w}_{\ast} := w_{\as
 
 Evaluation Metrics of OPE/OPS
 ~~~~~~~~~~
-Finally, we describe the metrics to evaluate the quality of OPE estimators and its OPS result.
+Finally, we describe the metrics to evaluate the quality of OPE estimators and its OPS results.
 
-* Mean Squared Error (MSE) :cite:`paine2020hyperparameter` :cite:`voloshin2021empirical` :cite:`fu2021benchmarks`: 
+* Mean Squared Error (MSE) :cite:`paine2020hyperparameter, voloshin2021empirical, fu2021benchmarks`: 
     This metrics measures the estimation accuracy as :math:`\sum_{\pi \in \Pi} (\hat{J}(\pi; \mathcal{D}) - J(\pi))^2 / |\Pi|`.
 
-* Regret@k :cite:`paine2020hyperparameter` :cite:`fu2021benchmarks`: 
+* Regret@k :cite:`paine2020hyperparameter, fu2021benchmarks`: 
     This metrics measures how well the selected policy(ies) performs. In particular, Regret@1 indicates the expected performance difference between the (oracle) best policy and the selected policy as :math:`J(\pi^{\ast}) - J(\hat{\pi}^{\ast})`, where :math:`\pi^{\ast} := {\arg\max}_{\pi \in \Pi} J(\pi)` and :math:`\hat{\pi}^{\ast} := {\arg\max}_{\pi \in \Pi} \hat{J}(\pi; \mathcal{D})`.
 
-* Spearman's Rank Correlation Coefficient :cite:`paine2020hyperparameter` :cite:`fu2021benchmarks`: 
+* Spearman's Rank Correlation Coefficient :cite:`paine2020hyperparameter, fu2021benchmarks`: 
     This metrics measures how well the raking of the candidate estimators are preserved in the OPE result.
 
 * Type I and Type II Error Rate: 
@@ -1198,7 +1204,7 @@ Finally, the OPS class also implements the modules to compare the OPE result and
             
             top-k deployment result with multiple logged datasets
 
-        In the validation visualization, colors indicate the dataset ids. 
+        In the validation visualization, colors indicate the behavior policies. 
         This function is particularly useful to see how the choice of behavior policy (e.g., their stochasticity) affects the estimation result.
 
         .. code-block:: python
@@ -1224,11 +1230,11 @@ Finally, the OPS class also implements the modules to compare the OPE result and
             * :ref:`How to create input_dict for MultipleLoggedDataset? <tip_create_input_dict>`
             * :ref:`How to conduct OPE with MultipleLoggedDataset? <tip_ope>`
             * :ref:`How to conduct Cumulative Distribution OPE with MultipleLoggedDataset? <tip_cumulative_distribution_ope>`
-            * :ref:`Example codes with MultipleLoggedDataset </documentation/examples/multiple>`
+            * :doc:`Examples with MultipleLoggedDataset </documentation/examples/multiple>`
 
 .. seealso::
 
-    * :doc:`quickstart` and :ref:`related example codes </documentation/examples/assessments>`
+    * :doc:`quickstart` and :doc:`related example codes </documentation/examples/assessments>`
 
 The OPS class implements the following functions.
 

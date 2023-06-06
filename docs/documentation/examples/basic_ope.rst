@@ -8,7 +8,7 @@ Here, we show example codes for conducting basic off-policy evaluation (OPE).
     For preparation, please also refer to the following pages:
 
     * :doc:`What is Off-Policy Evaluation? </documentation/ope_ops>`
-    * :doc:`Supported OPE estimators </documentation/evaluation_implementation>`
+    * :ref:`Supported OPE estimators <implementation_basic_ope>`
     * :doc:`Supported implementations for data collection and Offline RL </documentation/learning_implementation>`
 
 Logged Dataset
@@ -50,7 +50,7 @@ OPE with importance sampling-based estimators
 When using the importance sampling-based estimators including TIS, PDIS, SNTIS, and SNPDIS, 
 and hybrid estimators including DR and SNDR, make sure that "pscore" is recorded in the logged dataset.
 
-Then, when only using importance sampling estimators, the minimal sufficient codes are the following:
+Then, when using only importance sampling-based estimators, the minimal sufficient codes are the following:
 
 .. code-block:: python
 
@@ -70,7 +70,7 @@ Then, when only using importance sampling estimators, the minimal sufficient cod
 
 OPE with model-based estimators
 ----------
-When using the model based estimator (DM) or hybrid methods, we need to additionally obtain value estimation in the input dict.
+When using the model-based estimator (DM) or hybrid methods, we need to additionally obtain value estimation in the input dict.
 
 .. code-block:: python
 
@@ -100,7 +100,7 @@ When using the model based estimator (DM) or hybrid methods, we need to addition
 
 OPE with marginal importance sampling-based estimators
 ----------
-Marginal importance sampling estimators (e.g., SAMIS, SAMDR, ..) requires the estimation of marginal importance weights.
+Marginal importance sampling-based estimators (e.g., SAMIS, SAMDR, ..) require the estimation of marginal importance weights.
 
 .. code-block:: python
 
@@ -127,7 +127,7 @@ Marginal importance sampling estimators (e.g., SAMIS, SAMDR, ..) requires the es
 
 OPE with Double Reinforcement Learning
 ----------
-Doble Reinforcement Learning learns weight and value functions through the cross-fitting procedure :citep`kallus2020double`:. 
+Double Reinforcement Learning learns weight and value functions through the cross-fitting procedure :cite:`kallus2020double`. 
 This is done by setting the ``k_hold`` parameter as follows.
 
 .. code-block:: python
@@ -186,7 +186,7 @@ Here, we use the following OPE estimators.
     estimators = [DM(), SNPDIS(), SNDR(), SMSNIS(), SMSNDR(), DRL()]
 
 
-Note that, the following provides the complete list of estimators that are currently implemented in OPE.
+Note that, the following provides the complete list of estimators that are currently implemented in SCOPE-RL.
 
 .. dropdown:: Supported OPE estimators
 
@@ -315,8 +315,8 @@ Choosing the "Spectrum" of OPE for marginal estimators
 ----------
 The implemented OPE estimators can interpolates among naive importance sampling and
 marginal importance sampling by specifying the steps to use per-decision importance weight 
-(See :doc:`Supported OPE estimators </documentation/evaluation_implementation>` for the details). 
-This is done by specifying `n_step_pdis` when initializing the class.
+(See :ref:`Supported OPE estimators (SOPE) <implementation_sope>` for the details). 
+This is done by specifying ``n_step_pdis`` when initializing the class.
 
 .. code-block:: python
 
@@ -329,7 +329,7 @@ This is done by specifying `n_step_pdis` when initializing the class.
 
 Choosing a kernel for continuous-action OPE
 ----------
-In continuous-action OPE, choices of kernel and the bandwith hyperparameter can affect the bias-variance tradeoff and the estimation accuracy.
+In continuous-action OPE, the choices of kernel and the bandwith hyperparameter can affect the bias-variance tradeoff and the estimation accuracy.
 To control the hyperparameter, please use the following arguments.
 
 .. code-block:: python
@@ -411,7 +411,7 @@ Finally, OPE class also provides a function to calculate the estimation accuracy
             :margin: 0
 
             .. grid-item-card::
-                :link: /documentation/subpackages/cumulative_dist_ope
+                :link: /documentation/examples/cumulative_dist_ope
                 :link-type: doc
                 :shadow: none
                 :margin: 0
@@ -421,7 +421,7 @@ Finally, OPE class also provides a function to calculate the estimation accuracy
                 **CD_OPE**
 
             .. grid-item-card::
-                :link: /documentation/subpackages/assessments
+                :link: /documentation/examples/assessments
                 :link-type: doc
                 :shadow: none
                 :margin: 0

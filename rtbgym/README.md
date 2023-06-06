@@ -26,7 +26,8 @@ Note that, RTBGym is publicized under [SCOPE-RL](../) repository, which facilita
 ### Basic Setting
 
 In RTB, the objective of the RL agent is to maximize some KPIs (number of clicks or conversions) within an episode under given budget constraints. \
-We often aim to achieve this goal by adjusting bidding price function parameter $\alpha$. Specifically, we adjust bid price using $\alpha$ as follows.
+We often aim to achieve this goal by adjusting a parameter $\alpha$ to control the bid price as follows.
+
 <p align="center">
 $bid_{t,i} = \alpha \cdot r^{\ast}$,
 </p>

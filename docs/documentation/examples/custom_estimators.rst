@@ -115,7 +115,7 @@ To add the inequality to derive confidence intervals, override the following pro
                 "custom_ci": estimate_confidence_interval_by_ttest
             }
 
-Note that, an OPE estimator can take the following inputs from logged dataset and input dict.
+Note that, an OPE estimator can take the following inputs from ``logged_dataset`` and ``input_dict``.
 
 (logged datasets)
 
@@ -368,7 +368,7 @@ Note that, the available inputs are the same with basic OPE.
             :margin: 0
 
             .. grid-item-card::
-                :link: /documentation/subpackages/real_world
+                :link: /documentation/examples/real_world
                 :link-type: doc
                 :shadow: none
                 :margin: 0

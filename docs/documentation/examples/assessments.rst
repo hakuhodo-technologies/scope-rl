@@ -8,7 +8,7 @@ Here, we show example codes for assessing OPE/OPS results.
     For preparation, please also refer to the following pages:
 
     * :doc:`What are Off-Policy Evaluation and Selection? </documentation/ope_ops>`
-    * :doc:`Supported Evaluation Protococols for OPE/OPS </documentation/evaluation_implementation>`
+    * :ref:`Supported Evaluation Protococols for OPE/OPS <implementation_eval_ope_ops>`
     * :doc:`/documentation/sharpe_ratio`
     * :doc:`Supported Implementations for data collection and Offline RL </documentation/learning_implementation>`
     * :doc:`Example codes for basic OPE </documentation/examples/basic_ope>`
@@ -37,11 +37,11 @@ Note that, to run the following example codes, ``input_dict`` should contain on-
 This requirement is automatically satisfied when collecting logged dataset by handing ``env`` over the :class:`CreateInput` class.
 
 In the following examples, we also use a single logged dataset for simplicity.
-For the case of using multiple behavior policies or multiple logged datasets, refer to :doc:`/documentation/ecamples/multiple`.
+For the case of using multiple behavior policies or multiple logged datasets, refer to :doc:`/documentation/examples/multiple`.
 
 Assessing OPE/OPS results
 ~~~~~~~~~~
-The assessments uses the OPS class.
+The assessments use the OPS class.
 
 .. code-block:: python
 
@@ -108,7 +108,7 @@ Similar evaluations are available in the following functions.
 Assessments with top-:math:`k` deployment results
 ----------
 
-SCOPE-RL enables to obtain and compare the statistics of policy portfolio formed by each estiamtor as follows.
+SCOPE-RL enables to obtain and compare the statistics of policy portfolio formed by each estimator as follows.
 
 .. code-block:: python
 
@@ -160,7 +160,7 @@ We can also evaluate CVaR of top-:math:`k` policies selected based on estimated 
         ope_alpha=0.3,
     )
 
-We can also evaluate lower quartile of top-:math:`k` policies selected based on estimated policy value as follows.
+We can also evaluate the lower quartile of top-:math:`k` policies selected based on estimated policy value as follows.
 
 .. code-block:: python
 
@@ -289,7 +289,7 @@ Similar evaluations are available in the following functions.
             :margin: 0
 
             .. grid-item-card::
-                :link: /documentation/subpackages/multiple
+                :link: /documentation/examples/multiple
                 :link-type: doc
                 :shadow: none
                 :margin: 0

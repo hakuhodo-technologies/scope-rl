@@ -11,7 +11,7 @@ Overview
 The simulator is particularly intended for reinforcement learning algorithms and follows `OpenAI Gym <https://github.com/openai/gym>`_ and `Gymnasium <https://github.com/Farama-Foundation/Gymnasium>`_ interface.
 We design BasicGym as a configurative environment so that researchers and practitioner can customize the environmental modules including UserModel.
 
-Note that, BasicGym is publicized as a sub-package of :doc:`SCOPE-RL <index>`, which streamlines the implementation of offline reinforcement learning (offline RL) and off-policy evaluation and selection (OPE/OPS) procedures.
+Note that, BasicGym is publicized as a sub-package of :doc:`SCOPE-RL </documentation/index>`, which streamlines the implementation of offline reinforcement learning (offline RL) and off-policy evaluation and selection (OPE/OPS) procedures.
 
 Basic Setting
 ~~~~~~~~~~
@@ -49,13 +49,12 @@ Quickstart and Configurations
 ~~~~~~~~~~
 
 We provide an example usage of the standard and customized environment. 
-The online/offlline RL and OPE/OPS examples are provides in :doc:`SCOPE-RL's quickstart <quickstart>`.
 
 Standard BasicEnv
 ----------
 
 Our BasicEnv is available from :class:`gym.make()`, 
-following the `OpenAI Gym <https://gym.openai.com>`_ and `Gymnasium <https://github.com/Farama-Foundation/Gymnasium>`_ interface.
+following the `OpenAI Gym <https://github.com/openai/gym>`_ and `Gymnasium <https://github.com/Farama-Foundation/Gymnasium>`_ interface.
 
 .. code-block:: python
 
@@ -102,8 +101,8 @@ Let's interact with a uniform random policy.
         action = agent.predict_online(obs)
         obs, reward, done, truncated, info = env.step(action)
 
-Note that, while we use :doc:`SCOPE-RL <index>` and `d3rlpy <https://github.com/takuseno/d3rlpy>`_ here,
-BasicGym is compatible with any other libraries that is compatible to the `OpenAI Gym <https://gym.openai.com>`_ 
+Note that, while we use :doc:`SCOPE-RL </documentation/index>` and `d3rlpy <https://github.com/takuseno/d3rlpy>`_ here,
+BasicGym is compatible with any other libraries that is compatible to the `OpenAI Gym <https://github.com/openai/gym>`_ 
 and `Gymnasium <https://github.com/Farama-Foundation/Gymnasium>`_ interface.
 
 Customized BasicEnv
@@ -135,7 +134,7 @@ Example:
         state_dim=10,
         action_type="continuous",  # "discrete"
         action_dim=5,
-        reward_type="continuous",  # "ninary"
+        reward_type="continuous",  # "binary"
         reward_std=0.3,
         obs_std=0.3,
         step_per_episode=10,
@@ -233,7 +232,7 @@ For any question about the paper and pipeline, feel free to contact: hk844@corne
 Contribution
 ~~~~~~~~~~
 Any contributions to BasicGym are more than welcome!
-Please refer to `CONTRIBUTING.md <https://github.com/hakuhodo-technologies/scope-rl/CONTRIBUTING.md>`_ for general guidelines how to contribute to the project.
+Please refer to `CONTRIBUTING.md <https://github.com/hakuhodo-technologies/scope-rl/blob/main/CONTRIBUTING.md>`_ for general guidelines how to contribute to the project.
 
 .. grid::
     :margin: 0

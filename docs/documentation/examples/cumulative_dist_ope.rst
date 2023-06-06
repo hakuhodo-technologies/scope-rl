@@ -8,7 +8,7 @@ Here, we show example codes for conducting cumulative distribution OPE (CD-OPE).
     For preparation, please also refer to the following pages:
 
     * :doc:`What is Cumulative Distribution OPE? </documentation/ope_ops>`
-    * :doc:`Supported CD_OPE estimators </documentation/evaluation_implementation>`
+    * :ref:`Supported CD-OPE estimators <implementation_cumulative_distribution_ope>`
     * :doc:`Supported implementations for data collection and Offline RL </documentation/learning_implementation>`
     * :doc:`Example codes for basic OPE </documentation/examples/basic_ope>`
 
@@ -41,7 +41,7 @@ Then, we use the behavior policy to collect logged dataset as follows.
     )
 
 Note that, in the following example, we use a single logged dataset for simplicity.
-For the case of using multiple behavior policies or multiple logged datasets, refer to :doc:`/documentation/ecamples/multiple`.
+For the case of using multiple behavior policies or multiple logged datasets, refer to :doc:`/documentation/examples/multiple`.
 
 Inputs
 ~~~~~~~~~~
@@ -52,7 +52,7 @@ OPE with importance sampling-based estimators
 When using the importance sampling-based estimators including TIS and SNTIS, 
 and hybrid estimators including DR and SNDR, make sure that "pscore" is recorded in the logged dataset.
 
-Then, when only using importance sampling estimators, the minimal sufficient codes are the following:
+Then, when using only importance sampling-based estimators, the minimal sufficient codes are the following:
 
 .. code-block:: python
 
@@ -72,7 +72,7 @@ Then, when only using importance sampling estimators, the minimal sufficient cod
 
 OPE with model-based estimators
 ----------
-When using the model based estimator (DM) or hybrid methods, we need to additionally obtain value estimation in the input dict.
+When using the model-based estimator (DM) or hybrid methods, we need to additionally obtain value estimation in the input dict.
 
 .. code-block:: python
 
@@ -160,7 +160,7 @@ The following code visualizes the results to compare OPE estimators.
     cd_ope.visualize_cumulative_distribution_function(
         input_dict=input_dict,
         hue="estimator",  # (default)
-        n_cols=4,  # specify number of columns (optional)
+        n_cols=4,  # specify the number of columns (optional)
     )
 
 .. card:: 
@@ -175,7 +175,7 @@ The following code visualizes the results to compare policies.
         input_dict=input_dict,
         hue="policy",  # (optional)
         legend=False,
-        n_cols=4,  # specify number of columns (optional)
+        n_cols=4,
     )
 
 .. card:: 
@@ -362,7 +362,7 @@ Finally, SCOPE-RL estimates and visualizes the Interquartile range as follows.
             :margin: 0
 
             .. grid-item-card::
-                :link: /documentation/subpackages/ops
+                :link: /documentation/examples/ops
                 :link-type: doc
                 :shadow: none
                 :margin: 0
@@ -372,7 +372,7 @@ Finally, SCOPE-RL estimates and visualizes the Interquartile range as follows.
                 **Off_policy Selection**
 
             .. grid-item-card::
-                :link: /documentation/subpackages/assessments
+                :link: /documentation/examples/assessments
                 :link-type: doc
                 :shadow: none
                 :margin: 0

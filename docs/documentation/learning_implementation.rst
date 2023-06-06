@@ -2,14 +2,14 @@
 Supported Implementation
 ==========
 
-Our implementation aims to streamline the data collection, (offline) policy learning, and off-policy evaluation/selection (OPE/OPS) procedure.
+Our implementation aims to streamline the data collection, (offline) policy learning, and off-policy evaluation and selection (OPE/OPS) procedure.
 We rely on `d3rlpy <https://github.com/takuseno/d3rlpy>`_'s implementation of the learning algorithms and provide some useful tools to streamline the above offline RL procedure.
 
 .. _implementation_dataset:
 
 Synthetic Dataset Generation
 ~~~~~~~~~~
-:class:`SyntheticDataset` is an easy-to-use data collection module which is compatible to any `OpenAI Gym <https://gym.openai.com>`_ and `Gymnasium <https://gymnasium.farama.org/>`_-like RL environment.
+:class:`SyntheticDataset` is an easy-to-use data collection module which is compatible to any `OpenAI Gym <https://github.com/openai/gym>`_ and `Gymnasium <https://gymnasium.farama.org/>`_-like RL environment.
 
 It takes an RL environment as input to instantiate the class.
 
@@ -112,7 +112,7 @@ Then, it collects logged data by a behavior policy (i.e., data collection policy
 
         .. seealso::
 
-            :doc:`API reference of BaseDataset<_autosummary/dataset/scope_rl.dataset.base>` and :doc:`</documentation/examples/real_world>` explain the meaning of each keys in detail.
+            :doc:`API reference of BaseDataset<_autosummary/dataset/scope_rl.dataset.base>` and :doc:`/documentation/examples/real_world` explain the meaning of each keys in detail.
 
 
     .. dropdown:: How to handle multiple logged datasets at once?
@@ -171,17 +171,18 @@ Then, it collects logged data by a behavior policy (i.e., data collection policy
                 multiple_logged_dataset.add(
                     single_logged_dataset, 
                     behavior_policy_name=behavior_policy.name,
+                    dataset_id=0,
                 )
 
         .. seealso::
 
             * :doc:`API reference of MultipleLoggedDataset <_autosummary/scope_rl.utils.MultipleLoggedDataset>`
-            * :ref:`Example codes with MultipleLoggedDataset </documentation/examples/multiple>`
+            * :doc:`Example codes with MultipleLoggedDataset </documentation/examples/multiple>`
 
     .. dropdown:: How to collect data in a non-episodic setting?
 
         When the goal is to evaluate the policy under a stationary distribution (:math:`d^{\pi}(s)`) rather than in an episodic setting 
-        (i.e., cartpole or taxi used in :cite:`liu2018breaking` :cite:`uehara2020minimax`), we need to collect data from stationary distribution.
+        (i.e., cartpole or taxi used in :cite:`liu2018breaking, uehara2020minimax`), we need to collect data from stationary distribution.
 
         For this, please consider using :class:`obtain_step` instead of :class:`obtain_episodes` as follows.
 
@@ -365,7 +366,7 @@ The obtained evaluation policies are the following (both algorithms and policy w
         .. seealso::
 
             * :ref:`How to obtain MultipleLoggedDataset? <tips_synthetic_dataset>`
-            .. * :ref:`Tutorial with MultipleLoggedDataset <scope_rl_multiple_tutorial>`
+            * :doc:`Examples with MultipleLoggedDataset </documentation/examples/multiple>`
 
 .. seealso::
 
@@ -377,7 +378,7 @@ The obtained evaluation policies are the following (both algorithms and policy w
 Policy Wrapper
 ~~~~~~~~~~
 
-Here, we describe some useful wrapper tools to convert a `d3rlpy <https://github.com/takuseno/d3rlpy>`_'s policy to the behavior/evaluation policies.
+Here, we describe some useful wrapper tools to convert a `d3rlpy <https://github.com/takuseno/d3rlpy>`_'s policy to (stochastic) behavior and evaluation policies.
 
 
 ======================================================   =============================================
@@ -425,7 +426,7 @@ Here, we describe some useful wrapper tools to convert a `d3rlpy <https://github
 DiscreteHead
 ----------
 This module transforms a deterministic policy to a stochastic one in discrete action cases.
-Specifically, we have two stochastic policies.
+Specifically, we have the following two options.
 
     * :class:`DiscreteEpsilonGreedyHead`: :math:`\pi(a | s) := (1 - \epsilon) * \pi_{\mathrm{det}}(a | s) + \epsilon / |\mathcal{A}|`.
     * :class:`DiscreteSoftmaxHead`: :math:`\pi(a | s) := \displaystyle \frac{\exp(Q^{(\pi_{\mathrm{det}})}(s, a) / \tau)}{\sum_{a' \in \mathcal{A}} \exp(Q^{(\pi_{\mathrm{det}})}(s, a') / \tau)}`.
@@ -438,7 +439,6 @@ DiscreteEpsilonGreedyHead is also used to construct a deterministic evaluation p
 ContinuousHead
 ----------
 This module transforms a deterministic policy to a stochastic one in continuous action cases.
-Specifically, we have two stochastic policies.
 
     * :class:`ContinuousGaussianHead`: :math:`\pi(a | s) := \mathrm{Normal}(\pi_{\mathrm{det}}(s), \sigma)`.
     * :class:`ContinuousTruncatedGaussianHead`: :math:`\pi(a | s) := \mathrm{TruncatedNormal}(\pi_{\mathrm{det}}(s), \sigma)`.

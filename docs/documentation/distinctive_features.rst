@@ -29,16 +29,16 @@ Especially in the reinforcement learning (RL) setting, a variety of theoreticall
 Moreover, several recent work on cumulative distribution OPE :cite:`huang2021off, huang2022off, chandak2021universal` also aim at estimating the cumulative distribution function (CDF) and risk functions (e.g., variance, conditional value at risk (CVaR), and interquartile range) of an evaluation policy. 
 These risk functions provide informative insights on policy performance especially from safety perspectives, which are thus crucial for practical decision making.
 
-Unfortunately, despite these recent advances in OPE of RL policies, only a few existing platforms :cite:`fu2021benchmarks, voloshin2021empirical` are available for extensive OPE studies and benchmarks for plactical applications. 
+Unfortunately, despite these recent advances in OPE of RL policies, only a few existing platforms :cite:`fu2021benchmarks, voloshin2021empirical` are available for extensive OPE studies and benchmarking experiments. 
 Moreover, those existing platform lacks the following important properties:
 
 Most *offline RL* plaforms:
 
-* ... provide only a basic OPE estimators.
+* ... provide only a few basic OPE estimators.
 
 Existing *OPE* platforms:
 
-* ... have a limited flexibly of environment and the choice of offline RL methods (i.e., **limited compatibility with gym/gymnasium and offline RL libraries**).
+* ... have a limited flexibly in the choices of environments and offline RL methods (i.e., **limited compatibility with gym/gymnasium and offline RL libraries**).
 * ... support only the standard OPE framework and lack the implementation of **cumulative distribution OPE**.
 * ... only focus on the accuracy of OPE/OPS and do not take the **risk-return tradeoff** of the policy selection into account.
 * ... do not support user-friendly **visualization tools** to interpret the OPE results.
@@ -70,7 +70,7 @@ End-to-end implementation of Offline RL and OPE
 ----------
 
 While existing platforms support flexible implementations on either offline RL or OPE, we aim to bridge the offline RL and OPE processes and streamline an end-to-end procedure for the first time.
-Specifically, as shown in the bottom figure, our module mainly consists of the following four modules:
+Specifically, SCOPE-RL mainly consists of the following four modules as shown in the bottom figure:
 
 .. card:: 
    :width: 75%
@@ -95,8 +95,8 @@ Moreover, SCOPE-RL supports compatibility with `d3rlpy <https://github.com/takus
 This also allows us test the performance of offline RL and OPE with various behavior policies or other experimental settings.
 
 Next, the *OPL* module provides an easy-to-handle wrapper for learning new policies with various offline RL algorithms.
-While `d3rlpy <https://github.com/takuseno/d3rlpy>`_ has already supported user-friedly API, their implementation is basically intended to use offline RL algorithms one by one.
-Therefore, to further make the end-to-end offline RL and OPE process smoothly connected, our OPL wrapper enables to handle multiple datasets and multiple algorithms in a single class.
+While `d3rlpy <https://github.com/takuseno/d3rlpy>`_ has already supported user-friedly APIs, their implementation is basically intended to use offline RL algorithms one by one.
+Therefore, to further make the end-to-end offline RL and OPE processes smoothly connected, our OPL wrapper enables to handle multiple datasets and multiple algorithms in a single class.
 
 .. Please refer to :ref:`this page <>` for the details. 
 
@@ -113,7 +113,7 @@ Variety of OPE estimators and evaluation protocol of OPE
 
 SCOPE-RL provides the implementation of various OPE estimators in both discrete and continuous action settings.
 In the standard OPE, which aim to estimate the expected performance of the given evaluation policy, we implement the OPE estimators listed below. 
-These implementations are as comprehensive as the existing platforms for OPE including :cite:`fu2021benchmarks, voloshin2021empirical`.
+These implementations are as comprehensive as the existing OPE platforms including :cite:`fu2021benchmarks, voloshin2021empirical`.
 
 .. card:: 
     :width: 75%
@@ -141,13 +141,13 @@ These implementations are as comprehensive as the existing platforms for OPE inc
 **Basic estimators**
 
 * (abstract base)
-* Direct Method (DM) :cite:`beygelzimer2009offset` :cite:`le2019batch`
+* Direct Method (DM) :cite:`beygelzimer2009offset, le2019batch`
 * Trajectory-wise Importance Sampling (TIS) :cite:`precup2000eligibility`
 * Per-Decision Importance Sampling (PDIS) :cite:`precup2000eligibility`
-* Doubly Robust (DR) :cite:`jiang2016doubly` :cite:`thomas2016data`
-* Self-Normalized Trajectory-wise Importance Sampling (SNTIS) :cite:`precup2000eligibility` :cite:`kallus2020optimal`
-* Self-Normalized Per-Decision Importance Sampling (SNPDIS) :cite:`precup2000eligibility` :cite:`kallus2020optimal`
-* Self-Normalized Doubly Robust (SNDR) :cite:`jiang2016doubly` :cite:`thomas2016data` :cite:`kallus2020optimal`
+* Doubly Robust (DR) :cite:`jiang2016doubly, thomas2016data`
+* Self-Normalized Trajectory-wise Importance Sampling (SNTIS) :cite:`precup2000eligibility, kallus2019intrinsically`
+* Self-Normalized Per-Decision Importance Sampling (SNPDIS) :cite:`precup2000eligibility, kallus2019intrinsically`
+* Self-Normalized Doubly Robust (SNDR) :cite:`jiang2016doubly, thomas2016data, kallus2019intrinsically`
 
 .. raw:: html
 
@@ -157,10 +157,10 @@ These implementations are as comprehensive as the existing platforms for OPE inc
 
 * (abstract base)
 * State Marginal Direct Method (SM-DM) :cite:`uehara2020minimax`
-* State Marginal Importance Sampling (SM-IS) :cite:`liu2018breaking` :cite:`uehara2020minimax`
-* State Marginal Doubly Robust (SM-DR) :cite:`liu2018breaking` :cite:`uehara2020minimax`
-* State Marginal Self-Normalized Importance Sampling (SM-SNIS) :cite:`liu2018breaking` :cite:`uehara2020minimax`
-* State Marginal Self-Normalized Doubly Robust (SM-SNDR) :cite:`liu2018breaking` :cite:`uehara2020minimax`
+* State Marginal Importance Sampling (SM-IS) :cite:`liu2018breaking, uehara2020minimax`
+* State Marginal Doubly Robust (SM-DR) :cite:`liu2018breaking, uehara2020minimax`
+* State Marginal Self-Normalized Importance Sampling (SM-SNIS) :cite:`liu2018breaking, uehara2020minimax`
+* State Marginal Self-Normalized Doubly Robust (SM-SNDR) :cite:`liu2018breaking, uehara2020minimax`
 * Spectrum of Off-Policy Evaluation (SOPE) :cite:`yuan2021sope`
 
 .. raw:: html
@@ -200,9 +200,9 @@ These implementations are as comprehensive as the existing platforms for OPE inc
 
 **High Confidence OPE**
 
-* Bootstrap :cite:`thomas2015improvement` :cite:`hanna2017bootstrapping`
+* Bootstrap :cite:`thomas2015improvement, hanna2017bootstrapping`
 * Hoeffding :cite:`thomas2015evaluation`
-* (Empirical) Bernstein :cite:`thomas2015evaluation` :cite:`thomas2015improvement`
+* (Empirical) Bernstein :cite:`thomas2015evaluation, thomas2015improvement`
 * Student T-test :cite:`thomas2015improvement`
 
 .. raw:: html
@@ -214,9 +214,9 @@ Moreover, we streamline the evaluation protocol of OPE/OPS with the following me
 
 **OPE metrics**
 
-* Mean Squared Error :cite:`paine2020hyperparameter` :cite:`voloshin2021empirical` :cite:`fu2021benchmarks`
-* Spearman's Rank Correlation Coefficient :cite:`paine2020hyperparameter` :cite:`fu2021benchmarks`
-* Regret :cite:`paine2020hyperparameter` :cite:`fu2021benchmarks`
+* Mean Squared Error :cite:`paine2020hyperparameter, voloshin2021empirical, fu2021benchmarks`
+* Spearman's Rank Correlation Coefficient :cite:`paine2020hyperparameter, fu2021benchmarks`
+* Regret :cite:`paine2020hyperparameter, fu2021benchmarks`
 * Type I and Type II Error Rates
 
 .. raw:: html
@@ -231,7 +231,7 @@ Moreover, we streamline the evaluation protocol of OPE/OPS with the following me
 
 Note that, the above top-:math:`k` metrics are the proposal in our research paper **"
 Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation in Reinforcement Learning"**.  
-:doc:`sharpe_ratio` describe these metrics in details, and we also discuss about these metrics briefly in :ref:`the later sub-section <feature_sharpe_ratio>`.
+:doc:`sharpe_ratio` describe the above metrics and the contribution of SharpRatio@k in details. We also discuss these metrics briefly in :ref:`the later sub-section <feature_sharpe_ratio>`.
 
 .. _feature_cd_ope:
 
@@ -271,7 +271,7 @@ We believe that the release of cumulative distribution OPE implementations will 
 Risk-Return Assessments of OPS
 ----------
 
-Our SCOPE-RL is also unique in that it provides risk-return assessments of Off-Policy Selection (OPS). 
+Our SCOPE-RL is also unique in that it enables risk-return assessments of Off-Policy Selection (OPS). 
 
 While OPE is useful for estimating the policy performance of a new policy using offline logged data, 
 OPE sometimes produces erroneous estimation due to *counterfactual estimation* and *distribution shift* between the behavior and evaluation policies.
@@ -280,7 +280,7 @@ Specifically, the practical workflow often begins by filtering out poor-performi
 policies to identify the best policy based on reliable online evaluation, as illustrated in the following figure.
 
 .. card:: 
-    :width: 50%
+    :width: 75%
     :margin: auto
     :img-top: ../_static/images/ops_workflow.png
     :text-align: center
@@ -300,7 +300,7 @@ we measure risk, return, and efficiency of the selected top-:math:`k` policy wit
     :img-top: ../_static/images/ops_topk_policy_value_multiple.png
     :text-align: center
 
-    Example of evaluating OPE/OPS methods with top-:math:`k` RRT metrics
+    Example of evaluating OPE/OPS methods with top-:math:`k` risk-return tradeoff metrics
 
 .. raw:: html
 
@@ -345,10 +345,10 @@ The criteria of each colums is given as follows:
 * "OPE": |:white_check_mark:| means that the platform implements various OPE estimators other than the standard choices including Direct Method :cite:`le2019batch`, Importance Sampling :cite:`precup2000eligibility`, and Doubly Robust :cite:`jiang2016doubly`. (limited) means that the platform supports only these standard estimators.
 * "CD-OPE": is the abbreviation of Cumulative Distribution OPE, which estimates the cumulative distribution function of the return under evaluation policy :cite:`huang20210ff, huang2022off, chandak2021universal`. 
 
-In summary, **our unique contribution is 
+In summary, **our unique contributions are 
 (1) to provide the first end-to-end platform for offline RL, OPE, and OPS,
 (2) to support cumulative distribution ope for the first time, and
-(3) to implement (the proposed) top-** :math:`k` **risk-return tradeoff metics for the risk assessments of OPS.**
+(3) to implement (the proposed) SharpRatio@k and other top-** :math:`k` **risk-return tradeoff metics for the risk assessments of OPS.**
 Additionally, we provide a user-friendly :doc:`visualization tools <visualization>`, :doc:`documentation <index>`, and `quickstart examples <https://github.com/hakuhodo-technologies/scope-rl/tree/main/examples/quickstart>`_ to facilitate a quick benckmarking and practical application. 
 We hope that SCOPE-RL will serve as a important milestone for the future development of OPE research.
 

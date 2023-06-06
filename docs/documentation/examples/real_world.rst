@@ -3,7 +3,7 @@ Guidelines for Preparing Real-World Datasets
 
 Here, we provide the guideline for preparing logged datasets and inputs that are compatible to SCOPE-RL.
 
-Logged Datasets
+Logged Dataset
 ~~~~~~~~~~
 
 In real-world experiments, ``logged_dataset`` should contain the following keys. 
@@ -95,7 +95,7 @@ Note that, when ``state_action_value_prediction`` and ``initial_state_value_pred
 the model-based and hybrid estimators (e.g., DM and DR) are applicable to OPE.
 On the other side, when ``state_action_marginal_importance_weight`` and ``state_marginal_importance_weight`` are available, 
 the marginal importance-sampling based estimators are apllicable to OPE.
-Finally, the assessments of OPE methods become feasible when ``on-policy policy value`` is available.
+Finally, the assessments of OPE methods become feasible when ``on_policy_policy_value`` is available.
 
 The shape of ``state_action_value_prediction`` is *(size, n_actions)* in discrete action cases, while it is *(size, 2)* in continuous action cases.
 In continuous action case, index 0 of ``axis=1`` should contain the predicted values for the actions chosen by the behavior policy, whreas index 1 of ``axis=1`` should contain those of evaluation policy. 
@@ -139,7 +139,7 @@ In continuous action case, index 0 of ``axis=1`` should contain the predicted va
             :margin: 0
 
             .. grid-item-card::
-                :link: /documentation/subpackages/custom_estimators
+                :link: /documentation/examples/custom_estimators
                 :link-type: doc
                 :shadow: none
                 :margin: 0
