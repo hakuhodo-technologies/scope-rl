@@ -60,8 +60,9 @@ def visualize_on_policy_policy_value(
         Number of timesteps in an trajectory.
 
     evaluate_on_stationary_distribution: bool, default=False
-        Whether to evaluate policy on stationary distribution.
-        When True, evaluation policy is evaluated by rollout without resetting environment at each trajectory.
+        Whether to evaluate a policy based on the stationary state distribution induced by it.
+        When True, the evaluation policy is evaluated by rollout without resetting environment at each trajectory.
+        This argument is irrelevant when working on the finite horizon setting.
 
     gamma: float, default=1.0
         Discount factor. The value should be within (0, 1].
@@ -160,8 +161,9 @@ def visualize_on_policy_policy_value_with_variance(
         Number of timesteps in an trajectory.
 
     evaluate_on_stationary_distribution: bool, default=False
-        Whether to evaluate policy on stationary distribution.
-        When True, evaluation policy is evaluated by rollout without resetting environment at each trajectory.
+        Whether to evaluate a policy based on the stationary state distribution induced by it.
+        When True, the evaluation policy is evaluated by rollout without resetting environment at each trajectory.
+        This argument is irrelevant when working on the finite horizon setting.
 
     gamma: float, default=1.0
         Discount factor. The value should be within (0, 1].
@@ -277,27 +279,28 @@ def visualize_on_policy_cumulative_distribution_function(
         Number of timesteps in an trajectory.
 
     evaluate_on_stationary_distribution: bool, default=False
-        Whether to evaluate policy on stationary distribution.
-        When True, evaluation policy is evaluated by rollout without resetting environment at each trajectory.
+        Whether to evaluate a policy based on the stationary state distribution induced by it.
+        When True, the evaluation policy is evaluated by rollout without resetting environment at each trajectory.
+        This argument is irrelevant when working on the finite horizon setting.
 
     gamma: float, default=1.0
         Discount factor. The value should be within (0, 1].
 
     use_custom_reward_scale: bool, default=False
-        Whether to use the custom reward scale or the reward observed by the behavior policy.
+        Whether to use a customized reward scale or the reward observed under the behavior policy.
         If True, the reward scale is uniform, following Huang et al. (2021).
         If False, the reward scale follows the one defined in Chundak et al. (2021).
 
     scale_min: float, default=None
-        Minimum value of the reward scale in CDF.
+        Minimum value of the reward scale in the CDF.
         When `use_custom_reward_scale == True`, a value must be given.
 
     scale_max: float, default=None
-        Maximum value of the reward scale in CDF.
+        Maximum value of the reward scale in the CDF.
         When `use_custom_reward_scale == True`, a value must be given.
 
     n_partition: int, default=None
-        Number of partitions in the reward scale (x-axis of CDF).
+        Number of partitions in the reward scale (x-axis of the CDF).
         When `use_custom_reward_scale == True`, a value must be given.
 
     random_state: int, default=None (>= 0)
@@ -339,7 +342,7 @@ def visualize_on_policy_cumulative_distribution_function(
         ax.plot(reward_scale, cdf, label=policy_name)
 
     ax.set_title("cumulative distribution function")
-    ax.set_xlabel("trajectory wise reward")
+    ax.set_xlabel("trajectory-wise reward")
     ax.set_ylabel("cumulative probability")
     if legend:
         ax.legend()
@@ -386,30 +389,31 @@ def visualize_on_policy_conditional_value_at_risk(
         Number of timesteps in an trajectory.
 
     evaluate_on_stationary_distribution: bool, default=False
-        Whether to evaluate policy on stationary distribution.
-        When True, evaluation policy is evaluated by rollout without resetting environment at each trajectory.
+        Whether to evaluate a policy based on the stationary state distribution induced by it.
+        When True, the evaluation policy is evaluated by rollout without resetting environment at each trajectory.
+        This argument is irrelevant when working on the finite horizon setting.
 
     gamma: float, default=1.0
         Discount factor. The value should be within (0, 1].
 
     alphas: array-like of shape (n_alpha, ) default=np.linspace(0, 1, 20)
-        Set of proportions of the sided region. The value should be within (0, 1].
+        Set of proportions of the shaded region. The value should be within (0, 1].
 
     use_custom_reward_scale: bool, default=False
-        Whether to use the custom reward scale or the reward observed by the behavior policy.
+        Whether to use a customized reward scale or the reward observed under the behavior policy.
         If True, the reward scale is uniform, following Huang et al. (2021).
         If False, the reward scale follows the one defined in Chundak et al. (2021).
 
     scale_min: float, default=None
-        Minimum value of the reward scale in CDF.
+        Minimum value of the reward scale in the CDF.
         When `use_custom_reward_scale == True`, a value must be given.
 
     scale_max: float, default=None
-        Maximum value of the reward scale in CDF.
+        Maximum value of the reward scale in the CDF.
         When `use_custom_reward_scale == True`, a value must be given.
 
     n_partition: int, default=None
-        Number of partitions in the reward scale (x-axis of CDF).
+        Number of partitions in the reward scale (x-axis of the CDF).
         When `use_custom_reward_scale == True`, a value must be given.
 
     random_state: int, default=None (>= 0)
@@ -498,8 +502,9 @@ def visualize_on_policy_interquartile_range(
         Number of timesteps in an trajectory.
 
     evaluate_on_stationary_distribution: bool, default=False
-        Whether to evaluate policy on stationary distribution.
-        When True, evaluation policy is evaluated by rollout without resetting environment at each trajectory.
+        Whether to evaluate a policy based on the stationary state distribution induced by it.
+        When True, the evaluation policy is evaluated by rollout without resetting environment at each trajectory.
+        This argument is irrelevant when working on the finite horizon setting.
 
     gamma: float, default=1.0
         Discount factor. The value should be within (0, 1].
@@ -508,20 +513,20 @@ def visualize_on_policy_interquartile_range(
         Significance level. The value should be within `[0, 1)`.
 
     use_custom_reward_scale: bool, default=False
-        Whether to use the custom reward scale or the reward observed by the behavior policy.
+        Whether to use a customized reward scale or the reward observed under the behavior policy.
         If True, the reward scale is uniform, following Huang et al. (2021).
         If False, the reward scale follows the one defined in Chundak et al. (2021).
 
     scale_min: float, default=None
-        Minimum value of the reward scale in CDF.
+        Minimum value of the reward scale in the CDF.
         When `use_custom_reward_scale == True`, a value must be given.
 
     scale_max: float, default=None
-        Maximum value of the reward scale in CDF.
+        Maximum value of the reward scale in the CDF.
         When `use_custom_reward_scale == True`, a value must be given.
 
     n_partition: int, default=None
-        Number of partitions in the reward scale (x-axis of CDF).
+        Number of partitions in the reward scale (x-axis of the CDF).
         When `use_custom_reward_scale == True`, a value must be given.
 
     random_state: int, default=None (>= 0)
@@ -649,33 +654,34 @@ def calc_on_policy_statistics(
         Number of timesteps in an trajectory.
 
     evaluate_on_stationary_distribution: bool, default=False
-        Whether to evaluate policy on stationary distribution.
-        When True, evaluation policy is evaluated by rollout without resetting environment at each trajectory.
+        Whether to evaluate a policy based on the stationary state distribution induced by it.
+        When True, the evaluation policy is evaluated by rollout without resetting environment at each trajectory.
+        This argument is irrelevant when working on the finite horizon setting.
 
     gamma: float, default=1.0
         Discount factor. The value should be within (0, 1].
 
     quartile_alpha: float, default=0.05
-        Proportion of the sided region. The value should be within (0, 1].
+        Proportion of the shaded region. The value should be within (0, 1].
 
     cvar_alpha: float, default=0.05
-        Proportion of the sided region. The value should be within (0, 1].
+        Proportion of the shaded region. The value should be within (0, 1].
 
     use_custom_reward_scale: bool, default=False
-        Whether to use the custom reward scale or the reward observed by the behavior policy.
+        Whether to use a customized reward scale or the reward observed under the behavior policy.
         If True, the reward scale is uniform, following Huang et al. (2021).
         If False, the reward scale follows the one defined in Chundak et al. (2021).
 
     scale_min: float, default=None
-        Minimum value of the reward scale in CDF.
+        Minimum value of the reward scale in the CDF.
         When `use_custom_reward_scale == True`, a value must be given.
 
     scale_max: float, default=None
-        Maximum value of the reward scale in CDF.
+        Maximum value of the reward scale in the CDF.
         When `use_custom_reward_scale == True`, a value must be given.
 
     n_partition: int, default=None
-        Number of partitions in the reward scale (x-axis of CDF).
+        Number of partitions in the reward scale (x-axis of the CDF).
         When `use_custom_reward_scale == True`, a value must be given.
 
     random_state: int, default=None (>= 0)
@@ -831,8 +837,9 @@ def calc_on_policy_policy_value(
         Number of timesteps in an trajectory.
 
     evaluate_on_stationary_distribution: bool, default=False
-        Whether to evaluate policy on stationary distribution.
-        When True, evaluation policy is evaluated by rollout without resetting environment at each trajectory.
+        Whether to evaluate a policy based on the stationary state distribution induced by it.
+        When True, the evaluation policy is evaluated by rollout without resetting environment at each trajectory.
+        This argument is irrelevant when working on the finite horizon setting.
 
     gamma: float, default=1.0
         Discount factor. The value should be within (0, 1].
@@ -891,7 +898,7 @@ def calc_on_policy_policy_value_interval(
     n_bootstrap_samples: int = 100,
     random_state: Optional[int] = None,
 ):
-    """Calculate confidence interval of on-policy policy value by nonparametric bootstrap.
+    """Estimate the confidence interval of on-policy policy value by nonparametric bootstrap.
 
     Parameters
     -------
@@ -908,8 +915,9 @@ def calc_on_policy_policy_value_interval(
         Number of timesteps in an trajectory.
 
     evaluate_on_stationary_distribution: bool, default=False
-        Whether to evaluate policy on stationary distribution.
-        When True, evaluation policy is evaluated by rollout without resetting environment at each trajectory.
+        Whether to evaluate a policy based on the stationary state distribution induced by it.
+        When True, the evaluation policy is evaluated by rollout without resetting environment at each trajectory.
+        This argument is irrelevant when working on the finite horizon setting.
 
     gamma: float, default=1.0
         Discount factor. The value should be within (0, 1].
@@ -972,8 +980,9 @@ def calc_on_policy_variance(
         Number of timesteps in an trajectory.
 
     evaluate_on_stationary_distribution: bool, default=False
-        Whether to evaluate policy on stationary distribution.
-        When True, evaluation policy is evaluated by rollout without resetting environment at each trajectory.
+        Whether to evaluate a policy based on the stationary state distribution induced by it.
+        When True, the evaluation policy is evaluated by rollout without resetting environment at each trajectory.
+        This argument is irrelevant when working on the finite horizon setting.
 
     gamma: float, default=1.0
         Discount factor. The value should be within (0, 1].
@@ -1030,30 +1039,31 @@ def calc_on_policy_conditional_value_at_risk(
         Number of timesteps in an trajectory.
 
     evaluate_on_stationary_distribution: bool, default=False
-        Whether to evaluate policy on stationary distribution.
-        When True, evaluation policy is evaluated by rollout without resetting environment at each trajectory.
+        Whether to evaluate a policy based on the stationary state distribution induced by it.
+        When True, the evaluation policy is evaluated by rollout without resetting environment at each trajectory.
+        This argument is irrelevant when working on the finite horizon setting.
 
     gamma: float, default=1.0
         Discount factor. The value should be within (0, 1].
 
     alphas: {float, array-like of shape (n_alpha, )}, default=np.linspace(0, 1, 20)
-        Set of proportions of the sided region. The value(s) should be within `[0, 1)`.
+        Set of proportions of the shaded region. The value(s) should be within `[0, 1)`.
 
     use_custom_reward_scale: bool, default=False
-        Whether to use the custom reward scale or the reward observed by the behavior policy.
+        Whether to use a customized reward scale or the reward observed under the behavior policy.
         If True, the reward scale is uniform, following Huang et al. (2021).
         If False, the reward scale follows the one defined in Chundak et al. (2021).
 
     scale_min: float, default=None
-        Minimum value of the reward scale in CDF.
+        Minimum value of the reward scale in the CDF.
         When `use_custom_reward_scale == True`, a value must be given.
 
     scale_max: float, default=None
-        Maximum value of the reward scale in CDF.
+        Maximum value of the reward scale in the CDF.
         When `use_custom_reward_scale == True`, a value must be given.
 
     n_partition: int, default=None
-        Number of partitions in the reward scale (x-axis of CDF).
+        Number of partitions in the reward scale (x-axis of the CDF).
         When `use_custom_reward_scale == True`, a value must be given.
 
     random_state: int, default=None (>= 0)
@@ -1180,30 +1190,31 @@ def calc_on_policy_interquartile_range(
         Number of timesteps in an trajectory.
 
     evaluate_on_stationary_distribution: bool, default=False
-        Whether to evaluate policy on stationary distribution.
-        When True, evaluation policy is evaluated by rollout without resetting environment at each trajectory.
+        Whether to evaluate a policy based on the stationary state distribution induced by it.
+        When True, the evaluation policy is evaluated by rollout without resetting environment at each trajectory.
+        This argument is irrelevant when working on the finite horizon setting.
 
     gamma: float, default=1.0
         Discount factor. The value should be within (0, 1].
 
     alpha: float, default=0.05
-        Proportion of the sided region. The value should be within (0, 1].
+        Proportion of the shaded region. The value should be within (0, 1].
 
     use_custom_reward_scale: bool, default=False
-        Whether to use the custom reward scale or the reward observed by the behavior policy.
+        Whether to use a customized reward scale or the reward observed under the behavior policy.
         If True, the reward scale is uniform, following Huang et al. (2021).
         If False, the reward scale follows the one defined in Chundak et al. (2021).
 
     scale_min: float, default=None
-        Minimum value of the reward scale in CDF.
+        Minimum value of the reward scale in the CDF.
         When `use_custom_reward_scale == True`, a value must be given.
 
     scale_max: float, default=None
-        Maximum value of the reward scale in CDF.
+        Maximum value of the reward scale in the CDF.
         When `use_custom_reward_scale == True`, a value must be given.
 
     n_partition: int, default=None
-        Number of partitions in the reward scale (x-axis of CDF).
+        Number of partitions in the reward scale (x-axis of the CDF).
         When `use_custom_reward_scale == True`, a value must be given.
 
     random_state: int, default=None (>= 0)
@@ -1319,27 +1330,28 @@ def calc_on_policy_cumulative_distribution_function(
         Number of timesteps in an trajectory.
 
     evaluate_on_stationary_distribution: bool, default=False
-        Whether to evaluate policy on stationary distribution.
-        When True, evaluation policy is evaluated by rollout without resetting environment at each trajectory.
+        Whether to evaluate a policy based on the stationary state distribution induced by it.
+        When True, the evaluation policy is evaluated by rollout without resetting environment at each trajectory.
+        This argument is irrelevant when working on the finite horizon setting.
 
     gamma: float, default=1.0
         Discount factor. The value should be within (0, 1].
 
     use_custom_reward_scale: bool, default=False
-        Whether to use the custom reward scale or the reward observed by the behavior policy.
+        Whether to use a customized reward scale or the reward observed under the behavior policy.
         If True, the reward scale is uniform, following Huang et al. (2021).
         If False, the reward scale follows the one defined in Chundak et al. (2021).
 
     scale_min: float, default=None
-        Minimum value of the reward scale in CDF.
+        Minimum value of the reward scale in the CDF.
         When `use_custom_reward_scale == True`, a value must be given.
 
     scale_max: float, default=None
-        Maximum value of the reward scale in CDF.
+        Maximum value of the reward scale in the CDF.
         When `use_custom_reward_scale == True`, a value must be given.
 
     n_partition: int, default=None
-        Number of partitions in the reward scale (x-axis of CDF).
+        Number of partitions in the reward scale (x-axis of the CDF).
         When `use_custom_reward_scale == True`, a value must be given.
 
     random_state: int, default=None (>= 0)
@@ -1419,7 +1431,7 @@ def rollout_policy_online(
     gamma: float = 1.0,
     random_state: Optional[int] = None,
 ):
-    """Rollout a given policy on the environment and collect the trajectory-wise on-policy policy value.
+    """Rollout a given policy on the environment and generate trajectory-wise rewards under the policy online.
 
     Parameters
     -------
@@ -1436,8 +1448,9 @@ def rollout_policy_online(
         Number of timesteps in an trajectory.
 
     evaluate_on_stationary_distribution: bool, default=False
-        Whether to evaluate policy on stationary distribution.
-        When True, evaluation policy is evaluated by rollout without resetting environment at each trajectory.
+        Whether to evaluate a policy based on the stationary state distribution induced by it.
+        When True, the evaluation policy is evaluated by rollout without resetting environment at each trajectory.
+        This argument is irrelevant when working on the finite horizon setting.
 
     gamma: float, default=1.0
         Discount factor. The value should be within (0, 1].

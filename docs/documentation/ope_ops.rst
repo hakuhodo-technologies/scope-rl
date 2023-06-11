@@ -56,9 +56,9 @@ We discuss the properties of various OPE estimators together with their implemen
 
 .. seealso::
 
-    * :doc:`Supported OPE estimators <evaluation_implementation>` and :doc:`their API reference <_autosummary/scope_rl.ope.basic_estimators_discrete>` 
+    * :doc:`Supported OPE estimators <evaluation_implementation>` and :doc:`their API reference <_autosummary/scope_rl.ope.basic_estimators_discrete>`
     * (advanced) :doc:`Marginal OPE estimators <evaluation_implementation>` and their :doc:`API reference <_autosummary/scope_rl.ope.marginal_estimators_discrete>`
-    * :doc:`Quickstart <quickstart>`. 
+    * :doc:`Quickstart <quickstart>`.
     .. * and :doc:`related tutorials <_autogallery/basic_ope/index>`
 
 .. _overview_cumulative_distribution_ope:
@@ -80,12 +80,12 @@ Then, we can derive various risk functions based on :math:`F(\cdot)` as follows.
 * :math:`\alpha`-quartile: :math:`Q^{\alpha}(F) := \min \{ G \mid F(G) \leq \alpha \}`
 * Conditional Value at Risk (CVaR): :math:`\int_{G} G \, \mathbb{I}\{ G \leq Q^{\alpha}(F) \} \, \mathrm{d}F(G)`
 
-where we let :math:`G := \sum_{t=0}^{T-1} \gamma^t r_t` to represent the random variable of trajectory wise reward
+where we let :math:`G := \sum_{t=0}^{T-1} \gamma^t r_t` to represent the random variable of trajectory-wise reward
 and :math:`dF(G) := \mathrm{lim}_{\Delta \rightarrow 0} F(G) - F(G- \Delta)`.
 
 .. seealso::
 
-    * :doc:`Supported OPE estimators <evaluation_implementation>` and :doc:`their API reference <_autosummary/scope_rl.ope.cumulative_distribution_estimators_discrete>` 
+    * :doc:`Supported OPE estimators <evaluation_implementation>` and :doc:`their API reference <_autosummary/scope_rl.ope.cumulative_distribution_estimators_discrete>`
     * :doc:`Quickstart <quickstart>` and :doc:`related tutorials <_autogallery/cumulative_distribution_ope/index>`
 
 
@@ -106,12 +106,12 @@ where the :math:`\hat{J}(\cdot)` is the OPE estimate of the policy value, which 
 
 In OPS, how well the ranking of the candidate policy preserves and the safety of the chosen policy matters as well as the accuracy of OPE.
 In the next page, we provide a review of convensional evaluation metrics of OPE/OPS and describe the risk-return tradeoff metrics of top-:math:`k` policy selection in :doc:`Supported evaluation protocols <evaluation_implementation>`.
-We also feature SharpRatio@k, which is the main contribution of our research paper "Risk-Return Assessments of Off-Policy Evaluation in Offline" in :doc:`this page <sharpe_ratio>`. 
+We also feature SharpRatio@k, which is the main contribution of our research paper "Risk-Return Assessments of Off-Policy Evaluation in Offline" in :doc:`this page <sharpe_ratio>`.
 
 .. seealso::
 
     * :doc:`Conventional OPS metrics and SharpRatio@k <sharpe_ratio>`
-    * :doc:`OPS evaluation protocols <evaluation_implementation>` and :doc:`their API reference <_autosummary/scope_rl.ope.ops>` 
+    * :doc:`OPS evaluation protocols <evaluation_implementation>` and :doc:`their API reference <_autosummary/scope_rl.ope.ops>`
     * :doc:`Quickstart <quickstart>` and :doc:`related tutorials <_autogallery/ops/index>`
 
 .. seealso::

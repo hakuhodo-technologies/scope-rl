@@ -11,7 +11,7 @@ Overview
 The simulator is particularly intended for reinforcement learning algorithms and follows `OpenAI Gym <https://gym.openai.com>`_ and `Gymnasium <https://github.com/Farama-Foundation/Gymnasium>`_ interface.
 We design RTBGym as a configurative environment so that researchers and practitioner can customize the environmental modules including WinningPriceDistribution, ClickThroughRate, and ConversionRate.
 
-Note that, RTBGym is publicized as a sub-package of :doc:`SCOPE-RL <index>`, which streamlines the implementation of offline reinforcement learning (offline RL) and off-policy evaluation and selection (OPE/OPS) procedures.
+Note that RTBGym is publicized as a sub-package of :doc:`SCOPE-RL <index>`, which streamlines the implementation of offline reinforcement learning (offline RL) and off-policy evaluation and selection (OPE/OPS) procedures.
 
 Basic Setting
 ~~~~~~~~~~
@@ -33,7 +33,7 @@ We often formulate this RTB problem as the following Constrained Markov Decision
     * remaining budget
     * impression level features (budget consumption rate, cost per mille of impressions, auction winning rate, reward) at the previous timestep
     * adjust rate (RL agent's decision making) at the previous timestep
-    
+
 * `action` (:math:`a \in \mathcal{A}`): Agent chooses adjust rate parameter :math:`\alpha` to maximize KPIs.
 * `reward` (:math:`r \in \mathbb{R}`): Total number of clicks or conversions obtained during the timestep.
 * `constraints` (:math:`C`): The pre-determined episodic budget should not be exceeded.
@@ -73,19 +73,19 @@ Configurative Modules
     * :class:`ClickThroughRate`: Class to define the click through rate of users.
     * :class:`ConversionRate`: Class to define the conversion rate of users.
 
-Note that, users can customize the above modules by following the abstract class.
+Note that users can customize the above modules by following the abstract class.
 We also define the bidding function in the Bidder class and the auction simulation in the Simulator class, respectively.
 
 Quickstart and Configurations
 ~~~~~~~~~~
 
-We provide an example usage of the standard and customized environment. 
-The online/offlline RL and OPE/OPS examples are provides in :doc:`SCOPE-RL's quickstart <quickstart>`.
+We provide an example usage of the standard and customized environment.
+The online/offline RL and OPE/OPS examples are provides in :doc:`SCOPE-RL's quickstart <quickstart>`.
 
 Standard RTBEnv
 ----------
 
-Our standard RTBEnv is available from :class:`gym.make()`, 
+Our standard RTBEnv is available from :class:`gym.make()`,
 following the `OpenAI Gym <https://gym.openai.com>`_ and `Gymnasium <https://github.com/Farama-Foundation/Gymnasium>`_ interface.
 
 .. code-block:: python
@@ -137,8 +137,8 @@ Let's interact uniform random policy with a continuous action RTB environment. T
         action = agent.predict_online(obs)
         obs, reward, done, truncated, info = env.step(action)
 
-Note that, while we use :doc:`SCOPE-RL <index>` and `d3rlpy <https://github.com/takuseno/d3rlpy>`_ here,
-RTBGym is compatible with any other libraries that is compatible to the `OpenAI Gym <https://github.com/openai/gym>`_ 
+Note that while we use :doc:`SCOPE-RL <index>` and `d3rlpy <https://github.com/takuseno/d3rlpy>`_ here,
+RTBGym is compatible with any other libraries that is compatible to the `OpenAI Gym <https://github.com/openai/gym>`_
 and `Gymnasium <https://github.com/Farama-Foundation/Gymnasium>`_ interface.
 
 Customized RTBEnv
@@ -297,7 +297,7 @@ Example of Custom ClickThroughRate (and Conversion Rate):
             clicks = self.random_.rand(len(ad_ids)) < ctrs
             return clicks.astype(int)
 
-Note that, custom conversion rate can be defined in a similar manner.
+Note that custom conversion rate can be defined in a similar manner.
 
 Wrapper class for custom bidding setup
 ----------

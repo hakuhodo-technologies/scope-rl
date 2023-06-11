@@ -21,7 +21,7 @@
 
 *RTBGym* is an open-source simulation platform for Real-Time Bidding (RTB) of Display Advertising, which is written in Python. The simulator is particularly intended for reinforcement learning algorithms and follows [OpenAI Gym](https://gym.openai.com) and [Gymnasium](https://gymnasium.farama.org/)-like interface. We design RTBGym as a configurative environment so that researchers and practitioner can customize the environmental modules including `WinningPriceDistribution`, `ClickThroughRate`, and `ConversionRate`.
 
-Note that, RTBGym is publicized under [SCOPE-RL](../) repository, which facilitates the implementation of offline reinforcement learning procedure.
+Note that RTBGym is publicized under [SCOPE-RL](../) repository, which facilitates the implementation of offline reinforcement learning procedure.
 
 ### Basic Setting
 
@@ -61,7 +61,7 @@ RTBGym is configurative about the following three modules.
 - [ClickThroughRate](./envs/simulator/function.py#L183): Class to define the click through rate of users.
 - [ConversionRate](./envs/simulator/function.py#L393): Class to define the conversion rate of users.
 
-Note that, users can customize the above modules by following the [abstract class](./envs/simulator/base.py). \
+Note that users can customize the above modules by following the [abstract class](./envs/simulator/base.py). \
 We also define the bidding function in the [Bidder](./envs/simulator/bidder.py#15) class and the auction simulation in the [Simulator](./envs/simulator/rtb_synthetic.py#23) class, respectively.
 
 ## Installation
@@ -80,7 +80,7 @@ python setup.py install
 ## Usage
 
 We provide an example usage of the standard and customized environment. \
-The online/offlline RL and Off-Policy Evaluation examples are provides in [SCOPE-RL's README](../README.md).
+The online/offline RL and Off-Policy Evaluation examples are provides in [SCOPE-RL's README](../README.md).
 
 ### Standard RTBEnv
 
@@ -163,7 +163,7 @@ plt.show()
 </p>
 </figcaption>
 
-Note that, while we use [SCOPE-RL](../README.md) and [d3rlpy](https://github.com/takuseno/d3rlpy) here, RTBGym is compatible with any other libraries working on the [OpenAI Gym](https://gym.openai.com) and [Gymnasium](https://gymnasium.farama.org/)-like interface.
+Note that while we use [SCOPE-RL](../README.md) and [d3rlpy](https://github.com/takuseno/d3rlpy) here, RTBGym is compatible with any other libraries working on the [OpenAI Gym](https://gym.openai.com) and [Gymnasium](https://gymnasium.farama.org/)-like interface.
 
 ### Customized RTGEnv
 
@@ -318,7 +318,7 @@ class CustomizedClickThroughRate(BaseClickAndConversionRate):
         clicks = self.random_.rand(len(ad_ids)) < ctrs
         return clicks.astype(int)
 ```
-Note that, custom conversion rate can be defined in a simmilar manner.
+Note that custom conversion rate can be defined in a simmilar manner.
 
 ### Wrapper class for custom bidding setup
 To customize the bidding setup, we also provide `CustomizedRTBEnv`.
@@ -349,10 +349,10 @@ custom_env = CustomizedRTBEnv(
 )
 ```
 
-More examples are available at [quickstart/rtb_synthetic_customize_env.ipynb](./examples/quickstart/rtb_synthetic_customize_env.ipynb). \
-The statistics of the environment is also visualized at [quickstart/rtb_synthetic_data_collection.ipynb](./examples/quickstart/rtb_synthetic_data_collection.ipynb).
+More examples are available at [quickstart/rtb/rtb_synthetic_customize_env.ipynb](./examples/quickstart/rtb/rtb_synthetic_customize_env.ipynb). \
+The statistics of the environment is also visualized at [quickstart/rtb/rtb_synthetic_data_collection.ipynb](./examples/quickstart/rtb/rtb_synthetic_data_collection.ipynb).
 
-Finally, example usages for online/offline RL and OPE/OPS studies are available at [quickstart/rtb_synthetic_discrete_basic.ipynb](./examples/quickstart/rtb_synthetic_discrete_basic.ipynb) (discrete action space) and [quickstart/rtb_synthetic_continuous_basic.ipynb](./examples/quickstart/rtb_synthetic_continuous_basic.ipynb) (continuous action space).
+Finally, example usages for online/offline RL and OPE/OPS studies are available at [quickstart/rtb/rtb_synthetic_discrete_basic.ipynb](./examples/quickstart/rtb/rtb_synthetic_discrete_basic.ipynb) (discrete action space) and [quickstart/rtb/rtb_synthetic_continuous_basic.ipynb](./examples/quickstart/rtb/rtb_synthetic_continuous_basic.ipynb) (continuous action space).
 
 ## Citation
 

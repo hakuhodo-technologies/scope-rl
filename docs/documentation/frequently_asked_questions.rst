@@ -7,7 +7,7 @@ SCOPE-RL
 
 .. rubric:: Q. xxx environment does not work on SCOPE-RL. How should we fix it?
 
-A. SCOPE-RL is compatible to Open AI Gym and Gymnasium API, specifically for `gym>=0.26.0`, which works as follows. 
+A. SCOPE-RL is compatible to Open AI Gym and Gymnasium API, specifically for `gym>=0.26.0`, which works as follows.
 
 .. code-block:: Python
 
@@ -34,7 +34,7 @@ To solve this incompatibility, please use `NewGymAPIWrapper` provided in `scope_
 
 .. rubric:: Q. xxx environment does not work on d3rlpy, which is used for model training. How should we fix it? (d3rlpy and SCOPE-RL is compatible to different version of Open AI Gym.)
 
-A. While SCOPE-RL is compatible to the latest API of Open AI Gym, d3rlpy is not. Therefore, please use `OldGymAPIWrapper` provided in `scope_rl/utils.py` to make the environment work for d3rlpy.
+A. While OFRL is compatible to the latest API of Open AI Gym, d3rlpy is not. Therefore, please use `OldGymAPIWrapper` provided in `scope_rl/utils.py` to enable the use of d3rlpy.
 
 .. code-block:: Python
 

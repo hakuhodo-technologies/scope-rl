@@ -80,7 +80,7 @@ class StateTransitionFunction(BaseStateTransitionFunction):
             Current state.
 
         action: array-like of shape (action_dim, )
-            Indicating the action presented by the agent.
+            Indicating the action chosen by the agent.
 
         Return
         -------
@@ -172,7 +172,7 @@ class RewardFunction(BaseRewardFunction):
         state: np.ndarray,
         action: np.ndarray,
     ) -> float:
-        """Linear mean reward function.
+        """Linear expected immediate reward function.
 
         Parameters
         -------
@@ -180,12 +180,12 @@ class RewardFunction(BaseRewardFunction):
             State in the RL environment.
 
         action: array-like of shape (action_dim, )
-            Indicating the action presented by the agent.
+            Indicating the action chosen by the agent.
 
         Return
         -------
         mean_reward_function: float
-            Mean reward function conditioned on the state and action.
+            Expected immediate reward function conditioned on the state and action.
 
         """
         state = state / self.state_dim

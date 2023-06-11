@@ -24,12 +24,12 @@ class BaseUserModel(metaclass=ABCMeta):
         action: Action,
         item_feature_vector: np.ndarray,
     ) -> np.ndarray:
-        """Function that determines how to update the state (i.e., user preference) based on the recommended item.
+        """Function that determines the user state transition (i.e., user preference) based on the recommended item.
 
         Parameters
         -------
         state: array-like of shape (user_feature_dim, )
-            A vector representing user preference.  The preference changes over time in an episode by the actions presented by the RL agent.
+            A vector representing user preference. The preference changes over time in an episode depending on the actions presented by the RL agent.
             When the true state is unobservable, you can gain observation instead of state.
 
         action: int or array-like of shape (1, )
@@ -41,7 +41,7 @@ class BaseUserModel(metaclass=ABCMeta):
         Returns
         -------
         state: array-like of shape (user_feature_dim, )
-            A vector representing user preference.  The preference changes over time in an episode by the actions presented by the RL agent.
+            A vector representing user preference. The preference changes over time in an episode depending on the actions presented by the RL agent.
             When the true state is unobservable, you can gain observation instead of state.
 
         """
@@ -59,7 +59,7 @@ class BaseUserModel(metaclass=ABCMeta):
         Parameters
         -------
         state: array-like of shape (user_feature_dim, )
-            A vector representing user preference.  The preference changes over time in an episode by the actions presented by the RL agent.
+            A vector representing user preference. The preference changes over time in an episode depending on the actions presented by the RL agent.
             When the true state is unobservable, you can gain observation instead of state.
 
         action: int or array-like of shape (1, )
@@ -71,7 +71,7 @@ class BaseUserModel(metaclass=ABCMeta):
         Returns
         -------
         reward: bool or float
-            User engagement signal. Either binary or continuous.
+            User engagement signal as a reward. Either binary or continuous.
 
         """
         raise NotImplementedError

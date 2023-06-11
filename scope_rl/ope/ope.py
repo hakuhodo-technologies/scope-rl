@@ -53,7 +53,7 @@ class OffPolicyEvaluation:
 
         V(\\pi) := \\mathbb{E} \\left[ \\sum_{t=0}^{T-1} \\gamma^t r_t \\mid \\pi \\right]
 
-    where :math:`\\pi` is the evaluation policy, :math:`r_t` is the reward observation at each timestep :math:`t`,
+    where :math:`\\pi` is the evaluation policy, :math:`r_t` is the reward observed at each timestep :math:`t`,
     :math:`T` is the total number of timesteps in an episode, and :math:`\\gamma` is the discount factor.
 
     Parameters
@@ -95,7 +95,7 @@ class OffPolicyEvaluation:
 
     n_step_pdis: int, default=0 (>= 0)
         Number of previous steps to use per-decision importance weight in marginal OPE estimators.
-        If zero is given, the estimator corresponds to the pure state(-action) marginal IS.
+        When set to zero, the estimator is reduced to the vanilla state marginal IS.
 
     sigma: float, default=1.0 (> 0)
         Bandwidth hyperparameter of gaussian kernel for continuous action space.
@@ -353,7 +353,7 @@ class OffPolicyEvaluation:
         input_dict: OPEInputDict,
         compared_estimators: Optional[List[str]] = None,
     ) -> Dict[str, float]:
-        """Estimate the policy value of the evaluation policies.
+        """Estimate the policy value of the given evaluation policies.
 
         Parameters
         -------
@@ -458,7 +458,7 @@ class OffPolicyEvaluation:
             Significance level. The value should be within `[0, 1)`.
 
         ci: {"bootstrap", "hoeffding", "bernstein", "ttest"}, default="bootstrap"
-            Estimation method for confidence intervals.
+            Method to estimate the confidence interval.
 
         n_bootstrap_samples: int, default=100 (> 0)
             Number of resampling performed in the bootstrap procedure.
@@ -692,7 +692,7 @@ class OffPolicyEvaluation:
         behavior_policy_name: Optional[str] = None,
         dataset_id: Optional[int] = None,
     ) -> Dict[str, float]:
-        """Estimate the policy value of the evaluation policies.
+        """Estimate the policy value of the given evaluation policies.
 
         Parameters
         -------
@@ -924,7 +924,7 @@ class OffPolicyEvaluation:
             Significance level. The value should be within `[0, 1)`.
 
         ci: {"bootstrap", "hoeffding", "bernstein", "ttest"}, default="bootstrap"
-            Estimation method for confidence intervals.
+            Method to estimate the confidence interval.
 
         n_bootstrap_samples: int, default=100 (> 0)
             Number of resampling performed in the bootstrap procedure.
@@ -1175,7 +1175,7 @@ class OffPolicyEvaluation:
             Number of resampling performed in the bootstrap procedure.
 
         ci: {"bootstrap", "hoeffding", "bernstein", "ttest"}, default="bootstrap"
-            Estimation method for confidence intervals.
+            Method to estimate the confidence interval.
 
         random_state: int, default=None (>= 0)
             Random state.
@@ -1571,7 +1571,7 @@ class OffPolicyEvaluation:
             Significance level. The value should be within (0, 1].
 
         ci: {"bootstrap", "hoeffding", "bernstein", "ttest"}, default="bootstrap"
-            Estimation method for confidence intervals.
+            Method to estimate the confidence interval.
 
         n_bootstrap_samples: int, default=10000 (> 0)
             Number of resampling performed in the bootstrap procedure.
@@ -1580,7 +1580,7 @@ class OffPolicyEvaluation:
             Random state.
 
         is_relative: bool, default=False
-            If `True`, the method visualizes the estimated policy value of the evaluation policies
+            If `True`, we get the estimated policy values of the evaluation policies
             relative to the on-policy policy value of the behavior policy. (Only applicable when using a single input_dict.)
 
         hue: {"estimator", "policy"}, default="estimator"
@@ -1827,7 +1827,7 @@ class OffPolicyEvaluation:
         fig_dir: Optional[Path] = None,
         fig_name: str = "estimated_policy_value_multiple.png",
     ) -> None:
-        """Visualize policy value estimated by OPE estimators across multiple logged dataset.
+        """Visualize the policy value estimated by OPE estimators across multiple logged dataset.
 
         Note
         -------
@@ -1867,8 +1867,8 @@ class OffPolicyEvaluation:
 
         plot_type: {"ci", "scatter", "violin"}, default="ci"
             Type of plot.
-            If "ci" is given, the method visualizes the average policy value and the confidence intervals based on the multiple estimate.
-            If "scatter" is given, the method visualizes the individual estimation result.
+            If "ci" is given, we get the empirical average of the estimated values with their estimated confidence intervals.
+            If "scatter" is given, we get a scatter plot of estimated values.
 
         hue: {"estimator", "policy"}, default="estimator"
             Hue of the plot.
@@ -2404,18 +2404,17 @@ class CumulativeDistributionOPE:
 
         F(m, \\pi) := \\mathbb{E} \\left[ \\mathbb{I} \\left \\{ \\sum_{t=0}^{T-1} \\gamma^t r_t \\leq m \\right \\} \\mid \\pi \\right]
 
-    where :math:`\\pi` is the evaluation policy, :math:`r_t` is the reward observation at each timestep :math:`t`,
+    where :math:`\\pi` is the evaluation policy, :math:`r_t` is the reward observed at each timestep :math:`t`,
     :math:`T` is the total number of timesteps in an episode, and :math:`\\gamma` is the discount factor.
 
-    CDF is itself informative, but also enables us to calculate the following risk functions.
+    CDF is itself informative, but it also enables us to calculate the following risk functions.
 
     * Mean: :math:`\\mu(F) := \\int_{G} G \\, \\mathrm{d}F(G)`
     * Variance: :math:`\\sigma^2(F) := \\int_{G} (G - \\mu(F))^2 \\, \\mathrm{d}F(G)`
     * :math:`\\alpha`-quartile: :math:`Q^{\\alpha}(F) := \\min \\{ G \\mid F(G) \\leq \\alpha \\}`
     * Conditional Value at Risk (CVaR): :math:`\\int_{G} G \\, \mathbb{I}\\{ G \\leq Q^{\\alpha}(F) \\} \\, \\mathrm{d}F(G)`
 
-    where we let :math:`G := \\sum_{t=0}^{T-1} \\gamma^t r_t` to represent the random variable of trajectory wise reward
-    and :math:`dF(G) := \\mathrm{lim}_{\\Delta \\rightarrow 0} F(G) - F(G- \\Delta)`.
+    where we use :math:`G := \\sum_{t=0}^{T-1} \\gamma^t r_t`and :math:`dF(G) := \\mathrm{lim}_{\\Delta \\rightarrow 0} F(G) - F(G- \\Delta)`.
 
     Parameters
     -----------
@@ -2455,22 +2454,22 @@ class CumulativeDistributionOPE:
         Estimators must follow the interface of `scope_rl.ope.BaseCumulativeDistributionOPEEstimator`.
 
     use_custom_reward_scale: bool, default=False
-        Whether to use the custom reward scale or the reward observed by the behavior policy.
+        Whether to use a customized reward scale or the reward observed under the behavior policy.
 
         If `True`, the reward scale is uniform, following Huang et al. (2021).
 
         If `False`, the reward scale follows the one defined in Chundak et al. (2021).
 
     scale_min: float, default=None
-        Minimum value of the reward scale in CDF.
+        Minimum value of the reward scale in the CDF.
         If use_custom_reward_scale is `True`, a value must be given.
 
     scale_max: float, default=None
-        Maximum value of the reward scale in CDF.
+        Maximum value of the reward scale in the CDF.
         If use_custom_reward_scale is `True`, a value must be given.
 
     n_partition: int, default=None
-        Number of partitions in the reward scale (x-axis of CDF).
+        Number of partitions in the reward scale (x-axis of the CDF).
         If use_custom_reward_scale is `True`, a value must be given.
 
     sigma: float, default=1.0 (> 0)
@@ -2851,7 +2850,7 @@ class CumulativeDistributionOPE:
             }
 
     def _target_value_given_idx(self, idx_: int, reward_scale: np.ndarray):
-        """Obtain target value in reward scale for cumulative distribution estimation.
+        """Obtain the reward value corresponding to the given idx when estimating the CDF.
 
         Parameters
         -------
@@ -2859,7 +2858,7 @@ class CumulativeDistributionOPE:
             Indicating index. If a list is given, the average of the two will be returned.
 
         reward_scale: array-like of shape (n_partition, )
-            Scale of the trajectory wise reward used for x-axis of CDF curve.
+            Scale of the trajectory-wise reward used for x-axis of the CDF plot.
 
         Return
         -------
@@ -2902,7 +2901,7 @@ class CumulativeDistributionOPE:
         compared_estimators: Optional[List[str]] = None,
         reward_scale: Optional[np.ndarray] = None,
     ):
-        """Estimate the cumulative distribution of the trajectory wise reward of the evaluation policies.
+        """Estimate the cumulative distribution of the trajectory-wise reward under the given evaluation policies.
 
         Parameters
         -------
@@ -2934,7 +2933,7 @@ class CumulativeDistributionOPE:
             If `None` is given, all the estimators are compared.
 
         reward_scale: array-like of shape (n_partition, ), default=None
-            Scale of the trajectory wise reward used for x-axis of CDF curve.
+            Scale of the trajectory-wise reward used for x-axis of the CDF plot.
 
         Return
         -------
@@ -2982,7 +2981,7 @@ class CumulativeDistributionOPE:
         input_dict: OPEInputDict,
         compared_estimators: Optional[List[str]] = None,
     ):
-        """Estimate the mean of the trajectory wise reward (i.e., policy value) of the evaluation policies.
+        """Estimate the expected trajectory-wise reward (i.e., policy value) of the evaluation policies.
 
         Parameters
         -------
@@ -3016,7 +3015,7 @@ class CumulativeDistributionOPE:
         Return
         -------
         mean_dict: dict
-            Dictionary containing the mean trajectory wise reward of each evaluation policy estimated by OPE estimators.
+            Dictionary containing the mean trajectory-wise reward of each evaluation policy estimated by OPE estimators.
             key: :class:`[evaluation_policy][OPE_estimator_name]`
 
         """
@@ -3055,7 +3054,7 @@ class CumulativeDistributionOPE:
         input_dict: OPEInputDict,
         compared_estimators: Optional[List[str]] = None,
     ):
-        """Estimate the variance of the trajectory wise reward of the evaluation policies.
+        """Estimate the variance of the trajectory-wise reward under the given evaluation policies.
 
         Parameters
         -------
@@ -3089,7 +3088,7 @@ class CumulativeDistributionOPE:
         Return
         -------
         variance_dict: dict
-            Dictionary containing the variance of trajectory wise reward of each evaluation policy estimated by OPE estimators.
+            Dictionary containing the variance of trajectory-wise reward of each evaluation policy estimated by OPE estimators.
             key: :class:`[evaluation_policy][OPE_estimator_name]`
 
         """
@@ -3131,7 +3130,7 @@ class CumulativeDistributionOPE:
         compared_estimators: Optional[List[str]] = None,
         alphas: Optional[Union[np.ndarray, float]] = None,
     ):
-        """Estimate the conditional value at risk of the trajectory wise reward of the evaluation policies.
+        """Estimate the conditional value at risk of the trajectory-wise reward under the given evaluation policies.
 
         Parameters
         -------
@@ -3163,13 +3162,13 @@ class CumulativeDistributionOPE:
             If `None` is given, all the estimators are compared.
 
         alphas: {float, array-like of shape (n_alpha, )}, default=None
-            Set of proportions of the sided region. The value(s) should be within `[0, 1)`.
+            Set of proportions of the shaded region. The value(s) should be within `[0, 1)`.
             If `None` is given, :class:`np.linspace(0, 1, 21)` will be used.
 
         Return
         -------
         conditional_value_at_risk_dict: dict
-            Dictionary containing the conditional value at risk of trajectory wise reward of each evaluation policy estimated by OPE estimators.
+            Dictionary containing the conditional value at risk of trajectory-wise reward of each evaluation policy estimated by OPE estimators.
             key: :class:`[evaluation_policy][OPE_estimator_name]`
 
         """
@@ -3235,7 +3234,7 @@ class CumulativeDistributionOPE:
         compared_estimators: Optional[List[str]] = None,
         alpha: float = 0.05,
     ):
-        """Estimate the interquartile range of the trajectory wise reward of the evaluation policies.
+        """Estimate the interquartile range of the trajectory-wise reward under the given evaluation policies.
 
         Parameters
         -------
@@ -3267,12 +3266,12 @@ class CumulativeDistributionOPE:
             If `None` is given, all the estimators are compared.
 
         alpha: float, default=0.05
-            Proportion of the sided region. The value should be within (0, 1].
+            Proportion of the shaded region. The value should be within (0, 1].
 
         Return
         -------
         interquartile_range_dict: dict
-            Dictionary containing the interquartile range of trajectory wise reward of each evaluation policy estimated by OPE estimators.
+            Dictionary containing the interquartile range of trajectory-wise reward of each evaluation policy estimated by OPE estimators.
             key: :class:`[evaluation_policy][OPE_estimator_name][quartile_name]`
 
         """
@@ -3337,7 +3336,7 @@ class CumulativeDistributionOPE:
         dataset_id: Optional[int] = None,
         reward_scale: Optional[np.ndarray] = None,
     ):
-        """Estimate the cumulative distribution of the trajectory wise reward of the evaluation policies.
+        """Estimate the cumulative distribution of the trajectory-wise reward under the given evaluation policies.
 
         Parameters
         -------
@@ -3375,7 +3374,7 @@ class CumulativeDistributionOPE:
             Id of the logged dataset.
 
         reward_scale: array-like of shape (n_partition, ), default=None
-            Scale of the trajectory wise reward used for x-axis of CDF curve.
+            Scale of the trajectory-wise reward used for x-axis of the CDF plot.
 
         Return
         -------
@@ -3552,7 +3551,7 @@ class CumulativeDistributionOPE:
         behavior_policy_name: Optional[str] = None,
         dataset_id: Optional[int] = None,
     ):
-        """Estimate the mean of the trajectory wise reward (i.e., policy value) of the evaluation policies.
+        """Estimate the expected trajectory-wise reward (i.e., policy value) of the evaluation policies.
 
         Parameters
         -------
@@ -3592,7 +3591,7 @@ class CumulativeDistributionOPE:
         Return
         -------
         mean_dict: dict (, list of dict)
-            Dictionary containing the mean trajectory wise reward of each evaluation policy estimated by OPE estimators.
+            Dictionary containing the mean trajectory-wise reward of each evaluation policy estimated by OPE estimators.
             key: :class:`[evaluation_policy][OPE_estimator_name]`
 
             When behavior_policy_name is `None` and dataset_id is `None`,
@@ -3737,7 +3736,7 @@ class CumulativeDistributionOPE:
         behavior_policy_name: Optional[str] = None,
         dataset_id: Optional[int] = None,
     ):
-        """Estimate the variance of the trajectory wise reward of the evaluation policies.
+        """Estimate the variance of the trajectory-wise reward under the given evaluation policies.
 
         Parameters
         -------
@@ -3777,7 +3776,7 @@ class CumulativeDistributionOPE:
         Return
         -------
         variance_dict: dict (, list of dict)
-            Dictionary containing the variance of trajectory wise reward of each evaluation policy estimated by OPE estimators.
+            Dictionary containing the variance of trajectory-wise reward of each evaluation policy estimated by OPE estimators.
             key: :class:`[evaluation_policy][OPE_estimator_name]`
 
             When behavior_policy_name is `None` and dataset_id is `None`,
@@ -3923,7 +3922,7 @@ class CumulativeDistributionOPE:
         dataset_id: Optional[int] = None,
         alphas: Optional[Union[np.ndarray, float]] = None,
     ):
-        """Estimate the conditional value at risk of the trajectory wise reward of the evaluation policies.
+        """Estimate the conditional value at risk of the trajectory-wise reward under the given evaluation policies.
 
         Parameters
         -------
@@ -3961,13 +3960,13 @@ class CumulativeDistributionOPE:
             Id of the logged dataset.
 
         alphas: {float, array-like of shape (n_alpha, )}, default=None
-            Set of proportions of the sided region. The value(s) should be within `[0, 1)`.
+            Set of proportions of the shaded region. The value(s) should be within `[0, 1)`.
             If `None` is given, :class:`np.linspace(0, 1, 21)` will be used.
 
         Return
         -------
         conditional_value_at_risk_dict: dict (, list of dict)
-            Dictionary containing the conditional value at risk of trajectory wise reward of each evaluation policy estimated by OPE estimators.
+            Dictionary containing the conditional value at risk of trajectory-wise reward of each evaluation policy estimated by OPE estimators.
             key: :class:`[evaluation_policy][OPE_estimator_name]`
 
             When behavior_policy_name is `None` and dataset_id is `None`,
@@ -4120,7 +4119,7 @@ class CumulativeDistributionOPE:
         dataset_id: Optional[int] = None,
         alpha: float = 0.05,
     ):
-        """Estimate the interquartile range of the trajectory wise reward of the evaluation policies.
+        """Estimate the interquartile range of the trajectory-wise reward under the given evaluation policies.
 
         Parameters
         -------
@@ -4158,12 +4157,12 @@ class CumulativeDistributionOPE:
             Id of the logged dataset.
 
         alpha: float, default=0.05
-            Proportion of the sided region. The value should be within (0, 1].
+            Proportion of the shaded region. The value should be within (0, 1].
 
         Return
         -------
         interquartile_range_dict: dict (, list of dict)
-            Dictionary containing the interquartile range of trajectory wise reward of each evaluation policy estimated by OPE estimators.
+            Dictionary containing the interquartile range of trajectory-wise reward of each evaluation policy estimated by OPE estimators.
             key: :class:`[evaluation_policy][OPE_estimator_name][quartile_name]`
 
         """
@@ -4431,7 +4430,7 @@ class CumulativeDistributionOPE:
                         )
 
                     axes[i].set_title(eval_policy)
-                    axes[i].set_xlabel("trajectory wise reward")
+                    axes[i].set_xlabel("trajectory-wise reward")
                     axes[i].set_ylabel("cumulative probability")
                     if legend:
                         axes[i].legend()
@@ -4462,7 +4461,7 @@ class CumulativeDistributionOPE:
                         )
 
                     axes[i // n_cols, i % n_cols].set_title(eval_policy)
-                    axes[i // n_cols, i % n_cols].set_xlabel("trajectory wise reward")
+                    axes[i // n_cols, i % n_cols].set_xlabel("trajectory-wise reward")
                     axes[i // n_cols, i % n_cols].set_ylabel("cumulative probability")
                     if legend:
                         axes[i // n_cols, i % n_cols].legend()
@@ -4502,7 +4501,7 @@ class CumulativeDistributionOPE:
                         )
 
                     axes[i].set_title(estimator)
-                    axes[i].set_xlabel("trajectory wise reward")
+                    axes[i].set_xlabel("trajectory-wise reward")
                     axes[i].set_ylabel("cumulative probability")
                     if legend:
                         axes[i].legend()
@@ -4518,7 +4517,7 @@ class CumulativeDistributionOPE:
                         )
 
                     axes[i + 1].set_title("on_policy")
-                    axes[i + 1].set_xlabel("trajectory wise reward")
+                    axes[i + 1].set_xlabel("trajectory-wise reward")
                     axes[i + 1].set_ylabel("cumulative probability")
                     if legend:
                         axes[i + 1].legend()
@@ -4540,7 +4539,7 @@ class CumulativeDistributionOPE:
                         )
 
                     axes[i // n_cols, i % n_cols].set_title(estimator)
-                    axes[i // n_cols, i % n_cols].set_xlabel("trajectory wise reward")
+                    axes[i // n_cols, i % n_cols].set_xlabel("trajectory-wise reward")
                     axes[i // n_cols, i % n_cols].set_ylabel("cumulative probability")
                     if legend:
                         axes[i // n_cols, i % n_cols].legend()
@@ -4557,7 +4556,7 @@ class CumulativeDistributionOPE:
 
                     axes[(i + 1) // n_cols, (i + 1) % n_cols].set_title("on_policy")
                     axes[(i + 1) // n_cols, (i + 1) % n_cols].set_xlabel(
-                        "trajectory wise reward"
+                        "trajectory-wise reward"
                     )
                     axes[(i + 1) // n_cols, (i + 1) % n_cols].set_ylabel(
                         "cumulative probability"
@@ -4630,7 +4629,7 @@ class CumulativeDistributionOPE:
             Significance level. The value should be within `[0, 1)`.
 
         is_relative: bool, default=False
-            If `True`, the method visualizes the estimated policy value of the evaluation policies
+            If `True`, we get the estimated policy values of the evaluation policies
             relative to the ground-truth policy value of the behavior policy.
 
         hue: {"estimator", "policy"}, default="estimator"
@@ -4937,7 +4936,7 @@ class CumulativeDistributionOPE:
             Id of the logged dataset.
 
         alphas: array-like of shape (n_alpha, ), default=None
-            Set of proportions of the sided region. The values should be within `[0, 1)`.
+            Set of proportions of the shaded region. The values should be within `[0, 1)`.
             If `None` is given, :class:`np.linspace(0, 1, 21)` will be used.
 
         hue: {"estimator", "policy"}, default="estimator"
@@ -5408,8 +5407,8 @@ class CumulativeDistributionOPE:
 
         plot_type: {"ci", "scatter", "violin"}, default="ci"
             Type of plot.
-            If "ci" is given, the method visualizes the average policy value and the confidence intervals based on the multiple estimate.
-            If "scatter" is given, the method visualizes the individual estimation result.
+            If "ci" is given, we get the empirical average of the estimated values with their estimated confidence intervals.
+            If "scatter" is given, we get a scatter plot of estimated values.
 
         hue: {"estimator", "policy"}, default="estimator"
             Hue of the plot.
@@ -5878,7 +5877,7 @@ class CumulativeDistributionOPE:
         fig_dir: Optional[Path] = None,
         fig_name: str = "estimated_policy_value_multiple.png",
     ) -> None:
-        """Visualize policy value estimated by OPE estimators across multiple logged dataset.
+        """Visualize the policy value estimated by OPE estimators across multiple logged dataset.
 
         Note
         -------
@@ -5923,7 +5922,7 @@ class CumulativeDistributionOPE:
         plot_type: {"ci_hue", "ci_behavior_policy", "enumerate"}, default="ci_hue"
             Type of plot.
             If "ci" is given, the method visualizes the average policy value and its 95% confidence intervals based on the multiple estimate.
-            If "enumerate" is given, the method visualizes the individual estimation result.
+            If "enumerate" is given, we get a scatter plot of estimated values.
 
         hue: {"estimator", "policy"}, default="estimator"
             Hue of the plot.
@@ -6064,7 +6063,7 @@ class CumulativeDistributionOPE:
                             )
 
                         axes[i].set_title(eval_policy)
-                        axes[i].set_xlabel("trajectory wise reward")
+                        axes[i].set_xlabel("trajectory-wise reward")
                         axes[i].set_ylabel("cumulative probability")
                         if legend:
                             axes[i].legend()
@@ -6108,7 +6107,7 @@ class CumulativeDistributionOPE:
 
                         axes[i // n_cols, i % n_cols].set_title(eval_policy)
                         axes[i // n_cols, i % n_cols].set_xlabel(
-                            "trajectory wise reward"
+                            "trajectory-wise reward"
                         )
                         axes[i // n_cols, i % n_cols].set_ylabel(
                             "cumulative probability"
@@ -6163,7 +6162,7 @@ class CumulativeDistributionOPE:
                             )
 
                         axes[i].set_title(estimator)
-                        axes[i].set_xlabel("trajectory wise reward")
+                        axes[i].set_xlabel("trajectory-wise reward")
                         axes[i].set_ylabel("cumulative probability")
                         if legend:
                             axes[i].legend()
@@ -6177,7 +6176,7 @@ class CumulativeDistributionOPE:
                             )
 
                         axes[i + 1].set_title("on_policy")
-                        axes[i + 1].set_xlabel("trajectory wise reward")
+                        axes[i + 1].set_xlabel("trajectory-wise reward")
                         axes[i + 1].set_ylabel("cumulative probability")
                         if legend:
                             axes[i + 1].legend()
@@ -6212,7 +6211,7 @@ class CumulativeDistributionOPE:
 
                         axes[i // n_cols, i % n_cols].set_title(estimator)
                         axes[i // n_cols, i % n_cols].set_xlabel(
-                            "trajectory wise reward"
+                            "trajectory-wise reward"
                         )
                         axes[i // n_cols, i % n_cols].set_ylabel(
                             "cumulative probability"
@@ -6230,7 +6229,7 @@ class CumulativeDistributionOPE:
 
                         axes[(i + 1) // n_cols, (i + 1) % n_cols].set_title("on_policy")
                         axes[(i + 1) // n_cols, (i + 1) % n_cols].set_xlabel(
-                            "trajectory wise reward"
+                            "trajectory-wise reward"
                         )
                         axes[(i + 1) // n_cols, (i + 1) % n_cols].set_ylabel(
                             "cumulative probability"
@@ -6291,7 +6290,7 @@ class CumulativeDistributionOPE:
                             )
 
                         axes[i, j].set_title(f"{eval_policy}, {estimator}")
-                        axes[i, j].set_xlabel("trajectory wise reward")
+                        axes[i, j].set_xlabel("trajectory-wise reward")
                         axes[i, j].set_ylabel("cumulative probability")
                         if legend:
                             axes[i, j].legend(title="behavior_policy")
@@ -6349,7 +6348,7 @@ class CumulativeDistributionOPE:
                             )
 
                         axes[i].set_title(f"{estimator}, {eval_policy}")
-                        axes[i].set_xlabel("trajectory wise reward")
+                        axes[i].set_xlabel("trajectory-wise reward")
                         axes[i].set_ylabel("cumulative probability")
                         if legend:
                             axes[i].legend(title="behavior_policy")
@@ -6399,7 +6398,7 @@ class CumulativeDistributionOPE:
                                 )
 
                             axes[i, j].set_title(f"{estimator}, {eval_policy}")
-                            axes[i, j].set_xlabel("trajectory wise reward")
+                            axes[i, j].set_xlabel("trajectory-wise reward")
                             axes[i, j].set_ylabel("cumulative probability")
                             if legend:
                                 axes[i, j].legend(title="behavior_policy")
@@ -6436,7 +6435,7 @@ class CumulativeDistributionOPE:
                             )
 
                         axes[i, j].set_title(f"{eval_policy}, {estimator}")
-                        axes[i, j].set_xlabel("trajectory wise reward")
+                        axes[i, j].set_xlabel("trajectory-wise reward")
                         axes[i, j].set_ylabel("cumulative probability")
                         if legend:
                             axes[i, j].legend(title="dataset_id")
@@ -6467,7 +6466,7 @@ class CumulativeDistributionOPE:
                             )
 
                         axes[i, j].set_title(f"{estimator}, {eval_policy}")
-                        axes[i, j].set_xlabel("trajectory wise reward")
+                        axes[i, j].set_xlabel("trajectory-wise reward")
                         axes[i, j].set_ylabel("cumulative probability")
                         if legend:
                             axes[i, j].legend(title="dataset_id")
@@ -6495,7 +6494,7 @@ class CumulativeDistributionOPE:
         fig_dir: Optional[Path] = None,
         fig_name: str = "estimated_policy_value_multiple.png",
     ) -> None:
-        """Visualize policy value estimated by OPE estimators across multiple logged dataset.
+        """Visualize the policy value estimated by OPE estimators across multiple logged dataset.
 
         Note
         -------
@@ -6536,8 +6535,8 @@ class CumulativeDistributionOPE:
 
         plot_type: {"ci", "scatter", "violin"}, default="ci"
             Type of plot.
-            If "ci" is given, the method visualizes the average policy value and the confidence intervals based on the multiple estimate.
-            If "scatter" is given, the method visualizes the individual estimation result.
+            If "ci" is given, we get the empirical average of the estimated values with their estimated confidence intervals.
+            If "scatter" is given, we get a scatter plot of estimated values.
 
         hue: {"estimator", "policy"}, default="estimator"
             Hue of the plot.
@@ -6655,7 +6654,7 @@ class CumulativeDistributionOPE:
         fig_dir: Optional[Path] = None,
         fig_name: str = "estimated_variance_multiple.png",
     ) -> None:
-        """Visualize variance estimated by OPE estimators across multiple logged dataset.
+        """Visualize the variance of the trajectory-wise reward under the evaluation policy estimated by OPE estimators across multiple logged dataset.
 
         Note
         -------
@@ -6696,8 +6695,8 @@ class CumulativeDistributionOPE:
 
         plot_type: {"ci", "scatter", "violin"}, default="ci"
             Type of plot.
-            If "ci" is given, the method visualizes the average policy value and the confidence intervals based on the multiple estimate.
-            If "scatter" is given, the method visualizes the individual estimation result.
+            If "ci" is given, we get the empirical average of the estimated values with their estimated confidence intervals.
+            If "scatter" is given, we get a scatter plot of estimated values.
 
         hue: {"estimator", "policy"}, default="estimator"
             Hue of the plot.
@@ -6814,7 +6813,7 @@ class CumulativeDistributionOPE:
         fig_dir: Optional[Path] = None,
         fig_name: str = "estimated_conditional_value_at_risk_multiple.png",
     ) -> None:
-        """Visualize conditional value at risk estimated by OPE estimators across multiple logged dataset.
+        """Visualize the conditional value at risk of the trajectory-wise reward under the evaluation policy estimated by OPE estimators across multiple logged dataset.
 
         Note
         -------
@@ -6854,12 +6853,12 @@ class CumulativeDistributionOPE:
             Name of the behavior policy.
 
         alpha: float = 0.05.
-            Proportion of the sided region in CVaR estimate. The value should be within `[0, 1)`.
+            Proportion of the shaded region in CVaR estimate. The value should be within `[0, 1)`.
 
         plot_type: {"ci", "scatter", "violin"}, default="ci"
             Type of plot.
-            If "ci" is given, the method visualizes the average policy value and the confidence intervals based on the multiple estimate.
-            If "scatter" is given, the method visualizes the individual estimation result.
+            If "ci" is given, we get the empirical average of the estimated values with their estimated confidence intervals.
+            If "scatter" is given, we get a scatter plot of estimated values.
 
         hue: {"estimator", "policy"}, default="estimator"
             Hue of the plot.
@@ -6979,7 +6978,7 @@ class CumulativeDistributionOPE:
         fig_dir: Optional[Path] = None,
         fig_name: str = "estimated_conditional_value_at_risk_multiple.png",
     ) -> None:
-        """Visualize lower quartile estimated by OPE estimators across multiple logged dataset.
+        """Visualize the lower quartile of the trajectory-wise reward under the evaluation policy estimated by OPE estimators across multiple logged dataset.
 
         Note
         -------
@@ -7019,12 +7018,12 @@ class CumulativeDistributionOPE:
             Name of the behavior policy.
 
         alpha: float = 0.05.
-            Proportion of the sided region in CVaR estimate. The value should be within `[0, 1)`.
+            Proportion of the shaded region in CVaR estimate. The value should be within `[0, 1)`.
 
         plot_type: {"ci", "scatter", "violin"}, default="ci"
             Type of plot.
-            If "ci" is given, the method visualizes the average policy value and the confidence intervals based on the multiple estimate.
-            If "scatter" is given, the method visualizes the individual estimation result.
+            If "ci" is given, we get the empirical average of the estimated values with their estimated confidence intervals.
+            If "scatter" is given, we get a scatter plot of estimated values.
 
         hue: {"estimator", "policy"}, default="estimator"
             Hue of the plot.

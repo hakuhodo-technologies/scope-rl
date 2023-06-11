@@ -50,7 +50,7 @@ class BasicEnv(gym.Env):
         Dimension of the state.
 
     action_type: {"discrete", "continuous"}, default="continuous"
-        Action type of the RL agent.
+        Type of the action space.
 
     action_dim: int
         Dimension of the action (context).
@@ -74,7 +74,7 @@ class BasicEnv(gym.Env):
         State transition function. Both class and instance are acceptable.
 
     RewardFunction: BaseRewardFunction, default=RewardFunction
-        Mean reward function. Both class and instance are acceptable.
+        Expected immediate reward function. Both class and instance are acceptable.
 
     random_state: int, default=None (>= 0)
         Random state.
@@ -329,19 +329,20 @@ class BasicEnv(gym.Env):
         -------
         feedbacks: Tuple
             obs: ndarray of shape (state_dim,)
-                State observation, which may be noisy.
+                State observation, which possibly be noisy.
 
             reward: float
-                Reward observation.
+                Observed immediate rewards.
 
             done: bool
-                Wether the episode end or not.
+                Whether the episode end or not.
 
             truncated: False
                 For API consistency.
 
             info: (empty) dict
-                Additional feedback, which is unavailable to the agent.
+                Additional information that may be useful for the package users.
+            This is unavailable to the RL agent.
 
         """
         if self.action_type == "discrete":
@@ -380,10 +381,11 @@ class BasicEnv(gym.Env):
         Returns
         -------
         obs: ndarray of shape (state_dim,)
-            State observation, which may be noisy.
+            State observation, which possibly be noisy.
 
         info: (empty) dict
-            Additional feedbacks, which is unavailable to the agent.
+            Additional information that may be useful for the package users.
+            This is unavailable to the RL agent.
 
         """
         if seed is not None:

@@ -1,7 +1,7 @@
 # Copyright (c) 2023, Haruka Kiyohara, Ren Kishimoto, HAKUHODO Technologies Inc., and Hanjuku-kaso Co., Ltd. All rights reserved.
 # Licensed under the Apache 2.0 License.
 
-"""State(-Action) Marginal Off-Policy Estimators for continuous action cases (designed for deterministic policies)."""
+"""State(-Action) Marginal Off-Policy Estimators for continuous action cases (designed for deterministic evaluation policies)."""
 from dataclasses import dataclass
 from typing import Optional, Union, Dict
 
@@ -28,7 +28,7 @@ class ContinuousDoubleReinforcementLearning(BaseOffPolicyEstimator):
 
     Note
     -------
-    DRL estimates the policy value using state-action marginal importance weight and Q function estimated by cross-fitting.
+    DRL estimates the policy value using state-action marginal importance weight and Q-function estimated by cross-fitting.
 
     .. math::
 
@@ -36,14 +36,13 @@ class ContinuousDoubleReinforcementLearning(BaseOffPolicyEstimator):
         &:= \\frac{1}{n} \\sum_{k=1}^K \\sum_{i=1}^{n_k} \\sum_{t=0}^{T-1} ( w^j(s_{i,t}, a_{i, t}) (r_{i, t} - Q^j(s_{i, t}, a_{i, t})) \\\\
         & \quad \quad + w^j(s_{i, t-1}, a_{i, t-1}) Q^j(s_{i, t}, \\pi(s_{i, t})) )
 
-    where :math:`w(s, a) \\approx d^{\\pi}(s, a) / d^{\\pi_0}(s, a)` is the state-action marginal importance weight and :math:`Q(s, a)` is the Q function.
+    where :math:`w(s, a) \\approx d^{\\pi}(s, a) / d^{\\pi_b}(s, a)` is the state-action marginal importance weight and :math:`Q(s, a)` is the Q-function.
     :math:`K` is the number of folds and :math:`\\mathcal{D}_j` is the :math:`j`-th split of logged data consisting of :math:`n_k` samples.
-    :math:`w^j` and :math:`Q^j` are trained on the subset of data used for OPE, i.e., :math:`\\mathcal{D} \\setminus \\mathcal{D}_j`.
+    :math:`w^j` and :math:`Q^j` are estimated on the subset of data used for OPE, i.e., :math:`\\mathcal{D} \\setminus \\mathcal{D}_j`.
 
-    DRL achieves the semiparametric efficiency with a consistent value predictor.
+    DRL achieves the semiparametric efficiency bound with a consistent value predictor.
 
-    There are several ways to estimate state(-action) marginal importance weight including Augmented Lagrangian Method (ALM) (Yang et al., 2020) 
-    and Minimax Weight Learning (MWL) (Uehara et al., 2020).
+    There are several ways to estimate the state(-action) marginal importance weight such as Augmented Lagrangian Method (ALM) (Yang et al., 2020) and Minimax Weight Learning (MWL) (Uehara et al., 2020).
 
     .. seealso::
 
@@ -87,19 +86,19 @@ class ContinuousDoubleReinforcementLearning(BaseOffPolicyEstimator):
             Number of timesteps in an episode.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
-            Reward observation.
+            Observed immediate rewards.
 
         state_action_marginal_importance_weight: array-like of shape (n_trajectories * step_per_trajectory, )
-            Marginal importance weight of the state-action pair, i.e., :math:`d_{\\pi}(s, a) / d_{\\pi_0}(s, a)`
+            Importance weight wrt the state-action marginal distribution, i.e., :math:`d_{\\pi}(s, a) / d_{\\pi_b}(s, a)`
 
         state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, 2)
-            :math:`\\hat{Q}` for the observed action and action chosen evaluation policy,
+            :math:`\\hat{Q}` for the observed action and that chosen by the evaluation policy,
             i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a | s_t))`.
 
         Return
         -------
         estimated_trajectory_wise_policy_value: ndarray of shape (n_trajectories, )
-            Policy value estimated for each trajectory.
+            Policy value (expected reward under the evaluation policy) estimated for each trajectory.
 
         """
         state_action_value_prediction = state_action_value_prediction.reshape(
@@ -139,13 +138,13 @@ class ContinuousDoubleReinforcementLearning(BaseOffPolicyEstimator):
             Number of timesteps in an episode.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
-            Reward observation.
+            Observed immediate rewards.
 
         state_action_marginal_importance_weight: array-like of shape (n_trajectories * step_per_trajectory, )
-            Marginal importance weight of the state-action pair, i.e., :math:`d_{\\pi}(s, a) / d_{\\pi_0}(s, a)`
+            Importance weight wrt the state-action marginal distribution, i.e., :math:`d_{\\pi}(s, a) / d_{\\pi_b}(s, a)`
 
         state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, 2)
-            :math:`\\hat{Q}` for the observed action and action chosen evaluation policy,
+            :math:`\\hat{Q}` for the observed action and that chosen by the evaluation policy,
             i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a | s_t))`.
 
         Return
@@ -213,20 +212,20 @@ class ContinuousDoubleReinforcementLearning(BaseOffPolicyEstimator):
             Number of timesteps in an episode.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
-            Reward observation.
+            Observed immediate rewards.
 
         state_action_marginal_importance_weight: array-like of shape (n_trajectories * step_per_trajectory, )
-            Marginal importance weight of the state-action pair, i.e., :math:`d_{\\pi}(s, a) / d_{\\pi_0}(s, a)`
+            Importance weight wrt the state-action marginal distribution, i.e., :math:`d_{\\pi}(s, a) / d_{\\pi_b}(s, a)`
 
         state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, 2)
-            :math:`\\hat{Q}` for the observed action and action chosen evaluation policy,
+            :math:`\\hat{Q}` for the observed action and that chosen by the evaluation policy,
             i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a | s_t))`.
 
         alpha: float, default=0.05
             Significance level. The value should be within `[0, 1)`.
 
         ci: {"bootstrap", "hoeffding", "bernstein", "ttest"}, default="bootstrap"
-            Estimation method for confidence interval.
+            Method to estimate the confidence interval.
 
         n_bootstrap_samples: int, default=10000 (> 0)
             Number of resampling performed in the bootstrap procedure.
@@ -300,7 +299,7 @@ class ContinuousDoubleReinforcementLearning(BaseOffPolicyEstimator):
 
 @dataclass
 class ContinuousStateMarginalDM(BaseStateMarginalOPEEstimator):
-    """Direct Method (DM) for continuous-action and stationary OPE (designed for deterministic policies).
+    """Direct Method (DM) for continuous-action and stationary OPE (designed for deterministic evaluation policies).
 
     Bases: :class:`scope_rl.ope.BaseStateMarginalOPEEstimator` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
@@ -308,7 +307,7 @@ class ContinuousStateMarginalDM(BaseStateMarginalOPEEstimator):
 
     Note
     -------
-    DM estimates the policy value using the initial state value as follows.
+    DM estimates the policy value using an estimated initial state value as follows.
 
     .. math::
 
@@ -316,13 +315,13 @@ class ContinuousStateMarginalDM(BaseStateMarginalOPEEstimator):
         := \\mathbb{E}_n [\\hat{Q}(s_0, \\pi(s_0))]]
         = \\mathbb{E}_n [\\hat{V}(s_0)],
 
-    where :math:`\\mathcal{D}=\\{\\{(s_t, a_t, r_t)\\}_{t=0}^{T-1}\\}_{i=1}^n` is the logged dataset with :math:`n` trajectories of data.
+    where :math:`\\mathcal{D}=\\{\\{(s_t, a_t, r_t)\\}_{t=0}^{T-1}\\}_{i=1}^n` is the logged dataset with :math:`n` trajectories.
     :math:`T` indicates step per episode. :math:`\\hat{Q}(s_t, a_t)` is the estimated Q value given a state-action pair.
     \\hat{V}(s_t) is the estimated value function given a state.
 
-    DM has low variance, but can incur bias due to approximation errors.
+    DM has low variance compared to other estimators, but can produce larger bias due to approximation errors.
 
-    There are several ways to estimate :math:`\\hat{Q}(s, a)` such as Fitted Q Evaluation (FQE) (Le et al., 2019),
+    There are several methods to estimate :math:`\\hat{Q}(s, a)` such as Fitted Q Evaluation (FQE) (Le et al., 2019),
     Minimax Q-Function Learning (MQL) (Uehara et al., 2020), and Augmented Lagrangian Method (ALM) (Yang et al., 2020).
 
     .. seealso::
@@ -373,7 +372,7 @@ class ContinuousStateMarginalDM(BaseStateMarginalOPEEstimator):
         Return
         -------
         estimated_trajectory_wise_policy_value: ndarray of shape (n_trajectories, )
-            Policy value estimated for each trajectory.
+            Policy value (expected reward under the evaluation policy) estimated for each trajectory.
             (Equivalent to initial_state_value_prediction.)
 
         """
@@ -469,7 +468,7 @@ class ContinuousStateMarginalDM(BaseStateMarginalOPEEstimator):
 
 @dataclass
 class ContinuousStateMarginalIS(BaseStateMarginalOPEEstimator):
-    """State Marginal Importance Sampling (SM-IS) for continuous-action OPE.
+    """State Marginal Importance Sampling (SM-IS) for continuous action spaces.
 
     Bases: :class:`scope_rl.ope.BaseStateMarginalOPEEstimator` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
@@ -478,7 +477,7 @@ class ContinuousStateMarginalIS(BaseStateMarginalOPEEstimator):
     Note
     -------
     SM-IS estimates the policy value using state marginal importance weighting.
-    Following SOPE (Yuan et al., 2021), we consider the combination of marginalized OPE and :math:`k`-step PDIS as follows.
+    Following SOPE (Yuan et al., 2021), we combine State Marginal Importance Sampling and :math:`k`-step PDIS as follows.
 
     .. math::
 
@@ -486,16 +485,15 @@ class ContinuousStateMarginalIS(BaseStateMarginalOPEEstimator):
         &:= \\mathbb{E}_{n} \\left[\\sum_{t=0}^{k-1} \\gamma^t w_{0:t} \\delta(\\pi, a_{0:t}) r_t \\right] \\\\
         & \quad \quad + \\mathbb{E}_{n} \\left[\\sum_{t=k}^{T-1} \\gamma^t w_s(s_{t-k}) w_{t-k:t} \\delta(\\pi, a_{t-k:t}) r_t \\right],
 
-    where :math:`w_s(s) := d_{\\pi}(s) / d_{\\pi_0}(s)` and :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} (\\pi(a_t | s_t) / \\pi_0(a_t | s_t))`.
+    where :math:`w_s(s) := d_{\\pi}(s) / d_{\\pi_b}(s)` and :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} (\\pi(a_t | s_t) / \\pi_0(a_t | s_t))`.
     :math:`\\delta(\\pi, a_{t_1:t_2}) = \\prod_{t=t_1}^{t_2} K(\\pi(s_t), a_t)` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy
     (:math:`K(\\cdot, \\cdot)` is a kernel function).
-    When :math:`k=0`, this estimator is identical to the (pure) state marginal IS.
+    When :math:`k=0`, this estimator is reduced to the vanilla state marginal IS.
 
-    SM-IS is unbiased when the marginal importance weight is estimated correctly. 
-    Moreover, SM-IS reduces the variance caused by trajectory-wise or per-decision importance weight by considering the marginal distribution across various timesteps.
+    SM-IS is unbiased when the marginal importance weight is estimated correctly.
+    Moreover, SM-IS reduces the variance caused by trajectory-wise or per-decision importance weighting by considering the marginal distribution across various timesteps.
 
-    There are several ways to estimate state(-action) marginal importance weight including Augmented Lagrangian Method (ALM) (Yang et al., 2020) 
-    and Minimax Weight Learning (MWL) (Uehara et al., 2020).
+    There are several ways to estimate the state(-action) marginal importance weight such as Augmented Lagrangian Method (ALM) (Yang et al., 2020) and Minimax Weight Learning (MWL) (Uehara et al., 2020).
 
     .. seealso::
 
@@ -552,8 +550,8 @@ class ContinuousStateMarginalIS(BaseStateMarginalOPEEstimator):
         Parameters
         -------
         n_step_pdis: int (>= 0)
-            Number of previous steps to use per-decision importance weight.
-            When zero is given, the estimator corresponds to the pure state marginal IS.
+            Number of initial steps whose rewards are estimated by step-wise importance weighting.
+            When set to zero, the estimator is reduced to the vanilla state marginal IS.
 
         step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
@@ -562,14 +560,14 @@ class ContinuousStateMarginalIS(BaseStateMarginalOPEEstimator):
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
-            Reward observation.
+            Observed immediate rewards.
 
         state_marginal_importance_weight: array-like of shape (n_trajectories * step_per_trajectory, )
-            Marginal importance weight of the state, i.e., :math:`d_{\\pi}(s) / d_{\\pi_0}(s)`
+            Importance weight wrt the state marginal distribution, i.e., :math:`d_{\\pi}(s) / d_{\\pi_b}(s)`
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a | s)`
+            i.e., :math:`\\pi_b(a | s)`
 
         evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
@@ -578,7 +576,7 @@ class ContinuousStateMarginalIS(BaseStateMarginalOPEEstimator):
             Discount factor. The value should be within (0, 1].
 
         sigma: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of gaussian kernel.
+            Bandwidth hyperparameter of the Gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -586,7 +584,7 @@ class ContinuousStateMarginalIS(BaseStateMarginalOPEEstimator):
         Return
         -------
         estimated_trajectory_wise_policy_value: ndarray of shape (n_trajectories, )
-            Policy value estimated for each trajectory.
+            Policy value (expected reward under the evaluation policy) estimated for each trajectory.
 
         """
         behavior_policy_pscore = self._calc_behavior_policy_pscore_continuous(
@@ -639,8 +637,8 @@ class ContinuousStateMarginalIS(BaseStateMarginalOPEEstimator):
         Parameters
         -------
         n_step_pdis: int (>= 0)
-            Number of previous steps to use per-decision importance weight.
-            When zero is given, the estimator corresponds to the pure state marginal IS.
+            Number of initial steps whose rewards are estimated by step-wise importance weighting.
+            When set to zero, the estimator is reduced to the vanilla state marginal IS.
 
         step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
@@ -649,14 +647,14 @@ class ContinuousStateMarginalIS(BaseStateMarginalOPEEstimator):
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
-            Reward observation.
+            Observed immediate rewards.
 
         state_marginal_importance_weight: array-like of shape (n_trajectories * step_per_trajectory, )
-            Marginal importance weight of the state, i.e., :math:`d_{\\pi}(s) / d_{\\pi_0}(s)`
+            Importance weight wrt the state marginal distribution, i.e., :math:`d_{\\pi}(s) / d_{\\pi_b}(s)`
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a | s)`
+            i.e., :math:`\\pi_b(a | s)`
 
         evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
@@ -665,7 +663,7 @@ class ContinuousStateMarginalIS(BaseStateMarginalOPEEstimator):
             Discount factor. The value should be within (0, 1].
 
         sigma: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of gaussian kernel.
+            Bandwidth hyperparameter of the Gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -778,8 +776,8 @@ class ContinuousStateMarginalIS(BaseStateMarginalOPEEstimator):
         Parameters
         -------
         n_step_pdis: int (>= 0)
-            Number of previous steps to use per-decision importance weight.
-            When zero is given, the estimator corresponds to the pure state marginal IS.
+            Number of initial steps whose rewards are estimated by step-wise importance weighting.
+            When set to zero, the estimator is reduced to the vanilla state marginal IS.
 
         step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
@@ -788,14 +786,14 @@ class ContinuousStateMarginalIS(BaseStateMarginalOPEEstimator):
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
-            Reward observation.
+            Observed immediate rewards.
 
         state_marginal_importance_weight: array-like of shape (n_trajectories * step_per_trajectory, )
-            Marginal importance weight of the state, i.e., :math:`d_{\\pi}(s) / d_{\\pi_0}(s)`
+            Importance weight wrt the state marginal distribution, i.e., :math:`d_{\\pi}(s) / d_{\\pi_b}(s)`
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a | s)`
+            i.e., :math:`\\pi_b(a | s)`
 
         evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
@@ -804,7 +802,7 @@ class ContinuousStateMarginalIS(BaseStateMarginalOPEEstimator):
             Discount factor. The value should be within (0, 1].
 
         sigma: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of gaussian kernel.
+            Bandwidth hyperparameter of the Gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -813,7 +811,7 @@ class ContinuousStateMarginalIS(BaseStateMarginalOPEEstimator):
             Significance level. The value should be within `[0, 1)`.
 
         ci: {"bootstrap", "hoeffding", "bernstein", "ttest"}, default="bootstrap"
-            Estimation method for confidence interval.
+            Method to estimate the confidence interval.
 
         n_bootstrap_samples: int, default=10000 (> 0)
             Number of resampling performed in the bootstrap procedure.
@@ -927,7 +925,7 @@ class ContinuousStateMarginalIS(BaseStateMarginalOPEEstimator):
 
 @dataclass
 class ContinuousStateMarginalDR(BaseStateMarginalOPEEstimator):
-    """State Marginal Doubly Robust (SM-DR) for continuous-action OPE.
+    """State Marginal Doubly Robust (SM-DR) for continuous action spaces.
 
     Bases: :class:`scope_rl.ope.BaseStateMarginalOPEEstimator` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
@@ -936,7 +934,7 @@ class ContinuousStateMarginalDR(BaseStateMarginalOPEEstimator):
     Note
     -------
     SM-DR estimates the policy value using state marginal importance weighting.
-    Following SOPE (Yuan et al., 2021), we consider the combination of marginalized OPE and :math:`k`-step PDIS as follows.
+    Following SOPE (Yuan et al., 2021), we combine state-marginal importance weighting and :math:`k`-step DR as follows.
 
     .. math::
 
@@ -945,16 +943,15 @@ class ContinuousStateMarginalDR(BaseStateMarginalOPEEstimator):
         & \quad \quad + \\mathbb{E}_{n} \\left[\\sum_{t=0}^{k-1} \\gamma^t w_{0:t} \\delta(\\pi, a_{0:t}) (r_t + \\gamma \\hat{Q}(s_{t+1}, \\pi(s_{t+1}))] - \\hat{Q}(s_t, a_t)) \\right] \\\\
         & \quad \quad + \\mathbb{E}_{n} \\left[\\sum_{t=k}^{T-1} \\gamma^t w_s(s_{t-k}) w_{t-k:t} \\delta{\\pi, a_{t-k:t}} (r_t + \\gamma \\hat{Q}(s_{t+1}, \\pi(s_{t+1}))] - \\hat{Q}(s_t, a_t)) \\right],
 
-    where :math:`w_s(s) := d_{\\pi}(s) / d_{\\pi_0}(s)` and :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} (\\pi(a_t | s_t) / \\pi_0(a_t | s_t))`. :math:`Q(s, a)` is the state-action value.
+    where :math:`w_s(s) := d_{\\pi}(s) / d_{\\pi_b}(s)` and :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} (\\pi(a_t | s_t) / \\pi_0(a_t | s_t))`. :math:`Q(s, a)` is the state-action value.
     :math:`\\delta(\\pi, a_{t_1:t_2}) = \\prod_{t=t_1}^{t_2} K(\\pi(s_t), a_t)` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy
     (:math:`K(\\cdot, \\cdot)` is a kernel function).
-    When :math:`k=0`, this estimator is identical to the (pure) state marginal DR.
+    When :math:`k=0`, this estimator is reduced to the vanilla state marginal DR.
 
-    SM-DR is unbiased when either the marginal importance weight or Q-function is estimated correctly. 
-    Moreover, SM-DR reduces the variance caused by trajectory-wise or per-decision importance weight by considering the marginal distribution across various timesteps.
+    SM-DR is unbiased when either the marginal importance weight or Q-function is estimated correctly.
+    Moreover, SM-DR reduces the variance caused by the trajectory-wise or per-decision importance weight by considering the marginal distribution across various timesteps.
 
-    There are several ways to estimate state(-action) marginal importance weight including Augmented Lagrangian Method (ALM) (Yang et al., 2020) 
-    and Minimax Weight Learning (MWL) (Uehara et al., 2020).
+    There are several ways to estimate the state(-action) marginal importance weight such as Augmented Lagrangian Method (ALM) (Yang et al., 2020) and Minimax Weight Learning (MWL) (Uehara et al., 2020).
 
     .. seealso::
 
@@ -1016,8 +1013,8 @@ class ContinuousStateMarginalDR(BaseStateMarginalOPEEstimator):
         Parameters
         -------
         n_step_pdis: int (>= 0)
-            Number of previous steps to use per-decision importance weight.
-            When zero is given, the estimator corresponds to the pure state marginal IS.
+            Number of initial steps whose rewards are estimated by step-wise importance weighting.
+            When set to zero, the estimator is reduced to the vanilla state marginal IS.
 
         step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
@@ -1026,20 +1023,20 @@ class ContinuousStateMarginalDR(BaseStateMarginalOPEEstimator):
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
-            Reward observation.
+            Observed immediate rewards.
 
         state_marginal_importance_weight: array-like of shape (n_trajectories * step_per_trajectory, )
-            Marginal importance weight of the state, i.e., :math:`d_{\\pi}(s) / d_{\\pi_0}(s)`
+            Importance weight wrt the state marginal distribution, i.e., :math:`d_{\\pi}(s) / d_{\\pi_b}(s)`
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a | s)`
+            i.e., :math:`\\pi_b(a | s)`
 
         evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
 
         state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, 2)
-            :math:`\\hat{Q}` for the observed action and action chosen evaluation policy,
+            :math:`\\hat{Q}` for the observed action and that chosen by the evaluation policy,
             i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a | s_t))`.
 
         initial_state_value_prediction: array-like of shape (n_trajectories, )
@@ -1049,7 +1046,7 @@ class ContinuousStateMarginalDR(BaseStateMarginalOPEEstimator):
             Discount factor. The value should be within (0, 1].
 
         sigma: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of gaussian kernel.
+            Bandwidth hyperparameter of the Gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -1057,7 +1054,7 @@ class ContinuousStateMarginalDR(BaseStateMarginalOPEEstimator):
         Return
         -------
         estimated_trajectory_wise_policy_value: ndarray of shape (n_trajectories, )
-            Policy value estimated for each trajectory.
+            Policy value (expected reward under the evaluation policy) estimated for each trajectory.
 
         """
         behavior_policy_pscore = self._calc_behavior_policy_pscore_continuous(
@@ -1120,8 +1117,8 @@ class ContinuousStateMarginalDR(BaseStateMarginalOPEEstimator):
         Parameters
         -------
         n_step_pdis: int (>= 0)
-            Number of previous steps to use per-decision importance weight.
-            When zero is given, the estimator corresponds to the pure state marginal IS.
+            Number of initial steps whose rewards are estimated by step-wise importance weighting.
+            When set to zero, the estimator is reduced to the vanilla state marginal IS.
 
         step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
@@ -1130,20 +1127,20 @@ class ContinuousStateMarginalDR(BaseStateMarginalOPEEstimator):
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
-            Reward observation.
+            Observed immediate rewards.
 
         state_marginal_importance_weight: array-like of shape (n_trajectories * step_per_trajectory, )
-            Marginal importance weight of the state, i.e., :math:`d_{\\pi}(s) / d_{\\pi_0}(s)`
+            Importance weight wrt the state marginal distribution, i.e., :math:`d_{\\pi}(s) / d_{\\pi_b}(s)`
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a | s)`
+            i.e., :math:`\\pi_b(a | s)`
 
         evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
 
         state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, 2)
-            :math:`\\hat{Q}` for the observed action and action chosen evaluation policy,
+            :math:`\\hat{Q}` for the observed action and that chosen by the evaluation policy,
             i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a | s_t))`.
 
         initial_state_value_prediction: array-like of shape (n_trajectories, )
@@ -1153,7 +1150,7 @@ class ContinuousStateMarginalDR(BaseStateMarginalOPEEstimator):
             Discount factor. The value should be within (0, 1].
 
         sigma: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of gaussian kernel.
+            Bandwidth hyperparameter of the Gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -1285,8 +1282,8 @@ class ContinuousStateMarginalDR(BaseStateMarginalOPEEstimator):
         Parameters
         -------
         n_step_pdis: int (>= 0)
-            Number of previous steps to use per-decision importance weight.
-            When zero is given, the estimator corresponds to the pure state marginal IS.
+            Number of initial steps whose rewards are estimated by step-wise importance weighting.
+            When set to zero, the estimator is reduced to the vanilla state marginal IS.
 
         step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
@@ -1295,20 +1292,20 @@ class ContinuousStateMarginalDR(BaseStateMarginalOPEEstimator):
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
-            Reward observation.
+            Observed immediate rewards.
 
         state_marginal_importance_weight: array-like of shape (n_trajectories * step_per_trajectory, )
-            Marginal importance weight of the state, i.e., :math:`d_{\\pi}(s) / d_{\\pi_0}(s)`
+            Importance weight wrt the state marginal distribution, i.e., :math:`d_{\\pi}(s) / d_{\\pi_b}(s)`
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a | s)`
+            i.e., :math:`\\pi_b(a | s)`
 
         evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
 
         state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, 2)
-            :math:`\\hat{Q}` for the observed action and action chosen evaluation policy,
+            :math:`\\hat{Q}` for the observed action and that chosen by the evaluation policy,
             i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a | s_t))`.
 
         initial_state_value_prediction: array-like of shape (n_trajectories, )
@@ -1318,7 +1315,7 @@ class ContinuousStateMarginalDR(BaseStateMarginalOPEEstimator):
             Discount factor. The value should be within (0, 1].
 
         sigma: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of gaussian kernel.
+            Bandwidth hyperparameter of the Gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -1327,7 +1324,7 @@ class ContinuousStateMarginalDR(BaseStateMarginalOPEEstimator):
             Significance level. The value should be within `[0, 1)`.
 
         ci: {"bootstrap", "hoeffding", "bernstein", "ttest"}, default="bootstrap"
-            Estimation method for confidence interval.
+            Method to estimate the confidence interval.
 
         n_bootstrap_samples: int, default=10000 (> 0)
             Number of resampling performed in the bootstrap procedure.
@@ -1458,7 +1455,7 @@ class ContinuousStateMarginalDR(BaseStateMarginalOPEEstimator):
 
 @dataclass
 class ContinuousStateMarginalSNIS(ContinuousStateMarginalIS):
-    """State Marginal Self-Normalized Importance Sampling (SM-SNIS) for continuous-action OPE.
+    """State Marginal Self-Normalized Importance Sampling (SM-SNIS) for continuous action spaces.
 
     Bases: :class:`scope_rl.ope.ContinuousStateMarginalIS` :class:`scope_rl.ope.BaseStateMarginalOPEEstimator` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
@@ -1467,7 +1464,7 @@ class ContinuousStateMarginalSNIS(ContinuousStateMarginalIS):
     Note
     -------
     SM-SNIS estimates the policy value using state marginal importance weighting.
-    Following SOPE (Yuan et al., 2021), we consider the combination of marginalized OPE and :math:`k`-step PDIS as follows.
+    Following SOPE (Yuan et al., 2021), we combine state-marginal importance weighting and :math:`k`-step PDIS as follows.
 
     .. math::
 
@@ -1475,16 +1472,15 @@ class ContinuousStateMarginalSNIS(ContinuousStateMarginalIS):
         &:= \\mathbb{E}_{n} \\left[\\sum_{t=0}^{k-1} \\gamma^t \\frac{w_{0:t} \\delta(\\pi, a_{0:t})}{\\sum_{n} w_{0:t} \\delta(\\pi, a_{0:t})} r_t \\right] \\\\
         & \quad \quad + \\mathbb{E}_{n} \\left[\\sum_{t=k}^{T-1} \\gamma^t \\frac{w_s(s_{t-k}) w_{t-k:t} \\delta{t-k:t}}{\\sum_n w_s(s_{t-k}) w_{t-k:t} \\delta{t-k:t}} r_t \\right],
 
-    where :math:`w_s(s) := d_{\\pi}(s) / d_{\\pi_0}(s)` and :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} (\\pi(a_t | s_t) / \\pi_0(a_t | s_t))`.
+    where :math:`w_s(s) := d_{\\pi}(s) / d_{\\pi_b}(s)` and :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} (\\pi(a_t | s_t) / \\pi_0(a_t | s_t))`.
     :math:`\\delta(\\pi, a_{t_1:t_2}) = \\prod_{t=t_1}^{t_2} K(\\pi(s_t), a_t)` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy
     (:math:`K(\\cdot, \\cdot)` is a kernel function).
-    When :math:`k=0`, this estimator is identical to the (pure) state marginal SNIS.
+    When :math:`k=0`, this estimator is reduced to the vanilla state marginal SNIS.
 
-    SM-SNIS is consistent when the marginal importance weight is estimated correctly. 
-    Moreover, SM-SNIS reduces the variance caused by trajectory-wise or per-decision importance weight by considering the marginal distribution across various timesteps.
+    SM-SNIS is consistent when the marginal importance weight is estimated correctly.
+    Moreover, SM-SNIS reduces the variance caused by trajectory-wise or per-decision importance weighting by considering the marginal distribution across various timesteps.
 
-    There are several ways to estimate state(-action) marginal importance weight including Augmented Lagrangian Method (ALM) (Yang et al., 2020) 
-    and Minimax Weight Learning (MWL) (Uehara et al., 2020).
+    There are several ways to estimate the state(-action) marginal importance weight such as Augmented Lagrangian Method (ALM) (Yang et al., 2020) and Minimax Weight Learning (MWL) (Uehara et al., 2020).
 
     .. seealso::
 
@@ -1541,8 +1537,8 @@ class ContinuousStateMarginalSNIS(ContinuousStateMarginalIS):
         Parameters
         -------
         n_step_pdis: int (>= 0)
-            Number of previous steps to use per-decision importance weight.
-            When zero is given, the estimator corresponds to the pure state marginal IS.
+            Number of initial steps whose rewards are estimated by step-wise importance weighting.
+            When set to zero, the estimator is reduced to the vanilla state marginal IS.
 
         step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
@@ -1551,14 +1547,14 @@ class ContinuousStateMarginalSNIS(ContinuousStateMarginalIS):
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
-            Reward observation.
+            Observed immediate rewards.
 
         state_marginal_importance_weight: array-like of shape (n_trajectories * step_per_trajectory, )
-            Marginal importance weight of the state, i.e., :math:`d_{\\pi}(s) / d_{\\pi_0}(s)`
+            Importance weight wrt the state marginal distribution, i.e., :math:`d_{\\pi}(s) / d_{\\pi_b}(s)`
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a | s)`
+            i.e., :math:`\\pi_b(a | s)`
 
         evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
@@ -1567,7 +1563,7 @@ class ContinuousStateMarginalSNIS(ContinuousStateMarginalIS):
             Discount factor. The value should be within (0, 1].
 
         sigma: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of gaussian kernel.
+            Bandwidth hyperparameter of the Gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -1575,7 +1571,7 @@ class ContinuousStateMarginalSNIS(ContinuousStateMarginalIS):
         Return
         -------
         estimated_trajectory_wise_policy_value: ndarray of shape (n_trajectories, )
-            Policy value estimated for each trajectory.
+            Policy value (expected reward under the evaluation policy) estimated for each trajectory.
 
         """
         behavior_policy_pscore = self._calc_behavior_policy_pscore_continuous(
@@ -1612,7 +1608,7 @@ class ContinuousStateMarginalSNIS(ContinuousStateMarginalIS):
 
 @dataclass
 class ContinuousStateMarginalSNDR(ContinuousStateMarginalDR):
-    """State Marginal Self-Normalized Doubly Robust (SM-SNDR) for continuous-action OPE.
+    """State Marginal Self-Normalized Doubly Robust (SM-SNDR) for continuous action spaces.
 
     Bases: :class:`scope_rl.ContinuousStateMarginalDR` :class:`scope_rl.BaseStateMarginalOPEEstimator` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
@@ -1621,7 +1617,7 @@ class ContinuousStateMarginalSNDR(ContinuousStateMarginalDR):
     Note
     -------
     SM-SNDR estimates the policy value using state marginal importance weighting.
-    Following SOPE (Yuan et al., 2021), we consider the combination of marginalized OPE and :math:`k`-step PDIS as follows.
+    Following SOPE (Yuan et al., 2021), we combine state-marginal importance weighting and :math:`k`-step PDIS as follows.
 
     .. math::
 
@@ -1630,16 +1626,15 @@ class ContinuousStateMarginalSNDR(ContinuousStateMarginalDR):
         & \quad \quad + \\mathbb{E}_{n} \\left[\\sum_{t=0}^{k-1} \\gamma^t \\frac{w_{0:t} \\delta(\\pi, a_{0:t})}{\\sum_{n} w_{0:t} \\delta(\\pi, a_{0:t})} (r_t + \\gamma \\hat{Q}(s_{t+1}, \\pi(s_{t+1})))] - \\hat{Q}(s_t, a_t)) \\right] \\\\
         & \quad \quad + \\mathbb{E}_{n} \\left[\\sum_{t=k}^{T-1} \\gamma^t \\frac{w_s(s_{t-k}) w_{t-k:t} \\delta(\\pi, a_{t-k:t})}{\\sum_{n} w_s(s_{t-k}) w_{t-k:t} \\delta(\\pi, a_{t-k:t})} (r_t + \\gamma \\hat{Q}(s_{t+1}, \\pi(s_{t+1}))] - \\hat{Q}(s_t, a_t)) \\right],
 
-    where :math:`w_s(s) := d_{\\pi}(s) / d_{\\pi_0}(s)` and :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} (\\pi(a_t | s_t) / \\pi_0(a_t | s_t))`. :math:`Q(s, a)` is the state-action value.
+    where :math:`w_s(s) := d_{\\pi}(s) / d_{\\pi_b}(s)` and :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} (\\pi(a_t | s_t) / \\pi_0(a_t | s_t))`. :math:`Q(s, a)` is the state-action value.
     :math:`\\delta(\\pi, a_{t_1:t_2}) = \\prod_{t=t_1}^{t_2} K(\\pi(s_t), a_t)` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy
     (:math:`K(\\cdot, \\cdot)` is a kernel function).
-    When :math:`k=0`, this estimator is identical to the (pure) state marginal SNDR.
+    When :math:`k=0`, this estimator is reduced to the vanilla state marginal SNDR.
 
-    SM-SNDR is consistent when either the marginal importance weight or Q-function is estimated correctly. 
-    Moreover, SM-SNDR reduces the variance caused by trajectory-wise or per-decision importance weight by considering the marginal distribution across various timesteps.
+    SM-SNDR is consistent when either the marginal importance weight or Q-function is estimated correctly.
+    Moreover, SM-SNDR reduces the variance caused by trajectory-wise or per-decision importance weighting by considering the marginal distribution across various timesteps.
 
-    There are several ways to estimate state(-action) marginal importance weight including Augmented Lagrangian Method (ALM) (Yang et al., 2020) 
-    and Minimax Weight Learning (MWL) (Uehara et al., 2020).
+    There are several ways to estimate the state(-action) marginal importance weight such as Augmented Lagrangian Method (ALM) (Yang et al., 2020) and Minimax Weight Learning (MWL) (Uehara et al., 2020).
 
     .. seealso::
 
@@ -1701,8 +1696,8 @@ class ContinuousStateMarginalSNDR(ContinuousStateMarginalDR):
         Parameters
         -------
         n_step_pdis: int (>= 0)
-            Number of previous steps to use per-decision importance weight.
-            When zero is given, the estimator corresponds to the pure state marginal IS.
+            Number of initial steps whose rewards are estimated by step-wise importance weighting.
+            When set to zero, the estimator is reduced to the vanilla state marginal IS.
 
         step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
@@ -1711,20 +1706,20 @@ class ContinuousStateMarginalSNDR(ContinuousStateMarginalDR):
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
-            Reward observation.
+            Observed immediate rewards.
 
         state_marginal_importance_weight: array-like of shape (n_trajectories * step_per_trajectory, )
-            Marginal importance weight of the state, i.e., :math:`d_{\\pi}(s) / d_{\\pi_0}(s)`
+            Importance weight wrt the state marginal distribution, i.e., :math:`d_{\\pi}(s) / d_{\\pi_b}(s)`
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a | s)`
+            i.e., :math:`\\pi_b(a | s)`
 
         evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
 
         state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, 2)
-            :math:`\\hat{Q}` for the observed action and action chosen evaluation policy,
+            :math:`\\hat{Q}` for the observed action and that chosen by the evaluation policy,
             i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a | s_t))`.
 
         initial_state_value_prediction: array-like of shape (n_trajectories, )
@@ -1734,7 +1729,7 @@ class ContinuousStateMarginalSNDR(ContinuousStateMarginalDR):
             Discount factor. The value should be within (0, 1].
 
         sigma: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of gaussian kernel.
+            Bandwidth hyperparameter of the Gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -1742,7 +1737,7 @@ class ContinuousStateMarginalSNDR(ContinuousStateMarginalDR):
         Return
         -------
         estimated_trajectory_wise_policy_value: ndarray of shape (n_trajectories, )
-            Policy value estimated for each trajectory.
+            Policy value (expected reward under the evaluation policy) estimated for each trajectory.
 
         """
         behavior_policy_pscore = self._calc_behavior_policy_pscore_continuous(
@@ -1788,7 +1783,7 @@ class ContinuousStateMarginalSNDR(ContinuousStateMarginalDR):
 
 @dataclass
 class ContinuousStateActionMarginalIS(BaseStateActionMarginalOPEEstimator):
-    """State-Action Marginal Importance Sampling (SAM-IS) for continuous-action OPE.
+    """State-Action Marginal Importance Sampling (SAM-IS) for continuous action spaces.
 
     Bases: :class:`scope_rl.ope.BaseStateActionMarginalOPEEstimator` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
@@ -1797,7 +1792,7 @@ class ContinuousStateActionMarginalIS(BaseStateActionMarginalOPEEstimator):
     Note
     -------
     SAM-IS estimates the policy value using state-action marginal importance weighting.
-    Following SOPE (Yuan et al., 2021), we consider the combination of marginalized OPE and :math:`k`-step PDIS as follows.
+    Following SOPE (Yuan et al., 2021), we combine state-marginal importance weighting and :math:`k`-step PDIS as follows.
 
     .. math::
 
@@ -1805,16 +1800,15 @@ class ContinuousStateActionMarginalIS(BaseStateActionMarginalOPEEstimator):
         &:= \\mathbb{E}_{n} \\left[\\sum_{t=0}^{k-1} \\gamma^t w_{0:t} \\delta(\\pi, a_{t_1:t_2}) r_t \\right] \\\\
         & \quad \quad + \\mathbb{E}_{n} \\left[\\sum_{t=k}^{T-1} \\gamma^t w(s_{t-k}, a_{t-k}) w_{t-k+1:t} \\delta(\\pi, a_{t_1:t_2}) r_t \\right],
 
-    where :math:`w(s, a) := d_{\\pi}(s, a) / d_{\\pi_0}(s, a)` and :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} (\\pi(a_t | s_t) / \\pi_0(a_t | s_t))`.
+    where :math:`w(s, a) := d_{\\pi}(s, a) / d_{\\pi_b}(s, a)` and :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} (\\pi(a_t | s_t) / \\pi_0(a_t | s_t))`.
     :math:`\\delta(\\pi, a_{t_1:t_2}) = \\prod_{t=t_1}^{t_2} K(\\pi(s_t), a_t)` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy
     (:math:`K(\\cdot, \\cdot)` is a kernel function).
-    When :math:`k=0`, this estimator is identical to the (pure) state-action marginal IS.
+    When :math:`k=0`, this estimator is reduced to the vanilla state-action marginal IS.
 
-    SAM-IS is unbiased when the marginal importance weight is estimated correctly. 
-    Moreover, SAM-IS reduces the variance caused by trajectory-wise or per-decision importance weight by considering the marginal distribution across various timesteps.
+    SAM-IS is unbiased when the marginal importance weight is estimated correctly.
+    Moreover, SAM-IS reduces the variance caused by trajectory-wise or per-decision importance weighting by considering the marginal distribution across various timesteps.
 
-    There are several ways to estimate state(-action) marginal importance weight including Augmented Lagrangian Method (ALM) (Yang et al., 2020) 
-    and Minimax Weight Learning (MWL) (Uehara et al., 2020).
+    There are several ways to estimate the state(-action) marginal importance weight such as Augmented Lagrangian Method (ALM) (Yang et al., 2020) and Minimax Weight Learning (MWL) (Uehara et al., 2020).
 
     .. seealso::
 
@@ -1868,8 +1862,8 @@ class ContinuousStateActionMarginalIS(BaseStateActionMarginalOPEEstimator):
         Parameters
         -------
         n_step_pdis: int (>= 0)
-            Number of previous steps to use per-decision importance weight.
-            When zero is given, the estimator corresponds to the pure state marginal IS.
+            Number of initial steps whose rewards are estimated by step-wise importance weighting.
+            When set to zero, the estimator is reduced to the vanilla state marginal IS.
 
         step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
@@ -1878,14 +1872,14 @@ class ContinuousStateActionMarginalIS(BaseStateActionMarginalOPEEstimator):
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
-            Reward observation.
+            Observed immediate rewards.
 
         state_action_marginal_importance_weight: array-like of shape (n_trajectories * step_per_trajectory, )
-            Marginal importance weight of the state-action pair, i.e., :math:`d_{\\pi}(s, a) / d_{\\pi_0}(s, a)`
+            Importance weight wrt the state-action marginal distribution, i.e., :math:`d_{\\pi}(s, a) / d_{\\pi_b}(s, a)`
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a | s)`
+            i.e., :math:`\\pi_b(a | s)`
 
         evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
@@ -1894,7 +1888,7 @@ class ContinuousStateActionMarginalIS(BaseStateActionMarginalOPEEstimator):
             Discount factor. The value should be within (0, 1].
 
         sigma: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of gaussian kernel.
+            Bandwidth hyperparameter of the Gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -1902,7 +1896,7 @@ class ContinuousStateActionMarginalIS(BaseStateActionMarginalOPEEstimator):
         Return
         -------
         estimated_trajectory_wise_policy_value: ndarray of shape (n_trajectories, )
-            Policy value estimated for each trajectory.
+            Policy value (expected reward under the evaluation policy) estimated for each trajectory.
 
         """
         behavior_policy_pscore = self._calc_behavior_policy_pscore_continuous(
@@ -1954,8 +1948,8 @@ class ContinuousStateActionMarginalIS(BaseStateActionMarginalOPEEstimator):
         Parameters
         -------
         n_step_pdis: int (>= 0)
-            Number of previous steps to use per-decision importance weight.
-            When zero is given, the estimator corresponds to the pure state marginal IS.
+            Number of initial steps whose rewards are estimated by step-wise importance weighting.
+            When set to zero, the estimator is reduced to the vanilla state marginal IS.
 
         step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
@@ -1964,14 +1958,14 @@ class ContinuousStateActionMarginalIS(BaseStateActionMarginalOPEEstimator):
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
-            Reward observation.
+            Observed immediate rewards.
 
         state_action_marginal_importance_weight: array-like of shape (n_trajectories * step_per_trajectory, )
-            Marginal importance weight of the state-action pair, i.e., :math:`d_{\\pi}(s, a) / d_{\\pi_0}(s, a)`
+            Importance weight wrt the state-action marginal distribution, i.e., :math:`d_{\\pi}(s, a) / d_{\\pi_b}(s, a)`
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a | s)`
+            i.e., :math:`\\pi_b(a | s)`
 
         evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
@@ -1980,7 +1974,7 @@ class ContinuousStateActionMarginalIS(BaseStateActionMarginalOPEEstimator):
             Discount factor. The value should be within (0, 1].
 
         sigma: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of gaussian kernel.
+            Bandwidth hyperparameter of the Gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -2093,8 +2087,8 @@ class ContinuousStateActionMarginalIS(BaseStateActionMarginalOPEEstimator):
         Parameters
         -------
         n_step_pdis: int (>= 0)
-            Number of previous steps to use per-decision importance weight.
-            When zero is given, the estimator corresponds to the pure state marginal IS.
+            Number of initial steps whose rewards are estimated by step-wise importance weighting.
+            When set to zero, the estimator is reduced to the vanilla state marginal IS.
 
         step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
@@ -2103,14 +2097,14 @@ class ContinuousStateActionMarginalIS(BaseStateActionMarginalOPEEstimator):
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
-            Reward observation.
+            Observed immediate rewards.
 
         state_action_marginal_importance_weight: array-like of shape (n_trajectories * step_per_trajectory, )
-            Marginal importance weight of the state-action pair, i.e., :math:`d_{\\pi}(s, a) / d_{\\pi_0}(s, a)`
+            Importance weight wrt the state-action marginal distribution, i.e., :math:`d_{\\pi}(s, a) / d_{\\pi_b}(s, a)`
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a | s)`
+            i.e., :math:`\\pi_b(a | s)`
 
         evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
@@ -2119,7 +2113,7 @@ class ContinuousStateActionMarginalIS(BaseStateActionMarginalOPEEstimator):
             Discount factor. The value should be within (0, 1].
 
         sigma: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of gaussian kernel.
+            Bandwidth hyperparameter of the Gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -2128,7 +2122,7 @@ class ContinuousStateActionMarginalIS(BaseStateActionMarginalOPEEstimator):
             Significance level. The value should be within `[0, 1)`.
 
         ci: {"bootstrap", "hoeffding", "bernstein", "ttest"}, default="bootstrap"
-            Estimation method for confidence interval.
+            Method to estimate the confidence interval.
 
         n_bootstrap_samples: int, default=10000 (> 0)
             Number of resampling performed in the bootstrap procedure.
@@ -2242,7 +2236,7 @@ class ContinuousStateActionMarginalIS(BaseStateActionMarginalOPEEstimator):
 
 @dataclass
 class ContinuousStateActionMarginalDR(BaseStateActionMarginalOPEEstimator):
-    """State-Action Marginal Doubly Robust (SAM-DR) for continuous-action OPE.
+    """State-Action Marginal Doubly Robust (SAM-DR) for continuous action spaces.
 
     Bases: :class:`scope_rl.ope.BaseStateActionMarginalOPEEstimator` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
@@ -2251,7 +2245,7 @@ class ContinuousStateActionMarginalDR(BaseStateActionMarginalOPEEstimator):
     Note
     -------
     SAM-DR estimates the policy value using state-action marginal importance weighting.
-    Following SOPE (Yuan et al., 2021), we consider the combination of marginalized OPE and :math:`k`-step PDIS as follows.
+    Following SOPE (Yuan et al., 2021), we combine state-marginal importance weighting and :math:`k`-step PDIS as follows.
 
     .. math::
 
@@ -2260,16 +2254,15 @@ class ContinuousStateActionMarginalDR(BaseStateActionMarginalOPEEstimator):
         & \quad \quad + \\mathbb{E}_{n} \\left[\\sum_{t=0}^{k-1} \\gamma^t w_{0:t} \\delta(\\pi, a_{0:t}) (r_t + \\gamma \\hat{Q}(s_{t+1}, \\pi(s_{t+1}))] - \\hat{Q}(s_t, a_t)) \\right] \\\\
         & \quad \quad + \\mathbb{E}_{n} \\left[\\sum_{t=k}^{T-1} \\gamma^t w(s_{t-k}, a_{t-k}) w_{t-k+1:t} \\delta(\\pi, a_{t-k+1:t}) (r_t + \\gamma \\hat{Q}(s_{t+1}, \\pi(s_{t+1})) - \\hat{Q}(s_t, a_t)) \\right],
 
-    where :math:`w(s, a) := d_{\\pi}(s, a) / d_{\\pi_0}(s, a)` and :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} (\\pi(a_t | s_t) / \\pi_0(a_t | s_t))`. :math:`Q(s, a)` is the state-action value.
+    where :math:`w(s, a) := d_{\\pi}(s, a) / d_{\\pi_b}(s, a)` and :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} (\\pi(a_t | s_t) / \\pi_0(a_t | s_t))`. :math:`Q(s, a)` is the state-action value.
     :math:`\\delta(\\pi, a_{t_1:t_2}) = \\prod_{t=t_1}^{t_2} K(\\pi(s_t), a_t)` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy
     (:math:`K(\\cdot, \\cdot)` is a kernel function).
-    When :math:`k=0`, this estimator is identical to the (pure) state-action marginal DR.
+    When :math:`k=0`, this estimator is reduced to the vanilla state-action marginal DR.
 
-    SAM-DR is unbiased when either the marginal importance weight or Q-function is estimated correctly. 
-    Moreover, SAM-DR reduces the variance caused by trajectory-wise or per-decision importance weight by considering the marginal distribution across various timesteps.
+    SAM-DR is unbiased when either the marginal importance weight or Q-function is estimated correctly.
+    Moreover, SAM-DR reduces the variance caused by trajectory-wise or per-decision importance weighting by considering the marginal distribution across various timesteps.
 
-    There are several ways to estimate state(-action) marginal importance weight including Augmented Lagrangian Method (ALM) (Yang et al., 2020) 
-    and Minimax Weight Learning (MWL) (Uehara et al., 2020).
+    There are several ways to estimate the state(-action) marginal importance weight such as Augmented Lagrangian Method (ALM) (Yang et al., 2020) and Minimax Weight Learning (MWL) (Uehara et al., 2020).
 
     .. seealso::
 
@@ -2328,8 +2321,8 @@ class ContinuousStateActionMarginalDR(BaseStateActionMarginalOPEEstimator):
         Parameters
         -------
         n_step_pdis: int (>= 0)
-            Number of previous steps to use per-decision importance weight.
-            When zero is given, the estimator corresponds to the pure state marginal IS.
+            Number of initial steps whose rewards are estimated by step-wise importance weighting.
+            When set to zero, the estimator is reduced to the vanilla state marginal IS.
 
         step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
@@ -2338,20 +2331,20 @@ class ContinuousStateActionMarginalDR(BaseStateActionMarginalOPEEstimator):
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
-            Reward observation.
+            Observed immediate rewards.
 
         state_action_marginal_importance_weight: array-like of shape (n_trajectories * step_per_trajectory, )
-            Marginal importance weight of the state-action pair, i.e., :math:`d_{\\pi}(s, a) / d_{\\pi_0}(s, a)`
+            Importance weight wrt the state-action marginal distribution, i.e., :math:`d_{\\pi}(s, a) / d_{\\pi_b}(s, a)`
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a | s)`
+            i.e., :math:`\\pi_b(a | s)`
 
         evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
 
         state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, 2)
-            :math:`\\hat{Q}` for the observed action and action chosen evaluation policy,
+            :math:`\\hat{Q}` for the observed action and that chosen by the evaluation policy,
             i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a | s_t))`.
 
         initial_state_value_prediction: array-like of shape (n_trajectories, )
@@ -2361,7 +2354,7 @@ class ContinuousStateActionMarginalDR(BaseStateActionMarginalOPEEstimator):
             Discount factor. The value should be within (0, 1].
 
         sigma: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of gaussian kernel.
+            Bandwidth hyperparameter of the Gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -2369,7 +2362,7 @@ class ContinuousStateActionMarginalDR(BaseStateActionMarginalOPEEstimator):
         Return
         -------
         estimated_trajectory_wise_policy_value: ndarray of shape (n_trajectories, )
-            Policy value estimated for each trajectory.
+            Policy value (expected reward under the evaluation policy) estimated for each trajectory.
 
         """
         behavior_policy_pscore = self._calc_behavior_policy_pscore_continuous(
@@ -2432,8 +2425,8 @@ class ContinuousStateActionMarginalDR(BaseStateActionMarginalOPEEstimator):
         Parameters
         -------
         n_step_pdis: int (>= 0)
-            Number of previous steps to use per-decision importance weight.
-            When zero is given, the estimator corresponds to the pure state marginal IS.
+            Number of initial steps whose rewards are estimated by step-wise importance weighting.
+            When set to zero, the estimator is reduced to the vanilla state marginal IS.
 
         step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
@@ -2442,20 +2435,20 @@ class ContinuousStateActionMarginalDR(BaseStateActionMarginalOPEEstimator):
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
-            Reward observation.
+            Observed immediate rewards.
 
         state_action_marginal_importance_weight: array-like of shape (n_trajectories * step_per_trajectory, )
-            Marginal importance weight of the state-action pair, i.e., :math:`d_{\\pi}(s, a) / d_{\\pi_0}(s, a)`
+            Importance weight wrt the state-action marginal distribution, i.e., :math:`d_{\\pi}(s, a) / d_{\\pi_b}(s, a)`
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a | s)`
+            i.e., :math:`\\pi_b(a | s)`
 
         evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
 
         state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, 2)
-            :math:`\\hat{Q}` for the observed action and action chosen evaluation policy,
+            :math:`\\hat{Q}` for the observed action and that chosen by the evaluation policy,
             i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a | s_t))`.
 
         initial_state_value_prediction: array-like of shape (n_trajectories, )
@@ -2465,7 +2458,7 @@ class ContinuousStateActionMarginalDR(BaseStateActionMarginalOPEEstimator):
             Discount factor. The value should be within (0, 1].
 
         sigma: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of gaussian kernel.
+            Bandwidth hyperparameter of the Gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -2597,8 +2590,8 @@ class ContinuousStateActionMarginalDR(BaseStateActionMarginalOPEEstimator):
         Parameters
         -------
         n_step_pdis: int (>= 0)
-            Number of previous steps to use per-decision importance weight.
-            When zero is given, the estimator corresponds to the pure state marginal IS.
+            Number of initial steps whose rewards are estimated by step-wise importance weighting.
+            When set to zero, the estimator is reduced to the vanilla state marginal IS.
 
         step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
@@ -2607,20 +2600,20 @@ class ContinuousStateActionMarginalDR(BaseStateActionMarginalOPEEstimator):
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
-            Reward observation.
+            Observed immediate rewards.
 
         state_action_marginal_importance_weight: array-like of shape (n_trajectories * step_per_trajectory, )
-            Marginal importance weight of the state-action pair, i.e., :math:`d_{\\pi}(s, a) / d_{\\pi_0}(s, a)`
+            Importance weight wrt the state-action marginal distribution, i.e., :math:`d_{\\pi}(s, a) / d_{\\pi_b}(s, a)`
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a | s)`
+            i.e., :math:`\\pi_b(a | s)`
 
         evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
 
         state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, 2)
-            :math:`\\hat{Q}` for the observed action and action chosen evaluation policy,
+            :math:`\\hat{Q}` for the observed action and that chosen by the evaluation policy,
             i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a | s_t))`.
 
         initial_state_value_prediction: array-like of shape (n_trajectories, )
@@ -2630,7 +2623,7 @@ class ContinuousStateActionMarginalDR(BaseStateActionMarginalOPEEstimator):
             Discount factor. The value should be within (0, 1].
 
         sigma: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of gaussian kernel.
+            Bandwidth hyperparameter of the Gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -2639,7 +2632,7 @@ class ContinuousStateActionMarginalDR(BaseStateActionMarginalOPEEstimator):
             Significance level. The value should be within `[0, 1)`.
 
         ci: {"bootstrap", "hoeffding", "bernstein", "ttest"}, default="bootstrap"
-            Estimation method for confidence interval.
+            Method to estimate the confidence interval.
 
         n_bootstrap_samples: int, default=10000 (> 0)
             Number of resampling performed in the bootstrap procedure.
@@ -2770,7 +2763,7 @@ class ContinuousStateActionMarginalDR(BaseStateActionMarginalOPEEstimator):
 
 @dataclass
 class ContinuousStateActionMarginalSNIS(ContinuousStateActionMarginalIS):
-    """State-Action Marginal Self-Normalized Importance Sampling (SAM-SNIS) for continuous-action OPE.
+    """State-Action Marginal Self-Normalized Importance Sampling (SAM-SNIS) for continuous action spaces.
 
     Bases: :class:`scope_rl.ope.ContinuousStateActionMarginalIS` :class:`scope_rl.ope.BaseStateActionMarginalOPEEstimator` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
@@ -2779,7 +2772,7 @@ class ContinuousStateActionMarginalSNIS(ContinuousStateActionMarginalIS):
     Note
     -------
     SAM-SNIS estimates the policy value using state-action marginal importance weighting.
-    Following SOPE (Yuan et al., 2021), we consider the combination of marginalized OPE and :math:`k`-step PDIS as follows.
+    Following SOPE (Yuan et al., 2021), we combine state-marginal importance weighting and :math:`k`-step PDIS as follows.
 
     .. math::
 
@@ -2787,16 +2780,15 @@ class ContinuousStateActionMarginalSNIS(ContinuousStateActionMarginalIS):
         &:= \\mathbb{E}_{n} \\left[\\sum_{t=0}^{k-1} \\gamma^t \\frac{w_{0:t} \\delta(\\pi, a_{0:t})}{\\sum_{n} w_{0:t} \\delta(\\pi, a_{0:t})} r_t \\right] \\\\
         & \quad \quad + \\mathbb{E}_{n} \\left[\\sum_{t=k}^{T-1} \\gamma^t \\frac{w(s_{t-k}, a_{t-k}) w_{t-k+1:t} \\delta(\\pi, a_{t-l+1:t})}{\\sum_n w(s_{t-k}, a_{t-k}) w_{t-k+1:t} \\delta(\\pi, a_{t-l+1:t})} r_t \\right],
 
-    where :math:`w(s, a) := d_{\\pi}(s, a) / d_{\\pi_0}(s, a)` and :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} (\\pi(a_t | s_t) / \\pi_0(a_t | s_t))`.
+    where :math:`w(s, a) := d_{\\pi}(s, a) / d_{\\pi_b}(s, a)` and :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} (\\pi(a_t | s_t) / \\pi_0(a_t | s_t))`.
     :math:`\\delta(\\pi, a_{t_1:t_2}) = \\prod_{t=t_1}^{t_2} K(\\pi(s_t), a_t)` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy
     (:math:`K(\\cdot, \\cdot)` is a kernel function).
-    When :math:`k=0`, this estimator is identical to the (pure) state-action marginal SNIS.
+    When :math:`k=0`, this estimator is reduced to the vanilla state-action marginal SNIS.
 
-    SAM-SNIS is consistent when the marginal importance weight is estimated correctly. 
-    Moreover, SAM-SNIS reduces the variance caused by trajectory-wise or per-decision importance weight by considering the marginal distribution across various timesteps.
+    SAM-SNIS is consistent when the marginal importance weight is estimated correctly.
+    Moreover, SAM-SNIS reduces the variance caused by trajectory-wise or per-decision importance weighting by considering the marginal distribution across various timesteps.
 
-    There are several ways to estimate state(-action) marginal importance weight including Augmented Lagrangian Method (ALM) (Yang et al., 2020) 
-    and Minimax Weight Learning (MWL) (Uehara et al., 2020).
+    There are several ways to estimate the state(-action) marginal importance weight such as Augmented Lagrangian Method (ALM) (Yang et al., 2020) and Minimax Weight Learning (MWL) (Uehara et al., 2020).
 
     .. seealso::
 
@@ -2850,8 +2842,8 @@ class ContinuousStateActionMarginalSNIS(ContinuousStateActionMarginalIS):
         Parameters
         -------
         n_step_pdis: int (>= 0)
-            Number of previous steps to use per-decision importance weight.
-            When zero is given, the estimator corresponds to the pure state marginal IS.
+            Number of initial steps whose rewards are estimated by step-wise importance weighting.
+            When set to zero, the estimator is reduced to the vanilla state marginal IS.
 
         step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
@@ -2860,14 +2852,14 @@ class ContinuousStateActionMarginalSNIS(ContinuousStateActionMarginalIS):
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
-            Reward observation.
+            Observed immediate rewards.
 
         state_action_marginal_importance_weight: array-like of shape (n_trajectories * step_per_trajectory, )
-            Marginal importance weight of the state-action pair, i.e., :math:`d_{\\pi}(s, a) / d_{\\pi_0}(s, a)`
+            Importance weight wrt the state-action marginal distribution, i.e., :math:`d_{\\pi}(s, a) / d_{\\pi_b}(s, a)`
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a | s)`
+            i.e., :math:`\\pi_b(a | s)`
 
         evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
@@ -2876,7 +2868,7 @@ class ContinuousStateActionMarginalSNIS(ContinuousStateActionMarginalIS):
             Discount factor. The value should be within (0, 1].
 
         sigma: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of gaussian kernel.
+            Bandwidth hyperparameter of the Gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -2884,7 +2876,7 @@ class ContinuousStateActionMarginalSNIS(ContinuousStateActionMarginalIS):
         Return
         -------
         estimated_trajectory_wise_policy_value: ndarray of shape (n_trajectories, )
-            Policy value estimated for each trajectory.
+            Policy value (expected reward under the evaluation policy) estimated for each trajectory.
 
         """
         behavior_policy_pscore = self._calc_behavior_policy_pscore_continuous(
@@ -2921,7 +2913,7 @@ class ContinuousStateActionMarginalSNIS(ContinuousStateActionMarginalIS):
 
 @dataclass
 class ContinuousStateActionMarginalSNDR(ContinuousStateActionMarginalDR):
-    """State-Action Marginal Self-Normalized Doubly Robust (SAM-SNDR) for continuous-action OPE.
+    """State-Action Marginal Self-Normalized Doubly Robust (SAM-SNDR) for continuous action spaces.
 
     Bases: :class:`scope_rl.ope.ContinuousStateActionMarginalDR` :class:`scope_rl.ope.BaseStateActionMarginalOPEEstimator` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
@@ -2930,7 +2922,7 @@ class ContinuousStateActionMarginalSNDR(ContinuousStateActionMarginalDR):
     Note
     -------
     SAM-SNDR estimates the policy value using state-action marginal importance weighting.
-    Following SOPE (Yuan et al., 2021), we consider the combination of marginalized OPE and :math:`k`-step PDIS as follows.
+    Following SOPE (Yuan et al., 2021), we combine state-marginal importance weighting and :math:`k`-step PDIS as follows.
 
     .. math::
 
@@ -2939,16 +2931,15 @@ class ContinuousStateActionMarginalSNDR(ContinuousStateActionMarginalDR):
         & \quad \quad + \\mathbb{E}_{n} \\left[\\sum_{t=0}^{k-1} \\gamma^t \\frac{w_{0:t} \\delta(\\pi, a_{0:t})}{\\sum_{n} w_{0:t} \\delta(\\pi, a_{0:t})} (r_t + \\gamma \\hat{Q}(s_{t+1}, \\pi(s_{t+1}))] - \\hat{Q}(s_t, a_t)) \\right] \\\\
         & \quad \quad + \\mathbb{E}_{n} \\left[\\sum_{t=k}^{T-1} \\gamma^t \\frac{w(s_{t-k}, a_{t-k}) w_{t-k+1:t} \\delta(\\pi, a_{t-k+1:t})}{\\sum_{n} w(s_{t-k}, a_{t-k}) w_{t-k+1:t} \\delta(\\pi, a_{t-k+1:t})} (r_t + \\gamma \\hat{Q}(s_{t+1}, \\pi(s_{t+1}))] - \\hat{Q}(s_t, a_t)) \\right],
 
-    where :math:`w(s, a) := d_{\\pi}(s, a) / d_{\\pi_0}(s, a)` and :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} (\\pi(a_t | s_t) / \\pi_0(a_t | s_t))`. :math:`Q(s, a)` is the state-action value.
+    where :math:`w(s, a) := d_{\\pi}(s, a) / d_{\\pi_b}(s, a)` and :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} (\\pi(a_t | s_t) / \\pi_0(a_t | s_t))`. :math:`Q(s, a)` is the state-action value.
     :math:`\\delta(\\pi, a_{t_1:t_2}) = \\prod_{t=t_1}^{t_2} K(\\pi(s_t), a_t)` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy
     (:math:`K(\\cdot, \\cdot)` is a kernel function).
-    When :math:`k=0`, this estimator is identical to the (pure) state-action marginal SNDR.
+    When :math:`k=0`, this estimator is reduced to the vanilla state-action marginal SNDR.
 
-    SAM-SNDR is consistent when either the marginal importance weight or Q-function is estimated correctly. 
-    Moreover, SAM-SNDR reduces the variance caused by trajectory-wise or per-decision importance weight by considering the marginal distribution across various timesteps.
+    SAM-SNDR is consistent when either the marginal importance weight or Q-function is estimated correctly.
+    Moreover, SAM-SNDR reduces the variance caused by trajectory-wise or per-decision importance weighting by considering the marginal distribution across various timesteps.
 
-    There are several ways to estimate state(-action) marginal importance weight including Augmented Lagrangian Method (ALM) (Yang et al., 2020) 
-    and Minimax Weight Learning (MWL) (Uehara et al., 2020).
+    There are several ways to estimate the state(-action) marginal importance weight such as Augmented Lagrangian Method (ALM) (Yang et al., 2020) and Minimax Weight Learning (MWL) (Uehara et al., 2020).
 
     .. seealso::
 
@@ -3007,8 +2998,9 @@ class ContinuousStateActionMarginalSNDR(ContinuousStateActionMarginalDR):
         Parameters
         -------
         n_step_pdis: int (>= 0)
-            Number of previous steps to use per-decision importance weight.
-            When zero is given, the estimator corresponds to the pure state marginal IS.
+            Number of initial steps whose rewards are estimated by step-wise importance weighting,
+            rewards of the later time steps are estimated by state marginal importance weighting.
+            When set to zero, the estimator is reduced to the vanilla state marginal IS.
 
         step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
@@ -3017,20 +3009,20 @@ class ContinuousStateActionMarginalSNDR(ContinuousStateActionMarginalDR):
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
-            Reward observation.
+            Observed immediate rewards.
 
         state_action_marginal_importance_weight: array-like of shape (n_trajectories * step_per_trajectory, )
-            Marginal importance weight of the state-action pair, i.e., :math:`d_{\\pi}(s, a) / d_{\\pi_0}(s, a)`
+            Importance weight wrt the state-action marginal distribution, i.e., :math:`d_{\\pi}(s, a) / d_{\\pi_b}(s, a)`
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a | s)`
+            i.e., :math:`\\pi_b(a | s)`
 
         evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
 
         state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, 2)
-            :math:`\\hat{Q}` for the observed action and action chosen evaluation policy,
+            :math:`\\hat{Q}` for the observed action and that chosen by the evaluation policy,
             i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a | s_t))`.
 
         initial_state_value_prediction: array-like of shape (n_trajectories, )
@@ -3040,7 +3032,7 @@ class ContinuousStateActionMarginalSNDR(ContinuousStateActionMarginalDR):
             Discount factor. The value should be within (0, 1].
 
         sigma: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of gaussian kernel.
+            Bandwidth hyperparameter of the Gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -3048,7 +3040,7 @@ class ContinuousStateActionMarginalSNDR(ContinuousStateActionMarginalDR):
         Return
         -------
         estimated_trajectory_wise_policy_value: ndarray of shape (n_trajectories, )
-            Policy value estimated for each trajectory.
+            Policy value (expected reward under the evaluation policy) estimated for each trajectory.
 
         """
         behavior_policy_pscore = self._calc_behavior_policy_pscore_continuous(
