@@ -3,10 +3,10 @@
 Installation
 ==========
 
-``scope-rl`` is available on PyPI, and can be installed from ``pip`` or source as follows.
+``scope-rl`` is available on PyPI, and can be installed from ``pip`` or from source as follows.
 
 .. card::
-    
+
     .. tabs::
 
         .. code-tab:: bash From :class:`pip`
@@ -59,7 +59,7 @@ If you use our pipeline or the proposed metric (SharpRatio@k) in your work, plea
         :margin: 0
         :padding: 0
 
-        <<< Prev 
+        <<< Prev
         **Welcome!**
 
     .. grid-item::

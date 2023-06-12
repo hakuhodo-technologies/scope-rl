@@ -37,10 +37,10 @@ def check_array(
         Expected dtype of the input array.
 
     min_val: float, default=None
-        Minimum number allowed in the input array.
+        Minimum value allowed in the input array.
 
     max_val: float, default=None
-        Maximum number allowed in the input array.
+        Maximum value allowed in the input array.
 
     """
     if not isinstance(array, np.ndarray):

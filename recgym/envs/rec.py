@@ -17,7 +17,7 @@ from ..types import Action
 
 
 class RECEnv(gym.Env):
-    """Class for recommend system (REC) environment for reinforcement learning (RL) agent to interact.
+    """Class for a recommender system (REC) environment for reinforcement learning (RL) agent to interact.
 
     Bases: :class:`gym.Env`
 
@@ -29,14 +29,14 @@ class RECEnv(gym.Env):
 
     (Partially Observable) Markov Decision Process ((PO)MDP) definition are given as follows:
         state: array-like of shape (user_feature_dim, )
-            A vector representing user preference.  The preference changes over time in an episode by the actions presented by the RL agent.
+            A vector representing user preference. The preference changes over time in an episode depending on the actions presented by the RL agent.
             When the true state is unobservable, observation will be returned to the RL agent instead of state.
 
         action: int (>= 0)
             Indicating which item to present to the user.
 
         reward: bool or float
-            User engagement signal. Either binary or continuous.
+            User engagement signal as a reward. Either binary or continuous.
 
     Parameters
     -------
@@ -71,8 +71,8 @@ class RECEnv(gym.Env):
         Noise level of the state observation.
 
     UserModel: BaseUserModel, default=UserModel
-        User model that defines user_prefecture_dynamics (, which simulates how the user preference changes through item interaction)
-        and reward_function (, which simulates how the user responds to the presented item).
+        User model that defines user_prefecture_dynamics (which simulates how the user preference changes through item interaction)
+        and reward_function (which simulates how the user responds to the presented item).
         Both class and instance are acceptable.
 
     random_state: int, default=None (>= 0)
@@ -325,20 +325,20 @@ class RECEnv(gym.Env):
         -------
         feedbacks: Tuple
             obs: ndarray of shape (1,)
-                A vector representing user preference.  The preference changes over time in an episode by the actions presented by the RL agent.
-                When the true state is unobservable, the agent uses observation instead of state.
+                A vector representing user preference. The preference changes over time in an episode depending on the actions presented by the RL agent.
+                When the true state is unobservable, the agent uses observations instead of the state.
 
             reward: float
-                User engagement signal. Either binary or continuous.
+                User engagement signal as a reward. Either binary or continuous.
 
             done: bool
-                Wether the episode end or not.
+                Whether the episode end or not.
 
             truncated: False
                 For API consistency.
 
             info: dict
-                Additional feedbacks (user_id, state) for analysts.
+                Additional feedbacks (user_id, state) that may be useful for the package users.
                 These are unavailable to the agent.
 
         """
@@ -371,11 +371,11 @@ class RECEnv(gym.Env):
         Returns
         -------
         obs: ndarray of shape (1,)
-            A vector representing user preference.  The preference changes over time in an episode by the actions presented by the RL agent.
-            When the true state is unobservable, the agent uses observation instead of state.
+            A vector representing user preference. The preference changes over time in an episode depending on the actions presented by the RL agent.
+            When the true state is unobservable, the agent uses observations instead of the state.
 
         info: dict
-            Additional feedbacks (user_id, state) for analysts.
+            Additional feedbacks (user_id, state) that may be useful for the package users.
             These are unavailable to the agent.
 
         """

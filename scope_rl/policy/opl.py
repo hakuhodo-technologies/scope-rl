@@ -73,7 +73,7 @@ class OffPolicyLearning:
             n_steps_per_epoch=1000,
         )
 
-        # convert ddqn policy to stochastic data collection policy
+        # convert ddqn policy to a stochastic data collection policy
         behavior_policy = DiscreteEpsilonGreedyHead(
             ddqn,
             n_actions=env.action_space.n,

@@ -97,10 +97,10 @@ class CreateOPEInput:
             * (API reference) :class:`scope_rl.ope.weight_value_learning`
 
     gamma: float, default=1.0
-            Discount factor. The value should be within (0, 1].
+        Discount factor. The value should be within (0, 1].
 
     sigma: float, default=1.0 (> 0)
-        Bandwidth hyperparameter of gaussian kernel.
+        Bandwidth hyperparameter of the Gaussian kernel.
 
     state_scaler: d3rlpy.preprocessing.Scaler, default=None
         Scaling factor of state.
@@ -358,7 +358,7 @@ class CreateOPEInput:
         n_epochs: int = 1,
         n_steps_per_epoch: int = 10000,
     ) -> None:
-        """Fit Fitted Q Evaluation (FQE).
+        """Perform Fitted Q Evaluation (FQE).
 
         Parameters
         -------
@@ -366,13 +366,10 @@ class CreateOPEInput:
             Evaluation policy.
 
         k_fold: int, default=1 (> 0)
-            Number of folds for cross-fitting.
+            Number of folds to perform cross-fitting.
 
-        n_epochs: int, default=1 (> 0)
-            Number of epochs to fit FQE.
-
-        n_steps_per_epoch: int, default=10000 (> 0)
-            Number of steps in an epoch.
+        n_steps: int, default=10000 (> 0)
+            Number of gradient steps.
 
         """
         if not isinstance(evaluation_policy, BaseHead):
@@ -467,7 +464,7 @@ class CreateOPEInput:
         n_steps_per_epoch: int = 10000,
         random_state: Optional[int] = None,
     ) -> None:
-        """Fit Augmented Lagrangian Method (ALM) for state-action value weight function.
+        """Perform Augmented Lagrangian Method (ALM) to estimate the state-action value weight function.
 
         Parameters
         -------
@@ -475,13 +472,10 @@ class CreateOPEInput:
             Evaluation policy.
 
         k_fold: int, default=1 (> 0)
-            Number of folds for cross-fitting.
+            Number of folds to perform cross-fitting.
 
-        n_epochs: int, default=1 (> 0)
-            Number of epochs to fit FQE.
-
-        n_steps_per_epoch: int, default=10000 (> 0)
-            Number of steps in an epoch.
+        n_steps: int, default=10000 (> 0)
+            Number of gradient steps.
 
         random_state: int, default=None (>= 0)
             Random state.
@@ -649,7 +643,7 @@ class CreateOPEInput:
         n_steps_per_epoch: int = 10000,
         random_state: Optional[int] = None,
     ) -> None:
-        """Fit Minimax Q Learning (MQL) for state-action value function.
+        """Perform Minimax Q Learning (MQL) to estimate the state-action value function.
 
         Parameters
         -------
@@ -657,13 +651,10 @@ class CreateOPEInput:
             Evaluation policy.
 
         k_fold: int, default=1 (> 0)
-            Number of folds for cross-fitting.
+            Number of folds to perform cross-fitting.
 
-        n_epochs: int, default=1 (> 0)
-            Number of epochs to fit FQE.
-
-        n_steps_per_epoch: int, default=10000 (> 0)
-            Number of steps in an epoch.
+        n_steps: int, default=10000 (> 0)
+            Number of gradient steps.
 
         random_state: int, default=None (>= 0)
             Random state.
@@ -824,7 +815,7 @@ class CreateOPEInput:
         n_steps_per_epoch: int = 10000,
         random_state: Optional[int] = None,
     ) -> None:
-        """Fit Minimax Weight Learning (MWL) for state-action weight function.
+        """Perform Minimax Weight Learning (MWL) to estimate the state-action weight function.
 
         Parameters
         -------
@@ -832,13 +823,10 @@ class CreateOPEInput:
             Evaluation policy.
 
         k_fold: int, default=1 (> 0)
-            Number of folds for cross-fitting.
+            Number of folds to perform cross-fitting.
 
-        n_epochs: int, default=1 (> 0)
-            Number of epochs to fit FQE.
-
-        n_steps_per_epoch: int, default=10000 (> 0)
-            Number of steps in an epoch.
+        n_steps: int, default=10000 (> 0)
+            Number of gradient steps.
 
         random_state: int, default=None (>= 0)
             Random state.
@@ -1002,7 +990,7 @@ class CreateOPEInput:
         n_steps_per_epoch: int = 10000,
         random_state: Optional[int] = None,
     ) -> None:
-        """Fit Augmented Lagrangian Method (ALM) for state value weight function.
+        """Perform Augmented Lagrangian Method (ALM) to estimate the state value weight function.
 
         Parameters
         -------
@@ -1010,13 +998,10 @@ class CreateOPEInput:
             Evaluation policy.
 
         k_fold: int, default=1 (> 0)
-            Number of folds for cross-fitting.
+            Number of folds to perform cross-fitting.
 
-        n_epochs: int, default=1 (> 0)
-            Number of epochs to fit FQE.
-
-        n_steps_per_epoch: int, default=10000 (> 0)
-            Number of steps in an epoch.
+        n_steps: int, default=10000 (> 0)
+            Number of gradient steps.
 
         random_state: int, default=None (>= 0)
             Random state.
@@ -1184,7 +1169,7 @@ class CreateOPEInput:
         n_steps_per_epoch: int = 10000,
         random_state: Optional[int] = None,
     ) -> None:
-        """Fit Minimax V Learning (MVL) for state value function.
+        """Perform Minimax V Learning (MVL) to estimate the state value function.
 
         Parameters
         -------
@@ -1192,13 +1177,10 @@ class CreateOPEInput:
             Evaluation policy.
 
         k_fold: int, default=1 (> 0)
-            Number of folds for cross-fitting.
+            Number of folds to perform cross-fitting.
 
-        n_epochs: int, default=1 (> 0)
-            Number of epochs to fit FQE.
-
-        n_steps_per_epoch: int, default=10000 (> 0)
-            Number of steps in an epoch.
+        n_steps: int, default=10000 (> 0)
+            Number of gradient steps.
 
         random_state: int, default=None (>= 0)
             Random state.
@@ -1356,7 +1338,7 @@ class CreateOPEInput:
         n_steps_per_epoch: int = 10000,
         random_state: Optional[int] = None,
     ) -> None:
-        """Fit Minimax Weight Learning (MWL) for state weight function.
+        """Perform Minimax Weight Learning (MWL) to estimate state weight function.
 
         Parameters
         -------
@@ -1364,13 +1346,10 @@ class CreateOPEInput:
             Evaluation policy.
 
         k_fold: int, default=1 (> 0)
-            Number of folds for cross-fitting.
+            Number of folds to perform cross-fitting.
 
-        n_epochs: int, default=1 (> 0)
-            Number of epochs to fit FQE.
-
-        n_steps_per_epoch: int, default=10000 (> 0)
-            Number of steps in an epoch.
+        n_steps: int, default=10000 (> 0)
+            Number of gradient steps.
 
         random_state: int, default=None (>= 0)
             Random state.
@@ -1530,7 +1509,7 @@ class CreateOPEInput:
         maximum_rollout_length: int = 100,
         random_state: Optional[int] = None,
     ):
-        """Obtain initial state distribution (stationary distribution) of evaluation policy.
+        """Obtain initial state distribution (stationary distribution) of the evaluation policy.
 
         Parameters
         -------
@@ -1538,14 +1517,18 @@ class CreateOPEInput:
             Evaluation policy.
 
         resample_initial_state: bool, default=False
-            Whether to resample initial state distribution using the given evaluation policy.
+            Whether to resample from initial state distribution using the given evaluation policy.
             If `False`, the initial state distribution of the behavior policy is used instead.
 
         minimum_rollout_length: int, default=0 (>= 0)
-            Minimum length of rollout before collecting dataset.
+            Minimum length of rollout by the behavior policy before generating the logged dataset
+            when working on the infinite horizon setting.
+            This argument is irrelevant when working on the finite horizon setting.
 
         maximum_rollout_length: int, default=100 (>= minimum_rollout_length)
-            Maximum length of rollout before collecting dataset.
+            Maximum length of rollout by the behavior policy before generating the logged dataset
+            when working on the infinite horizon setting.
+            This argument is irrelevant when working on the finite horizon setting.
 
         random_state: int, default=None (>= 0)
             Random state.
@@ -1553,7 +1536,7 @@ class CreateOPEInput:
         Return
         -------
         evaluation_policy_initial_state: ndarray of shape (n_trajectories, )
-            Initial state distribution of evaluation policy.
+            Initial state distribution of the evaluation policy.
             This is intended to be used in marginal OPE estimators.
 
         """
@@ -1623,7 +1606,7 @@ class CreateOPEInput:
             Evaluation policy.
 
         state: np.ndarray, default=None
-            State to obtain evaluation policy action.
+            Sample an action from the evaluation_policy at this state.
             If None is given, state observed in the logged data will be used.
 
         Return
@@ -1649,7 +1632,7 @@ class CreateOPEInput:
         evaluation_policy: BaseHead,
         state: Optional[np.ndarray] = None,
     ) -> np.ndarray:
-        """Obtain action choice probability of the discrete evaluation policy and its Q hat of the observed state.
+        """Obtain action choice probability of the evaluation policy and its an estimated Q-function of the observed state.
 
         Parameters
         -------
@@ -1657,7 +1640,7 @@ class CreateOPEInput:
             Evaluation policy.
 
         state: np.ndarray, default=None
-            State to obtain evaluation policy action.
+            Sample an action from the evaluation_policy at this state..
             If None is given, state observed in the logged data will be used.
 
         Return
@@ -1706,7 +1689,7 @@ class CreateOPEInput:
         evaluation_policy: BaseHead,
         k_fold: int = 1,
     ) -> np.ndarray:
-        """Obtain Q hat of the observed state and all actions (discrete) or that actions chosen by behavior and (deterministic) evaluation policies (continuous).
+        """Obtain an estimated Q-function of the observed state and all actions (discrete) or that of the actions chosen by behavior and (deterministic) evaluation policies (continuous).
 
         Parameters
         -------
@@ -1717,7 +1700,7 @@ class CreateOPEInput:
             Evaluation policy.
 
         k_fold: int, default=1 (> 0)
-            Number of folds for cross-fitting.
+            Number of folds to perform cross-fitting.
 
         Return
         -------
@@ -1725,7 +1708,7 @@ class CreateOPEInput:
             If action_type is "discrete", output is state action value for observed state and all actions,
             i.e., :math:`\\hat{Q}(s, a) \\forall a \\in \\mathcal{A}`.
 
-            If action_type is "continuous", output is state action value for the observed action and action chosen evaluation policy,
+            If action_type is "continuous", output is state action value for the observed action and that chosen by the evaluation policy,
             i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(s_t))`.
 
         """
@@ -1856,7 +1839,7 @@ class CreateOPEInput:
         maximum_rollout_length: int = 100,
         random_state: Optional[int] = None,
     ) -> np.ndarray:
-        """Obtain the initial state value of the discrete evaluation policy.
+        """Obtain the initial state value of the evaluation policy in the case of discrete action spaces.
 
         Parameters
         -------
@@ -1867,17 +1850,21 @@ class CreateOPEInput:
             Evaluation policy.
 
         k_fold: int, default=1 (> 0)
-            Number of folds for cross-fitting.
+            Number of folds to perform cross-fitting.
 
         resample_initial_state: bool, default=False
             Whether to resample initial state distribution using the given evaluation policy.
             If `False`, the initial state distribution of the behavior policy is used instead.
 
         minimum_rollout_length: int, default=0 (>= 0)
-            Minimum length of rollout before collecting dataset.
+            Minimum length of rollout by the behavior policy before generating the logged dataset
+            when working on the infinite horizon setting.
+            This argument is irrelevant when working on the finite horizon setting.
 
         maximum_rollout_length: int, default=100 (>= minimum_rollout_length)
-            Maximum length of rollout before collecting dataset.
+            Maximum length of rollout by the behavior policy before generating the logged dataset
+            when working on the infinite horizon setting.
+            This argument is irrelevant when working on the finite horizon setting.
 
         random_state: int, default=None (>= 0)
             Random state.
@@ -1885,7 +1872,7 @@ class CreateOPEInput:
         Return
         -------
         initial_state_value_prediction: ndarray of shape (n_trajectories, )
-            State action value of the observed state.
+            State action value of the observed initial state.
 
         """
         if method not in ["fqe", "dice_q", "dice_v", "mql", "mvl"]:
@@ -2015,12 +2002,12 @@ class CreateOPEInput:
             Evaluation policy.
 
         k_fold: int, default=1 (> 0)
-            Number of folds for cross-fitting.
+            Number of folds to perform cross-fitting.
 
         Return
         -------
         state_action_weight_prediction: ndarray of shape (n_trajectories * step_per_trajectory, )
-            State-action marginal importance weight for observed state and the action chosen by the behavior policy.
+            State-action marginal importance weight for the observed state and action.
 
         """
         if method not in ["dice", "mwl"]:
@@ -2080,7 +2067,7 @@ class CreateOPEInput:
             Evaluation policy.
 
         k_fold: int, default=1 (> 0)
-            Number of folds for cross-fitting.
+            Number of folds to perform cross-fitting.
 
         Return
         -------
@@ -2181,28 +2168,28 @@ class CreateOPEInput:
             Evaluation policies.
 
         require_value_prediction: bool, default=False
-            Whether to obtain value prediction.
+            Whether to obtain an estimated value function.
 
         require_weight_prediction: bool, default=False
-            Whether to obtain weight prediction.
+            Whether to obtain an estimated weight function.
 
         resample_initial_state: bool, default=False
             Whether to resample initial state distribution using the given evaluation policy.
             If `False`, the initial state distribution of the behavior policy is used instead.
 
-            Note that, this parameter is applicable only when self.env is given.
+            Note that this parameter is applicable only when self.env is given.
 
         q_function_method: {"fqe", "dice_q", "mql"}, default="fqe"
-            Estimation method of :math:`Q(s, a)`.
+            Method to estimate :math:`Q(s, a)`.
 
         v_function_method: {"fqe", "dice_q", "dice_v", "mql", "mvl"}, default="fqe"
-            Estimation method of :math:`V(s)`.
+            Method to estimate :math:`V(s)`.
 
         w_function_method: {"dice", "mwl"}, default="dice"
-            Estimation method of :math:`w(s, a)` and :math:`w(s)`.
+            Method to estimate :math:`w(s, a)` and :math:`w(s)`.
 
         k_fold: int, default=1 (> 0)
-            Number of folds for cross-fitting.
+            Number of folds to perform cross-fitting.
 
             If :math:`K>1`, we split the logged dataset into :math:`K` folds.
             :math:`\\mathcal{D}_j` is the :math:`j`-th split of logged data consisting of :math:`n_k` samples.
@@ -2215,13 +2202,13 @@ class CreateOPEInput:
             Number of epochs to fit FQE.
 
         n_steps_per_epoch: int, default=None (> 0)
-            Number of steps in an epoch.
+            Number of gradient steps.
 
         n_trajectories_on_policy_evaluation: int, default=None (> 0)
             Number of episodes to perform on-policy evaluation.
 
         use_stationary_distribution_on_policy_evaluation: bool, default=False
-            Whether to evaluate policy on stationary distribution.
+            Whether to evaluate a policy based on stationary distribution.
             If `True`, evaluation policy is evaluated by rollout without resetting environment at each episode.
 
         minimum_rollout_length: int, default=0 (>= 0)
@@ -2268,7 +2255,7 @@ class CreateOPEInput:
                 i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
                 shape (n_trajectories * step_per_trajectory, n_actions)
 
-                If action_type is "continuous", :math:`\\hat{Q}` for the observed action and action chosen evaluation policy,
+                If action_type is "continuous", :math:`\\hat{Q}` for the observed action and that chosen by the evaluation policy,
                 i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a \\mid s_t))`.
                 shape (n_trajectories * step_per_trajectory, 2)
 
@@ -2281,13 +2268,13 @@ class CreateOPEInput:
 
             state_action_marginal_importance_weight: ndarray of shape (n_trajectories * step_per_trajectory, )
                 Estimated state-action marginal importance weight,
-                i.e., :math:`\\hat{w}(s_t, a_t) \\approx d^{\\pi}(s_t, a_t) / d^{\\pi_0}(s_t, a_t)`.
+                i.e., :math:`\\hat{w}(s_t, a_t) \\approx d^{\\pi}(s_t, a_t) / d^{\\pi_b}(s_t, a_t)`.
 
                 If require_weight_prediction is `False`, `None` is recorded.
 
             state_marginal_importance_weight: ndarray of shape (n_trajectories * step_per_trajectory, )
                 Estimated state marginal importance weight,
-                i.e., :math:`\\hat{w}(s_t) \\approx d^{\\pi}(s_t) / d^{\\pi_0}(s_t)`.
+                i.e., :math:`\\hat{w}(s_t) \\approx d^{\\pi}(s_t) / d^{\\pi_b}(s_t)`.
 
                 If require_weight_prediction is `False`, `None` is recorded.
 
@@ -2637,28 +2624,28 @@ class CreateOPEInput:
             Id of the logged dataset.
 
         require_value_prediction: bool, default=False
-            Whether to obtain value prediction.
+            Whether to obtain an estimated value function.
 
         require_weight_prediction: bool, default=False
-            Whether to obtain weight prediction.
+            Whether to obtain an estimated weight function.
 
         resample_initial_state: bool, default=False
             Whether to resample initial state distribution using the given evaluation policy.
             If `False`, the initial state distribution of the behavior policy is used instead.
 
-            Note that, this parameter is applicable only when self.env is given.
+            Note that this parameter is applicable only when self.env is given.
 
         q_function_method: {"fqe", "dice_q", "mql"}, default="fqe"
-            Estimation method of :math:`Q(s, a)`.
+            Method to estimate :math:`Q(s, a)`.
 
         v_function_method: {"fqe", "dice_q", "dice_v", "mql", "mvl"}, default="fqe"
-            Estimation method of :math:`V(s)`.
+            Method to estimate :math:`V(s)`.
 
         w_function_method: {"dice", "mwl"}, default="dice"
-            Estimation method of :math:`w(s, a)` and :math:`w(s)`.
+            Method to estimate :math:`w(s, a)` and :math:`w(s)`.
 
         k_fold: int, default=1 (> 0)
-            Number of folds for cross-fitting.
+            Number of folds to perform cross-fitting.
 
             If :math:`K>1`, we split the logged dataset into :math:`K` folds.
             :math:`\\mathcal{D}_j` is the :math:`j`-th split of logged data consisting of :math:`n_k` samples.
@@ -2671,13 +2658,13 @@ class CreateOPEInput:
             Number of epochs to fit FQE.
 
         n_steps_per_epoch: int, default=None (> 0)
-            Number of steps in an epoch.
+            Number of gradient steps.
 
         n_trajectories_on_policy_evaluation: int, default=None (> 0)
             Number of episodes to perform on-policy evaluation.
 
         use_stationary_distribution_on_policy_evaluation: bool, default=False
-            Whether to evaluate policy on stationary distribution.
+            Whether to evaluate a policy based on stationary distribution.
             If `True`, evaluation policy is evaluated by rollout without resetting environment at each episode.
 
         minimum_rollout_length: int, default=0 (>= 0)
@@ -2690,20 +2677,20 @@ class CreateOPEInput:
             Random state.
 
         path: str
-            Path to the directory. Either absolute and relative path is acceptable.
+            Path to the directory. Either absolute or relative path is acceptable.
 
         save_relative_path: bool, default=False.
             Whether to save a relative path.
             If `True`, a path relative to the scope-rl directory will be saved.
             If `False`, the absolute path will be saved.
 
-            Note that, this option was added in order to run examples in the documentation properly.
+            Note that this option was added in order to run examples in the documentation properly.
             Otherwise, the default setting (`False`) is recommended.
 
         Return
         -------
         input_dicts: OPEInputDict or MultipleInputDict
-            MultipleInputDict is a instance containing (multiple) input dictionary for OPE.
+            MultipleInputDict is an instance containing (multiple) input dictionary for OPE.
 
             Each input dict is accessible by the following command.
 
@@ -2743,7 +2730,7 @@ class CreateOPEInput:
                 i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
                 shape (n_trajectories * step_per_trajectory, n_actions)
 
-                If action_type is "continuous", :math:`\\hat{Q}` for the observed action and action chosen evaluation policy,
+                If action_type is "continuous", :math:`\\hat{Q}` for the observed action and that chosen by the evaluation policy,
                 i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a \\mid s_t))`.
                 shape (n_trajectories * step_per_trajectory, 2)
 
@@ -2756,13 +2743,13 @@ class CreateOPEInput:
 
             state_action_marginal_importance_weight: ndarray of shape (n_trajectories * step_per_trajectory, )
                 Estimated state-action marginal importance weight,
-                i.e., :math:`\\hat{w}(s_t, a_t) \\approx d^{\\pi}(s_t, a_t) / d^{\\pi_0}(s_t, a_t)`.
+                i.e., :math:`\\hat{w}(s_t, a_t) \\approx d^{\\pi}(s_t, a_t) / d^{\\pi_b}(s_t, a_t)`.
 
                 If require_weight_prediction is `False`, `None` is recorded.
 
             state_marginal_importance_weight: ndarray of shape (n_trajectories * step_per_trajectory, )
                 Estimated state marginal importance weight,
-                i.e., :math:`\\hat{w}(s_t) \\approx d^{\\pi}(s_t) / d^{\\pi_0}(s_t)`.
+                i.e., :math:`\\hat{w}(s_t) \\approx d^{\\pi}(s_t) / d^{\\pi_b}(s_t)`.
 
                 If require_weight_prediction is `False`, `None` is recorded.
 

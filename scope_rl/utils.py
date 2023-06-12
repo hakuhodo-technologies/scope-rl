@@ -30,17 +30,17 @@ class MultipleLoggedDataset:
     Parameters
     -------
     action_type: {"discrete", "continuous"}
-        Action type of the RL agent.
+        Type of the action space.
 
     path: str
-        Path to the directory. Either absolute and relative path is acceptable.
+        Path to the directory. Either absolute or relative path is acceptable.
 
     save_relative_path: bool, default=False.
         Whether to save a relative path.
         If `True`, a path relative to the scope-rl directory will be saved.
         If `False`, the absolute path will be saved.
 
-        Note that, this option was added in order to run examples in the documentation properly.
+        Note that this option was added in order to run examples in the documentation properly.
         Otherwise, the default setting (`False`) is recommended.
 
     """
@@ -77,7 +77,7 @@ class MultipleLoggedDataset:
             Logged dataset to save.
 
         behavior_policy_name: str
-            Name of the behavior policy which collected the logged dataset.
+            Name of the behavior policy that generated the logged dataset.
 
         """
         dataset_id = self.dataset_ids[behavior_policy_name]
@@ -97,7 +97,7 @@ class MultipleLoggedDataset:
         Parameters
         -------
         behavior_policy_name: str
-            Name of the behavior policy which collected the logged dataset.
+            Name of the behavior policy that generated the logged dataset.
 
         dataset_id: int
             Id of the logged dataset.
@@ -145,17 +145,17 @@ class MultipleInputDict:
     Parameters
     -------
     action_type: {"discrete", "continuous"}
-        Action type of the RL agent.
+        Type of the action space.
 
     path: str
-        Path to the directory. Either absolute and relative path is acceptable.
+        Path to the directory. Either absolute or relative path is acceptable.
 
     save_relative_path: bool, default=False.
         Whether to save a relative path.
         If `True`, a path relative to the scope-rl directory will be saved.
         If `False`, the absolute path will be saved.
 
-        Note that, this option was added in order to run examples in the documentation properly.
+        Note that this option was added in order to run examples in the documentation properly.
         Otherwise, the default setting (`False`) is recommended.
 
     """
@@ -193,7 +193,7 @@ class MultipleInputDict:
             Input dictionary for OPE to save.
 
         behavior_policy_name: str
-            Name of the behavior policy which collected the logged dataset.
+            Name of the behavior policy that generated the logged dataset.
 
         dataset_id: int
             Id of the logged dataset.
@@ -215,7 +215,7 @@ class MultipleInputDict:
          Parameters
          -------
         behavior_policy_name: str
-             Name of the behavior policy which collected the logged dataset.
+             Name of the behavior policy that generated the logged dataset.
 
          dataset_id: int
              Id of the logged dataset.
@@ -305,7 +305,7 @@ def gaussian_kernel(
         Input array 2.
 
     sigma: float, default=1.0
-        Bandwidth hyperparameter of gaussian kernel.
+        Bandwidth hyperparameter of the Gaussian kernel.
 
     Returns
     -------
@@ -326,7 +326,7 @@ def estimate_confidence_interval_by_bootstrap(
     n_bootstrap_samples: int = 100,
     random_state: Optional[int] = None,
 ) -> Dict[str, float]:
-    """Estimate the confidence interval by nonparametric bootstrap-like procedure.
+    """Estimate the confidence interval by a nonparametric bootstrap-like procedure.
 
     Parameters
     -------
@@ -378,13 +378,13 @@ def estimate_confidence_interval_by_hoeffding(
 
     Note
     -------
-    The Hoeffding's inequality derives the confidence intervals of :math:`\\mu := \\mathbb{E}[X], X \\sim p(X)` with probability :math:`1 - \\alpha` as follows.
+    The Hoeffding's inequality provides high-probability bounds of the expectation :math:`\\mu := \\mathbb{E}[X], X \\sim p(X)` as follows.
 
     .. math::
 
-        |\\hat{\\mu} - \\mu]| \\leq X_{\\max} \\sqrt{\\frac{\\log(1 / \\alpha)}{2 n}}`
+        |\\hat{\\mu} - \\mu]| \\leq X_{\\max} \\sqrt{\\frac{\\log(1 / \\alpha)}{2 n}}`,
 
-    where :math:`n` is the data size.
+    which holds with probability :math:`1 - \\alpha` where :math:`n` is the data size.
 
     Parameters
     -------
@@ -419,13 +419,13 @@ def estimate_confidence_interval_by_empirical_bernstein(
 
     Note
     -------
-    The empirical bernstein inequality derives the confidence intervals of :math:`\\mu := \\mathbb{E}[X], X \\sim p(X)` with probability :math:`1 - \\alpha` as follows.
+    The empirical bernstein inequality provides high-probability bounds of the expectation :math:`\\mu := \\mathbb{E}[X], X \\sim p(X)` as follows.
 
     .. math::
 
-        |\\hat{\\mu} - \\mu]| \\leq \\frac{7 X_{\\max} \\log(2 / \\alpha)}{3 (n - 1)} + \\sqrt{\\frac{2 \\hat{\\mathbb{V}}(X) \\log(2 / \\alpha)}{n(n - 1)}}`
+        |\\hat{\\mu} - \\mu]| \\leq \\frac{7 X_{\\max} \\log(2 / \\alpha)}{3 (n - 1)} + \\sqrt{\\frac{2 \\hat{\\mathbb{V}}(X) \\log(2 / \\alpha)}{n(n - 1)}}`,
 
-    where :math:`n` is the data size and :math:`\\hat{\\mathbb{V}}` is the sample variance.
+    which holds with probability :math:`1 - \\alpha` where :math:`n` is the data size and :math:`\\hat{\\mathbb{V}}` is the sample variance.
 
     Parameters
     -------
@@ -464,7 +464,7 @@ def estimate_confidence_interval_by_t_test(
     Note
     -------
     Student T-test assumes that :math:`X \\sim p(X)` follows a normal distribution.
-    Based on this assumption, the confidence intervals of :math:`\\mu := \\mathbb{E}[X]` with probability :math:`1 - \\alpha` is derived as follows.
+    Based on this assumption, the :math:`1 - \\alpha` \% confidence interval of :math:`\\mu := \\mathbb{E}[X]` is derived as follows.
 
     .. math::
 
@@ -499,7 +499,7 @@ def estimate_confidence_interval_by_t_test(
 
 
 def defaultdict_to_dict(dict_: Union[Dict[Any, Any], DefaultDict[Any, Any]]):
-    """Transform a defaultdict into the dict."""
+    """Transform a defaultdict into a corresponding dict."""
     if isinstance(dict_, defaultdict):
         dict_ = {key: defaultdict_to_dict(value) for key, value in dict_.items()}
     return dict_
@@ -530,10 +530,10 @@ def check_array(
         Expected dtype of the input array.
 
     min_val: float, default=None
-        Minimum number allowed in the input array.
+        Minimum value allowed in the input array.
 
     max_val: float, default=None
-        Maximum number allowed in the input array.
+        Maximum value allowed in the input array.
 
     """
     if not isinstance(array, np.ndarray):

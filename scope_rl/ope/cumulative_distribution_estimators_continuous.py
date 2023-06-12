@@ -1,7 +1,7 @@
 # Copyright (c) 2023, Haruka Kiyohara, Ren Kishimoto, HAKUHODO Technologies Inc., and Hanjuku-kaso Co., Ltd. All rights reserved.
 # Licensed under the Apache 2.0 License.
 
-"""Cumulative Distribution Off-Policy Estimators for continuous action cases (designed for deterministic policies)."""
+"""Cumulative Distribution Off-Policy Estimators for continuous action cases (designed for deterministic evaluation policies)."""
 from dataclasses import dataclass
 from typing import Optional, Tuple
 
@@ -20,7 +20,7 @@ from ..utils import check_array
 class ContinuousCumulativeDistributionDM(
     BaseCumulativeDistributionOPEEstimator,
 ):
-    """Direct Method (DM) for estimating cumulative distribution function (CDF) in continuous-action OPE.
+    """Direct Method (DM) for estimating the cumulative distribution function (CDF) for continuous action spaces.
 
     Bases: :class:`scope_rl.ope.BaseCumulativeDistributionOPEEstimator`
 
@@ -28,17 +28,17 @@ class ContinuousCumulativeDistributionDM(
 
     Note
     -------
-    DM estimates CDF using the initial state value as follows.
+    DM estimates the CDF using the initial state value as follows.
 
     .. math::
 
         \\hat{F}_{\\mathrm{DM}}(m, \\pi; \\mathcal{D}) := \\mathbb{E}_{n} [\\hat{G}(m; s_0, \\pi(a_0))]
 
-    where :math:`\\hat{F}(\\cdot)` is the estimated cumulative distribution function and :math:`\\hat{G}(\\cdot)` is the estimated conditional distribution.
+    where :math:`\\hat{F}(\\cdot)` is the estimated cumulative distribution function and :math:`\\hat{G}(\\cdot)` is an estimator for :math:`\\mathbb{E}[\\mathbb{I} \\left \\{\\sum_{t=0}^{T-1} \\gamma^t r_t \\leq m \\right \\} \\mid s,a]`.
 
-    DM has low variance, but can incur bias due to approximation errors.
+    DM has low variance compared to other estimators, but can produce larger bias due to approximation errors.
 
-    There are several ways to estimate :math:`\\hat{Q}(s, a)` such as Fitted Q Evaluation (FQE) (Le et al., 2019) and
+    There are several methods to estimate :math:`\\hat{Q}(s, a)` such as Fitted Q Evaluation (FQE) (Le et al., 2019) and
     Minimax Q-Function Learning (MQL) (Uehara et al., 2020).
 
     .. seealso::
@@ -81,7 +81,7 @@ class ContinuousCumulativeDistributionDM(
         gamma: float = 1.0,
         **kwargs,
     ) -> Tuple[np.ndarray]:
-        """Estimate cumulative distribution function.
+        """Estimate the cumulative distribution function (CDF) of the reward distribution under the evaluation policy.
 
         Parameters
         -------
@@ -89,14 +89,13 @@ class ContinuousCumulativeDistributionDM(
             Number of timesteps in an episode.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
-            Reward observation.
+            Observed immediate rewards.
 
         state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, n_action)
-            :math:`\\hat{Q}` for all action,
-            i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
+            :math:`\\hat{Q}` for all actions, i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
 
         reward_scale: array-like of shape (n_partition, )
-            Scale of the trajectory wise reward used for x-axis of CDF curve.
+            Scale of the trajectory-wise reward used for x-axis of the CDF plot.
 
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
@@ -173,14 +172,13 @@ class ContinuousCumulativeDistributionDM(
             Number of timesteps in an episode.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
-            Reward observation.
+            Observed immediate rewards.
 
         state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, n_action)
-            :math:`\\hat{Q}` for all action,
-            i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
+            :math:`\\hat{Q}` for all actions, i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
 
         reward_scale: array-like of shape (n_partition, )
-            Scale of the trajectory wise reward used for x-axis of CDF curve.
+            Scale of the trajectory-wise reward used for x-axis of the CDF plot.
 
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
@@ -188,7 +186,7 @@ class ContinuousCumulativeDistributionDM(
         Return
         -------
         estimated_mean: float
-            Estimated mean of the policy value.
+            Estimated mean of the reward under the evaluation policy.
 
         """
         cumulative_density = self.estimate_cumulative_distribution_function(
@@ -217,14 +215,13 @@ class ContinuousCumulativeDistributionDM(
             Number of timesteps in an episode.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
-            Reward observation.
+            Observed immediate rewards.
 
         state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, n_action)
-            :math:`\\hat{Q}` for all action,
-            i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
+            :math:`\\hat{Q}` for all actions, i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
 
         reward_scale: array-like of shape (n_partition, )
-            Scale of the trajectory wise reward used for x-axis of CDF curve.
+            Scale of the trajectory-wise reward used for x-axis of the CDF plot.
 
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
@@ -232,7 +229,7 @@ class ContinuousCumulativeDistributionDM(
         Return
         -------
         estimated_variance: float
-            Estimated variance of the policy value.
+            Estimated variance of the reward under the evaluation policy.
 
         """
         cumulative_density = self.estimate_cumulative_distribution_function(
@@ -263,26 +260,25 @@ class ContinuousCumulativeDistributionDM(
             Number of timesteps in an episode.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
-            Reward observation.
+            Observed immediate rewards.
 
         state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, n_action)
-            :math:`\\hat{Q}` for all action,
-            i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
+            :math:`\\hat{Q}` for all actions, i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
 
         reward_scale: array-like of shape (n_partition, )
-            Scale of the trajectory wise reward used for x-axis of CDF curve.
+            Scale of the trajectory-wise reward used for x-axis of the CDF plot.
 
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
 
         alphas: array-like of shape (n_alpha, ), default=None
-            Set of proportions of the sided region. The values should be within `[0, 1)`.
+            Set of proportions of the shaded region. The values should be within `[0, 1)`.
             If `None` is given, :class:`np.linspace(0, 1, 21)` will be used.
 
         Return
         -------
         estimated_conditional_value_at_risk: ndarray of (n_alpha, )
-            Estimated conditional value at risk (CVaR) of the policy value.
+            Estimated conditional value at risk (CVaR) of the reward under the evaluation policy.
 
         """
         if alphas is None:
@@ -337,25 +333,24 @@ class ContinuousCumulativeDistributionDM(
             Number of timesteps in an episode.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
-            Reward observation.
+            Observed immediate rewards.
 
         state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, n_action)
-            :math:`\\hat{Q}` for all action,
-            i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
+            :math:`\\hat{Q}` for all actions, i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
 
         reward_scale: array-like of shape (n_partition, )
-            Scale of the trajectory wise reward used for x-axis of CDF curve.
+            Scale of the trajectory-wise reward used for x-axis of the CDF plot.
 
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
 
         alpha: float, default=0.05
-            Proportion of the sided region.
+            Proportion of the shaded region.
 
         Return
         -------
         estimated_interquartile_range: dict
-            Estimated interquartile range of the policy value.
+            Estimated interquartile range of the reward under the evaluation policy.
 
         """
         check_scalar(alpha, name="alpha", target_type=float, min_val=0.0, max_val=0.5)
@@ -393,7 +388,7 @@ class ContinuousCumulativeDistributionDM(
 class ContinuousCumulativeDistributionTIS(
     BaseCumulativeDistributionOPEEstimator,
 ):
-    """Trajectory-wise Importance Sampling (TIS) for estimating cumulative distribution function (CDF) in continuous-action OPE.
+    """Trajectory-wise Importance Sampling (TIS) for estimating the cumulative distribution function (CDF) for continuous action spaces.
 
     Bases: :class:`scope_rl.ope.BaseCumulativeDistributionOPEyEstimator`
 
@@ -401,7 +396,7 @@ class ContinuousCumulativeDistributionTIS(
 
     Note
     -------
-    TIS estimates CDF using importance sampling techniques as follows.
+    TIS estimates the CDF via trajectory-wise importance weighting as follows.
 
     .. math::
 
@@ -414,7 +409,7 @@ class ContinuousCumulativeDistributionTIS(
     :math:`\\delta(\\pi, a_{0:T-1}) = \\prod_{t=0}^{T-1} K(\\pi(s_t), a_t)` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy.
 
     TIS enables an unbiased estimation of the policy value. However, when the trajectory length (:math:`T`) is large,
-    TIS suffers from high variance due to the product of importance weights.
+    TIS suffers from high variance due to the product of importance weights over the entire horizon.
 
     Parameters
     -------
@@ -452,7 +447,7 @@ class ContinuousCumulativeDistributionTIS(
         action_scaler: Optional[ActionScaler] = None,
         **kwargs,
     ) -> Tuple[np.ndarray]:
-        """Estimate cumulative distribution function.
+        """Estimate the cumulative distribution function (CDF) of the reward distribution under the evaluation policy.
 
         Parameters
         -------
@@ -463,7 +458,7 @@ class ContinuousCumulativeDistributionTIS(
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
-            Reward observation.
+            Observed immediate rewards.
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
@@ -474,13 +469,13 @@ class ContinuousCumulativeDistributionTIS(
             i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
 
         reward_scale: array-like of shape (n_partition, )
-            Scale of the trajectory wise reward used for x-axis of CDF curve.
+            Scale of the trajectory-wise reward used for x-axis of the CDF plot.
 
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
 
         sigma: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of gaussian kernel.
+            Bandwidth hyperparameter of the Gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -602,7 +597,7 @@ class ContinuousCumulativeDistributionTIS(
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
-            Reward observation.
+            Observed immediate rewards.
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
@@ -612,13 +607,13 @@ class ContinuousCumulativeDistributionTIS(
             Action chosen by the evaluation policy.
 
         reward_scale: array-like of shape (n_partition, )
-            Scale of the trajectory wise reward used for x-axis of CDF curve.
+            Scale of the trajectory-wise reward used for x-axis of the CDF plot.
 
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
 
         sigma: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of gaussian kernel.
+            Bandwidth hyperparameter of the Gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -626,7 +621,7 @@ class ContinuousCumulativeDistributionTIS(
         Return
         -------
         estimated_mean: float
-            Estimated mean of the policy value.
+            Estimated mean of the reward under the evaluation policy.
 
         """
         cumulative_density = self.estimate_cumulative_distribution_function(
@@ -666,7 +661,7 @@ class ContinuousCumulativeDistributionTIS(
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
-            Reward observation.
+            Observed immediate rewards.
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
@@ -676,13 +671,13 @@ class ContinuousCumulativeDistributionTIS(
             Action chosen by the evaluation policy.
 
         reward_scale: array-like of shape (n_partition, )
-            Scale of the trajectory wise reward used for x-axis of CDF curve.
+            Scale of the trajectory-wise reward used for x-axis of the CDF plot.
 
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
 
         sigma: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of gaussian kernel.
+            Bandwidth hyperparameter of the Gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -690,7 +685,7 @@ class ContinuousCumulativeDistributionTIS(
         Return
         -------
         estimated_variance: float
-            Estimated variance of the policy value.
+            Estimated variance of the reward under the evaluation policy.
 
         """
         cumulative_density = self.estimate_cumulative_distribution_function(
@@ -732,7 +727,7 @@ class ContinuousCumulativeDistributionTIS(
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
-            Reward observation.
+            Observed immediate rewards.
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
@@ -742,25 +737,25 @@ class ContinuousCumulativeDistributionTIS(
             Action chosen by the evaluation policy.
 
         reward_scale: array-like of shape (n_partition, )
-            Scale of the trajectory wise reward used for x-axis of CDF curve.
+            Scale of the trajectory-wise reward used for x-axis of the CDF plot.
 
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
 
         sigma: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of gaussian kernel.
+            Bandwidth hyperparameter of the Gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
 
         alphas: array-like of shape (n_alpha, ), default=None
-            Set of proportions of the sided region. The values should be within `[0, 1)`.
+            Set of proportions of the shaded region. The values should be within `[0, 1)`.
             If `None` is given, :class:`np.linspace(0, 1, 21)` will be used.
 
         Return
         -------
         estimated_conditional_value_at_risk: ndarray of (n_alpha, )
-            Estimated conditional value at risk (CVaR) of the policy value.
+            Estimated conditional value at risk (CVaR) of the reward under the evaluation policy.
 
         """
         if alphas is None:
@@ -826,7 +821,7 @@ class ContinuousCumulativeDistributionTIS(
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
-            Reward observation.
+            Observed immediate rewards.
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
@@ -836,24 +831,24 @@ class ContinuousCumulativeDistributionTIS(
             Action chosen by the evaluation policy.
 
         reward_scale: array-like of shape (n_partition, )
-            Scale of the trajectory wise reward used for x-axis of CDF curve.
+            Scale of the trajectory-wise reward used for x-axis of the CDF plot.
 
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
 
         sigma: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of gaussian kernel.
+            Bandwidth hyperparameter of the Gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
 
         alpha: float, default=0.05
-            Proportion of the sided region.
+            Proportion of the shaded region.
 
         Return
         -------
         estimated_interquartile_range: dict
-            Estimated interquartile range of the policy value.
+            Estimated interquartile range of the reward under the evaluation policy.
 
         """
         check_scalar(alpha, name="alpha", target_type=float, min_val=0.0, max_val=0.5)
@@ -895,7 +890,7 @@ class ContinuousCumulativeDistributionTIS(
 class ContinuousCumulativeDistributionTDR(
     BaseCumulativeDistributionOPEEstimator,
 ):
-    """Trajectory-wise Doubly Robust (TDR) for estimating cumulative distribution function (CDF) in continuous-action OPE.
+    """Trajectory-wise Doubly Robust (TDR) for estimating the cumulative distribution function (CDF) for continuous action spaces.
 
     Bases: :class:`scope_rl.ope.BaseCumulativeDistributionOPEEstimator`
 
@@ -904,7 +899,7 @@ class ContinuousCumulativeDistributionTDR(
 
     Note
     -------
-    TDR estimates CDF using importance sampling techniques as follows.
+    TDR estimates the CDF via trajectory-wise importance weighting and estimated Q-function :math:`\\hat{Q}` as follows.
 
     .. math::
 
@@ -912,11 +907,11 @@ class ContinuousCumulativeDistributionTDR(
         &:= \\mathbb{E}_{n} [\\hat{G}(m; s_0, \\pi(a_0))] \\\\
         & \quad \quad + \\mathbb{E}_{n} \\left[ w_{0:T-1} \\delta(\\pi, a_{0:T-1}) \\left( \\mathbb{I} \\left \\{\\sum_{t=0}^{T-1} \\gamma^t r_t \\leq m \\right \\} - \\hat{G}(m; s_0, a_0) \\right) \\right]
 
-    where :math:`\\hat{F}(\\cdot)` is the estimated cumulative distribution function and :math:`\\hat{G}(\\cdot)` is the estimated conditional distribution.
+    where :math:`\\hat{F}(\\cdot)` is the estimated cumulative distribution function and :math:`\\hat{G}(\\cdot)` is an estimator for :math:`\\mathbb{E}[\\mathbb{I} \\left \\{\\sum_{t=0}^{T-1} \\gamma^t r_t \\leq m \\right \\} \\mid s,a]`.
     :math:`w_{0:T-1} := \\prod_{t=0}^{T-1} (\\pi(a_t \\mid s_t) / \\pi_0(a_t \\mid s_t))` is the trajectory-wise importance weight and :math:`\\mathbb{I} \\{ \\cdot \\}` is the indicator function.
     :math:`\\delta(\\pi, a_{0:T-1}) = \\prod_{t=0}^{T-1} K(\\pi(s_t), a_t)` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy.
 
-    TDR is unbiased and reduces the variance of TIS when :math:`\\hat{Q}(\\cdot)` is reasonably accurate to satisfy :math:`0 < \\hat{Q}(\\cdot) < 2 Q(\\cdot)`. 
+    TDR is unbiased and has lower variance than TIS when :math:`\\hat{Q}(\\cdot)` is reasonably accurate and satisfies :math:`0 < \\hat{Q}(\\cdot) < 2 Q(\\cdot)`.
     However, when the importance weight is quite large, it may still suffer from a high variance.
 
     Parameters
@@ -956,7 +951,7 @@ class ContinuousCumulativeDistributionTDR(
         action_scaler: Optional[ActionScaler] = None,
         **kwargs,
     ) -> Tuple[np.ndarray]:
-        """Estimate cumulative distribution function.
+        """Estimate the cumulative distribution function (CDF) of the reward distribution under the evaluation policy.
 
         Parameters
         -------
@@ -967,7 +962,7 @@ class ContinuousCumulativeDistributionTDR(
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
-            Reward observation.
+            Observed immediate rewards.
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
@@ -977,17 +972,16 @@ class ContinuousCumulativeDistributionTDR(
             Action chosen by the evaluation policy.
 
         state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, n_action)
-            :math:`\\hat{Q}` for all action,
-            i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
+            :math:`\\hat{Q}` for all actions, i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
 
         reward_scale: array-like of shape (n_partition, )
-            Scale of the trajectory wise reward used for x-axis of CDF curve.
+            Scale of the trajectory-wise reward used for x-axis of the CDF plot.
 
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
 
         sigma: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of gaussian kernel.
+            Bandwidth hyperparameter of the Gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -1124,7 +1118,7 @@ class ContinuousCumulativeDistributionTDR(
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
-            Reward observation.
+            Observed immediate rewards.
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
@@ -1134,17 +1128,16 @@ class ContinuousCumulativeDistributionTDR(
             Action chosen by the evaluation policy.
 
         state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, n_action)
-            :math:`\\hat{Q}` for all action,
-            i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
+            :math:`\\hat{Q}` for all actions, i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
 
         reward_scale: array-like of shape (n_partition, )
-            Scale of the trajectory wise reward used for x-axis of CDF curve.
+            Scale of the trajectory-wise reward used for x-axis of the CDF plot.
 
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
 
         sigma: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of gaussian kernel.
+            Bandwidth hyperparameter of the Gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -1152,7 +1145,7 @@ class ContinuousCumulativeDistributionTDR(
         Return
         -------
         estimated_mean: float
-            Estimated mean of the policy value.
+            Estimated mean of the reward under the evaluation policy.
 
         """
         cumulative_density = self.estimate_cumulative_distribution_function(
@@ -1194,7 +1187,7 @@ class ContinuousCumulativeDistributionTDR(
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
-            Reward observation.
+            Observed immediate rewards.
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
@@ -1204,17 +1197,16 @@ class ContinuousCumulativeDistributionTDR(
             Action chosen by the evaluation policy.
 
         state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, n_action)
-            :math:`\\hat{Q}` for all action,
-            i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
+            :math:`\\hat{Q}` for all actions, i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
 
         reward_scale: array-like of shape (n_partition, )
-            Scale of the trajectory wise reward used for x-axis of CDF curve.
+            Scale of the trajectory-wise reward used for x-axis of the CDF plot.
 
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
 
         sigma: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of gaussian kernel.
+            Bandwidth hyperparameter of the Gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -1222,7 +1214,7 @@ class ContinuousCumulativeDistributionTDR(
         Return
         -------
         estimated_variance: float
-            Estimated variance of the policy value.
+            Estimated variance of the reward under the evaluation policy.
 
         """
         cumulative_density = self.estimate_cumulative_distribution_function(
@@ -1266,7 +1258,7 @@ class ContinuousCumulativeDistributionTDR(
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
-            Reward observation.
+            Observed immediate rewards.
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
@@ -1276,29 +1268,28 @@ class ContinuousCumulativeDistributionTDR(
             Action chosen by the evaluation policy.
 
         state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, n_action)
-            :math:`\\hat{Q}` for all action,
-            i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
+            :math:`\\hat{Q}` for all actions, i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
 
         reward_scale: array-like of shape (n_partition, )
-            Scale of the trajectory wise reward used for x-axis of CDF curve.
+            Scale of the trajectory-wise reward used for x-axis of the CDF plot.
 
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
 
         sigma: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of gaussian kernel.
+            Bandwidth hyperparameter of the Gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
 
         alphas: array-like of shape (n_alpha, ), default=None
-            Set of proportions of the sided region. The values should be within `[0, 1)`.
+            Set of proportions of the shaded region. The values should be within `[0, 1)`.
             If `None` is given, :class:`np.linspace(0, 1, 21)` will be used.
 
         Return
         -------
         estimated_conditional_value_at_risk: ndarray of (n_alpha, )
-            Estimated conditional value at risk (CVaR) of the policy value.
+            Estimated conditional value at risk (CVaR) of the reward under the evaluation policy.
 
         """
         if alphas is None:
@@ -1365,7 +1356,7 @@ class ContinuousCumulativeDistributionTDR(
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
-            Reward observation.
+            Observed immediate rewards.
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
@@ -1375,28 +1366,27 @@ class ContinuousCumulativeDistributionTDR(
             Action chosen by the evaluation policy.
 
         state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, n_action)
-            :math:`\\hat{Q}` for all action,
-            i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
+            :math:`\\hat{Q}` for all actions, i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
 
         reward_scale: array-like of shape (n_partition, )
-            Scale of the trajectory wise reward used for x-axis of CDF curve.
+            Scale of the trajectory-wise reward used for x-axis of the CDF plot.
 
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
 
         sigma: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of gaussian kernel.
+            Bandwidth hyperparameter of the Gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
 
         alpha: float, default=0.05
-            Proportion of the sided region.
+            Proportion of the shaded region.
 
         Return
         -------
         estimated_interquartile_range: dict
-            Estimated interquartile range of the policy value.
+            Estimated interquartile range of the reward under the evaluation policy.
 
         """
         check_scalar(alpha, name="alpha", target_type=float, min_val=0.0, max_val=0.5)
@@ -1439,7 +1429,7 @@ class ContinuousCumulativeDistributionTDR(
 class ContinuousCumulativeDistributionSNTIS(
     ContinuousCumulativeDistributionTIS,
 ):
-    """Self Normalized Trajectory-wise Importance Sampling (SNTIS) for estimating cumulative distribution function (CDF) in continuous-action OPE.
+    """Self Normalized Trajectory-wise Importance Sampling (SNTIS) for estimating the cumulative distribution function (CDF) for continuous action spaces.
 
     Bases: :class:`scope_rl.ope.ContinuousCumulativeTIS` -> :class:`scope_rl.ope.BaseCumulativeDistributionOPEEstimator`
 
@@ -1448,7 +1438,7 @@ class ContinuousCumulativeDistributionSNTIS(
 
     Note
     -------
-    SNTIS estimates CDF using importance sampling techniques as follows.
+    SNTIS estimates the CDF via trajectory-wise importance weighting as follows.
 
     .. math::
 
@@ -1460,7 +1450,7 @@ class ContinuousCumulativeDistributionSNTIS(
     and :math:`\\mathbb{I} \\{ \\cdot \\}` is the indicator function.
     :math:`\\delta(\\pi, a_{0:T-1}) = \\prod_{t=0}^{T-1} K(\\pi(s_t), a_t)` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy.
 
-    The self-normalized estimator is no longer unbiased, but has a bounded variance while also being consistent.
+    The self-normalized estimator is no longer unbiased, but has a bounded variance while also remaining consistent.
 
     Parameters
     -------
@@ -1498,7 +1488,7 @@ class ContinuousCumulativeDistributionSNTIS(
         action_scaler: Optional[ActionScaler] = None,
         **kwargs,
     ) -> Tuple[np.ndarray]:
-        """Estimate cumulative distribution function.
+        """Estimate the cumulative distribution function (CDF) of the reward distribution under the evaluation policy.
 
         Parameters
         -------
@@ -1509,7 +1499,7 @@ class ContinuousCumulativeDistributionSNTIS(
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
-            Reward observation.
+            Observed immediate rewards.
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
@@ -1519,13 +1509,13 @@ class ContinuousCumulativeDistributionSNTIS(
             Action chosen by the evaluation policy.
 
         reward_scale: array-like of shape (n_partition, )
-            Scale of the trajectory wise reward used for x-axis of CDF curve.
+            Scale of the trajectory-wise reward used for x-axis of the CDF plot.
 
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
 
         sigma: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of gaussian kernel.
+            Bandwidth hyperparameter of the Gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -1630,7 +1620,7 @@ class ContinuousCumulativeDistributionSNTIS(
 class ContinuousCumulativeDistributionSNTDR(
     ContinuousCumulativeDistributionTDR,
 ):
-    """Self Normalized Trajectory-wise Doubly Robust (SNTDR) for estimating cumulative distribution function (CDF) in continuous-action OPE.
+    """Self Normalized Trajectory-wise Doubly Robust (SNTDR) for estimating the cumulative distribution function (CDF) for continuous action spaces.
 
     Bases: :class:`scope_rl.ope.ContinuousCumulativeTDR` -> :class:`scope_rl.ope.BaseCumulativeDistributionOPEEstimator`
 
@@ -1638,20 +1628,20 @@ class ContinuousCumulativeDistributionSNTDR(
 
     Note
     -------
-    SNTDR estimates CDF using importance sampling techniques as follows.
+    SNTDR estimates the CDF via trajectory-wise importance weighting and estimated Q-function :math:`\\hat{Q}` as follows.
 
     .. math::
 
         \\hat{F}_{\\mathrm{SNTDR}}(m, \\pi; \\mathcal{D}))
         &:= \\mathbb{E}_{n} [\\hat{G}(m; s_0, \\pi(a_0))] \\\\
         & \\quad \\quad + \\mathbb{E}_{n} \\left[ \\frac{w_{0:T-1} \\delta(\\pi, a_{0:T-1})}{\\sum_{n} w_{0:T-1} \\delta(\\pi, a_{0:T-1})} \\left( \\mathbb{I} \\left \\{\\sum_{t=0}^{T-1} \\gamma^t r_t \\leq t \\right \\} - \\hat{G}(m; s_0, a_0) \\right) \\right]
-        
 
-    where :math:`\\hat{F}(\\cdot)` is the estimated cumulative distribution function and :math:`\\hat{G}(\\cdot)` is the estimated conditional distribution.
+
+    where :math:`\\hat{F}(\\cdot)` is the estimated cumulative distribution function and :math:`\\hat{G}(\\cdot)` is an estimator for :math:`\\mathbb{E}[\\mathbb{I} \\left \\{\\sum_{t=0}^{T-1} \\gamma^t r_t \\leq m \\right \\} \\mid s,a]`.
     :math:`w_{0:T-1} := \\prod_{t=0}^{T-1} (\\pi(a_t \\mid s_t) / \\pi_0(a_t \\mid s_t))` is the trajectory-wise importance weight and :math:`\\mathbb{I} \\{ \\cdot \\}` is the indicator function.
     :math:`\\delta(\\pi, a_{0:T-1}) = \\prod_{t=0}^{T-1} K(\\pi(s_t), a_t)` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy.
 
-    The self-normalized estimator is no longer unbiased, but has a bounded variance while also being consistent.
+    The self-normalized estimator is no longer unbiased, but has a bounded variance while also remaining consistent.
 
     Parameters
     -------
@@ -1690,7 +1680,7 @@ class ContinuousCumulativeDistributionSNTDR(
         action_scaler: Optional[ActionScaler] = None,
         **kwargs,
     ) -> Tuple[np.ndarray]:
-        """Estimate cumulative distribution function.
+        """Estimate the cumulative distribution function (CDF) of the reward distribution under the evaluation policy.
 
         Parameters
         -------
@@ -1701,7 +1691,7 @@ class ContinuousCumulativeDistributionSNTDR(
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
-            Reward observation.
+            Observed immediate rewards.
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
@@ -1711,17 +1701,16 @@ class ContinuousCumulativeDistributionSNTDR(
             Action chosen by the evaluation policy.
 
         state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, n_action)
-            :math:`\\hat{Q}` for all action,
-            i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
+            :math:`\\hat{Q}` for all actions, i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
 
         reward_scale: array-like of shape (n_partition, )
-            Scale of the trajectory wise reward used for x-axis of CDF curve.
+            Scale of the trajectory-wise reward used for x-axis of the CDF plot.
 
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
 
         sigma: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of gaussian kernel.
+            Bandwidth hyperparameter of the Gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.

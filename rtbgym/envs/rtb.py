@@ -58,7 +58,7 @@ class RTBEnv(gym.Env):
 
                 {bid price}_{t, i} = {adjust rate}_{t} \\times {predicted reward}_{t,i} ( \\times {const.})
 
-            Note that, you can also use predicted reward instead of ground-truth reward in the above equation.
+            Note that you can also use predicted reward instead of the ground-truth reward in the above equation.
             Please also refer to CustomizedRTBEnv Wrapper.
 
         reward: int (>= 0)
@@ -373,10 +373,10 @@ class RTBEnv(gym.Env):
                 Total clicks/conversions gained during the timestep.
 
             done: bool
-                Wether the episode end or not.
+                Whether the episode end or not.
 
             info: dict
-                Additional feedbacks (total impressions, clicks, and conversions) for analysts.
+                Additional feedbacks (total impressions, clicks, and conversions) that may be useful for the package users.
                 These are unavailable to the agent.
 
         """
@@ -497,7 +497,8 @@ class RTBEnv(gym.Env):
                 - adjust rate (i.e., agent action) at the previous timestep
 
         info: (empty) dict
-            Additional feedbacks, which is unavailable to the agent.
+            Additional information that may be useful for the package users.
+            This is unavailable to the RL agent.
 
         """
         if seed is not None:

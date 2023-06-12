@@ -24,7 +24,7 @@ from ...types import Numeric
 
 @dataclass
 class RTBSyntheticSimulator(BaseSimulator):
-    """Class to calculate outcome probability and stochastically determine auction result in Real-Time Bidding (RTB) setting for display advertising.
+    """Class to calculate the outcome probability and stochastically determine auction result in Real-Time Bidding (RTB) setting for display advertising.
 
     Imported as: :class:`rtbgym.envs.simulator.RTBSyntheticSimulator`
 
@@ -367,7 +367,7 @@ class RTBSyntheticSimulator(BaseSimulator):
         Parameters
         -------
         volume: int, default=None (> 0)
-            Total numbers of the auctions to generate.
+            Total number of auctions to generate.
 
         timestep: int, default=None (> 0)
             Timestep in the RL environment.

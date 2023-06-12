@@ -22,26 +22,26 @@
 
 ## Overview
 
-*SCOPE-RL* is an open-source Python Software for implementing the end-to-end procedure regarding **offline Reinforcement Learning (offline RL)**, from data collection to offline policy learning, performance evaluation, and policy selection. Our software includes a series of modules to implement synthetic dataset generation, dataset preprocessing, estimators for Off-Policy Evaluation (OPE), and Off-Policy Selection (OPS) methods.
+*SCOPE-RL* is an open-source Python Software for implementing the end-to-end procedure regarding **offline Reinforcement Learning (offline RL)**, from data collection to offline policy learning, off-policy performance evaluation, and policy selection. Our software includes a series of modules to implement synthetic dataset generation, dataset preprocessing, estimators for Off-Policy Evaluation (OPE), and Off-Policy Selection (OPS) methods.
 
-This software is also compatible with [d3rlpy](https://github.com/takuseno/d3rlpy), which implements a range of online and offline RL methods. SCOPE-RL enables an easy, transparent, and reliable experiment in offline RL research on any environment with [OpenAI Gym](https://gym.openai.com) and [Gymnasium](https://gymnasium.farama.org/)-like interface and also facilitates implementation of offline RL in practice on a variety of customized datasets.
+This software is also compatible with [d3rlpy](https://github.com/takuseno/d3rlpy), which implements a range of online and offline RL methods. SCOPE-RL enables an easy, transparent, and reliable experiment in offline RL research on any environment with [OpenAI Gym](https://gym.openai.com) and [Gymnasium](https://gymnasium.farama.org/)-like interface. It also facilitates implementation of offline RL in practice on a variety of customized datasets and on real-world datasets.
 
-Our software enables evaluation and algorithm comparison related to the following research topics:
+In particular, SCOPE-RL enables and facilitates evaluation and algorithm comparison related to the following research topics:
 
 - **Offline Reinforcement Learning**: Offline RL aims at learning a new policy from only offline logged data collected by a behavior policy. SCOPE-RL enables flexible experiment using customized dataset collected by various behavior policies and on a variety of environment.
 
-- **Off-Policy Evaluation**: OPE aims at evaluating the performance of a counterfactual policy using only offline logged data. SCOPE-RL supports many OPE estimators and streamlines the experimental procedure to evaluate OPE estimators. Moreover, we also implement advanced OPE, such as cumulative distribution estimation.
+- **Off-Policy Evaluation**: OPE aims at evaluating the performance of a counterfactual policy using only offline logged data. SCOPE-RL supports many OPE estimators and streamlines the experimental procedure to evaluate and compare OPE estimators. Moreover, we also implement advanced OPE methods, such as estimators based on state-action density estimation and cumulative distribution estimation.
 
-- **Off-Policy Selection**: OPS aims at identifying the best-performing policy from a pool of several candidate policies using offline logged data. SCOPE-RL supports some basic OPS methods and provides some metrics to evaluate the OPS accuracy.
+- **Off-Policy Selection**: OPS aims at identifying the best-performing policy from a pool of several candidate policies using offline logged data. SCOPE-RL supports some basic OPS methods and provides several metrics to evaluate the OPS accuracy.
 
-This software is intended for the episodic RL setup. For those interested in the contextual bandit setup, we'd recommend [Open Bandit Pipeline](https://github.com/st-tech/zr-obp).
+This software is inspired by [Open Bandit Pipeline](https://github.com/st-tech/zr-obp), which is a library for OPE in contextual bandits. However, SCOPE-RL also implements a set of OPE estimators and tools to facilitate experiments about OPE for the contextual bandit setup by itself as well as those for RL.
 
 ### Implementations
 
 *SCOPE-RL* mainly consists of the following three modules.
-- [**dataset module**](./_gym/dataset): This module provides tools to generate synthetic data from any environment on top of [OpenAI Gym](http://gym.openai.com/) and [Gymnasium](https://gymnasium.farama.org/)-like interface. It also provides tools to preprocess the logged data.
+- [**dataset module**](./_gym/dataset): This module provides tools to generate synthetic data from any environment on top of [OpenAI Gym](http://gym.openai.com/) and [Gymnasium](https://gymnasium.farama.org/)-like interface. It also provides tools to pre-process the logged data.
 - [**policy module**](./_gym/policy): This module provides a wrapper class for [d3rlpy](https://github.com/takuseno/d3rlpy) to enable a flexible data collection.
-- [**ope module**](./_gym/ope): This module provides a generic abstract class to implement an OPE estimator and some popular estimators. It also provides some tools useful for performing OPS.
+- [**ope module**](./_gym/ope): This module provides a generic abstract class to implement OPE estimators. It also provides some tools useful for performing OPS.
 
 <details>
 <summary><strong>Behavior Policy </strong>(click to expand)</summary>
@@ -78,7 +78,7 @@ This software is intended for the episodic RL setup. For those interested in the
   - Hoeffding
   - (Empirical) Bernstein
   - Student T-test
-- Cumulative Distribution Function and Statistics Estimation
+- Cumulative Distribution Function Estimation
   - Direct Method (Fitted Q Evaluation)
   - Trajectory-wise Importance Sampling
   - Trajectory-wise Doubly Robust
@@ -109,9 +109,9 @@ This software is intended for the episodic RL setup. For those interested in the
 
 </details>
 
-Note that, in addition to the above OPE and OPS methods, researcher can easily implement and compare their own estimators through a generic abstract class. Moreover, practitioners can apply the above implementation to their real-world data to evaluate and choose counterfactual policies.
+Note that in addition to the above OPE and OPS methods, researcher can easily implement and compare their own estimators through a generic abstract class implemented in SCOPE-RL. Moreover, practitioners can apply the above methods to their real-world data to evaluate and choose counterfactual policies for their own practical situations.
 
-To provide an example of performing a customized experiment imitating a practical setup, we also provide [RTBGym](./rtbgym), an RL environment for Real-Time Bidding (RTB) under this repository.
+To provide an example of performing a customized experiment imitating a practical setup, we also provide [RTBGym](./rtbgym) and [RecGym](./recgym), RL environments for Real-Time Bidding (RTB) and Recommender Systems.
 
 ## Installation
 
@@ -131,11 +131,11 @@ SCOPE-RL supports Python 3.7 or newer. See [requirements.txt](./requirements.txt
 
 ## Usage
 
-Here, we provide an example workflow to perform offline RL, OPE, and OPS on [RTBGym](./rtbgym).
+Here, we provide an example workflow to perform offline RL, OPE, and OPS using SCOPE-RL on [RTBGym](./rtbgym).
 
 ### Synthetic Dataset Generation and Data Preprocessing
 
-Let's start by collecting some logged data useful for offline RL.
+Let's start by generating some synthetic logged data useful for performing offline RL.
 
 ```Python
 # implement a data collection procedure on the RTBGym environment
@@ -156,7 +156,7 @@ random_state = 12345
 # (0) Setup environment
 env = gym.make("RTBEnv-discrete-v0")
 
-# (1) Learn a baseline online policy (using d3rlpy)
+# (1) Learn a baseline policy in an online environment (using d3rlpy)
 # initialize the algorithm
 ddqn = DoubleDQN()
 # train an online policy
@@ -198,7 +198,7 @@ test_logged_dataset = dataset.obtain_trajectories(
 ```
 
 ### Offline Reinforcement Learning
-We are now ready to learn a new policy from the logged data using [d3rlpy](https://github.com/takuseno/d3rlpy).
+We are now ready to learn a new policy (evaluation policy) from the logged data using [d3rlpy](https://github.com/takuseno/d3rlpy).
 
 ```Python
 # implement an offline RL procedure using SCOPE-RL and d3rlpy
@@ -229,7 +229,7 @@ cql.fit(
 
 ### Basic Off-Policy Evaluation
 
-Then, we evaluate the performance of the learned policy using offline logged data. Specifically, we compare the estimation results of various OPE estimators, including Direct Method (DM), Trajectory-wise Importance Sampling (TIS), Per-Decision Importance Sampling (PDIS), and Doubly Robust (DR).
+Then, we evaluate the performance of several evaluation policy (ddqn, cql, and random) using offline logged data collected by the behavior policy. Specifically, we compare the estimation results of various OPE estimators, including Direct Method (DM), Trajectory-wise Importance Sampling (TIS), Per-Decision Importance Sampling (PDIS), and Doubly Robust (DR) below.
 
 ```Python
 # implement a basic OPE procedure using SCOPE-RL
@@ -296,11 +296,11 @@ ope.visualize_off_policy_estimates(
 </p>
 </figcaption>
 
-A formal quickstart example with RTBGym is available at [quickstart/rtb_synthetic_discrete_basic.ipynb](./examples/quickstart/rtb_synthetic_discrete_basic.ipynb) (discrete action space) and [quickstart/rtb_synthetic_continuous_basic.ipynb](./examples/quickstart/rtb_synthetic_continuous_basic.ipynb) (continuous action space).
+More formal example implementations with RTBGym is available at [./examples/quickstart/rtb/](./examples/quickstart/rtb). Those with RecGym are also available at [./examples/quickstart/rec/](./examples/quickstart/rec).
 
 ### Advanced Off-Policy Evaluation
 
-We can also estimate various performance statics including variance and conditional value at risk (CVaR) by using estimators of cumulative distribution function.
+We can also estimate various statics of the evaluation policy, beyond just its expected performance, including variance and conditional value at risk (CVaR) via estimating the cumulative distribution function (CDF) of the reward under the evaluation policy.
 
 ```Python
 # implement a cumulative distribution estimation procedure using SCOPE-RL
@@ -313,7 +313,7 @@ from scope_rl.ope import DiscreteCumulativeDistributionTDR as CD_DR
 from scope_rl.ope import DiscreteCumulativeDistributionSNTIS as CD_SNIS
 from scope_rl.ope import DiscreteCumulativeDistributionSNTDR as CD_SNDR
 
-# (4) Evaluate the cumulative distribution function of the learned policy (in an offline manner)
+# (4) Evaluate the cumulative distribution function of the reward under the evaluation policy (in an offline manner)
 # we compare ddqn, cql, and random policy defined from the previous section (i.e., (3) of basic OPE procedure)
 # initialize the OPE class
 cd_ope = CumulativeDistributionOPE(
@@ -340,11 +340,11 @@ cd_ope.visualize_cumulative_distribution_function(input_dict, n_cols=4)
 </p>
 </figcaption>
 
-For more examples, please refer to [quickstart/rtb_synthetic_discrete_advanced.ipynb](./examples/quickstart/rtb_synthetic_discrete_advanced.ipynb).
+For more extensive examples, please refer to [quickstart/rtb/rtb_synthetic_discrete_advanced.ipynb](./examples/quickstart/rtb/rtb_synthetic_discrete_advanced.ipynb).
 
 ### Off-Policy Selection and Evaluation of OPE/OPS
 
-Finally, we select the best-performing policy based on the OPE results using the OPS class. We also evaluate the reliability of OPE/OPS using various metrics such as mean-squared-error, rank correlation, regret, and type I and type II error rates.
+We can also select the best-performing policy among a set of candidate policies based on the OPE results using the OPS class. It is also possible to evaluate the reliability of OPE/OPS using various metrics such as mean-squared-error, rank correlation, regret, and type I and type II error rates.
 
 ```Python
 # perform off-policy selection based on the OPE results
@@ -399,8 +399,8 @@ ops.visualize_cvar_for_validation(
 </p>
 </figcaption>
 
-For more examples, please refer to [quickstart/rtb_synthetic_discrete_advanced.ipynb](./examples/quickstart/rtb_synthetic_discrete_advanced.ipynb) for discrete actions and 
-[quickstart/rtb_synthetic_continuous_advanced.ipynb](./examples/quickstart/rtb_synthetic_continuous_advanced.ipynb) for continuous actions.
+For more examples, please refer to [quickstart/rtb/rtb_synthetic_discrete_advanced.ipynb](./examples/quickstart/rtb/rtb_synthetic_discrete_advanced.ipynb) for discrete actions and
+[quickstart/rtb/rtb_synthetic_continuous_advanced.ipynb](./examples/quickstart/rtb/rtb_synthetic_continuous_advanced.ipynb) for continuous actions.
 
 ## Citation
 

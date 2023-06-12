@@ -38,17 +38,17 @@ class ContinuousMinimaxStateActionValueLearning(BaseWeightValueLearner):
 
     .. math::
 
-        \\mathbb{E}_{(s_t, a_t, r_t, s_{t+1}) \\sim d^{\\pi_0}} [w(s_t, a_t) (r_t + \\gamma Q(s_{t+1}, \\pi(s_{t+1})))]
-        = \\mathbb{E}_{(s_t, a_t) \\sim d^{\\pi_0}} [Q(s_t, a_t)]
+        \\mathbb{E}_{(s_t, a_t, r_t, s_{t+1}) \\sim d^{\\pi_b}} [w(s_t, a_t) (r_t + \\gamma Q(s_{t+1}, \\pi(s_{t+1})))]
+        = \\mathbb{E}_{(s_t, a_t) \\sim d^{\\pi_b}} [Q(s_t, a_t)]
 
-    where :math:`Q(s_t, a_t)` is the Q-function, :math:`w(s_t, a_t) \\approx d^{\\pi}(s_t, a_t) / d^{\\pi_0}(s_t, a_t)` is the state-action marginal importance weight.
+    where :math:`Q(s_t, a_t)` is the Q-function, :math:`w(s_t, a_t) \\approx d^{\\pi}(s_t, a_t) / d^{\\pi_b}(s_t, a_t)` is the state-action marginal importance weight.
 
     Then, it adversarially minimize the difference between RHS and LHS (which we denote :math:`L_Q(w, Q)`) to the worst case in terms of :math:`w(\\cdot)`
     using a discriminator defined in reproducing kernel Hilbert space (RKHS) as follows.
 
     .. math::
 
-        \\max_Q L_Q^2(w, Q) = \\mathbb{E}_{(s_t, a_t, r_t, s_{t+1}), (\\tilde{s}_t, \\tilde{a}_t, \\tilde{r}_t, \\tilde{s}_{t+1}) \\sim d^{\\pi_0}}[
+        \\max_Q L_Q^2(w, Q) = \\mathbb{E}_{(s_t, a_t, r_t, s_{t+1}), (\\tilde{s}_t, \\tilde{a}_t, \\tilde{r}_t, \\tilde{s}_{t+1}) \\sim d^{\\pi_b}}[
             (r_t + \\gamma Q(s_{t+1}, \\pi(s_{t+1})) - Q(s_t, a_t)) K((s_t, a_t), (\\tilde{s}_t, \\tilde{a}_t)) (\\tilde{r}_t + \\gamma Q(\\tilde{s}_{t+1}, \\pi(\\tilde{s}_{t+1})) - Q(\\tilde{s}_t, \\tilde{a}_t))
         ]
 
@@ -57,13 +57,13 @@ class ContinuousMinimaxStateActionValueLearning(BaseWeightValueLearner):
     Parameters
     -------
     q_function: ContinuousQFunction
-        Q function model.
+        Q-function model.
 
     gamma: float, default=1.0
         Discount factor. The value should be within (0, 1].
 
     sigma: float, default=1.0 (> 0)
-        Bandwidth hyperparameter of gaussian kernel.
+        Bandwidth hyperparameter of the Gaussian kernel.
 
     state_scaler: d3rlpy.preprocessing.Scaler, default=None
         Scaling factor of state.
@@ -224,7 +224,7 @@ class ContinuousMinimaxStateActionValueLearning(BaseWeightValueLearner):
             Reward observed for each (state, action) pair.
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory)
-            Action choice probability of the behavior policy for the chosen action.
+            Propensity of the observed action being chosen under the behavior policy (pscore stands for propensity score).
 
         evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
@@ -366,7 +366,7 @@ class ContinuousMinimaxStateActionValueLearning(BaseWeightValueLearner):
         state: np.ndarray,
         action: np.ndarray,
     ):
-        """Predict Q function.
+        """Predict Q-function.
 
         Parameters
         -------
@@ -502,7 +502,7 @@ class ContinuousMinimaxStateActionValueLearning(BaseWeightValueLearner):
             Reward observed for each (state, action) pair.
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory)
-            Action choice probability of the behavior policy for the chosen action.
+            Propensity of the observed action being chosen under the behavior policy (pscore stands for propensity score).
 
         evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
@@ -549,17 +549,17 @@ class ContinuousMinimaxStateValueLearning(BaseWeightValueLearner):
 
     .. math::
 
-        \\mathbb{E}_{(s_t, a_t, r_t, s_{t+1}) \\sim d^{\\pi_0}} [w(s_t, a_t) (r_t + \\gamma V(s_{t+1}))]
-        = \\mathbb{E}_{s_t \\sim d^{\\pi_0}} [V(s_t)]
+        \\mathbb{E}_{(s_t, a_t, r_t, s_{t+1}) \\sim d^{\\pi_b}} [w(s_t, a_t) (r_t + \\gamma V(s_{t+1}))]
+        = \\mathbb{E}_{s_t \\sim d^{\\pi_b}} [V(s_t)]
 
-    where :math:`V(s_t)` is the Q-function, :math:`w(s_t, a_t) \\approx d^{\\pi}(s_t, a_t) / d^{\\pi_0}(s_t, a_t)` is the state-action marginal importance weight.
+    where :math:`V(s_t)` is the Q-function, :math:`w(s_t, a_t) \\approx d^{\\pi}(s_t, a_t) / d^{\\pi_b}(s_t, a_t)` is the state-action marginal importance weight.
 
     Then, it adversarially minimize the difference between RHS and LHS (which we denote :math:`L_V(w, V)`) to the worst case in terms of :math:`w(\\cdot)`
     using a discriminator defined in reproducing kernel Hilbert space (RKHS) as follows.
 
     .. math::
 
-        \\max_V L_V^2(w, V) = \\mathbb{E}_{(s_t, a_t, r_t, s_{t+1}), (\\tilde{s}_t, \\tilde{a}_t, \\tilde{r}_t, \\tilde{s}_{t+1}) \\sim d^{\\pi_0}}[
+        \\max_V L_V^2(w, V) = \\mathbb{E}_{(s_t, a_t, r_t, s_{t+1}), (\\tilde{s}_t, \\tilde{a}_t, \\tilde{r}_t, \\tilde{s}_{t+1}) \\sim d^{\\pi_b}}[
             (r_t + \\gamma V(s_{t+1}) - V(s_t)) K(s_t, \\tilde{s_t}) (\\tilde{r}_t + \\gamma V(\\tilde{s}_{t+1}) - V(\\tilde{s}_t)
         ]
 
@@ -574,7 +574,7 @@ class ContinuousMinimaxStateValueLearning(BaseWeightValueLearner):
         Discount factor. The value should be within (0, 1].
 
     sigma: float, default=1.0 (> 0)
-        Bandwidth hyperparameter of gaussian kernel.
+        Bandwidth hyperparameter of the Gaussian kernel.
 
     state_scaler: d3rlpy.preprocessing.Scaler, default=None
         Scaling factor of state.
@@ -722,7 +722,7 @@ class ContinuousMinimaxStateValueLearning(BaseWeightValueLearner):
             Reward observed for each (state, action) pair.
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory)
-            Action choice probability of the behavior policy for the chosen action.
+            Propensity of the observed action being chosen under the behavior policy (pscore stands for propensity score).
 
         evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
@@ -948,7 +948,7 @@ class ContinuousMinimaxStateValueLearning(BaseWeightValueLearner):
             Reward observed for each (state, action) pair.
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
-            Action choice probability of the behavior policy for the chosen action.
+            Propensity of the observed action being chosen under the behavior policy (pscore stands for propensity score).
 
         evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.

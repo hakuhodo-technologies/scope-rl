@@ -29,8 +29,7 @@ class BaseHead(AlgoBase):
     Note
     -------
     To ensure API compatibility with `d3rlpy <https://github.com/takuseno/d3rlpy>`_, :class:`BaseHead` inherits :class:`d3rlpy.algos.AlgoBase`.
-    This base class also has additional methods including :class:`fit`, :class:`predict`, and :class:`predict_value`. Please also refer to the
-    following documentation for the methods which are not described in this API reference.
+    This base class also has additional methods including :class:`fit`, :class:`predict`, and :class:`predict_value`. Please also refer to the following documentation for the methods that are not described in this API reference.
 
     .. seealso::
 
@@ -50,11 +49,11 @@ class BaseHead(AlgoBase):
 
     @abstractmethod
     def calc_pscore_given_action(self, x: np.ndarray, action: np.ndarray):
-        """Calculate the pscore given action."""
+        """Calculate the pscore of the given action."""
         raise NotImplementedError()
 
     def predict_online(self, x: np.ndarray):
-        """Predict the best action during the online interaction."""
+        """Predict the best action in an online environment."""
         return self.predict(x.reshape((1, -1)))[0]
 
     def predict_value_online(
@@ -63,7 +62,7 @@ class BaseHead(AlgoBase):
         action: Union[np.ndarray, int, float],
         with_std: bool = False,
     ):
-        """Predict the state action value during the online interaction."""
+        """Predict the state action value in an online environment."""
         if isinstance(action, (int, float)):
             action = np.array([[action]])
         else:
@@ -71,11 +70,11 @@ class BaseHead(AlgoBase):
         return self.predict_value(x.reshape((1, -1)), action, with_std=with_std)[0]
 
     def sample_action_online(self, x: np.ndarray):
-        """Sample an action during the online interaction."""
+        """Sample an action in an online environment."""
         return self.sample_action(x.reshape(1, -1))[0]
 
     def stochastic_action_with_pscore_online(self, x: np.ndarray):
-        """Sample an action and calculate its pscore during the online interaction."""
+        """Sample an action and calculate its pscore in an online environment."""
         action, pscore = self.stochastic_action_with_pscore(x.reshape(1, -1))
         return action[0], pscore[0]
 
@@ -218,8 +217,7 @@ class OnlineHead(BaseHead):
     Note
     -------
     To ensure API compatibility with `d3rlpy <https://github.com/takuseno/d3rlpy>`_, :class:`BaseHead` inherits :class:`d3rlpy.algos.AlgoBase`.
-    This base class also has additional methods including :class:`fit`, :class:`predict`, and :class:`predict_value`. Please also refer to the
-    following documentation for the methods which are not described in this API reference.
+    This base class also has additional methods including :class:`fit`, :class:`predict`, and :class:`predict_value`. Please also refer to the following documentation for the methods that are not described in this API reference.
 
     .. seealso::
 
@@ -273,8 +271,7 @@ class DiscreteEpsilonGreedyHead(BaseHead):
     Note
     -------
     To ensure API compatibility with `d3rlpy <https://github.com/takuseno/d3rlpy>`_, :class:`BaseHead` inherits :class:`d3rlpy.algos.AlgoBase`.
-    This base class also has additional methods including :class:`fit`, :class:`predict`, and :class:`predict_value`. Please also refer to the
-    following documentation for the methods which are not described in this API reference.
+    This base class also has additional methods including :class:`fit`, :class:`predict`, and :class:`predict_value`. Please also refer to the following documentation for the methods that are not described in this API reference.
 
     .. seealso::
 
@@ -329,7 +326,7 @@ class DiscreteEpsilonGreedyHead(BaseHead):
         Parameters
         -------
         x: array-like of shape (n_samples, state_dim)
-            State.
+            State (we will follow the implementation of d3rlpy and thus use 'x' rather than 's').
 
         Return
         -------
@@ -337,7 +334,7 @@ class DiscreteEpsilonGreedyHead(BaseHead):
             Sampled action.
 
         pscore: ndarray of shape (n_samples, )
-            Pscore of the sampled action.
+            Propensity of the observed action being chosen under the behavior policy (pscore stands for propensity score).
 
         """
         action = self.sample_action(x)
@@ -350,12 +347,12 @@ class DiscreteEpsilonGreedyHead(BaseHead):
         Parameters
         -------
         x: array-like of shape (n_samples, state_dim)
-            State.
+            State (we will follow the implementation of d3rlpy and thus use 'x' rather than 's').
 
         Return
         -------
         pscore: ndarray of shape (n_samples, n_actions)
-            Pscore of the sample action.
+            Propensity of the observed action being chosen under the behavior policy (pscore stands for propensity score).
 
         """
         greedy_action = self.base_policy.predict(x)
@@ -367,12 +364,12 @@ class DiscreteEpsilonGreedyHead(BaseHead):
         return pscore  # shape (n_samples, n_actions)
 
     def calc_pscore_given_action(self, x: np.ndarray, action: np.ndarray):
-        """Calculate pscore given action.
+        """Calculate the pscore of a given action.
 
         Parameters
         -------
         x: array-like of shape (n_samples, state_dim)
-            State.
+            State (we will follow the implementation of d3rlpy and thus use 'x' rather than 's').
 
         action: array-like of shape (n_samples, )
             Action.
@@ -396,7 +393,7 @@ class DiscreteEpsilonGreedyHead(BaseHead):
         Parameters
         -------
         x: array-like of shape (n_samples, state_dim)
-            State.
+            State (we will follow the implementation of d3rlpy and thus use 'x' rather than 's').
 
         Return
         -------
@@ -421,7 +418,7 @@ class DiscreteSoftmaxHead(BaseHead):
 
     Note
     -------
-    Softmax policy stochastically chooses actions (i.e., :math:`a \\in \\mathcal{A}`) given state :math:`s` as follows.
+    A softmax policy stochastically chooses an action (i.e., :math:`a \\in \\mathcal{A}`) given state :math:`s` as follows.
 
     .. math::
 
@@ -433,8 +430,7 @@ class DiscreteSoftmaxHead(BaseHead):
     Note
     -------
     To ensure API compatibility with `d3rlpy <https://github.com/takuseno/d3rlpy>`_, :class:`BaseHead` inherits :class:`d3rlpy.algos.AlgoBase`.
-    This base class also has additional methods including :class:`fit`, :class:`predict`, and :class:`predict_value`. Please also refer to the
-    following documentation for the methods which are not described in this API reference.
+    This base class also has additional methods including :class:`fit`, :class:`predict`, and :class:`predict_value`. Please also refer to the following documentation for the methods that are not described in this API reference.
 
     .. seealso::
 
@@ -495,7 +491,7 @@ class DiscreteSoftmaxHead(BaseHead):
         Parameters
         -------
         x: array-like of shape (n_samples, state_dim)
-            State.
+            State (we will follow the implementation of d3rlpy and thus use 'x' rather than 's').
 
         Return
         -------
@@ -512,12 +508,12 @@ class DiscreteSoftmaxHead(BaseHead):
         Parameters
         -------
         x: array-like of shape (n_samples, state_dim)
-            State.
+            State (we will follow the implementation of d3rlpy and thus use 'x' rather than 's').
 
         Return
         -------
         state_action_value: ndarray of shape (n_samples, n_actions)
-            State action values for all observed state and possible action.
+            State action values for all observed states and possible actions.
 
         """
         x_ = []
@@ -535,7 +531,7 @@ class DiscreteSoftmaxHead(BaseHead):
         Parameters
         -------
         x: array-like of shape (n_samples, state_dim)
-            State.
+            State (we will follow the implementation of d3rlpy and thus use 'x' rather than 's').
 
         Return
         -------
@@ -543,7 +539,7 @@ class DiscreteSoftmaxHead(BaseHead):
             Sampled action.
 
         pscore: ndarray of shape (n_samples, )
-            Pscore of the sampled action.
+            Propensity of the observed action being chosen under the behavior policy (pscore stands for propensity score).
 
         """
         predicted_value = self._predict_value(x)
@@ -565,24 +561,24 @@ class DiscreteSoftmaxHead(BaseHead):
         Parameters
         -------
         x: array-like of shape (n_samples, state_dim)
-            State.
+            State (we will follow the implementation of d3rlpy and thus use 'x' rather than 's').
 
         Return
         -------
         pscore: ndarray of shape (n_samples, n_actions)
-            Pscore of the sample action.
+            Propensity of the observed action being chosen under the behavior policy (pscore stands for propensity score).
 
         """
         predicted_value = self._predict_value(x)
         return self._softmax(predicted_value)  # (n_samples, n_actions)
 
     def calc_pscore_given_action(self, x: np.ndarray, action: np.ndarray):
-        """Calculate pscore given action.
+        """Calculate the pscore of a given action.
 
         Parameters
         -------
         x: array-like of shape (n_samples, state_dim)
-            State.
+            State (we will follow the implementation of d3rlpy and thus use 'x' rather than 's').
 
         action: array-like of shape (n_samples, )
             Action.
@@ -607,7 +603,7 @@ class DiscreteSoftmaxHead(BaseHead):
         Parameters
         -------
         x: array-like of shape (n_samples, state_dim)
-            State.
+            State (we will follow the implementation of d3rlpy and thus use 'x' rather than 's').
 
         Return
         -------
@@ -632,7 +628,7 @@ class ContinuousGaussianHead(BaseHead):
     This class should be used when action_space is not clipped.
     Otherwise, please use :class:`ContinuousTruncatedGaussianHead` instead.
 
-    Given a deterministic policy, a gaussian policy samples action :math:`a \\in \\mathcal{A}` given state :math:`s` as follows.
+    Given a deterministic policy, a gaussian policy samples an action :math:`a \\in \\mathcal{A}` given state :math:`s` as follows.
 
     .. math::
 
@@ -644,8 +640,7 @@ class ContinuousGaussianHead(BaseHead):
     Note
     -------
     To ensure API compatibility with `d3rlpy <https://github.com/takuseno/d3rlpy>`_, :class:`BaseHead` inherits :class:`d3rlpy.algos.AlgoBase`.
-    This base class also has additional methods including :class:`fit`, :class:`predict`, and :class:`predict_value`. Please also refer to the
-    following documentation for the methods which are not described in this API reference.
+    This base class also has additional methods including :class:`fit`, :class:`predict`, and :class:`predict_value`. Please also refer to the following documentation for the methods that are not described in this API reference.
 
     .. seealso::
 
@@ -699,7 +694,7 @@ class ContinuousGaussianHead(BaseHead):
         Return
         -------
         pscore: ndarray of shape (n_samples, )
-            Pscore of the sampled action.
+            Propensity of the observed action being chosen under the behavior policy (pscore stands for propensity score).
 
         """
         prob = norm.pdf(
@@ -715,7 +710,7 @@ class ContinuousGaussianHead(BaseHead):
         Parameters
         -------
         x: array-like of shape (n_samples, state_dim)
-            State.
+            State (we will follow the implementation of d3rlpy and thus use 'x' rather than 's').
 
         Return
         -------
@@ -723,7 +718,7 @@ class ContinuousGaussianHead(BaseHead):
             Sampled action.
 
         pscore: ndarray of shape (n_samples, )
-            Pscore of the sampled action.
+            Propensity of the observed action being chosen under the behavior policy (pscore stands for propensity score).
 
         """
         greedy_action = self.base_policy.predict(x)
@@ -732,12 +727,12 @@ class ContinuousGaussianHead(BaseHead):
         return action, pscore
 
     def calc_pscore_given_action(self, x: np.ndarray, action: np.ndarray):
-        """Calculate pscore given action.
+        """Calculate the pscore of a given action.
 
         Parameters
         -------
         x: array-like of shape (n_samples, state_dim)
-            State.
+            State (we will follow the implementation of d3rlpy and thus use 'x' rather than 's').
 
         action: array-like of shape (n_samples, action_dim)
             Action.
@@ -757,7 +752,7 @@ class ContinuousGaussianHead(BaseHead):
         Parameters
         -------
         x: array-like of shape (n_samples, state_dim)
-            State.
+            State (we will follow the implementation of d3rlpy and thus use 'x' rather than 's').
 
         Return
         -------
@@ -775,7 +770,7 @@ class ContinuousGaussianHead(BaseHead):
 
 @dataclass
 class ContinuousTruncatedGaussianHead(BaseHead):
-    """Class to sample action from Truncated Gaussian distribution.
+    """Class to sample continuous actions from Truncated Gaussian distribution.
 
     Bases: :class:`scope_rl.policy.BaseHead`
 
@@ -783,7 +778,7 @@ class ContinuousTruncatedGaussianHead(BaseHead):
 
     Note
     -------
-    Given a deterministic policy, a truncated gaussian policy samples action :math:`a \\in \\mathcal{A}` given state :math:`s` as follows.
+    Given a deterministic policy, a truncated gaussian policy samples an action :math:`a \\in \\mathcal{A}` given state :math:`s` as follows.
 
     .. math::
 
@@ -795,8 +790,7 @@ class ContinuousTruncatedGaussianHead(BaseHead):
     Note
     -------
     To ensure API compatibility with `d3rlpy <https://github.com/takuseno/d3rlpy>`_, :class:`BaseHead` inherits :class:`d3rlpy.algos.AlgoBase`.
-    This base class also has additional methods including :class:`fit`, :class:`predict`, and :class:`predict_value`. Please also refer to the
-    following documentation for the methods which are not described in this API reference.
+    This base class also has additional methods including :class:`fit`, :class:`predict`, and :class:`predict_value`. Please also refer to the following documentation for the methods that are not described in this API reference.
 
     .. seealso::
 
@@ -864,7 +858,7 @@ class ContinuousTruncatedGaussianHead(BaseHead):
         Return
         -------
         pscore: ndarray of shape (n_samples, )
-            Pscore of the sampled action.
+            Propensity of the observed action being chosen under the behavior policy (pscore stands for propensity score).
 
         """
         prob = truncnorm.pdf(
@@ -882,7 +876,7 @@ class ContinuousTruncatedGaussianHead(BaseHead):
         Parameters
         -------
         x: array-like of shape (n_samples, state_dim)
-            State.
+            State (we will follow the implementation of d3rlpy and thus use 'x' rather than 's').
 
         Return
         -------
@@ -890,7 +884,7 @@ class ContinuousTruncatedGaussianHead(BaseHead):
             Sampled action.
 
         pscore: ndarray of shape (n_samples, )
-            Pscore of the sampled action.
+            Propensity of the observed action being chosen under the behavior policy (pscore stands for propensity score).
 
         """
         greedy_action = self.base_policy.predict(x)
@@ -899,12 +893,12 @@ class ContinuousTruncatedGaussianHead(BaseHead):
         return action, pscore
 
     def calc_pscore_given_action(self, x: np.ndarray, action: np.ndarray):
-        """Calculate pscore given action.
+        """Calculate the pscore of a given action.
 
         Parameters
         -------
         x: array-like of shape (n_samples, state_dim)
-            State.
+            State (we will follow the implementation of d3rlpy and thus use 'x' rather than 's').
 
         action: array-like of shape (n_samples, action_dim)
             Action.
@@ -924,7 +918,7 @@ class ContinuousTruncatedGaussianHead(BaseHead):
         Parameters
         -------
         x: array-like of shape (n_samples, state_dim)
-            State.
+            State (we will follow the implementation of d3rlpy and thus use 'x' rather than 's').
 
         Return
         -------
@@ -953,8 +947,7 @@ class ContinuousEvalHead(BaseHead):
     Note
     -------
     To ensure API compatibility with `d3rlpy <https://github.com/takuseno/d3rlpy>`_, :class:`BaseHead` inherits :class:`d3rlpy.algos.AlgoBase`.
-    This base class also has additional methods including :class:`fit`, :class:`predict`, and :class:`predict_value`. Please also refer to the
-    following documentation for the methods which are not described in this API reference.
+    This base class also has additional methods including :class:`fit`, :class:`predict`, and :class:`predict_value`. Please also refer to the following documentation for the methods that are not described in this API reference.
 
     .. seealso::
 
@@ -989,7 +982,7 @@ class ContinuousEvalHead(BaseHead):
         Parameters
         -------
         x: array-like of shape (n_samples, state_dim)
-            State.
+            State (we will follow the implementation of d3rlpy and thus use 'x' rather than 's').
 
         Return
         -------

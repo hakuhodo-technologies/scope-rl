@@ -17,19 +17,19 @@
 
 ## Overview
 
-*RECGym* is an open-source simulation platform for recommender system (REC), which is written in Python. The simulator is particularly intended for reinforcement learning algorithms and follows [OpenAI Gym](https://gym.openai.com) and [Gymnasium](https://gymnasium.farama.org/)-like interface. We design RECGym as a configurative environment so that researchers and practitioner can customize the environmental modules including `UserModel`((i.e. `user_preference_dynamics` and `reward_function`).
+*RECGym* is an open-source Python platform for RL simulations on a recommender system (REC) environment. The simulator is particularly intended for reinforcement learning algorithms and follows [OpenAI Gym](https://gym.openai.com) and [Gymnasium](https://gymnasium.farama.org/)-like interface. We design RECGym as a configurative environment so that researchers and practitioner can customize the environmental modules including `UserModel`((i.e. `user_preference_dynamics` and `reward_function`) based on their own research purposes.
 
-Note that, RECGym is publicized under [SCOPE-RL](../) repository, which facilitates the implementation of offline reinforcement learning procedure.
+Note that RECGym is publicized under [SCOPE-RL](../) repository, which facilitates the implementation of offline reinforcement learning procedure.
 
 ### Basic Setting
 
-In recommendation, the objective of the RL agent is to maximize reward. \
+In a recommender system application, the objective of an RL agent is to maximize the expected cumulative reward such as user engagement. \
 We often formulate this recommendation problem as the following (Partially Observable) Markov Decision Process ((PO)MDP):
-- `state`: 
-   - A vector representing user preference.  The preference changes over time in an episode by the actions presented by the RL agent.
-   - When the true state is unobservable, the agent uses observation instead of state.
+- `state`:
+   - A vector representing user preference. The preference changes over time in an episode depending on the actions presented by the RL agent.
+   - When the true state is unobservable, the agent uses observations instead of the state.
 - `action`: Indicating which item to present to the user.
-- `reward`: User engagement signal. Either binary or continuous.
+- `reward`: User engagement signal as a reward. Either binary or continuous.
 
 ### Implementation
 
@@ -42,7 +42,7 @@ RECGym consists of the following a environments.
 RECGym is configurative about the following a module.
 - [UserModel](./envs/simulator/function.py#L13): Class to define the user model of the recommender system.
 
-Note that, users can customize the above modules by following the [abstract class](./envs/simulator/base.py).
+Note that users can customize the above modules by following the [abstract class](./envs/simulator/base.py).
 
 ## Installation
 RECGym can be installed as a part of [SCOPE-RL](../) using Python's package manager `pip`.
@@ -60,7 +60,7 @@ python setup.py install
 ## Usage
 
 We provide an example usage of the standard and customized environment. \
-The online/offlline RL and Off-Policy Evaluation examples are provides in [SCOPE-RL's README](../README.md).
+The online/offline RL and Off-Policy Evaluation examples are provides in [SCOPE-RL's README](../README.md).
 
 ### Standard RECEnv
 
@@ -71,7 +71,7 @@ Our standard RECEnv is available from `gym.make()`, following the [OpenAI Gym](h
 import recgym
 import gym
 
-# (1) standard environment 
+# (1) standard environment
 env = gym.make('RECEnv-v0')
 ```
 
@@ -98,7 +98,7 @@ agent = OnlineHead(
 )
 agent.build_with_env(env)
 
-# (2) basic interaction 
+# (2) basic interaction
 obs, info = env.reset()
 done = False
 # logs
@@ -127,7 +127,7 @@ plt.show()
 </p>
 </figcaption>
 
-Note that, while we use [SCOPE-RL](../README.md) and [d3rlpy](https://github.com/takuseno/d3rlpy) here, RECGym is compatible with any other libraries working on the [OpenAI Gym](https://gym.openai.com) and [Gymnasium](https://gymnasium.farama.org/)-like interface.
+Note that while we use [SCOPE-RL](../README.md) and [d3rlpy](https://github.com/takuseno/d3rlpy) here, RECGym is compatible with any other libraries working on the [OpenAI Gym](https://gym.openai.com) and [Gymnasium](https://gymnasium.farama.org/)-like interface.
 
 ### Customized RECEnv
 
@@ -219,8 +219,8 @@ class CustomizedUserModel(BaseUserModel):
         return reward
 ```
 
-More examples are available at [quickstart/rec_synthetic_customize_env.ipynb](./examples/quickstart/rec_synthetic_customize_env.ipynb). \
-The statistics of the environment is also visualized at [quickstart/rec_synthetic_data_collection.ipynb](./examples/quickstart/rec_synthetic_data_collection.ipynb).
+More examples are available at [quickstart/rec/rec_synthetic_customize_env.ipynb](./examples/quickstart/rec/rec_synthetic_customize_env.ipynb). \
+The statistics of the environment is also visualized at [quickstart/rec/rec_synthetic_data_collection.ipynb](./examples/quickstart/rec/rec_synthetic_data_collection.ipynb).
 
 ## Citation
 
