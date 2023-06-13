@@ -38,7 +38,7 @@ class BaseHead(AlgoBase):
     """
 
     @abstractmethod
-    def stochastic_action_with_pscore(self, x: np.ndarray):
+    def sample_action_with_pscore(self, x: np.ndarray):
         """Sample an action stochastically with its pscore."""
         raise NotImplementedError()
 
@@ -73,9 +73,9 @@ class BaseHead(AlgoBase):
         """Sample an action in an online environment."""
         return self.sample_action(x.reshape(1, -1))[0]
 
-    def stochastic_action_with_pscore_online(self, x: np.ndarray):
+    def sample_action_with_pscore_online(self, x: np.ndarray):
         """Sample an action and calculate its pscore in an online environment."""
-        action, pscore = self.stochastic_action_with_pscore(x.reshape(1, -1))
+        action, pscore = self.sample_action_with_pscore(x.reshape(1, -1))
         return action[0], pscore[0]
 
     def predict(self, x: np.ndarray):
@@ -236,7 +236,7 @@ class OnlineHead(BaseHead):
     base_policy: AlgoBase
     name: str
 
-    def stochastic_action_with_pscore(self, x: np.ndarray):
+    def sample_action_with_pscore(self, x: np.ndarray):
         """Only for API consistency."""
         pass
 
@@ -320,7 +320,7 @@ class DiscreteEpsilonGreedyHead(BaseHead):
             raise ValueError("random_state must be given")
         self.random_ = check_random_state(self.random_state)
 
-    def stochastic_action_with_pscore(self, x: np.ndarray):
+    def sample_action_with_pscore(self, x: np.ndarray):
         """Sample an action stochastically based on the pscore.
 
         Parameters
@@ -525,7 +525,7 @@ class DiscreteSoftmaxHead(BaseHead):
             (-1, self.n_actions)
         )  # (n_samples, n_actions)
 
-    def stochastic_action_with_pscore(self, x: np.ndarray):
+    def sample_action_with_pscore(self, x: np.ndarray):
         """Sample stochastic action with its pscore.
 
         Parameters
@@ -704,7 +704,7 @@ class ContinuousGaussianHead(BaseHead):
         )
         return np.prod(prob, axis=1)
 
-    def stochastic_action_with_pscore(self, x: np.ndarray):
+    def sample_action_with_pscore(self, x: np.ndarray):
         """Sample stochastic action with its pscore.
 
         Parameters
@@ -870,7 +870,7 @@ class ContinuousTruncatedGaussianHead(BaseHead):
         )
         return np.prod(prob, axis=1)
 
-    def stochastic_action_with_pscore(self, x: np.ndarray):
+    def sample_action_with_pscore(self, x: np.ndarray):
         """Sample stochastic action with its pscore.
 
         Parameters

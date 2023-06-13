@@ -401,13 +401,13 @@ Here, we describe some useful wrapper tools to convert a `d3rlpy <https://github
         * :class:`predict_online`
         * :class:`predict_value_online`
         * :class:`sample_action_online`
-        * :class:`stochastic_action_with_pscore_online`
+        * :class:`sample_action_with_pscore_online`
 
         Please just override these functions for online interactions. :class:`OnlineHead` is also useful for this purpose.
 
         Next, for the second purpose, you can customize how to convert a deterministic policy to a stochastic policy using following functions.
 
-        * :class:`stochastic_action_with_pscore_online`
+        * :class:`sample_action_with_pscore_online`
         * :class:`calc_action_choice_probability`
         * :class:`calc_pscore_given_action`
 
