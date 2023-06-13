@@ -33,7 +33,7 @@ class DiscreteDiceStateActionWightValueLearning(BaseWeightValueLearner):
 
     Bases: :class:`scope_rl.ope.weight_value_learning.BaseWeightValueLearner`
 
-    Imported as: :class:`scope_rl.ope.DiscreteAugmentedLagrangianStateActionWightValueLearning`
+    Imported as: :class:`scope_rl.ope.weight_value_learning.DiscreteAugmentedLagrangianStateActionWightValueLearning`
 
     Note
     -------
@@ -760,7 +760,7 @@ class DiscreteDiceStateWightValueLearning(BaseWeightValueLearner):
 
     Bases: :class:`scope_rl.ope.weight_value_learning.BaseWeightValueLearner`
 
-    Imported as: :class:`scope_rl.ope.DiscreteAugmentedLagrangianStateWightValueLearning`
+    Imported as: :class:`scope_rl.ope.weight_value_learning.DiscreteAugmentedLagrangianStateWightValueLearning`
 
     Note
     -------

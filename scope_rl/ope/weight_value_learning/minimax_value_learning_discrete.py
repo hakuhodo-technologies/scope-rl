@@ -31,7 +31,7 @@ class DiscreteMinimaxStateActionValueLearning(BaseWeightValueLearner):
 
     Bases: :class:`scope_rl.ope.weight_value_learning.BaseWeightValueLearner`
 
-    Imported as: :class:`scope_rl.ope.DiscreteMinimaxStateActionValueLearning`
+    Imported as: :class:`scope_rl.ope.weight_value_learning.DiscreteMinimaxStateActionValueLearning`
 
     Note
     -------
@@ -600,7 +600,7 @@ class DiscreteMinimaxStateValueLearning(BaseWeightValueLearner):
 
     Bases: :class:`scope_rl.ope.weight_value_learning.BaseWeightValueLearner`
 
-    Imported as: :class:`scope_rl.ope.DiscreteMinimaxStateValueLearning`
+    Imported as: :class:`scope_rl.ope.weight_value_learning.DiscreteMinimaxStateValueLearning`
 
     Note
     -------

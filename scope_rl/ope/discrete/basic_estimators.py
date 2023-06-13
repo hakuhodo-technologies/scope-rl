@@ -8,17 +8,17 @@ from typing import Dict, Optional
 import numpy as np
 from sklearn.utils import check_scalar
 
-from .estimators_base import BaseOffPolicyEstimator
-from ..utils import check_array
+from ..estimators_base import BaseOffPolicyEstimator
+from ...utils import check_array
 
 
 @dataclass
-class DiscreteDirectMethod(BaseOffPolicyEstimator):
+class DirectMethod(BaseOffPolicyEstimator):
     """Direct Method (DM) for discrete action spaces.
 
     Bases: :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
-    Imported as: :class:`scope_rl.ope.DiscreteDirectMethod`
+    Imported as: :class:`scope_rl.ope.discrete.DirectMethod`
 
     Note
     -------
@@ -295,12 +295,12 @@ class DiscreteDirectMethod(BaseOffPolicyEstimator):
 
 
 @dataclass
-class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
+class TrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
     """Trajectory-wise Important Sampling (TIS) for discrete action spaces.
 
     Bases: :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
-    Imported as: :class:`scope_rl.ope.DiscreteTrajectoryWiseImportanceSampling`
+    Imported as: :class:`scope_rl.ope.discrete.TrajectoryWiseImportanceSampling`
 
     Note
     -------
@@ -641,12 +641,12 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 
 
 @dataclass
-class DiscretePerDecisionImportanceSampling(BaseOffPolicyEstimator):
+class PerDecisionImportanceSampling(BaseOffPolicyEstimator):
     """Per-Decision Importance Sampling (PDIS) for discrete action spaces.
 
     Bases: :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
-    Imported as: :class:`scope_rl.ope.DiscretePerDecisionImportanceSampling`
+    Imported as: :class:`scope_rl.ope.discrete.PerDecisionImportanceSampling`
 
     Note
     -------
@@ -985,12 +985,12 @@ class DiscretePerDecisionImportanceSampling(BaseOffPolicyEstimator):
 
 
 @dataclass
-class DiscreteDoublyRobust(BaseOffPolicyEstimator):
+class DoublyRobust(BaseOffPolicyEstimator):
     """Doubly Robust (DR) for discrete action spaces.
 
     Bases: :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
-    Imported as: :class:`scope_rl.ope.DiscreteDoublyRobust`
+    Imported as: :class:`scope_rl.ope.discrete.DoublyRobust`
 
     Note
     -------
@@ -1395,12 +1395,12 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
 
 
 @dataclass
-class DiscreteSelfNormalizedTIS(DiscreteTrajectoryWiseImportanceSampling):
+class SelfNormalizedTIS(TrajectoryWiseImportanceSampling):
     """Self-Normalized Trajectory-wise Important Sampling (SNTIS) for discrete action spaces.
 
-    Bases: :class:`scope_rl.ope.DiscreteTrajectoryWiseImportanceSampling` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
+    Bases: :class:`scope_rl.ope.discrete.TrajectoryWiseImportanceSampling` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
-    Imported as: :class:`scope_rl.ope.DiscreteSelfNormalizedTIS`
+    Imported as: :class:`scope_rl.ope.discrete.SelfNormalizedTIS`
 
     Note
     -------
@@ -1502,12 +1502,12 @@ class DiscreteSelfNormalizedTIS(DiscreteTrajectoryWiseImportanceSampling):
 
 
 @dataclass
-class DiscreteSelfNormalizedPDIS(DiscretePerDecisionImportanceSampling):
+class SelfNormalizedPDIS(PerDecisionImportanceSampling):
     """Self-Normalized Per-Decision Importance Sampling (SNPDIS) for discrete action spaces.
 
-    Bases: :class:`scope_rl.ope.DiscretePerDecisionImportanceSampling` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
+    Bases: :class:`scope_rl.ope.discrete.PerDecisionImportanceSampling` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
-    Imported as: :class:`scope_rl.ope.DiscreteSelfNormalizedPDIS`
+    Imported as: :class:`scope_rl.ope.discrete.SelfNormalizedPDIS`
 
     Note
     -------
@@ -1606,12 +1606,12 @@ class DiscreteSelfNormalizedPDIS(DiscretePerDecisionImportanceSampling):
 
 
 @dataclass
-class DiscreteSelfNormalizedDR(DiscreteDoublyRobust):
+class SelfNormalizedDR(DoublyRobust):
     """Self-Normalized Doubly Robust (SNDR) for discrete action spaces.
 
-    Bases: :class:`scope_rl.ope.DiscreteDoublyRobust` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
+    Bases: :class:`scope_rl.ope.discrete.DoublyRobust` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
-    Imported as: :class:`scope_rl.ope.DiscreteSelfNormalizedDR`
+    Imported as: :class:`scope_rl.ope.discrete.SelfNormalizedDR`
 
     Note
     -------

@@ -30,7 +30,7 @@ class ContinuousMinimaxStateActionValueLearning(BaseWeightValueLearner):
 
     Bases: :class:`scope_rl.ope.weight_value_learning.BaseWeightValueLearner`
 
-    Imported as: :class:`scope_rl.ope.ContinuousMinimaxStateActionValueLearning`
+    Imported as: :class:`scope_rl.ope.weight_value_learning.ContinuousMinimaxStateActionValueLearning`
 
     Note
     -------
@@ -543,7 +543,7 @@ class ContinuousMinimaxStateValueLearning(BaseWeightValueLearner):
 
     Bases: :class:`scope_rl.ope.weight_value_learning.BaseWeightValueLearner`
 
-    Imported as: :class:`scope_rl.ope.ContinuousMinimaxStateValueLearning`
+    Imported as: :class:`scope_rl.ope.weight_value_learning.ContinuousMinimaxStateValueLearning`
 
     Note
     -------

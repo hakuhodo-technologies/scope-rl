@@ -10,21 +10,21 @@ from sklearn.utils import check_scalar
 
 from d3rlpy.preprocessing import ActionScaler
 
-from .estimators_base import (
+from ..estimators_base import (
     BaseCumulativeDistributionOPEEstimator,
 )
-from ..utils import check_array
+from ...utils import check_array
 
 
 @dataclass
-class ContinuousCumulativeDistributionDM(
+class CumulativeDistributionDM(
     BaseCumulativeDistributionOPEEstimator,
 ):
     """Direct Method (DM) for estimating the cumulative distribution function (CDF) for continuous action spaces.
 
     Bases: :class:`scope_rl.ope.BaseCumulativeDistributionOPEEstimator`
 
-    Imported as: :class:`scope_rl.ope.ContinuousCumulativeDistributionDM`
+    Imported as: :class:`scope_rl.ope.continuous.CumulativeDistributionDM`
 
     Note
     -------
@@ -385,14 +385,14 @@ class ContinuousCumulativeDistributionDM(
 
 
 @dataclass
-class ContinuousCumulativeDistributionTIS(
+class CumulativeDistributionTIS(
     BaseCumulativeDistributionOPEEstimator,
 ):
     """Trajectory-wise Importance Sampling (TIS) for estimating the cumulative distribution function (CDF) for continuous action spaces.
 
     Bases: :class:`scope_rl.ope.BaseCumulativeDistributionOPEyEstimator`
 
-    Imported as: :class:`scope_rl.ope.ContinuousCumulativeTIS`
+    Imported as: :class:`scope_rl.ope.continuous.CumulativeDistributionTIS`
 
     Note
     -------
@@ -407,8 +407,9 @@ class ContinuousCumulativeDistributionTIS(
     :math:`w_{0:T-1} := \\prod_{t=0}^{T-1} (\\pi(a_t \\mid s_t) / \\pi_0(a_t \\mid s_t))` is the trajectory-wise importance weight,
     and :math:`\\mathbb{I} \\{ \\cdot \\}` is the indicator function.
     :math:`\\delta(\\pi, a_{0:T-1}) = \\prod_{t=0}^{T-1} K(\\pi(s_t), a_t)` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy.
+    Note that the bandwidth of the kernel is an important hyperparameter; the variance of the above estimator often becomes small when the bandwidth of the kernel is large, while the bias often becomes large in those cases.
 
-    TIS enables an unbiased estimation of the policy value. However, when the trajectory length (:math:`T`) is large,
+    TIS corrects the distribution shift between the behavior and evaluation policies. However, when the trajectory length (:math:`T`) is large,
     TIS suffers from high variance due to the product of importance weights over the entire horizon.
 
     Parameters
@@ -912,14 +913,14 @@ class ContinuousCumulativeDistributionTIS(
 
 
 @dataclass
-class ContinuousCumulativeDistributionTDR(
+class CumulativeDistributionTDR(
     BaseCumulativeDistributionOPEEstimator,
 ):
     """Trajectory-wise Doubly Robust (TDR) for estimating the cumulative distribution function (CDF) for continuous action spaces.
 
     Bases: :class:`scope_rl.ope.BaseCumulativeDistributionOPEEstimator`
 
-    Imported as: :class:`scope_rl.ope.ContinuousCumulativeTDR`
+    Imported as: :class:`scope_rl.ope.continuous.CumulativeDistributionTDR`
 
 
     Note
@@ -935,8 +936,9 @@ class ContinuousCumulativeDistributionTDR(
     where :math:`\\hat{F}(\\cdot)` is the estimated cumulative distribution function and :math:`\\hat{G}(\\cdot)` is an estimator for :math:`\\mathbb{E}[\\mathbb{I} \\left \\{\\sum_{t=0}^{T-1} \\gamma^t r_t \\leq m \\right \\} \\mid s,a]`.
     :math:`w_{0:T-1} := \\prod_{t=0}^{T-1} (\\pi(a_t \\mid s_t) / \\pi_0(a_t \\mid s_t))` is the trajectory-wise importance weight and :math:`\\mathbb{I} \\{ \\cdot \\}` is the indicator function.
     :math:`\\delta(\\pi, a_{0:T-1}) = \\prod_{t=0}^{T-1} K(\\pi(s_t), a_t)` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy.
-
-    TDR is unbiased and has lower variance than TIS when :math:`\\hat{Q}(\\cdot)` is reasonably accurate and satisfies :math:`0 < \\hat{Q}(\\cdot) < 2 Q(\\cdot)`.
+    Note that the bandwidth of the kernel is an important hyperparameter; the variance of the above estimator often becomes small when the bandwidth of the kernel is large, while the bias often becomes large in those cases.
+    
+    TDR corrects the distribution shift between the behavior and evaluation policies and often has lower variance than TIS when :math:`\\hat{Q}(\\cdot)` is reasonably accurate and satisfies :math:`0 < \\hat{Q}(\\cdot) < 2 Q(\\cdot)`.
     However, when the importance weight is quite large, it may still suffer from a high variance.
 
     Parameters
@@ -1476,14 +1478,14 @@ class ContinuousCumulativeDistributionTDR(
 
 
 @dataclass
-class ContinuousCumulativeDistributionSNTIS(
-    ContinuousCumulativeDistributionTIS,
+class CumulativeDistributionSNTIS(
+    CumulativeDistributionTIS,
 ):
     """Self Normalized Trajectory-wise Importance Sampling (SNTIS) for estimating the cumulative distribution function (CDF) for continuous action spaces.
 
-    Bases: :class:`scope_rl.ope.ContinuousCumulativeTIS` -> :class:`scope_rl.ope.BaseCumulativeDistributionOPEEstimator`
+    Bases: :class:`scope_rl.ope.continuous.CumulativeDistributionTIS` -> :class:`scope_rl.ope.BaseCumulativeDistributionOPEEstimator`
 
-    Imported as: :class:`scope_rl.ope.ContinuousCumulativeSNTIS`
+    Imported as: :class:`scope_rl.ope.continuous.CumulativeDistributionSNTIS`
 
 
     Note
@@ -1499,8 +1501,9 @@ class ContinuousCumulativeDistributionSNTIS(
     :math:`w_{0:T-1} := \\prod_{t=0}^{T-1} (\\pi(a_t \\mid s_t) / \\pi_0(a_t \\mid s_t))` is the trajectory-wise importance weight,
     and :math:`\\mathbb{I} \\{ \\cdot \\}` is the indicator function.
     :math:`\\delta(\\pi, a_{0:T-1}) = \\prod_{t=0}^{T-1} K(\\pi(s_t), a_t)` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy.
+    Note that the bandwidth of the kernel is an important hyperparameter; the variance of the above estimator often becomes small when the bandwidth of the kernel is large, while the bias often becomes large in those cases.
 
-    The self-normalized estimator is no longer unbiased, but has a bounded variance while also remaining consistent.
+    The self-normalized estimator has a bounded variance.
 
     Parameters
     -------
@@ -1672,14 +1675,14 @@ class ContinuousCumulativeDistributionSNTIS(
 
 
 @dataclass
-class ContinuousCumulativeDistributionSNTDR(
-    ContinuousCumulativeDistributionTDR,
+class CumulativeDistributionSNTDR(
+    CumulativeDistributionTDR,
 ):
     """Self Normalized Trajectory-wise Doubly Robust (SNTDR) for estimating the cumulative distribution function (CDF) for continuous action spaces.
 
-    Bases: :class:`scope_rl.ope.ContinuousCumulativeTDR` -> :class:`scope_rl.ope.BaseCumulativeDistributionOPEEstimator`
+    Bases: :class:`scope_rl.ope.continuous.CumulativeDistributionTDR` -> :class:`scope_rl.ope.BaseCumulativeDistributionOPEEstimator`
 
-    Imported as: :class:`scope_rl.ope.ContinuousCumulativeSNTDR`
+    Imported as: :class:`scope_rl.ope.continuous.CumulativeDistributionSNTDR`
 
     Note
     -------
@@ -1695,8 +1698,9 @@ class ContinuousCumulativeDistributionSNTDR(
     where :math:`\\hat{F}(\\cdot)` is the estimated cumulative distribution function and :math:`\\hat{G}(\\cdot)` is an estimator for :math:`\\mathbb{E}[\\mathbb{I} \\left \\{\\sum_{t=0}^{T-1} \\gamma^t r_t \\leq m \\right \\} \\mid s,a]`.
     :math:`w_{0:T-1} := \\prod_{t=0}^{T-1} (\\pi(a_t \\mid s_t) / \\pi_0(a_t \\mid s_t))` is the trajectory-wise importance weight and :math:`\\mathbb{I} \\{ \\cdot \\}` is the indicator function.
     :math:`\\delta(\\pi, a_{0:T-1}) = \\prod_{t=0}^{T-1} K(\\pi(s_t), a_t)` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy.
-
-    The self-normalized estimator is no longer unbiased, but has a bounded variance while also remaining consistent.
+    Note that the bandwidth of the kernel is an important hyperparameter; the variance of the above estimator often becomes small when the bandwidth of the kernel is large, while the bias often becomes large in those cases.
+    
+    The self-normalized estimator has a bounded variance.
 
     Parameters
     -------

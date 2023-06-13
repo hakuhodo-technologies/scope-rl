@@ -1,30 +1,28 @@
 # Copyright (c) 2023, Haruka Kiyohara, Ren Kishimoto, HAKUHODO Technologies Inc., and Hanjuku-kaso Co., Ltd. All rights reserved.
 # Licensed under the Apache 2.0 License.
 
-"""State(-Action) Marginal Off-Policy Estimators for continuous action cases (designed for deterministic evaluation policies)."""
+"""State(-Action) Marginal Off-Policy Estimators for discrete action cases."""
 from dataclasses import dataclass
 from typing import Optional, Dict
 
 import numpy as np
 from sklearn.utils import check_scalar
 
-from d3rlpy.preprocessing import ActionScaler
-
-from .estimators_base import (
+from ..estimators_base import (
     BaseOffPolicyEstimator,
     BaseStateMarginalOPEEstimator,
     BaseStateActionMarginalOPEEstimator,
 )
-from ..utils import check_array
+from ...utils import check_array
 
 
 @dataclass
-class ContinuousDoubleReinforcementLearning(BaseOffPolicyEstimator):
-    """Double Reinforcement Learning (DRL) estimator for continuous action space.
+class DoubleReinforcementLearning(BaseOffPolicyEstimator):
+    """Double Reinforcement Learning (DRL) estimator for discrete action spaces.
 
     Bases: :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
-    Imported as: :class:`scope_rl.ope.ContinuousDoubleReinforcementLearning`
+    Imported as: :class:`scope_rl.ope.discrete.DoubleReinforcementLearning`
 
     Note
     -------
@@ -33,8 +31,8 @@ class ContinuousDoubleReinforcementLearning(BaseOffPolicyEstimator):
     .. math::
 
         \\hat{J}_{\\mathrm{DRL}} (\\pi; \\mathcal{D})
-        &:= \\frac{1}{n} \\sum_{k=1}^K \\sum_{i=1}^{n_k} \\sum_{t=0}^{T-1} ( w^j(s_{i,t}, a_{i, t}) (r_{i, t} - Q^j(s_{i, t}, a_{i, t})) \\\\
-        & \quad \quad + w^j(s_{i, t-1}, a_{i, t-1}) Q^j(s_{i, t}, \\pi(s_{i, t})) )
+        &:= \\frac{1}{n} \\sum_{k=1}^K \\sum_{i=1}^{n_k} \\sum_{t=0}^{T-1} (w^j(s_{i,t}, a_{i, t}) (r_{i, t} - Q^j(s_{i, t}, a_{i, t})) \\\\
+        & \quad \quad + w^j(s_{i, t-1}, a_{i, t-1}) \\mathbb{E}_{a \\sim \\pi(a | s_t)}[Q^j(s_{i, t}, a)] )
 
     where :math:`w(s, a) \\approx d^{\\pi}(s, a) / d^{\\pi_b}(s, a)` is the state-action marginal importance weight and :math:`Q(s, a)` is the Q-function.
     :math:`K` is the number of folds and :math:`\\mathcal{D}_j` is the :math:`j`-th split of logged data consisting of :math:`n_k` samples.
@@ -69,13 +67,15 @@ class ContinuousDoubleReinforcementLearning(BaseOffPolicyEstimator):
     estimator_name: str = "drl"
 
     def __post_init__(self):
-        self.action_type = "continuous"
+        self.action_type = "discrete"
 
     def _estimate_trajectory_value(
         self,
         step_per_trajectory: int,
+        action: np.ndarray,
         reward: np.ndarray,
         state_action_marginal_importance_weight: np.ndarray,
+        evaluation_policy_action_dist: np.ndarray,
         state_action_value_prediction: np.ndarray,
     ):
         """Estimate the trajectory-wise policy value.
@@ -85,15 +85,21 @@ class ContinuousDoubleReinforcementLearning(BaseOffPolicyEstimator):
         step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
 
+        action: array-like of shape (n_trajectories * step_per_trajectory, )
+            Action chosen by the behavior policy.
+
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
             Observed immediate rewards.
 
         state_action_marginal_importance_weight: array-like of shape (n_trajectories * step_per_trajectory, )
             Importance weight wrt the state-action marginal distribution, i.e., :math:`d_{\\pi}(s, a) / d_{\\pi_b}(s, a)`
 
-        state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, 2)
-            :math:`\\hat{Q}` for the observed action and that chosen by the evaluation policy,
-            i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a | s_t))`.
+        evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
+            Conditional action distribution induced by the evaluation policy,
+            i.e., :math:`\\pi(a | s) \\forall a \\in \\mathcal{A}`
+
+        state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, n_action)
+            :math:`\\hat{Q}` for all actions, i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
 
         Return
         -------
@@ -101,11 +107,14 @@ class ContinuousDoubleReinforcementLearning(BaseOffPolicyEstimator):
             Policy value (expected reward under the evaluation policy) estimated for each trajectory.
 
         """
-        state_action_value_prediction = state_action_value_prediction.reshape(
-            (-1, step_per_trajectory, 2)
+        state_value_prediction = (
+            (state_action_value_prediction * evaluation_policy_action_dist)
+            .sum(axis=1)
+            .reshape((-1, step_per_trajectory))
         )
-        state_value_prediction = state_action_value_prediction[:, :, 1]
-        state_action_value_prediction = state_action_value_prediction[:, :, 0]
+        state_action_value_prediction = state_action_value_prediction[
+            np.arange(len(action)), action
+        ].reshape((-1, step_per_trajectory))
 
         reward = reward.reshape((-1, step_per_trajectory))
 
@@ -125,8 +134,10 @@ class ContinuousDoubleReinforcementLearning(BaseOffPolicyEstimator):
     def estimate_policy_value(
         self,
         step_per_trajectory: int,
+        action: np.ndarray,
         reward: np.ndarray,
         state_action_marginal_importance_weight: np.ndarray,
+        evaluation_policy_action_dist: np.ndarray,
         state_action_value_prediction: np.ndarray,
         **kwargs,
     ) -> float:
@@ -137,15 +148,21 @@ class ContinuousDoubleReinforcementLearning(BaseOffPolicyEstimator):
         step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
 
+        action: array-like of shape (n_trajectories * step_per_trajectory, )
+            Action chosen by the behavior policy.
+
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
             Observed immediate rewards.
 
         state_action_marginal_importance_weight: array-like of shape (n_trajectories * step_per_trajectory, )
             Importance weight wrt the state-action marginal distribution, i.e., :math:`d_{\\pi}(s, a) / d_{\\pi_b}(s, a)`
 
-        state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, 2)
-            :math:`\\hat{Q}` for the observed action and that chosen by the evaluation policy,
-            i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a | s_t))`.
+        evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
+            Conditional action distribution induced by the evaluation policy,
+            i.e., :math:`\\pi(a | s) \\forall a \\in \\mathcal{A}`
+
+        state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, n_action)
+            :math:`\\hat{Q}` for all actions, i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
 
         Return
         -------
@@ -166,28 +183,57 @@ class ContinuousDoubleReinforcementLearning(BaseOffPolicyEstimator):
             min_val=0.0,
         )
         check_array(
-            state_action_value_prediction,
-            name="state_action_value_prediction",
+            evaluation_policy_action_dist,
+            name="evaluation_policy_action_dist",
             expected_dim=2,
+            min_val=0.0,
+            max_val=1.0,
+        )
+        check_array(
+            action,
+            name="action",
+            expected_dim=1,
+            min_val=0,
+            max_val=evaluation_policy_action_dist.shape[1] - 1,
         )
         if not (
-            reward.shape[0]
+            action.shape[0]
+            == reward.shape[0]
             == state_action_marginal_importance_weight.shape[0]
+            == evaluation_policy_action_dist.shape[0]
             == state_action_value_prediction.shape[0]
         ):
             raise ValueError(
-                "Expected `reward.shape[0] == state_action_marginal_importance_weight.shape[0] == state_action_value_prediction.shape[0]`"
+                "Expected `action.shape[0] == reward.shape[0] == state_action_marginal_importance_weight.shape[0] "
+                "== pscore.shape[0] == evaluation_policy_action_dist.shape[0] == state_action_value_prediction.shape[0]`"
                 ", but found False"
             )
-        if state_action_value_prediction.shape[1] != 2:
+        if (
+            evaluation_policy_action_dist.shape[1]
+            != state_action_value_prediction.shape[1]
+        ):
             raise ValueError(
-                "Expected `state_action_value_prediction.shape[1] == 2`, but found False"
+                "Expected `evaluation_policy_action_dist.shape[1] == state_action_value_prediction.shape[1]`, but found False"
+            )
+        if action.shape[0] % step_per_trajectory:
+            raise ValueError(
+                "Expected `action.shape[0] \\% step_per_trajectory == 0`, but found False"
+            )
+        if not np.allclose(
+            evaluation_policy_action_dist.sum(axis=1),
+            np.ones(evaluation_policy_action_dist.shape[0]),
+        ):
+            raise ValueError(
+                "Expected `evaluation_policy_action_dist.sum(axis=1) == np.ones(evaluation_policy_action_dist.shape[0])`"
+                ", but found it False"
             )
 
         estimated_policy_value = self._estimate_trajectory_value(
             step_per_trajectory=step_per_trajectory,
+            action=action,
             reward=reward,
             state_action_marginal_importance_weight=state_action_marginal_importance_weight,
+            evaluation_policy_action_dist=evaluation_policy_action_dist,
             state_action_value_prediction=state_action_value_prediction,
         ).mean()
         return estimated_policy_value
@@ -195,8 +241,10 @@ class ContinuousDoubleReinforcementLearning(BaseOffPolicyEstimator):
     def estimate_interval(
         self,
         step_per_trajectory: int,
+        action: np.ndarray,
         reward: np.ndarray,
         state_action_marginal_importance_weight: np.ndarray,
+        evaluation_policy_action_dist: np.ndarray,
         state_action_value_prediction: np.ndarray,
         alpha: float = 0.05,
         ci: str = "bootstrap",
@@ -211,15 +259,21 @@ class ContinuousDoubleReinforcementLearning(BaseOffPolicyEstimator):
         step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
 
+        action: array-like of shape (n_trajectories * step_per_trajectory, )
+            Action chosen by the behavior policy.
+
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
             Observed immediate rewards.
 
         state_action_marginal_importance_weight: array-like of shape (n_trajectories * step_per_trajectory, )
             Importance weight wrt the state-action marginal distribution, i.e., :math:`d_{\\pi}(s, a) / d_{\\pi_b}(s, a)`
 
-        state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, 2)
-            :math:`\\hat{Q}` for the observed action and that chosen by the evaluation policy,
-            i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a | s_t))`.
+        evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
+            Conditional action distribution induced by the evaluation policy,
+            i.e., :math:`\\pi(a | s) \\forall a \\in \\mathcal{A}`
+
+        state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, n_action)
+            :math:`\\hat{Q}` for all actions, i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
 
         alpha: float, default=0.05
             Significance level. The value should be within `[0, 1)`.
@@ -260,22 +314,49 @@ class ContinuousDoubleReinforcementLearning(BaseOffPolicyEstimator):
             min_val=0.0,
         )
         check_array(
-            state_action_value_prediction,
-            name="state_action_value_prediction",
+            evaluation_policy_action_dist,
+            name="evaluation_policy_action_dist",
             expected_dim=2,
+            min_val=0.0,
+            max_val=1.0,
+        )
+        check_array(
+            action,
+            name="action",
+            expected_dim=1,
+            min_val=0,
+            max_val=evaluation_policy_action_dist.shape[1] - 1,
         )
         if not (
-            reward.shape[0]
+            action.shape[0]
+            == reward.shape[0]
             == state_action_marginal_importance_weight.shape[0]
+            == evaluation_policy_action_dist.shape[0]
             == state_action_value_prediction.shape[0]
         ):
             raise ValueError(
-                "Expected `reward.shape[0] == state_action_marginal_importance_weight.shape[0] == state_action_value_prediction.shape[0]`"
+                "Expected `action.shape[0] == reward.shape[0] == state_action_marginal_importance_weight.shape[0] "
+                "== pscore.shape[0] == evaluation_policy_action_dist.shape[0] == state_action_value_prediction.shape[0]`"
                 ", but found False"
             )
-        if state_action_value_prediction.shape[1] != 2:
+        if (
+            evaluation_policy_action_dist.shape[1]
+            != state_action_value_prediction.shape[1]
+        ):
             raise ValueError(
-                "Expected `state_action_value_prediction.shape[1] == 2`, but found False"
+                "Expected `evaluation_policy_action_dist.shape[1] == state_action_value_prediction.shape[1]`, but found False"
+            )
+        if action.shape[0] % step_per_trajectory:
+            raise ValueError(
+                "Expected `action.shape[0] \\% step_per_trajectory == 0`, but found False"
+            )
+        if not np.allclose(
+            evaluation_policy_action_dist.sum(axis=1),
+            np.ones(evaluation_policy_action_dist.shape[0]),
+        ):
+            raise ValueError(
+                "Expected `evaluation_policy_action_dist.sum(axis=1) == np.ones(evaluation_policy_action_dist.shape[0])`"
+                ", but found it False"
             )
 
         if ci not in self._estimate_confidence_interval.keys():
@@ -285,8 +366,10 @@ class ContinuousDoubleReinforcementLearning(BaseOffPolicyEstimator):
 
         estimated_trajectory_value = self._estimate_trajectory_value(
             step_per_trajectory=step_per_trajectory,
+            action=action,
             reward=reward,
             state_action_marginal_importance_weight=state_action_marginal_importance_weight,
+            evaluation_policy_action_dist=evaluation_policy_action_dist,
             state_action_value_prediction=state_action_value_prediction,
         )
         return self._estimate_confidence_interval[ci](
@@ -298,12 +381,12 @@ class ContinuousDoubleReinforcementLearning(BaseOffPolicyEstimator):
 
 
 @dataclass
-class ContinuousStateMarginalDM(BaseStateMarginalOPEEstimator):
-    """Direct Method (DM) for continuous-action and stationary OPE (designed for deterministic evaluation policies).
+class StateMarginalDM(BaseStateActionMarginalOPEEstimator):
+    """Direct Method (DM) for discrete-action and stationary OPE.
 
     Bases: :class:`scope_rl.ope.BaseStateMarginalOPEEstimator` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
-    Imported as: :class:`scope_rl.ope.ContinuousStateMarginalDM`
+    Imported as: :class:`scope_rl.ope.discrete.StateMarginalDM`
 
     Note
     -------
@@ -312,7 +395,7 @@ class ContinuousStateMarginalDM(BaseStateMarginalOPEEstimator):
     .. math::
 
         \\hat{J}_{\\mathrm{DM}} (\\pi; \\mathcal{D})
-        := \\mathbb{E}_n [\\hat{Q}(s_0, \\pi(s_0))]]
+        := \\mathbb{E}_n [\\mathbb{E}_{a_0 \\sim \\pi(a_0 | s_0)} [\\hat{Q}(s_0, a_0)] ]
         = \\mathbb{E}_n [\\hat{V}(s_0)],
 
     where :math:`\\mathcal{D}=\\{\\{(s_t, a_t, r_t)\\}_{t=0}^{T-1}\\}_{i=1}^n` is the logged dataset with :math:`n` trajectories.
@@ -331,7 +414,7 @@ class ContinuousStateMarginalDM(BaseStateMarginalOPEEstimator):
 
     Note
     -------
-    This function is different from :class:`ContinuousDirectMethod` in that
+    This function is different from :class:`DirectMethod` in that
     the initial state is sampled from the stationary distribution :math:`d^{\pi}(s_0)`.
 
     Parameters
@@ -341,21 +424,27 @@ class ContinuousStateMarginalDM(BaseStateMarginalOPEEstimator):
 
     References
     -------
+    Yuta Saito, Shunsuke Aihara, Megumi Matsutani, and Yusuke Narita.
+    "Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation." 2021.
+
+    Takuma Seno and Michita Imai.
+    "d3rlpy: An Offline Deep Reinforcement Library." 2021.
+
     Masatoshi Uehara, Jiawei Huang, and Nan Jiang.
     "Minimax Weight and Q-Function Learning for Off-Policy Evaluation." 2020.
-
-    Mengjiao Yang, Ofir Nachum, Bo Dai, Lihong Li, and Dale Schuurmans.
-    "Off-Policy Evaluation via the Regularized Lagrangian." 2020.
 
     Hoang Le, Cameron Voloshin, and Yisong Yue.
     "Batch Policy Learning under Constraints." 2019.
 
+    Alina Beygelzimer and John Langford.
+    "The Offset Tree for Learning with Partial Labels." 2009.
+
     """
 
-    estimator_name = "sm_dm"
+    estimator_name: str = "sm_dm"
 
     def __post_init__(self):
-        self.action_type = "continuous"
+        self.action_type = "discrete"
 
     def _estimate_trajectory_value(
         self,
@@ -379,9 +468,7 @@ class ContinuousStateMarginalDM(BaseStateMarginalOPEEstimator):
         return initial_state_value_prediction
 
     def estimate_policy_value(
-        self,
-        initial_state_value_prediction: np.ndarray,
-        **kwargs,
+        self, initial_state_value_prediction: np.ndarray, **kwargs
     ) -> float:
         """Estimate the policy value of the evaluation policy.
 
@@ -402,7 +489,7 @@ class ContinuousStateMarginalDM(BaseStateMarginalOPEEstimator):
             expected_dim=1,
         )
         estimated_policy_value = self._estimate_trajectory_value(
-            initial_state_value_prediction,
+            initial_state_value_prediction
         ).mean()
         return estimated_policy_value
 
@@ -423,7 +510,10 @@ class ContinuousStateMarginalDM(BaseStateMarginalOPEEstimator):
             Estimated initial state value.
 
         alpha: float, default=0.05
-            Significance level. The value should be within `[0, 1)`
+            Significance level. The value should be within `[0, 1)`.
+
+        ci: {"bootstrap", "hoeffding", "bernstein", "ttest"}, default="bootstrap"
+            Method to estimate the confidence interval.
 
         n_bootstrap_samples: int, default=10000 (> 0)
             Number of resampling performed in the bootstrap procedure.
@@ -456,7 +546,7 @@ class ContinuousStateMarginalDM(BaseStateMarginalOPEEstimator):
             )
 
         estimated_trajectory_value = self._estimate_trajectory_value(
-            initial_state_value_prediction,
+            initial_state_value_prediction
         )
         return self._estimate_confidence_interval[ci](
             samples=estimated_trajectory_value,
@@ -467,27 +557,24 @@ class ContinuousStateMarginalDM(BaseStateMarginalOPEEstimator):
 
 
 @dataclass
-class ContinuousStateMarginalIS(BaseStateMarginalOPEEstimator):
-    """State Marginal Importance Sampling (SM-IS) for continuous action spaces.
+class StateMarginalIS(BaseStateMarginalOPEEstimator):
+    """State Marginal Importance Sampling (SM-IS) for discrete action spaces.
 
     Bases: :class:`scope_rl.ope.BaseStateMarginalOPEEstimator` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
-    Imported as: :class:`scope_rl.ope.ContinuousStateMarginalIS`
+    Imported as: :class:`scope_rl.ope.discrete.StateMarginalIS`
 
     Note
     -------
     SM-IS estimates the policy value using state marginal importance weighting.
-    Following SOPE (Yuan et al., 2021), we combine State Marginal Importance Sampling and :math:`k`-step PDIS as follows.
+    Following SOPE (Yuan et al., 2021), we combine state-marginal importance weighting and :math:`k`-step PDIS as follows.
 
     .. math::
 
         \\hat{J}_{\\mathrm{SM-IS}} (\\pi; \\mathcal{D})
-        &:= \\mathbb{E}_{n} \\left[\\sum_{t=0}^{k-1} \\gamma^t w_{0:t} \\delta(\\pi, a_{0:t}) r_t \\right] \\\\
-        & \quad \quad + \\mathbb{E}_{n} \\left[\\sum_{t=k}^{T-1} \\gamma^t w_s(s_{t-k}) w_{t-k:t} \\delta(\\pi, a_{t-k:t}) r_t \\right],
+        := \\mathbb{E}_{n} \\left[\\sum_{t=0}^{k-1} \\gamma^t w_{0:t} r_t \\right] + \\mathbb{E}_{n} \\left[\\sum_{t=k}^{T-1} \\gamma^t w_s(s_{t-k}) w_{t-k:t} r_t \\right],
 
     where :math:`w_s(s) := d_{\\pi}(s) / d_{\\pi_b}(s)` and :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} (\\pi(a_t | s_t) / \\pi_0(a_t | s_t))`.
-    :math:`\\delta(\\pi, a_{t_1:t_2}) = \\prod_{t=t_1}^{t_2} K(\\pi(s_t), a_t)` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy
-    (:math:`K(\\cdot, \\cdot)` is a kernel function).
     When :math:`k=0`, this estimator is reduced to the vanilla state marginal IS.
 
     SM-IS is unbiased when the marginal importance weight is estimated correctly.
@@ -515,9 +602,6 @@ class ContinuousStateMarginalIS(BaseStateMarginalOPEEstimator):
     Mengjiao Yang, Ofir Nachum, Bo Dai, Lihong Li, and Dale Schuurmans.
     "Off-Policy Evaluation via the Regularized Lagrangian." 2020.
 
-    Nathan Kallus and Angela Zhou.
-    "Policy Evaluation and Optimization with Continuous Treatments." 2019.
-
     Qiang Liu, Lihong Li, Ziyang Tang, and Dengyong Zhou.
     "Breaking the Curse of Horizon: Infinite-Horizon Off-Policy Estimation." 2018
 
@@ -529,7 +613,7 @@ class ContinuousStateMarginalIS(BaseStateMarginalOPEEstimator):
     estimator_name: str = "sm_is"
 
     def __post_init__(self):
-        self.action_type = "continuous"
+        self.action_type = "discrete"
 
     def _estimate_trajectory_value(
         self,
@@ -539,25 +623,22 @@ class ContinuousStateMarginalIS(BaseStateMarginalOPEEstimator):
         reward: np.ndarray,
         state_marginal_importance_weight: np.ndarray,
         pscore: np.ndarray,
-        evaluation_policy_action: np.ndarray,
+        evaluation_policy_action_dist: np.ndarray,
         gamma: float = 1.0,
-        kernel: str = "gaussian",
-        bandwidth: float = 1.0,
-        action_scaler: Optional[ActionScaler] = None,
         **kwargs,
     ) -> np.ndarray:
         """Estimate the trajectory-wise policy value.
 
         Parameters
         -------
-        n_step_pdis: int (>= 0)
+        n_step_pdis: int (> 0)
             Number of initial steps whose rewards are estimated by step-wise importance weighting.
             When set to zero, the estimator is reduced to the vanilla state marginal IS.
 
         step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
+        action: array-like of shape (n_trajectories * step_per_trajectory, )
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
@@ -570,20 +651,12 @@ class ContinuousStateMarginalIS(BaseStateMarginalOPEEstimator):
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_b(a | s)`
 
-        evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
-            Action chosen by the evaluation policy.
+        evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
+            Conditional action distribution induced by the evaluation policy,
+            i.e., :math:`\\pi(a | s) \\forall a \\in \\mathcal{A}`
 
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
-
-        kernel: {"gaussian", "epanechnikov", "triangular", "cosine", "uniform"}
-            Name of the kernel function to smooth importance weights.
-
-        bandwidth: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of the kernel function.
-
-        action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
-            Scaling factor of action.
 
         Return
         -------
@@ -591,32 +664,29 @@ class ContinuousStateMarginalIS(BaseStateMarginalOPEEstimator):
             Policy value (expected reward under the evaluation policy) estimated for each trajectory.
 
         """
-        behavior_policy_pscore = self._calc_behavior_policy_pscore_continuous(
+        behavior_policy_pscore = self._calc_behavior_policy_pscore_discrete(
             n_step_pdis=n_step_pdis,
             step_per_trajectory=step_per_trajectory,
             pscore=pscore,
         )
-        similarity_weight = self._calc_similarity_weight(
+        evaluation_policy_pscore = self._calc_evaluation_policy_pscore_discrete(
             n_step_pdis=n_step_pdis,
             step_per_trajectory=step_per_trajectory,
             action=action,
-            evaluation_policy_action=evaluation_policy_action,
-            action_scaler=action_scaler,
-            kernel=kernel,
-            bandwidth=bandwidth,
+            evaluation_policy_action_dist=evaluation_policy_action_dist,
+        )
+        per_decision_importance_weight = (
+            evaluation_policy_pscore / behavior_policy_pscore
         )
         state_marginal_importance_weight = self._calc_marginal_importance_weight(
             n_step_pdis=n_step_pdis,
             step_per_trajectory=step_per_trajectory,
             state_marginal_importance_weight=state_marginal_importance_weight,
         )
-        weight = state_marginal_importance_weight * (
-            similarity_weight / behavior_policy_pscore
-        )
+        weight = state_marginal_importance_weight * per_decision_importance_weight
 
         reward = reward.reshape((-1, step_per_trajectory))
         discount = np.full(step_per_trajectory, gamma).cumprod() / gamma
-
         estimated_trajectory_value = (discount[np.newaxis, :] * weight * reward).sum(
             axis=1
         )
@@ -631,11 +701,8 @@ class ContinuousStateMarginalIS(BaseStateMarginalOPEEstimator):
         reward: np.ndarray,
         state_marginal_importance_weight: np.ndarray,
         pscore: np.ndarray,
-        evaluation_policy_action: np.ndarray,
+        evaluation_policy_action_dist: np.ndarray,
         gamma: float = 1.0,
-        kernel: str = "gaussian",
-        bandwidth: float = 1.0,
-        action_scaler: Optional[ActionScaler] = None,
         **kwargs,
     ) -> float:
         """Estimate the policy value of the evaluation policy.
@@ -649,7 +716,7 @@ class ContinuousStateMarginalIS(BaseStateMarginalOPEEstimator):
         step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
+        action: array-like of shape (n_trajectories * step_per_trajectory, )
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
@@ -662,20 +729,12 @@ class ContinuousStateMarginalIS(BaseStateMarginalOPEEstimator):
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_b(a | s)`
 
-        evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
-            Action chosen by the evaluation policy.
+        evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
+            Conditional action distribution induced by the evaluation policy,
+            i.e., :math:`\\pi(a | s) \\forall a \\in \\mathcal{A}`
 
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
-
-        kernel: {"gaussian", "epanechnikov", "triangular", "cosine", "uniform"}
-            Name of the kernel function to smooth importance weights.
-
-        bandwidth: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of the kernel function.
-
-        action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
-            Scaling factor of action.
 
         Return
         -------
@@ -709,44 +768,49 @@ class ContinuousStateMarginalIS(BaseStateMarginalOPEEstimator):
         check_array(
             pscore,
             name="pscore",
-            expected_dim=2,
+            expected_dim=1,
             min_val=0.0,
+            max_val=1.0,
         )
         check_array(
-            evaluation_policy_action,
-            name="evaluation_policy_action",
+            evaluation_policy_action_dist,
+            name="evaluation_policy_action_dist",
             expected_dim=2,
+            min_val=0.0,
+            max_val=1.0,
         )
         check_array(
             action,
             name="action",
-            expected_dim=2,
+            expected_dim=1,
+            min_val=0,
+            max_val=evaluation_policy_action_dist.shape[1] - 1,
         )
         if not (
             action.shape[0]
             == reward.shape[0]
             == state_marginal_importance_weight.shape[0]
             == pscore.shape[0]
-            == evaluation_policy_action.shape[0]
+            == evaluation_policy_action_dist.shape[0]
         ):
             raise ValueError(
                 "Expected `action.shape[0] == reward.shape[0] == state_marginal_importance_weight.shape[0] "
-                "== pscore.shape[0] == evaluation_policy_action.shape[0]`"
+                "== pscore.shape[0] == evaluation_policy_action_dist.shape[0]`"
                 ", but found False"
             )
-        if not (
-            action.shape[1] == evaluation_policy_action.shape[1] == pscore.shape[1]
+        if action.shape[0] % step_per_trajectory:
+            raise ValueError(
+                "Expected `action.shape[0] \\% step_per_trajectory == 0`, but found False"
+            )
+        if not np.allclose(
+            evaluation_policy_action_dist.sum(axis=1),
+            np.ones(evaluation_policy_action_dist.shape[0]),
         ):
             raise ValueError(
-                "Expected `action.shape[1] == evaluation_policy_action.shape[1] == pscore.shape[1]`, but found False"
+                "Expected `evaluation_policy_action_dist.sum(axis=1) == np.ones(evaluation_policy_action_dist.shape[0])`"
+                ", but found it False"
             )
-
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
-        check_scalar(bandwidth, name="bandwidth", target_type=float, min_val=0.0)
-        if action_scaler is not None and not isinstance(action_scaler, ActionScaler):
-            raise ValueError(
-                "action_scaler must be an instance of d3rlpy.preprocessing.ActionScaler, but found False"
-            )
 
         estimated_policy_value = self._estimate_trajectory_value(
             n_step_pdis=n_step_pdis,
@@ -755,10 +819,7 @@ class ContinuousStateMarginalIS(BaseStateMarginalOPEEstimator):
             reward=reward,
             state_marginal_importance_weight=state_marginal_importance_weight,
             pscore=pscore,
-            evaluation_policy_action=evaluation_policy_action,
-            action_scaler=action_scaler,
-            kernel=kernel,
-            bandwidth=bandwidth,
+            evaluation_policy_action_dist=evaluation_policy_action_dist,
             gamma=gamma,
         ).mean()
         return estimated_policy_value
@@ -771,11 +832,8 @@ class ContinuousStateMarginalIS(BaseStateMarginalOPEEstimator):
         reward: np.ndarray,
         state_marginal_importance_weight: np.ndarray,
         pscore: np.ndarray,
-        evaluation_policy_action: np.ndarray,
+        evaluation_policy_action_dist: np.ndarray,
         gamma: float = 1.0,
-        kernel: str = "gaussian",
-        bandwidth: float = 1.0,
-        action_scaler: Optional[ActionScaler] = None,
         alpha: float = 0.05,
         ci: str = "bootstrap",
         n_bootstrap_samples: int = 10000,
@@ -793,7 +851,7 @@ class ContinuousStateMarginalIS(BaseStateMarginalOPEEstimator):
         step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
+        action: array-like of shape (n_trajectories * step_per_trajectory, )
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
@@ -806,20 +864,12 @@ class ContinuousStateMarginalIS(BaseStateMarginalOPEEstimator):
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_b(a | s)`
 
-        evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
-            Action chosen by the evaluation policy.
+        evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
+            Conditional action distribution induced by the evaluation policy,
+            i.e., :math:`\\pi(a | s) \\forall a \\in \\mathcal{A}`
 
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
-
-        kernel: {"gaussian", "epanechnikov", "triangular", "cosine", "uniform"}
-            Name of the kernel function to smooth importance weights.
-
-        bandwidth: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of the kernel function.
-
-        action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
-            Scaling factor of action.
 
         alpha: float, default=0.05
             Significance level. The value should be within `[0, 1)`.
@@ -873,44 +923,49 @@ class ContinuousStateMarginalIS(BaseStateMarginalOPEEstimator):
         check_array(
             pscore,
             name="pscore",
-            expected_dim=2,
+            expected_dim=1,
             min_val=0.0,
+            max_val=1.0,
         )
         check_array(
-            evaluation_policy_action,
-            name="evaluation_policy_action",
+            evaluation_policy_action_dist,
+            name="evaluation_policy_action_dist",
             expected_dim=2,
+            min_val=0.0,
+            max_val=1.0,
         )
         check_array(
             action,
             name="action",
-            expected_dim=2,
+            expected_dim=1,
+            min_val=0,
+            max_val=evaluation_policy_action_dist.shape[1] - 1,
         )
         if not (
             action.shape[0]
             == reward.shape[0]
             == state_marginal_importance_weight.shape[0]
             == pscore.shape[0]
-            == evaluation_policy_action.shape[0]
+            == evaluation_policy_action_dist.shape[0]
         ):
             raise ValueError(
                 "Expected `action.shape[0] == reward.shape[0] == state_marginal_importance_weight.shape[0] "
-                "== pscore.shape[0] == evaluation_policy_action.shape[0]`"
+                "== pscore.shape[0] == evaluation_policy_action_dist.shape[0]`"
                 ", but found False"
             )
-        if not (
-            action.shape[1] == evaluation_policy_action.shape[1] == pscore.shape[1]
+        if action.shape[0] % step_per_trajectory:
+            raise ValueError(
+                "Expected `action.shape[0] \\% step_per_trajectory == 0`, but found False"
+            )
+        if not np.allclose(
+            evaluation_policy_action_dist.sum(axis=1),
+            np.ones(evaluation_policy_action_dist.shape[0]),
         ):
             raise ValueError(
-                "Expected `action.shape[1] == evaluation_policy_action.shape[1] == pscore.shape[1]`, but found False"
+                "Expected `evaluation_policy_action_dist.sum(axis=1) == np.ones(evaluation_policy_action_dist.shape[0])`"
+                ", but found it False"
             )
-
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
-        check_scalar(bandwidth, name="bandwidth", target_type=float, min_val=0.0)
-        if action_scaler is not None and not isinstance(action_scaler, ActionScaler):
-            raise ValueError(
-                "action_scaler must be an instance of d3rlpy.preprocessing.ActionScaler, but found False"
-            )
 
         if ci not in self._estimate_confidence_interval.keys():
             raise ValueError(
@@ -924,10 +979,7 @@ class ContinuousStateMarginalIS(BaseStateMarginalOPEEstimator):
             reward=reward,
             state_marginal_importance_weight=state_marginal_importance_weight,
             pscore=pscore,
-            evaluation_policy_action=evaluation_policy_action,
-            action_scaler=action_scaler,
-            kernel=kernel,
-            bandwidth=bandwidth,
+            evaluation_policy_action_dist=evaluation_policy_action_dist,
             gamma=gamma,
         )
         return self._estimate_confidence_interval[ci](
@@ -939,32 +991,30 @@ class ContinuousStateMarginalIS(BaseStateMarginalOPEEstimator):
 
 
 @dataclass
-class ContinuousStateMarginalDR(BaseStateMarginalOPEEstimator):
-    """State Marginal Doubly Robust (SM-DR) for continuous action spaces.
+class StateMarginalDR(BaseStateMarginalOPEEstimator):
+    """State Marginal Doubly Robust (SM-DR) for discrete action spaces.
 
-    Bases: :class:`scope_rl.ope.BaseStateMarginalOPEEstimator` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
+    Bases: :class:`scope_rl.ope.BaseStateActionMarginalOPEEstimator` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
-    Imported as: :class:`scope_rl.ope.ContinuousStateMarginalDR`
+    Imported as: :class:`scope_rl.ope.discrete.StateMarginalDR`
 
     Note
     -------
     SM-DR estimates the policy value using state marginal importance weighting.
-    Following SOPE (Yuan et al., 2021), we combine state-marginal importance weighting and :math:`k`-step DR as follows.
+    Following SOPE (Yuan et al., 2021), we combine state-marginal importance weighting and :math:`k`-step PDIS as follows.
 
     .. math::
 
         \\hat{J}_{\\mathrm{SM-DR}} (\\pi; \\mathcal{D})
-        &:= \\mathbb{E}_{n} [\\hat{Q}(s_0, \\pi(a_0))] \\\\
-        & \quad \quad + \\mathbb{E}_{n} \\left[\\sum_{t=0}^{k-1} \\gamma^t w_{0:t} \\delta(\\pi, a_{0:t}) (r_t + \\gamma \\hat{Q}(s_{t+1}, \\pi(s_{t+1}))] - \\hat{Q}(s_t, a_t)) \\right] \\\\
-        & \quad \quad + \\mathbb{E}_{n} \\left[\\sum_{t=k}^{T-1} \\gamma^t w_s(s_{t-k}) w_{t-k:t} \\delta{\\pi, a_{t-k:t}} (r_t + \\gamma \\hat{Q}(s_{t+1}, \\pi(s_{t+1}))] - \\hat{Q}(s_t, a_t)) \\right],
+        &:= \\mathbb{E}_{n} [\\mathbb{E}_{a_0 \sim \\pi(a_0 | s_0)} [\\hat{Q}(s_0, a_0)]] \\\\
+        & \quad \quad + \\mathbb{E}_{n} \\left[\\sum_{t=0}^{k-1} \\gamma^t w_{0:t} (r_t + \\gamma \\mathbb{E}_{a \\sim \\pi(a | s_t)}[\\hat{Q}(s_{t+1}, a)] - \\hat{Q}(s_t, a_t)) \\right] \\\\
+        & \quad \quad + \\mathbb{E}_{n} \\left[\\sum_{t=k}^{T-1} \\gamma^t w_s(s_{t-k}) w_{t-k:t} (r_t + \\gamma \\mathbb{E}_{a \\sim \\pi(a | s_t)}[\\hat{Q}(s_{t+1}, a)] - \\hat{Q}(s_t, a_t)) \\right],
 
     where :math:`w_s(s) := d_{\\pi}(s) / d_{\\pi_b}(s)` and :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} (\\pi(a_t | s_t) / \\pi_0(a_t | s_t))`. :math:`Q(s, a)` is the state-action value.
-    :math:`\\delta(\\pi, a_{t_1:t_2}) = \\prod_{t=t_1}^{t_2} K(\\pi(s_t), a_t)` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy
-    (:math:`K(\\cdot, \\cdot)` is a kernel function).
     When :math:`k=0`, this estimator is reduced to the vanilla state marginal DR.
 
     SM-DR is unbiased when either the marginal importance weight or Q-function is estimated correctly.
-    Moreover, SM-DR reduces the variance caused by the trajectory-wise or per-decision importance weight by considering the marginal distribution across various timesteps.
+    Moreover, SM-DR reduces the variance caused by trajectory-wise or per-decision importance weighting by considering the marginal distribution across various timesteps.
 
     There are several ways to estimate the state(-action) marginal importance weight such as Augmented Lagrangian Method (ALM) (Yang et al., 2020) and Minimax Weight Learning (MWL) (Uehara et al., 2020).
 
@@ -988,9 +1038,6 @@ class ContinuousStateMarginalDR(BaseStateMarginalOPEEstimator):
     Mengjiao Yang, Ofir Nachum, Bo Dai, Lihong Li, and Dale Schuurmans.
     "Off-Policy Evaluation via the Regularized Lagrangian." 2020.
 
-    Nathan Kallus and Angela Zhou.
-    "Policy Evaluation and Optimization with Continuous Treatments." 2019.
-
     Qiang Liu, Lihong Li, Ziyang Tang, and Dengyong Zhou.
     "Breaking the Curse of Horizon: Infinite-Horizon Off-Policy Estimation." 2018
 
@@ -1005,7 +1052,7 @@ class ContinuousStateMarginalDR(BaseStateMarginalOPEEstimator):
     estimator_name: str = "sm_dr"
 
     def __post_init__(self):
-        self.action_type = "continuous"
+        self.action_type = "discrete"
 
     def _estimate_trajectory_value(
         self,
@@ -1015,13 +1062,10 @@ class ContinuousStateMarginalDR(BaseStateMarginalOPEEstimator):
         reward: np.ndarray,
         state_marginal_importance_weight: np.ndarray,
         pscore: np.ndarray,
-        evaluation_policy_action: np.ndarray,
+        evaluation_policy_action_dist: np.ndarray,
         state_action_value_prediction: np.ndarray,
         initial_state_value_prediction: np.ndarray,
         gamma: float = 1.0,
-        kernel: str = "gaussian",
-        bandwidth: float = 1.0,
-        action_scaler: Optional[ActionScaler] = None,
         **kwargs,
     ) -> np.ndarray:
         """Estimate the trajectory-wise policy value.
@@ -1035,7 +1079,7 @@ class ContinuousStateMarginalDR(BaseStateMarginalOPEEstimator):
         step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
+        action: array-like of shape (n_trajectories * step_per_trajectory, )
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
@@ -1048,12 +1092,12 @@ class ContinuousStateMarginalDR(BaseStateMarginalOPEEstimator):
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_b(a | s)`
 
-        evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
-            Action chosen by the evaluation policy.
+        evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
+            Conditional action distribution induced by the evaluation policy,
+            i.e., :math:`\\pi(a | s) \\forall a \\in \\mathcal{A}`
 
-        state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, 2)
-            :math:`\\hat{Q}` for the observed action and that chosen by the evaluation policy,
-            i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a | s_t))`.
+        state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, n_action)
+            :math:`\\hat{Q}` for all actions, i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
 
         initial_state_value_prediction: array-like of shape (n_trajectories, )
             Estimated initial state value.
@@ -1061,52 +1105,46 @@ class ContinuousStateMarginalDR(BaseStateMarginalOPEEstimator):
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
 
-        kernel: {"gaussian", "epanechnikov", "triangular", "cosine", "uniform"}
-            Name of the kernel function to smooth importance weights.
-
-        bandwidth: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of the kernel function.
-
-        action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
-            Scaling factor of action.
-
         Return
         -------
         estimated_trajectory_wise_policy_value: ndarray of shape (n_trajectories, )
             Policy value (expected reward under the evaluation policy) estimated for each trajectory.
 
         """
-        behavior_policy_pscore = self._calc_behavior_policy_pscore_continuous(
+        state_value_prediction = (
+            (state_action_value_prediction * evaluation_policy_action_dist)
+            .sum(axis=1)
+            .reshape((-1, step_per_trajectory))
+        )
+        state_action_value_prediction = state_action_value_prediction[
+            np.arange(len(action)), action
+        ].reshape((-1, step_per_trajectory))
+
+        behavior_policy_pscore = self._calc_behavior_policy_pscore_discrete(
             n_step_pdis=n_step_pdis,
             step_per_trajectory=step_per_trajectory,
             pscore=pscore,
         )
-        similarity_weight = self._calc_similarity_weight(
+        evaluation_policy_pscore = self._calc_evaluation_policy_pscore_discrete(
             n_step_pdis=n_step_pdis,
             step_per_trajectory=step_per_trajectory,
             action=action,
-            evaluation_policy_action=evaluation_policy_action,
-            action_scaler=action_scaler,
-            kernel=kernel,
-            bandwidth=bandwidth,
+            evaluation_policy_action_dist=evaluation_policy_action_dist,
+        )
+        per_decision_importance_weight = (
+            evaluation_policy_pscore / behavior_policy_pscore
         )
         state_marginal_importance_weight = self._calc_marginal_importance_weight(
             n_step_pdis=n_step_pdis,
             step_per_trajectory=step_per_trajectory,
             state_marginal_importance_weight=state_marginal_importance_weight,
         )
-        weight = state_marginal_importance_weight * (
-            similarity_weight / behavior_policy_pscore
-        ).reshape((-1, step_per_trajectory))
+        weight = state_marginal_importance_weight * per_decision_importance_weight
 
         reward = reward.reshape((-1, step_per_trajectory))
         discount = np.full(step_per_trajectory, gamma).cumprod() / gamma
 
-        state_action_value_prediction = state_action_value_prediction.reshape(
-            (-1, step_per_trajectory, 2)
-        )
-        state_value_prediction = state_action_value_prediction[:, :, 1]
-        state_action_value_prediction = state_action_value_prediction[:, :, 0]
+        state_value_prediction = np.insert(state_value_prediction, -1, 0, axis=1)[:, 1:]
 
         estimated_trajectory_value = initial_state_value_prediction + (
             discount[np.newaxis, :]
@@ -1124,13 +1162,10 @@ class ContinuousStateMarginalDR(BaseStateMarginalOPEEstimator):
         reward: np.ndarray,
         state_marginal_importance_weight: np.ndarray,
         pscore: np.ndarray,
-        evaluation_policy_action: np.ndarray,
+        evaluation_policy_action_dist: np.ndarray,
         state_action_value_prediction: np.ndarray,
         initial_state_value_prediction: np.ndarray,
         gamma: float = 1.0,
-        kernel: str = "gaussian",
-        bandwidth: float = 1.0,
-        action_scaler: Optional[ActionScaler] = None,
         **kwargs,
     ) -> float:
         """Estimate the policy value of the evaluation policy.
@@ -1144,7 +1179,7 @@ class ContinuousStateMarginalDR(BaseStateMarginalOPEEstimator):
         step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
+        action: array-like of shape (n_trajectories * step_per_trajectory, )
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
@@ -1157,27 +1192,18 @@ class ContinuousStateMarginalDR(BaseStateMarginalOPEEstimator):
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_b(a | s)`
 
-        evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
-            Action chosen by the evaluation policy.
+        evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
+            Conditional action distribution induced by the evaluation policy,
+            i.e., :math:`\\pi(a | s) \\forall a \\in \\mathcal{A}`
 
-        state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, 2)
-            :math:`\\hat{Q}` for the observed action and that chosen by the evaluation policy,
-            i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a | s_t))`.
+        state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, n_action)
+            :math:`\\hat{Q}` for all actions, i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
 
         initial_state_value_prediction: array-like of shape (n_trajectories, )
             Estimated initial state value.
 
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
-
-        kernel: {"gaussian", "epanechnikov", "triangular", "cosine", "uniform"}
-            Name of the kernel function to smooth importance weights.
-
-        bandwidth: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of the kernel function.
-
-        action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
-            Scaling factor of action.
 
         Return
         -------
@@ -1211,13 +1237,9 @@ class ContinuousStateMarginalDR(BaseStateMarginalOPEEstimator):
         check_array(
             pscore,
             name="pscore",
-            expected_dim=2,
+            expected_dim=1,
             min_val=0.0,
-        )
-        check_array(
-            evaluation_policy_action,
-            name="evaluation_policy_action",
-            expected_dim=2,
+            max_val=1.0,
         )
         check_array(
             state_action_value_prediction,
@@ -1230,40 +1252,56 @@ class ContinuousStateMarginalDR(BaseStateMarginalOPEEstimator):
             expected_dim=1,
         )
         check_array(
+            evaluation_policy_action_dist,
+            name="evaluation_policy_action_dist",
+            expected_dim=2,
+            min_val=0.0,
+            max_val=1.0,
+        )
+        check_array(
             action,
             name="action",
-            expected_dim=2,
+            expected_dim=1,
+            min_val=0,
+            max_val=evaluation_policy_action_dist.shape[1] - 1,
         )
         if not (
             action.shape[0]
             == reward.shape[0]
             == state_marginal_importance_weight.shape[0]
             == pscore.shape[0]
-            == evaluation_policy_action.shape[0]
+            == evaluation_policy_action_dist.shape[0]
             == state_action_value_prediction.shape[0]
         ):
             raise ValueError(
                 "Expected `action.shape[0] == reward.shape[0] == state_marginal_importance_weight.shape[0] "
-                "== pscore.shape[0] == evaluation_policy_action.shape[0]`== state_action_value_prediction.shape[0]"
+                "== pscore.shape[0] == evaluation_policy_action_dist.shape[0] == state_action_value_prediction.shape[0]`"
                 ", but found False"
             )
-        if not (
-            action.shape[1] == evaluation_policy_action.shape[1] == pscore.shape[1]
+        if action.shape[0] % step_per_trajectory:
+            raise ValueError(
+                "Expected `action.shape[0] \\% step_per_trajectory == 0`, but found False"
+            )
+        if (
+            action.shape[0] // step_per_trajectory
+            != initial_state_value_prediction.shape[0]
         ):
             raise ValueError(
-                "Expected `action.shape[1] == evaluation_policy_action.shape[1] == pscore.shape[1]`, but found False"
+                "Expected `action.shape[0] // step_per_trajectory == initial_state_value_prediction.shape[0]`, but found False"
             )
-        if state_action_value_prediction.shape[1] != 2:
+        if evaluation_policy_action_dist.shape != state_action_value_prediction.shape:
             raise ValueError(
-                "Expected `state_action_value_prediction.shape[1] == 2`, but found False"
+                "Expected `evaluation_policy_action_dist.shape == state_action_value_prediction.shape`, but found False"
             )
-
+        if not np.allclose(
+            evaluation_policy_action_dist.sum(axis=1),
+            np.ones(evaluation_policy_action_dist.shape[0]),
+        ):
+            raise ValueError(
+                "Expected `evaluation_policy_action_dist.sum(axis=1) == np.ones(evaluation_policy_action_dist.shape[0])`"
+                ", but found it False"
+            )
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
-        check_scalar(bandwidth, name="bandwidth", target_type=float, min_val=0.0)
-        if action_scaler is not None and not isinstance(action_scaler, ActionScaler):
-            raise ValueError(
-                "action_scaler must be an instance of d3rlpy.preprocessing.ActionScaler, but found False"
-            )
 
         estimated_policy_value = self._estimate_trajectory_value(
             n_step_pdis=n_step_pdis,
@@ -1272,12 +1310,9 @@ class ContinuousStateMarginalDR(BaseStateMarginalOPEEstimator):
             reward=reward,
             state_marginal_importance_weight=state_marginal_importance_weight,
             pscore=pscore,
-            evaluation_policy_action=evaluation_policy_action,
+            evaluation_policy_action_dist=evaluation_policy_action_dist,
             state_action_value_prediction=state_action_value_prediction,
             initial_state_value_prediction=initial_state_value_prediction,
-            action_scaler=action_scaler,
-            kernel=kernel,
-            bandwidth=bandwidth,
             gamma=gamma,
         ).mean()
         return estimated_policy_value
@@ -1290,13 +1325,10 @@ class ContinuousStateMarginalDR(BaseStateMarginalOPEEstimator):
         reward: np.ndarray,
         state_marginal_importance_weight: np.ndarray,
         pscore: np.ndarray,
-        evaluation_policy_action: np.ndarray,
+        evaluation_policy_action_dist: np.ndarray,
         state_action_value_prediction: np.ndarray,
         initial_state_value_prediction: np.ndarray,
         gamma: float = 1.0,
-        kernel: str = "gaussian",
-        bandwidth: float = 1.0,
-        action_scaler: Optional[ActionScaler] = None,
         alpha: float = 0.05,
         ci: str = "bootstrap",
         n_bootstrap_samples: int = 10000,
@@ -1314,7 +1346,7 @@ class ContinuousStateMarginalDR(BaseStateMarginalOPEEstimator):
         step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
+        action: array-like of shape (n_trajectories * step_per_trajectory, )
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
@@ -1327,27 +1359,18 @@ class ContinuousStateMarginalDR(BaseStateMarginalOPEEstimator):
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_b(a | s)`
 
-        evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
-            Action chosen by the evaluation policy.
+        evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
+            Conditional action distribution induced by the evaluation policy,
+            i.e., :math:`\\pi(a | s) \\forall a \\in \\mathcal{A}`
 
-        state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, 2)
-            :math:`\\hat{Q}` for the observed action and that chosen by the evaluation policy,
-            i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a | s_t))`.
+        state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, n_action)
+            :math:`\\hat{Q}` for all actions, i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
 
         initial_state_value_prediction: array-like of shape (n_trajectories, )
             Estimated initial state value.
 
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
-
-        kernel: {"gaussian", "epanechnikov", "triangular", "cosine", "uniform"}
-            Name of the kernel function to smooth importance weights.
-
-        bandwidth: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of the kernel function.
-
-        action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
-            Scaling factor of action.
 
         alpha: float, default=0.05
             Significance level. The value should be within `[0, 1)`.
@@ -1401,13 +1424,9 @@ class ContinuousStateMarginalDR(BaseStateMarginalOPEEstimator):
         check_array(
             pscore,
             name="pscore",
-            expected_dim=2,
+            expected_dim=1,
             min_val=0.0,
-        )
-        check_array(
-            evaluation_policy_action,
-            name="evaluation_policy_action",
-            expected_dim=2,
+            max_val=1.0,
         )
         check_array(
             state_action_value_prediction,
@@ -1420,40 +1439,59 @@ class ContinuousStateMarginalDR(BaseStateMarginalOPEEstimator):
             expected_dim=1,
         )
         check_array(
+            evaluation_policy_action_dist,
+            name="evaluation_policy_action_dist",
+            expected_dim=2,
+            min_val=0.0,
+            max_val=1.0,
+        )
+        check_array(
             action,
             name="action",
-            expected_dim=2,
+            expected_dim=1,
+            min_val=0,
+            max_val=evaluation_policy_action_dist.shape[1] - 1,
         )
         if not (
             action.shape[0]
             == reward.shape[0]
             == state_marginal_importance_weight.shape[0]
             == pscore.shape[0]
-            == evaluation_policy_action.shape[0]
+            == evaluation_policy_action_dist.shape[0]
             == state_action_value_prediction.shape[0]
         ):
             raise ValueError(
                 "Expected `action.shape[0] == reward.shape[0] == state_marginal_importance_weight.shape[0] "
-                "== pscore.shape[0] == evaluation_policy_action.shape[0] == state_action_value_prediction.shape[0]`"
+                "== pscore.shape[0] == evaluation_policy_action_dist.shape[0] == state_action_value_prediction.shape[0]`"
                 ", but found False"
             )
-        if not (
-            action.shape[1] == evaluation_policy_action.shape[1] == pscore.shape[1]
+        if (
+            evaluation_policy_action_dist.shape[1]
+            != state_action_value_prediction.shape[1]
         ):
             raise ValueError(
-                "Expected `action.shape[1] == evaluation_policy_action.shape[1] == pscore.shape[1]`, but found False"
+                "Expected `evaluation_policy_action_dist.shape[1] == state_action_value_prediction.shape[1]`, but found False"
             )
-        if state_action_value_prediction.shape[1] != 2:
+        if action.shape[0] % step_per_trajectory:
             raise ValueError(
-                "Expected `state_action_value_prediction.shape[1] == 2`, but found False"
+                "Expected `action.shape[0] \\% step_per_trajectory == 0`, but found False"
             )
-
+        if (
+            action.shape[0] // step_per_trajectory
+            != initial_state_value_prediction.shape[0]
+        ):
+            raise ValueError(
+                "Expected `action.shape[0] // step_per_trajectory == initial_state_value_prediction.shape[0]`, but found False"
+            )
+        if not np.allclose(
+            evaluation_policy_action_dist.sum(axis=1),
+            np.ones(evaluation_policy_action_dist.shape[0]),
+        ):
+            raise ValueError(
+                "Expected `evaluation_policy_action_dist.sum(axis=1) == np.ones(evaluation_policy_action_dist.shape[0])`"
+                ", but found it False"
+            )
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
-        check_scalar(bandwidth, name="bandwidth", target_type=float, min_val=0.0)
-        if action_scaler is not None and not isinstance(action_scaler, ActionScaler):
-            raise ValueError(
-                "action_scaler must be an instance of d3rlpy.preprocessing.ActionScaler, but found False"
-            )
 
         if ci not in self._estimate_confidence_interval.keys():
             raise ValueError(
@@ -1467,12 +1505,9 @@ class ContinuousStateMarginalDR(BaseStateMarginalOPEEstimator):
             reward=reward,
             state_marginal_importance_weight=state_marginal_importance_weight,
             pscore=pscore,
-            evaluation_policy_action=evaluation_policy_action,
+            evaluation_policy_action_dist=evaluation_policy_action_dist,
             state_action_value_prediction=state_action_value_prediction,
             initial_state_value_prediction=initial_state_value_prediction,
-            action_scaler=action_scaler,
-            kernel=kernel,
-            bandwidth=bandwidth,
             gamma=gamma,
         )
         return self._estimate_confidence_interval[ci](
@@ -1484,12 +1519,12 @@ class ContinuousStateMarginalDR(BaseStateMarginalOPEEstimator):
 
 
 @dataclass
-class ContinuousStateMarginalSNIS(ContinuousStateMarginalIS):
-    """State Marginal Self-Normalized Importance Sampling (SM-SNIS) for continuous action spaces.
+class StateMarginalSNIS(StateMarginalIS):
+    """State Marginal Self-Normalized Importance Sampling (SM-SNIS) for discrete action spaces.
 
-    Bases: :class:`scope_rl.ope.ContinuousStateMarginalIS` :class:`scope_rl.ope.BaseStateMarginalOPEEstimator` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
+    Bases: :class:`scope_rl.ope.discrete.StateMarginalIS` -> :class:`scope_rl.ope.BaseStateMarginalOPEEstimator` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
-    Imported as: :class:`scope_rl.ope.ContinuousStateMarginalSNIS`
+    Imported as: :class:`scope_rl.ope.discrete.StateMarginalSNIS`
 
     Note
     -------
@@ -1499,12 +1534,10 @@ class ContinuousStateMarginalSNIS(ContinuousStateMarginalIS):
     .. math::
 
         \\hat{J}_{\\mathrm{SM-SNIS}} (\\pi; \\mathcal{D})
-        &:= \\mathbb{E}_{n} \\left[\\sum_{t=0}^{k-1} \\gamma^t \\frac{w_{0:t} \\delta(\\pi, a_{0:t})}{\\sum_{n} w_{0:t} \\delta(\\pi, a_{0:t})} r_t \\right] \\\\
-        & \quad \quad + \\mathbb{E}_{n} \\left[\\sum_{t=k}^{T-1} \\gamma^t \\frac{w_s(s_{t-k}) w_{t-k:t} \\delta{t-k:t}}{\\sum_n w_s(s_{t-k}) w_{t-k:t} \\delta{t-k:t}} r_t \\right],
+        := \\mathbb{E}_{n} \\left[\\sum_{t=0}^{k-1} \\gamma^t \\frac{w_{0:t}}{\\sum_{n} w_{0:t}} r_t \\right]
+            + \\mathbb{E}_{n} \\left[\\sum_{t=k}^{T-1} \\gamma^t \\frac{w_s(s_{t-k}) w_{t-k:t}}{\\sum_n w_s(s_{t-k}) w_{t-k:t}} r_t \\right],
 
     where :math:`w_s(s) := d_{\\pi}(s) / d_{\\pi_b}(s)` and :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} (\\pi(a_t | s_t) / \\pi_0(a_t | s_t))`.
-    :math:`\\delta(\\pi, a_{t_1:t_2}) = \\prod_{t=t_1}^{t_2} K(\\pi(s_t), a_t)` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy
-    (:math:`K(\\cdot, \\cdot)` is a kernel function).
     When :math:`k=0`, this estimator is reduced to the vanilla state marginal SNIS.
 
     SM-SNIS is consistent when the marginal importance weight is estimated correctly.
@@ -1532,9 +1565,6 @@ class ContinuousStateMarginalSNIS(ContinuousStateMarginalIS):
     Mengjiao Yang, Ofir Nachum, Bo Dai, Lihong Li, and Dale Schuurmans.
     "Off-Policy Evaluation via the Regularized Lagrangian." 2020.
 
-    Nathan Kallus and Angela Zhou.
-    "Policy Evaluation and Optimization with Continuous Treatments." 2019.
-
     Qiang Liu, Lihong Li, Ziyang Tang, and Dengyong Zhou.
     "Breaking the Curse of Horizon: Infinite-Horizon Off-Policy Estimation." 2018
 
@@ -1546,7 +1576,7 @@ class ContinuousStateMarginalSNIS(ContinuousStateMarginalIS):
     estimator_name: str = "sm_snis"
 
     def __post_init__(self):
-        self.action_type = "continuous"
+        self.action_type = "discrete"
 
     def _estimate_trajectory_value(
         self,
@@ -1556,11 +1586,8 @@ class ContinuousStateMarginalSNIS(ContinuousStateMarginalIS):
         reward: np.ndarray,
         state_marginal_importance_weight: np.ndarray,
         pscore: np.ndarray,
-        evaluation_policy_action: np.ndarray,
+        evaluation_policy_action_dist: np.ndarray,
         gamma: float = 1.0,
-        kernel: str = "gaussian",
-        bandwidth: float = 1.0,
-        action_scaler: Optional[ActionScaler] = None,
         **kwargs,
     ) -> np.ndarray:
         """Estimate the trajectory-wise policy value.
@@ -1574,7 +1601,7 @@ class ContinuousStateMarginalSNIS(ContinuousStateMarginalIS):
         step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
+        action: array-like of shape (n_trajectories * step_per_trajectory, )
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
@@ -1587,20 +1614,12 @@ class ContinuousStateMarginalSNIS(ContinuousStateMarginalIS):
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_b(a | s)`
 
-        evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
-            Action chosen by the evaluation policy.
+        evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
+            Conditional action distribution induced by the evaluation policy,
+            i.e., :math:`\\pi(a | s) \\forall a \\in \\mathcal{A}`
 
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
-
-        kernel: {"gaussian", "epanechnikov", "triangular", "cosine", "uniform"}
-            Name of the kernel function to smooth importance weights.
-
-        bandwidth: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of the kernel function.
-
-        action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
-            Scaling factor of action.
 
         Return
         -------
@@ -1608,28 +1627,26 @@ class ContinuousStateMarginalSNIS(ContinuousStateMarginalIS):
             Policy value (expected reward under the evaluation policy) estimated for each trajectory.
 
         """
-        behavior_policy_pscore = self._calc_behavior_policy_pscore_continuous(
+        behavior_policy_pscore = self._calc_behavior_policy_pscore_discrete(
             n_step_pdis=n_step_pdis,
             step_per_trajectory=step_per_trajectory,
             pscore=pscore,
         )
-        similarity_weight = self._calc_similarity_weight(
+        evaluation_policy_pscore = self._calc_evaluation_policy_pscore_discrete(
             n_step_pdis=n_step_pdis,
             step_per_trajectory=step_per_trajectory,
             action=action,
-            evaluation_policy_action=evaluation_policy_action,
-            action_scaler=action_scaler,
-            kernel=kernel,
-            bandwidth=bandwidth,
+            evaluation_policy_action_dist=evaluation_policy_action_dist,
+        )
+        per_decision_importance_weight = (
+            evaluation_policy_pscore / behavior_policy_pscore
         )
         state_marginal_importance_weight = self._calc_marginal_importance_weight(
             n_step_pdis=n_step_pdis,
             step_per_trajectory=step_per_trajectory,
             state_marginal_importance_weight=state_marginal_importance_weight,
         )
-        weight = state_marginal_importance_weight * (
-            similarity_weight / behavior_policy_pscore
-        )
+        weight = state_marginal_importance_weight * per_decision_importance_weight
         self_normalized_weight = weight / (weight.mean(axis=0)[np.newaxis, :] + 1e-10)
 
         reward = reward.reshape((-1, step_per_trajectory))
@@ -1642,12 +1659,12 @@ class ContinuousStateMarginalSNIS(ContinuousStateMarginalIS):
 
 
 @dataclass
-class ContinuousStateMarginalSNDR(ContinuousStateMarginalDR):
-    """State Marginal Self-Normalized Doubly Robust (SM-SNDR) for continuous action spaces.
+class StateMarginalSNDR(StateMarginalDR):
+    """State Marginal Self-Normalized Doubly Robust (SM-SNDR) for discrete action spaces.
 
-    Bases: :class:`scope_rl.ContinuousStateMarginalDR` :class:`scope_rl.BaseStateMarginalOPEEstimator` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
+    Bases: :class:`scope_rl.ope.discrete.StateMarginalDR` -> :class:`scope_rl.ope.BaseStateMarginalOPEEstimator` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
-    Imported as: :class:`scope_rl.ope.ContinuousStateMarginalSNDR`
+    Imported as: :class:`scope_rl.ope.discrete.StateMarginalSNDR`
 
     Note
     -------
@@ -1657,13 +1674,11 @@ class ContinuousStateMarginalSNDR(ContinuousStateMarginalDR):
     .. math::
 
         \\hat{J}_{\\mathrm{SM-SNDR}} (\\pi; \\mathcal{D})
-        &:= \\mathbb{E}_{n} [\\hat{Q}(s_0, \\pi(s_0)] \\\\
-        & \quad \quad + \\mathbb{E}_{n} \\left[\\sum_{t=0}^{k-1} \\gamma^t \\frac{w_{0:t} \\delta(\\pi, a_{0:t})}{\\sum_{n} w_{0:t} \\delta(\\pi, a_{0:t})} (r_t + \\gamma \\hat{Q}(s_{t+1}, \\pi(s_{t+1})))] - \\hat{Q}(s_t, a_t)) \\right] \\\\
-        & \quad \quad + \\mathbb{E}_{n} \\left[\\sum_{t=k}^{T-1} \\gamma^t \\frac{w_s(s_{t-k}) w_{t-k:t} \\delta(\\pi, a_{t-k:t})}{\\sum_{n} w_s(s_{t-k}) w_{t-k:t} \\delta(\\pi, a_{t-k:t})} (r_t + \\gamma \\hat{Q}(s_{t+1}, \\pi(s_{t+1}))] - \\hat{Q}(s_t, a_t)) \\right],
+        &:= \\mathbb{E}_{n} [\\mathbb{E}_{a_0 \sim \\pi(a_0 | s_0)} [\\hat{Q}(s_0, a_0)]] \\\\
+        & \quad \quad + \\mathbb{E}_{n} \\left[\\sum_{t=0}^{k-1} \\gamma^t \\frac{w_{0:t}}{\\sum_{n} w_{0:t}} (r_t + \\gamma \\mathbb{E}_{a \\sim \\pi(a | s_t)}[\\hat{Q}(s_{t+1}, a)] - \\hat{Q}(s_t, a_t)) \\right] \\\\
+        & \quad \quad + \\mathbb{E}_{n} \\left[\\sum_{t=k}^{T-1} \\gamma^t \\frac{w_s(s_{t-k}) w_{t-k:t}}{\\sum_{n} w_s(s_{t-k}) w_{t-k:t}} (r_t + \\gamma \\mathbb{E}_{a \\sim \\pi(a | s_t)}[\\hat{Q}(s_{t+1}, a)] - \\hat{Q}(s_t, a_t)) \\right],
 
     where :math:`w_s(s) := d_{\\pi}(s) / d_{\\pi_b}(s)` and :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} (\\pi(a_t | s_t) / \\pi_0(a_t | s_t))`. :math:`Q(s, a)` is the state-action value.
-    :math:`\\delta(\\pi, a_{t_1:t_2}) = \\prod_{t=t_1}^{t_2} K(\\pi(s_t), a_t)` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy
-    (:math:`K(\\cdot, \\cdot)` is a kernel function).
     When :math:`k=0`, this estimator is reduced to the vanilla state marginal SNDR.
 
     SM-SNDR is consistent when either the marginal importance weight or Q-function is estimated correctly.
@@ -1691,9 +1706,6 @@ class ContinuousStateMarginalSNDR(ContinuousStateMarginalDR):
     Mengjiao Yang, Ofir Nachum, Bo Dai, Lihong Li, and Dale Schuurmans.
     "Off-Policy Evaluation via the Regularized Lagrangian." 2020.
 
-    Nathan Kallus and Angela Zhou.
-    "Policy Evaluation and Optimization with Continuous Treatments." 2019.
-
     Qiang Liu, Lihong Li, Ziyang Tang, and Dengyong Zhou.
     "Breaking the Curse of Horizon: Infinite-Horizon Off-Policy Estimation." 2018
 
@@ -1708,7 +1720,7 @@ class ContinuousStateMarginalSNDR(ContinuousStateMarginalDR):
     estimator_name: str = "sm_sndr"
 
     def __post_init__(self):
-        self.action_type = "continuous"
+        self.action_type = "discrete"
 
     def _estimate_trajectory_value(
         self,
@@ -1718,13 +1730,10 @@ class ContinuousStateMarginalSNDR(ContinuousStateMarginalDR):
         reward: np.ndarray,
         state_marginal_importance_weight: np.ndarray,
         pscore: np.ndarray,
-        evaluation_policy_action: np.ndarray,
+        evaluation_policy_action_dist: np.ndarray,
         state_action_value_prediction: np.ndarray,
         initial_state_value_prediction: np.ndarray,
         gamma: float = 1.0,
-        kernel: str = "gaussian",
-        bandwidth: float = 1.0,
-        action_scaler: Optional[ActionScaler] = None,
         **kwargs,
     ) -> np.ndarray:
         """Estimate the trajectory-wise policy value.
@@ -1738,7 +1747,7 @@ class ContinuousStateMarginalSNDR(ContinuousStateMarginalDR):
         step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
+        action: array-like of shape (n_trajectories * step_per_trajectory, )
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
@@ -1751,12 +1760,12 @@ class ContinuousStateMarginalSNDR(ContinuousStateMarginalDR):
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_b(a | s)`
 
-        evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
-            Action chosen by the evaluation policy.
+        evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
+            Conditional action distribution induced by the evaluation policy,
+            i.e., :math:`\\pi(a | s) \\forall a \\in \\mathcal{A}`
 
-        state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, 2)
-            :math:`\\hat{Q}` for the observed action and that chosen by the evaluation policy,
-            i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a | s_t))`.
+        state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, n_action)
+            :math:`\\hat{Q}` for all actions, i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
 
         initial_state_value_prediction: array-like of shape (n_trajectories, )
             Estimated initial state value.
@@ -1764,57 +1773,51 @@ class ContinuousStateMarginalSNDR(ContinuousStateMarginalDR):
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
 
-        kernel: {"gaussian", "epanechnikov", "triangular", "cosine", "uniform"}
-            Name of the kernel function to smooth importance weights.
-
-        bandwidth: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of the kernel function.
-
-        action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
-            Scaling factor of action.
-
         Return
         -------
         estimated_trajectory_wise_policy_value: ndarray of shape (n_trajectories, )
             Policy value (expected reward under the evaluation policy) estimated for each trajectory.
 
         """
-        behavior_policy_pscore = self._calc_behavior_policy_pscore_continuous(
+        state_value_prediction = (
+            (state_action_value_prediction * evaluation_policy_action_dist)
+            .sum(axis=1)
+            .reshape((-1, step_per_trajectory))
+        )
+        state_action_value_prediction = state_action_value_prediction[
+            np.arange(len(action)), action
+        ].reshape((-1, step_per_trajectory))
+
+        behavior_policy_pscore = self._calc_behavior_policy_pscore_discrete(
             n_step_pdis=n_step_pdis,
             step_per_trajectory=step_per_trajectory,
             pscore=pscore,
         )
-        similarity_weight = self._calc_similarity_weight(
+        evaluation_policy_pscore = self._calc_evaluation_policy_pscore_discrete(
             n_step_pdis=n_step_pdis,
             step_per_trajectory=step_per_trajectory,
             action=action,
-            evaluation_policy_action=evaluation_policy_action,
-            action_scaler=action_scaler,
-            kernel=kernel,
-            bandwidth=bandwidth,
+            evaluation_policy_action_dist=evaluation_policy_action_dist,
+        )
+        per_decision_importance_weight = (
+            evaluation_policy_pscore / behavior_policy_pscore
         )
         state_marginal_importance_weight = self._calc_marginal_importance_weight(
             n_step_pdis=n_step_pdis,
             step_per_trajectory=step_per_trajectory,
             state_marginal_importance_weight=state_marginal_importance_weight,
         )
-        weight = state_marginal_importance_weight * (
-            similarity_weight / behavior_policy_pscore
-        )
-        self_normalized_weight = weight / (weight.mean(axis=0)[np.newaxis, :] + 1e-10)
+        weight = state_marginal_importance_weight * per_decision_importance_weight
+        weight = weight / (weight.mean(axis=0)[np.newaxis, :] + 1e-10)
 
         reward = reward.reshape((-1, step_per_trajectory))
         discount = np.full(step_per_trajectory, gamma).cumprod() / gamma
 
-        state_action_value_prediction = state_action_value_prediction.reshape(
-            (-1, step_per_trajectory, 2)
-        )
-        state_value_prediction = state_action_value_prediction[:, :, 1]
-        state_action_value_prediction = state_action_value_prediction[:, :, 0]
+        state_value_prediction = np.insert(state_value_prediction, -1, 0, axis=1)[:, 1:]
 
-        estimated_trajectory_value = initial_state_value_prediction + (
+        estimated_trajectory_value = state_value_prediction[:, 0] + (
             discount[np.newaxis, :]
-            * self_normalized_weight
+            * weight
             * (reward + gamma * state_value_prediction - state_action_value_prediction)
         ).sum(axis=1)
 
@@ -1822,12 +1825,12 @@ class ContinuousStateMarginalSNDR(ContinuousStateMarginalDR):
 
 
 @dataclass
-class ContinuousStateActionMarginalIS(BaseStateActionMarginalOPEEstimator):
-    """State-Action Marginal Importance Sampling (SAM-IS) for continuous action spaces.
+class StateActionMarginalIS(BaseStateActionMarginalOPEEstimator):
+    """State-Action Marginal Importance Sampling (SAM-IS) for discrete action spaces.
 
     Bases: :class:`scope_rl.ope.BaseStateActionMarginalOPEEstimator` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
-    Imported as: :class:`scope_rl.ope.ContinuousStateActionMarginalIS`
+    Imported as: :class:`scope_rl.ope.discrete.StateActionMarginalIS`
 
     Note
     -------
@@ -1837,12 +1840,9 @@ class ContinuousStateActionMarginalIS(BaseStateActionMarginalOPEEstimator):
     .. math::
 
         \\hat{J}_{\\mathrm{SAM-IS}} (\\pi; \\mathcal{D})
-        &:= \\mathbb{E}_{n} \\left[\\sum_{t=0}^{k-1} \\gamma^t w_{0:t} \\delta(\\pi, a_{t_1:t_2}) r_t \\right] \\\\
-        & \quad \quad + \\mathbb{E}_{n} \\left[\\sum_{t=k}^{T-1} \\gamma^t w(s_{t-k}, a_{t-k}) w_{t-k+1:t} \\delta(\\pi, a_{t_1:t_2}) r_t \\right],
+        := \\mathbb{E}_{n} \\left[\\sum_{t=0}^{k-1} \\gamma^t w_{0:t} r_t \\right] + \\mathbb{E}_{n} \\left[\\sum_{t=k}^{T-1} \\gamma^t w(s_{t-k}, a_{t-k}) w_{t-k+1:t} r_t \\right],
 
     where :math:`w(s, a) := d_{\\pi}(s, a) / d_{\\pi_b}(s, a)` and :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} (\\pi(a_t | s_t) / \\pi_0(a_t | s_t))`.
-    :math:`\\delta(\\pi, a_{t_1:t_2}) = \\prod_{t=t_1}^{t_2} K(\\pi(s_t), a_t)` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy
-    (:math:`K(\\cdot, \\cdot)` is a kernel function).
     When :math:`k=0`, this estimator is reduced to the vanilla state-action marginal IS.
 
     SAM-IS is unbiased when the marginal importance weight is estimated correctly.
@@ -1870,9 +1870,6 @@ class ContinuousStateActionMarginalIS(BaseStateActionMarginalOPEEstimator):
     Mengjiao Yang, Ofir Nachum, Bo Dai, Lihong Li, and Dale Schuurmans.
     "Off-Policy Evaluation via the Regularized Lagrangian." 2020.
 
-    Nathan Kallus and Angela Zhou.
-    "Policy Evaluation and Optimization with Continuous Treatments." 2019.
-
     Doina Precup, Richard S. Sutton, and Satinder P. Singh.
     "Eligibility Traces for Off-Policy Policy Evaluation." 2000.
 
@@ -1881,7 +1878,7 @@ class ContinuousStateActionMarginalIS(BaseStateActionMarginalOPEEstimator):
     estimator_name: str = "sam_is"
 
     def __post_init__(self):
-        self.action_type = "continuous"
+        self.action_type = "discrete"
 
     def _estimate_trajectory_value(
         self,
@@ -1891,11 +1888,8 @@ class ContinuousStateActionMarginalIS(BaseStateActionMarginalOPEEstimator):
         reward: np.ndarray,
         state_action_marginal_importance_weight: np.ndarray,
         pscore: np.ndarray,
-        evaluation_policy_action: np.ndarray,
+        evaluation_policy_action_dist: np.ndarray,
         gamma: float = 1.0,
-        kernel: str = "gaussian",
-        bandwidth: float = 1.0,
-        action_scaler: Optional[ActionScaler] = None,
         **kwargs,
     ) -> np.ndarray:
         """Estimate the trajectory-wise policy value.
@@ -1909,7 +1903,7 @@ class ContinuousStateActionMarginalIS(BaseStateActionMarginalOPEEstimator):
         step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
+        action: array-like of shape (n_trajectories * step_per_trajectory, )
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
@@ -1922,20 +1916,12 @@ class ContinuousStateActionMarginalIS(BaseStateActionMarginalOPEEstimator):
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_b(a | s)`
 
-        evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
-            Action chosen by the evaluation policy.
+        evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
+            Conditional action distribution induced by the evaluation policy,
+            i.e., :math:`\\pi(a | s) \\forall a \\in \\mathcal{A}`
 
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
-
-        kernel: {"gaussian", "epanechnikov", "triangular", "cosine", "uniform"}
-            Name of the kernel function to smooth importance weights.
-
-        bandwidth: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of the kernel function.
-
-        action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
-            Scaling factor of action.
 
         Return
         -------
@@ -1943,27 +1929,27 @@ class ContinuousStateActionMarginalIS(BaseStateActionMarginalOPEEstimator):
             Policy value (expected reward under the evaluation policy) estimated for each trajectory.
 
         """
-        behavior_policy_pscore = self._calc_behavior_policy_pscore_continuous(
+        behavior_policy_pscore = self._calc_behavior_policy_pscore_discrete(
             n_step_pdis=n_step_pdis,
             step_per_trajectory=step_per_trajectory,
             pscore=pscore,
         )
-        similarity_weight = self._calc_similarity_weight(
+        evaluation_policy_pscore = self._calc_evaluation_policy_pscore_discrete(
             n_step_pdis=n_step_pdis,
             step_per_trajectory=step_per_trajectory,
             action=action,
-            evaluation_policy_action=evaluation_policy_action,
-            action_scaler=action_scaler,
-            kernel=kernel,
-            bandwidth=bandwidth,
+            evaluation_policy_action_dist=evaluation_policy_action_dist,
+        )
+        per_decision_importance_weight = (
+            evaluation_policy_pscore / behavior_policy_pscore
         )
         state_action_marginal_importance_weight = self._calc_marginal_importance_weight(
             n_step_pdis=n_step_pdis,
             step_per_trajectory=step_per_trajectory,
             state_action_marginal_importance_weight=state_action_marginal_importance_weight,
         )
-        weight = state_action_marginal_importance_weight * (
-            similarity_weight / behavior_policy_pscore
+        weight = (
+            state_action_marginal_importance_weight * per_decision_importance_weight
         )
 
         reward = reward.reshape((-1, step_per_trajectory))
@@ -1982,11 +1968,8 @@ class ContinuousStateActionMarginalIS(BaseStateActionMarginalOPEEstimator):
         reward: np.ndarray,
         state_action_marginal_importance_weight: np.ndarray,
         pscore: np.ndarray,
-        evaluation_policy_action: np.ndarray,
+        evaluation_policy_action_dist: np.ndarray,
         gamma: float = 1.0,
-        kernel: str = "gaussian",
-        bandwidth: float = 1.0,
-        action_scaler: Optional[ActionScaler] = None,
         **kwargs,
     ) -> float:
         """Estimate the policy value of the evaluation policy.
@@ -2000,7 +1983,7 @@ class ContinuousStateActionMarginalIS(BaseStateActionMarginalOPEEstimator):
         step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
+        action: array-like of shape (n_trajectories * step_per_trajectory, )
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
@@ -2013,20 +1996,12 @@ class ContinuousStateActionMarginalIS(BaseStateActionMarginalOPEEstimator):
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_b(a | s)`
 
-        evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
-            Action chosen by the evaluation policy.
+        evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
+            Conditional action distribution induced by the evaluation policy,
+            i.e., :math:`\\pi(a | s) \\forall a \\in \\mathcal{A}`
 
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
-
-        kernel: {"gaussian", "epanechnikov", "triangular", "cosine", "uniform"}
-            Name of the kernel function to smooth importance weights.
-
-        bandwidth: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of the kernel function.
-
-        action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
-            Scaling factor of action.
 
         Return
         -------
@@ -2060,56 +2035,58 @@ class ContinuousStateActionMarginalIS(BaseStateActionMarginalOPEEstimator):
         check_array(
             pscore,
             name="pscore",
-            expected_dim=2,
+            expected_dim=1,
             min_val=0.0,
+            max_val=1.0,
         )
         check_array(
-            evaluation_policy_action,
-            name="evaluation_policy_action",
+            evaluation_policy_action_dist,
+            name="evaluation_policy_action_dist",
             expected_dim=2,
+            min_val=0.0,
+            max_val=1.0,
         )
         check_array(
             action,
             name="action",
-            expected_dim=2,
+            expected_dim=1,
+            min_val=0,
+            max_val=evaluation_policy_action_dist.shape[1] - 1,
         )
         if not (
             action.shape[0]
             == reward.shape[0]
             == state_action_marginal_importance_weight.shape[0]
             == pscore.shape[0]
-            == evaluation_policy_action.shape[0]
+            == evaluation_policy_action_dist.shape[0]
         ):
             raise ValueError(
-                "Expected `action.shape[0] == reward.shape[0] == state_marginal_importance_weight.shape[0] "
-                "== pscore.shape[0] == evaluation_policy_action.shape[0]`"
+                "Expected `action.shape[0] == reward.shape[0] == state_action_marginal_importance_weight.shape[0] "
+                "== pscore.shape[0] == evaluation_policy_action_dist.shape[0]`"
                 ", but found False"
             )
-        if not (
-            action.shape[1] == evaluation_policy_action.shape[1] == pscore.shape[1]
+        if action.shape[0] % step_per_trajectory:
+            raise ValueError(
+                "Expected `action.shape[0] \\% step_per_trajectory == 0`, but found False"
+            )
+        if not np.allclose(
+            evaluation_policy_action_dist.sum(axis=1),
+            np.ones(evaluation_policy_action_dist.shape[0]),
         ):
             raise ValueError(
-                "Expected `action.shape[1] == evaluation_policy_action.shape[1] == pscore.shape[1]`, but found False"
+                "Expected `evaluation_policy_action_dist.sum(axis=1) == np.ones(evaluation_policy_action_dist.shape[0])`"
+                ", but found it False"
             )
-
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
-        check_scalar(bandwidth, name="bandwidth", target_type=float, min_val=0.0)
-        if action_scaler is not None and not isinstance(action_scaler, ActionScaler):
-            raise ValueError(
-                "action_scaler must be an instance of d3rlpy.preprocessing.ActionScaler, but found False"
-            )
 
         estimated_policy_value = self._estimate_trajectory_value(
             n_step_pdis=n_step_pdis,
             step_per_trajectory=step_per_trajectory,
             action=action,
             reward=reward,
-            pscore=pscore,
-            evaluation_policy_action=evaluation_policy_action,
             state_action_marginal_importance_weight=state_action_marginal_importance_weight,
-            action_scaler=action_scaler,
-            kernel=kernel,
-            bandwidth=bandwidth,
+            pscore=pscore,
+            evaluation_policy_action_dist=evaluation_policy_action_dist,
             gamma=gamma,
         ).mean()
         return estimated_policy_value
@@ -2122,11 +2099,8 @@ class ContinuousStateActionMarginalIS(BaseStateActionMarginalOPEEstimator):
         reward: np.ndarray,
         state_action_marginal_importance_weight: np.ndarray,
         pscore: np.ndarray,
-        evaluation_policy_action: np.ndarray,
+        evaluation_policy_action_dist: np.ndarray,
         gamma: float = 1.0,
-        kernel: str = "gaussian",
-        bandwidth: float = 1.0,
-        action_scaler: Optional[ActionScaler] = None,
         alpha: float = 0.05,
         ci: str = "bootstrap",
         n_bootstrap_samples: int = 10000,
@@ -2144,7 +2118,7 @@ class ContinuousStateActionMarginalIS(BaseStateActionMarginalOPEEstimator):
         step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
+        action: array-like of shape (n_trajectories * step_per_trajectory, )
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
@@ -2157,20 +2131,12 @@ class ContinuousStateActionMarginalIS(BaseStateActionMarginalOPEEstimator):
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_b(a | s)`
 
-        evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
-            Action chosen by the evaluation policy.
+        evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
+            Conditional action distribution induced by the evaluation policy,
+            i.e., :math:`\\pi(a | s) \\forall a \\in \\mathcal{A}`
 
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
-
-        kernel: {"gaussian", "epanechnikov", "triangular", "cosine", "uniform"}
-            Name of the kernel function to smooth importance weights.
-
-        bandwidth: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of the kernel function.
-
-        action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
-            Scaling factor of action.
 
         alpha: float, default=0.05
             Significance level. The value should be within `[0, 1)`.
@@ -2211,57 +2177,57 @@ class ContinuousStateActionMarginalIS(BaseStateActionMarginalOPEEstimator):
             min_val=1,
         )
         check_array(
-            reward,
-            name="reward",
-            expected_dim=1,
-        )
-        check_array(
             state_action_marginal_importance_weight,
-            name="state_marginal_importance_weight",
+            name="state_action_marginal_importance_weight",
             expected_dim=1,
             min_val=0.0,
         )
         check_array(
             pscore,
             name="pscore",
-            expected_dim=2,
+            expected_dim=1,
             min_val=0.0,
+            max_val=1.0,
         )
         check_array(
-            evaluation_policy_action,
-            name="evaluation_policy_action",
+            evaluation_policy_action_dist,
+            name="evaluation_policy_action_dist",
             expected_dim=2,
+            min_val=0.0,
+            max_val=1.0,
         )
         check_array(
             action,
             name="action",
-            expected_dim=2,
+            expected_dim=1,
+            min_val=0,
+            max_val=evaluation_policy_action_dist.shape[1] - 1,
         )
         if not (
             action.shape[0]
             == reward.shape[0]
             == state_action_marginal_importance_weight.shape[0]
             == pscore.shape[0]
-            == evaluation_policy_action.shape[0]
+            == evaluation_policy_action_dist.shape[0]
         ):
             raise ValueError(
-                "Expected `action.shape[0] == reward.shape[0] == state_marginal_importance_weight.shape[0] "
-                "== pscore.shape[0] == evaluation_policy_action.shape[0]`"
+                "Expected `action.shape[0] == reward.shape[0] == state_action_marginal_importance_weight.shape[0] "
+                "== pscore.shape[0] == evaluation_policy_action_dist.shape[0]`"
                 ", but found False"
             )
-        if not (
-            action.shape[1] == evaluation_policy_action.shape[1] == pscore.shape[1]
+        if action.shape[0] % step_per_trajectory:
+            raise ValueError(
+                "Expected `action.shape[0] \\% step_per_trajectory == 0`, but found False"
+            )
+        if not np.allclose(
+            evaluation_policy_action_dist.sum(axis=1),
+            np.ones(evaluation_policy_action_dist.shape[0]),
         ):
             raise ValueError(
-                "Expected `action.shape[1] == evaluation_policy_action.shape[1] == pscore.shape[1]`, but found False"
+                "Expected `evaluation_policy_action_dist.sum(axis=1) == np.ones(evaluation_policy_action_dist.shape[0])`"
+                ", but found it False"
             )
-
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
-        check_scalar(bandwidth, name="bandwidth", target_type=float, min_val=0.0)
-        if action_scaler is not None and not isinstance(action_scaler, ActionScaler):
-            raise ValueError(
-                "action_scaler must be an instance of d3rlpy.preprocessing.ActionScaler, but found False"
-            )
 
         if ci not in self._estimate_confidence_interval.keys():
             raise ValueError(
@@ -2273,12 +2239,9 @@ class ContinuousStateActionMarginalIS(BaseStateActionMarginalOPEEstimator):
             step_per_trajectory=step_per_trajectory,
             action=action,
             reward=reward,
-            pscore=pscore,
-            evaluation_policy_action=evaluation_policy_action,
             state_action_marginal_importance_weight=state_action_marginal_importance_weight,
-            action_scaler=action_scaler,
-            kernel=kernel,
-            bandwidth=bandwidth,
+            pscore=pscore,
+            evaluation_policy_action_dist=evaluation_policy_action_dist,
             gamma=gamma,
         )
         return self._estimate_confidence_interval[ci](
@@ -2290,12 +2253,12 @@ class ContinuousStateActionMarginalIS(BaseStateActionMarginalOPEEstimator):
 
 
 @dataclass
-class ContinuousStateActionMarginalDR(BaseStateActionMarginalOPEEstimator):
-    """State-Action Marginal Doubly Robust (SAM-DR) for continuous action spaces.
+class StateActionMarginalDR(BaseStateActionMarginalOPEEstimator):
+    """State-Action Marginal Doubly Robust (SAM-DR) for discrete action spaces.
 
     Bases: :class:`scope_rl.ope.BaseStateActionMarginalOPEEstimator` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
-    Imported as: :class:`scope_rl.ope.ContinuousStateActionMarginalDR`
+    Imported as: :class:`scope_rl.ope.discrete.StateActionMarginalDR`
 
     Note
     -------
@@ -2305,13 +2268,11 @@ class ContinuousStateActionMarginalDR(BaseStateActionMarginalOPEEstimator):
     .. math::
 
         \\hat{J}_{\\mathrm{SAM-DR}} (\\pi; \\mathcal{D})
-        &:= \\mathbb{E}_{n} [\\hat{Q}(s_0, \\pi(s_0))] \\\\
-        & \quad \quad + \\mathbb{E}_{n} \\left[\\sum_{t=0}^{k-1} \\gamma^t w_{0:t} \\delta(\\pi, a_{0:t}) (r_t + \\gamma \\hat{Q}(s_{t+1}, \\pi(s_{t+1}))] - \\hat{Q}(s_t, a_t)) \\right] \\\\
-        & \quad \quad + \\mathbb{E}_{n} \\left[\\sum_{t=k}^{T-1} \\gamma^t w(s_{t-k}, a_{t-k}) w_{t-k+1:t} \\delta(\\pi, a_{t-k+1:t}) (r_t + \\gamma \\hat{Q}(s_{t+1}, \\pi(s_{t+1})) - \\hat{Q}(s_t, a_t)) \\right],
+        &:= \\mathbb{E}_{n} [\\mathbb{E}_{a_0 \\sim \\pi(a_0 | s_0)} [\\hat{Q}(s_0, a_0)]] \\\\
+        & \quad \quad + \\mathbb{E}_{n} \\left[\\sum_{t=0}^{k-1} \\gamma^t w_{0:t} (r_t + \\gamma \\mathbb{E}_{a \\sim \\pi(a | s_t)}[\\hat{Q}(s_{t+1}, a)] - \\hat{Q}(s_t, a_t)) \\right] \\\\
+        & \quad \quad + \\mathbb{E}_{n} \\left[\\sum_{t=k}^{T-1} \\gamma^t w(s_{t-k}, a_{t-k}) w_{t-k+1:t} (r_t + \\gamma \\mathbb{E}_{a \\sim \\pi(a | s_t)}[\\hat{Q}(s_{t+1}, a)] - \\hat{Q}(s_t, a_t)) \\right],
 
     where :math:`w(s, a) := d_{\\pi}(s, a) / d_{\\pi_b}(s, a)` and :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} (\\pi(a_t | s_t) / \\pi_0(a_t | s_t))`. :math:`Q(s, a)` is the state-action value.
-    :math:`\\delta(\\pi, a_{t_1:t_2}) = \\prod_{t=t_1}^{t_2} K(\\pi(s_t), a_t)` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy
-    (:math:`K(\\cdot, \\cdot)` is a kernel function).
     When :math:`k=0`, this estimator is reduced to the vanilla state-action marginal DR.
 
     SAM-DR is unbiased when either the marginal importance weight or Q-function is estimated correctly.
@@ -2339,9 +2300,6 @@ class ContinuousStateActionMarginalDR(BaseStateActionMarginalOPEEstimator):
     Mengjiao Yang, Ofir Nachum, Bo Dai, Lihong Li, and Dale Schuurmans.
     "Off-Policy Evaluation via the Regularized Lagrangian." 2020.
 
-    Nathan Kallus and Angela Zhou.
-    "Policy Evaluation and Optimization with Continuous Treatments." 2019.
-
     Nan Jiang and Lihong Li.
     "Doubly Robust Off-policy Value Evaluation for Reinforcement Learning." 2016.
 
@@ -2353,7 +2311,7 @@ class ContinuousStateActionMarginalDR(BaseStateActionMarginalOPEEstimator):
     estimator_name: str = "sam_dr"
 
     def __post_init__(self):
-        self.action_type = "continuous"
+        self.action_type = "discrete"
 
     def _estimate_trajectory_value(
         self,
@@ -2363,13 +2321,10 @@ class ContinuousStateActionMarginalDR(BaseStateActionMarginalOPEEstimator):
         reward: np.ndarray,
         state_action_marginal_importance_weight: np.ndarray,
         pscore: np.ndarray,
-        evaluation_policy_action: np.ndarray,
+        evaluation_policy_action_dist: np.ndarray,
         state_action_value_prediction: np.ndarray,
         initial_state_value_prediction: np.ndarray,
         gamma: float = 1.0,
-        kernel: str = "gaussian",
-        bandwidth: float = 1.0,
-        action_scaler: Optional[ActionScaler] = None,
         **kwargs,
     ) -> np.ndarray:
         """Estimate the trajectory-wise policy value.
@@ -2383,7 +2338,7 @@ class ContinuousStateActionMarginalDR(BaseStateActionMarginalOPEEstimator):
         step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
+        action: array-like of shape (n_trajectories * step_per_trajectory, )
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
@@ -2396,12 +2351,12 @@ class ContinuousStateActionMarginalDR(BaseStateActionMarginalOPEEstimator):
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_b(a | s)`
 
-        evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
-            Action chosen by the evaluation policy.
+        evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
+            Conditional action distribution induced by the evaluation policy,
+            i.e., :math:`\\pi(a | s) \\forall a \\in \\mathcal{A}`
 
-        state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, 2)
-            :math:`\\hat{Q}` for the observed action and that chosen by the evaluation policy,
-            i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a | s_t))`.
+        state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, n_action)
+            :math:`\\hat{Q}` for all actions, i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
 
         initial_state_value_prediction: array-like of shape (n_trajectories, )
             Estimated initial state value.
@@ -2409,52 +2364,48 @@ class ContinuousStateActionMarginalDR(BaseStateActionMarginalOPEEstimator):
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
 
-        kernel: {"gaussian", "epanechnikov", "triangular", "cosine", "uniform"}
-            Name of the kernel function to smooth importance weights.
-
-        bandwidth: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of the kernel function.
-
-        action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
-            Scaling factor of action.
-
         Return
         -------
         estimated_trajectory_wise_policy_value: ndarray of shape (n_trajectories, )
             Policy value (expected reward under the evaluation policy) estimated for each trajectory.
 
         """
-        behavior_policy_pscore = self._calc_behavior_policy_pscore_continuous(
+        state_value_prediction = (
+            (state_action_value_prediction * evaluation_policy_action_dist)
+            .sum(axis=1)
+            .reshape((-1, step_per_trajectory))
+        )
+        state_action_value_prediction = state_action_value_prediction[
+            np.arange(len(action)), action
+        ].reshape((-1, step_per_trajectory))
+
+        behavior_policy_pscore = self._calc_behavior_policy_pscore_discrete(
             n_step_pdis=n_step_pdis,
             step_per_trajectory=step_per_trajectory,
             pscore=pscore,
         )
-        similarity_weight = self._calc_similarity_weight(
+        evaluation_policy_pscore = self._calc_evaluation_policy_pscore_discrete(
             n_step_pdis=n_step_pdis,
             step_per_trajectory=step_per_trajectory,
             action=action,
-            evaluation_policy_action=evaluation_policy_action,
-            action_scaler=action_scaler,
-            kernel=kernel,
-            bandwidth=bandwidth,
+            evaluation_policy_action_dist=evaluation_policy_action_dist,
+        )
+        per_decision_importance_weight = (
+            evaluation_policy_pscore / behavior_policy_pscore
         )
         state_action_marginal_importance_weight = self._calc_marginal_importance_weight(
             n_step_pdis=n_step_pdis,
             step_per_trajectory=step_per_trajectory,
             state_action_marginal_importance_weight=state_action_marginal_importance_weight,
         )
-        weight = state_action_marginal_importance_weight * (
-            similarity_weight / behavior_policy_pscore
+        weight = (
+            state_action_marginal_importance_weight * per_decision_importance_weight
         )
 
         reward = reward.reshape((-1, step_per_trajectory))
         discount = np.full(step_per_trajectory, gamma).cumprod() / gamma
 
-        state_action_value_prediction = state_action_value_prediction.reshape(
-            (-1, step_per_trajectory, 2)
-        )
-        state_value_prediction = state_action_value_prediction[:, :, 1]
-        state_action_value_prediction = state_action_value_prediction[:, :, 0]
+        state_value_prediction = np.insert(state_value_prediction, -1, 0, axis=1)[:, 1:]
 
         estimated_trajectory_value = initial_state_value_prediction + (
             discount[np.newaxis, :]
@@ -2472,13 +2423,10 @@ class ContinuousStateActionMarginalDR(BaseStateActionMarginalOPEEstimator):
         reward: np.ndarray,
         state_action_marginal_importance_weight: np.ndarray,
         pscore: np.ndarray,
-        evaluation_policy_action: np.ndarray,
+        evaluation_policy_action_dist: np.ndarray,
         state_action_value_prediction: np.ndarray,
         initial_state_value_prediction: np.ndarray,
         gamma: float = 1.0,
-        kernel: str = "gaussian",
-        bandwidth: float = 1.0,
-        action_scaler: Optional[ActionScaler] = None,
         **kwargs,
     ) -> float:
         """Estimate the policy value of the evaluation policy.
@@ -2492,7 +2440,7 @@ class ContinuousStateActionMarginalDR(BaseStateActionMarginalOPEEstimator):
         step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
+        action: array-like of shape (n_trajectories * step_per_trajectory, )
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
@@ -2505,27 +2453,18 @@ class ContinuousStateActionMarginalDR(BaseStateActionMarginalOPEEstimator):
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_b(a | s)`
 
-        evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
-            Action chosen by the evaluation policy.
+        evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
+            Conditional action distribution induced by the evaluation policy,
+            i.e., :math:`\\pi(a | s) \\forall a \\in \\mathcal{A}`
 
-        state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, 2)
-            :math:`\\hat{Q}` for the observed action and that chosen by the evaluation policy,
-            i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a | s_t))`.
+        state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, n_action)
+            :math:`\\hat{Q}` for all actions, i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
 
         initial_state_value_prediction: array-like of shape (n_trajectories, )
             Estimated initial state value.
 
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
-
-        kernel: {"gaussian", "epanechnikov", "triangular", "cosine", "uniform"}
-            Name of the kernel function to smooth importance weights.
-
-        bandwidth: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of the kernel function.
-
-        action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
-            Scaling factor of action.
 
         Return
         -------
@@ -2546,26 +2485,17 @@ class ContinuousStateActionMarginalDR(BaseStateActionMarginalOPEEstimator):
             min_val=1,
         )
         check_array(
-            reward,
-            name="reward",
-            expected_dim=1,
-        )
-        check_array(
             state_action_marginal_importance_weight,
-            name="state_marginal_importance_weight",
+            name="state_action_marginal_importance_weight",
             expected_dim=1,
             min_val=0.0,
         )
         check_array(
             pscore,
             name="pscore",
-            expected_dim=2,
+            expected_dim=1,
             min_val=0.0,
-        )
-        check_array(
-            evaluation_policy_action,
-            name="evaluation_policy_action",
-            expected_dim=2,
+            max_val=1.0,
         )
         check_array(
             state_action_value_prediction,
@@ -2578,54 +2508,70 @@ class ContinuousStateActionMarginalDR(BaseStateActionMarginalOPEEstimator):
             expected_dim=1,
         )
         check_array(
+            evaluation_policy_action_dist,
+            name="evaluation_policy_action_dist",
+            expected_dim=2,
+            min_val=0.0,
+            max_val=1.0,
+        )
+        check_array(
             action,
             name="action",
-            expected_dim=2,
+            expected_dim=1,
+            min_val=0,
+            max_val=evaluation_policy_action_dist.shape[1] - 1,
         )
         if not (
             action.shape[0]
             == reward.shape[0]
             == state_action_marginal_importance_weight.shape[0]
             == pscore.shape[0]
-            == evaluation_policy_action.shape[0]
+            == evaluation_policy_action_dist.shape[0]
             == state_action_value_prediction.shape[0]
         ):
             raise ValueError(
-                "Expected `action.shape[0] == reward.shape[0] == state_marginal_importance_weight.shape[0] "
-                "== pscore.shape[0] == evaluation_policy_action.shape[0] == state_action_value_prediction.shape[0]`"
+                "Expected `action.shape[0] == reward.shape[0] == state_action_marginal_importance_weight.shape[0] "
+                "== pscore.shape[0] == evaluation_policy_action_dist.shape[0] == state_action_value_prediction.shape[0]`"
                 ", but found False"
             )
-        if not (
-            action.shape[1] == evaluation_policy_action.shape[1] == pscore.shape[1]
+        if (
+            evaluation_policy_action_dist.shape[0]
+            != state_action_value_prediction.shape[0]
         ):
             raise ValueError(
-                "Expected `action.shape[1] == evaluation_policy_action.shape[1] == pscore.shape[1]`, but found False"
+                "Expected `evaluation_policy_action_dist.shape[0] == state_action_value_prediction.shape[0]`, but found False"
             )
-        if state_action_value_prediction.shape[1] != 2:
+        if action.shape[0] % step_per_trajectory:
             raise ValueError(
-                "Expected `state_action_value_prediction.shape[1] == 2`, but found False"
+                "Expected `action.shape[0] \\% step_per_trajectory == 0`, but found False"
             )
-
+        if (
+            action.shape[0] // step_per_trajectory
+            != initial_state_value_prediction.shape[0]
+        ):
+            raise ValueError(
+                "Expected `action.shape[0] // step_per_trajectory == initial_state_value_prediction.shape[0]`, but found False"
+            )
+        if not np.allclose(
+            evaluation_policy_action_dist.sum(axis=1),
+            np.ones(evaluation_policy_action_dist.shape[0]),
+        ):
+            raise ValueError(
+                "Expected `evaluation_policy_action_dist.sum(axis=1) == np.ones(evaluation_policy_action_dist.shape[0])`"
+                ", but found it False"
+            )
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
-        check_scalar(bandwidth, name="bandwidth", target_type=float, min_val=0.0)
-        if action_scaler is not None and not isinstance(action_scaler, ActionScaler):
-            raise ValueError(
-                "action_scaler must be an instance of d3rlpy.preprocessing.ActionScaler, but found False"
-            )
 
         estimated_policy_value = self._estimate_trajectory_value(
             n_step_pdis=n_step_pdis,
             step_per_trajectory=step_per_trajectory,
             action=action,
             reward=reward,
-            pscore=pscore,
             state_action_marginal_importance_weight=state_action_marginal_importance_weight,
-            evaluation_policy_action=evaluation_policy_action,
+            pscore=pscore,
+            evaluation_policy_action_dist=evaluation_policy_action_dist,
             state_action_value_prediction=state_action_value_prediction,
             initial_state_value_prediction=initial_state_value_prediction,
-            action_scaler=action_scaler,
-            kernel=kernel,
-            bandwidth=bandwidth,
             gamma=gamma,
         ).mean()
         return estimated_policy_value
@@ -2638,13 +2584,10 @@ class ContinuousStateActionMarginalDR(BaseStateActionMarginalOPEEstimator):
         reward: np.ndarray,
         state_action_marginal_importance_weight: np.ndarray,
         pscore: np.ndarray,
-        evaluation_policy_action: np.ndarray,
+        evaluation_policy_action_dist: np.ndarray,
         state_action_value_prediction: np.ndarray,
         initial_state_value_prediction: np.ndarray,
         gamma: float = 1.0,
-        kernel: str = "gaussian",
-        bandwidth: float = 1.0,
-        action_scaler: Optional[ActionScaler] = None,
         alpha: float = 0.05,
         ci: str = "bootstrap",
         n_bootstrap_samples: int = 10000,
@@ -2662,7 +2605,7 @@ class ContinuousStateActionMarginalDR(BaseStateActionMarginalOPEEstimator):
         step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
+        action: array-like of shape (n_trajectories * step_per_trajectory, )
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
@@ -2675,27 +2618,18 @@ class ContinuousStateActionMarginalDR(BaseStateActionMarginalOPEEstimator):
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_b(a | s)`
 
-        evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
-            Action chosen by the evaluation policy.
+        evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
+            Conditional action distribution induced by the evaluation policy,
+            i.e., :math:`\\pi(a | s) \\forall a \\in \\mathcal{A}`
 
-        state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, 2)
-            :math:`\\hat{Q}` for the observed action and that chosen by the evaluation policy,
-            i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a | s_t))`.
+        state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, n_action)
+            :math:`\\hat{Q}` for all actions, i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
 
         initial_state_value_prediction: array-like of shape (n_trajectories, )
             Estimated initial state value.
 
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
-
-        kernel: {"gaussian", "epanechnikov", "triangular", "cosine", "uniform"}
-            Name of the kernel function to smooth importance weights.
-
-        bandwidth: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of the kernel function.
-
-        action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
-            Scaling factor of action.
 
         alpha: float, default=0.05
             Significance level. The value should be within `[0, 1)`.
@@ -2736,26 +2670,17 @@ class ContinuousStateActionMarginalDR(BaseStateActionMarginalOPEEstimator):
             min_val=1,
         )
         check_array(
-            reward,
-            name="reward",
-            expected_dim=1,
-        )
-        check_array(
             state_action_marginal_importance_weight,
-            name="state_marginal_importance_weight",
+            name="state_action_marginal_importance_weight",
             expected_dim=1,
             min_val=0.0,
         )
         check_array(
             pscore,
             name="pscore",
-            expected_dim=2,
+            expected_dim=1,
             min_val=0.0,
-        )
-        check_array(
-            evaluation_policy_action,
-            name="evaluation_policy_action",
-            expected_dim=2,
+            max_val=1.0,
         )
         check_array(
             state_action_value_prediction,
@@ -2768,40 +2693,59 @@ class ContinuousStateActionMarginalDR(BaseStateActionMarginalOPEEstimator):
             expected_dim=1,
         )
         check_array(
+            evaluation_policy_action_dist,
+            name="evaluation_policy_action_dist",
+            expected_dim=2,
+            min_val=0.0,
+            max_val=1.0,
+        )
+        check_array(
             action,
             name="action",
-            expected_dim=2,
+            expected_dim=1,
+            min_val=0,
+            max_val=evaluation_policy_action_dist.shape[1] - 1,
         )
         if not (
             action.shape[0]
             == reward.shape[0]
             == state_action_marginal_importance_weight.shape[0]
             == pscore.shape[0]
-            == evaluation_policy_action.shape[0]
+            == evaluation_policy_action_dist.shape[0]
             == state_action_value_prediction.shape[0]
         ):
             raise ValueError(
-                "Expected `action.shape[0] == reward.shape[0] == state_marginal_importance_weight.shape[0] "
-                "== pscore.shape[0] == evaluation_policy_action.shape[0] == state_action_value_prediction.shape[0]`"
+                "Expected `action.shape[0] == reward.shape[0] == state_action_marginal_importance_weight.shape[0] "
+                "== pscore.shape[0] == evaluation_policy_action_dist.shape[0] == state_action_value_prediction.shape[0]`"
                 ", but found False"
             )
-        if not (
-            action.shape[1] == evaluation_policy_action.shape[1] == pscore.shape[1]
+        if (
+            evaluation_policy_action_dist.shape[1]
+            != state_action_value_prediction.shape[1]
         ):
             raise ValueError(
-                "Expected `action.shape[1] == evaluation_policy_action.shape[1] == pscore.shape[1]`, but found False"
+                "Expected `evaluation_policy_action_dist.shape[1] == state_action_value_prediction.shape[1]`, but found False"
             )
-        if state_action_value_prediction.shape[1] != 2:
+        if action.shape[0] % step_per_trajectory:
             raise ValueError(
-                "Expected `state_action_value_prediction.shape[1] == 2`, but found False"
+                "Expected `action.shape[0] \\% step_per_trajectory == 0`, but found False"
             )
-
+        if (
+            action.shape[0] // step_per_trajectory
+            != initial_state_value_prediction.shape[0]
+        ):
+            raise ValueError(
+                "Expected `action.shape[0] // step_per_trajectory == initial_state_value_prediction.shape[0]`, but found False"
+            )
+        if not np.allclose(
+            evaluation_policy_action_dist.sum(axis=1),
+            np.ones(evaluation_policy_action_dist.shape[0]),
+        ):
+            raise ValueError(
+                "Expected `evaluation_policy_action_dist.sum(axis=1) == np.ones(evaluation_policy_action_dist.shape[0])`"
+                ", but found it False"
+            )
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
-        check_scalar(bandwidth, name="bandwidth", target_type=float, min_val=0.0)
-        if action_scaler is not None and not isinstance(action_scaler, ActionScaler):
-            raise ValueError(
-                "action_scaler must be an instance of d3rlpy.preprocessing.ActionScaler, but found False"
-            )
 
         if ci not in self._estimate_confidence_interval.keys():
             raise ValueError(
@@ -2813,14 +2757,11 @@ class ContinuousStateActionMarginalDR(BaseStateActionMarginalOPEEstimator):
             step_per_trajectory=step_per_trajectory,
             action=action,
             reward=reward,
-            pscore=pscore,
             state_action_marginal_importance_weight=state_action_marginal_importance_weight,
-            evaluation_policy_action=evaluation_policy_action,
+            pscore=pscore,
+            evaluation_policy_action_dist=evaluation_policy_action_dist,
             state_action_value_prediction=state_action_value_prediction,
             initial_state_value_prediction=initial_state_value_prediction,
-            action_scaler=action_scaler,
-            kernel=kernel,
-            bandwidth=bandwidth,
             gamma=gamma,
         )
         return self._estimate_confidence_interval[ci](
@@ -2832,12 +2773,12 @@ class ContinuousStateActionMarginalDR(BaseStateActionMarginalOPEEstimator):
 
 
 @dataclass
-class ContinuousStateActionMarginalSNIS(ContinuousStateActionMarginalIS):
-    """State-Action Marginal Self-Normalized Importance Sampling (SAM-SNIS) for continuous action spaces.
+class StateActionMarginalSNIS(StateActionMarginalIS):
+    """State-Action Marginal Self-Normalized Importance Sampling (SAM-SNIS) for discrete action spaces.
 
-    Bases: :class:`scope_rl.ope.ContinuousStateActionMarginalIS` :class:`scope_rl.ope.BaseStateActionMarginalOPEEstimator` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
+    Bases: :class:`scope_rl.ope.discrete.StateActionMarginalIS` -> :class:`scope_rl.ope.BaseStateActionMarginalOPEEstimator` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
-    Imported as: :class:`scope_rl.ope.ContinuousStateActionMarginalSNIS`
+    Imported as: :class:`scope_rl.ope.discrete.StateActionMarginalSNIS`
 
     Note
     -------
@@ -2847,12 +2788,10 @@ class ContinuousStateActionMarginalSNIS(ContinuousStateActionMarginalIS):
     .. math::
 
         \\hat{J}_{\\mathrm{SAM-SNIS}} (\\pi; \\mathcal{D})
-        &:= \\mathbb{E}_{n} \\left[\\sum_{t=0}^{k-1} \\gamma^t \\frac{w_{0:t} \\delta(\\pi, a_{0:t})}{\\sum_{n} w_{0:t} \\delta(\\pi, a_{0:t})} r_t \\right] \\\\
-        & \quad \quad + \\mathbb{E}_{n} \\left[\\sum_{t=k}^{T-1} \\gamma^t \\frac{w(s_{t-k}, a_{t-k}) w_{t-k+1:t} \\delta(\\pi, a_{t-l+1:t})}{\\sum_n w(s_{t-k}, a_{t-k}) w_{t-k+1:t} \\delta(\\pi, a_{t-l+1:t})} r_t \\right],
+        &:= \\mathbb{E}_{n} \\left[\\sum_{t=0}^{k-1} \\gamma^t \\frac{w_{0:t}}{\\sum_{n} w_{0:t}} r_t \\right] \\\\
+        & \quad \quad + \\mathbb{E}_{n} \\left[\\sum_{t=k}^{T-1} \\gamma^t \\frac{w(s_{t-k}, a_{t-k}) w_{t-k+1:t}}{\\sum_n w(s_{t-k}, a_{t-k}) w_{t-k+1:t}} r_t \\right],
 
     where :math:`w(s, a) := d_{\\pi}(s, a) / d_{\\pi_b}(s, a)` and :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} (\\pi(a_t | s_t) / \\pi_0(a_t | s_t))`.
-    :math:`\\delta(\\pi, a_{t_1:t_2}) = \\prod_{t=t_1}^{t_2} K(\\pi(s_t), a_t)` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy
-    (:math:`K(\\cdot, \\cdot)` is a kernel function).
     When :math:`k=0`, this estimator is reduced to the vanilla state-action marginal SNIS.
 
     SAM-SNIS is consistent when the marginal importance weight is estimated correctly.
@@ -2880,9 +2819,6 @@ class ContinuousStateActionMarginalSNIS(ContinuousStateActionMarginalIS):
     Mengjiao Yang, Ofir Nachum, Bo Dai, Lihong Li, and Dale Schuurmans.
     "Off-Policy Evaluation via the Regularized Lagrangian." 2020.
 
-    Nathan Kallus and Angela Zhou.
-    "Policy Evaluation and Optimization with Continuous Treatments." 2019.
-
     Doina Precup, Richard S. Sutton, and Satinder P. Singh.
     "Eligibility Traces for Off-Policy Policy Evaluation." 2000.
 
@@ -2891,7 +2827,7 @@ class ContinuousStateActionMarginalSNIS(ContinuousStateActionMarginalIS):
     estimator_name: str = "sam_snis"
 
     def __post_init__(self):
-        self.action_type = "continuous"
+        self.action_type = "discrete"
 
     def _estimate_trajectory_value(
         self,
@@ -2901,11 +2837,8 @@ class ContinuousStateActionMarginalSNIS(ContinuousStateActionMarginalIS):
         reward: np.ndarray,
         state_action_marginal_importance_weight: np.ndarray,
         pscore: np.ndarray,
-        evaluation_policy_action: np.ndarray,
+        evaluation_policy_action_dist: np.ndarray,
         gamma: float = 1.0,
-        kernel: str = "gaussian",
-        bandwidth: float = 1.0,
-        action_scaler: Optional[ActionScaler] = None,
         **kwargs,
     ) -> np.ndarray:
         """Estimate the trajectory-wise policy value.
@@ -2919,7 +2852,7 @@ class ContinuousStateActionMarginalSNIS(ContinuousStateActionMarginalIS):
         step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
+        action: array-like of shape (n_trajectories * step_per_trajectory, )
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
@@ -2932,20 +2865,12 @@ class ContinuousStateActionMarginalSNIS(ContinuousStateActionMarginalIS):
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_b(a | s)`
 
-        evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
-            Action chosen by the evaluation policy.
+        evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
+            Conditional action distribution induced by the evaluation policy,
+            i.e., :math:`\\pi(a | s) \\forall a \\in \\mathcal{A}`
 
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
-
-        kernel: {"gaussian", "epanechnikov", "triangular", "cosine", "uniform"}
-            Name of the kernel function to smooth importance weights.
-
-        bandwidth: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of the kernel function.
-
-        action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
-            Scaling factor of action.
 
         Return
         -------
@@ -2953,27 +2878,27 @@ class ContinuousStateActionMarginalSNIS(ContinuousStateActionMarginalIS):
             Policy value (expected reward under the evaluation policy) estimated for each trajectory.
 
         """
-        behavior_policy_pscore = self._calc_behavior_policy_pscore_continuous(
+        behavior_policy_pscore = self._calc_behavior_policy_pscore_discrete(
             n_step_pdis=n_step_pdis,
             step_per_trajectory=step_per_trajectory,
             pscore=pscore,
         )
-        similarity_weight = self._calc_similarity_weight(
+        evaluation_policy_pscore = self._calc_evaluation_policy_pscore_discrete(
             n_step_pdis=n_step_pdis,
             step_per_trajectory=step_per_trajectory,
             action=action,
-            evaluation_policy_action=evaluation_policy_action,
-            action_scaler=action_scaler,
-            kernel=kernel,
-            bandwidth=bandwidth,
+            evaluation_policy_action_dist=evaluation_policy_action_dist,
+        )
+        per_decision_importance_weight = (
+            evaluation_policy_pscore / behavior_policy_pscore
         )
         state_action_marginal_importance_weight = self._calc_marginal_importance_weight(
             n_step_pdis=n_step_pdis,
             step_per_trajectory=step_per_trajectory,
             state_action_marginal_importance_weight=state_action_marginal_importance_weight,
         )
-        weight = state_action_marginal_importance_weight * (
-            similarity_weight / behavior_policy_pscore
+        weight = (
+            state_action_marginal_importance_weight * per_decision_importance_weight
         )
         self_normalized_weight = weight / (weight.mean(axis=0)[np.newaxis, :] + 1e-10)
 
@@ -2987,12 +2912,12 @@ class ContinuousStateActionMarginalSNIS(ContinuousStateActionMarginalIS):
 
 
 @dataclass
-class ContinuousStateActionMarginalSNDR(ContinuousStateActionMarginalDR):
-    """State-Action Marginal Self-Normalized Doubly Robust (SAM-SNDR) for continuous action spaces.
+class StateActionMarginalSNDR(StateActionMarginalDR):
+    """State-Action Marginal Self-Normalized Doubly Robust (SAM-SNDR) for discrete action spaces.
 
-    Bases: :class:`scope_rl.ope.ContinuousStateActionMarginalDR` :class:`scope_rl.ope.BaseStateActionMarginalOPEEstimator` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
+    Bases: :class:`scope_rl.ope.discrete.StateActionMarginalDR` -> :class:`scope_rl.ope.BaseStateActionMarginalOPEEstimator` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
-    Imported as: :class:`scope_rl.ope.ContinuousStateActionMarginalSNDR`
+    Imported as: :class:`scope_rl.ope.discrete.StateActionMarginalSNDR`
 
     Note
     -------
@@ -3002,13 +2927,11 @@ class ContinuousStateActionMarginalSNDR(ContinuousStateActionMarginalDR):
     .. math::
 
         \\hat{J}_{\\mathrm{SAM-SNDR}} (\\pi; \\mathcal{D})
-        &:= \\mathbb{E}_{n} [\\hat{Q}(s_0, \\pi(s_0))] \\\\
-        & \quad \quad + \\mathbb{E}_{n} \\left[\\sum_{t=0}^{k-1} \\gamma^t \\frac{w_{0:t} \\delta(\\pi, a_{0:t})}{\\sum_{n} w_{0:t} \\delta(\\pi, a_{0:t})} (r_t + \\gamma \\hat{Q}(s_{t+1}, \\pi(s_{t+1}))] - \\hat{Q}(s_t, a_t)) \\right] \\\\
-        & \quad \quad + \\mathbb{E}_{n} \\left[\\sum_{t=k}^{T-1} \\gamma^t \\frac{w(s_{t-k}, a_{t-k}) w_{t-k+1:t} \\delta(\\pi, a_{t-k+1:t})}{\\sum_{n} w(s_{t-k}, a_{t-k}) w_{t-k+1:t} \\delta(\\pi, a_{t-k+1:t})} (r_t + \\gamma \\hat{Q}(s_{t+1}, \\pi(s_{t+1}))] - \\hat{Q}(s_t, a_t)) \\right],
+        &:= \\mathbb{E}_{n} [\\mathbb{E}_{a_0 \\sim \\pi(a_0 | s_0)} [\\hat{Q}(s_0, a_0)]] \\\\
+        & \quad \quad + \\mathbb{E}_{n} \\left[\\sum_{t=0}^{k-1} \\gamma^t \\frac{w_{0:t}}{\\sum_{n} w_{0:t}} (r_t + \\gamma \\mathbb{E}_{a \\sim \\pi(a | s_t)}[\\hat{Q}(s_{t+1}, a)] - \\hat{Q}(s_t, a_t)) \\right] \\\\
+        & \quad \quad + \\mathbb{E}_{n} \\left[\\sum_{t=k}^{T-1} \\gamma^t \\frac{w(s_{t-k}, a_{t-k}) w_{t-k+1:t}}{\\sum_{n} w(s_{t-k}, a_{t-k}) w_{t-k+1:t}} (r_t + \\gamma \\mathbb{E}_{a \\sim \\pi(a | s_t)}[\\hat{Q}(s_{t+1}, a)] - \\hat{Q}(s_t, a_t)) \\right],
 
     where :math:`w(s, a) := d_{\\pi}(s, a) / d_{\\pi_b}(s, a)` and :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} (\\pi(a_t | s_t) / \\pi_0(a_t | s_t))`. :math:`Q(s, a)` is the state-action value.
-    :math:`\\delta(\\pi, a_{t_1:t_2}) = \\prod_{t=t_1}^{t_2} K(\\pi(s_t), a_t)` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy
-    (:math:`K(\\cdot, \\cdot)` is a kernel function).
     When :math:`k=0`, this estimator is reduced to the vanilla state-action marginal SNDR.
 
     SAM-SNDR is consistent when either the marginal importance weight or Q-function is estimated correctly.
@@ -3036,9 +2959,6 @@ class ContinuousStateActionMarginalSNDR(ContinuousStateActionMarginalDR):
     Mengjiao Yang, Ofir Nachum, Bo Dai, Lihong Li, and Dale Schuurmans.
     "Off-Policy Evaluation via the Regularized Lagrangian." 2020.
 
-    Nathan Kallus and Angela Zhou.
-    "Policy Evaluation and Optimization with Continuous Treatments." 2019.
-
     Nan Jiang and Lihong Li.
     "Doubly Robust Off-policy Value Evaluation for Reinforcement Learning." 2016.
 
@@ -3050,7 +2970,7 @@ class ContinuousStateActionMarginalSNDR(ContinuousStateActionMarginalDR):
     estimator_name: str = "sam_sndr"
 
     def __post_init__(self):
-        self.action_type = "continuous"
+        self.action_type = "discrete"
 
     def _estimate_trajectory_value(
         self,
@@ -3060,13 +2980,10 @@ class ContinuousStateActionMarginalSNDR(ContinuousStateActionMarginalDR):
         reward: np.ndarray,
         state_action_marginal_importance_weight: np.ndarray,
         pscore: np.ndarray,
-        evaluation_policy_action: np.ndarray,
+        evaluation_policy_action_dist: np.ndarray,
         state_action_value_prediction: np.ndarray,
         initial_state_value_prediction: np.ndarray,
         gamma: float = 1.0,
-        kernel: str = "gaussian",
-        bandwidth: float = 1.0,
-        action_scaler: Optional[ActionScaler] = None,
         **kwargs,
     ) -> np.ndarray:
         """Estimate the trajectory-wise policy value.
@@ -3074,14 +2991,13 @@ class ContinuousStateActionMarginalSNDR(ContinuousStateActionMarginalDR):
         Parameters
         -------
         n_step_pdis: int (>= 0)
-            Number of initial steps whose rewards are estimated by step-wise importance weighting,
-            rewards of the later time steps are estimated by state marginal importance weighting.
+            Number of initial steps whose rewards are estimated by step-wise importance weighting.
             When set to zero, the estimator is reduced to the vanilla state marginal IS.
 
         step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
+        action: array-like of shape (n_trajectories * step_per_trajectory, )
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
@@ -3094,12 +3010,12 @@ class ContinuousStateActionMarginalSNDR(ContinuousStateActionMarginalDR):
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_b(a | s)`
 
-        evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
-            Action chosen by the evaluation policy.
+        evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
+            Conditional action distribution induced by the evaluation policy,
+            i.e., :math:`\\pi(a | s) \\forall a \\in \\mathcal{A}`
 
-        state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, 2)
-            :math:`\\hat{Q}` for the observed action and that chosen by the evaluation policy,
-            i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a | s_t))`.
+        state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, n_action)
+            :math:`\\hat{Q}` for all actions, i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
 
         initial_state_value_prediction: array-like of shape (n_trajectories, )
             Estimated initial state value.
@@ -3107,57 +3023,53 @@ class ContinuousStateActionMarginalSNDR(ContinuousStateActionMarginalDR):
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
 
-        kernel: {"gaussian", "epanechnikov", "triangular", "cosine", "uniform"}
-            Name of the kernel function to smooth importance weights.
-
-        bandwidth: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of the kernel function.
-
-        action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
-            Scaling factor of action.
-
         Return
         -------
         estimated_trajectory_wise_policy_value: ndarray of shape (n_trajectories, )
             Policy value (expected reward under the evaluation policy) estimated for each trajectory.
 
         """
-        behavior_policy_pscore = self._calc_behavior_policy_pscore_continuous(
+        state_value_prediction = (
+            (state_action_value_prediction * evaluation_policy_action_dist)
+            .sum(axis=1)
+            .reshape((-1, step_per_trajectory))
+        )
+        state_action_value_prediction = state_action_value_prediction[
+            np.arange(len(action)), action
+        ].reshape((-1, step_per_trajectory))
+
+        behavior_policy_pscore = self._calc_behavior_policy_pscore_discrete(
             n_step_pdis=n_step_pdis,
             step_per_trajectory=step_per_trajectory,
             pscore=pscore,
         )
-        similarity_weight = self._calc_similarity_weight(
+        evaluation_policy_pscore = self._calc_evaluation_policy_pscore_discrete(
             n_step_pdis=n_step_pdis,
             step_per_trajectory=step_per_trajectory,
             action=action,
-            evaluation_policy_action=evaluation_policy_action,
-            action_scaler=action_scaler,
-            kernel=kernel,
-            bandwidth=bandwidth,
+            evaluation_policy_action_dist=evaluation_policy_action_dist,
+        )
+        per_decision_importance_weight = (
+            evaluation_policy_pscore / behavior_policy_pscore
         )
         state_action_marginal_importance_weight = self._calc_marginal_importance_weight(
             n_step_pdis=n_step_pdis,
             step_per_trajectory=step_per_trajectory,
             state_action_marginal_importance_weight=state_action_marginal_importance_weight,
         )
-        weight = state_action_marginal_importance_weight * (
-            similarity_weight / behavior_policy_pscore
+        weight = (
+            state_action_marginal_importance_weight * per_decision_importance_weight
         )
-        self_normalized_weight = weight / (weight.mean(axis=0)[np.newaxis, :] + 1e-10)
+        weight = weight / (weight.mean(axis=0)[np.newaxis, :] + 1e-10)
 
         reward = reward.reshape((-1, step_per_trajectory))
         discount = np.full(step_per_trajectory, gamma).cumprod() / gamma
 
-        state_action_value_prediction = state_action_value_prediction.reshape(
-            (-1, step_per_trajectory, 2)
-        )
-        state_value_prediction = state_action_value_prediction[:, :, 1]
-        state_action_value_prediction = state_action_value_prediction[:, :, 0]
+        state_value_prediction = np.insert(state_value_prediction, -1, 0, axis=1)[:, 1:]
 
         estimated_trajectory_value = initial_state_value_prediction + (
             discount[np.newaxis, :]
-            * self_normalized_weight
+            * weight
             * (reward + gamma * state_value_prediction - state_action_value_prediction)
         ).sum(axis=1)
 

@@ -10,17 +10,17 @@ from sklearn.utils import check_scalar
 
 from d3rlpy.preprocessing import ActionScaler
 
-from .estimators_base import BaseOffPolicyEstimator
-from ..utils import check_array
+from ..estimators_base import BaseOffPolicyEstimator
+from ...utils import check_array
 
 
 @dataclass
-class ContinuousDirectMethod(BaseOffPolicyEstimator):
+class DirectMethod(BaseOffPolicyEstimator):
     """Direct Method (DM) (designed for deterministic evaluation policies) for continuous action spaces.
 
     Bases: :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
-    Imported as: :class:`scope_rl.ope.ContinuousDirectMethod`
+    Imported as: :class:`scope_rl.ope.continuous.DirectMethod`
 
     Note
     -------
@@ -227,12 +227,12 @@ class ContinuousDirectMethod(BaseOffPolicyEstimator):
 
 
 @dataclass
-class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
+class TrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
     """Trajectory-wise Importance Sampling (TIS) (designed for deterministic evaluation policies) for continuous action spaces.
 
     Bases: :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
-    Imported as: :class:`scope_rl.ope.ContinuousTrajectoryWiseImportanceSampling`
+    Imported as: :class:`scope_rl.ope.continuous.TrajectoryWiseImportanceSampling`
 
     Note
     -------
@@ -244,8 +244,9 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 
     where :math:`w_{0:T-1} := \\prod_{t=0}^{T-1} (1 / \\pi_0(a_t | s_t))` is the (trajectory-wise) importance weight.
     :math:`\\delta(\\pi, a_{0:T-1}) = \\prod_{t=0}^{T-1} K(\\pi(s_t), a_t)` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy where :math:`K(\\cdot)` is a kernel function.
+    Note that the bandwidth of the kernel is an important hyperparameter; the variance of the above estimator often becomes small when the bandwidth of the kernel is large, while the bias often becomes large in those cases.
 
-    TIS enables an unbiased estimation of the policy value. However, when the trajectory length (:math:`T`) is large,
+    TIS is able to correct the distribution shift between the behavior and evaluation policies. However, when the trajectory length (:math:`T`) is large,
     TIS suffers from high variance due to the product of importance weights over the entire horizon.
 
     Parameters
@@ -619,12 +620,12 @@ class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 
 
 @dataclass
-class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
+class PerDecisionImportanceSampling(BaseOffPolicyEstimator):
     """Per-Decision Importance Sampling (PDIS) (designed for deterministic evaluation policies) for continuous action spaces.
 
     Bases: :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
-    Imported as: :class:`scope_rl.ope.ContinuousPerDecisionImportanceSampling`
+    Imported as: :class:`scope_rl.ope.continuous.PerDecisionImportanceSampling`
 
     Note
     -------
@@ -636,8 +637,9 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
 
     where :math:`w_{0:t} := \\prod_{t'=0}^t (1 / \\pi_0(a_{t'} | s_{t'}))`. is the importance weight for each time step wrt the previous actions (referred to as the per-decision or step-wise importance weight).
     :math:`\\delta(\\pi, a_{0:t}) = \\prod_{t'=0}^t K(\\pi(s_{t'}), a_{t'})` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy where :math:`K(\\cdot)` is a kernel function.
+    Note that the bandwidth of the kernel is an important hyperparameter; the variance of the above estimator often becomes small when the bandwidth of the kernel is large, while the bias often becomes large in those cases.
 
-    By using per-decision importance weighting instead of trajectory-wise importance weighting of TIS, PDIS has lower variance than TIS while remaining unbiased.
+    By using per-decision importance weighting instead of trajectory-wise importance weighting of TIS, PDIS has lower variance than TIS while still correcting the distribution shift between the behavior and evaluation policies.
     However, when the trajectory length (:math:`T`) is large, PDIS still suffers from high variance.
 
     Parameters
@@ -1011,12 +1013,12 @@ class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
 
 
 @dataclass
-class ContinuousDoublyRobust(BaseOffPolicyEstimator):
+class DoublyRobust(BaseOffPolicyEstimator):
     """Doubly Robust (DR) (designed for deterministic evaluation policies) for continuous action spaces.
 
     Bases: :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
-    Imported as: :class:`scope_rl.ope.ContinuousDoublyRobust`
+    Imported as: :class:`scope_rl.ope.continuous.DoublyRobust`
 
     Note
     -------
@@ -1030,8 +1032,9 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
 
     where :math:`w_{0:t} := \\prod_{t'=0}^t (1 / \\pi_0(a_{t'} | s_{t'}))` is the per-decision importance weight.
     :math:`\\delta(\\pi, a_{0:t}) = \\prod_{t'=1}^t K(\\pi(s_{t'}), a_{t'})` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy where :math:`K(\\cdot)` is a kernel function.
-
-    DR is unbiased and has lower variance than PDIS when :math:`\\hat{Q}(\\cdot)` is reasonably accurate and satisfies :math:`0 < \\hat{Q}(\\cdot) < 2 Q(\\cdot)`.
+    Note that the bandwidth of the kernel is an important hyperparameter; the variance of the above estimator often becomes small when the bandwidth of the kernel is large, while the bias often becomes large in those cases.
+    
+    DR corrects distribution shift between the behavior and evaluation policies and has lower variance than PDIS when :math:`\\hat{Q}(\\cdot)` is reasonably accurate and satisfies :math:`0 < \\hat{Q}(\\cdot) < 2 Q(\\cdot)`.
     However, when the importance weight is quite large, it may still suffer from a high variance.
 
     Parameters
@@ -1455,12 +1458,12 @@ class ContinuousDoublyRobust(BaseOffPolicyEstimator):
 
 
 @dataclass
-class ContinuousSelfNormalizedTIS(ContinuousTrajectoryWiseImportanceSampling):
+class SelfNormalizedTIS(TrajectoryWiseImportanceSampling):
     """Self-Normalized Trajectory-wise Importance Sampling (SNTIS) (designed for deterministic evaluation policies) for continuous action spaces.
 
-    Bases: :class:`scope_rl.ope.ContinuousTrajectoryWiseImportanceSampling` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
+    Bases: :class:`scope_rl.ope.continuous.TrajectoryWiseImportanceSampling` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
-    Imported as: :class:`scope_rl.ope.ContinuousSelfNormalizedTIS`
+    Imported as: :class:`scope_rl.ope.continuous.SelfNormalizedTIS`
 
     Note
     -------
@@ -1473,8 +1476,9 @@ class ContinuousSelfNormalizedTIS(ContinuousTrajectoryWiseImportanceSampling):
 
     where :math:`w_{0:T-1} := \\prod_{t=0}^{T-1} (1 / \\pi_0(a_t | s_t))` is the trajectory-wise importance weight.
     :math:`\\delta(\\pi, a_{0:T}) = \\prod_{t=0}^{T-1} K(\\pi(s_t), a_t)` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy where :math:`K(\\cdot)` is a kernel function.
+    Note that the bandwidth of the kernel is an important hyperparameter; the variance of the above estimator often becomes small when the bandwidth of the kernel is large, while the bias often becomes large in those cases.
 
-    The self-normalized estimator is no longer unbiased, but has variance bounded by :math:`r_{max}^2` while also remaining consistent.
+    The self-normalized estimator has variance bounded by :math:`r_{max}^2`.
 
     Parameters
     -------
@@ -1578,12 +1582,12 @@ class ContinuousSelfNormalizedTIS(ContinuousTrajectoryWiseImportanceSampling):
 
 
 @dataclass
-class ContinuousSelfNormalizedPDIS(ContinuousPerDecisionImportanceSampling):
+class SelfNormalizedPDIS(PerDecisionImportanceSampling):
     """Self-Normalized Per-Decision Importance Sampling (SNPDIS) (designed for deterministic evaluation policies) for continuous action spaces.
 
-    Bases: :class:`scope_rl.ope.ContinuousPerDecisionImportanceSampling` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
+    Bases: :class:`scope_rl.ope.continuous.PerDecisionImportanceSampling` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
-    Imported as: :class:`scope_rl.ope.ContinuousSelfNormalizedPDIS`
+    Imported as: :class:`scope_rl.ope.continuous.SelfNormalizedPDIS`
 
     Note
     -------
@@ -1596,8 +1600,9 @@ class ContinuousSelfNormalizedPDIS(ContinuousPerDecisionImportanceSampling):
 
     where :math:`w_{0:t} := \\prod_{t'=1}^t (1 / \\pi_0(a_{t'} | s_{t'}))` is the per-decision importance weight.
     :math:`\\delta(\\pi, a_{0:t}) = \\prod_{t'=1}^t K(\\pi(s_{t'}), a_{t'})` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy where :math:`K(\\cdot)` is a kernel function.
+    Note that the bandwidth of the kernel is an important hyperparameter; the variance of the above estimator often becomes small when the bandwidth of the kernel is large, while the bias often becomes large in those cases.
 
-    The self-normalized estimator is no longer unbiased, but has variance bounded by :math:`r_{max}^2` while also remaining consistent.
+    The self-normalized estimator has variance bounded by :math:`r_{max}^2`.
 
     Parameters
     -------
@@ -1701,12 +1706,12 @@ class ContinuousSelfNormalizedPDIS(ContinuousPerDecisionImportanceSampling):
 
 
 @dataclass
-class ContinuousSelfNormalizedDR(ContinuousDoublyRobust):
+class SelfNormalizedDR(DoublyRobust):
     """Self-Normalized Doubly Robust (SNDR) (designed for deterministic evaluation policies) for continuous action spaces.
 
-    Bases: :class:`scope_rl.ope.ContinuousDoublyRobust` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
+    Bases: :class:`scope_rl.ope.continuous.DoublyRobust` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
-    Imported as: :class:`scope_rl.ope.ContinuousSelfNormalizedDR`
+    Imported as: :class:`scope_rl.ope.continuous.SelfNormalizedDR`
 
     Note
     -------
@@ -1720,8 +1725,9 @@ class ContinuousSelfNormalizedDR(ContinuousDoublyRobust):
 
     where :math:`w_{0:t} := \\prod_{t'=0}^t (1 / \\pi_0(a_{t'} | s_{t'}))` is the per-decision importance weight.
     :math:`\\delta(\\pi, a_{0:t}) = \\prod_{t'=1}^t K(\\pi(s_{t'}), a_{t'})` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy where :math:`K(\\cdot)` is a kernel function.
-
-    The self-normalized estimator is no longer unbiased, but has variance bounded by :math:`r_{max}^2` while also remaining consistent.
+    Note that the bandwidth of the kernel is an important hyperparameter; the variance of the above estimator often becomes small when the bandwidth of the kernel is large, while the bias often becomes large in those cases.
+    
+    The self-normalized estimator has variance bounded by :math:`r_{max}^2`.
 
     Parameters
     -------

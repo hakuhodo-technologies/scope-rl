@@ -33,7 +33,7 @@ class ContinuousDiceStateActionWightValueLearning(BaseWeightValueLearner):
 
     Bases: :class:`scope_rl.ope.weight_value_learning.BaseWeightValueLearner`
 
-    Imported as: :class:`scope_rl.ope.ContinuousDiceStateActionWightValueLearning`
+    Imported as: :class:`scope_rl.ope.weight_value_learning.ContinuousDiceStateActionWightValueLearning`
 
     Note
     -------
@@ -694,7 +694,7 @@ class ContinuousDiceStateWightValueLearning(BaseWeightValueLearner):
 
     Bases: :class:`scope_rl.ope.weight_value_learning.BaseWeightValueLearner`
 
-    Imported as: :class:`scope_rl.ope.ContinuousDiceStateWightValueLearning`
+    Imported as: :class:`scope_rl.ope.weight_value_learning.ContinuousDiceStateWightValueLearning`
 
     Note
     -------

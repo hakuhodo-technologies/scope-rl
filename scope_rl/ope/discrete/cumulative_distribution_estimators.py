@@ -8,21 +8,21 @@ from typing import Tuple, Optional, Dict
 import numpy as np
 from sklearn.utils import check_scalar
 
-from .estimators_base import (
+from ..estimators_base import (
     BaseCumulativeDistributionOPEEstimator,
 )
-from ..utils import check_array
+from ...utils import check_array
 
 
 @dataclass
-class DiscreteCumulativeDistributionDM(
+class CumulativeDistributionDM(
     BaseCumulativeDistributionOPEEstimator,
 ):
     """Direct Method (DM) for estimating the cumulative distribution function (CDF) for discrete action spaces.
 
     Bases: :class:`scope_rl.ope.BaseCumulativeDistributionOPEEstimator`
 
-    Imported as: :class:`scope_rl.ope.DiscreteCumulativeDistributionDM`
+    Imported as: :class:`scope_rl.ope.discrete.CumulativeDistributionDM`
 
     Note
     -------
@@ -440,14 +440,14 @@ class DiscreteCumulativeDistributionDM(
 
 
 @dataclass
-class DiscreteCumulativeDistributionTIS(
+class CumulativeDistributionTIS(
     BaseCumulativeDistributionOPEEstimator,
 ):
     """Trajectory-wise Importance Sampling (TIS) for estimating the cumulative distribution function (CDF) for discrete action spaces.
 
     Bases: :class:`scope_rl.ope.BaseCumulativeDistributionOPEEstimator`
 
-    Imported as: :class:`scope_rl.ope.DiscreteCumulativeDistributionTIS`
+    Imported as: :class:`scope_rl.ope.discrete.CumulativeDistributionTIS`
 
     Note
     -------
@@ -901,14 +901,14 @@ class DiscreteCumulativeDistributionTIS(
 
 
 @dataclass
-class DiscreteCumulativeDistributionTDR(
+class CumulativeDistributionTDR(
     BaseCumulativeDistributionOPEEstimator,
 ):
     """Trajectory-wise Doubly Robust (TDR) for estimating the cumulative distribution function (CDF) for discrete action spaces.
 
     Bases: :class:`scope_rl.ope.BaseCumulativeDistributionOPEEstimator`
 
-    Imported as: :class:`scope_rl.ope.DiscreteCumulativeDistributionTrajectoryWiseDR`
+    Imported as: :class:`scope_rl.ope.discrete.CumulativeDistributionTrajectoryWiseDR`
 
     Note
     -------
@@ -1406,14 +1406,14 @@ class DiscreteCumulativeDistributionTDR(
 
 
 @dataclass
-class DiscreteCumulativeDistributionSNTIS(
-    DiscreteCumulativeDistributionTIS,
+class CumulativeDistributionSNTIS(
+    CumulativeDistributionTIS,
 ):
     """Self Normalized Trajectory-wise Importance Sampling (SNTIS) for estimating the cumulative distribution function (CDF) for discrete action spaces.
 
-    Bases: :class:`scope_rl.ope.DiscreteCumulativeDistributionTIS` :class:`scope_rl.ope.BaseCumulativeDistributionOPEEstimator`
+    Bases: :class:`scope_rl.ope.discrete.CumulativeDistributionTIS` :class:`scope_rl.ope.BaseCumulativeDistributionOPEEstimator`
 
-    Imported as: :class:`scope_rl.ope.DiscreteCumulativeDistributionSNTIS`
+    Imported as: :class:`scope_rl.ope.discrete.CumulativeDistributionSNTIS`
 
     Note
     -------
@@ -1586,14 +1586,14 @@ class DiscreteCumulativeDistributionSNTIS(
 
 
 @dataclass
-class DiscreteCumulativeDistributionSNTDR(
-    DiscreteCumulativeDistributionTDR,
+class CumulativeDistributionSNTDR(
+    CumulativeDistributionTDR,
 ):
     """Self Normalized Trajectory-wise Doubly Robust (SNTDR) for estimating the cumulative distribution function (CDF) for discrete action spaces.
 
-    Bases: :class:`scope_rl.ope.DiscreteCumulativeDistributionTDR` :class:`scope_rl.ope.BaseCumulativeDistributionOPEEstimator`
+    Bases: :class:`scope_rl.ope.discrete.CumulativeDistributionTDR` :class:`scope_rl.ope.BaseCumulativeDistributionOPEEstimator`
 
-    Imported as: :class:`scope_rl.ope.DiscreteCumulativeDistributionSNTDR`
+    Imported as: :class:`scope_rl.ope.discrete.CumulativeDistributionSNTDR`
 
     Note
     -------
