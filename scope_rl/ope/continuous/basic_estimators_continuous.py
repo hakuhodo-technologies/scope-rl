@@ -1,24 +1,26 @@
 # Copyright (c) 2023, Haruka Kiyohara, Ren Kishimoto, HAKUHODO Technologies Inc., and Hanjuku-kaso Co., Ltd. All rights reserved.
 # Licensed under the Apache 2.0 License.
 
-"""Off-Policy Estimators for discrete action cases."""
+"""Off-Policy Estimators for continuous action cases (designed for deterministic evaluation policies)."""
 from dataclasses import dataclass
 from typing import Dict, Optional
 
 import numpy as np
 from sklearn.utils import check_scalar
 
+from d3rlpy.preprocessing import ActionScaler
+
 from .estimators_base import BaseOffPolicyEstimator
 from ..utils import check_array
 
 
 @dataclass
-class DiscreteDirectMethod(BaseOffPolicyEstimator):
-    """Direct Method (DM) for discrete action spaces.
+class ContinuousDirectMethod(BaseOffPolicyEstimator):
+    """Direct Method (DM) (designed for deterministic evaluation policies) for continuous action spaces.
 
     Bases: :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
-    Imported as: :class:`scope_rl.ope.DiscreteDirectMethod`
+    Imported as: :class:`scope_rl.ope.ContinuousDirectMethod`
 
     Note
     -------
@@ -27,12 +29,12 @@ class DiscreteDirectMethod(BaseOffPolicyEstimator):
     .. math::
 
         \\hat{J}_{\\mathrm{DM}} (\\pi; \\mathcal{D})
-        := \\mathbb{E}_n [\\mathbb{E}_{a_0 \\sim \\pi(a_0 | s_0)} [\\hat{Q}(s_0, a_0)] ]
+        := \\mathbb{E}_n [\\hat{Q}(s_0, \\pi(s_0))]
         = \\mathbb{E}_n [\\hat{V}(s_0)],
 
     where :math:`\\mathcal{D}=\\{\\{(s_t, a_t, r_t)\\}_{t=0}^{T-1}\\}_{i=1}^n` is the logged dataset with :math:`n` trajectories.
     :math:`T` indicates step per episode. :math:`\\hat{Q}(s_t, a_t)` is the estimated Q value given a state-action pair.
-    :math:`\\hat{V}(s_t)` is the estimated value function given a state.
+    \\hat{V}(s_t) is the estimated value function given a state.
 
     DM has low variance compared to other estimators, but can produce larger bias due to approximation errors.
 
@@ -59,15 +61,14 @@ class DiscreteDirectMethod(BaseOffPolicyEstimator):
 
     """
 
-    estimator_name: str = "dm"
+    estimator_name = "dm"
 
     def __post_init__(self):
-        self.action_type = "discrete"
+        self.action_type = "continuous"
 
     def _estimate_trajectory_value(
         self,
         step_per_trajectory: int,
-        evaluation_policy_action_dist: np.ndarray,
         state_action_value_prediction: np.ndarray,
         **kwargs,
     ) -> np.ndarray:
@@ -78,12 +79,9 @@ class DiscreteDirectMethod(BaseOffPolicyEstimator):
         step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
 
-        evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
-            Conditional action distribution induced by the evaluation policy,
-            i.e., :math:`\\pi(a | s_t) \\forall a \\in \\mathcal{A}`
-
-        state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, n_action)
-            :math:`\\hat{Q}` for all actions, i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
+        state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, 2)
+            :math:`\\hat{Q}` for the observed action and that chosen by the evaluation policy,
+            i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a | s_t))`.
 
         Return
         -------
@@ -91,17 +89,14 @@ class DiscreteDirectMethod(BaseOffPolicyEstimator):
             Policy value (expected reward under the evaluation policy) estimated for each trajectory.
 
         """
-        state_value = (
-            (state_action_value_prediction * evaluation_policy_action_dist)
-            .sum(axis=1)
-            .reshape((-1, step_per_trajectory))
+        state_action_value_prediction = state_action_value_prediction.reshape(
+            (-1, step_per_trajectory, 2)
         )
-        return state_value[:, 0]
+        return state_action_value_prediction[:, 0, 1]
 
     def estimate_policy_value(
         self,
         step_per_trajectory: int,
-        evaluation_policy_action_dist: np.ndarray,
         state_action_value_prediction: np.ndarray,
         **kwargs,
     ) -> float:
@@ -112,12 +107,9 @@ class DiscreteDirectMethod(BaseOffPolicyEstimator):
         step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
 
-        evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
-            Conditional action distribution induced by the evaluation policy,
-            i.e., :math:`\\pi(a | s_t) \\forall a \\in \\mathcal{A}`
-
-        state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, n_action)
-            :math:`\\hat{Q}` for all actions, i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
+        state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, 2)
+            :math:`\\hat{Q}` for the observed action and that chosen by the evaluation policy,
+            i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a | s_t))`.
 
         Return
         -------
@@ -136,45 +128,17 @@ class DiscreteDirectMethod(BaseOffPolicyEstimator):
             name="state_action_value_prediction",
             expected_dim=2,
         )
-        check_array(
-            evaluation_policy_action_dist,
-            name="evaluation_policy_action_dist",
-            expected_dim=2,
-            min_val=0.0,
-            max_val=1.0,
-        )
-        if (
-            state_action_value_prediction.shape[0]
-            != evaluation_policy_action_dist.shape[0]
-        ):
-            raise ValueError(
-                "Expected `state_action_value_prediction.shape[0] == evaluation_policy_action_dist.shape[0]`"
-                ", but found False"
-            )
-        if (
-            state_action_value_prediction.shape[1]
-            != evaluation_policy_action_dist.shape[1]
-        ):
-            raise ValueError(
-                "Expected `state_action_value_prediction.shape[1] == evaluation_policy_action_dist.shape[1]`"
-                ", but found False"
-            )
         if state_action_value_prediction.shape[0] % step_per_trajectory:
             raise ValueError(
                 "Expected `state_action_value_prediction.shape[0] \\% step_per_trajectory == 0`, but found False"
             )
-        if not np.allclose(
-            evaluation_policy_action_dist.sum(axis=1),
-            np.ones(evaluation_policy_action_dist.shape[0]),
-        ):
+        if state_action_value_prediction.shape[1] != 2:
             raise ValueError(
-                "Expected `evaluation_policy_action_dist.sum(axis=1) == np.ones(evaluation_policy_action_dist.shape[0])`"
-                ", but found it False"
+                "Expected `state_action_value_prediction.shape[1] == 2`, but found False"
             )
 
         estimated_policy_value = self._estimate_trajectory_value(
             step_per_trajectory=step_per_trajectory,
-            evaluation_policy_action_dist=evaluation_policy_action_dist,
             state_action_value_prediction=state_action_value_prediction,
         ).mean()
         return estimated_policy_value
@@ -182,7 +146,6 @@ class DiscreteDirectMethod(BaseOffPolicyEstimator):
     def estimate_interval(
         self,
         step_per_trajectory: int,
-        evaluation_policy_action_dist: np.ndarray,
         state_action_value_prediction: np.ndarray,
         alpha: float = 0.05,
         ci: str = "bootstrap",
@@ -197,18 +160,15 @@ class DiscreteDirectMethod(BaseOffPolicyEstimator):
         step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
 
-        evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
-            Conditional action distribution induced by the evaluation policy,
-            i.e., :math:`\\pi(a | s_t) \\forall a \\in \\mathcal{A}`
-
-        state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, n_action)
-            :math:`\\hat{Q}` for all actions, i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
+        state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, 2)
+            :math:`\\hat{Q}` for the observed action and that chosen by the evaluation policy,
+            i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a | s_t))`.
 
         alpha: float, default=0.05
             Significance level. The value should be within `[0, 1)`.
 
         ci: {"bootstrap", "hoeffding", "bernstein", "ttest"}, default="bootstrap"
-            Method to estimate the confidence interval.
+            Name of the method to estimate the confidence interval.
 
         n_bootstrap_samples: int, default=10000 (> 0)
             Number of resampling performed in the bootstrap procedure.
@@ -241,40 +201,13 @@ class DiscreteDirectMethod(BaseOffPolicyEstimator):
             name="state_action_value_prediction",
             expected_dim=2,
         )
-        check_array(
-            evaluation_policy_action_dist,
-            name="evaluation_policy_action_dist",
-            expected_dim=2,
-            min_val=0.0,
-            max_val=1.0,
-        )
-        if (
-            state_action_value_prediction.shape[0]
-            != evaluation_policy_action_dist.shape[0]
-        ):
-            raise ValueError(
-                "Expected `state_action_value_prediction.shape[0] == evaluation_policy_action_dist.shape[0]`"
-                ", but found False"
-            )
-        if (
-            state_action_value_prediction.shape[1]
-            != evaluation_policy_action_dist.shape[1]
-        ):
-            raise ValueError(
-                "Expected `state_action_value_prediction.shape[1] == evaluation_policy_action_dist.shape[1]`"
-                ", but found False"
-            )
         if state_action_value_prediction.shape[0] % step_per_trajectory:
             raise ValueError(
                 "Expected `state_action_value_prediction.shape[0] \\% step_per_trajectory == 0`, but found False"
             )
-        if not np.allclose(
-            evaluation_policy_action_dist.sum(axis=1),
-            np.ones(evaluation_policy_action_dist.shape[0]),
-        ):
+        if state_action_value_prediction.shape[1] != 2:
             raise ValueError(
-                "Expected `evaluation_policy_action_dist.sum(axis=1) == np.ones(evaluation_policy_action_dist.shape[0])`"
-                ", but found it False"
+                "Expected `state_action_value_prediction.shape[1] == 2`, but found False"
             )
         if ci not in self._estimate_confidence_interval.keys():
             raise ValueError(
@@ -283,7 +216,6 @@ class DiscreteDirectMethod(BaseOffPolicyEstimator):
 
         estimated_trajectory_value = self._estimate_trajectory_value(
             step_per_trajectory=step_per_trajectory,
-            evaluation_policy_action_dist=evaluation_policy_action_dist,
             state_action_value_prediction=state_action_value_prediction,
         )
         return self._estimate_confidence_interval[ci](
@@ -295,12 +227,12 @@ class DiscreteDirectMethod(BaseOffPolicyEstimator):
 
 
 @dataclass
-class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
-    """Trajectory-wise Important Sampling (TIS) for discrete action spaces.
+class ContinuousTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
+    """Trajectory-wise Importance Sampling (TIS) (designed for deterministic evaluation policies) for continuous action spaces.
 
     Bases: :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
-    Imported as: :class:`scope_rl.ope.DiscreteTrajectoryWiseImportanceSampling`
+    Imported as: :class:`scope_rl.ope.ContinuousTrajectoryWiseImportanceSampling`
 
     Note
     -------
@@ -308,9 +240,10 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 
     .. math::
 
-        \\hat{J}_{\\mathrm{TIS}} (\\pi; \\mathcal{D}) := \\mathbb{E}_{n} \\left[\\sum_{t=0}^{T-1} \\gamma^t w_{0:T-1} r_t \\right],
+        \\hat{J}_{\\mathrm{TIS}} (\\pi; \\mathcal{D}) := \\mathbb{E}_{n} \\left[\\sum_{t=0}^{T-1} \\gamma^t w_{0:T-1} \\delta(\\pi, a_{0:T-1}) r_t \\right],
 
-    where :math:`w_{0:T-1} := \\prod_{t=0}^{T-1} (\\pi(a_t | s_t) / \\pi_0(a_t | s_t))` is the trajectory-wise importance weight.
+    where :math:`w_{0:T-1} := \\prod_{t=0}^{T-1} (1 / \\pi_0(a_t | s_t))` is the (trajectory-wise) importance weight.
+    :math:`\\delta(\\pi, a_{0:T-1}) = \\prod_{t=0}^{T-1} K(\\pi(s_t), a_t)` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy where :math:`K(\\cdot)` is a kernel function.
 
     TIS enables an unbiased estimation of the policy value. However, when the trajectory length (:math:`T`) is large,
     TIS suffers from high variance due to the product of importance weights over the entire horizon.
@@ -322,15 +255,18 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 
     References
     -------
+    Nathan Kallus and Angela Zhou.
+    "Policy Evaluation and Optimization with Continuous Treatments." 2019.
+
     Doina Precup, Richard S. Sutton, and Satinder P. Singh.
     "Eligibility Traces for Off-Policy Policy Evaluation." 2000.
 
     """
 
-    estimator_name = "tis"
+    estimator_name: str = "tis"
 
     def __post_init__(self):
-        self.action_type = "discrete"
+        self.action_type = "continuous"
 
     def _estimate_trajectory_value(
         self,
@@ -338,8 +274,11 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         action: np.ndarray,
         reward: np.ndarray,
         pscore: np.ndarray,
-        evaluation_policy_action_dist: np.ndarray,
+        evaluation_policy_action: np.ndarray,
         gamma: float = 1.0,
+        kernel: str = "gaussian",
+        bandwidth: float = 1.0,
+        action_scaler: Optional[ActionScaler] = None,
         **kwargs,
     ) -> np.ndarray:
         """Estimate the trajectory-wise policy value.
@@ -349,22 +288,30 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_trajectories * step_per_trajectory, )
+        action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
             Observed immediate rewards.
 
-        pscore: array-like of shape (n_trajectories * step_per_trajectory, )
+        pscore: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_b(a | s)`
 
-        evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
-            Conditional action distribution induced by the evaluation policy,
-            i.e., :math:`\\pi(a | s_t) \\forall a \\in \\mathcal{A}`
+        evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
+            Action chosen by the evaluation policy.
 
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
+
+        kernel: {"gaussian", "epanechnikov", "triangular", "cosine", "uniform"}
+            Name of the kernel function to smooth importance weights.
+
+        bandwidth: float, default=1.0 (> 0)
+            Bandwidth hyperparameter of the kernel function.
+
+        action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
+            Scaling factor of action.
 
         Return
         -------
@@ -372,24 +319,30 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
             Policy value (expected reward under the evaluation policy) estimated for each trajectory.
 
         """
-        behavior_policy_pscore = self._calc_behavior_policy_pscore_discrete(
+        behavior_policy_pscore = self._calc_behavior_policy_pscore_continuous(
             step_per_trajectory=step_per_trajectory,
             pscore=pscore,
             pscore_type="trajectory_wise",
         )
-        evaluation_policy_pscore = self._calc_evaluation_policy_pscore_discrete(
+        similarity_weight = self._calc_similarity_weight(
             step_per_trajectory=step_per_trajectory,
             action=action,
-            evaluation_policy_action_dist=evaluation_policy_action_dist,
+            evaluation_policy_action=evaluation_policy_action,
+            action_scaler=action_scaler,
+            kernel=kernel,
+            bandwidth=bandwidth,
             pscore_type="trajectory_wise",
         )
-        weight = evaluation_policy_pscore / behavior_policy_pscore
 
         reward = reward.reshape((-1, step_per_trajectory))
         discount = np.full(step_per_trajectory, gamma).cumprod() / gamma
-        estimated_trajectory_value = (discount[np.newaxis, :] * weight * reward).sum(
-            axis=1
-        )
+
+        estimated_trajectory_value = (
+            discount[np.newaxis, :]
+            * reward
+            * similarity_weight
+            / behavior_policy_pscore
+        ).sum(axis=1)
 
         return estimated_trajectory_value
 
@@ -399,8 +352,11 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         action: np.ndarray,
         reward: np.ndarray,
         pscore: np.ndarray,
-        evaluation_policy_action_dist: np.ndarray,
+        evaluation_policy_action: np.ndarray,
         gamma: float = 1.0,
+        kernel: str = "gaussian",
+        bandwidth: float = 1.0,
+        action_scaler: Optional[ActionScaler] = None,
         **kwargs,
     ) -> float:
         """Estimate the policy value of the evaluation policy.
@@ -410,22 +366,30 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_trajectories * step_per_trajectory, )
+        action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
             Observed immediate rewards.
 
-        pscore: array-like of shape (n_trajectories * step_per_trajectory, )
+        pscore: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_b(a | s)`
 
-        evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
-            Conditional action distribution induced by the evaluation policy,
-            i.e., :math:`\\pi(a | s_t) \\forall a \\in \\mathcal{A}`
+        evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
+            Action chosen by the evaluation policy.
 
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
+
+        kernel: {"gaussian", "epanechnikov", "triangular", "cosine", "uniform"}
+            Name of the kernel function to smooth importance weights.
+
+        bandwidth: float, default=1.0 (> 0)
+            Bandwidth hyperparameter of the kernel function.
+
+        action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
+            Scaling factor of action.
 
         Return
         -------
@@ -440,6 +404,11 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
             min_val=1,
         )
         check_array(
+            action,
+            name="action",
+            expected_dim=2,
+        )
+        check_array(
             reward,
             name="reward",
             expected_dim=1,
@@ -447,57 +416,53 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         check_array(
             pscore,
             name="pscore",
-            expected_dim=1,
-            min_val=0.0,
-            max_val=1.0,
-        )
-        check_array(
-            evaluation_policy_action_dist,
-            name="evaluation_policy_action_dist",
             expected_dim=2,
             min_val=0.0,
-            max_val=1.0,
         )
         check_array(
-            action,
-            name="action",
-            expected_dim=1,
-            min_val=0,
-            max_val=evaluation_policy_action_dist.shape[1] - 1,
+            evaluation_policy_action,
+            name="evaluation_policy_action",
+            expected_dim=2,
         )
         if not (
             action.shape[0]
             == reward.shape[0]
             == pscore.shape[0]
-            == evaluation_policy_action_dist.shape[0]
+            == evaluation_policy_action.shape[0]
         ):
             raise ValueError(
-                "Expected `action.shape[0] == reward.shape[0] == pscore.shape[0] == evaluation_policy_action_dist.shape[0]`"
+                "Expected `action.shape[0] == reward.shape[0] == pscore.shape[0] == evaluation_policy_action.shape[0]`"
                 ", but found False"
+            )
+        if not (
+            action.shape[1] == evaluation_policy_action.shape[1] == pscore.shape[1]
+        ):
+            raise ValueError(
+                "Expected `action.shape[1] == evaluation_policy_action.shape[1] == pscore.shape[1]`, but found False"
             )
         if action.shape[0] % step_per_trajectory:
             raise ValueError(
                 "Expected `action.shape[0] \\% step_per_trajectory == 0`, but found False"
             )
-        if not np.allclose(
-            evaluation_policy_action_dist.sum(axis=1),
-            np.ones(evaluation_policy_action_dist.shape[0]),
-        ):
-            raise ValueError(
-                "Expected `evaluation_policy_action_dist.sum(axis=1) == np.ones(evaluation_policy_action_dist.shape[0])`"
-                ", but found it False"
-            )
-        check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
 
-        estimated_policy_value = self._estimate_trajectory_value(
+        check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
+        check_scalar(bandwidth, name="bandwidth", target_type=float, min_val=0.0)
+        if action_scaler is not None and not isinstance(action_scaler, ActionScaler):
+            raise ValueError(
+                "action_scaler must be an instance of d3rlpy.preprocessing.ActionScaler, but found False"
+            )
+
+        return self._estimate_trajectory_value(
             step_per_trajectory=step_per_trajectory,
             action=action,
             reward=reward,
             pscore=pscore,
-            evaluation_policy_action_dist=evaluation_policy_action_dist,
+            evaluation_policy_action=evaluation_policy_action,
             gamma=gamma,
+            kernel=kernel,
+            bandwidth=bandwidth,
+            action_scaler=action_scaler,
         ).mean()
-        return estimated_policy_value
 
     def estimate_interval(
         self,
@@ -505,12 +470,15 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         action: np.ndarray,
         reward: np.ndarray,
         pscore: np.ndarray,
-        evaluation_policy_action_dist: np.ndarray,
+        evaluation_policy_action: np.ndarray,
         gamma: float = 1.0,
+        kernel: str = "gaussian",
+        bandwidth: float = 1.0,
+        action_scaler: Optional[ActionScaler] = None,
         alpha: float = 0.05,
         ci: str = "bootstrap",
         n_bootstrap_samples: int = 10000,
-        random_state: Optional[int] = None,
+        random_state: int = 12345,
         **kwargs,
     ) -> Dict[str, float]:
         """Estimate the confidence interval of the policy value by nonparametric bootstrap.
@@ -520,28 +488,36 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_trajectories * step_per_trajectory, )
+        action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
             Observed immediate rewards.
 
-        pscore: array-like of shape (n_trajectories * step_per_trajectory, )
+        pscore: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_b(a | s)`
 
-        evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
-            Conditional action distribution induced by the evaluation policy,
-            i.e., :math:`\\pi(a | s_t) \\forall a \\in \\mathcal{A}`
+        evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
+            Action chosen by the evaluation policy.
 
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
+
+        kernel: {"gaussian", "epanechnikov", "triangular", "cosine", "uniform"}
+            Name of the kernel function to smooth importance weights.
+
+        bandwidth: float, default=1.0 (> 0)
+            Bandwidth hyperparameter of the kernel function.
+
+        action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
+            Scaling factor of action.
 
         alpha: float, default=0.05
             Significance level. The value should be within `[0, 1)`.
 
         ci: {"bootstrap", "hoeffding", "bernstein", "ttest"}, default="bootstrap"
-            Method to estimate the confidence interval.
+            Name of the method to estimate the confidence interval.
 
         n_bootstrap_samples: int, default=10000 (> 0)
             Number of resampling performed in the bootstrap procedure.
@@ -570,6 +546,11 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
             min_val=1,
         )
         check_array(
+            action,
+            name="action",
+            expected_dim=2,
+        )
+        check_array(
             reward,
             name="reward",
             expected_dim=1,
@@ -577,47 +558,41 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         check_array(
             pscore,
             name="pscore",
-            expected_dim=1,
-            min_val=0.0,
-            max_val=1.0,
-        )
-        check_array(
-            evaluation_policy_action_dist,
-            name="evaluation_policy_action_dist",
             expected_dim=2,
             min_val=0.0,
-            max_val=1.0,
         )
         check_array(
-            action,
-            name="action",
-            expected_dim=1,
-            min_val=0,
-            max_val=evaluation_policy_action_dist.shape[1] - 1,
+            evaluation_policy_action,
+            name="evaluation_policy_action",
+            expected_dim=2,
         )
         if not (
             action.shape[0]
             == reward.shape[0]
             == pscore.shape[0]
-            == evaluation_policy_action_dist.shape[0]
+            == evaluation_policy_action.shape[0]
         ):
             raise ValueError(
-                "Expected `action.shape[0] == reward.shape[0] == pscore.shape[0] == evaluation_policy_action_dist.shape[0]`"
+                "Expected `action.shape[0] == reward.shape[0] == pscore.shape[0] == evaluation_policy_action.shape[0]`"
                 ", but found False"
+            )
+        if not (
+            action.shape[1] == evaluation_policy_action.shape[1] == pscore.shape[1]
+        ):
+            raise ValueError(
+                "Expected `action.shape[1] == evaluation_policy_action.shape[1] == pscore.shape[1]`, but found False"
             )
         if action.shape[0] % step_per_trajectory:
             raise ValueError(
                 "Expected `action.shape[0] \\% step_per_trajectory == 0`, but found False"
             )
-        if not np.allclose(
-            evaluation_policy_action_dist.sum(axis=1),
-            np.ones(evaluation_policy_action_dist.shape[0]),
-        ):
-            raise ValueError(
-                "Expected `evaluation_policy_action_dist.sum(axis=1) == np.ones(evaluation_policy_action_dist.shape[0])`"
-                ", but found it False"
-            )
+
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
+        check_scalar(bandwidth, name="bandwidth", target_type=float, min_val=0.0)
+        if action_scaler is not None and not isinstance(action_scaler, ActionScaler):
+            raise ValueError(
+                "action_scaler must be an instance of d3rlpy.preprocessing.ActionScaler, but found False"
+            )
 
         if ci not in self._estimate_confidence_interval.keys():
             raise ValueError(
@@ -629,8 +604,11 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
             action=action,
             reward=reward,
             pscore=pscore,
-            evaluation_policy_action_dist=evaluation_policy_action_dist,
+            evaluation_policy_action=evaluation_policy_action,
             gamma=gamma,
+            kernel=kernel,
+            bandwidth=bandwidth,
+            action_scaler=action_scaler,
         )
         return self._estimate_confidence_interval[ci](
             samples=estimated_trajectory_value,
@@ -641,12 +619,12 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 
 
 @dataclass
-class DiscretePerDecisionImportanceSampling(BaseOffPolicyEstimator):
-    """Per-Decision Importance Sampling (PDIS) for discrete action spaces.
+class ContinuousPerDecisionImportanceSampling(BaseOffPolicyEstimator):
+    """Per-Decision Importance Sampling (PDIS) (designed for deterministic evaluation policies) for continuous action spaces.
 
     Bases: :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
-    Imported as: :class:`scope_rl.ope.DiscretePerDecisionImportanceSampling`
+    Imported as: :class:`scope_rl.ope.ContinuousPerDecisionImportanceSampling`
 
     Note
     -------
@@ -654,11 +632,13 @@ class DiscretePerDecisionImportanceSampling(BaseOffPolicyEstimator):
 
     .. math::
 
-        \\hat{J}_{\\mathrm{PDIS}} (\\pi; \\mathcal{D}) := \\mathbb{E}_{n} \\left[\\sum_{t=0}^{T-1} \\gamma^t w_{0:t} r_t \\right],
+        \\hat{J}_{\\mathrm{PDIS}} (\\pi; \\mathcal{D}) := \\mathbb{E}_{n} \\left[\\sum_{t=0}^{T-1} \\gamma^t w_{0:t} \\delta(\\pi, a_{0:t}) r_t \\right],
 
-    where :math:`w_{0:t} := \\prod_{t'=0}^t (\\pi(a_{t'} | s_{t'}) / \\pi_0(a_{t'} | s_{t'}))` is the importance weight for each time step wrt the previous actions (referred to as the per-decision or step-wise importance weight).
+    where :math:`w_{0:t} := \\prod_{t'=0}^t (1 / \\pi_0(a_{t'} | s_{t'}))`. is the importance weight for each time step wrt the previous actions (referred to as the per-decision or step-wise importance weight).
+    :math:`\\delta(\\pi, a_{0:t}) = \\prod_{t'=0}^t K(\\pi(s_{t'}), a_{t'})` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy where :math:`K(\\cdot)` is a kernel function.
 
-    By using per-decision importance weighting instead of trajectory-wise importance weighting of TIS, PDIS has lower variance than TIS while remaining unbiased. However, when the trajectory length (:math:`T`) is large, PDIS still suffers from high variance.
+    By using per-decision importance weighting instead of trajectory-wise importance weighting of TIS, PDIS has lower variance than TIS while remaining unbiased.
+    However, when the trajectory length (:math:`T`) is large, PDIS still suffers from high variance.
 
     Parameters
     -------
@@ -667,15 +647,18 @@ class DiscretePerDecisionImportanceSampling(BaseOffPolicyEstimator):
 
     References
     -------
+    Nathan Kallus and Angela Zhou.
+    "Policy Evaluation and Optimization with Continuous Treatments." 2019.
+
     Doina Precup, Richard S. Sutton, and Satinder P. Singh.
     "Eligibility Traces for Off-Policy Policy Evaluation." 2000.
 
     """
 
-    estimator_name = "pdis"
+    estimator_name: str = "pdis"
 
     def __post_init__(self):
-        self.action_type = "discrete"
+        self.action_type = "continuous"
 
     def _estimate_trajectory_value(
         self,
@@ -683,8 +666,11 @@ class DiscretePerDecisionImportanceSampling(BaseOffPolicyEstimator):
         action: np.ndarray,
         reward: np.ndarray,
         pscore: np.ndarray,
-        evaluation_policy_action_dist: np.ndarray,
+        evaluation_policy_action: np.ndarray,
         gamma: float = 1.0,
+        kernel: str = "gaussian",
+        bandwidth: float = 1.0,
+        action_scaler: Optional[ActionScaler] = None,
         **kwargs,
     ) -> np.ndarray:
         """Estimate the trajectory-wise policy value.
@@ -694,22 +680,30 @@ class DiscretePerDecisionImportanceSampling(BaseOffPolicyEstimator):
         step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_trajectories * step_per_trajectory, )
+        action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
             Observed immediate rewards.
 
-        pscore: array-like of shape (n_trajectories * step_per_trajectory, )
+        pscore: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_b(a | s)`
 
-        evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
-            Conditional action distribution induced by the evaluation policy,
-            i.e., :math:`\\pi(a | s_t) \\forall a \\in \\mathcal{A}`
+        evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
+            Action chosen by the evaluation policy.
 
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
+
+        kernel: {"gaussian", "epanechnikov", "triangular", "cosine", "uniform"}
+            Name of the kernel function to smooth importance weights.
+
+        bandwidth: float, default=1.0 (> 0)
+            Bandwidth hyperparameter of the kernel function.
+
+        action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
+            Scaling factor of action.
 
         Return
         -------
@@ -717,24 +711,30 @@ class DiscretePerDecisionImportanceSampling(BaseOffPolicyEstimator):
             Policy value (expected reward under the evaluation policy) estimated for each trajectory.
 
         """
-        behavior_policy_pscore = self._calc_behavior_policy_pscore_discrete(
+        behavior_policy_pscore = self._calc_behavior_policy_pscore_continuous(
             step_per_trajectory=step_per_trajectory,
             pscore=pscore,
             pscore_type="step_wise",
         )
-        evaluation_policy_pscore = self._calc_evaluation_policy_pscore_discrete(
+        similarity_weight = self._calc_similarity_weight(
             step_per_trajectory=step_per_trajectory,
             action=action,
-            evaluation_policy_action_dist=evaluation_policy_action_dist,
+            evaluation_policy_action=evaluation_policy_action,
+            action_scaler=action_scaler,
+            kernel=kernel,
+            bandwidth=bandwidth,
             pscore_type="step_wise",
         )
-        weight = evaluation_policy_pscore / behavior_policy_pscore
 
         reward = reward.reshape((-1, step_per_trajectory))
         discount = np.full(step_per_trajectory, gamma).cumprod() / gamma
-        estimated_trajectory_value = (discount[np.newaxis, :] * weight * reward).sum(
-            axis=1
-        )
+
+        estimated_trajectory_value = (
+            discount[np.newaxis, :]
+            * reward
+            * similarity_weight
+            / behavior_policy_pscore
+        ).sum(axis=1)
 
         return estimated_trajectory_value
 
@@ -744,8 +744,11 @@ class DiscretePerDecisionImportanceSampling(BaseOffPolicyEstimator):
         action: np.ndarray,
         reward: np.ndarray,
         pscore: np.ndarray,
-        evaluation_policy_action_dist: np.ndarray,
+        evaluation_policy_action: np.ndarray,
         gamma: float = 1.0,
+        kernel: str = "gaussian",
+        bandwidth: float = 1.0,
+        action_scaler: Optional[ActionScaler] = None,
         **kwargs,
     ) -> float:
         """Estimate the policy value of the evaluation policy.
@@ -755,22 +758,30 @@ class DiscretePerDecisionImportanceSampling(BaseOffPolicyEstimator):
         step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_trajectories * step_per_trajectory, )
+        action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
             Observed immediate rewards.
 
-        pscore: array-like of shape (n_trajectories * step_per_trajectory, )
+        pscore: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_b(a | s)`
 
-        evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
-            Conditional action distribution induced by the evaluation policy,
-            i.e., :math:`\\pi(a | s_t) \\forall a \\in \\mathcal{A}`
+        evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
+            Action chosen by the evaluation policy.
 
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
+
+        kernel: {"gaussian", "epanechnikov", "triangular", "cosine", "uniform"}
+            Name of the kernel function to smooth importance weights.
+
+        bandwidth: float, default=1.0 (> 0)
+            Bandwidth hyperparameter of the kernel function.
+
+        action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
+            Scaling factor of action.
 
         Return
         -------
@@ -785,6 +796,11 @@ class DiscretePerDecisionImportanceSampling(BaseOffPolicyEstimator):
             min_val=1,
         )
         check_array(
+            action,
+            name="action",
+            expected_dim=2,
+        )
+        check_array(
             reward,
             name="reward",
             expected_dim=1,
@@ -792,55 +808,52 @@ class DiscretePerDecisionImportanceSampling(BaseOffPolicyEstimator):
         check_array(
             pscore,
             name="pscore",
-            expected_dim=1,
-            min_val=0.0,
-            max_val=1.0,
-        )
-        check_array(
-            evaluation_policy_action_dist,
-            name="evaluation_policy_action_dist",
             expected_dim=2,
             min_val=0.0,
-            max_val=1.0,
         )
         check_array(
-            action,
-            name="action",
-            expected_dim=1,
-            min_val=0,
-            max_val=evaluation_policy_action_dist.shape[1] - 1,
+            evaluation_policy_action,
+            name="evaluation_policy_action",
+            expected_dim=2,
         )
         if not (
             action.shape[0]
             == reward.shape[0]
             == pscore.shape[0]
-            == evaluation_policy_action_dist.shape[0]
+            == evaluation_policy_action.shape[0]
         ):
             raise ValueError(
-                "Expected `action.shape[0] == reward.shape[0] == pscore.shape[0] == evaluation_policy_action_dist.shape[0]`"
+                "Expected `action.shape[0] == reward.shape[0] == pscore.shape[0] == evaluation_policy_action.shape[0]`"
                 ", but found False"
+            )
+        if not (
+            action.shape[1] == evaluation_policy_action.shape[1] == pscore.shape[1]
+        ):
+            raise ValueError(
+                "Expected `action.shape[1] == evaluation_policy_action.shape[1]`, but found False"
             )
         if action.shape[0] % step_per_trajectory:
             raise ValueError(
                 "Expected `action.shape[0] \\% step_per_trajectory == 0`, but found False"
             )
-        if not np.allclose(
-            evaluation_policy_action_dist.sum(axis=1),
-            np.ones(evaluation_policy_action_dist.shape[0]),
-        ):
-            raise ValueError(
-                "Expected `evaluation_policy_action_dist.sum(axis=1) == np.ones(evaluation_policy_action_dist.shape[0])`"
-                ", but found it False"
-            )
+
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
+        check_scalar(bandwidth, name="bandwidth", target_type=float, min_val=0.0)
+        if action_scaler is not None and not isinstance(action_scaler, ActionScaler):
+            raise ValueError(
+                "action_scaler must be an instance of d3rlpy.preprocessing.ActionScaler, but found False"
+            )
 
         return self._estimate_trajectory_value(
             step_per_trajectory=step_per_trajectory,
             action=action,
             reward=reward,
             pscore=pscore,
-            evaluation_policy_action_dist=evaluation_policy_action_dist,
+            evaluation_policy_action=evaluation_policy_action,
             gamma=gamma,
+            kernel=kernel,
+            bandwidth=bandwidth,
+            action_scaler=action_scaler,
         ).mean()
 
     def estimate_interval(
@@ -849,12 +862,15 @@ class DiscretePerDecisionImportanceSampling(BaseOffPolicyEstimator):
         action: np.ndarray,
         reward: np.ndarray,
         pscore: np.ndarray,
-        evaluation_policy_action_dist: np.ndarray,
+        evaluation_policy_action: np.ndarray,
         gamma: float = 1.0,
+        kernel: str = "gaussian",
+        bandwidth: float = 1.0,
+        action_scaler: Optional[ActionScaler] = None,
         alpha: float = 0.05,
         ci: str = "bootstrap",
         n_bootstrap_samples: int = 10000,
-        random_state: Optional[int] = None,
+        random_state: int = 12345,
         **kwargs,
     ) -> Dict[str, float]:
         """Estimate the confidence interval of the policy value by nonparametric bootstrap.
@@ -864,28 +880,36 @@ class DiscretePerDecisionImportanceSampling(BaseOffPolicyEstimator):
         step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_trajectories * step_per_trajectory, )
+        action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
             Observed immediate rewards.
 
-        pscore: array-like of shape (n_trajectories * step_per_trajectory, )
+        pscore: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_b(a | s)`
 
-        evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
-            Conditional action distribution induced by the evaluation policy,
-            i.e., :math:`\\pi(a | s_t) \\forall a \\in \\mathcal{A}`
+        evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
+            Action chosen by the evaluation policy.
 
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
+
+        kernel: {"gaussian", "epanechnikov", "triangular", "cosine", "uniform"}
+            Name of the kernel function to smooth importance weights.
+
+        bandwidth: float, default=1.0 (> 0)
+            Bandwidth hyperparameter of the kernel function.
+
+        action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
+            Scaling factor of action.
 
         alpha: float, default=0.05
             Significance level. The value should be within `[0, 1)`.
 
         ci: {"bootstrap", "hoeffding", "bernstein", "ttest"}, default="bootstrap"
-            Method to estimate the confidence interval.
+            Name of the method to estimate the confidence interval.
 
         n_bootstrap_samples: int, default=10000 (> 0)
             Number of resampling performed in the bootstrap procedure.
@@ -914,6 +938,11 @@ class DiscretePerDecisionImportanceSampling(BaseOffPolicyEstimator):
             min_val=1,
         )
         check_array(
+            action,
+            name="action",
+            expected_dim=2,
+        )
+        check_array(
             reward,
             name="reward",
             expected_dim=1,
@@ -921,47 +950,41 @@ class DiscretePerDecisionImportanceSampling(BaseOffPolicyEstimator):
         check_array(
             pscore,
             name="pscore",
-            expected_dim=1,
-            min_val=0.0,
-            max_val=1.0,
-        )
-        check_array(
-            evaluation_policy_action_dist,
-            name="evaluation_policy_action_dist",
             expected_dim=2,
             min_val=0.0,
-            max_val=1.0,
         )
         check_array(
-            action,
-            name="action",
-            expected_dim=1,
-            min_val=0,
-            max_val=evaluation_policy_action_dist.shape[1] - 1,
+            evaluation_policy_action,
+            name="evaluation_policy_action",
+            expected_dim=2,
         )
         if not (
             action.shape[0]
             == reward.shape[0]
             == pscore.shape[0]
-            == evaluation_policy_action_dist.shape[0]
+            == evaluation_policy_action.shape[0]
         ):
             raise ValueError(
-                "Expected `action.shape[0] == reward.shape[0] == pscore.shape[0] == evaluation_policy_action_dist.shape[0]`"
+                "Expected `action.shape[0] == reward.shape[0] == pscore.shape[0] == evaluation_policy_action.shape[0]`"
                 ", but found False"
+            )
+        if not (
+            action.shape[1] == evaluation_policy_action.shape[1] == pscore.shape[1]
+        ):
+            raise ValueError(
+                "Expected `action.shape[1] == evaluation_policy_action.shape[1]`, but found False"
             )
         if action.shape[0] % step_per_trajectory:
             raise ValueError(
                 "Expected `action.shape[0] \\% step_per_trajectory == 0`, but found False"
             )
-        if not np.allclose(
-            evaluation_policy_action_dist.sum(axis=1),
-            np.ones(evaluation_policy_action_dist.shape[0]),
-        ):
-            raise ValueError(
-                "Expected `evaluation_policy_action_dist.sum(axis=1) == np.ones(evaluation_policy_action_dist.shape[0])`"
-                ", but found it False"
-            )
+
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
+        check_scalar(bandwidth, name="bandwidth", target_type=float, min_val=0.0)
+        if action_scaler is not None and not isinstance(action_scaler, ActionScaler):
+            raise ValueError(
+                "action_scaler must be an instance of d3rlpy.preprocessing.ActionScaler, but found False"
+            )
 
         if ci not in self._estimate_confidence_interval.keys():
             raise ValueError(
@@ -973,8 +996,11 @@ class DiscretePerDecisionImportanceSampling(BaseOffPolicyEstimator):
             action=action,
             reward=reward,
             pscore=pscore,
-            evaluation_policy_action_dist=evaluation_policy_action_dist,
+            evaluation_policy_action=evaluation_policy_action,
             gamma=gamma,
+            kernel=kernel,
+            bandwidth=bandwidth,
+            action_scaler=action_scaler,
         )
         return self._estimate_confidence_interval[ci](
             samples=estimated_trajectory_value,
@@ -985,12 +1011,12 @@ class DiscretePerDecisionImportanceSampling(BaseOffPolicyEstimator):
 
 
 @dataclass
-class DiscreteDoublyRobust(BaseOffPolicyEstimator):
-    """Doubly Robust (DR) for discrete action spaces.
+class ContinuousDoublyRobust(BaseOffPolicyEstimator):
+    """Doubly Robust (DR) (designed for deterministic evaluation policies) for continuous action spaces.
 
     Bases: :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
-    Imported as: :class:`scope_rl.ope.DiscreteDoublyRobust`
+    Imported as: :class:`scope_rl.ope.ContinuousDoublyRobust`
 
     Note
     -------
@@ -999,9 +1025,11 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
     .. math::
 
         \\hat{J}_{\\mathrm{DR}} (\\pi; \\mathcal{D})
-        := \\mathbb{E}_{n} \\left[\\sum_{t=0}^{T-1} \\gamma^t (w_{0:t} (r_t - \\hat{Q}(s_t, a_t)) + w_{0:t-1} \\mathbb{E}_{a \\sim \\pi(a | s_t)}[\\hat{Q}(s_t, a)]) \\right],
+        &:= \\mathbb{E}_{n} \\Biggl[\\sum_{t=0}^{T-1} \\gamma^t (w_{0:t} \\delta(\\pi, a_{0:t}) (r_t - \\hat{Q}(s_t, a_t)) \\\\
+        & \quad \quad \quad \quad \quad + w_{0:t-1} \\delta(\\pi, a_{0:t-1}) \\hat{Q}(s_t, \\pi(s_t))) \\Biggr],
 
-    where :math:`w_{0:t} := \\prod_{t'=0}^t (\\pi(a_{t'} | s_{t'}) / \\pi_0(a_{t'} | s_{t'}))` is the per-decision importance weight.
+    where :math:`w_{0:t} := \\prod_{t'=0}^t (1 / \\pi_0(a_{t'} | s_{t'}))` is the per-decision importance weight.
+    :math:`\\delta(\\pi, a_{0:t}) = \\prod_{t'=1}^t K(\\pi(s_{t'}), a_{t'})` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy where :math:`K(\\cdot)` is a kernel function.
 
     DR is unbiased and has lower variance than PDIS when :math:`\\hat{Q}(\\cdot)` is reasonably accurate and satisfies :math:`0 < \\hat{Q}(\\cdot) < 2 Q(\\cdot)`.
     However, when the importance weight is quite large, it may still suffer from a high variance.
@@ -1013,6 +1041,9 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
 
     References
     -------
+    Nathan Kallus and Angela Zhou.
+    "Policy Evaluation and Optimization with Continuous Treatments." 2019.
+
     Nan Jiang and Lihong Li.
     "Doubly Robust Off-policy Value Evaluation for Reinforcement Learning." 2016.
 
@@ -1024,7 +1055,7 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
     estimator_name = "dr"
 
     def __post_init__(self):
-        self.action_type = "discrete"
+        self.action_type = "continuous"
 
     def _estimate_trajectory_value(
         self,
@@ -1032,9 +1063,12 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
         action: np.ndarray,
         reward: np.ndarray,
         pscore: np.ndarray,
-        evaluation_policy_action_dist: np.ndarray,
+        evaluation_policy_action: np.ndarray,
         state_action_value_prediction: np.ndarray,
         gamma: float = 1.0,
+        kernel: str = "gaussian",
+        bandwidth: float = 1.0,
+        action_scaler: Optional[ActionScaler] = None,
         **kwargs,
     ) -> np.ndarray:
         """Estimate the trajectory-wise policy value.
@@ -1044,25 +1078,34 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
         step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_trajectories * step_per_trajectory, )
+        action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
             Observed immediate rewards.
 
-        pscore: array-like of shape (n_trajectories * step_per_trajectory, )
+        pscore: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_b(a | s)`
 
-        evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
-            Conditional action distribution induced by the evaluation policy,
-            i.e., :math:`\\pi(a | s_t) \\forall a \\in \\mathcal{A}`
+        evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
+            Action chosen by the evaluation policy.
 
-        state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, n_action)
-            :math:`\\hat{Q}` for all actions, i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
+        state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, 2)
+            :math:`\\hat{Q}` for the observed action and that chosen by the evaluation policy,
+            i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a | s_t))`.
 
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
+
+        kernel: {"gaussian", "epanechnikov", "triangular", "cosine", "uniform"}
+            Name of the kernel function to smooth importance weights.
+
+        bandwidth: float, default=1.0 (> 0)
+            Bandwidth hyperparameter of the kernel function.
+
+        action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
+            Scaling factor of action.
 
         Return
         -------
@@ -1070,33 +1113,32 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
             Policy value (expected reward under the evaluation policy) estimated for each trajectory.
 
         """
-        behavior_policy_pscore = self._calc_behavior_policy_pscore_discrete(
+        behavior_policy_pscore = self._calc_behavior_policy_pscore_continuous(
             step_per_trajectory=step_per_trajectory,
             pscore=pscore,
             pscore_type="step_wise",
         )
-        evaluation_policy_pscore = self._calc_evaluation_policy_pscore_discrete(
+        similarity_weight = self._calc_similarity_weight(
             step_per_trajectory=step_per_trajectory,
             action=action,
-            evaluation_policy_action_dist=evaluation_policy_action_dist,
+            evaluation_policy_action=evaluation_policy_action,
+            action_scaler=action_scaler,
+            kernel=kernel,
+            bandwidth=bandwidth,
             pscore_type="step_wise",
         )
-        weight = evaluation_policy_pscore / behavior_policy_pscore
+        weight = similarity_weight / behavior_policy_pscore
         weight_prev = np.roll(weight, 1, axis=1)
         weight_prev[:, 0] = 1
 
         reward = reward.reshape((-1, step_per_trajectory))
         discount = np.full(step_per_trajectory, gamma).cumprod() / gamma
 
-        state_value_prediction = (
-            (state_action_value_prediction * evaluation_policy_action_dist)
-            .sum(axis=1)
-            .reshape((-1, step_per_trajectory))
+        state_action_value_prediction = state_action_value_prediction.reshape(
+            (-1, step_per_trajectory, 2)
         )
-
-        state_action_value_prediction = state_action_value_prediction[
-            np.arange(len(action)), action
-        ].reshape((-1, step_per_trajectory))
+        state_value_prediction = state_action_value_prediction[:, :, 1]
+        state_action_value_prediction = state_action_value_prediction[:, :, 0]
 
         estimated_trajectory_value = (
             discount[np.newaxis, :]
@@ -1114,9 +1156,12 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
         action: np.ndarray,
         reward: np.ndarray,
         pscore: np.ndarray,
-        evaluation_policy_action_dist: np.ndarray,
+        evaluation_policy_action: np.ndarray,
         state_action_value_prediction: np.ndarray,
         gamma: float = 1.0,
+        kernel: str = "gaussian",
+        bandwidth: float = 1.0,
+        action_scaler: Optional[ActionScaler] = None,
         **kwargs,
     ) -> float:
         """Estimate the policy value of the evaluation policy.
@@ -1126,25 +1171,34 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
         step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_trajectories * step_per_trajectory, )
+        action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
             Observed immediate rewards.
 
-        pscore: array-like of shape (n_trajectories * step_per_trajectory, )
+        pscore: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_b(a | s)`
 
-        evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
-            Conditional action distribution induced by the evaluation policy,
-            i.e., :math:`\\pi(a | s_t) \\forall a \\in \\mathcal{A}`
+        evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
+            Action chosen by the evaluation policy.
 
-        state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, n_action)
-            :math:`\\hat{Q}` for all actions, i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
+        state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, 2)
+            :math:`\\hat{Q}` for the observed action and that chosen by the evaluation policy,
+            i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a | s_t))`.
 
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
+
+        kernel: {"gaussian", "epanechnikov", "triangular", "cosine", "uniform"}
+            Name of the kernel function to smooth importance weights.
+
+        bandwidth: float, default=1.0 (> 0)
+            Bandwidth hyperparameter of the kernel function.
+
+        action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
+            Scaling factor of action.
 
         Return
         -------
@@ -1159,6 +1213,11 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
             min_val=1,
         )
         check_array(
+            action,
+            name="action",
+            expected_dim=2,
+        )
+        check_array(
             reward,
             name="reward",
             expected_dim=1,
@@ -1166,71 +1225,63 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
         check_array(
             pscore,
             name="pscore",
-            expected_dim=1,
+            expected_dim=2,
             min_val=0.0,
-            max_val=1.0,
+        )
+        check_array(
+            evaluation_policy_action,
+            name="evaluation_policy_action",
+            expected_dim=2,
         )
         check_array(
             state_action_value_prediction,
             name="state_action_value_prediction",
             expected_dim=2,
         )
-        check_array(
-            evaluation_policy_action_dist,
-            name="evaluation_policy_action_dist",
-            expected_dim=2,
-            min_val=0.0,
-            max_val=1.0,
-        )
-        check_array(
-            action,
-            name="action",
-            expected_dim=1,
-            min_val=0,
-            max_val=evaluation_policy_action_dist.shape[1] - 1,
-        )
         if not (
             action.shape[0]
             == reward.shape[0]
             == pscore.shape[0]
+            == evaluation_policy_action.shape[0]
             == state_action_value_prediction.shape[0]
-            == evaluation_policy_action_dist.shape[0]
         ):
             raise ValueError(
-                "Expected `action.shape[0] == reward.shape[0] == pscore.shape[0] "
-                "== state_action_value_prediction.shape[0] == evaluation_policy_action_dist.shape[0]`"
-                ", but found False"
+                "Expected `action.shape[0] == reward.shape[0] == pscore.shape[0] == evaluation_policy_action.shape[0] "
+                "== state_action_value_prediction.shape[0]`, but found False"
             )
-        if (
-            state_action_value_prediction.shape[1]
-            != evaluation_policy_action_dist.shape[1]
+        if not (
+            action.shape[1] == evaluation_policy_action.shape[1] == pscore.shape[1]
         ):
             raise ValueError(
-                "Expected `state_action_value_prediction.shape[1] == evaluation_policy_action_dist.shape[1]`"
-                ", but found False"
+                "Expected `action.shape[1] == evaluation_policy_action.shape[1]`, but found False"
             )
         if action.shape[0] % step_per_trajectory:
             raise ValueError(
                 "Expected `action.shape[0] \\% step_per_trajectory == 0`, but found False"
             )
-        if not np.allclose(
-            evaluation_policy_action_dist.sum(axis=1),
-            np.ones(evaluation_policy_action_dist.shape[0]),
-        ):
+        if state_action_value_prediction.shape[1] != 2:
             raise ValueError(
-                "Expected `evaluation_policy_action_dist.sum(axis=1) == np.ones(evaluation_policy_action_dist.shape[0])`"
-                ", but found it False"
+                "Expected `state_action_value_prediction.shape[1] == 2`, but found False"
             )
+
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
+        check_scalar(bandwidth, name="bandwidth", target_type=float, min_val=0.0)
+        if action_scaler is not None and not isinstance(action_scaler, ActionScaler):
+            raise ValueError(
+                "action_scaler must be an instance of d3rlpy.preprocessing.ActionScaler, but found False"
+            )
 
         return self._estimate_trajectory_value(
             step_per_trajectory=step_per_trajectory,
             action=action,
             reward=reward,
             pscore=pscore,
-            evaluation_policy_action_dist=evaluation_policy_action_dist,
+            evaluation_policy_action=evaluation_policy_action,
             state_action_value_prediction=state_action_value_prediction,
             gamma=gamma,
+            kernel=kernel,
+            bandwidth=bandwidth,
+            action_scaler=action_scaler,
         ).mean()
 
     def estimate_interval(
@@ -1239,13 +1290,16 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
         action: np.ndarray,
         reward: np.ndarray,
         pscore: np.ndarray,
-        evaluation_policy_action_dist: np.ndarray,
+        evaluation_policy_action: np.ndarray,
         state_action_value_prediction: np.ndarray,
         gamma: float = 1.0,
+        kernel: str = "gaussian",
+        bandwidth: float = 1.0,
+        action_scaler: Optional[ActionScaler] = None,
         alpha: float = 0.05,
         ci: str = "bootstrap",
         n_bootstrap_samples: int = 10000,
-        random_state: Optional[int] = None,
+        random_state: int = 12345,
         **kwargs,
     ) -> Dict[str, float]:
         """Estimate the confidence interval of the policy value by nonparametric bootstrap.
@@ -1255,31 +1309,40 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
         step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_trajectories * step_per_trajectory, )
+        action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
             Observed immediate rewards.
 
-        pscore: array-like of shape (n_trajectories * step_per_trajectory, )
+        pscore: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_b(a | s)`
 
-        evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
-            Conditional action distribution induced by the evaluation policy,
-            i.e., :math:`\\pi(a | s_t) \\forall a \\in \\mathcal{A}`
+        evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
+            Action chosen by the evaluation policy.
 
-        state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, n_action)
-            :math:`\\hat{Q}` for all actions, i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
+        state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, 2)
+            :math:`\\hat{Q}` for the observed action and that chosen by the evaluation policy,
+            i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a | s_t))`.
 
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
+
+        kernel: {"gaussian", "epanechnikov", "triangular", "cosine", "uniform"}
+            Name of the kernel function to smooth importance weights.
+
+        bandwidth: float, default=1.0 (> 0)
+            Bandwidth hyperparameter of the kernel function.
+
+        action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
+            Scaling factor of action.
 
         alpha: float, default=0.05
             Significance level. The value should be within `[0, 1)`.
 
         ci: {"bootstrap", "hoeffding", "bernstein", "ttest"}, default="bootstrap"
-            Method to estimate the confidence interval.
+            Name of the method to estimate the confidence interval.
 
         n_bootstrap_samples: int, default=10000 (> 0)
             Number of resampling performed in the bootstrap procedure.
@@ -1308,6 +1371,11 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
             min_val=1,
         )
         check_array(
+            action,
+            name="action",
+            expected_dim=2,
+        )
+        check_array(
             reward,
             name="reward",
             expected_dim=1,
@@ -1315,62 +1383,51 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
         check_array(
             pscore,
             name="pscore",
-            expected_dim=1,
+            expected_dim=2,
             min_val=0.0,
-            max_val=1.0,
+        )
+        check_array(
+            evaluation_policy_action,
+            name="evaluation_policy_action",
+            expected_dim=2,
         )
         check_array(
             state_action_value_prediction,
             name="state_action_value_prediction",
             expected_dim=2,
         )
-        check_array(
-            evaluation_policy_action_dist,
-            name="evaluation_policy_action_dist",
-            expected_dim=2,
-            min_val=0.0,
-            max_val=1.0,
-        )
-        check_array(
-            action,
-            name="action",
-            expected_dim=1,
-            min_val=0,
-            max_val=evaluation_policy_action_dist.shape[1] - 1,
-        )
         if not (
             action.shape[0]
             == reward.shape[0]
             == pscore.shape[0]
+            == evaluation_policy_action.shape[0]
             == state_action_value_prediction.shape[0]
-            == evaluation_policy_action_dist.shape[0]
         ):
             raise ValueError(
-                "Expected `action.shape[0] == reward.shape[0] == pscore.shape[0] "
-                "== state_action_value_prediction.shape[0] == evaluation_policy_action_dist.shape[0]`"
-                ", but found False"
+                "Expected `action.shape[0] == reward.shape[0] == pscore.shape[0] == evaluation_policy_action.shape[0] "
+                "== state_action_value_prediction.shape[0]`, but found False"
             )
-        if (
-            state_action_value_prediction.shape[1]
-            != evaluation_policy_action_dist.shape[1]
+        if not (
+            action.shape[1] == evaluation_policy_action.shape[1] == pscore.shape[1]
         ):
             raise ValueError(
-                "Expected `state_action_value_prediction.shape[1] == evaluation_policy_action_dist.shape[1]`"
-                ", but found False"
+                "Expected `action.shape[1] == evaluation_policy_action.shape[1]`, but found False"
             )
         if action.shape[0] % step_per_trajectory:
             raise ValueError(
                 "Expected `action.shape[0] \\% step_per_trajectory == 0`, but found False"
             )
-        if not np.allclose(
-            evaluation_policy_action_dist.sum(axis=1),
-            np.ones(evaluation_policy_action_dist.shape[0]),
-        ):
+        if state_action_value_prediction.shape[1] != 2:
             raise ValueError(
-                "Expected `evaluation_policy_action_dist.sum(axis=1) == np.ones(evaluation_policy_action_dist.shape[0])`"
-                ", but found it False"
+                "Expected `state_action_value_prediction.shape[1] == 2`, but found False"
             )
+
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
+        check_scalar(bandwidth, name="bandwidth", target_type=float, min_val=0.0)
+        if action_scaler is not None and not isinstance(action_scaler, ActionScaler):
+            raise ValueError(
+                "action_scaler must be an instance of d3rlpy.preprocessing.ActionScaler, but found False"
+            )
 
         if ci not in self._estimate_confidence_interval.keys():
             raise ValueError(
@@ -1382,9 +1439,12 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
             action=action,
             reward=reward,
             pscore=pscore,
-            evaluation_policy_action_dist=evaluation_policy_action_dist,
+            evaluation_policy_action=evaluation_policy_action,
             state_action_value_prediction=state_action_value_prediction,
             gamma=gamma,
+            kernel=kernel,
+            bandwidth=bandwidth,
+            action_scaler=action_scaler,
         )
         return self._estimate_confidence_interval[ci](
             samples=estimated_trajectory_value,
@@ -1395,12 +1455,12 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
 
 
 @dataclass
-class DiscreteSelfNormalizedTIS(DiscreteTrajectoryWiseImportanceSampling):
-    """Self-Normalized Trajectory-wise Important Sampling (SNTIS) for discrete action spaces.
+class ContinuousSelfNormalizedTIS(ContinuousTrajectoryWiseImportanceSampling):
+    """Self-Normalized Trajectory-wise Importance Sampling (SNTIS) (designed for deterministic evaluation policies) for continuous action spaces.
 
-    Bases: :class:`scope_rl.ope.DiscreteTrajectoryWiseImportanceSampling` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
+    Bases: :class:`scope_rl.ope.ContinuousTrajectoryWiseImportanceSampling` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
-    Imported as: :class:`scope_rl.ope.DiscreteSelfNormalizedTIS`
+    Imported as: :class:`scope_rl.ope.ContinuousSelfNormalizedTIS`
 
     Note
     -------
@@ -1409,9 +1469,10 @@ class DiscreteSelfNormalizedTIS(DiscreteTrajectoryWiseImportanceSampling):
     .. math::
 
         \\hat{J}_{\\mathrm{SNTIS}} (\\pi; \\mathcal{D})
-        := \\mathbb{E}_{n} \\left[\\sum_{t=0}^{T-1} \\gamma^t \\frac{w_{0:T-1}}{\\sum_{n} w_{0:T-1}} r_t \\right],
+        := \\mathbb{E}_{n} \\left[\\sum_{t=0}^{T-1} \\gamma^t \\frac{w_{0:T-1} \\delta(\\pi, a_{0:T-1})}{\\sum_{n} w_{1:T-1} \\delta(\\pi, a_{0:T-1})} r_t \\right],
 
-    where :math:`w_{0:T-1} := \\prod_{t=0}^{T-1} (\\pi(a_t | s_t) / \\pi_0(a_t | s_t))` is the trajectory-wise importance weight.
+    where :math:`w_{0:T-1} := \\prod_{t=0}^{T-1} (1 / \\pi_0(a_t | s_t))` is the trajectory-wise importance weight.
+    :math:`\\delta(\\pi, a_{0:T}) = \\prod_{t=0}^{T-1} K(\\pi(s_t), a_t)` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy where :math:`K(\\cdot)` is a kernel function.
 
     The self-normalized estimator is no longer unbiased, but has variance bounded by :math:`r_{max}^2` while also remaining consistent.
 
@@ -1422,8 +1483,8 @@ class DiscreteSelfNormalizedTIS(DiscreteTrajectoryWiseImportanceSampling):
 
     References
     -------
-    Yuta Saito, Shunsuke Aihara, Megumi Matsutani, and Yusuke Narita.
-    "Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation." 2021.
+    Nathan Kallus and Angela Zhou.
+    "Policy Evaluation and Optimization with Continuous Treatments." 2019.
 
     Nathan Kallus and Masatoshi Uehara.
     "Intrinsically Efficient, Stable, and Bounded Off-Policy Evaluation for Reinforcement Learning." 2019.
@@ -1433,10 +1494,10 @@ class DiscreteSelfNormalizedTIS(DiscreteTrajectoryWiseImportanceSampling):
 
     """
 
-    estimator_name = "sntis"
+    estimator_name: str = "sntis"
 
     def __post_init__(self):
-        self.action_type = "discrete"
+        self.action_type = "continuous"
 
     def _estimate_trajectory_value(
         self,
@@ -1444,8 +1505,11 @@ class DiscreteSelfNormalizedTIS(DiscreteTrajectoryWiseImportanceSampling):
         action: np.ndarray,
         reward: np.ndarray,
         pscore: np.ndarray,
-        evaluation_policy_action_dist: np.ndarray,
+        evaluation_policy_action: np.ndarray,
         gamma: float = 1.0,
+        kernel: str = "gaussian",
+        bandwidth: float = 1.0,
+        action_scaler: Optional[ActionScaler] = None,
         **kwargs,
     ) -> np.ndarray:
         """Estimate the trajectory-wise policy value.
@@ -1455,22 +1519,30 @@ class DiscreteSelfNormalizedTIS(DiscreteTrajectoryWiseImportanceSampling):
         step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_trajectories * step_per_trajectory, )
+        action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
             Observed immediate rewards.
 
-        pscore: array-like of shape (n_trajectories * step_per_trajectory, )
+        pscore: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_b(a | s)`
 
-        evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
-            Conditional action distribution induced by the evaluation policy,
-            i.e., :math:`\\pi(a | s_t) \\forall a \\in \\mathcal{A}`
+        evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
+            Action chosen by the evaluation policy.
 
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
+
+        kernel: {"gaussian", "epanechnikov", "triangular", "cosine", "uniform"}
+            Name of the kernel function to smooth importance weights.
+
+        bandwidth: float, default=1.0 (> 0)
+            Bandwidth hyperparameter of the kernel function.
+
+        action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
+            Scaling factor of action.
 
         Return
         -------
@@ -1478,22 +1550,26 @@ class DiscreteSelfNormalizedTIS(DiscreteTrajectoryWiseImportanceSampling):
             Policy value (expected reward under the evaluation policy) estimated for each trajectory.
 
         """
-        behavior_policy_pscore = self._calc_behavior_policy_pscore_discrete(
+        behavior_policy_pscore = self._calc_behavior_policy_pscore_continuous(
             step_per_trajectory=step_per_trajectory,
             pscore=pscore,
             pscore_type="trajectory_wise",
         )
-        evaluation_policy_pscore = self._calc_evaluation_policy_pscore_discrete(
+        similarity_weight = self._calc_similarity_weight(
             step_per_trajectory=step_per_trajectory,
             action=action,
-            evaluation_policy_action_dist=evaluation_policy_action_dist,
+            evaluation_policy_action=evaluation_policy_action,
+            action_scaler=action_scaler,
+            kernel=kernel,
+            bandwidth=bandwidth,
             pscore_type="trajectory_wise",
         )
-        weight = evaluation_policy_pscore / behavior_policy_pscore
+        weight = similarity_weight / behavior_policy_pscore
         self_normalized_weight = weight / (weight.mean(axis=0)[np.newaxis, :] + 1e-10)
 
         reward = reward.reshape((-1, step_per_trajectory))
         discount = np.full(step_per_trajectory, gamma).cumprod() / gamma
+
         estimated_trajectory_value = (
             discount[np.newaxis, :] * self_normalized_weight * reward
         ).sum(axis=1)
@@ -1502,12 +1578,12 @@ class DiscreteSelfNormalizedTIS(DiscreteTrajectoryWiseImportanceSampling):
 
 
 @dataclass
-class DiscreteSelfNormalizedPDIS(DiscretePerDecisionImportanceSampling):
-    """Self-Normalized Per-Decision Importance Sampling (SNPDIS) for discrete action spaces.
+class ContinuousSelfNormalizedPDIS(ContinuousPerDecisionImportanceSampling):
+    """Self-Normalized Per-Decision Importance Sampling (SNPDIS) (designed for deterministic evaluation policies) for continuous action spaces.
 
-    Bases: :class:`scope_rl.ope.DiscretePerDecisionImportanceSampling` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
+    Bases: :class:`scope_rl.ope.ContinuousPerDecisionImportanceSampling` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
-    Imported as: :class:`scope_rl.ope.DiscreteSelfNormalizedPDIS`
+    Imported as: :class:`scope_rl.ope.ContinuousSelfNormalizedPDIS`
 
     Note
     -------
@@ -1516,9 +1592,10 @@ class DiscreteSelfNormalizedPDIS(DiscretePerDecisionImportanceSampling):
     .. math::
 
         \\hat{J}_{\\mathrm{SNPDIS}} (\\pi; \\mathcal{D})
-        := \\mathbb{E}_{n} \\left[\\sum_{t=0}^{T-1} \\gamma^t \\frac{w_{1:t}}{\\sum_{n} w_{1:t}} r_t \\right],
+        := \\mathbb{E}_{n} \\left[\\sum_{t=0}^{T-1} \\gamma^t \\frac{w_{1:t} \\delta(\\pi, a_{0:t})}{\\sum_{n} w_{1:t} \\delta(\\pi, a_{0:t})} r_t \\right],
 
-    where :math:`w_{0:t} := \\prod_{t'=1}^t (\\pi(a_{t'} | s_{t'}) / \\pi_0(a_{t'} | s_{t'}))` is the per-decision importance weight.
+    where :math:`w_{0:t} := \\prod_{t'=1}^t (1 / \\pi_0(a_{t'} | s_{t'}))` is the per-decision importance weight.
+    :math:`\\delta(\\pi, a_{0:t}) = \\prod_{t'=1}^t K(\\pi(s_{t'}), a_{t'})` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy where :math:`K(\\cdot)` is a kernel function.
 
     The self-normalized estimator is no longer unbiased, but has variance bounded by :math:`r_{max}^2` while also remaining consistent.
 
@@ -1529,6 +1606,9 @@ class DiscreteSelfNormalizedPDIS(DiscretePerDecisionImportanceSampling):
 
     References
     -------
+    Nathan Kallus and Angela Zhou.
+    "Policy Evaluation and Optimization with Continuous Treatments." 2019.
+
     Nathan Kallus and Masatoshi Uehara.
     "Intrinsically Efficient, Stable, and Bounded Off-Policy Evaluation for Reinforcement Learning." 2019.
 
@@ -1537,10 +1617,10 @@ class DiscreteSelfNormalizedPDIS(DiscretePerDecisionImportanceSampling):
 
     """
 
-    estimator_name = "snpdis"
+    estimator_name: str = "snpdis"
 
     def __post_init__(self):
-        self.action_type = "discrete"
+        self.action_type = "continuous"
 
     def _estimate_trajectory_value(
         self,
@@ -1548,8 +1628,11 @@ class DiscreteSelfNormalizedPDIS(DiscretePerDecisionImportanceSampling):
         action: np.ndarray,
         reward: np.ndarray,
         pscore: np.ndarray,
-        evaluation_policy_action_dist: np.ndarray,
+        evaluation_policy_action: np.ndarray,
         gamma: float = 1.0,
+        kernel: str = "gaussian",
+        bandwidth: float = 1.0,
+        action_scaler: Optional[ActionScaler] = None,
         **kwargs,
     ) -> np.ndarray:
         """Estimate the trajectory-wise policy value.
@@ -1559,22 +1642,30 @@ class DiscreteSelfNormalizedPDIS(DiscretePerDecisionImportanceSampling):
         step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_trajectories * step_per_trajectory, )
+        action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
             Observed immediate rewards.
 
-        pscore: array-like of shape (n_trajectories * step_per_trajectory, )
+        pscore: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_b(a | s)`
 
-        evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
-            Conditional action distribution induced by the evaluation policy,
-            i.e., :math:`\\pi(a | s_t) \\forall a \\in \\mathcal{A}`
+        evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
+            Action chosen by the evaluation policy.
 
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
+
+        kernel: {"gaussian", "epanechnikov", "triangular", "cosine", "uniform"}
+            Name of the kernel function to smooth importance weights.
+
+        bandwidth: float, default=1.0 (> 0)
+            Bandwidth hyperparameter of the kernel function.
+
+        action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
+            Scaling factor of action.
 
         Return
         -------
@@ -1582,22 +1673,26 @@ class DiscreteSelfNormalizedPDIS(DiscretePerDecisionImportanceSampling):
             Policy value (expected reward under the evaluation policy) estimated for each trajectory.
 
         """
-        behavior_policy_pscore = self._calc_behavior_policy_pscore_discrete(
+        behavior_policy_pscore = self._calc_behavior_policy_pscore_continuous(
             step_per_trajectory=step_per_trajectory,
             pscore=pscore,
             pscore_type="step_wise",
         )
-        evaluation_policy_pscore = self._calc_evaluation_policy_pscore_discrete(
+        similarity_weight = self._calc_similarity_weight(
             step_per_trajectory=step_per_trajectory,
             action=action,
-            evaluation_policy_action_dist=evaluation_policy_action_dist,
+            evaluation_policy_action=evaluation_policy_action,
+            action_scaler=action_scaler,
+            kernel=kernel,
+            bandwidth=bandwidth,
             pscore_type="step_wise",
         )
-        weight = evaluation_policy_pscore / behavior_policy_pscore
+        weight = similarity_weight / behavior_policy_pscore
         self_normalized_weight = weight / (weight.mean(axis=0)[np.newaxis, :] + 1e-10)
 
         reward = reward.reshape((-1, step_per_trajectory))
         discount = np.full(step_per_trajectory, gamma).cumprod() / gamma
+
         estimated_trajectory_value = (
             discount[np.newaxis, :] * self_normalized_weight * reward
         ).sum(axis=1)
@@ -1606,12 +1701,12 @@ class DiscreteSelfNormalizedPDIS(DiscretePerDecisionImportanceSampling):
 
 
 @dataclass
-class DiscreteSelfNormalizedDR(DiscreteDoublyRobust):
-    """Self-Normalized Doubly Robust (SNDR) for discrete action spaces.
+class ContinuousSelfNormalizedDR(ContinuousDoublyRobust):
+    """Self-Normalized Doubly Robust (SNDR) (designed for deterministic evaluation policies) for continuous action spaces.
 
-    Bases: :class:`scope_rl.ope.DiscreteDoublyRobust` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
+    Bases: :class:`scope_rl.ope.ContinuousDoublyRobust` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
-    Imported as: :class:`scope_rl.ope.DiscreteSelfNormalizedDR`
+    Imported as: :class:`scope_rl.ope.ContinuousSelfNormalizedDR`
 
     Note
     -------
@@ -1619,11 +1714,12 @@ class DiscreteSelfNormalizedDR(DiscreteDoublyRobust):
 
     .. math::
 
-        \\hat{J}_{\\mathrm{SNDR}} (\\pi; \\mathcal{D})
-        &:= \\mathbb{E}_{n} \\Biggl[\\sum_{t=0}^{T-1} \\gamma^t \\biggl( \\frac{w_{0:t}}{\\sum_{n} w_{0:t}} (r_t - \\hat{Q}(s_t, a_t)) \\\\
-        & \quad \quad \quad \quad \quad + \\frac{w_{0:t-1}}{\\sum_{n} w_{0:t-1}} \\mathbb{E}_{a \\sim \\pi(a | s_t)}[\\hat{Q}(s_t, a)] \\biggr) \\Biggr],
+        \\hat{J}_{\\mathrm{DR}} (\\pi; \\mathcal{D})
+        &:= \\mathbb{E}_{n} \\Biggl[\\sum_{t=0}^{T-1} \\gamma^t \\biggl( \\frac{w_{0:t} \\delta(\\pi, a_{0:t})}{\\sum_{n} w_{0:t} \\delta(\\pi, a_{0:t})} (r_t - \\hat{Q}(s_t, a_t)) \\\\
+        & \quad \quad \quad \quad \quad + \\frac{w_{0:t-1} \\delta(\\pi, a_{0:t-1})}{\\sum_{n} w_{0:t-1} \\delta(\\pi, a_{0:t-1})} \\hat{Q}(s_t, \\pi(s_t)) \\biggr) \\Biggr],
 
-    where :math:`w_{0:t} := \\prod_{t'=0}^t (\\pi(a_{t'} | s_{t'}) / \\pi_0(a_{t'} | s_{t'}))` is the per-decision importance weight.
+    where :math:`w_{0:t} := \\prod_{t'=0}^t (1 / \\pi_0(a_{t'} | s_{t'}))` is the per-decision importance weight.
+    :math:`\\delta(\\pi, a_{0:t}) = \\prod_{t'=1}^t K(\\pi(s_{t'}), a_{t'})` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy where :math:`K(\\cdot)` is a kernel function.
 
     The self-normalized estimator is no longer unbiased, but has variance bounded by :math:`r_{max}^2` while also remaining consistent.
 
@@ -1634,6 +1730,9 @@ class DiscreteSelfNormalizedDR(DiscreteDoublyRobust):
 
     References
     -------
+    Nathan Kallus and Angela Zhou.
+    "Policy Evaluation and Optimization with Continuous Treatments." 2019.
+
     Nathan Kallus and Masatoshi Uehara.
     "Intrinsically Efficient, Stable, and Bounded Off-Policy Evaluation for Reinforcement Learning." 2019.
 
@@ -1648,7 +1747,7 @@ class DiscreteSelfNormalizedDR(DiscreteDoublyRobust):
     estimator_name = "sndr"
 
     def __post_init__(self):
-        self.action_type = "discrete"
+        self.action_type = "continuous"
 
     def _estimate_trajectory_value(
         self,
@@ -1656,9 +1755,12 @@ class DiscreteSelfNormalizedDR(DiscreteDoublyRobust):
         action: np.ndarray,
         reward: np.ndarray,
         pscore: np.ndarray,
-        evaluation_policy_action_dist: np.ndarray,
+        evaluation_policy_action: np.ndarray,
         state_action_value_prediction: np.ndarray,
         gamma: float = 1.0,
+        kernel: str = "gaussian",
+        bandwidth: float = 1.0,
+        action_scaler: Optional[ActionScaler] = None,
         **kwargs,
     ) -> np.ndarray:
         """Estimate the trajectory-wise policy value.
@@ -1668,25 +1770,34 @@ class DiscreteSelfNormalizedDR(DiscreteDoublyRobust):
         step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
 
-        action: array-like of shape (n_trajectories * step_per_trajectory, )
+        action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
             Observed immediate rewards.
 
-        pscore: array-like of shape (n_trajectories * step_per_trajectory, )
+        pscore: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Conditional action choice probability of the behavior policy,
             i.e., :math:`\\pi_b(a | s)`
 
-        evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
-            Conditional action distribution induced by the evaluation policy,
-            i.e., :math:`\\pi(a | s_t) \\forall a \\in \\mathcal{A}`
+        evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
+            Action chosen by the evaluation policy.
 
-        state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, n_action)
-            :math:`\\hat{Q}` for all actions, i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
+        state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, 2)
+            :math:`\\hat{Q}` for the observed action and that chosen by the evaluation policy,
+            i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a | s_t))`.
 
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
+
+        kernel: {"gaussian", "epanechnikov", "triangular", "cosine", "uniform"}
+            Name of the kernel function to smooth importance weights.
+
+        bandwidth: float, default=1.0 (> 0)
+            Bandwidth hyperparameter of the kernel function.
+
+        action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
+            Scaling factor of action.
 
         Return
         -------
@@ -1694,18 +1805,21 @@ class DiscreteSelfNormalizedDR(DiscreteDoublyRobust):
             Policy value (expected reward under the evaluation policy) estimated for each trajectory.
 
         """
-        behavior_policy_pscore = self._calc_behavior_policy_pscore_discrete(
+        behavior_policy_pscore = self._calc_behavior_policy_pscore_continuous(
             step_per_trajectory=step_per_trajectory,
             pscore=pscore,
             pscore_type="step_wise",
         )
-        evaluation_policy_pscore = self._calc_evaluation_policy_pscore_discrete(
+        similarity_weight = self._calc_similarity_weight(
             step_per_trajectory=step_per_trajectory,
             action=action,
-            evaluation_policy_action_dist=evaluation_policy_action_dist,
+            evaluation_policy_action=evaluation_policy_action,
+            action_scaler=action_scaler,
+            kernel=kernel,
+            bandwidth=bandwidth,
             pscore_type="step_wise",
         )
-        weight = evaluation_policy_pscore / behavior_policy_pscore
+        weight = similarity_weight / behavior_policy_pscore
         self_normalized_weight = weight / (weight.mean(axis=0)[np.newaxis, :] + 1e-10)
         self_normalized_weight_prev = np.roll(self_normalized_weight, 1, axis=1)
         self_normalized_weight_prev[:, 0] = 1
@@ -1713,15 +1827,11 @@ class DiscreteSelfNormalizedDR(DiscreteDoublyRobust):
         reward = reward.reshape((-1, step_per_trajectory))
         discount = np.full(step_per_trajectory, gamma).cumprod() / gamma
 
-        state_value_prediction = (
-            (state_action_value_prediction * evaluation_policy_action_dist)
-            .sum(axis=1)
-            .reshape((-1, step_per_trajectory))
+        state_action_value_prediction = state_action_value_prediction.reshape(
+            (-1, step_per_trajectory, 2)
         )
-
-        state_action_value_prediction = state_action_value_prediction[
-            np.arange(len(action)), action
-        ].reshape((-1, step_per_trajectory))
+        state_value_prediction = state_action_value_prediction[:, :, 1]
+        state_action_value_prediction = state_action_value_prediction[:, :, 0]
 
         estimated_trajectory_value = (
             discount[np.newaxis, :]

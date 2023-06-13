@@ -3,7 +3,7 @@
 
 """State(-Action) Marginal Off-Policy Estimators for continuous action cases (designed for deterministic evaluation policies)."""
 from dataclasses import dataclass
-from typing import Optional, Union, Dict
+from typing import Optional, Dict
 
 import numpy as np
 from sklearn.utils import check_scalar
@@ -541,7 +541,8 @@ class ContinuousStateMarginalIS(BaseStateMarginalOPEEstimator):
         pscore: np.ndarray,
         evaluation_policy_action: np.ndarray,
         gamma: float = 1.0,
-        sigma: float = 1.0,
+        kernel: str = "gaussian",
+        bandwidth: float = 1.0,
         action_scaler: Optional[ActionScaler] = None,
         **kwargs,
     ) -> np.ndarray:
@@ -575,8 +576,11 @@ class ContinuousStateMarginalIS(BaseStateMarginalOPEEstimator):
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of the Gaussian kernel.
+        kernel: {"gaussian", "epanechnikov", "triangular", "cosine", "uniform"}
+            Name of the kernel function to smooth importance weights.
+
+        bandwidth: float, default=1.0 (> 0)
+            Bandwidth hyperparameter of the kernel function.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -598,7 +602,8 @@ class ContinuousStateMarginalIS(BaseStateMarginalOPEEstimator):
             action=action,
             evaluation_policy_action=evaluation_policy_action,
             action_scaler=action_scaler,
-            sigma=sigma,
+            kernel=kernel,
+            bandwidth=bandwidth,
         )
         state_marginal_importance_weight = self._calc_marginal_importance_weight(
             n_step_pdis=n_step_pdis,
@@ -628,7 +633,8 @@ class ContinuousStateMarginalIS(BaseStateMarginalOPEEstimator):
         pscore: np.ndarray,
         evaluation_policy_action: np.ndarray,
         gamma: float = 1.0,
-        sigma: float = 1.0,
+        kernel: str = "gaussian",
+        bandwidth: float = 1.0,
         action_scaler: Optional[ActionScaler] = None,
         **kwargs,
     ) -> float:
@@ -662,8 +668,11 @@ class ContinuousStateMarginalIS(BaseStateMarginalOPEEstimator):
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of the Gaussian kernel.
+        kernel: {"gaussian", "epanechnikov", "triangular", "cosine", "uniform"}
+            Name of the kernel function to smooth importance weights.
+
+        bandwidth: float, default=1.0 (> 0)
+            Bandwidth hyperparameter of the kernel function.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -733,7 +742,7 @@ class ContinuousStateMarginalIS(BaseStateMarginalOPEEstimator):
             )
 
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
-        check_scalar(sigma, name="sigma", target_type=float, min_val=0.0)
+        check_scalar(bandwidth, name="bandwidth", target_type=float, min_val=0.0)
         if action_scaler is not None and not isinstance(action_scaler, ActionScaler):
             raise ValueError(
                 "action_scaler must be an instance of d3rlpy.preprocessing.ActionScaler, but found False"
@@ -748,7 +757,8 @@ class ContinuousStateMarginalIS(BaseStateMarginalOPEEstimator):
             pscore=pscore,
             evaluation_policy_action=evaluation_policy_action,
             action_scaler=action_scaler,
-            sigma=sigma,
+            kernel=kernel,
+            bandwidth=bandwidth,
             gamma=gamma,
         ).mean()
         return estimated_policy_value
@@ -763,7 +773,8 @@ class ContinuousStateMarginalIS(BaseStateMarginalOPEEstimator):
         pscore: np.ndarray,
         evaluation_policy_action: np.ndarray,
         gamma: float = 1.0,
-        sigma: float = 1.0,
+        kernel: str = "gaussian",
+        bandwidth: float = 1.0,
         action_scaler: Optional[ActionScaler] = None,
         alpha: float = 0.05,
         ci: str = "bootstrap",
@@ -801,8 +812,11 @@ class ContinuousStateMarginalIS(BaseStateMarginalOPEEstimator):
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of the Gaussian kernel.
+        kernel: {"gaussian", "epanechnikov", "triangular", "cosine", "uniform"}
+            Name of the kernel function to smooth importance weights.
+
+        bandwidth: float, default=1.0 (> 0)
+            Bandwidth hyperparameter of the kernel function.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -892,7 +906,7 @@ class ContinuousStateMarginalIS(BaseStateMarginalOPEEstimator):
             )
 
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
-        check_scalar(sigma, name="sigma", target_type=float, min_val=0.0)
+        check_scalar(bandwidth, name="bandwidth", target_type=float, min_val=0.0)
         if action_scaler is not None and not isinstance(action_scaler, ActionScaler):
             raise ValueError(
                 "action_scaler must be an instance of d3rlpy.preprocessing.ActionScaler, but found False"
@@ -912,7 +926,8 @@ class ContinuousStateMarginalIS(BaseStateMarginalOPEEstimator):
             pscore=pscore,
             evaluation_policy_action=evaluation_policy_action,
             action_scaler=action_scaler,
-            sigma=sigma,
+            kernel=kernel,
+            bandwidth=bandwidth,
             gamma=gamma,
         )
         return self._estimate_confidence_interval[ci](
@@ -1004,7 +1019,8 @@ class ContinuousStateMarginalDR(BaseStateMarginalOPEEstimator):
         state_action_value_prediction: np.ndarray,
         initial_state_value_prediction: np.ndarray,
         gamma: float = 1.0,
-        sigma: float = 1.0,
+        kernel: str = "gaussian",
+        bandwidth: float = 1.0,
         action_scaler: Optional[ActionScaler] = None,
         **kwargs,
     ) -> np.ndarray:
@@ -1045,8 +1061,11 @@ class ContinuousStateMarginalDR(BaseStateMarginalOPEEstimator):
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of the Gaussian kernel.
+        kernel: {"gaussian", "epanechnikov", "triangular", "cosine", "uniform"}
+            Name of the kernel function to smooth importance weights.
+
+        bandwidth: float, default=1.0 (> 0)
+            Bandwidth hyperparameter of the kernel function.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -1068,7 +1087,8 @@ class ContinuousStateMarginalDR(BaseStateMarginalOPEEstimator):
             action=action,
             evaluation_policy_action=evaluation_policy_action,
             action_scaler=action_scaler,
-            sigma=sigma,
+            kernel=kernel,
+            bandwidth=bandwidth,
         )
         state_marginal_importance_weight = self._calc_marginal_importance_weight(
             n_step_pdis=n_step_pdis,
@@ -1108,7 +1128,8 @@ class ContinuousStateMarginalDR(BaseStateMarginalOPEEstimator):
         state_action_value_prediction: np.ndarray,
         initial_state_value_prediction: np.ndarray,
         gamma: float = 1.0,
-        sigma: float = 1.0,
+        kernel: str = "gaussian",
+        bandwidth: float = 1.0,
         action_scaler: Optional[ActionScaler] = None,
         **kwargs,
     ) -> float:
@@ -1149,8 +1170,11 @@ class ContinuousStateMarginalDR(BaseStateMarginalOPEEstimator):
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of the Gaussian kernel.
+        kernel: {"gaussian", "epanechnikov", "triangular", "cosine", "uniform"}
+            Name of the kernel function to smooth importance weights.
+
+        bandwidth: float, default=1.0 (> 0)
+            Bandwidth hyperparameter of the kernel function.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -1235,7 +1259,7 @@ class ContinuousStateMarginalDR(BaseStateMarginalOPEEstimator):
             )
 
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
-        check_scalar(sigma, name="sigma", target_type=float, min_val=0.0)
+        check_scalar(bandwidth, name="bandwidth", target_type=float, min_val=0.0)
         if action_scaler is not None and not isinstance(action_scaler, ActionScaler):
             raise ValueError(
                 "action_scaler must be an instance of d3rlpy.preprocessing.ActionScaler, but found False"
@@ -1252,7 +1276,8 @@ class ContinuousStateMarginalDR(BaseStateMarginalOPEEstimator):
             state_action_value_prediction=state_action_value_prediction,
             initial_state_value_prediction=initial_state_value_prediction,
             action_scaler=action_scaler,
-            sigma=sigma,
+            kernel=kernel,
+            bandwidth=bandwidth,
             gamma=gamma,
         ).mean()
         return estimated_policy_value
@@ -1269,7 +1294,8 @@ class ContinuousStateMarginalDR(BaseStateMarginalOPEEstimator):
         state_action_value_prediction: np.ndarray,
         initial_state_value_prediction: np.ndarray,
         gamma: float = 1.0,
-        sigma: float = 1.0,
+        kernel: str = "gaussian",
+        bandwidth: float = 1.0,
         action_scaler: Optional[ActionScaler] = None,
         alpha: float = 0.05,
         ci: str = "bootstrap",
@@ -1314,8 +1340,11 @@ class ContinuousStateMarginalDR(BaseStateMarginalOPEEstimator):
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of the Gaussian kernel.
+        kernel: {"gaussian", "epanechnikov", "triangular", "cosine", "uniform"}
+            Name of the kernel function to smooth importance weights.
+
+        bandwidth: float, default=1.0 (> 0)
+            Bandwidth hyperparameter of the kernel function.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -1420,7 +1449,7 @@ class ContinuousStateMarginalDR(BaseStateMarginalOPEEstimator):
             )
 
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
-        check_scalar(sigma, name="sigma", target_type=float, min_val=0.0)
+        check_scalar(bandwidth, name="bandwidth", target_type=float, min_val=0.0)
         if action_scaler is not None and not isinstance(action_scaler, ActionScaler):
             raise ValueError(
                 "action_scaler must be an instance of d3rlpy.preprocessing.ActionScaler, but found False"
@@ -1442,7 +1471,8 @@ class ContinuousStateMarginalDR(BaseStateMarginalOPEEstimator):
             state_action_value_prediction=state_action_value_prediction,
             initial_state_value_prediction=initial_state_value_prediction,
             action_scaler=action_scaler,
-            sigma=sigma,
+            kernel=kernel,
+            bandwidth=bandwidth,
             gamma=gamma,
         )
         return self._estimate_confidence_interval[ci](
@@ -1528,7 +1558,8 @@ class ContinuousStateMarginalSNIS(ContinuousStateMarginalIS):
         pscore: np.ndarray,
         evaluation_policy_action: np.ndarray,
         gamma: float = 1.0,
-        sigma: float = 1.0,
+        kernel: str = "gaussian",
+        bandwidth: float = 1.0,
         action_scaler: Optional[ActionScaler] = None,
         **kwargs,
     ) -> np.ndarray:
@@ -1562,8 +1593,11 @@ class ContinuousStateMarginalSNIS(ContinuousStateMarginalIS):
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of the Gaussian kernel.
+        kernel: {"gaussian", "epanechnikov", "triangular", "cosine", "uniform"}
+            Name of the kernel function to smooth importance weights.
+
+        bandwidth: float, default=1.0 (> 0)
+            Bandwidth hyperparameter of the kernel function.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -1585,7 +1619,8 @@ class ContinuousStateMarginalSNIS(ContinuousStateMarginalIS):
             action=action,
             evaluation_policy_action=evaluation_policy_action,
             action_scaler=action_scaler,
-            sigma=sigma,
+            kernel=kernel,
+            bandwidth=bandwidth,
         )
         state_marginal_importance_weight = self._calc_marginal_importance_weight(
             n_step_pdis=n_step_pdis,
@@ -1687,7 +1722,8 @@ class ContinuousStateMarginalSNDR(ContinuousStateMarginalDR):
         state_action_value_prediction: np.ndarray,
         initial_state_value_prediction: np.ndarray,
         gamma: float = 1.0,
-        sigma: float = 1.0,
+        kernel: str = "gaussian",
+        bandwidth: float = 1.0,
         action_scaler: Optional[ActionScaler] = None,
         **kwargs,
     ) -> np.ndarray:
@@ -1728,8 +1764,11 @@ class ContinuousStateMarginalSNDR(ContinuousStateMarginalDR):
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of the Gaussian kernel.
+        kernel: {"gaussian", "epanechnikov", "triangular", "cosine", "uniform"}
+            Name of the kernel function to smooth importance weights.
+
+        bandwidth: float, default=1.0 (> 0)
+            Bandwidth hyperparameter of the kernel function.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -1751,7 +1790,8 @@ class ContinuousStateMarginalSNDR(ContinuousStateMarginalDR):
             action=action,
             evaluation_policy_action=evaluation_policy_action,
             action_scaler=action_scaler,
-            sigma=sigma,
+            kernel=kernel,
+            bandwidth=bandwidth,
         )
         state_marginal_importance_weight = self._calc_marginal_importance_weight(
             n_step_pdis=n_step_pdis,
@@ -1853,7 +1893,8 @@ class ContinuousStateActionMarginalIS(BaseStateActionMarginalOPEEstimator):
         pscore: np.ndarray,
         evaluation_policy_action: np.ndarray,
         gamma: float = 1.0,
-        sigma: float = 1.0,
+        kernel: str = "gaussian",
+        bandwidth: float = 1.0,
         action_scaler: Optional[ActionScaler] = None,
         **kwargs,
     ) -> np.ndarray:
@@ -1887,8 +1928,11 @@ class ContinuousStateActionMarginalIS(BaseStateActionMarginalOPEEstimator):
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of the Gaussian kernel.
+        kernel: {"gaussian", "epanechnikov", "triangular", "cosine", "uniform"}
+            Name of the kernel function to smooth importance weights.
+
+        bandwidth: float, default=1.0 (> 0)
+            Bandwidth hyperparameter of the kernel function.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -1910,7 +1954,8 @@ class ContinuousStateActionMarginalIS(BaseStateActionMarginalOPEEstimator):
             action=action,
             evaluation_policy_action=evaluation_policy_action,
             action_scaler=action_scaler,
-            sigma=sigma,
+            kernel=kernel,
+            bandwidth=bandwidth,
         )
         state_action_marginal_importance_weight = self._calc_marginal_importance_weight(
             n_step_pdis=n_step_pdis,
@@ -1939,7 +1984,8 @@ class ContinuousStateActionMarginalIS(BaseStateActionMarginalOPEEstimator):
         pscore: np.ndarray,
         evaluation_policy_action: np.ndarray,
         gamma: float = 1.0,
-        sigma: float = 1.0,
+        kernel: str = "gaussian",
+        bandwidth: float = 1.0,
         action_scaler: Optional[ActionScaler] = None,
         **kwargs,
     ) -> float:
@@ -1973,8 +2019,11 @@ class ContinuousStateActionMarginalIS(BaseStateActionMarginalOPEEstimator):
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of the Gaussian kernel.
+        kernel: {"gaussian", "epanechnikov", "triangular", "cosine", "uniform"}
+            Name of the kernel function to smooth importance weights.
+
+        bandwidth: float, default=1.0 (> 0)
+            Bandwidth hyperparameter of the kernel function.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -2044,7 +2093,7 @@ class ContinuousStateActionMarginalIS(BaseStateActionMarginalOPEEstimator):
             )
 
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
-        check_scalar(sigma, name="sigma", target_type=float, min_val=0.0)
+        check_scalar(bandwidth, name="bandwidth", target_type=float, min_val=0.0)
         if action_scaler is not None and not isinstance(action_scaler, ActionScaler):
             raise ValueError(
                 "action_scaler must be an instance of d3rlpy.preprocessing.ActionScaler, but found False"
@@ -2059,7 +2108,8 @@ class ContinuousStateActionMarginalIS(BaseStateActionMarginalOPEEstimator):
             evaluation_policy_action=evaluation_policy_action,
             state_action_marginal_importance_weight=state_action_marginal_importance_weight,
             action_scaler=action_scaler,
-            sigma=sigma,
+            kernel=kernel,
+            bandwidth=bandwidth,
             gamma=gamma,
         ).mean()
         return estimated_policy_value
@@ -2074,7 +2124,8 @@ class ContinuousStateActionMarginalIS(BaseStateActionMarginalOPEEstimator):
         pscore: np.ndarray,
         evaluation_policy_action: np.ndarray,
         gamma: float = 1.0,
-        sigma: float = 1.0,
+        kernel: str = "gaussian",
+        bandwidth: float = 1.0,
         action_scaler: Optional[ActionScaler] = None,
         alpha: float = 0.05,
         ci: str = "bootstrap",
@@ -2112,8 +2163,11 @@ class ContinuousStateActionMarginalIS(BaseStateActionMarginalOPEEstimator):
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of the Gaussian kernel.
+        kernel: {"gaussian", "epanechnikov", "triangular", "cosine", "uniform"}
+            Name of the kernel function to smooth importance weights.
+
+        bandwidth: float, default=1.0 (> 0)
+            Bandwidth hyperparameter of the kernel function.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -2203,7 +2257,7 @@ class ContinuousStateActionMarginalIS(BaseStateActionMarginalOPEEstimator):
             )
 
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
-        check_scalar(sigma, name="sigma", target_type=float, min_val=0.0)
+        check_scalar(bandwidth, name="bandwidth", target_type=float, min_val=0.0)
         if action_scaler is not None and not isinstance(action_scaler, ActionScaler):
             raise ValueError(
                 "action_scaler must be an instance of d3rlpy.preprocessing.ActionScaler, but found False"
@@ -2223,7 +2277,8 @@ class ContinuousStateActionMarginalIS(BaseStateActionMarginalOPEEstimator):
             evaluation_policy_action=evaluation_policy_action,
             state_action_marginal_importance_weight=state_action_marginal_importance_weight,
             action_scaler=action_scaler,
-            sigma=sigma,
+            kernel=kernel,
+            bandwidth=bandwidth,
             gamma=gamma,
         )
         return self._estimate_confidence_interval[ci](
@@ -2312,7 +2367,8 @@ class ContinuousStateActionMarginalDR(BaseStateActionMarginalOPEEstimator):
         state_action_value_prediction: np.ndarray,
         initial_state_value_prediction: np.ndarray,
         gamma: float = 1.0,
-        sigma: float = 1.0,
+        kernel: str = "gaussian",
+        bandwidth: float = 1.0,
         action_scaler: Optional[ActionScaler] = None,
         **kwargs,
     ) -> np.ndarray:
@@ -2353,8 +2409,11 @@ class ContinuousStateActionMarginalDR(BaseStateActionMarginalOPEEstimator):
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of the Gaussian kernel.
+        kernel: {"gaussian", "epanechnikov", "triangular", "cosine", "uniform"}
+            Name of the kernel function to smooth importance weights.
+
+        bandwidth: float, default=1.0 (> 0)
+            Bandwidth hyperparameter of the kernel function.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -2376,7 +2435,8 @@ class ContinuousStateActionMarginalDR(BaseStateActionMarginalOPEEstimator):
             action=action,
             evaluation_policy_action=evaluation_policy_action,
             action_scaler=action_scaler,
-            sigma=sigma,
+            kernel=kernel,
+            bandwidth=bandwidth,
         )
         state_action_marginal_importance_weight = self._calc_marginal_importance_weight(
             n_step_pdis=n_step_pdis,
@@ -2416,7 +2476,8 @@ class ContinuousStateActionMarginalDR(BaseStateActionMarginalOPEEstimator):
         state_action_value_prediction: np.ndarray,
         initial_state_value_prediction: np.ndarray,
         gamma: float = 1.0,
-        sigma: float = 1.0,
+        kernel: str = "gaussian",
+        bandwidth: float = 1.0,
         action_scaler: Optional[ActionScaler] = None,
         **kwargs,
     ) -> float:
@@ -2457,8 +2518,11 @@ class ContinuousStateActionMarginalDR(BaseStateActionMarginalOPEEstimator):
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of the Gaussian kernel.
+        kernel: {"gaussian", "epanechnikov", "triangular", "cosine", "uniform"}
+            Name of the kernel function to smooth importance weights.
+
+        bandwidth: float, default=1.0 (> 0)
+            Bandwidth hyperparameter of the kernel function.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -2543,7 +2607,7 @@ class ContinuousStateActionMarginalDR(BaseStateActionMarginalOPEEstimator):
             )
 
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
-        check_scalar(sigma, name="sigma", target_type=float, min_val=0.0)
+        check_scalar(bandwidth, name="bandwidth", target_type=float, min_val=0.0)
         if action_scaler is not None and not isinstance(action_scaler, ActionScaler):
             raise ValueError(
                 "action_scaler must be an instance of d3rlpy.preprocessing.ActionScaler, but found False"
@@ -2560,7 +2624,8 @@ class ContinuousStateActionMarginalDR(BaseStateActionMarginalOPEEstimator):
             state_action_value_prediction=state_action_value_prediction,
             initial_state_value_prediction=initial_state_value_prediction,
             action_scaler=action_scaler,
-            sigma=sigma,
+            kernel=kernel,
+            bandwidth=bandwidth,
             gamma=gamma,
         ).mean()
         return estimated_policy_value
@@ -2577,7 +2642,8 @@ class ContinuousStateActionMarginalDR(BaseStateActionMarginalOPEEstimator):
         state_action_value_prediction: np.ndarray,
         initial_state_value_prediction: np.ndarray,
         gamma: float = 1.0,
-        sigma: float = 1.0,
+        kernel: str = "gaussian",
+        bandwidth: float = 1.0,
         action_scaler: Optional[ActionScaler] = None,
         alpha: float = 0.05,
         ci: str = "bootstrap",
@@ -2622,8 +2688,11 @@ class ContinuousStateActionMarginalDR(BaseStateActionMarginalOPEEstimator):
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of the Gaussian kernel.
+        kernel: {"gaussian", "epanechnikov", "triangular", "cosine", "uniform"}
+            Name of the kernel function to smooth importance weights.
+
+        bandwidth: float, default=1.0 (> 0)
+            Bandwidth hyperparameter of the kernel function.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -2728,7 +2797,7 @@ class ContinuousStateActionMarginalDR(BaseStateActionMarginalOPEEstimator):
             )
 
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
-        check_scalar(sigma, name="sigma", target_type=float, min_val=0.0)
+        check_scalar(bandwidth, name="bandwidth", target_type=float, min_val=0.0)
         if action_scaler is not None and not isinstance(action_scaler, ActionScaler):
             raise ValueError(
                 "action_scaler must be an instance of d3rlpy.preprocessing.ActionScaler, but found False"
@@ -2750,7 +2819,8 @@ class ContinuousStateActionMarginalDR(BaseStateActionMarginalOPEEstimator):
             state_action_value_prediction=state_action_value_prediction,
             initial_state_value_prediction=initial_state_value_prediction,
             action_scaler=action_scaler,
-            sigma=sigma,
+            kernel=kernel,
+            bandwidth=bandwidth,
             gamma=gamma,
         )
         return self._estimate_confidence_interval[ci](
@@ -2833,7 +2903,8 @@ class ContinuousStateActionMarginalSNIS(ContinuousStateActionMarginalIS):
         pscore: np.ndarray,
         evaluation_policy_action: np.ndarray,
         gamma: float = 1.0,
-        sigma: float = 1.0,
+        kernel: str = "gaussian",
+        bandwidth: float = 1.0,
         action_scaler: Optional[ActionScaler] = None,
         **kwargs,
     ) -> np.ndarray:
@@ -2867,8 +2938,11 @@ class ContinuousStateActionMarginalSNIS(ContinuousStateActionMarginalIS):
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of the Gaussian kernel.
+        kernel: {"gaussian", "epanechnikov", "triangular", "cosine", "uniform"}
+            Name of the kernel function to smooth importance weights.
+
+        bandwidth: float, default=1.0 (> 0)
+            Bandwidth hyperparameter of the kernel function.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -2890,7 +2964,8 @@ class ContinuousStateActionMarginalSNIS(ContinuousStateActionMarginalIS):
             action=action,
             evaluation_policy_action=evaluation_policy_action,
             action_scaler=action_scaler,
-            sigma=sigma,
+            kernel=kernel,
+            bandwidth=bandwidth,
         )
         state_action_marginal_importance_weight = self._calc_marginal_importance_weight(
             n_step_pdis=n_step_pdis,
@@ -2989,7 +3064,8 @@ class ContinuousStateActionMarginalSNDR(ContinuousStateActionMarginalDR):
         state_action_value_prediction: np.ndarray,
         initial_state_value_prediction: np.ndarray,
         gamma: float = 1.0,
-        sigma: float = 1.0,
+        kernel: str = "gaussian",
+        bandwidth: float = 1.0,
         action_scaler: Optional[ActionScaler] = None,
         **kwargs,
     ) -> np.ndarray:
@@ -3031,8 +3107,11 @@ class ContinuousStateActionMarginalSNDR(ContinuousStateActionMarginalDR):
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of the Gaussian kernel.
+        kernel: {"gaussian", "epanechnikov", "triangular", "cosine", "uniform"}
+            Name of the kernel function to smooth importance weights.
+
+        bandwidth: float, default=1.0 (> 0)
+            Bandwidth hyperparameter of the kernel function.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -3054,7 +3133,8 @@ class ContinuousStateActionMarginalSNDR(ContinuousStateActionMarginalDR):
             action=action,
             evaluation_policy_action=evaluation_policy_action,
             action_scaler=action_scaler,
-            sigma=sigma,
+            kernel=kernel,
+            bandwidth=bandwidth,
         )
         state_action_marginal_importance_weight = self._calc_marginal_importance_weight(
             n_step_pdis=n_step_pdis,

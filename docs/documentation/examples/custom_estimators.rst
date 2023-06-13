@@ -124,7 +124,7 @@ Note that, an OPE estimator can take the following inputs from ``logged_dataset`
 * ``action``: action chosen by the behavior policy
 * ``reward``: reward observation
 * ``done``: whether an episode ends or not (due to the consequence of agent action)
-* ``terminal``: wether an episode terminates or not (due to fixed episode lengths)
+* ``terminal``: whether an episode terminates or not (due to fixed episode lengths)
 * ``pscore``: probability of the behavior policy choosing the observed action
 
 (input dict)

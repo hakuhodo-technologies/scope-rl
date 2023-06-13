@@ -99,8 +99,8 @@ class CreateOPEInput:
     gamma: float, default=1.0
         Discount factor. The value should be within (0, 1].
 
-    sigma: float, default=1.0 (> 0)
-        Bandwidth hyperparameter of the Gaussian kernel.
+    bandwidth: float, default=1.0 (> 0)
+        Bandwidth hyperparameter of the kernel.
 
     state_scaler: d3rlpy.preprocessing.Scaler, default=None
         Scaling factor of state.
@@ -222,7 +222,7 @@ class CreateOPEInput:
     env: Optional[gym.Env] = None
     model_args: Optional[Dict[str, Any]] = None
     gamma: float = 1.0
-    sigma: float = 1.0
+    bandwidth: float = 1.0
     state_scaler: Optional[Scaler] = None
     action_scaler: Optional[ActionScaler] = None
     device: str = "cuda:0"
@@ -287,7 +287,7 @@ class CreateOPEInput:
         check_scalar(
             self.gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0
         )
-        check_scalar(self.sigma, name="sigma", target_type=float, min_val=0.0)
+        check_scalar(self.bandwidth, name="bandwidth", target_type=float, min_val=0.0)
         if self.state_scaler is not None:
             if not isinstance(self.state_scaler, Scaler):
                 raise ValueError(
@@ -513,6 +513,7 @@ class CreateOPEInput:
                                 device=self.device,
                             ),
                             state_scaler=self.state_scaler,
+                            bandwidth=self.bandwidth,
                             device=self.device,
                             **self.model_args["state_action_dual"],
                         )
@@ -533,6 +534,7 @@ class CreateOPEInput:
                             ),
                             state_scaler=self.state_scaler,
                             action_scaler=self.action_scaler,
+                            bandwidth=self.bandwidth,
                             device=self.device,
                             **self.model_args["state_action_dual"],
                         )
@@ -685,6 +687,7 @@ class CreateOPEInput:
                                 hidden_dim=self.model_args["hidden_dim"],
                             ),
                             state_scaler=self.state_scaler,
+                            bandwidth=self.bandwidth,
                             device=self.device,
                             **self.model_args["state_action_value"],
                         )
@@ -699,6 +702,7 @@ class CreateOPEInput:
                             ),
                             state_scaler=self.state_scaler,
                             action_scaler=self.action_scaler,
+                            bandwidth=self.bandwidth,
                             device=self.device,
                             **self.model_args["state_action_value"],
                         )
@@ -861,6 +865,7 @@ class CreateOPEInput:
                                 device=self.device,
                             ),
                             state_scaler=self.state_scaler,
+                            bandwidth=self.bandwidth,
                             device=self.device,
                             **self.model_args["state_action_weight"],
                         )
@@ -876,6 +881,7 @@ class CreateOPEInput:
                             ),
                             state_scaler=self.state_scaler,
                             action_scaler=self.action_scaler,
+                            bandwidth=self.bandwidth,
                             device=self.device,
                             **self.model_args["state_action_weight"],
                         )
@@ -1035,6 +1041,7 @@ class CreateOPEInput:
                                 enable_gradient_reversal=True,
                             ),
                             state_scaler=self.state_scaler,
+                            bandwidth=self.bandwidth,
                             device=self.device,
                             **self.model_args["state_dual"],
                         )
@@ -1053,6 +1060,7 @@ class CreateOPEInput:
                             ),
                             state_scaler=self.state_scaler,
                             action_scaler=self.action_scaler,
+                            bandwidth=self.bandwidth,
                             device=self.device,
                             **self.model_args["state_dual"],
                         )
@@ -1209,6 +1217,7 @@ class CreateOPEInput:
                                 hidden_dim=self.model_args["hidden_dim"],
                             ),
                             state_scaler=self.state_scaler,
+                            bandwidth=self.bandwidth,
                             device=self.device,
                             **self.model_args["state_value"],
                         )
@@ -1222,6 +1231,7 @@ class CreateOPEInput:
                             ),
                             state_scaler=self.state_scaler,
                             action_scaler=self.action_scaler,
+                            bandwidth=self.bandwidth,
                             device=self.device,
                             **self.model_args["state_value"],
                         )
@@ -1379,6 +1389,7 @@ class CreateOPEInput:
                                 enable_gradient_reversal=True,
                             ),
                             state_scaler=self.state_scaler,
+                            bandwidth=self.bandwidth,
                             device=self.device,
                             **self.model_args["state_weight"],
                         )
@@ -1393,6 +1404,7 @@ class CreateOPEInput:
                             ),
                             state_scaler=self.state_scaler,
                             action_scaler=self.action_scaler,
+                            bandwidth=self.bandwidth,
                             device=self.device,
                             **self.model_args["state_weight"],
                         )

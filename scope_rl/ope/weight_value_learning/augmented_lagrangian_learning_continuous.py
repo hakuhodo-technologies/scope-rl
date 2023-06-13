@@ -86,7 +86,7 @@ class ContinuousDiceStateActionWightValueLearning(BaseWeightValueLearner):
     gamma: float, default=1.0
         Discount factor. The value should be within (0, 1].
 
-    sigma: float, default=1.0 (> 0)
+    bandwidth: float, default=1.0 (> 0)
         Bandwidth hyperparameter of the Gaussian kernel. (This is for API consistency)
 
     state_scaler: d3rlpy.preprocessing.Scaler, default=None
@@ -154,7 +154,7 @@ class ContinuousDiceStateActionWightValueLearning(BaseWeightValueLearner):
     q_function: ContinuousQFunction
     w_function: ContinuousStateActionWeightFunction
     gamma: float = 1.0
-    sigma: float = 1.0
+    bandwidth: float = 1.0
     state_scaler: Optional[Scaler] = None
     action_scaler: Optional[ActionScaler] = None
     method: str = "best_dice"
@@ -175,7 +175,7 @@ class ContinuousDiceStateActionWightValueLearning(BaseWeightValueLearner):
         check_scalar(
             self.gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0
         )
-        check_scalar(self.sigma, name="sigma", target_type=float, min_val=0.0)
+        check_scalar(self.bandwidth, name="bandwidth", target_type=float, min_val=0.0)
         if self.state_scaler is not None:
             if not isinstance(self.state_scaler, Scaler):
                 raise ValueError(
@@ -751,7 +751,7 @@ class ContinuousDiceStateWightValueLearning(BaseWeightValueLearner):
     gamma: float, default=1.0
         Discount factor. The value should be within (0, 1].
 
-    sigma: float, default=1.0 (> 0)
+    bandwidth: float, default=1.0 (> 0)
         Bandwidth hyperparameter of the Gaussian kernel. (This is for API consistency)
 
     state_scaler: d3rlpy.preprocessing.Scaler, default=None
@@ -819,7 +819,7 @@ class ContinuousDiceStateWightValueLearning(BaseWeightValueLearner):
     v_function: VFunction
     w_function: StateWeightFunction
     gamma: float = 1.0
-    sigma: float = 1.0
+    bandwidth: float = 1.0
     state_scaler: Optional[Scaler] = None
     action_scaler: Optional[ActionScaler] = None
     method: str = "best_dice"
@@ -840,7 +840,7 @@ class ContinuousDiceStateWightValueLearning(BaseWeightValueLearner):
         check_scalar(
             self.gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0
         )
-        check_scalar(self.sigma, name="sigma", target_type=float, min_val=0.0)
+        check_scalar(self.bandwidth, name="bandwidth", target_type=float, min_val=0.0)
         if self.state_scaler is not None and not isinstance(self.state_scaler, Scaler):
             raise ValueError(
                 "state_scaler must be an instance of d3rlpy.preprocessing.Scaler, but found False"
@@ -1064,7 +1064,7 @@ class ContinuousDiceStateWightValueLearning(BaseWeightValueLearner):
         similarity_weight = gaussian_kernel(
             evaluation_policy_action_,
             action_,
-            sigma=self.sigma,
+            bandwidth=self.bandwidth,
         ).reshape((-1, step_per_trajectory))
 
         state = state.reshape((-1, step_per_trajectory, state_dim))

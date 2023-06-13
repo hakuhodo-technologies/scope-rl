@@ -40,7 +40,7 @@ For the keys that are (optional), please use ``None`` values when the data is un
 * ``action``: action chosen by the behavior policy, *np.ndarray*
 * ``reward``: reward observation, *np.ndarray of shape (size, )*
 * ``done``: whether an episode ends or not (due to the consequence of agent action), *np.ndarray of (size, )*
-* ``terminal``: wether an episode terminates or not (due to fixed episode lengths), *np.ndarray of (size, )*
+* ``terminal``: whether an episode terminates or not (due to fixed episode lengths), *np.ndarray of (size, )*
 * ``pscore``: probability of the behavior policy choosing the observed action, *np.ndarray of (size, ), (optional)*
 
 * ``action_type``: type of action, *str (either "discrete" or "continuous")*

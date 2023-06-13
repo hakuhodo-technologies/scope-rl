@@ -69,7 +69,7 @@ class ContinuousMinimaxStateActionWeightLearning(BaseWeightValueLearner):
     gamma: float, default=1.0
         Discount factor. The value should be within (0, 1].
 
-    sigma: float, default=1.0 (> 0)
+    bandwidth: float, default=1.0 (> 0)
         Bandwidth hyperparameter of the Gaussian kernel.
 
     state_scaler: d3rlpy.preprocessing.Scaler, default=None
@@ -96,7 +96,7 @@ class ContinuousMinimaxStateActionWeightLearning(BaseWeightValueLearner):
 
     w_function: ContinuousStateActionWeightFunction
     gamma: float = 1.0
-    sigma: float = 1.0
+    bandwidth: float = 1.0
     state_scaler: Optional[Scaler] = None
     action_scaler: Optional[ActionScaler] = None
     batch_size: int = 128
@@ -109,7 +109,7 @@ class ContinuousMinimaxStateActionWeightLearning(BaseWeightValueLearner):
         check_scalar(
             self.gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0
         )
-        check_scalar(self.sigma, name="sigma", target_type=float, min_val=0.0)
+        check_scalar(self.bandwidth, name="bandwidth", target_type=float, min_val=0.0)
         if self.state_scaler is not None and not isinstance(self.state_scaler, Scaler):
             raise ValueError(
                 "state_scaler must be an instance of d3rlpy.preprocessing.Scaler, but found False"
@@ -146,7 +146,9 @@ class ContinuousMinimaxStateActionWeightLearning(BaseWeightValueLearner):
             x2_2 = (x2**2).sum(dim=1)
             x_y = x1 @ x2.T
             distance = x1_2[:, None] + x2_2[None, :] - 2 * x_y
-            kernel = torch.exp(-distance / self.sigma)
+            kernel = torch.exp(-distance / (2 * self.bandwidth**2)) / np.sqrt(
+                2 * np.pi * self.bandwidth**2
+            )
 
         return kernel  # shape (n_trajectories, n_trajectories)
 
@@ -583,7 +585,7 @@ class ContinuousMinimaxStateWeightLearning(BaseWeightValueLearner):
     gamma: float, default=1.0
         Discount factor. The value should be within (0, 1].
 
-    sigma: float, default=1.0 (> 0)
+    bandwidth: float, default=1.0 (> 0)
         Bandwidth hyperparameter of the Gaussian kernel.
 
     state_scaler: d3rlpy.preprocessing.Scaler, default=None
@@ -610,7 +612,7 @@ class ContinuousMinimaxStateWeightLearning(BaseWeightValueLearner):
 
     w_function: StateWeightFunction
     gamma: float = 1.0
-    sigma: float = 1.0
+    bandwidth: float = 1.0
     state_scaler: Optional[Scaler] = None
     action_scaler: Optional[ActionScaler] = None
     batch_size: int = 128
@@ -623,7 +625,7 @@ class ContinuousMinimaxStateWeightLearning(BaseWeightValueLearner):
         check_scalar(
             self.gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0
         )
-        check_scalar(self.sigma, name="sigma", target_type=float, min_val=0.0)
+        check_scalar(self.bandwidth, name="bandwidth", target_type=float, min_val=0.0)
         if self.state_scaler is not None and not isinstance(self.state_scaler, Scaler):
             raise ValueError(
                 "state_scaler must be an instance of d3rlpy.preprocessing.Scaler, but found False"
@@ -657,7 +659,9 @@ class ContinuousMinimaxStateWeightLearning(BaseWeightValueLearner):
             x_y = state_1 @ state_2.T
             distance = x_2[:, None] + y_2[None, :] - 2 * x_y
 
-            kernel = torch.exp(-distance / self.sigma)
+            kernel = torch.exp(-distance / (2 * self.bandwidth**2)) / np.sqrt(
+                2 * np.pi * self.bandwidth**2
+            )
 
         return kernel  # shape (n_trajectories, n_trajectories)
 
@@ -870,7 +874,7 @@ class ContinuousMinimaxStateWeightLearning(BaseWeightValueLearner):
         similarity_weight = gaussian_kernel(
             evaluation_policy_action_,
             action_,
-            sigma=self.sigma,
+            bandwidth=self.bandwidth,
         ).reshape((-1, step_per_trajectory))
 
         n_trajectories, step_per_trajectory, _ = state.shape
@@ -1010,7 +1014,7 @@ class ContinuousMinimaxStateWeightLearning(BaseWeightValueLearner):
         similarity_weight = gaussian_kernel(
             evaluation_policy_action_,
             action_,
-            sigma=self.sigma,
+            bandwidth=self.bandwidth,
         )
 
         state_marginal_importance_weight = (

@@ -1,7 +1,7 @@
 # Copyright (c) 2023, Haruka Kiyohara, Ren Kishimoto, HAKUHODO Technologies Inc., and Hanjuku-kaso Co., Ltd. All rights reserved.
 # Licensed under the Apache 2.0 License.
 
-from scope_rl.policy.opl import OffPolicyLearning
+from scope_rl.policy.opl import TrainCandidatePolicies
 from scope_rl.policy.head import (
     BaseHead,
     OnlineHead,
@@ -18,7 +18,7 @@ from scope_rl.policy.encoder import (
 
 
 __all__ = [
-    "OffPolicyLearning",
+    "TrainCandidatePolicies",
     "BaseHead",
     "OnlineHead",
     "DiscreteEpsilonGreedyHead",

@@ -23,10 +23,10 @@ HeadDict = Dict[str, Tuple[BaseHead, Dict[str, Any]]]
 
 
 @dataclass
-class OffPolicyLearning:
+class TrainCandidatePolicies:
     """Class to handle OPL by multiple algorithms simultaneously. (applicable to both discrete/continuous action cases)
 
-    Imported as: :class:`scope_rl.policy.OffPolicyLearning`
+    Imported as: :class:`scope_rl.policy.TrainCandidatePolicies`
 
     Parameters
     -------
@@ -42,7 +42,7 @@ class OffPolicyLearning:
 
         # import necessary module from SCOPE-RL
         from scope_rl.dataset import SyntheticDataset
-        from scope_rl.policy import OffPolicyLearning
+        from scope_rl.policy import TrainCandidatePolicies
         from scope_rl.policy import DiscreteEpsilonGreedyHead, DiscreteSoftmaxHead
 
         # import necessary module from other libraries
@@ -128,7 +128,7 @@ class OffPolicyLearning:
         }
 
         # off-policy learning
-        opl = OffPolicyLearning()
+        opl = TrainCandidatePolicies()
         eval_policies = opl.obtain_evaluation_policy(
             algorithms=algorithms,
             algorithms_name=algorithms_name,

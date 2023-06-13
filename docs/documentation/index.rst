@@ -65,7 +65,7 @@ wrapper classes for transforming the policy into a stochastic policy as follows.
 Meta class
 ^^^^^^
 * SyntheticDataset
-* OffPolicyLearning
+* TrainCandidatePolicies
 
 Discrete
 ^^^^^^

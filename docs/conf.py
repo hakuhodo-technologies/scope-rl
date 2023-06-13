@@ -136,7 +136,7 @@ numpydoc_show_inherited_class_members = {
 #     "BaseOffPolicyEstimator": "scope\_rl.ope.estimators_base.BaseOffPolicyEstimator",
 #     "BaseCumulativeDistributionOPEEstimator": "scope\_rl.ope.estimators\_base.BaseCumulativeDistributionOPEEstimator",
 #     "SyntheticDataset": "scope\_rl.dataset.synthetic.SyntheticDataset",
-#     "OffPolicyLearning": "scope\_rl.policy.opl.OffPolicyLearning",
+#     "TrainCandidatePolicies": "scope\_rl.policy.opl.TrainCandidatePolicies",
 # }
 
 intersphinx_mapping = {

@@ -97,8 +97,8 @@ class OffPolicyEvaluation:
         Number of previous steps to use per-decision importance weight in marginal OPE estimators.
         When set to zero, the estimator is reduced to the vanilla state marginal IS.
 
-    sigma: float, default=1.0 (> 0)
-        Bandwidth hyperparameter of gaussian kernel for continuous action space.
+    bandwidth: float, default=1.0 (> 0)
+        Bandwidth hyperparameter of the kernel used in continuous action case.
 
     action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
         Scaling factor of action.
@@ -233,7 +233,7 @@ class OffPolicyEvaluation:
     logged_dataset: Union[LoggedDataset, MultipleLoggedDataset]
     ope_estimators: List[BaseOffPolicyEstimator]
     n_step_pdis: int = 0
-    sigma: float = 1.0
+    bandwidth: float = 1.0
     action_scaler: Optional[ActionScaler] = None
     disable_reward_after_done: bool = True
 
@@ -336,7 +336,9 @@ class OffPolicyEvaluation:
                 raise ValueError(
                     "action_scaler must be an instance of d3rlpy.preprocessing.ActionScaler, but found False"
                 )
-            check_scalar(self.sigma, name="sigma", target_type=float, min_val=0.0)
+            check_scalar(
+                self.bandwidth, name="bandwidth", target_type=float, min_val=0.0
+            )
 
             self.input_dict_ = {
                 "step_per_trajectory": self.step_per_trajectory,
@@ -345,7 +347,7 @@ class OffPolicyEvaluation:
                 "done": self.logged_dataset["done"],
                 "pscore": self.logged_dataset["pscore"],
                 "action_scaler": self.action_scaler,
-                "sigma": self.sigma,
+                "bandwidth": self.bandwidth,
             }
 
     def _estimate_policy_value(
@@ -2472,8 +2474,8 @@ class CumulativeDistributionOPE:
         Number of partitions in the reward scale (x-axis of the CDF).
         If use_custom_reward_scale is `True`, a value must be given.
 
-    sigma: float, default=1.0 (> 0)
-        Bandwidth hyperparameter of gaussian kernel for continuous action space.
+    bandwidth: float, default=1.0 (> 0)
+        Bandwidth hyperparameter of the kernel used in continuous action case.
 
     action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
         Scaling factor of action.
@@ -2622,7 +2624,7 @@ class CumulativeDistributionOPE:
     scale_min: Optional[float] = None
     scale_max: Optional[float] = None
     n_partition: Optional[int] = None
-    sigma: float = 1.0
+    bandwidth: float = 1.0
     action_scaler: Optional[ActionScaler] = None
     disable_reward_after_done: bool = True
 
@@ -2697,7 +2699,9 @@ class CumulativeDistributionOPE:
                 raise ValueError(
                     "action_scaler must be an instance of d3rlpy.preprocessing.ActionScaler, but found False"
                 )
-            check_scalar(self.sigma, name="sigma", target_type=float, min_val=0.0)
+            check_scalar(
+                self.bandwidth, name="bandwidth", target_type=float, min_val=0.0
+            )
 
         self._estimate_confidence_interval = {
             "bootstrap": estimate_confidence_interval_by_bootstrap,
@@ -2846,7 +2850,7 @@ class CumulativeDistributionOPE:
                 "done": self.logged_dataset["done"],
                 "pscore": self.logged_dataset["pscore"],
                 "action_scaler": self.action_scaler,
-                "sigma": self.sigma,
+                "bandwidth": self.bandwidth,
             }
 
     def _target_value_given_idx(self, idx_: int, reward_scale: np.ndarray):

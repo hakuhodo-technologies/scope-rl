@@ -11,6 +11,10 @@ from d3rlpy.preprocessing import ActionScaler
 
 from ..utils import (
     gaussian_kernel,
+    epanechnikov_kernel,
+    triangular_kernel,
+    cosine_kernel,
+    uniform_kernel,
     estimate_confidence_interval_by_bootstrap,
     estimate_confidence_interval_by_hoeffding,
     estimate_confidence_interval_by_empirical_bernstein,
@@ -55,6 +59,19 @@ class BaseOffPolicyEstimator(metaclass=ABCMeta):
                 ttest,
             ]
 
+    *property* _kernel_function:
+        Dictionary containing names and functions of kernels.
+
+        .. code-block:: python
+
+            key: [
+                gaussian,
+                epanechnikov,
+                triangular,
+                cosine,
+                uniform,
+            ]
+
     """
 
     @abstractmethod
@@ -82,6 +99,17 @@ class BaseOffPolicyEstimator(metaclass=ABCMeta):
             "ttest": estimate_confidence_interval_by_t_test,
         }
 
+    @property
+    def _kernel_function(self) -> Dict[str, Callable]:
+        """Dictionary containing names and functions of kernels."""
+        return {
+            "gaussian": gaussian_kernel,
+            "epanechnikov": epanechnikov_kernel,
+            "triangular": triangular_kernel,
+            "cosine": cosine_kernel,
+            "uniform": uniform_kernel,
+        }
+
     def _calc_behavior_policy_pscore_discrete(
         self,
         step_per_trajectory: int,
@@ -100,7 +128,7 @@ class BaseOffPolicyEstimator(metaclass=ABCMeta):
             i.e., :math:`\\pi_0(a \\mid s)`
 
         pscore_type: {"trajectory-wise", "step-wise"}
-            Indicates wether to return trajectory-wise pscore or step-wise pscore.
+            Indicates whether to return trajectory-wise pscore or step-wise pscore.
 
         Return
         -------
@@ -143,7 +171,7 @@ class BaseOffPolicyEstimator(metaclass=ABCMeta):
             i.e., :math:`\\pi_0(a \\mid s)`
 
         pscore_type: {"trajectory-wise", "step-wise"}
-            Indicates wether to return trajectory-wise pscore or step-wise pscore.
+            Indicates whether to return trajectory-wise pscore or step-wise pscore.
 
         Return
         -------
@@ -194,7 +222,7 @@ class BaseOffPolicyEstimator(metaclass=ABCMeta):
             i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
 
         pscore_type: {"trajectory-wise", "step-wise"}
-            Indicates wether to return trajectory-wise pscore or step-wise pscore.
+            Indicates whether to return trajectory-wise pscore or step-wise pscore.
 
         Return
         -------
@@ -226,7 +254,8 @@ class BaseOffPolicyEstimator(metaclass=ABCMeta):
         action: np.ndarray,
         evaluation_policy_action: np.ndarray,
         pscore_type: str,
-        sigma: float = 1.0,
+        kernel: str = "gaussian",
+        bandwidth: float = 1.0,
         action_scaler: Optional[ActionScaler] = None,
     ):
         """Calculate the similarity weight.
@@ -243,10 +272,13 @@ class BaseOffPolicyEstimator(metaclass=ABCMeta):
             Action chosen by the evaluation policy.
 
         pscore_type: {"trajectory-wise", "step-wise"}
-            Indicates wether to return trajectory-wise pscore or step-wise pscore.
+            Indicates whether to return trajectory-wise pscore or step-wise pscore.
 
-        sigma: float, default=1.0
-            Bandwidth hyperparameter of the Gaussian kernel.
+        kernel: {"gaussian", "epanechnikov", "triangular", "cosine", "uniform"}
+            Name of the kernel function to smooth importance weights.
+
+        bandwidth: float, default=1.0 (> 0)
+            Bandwidth hyperparameter of the kernel function.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -268,10 +300,10 @@ class BaseOffPolicyEstimator(metaclass=ABCMeta):
             )
             action = action_scaler.transform_numpy(action)
 
-        similarity_weight = gaussian_kernel(
+        similarity_weight = self._kernel_function[kernel](
             evaluation_policy_action,
             action,
-            sigma=sigma,
+            bandwidth=bandwidth,
         ).reshape((-1, step_per_trajectory))
 
         similarity_weight = np.cumprod(similarity_weight, axis=1)
@@ -455,7 +487,8 @@ class BaseMarginalOPEEstimator(BaseOffPolicyEstimator):
         step_per_trajectory: int,
         action: np.ndarray,
         evaluation_policy_action: np.ndarray,
-        sigma: float = 1.0,
+        kernel: str = "gaussian",
+        bandwidth: float = 1.0,
         action_scaler: Optional[ActionScaler] = None,
     ):
         """Calculate the similarity weight.
@@ -474,8 +507,11 @@ class BaseMarginalOPEEstimator(BaseOffPolicyEstimator):
         evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
 
-        sigma: float, default=1.0
-            Bandwidth hyperparameter of the Gaussian kernel.
+        kernel: {"gaussian", "epanechnikov", "triangular", "cosine", "uniform"}
+            Name of the kernel function to smooth importance weights.
+
+        bandwidth: float, default=1.0 (> 0)
+            Bandwidth hyperparameter of the kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -494,10 +530,10 @@ class BaseMarginalOPEEstimator(BaseOffPolicyEstimator):
             )
             action = action_scaler.transform_numpy(action)
 
-        similarity_weight = gaussian_kernel(
+        similarity_weight = self._kernel_function[kernel](
             evaluation_policy_action,
             action,
-            sigma=sigma,
+            bandwidth=bandwidth,
         ).reshape((-1, step_per_trajectory))
 
         n_step_similarity_weight = np.zeros_like(similarity_weight)
@@ -693,6 +729,19 @@ class BaseCumulativeDistributionOPEEstimator(metaclass=ABCMeta):
     _target_value_given_idx:
         Obtain the reward value corresponding to the given idx when estimating the CDF.
 
+    *property* _kernel_function:
+        Dictionary containing names and functions of kernels.
+
+        .. code-block:: python
+
+            key: [
+                gaussian,
+                epanechnikov,
+                triangular,
+                cosine,
+                uniform,
+            ]
+
     """
 
     @abstractmethod
@@ -719,6 +768,17 @@ class BaseCumulativeDistributionOPEEstimator(metaclass=ABCMeta):
     def estimate_interquartile_range(self) -> Dict[str, float]:
         """Estimate the interquartile range of the reward under the evaluation policy."""
         raise NotImplementedError
+
+    @property
+    def _kernel_function(self) -> Dict[str, Callable]:
+        """Dictionary containing names and functions of kernels."""
+        return {
+            "gaussian": gaussian_kernel,
+            "epanechnikov": epanechnikov_kernel,
+            "triangular": triangular_kernel,
+            "cosine": cosine_kernel,
+            "uniform": uniform_kernel,
+        }
 
     def _target_value_given_idx(
         self, idx_: Union[List[int], int], reward_scale: np.ndarray
@@ -849,7 +909,8 @@ class BaseCumulativeDistributionOPEEstimator(metaclass=ABCMeta):
         evaluation_policy_action: Optional[np.ndarray] = None,
         state_action_value_prediction: Optional[np.ndarray] = None,
         gamma: float = 1.0,
-        sigma: float = 1.0,
+        kernel: str = "gaussian",
+        bandwidth: float = 1.0,
         action_scaler: Optional[ActionScaler] = None,
     ):
         """Calculate trajectory-wise summary statistics based on step-wise observations in the case of continuous action spaces.
@@ -879,8 +940,11 @@ class BaseCumulativeDistributionOPEEstimator(metaclass=ABCMeta):
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0
-            Bandwidth hyperparameter of the Gaussian kernel.
+        kernel: {"gaussian", "epanechnikov", "triangular", "cosine", "uniform"}
+            Name of the kernel function to smooth importance weights.
+
+        bandwidth: float, default=1.0 (> 0)
+            Bandwidth hyperparameter of the kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -922,10 +986,10 @@ class BaseCumulativeDistributionOPEEstimator(metaclass=ABCMeta):
                 action = action_scaler.transform_numpy(action)
 
             similarity_weight = (
-                gaussian_kernel(
+                self._kernel_function[kernel](
                     evaluation_policy_action,
                     action,
-                    sigma=sigma,
+                    bandwidth=bandwidth,
                 )
                 .reshape((-1, step_per_trajectory))
                 .prod(axis=1)

@@ -63,7 +63,7 @@ class DiscreteMinimaxStateActionValueLearning(BaseWeightValueLearner):
     gamma: float, default=1.0
         Discount factor. The value should be within (0, 1].
 
-    sigma: float, default=1.0 (> 0)
+    bandwidth: float, default=1.0 (> 0)
         Bandwidth hyperparameter of the Gaussian kernel.
 
     state_scaler: d3rlpy.preprocessing.Scaler, default=None
@@ -87,7 +87,7 @@ class DiscreteMinimaxStateActionValueLearning(BaseWeightValueLearner):
 
     q_function: DiscreteQFunction
     gamma: float = 1.0
-    sigma: float = 1.0
+    bandwidth: float = 1.0
     state_scaler: Optional[Scaler] = None
     batch_size: int = 128
     lr: float = 1e-4
@@ -99,7 +99,7 @@ class DiscreteMinimaxStateActionValueLearning(BaseWeightValueLearner):
         check_scalar(
             self.gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0
         )
-        check_scalar(self.sigma, name="sigma", target_type=float, min_val=0.0)
+        check_scalar(self.bandwidth, name="bandwidth", target_type=float, min_val=0.0)
         if self.state_scaler is not None and not isinstance(self.state_scaler, Scaler):
             raise ValueError(
                 "state_scaler must be an instance of d3rlpy.preprocessing.Scaler, but found False"
@@ -132,8 +132,10 @@ class DiscreteMinimaxStateActionValueLearning(BaseWeightValueLearner):
 
             action_onehot_1 = F.one_hot(action_1, num_classes=n_actions)
             action_onehot_2 = F.one_hot(action_2, num_classes=n_actions)
-            kernel = torch.exp(-distance / self.sigma) * (
-                action_onehot_1 @ action_onehot_2.T
+            kernel = (
+                torch.exp(-distance / (2 * self.bandwidth**2))
+                / np.sqrt(2 * np.pi * self.bandwidth**2)
+                * (action_onehot_1 @ action_onehot_2.T)
             )
 
         return kernel  # shape (n_trajectories, n_trajectories)
@@ -630,7 +632,7 @@ class DiscreteMinimaxStateValueLearning(BaseWeightValueLearner):
     gamma: float, default=1.0
         Discount factor. The value should be within (0, 1].
 
-    sigma: float, default=1.0 (> 0)
+    bandwidth: float, default=1.0 (> 0)
         Bandwidth hyperparameter of the Gaussian kernel.
 
     state_scaler: d3rlpy.preprocessing.Scaler, default=None
@@ -654,7 +656,7 @@ class DiscreteMinimaxStateValueLearning(BaseWeightValueLearner):
 
     v_function: VFunction
     gamma: float = 1.0
-    sigma: float = 1.0
+    bandwidth: float = 1.0
     state_scaler: Optional[Scaler] = None
     batch_size: int = 128
     lr: float = 1e-4
@@ -666,7 +668,7 @@ class DiscreteMinimaxStateValueLearning(BaseWeightValueLearner):
         check_scalar(
             self.gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0
         )
-        check_scalar(self.sigma, name="sigma", target_type=float, min_val=0.0)
+        check_scalar(self.bandwidth, name="bandwidth", target_type=float, min_val=0.0)
         if self.state_scaler is not None and not isinstance(self.state_scaler, Scaler):
             raise ValueError(
                 "state_scaler must be an instance of d3rlpy.preprocessing.Scaler, but found False"
@@ -694,7 +696,9 @@ class DiscreteMinimaxStateValueLearning(BaseWeightValueLearner):
             x_y = state_1 @ state_2.T
             distance = x_2[:, None] + y_2[None, :] - 2 * x_y
 
-            kernel = torch.exp(-distance / self.sigma)
+            kernel = torch.exp(-distance / (2 * self.bandwidth**2)) / np.sqrt(
+                2 * np.pi * self.bandwidth**2
+            )
 
         return kernel  # shape (n_trajectories, n_trajectories)
 

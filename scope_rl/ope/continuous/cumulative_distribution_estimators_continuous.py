@@ -443,7 +443,8 @@ class ContinuousCumulativeDistributionTIS(
         evaluation_policy_action: np.ndarray,
         reward_scale: np.ndarray,
         gamma: float = 1.0,
-        sigma: float = 1.0,
+        kernel: str = "gaussian",
+        bandwidth: float = 1.0,
         action_scaler: Optional[ActionScaler] = None,
         **kwargs,
     ) -> Tuple[np.ndarray]:
@@ -474,8 +475,11 @@ class ContinuousCumulativeDistributionTIS(
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of the Gaussian kernel.
+        kernel: {"gaussian", "epanechnikov", "triangular", "cosine", "uniform"}
+            Name of the kernel function to smooth importance weights.
+
+        bandwidth: float, default=1.0 (> 0)
+            Bandwidth hyperparameter of the kernel function.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -531,7 +535,7 @@ class ContinuousCumulativeDistributionTIS(
             )
 
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
-        check_scalar(sigma, name="sigma", target_type=float, min_val=0.0)
+        check_scalar(bandwidth, name="bandwidth", target_type=float, min_val=0.0)
         if action_scaler is not None and not isinstance(action_scaler, ActionScaler):
             raise ValueError(
                 "action_scaler must be an instance of d3rlpy.preprocessing.ActionScaler, but found False"
@@ -548,7 +552,8 @@ class ContinuousCumulativeDistributionTIS(
             pscore=pscore,
             evaluation_policy_action=evaluation_policy_action,
             action_scaler=action_scaler,
-            sigma=sigma,
+            kernel=kernel,
+            bandwidth=bandwidth,
             gamma=gamma,
         )
 
@@ -582,7 +587,8 @@ class ContinuousCumulativeDistributionTIS(
         evaluation_policy_action: np.ndarray,
         reward_scale: np.ndarray,
         gamma: float = 1.0,
-        sigma: float = 1.0,
+        kernel: str = "gaussian",
+        bandwidth: float = 1.0,
         action_scaler: Optional[ActionScaler] = None,
         **kwargs,
     ) -> float:
@@ -612,8 +618,11 @@ class ContinuousCumulativeDistributionTIS(
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of the Gaussian kernel.
+        kernel: {"gaussian", "epanechnikov", "triangular", "cosine", "uniform"}
+            Name of the kernel function to smooth importance weights.
+
+        bandwidth: float, default=1.0 (> 0)
+            Bandwidth hyperparameter of the kernel function.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -632,7 +641,8 @@ class ContinuousCumulativeDistributionTIS(
             evaluation_policy_action=evaluation_policy_action,
             reward_scale=reward_scale,
             action_scaler=action_scaler,
-            sigma=sigma,
+            kernel=kernel,
+            bandwidth=bandwidth,
             gamma=gamma,
         )
         return (np.diff(cumulative_density) * reward_scale[1:]).sum()
@@ -646,7 +656,8 @@ class ContinuousCumulativeDistributionTIS(
         evaluation_policy_action: np.ndarray,
         reward_scale: np.ndarray,
         gamma: float = 1.0,
-        sigma: float = 1.0,
+        kernel: str = "gaussian",
+        bandwidth: float = 1.0,
         action_scaler: Optional[ActionScaler] = None,
         **kwargs,
     ) -> float:
@@ -676,8 +687,11 @@ class ContinuousCumulativeDistributionTIS(
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of the Gaussian kernel.
+        kernel: {"gaussian", "epanechnikov", "triangular", "cosine", "uniform"}
+            Name of the kernel function to smooth importance weights.
+
+        bandwidth: float, default=1.0 (> 0)
+            Bandwidth hyperparameter of the kernel function.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -696,7 +710,8 @@ class ContinuousCumulativeDistributionTIS(
             evaluation_policy_action=evaluation_policy_action,
             reward_scale=reward_scale,
             action_scaler=action_scaler,
-            sigma=sigma,
+            kernel=kernel,
+            bandwidth=bandwidth,
             gamma=gamma,
         )
         mean = (np.diff(cumulative_density) * reward_scale[1:]).sum()
@@ -711,7 +726,8 @@ class ContinuousCumulativeDistributionTIS(
         evaluation_policy_action: np.ndarray,
         reward_scale: np.ndarray,
         gamma: float = 1.0,
-        sigma: float = 1.0,
+        kernel: str = "gaussian",
+        bandwidth: float = 1.0,
         action_scaler: Optional[ActionScaler] = None,
         alphas: Optional[np.ndarray] = None,
         **kwargs,
@@ -742,8 +758,11 @@ class ContinuousCumulativeDistributionTIS(
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of the Gaussian kernel.
+        kernel: {"gaussian", "epanechnikov", "triangular", "cosine", "uniform"}
+            Name of the kernel function to smooth importance weights.
+
+        bandwidth: float, default=1.0 (> 0)
+            Bandwidth hyperparameter of the kernel function.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -771,7 +790,8 @@ class ContinuousCumulativeDistributionTIS(
             evaluation_policy_action=evaluation_policy_action,
             reward_scale=reward_scale,
             action_scaler=action_scaler,
-            sigma=sigma,
+            kernel=kernel,
+            bandwidth=bandwidth,
             gamma=gamma,
         )
 
@@ -805,7 +825,8 @@ class ContinuousCumulativeDistributionTIS(
         evaluation_policy_action: np.ndarray,
         reward_scale: np.ndarray,
         gamma: float = 1.0,
-        sigma: float = 1.0,
+        kernel: str = "gaussian",
+        bandwidth: float = 1.0,
         action_scaler: Optional[ActionScaler] = None,
         alpha: float = 0.05,
         **kwargs,
@@ -836,8 +857,11 @@ class ContinuousCumulativeDistributionTIS(
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of the Gaussian kernel.
+        kernel: {"gaussian", "epanechnikov", "triangular", "cosine", "uniform"}
+            Name of the kernel function to smooth importance weights.
+
+        bandwidth: float, default=1.0 (> 0)
+            Bandwidth hyperparameter of the kernel function.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -861,7 +885,8 @@ class ContinuousCumulativeDistributionTIS(
             evaluation_policy_action=evaluation_policy_action,
             reward_scale=reward_scale,
             action_scaler=action_scaler,
-            sigma=sigma,
+            kernel=kernel,
+            bandwidth=bandwidth,
             gamma=gamma,
         )
 
@@ -947,7 +972,8 @@ class ContinuousCumulativeDistributionTDR(
         state_action_value_prediction: np.ndarray,
         reward_scale: np.ndarray,
         gamma: float = 1.0,
-        sigma: float = 1.0,
+        kernel: str = "gaussian",
+        bandwidth: float = 1.0,
         action_scaler: Optional[ActionScaler] = None,
         **kwargs,
     ) -> Tuple[np.ndarray]:
@@ -980,8 +1006,11 @@ class ContinuousCumulativeDistributionTDR(
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of the Gaussian kernel.
+        kernel: {"gaussian", "epanechnikov", "triangular", "cosine", "uniform"}
+            Name of the kernel function to smooth importance weights.
+
+        bandwidth: float, default=1.0 (> 0)
+            Bandwidth hyperparameter of the kernel function.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -1047,7 +1076,7 @@ class ContinuousCumulativeDistributionTDR(
             )
 
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
-        check_scalar(sigma, name="sigma", target_type=float, min_val=0.0)
+        check_scalar(bandwidth, name="bandwidth", target_type=float, min_val=0.0)
         if action_scaler is not None and not isinstance(action_scaler, ActionScaler):
             raise ValueError(
                 "action_scaler must be an instance of d3rlpy.preprocessing.ActionScaler, but found False"
@@ -1065,7 +1094,8 @@ class ContinuousCumulativeDistributionTDR(
             evaluation_policy_action=evaluation_policy_action,
             state_action_value_prediction=state_action_value_prediction,
             action_scaler=action_scaler,
-            sigma=sigma,
+            kernel=kernel,
+            bandwidth=bandwidth,
             gamma=gamma,
         )
 
@@ -1103,7 +1133,8 @@ class ContinuousCumulativeDistributionTDR(
         state_action_value_prediction: np.ndarray,
         reward_scale: np.ndarray,
         gamma: float = 1.0,
-        sigma: float = 1.0,
+        kernel: str = "gaussian",
+        bandwidth: float = 1.0,
         action_scaler: Optional[ActionScaler] = None,
         **kwargs,
     ) -> float:
@@ -1136,8 +1167,11 @@ class ContinuousCumulativeDistributionTDR(
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of the Gaussian kernel.
+        kernel: {"gaussian", "epanechnikov", "triangular", "cosine", "uniform"}
+            Name of the kernel function to smooth importance weights.
+
+        bandwidth: float, default=1.0 (> 0)
+            Bandwidth hyperparameter of the kernel function.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -1157,7 +1191,8 @@ class ContinuousCumulativeDistributionTDR(
             state_action_value_prediction=state_action_value_prediction,
             reward_scale=reward_scale,
             action_scaler=action_scaler,
-            sigma=sigma,
+            kernel=kernel,
+            bandwidth=bandwidth,
             gamma=gamma,
         )
         return (np.diff(cumulative_density) * reward_scale[1:]).sum()
@@ -1172,7 +1207,8 @@ class ContinuousCumulativeDistributionTDR(
         state_action_value_prediction: np.ndarray,
         reward_scale: np.ndarray,
         gamma: float = 1.0,
-        sigma: float = 1.0,
+        kernel: str = "gaussian",
+        bandwidth: float = 1.0,
         action_scaler: Optional[ActionScaler] = None,
         **kwargs,
     ) -> float:
@@ -1205,8 +1241,11 @@ class ContinuousCumulativeDistributionTDR(
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of the Gaussian kernel.
+        kernel: {"gaussian", "epanechnikov", "triangular", "cosine", "uniform"}
+            Name of the kernel function to smooth importance weights.
+
+        bandwidth: float, default=1.0 (> 0)
+            Bandwidth hyperparameter of the kernel function.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -1226,7 +1265,8 @@ class ContinuousCumulativeDistributionTDR(
             state_action_value_prediction=state_action_value_prediction,
             reward_scale=reward_scale,
             action_scaler=action_scaler,
-            sigma=sigma,
+            kernel=kernel,
+            bandwidth=bandwidth,
             gamma=gamma,
         )
         mean = (np.diff(cumulative_density) * reward_scale[1:]).sum()
@@ -1242,7 +1282,8 @@ class ContinuousCumulativeDistributionTDR(
         state_action_value_prediction: np.ndarray,
         reward_scale: np.ndarray,
         gamma: float = 1.0,
-        sigma: float = 1.0,
+        kernel: str = "gaussian",
+        bandwidth: float = 1.0,
         action_scaler: Optional[ActionScaler] = None,
         alphas: Optional[np.ndarray] = None,
         **kwargs,
@@ -1276,8 +1317,11 @@ class ContinuousCumulativeDistributionTDR(
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of the Gaussian kernel.
+        kernel: {"gaussian", "epanechnikov", "triangular", "cosine", "uniform"}
+            Name of the kernel function to smooth importance weights.
+
+        bandwidth: float, default=1.0 (> 0)
+            Bandwidth hyperparameter of the kernel function.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -1306,7 +1350,8 @@ class ContinuousCumulativeDistributionTDR(
             state_action_value_prediction=state_action_value_prediction,
             reward_scale=reward_scale,
             action_scaler=action_scaler,
-            sigma=sigma,
+            kernel=kernel,
+            bandwidth=bandwidth,
             gamma=gamma,
         )
 
@@ -1340,7 +1385,8 @@ class ContinuousCumulativeDistributionTDR(
         state_action_value_prediction: np.ndarray,
         reward_scale: np.ndarray,
         gamma: float = 1.0,
-        sigma: float = 1.0,
+        kernel: str = "gaussian",
+        bandwidth: float = 1.0,
         action_scaler: Optional[ActionScaler] = None,
         alpha: float = 0.05,
         **kwargs,
@@ -1374,8 +1420,11 @@ class ContinuousCumulativeDistributionTDR(
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of the Gaussian kernel.
+        kernel: {"gaussian", "epanechnikov", "triangular", "cosine", "uniform"}
+            Name of the kernel function to smooth importance weights.
+
+        bandwidth: float, default=1.0 (> 0)
+            Bandwidth hyperparameter of the kernel function.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -1400,7 +1449,8 @@ class ContinuousCumulativeDistributionTDR(
             state_action_value_prediction=state_action_value_prediction,
             reward_scale=reward_scale,
             action_scaler=action_scaler,
-            sigma=sigma,
+            kernel=kernel,
+            bandwidth=bandwidth,
             gamma=gamma,
         )
 
@@ -1484,7 +1534,8 @@ class ContinuousCumulativeDistributionSNTIS(
         evaluation_policy_action: np.ndarray,
         reward_scale: np.ndarray,
         gamma: float = 1.0,
-        sigma: float = 1.0,
+        kernel: str = "gaussian",
+        bandwidth: float = 1.0,
         action_scaler: Optional[ActionScaler] = None,
         **kwargs,
     ) -> Tuple[np.ndarray]:
@@ -1514,8 +1565,11 @@ class ContinuousCumulativeDistributionSNTIS(
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of the Gaussian kernel.
+        kernel: {"gaussian", "epanechnikov", "triangular", "cosine", "uniform"}
+            Name of the kernel function to smooth importance weights.
+
+        bandwidth: float, default=1.0 (> 0)
+            Bandwidth hyperparameter of the kernel function.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -1571,7 +1625,7 @@ class ContinuousCumulativeDistributionSNTIS(
             )
 
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
-        check_scalar(sigma, name="sigma", target_type=float, min_val=0.0)
+        check_scalar(bandwidth, name="bandwidth", target_type=float, min_val=0.0)
         if action_scaler is not None and not isinstance(action_scaler, ActionScaler):
             raise ValueError(
                 "action_scaler must be an instance of d3rlpy.preprocessing.ActionScaler, but found False"
@@ -1588,7 +1642,8 @@ class ContinuousCumulativeDistributionSNTIS(
             pscore=pscore,
             evaluation_policy_action=evaluation_policy_action,
             action_scaler=action_scaler,
-            sigma=sigma,
+            kernel=kernel,
+            bandwidth=bandwidth,
             gamma=gamma,
         )
 
@@ -1676,7 +1731,8 @@ class ContinuousCumulativeDistributionSNTDR(
         state_action_value_prediction: np.ndarray,
         reward_scale: np.ndarray,
         gamma: float = 1.0,
-        sigma: float = 1.0,
+        kernel: str = "gaussian",
+        bandwidth: float = 1.0,
         action_scaler: Optional[ActionScaler] = None,
         **kwargs,
     ) -> Tuple[np.ndarray]:
@@ -1709,8 +1765,11 @@ class ContinuousCumulativeDistributionSNTDR(
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
 
-        sigma: float, default=1.0 (> 0)
-            Bandwidth hyperparameter of the Gaussian kernel.
+        kernel: {"gaussian", "epanechnikov", "triangular", "cosine", "uniform"}
+            Name of the kernel function to smooth importance weights.
+
+        bandwidth: float, default=1.0 (> 0)
+            Bandwidth hyperparameter of the kernel function.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -1771,7 +1830,7 @@ class ContinuousCumulativeDistributionSNTDR(
             )
 
         check_scalar(gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0)
-        check_scalar(sigma, name="sigma", target_type=float, min_val=0.0)
+        check_scalar(bandwidth, name="bandwidth", target_type=float, min_val=0.0)
         if action_scaler is not None and not isinstance(action_scaler, ActionScaler):
             raise ValueError(
                 "action_scaler must be an instance of d3rlpy.preprocessing.ActionScaler, but found False"
@@ -1789,7 +1848,8 @@ class ContinuousCumulativeDistributionSNTDR(
             evaluation_policy_action=evaluation_policy_action,
             state_action_value_prediction=state_action_value_prediction,
             action_scaler=action_scaler,
-            sigma=sigma,
+            kernel=kernel,
+            bandwidth=bandwidth,
             gamma=gamma,
         )
 

@@ -244,7 +244,7 @@ For this, `d3rlpy <https://github.com/takuseno/d3rlpy>`_ provides various offlin
     )
 
 While the above procedure is alreaady simple and easy-to-use, 
-we also provide :class:`OffPolicyLearning` as a meta class to further smoothen the OPL procedure with various algorithms.
+we also provide :class:`TrainCandidatePolicies` as a meta class to further smoothen the OPL procedure with various algorithms.
 
 .. code-block:: python
 
@@ -263,8 +263,8 @@ we also provide :class:`OffPolicyLearning` as a meta class to further smoothen t
     )
 
     # off-policy learning
-    from scope_rl.policy import OffPolicyLearning
-    opl = OffPolicyLearning(
+    from scope_rl.policy import TrainCandidatePolicies
+    opl = TrainCandidatePolicies(
         fitting_args={"n_steps": 10000},
     )
     base_policies = opl.learn_base_policy(
@@ -273,7 +273,7 @@ we also provide :class:`OffPolicyLearning` as a meta class to further smoothen t
         random_state=random_state,
     )
 
-Using :class:`OffPolicyLearning`, we can also convert the deterministic base policies to stochastic (evaluation) policies as follows.
+Using :class:`TrainCandidatePolicies`, we can also convert the deterministic base policies to stochastic (evaluation) policies as follows.
 
 .. code-block:: python
 
@@ -345,7 +345,7 @@ The obtained evaluation policies are the following (both algorithms and policy w
 
     .. dropdown:: How to handle OPL with multiple logged datasets?
 
-        :class:`OffPolicyLearning` is particularly useful when fitting offline RL algorithms on multiple logged dataset.
+        :class:`TrainCandidatePolicies` is particularly useful when fitting offline RL algorithms on multiple logged dataset.
 
         We can apply the same algorithms and policies wrappers across multiple datasets by the following command.
 
