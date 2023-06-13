@@ -25,8 +25,8 @@ Before proceeding to OPE/OPS, we first create :class:`input_dict` to enable a sm
 
 .. _tip_create_input_dict:
 
-.. tip:: 
-    
+.. tip::
+
     .. dropdown:: How to create input_dict for multiple logged datasets?
 
         When obtaining :class:`input_dict` from the same evaluation policies across multiple datasets, try the following command.
@@ -52,7 +52,7 @@ Before proceeding to OPE/OPS, we first create :class:`input_dict` to enable a sm
         In both cases, :class:`MultipleInputDict` will be returned.
 
         :class:`MultipleInputDict` saves the paths to each input_dict and make it accessible through the following command.
-            
+
         .. code-block:: python
 
             input_dict_ = multiple_input_dict.get(behavior_policy_name=behavior_policy.name, dataset_id=0)
@@ -72,8 +72,8 @@ Before proceeding to OPE/OPS, we first create :class:`input_dict` to enable a sm
 
             input_dict = prep.obtain_whole_inputs(
                 ...,
-                require_value_prediction=True, 
-                require_weight_prediction=True, 
+                require_value_prediction=True,
+                require_weight_prediction=True,
                 ...,
             )
 
@@ -152,7 +152,7 @@ Before proceeding to OPE/OPS, we first create :class:`input_dict` to enable a sm
             )
 
 .. seealso::
-        
+
     :doc:`Supported Implementation (learning) <learning_implementation>` describes how to obtain :class:`logged_dataset` using a behavior policy in detail.
 
 .. _implementation_basic_ope:
@@ -165,11 +165,11 @@ The goal of (basic) OPE is to evaluate the following expected trajectory-wise re
 
     J(\pi) := \mathbb{E}_{\tau} \left [ \sum_{t=0}^{T-1} \gamma^t r_{t} \mid \pi \right ],
 
-where :math:`\pi` is the (evaluation) policy, :math:`\tau` is the trajectory observed by the evaluation policy, and :math:`r_t` is the immediate reward at each timestep. 
+where :math:`\pi` is the (evaluation) policy, :math:`\tau` is the trajectory observed by the evaluation policy, and :math:`r_t` is the immediate reward at each timestep.
 (Please refer to the :doc:`problem setup <ope_ops>` for additional notations.)
 
 
-Here, we describe the class for conducting OPE and the implemented OPE estimators for estimating the policy value. 
+Here, we describe the class for conducting OPE and the implemented OPE estimators for estimating the policy value.
 We begin with the :class:`OffPolicyEvaluation` class to streamline the OPE procedure.
 
 .. code-block:: python
@@ -230,10 +230,10 @@ Using the OPE class, we can obtain the OPE results of various estimators at once
                 ...,
             )
 
-        .. card:: 
+        .. card::
             :img-top: ../_static/images/ope_policy_value_basic.png
             :text-align: center
-            
+
             policy value estimated with the specified dataset
 
         Moreover, we provide additional visualization functions for the multiple logged dataset case.
@@ -248,31 +248,31 @@ Using the OPE class, we can obtain the OPE results of various estimators at once
                 ...,
             )
 
-        When the ``plot_type`` is "ci", the plot is somewhat similar to the basic visualization. 
+        When the ``plot_type`` is "ci", the plot is somewhat similar to the basic visualization.
         (The star indicates the ground-truth policy value and the confidence intervals are derived by multiple estimates across datasets.)
 
-        .. card:: 
+        .. card::
             :img-top: ../_static/images/ope_policy_value_basic_multiple.png
             :text-align: center
-            
+
             policy value estimated with the multiple datasets
 
         When the ``plot_type`` is "violin", the plot visualizes the distribution of multiple estimates.
-        This is particularly useful to see how the estimation result can vary depending on different datasets or random seeds. 
+        This is particularly useful to see how the estimation result can vary depending on different datasets or random seeds.
 
-        .. card:: 
+        .. card::
             :img-top: ../_static/images/ope_policy_value_basic_multiple_violin.png
             :text-align: center
-            
+
             policy value estimated with the multiple datasets (violin)
 
         Finally, when the ``plot_type`` is "scatter", the plot visualizes each estimation with its color specifying the behavior policy.
         This function is particularly useful to see how the choice of behavior policy (e.g., their stochasticity) affects the estimation result.
 
-        .. card:: 
+        .. card::
             :img-top: ../_static/images/ope_policy_value_basic_multiple_scatter.png
             :text-align: center
-            
+
             policy value estimated with the multiple datasets (scatter)
 
         .. seealso::
@@ -311,31 +311,31 @@ The OPE class implements the following functions.
 Below, we describe the implemented OPE estimators.
 
 ==================================================================================  ================  ================
-Standard OPE estimators                                                                    
+Standard OPE estimators
 ==================================================================================  ================  ================
-:ref:`Direct Method (DM) <implementation_dm>`                                                                    
-:ref:`Trajectory-wise Importance Sampling (TIS) <implementation_tis>`             
-:ref:`Per-Decision Importance Sampling (PDIS) <implementation_pdis>`              
-:ref:`Doubly Robust (DR) <implementation_dr>`                                    
-:ref:`Self-Normalized estimators <implementation_sn>`    
-==================================================================================  ================  ================
-
-
-==================================================================================  ================  ================
-Marginal OPE estimators                                                                    
-==================================================================================  ================  ================
-:ref:`State Marginal estimators <implementation_marginal_ope>`                    
-:ref:`State-Action Marginal estimators <implementation_marginal_ope>`             
-:ref:`Double Reinforcement Learning <implementation_drl>`                         
-:ref:`Spectrum of Off-Policy Evaluation <implementation_sope>`     
+:ref:`Direct Method (DM) <implementation_dm>`
+:ref:`Trajectory-wise Importance Sampling (TIS) <implementation_tis>`
+:ref:`Per-Decision Importance Sampling (PDIS) <implementation_pdis>`
+:ref:`Doubly Robust (DR) <implementation_dr>`
+:ref:`Self-Normalized estimators <implementation_sn>`
 ==================================================================================  ================  ================
 
 
 ==================================================================================  ================  ================
-Extensions         
+Marginal OPE estimators
 ==================================================================================  ================  ================
-:ref:`High Confidence Off-Policy Evaluation <implementation_high_confidence_ope>` 
-:ref:`Extension to the continuous action space <implementation_continuous_ope>`   
+:ref:`State Marginal estimators <implementation_marginal_ope>`
+:ref:`State-Action Marginal estimators <implementation_marginal_ope>`
+:ref:`Double Reinforcement Learning <implementation_drl>`
+:ref:`Spectrum of Off-Policy Evaluation <implementation_sope>`
+==================================================================================  ================  ================
+
+
+==================================================================================  ================  ================
+Extensions
+==================================================================================  ================  ================
+:ref:`High Confidence Off-Policy Evaluation <implementation_high_confidence_ope>`
+:ref:`Extension to the continuous action space <implementation_continuous_ope>`
 ==================================================================================  ================  ================
 
 .. tip::
@@ -372,7 +372,7 @@ Extensions
                 on_policy_policy_value,
                 gamma,
             ]
-        
+
         ``n_step_pdis`` is also applicable to marginal estimators and ``action_scaler`` and ``sigma`` are added in the continuous-action case.
 
         If you want to add other arguments, please add them in the initialization arguments for API consistency.
@@ -394,10 +394,10 @@ It first learns the Q-function and then leverages the learned Q-function as foll
 
     \hat{J}_{\mathrm{DM}} (\pi; \mathcal{D}) := \mathbb{E}_n [ \mathbb{E}_{a_0 \sim \pi(a_0 | s_0)} [\hat{Q}(s_0, a_0)] ] = \mathbb{E}_n [\hat{V}(s_0)],
 
-where :math:`\mathcal{D}=\{\{(s_t, a_t, r_t)\}_{t=0}^T\}_{i=1}^n` is the logged dataset with :math:`n` trajectories of data.
+where :math:`\mathcal{D}=\{\{(s_t, a_t, r_t)\}_{t=0}^T\}_{i=1}^n` is the logged dataset with :math:`n` trajectories.
 :math:`T` indicates step per episode. :math:`\hat{Q}(s_t, a_t)` is the estimated state-action value and :math:`\hat{V}(s_t)` is the estimated state value.
 
-DM has low variance, but can incur bias due to approximation errors.
+DM has low variance compared to other estimators, but can produce larger bias due to approximation errors.
 
     * :class:`DiscreteDirectMethod`
     * :class:`ContinuousDirectMethod`
@@ -420,7 +420,7 @@ TIS :cite:`precup2000eligibility` uses importance sampling technique to correct 
 where :math:`w_{0:T-1} := \prod_{t=0}^{T-1} (\pi(a_t | s_t) / \pi_0(a_t | s_t))` is the trajectory-wise importance weight.
 
 TIS enables an unbiased estimation of the policy value. However, when the trajectory length :math:`T` is large, TIS suffers from high variance
-due to the product of importance weights.
+due to the product of importance weights over the entire horizon.
 
     * :class:`DiscreteTrajectoryWiseImportanceSampling`
     * :class:`ContinuousTrajectoryWiseImportanceSampling`
@@ -437,7 +437,7 @@ PDIS only considers the importance weight of the past interactions when estimati
 
     \hat{J}_{\mathrm{PDIS}} (\pi; \mathcal{D}) := \mathbb{E}_{n} \left[ \sum_{t=0}^{T-1} \gamma^t w_{0:t} r_t \right],
 
-where :math:`w_{0:t} := \prod_{t'=0}^t (\pi_e(a_{t'} | s_{t'}) / \pi_b(a_{t'} | s_{t'}))` is the importance weight of past interactions.
+where :math:`w_{0:t} := \prod_{t'=0}^t (\pi_e(a_{t'} | s_{t'}) / \pi_b(a_{t'} | s_{t'}))` is the importance weight for each time step wrt the previous actions.
 
 PDIS remains unbiased while reducing the variance of TIS. However, when :math:`t` is large, PDIS still suffers from high variance.
 
@@ -456,7 +456,7 @@ It introduces :math:`\hat{Q}` as a baseline estimation in the recursive form of 
     \hat{J}_{\mathrm{DR}} (\pi; \mathcal{D})
     := \mathbb{E}_{n} \left[\sum_{t=0}^{T-1} \gamma^t (w_{0:t} (r_t - \hat{Q}(s_t, a_t)) + w_{0:t-1} \mathbb{E}_{a \sim \pi(a | s_t)}[\hat{Q}(s_t, a)])\right],
 
-DR is unbiased and reduces the variance of PDIS when :math:`\hat{Q}(\cdot)` is reasonably accurate to satisfy :math:`0 < \hat{Q}(\cdot) < 2 Q(\cdot)`. 
+DR is unbiased and has lower variance than PDIS when :math:`\hat{Q}(\cdot)` is reasonably accurate to satisfy :math:`0 < \hat{Q}(\cdot) < 2 Q(\cdot)`.
 However, when the importance weight is quite large, it may still suffer from a high variance.
 
     * :class:`DiscreteDoublyRobust`
@@ -475,7 +475,7 @@ Specifically, it substitute importance weight :math:`w_{\ast}` as follows.
 
 where :math:`\tilde{w}_{\ast}` is the self-normalized importance weight.
 
-Self-normalized estimators are no longer unbiased, but has variance bounded by :math:`r_{max}^2` while also being consistent.
+Self-normalized estimators are no longer unbiased, but has variance bounded by :math:`r_{max}^2` while also remaining consistent.
 
 (Discrete)
 
@@ -507,8 +507,8 @@ Then, the importance weight is replaced as follows.
 
     w(s_t, a_t) &= w_{s, a}(s_t, a_t) \\
     w(s_t, a_t) &= w_{s}(s_t) w_{t}(s_t, a_t)
-    
-    
+
+
 where :math:`w_t(s_t, a_t) = \pi(a_t | s_t) / \pi_0(a_t | s_t)` is the immediate importance weight.
 
 This estimator is particularly useful when policy visits the same or similar states among different trajectories or different timestep.
@@ -532,14 +532,14 @@ This estimator is particularly useful when policy visits the same or similar sta
         The objective of weight learning is to minimize the difference between the middle term and the last term of the above equation when Q-function adversarially maximizes the difference.
         In particular, we provide the following algorithms to estimate state marginal and state-action marginal importance weights (and corresponding state-action value function) via minimax learning.
 
-        * Augmented Lagrangian Method (ALM/DICE) :cite:`yang2020off`: 
-            This method simultaneously optimize both :math:`w(s, a)` and :math:`Q(s, a)`. By setting different hyperparameters, 
-            ALM can be identical to BestDICE :cite:`yang2020off`, DualDICE :cite:`nachum2019dualdice`, GenDICE :cite:`zhang2020gendice`, 
-            AlgaeDICE :cite:`nachum2019algaedice`, and MQL/MWL :cite:`uehara2020minimax`. 
+        * Augmented Lagrangian Method (ALM/DICE) :cite:`yang2020off`:
+            This method simultaneously optimize both :math:`w(s, a)` and :math:`Q(s, a)`. By setting different hyperparameters,
+            ALM can be identical to BestDICE :cite:`yang2020off`, DualDICE :cite:`nachum2019dualdice`, GenDICE :cite:`zhang2020gendice`,
+            AlgaeDICE :cite:`nachum2019algaedice`, and MQL/MWL :cite:`uehara2020minimax`.
 
-        * Minimax Q-Learning and Weight Learning (MQL/MWL) :cite:`uehara2020minimax`: 
-            This method assumes that one of the value function or weight function is expressed by a function class in a reproducing kernel Hilbert space (RKHS) 
-            and optimizes only either value function or weight function. 
+        * Minimax Q-Learning and Weight Learning (MQL/MWL) :cite:`uehara2020minimax`:
+            This method assumes that one of the value function or weight function is expressed by a function class in a reproducing kernel Hilbert space (RKHS)
+            and optimizes only either value function or weight function.
 
         .. seealso::
 
@@ -595,7 +595,7 @@ DRL :cite:`kallus2020double` leverages the marginal importance sampling in the s
     & := \frac{1}{n} \sum_{k=1}^K \sum_{i=1}^{n_k} \sum_{t=0}^{T-1} (w_s^j(s_{i,t}, a_{i, t}) (r_{i, t} - Q^j(s_{i, t}, a_{i, t})) \\
     & \quad \quad + w_s^j(s_{i, t-1}, a_{i, t-1}) \mathbb{E}_{a \sim \pi(a | s_t)}[Q^j(s_{i, t}, a)] )
 
-DRL achieves the semiparametric efficiency with a consistent value predictor :math:`Q`. 
+DRL achieves the semiparametric efficiency bound with a consistent value predictor :math:`Q`.
 Therefore, to alleviate the potential bias introduced in :math:`Q`, DRL uses the "cross-fitting" technique to estimate the value function.
 Specifically, let :math:`K` is the number of folds and :math:`\mathcal{D}_j` is the :math:`j`-th split of logged data consisting of :math:`n_k` samples.
 Cross-fitting trains :math:`w^j` and :math:`Q^j` on the subset of data used for OPE, i.e., :math:`\mathcal{D} \setminus \mathcal{D}_j`.
@@ -633,17 +633,17 @@ may introduce some bias in estimation. To alleviate this and control the bias-va
 
 .. math::
 
-    w(s_t, a_t) &= 
+    w(s_t, a_t) &=
     \begin{cases}
         \prod_{t'=0}^{k-1} w_t(s_{t'}, a_{t'}) & \mathrm{if} \, t < k \\
         w_{s, a}(s_{t-k}, a_{t-k}) \prod_{t'=t-k+1}^{t} w_t(s_{t'}, a_{t'}) & \mathrm{otherwise}
     \end{cases} \\
-    w(s_t, a_t) &= 
+    w(s_t, a_t) &=
     \begin{cases}
         \prod_{t'=0}^{k-1} w_t(s_{t'}, a_{t'}) & \mathrm{if} \, t < k \\
         w_{s}(s_{t-k}) \prod_{t'=t-k}^{t} w_t(s_{t'}, a_{t'}) & \mathrm{otherwise}
     \end{cases}
-    
+
 where SOPE uses per-decision importance weight :math:`w_t(s_t, a_t) := \pi(a_t | s_t) / \pi_0(a_t | s_t)` for the :math:`k` most recent timesteps.
 
 .. tip::
@@ -672,7 +672,7 @@ High Confidence Off-Policy Evaluation (HCOPE)
 To alleviate the risk of optimistically overestimating the policy value, we are sometimes interested in the confidence intervals and the lower bound of the estimated policy value.
 We implement four methods to estimate the confidence intervals :cite:`thomas2015improvement, hanna2017bootstrapping, thomas2015evaluation`.
 
-* Hoeffding :cite:`thomas2015evaluation`: 
+* Hoeffding :cite:`thomas2015evaluation`:
 
 .. math::
 
@@ -684,7 +684,7 @@ We implement four methods to estimate the confidence intervals :cite:`thomas2015
 
     |\hat{J}(\pi; \mathcal{D}) - \mathbb{E}_{\mathcal{D}}[\hat{J}(\pi; \mathcal{D})]| \leq \displaystyle \frac{7 \hat{J}_{\max} \log(2 / \alpha)}{3 (n - 1)} + \displaystyle \sqrt{\frac{2 \hat{\mathbb{V}}_{\mathcal{D}}(\hat{J}) \log(2 / \alpha)}{(n - 1)}}.
 
-* Student T-test :cite:`thomas2015improvement`: 
+* Student T-test :cite:`thomas2015improvement`:
 
 .. math::
 
@@ -696,7 +696,7 @@ We implement four methods to estimate the confidence intervals :cite:`thomas2015
 
     |\hat{J}(\pi; \mathcal{D}) - \mathbb{E}_{\mathcal{D}}[\hat{J}(\pi; \mathcal{D})]| \leq \mathrm{Bootstrap}(1 - \alpha).
 
-Note that, all the above bound holds with probability :math:`1 - \alpha`.
+Note that all the above bound holds with probability :math:`1 - \alpha`.
 For notations, we denote :math:`\hat{\mathbb{V}}_{\mathcal{D}}(\cdot)` to be the sample variance,
 :math:`T_{\mathrm{test}}(\cdot,\cdot)` to be T value,
 and :math:`\sigma` to be the standard deviation.
@@ -718,7 +718,7 @@ On the other hand, T-test is based on the assumption that each sample of :math:`
                 ope_estimators=[DM(), TIS(), PDIS(), DR()],  # any standard or marginal estimators
             )
             estimation_dict = ope.estimate_intervals(
-                input_dict, 
+                input_dict,
                 ci="hoeffding",  # one of {"hoeffding", "bernstein", "ttest", "bootstrap"}
                 alpha=0.05,      # confidence level
             )
@@ -751,7 +751,7 @@ In our implementation, we use the (distance-based) Gaussian kernel :math:`K(x)=\
 
     .. dropdown:: How to control the bias-variance tradeoff with a kernel?
 
-        The bandwidth parameter :math:`h` controls the bias-variance tradeoff. 
+        The bandwidth parameter :math:`h` controls the bias-variance tradeoff.
         Specifically, a large value of :math:`h` leads to a low-variance but high-bias estimation,
         while a small value of :math:`h` leads to a high-variance but low-bias estimation.
 
@@ -766,7 +766,7 @@ In our implementation, we use the (distance-based) Gaussian kernel :math:`K(x)=\
             )
 
         For multi-dimension actions, we define the kernel with dot product among actions as :math:`K(a, a') := K(a^T a')`.
-        To control the scale of each dimension, ``action_scaler``, which is speficied in :class:`OffPolicyEvaluation`, is also useful. 
+        To control the scale of each dimension, ``action_scaler``, which is speficied in :class:`OffPolicyEvaluation`, is also useful.
 
         .. code-block:: python
 
@@ -798,7 +798,7 @@ Cumulative distribution OPE enables flexible estimation of various risk function
 .. math::
 
     F(m, \pi) := \mathbb{E} \left[ \mathbb{I} \left \{ \sum_{t=0}^{T-1} \gamma^t r_t \leq m \right \} \mid \pi \right]
-    
+
 (Risk Functions derived by CDF)
 
 * Mean: :math:`\mu(F) := \int_{G} G \, \mathrm{d}F(G)`
@@ -806,7 +806,7 @@ Cumulative distribution OPE enables flexible estimation of various risk function
 * :math:`\alpha`-quartile: :math:`Q^{\alpha}(F) := \min \{ G \mid F(G) \leq \alpha \}`
 * Conditional Value at Risk (CVaR): :math:`\int_{G} G \, \mathbb{I}\{ G \leq Q^{\alpha}(F) \} \, \mathrm{d}F(G)`
 
-where we let :math:`G := \sum_{t=0}^{T-1} \gamma^t r_t` to represent the random variable of trajectory wise reward
+where we let :math:`G := \sum_{t=0}^{T-1} \gamma^t r_t` to represent the random variable of trajectory-wise reward
 and :math:`dF(G) := \mathrm{lim}_{\Delta \rightarrow 0} F(G) - F(G- \Delta)`.
 
 To estimate both CDF and various risk functions, we provide the following :class:`CumulativeDistributionOffPolicyEvaluation` class.
@@ -820,7 +820,7 @@ To estimate both CDF and various risk functions, we provide the following :class
         ope_estimators=[CD_DM(), CD_IS(), CD_DR()],
     )
 
-It estimates the cumulative distribution of the trajectory wise reward and various risk functions as follows.
+It estimates the cumulative distribution of the trajectory-wise reward and various risk functions as follows.
 
 .. code-block:: python
 
@@ -870,10 +870,10 @@ It estimates the cumulative distribution of the trajectory wise reward and vario
                 random_state=random_state,
             )
 
-        .. card:: 
+        .. card::
             :img-top: ../_static/images/ope_cumulative_distribution_function.png
             :text-align: center
-            
+
             cumulative distribution function estimated with the specified dataset
 
         Moreover, we provide additional visualization function for the multiple logged dataset case.
@@ -889,14 +889,14 @@ It estimates the cumulative distribution of the trajectory wise reward and vario
                 random_state=random_state,
             )
 
-        .. card:: 
+        .. card::
             :img-top: ../_static/images/ope_cumulative_distribution_function_multiple.png
             :text-align: center
-            
+
             cumulative distribution function estimated with the multiple datasets
 
-        On contrary, the following visualizes the distribution of multiple estimates of ponit-wise policy performance 
-        (e.g., policy value, variance, conditional value at risk, lower quartile). 
+        On contrary, the following visualizes the distribution of multiple estimates of ponit-wise policy performance
+        (e.g., policy value, variance, conditional value at risk, lower quartile).
 
         .. code-block:: python
 
@@ -906,31 +906,31 @@ It estimates the cumulative distribution of the trajectory wise reward and vario
                 random_state=random_state,
             )
 
-        When the ``plot_type`` is "ci", the plot is somewhat similar to the basic visualization. 
+        When the ``plot_type`` is "ci", the plot is somewhat similar to the basic visualization.
         (The star indicates the ground-truth policy value and the confidence intervals are derived by multiple estimates across datasets.)
 
-        .. card:: 
+        .. card::
             :img-top: ../_static/images/ope_cumulative_policy_value_basic_multiple.png
             :text-align: center
-            
+
             policy value estimated with the multiple datasets
 
         When the ``plot_type`` is "violin", the plot visualizes the distribution of multiple estimates.
-        This is particularly useful to see how the estimation result can vary depending on different datasets or random seeds. 
+        This is particularly useful to see how the estimation result can vary depending on different datasets or random seeds.
 
-        .. card:: 
+        .. card::
             :img-top: ../_static/images/ope_cumulative_policy_value_basic_multiple_violin.png
             :text-align: center
-            
+
             policy value estimated with the multiple datasets (violin)
 
         Finally, when the ``plot_type`` is "scatter", the plot visualizes each estimation with its color specifying the behavior policy.
         This function is particularly useful to see how the choice of behavior policy (e.g., their stochasticity) affects the estimation result.
 
-        .. card:: 
+        .. card::
             :img-top: ../_static/images/ope_cumulative_policy_value_basic_multiple_scatter.png
             :text-align: center
-            
+
             policy value estimated with the multiple datasets (scatter)
 
         .. seealso::
@@ -980,11 +980,11 @@ It estimates the cumulative distribution of the trajectory wise reward and vario
 Below, we describe the implemented cumulative distribution OPE estimators.
 
 ==================================================================================  ================  ================
-:ref:`Direct Method (DM) <implementation_cd_dm>`                                                                    
-:ref:`Trajectory-wise Importance Sampling (TIS) <implementation_cd_tis>`             
-:ref:`Trajectory-wise Doubly Robust (DR) <implementation_cd_tdr>`                                    
+:ref:`Direct Method (DM) <implementation_cd_dm>`
+:ref:`Trajectory-wise Importance Sampling (TIS) <implementation_cd_tis>`
+:ref:`Trajectory-wise Doubly Robust (DR) <implementation_cd_tdr>`
 Self-Normalized estimators
-Extension to the continuous action space   
+Extension to the continuous action space
 ==================================================================================  ================  ================
 
 .. tip::
@@ -993,7 +993,7 @@ Extension to the continuous action space
 
         To define your own OPE estimator, use :class:`BaseCumulativeDistributionOPEEstimator`. 
 
-        Basically, the common inputs for each functions are ``reward_scale`` (np.ndarray indicating x-axis of cumulative distribution function) 
+        Basically, the common inputs for each functions are ``reward_scale`` (np.ndarray indicating x-axis of cumulative distribution function)
         and the following keys from ``logged_dataset`` and ``input_dict``.
 
         (logged_dataset)
@@ -1022,7 +1022,7 @@ Extension to the continuous action space
                 on_policy_policy_value,
                 gamma,
             ]
-        
+
         ``action_scaler`` and ``sigma`` are also added in the continuous-action case.
 
         If you want to add other arguments, please add them in the initialization arguments for API consistency.
@@ -1044,7 +1044,7 @@ DM adopts a model-based approach to estimate the cumulative distribution functio
 
         \hat{F}_{\mathrm{DM}}(m, \pi; \mathcal{D}) := \mathbb{E}_{n} [\mathbb{E}_{a_0 \sim \pi(a_0 | s_0)} \hat{G}(m; s_0, a_0)]
 
-where :math:`\hat{F}(\cdot)` is the estimated cumulative distribution function and :math:`\hat{G}(\cdot)` is the estimated conditional distribution.
+where :math:`\hat{F}(\cdot)` is the estimated cumulative distribution function and :math:`\hat{G}(\cdot)` is an estimator for :math:`\\mathbb{E}[\\mathbb{I} \\left \\{\\sum_{t=0}^{T-1} \\gamma^t r_t \\leq m \\right \\} \\mid s,a]`.
 
 DM is vulnerable to the approximation error, but has low variance.
 
@@ -1095,7 +1095,7 @@ Since :math:`\hat{F}_{\mathrm{TDR}}(\cdot)` may be less than zero or more than o
 
     \hat{F}^{\ast}_{\mathrm{TIS}}(m, \pi; \mathcal{D}) := \mathrm{clip}(\max_{m' \leq m} \hat{F}_{\mathrm{TIS}}(m', \pi; \mathcal{D}), 0, 1).
 
-Note that, this estimator is not equivalent to the (recursive) DR estimator defined by :cite:`huang2022off`. We are planning to implement the recursive version in a future update of the software.
+Note that this estimator is not equivalent to the (recursive) DR estimator defined by :cite:`huang2022off`. We are planning to implement the recursive version in a future update of the software.
 
     * :class:`DiscreteCumulativeDistributionTrajectoryWiseDoublyRobust`
     * :class:`ContinuousCumulativeDistributionTrajectoryWiseDoublyRobust`
@@ -1123,7 +1123,7 @@ Finally, we describe the metrics to evaluate the quality of OPE estimators and i
 * Spearman's Rank Correlation Coefficient :cite:`paine2020hyperparameter, fu2021benchmarks`: 
     This metrics measures how well the raking of the candidate estimators are preserved in the OPE result.
 
-* Type I and Type II Error Rate: 
+* Type I and Type II Error Rate:
     This metrics measures how well an OPE estimator validates whether the policy performance surpasses the given safety threshold or not.
 
 To ease the comparison of candidate (evaluation) policies and the OPE estimators, we provide the :class:`OffPolicySelection` class.
@@ -1198,10 +1198,10 @@ Finally, the OPS class also implements the modules to compare the OPE result and
                 safety_criteria=1.0,
             )
 
-        .. card:: 
+        .. card::
             :img-top: ../_static/images/ops_topk_policy_value_multiple.png
             :text-align: center
-            
+
             top-k deployment result with multiple logged datasets
 
         In the validation visualization, colors indicate the behavior policies. 
@@ -1215,13 +1215,13 @@ Finally, the OPS class also implements the modules to compare the OPE result and
                 share_axes=True,
             )
 
-        .. card:: 
+        .. card::
             :img-top: ../_static/images/ops_validation_policy_value_multiple.png
             :text-align: center
-            
+
             validation results on multiple logged datasets
 
-        Note that, when the ``behavior_policy_name`` and ``dataset_id`` is specified, the methods show the result on the specified dataset.
+        Note that when the ``behavior_policy_name`` and ``dataset_id`` is specified, the methods show the result on the specified dataset.
 
         .. seealso::
 

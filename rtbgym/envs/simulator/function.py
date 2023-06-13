@@ -19,7 +19,7 @@ from ...utils import check_array
 
 @dataclass
 class WinningPriceDistribution(BaseWinningPriceDistribution):
-    """Class to sample the winning price (i.e., second price) and compare with the given bid price.
+    """Class to sample the winning price (i.e., second price) and compare it with the given bid price.
 
     Imported as: :class:`rtbgym.envs.simulator.WinningDistribution`
 
@@ -387,7 +387,7 @@ class ClickThroughRate(BaseClickAndConversionRate):
         Returns
         -------
         clicks: array-like of shape (search_volume/n_samples, )
-            Whether click occurs in impression=True case.
+            Whether click occurs when impression=True.
 
         """
         ctrs = self.calc_prob(
@@ -602,7 +602,7 @@ class ConversionRate(BaseClickAndConversionRate):
         Returns
         -------
         conversions: ndarray of shape (search_volume/n_samples, )
-            Whether conversion occurs in click=True case.
+            Whether conversion occurs when click=True.
 
         """
         cvrs = self.calc_prob(

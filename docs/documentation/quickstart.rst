@@ -7,15 +7,15 @@ The workflow mainly consists of following three steps:
 * **Synthetic Dataset Generation and Data Preprocessing**: 
     The initial step is to collect logged data using a behavior policy. In a synthetic setup, we first train the behavior policy through online interaction and then generate dataset with the behavior policy. In a practical situation, we should use the preprocessed logged data from real-world applications.
 
-* **Offline Reinforcement Learning**: 
-    We then learn new policies (, which hopefully perform better than the behavior policy) from only offline logged data, without any online interactions.
+* **Offline Reinforcement Learning**:
+    We then learn new policies (which hopefully perform better than the behavior policy) from only offline logged data, without any online interactions.
 
-* **Off-Policy Evaluation and Selection**: 
-    After learning several candidate policies in an offline manner, we need to choose the production policy. 
+* **Off-Policy Evaluation and Selection**:
+    After learning several candidate policies in an offline manner, we need to choose the production policy.
     We consider a typical workflow that starts from screening out promising candidate policies through Off-Policy Evaluation (OPE)
     and then choosing the final production policy among the selected candidates based on more reliable online A/B tests result, as illustrated in the following figure.
 
-    .. card:: 
+    .. card::
         :width: 75%
         :margin: auto
         :img-top: ../_static/images/ops_workflow.png
@@ -34,7 +34,7 @@ Synthetic Dataset Generation and Data Preprocessing
 ~~~~~~~~~~
 
 We start by collecting the logged data using DDQN :cite:`van2016deep` as a behavior policy.
-Note that, in the following example, we use :doc:`RTBGym <subpackages/rtbgym_about>` (a sub-package of SCOPE-RL) and `d3rlpy <https://github.com/takuseno/d3rlpy>`_. Please satisfy the `requirements <https://github.com/hakuhodo-technologies/scope-rl/blob/main/requirements.txt>`_ in advance.
+Note that in the following example, we use :doc:`RTBGym <subpackages/rtbgym_about>` (a sub-package of SCOPE-RL) and `d3rlpy <https://github.com/takuseno/d3rlpy>`_. Please satisfy the `requirements <https://github.com/hakuhodo-technologies/scope-rl/blob/main/requirements.txt>`_ in advance.
 
 
 .. code-block:: python
@@ -142,7 +142,7 @@ Note that, we use `d3rlpy <https://github.com/takuseno/d3rlpy>`_ for offline RL.
 .. seealso::
 
     * :ref:`Problem setting <overview_offline_rl>`
-    * :doc:`Supported implementations and useful tools <learning_implementation>` 
+    * :doc:`Supported implementations and useful tools <learning_implementation>`
     * (external) `d3rlpy's documentation <https://d3rlpy.readthedocs.io/en/latest/>`_
 
 .. _quickstart_ope_ops:
@@ -161,7 +161,7 @@ The goal of (basic) OPE is to accurately estimate the expected performance (i.e.
 
     J(\pi) := \mathbb{E}_{\tau} \left [ \sum_{t=0}^{T-1} \gamma^t r_{t} \mid \pi \right ],
 
-where :math:`\pi` is the evaluation policy and :math:`\sum_{t=0}^{T-1} \gamma^t r_{t}` is the trajectory-wise reward. 
+where :math:`\pi` is the evaluation policy and :math:`\sum_{t=0}^{T-1} \gamma^t r_{t}` is the trajectory-wise reward.
 (See :doc:`problem setting <ope_ops>` for the detailed notations).
 
 We compare the estimation results from various OPE estimators, Direct Method (DM) :cite:`beygelzimer2009offset, le2019batch`, 
@@ -227,10 +227,10 @@ and Doubly Robust (DR) :cite:`jiang2016doubly, thomas2016data`.
         sharey=True,
     )
 
-.. card:: 
+.. card::
     :img-top: ../_static/images/ope_policy_value_basic.png
     :text-align: center
-    
+
     Policy Value Estimated by OPE Estimators
 
 Users can implement their own OPE estimators by following the interface of :class:`BaseOffPolicyEstimator`.
@@ -240,7 +240,7 @@ In addition, :class:`OffPolicyEvaluation` summarizes and compares the estimation
 
     * :doc:`Related example codes </documentation/examples/basic_ope>`
     * :doc:`Problem setting <ope_ops>`
-    * :doc:`Supported OPE estimators <evaluation_implementation>` and :doc:`their API reference <_autosummary/scope_rl.ope.basic_estimators_discrete>` 
+    * :doc:`Supported OPE estimators <evaluation_implementation>` and :doc:`their API reference <_autosummary/scope_rl.ope.basic_estimators_discrete>`
     * (advanced) :ref:`Marginal OPE estimators <implementation_marginal_ope>`, and :doc:`their API reference <_autosummary/scope_rl.ope.marginal_estimators_discrete>`
 
 .. _quickstart_cumulative_distribution_ope:
@@ -288,10 +288,10 @@ using Cumulative Distribution OPE estimators :cite:`huang2021off, huang2022off, 
     # estimate and visualize cumulative distribution function
     cd_ope.visualize_cumulative_distribution_function(input_dict, n_cols=4)
 
-.. card:: 
+.. card::
     :img-top: ../_static/images/ope_cumulative_distribution_function.png
     :text-align: center
-    
+
     Cumulative Distribution Function Estimated by OPE Estimators
 
 Users can implement their own OPE estimators by following the interface of :class:`BaseCumulativeDistributionOPEEstimator`.
@@ -301,7 +301,7 @@ In addition, :class:`CumulativeDistributionOPE` summarizes and compares the esti
 
     * :doc:`Related example codes </documentation/examples/cumulative_dist_ope>`
     * :ref:`Problem setting <overview_cumulative_distribution_ope>`
-    * :ref:`Supported cumulative distribution OPE estimators <implementation_cumulative_distribution_ope>` and :doc:`their API reference <_autosummary/scope_rl.ope.cumulative_distribution_estimators_discrete>` 
+    * :ref:`Supported cumulative distribution OPE estimators <implementation_cumulative_distribution_ope>` and :doc:`their API reference <_autosummary/scope_rl.ope.cumulative_distribution_estimators_discrete>`
 
 .. _quickstart_ops:
 
@@ -346,23 +346,23 @@ Finally, we provide the code to conduct OPS, which selects the "best" performing
         share_axes=True,
     )
 
-.. card:: 
+.. card::
     :img-top: ../_static/images/ops_topk_lower_quartile.png
     :text-align: center
-    
+
     Comparison of the Top-k Statistics of 10% Lower Quartile of Policy Value
 
-.. card:: 
+.. card::
     :img-top: ../_static/images/ops_variance_validation.png
     :text-align: center
-    
+
     Validation of Estimated and Ground-truth Variance of Policy Value
 
 .. seealso::
 
     * :doc:`Related example codes </documentation/examples/assessments>`
     * :ref:`Problem setting <overview_ops>`
-    * :ref:`OPS evaluation protocols <implementation_eval_ope_ops>` and :doc:`their API reference <_autosummary/scope_rl.ope.ops>` 
+    * :ref:`OPS evaluation protocols <implementation_eval_ope_ops>` and :doc:`their API reference <_autosummary/scope_rl.ope.ops>`
 
 
 .. raw:: html

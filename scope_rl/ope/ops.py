@@ -48,8 +48,7 @@ class OffPolicySelection:
 
         \\hat{\\pi} := {\\arg \\max}_{\\pi \\in \\Pi} \hat{J}(\\pi)
 
-    where :math:`\\Pi` is a set of candidate policies and :math:`\hat{J}(\\cdot)` is some OPE estimates of the policy performance. Below, we describe two types of OPE
-    to estimate such policy performance.
+    where :math:`\\Pi` is a set of candidate policies and :math:`\hat{J}(\\cdot)` is some OPE estimates of the policy performance. Below, we describe two types of OPE to estimate such policy performance.
 
     **Off-Policy Evaluation (OPE)**
 
@@ -59,7 +58,7 @@ class OffPolicySelection:
 
         V(\\pi) := \\mathbb{E} \\left[ \\sum_{t=1}^T \\gamma^{t-1} r_t \\mid \\pi \\right]
 
-    where :math:`r_t` is the reward observation at each timestep :math:`t`,
+    where :math:`r_t` is the reward observed at each timestep :math:`t`,
     :math:`T` is the total number of timesteps in an episode, and :math:`\\gamma` is the discount factor.
 
     .. seealso::
@@ -488,7 +487,7 @@ class OffPolicySelection:
         quartile_alpha: float = 0.05,
         cvar_alpha: float = 0.05,
     ):
-        """Obtain the oracle selection result using the ground-truth policy value.
+        """Obtain the oracle selection result based on the ground-truth policy value.
 
         Parameters
         -------
@@ -528,10 +527,10 @@ class OffPolicySelection:
             Whether to return the result in a dataframe format.
 
         quartile_alpha: float, default=0.05
-            Proportion of the sided region of the interquartile range.
+            Proportion of the shaded region of the interquartile range.
 
         cvar_alpha: float, default=0.05
-            Proportion of the sided region of the conditional value at risk.
+            Proportion of the shaded region of the conditional value at risk.
 
         Return
         -------
@@ -562,11 +561,11 @@ class OffPolicySelection:
                 Ground-truth relative policy value of the candidate policies compared to the behavior policy (sorted by ranking).
 
             variance: list of float
-                Ground-truth variance of the trajectory wise reward of the candidate policies (sorted by ranking).
+                Ground-truth variance of the trajectory-wise reward of the candidate policies (sorted by ranking).
                 If return_variance is `False`, `None` is recorded.
 
             ranking_by_lower_quartile: list of str
-                Name of the candidate policies sorted by the ground-truth lower quartile of the trajectory wise reward.
+                Name of the candidate policies sorted by the ground-truth lower quartile of the trajectory-wise reward.
                 If return_lower_quartile is `False`, `None` is recorded.
 
             lower_quartile: list of float
@@ -692,7 +691,7 @@ class OffPolicySelection:
         safety_threshold: Optional[float] = None,
         relative_safety_criteria: Optional[float] = None,
     ):
-        """Rank the candidate policies by their estimated policy value.
+        """Rank the candidate policies by their estimated policy values.
 
         Parameters
         -------
@@ -724,10 +723,10 @@ class OffPolicySelection:
             When `None` is given, all the estimators are compared.
 
         return_true_values: bool, default=False
-            Whether to return the true policy value and its ranking.
+            Whether to return the true policy value and corresponding ranking of the candidate policies.
 
         return_metrics: bool, default=False
-            Whether to return the following evaluation metrics:
+            Whether to return the following evaluation metrics in terms of OPE and OPS:
             mean-squared-error, rank-correlation, regret@k, and Type I and Type II error rate.
 
         return_by_dataframe: bool, default=False
@@ -737,10 +736,10 @@ class OffPolicySelection:
             How many candidate policies are included in regret@k.
 
         safety_threshold: float, default=None.
-            The policy value required to be a safe policy.
+            A policy whose policy value is below the given threshold is to be considered unsafe.
 
         relative_safety_criteria: float, default=None (>= 0)
-            The relative policy value required to be a safe policy.
+            The relative policy value required to be considered a safe policy.
             For example, when 0.9 is given, candidate policy must exceed 90\\% of the behavior policy performance.
             Only applicable when using a single behavior policy.
 
@@ -793,7 +792,7 @@ class OffPolicySelection:
                 Recorded in ranking_df_dict if return_by_dataframe is `True`.
 
             mean_squared_error: float
-                Mean-squared-error of the estimated policy value.
+                Mean-squared-error of the estimators calculated across candidate evaluation policies.
                 Recorded only when return_metric is `True`.
                 Recorded in metric_df if return_by_dataframe is `True`.
 
@@ -818,7 +817,7 @@ class OffPolicySelection:
                 Recorded in metric_df when return_by_dataframe is `True`.
 
             safety_threshold: float
-                The policy value required to be a safe policy.
+                A policy whose policy value is below the given threshold is to be considered unsafe.
 
         """
         behavior_policy_name = list(input_dict.values())[0]["behavior_policy"]
@@ -1002,7 +1001,7 @@ class OffPolicySelection:
         safety_threshold: Optional[float] = None,
         relative_safety_criteria: Optional[float] = None,
     ):
-        """Rank the candidate policies by their estimated policy value via cumulative distribution methods.
+        """Rank the candidate policies by their estimated policy value via cumulative distribution OPE methods.
 
         Parameters
         -------
@@ -1034,10 +1033,10 @@ class OffPolicySelection:
             If `None` is given, all the estimators are compared.
 
         return_true_values: bool, default=False
-            Whether to return the true policy value and its ranking.
+            Whether to return the true policy value and corresponding ranking of the candidate policies.
 
         return_metrics: bool, default=False
-            Whether to return the following evaluation metrics:
+            Whether to return the following evaluation metrics in terms of OPE and OPS:
             mean-squared-error, rank-correlation, regret@k, and Type I and Type II error rate.
 
         return_by_dataframe: bool, default=False
@@ -1047,10 +1046,10 @@ class OffPolicySelection:
             How many candidate policies are included in regret@k.
 
         safety_threshold: float, default=None.
-            The policy value required to be a safe policy.
+            A policy whose policy value is below the given threshold is to be considered unsafe.
 
         relative_safety_criteria: float, default=None (>= 0)
-            The relative policy value required to be a safe policy.
+            The relative policy value required to be considered a safe policy.
             For example, when 0.9 is given, candidate policy must exceed 90\\% of the behavior policy performance.
             Only applicable when using a single behavior policy.
 
@@ -1103,7 +1102,7 @@ class OffPolicySelection:
                 Recorded in ranking_df_dict if return_by_dataframe is `True`.
 
             mean_squared_error: float
-                Mean-squared-error of the estimated policy value.
+                Mean-squared-error of the estimators calculated across candidate evaluation policies.
                 Recorded only when return_metric is `True`.
                 Recorded in metric_df if return_by_dataframe is `True`.
 
@@ -1128,7 +1127,7 @@ class OffPolicySelection:
                 Recorded in metric_df when return_by_dataframe is `True`.
 
             safety_threshold: float
-                The policy value required to be a safe policy.
+                A policy whose policy value is below the given threshold is to be considered unsafe.
 
         """
         behavior_policy_name = list(input_dict.values())[0]["behavior_policy"]
@@ -1350,10 +1349,10 @@ class OffPolicySelection:
             When `None` is given, all the estimators are compared.
 
         return_true_values: bool, default=False
-            Whether to return the true policy value and its ranking.
+            Whether to return the true policy value and corresponding ranking of the candidate policies.
 
         return_metrics: bool, default=False
-            Whether to return the following evaluation metrics:
+            Whether to return the following evaluation metrics in terms of OPE and OPS:
             rank-correlation, regret@k, and Type I and Type II error rate.
 
         return_by_dataframe: bool, default=False
@@ -1363,10 +1362,10 @@ class OffPolicySelection:
             How many candidate policies are included in regret@k.
 
         safety_threshold: float, default=None.
-            The policy value required to be a safe policy.
+            A policy whose policy value is below the given threshold is to be considered unsafe.
 
         relative_safety_criteria: float, default=None (>= 0)
-            The relative policy value required to be a safe policy.
+            The relative policy value required to be considered a safe policy.
             For example, when 0.9 is given, candidate policy must exceed 90\\% of the behavior policy performance.
             Only applicable when using a single behavior policy.
 
@@ -1455,7 +1454,7 @@ class OffPolicySelection:
                 Recorded in metric_df if return_by_dataframe is `True`.
 
             safety_threshold: float
-                The policy value required to be a safe policy.
+                A policy whose policy value is below the given threshold is to be considered unsafe.
 
         """
         ground_truth_dict = self.obtain_true_selection_result(input_dict)
@@ -1665,7 +1664,7 @@ class OffPolicySelection:
         return_by_dataframe: bool = False,
         safety_threshold: float = 0.0,
     ):
-        """Rank the candidate policies by their estimated lower quartile of the trajectory wise reward.
+        """Rank the candidate policies by their estimated lower quartile of the trajectory-wise reward.
 
         Parameters
         -------
@@ -1697,20 +1696,21 @@ class OffPolicySelection:
             When `None` is given, all the estimators are compared.
 
         alpha: float, default=0.05
-            Proportion of the sided region. The value should be within `[0, 0.5]`.
+            Proportion of the shaded region. The value should be within `[0, 0.5]`.
 
         return_true_values: bool, default=False
-            Whether to return the true lower quartile of the trajectory wise reward and its ranking.
+            Whether to return the true lower quartile of the trajectory-wise reward
+            and corresponding ranking of the candidate evaluation policies.
 
         return_metrics: bool, default=False
-            Whether to return the following evaluation metrics:
+            Whether to return the following evaluation metrics in terms of OPE and OPS:
             mean-squared-error, rank-correlation, and Type I and Type II error rate.
 
         return_by_dataframe: bool, default=False
             Whether to return the result in a dataframe format.
 
         safety_threshold: float, default=0.0 (>= 0)
-            The lower quartile required to be a safe policy.
+            The lower quartile required to be considered a safe policy.
 
         Return
         -------
@@ -1732,25 +1732,25 @@ class OffPolicySelection:
                 ]
 
             estimated_ranking: list of str
-                Name of the candidate policies sorted by the estimated lower quartile of the trajectory wise reward.
+                Name of the candidate policies sorted by the estimated lower quartile of the trajectory-wise reward.
                 Recorded in ranking_df_dict if return_by_dataframe is `True`.
 
             estimated_lower_quartile: list of float
-                Estimated lower quartile of the trajectory wise reward of the candidate policies (sorted by estimated_ranking).
+                Estimated lower quartile of the trajectory-wise reward of the candidate policies (sorted by estimated_ranking).
                 Recorded in ranking_df_dict if return_by_dataframe is `True`.
 
             true_ranking: list of int
-                Ranking index of the (true) lower quartile of the trajectory wise reward of the candidate policies (sorted by estimated_ranking).
+                Ranking index of the (true) lower quartile of the trajectory-wise reward of the candidate policies (sorted by estimated_ranking).
                 Recorded only when return_true_values is `True`.
                 Recorded in ranking_df_dict if return_by_dataframe is `True`.
 
             true_lower_quartile: list of float
-                True lower quartile of the trajectory wise reward of the candidate policies (sorted by estimated_ranking).
+                True lower quartile of the trajectory-wise reward of the candidate policies (sorted by estimated_ranking).
                 Recorded only when return_true_values is `True`.
                 Recorded in ranking_df_dict if return_by_dataframe is `True`.
 
             mean_squared_error: float
-                Mean-squared-error of the estimated lower quartile of the trajectory wise reward.
+                Mean-squared-error of the estimated lower quartile of the trajectory-wise reward.
                 Recorded only when return_metric is `True`.
                 Recorded in metric_df if return_by_dataframe is `True`.
 
@@ -1774,7 +1774,7 @@ class OffPolicySelection:
                 Recorded in metric_df if return_by_dataframe is `True`.
 
             safety_threshold: float
-                The lower quartile required to be a safe policy.
+                The lower quartile required to be considered a safe policy.
 
         """
         behavior_policy_name = list(input_dict.values())[0]["behavior_policy"]
@@ -1960,20 +1960,21 @@ class OffPolicySelection:
             When `None` is given, all the estimators are compared.
 
         alpha: float, default=0.05
-            Proportion of the sided region. The value should be within `[0, 1]`.
+            Proportion of the shaded region. The value should be within `[0, 1]`.
 
         return_true_values: bool, default=False
-            Whether to return the true conditional value at risk and its ranking.
+            Whether to return the true conditional value at risk
+            and corresponding ranking of the candidate evaluation policies.
 
         return_metrics: bool, default=False
-            Whether to return the following evaluation metrics:
+            Whether to return the following evaluation metrics in terms of OPE and OPS:
             mean-squared-error, rank-correlation, and Type I and Type II error rate.
 
         return_by_dataframe: bool, default=False
             Whether to return the result in a dataframe format.
 
         safety_threshold: float, default=0.0 (>= 0)
-            The conditional value at risk required to be a safe policy.
+            The conditional value at risk required to be considered a safe policy.
 
         Return
         -------
@@ -2037,7 +2038,7 @@ class OffPolicySelection:
                 Recorded in metric_df if return_by_dataframe is True`.
 
             safety_threshold: float
-                The conditional value at risk required to be a safe policy.
+                The conditional value at risk required to be considered a safe policy.
 
         """
         behavior_policy_name = list(input_dict.values())[0]["behavior_policy"]
@@ -2196,7 +2197,7 @@ class OffPolicySelection:
         quartile_alpha: float = 0.05,
         cvar_alpha: float = 0.05,
     ):
-        """Obtain the oracle selection result using the ground-truth policy value.
+        """Obtain the oracle selection result based on the ground-truth policy value.
 
         Parameters
         -------
@@ -2242,10 +2243,10 @@ class OffPolicySelection:
             Whether to return the result in a dataframe format.
 
         quartile_alpha: float, default=0.05
-            Proportion of the sided region of the interquartile range.
+            Proportion of the shaded region of the interquartile range.
 
         cvar_alpha: float, default=0.05
-            Proportion of the sided region of the conditional value at risk.
+            Proportion of the shaded region of the conditional value at risk.
 
         Return
         -------
@@ -2276,11 +2277,11 @@ class OffPolicySelection:
                 Ground-truth relative policy value of the candidate policies compared to the behavior policy (sorted by ranking).
 
             variance: list of float
-                Ground-truth variance of the trajectory wise reward of the candidate policies (sorted by ranking).
+                Ground-truth variance of the trajectory-wise reward of the candidate policies (sorted by ranking).
                 If return_variance is `False`, `None` is recorded.
 
             ranking_by_lower_quartile: list of str
-                Name of the candidate policies sorted by the ground-truth lower quartile of the trajectory wise reward.
+                Name of the candidate policies sorted by the ground-truth lower quartile of the trajectory-wise reward.
                 If return_lower_quartile is `False`, `None` is recorded.
 
             lower_quartile: list of float
@@ -2400,7 +2401,7 @@ class OffPolicySelection:
         safety_threshold: Optional[float] = None,
         relative_safety_criteria: Optional[float] = None,
     ):
-        """Rank the candidate policies by their estimated policy value.
+        """Rank the candidate policies by their estimated policy values.
 
         Parameters
         -------
@@ -2438,10 +2439,10 @@ class OffPolicySelection:
             Id of the logged dataset.
 
         return_true_values: bool, default=False
-            Whether to return the true policy value and its ranking.
+            Whether to return the true policy value and corresponding ranking of the candidate policies.
 
         return_metrics: bool, default=False
-            Whether to return the following evaluation metrics:
+            Whether to return the following evaluation metrics in terms of OPE and OPS:
             mean-squared-error, rank-correlation, regret@k, and Type I and Type II error rate.
 
         return_by_dataframe: bool, default=False
@@ -2451,10 +2452,10 @@ class OffPolicySelection:
             How many candidate policies are included in regret@k.
 
         safety_threshold: float, default=None.
-            The policy value required to be a safe policy.
+            A policy whose policy value is below the given threshold is to be considered unsafe.
 
         relative_safety_criteria: float, default=None (>= 0)
-            The relative policy value required to be a safe policy.
+            The relative policy value required to be considered a safe policy.
             For example, when 0.9 is given, candidate policy must exceed 90\\% of the behavior policy performance.
             Only applicable when using a single behavior policy.
 
@@ -2507,7 +2508,7 @@ class OffPolicySelection:
                 Recorded in ranking_df_dict if return_by_dataframe is `True`.
 
             mean_squared_error: float
-                Mean-squared-error of the estimated policy value.
+                Mean-squared-error of the estimators calculated across candidate evaluation policies.
                 Recorded only when return_metric is `True`.
                 Recorded in metric_df if return_by_dataframe is `True`.
 
@@ -2532,7 +2533,7 @@ class OffPolicySelection:
                 Recorded in metric_df when return_by_dataframe is `True`.
 
             safety_threshold: float
-                The policy value required to be a safe policy.
+                A policy whose policy value is below the given threshold is to be considered unsafe.
 
         """
         compared_estimators = self._check_compared_estimators(
@@ -2776,7 +2777,7 @@ class OffPolicySelection:
         safety_threshold: Optional[float] = None,
         relative_safety_criteria: Optional[float] = None,
     ):
-        """Rank the candidate policies by their estimated policy value via cumulative distribution methods.
+        """Rank the candidate policies by their estimated policy value via cumulative distribution OPE methods.
 
         Parameters
         -------
@@ -2814,10 +2815,10 @@ class OffPolicySelection:
             Id of the logged dataset.
 
         return_true_values: bool, default=False
-            Whether to return the true policy value and its ranking.
+            Whether to return the true policy value and corresponding ranking of the candidate policies.
 
         return_metrics: bool, default=False
-            Whether to return the following evaluation metrics:
+            Whether to return the following evaluation metrics in terms of OPE and OPS:
             mean-squared-error, rank-correlation, regret@k, and Type I and Type II error rate.
 
         return_by_dataframe: bool, default=False
@@ -2827,10 +2828,10 @@ class OffPolicySelection:
             How many candidate policies are included in regret@k.
 
         safety_threshold: float, default=None.
-            The policy value required to be a safe policy.
+            A policy whose policy value is below the given threshold is to be considered unsafe.
 
         relative_safety_criteria: float, default=None (>= 0)
-            The relative policy value required to be a safe policy.
+            The relative policy value required to be considered a safe policy.
             For example, when 0.9 is given, candidate policy must exceed 90\\% of the behavior policy performance.
             Only applicable when using a single behavior policy.
 
@@ -2883,7 +2884,7 @@ class OffPolicySelection:
                 Recorded in ranking_df_dict if return_by_dataframe is `True`.
 
             mean_squared_error: float
-                Mean-squared-error of the estimated policy value.
+                Mean-squared-error of the estimators calculated across candidate evaluation policies.
                 Recorded only when return_metric is `True`.
                 Recorded in metric_df if return_by_dataframe is `True`.
 
@@ -2908,7 +2909,7 @@ class OffPolicySelection:
                 Recorded in metric_df when return_by_dataframe is `True`.
 
             safety_threshold: float
-                The policy value required to be a safe policy.
+                A policy whose policy value is below the given threshold is to be considered unsafe.
 
         """
         compared_estimators = self._check_compared_estimators(
@@ -3198,10 +3199,10 @@ class OffPolicySelection:
             Id of the logged dataset.
 
         return_true_values: bool, default=False
-            Whether to return the true policy value and its ranking.
+            Whether to return the true policy value and corresponding ranking of the candidate policies.
 
         return_metrics: bool, default=False
-            Whether to return the following evaluation metrics:
+            Whether to return the following evaluation metrics in terms of OPE and OPS:
             rank-correlation, regret@k, and Type I and Type II error rate.
 
         return_by_dataframe: bool, default=False
@@ -3211,10 +3212,10 @@ class OffPolicySelection:
             How many candidate policies are included in regret@k.
 
         safety_threshold: float, default=None.
-            The policy value required to be a safe policy.
+            A policy whose policy value is below the given threshold is to be considered unsafe.
 
         relative_safety_criteria: float, default=None (>= 0)
-            The relative policy value required to be a safe policy.
+            The relative policy value required to be considered a safe policy.
             For example, when 0.9 is given, candidate policy must exceed 90\\% of the behavior policy performance.
             Only applicable when using a single behavior policy.
 
@@ -3303,7 +3304,7 @@ class OffPolicySelection:
                 Recorded in metric_df if return_by_dataframe is `True`.
 
             safety_threshold: float
-                The policy value required to be a safe policy.
+                A policy whose policy value is below the given threshold is to be considered unsafe.
 
         """
         compared_estimators = self._check_compared_estimators(
@@ -3583,7 +3584,7 @@ class OffPolicySelection:
         return_by_dataframe: bool = False,
         safety_threshold: float = 0.0,
     ):
-        """Rank the candidate policies by their estimated lower quartile of the trajectory wise reward.
+        """Rank the candidate policies by their estimated lower quartile of the trajectory-wise reward.
 
         Parameters
         -------
@@ -3621,20 +3622,21 @@ class OffPolicySelection:
             Id of the logged dataset.
 
         alpha: float, default=0.05
-            Proportion of the sided region. The value should be within `[0, 0.5]`.
+            Proportion of the shaded region. The value should be within `[0, 0.5]`.
 
         return_true_values: bool, default=False
-            Whether to return the true lower quartile of the trajectory wise reward and its ranking.
+            Whether to return the true lower quartile of the trajectory-wise reward
+            and corresponding ranking of the candidate evaluation policies.
 
         return_metrics: bool, default=False
-            Whether to return the following evaluation metrics:
+            Whether to return the following evaluation metrics in terms of OPE and OPS:
             mean-squared-error, rank-correlation, and Type I and Type II error rate.
 
         return_by_dataframe: bool, default=False
             Whether to return the result in a dataframe format.
 
         safety_threshold: float, default=0.0 (>= 0)
-            The lower quartile required to be a safe policy.
+            The lower quartile required to be considered a safe policy.
 
         Return
         -------
@@ -3656,25 +3658,25 @@ class OffPolicySelection:
                 ]
 
             estimated_ranking: list of str
-                Name of the candidate policies sorted by the estimated lower quartile of the trajectory wise reward.
+                Name of the candidate policies sorted by the estimated lower quartile of the trajectory-wise reward.
                 Recorded in ranking_df_dict if return_by_dataframe is `True`.
 
             estimated_lower_quartile: list of float
-                Estimated lower quartile of the trajectory wise reward of the candidate policies (sorted by estimated_ranking).
+                Estimated lower quartile of the trajectory-wise reward of the candidate policies (sorted by estimated_ranking).
                 Recorded in ranking_df_dict if return_by_dataframe is `True`.
 
             true_ranking: list of int
-                Ranking index of the (true) lower quartile of the trajectory wise reward of the candidate policies (sorted by estimated_ranking).
+                Ranking index of the (true) lower quartile of the trajectory-wise reward of the candidate policies (sorted by estimated_ranking).
                 Recorded only when return_true_values is `True`.
                 Recorded in ranking_df_dict if return_by_dataframe is `True`.
 
             true_lower_quartile: list of float
-                True lower quartile of the trajectory wise reward of the candidate policies (sorted by estimated_ranking).
+                True lower quartile of the trajectory-wise reward of the candidate policies (sorted by estimated_ranking).
                 Recorded only when return_true_values is `True`.
                 Recorded in ranking_df_dict if return_by_dataframe is `True`.
 
             mean_squared_error: float
-                Mean-squared-error of the estimated lower quartile of the trajectory wise reward.
+                Mean-squared-error of the estimated lower quartile of the trajectory-wise reward.
                 Recorded only when return_metric is `True`.
                 Recorded in metric_df if return_by_dataframe is `True`.
 
@@ -3698,7 +3700,7 @@ class OffPolicySelection:
                 Recorded in metric_df if return_by_dataframe is `True`.
 
             safety_threshold: float
-                The lower quartile required to be a safe policy.
+                The lower quartile required to be considered a safe policy.
 
         """
         compared_estimators = self._check_compared_estimators(
@@ -3972,20 +3974,21 @@ class OffPolicySelection:
             Id of the logged dataset.
 
         alpha: float, default=0.05
-            Proportion of the sided region. The value should be within `[0, 1]`.
+            Proportion of the shaded region. The value should be within `[0, 1]`.
 
         return_true_values: bool, default=False
-            Whether to return the true conditional value at risk and its ranking.
+            Whether to return the true conditional value at risk
+            and corresponding ranking of the candidate evaluation policies.
 
         return_metrics: bool, default=False
-            Whether to return the following evaluation metrics:
+            Whether to return the following evaluation metrics in terms of OPE and OPS:
             mean-squared-error, rank-correlation, and Type I and Type II error rate.
 
         return_by_dataframe: bool, default=False
             Whether to return the result in a dataframe format.
 
         safety_threshold: float, default=0.0 (>= 0)
-            The conditional value at risk required to be a safe policy.
+            The conditional value at risk required to be considered a safe policy.
 
         Return
         -------
@@ -4049,7 +4052,7 @@ class OffPolicySelection:
                 Recorded in metric_df if return_by_dataframe is True`.
 
             safety_threshold: float
-                The conditional value at risk required to be a safe policy.
+                The conditional value at risk required to be considered a safe policy.
 
         """
         compared_estimators = self._check_compared_estimators(
@@ -4328,7 +4331,7 @@ class OffPolicySelection:
             Significance level. The value should be within `[0, 1)`.
 
         ci: {"bootstrap", "hoeffding", "bernstein", "ttest"}, default="bootstrap"
-            Estimation method for confidence intervals.
+            Method to estimate the confidence interval.
 
         n_bootstrap_samples: int, default=10000 (> 0)
             Number of resampling performed in the bootstrap procedure.
@@ -4584,7 +4587,7 @@ class OffPolicySelection:
             Id of the logged dataset.
 
         alphas: array-like of shape (n_alpha, ), default=None
-            Set of proportions of the sided region. The values should be within `[0, 1)`.
+            Set of proportions of the shaded region. The values should be within `[0, 1)`.
             If `None` is given, :class:`np.linspace(0, 1, 21)` will be used.
 
         hue: {"estimator", "policy"}, default="estimator"
@@ -4711,7 +4714,7 @@ class OffPolicySelection:
         fig_dir: Optional[Path] = None,
         fig_name: str = "estimated_policy_value_multiple_standard_ope.png",
     ) -> None:
-        """Visualize policy value estimated by OPE estimators across multiple logged dataset.
+        """Visualize the policy value estimated by OPE estimators across multiple logged dataset.
 
         Note
         -------
@@ -4752,8 +4755,8 @@ class OffPolicySelection:
 
         plot_type: {"ci", "scatter", "violin"}, default="ci"
             Type of plot.
-            If "ci" is given, the method visualizes the average policy value and the confidence intervals based on the multiple estimate.
-            If "scatter" is given, the method visualizes the individual estimation result.
+            If "ci" is given, we get the empirical average of the estimated values with their estimated confidence intervals.
+            If "scatter" is given, we get a scatter plot of estimated values.
 
         hue: {"estimator", "policy"}, default="estimator"
             Hue of the plot.
@@ -4800,7 +4803,7 @@ class OffPolicySelection:
         fig_dir: Optional[Path] = None,
         fig_name: str = "estimated_policy_value_multiple.png",
     ) -> None:
-        """Visualize policy value estimated by OPE estimators across multiple logged dataset.
+        """Visualize the policy value estimated by OPE estimators across multiple logged dataset.
 
         Note
         -------
@@ -4843,18 +4846,18 @@ class OffPolicySelection:
             Name of the behavior policy.
 
         scale_min: float, default=None
-            Minimum value of the reward scale in CDF.
+            Minimum value of the reward scale in the CDF.
 
         scale_max: float, default=None
-            Maximum value of the reward scale in CDF.
+            Maximum value of the reward scale in the CDF.
 
         n_partition: int, default=None
-            Number of partitions in the reward scale (x-axis of CDF).
+            Number of partitions in the reward scale (x-axis of the CDF).
 
         plot_type: {"ci_hue", "ci_behavior_policy", "enumerate"}, default="ci_hue"
             Type of plot.
             If "ci" is given, the method visualizes the average policy value and its 95% confidence intervals based on the multiple estimate.
-            If "enumerate" is given, the method visualizes the individual estimation result.
+            If "enumerate" is given, we get a scatter plot of estimated values.
 
         hue: {"estimator", "policy"}, default="estimator"
             Hue of the plot.
@@ -4901,7 +4904,7 @@ class OffPolicySelection:
         fig_dir: Optional[Path] = None,
         fig_name: str = "estimated_policy_value_multiple_cumulative_distribution_ope.png",
     ) -> None:
-        """Visualize policy value estimated by OPE estimators across multiple logged dataset.
+        """Visualize the policy value estimated by OPE estimators across multiple logged dataset.
 
         Note
         -------
@@ -4942,8 +4945,8 @@ class OffPolicySelection:
 
         plot_type: {"ci", "scatter", "violin"}, default="ci"
             Type of plot.
-            If "ci" is given, the method visualizes the average policy value and the confidence intervals based on the multiple estimate.
-            If "scatter" is given, the method visualizes the individual estimation result.
+            If "ci" is given, we get the empirical average of the estimated values with their estimated confidence intervals.
+            If "scatter" is given, we get a scatter plot of estimated values.
 
         hue: {"estimator", "policy"}, default="estimator"
             Hue of the plot.
@@ -4986,7 +4989,7 @@ class OffPolicySelection:
         fig_dir: Optional[Path] = None,
         fig_name: str = "estimated_variance_multiple.png",
     ) -> None:
-        """Visualize variance estimated by OPE estimators across multiple logged dataset.
+        """Visualize the variance of the trajectory-wise reward under the evaluation policy estimated by OPE estimators across multiple logged dataset.
 
         Note
         -------
@@ -5027,8 +5030,8 @@ class OffPolicySelection:
 
         plot_type: {"ci", "scatter", "violin"}, default="ci"
             Type of plot.
-            If "ci" is given, the method visualizes the average policy value and the confidence intervals based on the multiple estimate.
-            If "scatter" is given, the method visualizes the individual estimation result.
+            If "ci" is given, we get the empirical average of the estimated values with their estimated confidence intervals.
+            If "scatter" is given, we get a scatter plot of estimated values.
 
         hue: {"estimator", "policy"}, default="estimator"
             Hue of the plot.
@@ -5072,7 +5075,7 @@ class OffPolicySelection:
         fig_dir: Optional[Path] = None,
         fig_name: str = "estimated_conditional_value_at_risk_multiple.png",
     ) -> None:
-        """Visualize conditional value at risk estimated by OPE estimators across multiple logged dataset.
+        """Visualize the conditional value at risk of the trajectory-wise reward under the evaluation policy estimated by OPE estimators across multiple logged dataset.
 
         Note
         -------
@@ -5112,12 +5115,12 @@ class OffPolicySelection:
             Name of the behavior policy.
 
         alpha: float = 0.05.
-            Proportion of the sided region in CVaR estimate. The value should be within `[0, 1)`.
+            Proportion of the shaded region in CVaR estimate. The value should be within `[0, 1)`.
 
         plot_type: {"ci", "scatter", "violin"}, default="ci"
             Type of plot.
-            If "ci" is given, the method visualizes the average policy value and the confidence intervals based on the multiple estimate.
-            If "scatter" is given, the method visualizes the individual estimation result.
+            If "ci" is given, we get the empirical average of the estimated values with their estimated confidence intervals.
+            If "scatter" is given, we get a scatter plot of estimated values.
 
         hue: {"estimator", "policy"}, default="estimator"
             Hue of the plot.
@@ -5162,7 +5165,7 @@ class OffPolicySelection:
         fig_dir: Optional[Path] = None,
         fig_name: str = "estimated_conditional_value_at_risk_multiple.png",
     ) -> None:
-        """Visualize lower quartile estimated by OPE estimators across multiple logged dataset.
+        """Visualize the lower quartile of the trajectory-wise reward under the evaluation policy estimated by OPE estimators across multiple logged dataset.
 
         Note
         -------
@@ -5202,12 +5205,12 @@ class OffPolicySelection:
             Name of the behavior policy.
 
         alpha: float = 0.05.
-            Proportion of the sided region in CVaR estimate. The value should be within `[0, 1)`.
+            Proportion of the shaded region in CVaR estimate. The value should be within `[0, 1)`.
 
         plot_type: {"ci", "scatter", "violin"}, default="ci"
             Type of plot.
-            If "ci" is given, the method visualizes the average policy value and the confidence intervals based on the multiple estimate.
-            If "scatter" is given, the method visualizes the individual estimation result.
+            If "ci" is given, we get the empirical average of the estimated values with their estimated confidence intervals.
+            If "scatter" is given, we get a scatter plot of estimated values.
 
         hue: {"estimator", "policy"}, default="estimator"
             Hue of the plot.
@@ -5320,7 +5323,7 @@ class OffPolicySelection:
             Whether to calculate and return the safety violate.
 
         safety_threshold: float, default=0.0 (>= 0)
-            The conditional value at risk required to be a safe policy.
+            The conditional value at risk required to be considered a safe policy.
 
         clip_sharpe_ratio: bool, default=False
             Whether to clip a large value of SharpRatio with 1e2.
@@ -5332,7 +5335,7 @@ class OffPolicySelection:
         -------
         topk_metric_dict/topk_metric_df: dict or dataframe
             Dictionary/dataframe containing the following top-k risk return tradeoff metrics.
-            Note that, when returning dataframe, the average value will be returned.
+            Note that when returning dataframe, the average value will be returned.
 
             .. code-block:: python
 
@@ -5948,10 +5951,10 @@ class OffPolicySelection:
             Whether to calculate and return the safety violate.
 
         safety_threshold: float, default=None.
-            The policy value required to be a safe policy.
+            A policy whose policy value is below the given threshold is to be considered unsafe.
 
         relative_safety_criteria: float, default=None
-            The relative policy value required to be a safe policy.
+            The relative policy value required to be considered a safe policy.
             For example, when 0.9 is given, candidate policy must exceed 90\\% of the behavior policy performance.
             Only applicable when using a single behavior policy.
 
@@ -5962,7 +5965,7 @@ class OffPolicySelection:
         -------
         topk_metric_dict/topk_metric_df: dict or dataframe
             Dictionary/dataframe containing the following top-k risk return tradeoff metrics.
-            Note that, policy performance refers to the (standard) policy value here. When returning dataframe, the average value will be returned.
+            Note that policy performance refers to the (standard) policy value here. When returning dataframe, the average value will be returned.
 
             .. code-block:: python
 
@@ -6105,10 +6108,10 @@ class OffPolicySelection:
             Whether to calculate and return the safety violate.
 
         safety_threshold: float, default=None.
-            The policy value required to be a safe policy.
+            A policy whose policy value is below the given threshold is to be considered unsafe.
 
         relative_safety_criteria: float, default=None
-            The relative policy value required to be a safe policy.
+            The relative policy value required to be considered a safe policy.
             For example, when 0.9 is given, candidate policy must exceed 90\\% of the behavior policy performance.
             Only applicable when using a single behavior policy.
 
@@ -6119,7 +6122,7 @@ class OffPolicySelection:
         -------
         topk_metric_dict/topk_metric_df: dict or dataframe
             Dictionary/dataframe containing the following top-k risk return tradeoff metrics.
-            Note that, policy performance refers to the (standard) policy value here. When returning dataframe, the average value will be returned.
+            Note that policy performance refers to the (standard) policy value here. When returning dataframe, the average value will be returned.
 
             .. code-block:: python
 
@@ -6267,10 +6270,10 @@ class OffPolicySelection:
             Whether to calculate and return the safety violate.
 
         safety_threshold: float, default=None.
-            The policy value required to be a safe policy.
+            A policy whose policy value is below the given threshold is to be considered unsafe.
 
         relative_safety_criteria: float, default=None
-            The relative policy value required to be a safe policy.
+            The relative policy value required to be considered a safe policy.
             For example, when 0.9 is given, candidate policy must exceed 90\\% of the behavior policy performance.
             Only applicable when using a single behavior policy.
 
@@ -6296,7 +6299,7 @@ class OffPolicySelection:
         -------
         topk_metric_dict/topk_metric_df: dict or dataframe
             Dictionary/dataframe containing the following top-k risk return tradeoff metrics.
-            Note that, policy performance refers to the (standard) policy value here. When returning dataframe, the average value will be returned.
+            Note that policy performance refers to the (standard) policy value here. When returning dataframe, the average value will be returned.
 
             .. code-block:: python
 
@@ -6760,7 +6763,7 @@ class OffPolicySelection:
             If `None`, the average of the result will be shown.
 
         ope_alpha: float, default=0.05
-            Proportion of the sided region. The value should be within `[0, 1]`.
+            Proportion of the shaded region. The value should be within `[0, 1]`.
 
         max_topk: int, default=None
             Maximum number of policies to be deployed.
@@ -6770,7 +6773,7 @@ class OffPolicySelection:
             Whether to calculate and return the safety violate.
 
         safety_threshold: float, default=None.
-            The policy value required to be a safe policy.
+            A policy whose policy value is below the given threshold is to be considered unsafe.
 
         clip_sharpe_ratio: bool, default=False
             Whether to clip a large value of SharpRatio with 1e2.
@@ -6782,7 +6785,7 @@ class OffPolicySelection:
         -------
         topk_metric_dict/topk_metric_df: dict or dataframe
             Dictionary/dataframe containing the following top-k risk return tradeoff metrics.
-            Note that, policy performance refers to CVaR here. When returning dataframe, the average value will be returned.
+            Note that policy performance refers to CVaR here. When returning dataframe, the average value will be returned.
 
             .. code-block:: python
 
@@ -6922,7 +6925,7 @@ class OffPolicySelection:
             If `None`, the average of the result will be shown.
 
         ope_alpha: float, default=0.05
-            Proportion of the sided region. The value should be within `[0, 1]`.
+            Proportion of the shaded region. The value should be within `[0, 1]`.
 
         max_topk: int, default=None
             Maximum number of policies to be deployed.
@@ -6932,7 +6935,7 @@ class OffPolicySelection:
             Whether to calculate and return the safety violate.
 
         safety_threshold: float, default=None.
-            The policy value required to be a safe policy.
+            A policy whose policy value is below the given threshold is to be considered unsafe.
 
         clip_sharpe_ratio: bool, default=False
             Whether to clip a large value of SharpRatio with 1e2.
@@ -6944,7 +6947,7 @@ class OffPolicySelection:
         -------
         topk_metric_dict/topk_metric_df: dict or dataframe
             Dictionary/dataframe containing the following top-k risk return tradeoff metrics.
-            Note that, policy performance refers to CVaR here. When returning dataframe, the average value will be returned.
+            Note that policy performance refers to CVaR here. When returning dataframe, the average value will be returned.
 
             .. code-block:: python
 
@@ -7085,7 +7088,7 @@ class OffPolicySelection:
             If `None`, the average of the result will be shown.
 
         alpha: float, default=0.05
-            Proportion of the sided region. The value should be within `[0, 0.5]`.
+            Proportion of the shaded region. The value should be within `[0, 0.5]`.
 
         max_topk: int, default=None
             Maximum number of policies to be deployed.
@@ -7095,7 +7098,7 @@ class OffPolicySelection:
             Whether to calculate and return the safety violate.
 
         safety_threshold: float, default=None.
-            The policy value required to be a safe policy.
+            A policy whose policy value is below the given threshold is to be considered unsafe.
 
         clip_sharpe_ratio: bool, default=False
             Whether to clip a large value of SharpRatio with 1e2.
@@ -7107,7 +7110,7 @@ class OffPolicySelection:
         -------
         topk_metric_dict/topk_metric_df: dict or dataframe
             Dictionary/dataframe containing the following top-k risk return tradeoff metrics.
-            Note that, policy performance refers to the lower quartile here. When returning dataframe, the average value will be returned.
+            Note that policy performance refers to the lower quartile here. When returning dataframe, the average value will be returned.
 
             .. code-block:: python
 
@@ -7247,7 +7250,7 @@ class OffPolicySelection:
             If `None`, the average of the result will be shown.
 
         alpha: float, default=0.05
-            Proportion of the sided region. The value should be within `[0, 0.5]`.
+            Proportion of the shaded region. The value should be within `[0, 0.5]`.
 
         max_topk: int, default=None
             Maximum number of policies to be deployed.
@@ -7257,7 +7260,7 @@ class OffPolicySelection:
             Whether to calculate and return the safety violate.
 
         safety_threshold: float, default=None.
-            The policy value required to be a safe policy.
+            A policy whose policy value is below the given threshold is to be considered unsafe.
 
         clip_sharpe_ratio: bool, default=False
             Whether to clip a large value of SharpRatio with 1e2.
@@ -7269,7 +7272,7 @@ class OffPolicySelection:
         -------
         topk_metric_dict/topk_metric_df: dict or dataframe
             Dictionary/dataframe containing the following top-k risk return tradeoff metrics.
-            Note that, policy performance refers to the lower quartile here. When returning dataframe, the average value will be returned.
+            Note that policy performance refers to the lower quartile here. When returning dataframe, the average value will be returned.
 
             .. code-block:: python
 
@@ -7406,7 +7409,7 @@ class OffPolicySelection:
         -------
         topk_metric_dict/topk_metric_df: dict or dataframe
             Dictionary/dataframe containing the following top-k risk return tradeoff metrics.
-            Note that, when returning dataframe, the average value will be returned.
+            Note that when returning dataframe, the average value will be returned.
 
             .. code-block:: python
 
@@ -7551,13 +7554,13 @@ class OffPolicySelection:
             Maximum number of policies to be deployed.
 
         safety_threshold: float, default=None.
-            The policy value required to be a safe policy.
+            A policy whose policy value is below the given threshold is to be considered unsafe.
 
         visualize_ci: bool, default=False
             Whether to visualize ci.
 
         ci: {"bootstrap", "hoeffding", "bernstein", "ttest"}, default="bootstrap"
-            Estimation method for confidence intervals.
+            Method to estimate the confidence interval.
 
         alpha: float, default=0.05
             Significance level. The value should be within `[0, 1)`.
@@ -7861,10 +7864,10 @@ class OffPolicySelection:
             If `None` is given, all the policies will be deployed.
 
         safety_threshold: float, default=None.
-            The policy value required to be a safe policy.
+            A policy whose policy value is below the given threshold is to be considered unsafe.
 
         relative_safety_criteria: float, default=None
-            The relative policy value required to be a safe policy.
+            The relative policy value required to be considered a safe policy.
             For example, when 0.9 is given, candidate policy must exceed 90\\% of the behavior policy performance.
             Only applicable when using a single behavior policy.
 
@@ -7878,7 +7881,7 @@ class OffPolicySelection:
             Whether to visualize ci. (Only applicable when :class:`MultipleInputDict` is given.)
 
         plot_ci: {"bootstrap", "hoeffding", "bernstein", "ttest"}, default="bootstrap"
-            Estimation method for confidence intervals.
+            Method to estimate the confidence interval.
 
         plot_alpha: float, default=0.05
             Significance level. The value should be within `[0, 1)`.
@@ -8066,10 +8069,10 @@ class OffPolicySelection:
             If `None` is given, all the policies will be deployed.
 
         safety_threshold: float, default=None.
-            The policy value required to be a safe policy.
+            A policy whose policy value is below the given threshold is to be considered unsafe.
 
         relative_safety_criteria: float, default=None
-            The relative policy value required to be a safe policy.
+            The relative policy value required to be considered a safe policy.
             For example, when 0.9 is given, candidate policy must exceed 90\\% of the behavior policy performance.
 
         clip_sharpe_ratio: bool, default=False
@@ -8082,7 +8085,7 @@ class OffPolicySelection:
             Whether to visualize ci. (Only applicable when :class:`MultipleInputDict` is given.)
 
         plot_ci: {"bootstrap", "hoeffding", "bernstein", "ttest"}, default="bootstrap"
-            Estimation method for confidence intervals.
+            Method to estimate the confidence interval.
 
         plot_alpha: float, default=0.05
             Significance level. The value should be within `[0, 1)`.
@@ -8273,10 +8276,10 @@ class OffPolicySelection:
             If `None` is given, all the policies will be deployed.
 
         safety_threshold: float, default=None.
-            The policy value required to be a safe policy.
+            A policy whose policy value is below the given threshold is to be considered unsafe.
 
         relative_safety_criteria: float, default=None
-            The relative policy value required to be a safe policy.
+            The relative policy value required to be considered a safe policy.
             For example, when 0.9 is given, candidate policy must exceed 90\\% of the behavior policy performance.
 
         clip_sharpe_ratio: bool, default=False
@@ -8298,7 +8301,7 @@ class OffPolicySelection:
             Whether to visualize ci. (Only applicable when :class:`MultipleInputDict` is given.)
 
         plot_ci: {"bootstrap", "hoeffding", "bernstein", "ttest"}, default="bootstrap"
-            Estimation method for confidence intervals.
+            Method to estimate the confidence interval.
 
         plot_alpha: float, default=0.05
             Significance level. The value should be within `[0, 1)`.
@@ -8881,7 +8884,7 @@ class OffPolicySelection:
             If `None`, the average of the result will be shown.
 
         ope_alpha: float, default=0.05
-            Proportion of the sided region. The value should be within `[0, 1]`.
+            Proportion of the shaded region. The value should be within `[0, 1]`.
 
         metrics: list of {"k-th", "best", "worst", "mean", "std", "safety_violation_rate", "sharpe_ratio"}, default=["k-th", "best", "worst", "mean", "std", "safety_violation_rate", "sharpe_ratio"]
             Indicate which of the policy performance among {"best", "worst", "mean", "std"}, sharpe ratio, and safety violation rate to report.
@@ -8894,7 +8897,7 @@ class OffPolicySelection:
             If `None` is given, all the policies will be deployed.
 
         safety_threshold: float, default=0.0 (>= 0)
-            The conditional value at risk required to be a safe policy.
+            The conditional value at risk required to be considered a safe policy.
 
         clip_sharpe_ratio: bool, default=False
             Whether to clip a large value of SharpRatio with 1e2.
@@ -8906,7 +8909,7 @@ class OffPolicySelection:
             Whether to visualize ci. (Only applicable when :class:`MultipleInputDict` is given.)
 
         plot_ci: {"bootstrap", "hoeffding", "bernstein", "ttest"}, default="bootstrap"
-            Estimation method for confidence intervals.
+            Method to estimate the confidence interval.
 
         plot_alpha: float, default=0.05
             Significance level. The value should be within `[0, 1)`.
@@ -9089,7 +9092,7 @@ class OffPolicySelection:
             If `None`, the average of the result will be shown.
 
         ope_alpha: float, default=0.05
-            Proportion of the sided region. The value should be within `[0, 1]`.
+            Proportion of the shaded region. The value should be within `[0, 1]`.
 
         metrics: list of {"k-th", "best", "worst", "mean", "std", "safety_violation_rate", "sharpe_ratio"}, default=["k-th", "best", "worst", "mean", "std", "safety_violation_rate", "sharpe_ratio"]
             Indicate which of the policy performance among {"best", "worst", "mean", "std"}, sharpe ratio, and safety violation rate to report.
@@ -9102,7 +9105,7 @@ class OffPolicySelection:
             If `None` is given, all the policies will be deployed.
 
         safety_threshold: float, default=0.0 (>= 0)
-            The conditional value at risk required to be a safe policy.
+            The conditional value at risk required to be considered a safe policy.
 
         clip_sharpe_ratio: bool, default=False
             Whether to clip a large value of SharpRatio with 1e2.
@@ -9114,7 +9117,7 @@ class OffPolicySelection:
             Whether to visualize ci. (Only applicable when :class:`MultipleInputDict` is given.)
 
         plot_ci: {"bootstrap", "hoeffding", "bernstein", "ttest"}, default="bootstrap"
-            Estimation method for confidence intervals.
+            Method to estimate the confidence interval.
 
         plot_alpha: float, default=0.05
             Significance level. The value should be within `[0, 1)`.
@@ -9295,7 +9298,7 @@ class OffPolicySelection:
             If `None`, the average of the result will be shown.
 
         alpha: float, default=0.05
-            Proportion of the sided region. The value should be within `[0, 0.5]`.
+            Proportion of the shaded region. The value should be within `[0, 0.5]`.
 
         metrics: list of {"k-th", "best", "worst", "mean", "std", "safety_violation_rate", "sharpe_ratio"}, default=["k-th", "best", "worst", "mean", "std", "safety_violation_rate", "sharpe_ratio"]
             Indicate which of the policy performance among {"best", "worst", "mean", "std"}, sharpe ratio, and safety violation rate to report.
@@ -9308,7 +9311,7 @@ class OffPolicySelection:
             If `None` is given, all the policies will be deployed.
 
         safety_threshold: float, default=0.0 (>= 0)
-            The conditional value at risk required to be a safe policy.
+            The conditional value at risk required to be considered a safe policy.
 
         clip_sharpe_ratio: bool, default=False
             Whether to clip a large value of SharpRatio with 1e2.
@@ -9320,7 +9323,7 @@ class OffPolicySelection:
             Whether to visualize ci. (Only applicable when :class:`MultipleInputDict` is given.)
 
         plot_ci: {"bootstrap", "hoeffding", "bernstein", "ttest"}, default="bootstrap"
-            Estimation method for confidence intervals.
+            Method to estimate the confidence interval.
 
         plot_alpha: float, default=0.05
             Significance level. The value should be within `[0, 1)`.
@@ -9500,7 +9503,7 @@ class OffPolicySelection:
             If `None`, the average of the result will be shown.
 
         alpha: float, default=0.05
-            Proportion of the sided region. The value should be within `[0, 0.5]`.
+            Proportion of the shaded region. The value should be within `[0, 0.5]`.
 
         metrics: list of {"k-th", "best", "worst", "mean", "std", "safety_violation_rate", "sharpe_ratio"}, default=["k-th", "best", "worst", "mean", "std", "safety_violation_rate", "sharpe_ratio"]
             Indicate which of the policy performance among {"best", "worst", "mean", "std"}, sharpe ratio, and safety violation rate to report.
@@ -9513,7 +9516,7 @@ class OffPolicySelection:
             If `None` is given, all the policies will be deployed.
 
         safety_threshold: float, default=0.0 (>= 0)
-            The conditional value at risk required to be a safe policy.
+            The conditional value at risk required to be considered a safe policy.
 
         clip_sharpe_ratio: bool, default=False
             Whether to clip a large value of SharpRatio with 1e2.
@@ -9525,7 +9528,7 @@ class OffPolicySelection:
             Whether to visualize ci. (Only applicable when :class:`MultipleInputDict` is given.)
 
         plot_ci: {"bootstrap", "hoeffding", "bernstein", "ttest"}, default="bootstrap"
-            Estimation method for confidence intervals.
+            Method to estimate the confidence interval.
 
         plot_alpha: float, default=0.05
             Significance level. The value should be within `[0, 1)`.
@@ -11899,7 +11902,7 @@ class OffPolicySelection:
             Id of the logged dataset.
 
         alpha: float, default=0.05
-            Proportion of the sided region. The value should be within `[0, 0.5]`.
+            Proportion of the shaded region. The value should be within `[0, 0.5]`.
 
         n_cols: int, default=None (> 0)
             Number of columns in the figure.
@@ -12001,7 +12004,7 @@ class OffPolicySelection:
             Id of the logged dataset.
 
         alpha: float, default=0.05
-            Proportion of the sided region. The value should be within `[0, 1]`.
+            Proportion of the shaded region. The value should be within `[0, 1]`.
 
         n_cols: int, default=None (> 0)
             Number of columns in the figure.

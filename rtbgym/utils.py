@@ -18,7 +18,7 @@ class NormalDistribution:
     Parameters
     -------
     mean: {int, float, array-like}
-        Mean value of the normal distribution.
+        Mean parameter of the normal distribution.
 
     std: {int, float, array-like}
         Standard deviation of the normal distribution.
@@ -69,7 +69,7 @@ class NormalDistribution:
         Parameters
         -------
         size: int, default=1 (> 0)
-            Total numbers of the random variable to sample.
+            Total number of the random variable to sample.
 
         Returns
         -------
@@ -119,10 +119,10 @@ def check_array(
         Expected dtype of the input array.
 
     min_val: float, default=None
-        Minimum number allowed in the input array.
+        Minimum value allowed in the input array.
 
     max_val: float, default=None
-        Maximum number allowed in the input array.
+        Maximum value allowed in the input array.
 
     """
     if not isinstance(array, np.ndarray):

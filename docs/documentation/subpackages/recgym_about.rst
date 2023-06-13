@@ -11,20 +11,20 @@ Overview
 The simulator is particularly intended for reinforcement learning algorithms and follows `OpenAI Gym <https://github.com/openai/gym>`_ and `Gymnasium <https://github.com/Farama-Foundation/Gymnasium>`_ interface.
 We design RECGym as a configurative environment so that researchers and practitioners can customize the environmental modules including UserModel.
 
-Note that, RECGym is publicized as a sub-package of :doc:`SCOPE-RL </documentation/index>`, which streamlines the implementation of offline reinforcement learning (offline RL) and off-policy evaluation and selection (OPE/OPS) procedures.
+Note that RECGym is publicized as a sub-package of :doc:`SCOPE-RL </documentation/index>`, which streamlines the implementation of offline reinforcement learning (offline RL) and off-policy evaluation and selection (OPE/OPS) procedures.
 
 Basic Setting
 ~~~~~~~~~~
 The objective of recommender interactions is to maximize reward.
 We often formulate this problem as the following (Partially Observable) Markov Decision Process ((PO)MDP) as :math:`\langle \mathcal{S}, \mathcal{A}, \mathcal{T}, P_r \rangle`.
 
-* `state` (:math:`s \in \mathcal{S}`): 
+* `state` (:math:`s \in \mathcal{S}`):
 
-    * A vector representing user preference.  The preference changes over time in an episode by the actions presented by the RL agent.
+    * A vector representing user preference. The preference changes over time in an episode depending on the actions presented by the RL agent.
     * When the true state is unobservable, you can gain observation instead of state.
 
-* `action` (:math:`a \in \mathcal{A}`):  Index of an item to present to the user.
-* `reward` (:math:`r \in \mathbb{R}`): User engagement signal. Either binary or continuous.
+* `action`(:math:`a \in \mathcal{A}`):  Index of an item to present to the user.
+* `reward`(:math:`r \in \mathbb{R}`): User engagement signal as a reward. Either binary or continuous.
 
 Note that :math:`\mathcal{T}: \mathcal{S} \times \mathcal{A} \rightarrow \mathcal{P}(\mathcal{S})` is the state transition probability where :math:`\mathcal{T}(s'\mid s,a)` is the probability of observing state :math:`s'` after taking action :math:`a` given state :math:`s`.
 :math:`P_r: \mathcal{S} \times \mathcal{A} \times \mathbb{R} \rightarrow [0,1]` is the probability distribution of the immediate reward.
@@ -46,7 +46,7 @@ Configurative Modules
 ----------
     * :class:`UserModel`: Class to define the user model of the recommender system.
 
-Note that, users can customize the above modules by following the abstract class.
+Note that users can customize the above modules by following the abstract class.
 
 Quickstart and Configurations
 ~~~~~~~~~~
@@ -56,7 +56,7 @@ We provide an example usage of the standard and customized environment.
 Standard RECEnv
 ----------
 
-Our RECEnv is available from :class:`gym.make()`, 
+Our RECEnv is available from :class:`gym.make()`,
 following the `OpenAI Gym <https://github.com/openai/gym>`_ and `Gymnasium <https://github.com/Farama-Foundation/Gymnasium>`_ interface.
 
 .. code-block:: python
@@ -77,7 +77,7 @@ The basic interaction is performed using only four lines of code as follows.
        action = agent.act(obs)
        obs, reward, done, truncated, info = env.step(action)
 
-Let's interact uniform random policy with a discrete action REC environment. 
+Let's interact uniform random policy with a discrete action REC environment.
 
 .. code-block:: python
 
@@ -92,10 +92,10 @@ Let's interact uniform random policy with a discrete action REC environment.
         n_actions=env.n_items,
         epsilon=1.0,
         name='random',
-        random_state = random_state, 
+        random_state = random_state,
     )
 
-    # (2) basic interaction 
+    # (2) basic interaction
     obs, info = env.reset()
     done = False
 
@@ -103,8 +103,8 @@ Let's interact uniform random policy with a discrete action REC environment.
         action = agent.predict_online(obs)
         obs, reward, done, truncated, info = env.step(action)
 
-Note that, while we use :doc:`SCOPE-RL </documentation/index>` and `d3rlpy <https://github.com/takuseno/d3rlpy>`_ here,
-RECGym is compatible with any other library that is compatible to the `OpenAI Gym <https://github.com/openai/gym>`_ 
+Note that while we use :doc:`SCOPE-RL </documentation/index>` and `d3rlpy <https://github.com/takuseno/d3rlpy>`_ here,
+RECGym is compatible with any other libraries that is compatible to the `OpenAI Gym <https://github.com/openai/gym>`_
 and `Gymnasium <https://github.com/Farama-Foundation/Gymnasium>`_ interface.
 
 Customized RECEnv
@@ -178,7 +178,7 @@ Example of Custom UserModel:
             action: Action,
             alpha: float = 1.0,
         )-> np.ndarray:
-            """Function that determines how to update the state (i.e., user preference) based on the recommended item. user_feature is amplified by the recommended item_feature
+            """Function that determines the user state transition (i.e., user preference) based on the recommended item. user_feature is amplified by the recommended item_feature
             """
             state = (state + alpha * state @ self.item_feature_vector[action] * self.item_feature_vector[action])
             state = state / np.linalg.norm(state, ord=2)

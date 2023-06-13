@@ -11,14 +11,14 @@ Overview
 The simulator is particularly intended for reinforcement learning algorithms and follows `OpenAI Gym <https://github.com/openai/gym>`_ and `Gymnasium <https://github.com/Farama-Foundation/Gymnasium>`_ interface.
 We design BasicGym as a configurative environment so that researchers and practitioner can customize the environmental modules including UserModel.
 
-Note that, BasicGym is publicized as a sub-package of :doc:`SCOPE-RL </documentation/index>`, which streamlines the implementation of offline reinforcement learning (offline RL) and off-policy evaluation and selection (OPE/OPS) procedures.
+Note that BasicGym is publicized as a sub-package of :doc:`SCOPE-RL </documentation/index>`, which streamlines the implementation of offline reinforcement learning (offline RL) and off-policy evaluation and selection (OPE/OPS) procedures.
 
 Basic Setting
 ~~~~~~~~~~
 We formulate (Partially Observable) Markov Decision Process ((PO)MDP) as :math:`\langle \mathcal{S}, \mathcal{A}, \mathcal{T}, P_r \rangle` containing the following components.
 
 * `state` (:math:`s \in \mathcal{S}`)
-* `action` (:math:`a \in \mathcal{A}`)  
+* `action` (:math:`a \in \mathcal{A}`)
 * `reward` (:math:`r \in \mathbb{R}`)
 
 Note that :math:`\mathcal{T}: \mathcal{S} \times \mathcal{A} \rightarrow \mathcal{P}(\mathcal{S})` is the state transition probability where :math:`\mathcal{T}(s'\mid s,a)` is the probability of observing state :math:`s'` after taking action :math:`a` given state :math:`s`.
@@ -43,7 +43,7 @@ Configurative Modules
     * :class:`StateTransitionFunction`: Class to define the state transition of the synthetic simulation.
     * :class:`RewardFunction`: Class to define the reward function of the synthetic simulation.
 
-Note that, users can customize the above modules by following the abstract class.
+Note that users can customize the above modules by following the abstract class.
 
 Quickstart and Configurations
 ~~~~~~~~~~
@@ -53,7 +53,7 @@ We provide an example usage of the standard and customized environment.
 Standard BasicEnv
 ----------
 
-Our BasicEnv is available from :class:`gym.make()`, 
+Our BasicEnv is available from :class:`gym.make()`,
 following the `OpenAI Gym <https://github.com/openai/gym>`_ and `Gymnasium <https://github.com/Farama-Foundation/Gymnasium>`_ interface.
 
 .. code-block:: python
@@ -74,7 +74,7 @@ The basic interaction is performed using only four lines of code as follows.
        action = agent.act(obs)
        obs, reward, done, truncated, info = env.step(action)
 
-Let's interact with a uniform random policy. 
+Let's interact with a uniform random policy.
 
 .. code-block:: python
 
@@ -93,7 +93,7 @@ Let's interact with a uniform random policy.
     )
     agent.build_with_env(env)
 
-    # (2) basic interaction 
+    # (2) basic interaction
     obs, info = env.reset()
     done = False
 
@@ -101,8 +101,8 @@ Let's interact with a uniform random policy.
         action = agent.predict_online(obs)
         obs, reward, done, truncated, info = env.step(action)
 
-Note that, while we use :doc:`SCOPE-RL </documentation/index>` and `d3rlpy <https://github.com/takuseno/d3rlpy>`_ here,
-BasicGym is compatible with any other libraries that is compatible to the `OpenAI Gym <https://github.com/openai/gym>`_ 
+Note that while we use :doc:`SCOPE-RL </documentation/index>` and `d3rlpy <https://github.com/takuseno/d3rlpy>`_ here,
+BasicGym is compatible with any other libraries that is compatible to the `OpenAI Gym <https://github.com/openai/gym>`_
 and `Gymnasium <https://github.com/Farama-Foundation/Gymnasium>`_ interface.
 
 Customized BasicEnv
@@ -114,7 +114,7 @@ The list of arguments are given as follows.
 
 * :class:`step_per_episode`: Number of timesteps in an episode.
 * :class:`state_dim`: Dimension of the state.
-* :class:`action_type`: Action type of the RL agent.
+* :class:`action_type`: Type of the action space.
 * :class:`n_actions`: Number of actions in the discrete action case.
 * :class:`action_dim`: Dimension of the action (context).
 * :class:`action_context`: Feature vectors that characterizes each action. Applicable only when action_type is "discrete".
@@ -122,7 +122,7 @@ The list of arguments are given as follows.
 * :class:`reward_std`: Noise level of the reward. Applicable only when reward_type is "continuous".
 * :class:`obs_std`: Noise level of the state observation.
 * :class:`StateTransitionFunction`: State transition function.
-* :class:`RewardFunction`: Mean reward function.
+* :class:`RewardFunction`: Expected immediate reward function
 * :class:`random_state` : Random state.
 
 Example:

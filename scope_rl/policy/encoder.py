@@ -199,7 +199,7 @@ class EmbeddingEncoderWithAction(_EmbeddingEncoder, EncoderWithAction):
 class EmbeddingEncoderFactory(EncoderFactory):
     """Embedding encoder factory class.
 
-    This is the customization of the vector encoder factory in d3rlpy.
+    This is a customized version of the vector encoder factory in d3rlpy.
 
     """
 

@@ -11,19 +11,17 @@ SCOPE-RL
 .. .. card:: logo
 ..     :img-top: ../_static/images/logo.png
 ..     :text-align: center
-    
+
 Overview
 ~~~~~~~~~~
-*SCOPE-RL* is an open-source Python library for offline Reinforcement Learning (RL) and Off-Policy Evaluation and Selection (OPE/OPS).
-This library aims to facilitate an easy, flexible and reliable experiment in offline RL research, as well as to provide a streamlined implementation for practitioners.
-SCOPE-RL includes a series of modules to implement synthetic dataset generation and dataset preprocessing and methods for conducting and evaluating OPE/OPS.
+*SCOPE-RL* is an open-source Python library designed for both Offline Reinforcement Learning (RL) and Off-Policy Evaluation and Selection (OPE/OPS). This library is intended to streamline offline RL research by providing an easy, flexible, and reliable platform for conducting experiments. It also offers straightforward implementations for practitioners. SCOPE-RL incorporates a series of modules that allow for synthetic dataset generation, dataset preprocessing, and the conducting and evaluation of OPE/OPS.
 
-SCOPE-RL is applicable to any RL environment with `OpenAI Gym <https://github.com/openai/gym>`_ or `Gymnasium <https://github.com/Farama-Foundation/Gymnasium>`_-like interface.
-The library is also compatible with `d3rlpy <https://github.com/takuseno/d3rlpy>`_, which provides the algorithm implementation of both online and offline RL methods.
+SCOPE-RL can be used in any RL environment that has an interface similar to `OpenAI Gym <https://github.com/openai/gym>`_ or `Gymnasium <https://github.com/Farama-Foundation/Gymnasium>`_-like interface.
+The library is also compatible with `d3rlpy <https://github.com/takuseno/d3rlpy>`_ which provides the implementation of both online and offline RL methods.
 
 Our software facilitates implementation, evaluation and algorithm comparison related to the following research topics:
 
-.. card:: 
+.. card::
    :width: 75%
    :margin: auto
    :img-top: ../_static/images/offline_rl_workflow.png
@@ -35,15 +33,15 @@ Our software facilitates implementation, evaluation and algorithm comparison rel
 
     <div class="white-space-20px"></div>
 
-* **Offline Reinforcement Learning**: 
-   Offline RL aims to learn a new policy from only offline logged data collected by a behavior policy. SCOPE-RL enables a flexible experiment using customized dataset on diverse environments collected by various behavior policies.
+* **Offline Reinforcement Learning**:
+   Offline RL aims to train a new policy from only offline logged data collected by a behavior policy. SCOPE-RL enables a flexible experiment using customized dataset on diverse environments collected by various behavior policies.
 
-* **Off-Policy Evaluation**: 
-   OPE aims to evaluate the policies of a counterfactual policy using only offline logged data. SCOPE-RL supports the basic implementations of OPE estimators and streamline the experimental procedure to evaluate OPE estimators.
+* **Off-Policy Evaluation**:
+   OPE aims to evaluate the performance of a counterfactual policy using only offline logged data. SCOPE-RL supports implementations of a range of OPE estimators and streamline the experimental procedure to evaluate the accuracy of OPE estimators.
 
-* **Off-Policy Selection**: 
-   OPS aims to select the top-:math:`k` policies from several candidate policies using offline logged data. Typically, the final production policy is chosen based on the online A/B tests results of the selected top-:math:`k` policies.
-   SCOPE-RL supports the basic implementations of OPS methods and provide some metrics to evaluate OPS result.
+* **Off-Policy Selection**:
+   OPS aims to select the top-:math:`k` policies from several candidate policies using only offline logged data. Typically, the final production policy is chosen based on the online A/B tests of the top-:math:`k` policies selected by OPS.
+   SCOPE-RL supports implementations of a range of OPS methods and provide some metrics to evaluate OPS result.
 
 .. note::
 
@@ -60,8 +58,8 @@ Implementation
 
 Data Collection Policy and Offline RL
 ----------
-SCOPE-RL override `d3rlpy <https://github.com/takuseno/d3rlpy>`_'s implementation for the base algorithms.
-We provide a class to handle synthetic dataset deneration, off-policy learning with multiple algorithms, and
+SCOPE-RL overrides `d3rlpy <https://github.com/takuseno/d3rlpy>`_'s implementation for the base RL algorithms.
+We provide a class to handle synthetic dataset generation, off-policy learning with multiple algorithms, and
 wrapper classes for transforming the policy into a stochastic policy as follows.
 
 Meta class
@@ -82,10 +80,10 @@ Continuous
 Basic OPE
 ----------
 
-.. card:: 
+.. card::
     :img-top: ../_static/images/ope_policy_value_basic.png
     :text-align: center
-    
+
     Policy Value Estimated by OPE Estimators
 
 SCOPE-RL provides a variety of OPE estimators both in discrete and continuous action spaces.
@@ -141,14 +139,14 @@ High Confidence OPE
 Cumulative Distribution OPE
 ----------
 
-.. card:: 
+.. card::
     :img-top: ../_static/images/ope_cumulative_distribution_function.png
     :text-align: center
 
     Cumulative Distribution Function Estimated by OPE Estimators
 
-SCOPE-RL also provides cumulative distribution OPE estimators, which enables practitioners to evaluate various risk metrics (e.g., conditional value at risk) for safety assessment.
-Meta class and generic abstract class are available also for cumulative distribution OPE.
+SCOPE-RL also provides cumulative distribution OPE estimators, which enables practitioners to evaluate various risk metrics (e.g., conditional value at risk) for safety assessment beyond the mere expectation of the trajectory-wise reward.
+Meta class and generic abstract class are also available for cumulative distribution OPE.
 
 Estimators
 ^^^^^^
@@ -169,15 +167,13 @@ Metrics of Interest
 Off-Policy Selection Metrics
 ----------
 
-.. card:: 
+.. card::
     :img-top: ../_static/images/ops_topk_lower_quartile.png
     :text-align: center
-    
+
     Comparison of the Top-k Statistics of 10% Lower Quartile of Policy Value
 
-Finally, SCOPE-RL also standardizes the evaluation protocol of OPE in two axes, first by measuring the accuracy of OPE over the whole candidate policies, 
-and second by evaluating the gains and costs in top-k deployment (e.g., the best and worst performance in top-k deployment).
-The streamlined implementations and visualization of OPS class provide informative insights on offline RL and OPE performance.
+Finally, SCOPE-RL also standardizes the evaluation protocol of OPE in two axes, firstly by measuring the accuracy of OPE over the whole candidate policies, and secondly by evaluating the gains and costs in top-k deployment (e.g., the best and worst performance in top-k deployment). The streamlined implementations and visualization of OPS class provide informative insights on offline RL and OPE performance.
 
 OPE metrics
 ^^^^^^

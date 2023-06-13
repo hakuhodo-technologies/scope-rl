@@ -32,16 +32,16 @@ class BaseOffPolicyEstimator(metaclass=ABCMeta):
         Estimate the trajectory-wise expected reward.
 
     _calc_behavior_policy_pscore_discrete:
-        Calculate behavior policy pscore (action choice probability) for the discrete action setup.
+        Calculate the behavior policy pscore (action choice probability) in the case of discrete action spaces.
 
     _calc_behavior_policy_pscore_continuous:
-        Calculate behavior policy pscore (action choice probability) for the continuous action setup.
+        Calculate the behavior policy pscore (action choice probability) in the case of continuous action spaces.
 
     _calc_evaluation_policy_pscore_discrete:
-        Calculate evaluation policy pscore (action choice probability) for the discrete action setup.
+        Calculate the evaluation policy pscore (action choice probability) in the case of discrete action spaces.
 
     _calc_similarity_weight:
-        Calculate similarity weight (for continuous action case) for the continuous action setup.
+        Calculate the similarity weight (for continuous action case) in the case of continuous action spaces.
 
     *property* _estimate_confidence_interval:
         Dictionary containing names and functions of ci methods.
@@ -69,7 +69,7 @@ class BaseOffPolicyEstimator(metaclass=ABCMeta):
 
     @abstractmethod
     def estimate_interval(self) -> Dict[str, float]:
-        """Estimate the confidence intervals of the policy value."""
+        """Estimate the confidence interval of the policy value."""
         raise NotImplementedError
 
     @property
@@ -88,7 +88,7 @@ class BaseOffPolicyEstimator(metaclass=ABCMeta):
         pscore: np.ndarray,
         pscore_type: str,
     ):
-        """Calculate behavior policy pscore (action choice probability).
+        """Calculate the behavior policy pscore (action choice probability).
 
         Parameters
         -------
@@ -131,7 +131,7 @@ class BaseOffPolicyEstimator(metaclass=ABCMeta):
         pscore: np.ndarray,
         pscore_type: str,
     ):
-        """Calculate behavior policy pscore (action choice probability).
+        """Calculate the behavior policy pscore (action choice probability).
 
         Parameters
         -------
@@ -179,7 +179,7 @@ class BaseOffPolicyEstimator(metaclass=ABCMeta):
         evaluation_policy_action_dist: np.ndarray,
         pscore_type: str,
     ):
-        """Calculate evaluation policy pscore (action choice probability).
+        """Calculate the evaluation policy pscore (action choice probability).
 
         Parameters
         -------
@@ -229,7 +229,7 @@ class BaseOffPolicyEstimator(metaclass=ABCMeta):
         sigma: float = 1.0,
         action_scaler: Optional[ActionScaler] = None,
     ):
-        """Calculate similarity weight.
+        """Calculate the similarity weight.
 
         Parameters
         -------
@@ -246,7 +246,7 @@ class BaseOffPolicyEstimator(metaclass=ABCMeta):
             Indicates wether to return trajectory-wise pscore or step-wise pscore.
 
         sigma: float, default=1.0
-            Bandwidth hyperparameter of gaussian kernel.
+            Bandwidth hyperparameter of the Gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -254,11 +254,11 @@ class BaseOffPolicyEstimator(metaclass=ABCMeta):
         Return
         -------
         trajectory_wise_similarity_weight: ndarray of shape (n_trajectories, step_per_trajectory)
-            Trajectory-wise similarity weight between the action chosen by behavior policy and that of evaluation policy,
+            Trajectory-wise similarity weight between the action chosen by the behavior policy and that chosen by the evaluation policy,
             i.e., :math:`\\prod_{t'=0}^{T-1} K(\\pi(s_t), a_t)` where :math:`K(\\cdot, \\cdot)` is a kernel function.
 
         step_wise_similarity_weight: ndarray of shape (n_trajectories, step_per_trajectory)
-            Step-wise similarity weight between the action chosen by behavior policy and that of evaluation policy,
+            Step-wise similarity weight between the action chosen by the behavior policy and that chosen by the evaluation policy,
             i.e., :math:`\\prod_{t'=0}^t K(\\pi(s_t), a_t)` where :math:`K(\\cdot, \\cdot)` is a kernel function.
 
         """
@@ -300,19 +300,19 @@ class BaseMarginalOPEEstimator(BaseOffPolicyEstimator):
         Estimate the trajectory-wise expected reward.
 
     _calc_behavior_policy_pscore_discrete:
-        Calculate behavior policy pscore (action choice probability) for the discrete action setup.
+        Calculate the behavior policy pscore (action choice probability) in the case of discrete action spaces.
 
     _calc_behavior_policy_pscore_continuous:
-        Calculate behavior policy pscore (action choice probability) for the continuous action setup.
+        Calculate the behavior policy pscore (action choice probability) in the case of continuous action spaces.
 
     _calc_evaluation_policy_pscore_discrete:
-        Calculate evaluation policy pscore (action choice probability) for the discrete action setup.
+        Calculate the evaluation policy pscore (action choice probability) in the case of discrete action spaces.
 
     _calc_similarity_weight:
-        Calculate similarity weight (for continuous action case) for the continuous action setup.
+        Calculate the similarity weight (for continuous action case) in the case of continuous action spaces.
 
     _calc_marginal_importance_weight(self):
-        Calculate marginal importance weight.
+        Calculate the marginal importance weight.
         (Specified either in :class:`BaseStateMarginalOffPolicyEstimator` or :class:`BaseStateActionMarginalOffPolicyEstimator`)
 
     *property* _estimate_confidence_interval:
@@ -335,12 +335,12 @@ class BaseMarginalOPEEstimator(BaseOffPolicyEstimator):
         step_per_trajectory: int,
         pscore: np.ndarray,
     ):
-        """Calculate behavior policy pscore (action choice probability).
+        """Calculate the behavior policy pscore (action choice probability).
 
         Parameters
         -------
         n_step_pdis: int (> 0)
-            Number of previous steps to use per-decision importance weight.
+            Number of previous steps considered when defining the step-wise importance weight.
 
         step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
@@ -372,12 +372,12 @@ class BaseMarginalOPEEstimator(BaseOffPolicyEstimator):
         step_per_trajectory: int,
         pscore: np.ndarray,
     ):
-        """Calculate behavior policy pscore (action choice probability).
+        """Calculate the behavior policy pscore (action choice probability).
 
         Parameters
         -------
         n_step_pdis: int (> 0)
-            Number of previous steps to use per-decision importance weight.
+            Number of previous steps considered when defining the step-wise importance weight.
 
         step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
@@ -411,12 +411,12 @@ class BaseMarginalOPEEstimator(BaseOffPolicyEstimator):
         action: np.ndarray,
         evaluation_policy_action_dist: np.ndarray,
     ):
-        """Calculate evaluation policy pscore (action choice probability).
+        """Calculate the evaluation policy pscore (action choice probability).
 
         Parameters
         -------
         n_step_pdis: int (> 0)
-            Number of previous steps to use per-decision importance weight.
+            Number of previous steps considered when defining the step-wise importance weight.
 
         step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
@@ -458,12 +458,12 @@ class BaseMarginalOPEEstimator(BaseOffPolicyEstimator):
         sigma: float = 1.0,
         action_scaler: Optional[ActionScaler] = None,
     ):
-        """Calculate similarity weight.
+        """Calculate the similarity weight.
 
         Parameters
         -------
         n_step_pdis: int (> 0)
-            Number of previous steps to use per-decision importance weight.
+            Number of previous steps considered when defining the step-wise importance weight.
 
         step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
@@ -475,7 +475,7 @@ class BaseMarginalOPEEstimator(BaseOffPolicyEstimator):
             Action chosen by the evaluation policy.
 
         sigma: float, default=1.0
-            Bandwidth hyperparameter of gaussian kernel.
+            Bandwidth hyperparameter of the Gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -483,7 +483,7 @@ class BaseMarginalOPEEstimator(BaseOffPolicyEstimator):
         Return
         -------
         similarity_weight: ndarray of shape (n_trajectories, step_per_trajectory)
-            Similarity weight between the action chosen by behavior policy and that of evaluation policy,
+            Similarity weight between the action chosen by the behavior policy and that chosen by the evaluation policy,
             i.e., :math:`\\prod_{t'=0}^t K(\\pi(s_t), a_t)` where :math:`K(\\cdot, \\cdot)` is a kernel function.
             (adjusted by n_step_pdis)
 
@@ -510,7 +510,7 @@ class BaseMarginalOPEEstimator(BaseOffPolicyEstimator):
         return n_step_similarity_weight
 
     def _calc_marginal_importance_weight(self):
-        """Calculate marginal importance weight."""
+        """Calculate the marginal importance weight."""
         raise NotImplementedError
 
 
@@ -530,19 +530,19 @@ class BaseStateMarginalOPEEstimator(BaseMarginalOPEEstimator):
         Estimate the trajectory-wise expected reward.
 
     _calc_behavior_policy_pscore_discrete:
-        Calculate behavior policy pscore (action choice probability) for the discrete action setup.
+        Calculate the behavior policy pscore (action choice probability) in the case of discrete action spaces.
 
     _calc_behavior_policy_pscore_continuous:
-        Calculate behavior policy pscore (action choice probability) for the continuous action setup.
+        Calculate the behavior policy pscore (action choice probability) in the case of continuous action spaces.
 
     _calc_evaluation_policy_pscore_discrete:
-        Calculate evaluation policy pscore (action choice probability) for the discrete action setup.
+        Calculate the evaluation policy pscore (action choice probability) in the case of discrete action spaces.
 
     _calc_similarity_weight:
-        Calculate similarity weight (for continuous action case) for the continuous action setup.
+        Calculate the similarity weight (for continuous action case) in the case of continuous action spaces.
 
     _calc_marginal_importance_weight(self):
-        Calculate marginal importance weight.
+        Calculate the marginal importance weight.
 
     *property* _estimate_confidence_interval:
         Dictionary containing names and functions of ci methods.
@@ -564,18 +564,18 @@ class BaseStateMarginalOPEEstimator(BaseMarginalOPEEstimator):
         step_per_trajectory: int,
         state_marginal_importance_weight: np.ndarray,
     ):
-        """Calculate marginal importance weight.
+        """Calculate the marginal importance weight.
 
         Parameters
         -------
         n_step_pdis: int (> 0)
-            Number of previous steps to use per-decision importance weight.
+            Number of previous steps considered when defining the step-wise importance weight.
 
         step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
 
         state_marginal_importance_weight: array-like of shape (n_trajectories * step_per_trajectory, )
-            Marginal importance weight of the state, i.e., :math:`d_{\\pi}(s) / d_{\\pi_0}(s)`
+            Importance weight wrt the state marginal distribution, i.e., :math:`d_{\\pi}(s) / d_{\\pi_b}(s)`
 
         Return
         -------
@@ -610,19 +610,19 @@ class BaseStateActionMarginalOPEEstimator(BaseMarginalOPEEstimator):
         Estimate the trajectory-wise expected reward.
 
     _calc_behavior_policy_pscore_discrete:
-        Calculate behavior policy pscore (action choice probability) for the discrete action setup.
+        Calculate the behavior policy pscore (action choice probability) in the case of discrete action spaces.
 
     _calc_behavior_policy_pscore_continuous:
-        Calculate behavior policy pscore (action choice probability) for the continuous action setup.
+        Calculate the behavior policy pscore (action choice probability) in the case of continuous action spaces.
 
     _calc_evaluation_policy_pscore_discrete:
-        Calculate evaluation policy pscore (action choice probability) for the discrete action setup.
+        Calculate the evaluation policy pscore (action choice probability) in the case of discrete action spaces.
 
     _calc_similarity_weight:
-        Calculate similarity weight (for continuous action case) for the continuous action setup.
+        Calculate the similarity weight (for continuous action case) in the case of continuous action spaces.
 
     _calc_marginal_importance_weight(self):
-        Calculate marginal importance weight.
+        Calculate the marginal importance weight.
 
     *property* _estimate_confidence_interval:
         Dictionary containing names and functions of ci methods.
@@ -644,18 +644,18 @@ class BaseStateActionMarginalOPEEstimator(BaseMarginalOPEEstimator):
         step_per_trajectory: int,
         state_action_marginal_importance_weight: np.ndarray,
     ):
-        """Calculate marginal importance weight.
+        """Calculate the marginal importance weight.
 
         Parameters
         -------
         n_step_pdis: int (> 0)
-            Number of previous steps to use per-decision importance weight.
+            Number of previous steps considered when defining the step-wise importance weight.
 
         step_per_trajectory: int (> 0)
             Number of timesteps in an episode.
 
         state_action_marginal_importance_weight: array-like of shape (n_trajectories * step_per_trajectory, )
-            Marginal importance weight of the state-action pair, i.e., :math:`d_{\\pi}(s, a) / d_{\\pi_0}(s, a)`
+            Importance weight wrt the state-action marginal distribution, i.e., :math:`d_{\\pi}(s, a) / d_{\\pi_b}(s, a)`
 
         Return
         -------
@@ -685,13 +685,13 @@ class BaseCumulativeDistributionOPEEstimator(metaclass=ABCMeta):
     This abstract base class also implements the following private methods.
 
     _aggregate_trajectory_wise_statistics_discrete:
-        Aggregate step-wise observations into trajectory wise statistics for the discrete action setup.
+        Calculate trajectory-wise summary statistics based on step-wise observations in the case of discrete action spaces.
 
     _aggregate_trajectory_wise_statistics_continuous:
-        Aggregate step-wise observations into trajectory wise statistics for the continuous action setup.
+        Calculate trajectory-wise summary statistics based on step-wise observations in the case of continuous action spaces.
 
     _target_value_given_idx:
-        Obtain target value in reward scale for cumulative distribution estimation.
+        Obtain the reward value corresponding to the given idx when estimating the CDF.
 
     """
 
@@ -702,28 +702,28 @@ class BaseCumulativeDistributionOPEEstimator(metaclass=ABCMeta):
 
     @abstractmethod
     def estimate_mean(self) -> float:
-        """Estimate the mean of the policy value."""
+        """Estimate the mean of the reward under the evaluation policy."""
         raise NotImplementedError
 
     @abstractmethod
     def estimate_variance(self) -> float:
-        """Estimate the variance of the policy value."""
+        """Estimate the variance of the reward under the evaluation policy."""
         raise NotImplementedError
 
     @abstractmethod
     def estimate_conditional_value_at_risk(self) -> float:
-        """Estimate the conditional value at risk (CVaR) of the policy value."""
+        """Estimate the conditional value at risk (CVaR) of the reward under the evaluation policy."""
         raise NotImplementedError
 
     @abstractmethod
     def estimate_interquartile_range(self) -> Dict[str, float]:
-        """Estimate the interquartile range of the policy value."""
+        """Estimate the interquartile range of the reward under the evaluation policy."""
         raise NotImplementedError
 
     def _target_value_given_idx(
         self, idx_: Union[List[int], int], reward_scale: np.ndarray
     ):
-        """Obtain target value in reward scale for cumulative distribution estimation.
+        """Obtain the reward value corresponding to the given idx when estimating the CDF.
 
         Parameters
         -------
@@ -731,7 +731,7 @@ class BaseCumulativeDistributionOPEEstimator(metaclass=ABCMeta):
             Indicating index. When list is given, the average of the two will be returned.
 
         reward_scale: array-like of shape (n_partition, )
-            Scale of the trajectory wise reward used for x-axis of CDF curve.
+            Scale of the trajectory-wise reward used for x-axis of the CDF plot.
 
         Return
         -------
@@ -756,7 +756,7 @@ class BaseCumulativeDistributionOPEEstimator(metaclass=ABCMeta):
         state_action_value_prediction: Optional[np.ndarray] = None,
         gamma: float = 1.0,
     ):
-        """Aggregate step-wise observations into trajectory wise statistics for the discrete action setup.
+        """Calculate trajectory-wise summary statistics based on step-wise observations in the case of discrete action spaces.
 
         Parameters
         -------
@@ -767,7 +767,7 @@ class BaseCumulativeDistributionOPEEstimator(metaclass=ABCMeta):
             Action chosen by the behavior policy.
 
         reward: ndarray of shape (n_trajectories * step_per_trajectory, )
-            Reward observation.
+            Observed immediate rewards.
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
@@ -778,8 +778,7 @@ class BaseCumulativeDistributionOPEEstimator(metaclass=ABCMeta):
             i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
 
         state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, n_action)
-            :math:`\\hat{Q}` for all action,
-            i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
+            :math:`\\hat{Q}` for all actions, i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
 
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
@@ -787,10 +786,10 @@ class BaseCumulativeDistributionOPEEstimator(metaclass=ABCMeta):
         Return
         -------
         trajectory_wise_reward: ndarray of shape (n_trajectories, )
-            Trajectory wise reward observed under the behavior policy.
+            Trajectory-wise reward observed under the behavior policy.
 
         trajectory_wise_importance_weight: ndarray of shape (n_trajectories, )
-            Trajectory wise importance weight.
+            Trajectory-wise importance weight.
 
         initial_state_value_prediction: ndarray of shape (n_trajectories, )
             Estimated initial state value.
@@ -853,7 +852,7 @@ class BaseCumulativeDistributionOPEEstimator(metaclass=ABCMeta):
         sigma: float = 1.0,
         action_scaler: Optional[ActionScaler] = None,
     ):
-        """Aggregate step-wise observations into trajectory wise statistics for the continuous action setup.
+        """Calculate trajectory-wise summary statistics based on step-wise observations in the case of continuous action spaces.
 
         Parameters
         -------
@@ -864,7 +863,7 @@ class BaseCumulativeDistributionOPEEstimator(metaclass=ABCMeta):
             Action chosen by the behavior policy.
 
         reward: ndarray of shape (n_trajectories * step_per_trajectory, )
-            Reward observation.
+            Observed immediate rewards.
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Conditional action choice probability of the behavior policy,
@@ -874,14 +873,14 @@ class BaseCumulativeDistributionOPEEstimator(metaclass=ABCMeta):
             Action chosen by the evaluation policy.
 
         state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, 2)
-            :math:`\\hat{Q}` for the observed action and action chosen evaluation policy,
+            :math:`\\hat{Q}` for the observed action and that chosen by the evaluation policy,
             i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a \\mid s_t))`.
 
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
 
         sigma: float, default=1.0
-            Bandwidth hyperparameter of gaussian kernel.
+            Bandwidth hyperparameter of the Gaussian kernel.
 
         action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
             Scaling factor of action.
@@ -889,10 +888,10 @@ class BaseCumulativeDistributionOPEEstimator(metaclass=ABCMeta):
         Return
         -------
         trajectory_wise_reward: ndarray of shape (n_trajectories, )
-            Trajectory wise reward observed under the behavior policy.
+            Trajectory-wise reward observed under the behavior policy.
 
         trajectory_wise_importance_weight: ndarray of shape (n_trajectories, )
-            Trajectory wise importance weight.
+            Trajectory-wise importance weight.
 
         initial_state_value_prediction: ndarray of shape (n_trajectories, )
             Estimated initial state value.

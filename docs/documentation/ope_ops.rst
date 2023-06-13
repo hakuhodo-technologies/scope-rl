@@ -79,7 +79,7 @@ Then, we can derive various risk functions based on :math:`F(\cdot)` as follows.
 * :math:`\alpha`-quartile: :math:`Q^{\alpha}(F) := \min \{ G \mid F(G) \leq \alpha \}`
 * Conditional Value at Risk (CVaR): :math:`\int_{G} G \, \mathbb{I}\{ G \leq Q^{\alpha}(F) \} \, \mathrm{d}F(G)`
 
-where we let :math:`G := \sum_{t=0}^{T-1} \gamma^t r_t` to represent the random variable of trajectory wise reward
+where we let :math:`G := \sum_{t=0}^{T-1} \gamma^t r_t` to represent the random variable of trajectory-wise reward
 and :math:`dF(G) := \mathrm{lim}_{\Delta \rightarrow 0} F(G) - F(G- \Delta)`.
 
 We also discuss the properties of various cumulative distribution OPE estimators together with their implementaion details in :doc:`Supported OPE estimators <evaluation_implementation>`.

@@ -14,7 +14,7 @@ from ..utils import check_array
 
 @dataclass
 class DiscreteDirectMethod(BaseOffPolicyEstimator):
-    """Direct Method (DM) for discrete-action OPE.
+    """Direct Method (DM) for discrete action spaces.
 
     Bases: :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
@@ -22,7 +22,7 @@ class DiscreteDirectMethod(BaseOffPolicyEstimator):
 
     Note
     -------
-    DM estimates the policy value using the initial state value as follows.
+    DM estimates the policy value using an estimated initial state value as follows.
 
     .. math::
 
@@ -30,13 +30,13 @@ class DiscreteDirectMethod(BaseOffPolicyEstimator):
         := \\mathbb{E}_n [\\mathbb{E}_{a_0 \\sim \\pi(a_0 | s_0)} [\\hat{Q}(s_0, a_0)] ]
         = \\mathbb{E}_n [\\hat{V}(s_0)],
 
-    where :math:`\\mathcal{D}=\\{\\{(s_t, a_t, r_t)\\}_{t=0}^{T-1}\\}_{i=1}^n` is the logged dataset with :math:`n` trajectories of data.
+    where :math:`\\mathcal{D}=\\{\\{(s_t, a_t, r_t)\\}_{t=0}^{T-1}\\}_{i=1}^n` is the logged dataset with :math:`n` trajectories.
     :math:`T` indicates step per episode. :math:`\\hat{Q}(s_t, a_t)` is the estimated Q value given a state-action pair.
     :math:`\\hat{V}(s_t)` is the estimated value function given a state.
 
-    DM has low variance, but can incur bias due to approximation errors.
+    DM has low variance compared to other estimators, but can produce larger bias due to approximation errors.
 
-    There are several ways to estimate :math:`\\hat{Q}(s, a)` such as Fitted Q Evaluation (FQE) (Le et al., 2019) and
+    There are several methods to estimate :math:`\\hat{Q}(s, a)` such as Fitted Q Evaluation (FQE) (Le et al., 2019) and
     Minimax Q-Function Learning (MQL) (Uehara et al., 2020).
 
     .. seealso::
@@ -83,13 +83,12 @@ class DiscreteDirectMethod(BaseOffPolicyEstimator):
             i.e., :math:`\\pi(a | s_t) \\forall a \\in \\mathcal{A}`
 
         state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, n_action)
-            :math:`\\hat{Q}` for all action,
-            i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
+            :math:`\\hat{Q}` for all actions, i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
 
         Return
         -------
         estimated_trajectory_wise_policy_value: ndarray of shape (n_trajectories, )
-            Policy value estimated for each trajectory.
+            Policy value (expected reward under the evaluation policy) estimated for each trajectory.
 
         """
         state_value = (
@@ -118,8 +117,7 @@ class DiscreteDirectMethod(BaseOffPolicyEstimator):
             i.e., :math:`\\pi(a | s_t) \\forall a \\in \\mathcal{A}`
 
         state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, n_action)
-            :math:`\\hat{Q}` for all action,
-            i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
+            :math:`\\hat{Q}` for all actions, i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
 
         Return
         -------
@@ -204,14 +202,13 @@ class DiscreteDirectMethod(BaseOffPolicyEstimator):
             i.e., :math:`\\pi(a | s_t) \\forall a \\in \\mathcal{A}`
 
         state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, n_action)
-            :math:`\\hat{Q}` for all action,
-            i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
+            :math:`\\hat{Q}` for all actions, i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
 
         alpha: float, default=0.05
             Significance level. The value should be within `[0, 1)`.
 
         ci: {"bootstrap", "hoeffding", "bernstein", "ttest"}, default="bootstrap"
-            Estimation method for confidence interval.
+            Method to estimate the confidence interval.
 
         n_bootstrap_samples: int, default=10000 (> 0)
             Number of resampling performed in the bootstrap procedure.
@@ -299,7 +296,7 @@ class DiscreteDirectMethod(BaseOffPolicyEstimator):
 
 @dataclass
 class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
-    """Trajectory-wise Important Sampling (TIS) for discrete-action OPE.
+    """Trajectory-wise Important Sampling (TIS) for discrete action spaces.
 
     Bases: :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
@@ -307,7 +304,7 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 
     Note
     -------
-    TIS estimates the policy value via trajectory-wise importance weight as follows.
+    TIS estimates the policy value via trajectory-wise importance weighting as follows.
 
     .. math::
 
@@ -316,7 +313,7 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
     where :math:`w_{0:T-1} := \\prod_{t=0}^{T-1} (\\pi(a_t | s_t) / \\pi_0(a_t | s_t))` is the trajectory-wise importance weight.
 
     TIS enables an unbiased estimation of the policy value. However, when the trajectory length (:math:`T`) is large,
-    TIS suffers from high variance due to the product of importance weights.
+    TIS suffers from high variance due to the product of importance weights over the entire horizon.
 
     Parameters
     -------
@@ -356,11 +353,11 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
-            Reward observation.
+            Observed immediate rewards.
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a | s)`
+            i.e., :math:`\\pi_b(a | s)`
 
         evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
             Conditional action distribution induced by the evaluation policy,
@@ -372,7 +369,7 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
         Return
         -------
         estimated_trajectory_wise_policy_value: ndarray of shape (n_trajectories, )
-            Policy value estimated for each trajectory.
+            Policy value (expected reward under the evaluation policy) estimated for each trajectory.
 
         """
         behavior_policy_pscore = self._calc_behavior_policy_pscore_discrete(
@@ -417,11 +414,11 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
-            Reward observation.
+            Observed immediate rewards.
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a | s)`
+            i.e., :math:`\\pi_b(a | s)`
 
         evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
             Conditional action distribution induced by the evaluation policy,
@@ -527,11 +524,11 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
-            Reward observation.
+            Observed immediate rewards.
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a | s)`
+            i.e., :math:`\\pi_b(a | s)`
 
         evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
             Conditional action distribution induced by the evaluation policy,
@@ -544,7 +541,7 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
             Significance level. The value should be within `[0, 1)`.
 
         ci: {"bootstrap", "hoeffding", "bernstein", "ttest"}, default="bootstrap"
-            Estimation method for confidence interval.
+            Method to estimate the confidence interval.
 
         n_bootstrap_samples: int, default=10000 (> 0)
             Number of resampling performed in the bootstrap procedure.
@@ -645,7 +642,7 @@ class DiscreteTrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 
 @dataclass
 class DiscretePerDecisionImportanceSampling(BaseOffPolicyEstimator):
-    """Per-Decision Importance Sampling (PDIS) for discrete-action OPE.
+    """Per-Decision Importance Sampling (PDIS) for discrete action spaces.
 
     Bases: :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
@@ -659,11 +656,9 @@ class DiscretePerDecisionImportanceSampling(BaseOffPolicyEstimator):
 
         \\hat{J}_{\\mathrm{PDIS}} (\\pi; \\mathcal{D}) := \\mathbb{E}_{n} \\left[\\sum_{t=0}^{T-1} \\gamma^t w_{0:t} r_t \\right],
 
-    where :math:`w_{0:t} := \\prod_{t'=0}^t (\\pi(a_{t'} | s_{t'}) / \\pi_0(a_{t'} | s_{t'}))` is the importance weight of past interactions
-    (referred to as per-decision importance weight).
+    where :math:`w_{0:t} := \\prod_{t'=0}^t (\\pi(a_{t'} | s_{t'}) / \\pi_0(a_{t'} | s_{t'}))` is the importance weight for each time step wrt the previous actions (referred to as the per-decision or step-wise importance weight).
 
-    By using per-decision importance weight instead of the trajectory-wise importance weight, PDIS reduces the variance of TIS while remaining unbiased.
-    However, when the length of a trajectory (:math:`T`) is large, PDIS still suffers from high variance.
+    By using per-decision importance weighting instead of trajectory-wise importance weighting of TIS, PDIS has lower variance than TIS while remaining unbiased. However, when the trajectory length (:math:`T`) is large, PDIS still suffers from high variance.
 
     Parameters
     -------
@@ -703,11 +698,11 @@ class DiscretePerDecisionImportanceSampling(BaseOffPolicyEstimator):
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
-            Reward observation.
+            Observed immediate rewards.
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a | s)`
+            i.e., :math:`\\pi_b(a | s)`
 
         evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
             Conditional action distribution induced by the evaluation policy,
@@ -719,7 +714,7 @@ class DiscretePerDecisionImportanceSampling(BaseOffPolicyEstimator):
         Return
         -------
         estimated_trajectory_wise_policy_value: ndarray of shape (n_trajectories, )
-            Policy value estimated for each trajectory.
+            Policy value (expected reward under the evaluation policy) estimated for each trajectory.
 
         """
         behavior_policy_pscore = self._calc_behavior_policy_pscore_discrete(
@@ -764,11 +759,11 @@ class DiscretePerDecisionImportanceSampling(BaseOffPolicyEstimator):
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
-            Reward observation.
+            Observed immediate rewards.
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a | s)`
+            i.e., :math:`\\pi_b(a | s)`
 
         evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
             Conditional action distribution induced by the evaluation policy,
@@ -873,11 +868,11 @@ class DiscretePerDecisionImportanceSampling(BaseOffPolicyEstimator):
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
-            Reward observation.
+            Observed immediate rewards.
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a | s)`
+            i.e., :math:`\\pi_b(a | s)`
 
         evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
             Conditional action distribution induced by the evaluation policy,
@@ -890,7 +885,7 @@ class DiscretePerDecisionImportanceSampling(BaseOffPolicyEstimator):
             Significance level. The value should be within `[0, 1)`.
 
         ci: {"bootstrap", "hoeffding", "bernstein", "ttest"}, default="bootstrap"
-            Estimation method for confidence interval.
+            Method to estimate the confidence interval.
 
         n_bootstrap_samples: int, default=10000 (> 0)
             Number of resampling performed in the bootstrap procedure.
@@ -991,7 +986,7 @@ class DiscretePerDecisionImportanceSampling(BaseOffPolicyEstimator):
 
 @dataclass
 class DiscreteDoublyRobust(BaseOffPolicyEstimator):
-    """Doubly Robust (DR) for discrete-action OPE.
+    """Doubly Robust (DR) for discrete action spaces.
 
     Bases: :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
@@ -999,7 +994,7 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
 
     Note
     -------
-    DR estimates the policy value via step-wise importance weighting and :math:`\\hat{Q}` as follows.
+    DR estimates the policy value via step-wise importance weighting and estimated Q-function :math:`\\hat{Q}` as follows.
 
     .. math::
 
@@ -1008,7 +1003,7 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
 
     where :math:`w_{0:t} := \\prod_{t'=0}^t (\\pi(a_{t'} | s_{t'}) / \\pi_0(a_{t'} | s_{t'}))` is the per-decision importance weight.
 
-    DR is unbiased and reduces the variance of PDIS when :math:`\\hat{Q}(\\cdot)` is reasonably accurate to satisfy :math:`0 < \\hat{Q}(\\cdot) < 2 Q(\\cdot)`.
+    DR is unbiased and has lower variance than PDIS when :math:`\\hat{Q}(\\cdot)` is reasonably accurate and satisfies :math:`0 < \\hat{Q}(\\cdot) < 2 Q(\\cdot)`.
     However, when the importance weight is quite large, it may still suffer from a high variance.
 
     Parameters
@@ -1053,19 +1048,18 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
-            Reward observation.
+            Observed immediate rewards.
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a | s)`
+            i.e., :math:`\\pi_b(a | s)`
 
         evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
             Conditional action distribution induced by the evaluation policy,
             i.e., :math:`\\pi(a | s_t) \\forall a \\in \\mathcal{A}`
 
         state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, n_action)
-            :math:`\\hat{Q}` for all action,
-            i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
+            :math:`\\hat{Q}` for all actions, i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
 
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
@@ -1073,7 +1067,7 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
         Return
         -------
         estimated_trajectory_wise_policy_value: ndarray of shape (n_trajectories, )
-            Policy value estimated for each trajectory.
+            Policy value (expected reward under the evaluation policy) estimated for each trajectory.
 
         """
         behavior_policy_pscore = self._calc_behavior_policy_pscore_discrete(
@@ -1136,19 +1130,18 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
-            Reward observation.
+            Observed immediate rewards.
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a | s)`
+            i.e., :math:`\\pi_b(a | s)`
 
         evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
             Conditional action distribution induced by the evaluation policy,
             i.e., :math:`\\pi(a | s_t) \\forall a \\in \\mathcal{A}`
 
         state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, n_action)
-            :math:`\\hat{Q}` for all action,
-            i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
+            :math:`\\hat{Q}` for all actions, i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
 
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
@@ -1266,19 +1259,18 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
-            Reward observation.
+            Observed immediate rewards.
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a | s)`
+            i.e., :math:`\\pi_b(a | s)`
 
         evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
             Conditional action distribution induced by the evaluation policy,
             i.e., :math:`\\pi(a | s_t) \\forall a \\in \\mathcal{A}`
 
         state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, n_action)
-            :math:`\\hat{Q}` for all action,
-            i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
+            :math:`\\hat{Q}` for all actions, i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
 
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
@@ -1287,7 +1279,7 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
             Significance level. The value should be within `[0, 1)`.
 
         ci: {"bootstrap", "hoeffding", "bernstein", "ttest"}, default="bootstrap"
-            Estimation method for confidence interval.
+            Method to estimate the confidence interval.
 
         n_bootstrap_samples: int, default=10000 (> 0)
             Number of resampling performed in the bootstrap procedure.
@@ -1404,7 +1396,7 @@ class DiscreteDoublyRobust(BaseOffPolicyEstimator):
 
 @dataclass
 class DiscreteSelfNormalizedTIS(DiscreteTrajectoryWiseImportanceSampling):
-    """Self-Normalized Trajectory-wise Important Sampling (SNTIS) for discrete-action OPE.
+    """Self-Normalized Trajectory-wise Important Sampling (SNTIS) for discrete action spaces.
 
     Bases: :class:`scope_rl.ope.DiscreteTrajectoryWiseImportanceSampling` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
@@ -1412,7 +1404,7 @@ class DiscreteSelfNormalizedTIS(DiscreteTrajectoryWiseImportanceSampling):
 
     Note
     -------
-    SNTIS estimates the policy value via self-normalized trajectory-wise importance weight as follows.
+    SNTIS estimates the policy value via self-normalized trajectory-wise importance weighting as follows.
 
     .. math::
 
@@ -1421,7 +1413,7 @@ class DiscreteSelfNormalizedTIS(DiscreteTrajectoryWiseImportanceSampling):
 
     where :math:`w_{0:T-1} := \\prod_{t=0}^{T-1} (\\pi(a_t | s_t) / \\pi_0(a_t | s_t))` is the trajectory-wise importance weight.
 
-    The self-normalized estimator is no longer unbiased, but has variance bounded by :math:`r_{max}^2` while also being consistent.
+    The self-normalized estimator is no longer unbiased, but has variance bounded by :math:`r_{max}^2` while also remaining consistent.
 
     Parameters
     -------
@@ -1467,11 +1459,11 @@ class DiscreteSelfNormalizedTIS(DiscreteTrajectoryWiseImportanceSampling):
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
-            Reward observation.
+            Observed immediate rewards.
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a | s)`
+            i.e., :math:`\\pi_b(a | s)`
 
         evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
             Conditional action distribution induced by the evaluation policy,
@@ -1483,7 +1475,7 @@ class DiscreteSelfNormalizedTIS(DiscreteTrajectoryWiseImportanceSampling):
         Return
         -------
         estimated_trajectory_wise_policy_value: ndarray of shape (n_trajectories, )
-            Policy value estimated for each trajectory.
+            Policy value (expected reward under the evaluation policy) estimated for each trajectory.
 
         """
         behavior_policy_pscore = self._calc_behavior_policy_pscore_discrete(
@@ -1511,7 +1503,7 @@ class DiscreteSelfNormalizedTIS(DiscreteTrajectoryWiseImportanceSampling):
 
 @dataclass
 class DiscreteSelfNormalizedPDIS(DiscretePerDecisionImportanceSampling):
-    """Self-Normalized Per-Decision Importance Sampling (SNPDIS) for discrete-action OPE.
+    """Self-Normalized Per-Decision Importance Sampling (SNPDIS) for discrete action spaces.
 
     Bases: :class:`scope_rl.ope.DiscretePerDecisionImportanceSampling` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
@@ -1528,7 +1520,7 @@ class DiscreteSelfNormalizedPDIS(DiscretePerDecisionImportanceSampling):
 
     where :math:`w_{0:t} := \\prod_{t'=1}^t (\\pi(a_{t'} | s_{t'}) / \\pi_0(a_{t'} | s_{t'}))` is the per-decision importance weight.
 
-    The self-normalized estimator is no longer unbiased, but has variance bounded by :math:`r_{max}^2` while also being consistent.
+    The self-normalized estimator is no longer unbiased, but has variance bounded by :math:`r_{max}^2` while also remaining consistent.
 
     Parameters
     -------
@@ -1571,11 +1563,11 @@ class DiscreteSelfNormalizedPDIS(DiscretePerDecisionImportanceSampling):
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
-            Reward observation.
+            Observed immediate rewards.
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a | s)`
+            i.e., :math:`\\pi_b(a | s)`
 
         evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
             Conditional action distribution induced by the evaluation policy,
@@ -1587,7 +1579,7 @@ class DiscreteSelfNormalizedPDIS(DiscretePerDecisionImportanceSampling):
         Return
         -------
         estimated_trajectory_wise_policy_value: ndarray of shape (n_trajectories, )
-            Policy value estimated for each trajectory.
+            Policy value (expected reward under the evaluation policy) estimated for each trajectory.
 
         """
         behavior_policy_pscore = self._calc_behavior_policy_pscore_discrete(
@@ -1615,7 +1607,7 @@ class DiscreteSelfNormalizedPDIS(DiscretePerDecisionImportanceSampling):
 
 @dataclass
 class DiscreteSelfNormalizedDR(DiscreteDoublyRobust):
-    """Self-Normalized Doubly Robust (SNDR) for discrete-action OPE.
+    """Self-Normalized Doubly Robust (SNDR) for discrete action spaces.
 
     Bases: :class:`scope_rl.ope.DiscreteDoublyRobust` -> :class:`scope_rl.ope.BaseOffPolicyEstimator`
 
@@ -1623,7 +1615,7 @@ class DiscreteSelfNormalizedDR(DiscreteDoublyRobust):
 
     Note
     -------
-    SNDR estimates the policy value via self-normalized step-wise importance weighting and :math:`\\hat{Q}` as follows.
+    SNDR estimates the policy value via self-normalized step-wise importance weighting and estimated Q-function :math:`\\hat{Q}` as follows.
 
     .. math::
 
@@ -1633,7 +1625,7 @@ class DiscreteSelfNormalizedDR(DiscreteDoublyRobust):
 
     where :math:`w_{0:t} := \\prod_{t'=0}^t (\\pi(a_{t'} | s_{t'}) / \\pi_0(a_{t'} | s_{t'}))` is the per-decision importance weight.
 
-    The self-normalized estimator is no longer unbiased, but has variance bounded by :math:`r_{max}^2` while also being consistent.
+    The self-normalized estimator is no longer unbiased, but has variance bounded by :math:`r_{max}^2` while also remaining consistent.
 
     Parameters
     -------
@@ -1680,19 +1672,18 @@ class DiscreteSelfNormalizedDR(DiscreteDoublyRobust):
             Action chosen by the behavior policy.
 
         reward: array-like of shape (n_trajectories * step_per_trajectory, )
-            Reward observation.
+            Observed immediate rewards.
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
-            i.e., :math:`\\pi_0(a | s)`
+            i.e., :math:`\\pi_b(a | s)`
 
         evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
             Conditional action distribution induced by the evaluation policy,
             i.e., :math:`\\pi(a | s_t) \\forall a \\in \\mathcal{A}`
 
         state_action_value_prediction: array-like of shape (n_trajectories * step_per_trajectory, n_action)
-            :math:`\\hat{Q}` for all action,
-            i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
+            :math:`\\hat{Q}` for all actions, i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
 
         gamma: float, default=1.0
             Discount factor. The value should be within (0, 1].
@@ -1700,7 +1691,7 @@ class DiscreteSelfNormalizedDR(DiscreteDoublyRobust):
         Return
         -------
         estimated_trajectory_wise_policy_value: ndarray of shape (n_trajectories, )
-            Policy value estimated for each trajectory.
+            Policy value (expected reward under the evaluation policy) estimated for each trajectory.
 
         """
         behavior_policy_pscore = self._calc_behavior_policy_pscore_discrete(

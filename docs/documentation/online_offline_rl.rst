@@ -9,11 +9,11 @@ We describe the problem setup and prevalent approaches of online/offline Reinfor
 Online Reinforcement Learning
 ~~~~~~~~~~
 We consider a general reinforcement learning setup, which is formalized by Markov Decision Process (MDP) as :math:`\langle \mathcal{S}, \mathcal{A}, \mathcal{T}, P_r, \gamma \rangle`.
-:math:`\mathcal{S}` is the state space and :math:`\mathcal{A}` is the action space, which is either discrete or continuous. 
-Let :math:`\mathcal{T}: \mathcal{S} \times \mathcal{A} \rightarrow \mathcal{P}(\mathcal{S})` is the state transition probability where :math:`\mathcal{T}(s' | s,a)` is the probability of observing state :math:`s'` after taking action :math:`a` given state :math:`s`. 
-:math:`P_r: \mathcal{S} \times \mathcal{A} \times \mathbb{R} \rightarrow [0,1]` is the probability distribution of the immediate reward. 
-Given :math:`P_r`, :math:`R: \mathcal{S} \times \mathcal{A} \rightarrow \mathbb{R}` is the expected reward function where :math:`R(s,a) := \mathbb{E}_{r \sim P_r (r | s, a)}[r]` is the expected reward when taking action :math:`a` for state :math:`s`. 
-We also let :math:`\gamma \in (0,1]` be a discount factor. Finally, :math:`\pi: \mathcal{S} \rightarrow \mathcal{P}(\mathcal{A})` denotes a *policy* where :math:`\pi(a| s)` is the probability of taking action :math:`a` at a given state :math:`s`. 
+:math:`\mathcal{S}` is the state space and :math:`\mathcal{A}` is the action space, which is either discrete or continuous.
+Let :math:`\mathcal{T}: \mathcal{S} \times \mathcal{A} \rightarrow \mathcal{P}(\mathcal{S})` is the state transition probability where :math:`\mathcal{T}(s' | s,a)` is the probability of observing state :math:`s'` after taking action :math:`a` given state :math:`s`.
+:math:`P_r: \mathcal{S} \times \mathcal{A} \times \mathbb{R} \rightarrow [0,1]` is the probability distribution of the immediate reward.
+Given :math:`P_r`, :math:`R: \mathcal{S} \times \mathcal{A} \rightarrow \mathbb{R}` is the expected reward function where :math:`R(s,a) := \mathbb{E}_{r \sim P_r (r | s, a)}[r]` is the expected reward when taking action :math:`a` for state :math:`s`.
+We also let :math:`\gamma \in (0,1]` be a discount factor. Finally, :math:`\pi: \mathcal{S} \rightarrow \mathcal{P}(\mathcal{A})` denotes a *policy* where :math:`\pi(a| s)` is the probability of taking action :math:`a` at a given state :math:`s`.
 Note that we also denote :math:`d_0` as the initial state distribution.
 
 .. card:: Markov Decision Process in Reinforcement Learning
@@ -32,7 +32,7 @@ The goal of RL is to maximize the following expected cumulative reward (i.e., po
 
     \max_{\pi \in \Pi} \, J(\pi) := \mathbb{E}_{\tau \sim p_{\pi}(\tau)} \left [ \sum_{t=0}^{T-1} \gamma^t r_t | \pi \right ]
 
-where :math:`\gamma` is a discount rate and :math:`\tau := (s_t, a_t, s_{t+1}, r_t)_{t=0}^{T-1}` is the trajectory of the policy which is sampled from 
+where :math:`\gamma` is a discount rate and :math:`\tau := (s_t, a_t, s_{t+1}, r_t)_{t=0}^{T-1}` is the trajectory of the policy which is sampled from
 :math:`p_{\pi}(\tau) := d_0(s_0) \prod_{t=0}^{T-1} \pi(a_t | s_t) \mathcal{T}(s_{t+1} | s_t, a_t) P_r(r_t | s_t, a_t)`.
 
 There are several approaches to maximize the policy value. Below, we review three basic methods, On-Policy Policy Gradient :cite:`kakade2001natural, silver2014deterministic`, 
@@ -46,7 +46,7 @@ One of the most naive approaches to maximize the policy value is to directly lea
 
     \theta_{k+1} \leftarrow \theta_{k} + \eta \nabla J(\pi_{\theta_k})
 
-where :math:`\theta` is a set of policy parameters and :math:`\eta` is a learning rate. 
+where :math:`\theta` is a set of policy parameters and :math:`\eta` is a learning rate.
 
 Here, we approximate the policy gradient :math:`J(\pi)` via on-policy estimation as follows.
 
@@ -56,7 +56,7 @@ Here, we approximate the policy gradient :math:`J(\pi)` via on-policy estimation
 
 where :math:`\mathbb{E}_n [\cdot]` takes empirical average over :math:`n` trajectories sampled from online interactions.
 
-The benefit of On-Policy Policy Gradient is to enable an unbiased estimation of the policy gradient. 
+The benefit of On-Policy Policy Gradient is to enable an unbiased estimation of the policy gradient.
 However, as the estimation needs :math:`n` trajectories every time the policy is updated from :math:`\pi_{k-1}` to :math:`\pi_{k}`, On-Policy Policy Gradient often suffers from *sample inefficiency* and its training process can sometimes be unstable.
 
 Q-Learning
@@ -92,16 +92,16 @@ Based on this Q-function, the greedy policy :math:`\pi_k` chooses actions as fol
 
 .. math::
 
-    \pi_k(a_t | s_t) := \mathbb{I} \{ a_t = {\arg \max}_{a \in \mathcal{A}}  \hat{Q}_k(s_t, a) \}, 
+    \pi_k(a_t | s_t) := \mathbb{I} \{ a_t = {\arg \max}_{a \in \mathcal{A}}  \hat{Q}_k(s_t, a) \},
 
-where :math:`\mathbb{I} \{ \cdot \}` is the indicator function. 
+where :math:`\mathbb{I} \{ \cdot \}` is the indicator function.
 
-Though Q-learning enhances sample efficiency compared to On-Policy Policy Gradient, 
-it is also known to suffer from approximation error when the *deadly triad* conditions -- bootstrapping (i.e., TD learning), function approximation, and off-policy -- are satisfied at once :cite:`van2018deep`. 
+Though Q-learning enhances sample efficiency compared to On-Policy Policy Gradient,
+it is also known to suffer from approximation error when the *deadly triad* conditions -- bootstrapping (i.e., TD learning), function approximation, and off-policy -- are satisfied at once :cite:`van2018deep`.
 As a result, :math:`\hat{Q}(\cdot)` may fail to estimate the true state-action value, potentially leading to a sub-optimal policy.
 
 To alleviate the estimation error of :math:`\hat{Q}(\cdot)`, we often use epsilon-greedy policy, which chooses actions randomly with probability :math:`\epsilon`.
-Such *exploration* helps improve the quality of :math:`\hat{Q}(\cdot)` by collecting additional data to fit Q-function to the state-action pairs that have not seen in the replay buffer. 
+Such *exploration* helps improve the quality of :math:`\hat{Q}(\cdot)` by collecting additional data to fit Q-function to the state-action pairs that have not seen in the replay buffer.
 
 Actor-Critic
 ----------
@@ -116,7 +116,7 @@ It first estimates the Q-function and then calculates the advantage of choosing 
 
     \theta_{k+1} \leftarrow \theta_{k} + \mathbb{E}_n \left[ \sum_{t=0}^{T-1} \nabla \log \pi_{\theta_k}(a_t | s_t) \gamma^t \hat{A}(s_t, a_t) \right]
 
-where :math:`\hat{A}(s_t, a_t) := \hat{Q}(s_t, a_t) - \mathbb{E}_{a \sim \pi_{\theta_k}(a_t | s_t)} \left[ \hat{Q}(s_t, a) \right]` 
+where :math:`\hat{A}(s_t, a_t) := \hat{Q}(s_t, a_t) - \mathbb{E}_{a \sim \pi_{\theta_k}(a_t | s_t)} \left[ \hat{Q}(s_t, a) \right]`
 and :math:`\pi_{\theta_k}(s_{t+1})` is an action sampled from :math:`\pi_{\theta_k}(\cdot)`.
 
 Compared to the (vanilla) On-policy Policy Gradient, Actor-Critic stabilizes the policy gradient and enhances sample efficiency by the use of :math:`\hat{Q}`.
@@ -139,28 +139,28 @@ Moreover, updating a policy in a online manner may also require huge implementat
 
     <div class="white-space-20px"></div>
 
-To overcome the above issue, offline RL aims to learn a new policy in an `offline` manner, leveraging the logged data collected by a past deployment policy. 
+To overcome the above issue, offline RL aims to learn a new policy in an `offline` manner, leveraging the logged data collected by a past deployment policy.
 Specifically, let us assume that we are accessible to the logged dataset :math:`\mathcal{D}` consisting of :math:`n` trajectories, each of which is generated by a behavior policy :math:`\pi_b` as follows.
 
 .. math::
 
     \tau := \{ (s_t, a_t, s_{t+1}, r_t) \}_{t=0}^{T-1} \sim p(s_0) \prod_{t=0}^{T-1} \pi_b(a_t | s_t) \mathcal{T}(s_{t+1} | s_t, a_t) P_r (r_t | s_t, a_t)
 
-A key ingredient here is that we can observe feedback only for the actions chosen by the behavior policy. 
-Therefore, when learning a new policy in an offline manner, we need to answer the counterfactual question, 
+A key ingredient here is that we can observe feedback only for the actions chosen by the behavior policy.
+Therefore, when learning a new policy in an offline manner, we need to answer the counterfactual question,
 
-.. card:: 
+.. card::
     :text-align: center
 
     *"What if a new policy chooses a different action from that of behavior policy?"*
 
-Further, the state and reward observations in the logged dataset are also biased since state transition and data collection heavily depend on the action chosen by the behavior policy. 
-Therefore, we need to tackle the `distributional shift` between the behavior policy and a new policy and deal with the out-of-distribution problem. 
+Further, the state and reward observations in the logged dataset are also biased since state transition and data collection heavily depend on the action chosen by the behavior policy.
+Therefore, we need to tackle the `distributional shift` between the behavior policy and a new policy and deal with the out-of-distribution problem.
 
 The problem of Extrapolation Error
 ----------
 Apparently, Q-learning seems to be compatible with the offline setting, as it uses large amount of data to learn Q-function.
-However, Q-function is known to suffer from `extrapolation error` :cite:`fujimoto2019off` 
+However, Q-function is known to suffer from `extrapolation error` :cite:`fujimoto2019off`
 due to the distribution shift and the deadly triad conditions (i.e., the combination of the bootstrapping, function approximation, and off-policy) :cite:`van2018deep`.
 
 To investigate why the extrapolation error arises, let us recall the following TD loss of the Q-learning.
@@ -169,7 +169,7 @@ To investigate why the extrapolation error arises, let us recall the following T
 
     \hat{\mathcal{L}}_{\mathrm{TD}}(\theta, \mathcal{D}) \propto \mathbb{E}_n \left[ \left( Q_{\theta}(s_t, a_t) - (r_t + \hat{Q}_{\mathrm{target}}(s_{t+1}, \pi(s_{t+1}))) \right)^2 \right]
 
-where :math:`Q_{\theta}` is the currently learning Q-function and :math:`\theta` is its parameters. 
+where :math:`Q_{\theta}` is the currently learning Q-function and :math:`\theta` is its parameters.
 :math:`\hat{Q}_{\mathrm{target}}` is the previous Q-function, which is used as the `target`. :math:`\pi` is the policy derived from :math:`\hat{Q}_{\mathrm{target}}`.
 
 One of the most problematic point here is that we have to calculate the TD loss using :math:`(s_t, a_t, r_t, s_{t+1}, a_{t+1}=\pi(s_{t+1}))`, while we are only accessible to :math:`(s_t, a_t, r_t, s_{t+1})` in the logged data.
@@ -197,8 +197,8 @@ For example, BRAC :cite:`wu2019behavior` regularizes the discrepancy between the
     \hat{\mathcal{L}}_{\mathrm{TD}}(\theta, \mathcal{D}) \propto \mathbb{E}_n \left[ \left( Q_{\theta}(s_t, a_t) - (r_t + \hat{Q}_{\mathrm{target}}(s_{t+1}, \pi(s_{t+1})) - \alpha D(\pi(\cdot | s_{t+1}), \pi_b(\cdot | s_{t+1}))) \right)^2 \right]
 
 where :math:`\alpha` is the weight of the divergence regularization and :math:`D(\cdot, \cdot)` is some divergence metrics such as KL-divergence or Wassertein distance.
-This method forces :math:`\hat{Q}_{\mathrm{target}}` to understimate the out-distribution actions by explicitly regularizing the distribution shift. 
-However, the divergence regularization may also limit the generalizability of the policy, as the penalty term keeps the learned policy too similar to the behavior policy even when the Q-function is adequately accurate (e.g., when the :math:`\pi_b` is uniform random or follows a multi-modal distribution). 
+This method forces :math:`\hat{Q}_{\mathrm{target}}` to understimate the out-distribution actions by explicitly regularizing the distribution shift.
+However, the divergence regularization may also limit the generalizability of the policy, as the penalty term keeps the learned policy too similar to the behavior policy even when the Q-function is adequately accurate (e.g., when the :math:`\pi_b` is uniform random or follows a multi-modal distribution).
 
 Similarly, we can regularize the distribution shift is by directly imitating :math:`\pi_b` in the policy optimization phase.
 For example, TD3+BC :cite:`fujimoto2021minimalist` imposes a strong behavior cloning regularization when the average Q-value is large.
@@ -215,7 +215,7 @@ where the first term facilitates value optimization (based on :math:`\hat{Q}`), 
 
 where :math:`\alpha` is the predefined hyperparameter.
 Intuitively, :math:`\lambda` becomes small when the average Q-value is large. Therefore, :math:`\pi` imitates :math:`\pi_b` more when :math:`\hat{Q}` tends to overestimate the Q-value and thus is unreliable.
-On the other hand, when :math:`\hat{Q}` estimates well and the average Q-value is not very large, :math:`\pi` simply maximizes :math:`\hat{Q}`. 
+On the other hand, when :math:`\hat{Q}` estimates well and the average Q-value is not very large, :math:`\pi` simply maximizes :math:`\hat{Q}`.
 
 Uncertainty Estimation
 ----------
@@ -253,11 +253,11 @@ To derive the conservative Q-function without explicitly quantifying the uncerta
     Q \leftarrow \max_{Q} \min_{\mu} \, & \alpha \left( \mathbb{E}_n \left[ Q(s_t, \mu(s_t)) - Q(s_t, \pi_b(s_t)) \right]  \right) \\
     & \quad \quad + \mathbb{E}_n \left[ \left( Q(s_t, a_t) - (r_t + \hat{Q}(s_{t+1}, \pi(s_{t+1}))) \right)^2 \right]
 
-where :math:`\alpha` is the hyperparameter to balance the loss function. 
-The first term aims to minimize the maximum Q-value of the policy :math:`\mu` to alleviate the overestimation while maximizing the Q-value of the behavior policy. 
-By adding this loss function, CQL effectively learn the Q-function under the state-action pairs supported by :math:`\pi_b`, while being conservative to the out-of-distribution action. 
-However, CQL is also known to be too conservative to generalize well. Many advanced algorithms including COMBO :cite:`yu2021combo` (, which exploits model-based data augmentation for OOD observations)
-have been developed to improve the generalizability of CQL. 
+where :math:`\alpha` is the hyperparameter to balance the loss function.
+The first term aims to minimize the maximum Q-value of the policy :math:`\mu` to alleviate the overestimation while maximizing the Q-value of the behavior policy.
+By adding this loss function, CQL effectively learn the Q-function under the state-action pairs supported by :math:`\pi_b`, while being conservative to the out-of-distribution action.
+However, CQL is also known to be too conservative to generalize well. Many advanced algorithms including COMBO :cite:`yu2021combo` (which exploits model-based data augmentation for OOD observations)
+have been developed to improve the generalizability of CQL.
 
 Implicit Q-Learning
 ----------
@@ -271,7 +271,7 @@ For this, IQL first estimates the state-value function (V-function) with the asy
 
     \hat{\mathcal{L}}_{V}(\psi) = \mathbb{E}_n [ L_2^{\lambda} (\hat{Q}_{\theta}(s_t, a_t) - V_{\psi}(s_t)) ]
 
-where :math:`\hat{Q}_{\theta}` and :math:`V_{\psi}` is learned distinctly, with different parameters :math:`\theta` and :math:`\psi`, respectively. 
+where :math:`\hat{Q}_{\theta}` and :math:`V_{\psi}` is learned distinctly, with different parameters :math:`\theta` and :math:`\psi`, respectively.
 :math:`L_2^{\lambda}(z)` is the asymmetric loss function, which is defined as follows.
 
 .. math::
@@ -279,7 +279,7 @@ where :math:`\hat{Q}_{\theta}` and :math:`V_{\psi}` is learned distinctly, with 
     L_2^{\lambda}(z) := |\tau - \mathbb{I}(z < 0)| z^2
 
 where :math:`\tau` is the parameter to control the asymmetricity. When :math:`\tau > 0.5`, the loss function penalizes the positive value of :math:`z` more.
-Therefore, :math:`\hat{V}` learned with :math:`\tau \rightarrow 1` indicates the maximum Q-value among the observed state-action pairs, 
+Therefore, :math:`\hat{V}` learned with :math:`\tau \rightarrow 1` indicates the maximum Q-value among the observed state-action pairs,
 while that learned with :math:`\tau = 0.5` indicates the average Q-value among those pairs.
 This prevents the propagation of the overestimation bias, even when the basic TD loss is used to learn the Q-function as follows.
 
@@ -300,7 +300,7 @@ We describe the problem formulation of Off-Policy Evaluation (OPE) and Selection
 
 .. seealso::
 
-    For further taxonomies, algorithms, and descriptions, we refer readers to survey papers :cite:`levine2020offline` :cite:`prudencio2022survey`. 
+    For further taxonomies, algorithms, and descriptions, we refer readers to survey papers :cite:`levine2020offline` :cite:`prudencio2022survey`.
     `awesome-offline-rl <https://github.com/hanjuku-kaso/awesome-offline-rl>`_ also provides a comprehensive list of literature.
 
 .. raw:: html

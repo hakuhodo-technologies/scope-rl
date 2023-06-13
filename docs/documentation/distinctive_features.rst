@@ -7,12 +7,12 @@ Why SCOPE-RL?
 Motivation
 ~~~~~~~~~~
 
-Sequential decision making is ubiquitous in many real-world applications including recommender, search, and advertising systems. 
+Sequential decision making is ubiquitous in many real-world applications including recommender, search, and advertising systems.
 While a *logging* or *behavior* policy interacts with users to optimize such sequential decision making, it also produces logged data valuable for learning and evaluating future policies.
-For example, a search engine often records a user's search query (state), the document presented by the behavior policy (action), the user response such as a click observed for the presented document (reward), and the next user behavior including a more specific search query (next state). 
-Making most of these logged data to evaluate a counterfactual policy is particularly beneficial in practice, as it can be a safe and cost-effective substitute for online A/B tests. 
+For example, a search engine often records a user's search query (state), the document presented by the behavior policy (action), the user response such as a click observed for the presented document (reward), and the next user behavior including a more specific search query (next state).
+Making most of these logged data to evaluate a counterfactual policy is particularly beneficial in practice, as it can be a safe and cost-effective substitute for online A/B tests.
 
-.. card:: 
+.. card::
     :width: 75%
     :margin: auto
     :img-top: ../_static/images/real_world_interaction.png
@@ -25,8 +25,8 @@ Making most of these logged data to evaluate a counterfactual policy is particul
     <div class="white-space-20px"></div>
 
 **Off-Policy Evaluation (OPE)**, which studies how to accurately estimate the performance of an *evaluation* policy using only offline logged data, is thus gaining growing interest.
-Especially in the reinforcement learning (RL) setting, a variety of theoretically grounded OPE estimators have been proposed to accurately estimate the expected reward :cite:`precup2000eligibility, jiang2016doubly, thomas2016data, farajtabar2018more, le2019batch, kallus2019intrinsically,liu2018breaking, uehara2020minimax`. 
-Moreover, several recent work on cumulative distribution OPE :cite:`huang2021off, huang2022off, chandak2021universal` also aim at estimating the cumulative distribution function (CDF) and risk functions (e.g., variance, conditional value at risk (CVaR), and interquartile range) of an evaluation policy. 
+Especially in the reinforcement learning (RL) setting, a variety of theoretically grounded OPE estimators have been proposed to accurately estimate the expected reward :cite:`precup2000eligibility, jiang2016doubly, thomas2016data, farajtabar2018more, le2019batch, kallus2019intrinsically,liu2018breaking, uehara2020minimax`.
+Moreover, several recent work on cumulative distribution OPE :cite:`huang2021off, huang2022off, chandak2021universal` also aim at estimating the cumulative distribution function (CDF) and risk functions (e.g., variance, conditional value at risk (CVaR), and interquartile range) of an evaluation policy.
 These risk functions provide informative insights on policy performance especially from safety perspectives, which are thus crucial for practical decision making.
 
 Unfortunately, despite these recent advances in OPE of RL policies, only a few existing platforms :cite:`fu2021benchmarks, voloshin2021empirical` are available for extensive OPE studies and benchmarking experiments. 
@@ -61,8 +61,8 @@ The distinctive features of our SCOPE-RL platform are summarized as follows.
 
 * :ref:`feature_sharpe_ratio`
 
-Below, we describe each advantage one by one. 
-Note that, for a quick comparison with the exising platforms, please refer to :ref:`the following section <feature_comparison>`.
+Below, we describe each advantage one by one.
+Note that for a quick comparison with the exising platforms, please refer to :ref:`the following section <feature_comparison>`.
 
 .. _feature_end_to_end:
 
@@ -72,7 +72,7 @@ End-to-end implementation of Offline RL and OPE
 While existing platforms support flexible implementations on either offline RL or OPE, we aim to bridge the offline RL and OPE processes and streamline an end-to-end procedure for the first time.
 Specifically, SCOPE-RL mainly consists of the following four modules as shown in the bottom figure:
 
-.. card:: 
+.. card::
    :width: 75%
    :margin: auto
    :img-top: ../_static/images/scope_workflow.png
@@ -91,19 +91,19 @@ Specifically, SCOPE-RL mainly consists of the following four modules as shown in
 
 First, the *Dataset* module handles the data collection from RL environments.
 Since our Dataset module is compatible with `OpenAI Gym <https://github.com/openai/gym>`_ or `Gymnasium <https://github.com/Farama-Foundation/Gymnasium>`_-like environments, SCOPE-RL is applicable to a variety of environmental settings.
-Moreover, SCOPE-RL supports compatibility with `d3rlpy <https://github.com/takuseno/d3rlpy>`_, which provides implementations of various online and offline RL algorithms. 
+Moreover, SCOPE-RL supports compatibility with `d3rlpy <https://github.com/takuseno/d3rlpy>`_, which provides implementations of various online and offline RL algorithms.
 This also allows us test the performance of offline RL and OPE with various behavior policies or other experimental settings.
 
 Next, the *OPL* module provides an easy-to-handle wrapper for learning new policies with various offline RL algorithms.
 While `d3rlpy <https://github.com/takuseno/d3rlpy>`_ has already supported user-friedly APIs, their implementation is basically intended to use offline RL algorithms one by one.
 Therefore, to further make the end-to-end offline RL and OPE processes smoothly connected, our OPL wrapper enables to handle multiple datasets and multiple algorithms in a single class.
 
-.. Please refer to :ref:`this page <>` for the details. 
+.. Please refer to :ref:`this page <>` for the details.
 
-Finally, the *OPE* and *OPS* modules are particularly our focus. 
-As we will review in the following sub-sections, we implement a variety of OPE estimators from the basic choices :cite:`le2019batch, precup2000eligibility, jiang2016doubly, thomas2016data`, 
+Finally, the *OPE* and *OPS* modules are particularly our focus.
+As we will review in the following sub-sections, we implement a variety of OPE estimators from the basic choices :cite:`le2019batch, precup2000eligibility, jiang2016doubly, thomas2016data`,
 advanced ones :cite:`kallus2020double, uehara2020minimax, liu2018breaking, yang2020off, yuan2021sope`, and estimators for the cutting-edge cumulative distribution OPE :cite:`huang20210ff, huang2022off, chandak2021universal`.
-Moreover, we provide the meta-class to handle OPE/OPS experiments and the abstract base implementation of OPE estimators. 
+Moreover, we provide the meta-class to handle OPE/OPS experiments and the abstract base implementation of OPE estimators.
 This allows researchers to quickly test their own algorithms with this platform and also help practitioners empirically learn the property of various OPE methods.
 
 .. _feature_variety_ope:
@@ -115,7 +115,7 @@ SCOPE-RL provides the implementation of various OPE estimators in both discrete 
 In the standard OPE, which aim to estimate the expected performance of the given evaluation policy, we implement the OPE estimators listed below. 
 These implementations are as comprehensive as the existing OPE platforms including :cite:`fu2021benchmarks, voloshin2021empirical`.
 
-.. card:: 
+.. card::
     :width: 75%
     :margin: auto
     :img-top: ../_static/images/ope_policy_value_variety.png
@@ -241,13 +241,13 @@ Cumulative Distribution OPE for risk function estimation
 Besides the standard OPE, SCOPE-RL differentiates itself from other OPE platforms by supporting the cumulative distribution OPE for the first time.
 Roughly, cumulative distribution OPE aims to estimate the whole performance distribution of the policy performance, not just the expected performance as the standard OPE does.
 
-.. card:: 
+.. card::
     :width: 75%
     :margin: auto
     :img-top: ../_static/images/ope_cumulative_distribution_function.png
     :text-align: center
 
-    Example of estimating cumulative distribution function (CDF) via OPE
+    Example of estimating the cumulative distribution function (CDF) via OPE
 
 .. raw:: html
 
@@ -260,9 +260,9 @@ By estimating the cumulative distribution function (CDF), we can derive the foll
 * Conditional Value at Risk (CVaR)
 * Interquartile Range
 
-Knowing the whole performance distribution or deriving the risk metrics including CVaR is particularly beneficial in a real-life situation where the safety matters. 
+Knowing the whole performance distribution or deriving the risk metrics including CVaR is particularly beneficial in a real-life situation where the safety matters.
 For example, in recommender systems, we are interested in stably providing good-quality products rather than sometimes providing an extremely good one but sometimes hurting user satisfaction seriously with bad items.
-Moreover, in the self-diriving cars, the catastrophic accidents should be avoided even if its probability is small (e.g., less than 10%). 
+Moreover, in the self-diriving cars, the catastrophic accidents should be avoided even if its probability is small (e.g., less than 10%).
 We believe that the release of cumulative distribution OPE implementations will boost the applicability of OPE in practical situations.
 
 
@@ -273,7 +273,7 @@ Risk-Return Assessments of OPS
 
 Our SCOPE-RL is also unique in that it enables risk-return assessments of Off-Policy Selection (OPS). 
 
-While OPE is useful for estimating the policy performance of a new policy using offline logged data, 
+While OPE is useful for estimating the policy performance of a new policy using offline logged data,
 OPE sometimes produces erroneous estimation due to *counterfactual estimation* and *distribution shift* between the behavior and evaluation policies.
 Therefore, in practical situations, we cannot solely rely on OPE results to choose the production policy, but instead, combine OPE results and online A/B tests for policy evaluation and selection :cite:`kurenkov2022showing`.
 Specifically, the practical workflow often begins by filtering out poor-performing policies based on OPE results, then conducting A/B tests on the remaining top-:math:`k`
@@ -291,10 +291,10 @@ policies to identify the best policy based on reliable online evaluation, as ill
 
     <div class="white-space-20px"></div>
 
-While the conventional metrics of OPE focus on the "accuracy" of OPE and OPS measured by mean-squared error (MSE) :cite:`uehara2022review, voloshin2021empirical`, rank correlation :cite:`paine2020hyperparameter, fu2021benchmarks`, and regret :cite:`doroudi2017importance, tang2021model`, 
+While the conventional metrics of OPE focus on the "accuracy" of OPE and OPS measured by mean-squared error (MSE) :cite:`uehara2022review, voloshin2021empirical`, rank correlation :cite:`paine2020hyperparameter, fu2021benchmarks`, and regret :cite:`doroudi2017importance, tang2021model`,
 we measure risk, return, and efficiency of the selected top-:math:`k` policy with the following metrics.
 
-.. card:: 
+.. card::
     :width: 75%
     :margin: auto
     :img-top: ../_static/images/ops_topk_policy_value_multiple.png
@@ -326,7 +326,7 @@ Comparisons with the existing platforms
 
 Finally, we provide a comprehensive comparion with the existing offline RL and OPE platforms.
 
-.. card:: 
+.. card::
     :width: 75%
     :margin: auto
     :img-bottom: ../_static/images/distinctive_features.png
@@ -340,10 +340,10 @@ Finally, we provide a comprehensive comparion with the existing offline RL and O
 
 The criteria of each colums is given as follows:
 
-* "data collection": |:white_check_mark:| means that the platform is compatible with Gymnasium environments :cite:`brockman2016openai` and thus is able to handle various settings. 
+* "data collection": |:white_check_mark:| means that the platform is compatible with Gymnasium environments :cite:`brockman2016openai` and thus is able to handle various settings.
 * "offline RL": |:white_check_mark:| means that the platform implements a variety of offline RL algorithms or the platform is compatible to one of offline RL libraries. In particular, our SCOPE-RL supports compatibility to `d3rlpy <https://github.com/takuseno/d3rlpy>`_ :cite:`seno2021d3rlpy`.
 * "OPE": |:white_check_mark:| means that the platform implements various OPE estimators other than the standard choices including Direct Method :cite:`le2019batch`, Importance Sampling :cite:`precup2000eligibility`, and Doubly Robust :cite:`jiang2016doubly`. (limited) means that the platform supports only these standard estimators.
-* "CD-OPE": is the abbreviation of Cumulative Distribution OPE, which estimates the cumulative distribution function of the return under evaluation policy :cite:`huang20210ff, huang2022off, chandak2021universal`. 
+* "CD-OPE": is the abbreviation of Cumulative Distribution OPE, which estimates the cumulative distribution function of the return under evaluation policy :cite:`huang20210ff, huang2022off, chandak2021universal`.
 
 In summary, **our unique contributions are 
 (1) to provide the first end-to-end platform for offline RL, OPE, and OPS,
@@ -352,17 +352,17 @@ In summary, **our unique contributions are
 Additionally, we provide a user-friendly :doc:`visualization tools <visualization>`, :doc:`documentation <index>`, and `quickstart examples <https://github.com/hakuhodo-technologies/scope-rl/tree/main/examples/quickstart>`_ to facilitate a quick benckmarking and practical application. 
 We hope that SCOPE-RL will serve as a important milestone for the future development of OPE research.
 
-.. We also provide an :doc:`OPE tutorial <_autogallery/index>` with SCOPE-RL experiments for educational purpose. 
+.. We also provide an :doc:`OPE tutorial <_autogallery/index>` with SCOPE-RL experiments for educational purpose.
 .. We hope that SCOPE-RL will serve as a important milestone for the future development of OPE research.
 
-Note that, the compared platforms include the following:
+Note that the compared platforms include the following:
 
 (offline RL platforms)
 
 * d3rlpy :cite:`seno2021d3rlpy`
 * CORL :cite:`tarasov2022corl`
 * RLlib :cite:`liang2018rllib`
-* Horizon :cite:`gauci2018horizon` 
+* Horizon :cite:`gauci2018horizon`
 
 (application-specific testbeds)
 
@@ -383,7 +383,7 @@ Note that, the compared platforms include the following:
 
 **Remark**
 
-Our implementations are highly inspired by `OpenBanditPipeline (OBP) <https://zr-obp.readthedocs.io/en/latest/>`_ :cite:`saito2021open`, which has demonstrated success in enabling flexible OPE experiments in contextual bandits. 
+Our implementations are highly inspired by `OpenBanditPipeline (OBP) <https://zr-obp.readthedocs.io/en/latest/>`_ :cite:`saito2021open`, which has demonstrated success in enabling flexible OPE experiments in contextual bandits.
 We hope that SCOPE-RL will also serve as a quick prototyping and benchmarking toolkit for OPE of RL policies, as done by OBP in non-RL settings.
 
 .. raw:: html

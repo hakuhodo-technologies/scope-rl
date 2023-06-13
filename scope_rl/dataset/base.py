@@ -23,12 +23,12 @@ class BaseDataset(metaclass=ABCMeta):
         Parameters
         -------
         n_trajectories: int, default=10000 (> 0)
-            Number of trajectories to rollout the behavior policy and collect data.
+            Number of trajectories to generate by rolling out the behavior policy.
 
         Returns
         -------
         logged_dataset(s): LoggedDataset or MultipleLoggedDataset
-            :class:`MultipleLoggedDataset` is a instance containing (multiple) logged datasets.
+            :class:`MultipleLoggedDataset` is an instance containing (multiple) logged datasets.
 
             For API consistency, each logged dataset should contain the following.
 
@@ -64,33 +64,33 @@ class BaseDataset(metaclass=ABCMeta):
                 Number of timesteps in an trajectory.
 
             action_type: str
-                Action type of the RL agent.
+                Type of the action space.
                 Either "discrete" or "continuous".
 
             n_actions: int (> 0)
-                Number of discrete actions.
+                Number of actions.
                 If action_type is "continuous", `None` is recorded.
 
             action_dim: int (> 0)
-                Dimensions of the actions.
+                Dimensions of the action space.
                 If action_type is "discrete", `None` is recorded.
 
             action_keys: list of str
-                Name of the action variable at each dimension.
+                Name of each dimension in the action space.
                 If action_type is "discrete", `None` is recorded.
 
             action_meaning: dict
-                Dictionary which maps discrete action index into specific actions.
+                Dictionary to map discrete action index to a specific action.
                 If action_type is "continuous", `None` is recorded.
 
             state_dim: int (> 0)
-                Dimensions of the states.
+                Dimensions of the state space.
 
             state_keys: list of str
-                Name of the state variable at each dimension.
+                Name of each dimension of the state space.
 
             state: ndarray of shape (size, state_dim)
-                State observed by the behavior policy.
+                State observed under the behavior policy.
 
             action: ndarray of shape (size, ) or (size, action_dim)
                 Action chosen by the behavior policy.
@@ -108,7 +108,7 @@ class BaseDataset(metaclass=ABCMeta):
                 Additional feedbacks from the environment.
 
             pscore: ndarray of shape (size, )
-                Action choice probability of the behavior policy for the chosen action.
+                Propensity of the observed action being chosen under the behavior policy (pscore stands for propensity score).
 
 
         """
@@ -121,12 +121,12 @@ class BaseDataset(metaclass=ABCMeta):
         Parameters
         -------
         n_trajectories: int, default=10000 (> 0)
-            Number of trajectories to rollout the behavior policy and collect data.
+            Number of trajectories to generate by rolling out the behavior policy.
 
         Returns
         -------
         logged_dataset(s): LoggedDataset or MultipleLoggedDataset
-            :class:`MultipleLoggedDataset` is a instance containing (multiple) logged datasets.
+            :class:`MultipleLoggedDataset` is an instance containing (multiple) logged datasets.
 
             For API consistency, each logged dataset should contain the following.
 
@@ -162,33 +162,33 @@ class BaseDataset(metaclass=ABCMeta):
                 Number of timesteps in an trajectory.
 
             action_type: str
-                Action type of the RL agent.
+                Type of the action space.
                 Either "discrete" or "continuous".
 
             n_actions: int (> 0)
-                Number of discrete actions.
+                Number of actions.
                 If action_type is "continuous", `None` is recorded.
 
             action_dim: int (> 0)
-                Dimensions of the actions.
+                Dimensions of the action space.
                 If action_type is "discrete", `None` is recorded.
 
             action_keys: list of str
-                Name of the action variable at each dimension.
+                Name of each dimension of the action space.
                 If action_type is "discrete", `None` is recorded.
 
             action_meaning: dict
-                Dictionary which maps discrete action index into specific actions.
+                Dictionary to map discrete action index to a specific action.
                 If action_type is "continuous", `None` is recorded.
 
             state_dim: int (> 0)
-                Dimensions of the states.
+                Dimensions of the state space.
 
             state_keys: list of str
-                Name of the state variable at each dimension.
+                Name of each dimension of the state space.
 
             state: ndarray of shape (size, state_dim)
-                State observed by the behavior policy.
+                State observed under the behavior policy.
 
             action: ndarray of shape (size, ) or (size, action_dim)
                 Action chosen by the behavior policy.
@@ -206,7 +206,7 @@ class BaseDataset(metaclass=ABCMeta):
                 Additional feedbacks from the environment.
 
             pscore: ndarray of shape (size, )
-                Action choice probability of the behavior policy for the chosen action.
+                Propensity of the observed action being chosen under the behavior policy (pscore stands for propensity score).
 
         """
         raise NotImplementedError
