@@ -55,12 +55,12 @@ OPE estimators
     :nosignatures:
 
     scope_rl.ope.estimators_base
-    scope_rl.ope.basic_estimators_discrete
-    scope_rl.ope.basic_estimators_continuous
-    scope_rl.ope.marginal_estimators_discrete
-    scope_rl.ope.marginal_estimators_continuous
-    scope_rl.ope.cumulative_distribution_estimators_discrete
-    scope_rl.ope.cumulative_distribution_estimators_continuous
+    scope_rl.ope.discrete.basic_estimators
+    scope_rl.ope.continuous.basic_estimators
+    scope_rl.ope.discrete.marginal_estimators
+    scope_rl.ope.continuous.marginal_estimators
+    scope_rl.ope.discrete.cumulative_distribution_estimators
+    scope_rl.ope.continuous.cumulative_distribution_estimators
 
 .. _scope_rl_api_ope_weight_and_value_learning:
 

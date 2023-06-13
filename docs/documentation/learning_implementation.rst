@@ -197,11 +197,10 @@ Then, it collects logged data by a behavior policy (i.e., data collection policy
 .. seealso::
 
     * :doc:`quickstart` 
-    .. * and :ref:`related tutorials <scope_rl_others_tutorial>`
 
 .. _implementation_opl:
 
-Off-Policy Learning
+Offline Learning
 ~~~~~~~~~~
 
 Once we obtain the logged dataset, it's time to learn a new policy in an offline manner. 
@@ -244,7 +243,7 @@ For this, `d3rlpy <https://github.com/takuseno/d3rlpy>`_ provides various offlin
     )
 
 While the above procedure is alreaady simple and easy-to-use, 
-we also provide :class:`TrainCandidatePolicies` as a meta class to further smoothen the OPL procedure with various algorithms.
+we also provide :class:`TrainCandidatePolicies` as a meta class to further smoothen the ORL procedure with various algorithms.
 
 .. code-block:: python
 
@@ -401,13 +400,13 @@ Here, we describe some useful wrapper tools to convert a `d3rlpy <https://github
         * :class:`predict_online`
         * :class:`predict_value_online`
         * :class:`sample_action_online`
-        * :class:`sample_action_with_pscore_online`
+        * :class:`sample_action_and_output_pscore_online`
 
         Please just override these functions for online interactions. :class:`OnlineHead` is also useful for this purpose.
 
         Next, for the second purpose, you can customize how to convert a deterministic policy to a stochastic policy using following functions.
 
-        * :class:`sample_action_with_pscore_online`
+        * :class:`sample_action_and_output_pscore_online`
         * :class:`calc_action_choice_probability`
         * :class:`calc_pscore_given_action`
 

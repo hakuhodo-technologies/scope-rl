@@ -175,10 +175,10 @@ and Doubly Robust (DR) :cite:`jiang2016doubly, thomas2016data`.
     # import SCOPE-RL modules
     from scope_rl.ope import CreateOPEInput
     from scope_rl.ope import OffPolicyEvaluation as OPE
-    from scope_rl.ope import DiscreteDirectMethod as DM
-    from scope_rl.ope import DiscreteTrajectoryWiseImportanceSampling as TIS
-    from scope_rl.ope import DiscretePerDecisionImportanceSampling as PDIS
-    from scope_rl.ope import DiscreteDoublyRobust as DR
+    from scope_rl.ope.discrete import DirectMethod as DM
+    from scope_rl.ope.discrete import TrajectoryWiseImportanceSampling as TIS
+    from scope_rl.ope.discrete import PerDecisionImportanceSampling as PDIS
+    from scope_rl.ope.discrete import DoublyRobust as DR
 
     # (4) Evaluate the learned policy in an offline manner
     # we compare ddqn, cql, and random policy
@@ -240,8 +240,8 @@ In addition, :class:`OffPolicyEvaluation` summarizes and compares the estimation
 
     * :doc:`Related example codes </documentation/examples/basic_ope>`
     * :doc:`Problem setting <ope_ops>`
-    * :doc:`Supported OPE estimators <evaluation_implementation>` and :doc:`their API reference <_autosummary/scope_rl.ope.basic_estimators_discrete>`
-    * (advanced) :ref:`Marginal OPE estimators <implementation_marginal_ope>`, and :doc:`their API reference <_autosummary/scope_rl.ope.marginal_estimators_discrete>`
+    * :doc:`Supported OPE estimators <evaluation_implementation>` and :doc:`their API reference <_autosummary/scope_rl.ope.discrete.basic_estimators>`
+    * (advanced) :ref:`Marginal OPE estimators <implementation_marginal_ope>`, and :doc:`their API reference <_autosummary/scope_rl.ope.discrete.marginal_estimators>`
 
 .. _quickstart_cumulative_distribution_ope:
 
@@ -262,11 +262,11 @@ using Cumulative Distribution OPE estimators :cite:`huang2021off, huang2022off, 
 
     # import SCOPE-RL modules
     from scope_rl.ope import CumulativeDistributionOPE
-    from scope_rl.ope import DiscreteCumulativeDistributionDM as CD_DM
-    from scope_rl.ope import DiscreteCumulativeDistributionTIS as CD_IS
-    from scope_rl.ope import DiscreteCumulativeDistributionTDR as CD_DR
-    from scope_rl.ope import DiscreteCumulativeDistributionSNIS as CD_SNIS
-    from scope_rl.ope import DiscreteCumulativeDistributionSNDR as CD_SNDR
+    from scope_rl.ope.discrete import CumulativeDistributionDM as CD_DM
+    from scope_rl.ope.discrete import CumulativeDistributionTIS as CD_IS
+    from scope_rl.ope.discrete import CumulativeDistributionTDR as CD_DR
+    from scope_rl.ope.discrete import CumulativeDistributionSNIS as CD_SNIS
+    from scope_rl.ope.discrete import CumulativeDistributionSNDR as CD_SNDR
 
     # (4) Evaluate the learned policy using cumulative distribution function (in an offline manner)
     # we compare ddqn, cql, and random policy defined in the previous section (i.e., (3) of basic OPE procedure)
@@ -301,7 +301,7 @@ In addition, :class:`CumulativeDistributionOPE` summarizes and compares the esti
 
     * :doc:`Related example codes </documentation/examples/cumulative_dist_ope>`
     * :ref:`Problem setting <overview_cumulative_distribution_ope>`
-    * :ref:`Supported cumulative distribution OPE estimators <implementation_cumulative_distribution_ope>` and :doc:`their API reference <_autosummary/scope_rl.ope.cumulative_distribution_estimators_discrete>`
+    * :ref:`Supported cumulative distribution OPE estimators <implementation_cumulative_distribution_ope>` and :doc:`their API reference <_autosummary/scope_rl.ope.discrete.cumulative_distribution_estimators>`
 
 .. _quickstart_ops:
 

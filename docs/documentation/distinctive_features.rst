@@ -85,7 +85,7 @@ Specifically, SCOPE-RL mainly consists of the following four modules as shown in
     <div class="white-space-20px"></div>
 
 * Dataset module
-* Off-Policy Learning (OPL) module
+* Offline Learning (ORL) module
 * Off-Policy Evaluation (OPE) module
 * Off-Policy Selection (OPS) module
 
@@ -94,7 +94,7 @@ Since our Dataset module is compatible with `OpenAI Gym <https://github.com/open
 Moreover, SCOPE-RL supports compatibility with `d3rlpy <https://github.com/takuseno/d3rlpy>`_, which provides implementations of various online and offline RL algorithms.
 This also allows us test the performance of offline RL and OPE with various behavior policies or other experimental settings.
 
-Next, the *OPL* module provides an easy-to-handle wrapper for learning new policies with various offline RL algorithms.
+Next, the *ORL* module provides an easy-to-handle wrapper for learning new policies with various offline RL algorithms.
 While `d3rlpy <https://github.com/takuseno/d3rlpy>`_ has already supported user-friedly APIs, their implementation is basically intended to use offline RL algorithms one by one.
 Therefore, to further make the end-to-end offline RL and OPE processes smoothly connected, our OPL wrapper enables to handle multiple datasets and multiple algorithms in a single class.
 

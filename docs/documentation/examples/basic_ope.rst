@@ -171,17 +171,17 @@ Here, we use the following OPE estimators.
 
 .. code-block:: python
 
-    from scope_rl.ope import DiscreteDirectMethod as DM
-    from scope_rl.ope import DiscreteSelfNormalizedPDIS as SNPDIS
-    from scope_rl.ope import DiscreteSelfNormalizedDR as SNDR
+    from scope_rl.ope.discrete import DirectMethod as DM
+    from scope_rl.ope.discrete import SelfNormalizedPDIS as SNPDIS
+    from scope_rl.ope.discrete import SelfNormalizedDR as SNDR
 
-    from scope_rl.ope import DiscreteStateMarginalSNIS as SMSNIS
-    from scope_rl.ope import DiscreteStateMarginalSNDR as SMSNDR
+    from scope_rl.ope.discrete import StateMarginalSNIS as SMSNIS
+    from scope_rl.ope.discrete import StateMarginalSNDR as SMSNDR
 
-    from scope_rl.ope import DiscreteStateActionMarginalSNIS as SAMSNIS
-    from scope_rl.ope import DiscreteStateActionMarginalSNDR as SAMSNDR
+    from scope_rl.ope.discrete import StateActionMarginalSNIS as SAMSNIS
+    from scope_rl.ope.discrete import StateActionMarginalSNDR as SAMSNDR
 
-    from scope_rl.ope import DiscreteDoubleReinforcementLearning as DRL
+    from scope_rl.ope.discrete import DoubleReinforcementLearning as DRL
 
     estimators = [DM(), SNPDIS(), SNDR(), SMSNIS(), SMSNDR(), DRL()]
 

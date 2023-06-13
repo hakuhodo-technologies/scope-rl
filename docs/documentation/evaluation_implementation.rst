@@ -285,7 +285,7 @@ Using the OPE class, we can obtain the OPE results of various estimators at once
 
 .. seealso::
 
-    * :doc:`quickstart` and :ref:`Related Example Codes </documentation/examples/basic_ope>`
+    * :doc:`quickstart` and :doc:`related example codes </documentation/examples/basic_ope>`
 
 
 The OPE class implements the following functions.
@@ -399,8 +399,7 @@ where :math:`\mathcal{D}=\{\{(s_t, a_t, r_t)\}_{t=0}^T\}_{i=1}^n` is the logged 
 
 DM has low variance compared to other estimators, but can produce larger bias due to approximation errors.
 
-    * :class:`DiscreteDirectMethod`
-    * :class:`ContinuousDirectMethod`
+    * :class:`DirectMethod`
 
 .. note::
 
@@ -422,8 +421,7 @@ where :math:`w_{0:T-1} := \prod_{t=0}^{T-1} (\pi(a_t | s_t) / \pi_0(a_t | s_t))`
 TIS enables an unbiased estimation of the policy value. However, when the trajectory length :math:`T` is large, TIS suffers from high variance
 due to the product of importance weights over the entire horizon.
 
-    * :class:`DiscreteTrajectoryWiseImportanceSampling`
-    * :class:`ContinuousTrajectoryWiseImportanceSampling`
+    * :class:`TrajectoryWiseImportanceSampling`
 
 .. _implementation_pdis:
 
@@ -441,8 +439,7 @@ where :math:`w_{0:t} := \prod_{t'=0}^t (\pi_e(a_{t'} | s_{t'}) / \pi_b(a_{t'} | 
 
 PDIS remains unbiased while reducing the variance of TIS. However, when :math:`t` is large, PDIS still suffers from high variance.
 
-    * :class:`DiscretePerDecisionImportanceSampling`
-    * :class:`ContinuousPerDecisionWiseImportanceSampling`
+    * :class:`PerDecisionImportanceSampling`
 
 .. _implementation_dr:
 
@@ -459,8 +456,7 @@ It introduces :math:`\hat{Q}` as a baseline estimation in the recursive form of 
 DR is unbiased and has lower variance than PDIS when :math:`\hat{Q}(\cdot)` is reasonably accurate to satisfy :math:`0 < \hat{Q}(\cdot) < 2 Q(\cdot)`.
 However, when the importance weight is quite large, it may still suffer from a high variance.
 
-    * :class:`DiscreteDoublyRobust`
-    * :class:`ContinuousDoublyRobust`
+    * :class:`DoublyRobust`
 
 .. _implementation_sn:
 
@@ -477,17 +473,9 @@ where :math:`\tilde{w}_{\ast}` is the self-normalized importance weight.
 
 Self-normalized estimators are no longer unbiased, but has variance bounded by :math:`r_{max}^2` while also remaining consistent.
 
-(Discrete)
-
-    * :class:`DiscreteSelfNormalizedTrajectoryWiseImportanceSampling`
-    * :class:`DiscreteSelfNormalizedPerDecisionImportanceSampling`
-    * :class:`DiscreteSelfNormalizedDoublyRobust`
-
-(Continuous)
-
-    * :class:`ContinuousSelfNormalizedTrajectoryWiseImportanceSampling`
-    * :class:`ContinuousSelfNormalizedPerDecisionImportanceSampling`
-    * :class:`ContinuousSelfNormalizedDoublyRobust`
+    * :class:`SelfNormalizedTIS`
+    * :class:`SelfNormalizedPDIS`
+    * :class:`SelfNormalizedDR`
 
 .. _implementation_marginal_ope:
 
@@ -551,18 +539,18 @@ We implement state marginal and state-action marginal OPE estimators in the foll
 
 (State Marginal Estimators)
 
-    * :class:`StateMarginalDirectMethod`
-    * :class:`StateMarginalImportanceSampling`
-    * :class:`StateMarginalDoublyRobust`
-    * :class:`StateMarginalSelfNormalizedImportanceSampling`
-    * :class:`StateMarginalSelfNormalizedDoublyRobust`
+    * :class:`StateMarginalDM`
+    * :class:`StateMarginalIS`
+    * :class:`StateMarginalDR`
+    * :class:`StateMarginalSNIS`
+    * :class:`StateMarginalSNDR`
 
 (State-Action Marginal Estimators)
 
-    * :class:`StateActionMarginalImportanceSampling`
-    * :class:`StateActionMarginalDoublyRobust`
-    * :class:`StateActionMarginalSelfNormalizedImportanceSampling`
-    * :class:`StateActionMarginalSelfNormalizedDoublyRobust`
+    * :class:`StateActionMarginalIS`
+    * :class:`StateActionMarginalDR`
+    * :class:`StateActionMarginalSNIS`
+    * :class:`StateActionMarginalSNDR`
 
 .. _implementation_drl:
 
@@ -600,8 +588,7 @@ Therefore, to alleviate the potential bias introduced in :math:`Q`, DRL uses the
 Specifically, let :math:`K` is the number of folds and :math:`\mathcal{D}_j` is the :math:`j`-th split of logged data consisting of :math:`n_k` samples.
 Cross-fitting trains :math:`w^j` and :math:`Q^j` on the subset of data used for OPE, i.e., :math:`\mathcal{D} \setminus \mathcal{D}_j`.
 
-    * :class:`DiscreteDoubleReinforcementLearning`
-    * :class:`ContinuousDoubleReinforcementLearning`
+    * :class:`DoubleReinforcementLearning`
 
 .. tip::
 
@@ -745,7 +732,13 @@ We can use any function as :math:`K(\cdot)` that meets the following qualities:
 * 3) :math:`\lim _{x \rightarrow-\infty} K(x)=\lim _{x \rightarrow+\infty} K(x)=0`,
 * 4) :math:`K(x) \geq 0, \forall x`.
 
-In our implementation, we use the (distance-based) Gaussian kernel :math:`K(x)=\frac{1}{\sqrt{2 \pi}} e^{-\frac{x^{2}}{2}}`.
+We provide the following kernel functions in SCOPE-RL.
+
+* Gaussian kernel: :math:`K(x) = \frac{1}{\sqrt{2 \pi}} e^{-\frac{x^{2}}{2}}`
+* Epanechnikov kernel: :math:`K(x) = \frac{3}{4} (1 - x^2) \, (|x| \leq 1)`
+* Triangular kernel: :math:`K(x) = 1 - |x| \, (|x| \leq 1)`
+* Cosine kernel: :math:`K(x) = \frac{\pi}{4} \mathrm{cos} \left( \frac{\pi}{2} x \right) \, (|x| \leq 1)`
+* Uniform kernel: :math:`K(x) = \frac{1}{2} \, (|x| \leq 1)`
 
 .. tip::
 
@@ -755,14 +748,14 @@ In our implementation, we use the (distance-based) Gaussian kernel :math:`K(x)=\
         Specifically, a large value of :math:`h` leads to a low-variance but high-bias estimation,
         while a small value of :math:`h` leads to a high-variance but low-bias estimation.
 
-        The bandwidth parameter corresponds to ``sigma`` in the :class:`OffPolicyEvaluation` class.
+        The bandwidth parameter corresponds to ``bandwidth`` in the :class:`OffPolicyEvaluation` class.
 
         .. code-block:: python
 
             ope = OPE(
                 logged_dataset=logged_dataset,
                 ope_estimators=[DM(), TIS(), PDIS(), DR()],
-                sigma=1.0,  # bandwidth hyperparameter
+                bandwidth=1.0,  # bandwidth hyperparameter
             )
 
         For multi-dimension actions, we define the kernel with dot product among actions as :math:`K(a, a') := K(a^T a')`.
@@ -774,7 +767,7 @@ In our implementation, we use the (distance-based) Gaussian kernel :math:`K(x)=\
             ope = OPE(
                 logged_dataset=logged_dataset,
                 ope_estimators=[DM(), TIS(), PDIS(), DR()],
-                sigma=1.0,  # bandwidth hyperparameter
+                bandwidth=1.0,  # bandwidth hyperparameter
                 action_scaler=MinMaxActionScaler(
                     minimum=env.action_space.low,
                     maximum=env.action_space.high,
@@ -814,7 +807,7 @@ To estimate both CDF and various risk functions, we provide the following :class
 .. code-block:: python
 
     # initialize the OPE class
-    from scope_rl.ope import CumulativeDistributionOffPolicyEvaluation as CumulativeDistributionOPE
+    from scope_rl.ope import CumulativeDistributionOPE
     cd_ope = CumulativeDistributionOPE(
         logged_dataset=logged_dataset,
         ope_estimators=[CD_DM(), CD_IS(), CD_DR()],
@@ -1044,12 +1037,11 @@ DM adopts a model-based approach to estimate the cumulative distribution functio
 
         \hat{F}_{\mathrm{DM}}(m, \pi; \mathcal{D}) := \mathbb{E}_{n} [\mathbb{E}_{a_0 \sim \pi(a_0 | s_0)} \hat{G}(m; s_0, a_0)]
 
-where :math:`\hat{F}(\cdot)` is the estimated cumulative distribution function and :math:`\hat{G}(\cdot)` is an estimator for :math:`\\mathbb{E}[\\mathbb{I} \\left \\{\\sum_{t=0}^{T-1} \\gamma^t r_t \\leq m \\right \\} \\mid s,a]`.
+where :math:`\hat{F}(\cdot)` is the estimated cumulative distribution function and :math:`\hat{G}(\cdot)` is an estimator for :math:`\mathbb{E}[\mathbb{I} \left \{\sum_{t=0}^{T-1} \gamma^t r_t \leq m \right \} \mid s,a]`.
 
 DM is vulnerable to the approximation error, but has low variance.
 
-    * :class:`DiscreteCumulativeDistributionDirectMethod`
-    * :class:`ContinuousCumulativeDistributionDirectMethod`
+    * :class:`CumulativeDistributionDM`
 
 .. _implementation_cd_tis:
 
@@ -1072,8 +1064,7 @@ Therefore, we correct CDF as follows :cite:`huang2021off`.
 
 .
 
-    * :class:`DiscreteCumulativeDistributionTrajectoryWiseImportanceSampling`
-    * :class:`ContinuousCumulativeDistributionTrajectoryWiseImportanceSampling`
+    * :class:`CumulativeDistributionTIS`
 
 .. _implementation_cd_tdr:
 
@@ -1097,16 +1088,13 @@ Since :math:`\hat{F}_{\mathrm{TDR}}(\cdot)` may be less than zero or more than o
 
 Note that this estimator is not equivalent to the (recursive) DR estimator defined by :cite:`huang2022off`. We are planning to implement the recursive version in a future update of the software.
 
-    * :class:`DiscreteCumulativeDistributionTrajectoryWiseDoublyRobust`
-    * :class:`ContinuousCumulativeDistributionTrajectoryWiseDoublyRobust`
+    * :class:`CumulativeDistributionTDR`
 
 Finally, we also provide the self-normalized estimators for TIS and TDR.
 They use the self-normalized importance weight :math:`\tilde{w}_{\ast} := w_{\ast} / \mathbb{E}_{n}[w_{\ast}]` for the variance reduction purpose.
 
-    * :class:`DiscreteCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSampling`
-    * :class:`DiscreteCumulativeDistributionSelfNormalizedDoublyRobust`
-    * :class:`ContinuousCumulativeDistributionSelfNormalizedTrajectoryWiseImportanceSampling`
-    * :class:`ContinuousCumulativeDistributionSelfNormalizedDoublyRobust`
+    * :class:`CumulativeDistributionSNTIS`
+    * :class:`CumulativeDistributionSNDR`
 
 .. _implementation_eval_ope_ops:
 

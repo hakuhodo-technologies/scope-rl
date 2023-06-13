@@ -126,11 +126,11 @@ Here, we use the following OPE estimators.
 
 .. code-block:: python
 
-    from scope_rl.ope import DiscreteCumulativeDistributionDM as CD_DM
-    from scope_rl.ope import DiscreteCumulativeDistributionTIS as CD_TIS
-    from scope_rl.ope import DiscreteCumulativeDistributionTDR as CD_TDR
-    from scope_rl.ope import DiscreteCumulativeDistributionSNTIS as CD_SNTIS
-    from scope_rl.ope import DiscreteCumulativeDistributionSNTDR as CD_SNTDR
+    from scope_rl.ope.discrete import CumulativeDistributionDM as CD_DM
+    from scope_rl.ope.discrete import CumulativeDistributionTIS as CD_TIS
+    from scope_rl.ope.discrete import CumulativeDistributionTDR as CD_TDR
+    from scope_rl.ope.discrete import CumulativeDistributionSNTIS as CD_SNTIS
+    from scope_rl.ope.discrete import CumulativeDistributionSNTDR as CD_SNTDR
 
     estimators = [CD_DM(), CD_TIS(), CD_TDR(), CD_SNTIS(), CD_SNTDR()]
 
