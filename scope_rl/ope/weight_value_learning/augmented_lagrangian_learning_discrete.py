@@ -307,8 +307,8 @@ class DiscreteDiceStateActionWightValueLearning(BaseWeightValueLearner):
         action: np.ndarray,
         reward: np.ndarray,
         evaluation_policy_action_dist: np.ndarray,
-        n_epochs: int = 100,
-        n_steps_per_epoch: int = 100,
+        n_steps: int = 10000,
+        n_steps_per_epoch: int = 10000,
         random_state: Optional[int] = None,
         **kwargs,
     ):
@@ -332,10 +332,10 @@ class DiscreteDiceStateActionWightValueLearning(BaseWeightValueLearner):
             Conditional action distribution induced by the evaluation policy,
             i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
 
-        n_epochs: int, default=100 (> 0)
-            Number of epochs to train.
+        n_steps: int, default=10000 (> 0)
+            Number of gradient steps.
 
-        n_steps_per_epoch: int, default=100 (> 0)
+        n_steps_per_epoch: int, default=10000 (> 0)
             Number of gradient steps in a epoch.
 
         random_state: int, default=None (>= 0)
@@ -376,10 +376,11 @@ class DiscreteDiceStateActionWightValueLearning(BaseWeightValueLearner):
                 "evaluation_policy_action_dist must sums up to one in axis=1, but found False"
             )
 
-        check_scalar(n_epochs, name="n_epochs", target_type=int, min_val=1)
+        check_scalar(n_steps, name="n_steps", target_type=int, min_val=1)
         check_scalar(
             n_steps_per_epoch, name="n_steps_per_epoch", target_type=int, min_val=1
         )
+        n_epochs = (n_steps - 1) // n_steps_per_epoch + 1
 
         if random_state is None:
             raise ValueError("Random state mush be given.")
@@ -695,8 +696,8 @@ class DiscreteDiceStateActionWightValueLearning(BaseWeightValueLearner):
         action: np.ndarray,
         reward: np.ndarray,
         evaluation_policy_action_dist: np.ndarray,
-        n_epochs: int = 100,
-        n_steps_per_epoch: int = 100,
+        n_steps: int = 10000,
+        n_steps_per_epoch: int = 10000,
         random_state: Optional[int] = None,
         **kwargs,
     ):
@@ -723,10 +724,10 @@ class DiscreteDiceStateActionWightValueLearning(BaseWeightValueLearner):
         method: {"dual_dice", "gen_dice", "algae_dice", "best_dice", "mql", "mwl", "custom"}, default="best_dice"
             Indicates which parameter set should be used. When, "custom" users can specify their own parameter.
 
-        n_epochs: int, default=100 (> 0)
+        n_steps: int, default=10000 (> 0)
             Number of epochs to train.
 
-        n_steps_per_epoch: int, default=100 (> 0)
+        n_steps_per_epoch: int, default=10000 (> 0)
             Number of gradient steps in a epoch.
 
         random_state: int, default=None (>= 0)
@@ -747,7 +748,7 @@ class DiscreteDiceStateActionWightValueLearning(BaseWeightValueLearner):
             action=action,
             reward=reward,
             evaluation_policy_action_dist=evaluation_policy_action_dist,
-            n_epochs=n_epochs,
+            n_steps=n_steps,
             n_steps_per_epoch=n_steps_per_epoch,
             random_state=random_state,
         )
@@ -1030,8 +1031,8 @@ class DiscreteDiceStateWightValueLearning(BaseWeightValueLearner):
         reward: np.ndarray,
         pscore: np.ndarray,
         evaluation_policy_action_dist: np.ndarray,
-        n_epochs: int = 100,
-        n_steps_per_epoch: int = 100,
+        n_steps: int = 10000,
+        n_steps_per_epoch: int = 10000,
         random_state: Optional[int] = None,
         **kwargs,
     ):
@@ -1058,10 +1059,10 @@ class DiscreteDiceStateWightValueLearning(BaseWeightValueLearner):
             Conditional action distribution induced by the evaluation policy,
             i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
 
-        n_epochs: int, default=100 (> 0)
-            Number of epochs to train.
+        n_steps: int, default=10000 (> 0)
+            Number of gradient steps.
 
-        n_steps_per_epoch: int, default=100 (> 0)
+        n_steps_per_epoch: int, default=10000 (> 0)
             Number of gradient steps in a epoch.
 
         random_state: int, default=None (>= 0)
@@ -1104,10 +1105,11 @@ class DiscreteDiceStateWightValueLearning(BaseWeightValueLearner):
                 "evaluation_policy_action_dist must sums up to one in axis=1, but found False"
             )
 
-        check_scalar(n_epochs, name="n_epochs", target_type=int, min_val=1)
+        check_scalar(n_steps, name="n_steps", target_type=int, min_val=1)
         check_scalar(
             n_steps_per_epoch, name="n_steps_per_epoch", target_type=int, min_val=1
         )
+        n_epochs = (n_steps - 1) // n_steps_per_epoch + 1
 
         if random_state is None:
             raise ValueError("Random state mush be given.")
@@ -1282,8 +1284,8 @@ class DiscreteDiceStateWightValueLearning(BaseWeightValueLearner):
         reward: np.ndarray,
         pscore: np.ndarray,
         evaluation_policy_action_dist: np.ndarray,
-        n_epochs: int = 100,
-        n_steps_per_epoch: int = 100,
+        n_steps: int = 10000,
+        n_steps_per_epoch: int = 10000,
         random_state: Optional[int] = None,
         **kwargs,
     ):
@@ -1310,10 +1312,10 @@ class DiscreteDiceStateWightValueLearning(BaseWeightValueLearner):
             Conditional action distribution induced by the evaluation policy,
             i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
 
-        n_epochs: int, default=100 (> 0)
-            Number of epochs to train.
+        n_steps: int, default=10000 (> 0)
+            Number of gradient steps.
 
-        n_steps_per_epoch: int, default=100 (> 0)
+        n_steps_per_epoch: int, default=10000 (> 0)
             Number of gradient steps in a epoch.
 
         random_state: int, default=None (>= 0)
@@ -1335,7 +1337,7 @@ class DiscreteDiceStateWightValueLearning(BaseWeightValueLearner):
             reward=reward,
             pscore=pscore,
             evaluation_policy_action_dist=evaluation_policy_action_dist,
-            n_epochs=n_epochs,
+            n_steps=n_steps,
             n_steps_per_epoch=n_steps_per_epoch,
             random_state=random_state,
         )

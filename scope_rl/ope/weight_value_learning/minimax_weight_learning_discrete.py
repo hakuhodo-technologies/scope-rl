@@ -297,8 +297,8 @@ class DiscreteMinimaxStateActionWeightLearning(BaseWeightValueLearner):
         state: np.ndarray,
         action: np.ndarray,
         evaluation_policy_action_dist: np.ndarray,
-        n_epochs: int = 10,
-        n_steps_per_epoch: int = 1000,
+        n_steps: int = 10000,
+        n_steps_per_epoch: int = 10000,
         regularization_weight: float = 1.0,
         random_state: Optional[int] = None,
         **kwargs,
@@ -320,10 +320,10 @@ class DiscreteMinimaxStateActionWeightLearning(BaseWeightValueLearner):
             Conditional action distribution induced by the evaluation policy,
             i.e., :math:`\\pi(a \\mid s_{t+1}) \\forall a \\in \\mathcal{A}`
 
-        n_epochs: int, default=10 (> 0)
-            Number of epochs to train.
+        n_steps: int, default=10000 (> 0)
+            Number of gradient steps.
 
-        n_steps_per_epoch: int, default=1000 (> 0)
+        n_steps_per_epoch: int, default=10000 (> 0)
             Number of gradient steps in a epoch.
 
         regularization_weight: float, default=1.0 (> 0)
@@ -360,10 +360,11 @@ class DiscreteMinimaxStateActionWeightLearning(BaseWeightValueLearner):
                 "evaluation_policy_action_dist must sums up to one in axis=1, but found False"
             )
 
-        check_scalar(n_epochs, name="n_epochs", target_type=int, min_val=1)
+        check_scalar(n_steps, name="n_steps", target_type=int, min_val=1)
         check_scalar(
             n_steps_per_epoch, name="n_steps_per_epoch", target_type=int, min_val=1
         )
+        n_epochs = (n_steps - 1) // n_steps_per_epoch + 1
 
         if random_state is None:
             raise ValueError("Random state mush be given.")
@@ -501,8 +502,8 @@ class DiscreteMinimaxStateActionWeightLearning(BaseWeightValueLearner):
         state: np.ndarray,
         action: np.ndarray,
         evaluation_policy_action_dist: np.ndarray,
-        n_epochs: int = 10,
-        n_steps_per_epoch: int = 1000,
+        n_steps: int = 10000,
+        n_steps_per_epoch: int = 10000,
         regularization_weight: float = 1.0,
         random_state: Optional[int] = None,
         **kwargs,
@@ -524,10 +525,10 @@ class DiscreteMinimaxStateActionWeightLearning(BaseWeightValueLearner):
             Conditional action distribution induced by the evaluation policy,
             i.e., :math:`\\pi(a \\mid s_{t+1}) \\forall a \\in \\mathcal{A}`
 
-        n_epochs: int, default=10 (> 0)
-            Number of epochs to train.
+        n_steps: int, default=10000 (> 0)
+            Number of gradient steps.
 
-        n_steps_per_epoch: int, default=1000 (> 0)
+        n_steps_per_epoch: int, default=10000 (> 0)
             Number of gradient steps in a epoch.
 
         regularization_weight: float, default=1.0 (> 0)
@@ -547,7 +548,7 @@ class DiscreteMinimaxStateActionWeightLearning(BaseWeightValueLearner):
             state=state,
             action=action,
             evaluation_policy_action_dist=evaluation_policy_action_dist,
-            n_epochs=n_epochs,
+            n_steps=n_steps,
             n_steps_per_epoch=n_steps_per_epoch,
             regularization_weight=regularization_weight,
             random_state=random_state,
@@ -792,8 +793,8 @@ class DiscreteMinimaxStateWeightLearning(BaseWeightValueLearner):
         action: np.ndarray,
         pscore: np.ndarray,
         evaluation_policy_action_dist: np.ndarray,
-        n_epochs: int = 10,
-        n_steps_per_epoch: int = 1000,
+        n_steps: int = 10000,
+        n_steps_per_epoch: int = 10000,
         regularization_weight: float = 1.0,
         random_state: Optional[int] = None,
         **kwargs,
@@ -818,10 +819,10 @@ class DiscreteMinimaxStateWeightLearning(BaseWeightValueLearner):
             Conditional action distribution induced by the evaluation policy,
             i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
 
-        n_epochs: int, default=10 (> 0)
-            Number of epochs to train.
+        n_steps: int, default=10000 (> 0)
+            Number of gradient steps.
 
-        n_steps_per_epoch: int, default=1000 (> 0)
+        n_steps_per_epoch: int, default=10000 (> 0)
             Number of gradient steps in a epoch.
 
         regularization_weight: float, default=1.0 (> 0)
@@ -865,10 +866,11 @@ class DiscreteMinimaxStateWeightLearning(BaseWeightValueLearner):
                 "evaluation_policy_action_dist must sums up to one in axis=1, but found False"
             )
 
-        check_scalar(n_epochs, name="n_epochs", target_type=int, min_val=1)
+        check_scalar(n_steps, name="n_steps", target_type=int, min_val=1)
         check_scalar(
             n_steps_per_epoch, name="n_steps_per_epoch", target_type=int, min_val=1
         )
+        n_epochs = (n_steps - 1) // n_steps_per_epoch + 1
 
         if random_state is None:
             raise ValueError("Random state mush be given.")
@@ -1081,8 +1083,8 @@ class DiscreteMinimaxStateWeightLearning(BaseWeightValueLearner):
         action: np.ndarray,
         pscore: np.ndarray,
         evaluation_policy_action_dist: np.ndarray,
-        n_epochs: int = 10,
-        n_steps_per_epoch: int = 1000,
+        n_steps: int = 10000,
+        n_steps_per_epoch: int = 10000,
         regularization_weight: float = 1.0,
         random_state: Optional[int] = None,
         **kwargs,
@@ -1107,10 +1109,10 @@ class DiscreteMinimaxStateWeightLearning(BaseWeightValueLearner):
             Conditional action distribution induced by the evaluation policy,
             i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
 
-        n_epochs: int, default=10 (> 0)
-            Number of epochs to train.
+        n_steps: int, default=10000 (> 0)
+            Number of gradient steps.
 
-        n_steps_per_epoch: int, default=1000 (> 0)
+        n_steps_per_epoch: int, default=10000 (> 0)
             Number of gradient steps in a epoch.
 
         regularization_weight: float, default=1.0 (> 0)
@@ -1131,7 +1133,7 @@ class DiscreteMinimaxStateWeightLearning(BaseWeightValueLearner):
             action=action,
             pscore=pscore,
             evaluation_policy_action_dist=evaluation_policy_action_dist,
-            n_epochs=n_epochs,
+            n_steps=n_steps,
             n_steps_per_epoch=n_steps_per_epoch,
             random_state=random_state,
         )

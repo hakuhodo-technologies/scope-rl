@@ -23,7 +23,7 @@ HeadDict = Dict[str, Tuple[BaseHead, Dict[str, Any]]]
 
 @dataclass
 class TrainCandidatePolicies:
-    """Class to handle OPL by multiple algorithms simultaneously. (applicable to both discrete/continuous action cases)
+    """Class to handle ORL by multiple algorithms simultaneously. (applicable to both discrete/continuous action cases)
 
     Imported as: :class:`scope_rl.policy.TrainCandidatePolicies`
 
@@ -127,8 +127,8 @@ class TrainCandidatePolicies:
         }
 
         # off-policy learning
-        opl = TrainCandidatePolicies()
-        eval_policies = opl.obtain_evaluation_policy(
+        orl = TrainCandidatePolicies()
+        eval_policies = orl.obtain_evaluation_policy(
             algorithms=algorithms,
             algorithms_name=algorithms_name,
             policy_wrappers=policy_wrappers,
@@ -505,6 +505,10 @@ class TrainCandidatePolicies:
             evaluation_policies = {}
             for behavior_policy in base_policies.keys():
                 if isinstance(base_policies[behavior_policy][0], AlgoBase):
+                    if len(base_policies[behavior_policy]) != len(base_policies_name):
+                        raise ValueError(
+                            "Expected `len(base_policies[behavior_policy]) == len(base_policies_name)`, but found False"
+                        )
                     evaluation_policies[behavior_policy] = self._apply_head(
                         base_policies=base_policies[behavior_policy],
                         base_policies_name=base_policies_name,
@@ -515,6 +519,12 @@ class TrainCandidatePolicies:
                 else:
                     evaluation_policies[behavior_policy] = []
                     for dataset_id_ in range(len(base_policies[behavior_policy])):
+                        if len(base_policies[behavior_policy]) != len(
+                            base_policies_name
+                        ):
+                            raise ValueError(
+                                "Expected `len(base_policies[behavior_policy][dataset_id_]) == len(base_policies_name)`, but found False"
+                            )
                         evaluation_policies_ = self._apply_head(
                             base_policies=base_policies[behavior_policy][dataset_id_],
                             base_policies_name=base_policies_name,
@@ -527,6 +537,10 @@ class TrainCandidatePolicies:
 
         else:
             if isinstance(base_policies[0], AlgoBase):
+                if len(base_policies[behavior_policy]) != len(base_policies_name):
+                    raise ValueError(
+                        "Expected `len(base_policies) == len(base_policies_name)`, but found False"
+                    )
                 evaluation_policies = self._apply_head(
                     base_policies=base_policies,
                     base_policies_name=base_policies_name,
@@ -643,6 +657,10 @@ class TrainCandidatePolicies:
             List of (stochastic) evaluation policies.
 
         """
+        if not len(algorithms) != len(algorithms_name):
+            raise ValueError(
+                "algorithms and alogirthms_name must have the same length, but found False"
+            )
         if isinstance(logged_dataset, MultipleLoggedDataset):
             if behavior_policy_name is None and dataset_id is None:
                 eval_policies = defaultdict(list)
