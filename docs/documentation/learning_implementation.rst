@@ -277,7 +277,7 @@ Using :class:`TrainCandidatePolicies`, we can also convert the deterministic bas
 .. code-block:: python
 
     # policy wrapper
-    from scope_rl.policy import EpsilonGreedyHead as EpsilonGreedyHead
+    from scope_rl.policy import EpsilonGreedyHead
 
     policy_wrappers = {
         "eps_00": (

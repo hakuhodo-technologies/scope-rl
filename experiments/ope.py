@@ -22,9 +22,9 @@ from d3rlpy.models.q_functions import MeanQFunctionFactory
 
 from scope_rl.dataset import SyntheticDataset
 from scope_rl.policy import BaseHead
-from scope_rl.policy import GaussianHead as GaussianHead
-from scope_rl.policy import EpsilonGreedyHead as EpsilonGreedyHead
-from scope_rl.policy import SoftmaxHead as SoftmaxHead
+from scope_rl.policy import GaussianHead
+from scope_rl.policy import EpsilonGreedyHead
+from scope_rl.policy import SoftmaxHead
 from scope_rl.policy import TrainCandidatePolicies
 
 from scope_rl.ope import CreateOPEInput
