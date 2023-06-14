@@ -142,7 +142,7 @@ Let's start by generating some synthetic logged data useful for performing offli
 
 # import SCOPE-RL modules
 from scope_rl.dataset import SyntheticDataset
-from scope_rl.policy import DiscreteEpsilonGreedyHead
+from scope_rl.policy import EpsilonGreedyHead
 # import d3rlpy algorithms
 from d3rlpy.algos import DoubleDQN
 from d3rlpy.online.buffers import ReplayBuffer
@@ -172,7 +172,7 @@ ddqn.fit_online(
 
 # (2) Generate a logged dataset
 # convert the ddqn policy into a stochastic behavior policy
-behavior_policy = DiscreteEpsilonGreedyHead(
+behavior_policy = EpsilonGreedyHead(
     ddqn,
     n_actions=env.action_space.n,
     epsilon=0.3,
@@ -236,29 +236,29 @@ Then, we evaluate the performance of several evaluation policy (ddqn, cql, and r
 
 # import SCOPE-RL modules
 from scope_rl.ope import CreateOPEInput
-from scope_rl.ope import DiscreteOffPolicyEvaluation as OPE
-from scope_rl.ope import DiscreteDirectMethod as DM
-from scope_rl.ope import DiscreteTrajectoryWiseImportanceSampling as TIS
-from scope_rl.ope import DiscretePerDecisionImportanceSampling as PDIS
-from scope_rl.ope import DiscreteDoublyRobust as DR
+from scope_rl.ope import OffPolicyEvaluation as OPE
+from scope_rl.ope.discrete import DirectMethod as DM
+from scope_rl.ope.discrete import TrajectoryWiseImportanceSampling as TIS
+from scope_rl.ope.discrete import PerDecisionImportanceSampling as PDIS
+from scope_rl.ope.discrete import DoublyRobust as DR
 
 # (4) Evaluate the learned policy in an offline manner
 # we compare ddqn, cql, and random policy
-cql_ = DiscreteEpsilonGreedyHead(
+cql_ = EpsilonGreedyHead(
     base_policy=cql,
     n_actions=env.action_space.n,
     name="cql",
     epsilon=0.0,
     random_state=random_state,
 )
-ddqn_ = DiscreteEpsilonGreedyHead(
+ddqn_ = EpsilonGreedyHead(
     base_policy=ddqn,
     n_actions=env.action_space.n,
     name="ddqn",
     epsilon=0.0,
     random_state=random_state,
 )
-random_ = DiscreteEpsilonGreedyHead(
+random_ = EpsilonGreedyHead(
     base_policy=ddqn,
     n_actions=env.action_space.n,
     name="random",
@@ -307,11 +307,11 @@ We can also estimate various statics of the evaluation policy, beyond just its e
 
 # import SCOPE-RL modules
 from scope_rl.ope import CumulativeDistributionOPE
-from scope_rl.ope import DiscreteCumulativeDistributionDM as CD_DM
-from scope_rl.ope import DiscreteCumulativeDistributionTIS as CD_IS
-from scope_rl.ope import DiscreteCumulativeDistributionTDR as CD_DR
-from scope_rl.ope import DiscreteCumulativeDistributionSNTIS as CD_SNIS
-from scope_rl.ope import DiscreteCumulativeDistributionSNTDR as CD_SNDR
+from scope_rl.ope.discrete import CumulativeDistributionDM as CD_DM
+from scope_rl.ope.discrete import CumulativeDistributionTIS as CD_IS
+from scope_rl.ope.discrete import CumulativeDistributionTDR as CD_DR
+from scope_rl.ope.discrete import CumulativeDistributionSNTIS as CD_SNIS
+from scope_rl.ope.discrete import CumulativeDistributionSNTDR as CD_SNDR
 
 # (4) Evaluate the cumulative distribution function of the reward under the evaluation policy (in an offline manner)
 # we compare ddqn, cql, and random policy defined from the previous section (i.e., (3) of basic OPE procedure)
