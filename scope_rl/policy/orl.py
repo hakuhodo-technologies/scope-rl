@@ -1,9 +1,8 @@
 # Copyright (c) 2023, Haruka Kiyohara, Ren Kishimoto, HAKUHODO Technologies Inc., and Hanjuku-kaso Co., Ltd. All rights reserved.
 # Licensed under the Apache 2.0 License.
 
-"""Meta class to handle Off-Policy Learning (OPL)."""
+"""Meta class to handle Offline Learning (ORL)."""
 from dataclasses import dataclass
-from copy import deepcopy
 from collections import defaultdict
 from typing import Union, Optional, Any, Dict, List, Tuple
 from tqdm.auto import tqdm
@@ -43,7 +42,7 @@ class TrainCandidatePolicies:
         # import necessary module from SCOPE-RL
         from scope_rl.dataset import SyntheticDataset
         from scope_rl.policy import TrainCandidatePolicies
-        from scope_rl.policy import DiscreteEpsilonGreedyHead, DiscreteSoftmaxHead
+        from scope_rl.policy import EpsilonGreedyHead, SoftmaxHead
 
         # import necessary module from other libraries
         import gym
@@ -74,7 +73,7 @@ class TrainCandidatePolicies:
         )
 
         # convert ddqn policy to a stochastic data collection policy
-        behavior_policy = DiscreteEpsilonGreedyHead(
+        behavior_policy = EpsilonGreedyHead(
             ddqn,
             n_actions=env.action_space.n,
             epsilon=0.3,
@@ -105,21 +104,21 @@ class TrainCandidatePolicies:
         # policy wrappers
         policy_wrappers = {
             "eps_01": (
-                DiscreteEpsilonGreedyHead,
+                EpsilonGreedyHead,
                 {
                     "epsilon": 0.1,
                     "n_actions": env.action_space.n,
                 }
             ),
             "eps_03": (
-                DiscreteEpsilonGreedyHead,
+                EpsilonGreedyHead,
                 {
                     "epsilon": 0.3,
                     "n_actions": env.action_space.n,
                 }
             ),
             "softmax": (
-                DiscreteSoftmaxHead,
+                SoftmaxHead,
                 {
                     "tau": 1.0,
                     "n_actions": env.action_space.n,
@@ -268,7 +267,7 @@ class TrainCandidatePolicies:
                 {
                     "eps_01":  # wrapper_name
                         (
-                            DiscreteEpsilonGreedyHead,  # BaseHead
+                            EpsilonGreedyHead,  # BaseHead
                             {
                                 "epsilon": 0.1,         # params_dict
                                 "n_actions": 5,
@@ -471,7 +470,7 @@ class TrainCandidatePolicies:
                 {
                     "eps_01":  # wrapper_name
                         (
-                            DiscreteEpsilonGreedyHead,  # BaseHead
+                            EpsilonGreedyHead,  # BaseHead
                             {
                                 "epsilon": 0.1,         # params_dict
                                 "n_actions": 5,
@@ -613,7 +612,7 @@ class TrainCandidatePolicies:
                 {
                     "eps_01":  # wrapper_name
                         (
-                            DiscreteEpsilonGreedyHead,  # BaseHead
+                            EpsilonGreedyHead,  # BaseHead
                             {
                                 "epsilon": 0.1,         # params_dict
                                 "n_actions": 5,

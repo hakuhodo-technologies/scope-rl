@@ -250,12 +250,12 @@ class OnlineHead(BaseHead):
 
 
 @dataclass
-class DiscreteEpsilonGreedyHead(BaseHead):
-    """Class to convert a deterministic policy into an epsilon-greedy policy.
+class EpsilonGreedyHead(BaseHead):
+    """Class to convert a deterministic policy into an epsilon-greedy policy (applicable to discrete action case).
 
     Bases: :class:`scope_rl.policy.BaseHead`
 
-    Imported as: :class:`scope_rl.policy.DiscreteEpsilonGreedyHead`
+    Imported as: :class:`scope_rl.policy.EpsilonGreedyHead`
 
     Note
     -------
@@ -409,12 +409,12 @@ class DiscreteEpsilonGreedyHead(BaseHead):
 
 
 @dataclass
-class DiscreteSoftmaxHead(BaseHead):
-    """Class to convert a Q-learning based policy into a softmax policy.
+class SoftmaxHead(BaseHead):
+    """Class to convert a Q-learning based policy into a softmax policy (applicable to discrete action space).
 
     Bases: :class:`scope_rl.policy.BaseHead`
 
-    Imported as: :class:`scope_rl.policy.DiscreteSoftmaxHead`
+    Imported as: :class:`scope_rl.policy.SoftmaxHead`
 
     Note
     -------
@@ -616,17 +616,17 @@ class DiscreteSoftmaxHead(BaseHead):
 
 
 @dataclass
-class ContinuousGaussianHead(BaseHead):
-    """Class to sample action from Gaussian distribution.
+class GaussianHead(BaseHead):
+    """Class to sample action from Gaussian distribution (applicable to continuous action case).
 
     Bases: :class:`scope_rl.policy.BaseHead`
 
-    Imported as: :class:`scope_rl.policy.ContinuousGaussianHead`
+    Imported as: :class:`scope_rl.policy.GaussianHead`
 
     Note
     -------
     This class should be used when action_space is not clipped.
-    Otherwise, please use :class:`ContinuousTruncatedGaussianHead` instead.
+    Otherwise, please use :class:`TruncatedGaussianHead` instead.
 
     Given a deterministic policy, a gaussian policy samples an action :math:`a \\in \\mathcal{A}` given state :math:`s` as follows.
 
@@ -769,12 +769,12 @@ class ContinuousGaussianHead(BaseHead):
 
 
 @dataclass
-class ContinuousTruncatedGaussianHead(BaseHead):
-    """Class to sample continuous actions from Truncated Gaussian distribution.
+class TruncatedGaussianHead(BaseHead):
+    """Class to sample continuous actions from Truncated Gaussian distribution (applicable to continuous action space).
 
     Bases: :class:`scope_rl.policy.BaseHead`
 
-    Imported as: :class:`scope_rl.policy.ContinuousTruncatedGaussianHead`
+    Imported as: :class:`scope_rl.policy.TruncatedGaussianHead`
 
     Note
     -------

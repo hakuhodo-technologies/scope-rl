@@ -44,12 +44,12 @@ Then, it collects logged data by a behavior policy (i.e., data collection policy
         A policy head converts a `d3rlpy <https://github.com/takuseno/d3rlpy>`_'s deterministic behavior policy to 
         either a deterministic or stochastic policy with functions to calculate propensity scores (i.e., action choice probabilities).
 
-        For example, :class:`DiscreteEpsilonGreedyHead` converts a discrete-action policy to a epsilon-greedy policy as follows.
+        For example, :class:`EpsilonGreedyHead` converts a discrete-action policy to a epsilon-greedy policy as follows.
 
         .. code-block:: python
 
-            from scope_rl.policy import DiscreteEpsilonGreedyHead
-            behavior_policy = DiscreteEpsilonGreedyHead(
+            from scope_rl.policy import EpsilonGreedyHead
+            behavior_policy = EpsilonGreedyHead(
                 base_policy,  # AlgoBase of d3rlpy
                 n_actions=env.action_space.n,
                 epsilon=0.3,
@@ -58,12 +58,12 @@ Then, it collects logged data by a behavior policy (i.e., data collection policy
             )
 
 
-        :class:`ContinuousGaussianHead` converts a continuous-action policy to a stochastic policy as follows.
+        :class:`GaussianHead` converts a continuous-action policy to a stochastic policy as follows.
 
         .. code-block:: python
 
-            from scope_rl.policy import ContinuousGaussianHead
-            behavior_policy = ContinuousGaussianHead(
+            from scope_rl.policy import GaussianHead
+            behavior_policy = GaussianHead(
                 base_policy,  # AlgoBase of d3rlpy
                 sigma=1.0,
                 name="sigma_10",
@@ -277,7 +277,7 @@ Using :class:`TrainCandidatePolicies`, we can also convert the deterministic bas
 .. code-block:: python
 
     # policy wrapper
-    from scope_rl.policy import DiscreteEpsilonGreedyHead as EpsilonGreedyHead
+    from scope_rl.policy import EpsilonGreedyHead as EpsilonGreedyHead
 
     policy_wrappers = {
         "eps_00": (
@@ -427,11 +427,11 @@ DiscreteHead
 This module transforms a deterministic policy to a stochastic one in discrete action cases.
 Specifically, we have the following two options.
 
-    * :class:`DiscreteEpsilonGreedyHead`: :math:`\pi(a | s) := (1 - \epsilon) * \pi_{\mathrm{det}}(a | s) + \epsilon / |\mathcal{A}|`.
-    * :class:`DiscreteSoftmaxHead`: :math:`\pi(a | s) := \displaystyle \frac{\exp(Q^{(\pi_{\mathrm{det}})}(s, a) / \tau)}{\sum_{a' \in \mathcal{A}} \exp(Q^{(\pi_{\mathrm{det}})}(s, a') / \tau)}`.
+    * :class:`EpsilonGreedyHead`: :math:`\pi(a | s) := (1 - \epsilon) * \pi_{\mathrm{det}}(a | s) + \epsilon / |\mathcal{A}|`.
+    * :class:`SoftmaxHead`: :math:`\pi(a | s) := \displaystyle \frac{\exp(Q^{(\pi_{\mathrm{det}})}(s, a) / \tau)}{\sum_{a' \in \mathcal{A}} \exp(Q^{(\pi_{\mathrm{det}})}(s, a') / \tau)}`.
 
 Note that :math:`\epsilon \in [0, 1]` is the degree of exploration :math:`\tau` is the temperature hyperparameter.
-DiscreteEpsilonGreedyHead is also used to construct a deterministic evaluation policy in OPE/OPS by setting :math:`\epsilon=0.0`.
+EpsilonGreedyHead is also used to construct a deterministic evaluation policy in OPE/OPS by setting :math:`\epsilon=0.0`.
 
 .. _implementation_continuous_head:
 
@@ -439,8 +439,8 @@ ContinuousHead
 ----------
 This module transforms a deterministic policy to a stochastic one in continuous action cases.
 
-    * :class:`ContinuousGaussianHead`: :math:`\pi(a | s) := \mathrm{Normal}(\pi_{\mathrm{det}}(s), \sigma)`.
-    * :class:`ContinuousTruncatedGaussianHead`: :math:`\pi(a | s) := \mathrm{TruncatedNormal}(\pi_{\mathrm{det}}(s), \sigma)`.
+    * :class:`GaussianHead`: :math:`\pi(a | s) := \mathrm{Normal}(\pi_{\mathrm{det}}(s), \sigma)`.
+    * :class:`TruncatedGaussianHead`: :math:`\pi(a | s) := \mathrm{TruncatedNormal}(\pi_{\mathrm{det}}(s), \sigma)`.
 
 We also provide the wrapper class of deterministic policy to be used in OPE.
 

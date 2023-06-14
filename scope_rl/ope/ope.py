@@ -115,11 +115,11 @@ class OffPolicyEvaluation:
 
         # import necessary module from SCOPE-RL
         from scope_rl.dataset import SyntheticDataset
-        from scope_rl.policy import DiscreteEpsilonGreedyHead
+        from scope_rl.policy import EpsilonGreedyHead
         from scope_rl.ope import CreateOPEInput
-        from scope_rl.ope import DiscreteOffPolicyEvaluation as OPE
-        from scope_rl.ope import DiscreteTrajectoryWiseImportanceSampling as TIS
-        from scope_rl.ope import DiscretePerDecisionImportanceSampling as PDIS
+        from scope_rl.ope import OffPolicyEvaluation as OPE
+        from scope_rl.ope.discrete import TrajectoryWiseImportanceSampling as TIS
+        from scope_rl.ope.discrete import PerDecisionImportanceSampling as PDIS
 
         # import necessary module from other libraries
         import gym
@@ -149,7 +149,7 @@ class OffPolicyEvaluation:
         )
 
         # convert ddqn policy to stochastic data collection policy
-        behavior_policy = DiscreteEpsilonGreedyHead(
+        behavior_policy = EpsilonGreedyHead(
             ddqn,
             n_actions=env.action_space.n,
             epsilon=0.3,
@@ -175,14 +175,14 @@ class OffPolicyEvaluation:
     .. code-block:: python
 
         # evaluation policy
-        ddqn_ = DiscreteEpsilonGreedyHead(
+        ddqn_ = EpsilonGreedyHead(
             base_policy=ddqn,
             n_actions=env.action_space.n,
             name="ddqn",
             epsilon=0.0,
             random_state=12345
         )
-        random_ = DiscreteEpsilonGreedyHead(
+        random_ = EpsilonGreedyHead(
             base_policy=ddqn,
             n_actions=env.action_space.n,
             name="random",
@@ -226,7 +226,7 @@ class OffPolicyEvaluation:
     .. seealso::
 
         * :doc:`Quickstart </documentation/quickstart>`
-        * :doc:`Related tutorials </documentation/_autogallery/basic_ope/index>`
+        * :doc:`Related tutorials </documentation/examples/basic_ope>`
 
     """
 
@@ -2492,11 +2492,11 @@ class CumulativeDistributionOPE:
 
         # import necessary module from SCOPE-RL
         from scope_rl.dataset import SyntheticDataset
-        from scope_rl.policy import DiscreteEpsilonGreedyHead
+        from scope_rl.policy import EpsilonGreedyHead
         from scope_rl.ope import CreateOPEInput
         from scope_rl.ope import CumulativeDistributionOPE
-        from scope_rl.ope import DiscreteCumulativeDistributionTIS as CD_IS
-        from scope_rl.ope import DiscreteCumulativeDistributionSNTIS as CD_SNIS
+        from scope_rl.ope.discrete import CumulativeDistributionTIS as CD_IS
+        from scope_rl.ope.discrete import CumulativeDistributionSNTIS as CD_SNIS
 
         # import necessary module from other libraries
         import gym
@@ -2526,7 +2526,7 @@ class CumulativeDistributionOPE:
         )
 
         # convert ddqn policy to stochastic data collection policy
-        behavior_policy = DiscreteEpsilonGreedyHead(
+        behavior_policy = EpsilonGreedyHead(
             ddqn,
             n_actions=env.action_space.n,
             epsilon=0.3,
@@ -2549,14 +2549,14 @@ class CumulativeDistributionOPE:
     .. code-block:: python
 
         # evaluation policy
-        ddqn_ = DiscreteEpsilonGreedyHead(
+        ddqn_ = EpsilonGreedyHead(
             base_policy=ddqn,
             n_actions=env.action_space.n,
             name="ddqn",
             epsilon=0.0,
             random_state=12345
         )
-        random_ = DiscreteEpsilonGreedyHead(
+        random_ = EpsilonGreedyHead(
             base_policy=ddqn,
             n_actions=env.action_space.n,
             name="random",
@@ -2603,7 +2603,7 @@ class CumulativeDistributionOPE:
     .. seealso::
 
         * :doc:`Quickstart </documentation/quickstart>`
-        * :doc:`Related tutorials </documentation/_autogallery/cumulative_distribution_ope/index>`
+        * :doc:`Related tutorials </documentation/examples/cumulative_dist_ope>`
 
     References
     -------

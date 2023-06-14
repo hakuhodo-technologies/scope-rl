@@ -119,11 +119,11 @@ class CreateOPEInput:
 
         # import necessary module from SCOPE-RL
         from scope_rl.dataset import SyntheticDataset
-        from scope_rl.policy import DiscreteEpsilonGreedyHead
+        from scope_rl.policy import EpsilonGreedyHead
         from scope_rl.ope import CreateOPEInput
-        from scope_rl.ope import DiscreteOffPolicyEvaluation as OPE
-        from scope_rl.ope import DiscreteTrajectoryWiseImportanceSampling as TIS
-        from scope_rl.ope import DiscretePerDecisionImportanceSampling as PDIS
+        from scope_rl.ope import OffPolicyEvaluation as OPE
+        from scope_rl.ope.discrete import TrajectoryWiseImportanceSampling as TIS
+        from scope_rl.ope.discrete import PerDecisionImportanceSampling as PDIS
 
         # import necessary module from other libraries
         import gym
@@ -153,7 +153,7 @@ class CreateOPEInput:
         )
 
         # convert ddqn policy to stochastic data collection policy
-        behavior_policy = DiscreteEpsilonGreedyHead(
+        behavior_policy = EpsilonGreedyHead(
             ddqn,
             n_actions=env.action_space.n,
             epsilon=0.3,
@@ -179,14 +179,14 @@ class CreateOPEInput:
     .. code-block:: python
 
         # evaluation policy
-        ddqn_ = DiscreteEpsilonGreedyHead(
+        ddqn_ = EpsilonGreedyHead(
             base_policy=ddqn,
             n_actions=env.action_space.n,
             name="ddqn",
             epsilon=0.0,
             random_state=12345
         )
-        random_ = DiscreteEpsilonGreedyHead(
+        random_ = EpsilonGreedyHead(
             base_policy=ddqn,
             n_actions=env.action_space.n,
             name="random",
@@ -215,7 +215,6 @@ class CreateOPEInput:
     .. seealso::
 
         * :doc:`Quickstart </documentation/quickstart>`
-        * :doc:`Related tutorials </documentation/_autogallery/scope_rl_others/index>`
 
     """
 

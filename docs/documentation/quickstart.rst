@@ -43,7 +43,7 @@ Note that in the following example, we use :doc:`RTBGym <subpackages/rtbgym_abou
 
     # import SCOPE-RL modules
     from scope_rl.dataset import SyntheticDataset
-    from scope_rl.policy import DiscreteEpsilonGreedyHead
+    from scope_rl.policy import EpsilonGreedyHead
     # import d3rlpy algorithms
     from d3rlpy.algos import DoubleDQN
     from d3rlpy.online.buffers import ReplayBuffer
@@ -72,7 +72,7 @@ Note that in the following example, we use :doc:`RTBGym <subpackages/rtbgym_abou
 
     # (2) Generate logged dataset
     # convert ddqn policy into a stochastic behavior policy
-    behavior_policy = DiscreteEpsilonGreedyHead(
+    behavior_policy = EpsilonGreedyHead(
         ddqn,
         n_actions=env.action_space.n,
         epsilon=0.3,
@@ -182,21 +182,21 @@ and Doubly Robust (DR) :cite:`jiang2016doubly, thomas2016data`.
 
     # (4) Evaluate the learned policy in an offline manner
     # we compare ddqn, cql, and random policy
-    cql_ = DiscreteEpsilonGreedyHead(
+    cql_ = EpsilonGreedyHead(
         base_policy=cql,
         n_actions=env.action_space.n,
         name="cql",
         epsilon=0.0,
         random_state=random_state,
     )
-    ddqn_ = DiscreteEpsilonGreedyHead(
+    ddqn_ = EpsilonGreedyHead(
         base_policy=ddqn,
         n_actions=env.action_space.n,
         name="ddqn",
         epsilon=0.0,
         random_state=random_state,
     )
-    random_ = DiscreteEpsilonGreedyHead(
+    random_ = EpsilonGreedyHead(
         base_policy=ddqn,
         n_actions=env.action_space.n,
         name="random",

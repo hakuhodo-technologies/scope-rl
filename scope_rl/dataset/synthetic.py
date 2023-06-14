@@ -76,7 +76,7 @@ class SyntheticDataset(BaseDataset):
 
         # import necessary module from SCOPE-RL
         from scope_rl.dataset import SyntheticDataset
-        from scope_rl.policy import DiscreteEpsilonGreedyHead
+        from scope_rl.policy import EpsilonGreedyHead
 
         # import necessary module from other libraries
         import gym
@@ -106,7 +106,7 @@ class SyntheticDataset(BaseDataset):
         )
 
         # convert ddqn policy to stochastic data collection policy
-        behavior_policy = DiscreteEpsilonGreedyHead(
+        behavior_policy = EpsilonGreedyHead(
             ddqn,
             n_actions=env.action_space.n,
             epsilon=0.3,

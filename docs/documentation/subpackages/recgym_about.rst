@@ -82,12 +82,12 @@ Let's interact uniform random policy with a discrete action REC environment.
 .. code-block:: python
 
     # import from other libraries
-    from offlinegym.policy import DiscreteEpsilonGreedyHead
+    from offlinegym.policy import EpsilonGreedyHead
     from d3rlpy.algos import RandomPolicy as DiscreteRandomPolicy
     import matplotlib.pyplot as plt
 
     # define a random agent
-    agent = DiscreteEpsilonGreedyHead(
+    agent = EpsilonGreedyHead(
         base_policy=DiscreteRandomPolicy(),
         n_actions=env.n_items,
         epsilon=1.0,
