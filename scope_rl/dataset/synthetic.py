@@ -76,7 +76,7 @@ class SyntheticDataset(BaseDataset):
 
         # import necessary module from SCOPE-RL
         from scope_rl.dataset import SyntheticDataset
-        from scope_rl.policy import DiscreteEpsilonGreedyHead
+        from scope_rl.policy import EpsilonGreedyHead
 
         # import necessary module from other libraries
         import gym
@@ -106,7 +106,7 @@ class SyntheticDataset(BaseDataset):
         )
 
         # convert ddqn policy to stochastic data collection policy
-        behavior_policy = DiscreteEpsilonGreedyHead(
+        behavior_policy = EpsilonGreedyHead(
             ddqn,
             n_actions=env.action_space.n,
             epsilon=0.3,
@@ -433,7 +433,7 @@ class SyntheticDataset(BaseDataset):
                 (
                     action,
                     action_prob,
-                ) = behavior_policy.stochastic_action_with_pscore_online(state)
+                ) = behavior_policy.sample_action_and_output_pscore_online(state)
 
                 if self.action_type == "continuous":
                     if record_unclipped_action:
@@ -752,7 +752,7 @@ class SyntheticDataset(BaseDataset):
                 (
                     action,
                     action_prob,
-                ) = self.behavior_policy.stochastic_action_with_pscore_online(state)
+                ) = self.behavior_policy.sample_action_and_output_pscore_online(state)
                 next_state, reward, done, truncated, info_ = self.env.step(action)
 
                 states[idx] = state

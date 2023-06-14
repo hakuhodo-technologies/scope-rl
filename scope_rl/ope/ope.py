@@ -97,8 +97,8 @@ class OffPolicyEvaluation:
         Number of previous steps to use per-decision importance weight in marginal OPE estimators.
         When set to zero, the estimator is reduced to the vanilla state marginal IS.
 
-    sigma: float, default=1.0 (> 0)
-        Bandwidth hyperparameter of gaussian kernel for continuous action space.
+    bandwidth: float, default=1.0 (> 0)
+        Bandwidth hyperparameter of the kernel used in continuous action case.
 
     action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
         Scaling factor of action.
@@ -115,11 +115,11 @@ class OffPolicyEvaluation:
 
         # import necessary module from SCOPE-RL
         from scope_rl.dataset import SyntheticDataset
-        from scope_rl.policy import DiscreteEpsilonGreedyHead
+        from scope_rl.policy import EpsilonGreedyHead
         from scope_rl.ope import CreateOPEInput
-        from scope_rl.ope import DiscreteOffPolicyEvaluation as OPE
-        from scope_rl.ope import DiscreteTrajectoryWiseImportanceSampling as TIS
-        from scope_rl.ope import DiscretePerDecisionImportanceSampling as PDIS
+        from scope_rl.ope import OffPolicyEvaluation as OPE
+        from scope_rl.ope.discrete import TrajectoryWiseImportanceSampling as TIS
+        from scope_rl.ope.discrete import PerDecisionImportanceSampling as PDIS
 
         # import necessary module from other libraries
         import gym
@@ -149,7 +149,7 @@ class OffPolicyEvaluation:
         )
 
         # convert ddqn policy to stochastic data collection policy
-        behavior_policy = DiscreteEpsilonGreedyHead(
+        behavior_policy = EpsilonGreedyHead(
             ddqn,
             n_actions=env.action_space.n,
             epsilon=0.3,
@@ -175,14 +175,14 @@ class OffPolicyEvaluation:
     .. code-block:: python
 
         # evaluation policy
-        ddqn_ = DiscreteEpsilonGreedyHead(
+        ddqn_ = EpsilonGreedyHead(
             base_policy=ddqn,
             n_actions=env.action_space.n,
             name="ddqn",
             epsilon=0.0,
             random_state=12345
         )
-        random_ = DiscreteEpsilonGreedyHead(
+        random_ = EpsilonGreedyHead(
             base_policy=ddqn,
             n_actions=env.action_space.n,
             name="random",
@@ -226,14 +226,14 @@ class OffPolicyEvaluation:
     .. seealso::
 
         * :doc:`Quickstart </documentation/quickstart>`
-        * :doc:`Related tutorials </documentation/_autogallery/basic_ope/index>`
+        * :doc:`Related tutorials </documentation/examples/basic_ope>`
 
     """
 
     logged_dataset: Union[LoggedDataset, MultipleLoggedDataset]
     ope_estimators: List[BaseOffPolicyEstimator]
     n_step_pdis: int = 0
-    sigma: float = 1.0
+    bandwidth: float = 1.0
     action_scaler: Optional[ActionScaler] = None
     disable_reward_after_done: bool = True
 
@@ -336,7 +336,9 @@ class OffPolicyEvaluation:
                 raise ValueError(
                     "action_scaler must be an instance of d3rlpy.preprocessing.ActionScaler, but found False"
                 )
-            check_scalar(self.sigma, name="sigma", target_type=float, min_val=0.0)
+            check_scalar(
+                self.bandwidth, name="bandwidth", target_type=float, min_val=0.0
+            )
 
             self.input_dict_ = {
                 "step_per_trajectory": self.step_per_trajectory,
@@ -345,7 +347,7 @@ class OffPolicyEvaluation:
                 "done": self.logged_dataset["done"],
                 "pscore": self.logged_dataset["pscore"],
                 "action_scaler": self.action_scaler,
-                "sigma": self.sigma,
+                "bandwidth": self.bandwidth,
             }
 
     def _estimate_policy_value(
@@ -1625,7 +1627,7 @@ class OffPolicyEvaluation:
         )
 
         if is_relative:
-            gamma = input_dict["gamma"]
+            gamma = input_dict[list(input_dict.keys())[0]]["gamma"]
             discount = np.full(self.step_per_trajectory, gamma).cumprod() / gamma
             behavior_policy_value = (
                 discount[np.newaxis, :] * self.behavior_policy_reward
@@ -2472,8 +2474,8 @@ class CumulativeDistributionOPE:
         Number of partitions in the reward scale (x-axis of the CDF).
         If use_custom_reward_scale is `True`, a value must be given.
 
-    sigma: float, default=1.0 (> 0)
-        Bandwidth hyperparameter of gaussian kernel for continuous action space.
+    bandwidth: float, default=1.0 (> 0)
+        Bandwidth hyperparameter of the kernel used in continuous action case.
 
     action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
         Scaling factor of action.
@@ -2490,11 +2492,11 @@ class CumulativeDistributionOPE:
 
         # import necessary module from SCOPE-RL
         from scope_rl.dataset import SyntheticDataset
-        from scope_rl.policy import DiscreteEpsilonGreedyHead
+        from scope_rl.policy import EpsilonGreedyHead
         from scope_rl.ope import CreateOPEInput
         from scope_rl.ope import CumulativeDistributionOPE
-        from scope_rl.ope import DiscreteCumulativeDistributionTIS as CD_IS
-        from scope_rl.ope import DiscreteCumulativeDistributionSNTIS as CD_SNIS
+        from scope_rl.ope.discrete import CumulativeDistributionTIS as CD_IS
+        from scope_rl.ope.discrete import CumulativeDistributionSNTIS as CD_SNIS
 
         # import necessary module from other libraries
         import gym
@@ -2524,7 +2526,7 @@ class CumulativeDistributionOPE:
         )
 
         # convert ddqn policy to stochastic data collection policy
-        behavior_policy = DiscreteEpsilonGreedyHead(
+        behavior_policy = EpsilonGreedyHead(
             ddqn,
             n_actions=env.action_space.n,
             epsilon=0.3,
@@ -2547,14 +2549,14 @@ class CumulativeDistributionOPE:
     .. code-block:: python
 
         # evaluation policy
-        ddqn_ = DiscreteEpsilonGreedyHead(
+        ddqn_ = EpsilonGreedyHead(
             base_policy=ddqn,
             n_actions=env.action_space.n,
             name="ddqn",
             epsilon=0.0,
             random_state=12345
         )
-        random_ = DiscreteEpsilonGreedyHead(
+        random_ = EpsilonGreedyHead(
             base_policy=ddqn,
             n_actions=env.action_space.n,
             name="random",
@@ -2601,7 +2603,7 @@ class CumulativeDistributionOPE:
     .. seealso::
 
         * :doc:`Quickstart </documentation/quickstart>`
-        * :doc:`Related tutorials </documentation/_autogallery/cumulative_distribution_ope/index>`
+        * :doc:`Related tutorials </documentation/examples/cumulative_dist_ope>`
 
     References
     -------
@@ -2622,7 +2624,7 @@ class CumulativeDistributionOPE:
     scale_min: Optional[float] = None
     scale_max: Optional[float] = None
     n_partition: Optional[int] = None
-    sigma: float = 1.0
+    bandwidth: float = 1.0
     action_scaler: Optional[ActionScaler] = None
     disable_reward_after_done: bool = True
 
@@ -2697,7 +2699,9 @@ class CumulativeDistributionOPE:
                 raise ValueError(
                     "action_scaler must be an instance of d3rlpy.preprocessing.ActionScaler, but found False"
                 )
-            check_scalar(self.sigma, name="sigma", target_type=float, min_val=0.0)
+            check_scalar(
+                self.bandwidth, name="bandwidth", target_type=float, min_val=0.0
+            )
 
         self._estimate_confidence_interval = {
             "bootstrap": estimate_confidence_interval_by_bootstrap,
@@ -2846,7 +2850,7 @@ class CumulativeDistributionOPE:
                 "done": self.logged_dataset["done"],
                 "pscore": self.logged_dataset["pscore"],
                 "action_scaler": self.action_scaler,
-                "sigma": self.sigma,
+                "bandwidth": self.bandwidth,
             }
 
     def _target_value_given_idx(self, idx_: int, reward_scale: np.ndarray):
@@ -4677,7 +4681,7 @@ class CumulativeDistributionOPE:
         )
 
         if is_relative:
-            gamma = input_dict["gamma"]
+            gamma = input_dict[list(input_dict.keys())[0]]["gamma"]
             discount = np.full(self.step_per_trajectory, gamma).cumprod() / gamma
             behavior_policy_value = (
                 discount[np.newaxis, :] * self.behavior_policy_reward
@@ -4744,8 +4748,8 @@ class CumulativeDistributionOPE:
 
                 elines = ax.get_children()
                 for j in range(n_estimators):
-                    elines[2 * j + 1].set_color("black")
-                    elines[2 * j + 1].set_linewidth(2.0)
+                    elines[3 * j + 2].set_color("black")
+                    elines[3 * j + 2].set_linewidth(2.0)
 
                 if on_policy_mean is not None:
                     ax.axhline(on_policy_mean)

@@ -47,9 +47,8 @@ Our software facilitates implementation, evaluation and algorithm comparison rel
 
    This documentation aims to provide a gentle introduction to offline RL and OPE/OPS in the following steps.
 
-   .. 2. Provide a variety of examples of conducting offline RL and OPE/OPS in practical problem settings in :doc:`Quickstart <quickstart>` and :doc:`Tutorial <tutorial>`.
    1. Explain the basic concepts in :doc:`Overview (online/offline RL) <online_offline_rl>` and :doc:`Overview (OPE/OPS) <ope_ops>`.
-   2. Provide a variety of examples of conducting offline RL and OPE/OPS in practical problem settings in :doc:`Quickstart <quickstart>`.
+   2. Provide a variety of examples of conducting offline RL and OPE/OPS in practical problem settings in :doc:`Quickstart <quickstart>` and :doc:`Example Codes <examples/index>`.
    3. Describe the algorithms and implementations in detail in :doc:`Supported Implementation <evaluation_implementation>` and :doc:`Package Reference <scope_rl_api>`.
 
    **You can also find the distinctive features of SCOPE-RL here:** :doc:`distinctive_features`
@@ -66,7 +65,7 @@ wrapper classes for transforming the policy into a stochastic policy as follows.
 Meta class
 ^^^^^^
 * SyntheticDataset
-* OffPolicyLearning
+* TrainCandidatePolicies
 
 Discrete
 ^^^^^^
@@ -92,28 +91,28 @@ Moreover, SCOPE-RL also implements meta class to handle OPE with multiple estima
 
 Basic estimators
 ^^^^^^
-* Direct Method (DM) :cite:`beygelzimer2009offset` :cite:`le2019batch`
+* Direct Method (DM) :cite:`beygelzimer2009offset, le2019batch`
 * Trajectory-wise Importance Sampling (TIS) :cite:`precup2000eligibility`
 * Per-Decision Importance Sampling (PDIS) :cite:`precup2000eligibility`
-* Doubly Robust (DR) :cite:`jiang2016doubly` :cite:`thomas2016data`
-* Self-Normalized Trajectory-wise Importance Sampling (SNTIS) :cite:`precup2000eligibility` :cite:`kallus2019intrinsically`
-* Self-Normalized Per-Decision Importance Sampling (SNPDIS) :cite:`precup2000eligibility` :cite:`kallus2019intrinsically`
-* Self-Normalized Doubly Robust (SNDR) :cite:`jiang2016doubly` :cite:`thomas2016data` :cite:`kallus2019intrinsically`
+* Doubly Robust (DR) :cite:`jiang2016doubly, thomas2016data`
+* Self-Normalized Trajectory-wise Importance Sampling (SNTIS) :cite:`precup2000eligibility, kallus2019intrinsically`
+* Self-Normalized Per-Decision Importance Sampling (SNPDIS) :cite:`precup2000eligibility, kallus2019intrinsically`
+* Self-Normalized Doubly Robust (SNDR) :cite:`jiang2016doubly, thomas2016data, kallus2019intrinsically`
 
 State Marginal Estimators
 ^^^^^^
 * State Marginal Direct Method (SM-DM) :cite:`uehara2020minimax`
-* State Marginal Importance Sampling (SM-IS) :cite:`liu2018breaking` :cite:`uehara2020minimax` :cite:`yuan2021sope`
-* State Marginal Doubly Robust (SM-DR) :cite:`liu2018breaking` :cite:`uehara2020minimax` :cite:`yuan2021sope`
-* State Marginal Self-Normalized Importance Sampling (SM-SNIS) :cite:`liu2018breaking` :cite:`uehara2020minimax` :cite:`yuan2021sope`
-* State Marginal Self-Normalized Doubly Robust (SM-SNDR) :cite:`liu2018breaking` :cite:`uehara2020minimax` :cite:`yuan2021sope`
+* State Marginal Importance Sampling (SM-IS) :cite:`liu2018breaking, uehara2020minimax, yuan2021sope`
+* State Marginal Doubly Robust (SM-DR) :cite:`liu2018breaking, uehara2020minimax, yuan2021sope`
+* State Marginal Self-Normalized Importance Sampling (SM-SNIS) :cite:`liu2018breaking, uehara2020minimax, yuan2021sope`
+* State Marginal Self-Normalized Doubly Robust (SM-SNDR) :cite:`liu2018breaking, uehara2020minimax, yuan2021sope`
 
 State-Action Marginal Estimators
 ^^^^^^
-* State-Action Marginal Importance Sampling (SAM-IS) :cite:`uehara2020minimax` :cite:`yuan2021sope`
-* State-Action Marginal Doubly Robust (SAM-DR) :cite:`uehara2020minimax` :cite:`yuan2021sope`
-* State-Action Marginal Self-Normalized Importance Sampling (SAM-SNIS) :cite:`uehara2020minimax` :cite:`yuan2021sope`
-* State-Action Marginal Self-Normalized Doubly Robust (SAM-SNDR) :cite:`uehara2020minimax` :cite:`yuan2021sope`
+* State-Action Marginal Importance Sampling (SAM-IS) :cite:`uehara2020minimax, yuan2021sope`
+* State-Action Marginal Doubly Robust (SAM-DR) :cite:`uehara2020minimax, yuan2021sope`
+* State-Action Marginal Self-Normalized Importance Sampling (SAM-SNIS) :cite:`uehara2020minimax, yuan2021sope`
+* State-Action Marginal Self-Normalized Doubly Robust (SAM-SNDR) :cite:`uehara2020minimax, yuan2021sope`
 
 Double Reinforcement Learning
 ^^^^^^
@@ -132,9 +131,9 @@ Weight and Value Learning Methods
 
 High Confidence OPE
 ^^^^^^
-* Bootstrap :cite:`thomas2015improvement` :cite:`hanna2017bootstrapping`
+* Bootstrap :cite:`thomas2015improvement, hanna2017bootstrapping`
 * Hoeffding :cite:`thomas2015evaluation`
-* (Empirical) Bernstein :cite:`thomas2015evaluation` :cite:`thomas2015improvement`
+* (Empirical) Bernstein :cite:`thomas2015evaluation, thomas2015improvement`
 * Student T-test :cite:`thomas2015improvement`
 
 Cumulative Distribution OPE
@@ -152,9 +151,9 @@ Meta class and generic abstract class are also available for cumulative distribu
 Estimators
 ^^^^^^
 * Direct Method (DM) :cite:`huang2021off`
-* Trajectory-wise Importance Sampling (TIS) :cite:`huang2021off` :cite:`chandak2021universal`
+* Trajectory-wise Importance Sampling (TIS) :cite:`huang2021off, chandak2021universal`
 * Trajectory-wise Doubly Robust (TDR) :cite:`huang2021off`
-* Self-Normalized Trajectory-wise Importance Sampling (SNTIS) :cite:`huang2021off` :cite:`chandak2021universal`
+* Self-Normalized Trajectory-wise Importance Sampling (SNTIS) :cite:`huang2021off, chandak2021universal`
 * Self-Normalized Trajectory-wise Doubly Robust (SNDR) :cite:`huang2021off`
 
 Metrics of Interest
@@ -178,9 +177,9 @@ Finally, SCOPE-RL also standardizes the evaluation protocol of OPE in two axes, 
 
 OPE metrics
 ^^^^^^
-* Mean Squared Error :cite:`paine2020hyperparameter` :cite:`voloshin2021empirical` :cite:`fu2021benchmarks`
-* Spearman's Rank Correlation Coefficient :cite:`paine2020hyperparameter` :cite:`fu2021benchmarks`
-* Regret :cite:`paine2020hyperparameter` :cite:`fu2021benchmarks`
+* Mean Squared Error :cite:`paine2020hyperparameter, voloshin2021empirical, fu2021benchmarks`
+* Spearman's Rank Correlation Coefficient :cite:`paine2020hyperparameter, fu2021benchmarks`
+* Regret :cite:`paine2020hyperparameter, fu2021benchmarks`
 * Type I and Type II Error Rates
 
 OPS metrics (performance of top :math:`k` deployment policies)
@@ -188,6 +187,13 @@ OPS metrics (performance of top :math:`k` deployment policies)
 * {Best/Worst/Mean/Std} of {policy value/conditional value at risk/lower quartile}
 * Safety violation rate
 * Sharpe ratio (our proposal)
+
+
+.. seealso::
+
+    Among the top-:math:`k` risk-return tradeoff metrics, **SharpRatio** is the main propossal of our research paper 
+    **"Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation in Reinforcement Learning"**. 
+    We describe the motivation and contributions of the SharpRatio metric in :doc:`sharpe_ratio`.
 
 .. seealso::
 
@@ -261,6 +267,12 @@ Table of Contents
    :caption: Our Proposal:
 
    sharpe_ratio
+
+.. toctree::
+   :max_depth: 1
+   :caption: Usages:
+
+   Gallery of Example Codes <examples/index>
 
 .. toctree::
    :maxdepth: 1

@@ -46,6 +46,7 @@ This repository supports Python 3.7 or newer.
 - mujoco==2.3.5
 - d3rlpy==1.1.1
 - hydra-core==1.3.2
+- scope-rl==0.0.0
 
 ## Running the code
 To conduct the synthetic experiment, run the following commands. Note that, make sure that the path is connected to `scope-rl` and `scope-rl/experiments` directories.

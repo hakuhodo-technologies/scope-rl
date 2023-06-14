@@ -187,66 +187,100 @@
     </div>
     <div class="white-space-5px"></div>
 
-.. .. raw:: html
+.. raw:: html
 
-..     <h2>Explore more with SCOPE-RL</h2>
+    <h2>Explore more with SCOPE-RL</h2>
 
-..     <div class="top-page-gallery-link">
-..         <a href="documentation/_autogallery/index.html">Tutorials</a>
-..     </div>
+    <div class="top-page-gallery-link">
+        <a href="documentation/index.html">Featured Documentations</a>
+    </div>
 
-.. .. card-carousel:: 4
+.. card-carousel:: 4
 
-..     .. card:: Basic Off-Policy Evaluation
-..         :img-top: .png
+    .. card:: SCOPE-RL Documentation
+        :link: /documentation/index
+        :link-type: doc
 
-..     .. card:: Marginal Off-Policy Evaluation
-..         :img-top: .png
+    .. card:: Why SCOPE-RL?
+        :link: /documentation/distinctive_features
+        :link-type: doc
 
-..     .. card:: Cumulative Distribution Off-Policy Evaluation
-..         :img-top: .png
+    .. card:: Assessing OPE with SharpRatio@k
+        :link: /documentation/sharpe_ratio
+        :link-type: doc
 
-..     .. card:: Off-Policy Selection
-..         :img-top: .png
+    .. card:: Supported OPE Estimators
+        :link: /documentation/evaluation_implementation
+        :link-type: doc
 
-..     .. card:: Evaluation of OPE/OPS
-..         :img-top: .png
+.. raw:: html
 
-..     .. card:: Ablation with various value functions
-..         :img-top: .png
+    <div class="top-page-gallery-link">
+        <a href="documentation/index.html">Example Codes</a>
+    </div>
 
-..     .. card:: Ablation with xxx
-..         :img-top: .png
+.. card-carousel:: 4
 
-..     .. card:: Handling multiple datasets
-..         :img-top: .png
+    .. card:: Gallery of Example Codes
+        :link: /documentation/examples/index
+        :link-type: doc
 
-..     .. card:: Evaluating with various behavior policies
-..         :img-top: .png
+    .. card:: Basic Off-Policy Evaluation
+        :link: /documentation/examples/basic_ope
+        :link-type: doc
 
-..     .. card:: Evaluating on non-episodic setting
-..         :img-top: .png
+    .. card:: Cumulative Distribution Off-Policy Evaluation
+        :link: /documentation/examples/cumulative_dist_ope
+        :link-type: doc
 
-.. .. raw:: html
+    .. card:: Off-Policy Selection
+        :link: /documentation/examples/ops
+        :link-type: doc
 
-..     <div class="top-page-gallery-link">
-..         <a href="documentation/subpackages/index.html">Applications</a>
-..     </div>
+    .. card:: Evaluation of OPE/OPS
+        :link: /documentation/examples/assessments
+        :link-type: doc
+
+    .. card:: Implementing Custom Estimators
+        :link: /documentation/examples/custom_estimators
+        :link-type: doc
+
+    .. card:: Handling Multiple Datasets
+        :link: /documentation/examples/multiple
+        :link-type: doc
+
+    .. card:: Handling Real-World Dataset
+        :link: /documentation/examples/real_world
+        :link-type: doc
+
+    .. card:: Dataset and Integration with d3rlpy
+        :link: /documentation/learning_implementation
+        :link-type: doc
+
+.. raw:: html
+
+    <div class="top-page-gallery-link">
+        <a href="documentation/subpackages/index.html">Sub-packages</a>
+    </div>
 
 
-.. .. card-carousel:: 4
+.. card-carousel:: 4
 
-..     .. card:: Example on Real-Time Bidding
-..         :img-top: .png
+    .. card:: Gallery of Sub-packages
+        :link: /documentation/subpackages/index
+        :link-type: doc
 
-..     .. card:: Example on Recommendation
-..         :img-top: .png
+    .. card:: Real-Time Bidding Environment
+        :link: /documentation/subpackages/rtbgym_about
+        :link-type: doc
 
-..     .. card:: Example on xxx
-..         :img-top: .png
+    .. card:: Recommendation Environment
+        :link: /documentation/subpackages/recgym_about
+        :link-type: doc
 
-..     .. card:: Example on xxx
-..         :img-top: .png
+    .. card:: Basic Environment
+        :link: /documentation/subpackages/basicgym_about
+        :link-type: doc
 
 
 .. raw:: html
@@ -302,9 +336,10 @@ Welcome!
     Installation <documentation/installation>
     Quickstart <documentation/quickstart>
     Documentation <documentation/index>
+    Usage <documentation/examples/index>
+    Sub-packages <documentation/subpackages/index>
     FAQs <documentation/frequently_asked_questions>
     News <documentation/news>
-    Sub-packages <documentation/subpackages/index>
     Release Notes <https://github.com/hakuhodo-technologies/scope-rl/releases>
     Proceedings <https://github.com/hakuhodo-technologies/scope-rl/404>
 

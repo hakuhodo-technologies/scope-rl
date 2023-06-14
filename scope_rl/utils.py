@@ -291,10 +291,35 @@ class MultipleInputDict:
         return {key: len(value) for key, value in self.dataset_ids.items()}
 
 
+def l2_distance(
+    x: np.ndarray,
+    y: np.ndarray,
+    bandwidth: float = 1.0,
+):
+    """Calcilate L2 distance.
+
+    x: array-like of shape (n_samples, n_dim)
+        Input array 1.
+
+    y: array-like of shape (n_samples, n_dim)
+        Input array 2.
+
+    Returns
+    -------
+    distance: ndarray of (n_samples, )
+        distance between x and y.
+
+    """
+    x_2 = (x**2).sum(axis=1)
+    y_2 = (y**2).sum(axis=1)
+    x_y = (x[:, np.newaxis, :] @ y[:, :, np.newaxis]).flatten()
+    return x_2 + y_2 - 2 * x_y
+
+
 def gaussian_kernel(
     x: np.ndarray,
     y: np.ndarray,
-    sigma: float = 1.0,
+    bandwidth: float = 1.0,
 ):
     """Gaussian kernel.
 
@@ -304,7 +329,7 @@ def gaussian_kernel(
     y: array-like of shape (n_samples, n_dim)
         Input array 2.
 
-    sigma: float, default=1.0
+    bandwidth: float, default=1.0
         Bandwidth hyperparameter of the Gaussian kernel.
 
     Returns
@@ -313,11 +338,118 @@ def gaussian_kernel(
         kernel density of x given y.
 
     """
-    x_2 = (x**2).sum(axis=1)
-    y_2 = (y**2).sum(axis=1)
-    x_y = (x[:, np.newaxis, :] @ y[:, :, np.newaxis]).flatten()
-    distance = x_2 + y_2 - 2 * x_y
-    return np.exp(-distance / (2 * sigma**2))
+    distance = l2_distance(x, y)
+    return np.exp(-distance / (2 * bandwidth**2)) / np.sqrt(
+        2 * np.pi * bandwidth**2
+    )
+
+
+def triangular_kernel(
+    x: np.ndarray,
+    y: np.ndarray,
+    bandwidth: float = 1.0,
+):
+    """Triangular kernel.
+
+    x: array-like of shape (n_samples, n_dim)
+        Input array 1.
+
+    y: array-like of shape (n_samples, n_dim)
+        Input array 2.
+
+    bandwidth: float, default=1.0
+        Bandwidth hyperparameter of the Trianglar kernel.
+
+    Returns
+    -------
+    kernel_density: ndarray of (n_samples, )
+        kernel density of x given y.
+
+    """
+    distance = np.sqrt(l2_distance(x, y))
+    norm_dist = np.clip(distance / bandwidth)
+    return (norm_dist < 1) * (1 - norm_dist) / bandwidth
+
+
+def epanechnikov_kernel(
+    x: np.ndarray,
+    y: np.ndarray,
+    bandwidth: float = 1.0,
+):
+    """Epanechnikov kernel.
+
+    x: array-like of shape (n_samples, n_dim)
+        Input array 1.
+
+    y: array-like of shape (n_samples, n_dim)
+        Input array 2.
+
+    bandwidth: float, default=1.0
+        Bandwidth hyperparameter of the Trianglar kernel.
+
+    Returns
+    -------
+    kernel_density: ndarray of (n_samples, )
+        kernel density of x given y.
+
+    """
+    distance = np.sqrt(l2_distance(x, y))
+    clipped_norm_dist = np.clip(distance / bandwidth, None, 1.0)
+    return 0.75 * (1 - clipped_norm_dist**2) / bandwidth
+
+
+def cosine_kernel(
+    x: np.ndarray,
+    y: np.ndarray,
+    bandwidth: float = 1.0,
+):
+    """Cosine kernel.
+
+    x: array-like of shape (n_samples, n_dim)
+        Input array 1.
+
+    y: array-like of shape (n_samples, n_dim)
+        Input array 2.
+
+    bandwidth: float, default=1.0
+        Bandwidth hyperparameter of the Trianglar kernel.
+
+    Returns
+    -------
+    kernel_density: ndarray of (n_samples, )
+        kernel density of x given y.
+
+    """
+    distance = np.sqrt(l2_distance(x, y))
+    norm_dist = np.clip(distance / bandwidth)
+    return (norm_dist < 1) * (np.pi / 4) * np.cos(norm_dist * np.pi / 2) / bandwidth
+
+
+def uniform_kernel(
+    x: np.ndarray,
+    y: np.ndarray,
+    bandwidth: float = 1.0,
+):
+    """Uniform kernel.
+
+    x: array-like of shape (n_samples, n_dim)
+        Input array 1.
+
+    y: array-like of shape (n_samples, n_dim)
+        Input array 2.
+
+    bandwidth: float, default=1.0
+        Bandwidth hyperparameter of the Trianglar kernel.
+
+    Returns
+    -------
+    kernel_density: ndarray of (n_samples, )
+        kernel density of x given y.
+
+    """
+    distance = np.sqrt(l2_distance(x, y))
+    norm_dist = np.clip(distance / bandwidth)
+    return (norm_dist < 1) / (2 * bandwidth)
 
 
 def estimate_confidence_interval_by_bootstrap(

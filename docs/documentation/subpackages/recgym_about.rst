@@ -7,20 +7,22 @@ RECGym
 
 Overview
 ~~~~~~~~~~
-*RECGym* is an open-source simulation platform for recommender system(REC)
+*RECGym* is an open-source simulation platform for recommender system.
 The simulator is particularly intended for reinforcement learning algorithms and follows `OpenAI Gym <https://github.com/openai/gym>`_ and `Gymnasium <https://github.com/Farama-Foundation/Gymnasium>`_ interface.
-We design RECGym as a configurative environment so that researchers and practitioner can customize the environmental modules including UserModel.
+We design RECGym as a configurative environment so that researchers and practitioners can customize the environmental modules including UserModel.
 
-Note that RECGym is publicized as a sub-package of :doc:`SCOPE-RL <index>`, which streamlines the implementation of offline reinforcement learning (offline RL) and off-policy evaluation and selection (OPE/OPS) procedures.
+Note that RECGym is publicized as a sub-package of :doc:`SCOPE-RL </documentation/index>`, which streamlines the implementation of offline reinforcement learning (offline RL) and off-policy evaluation and selection (OPE/OPS) procedures.
 
 Basic Setting
 ~~~~~~~~~~
-In recommendation, the objective of the RL agent is to maximize reward.
-We often formulate this recommendation problem as the following (Partially Observable) Markov Decision Process ((PO)MDP) as :math:`\langle \mathcal{S}, \mathcal{A}, \mathcal{T}, P_r \rangle`.
+The objective of recommender interactions is to maximize reward.
+We often formulate this problem as the following (Partially Observable) Markov Decision Process ((PO)MDP) as :math:`\langle \mathcal{S}, \mathcal{A}, \mathcal{T}, P_r \rangle`.
 
 * `state` (:math:`s \in \mathcal{S}`):
+
     * A vector representing user preference. The preference changes over time in an episode depending on the actions presented by the RL agent.
     * When the true state is unobservable, you can gain observation instead of state.
+
 * `action`(:math:`a \in \mathcal{A}`):  Index of an item to present to the user.
 * `reward`(:math:`r \in \mathbb{R}`): User engagement signal as a reward. Either binary or continuous.
 
@@ -49,14 +51,13 @@ Note that users can customize the above modules by following the abstract class.
 Quickstart and Configurations
 ~~~~~~~~~~
 
-We provide an example usage of the standard and customized environment.
-The online/offline RL and OPE/OPS examples are provides in :doc:`SCOPE-RL's quickstart <quickstart>`.
+We provide an example usage of the standard and customized environment. 
 
 Standard RECEnv
 ----------
 
 Our RECEnv is available from :class:`gym.make()`,
-following the `OpenAI Gym <https://gym.openai.com>`_ and `Gymnasium <https://github.com/Farama-Foundation/Gymnasium>`_ interface.
+following the `OpenAI Gym <https://github.com/openai/gym>`_ and `Gymnasium <https://github.com/Farama-Foundation/Gymnasium>`_ interface.
 
 .. code-block:: python
 
@@ -81,12 +82,12 @@ Let's interact uniform random policy with a discrete action REC environment.
 .. code-block:: python
 
     # import from other libraries
-    from offlinegym.policy import DiscreteEpsilonGreedyHead
+    from offlinegym.policy import EpsilonGreedyHead
     from d3rlpy.algos import RandomPolicy as DiscreteRandomPolicy
     import matplotlib.pyplot as plt
 
     # define a random agent
-    agent = DiscreteEpsilonGreedyHead(
+    agent = EpsilonGreedyHead(
         base_policy=DiscreteRandomPolicy(),
         n_actions=env.n_items,
         epsilon=1.0,
@@ -102,8 +103,8 @@ Let's interact uniform random policy with a discrete action REC environment.
         action = agent.predict_online(obs)
         obs, reward, done, truncated, info = env.step(action)
 
-Note that while we use :doc:`SCOPE-RL <index>` and `d3rlpy <https://github.com/takuseno/d3rlpy>`_ here,
-RECGym is compatible with any other libraries that is compatible to the `OpenAI Gym <https://gym.openai.com>`_
+Note that while we use :doc:`SCOPE-RL </documentation/index>` and `d3rlpy <https://github.com/takuseno/d3rlpy>`_ here,
+RECGym is compatible with any other libraries that is compatible to the `OpenAI Gym <https://github.com/openai/gym>`_
 and `Gymnasium <https://github.com/Farama-Foundation/Gymnasium>`_ interface.
 
 Customized RECEnv
@@ -200,6 +201,9 @@ Citation
 ~~~~~~~~~~
 If you use our pipeline in your work, please cite our paper below.
 
+| Haruka Kiyohara, Kosuke Kawakami, Yuta Saito.
+| **Accelerating Offline Reinforcement Learning Application in Real-Time Bidding and Recommendation: Potential Use of Simulation** [`arXiv <https://arxiv.org/abs/2109.08331>`_]
+
 .. code-block::
 
     @article{kiyohara2021accelerating,
@@ -216,7 +220,7 @@ For any question about the paper and pipeline, feel free to contact: hk844@corne
 Contribution
 ~~~~~~~~~~
 Any contributions to RECGym are more than welcome!
-Please refer to `CONTRIBUTING.md <https://github.com/hakuhodo-technologies/scope-rl/CONTRIBUTING.md>`_ for general guidelines how to contribute to the project.
+Please refer to `CONTRIBUTING.md <https://github.com/hakuhodo-technologies/scope-rl/blob/main/CONTRIBUTING.md>`_ for general guidelines how to contribute to the project.
 
 .. grid::
     :margin: 0

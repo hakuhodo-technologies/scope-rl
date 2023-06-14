@@ -30,7 +30,7 @@ class ContinuousMinimaxStateActionValueLearning(BaseWeightValueLearner):
 
     Bases: :class:`scope_rl.ope.weight_value_learning.BaseWeightValueLearner`
 
-    Imported as: :class:`scope_rl.ope.ContinuousMinimaxStateActionValueLearning`
+    Imported as: :class:`scope_rl.ope.weight_value_learning.ContinuousMinimaxStateActionValueLearning`
 
     Note
     -------
@@ -62,7 +62,7 @@ class ContinuousMinimaxStateActionValueLearning(BaseWeightValueLearner):
     gamma: float, default=1.0
         Discount factor. The value should be within (0, 1].
 
-    sigma: float, default=1.0 (> 0)
+    bandwidth: float, default=1.0 (> 0)
         Bandwidth hyperparameter of the Gaussian kernel.
 
     state_scaler: d3rlpy.preprocessing.Scaler, default=None
@@ -89,7 +89,7 @@ class ContinuousMinimaxStateActionValueLearning(BaseWeightValueLearner):
 
     q_function: ContinuousQFunction
     gamma: float = 1.0
-    sigma: float = 1.0
+    bandwidth: float = 1.0
     state_scaler: Optional[Scaler] = None
     action_scaler: Optional[ActionScaler] = None
     batch_size: int = 128
@@ -102,7 +102,7 @@ class ContinuousMinimaxStateActionValueLearning(BaseWeightValueLearner):
         check_scalar(
             self.gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0
         )
-        check_scalar(self.sigma, name="sigma", target_type=float, min_val=0.0)
+        check_scalar(self.bandwidth, name="bandwidth", target_type=float, min_val=0.0)
         if self.state_scaler is not None and not isinstance(self.state_scaler, Scaler):
             raise ValueError(
                 "state_scaler must be an instance of d3rlpy.preprocessing.Scaler, but found False"
@@ -139,7 +139,9 @@ class ContinuousMinimaxStateActionValueLearning(BaseWeightValueLearner):
             x2_2 = (x2**2).sum(dim=1)
             x_y = x1 @ x2.T
             distance = x1_2[:, None] + x2_2[None, :] - 2 * x_y
-            kernel = torch.exp(-distance / self.sigma)
+            kernel = torch.exp(-distance / (2 * self.bandwidth**2)) / np.sqrt(
+                2 * np.pi * self.bandwidth**2
+            )
 
         return kernel  # shape (n_trajectories, n_trajectories)
 
@@ -201,8 +203,8 @@ class ContinuousMinimaxStateActionValueLearning(BaseWeightValueLearner):
         reward: np.ndarray,
         pscore: np.ndarray,
         evaluation_policy_action: np.ndarray,
-        n_epochs: int = 10,
-        n_steps_per_epoch: int = 1000,
+        n_steps: int = 10000,
+        n_steps_per_epoch: int = 10000,
         regularization_weight: float = 1.0,
         random_state: Optional[int] = None,
         **kwargs,
@@ -229,10 +231,10 @@ class ContinuousMinimaxStateActionValueLearning(BaseWeightValueLearner):
         evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
 
-        n_epochs: int, default=10 (> 0)
-            Number of epochs to train.
+        n_steps: int, default=10000 (> 0)
+            Number of gradient steps.
 
-        n_steps_per_epoch: int, default=1000 (> 0)
+        n_steps_per_epoch: int, default=10000 (> 0)
             Number of gradient steps in a epoch.
 
         regularization_weight: float, default=1.0 (> 0)
@@ -275,10 +277,11 @@ class ContinuousMinimaxStateActionValueLearning(BaseWeightValueLearner):
                 "Expected `action.shape[1] == evaluation_policy_action.shape[1] == pscore.shape[1]`, but found False"
             )
 
-        check_scalar(n_epochs, name="n_epochs", target_type=int, min_val=1)
+        check_scalar(n_steps, name="n_steps", target_type=int, min_val=1)
         check_scalar(
             n_steps_per_epoch, name="n_steps_per_epoch", target_type=int, min_val=1
         )
+        n_epochs = (n_steps - 1) // n_steps_per_epoch + 1
 
         if random_state is None:
             raise ValueError("Random state mush be given.")
@@ -308,7 +311,7 @@ class ContinuousMinimaxStateActionValueLearning(BaseWeightValueLearner):
         similarity_weight = gaussian_kernel(
             evaluation_policy_action_,
             action_,
-            sigma=self.sigma,
+            bandwidth=self.bandwidth,
         ).reshape((-1, step_per_trajectory))
 
         n_trajectories, step_per_trajectory, _ = state.shape
@@ -479,8 +482,8 @@ class ContinuousMinimaxStateActionValueLearning(BaseWeightValueLearner):
         reward: np.ndarray,
         pscore: np.ndarray,
         evaluation_policy_action: np.ndarray,
-        n_epochs: int = 10,
-        n_steps_per_epoch: int = 1000,
+        n_steps: int = 10000,
+        n_steps_per_epoch: int = 10000,
         regularization_weight: float = 1.0,
         random_state: Optional[int] = None,
         **kwargs,
@@ -507,10 +510,10 @@ class ContinuousMinimaxStateActionValueLearning(BaseWeightValueLearner):
         evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
 
-        n_epochs: int, default=10 (> 0)
-            Number of epochs to train.
+        n_steps: int, default=10000 (> 0)
+            Number of gradient steps.
 
-        n_steps_per_epoch: int, default=1000 (> 0)
+        n_steps_per_epoch: int, default=10000 (> 0)
             Number of gradient steps in a epoch.
 
         regularization_weight: float, default=1.0 (> 0)
@@ -527,7 +530,7 @@ class ContinuousMinimaxStateActionValueLearning(BaseWeightValueLearner):
             reward=reward,
             pscore=pscore,
             evaluation_policy_action=evaluation_policy_action,
-            n_epochs=n_epochs,
+            n_steps=n_steps,
             n_steps_per_epoch=n_steps_per_epoch,
             regularization_weight=regularization_weight,
             random_state=random_state,
@@ -541,7 +544,7 @@ class ContinuousMinimaxStateValueLearning(BaseWeightValueLearner):
 
     Bases: :class:`scope_rl.ope.weight_value_learning.BaseWeightValueLearner`
 
-    Imported as: :class:`scope_rl.ope.ContinuousMinimaxStateValueLearning`
+    Imported as: :class:`scope_rl.ope.weight_value_learning.ContinuousMinimaxStateValueLearning`
 
     Note
     -------
@@ -573,7 +576,7 @@ class ContinuousMinimaxStateValueLearning(BaseWeightValueLearner):
     gamma: float, default=1.0
         Discount factor. The value should be within (0, 1].
 
-    sigma: float, default=1.0 (> 0)
+    bandwidth: float, default=1.0 (> 0)
         Bandwidth hyperparameter of the Gaussian kernel.
 
     state_scaler: d3rlpy.preprocessing.Scaler, default=None
@@ -600,7 +603,7 @@ class ContinuousMinimaxStateValueLearning(BaseWeightValueLearner):
 
     v_function: VFunction
     gamma: float = 1.0
-    sigma: float = 1.0
+    bandwidth: float = 1.0
     state_scaler: Optional[Scaler] = None
     action_scaler: Optional[ActionScaler] = None
     batch_size: int = 128
@@ -613,7 +616,7 @@ class ContinuousMinimaxStateValueLearning(BaseWeightValueLearner):
         check_scalar(
             self.gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0
         )
-        check_scalar(self.sigma, name="sigma", target_type=float, min_val=0.0)
+        check_scalar(self.bandwidth, name="bandwidth", target_type=float, min_val=0.0)
         if self.state_scaler is not None and not isinstance(self.state_scaler, Scaler):
             raise ValueError(
                 "state_scaler must be an instance of d3rlpy.preprocessing.Scaler, but found False"
@@ -647,7 +650,9 @@ class ContinuousMinimaxStateValueLearning(BaseWeightValueLearner):
             x_y = state_1 @ state_2.T
             distance = x_2[:, None] + y_2[None, :] - 2 * x_y
 
-            kernel = torch.exp(-distance / self.sigma)
+            kernel = torch.exp(-distance / (2 * self.bandwidth**2)) / np.sqrt(
+                2 * np.pi * self.bandwidth**2
+            )
 
         return kernel  # shape (n_trajectories, n_trajectories)
 
@@ -699,8 +704,8 @@ class ContinuousMinimaxStateValueLearning(BaseWeightValueLearner):
         reward: np.ndarray,
         pscore: np.ndarray,
         evaluation_policy_action: np.ndarray,
-        n_epochs: int = 10,
-        n_steps_per_epoch: int = 1000,
+        n_steps: int = 10000,
+        n_steps_per_epoch: int = 10000,
         regularization_weight: float = 1.0,
         random_state: Optional[int] = None,
         **kwargs,
@@ -727,10 +732,10 @@ class ContinuousMinimaxStateValueLearning(BaseWeightValueLearner):
         evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
 
-        n_epochs: int, default=100 (> 0)
-            Number of epochs to train.
+        n_steps: int, default=10000 (> 0)
+            Number of gradient steps.
 
-        n_steps_per_epoch: int, default=100 (> 0)
+        n_steps_per_epoch: int, default=10000 (> 0)
             Number of gradient steps in a epoch.
 
         regularization_weight: float, default=1.0 (> 0)
@@ -773,10 +778,11 @@ class ContinuousMinimaxStateValueLearning(BaseWeightValueLearner):
                 "Expected `action.shape[1] == evaluation_policy_action.shape[1] == pscore.shape[1]`, but found False"
             )
 
-        check_scalar(n_epochs, name="n_epochs", target_type=int, min_val=1)
+        check_scalar(n_steps, name="n_steps", target_type=int, min_val=1)
         check_scalar(
             n_steps_per_epoch, name="n_steps_per_epoch", target_type=int, min_val=1
         )
+        n_epochs = (n_steps - 1) // n_steps_per_epoch + 1
 
         if random_state is None:
             raise ValueError("Random state mush be given.")
@@ -798,7 +804,7 @@ class ContinuousMinimaxStateValueLearning(BaseWeightValueLearner):
         similarity_weight = gaussian_kernel(
             evaluation_policy_action_,
             action_,
-            sigma=self.sigma,
+            bandwidth=self.bandwidth,
         ).reshape((-1, step_per_trajectory))
 
         state = state.reshape((-1, step_per_trajectory, state_dim))
@@ -925,8 +931,8 @@ class ContinuousMinimaxStateValueLearning(BaseWeightValueLearner):
         reward: np.ndarray,
         pscore: np.ndarray,
         evaluation_policy_action: np.ndarray,
-        n_epochs: int = 10,
-        n_steps_per_epoch: int = 1000,
+        n_steps: int = 10000,
+        n_steps_per_epoch: int = 10000,
         regularization_weight: float = 1.0,
         random_state: Optional[int] = None,
         **kwargs,
@@ -953,10 +959,10 @@ class ContinuousMinimaxStateValueLearning(BaseWeightValueLearner):
         evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
 
-        n_epochs: int, default=10 (> 0)
-            Number of epochs to train.
+        n_steps: int, default=10000 (> 0)
+            Number of gradient steps.
 
-        n_steps_per_epoch: int, default=1000 (> 0)
+        n_steps_per_epoch: int, default=10000 (> 0)
             Number of gradient steps in a epoch.
 
         regularization_weight: float, default=1.0 (> 0)
@@ -973,7 +979,7 @@ class ContinuousMinimaxStateValueLearning(BaseWeightValueLearner):
             reward=reward,
             pscore=pscore,
             evaluation_policy_action=evaluation_policy_action,
-            n_epochs=n_epochs,
+            n_steps=n_steps,
             n_steps_per_epoch=n_steps_per_epoch,
             regularization_weight=regularization_weight,
             random_state=random_state,

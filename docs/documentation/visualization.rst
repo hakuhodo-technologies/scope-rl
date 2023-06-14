@@ -169,7 +169,7 @@ In the figure, we observe that the cumulative distribution OPE results do not ch
 
 Finally, we compare the true policy value (x-axis) and estimated policy value (y-axis) in the following figure.
 For TIS, PDIS, and DR, the result suggests that the variance of OPE estimation becomes particularly large when using near-deterministic behavior policy named "sac_sigma_0.5".
-On the other hand, for SNTIS and SNPDIS, we found that the choice of behavior policy can heavily affects the estimation result of OPE -- OPE estimations are almost the same across various evaluation policies in the bottom left figures.
+On the other hand, for SNTIS and SNPDIS, we found that the choice of behavior policy can heavily affects the estimation result of OPE -- OPE results are almost the same across various evaluation policies in the bottom left figures.
 This kind of visualization is again available for all point-wise estimates including expected policy value, variance, CVaR, and lower quartile.
 
 .. card::
@@ -182,7 +182,15 @@ This kind of visualization is again available for all point-wise estimates inclu
 
 .. raw:: html
 
-    <div class="white-space-20px"></div>
+    <div class="white-space-5px"></div>
+
+.. seealso:: 
+
+    * :doc:`quickstart` and :doc:`related example codes </documentation/examples/multiple>`
+
+.. raw:: html
+
+    <div class="white-space-5px"></div>
 
 .. grid::
     :margin: 0
@@ -219,6 +227,16 @@ This kind of visualization is again available for all point-wise estimates inclu
             :margin: 0
 
             .. grid-item-card::
+                :link: sharpe_ratio
+                :link-type: doc
+                :shadow: none
+                :margin: 0
+                :padding: 0
+
+                Next >>>
+                **SharpeRatio**
+
+            .. grid-item-card::
                 :link: scope_rl_api
                 :link-type: doc
                 :shadow: none
@@ -228,12 +246,3 @@ This kind of visualization is again available for all point-wise estimates inclu
                 Next >>>
                 **Package Reference**
 
-            .. grid-item-card::
-                :link: quickstart
-                :link-type: doc
-                :shadow: none
-                :margin: 0
-                :padding: 0
-
-                Next >>>
-                **Quickstart**

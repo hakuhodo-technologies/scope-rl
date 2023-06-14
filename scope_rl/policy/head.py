@@ -38,7 +38,7 @@ class BaseHead(AlgoBase):
     """
 
     @abstractmethod
-    def stochastic_action_with_pscore(self, x: np.ndarray):
+    def sample_action_and_output_pscore(self, x: np.ndarray):
         """Sample an action stochastically with its pscore."""
         raise NotImplementedError()
 
@@ -73,9 +73,9 @@ class BaseHead(AlgoBase):
         """Sample an action in an online environment."""
         return self.sample_action(x.reshape(1, -1))[0]
 
-    def stochastic_action_with_pscore_online(self, x: np.ndarray):
+    def sample_action_and_output_pscore_online(self, x: np.ndarray):
         """Sample an action and calculate its pscore in an online environment."""
-        action, pscore = self.stochastic_action_with_pscore(x.reshape(1, -1))
+        action, pscore = self.sample_action_and_output_pscore(x.reshape(1, -1))
         return action[0], pscore[0]
 
     def predict(self, x: np.ndarray):
@@ -236,7 +236,7 @@ class OnlineHead(BaseHead):
     base_policy: AlgoBase
     name: str
 
-    def stochastic_action_with_pscore(self, x: np.ndarray):
+    def sample_action_and_output_pscore(self, x: np.ndarray):
         """Only for API consistency."""
         pass
 
@@ -250,12 +250,12 @@ class OnlineHead(BaseHead):
 
 
 @dataclass
-class DiscreteEpsilonGreedyHead(BaseHead):
-    """Class to convert a deterministic policy into an epsilon-greedy policy.
+class EpsilonGreedyHead(BaseHead):
+    """Class to convert a deterministic policy into an epsilon-greedy policy (applicable to discrete action case).
 
     Bases: :class:`scope_rl.policy.BaseHead`
 
-    Imported as: :class:`scope_rl.policy.DiscreteEpsilonGreedyHead`
+    Imported as: :class:`scope_rl.policy.EpsilonGreedyHead`
 
     Note
     -------
@@ -320,7 +320,7 @@ class DiscreteEpsilonGreedyHead(BaseHead):
             raise ValueError("random_state must be given")
         self.random_ = check_random_state(self.random_state)
 
-    def stochastic_action_with_pscore(self, x: np.ndarray):
+    def sample_action_and_output_pscore(self, x: np.ndarray):
         """Sample an action stochastically based on the pscore.
 
         Parameters
@@ -409,12 +409,12 @@ class DiscreteEpsilonGreedyHead(BaseHead):
 
 
 @dataclass
-class DiscreteSoftmaxHead(BaseHead):
-    """Class to convert a Q-learning based policy into a softmax policy.
+class SoftmaxHead(BaseHead):
+    """Class to convert a Q-learning based policy into a softmax policy (applicable to discrete action space).
 
     Bases: :class:`scope_rl.policy.BaseHead`
 
-    Imported as: :class:`scope_rl.policy.DiscreteSoftmaxHead`
+    Imported as: :class:`scope_rl.policy.SoftmaxHead`
 
     Note
     -------
@@ -525,7 +525,7 @@ class DiscreteSoftmaxHead(BaseHead):
             (-1, self.n_actions)
         )  # (n_samples, n_actions)
 
-    def stochastic_action_with_pscore(self, x: np.ndarray):
+    def sample_action_and_output_pscore(self, x: np.ndarray):
         """Sample stochastic action with its pscore.
 
         Parameters
@@ -616,17 +616,17 @@ class DiscreteSoftmaxHead(BaseHead):
 
 
 @dataclass
-class ContinuousGaussianHead(BaseHead):
-    """Class to sample action from Gaussian distribution.
+class GaussianHead(BaseHead):
+    """Class to sample action from Gaussian distribution (applicable to continuous action case).
 
     Bases: :class:`scope_rl.policy.BaseHead`
 
-    Imported as: :class:`scope_rl.policy.ContinuousGaussianHead`
+    Imported as: :class:`scope_rl.policy.GaussianHead`
 
     Note
     -------
     This class should be used when action_space is not clipped.
-    Otherwise, please use :class:`ContinuousTruncatedGaussianHead` instead.
+    Otherwise, please use :class:`TruncatedGaussianHead` instead.
 
     Given a deterministic policy, a gaussian policy samples an action :math:`a \\in \\mathcal{A}` given state :math:`s` as follows.
 
@@ -704,7 +704,7 @@ class ContinuousGaussianHead(BaseHead):
         )
         return np.prod(prob, axis=1)
 
-    def stochastic_action_with_pscore(self, x: np.ndarray):
+    def sample_action_and_output_pscore(self, x: np.ndarray):
         """Sample stochastic action with its pscore.
 
         Parameters
@@ -769,12 +769,12 @@ class ContinuousGaussianHead(BaseHead):
 
 
 @dataclass
-class ContinuousTruncatedGaussianHead(BaseHead):
-    """Class to sample continuous actions from Truncated Gaussian distribution.
+class TruncatedGaussianHead(BaseHead):
+    """Class to sample continuous actions from Truncated Gaussian distribution (applicable to continuous action space).
 
     Bases: :class:`scope_rl.policy.BaseHead`
 
-    Imported as: :class:`scope_rl.policy.ContinuousTruncatedGaussianHead`
+    Imported as: :class:`scope_rl.policy.TruncatedGaussianHead`
 
     Note
     -------
@@ -870,7 +870,7 @@ class ContinuousTruncatedGaussianHead(BaseHead):
         )
         return np.prod(prob, axis=1)
 
-    def stochastic_action_with_pscore(self, x: np.ndarray):
+    def sample_action_and_output_pscore(self, x: np.ndarray):
         """Sample stochastic action with its pscore.
 
         Parameters

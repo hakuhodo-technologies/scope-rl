@@ -31,7 +31,7 @@ class DiscreteMinimaxStateActionWeightLearning(BaseWeightValueLearner):
 
     Bases: :class:`scope_rl.ope.weight_value_learning.BaseWeightValueLearner`
 
-    Imported as: :class:`scope_rl.ope.DiscreteMinimaxStateActionWightLearning`
+    Imported as: :class:`scope_rl.ope.weight_value_learning.DiscreteMinimaxStateActionWightLearning`
 
     Note
     -------
@@ -70,7 +70,7 @@ class DiscreteMinimaxStateActionWeightLearning(BaseWeightValueLearner):
     gamma: float, default=1.0
         Discount factor. The value should be within (0, 1].
 
-    sigma: float, default=1.0 (> 0)
+    bandwidth: float, default=1.0 (> 0)
         Bandwidth hyperparameter of the Gaussian kernel.
 
     state_scaler: d3rlpy.preprocessing.Scaler, default=None
@@ -94,7 +94,7 @@ class DiscreteMinimaxStateActionWeightLearning(BaseWeightValueLearner):
 
     w_function: DiscreteStateActionWeightFunction
     gamma: float = 1.0
-    sigma: float = 1.0
+    bandwidth: float = 1.0
     state_scaler: Optional[Scaler] = None
     batch_size: int = 128
     lr: float = 1e-4
@@ -106,7 +106,7 @@ class DiscreteMinimaxStateActionWeightLearning(BaseWeightValueLearner):
         check_scalar(
             self.gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0
         )
-        check_scalar(self.sigma, name="sigma", target_type=float, min_val=0.0)
+        check_scalar(self.bandwidth, name="bandwidth", target_type=float, min_val=0.0)
         if self.state_scaler is not None and not isinstance(self.state_scaler, Scaler):
             raise ValueError(
                 "state_scaler must be an instance of d3rlpy.preprocessing.Scaler, but found False"
@@ -139,8 +139,10 @@ class DiscreteMinimaxStateActionWeightLearning(BaseWeightValueLearner):
 
             action_onehot_1 = F.one_hot(action_1, num_classes=n_actions)
             action_onehot_2 = F.one_hot(action_2, num_classes=n_actions)
-            kernel = torch.exp(-distance / self.sigma) * (
-                action_onehot_1 @ action_onehot_2.T
+            kernel = (
+                torch.exp(-distance / (2 * self.bandwidth**2))
+                / np.sqrt(2 * np.pi * self.bandwidth**2)
+                * (action_onehot_1 @ action_onehot_2.T)
             )
 
         return kernel  # shape (n_trajectories, n_trajectories)
@@ -295,8 +297,8 @@ class DiscreteMinimaxStateActionWeightLearning(BaseWeightValueLearner):
         state: np.ndarray,
         action: np.ndarray,
         evaluation_policy_action_dist: np.ndarray,
-        n_epochs: int = 10,
-        n_steps_per_epoch: int = 1000,
+        n_steps: int = 10000,
+        n_steps_per_epoch: int = 10000,
         regularization_weight: float = 1.0,
         random_state: Optional[int] = None,
         **kwargs,
@@ -318,10 +320,10 @@ class DiscreteMinimaxStateActionWeightLearning(BaseWeightValueLearner):
             Conditional action distribution induced by the evaluation policy,
             i.e., :math:`\\pi(a \\mid s_{t+1}) \\forall a \\in \\mathcal{A}`
 
-        n_epochs: int, default=10 (> 0)
-            Number of epochs to train.
+        n_steps: int, default=10000 (> 0)
+            Number of gradient steps.
 
-        n_steps_per_epoch: int, default=1000 (> 0)
+        n_steps_per_epoch: int, default=10000 (> 0)
             Number of gradient steps in a epoch.
 
         regularization_weight: float, default=1.0 (> 0)
@@ -358,10 +360,11 @@ class DiscreteMinimaxStateActionWeightLearning(BaseWeightValueLearner):
                 "evaluation_policy_action_dist must sums up to one in axis=1, but found False"
             )
 
-        check_scalar(n_epochs, name="n_epochs", target_type=int, min_val=1)
+        check_scalar(n_steps, name="n_steps", target_type=int, min_val=1)
         check_scalar(
             n_steps_per_epoch, name="n_steps_per_epoch", target_type=int, min_val=1
         )
+        n_epochs = (n_steps - 1) // n_steps_per_epoch + 1
 
         if random_state is None:
             raise ValueError("Random state mush be given.")
@@ -499,8 +502,8 @@ class DiscreteMinimaxStateActionWeightLearning(BaseWeightValueLearner):
         state: np.ndarray,
         action: np.ndarray,
         evaluation_policy_action_dist: np.ndarray,
-        n_epochs: int = 10,
-        n_steps_per_epoch: int = 1000,
+        n_steps: int = 10000,
+        n_steps_per_epoch: int = 10000,
         regularization_weight: float = 1.0,
         random_state: Optional[int] = None,
         **kwargs,
@@ -522,10 +525,10 @@ class DiscreteMinimaxStateActionWeightLearning(BaseWeightValueLearner):
             Conditional action distribution induced by the evaluation policy,
             i.e., :math:`\\pi(a \\mid s_{t+1}) \\forall a \\in \\mathcal{A}`
 
-        n_epochs: int, default=10 (> 0)
-            Number of epochs to train.
+        n_steps: int, default=10000 (> 0)
+            Number of gradient steps.
 
-        n_steps_per_epoch: int, default=1000 (> 0)
+        n_steps_per_epoch: int, default=10000 (> 0)
             Number of gradient steps in a epoch.
 
         regularization_weight: float, default=1.0 (> 0)
@@ -545,7 +548,7 @@ class DiscreteMinimaxStateActionWeightLearning(BaseWeightValueLearner):
             state=state,
             action=action,
             evaluation_policy_action_dist=evaluation_policy_action_dist,
-            n_epochs=n_epochs,
+            n_steps=n_steps,
             n_steps_per_epoch=n_steps_per_epoch,
             regularization_weight=regularization_weight,
             random_state=random_state,
@@ -559,7 +562,7 @@ class DiscreteMinimaxStateWeightLearning(BaseWeightValueLearner):
 
     Bases: :class:`scope_rl.ope.weight_value_learning.BaseWeightValueLearner`
 
-    Imported as: :class:`scope_rl.ope.DiscreteMinimaxStateWightLearning`
+    Imported as: :class:`scope_rl.ope.weight_value_learning.DiscreteMinimaxStateWightLearning`
 
     Note
     -------
@@ -600,7 +603,7 @@ class DiscreteMinimaxStateWeightLearning(BaseWeightValueLearner):
     gamma: float, default=1.0
         Discount factor. The value should be within (0, 1].
 
-    sigma: float, default=1.0 (> 0)
+    bandwidth: float, default=1.0 (> 0)
         Bandwidth hyperparameter of the Gaussian kernel.
 
     state_scaler: d3rlpy.preprocessing.Scaler, default=None
@@ -624,7 +627,7 @@ class DiscreteMinimaxStateWeightLearning(BaseWeightValueLearner):
 
     w_function: StateWeightFunction
     gamma: float = 1.0
-    sigma: float = 1.0
+    bandwidth: float = 1.0
     state_scaler: Optional[Scaler] = None
     batch_size: int = 128
     lr: float = 1e-4
@@ -636,7 +639,7 @@ class DiscreteMinimaxStateWeightLearning(BaseWeightValueLearner):
         check_scalar(
             self.gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0
         )
-        check_scalar(self.sigma, name="sigma", target_type=float, min_val=0.0)
+        check_scalar(self.bandwidth, name="bandwidth", target_type=float, min_val=0.0)
         if self.state_scaler is not None and not isinstance(self.state_scaler, Scaler):
             raise ValueError(
                 "state_scaler must be an instance of d3rlpy.preprocessing.Scaler, but found False"
@@ -664,7 +667,9 @@ class DiscreteMinimaxStateWeightLearning(BaseWeightValueLearner):
             x_y = state_1 @ state_2.T
             distance = x_2[:, None] + y_2[None, :] - 2 * x_y
 
-            kernel = torch.exp(-distance / self.sigma)
+            kernel = torch.exp(-distance / (2 * self.bandwidth**2)) / np.sqrt(
+                2 * np.pi * self.bandwidth**2
+            )
 
         return kernel  # shape (n_trajectories, n_trajectories)
 
@@ -788,8 +793,8 @@ class DiscreteMinimaxStateWeightLearning(BaseWeightValueLearner):
         action: np.ndarray,
         pscore: np.ndarray,
         evaluation_policy_action_dist: np.ndarray,
-        n_epochs: int = 10,
-        n_steps_per_epoch: int = 1000,
+        n_steps: int = 10000,
+        n_steps_per_epoch: int = 10000,
         regularization_weight: float = 1.0,
         random_state: Optional[int] = None,
         **kwargs,
@@ -814,10 +819,10 @@ class DiscreteMinimaxStateWeightLearning(BaseWeightValueLearner):
             Conditional action distribution induced by the evaluation policy,
             i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
 
-        n_epochs: int, default=10 (> 0)
-            Number of epochs to train.
+        n_steps: int, default=10000 (> 0)
+            Number of gradient steps.
 
-        n_steps_per_epoch: int, default=1000 (> 0)
+        n_steps_per_epoch: int, default=10000 (> 0)
             Number of gradient steps in a epoch.
 
         regularization_weight: float, default=1.0 (> 0)
@@ -861,10 +866,11 @@ class DiscreteMinimaxStateWeightLearning(BaseWeightValueLearner):
                 "evaluation_policy_action_dist must sums up to one in axis=1, but found False"
             )
 
-        check_scalar(n_epochs, name="n_epochs", target_type=int, min_val=1)
+        check_scalar(n_steps, name="n_steps", target_type=int, min_val=1)
         check_scalar(
             n_steps_per_epoch, name="n_steps_per_epoch", target_type=int, min_val=1
         )
+        n_epochs = (n_steps - 1) // n_steps_per_epoch + 1
 
         if random_state is None:
             raise ValueError("Random state mush be given.")
@@ -1077,8 +1083,8 @@ class DiscreteMinimaxStateWeightLearning(BaseWeightValueLearner):
         action: np.ndarray,
         pscore: np.ndarray,
         evaluation_policy_action_dist: np.ndarray,
-        n_epochs: int = 10,
-        n_steps_per_epoch: int = 1000,
+        n_steps: int = 10000,
+        n_steps_per_epoch: int = 10000,
         regularization_weight: float = 1.0,
         random_state: Optional[int] = None,
         **kwargs,
@@ -1103,10 +1109,10 @@ class DiscreteMinimaxStateWeightLearning(BaseWeightValueLearner):
             Conditional action distribution induced by the evaluation policy,
             i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
 
-        n_epochs: int, default=10 (> 0)
-            Number of epochs to train.
+        n_steps: int, default=10000 (> 0)
+            Number of gradient steps.
 
-        n_steps_per_epoch: int, default=1000 (> 0)
+        n_steps_per_epoch: int, default=10000 (> 0)
             Number of gradient steps in a epoch.
 
         regularization_weight: float, default=1.0 (> 0)
@@ -1127,7 +1133,7 @@ class DiscreteMinimaxStateWeightLearning(BaseWeightValueLearner):
             action=action,
             pscore=pscore,
             evaluation_policy_action_dist=evaluation_policy_action_dist,
-            n_epochs=n_epochs,
+            n_steps=n_steps,
             n_steps_per_epoch=n_steps_per_epoch,
             random_state=random_state,
         )

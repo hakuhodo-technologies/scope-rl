@@ -35,12 +35,12 @@ The goal of RL is to maximize the following expected cumulative reward (i.e., po
 where :math:`\gamma` is a discount rate and :math:`\tau := (s_t, a_t, s_{t+1}, r_t)_{t=0}^{T-1}` is the trajectory of the policy which is sampled from
 :math:`p_{\pi}(\tau) := d_0(s_0) \prod_{t=0}^{T-1} \pi(a_t | s_t) \mathcal{T}(s_{t+1} | s_t, a_t) P_r(r_t | s_t, a_t)`.
 
-There are several approaches to maximize the policy value. Below, we review three basic methods, On-Policy Policy Gradient :cite:`kakade2001natural` :cite:`silver2014deterministic`,
-Q-Learning :cite:`watkins1992q` :cite:`mnih2013playing`, and Actor-Critic :cite:`konda1999actor` :cite:`degris2012off`.
+There are several approaches to maximize the policy value. Below, we review three basic methods, On-Policy Policy Gradient :cite:`kakade2001natural, silver2014deterministic`, 
+Q-Learning :cite:`watkins1992q, mnih2013playing`, and Actor-Critic :cite:`konda1999actor, degris2012off`.
 
 On-Policy Policy Gradient
 ----------
-One of the most naive approaches to maximize the policy value is to directly learn a policy through gradient ascent as follows :cite:`kakade2001natural` :cite:`silver2014deterministic`.
+One of the most naive approaches to maximize the policy value is to directly learn a policy through gradient ascent as follows :cite:`kakade2001natural, silver2014deterministic`.
 
 .. math::
 
@@ -80,8 +80,8 @@ Using the recursive structure between :math:`V(\cdot)` and :math:`Q(\cdot)`, we 
 
     Q(s_t, a_t) = r_t + \mathbb{E}_{(s_{t+1}, a_{t+1}) \sim \mathcal{T}(s_{t+1} | s_t, a_t) \pi(a_{t+1} | s_{t+1})} [ Q(s_{t+1}, a_{t+1}) ]
 
-Temporal Difference (TD) learning leverages this recursive formula to learn Q-function (i.e., :math:`Q`).
-In particular, when we use a greedy policy, Q-Function is reduces to as follows.
+Temporal Difference (TD) learning leverages this recursive formula to learn Q-function (i.e., :math:`Q`). 
+In particular, when we use a greedy policy, Q-Function is reduced to the following.
 
 .. math::
 
@@ -105,8 +105,8 @@ Such *exploration* helps improve the quality of :math:`\hat{Q}(\cdot)` by collec
 
 Actor-Critic
 ----------
-Actor-critic :cite:`konda1999actor` :cite:`degris2012off` is a hybrid of Policy Gradient and Q-Learning.
-It first estimate the Q-function and then calculate the advantage of choosing actions (:math:`A(s, a) := Q(s, a) - V(s)`) to derive an approximated policy gradient as follows.
+Actor-critic :cite:`konda1999actor, degris2012off` is a hybrid of Policy Gradient and Q-Learning.
+It first estimates the Q-function and then calculates the advantage of choosing actions (:math:`A(s, a) := Q(s, a) - V(s)`) to derive an approximated policy gradient as follows.
 
 .. math::
 
@@ -144,7 +144,7 @@ Specifically, let us assume that we are accessible to the logged dataset :math:`
 
 .. math::
 
-    \tau := \{ (s_t, a_t, s_{t+1}, r_t) \}_{t=0}^{T} \sim p(s_0) \prod_{t=0}^{T} \pi_b(a_t | s_t) \mathcal{T}(s_{t+1} | s_t, a_t) P_r (r_t | s_t, a_t)
+    \tau := \{ (s_t, a_t, s_{t+1}, r_t) \}_{t=0}^{T-1} \sim p(s_0) \prod_{t=0}^{T-1} \pi_b(a_t | s_t) \mathcal{T}(s_{t+1} | s_t, a_t) P_r (r_t | s_t, a_t)
 
 A key ingredient here is that we can observe feedback only for the actions chosen by the behavior policy.
 Therefore, when learning a new policy in an offline manner, we need to answer the counterfactual question,
@@ -295,13 +295,17 @@ We describe the problem formulation of Off-Policy Evaluation (OPE) and Selection
 
 .. seealso::
 
-    * :doc:`Supported implementations and useful tools <learning_implementation>`
-    * :doc:`Quickstart <quickstart>`.
+    * :doc:`Supported implementations and useful tools <learning_implementation>` 
+    * :doc:`Quickstart <quickstart>`
 
 .. seealso::
 
     For further taxonomies, algorithms, and descriptions, we refer readers to survey papers :cite:`levine2020offline` :cite:`prudencio2022survey`.
     `awesome-offline-rl <https://github.com/hanjuku-kaso/awesome-offline-rl>`_ also provides a comprehensive list of literature.
+
+.. raw:: html
+
+    <div class="white-space-5px"></div>
 
 .. grid::
     :margin: 0

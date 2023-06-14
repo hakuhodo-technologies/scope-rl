@@ -14,6 +14,7 @@ import torch
 
 from sklearn.utils import check_random_state
 
+import d3rlpy
 from d3rlpy.algos import SAC
 from d3rlpy.algos import DoubleDQN as DDQN
 from d3rlpy.models.encoders import VectorEncoderFactory
@@ -21,24 +22,24 @@ from d3rlpy.models.q_functions import MeanQFunctionFactory
 
 from scope_rl.dataset import SyntheticDataset
 from scope_rl.policy import BaseHead
-from scope_rl.policy import ContinuousGaussianHead as GaussianHead
-from scope_rl.policy import DiscreteEpsilonGreedyHead as EpsilonGreedyHead
-from scope_rl.policy import DiscreteSoftmaxHead as SoftmaxHead
-from scope_rl.policy import OffPolicyLearning
+from scope_rl.policy import GaussianHead
+from scope_rl.policy import EpsilonGreedyHead
+from scope_rl.policy import SoftmaxHead
+from scope_rl.policy import TrainCandidatePolicies
 
+from scope_rl.ope import CreateOPEInput
 from scope_rl.ope import OffPolicyEvaluation
 from scope_rl.ope import OffPolicySelection
-from scope_rl.ope import ContinuousDirectMethod as C_DM
-from scope_rl.ope import ContinuousSelfNormalizedPDIS as C_PDIS
-from scope_rl.ope import ContinuousSelfNormalizedDR as C_DR
-from scope_rl.ope import ContinuousStateActionMarginalSNIS as C_MIS
-from scope_rl.ope import ContinuousStateActionMarginalSNDR as C_MDR
-from scope_rl.ope import DiscreteDirectMethod as D_DM
-from scope_rl.ope import DiscreteSelfNormalizedPDIS as D_PDIS
-from scope_rl.ope import DiscreteSelfNormalizedDR as D_DR
-from scope_rl.ope import DiscreteStateActionMarginalSNIS as D_MIS
-from scope_rl.ope import DiscreteStateActionMarginalSNDR as D_MDR
-from scope_rl.ope import CreateOPEInput
+from scope_rl.ope.continuous import DirectMethod as C_DM
+from scope_rl.ope.continuous import SelfNormalizedPDIS as C_PDIS
+from scope_rl.ope.continuous import SelfNormalizedDR as C_DR
+from scope_rl.ope.continuous import StateActionMarginalSNIS as C_MIS
+from scope_rl.ope.continuous import StateActionMarginalSNDR as C_MDR
+from scope_rl.ope.discrete import DirectMethod as D_DM
+from scope_rl.ope.discrete import SelfNormalizedPDIS as D_PDIS
+from scope_rl.ope.discrete import SelfNormalizedDR as D_DR
+from scope_rl.ope.discrete import StateActionMarginalSNIS as D_MIS
+from scope_rl.ope.discrete import StateActionMarginalSNDR as D_MDR
 
 from scope_rl.utils import MinMaxScaler
 from scope_rl.utils import MinMaxActionScaler
@@ -66,8 +67,6 @@ def load_behavior_policy(
     path_ = Path(log_dir + f"/behavior_policy")
     path_.mkdir(exist_ok=True, parents=True)
     path_behavior_policy = Path(path_ / f"behavior_policy_{env_name}.pt")
-
-    torch_seed(base_random_state, device=device)
 
     if action_type == "continuous":
         model = SAC(
@@ -183,7 +182,7 @@ def load_candidate_policies(
         path_ / f"candidate_policy_{env_name}_{behavior_policy_name}.pkl"
     )
 
-    opl = OffPolicyLearning(
+    opl = TrainCandidatePolicies(
         fitting_args={
             "n_steps": base_model_config.opl.fitting_steps,
             "scorers": {},
@@ -248,7 +247,6 @@ def off_policy_evaluation(
 ):
     behavior_policy_name = test_logged_dataset.behavior_policy_names[0]
     action_type = "continuous" if isinstance(env.action_space, Box) else "discrete"
-    n_candidate_policies = len(candidate_policies)
 
     path_ = Path(log_dir + f"/input_dict")
     path_.mkdir(exist_ok=True, parents=True)
@@ -259,6 +257,9 @@ def off_policy_evaluation(
             input_dict = pickle.load(f)
 
     else:
+        torch_seed(base_random_state, device=device)
+        d3rlpy.seed(base_random_state)
+
         if action_type == "continuous":
             prep = CreateOPEInput(
                 env=env,
@@ -290,7 +291,7 @@ def off_policy_evaluation(
                     minimum=env.action_space.low,  # minimum value that policy can take
                     maximum=env.action_space.high,  # maximum value that policy can take
                 ),
-                sigma=base_model_config.continuous_ope.sigma,
+                bandwidth=base_model_config.continuous_ope.bandwidth,
                 device=device,
             )
 

@@ -9,7 +9,7 @@ Note that for the basic problem formulation of Off-Policy Evaluation and Selecti
 
 .. seealso::
 
-    The SharpRatio@k metric is the main contribution of our paper **"Towards Risk-Return Assessments of Off-Policy Evaluation in Offline RL."**
+    The **SharpRatio@k** metric is the main contribution of our paper **"Towards Risk-Return Assessments of Off-Policy Evaluation in Offline RL."** 
     Our paper is currently under submission, and the arXiv version of the paper will come soon..
 
     .. A preprint is available at `arXiv <>`_.
@@ -42,9 +42,9 @@ Issues of existing evaluation protocols of OPE/OPS
 ~~~~~~~~~~
 To evaluate and compare the performance of OPE estimators, the following three metrics are often used:
 
-* Mean Squared Error (MSE) :cite:`voloshin2021empirical`: This metric measures the estimation accuracy of OPE esimator :math:`\hat{J}`.
-* Rank Correlation (RankCorr) :cite:`paine2020hyperparameter, fu2021benchmarks`: This metric measures how well the ranking of the candidate estimators is preserved in the OPE.
-* Regret @ :math:`k` :cite:`doroudi2017importance`: This metric measures how well the best policy among the top-:math:`k` policies selected by an estimator performs. In particular, Regret@1 measures performance difference between the true best policy and the best policy estimated by the OPE estimator.
+* **Mean Squared Error (MSE)** :cite:`voloshin2021empirical`: This metric measures the estimation accuracy of OPE esimator :math:`\hat{J}`.
+* **Rank Correlation (RankCorr)** :cite:`paine2020hyperparameter, fu2021benchmarks`: This metric measures how well the ranking of the candidate estimators is preserved in the OPE.
+* **Regret @** :math:`k` :cite:`doroudi2017importance`: This metric measures how well the best policy among the top-:math:`k` policies selected by an estimator performs. In particular, Regret@1 measures performance difference between the true best policy and the best policy estimated by the OPE estimator.
 
 In the above metrics, MSE measures the accuracy of OPE estimation, while the latter two assess the accuracy of downstream policy selection tasks.
 By combining these metrics, especially the latter two, we can quantify how likely an OPE estimator can choose a near-optimal policy in policy selection when solely relying on the OPE result.
@@ -83,8 +83,8 @@ This motivates the development of a new evaluation protocol that can quantify th
 
 Evaluating the top-:math:`k` risk-return tradeoff in policy deployment
 ~~~~~~~~~~
-Motivated by the lack of comprehensive risk-return assessment in OPE in existing literature, we propose a new evaluation metric called SharpeRatio@k.
-The key idea behind it is to regard the set of top-$k$ candidate policies selected by an OPE estimator as its *policy portfolio*, drawing inspiration from risk-return assessments in finance :cite:`sharpe1998sharpe`.
+Motivated by the lack of comprehensive risk-return assessment in OPE in existing literature, we propose a new evaluation metric called SharpeRatio@k. 
+The key idea behind it is to regard the set of top-:math:`k` candidate policies selected by an OPE estimator as its *policy portfolio*, drawing inspiration from risk-return assessments in finance :cite:`sharpe1998sharpe`. 
 Specifically, we measure the risk, return, and efficiency of an OPE estimator using the following novel metric:
 
 .. math::
@@ -182,7 +182,7 @@ As shown here, SharpeRatio@k effectively provides valuable guidance on selecting
 
 OPE benchmarks with SharpRatio@k
 ~~~~~~~~~~
-We conduct OPE benchmark using four continuous control benchmarks including Reacher, InvertedPendulum, Hopper, and Swimmer from Gym-Mujuco :cite:`brockman2016openai` :cite:`todorov2012mujoco` and discrete controls such as CartPole, MountainCar, and Acrobot from Gym-Classic Control :cite:`brockman2016openai`.
+We conduct OPE benchmark using four continuous control benchmarks including Reacher, InvertedPendulum, Hopper, and Swimmer from Gym-Mujuco :cite:`brockman2016openai` and discrete controls such as CartPole, MountainCar, and Acrobot from Gym-Classic Control :cite:`brockman2016openai`.
 For the detailed settings, please refer to Section 4.1 of our paper.
 
 **Result 1: SharpeRatio@k is more appropriate and informative than conventional accuracy metrics.**
