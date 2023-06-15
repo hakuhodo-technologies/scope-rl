@@ -31,12 +31,14 @@ class DoubleReinforcementLearning(BaseOffPolicyEstimator):
     .. math::
 
         \\hat{J}_{\\mathrm{DRL}} (\\pi; \\mathcal{D})
-        &:= \\frac{1}{n} \\sum_{k=1}^K \\sum_{i=1}^{n_k} \\sum_{t=0}^{T-1} (w^j(s_{i,t}, a_{i, t}) (r_{i, t} - Q^j(s_{i, t}, a_{i, t})) \\\\
-        & \quad \quad + w^j(s_{i, t-1}, a_{i, t-1}) \\mathbb{E}_{a \\sim \\pi(a | s_t)}[Q^j(s_{i, t}, a)] )
+        := \\frac{1}{n} \\sum_{k=1}^K \\sum_{i=1}^{n_k} \\sum_{t=0}^{T-1} (\\rho^j(s_t^{(i)}, a_t^{(i)}) (r_t^{(i)} - Q^j(s_t^{(i)}, a_t^{(i)}))
+        + \\rho^j(s_{t-1}^{(i)}, a_{t-1}^{(i)}) \\sum_{a \\in \\mathcal{A}} \\pi(a | s_t^{(i)}) Q^j(s_t^{(i)}, a))
 
-    where :math:`w(s, a) \\approx d^{\\pi}(s, a) / d^{\\pi_b}(s, a)` is the state-action marginal importance weight and :math:`Q(s, a)` is the Q-function.
+    where :math:`\\rho(s, a) \\approx d^{\\pi}(s, a) / d^{\\pi_b}(s, a)` is the state-action marginal importance weight,
+    where :math:`d^{\\pi}(s, a)` is the marginal visitation probability of the policy :math:`\\pi` on :math:`(s, a)`.
+    :math:`Q(s, a)` is the Q-function.
     :math:`K` is the number of folds and :math:`\\mathcal{D}_j` is the :math:`j`-th split of logged data consisting of :math:`n_k` samples.
-    :math:`w^j` and :math:`Q^j` are estimated on the subset of data used for OPE, i.e., :math:`\\mathcal{D} \\setminus \\mathcal{D}_j`.
+    :math:`\\rho^j` and :math:`Q^j` are estimated on the subset of data used for OPE, i.e., :math:`\\mathcal{D} \\setminus \\mathcal{D}_j`.
 
     DRL achieves the semiparametric efficiency bound with a consistent value predictor.
 
@@ -92,7 +94,7 @@ class DoubleReinforcementLearning(BaseOffPolicyEstimator):
             Observed immediate rewards.
 
         state_action_marginal_importance_weight: array-like of shape (n_trajectories * step_per_trajectory, )
-            Importance weight wrt the state-action marginal distribution, i.e., :math:`d_{\\pi}(s, a) / d_{\\pi_b}(s, a)`
+            Importance weight wrt the state-action marginal distribution, i.e., :math:`d^{\\pi}(s, a) / d^{\\pi_b}(s, a)`
 
         evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
             Conditional action distribution induced by the evaluation policy,
@@ -155,7 +157,7 @@ class DoubleReinforcementLearning(BaseOffPolicyEstimator):
             Observed immediate rewards.
 
         state_action_marginal_importance_weight: array-like of shape (n_trajectories * step_per_trajectory, )
-            Importance weight wrt the state-action marginal distribution, i.e., :math:`d_{\\pi}(s, a) / d_{\\pi_b}(s, a)`
+            Importance weight wrt the state-action marginal distribution, i.e., :math:`d^{\\pi}(s, a) / d^{\\pi_b}(s, a)`
 
         evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
             Conditional action distribution induced by the evaluation policy,
@@ -266,7 +268,7 @@ class DoubleReinforcementLearning(BaseOffPolicyEstimator):
             Observed immediate rewards.
 
         state_action_marginal_importance_weight: array-like of shape (n_trajectories * step_per_trajectory, )
-            Importance weight wrt the state-action marginal distribution, i.e., :math:`d_{\\pi}(s, a) / d_{\\pi_b}(s, a)`
+            Importance weight wrt the state-action marginal distribution, i.e., :math:`d^{\\pi}(s, a) / d^{\\pi_b}(s, a)`
 
         evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_action)
             Conditional action distribution induced by the evaluation policy,
@@ -395,12 +397,12 @@ class StateMarginalDM(BaseStateActionMarginalOPEEstimator):
     .. math::
 
         \\hat{J}_{\\mathrm{DM}} (\\pi; \\mathcal{D})
-        := \\mathbb{E}_n [\\mathbb{E}_{a_0 \\sim \\pi(a_0 | s_0)} [\\hat{Q}(s_0, a_0)] ]
-        = \\mathbb{E}_n [\\hat{V}(s_0)],
+        := \\frac{1}{n} \\sum_{i=1}^n \\sum_{a \\in \\mathcal{A}} \\pi(a | s_0^{(i)}) \\hat{Q}(s_0^{(i)}, a)
+        = \\frac{1}{n} \\sum_{i=1}^n \\hat{V}(s_0^{(i)}),
 
     where :math:`\\mathcal{D}=\\{\\{(s_t, a_t, r_t)\\}_{t=0}^{T-1}\\}_{i=1}^n` is the logged dataset with :math:`n` trajectories.
     :math:`T` indicates step per episode. :math:`\\hat{Q}(s_t, a_t)` is the estimated Q value given a state-action pair.
-    \\hat{V}(s_t) is the estimated value function given a state.
+    :math:`\\hat{V}(s_t)` is the estimated value function given a state.
 
     DM has low variance compared to other estimators, but can produce larger bias due to approximation errors.
 
@@ -572,9 +574,11 @@ class StateMarginalIS(BaseStateMarginalOPEEstimator):
     .. math::
 
         \\hat{J}_{\\mathrm{SM-IS}} (\\pi; \\mathcal{D})
-        := \\mathbb{E}_{n} \\left[\\sum_{t=0}^{k-1} \\gamma^t w_{0:t} r_t \\right] + \\mathbb{E}_{n} \\left[\\sum_{t=k}^{T-1} \\gamma^t w_s(s_{t-k}) w_{t-k:t} r_t \\right],
+        := \\frac{1}{n} \\sum_{i=1}^n \\sum_{t=0}^{k-1} \\gamma^t w_{0:t}^{(i)} r_t^{(i)}
+        + \\frac{1}{n} \\sum_{i=1}^n \\sum_{t=k}^{T-1} \\gamma^t \\rho(s_{t-k}^{(i)}) w_{t-k:t}^{(i)} r_t^{(i)},
 
-    where :math:`w_s(s) := d_{\\pi}(s) / d_{\\pi_b}(s)` and :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} (\\pi(a_t | s_t) / \\pi_0(a_t | s_t))`.
+    where :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} (\\pi(a_t | s_t) / \\pi_0(a_t | s_t))` and :math:`\\rho(s) \\approx d^{\\pi}(s) / d^{\\pi_b}(s)` is the state-marginal importance weight,
+    where :math:`d^{\\pi}(s)` is the marginal visitation probability of the policy :math:`\\pi` on :math:`s`.
     When :math:`k=0`, this estimator is reduced to the vanilla state marginal IS.
 
     SM-IS is unbiased when the marginal importance weight is estimated correctly.
@@ -645,7 +649,7 @@ class StateMarginalIS(BaseStateMarginalOPEEstimator):
             Observed immediate rewards.
 
         state_marginal_importance_weight: array-like of shape (n_trajectories * step_per_trajectory, )
-            Importance weight wrt the state marginal distribution, i.e., :math:`d_{\\pi}(s) / d_{\\pi_b}(s)`
+            Importance weight wrt the state marginal distribution, i.e., :math:`d^{\\pi}(s) / d^{\\pi_b}(s)`
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
@@ -723,7 +727,7 @@ class StateMarginalIS(BaseStateMarginalOPEEstimator):
             Observed immediate rewards.
 
         state_marginal_importance_weight: array-like of shape (n_trajectories * step_per_trajectory, )
-            Importance weight wrt the state marginal distribution, i.e., :math:`d_{\\pi}(s) / d_{\\pi_b}(s)`
+            Importance weight wrt the state marginal distribution, i.e., :math:`d^{\\pi}(s) / d^{\\pi_b}(s)`
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
@@ -858,7 +862,7 @@ class StateMarginalIS(BaseStateMarginalOPEEstimator):
             Observed immediate rewards.
 
         state_marginal_importance_weight: array-like of shape (n_trajectories * step_per_trajectory, )
-            Importance weight wrt the state marginal distribution, i.e., :math:`d_{\\pi}(s) / d_{\\pi_b}(s)`
+            Importance weight wrt the state marginal distribution, i.e., :math:`d^{\\pi}(s) / d^{\\pi_b}(s)`
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
@@ -1006,11 +1010,12 @@ class StateMarginalDR(BaseStateMarginalOPEEstimator):
     .. math::
 
         \\hat{J}_{\\mathrm{SM-DR}} (\\pi; \\mathcal{D})
-        &:= \\mathbb{E}_{n} [\\mathbb{E}_{a_0 \sim \\pi(a_0 | s_0)} [\\hat{Q}(s_0, a_0)]] \\\\
-        & \quad \quad + \\mathbb{E}_{n} \\left[\\sum_{t=0}^{k-1} \\gamma^t w_{0:t} (r_t + \\gamma \\mathbb{E}_{a \\sim \\pi(a | s_t)}[\\hat{Q}(s_{t+1}, a)] - \\hat{Q}(s_t, a_t)) \\right] \\\\
-        & \quad \quad + \\mathbb{E}_{n} \\left[\\sum_{t=k}^{T-1} \\gamma^t w_s(s_{t-k}) w_{t-k:t} (r_t + \\gamma \\mathbb{E}_{a \\sim \\pi(a | s_t)}[\\hat{Q}(s_{t+1}, a)] - \\hat{Q}(s_t, a_t)) \\right],
+        &:= \\frac{1}{n} \\sum_{i=1}^n \\sum_{a \\in \\mathcal{A}} \\pi(a | s_0^{(i)}) \\hat{Q}(s_0^{(i)}, a) \\\\
+        & \quad \quad + \\frac{1}{n} \\sum_{i=1}^n \\sum_{t=0}^{k-1} \\gamma^t w_{0:t}^{(i)} \left(r_t^{(i)} + \\gamma \\sum_{a \\in \\mathcal{A}} \\pi(a | s_t^{(i)}) \\hat{Q}(s_{t+1}^{(i)}, a) - \\hat{Q}(s_t^{(i)}, a_t^{(i)}) \\right) \\\\
+        & \quad \quad + \\frac{1}{n} \\sum_{t=k}^{T-1} \\gamma^t \\rho(s_{t-k}^{(i)}) w_{t-k:t}^{(i)} \\left( r_t^{(i)} + \\gamma \\sum_{a \\in \\mathcal{A}} \\pi(a | s_t^{(i)}) \\hat{Q}(s_{t+1}^{(i)}, a) - \\hat{Q}(s_t^{(i)}, a_t^{(i)}) \\right),
 
-    where :math:`w_s(s) := d_{\\pi}(s) / d_{\\pi_b}(s)` and :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} (\\pi(a_t | s_t) / \\pi_0(a_t | s_t))`. :math:`Q(s, a)` is the state-action value.
+    where :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} (\\pi(a_t | s_t) / \\pi_0(a_t | s_t))` and :math:`\\rho(s) \\approx d^{\\pi}(s) / d^{\\pi_b}(s)` is the state-marginal importance weight, 
+    where where :math:`d^{\\pi}(s)` is the marginal visitation probability of the policy :math:`\\pi` on :math:`s`. 
     When :math:`k=0`, this estimator is reduced to the vanilla state marginal DR.
 
     SM-DR is unbiased when either the marginal importance weight or Q-function is estimated correctly.
@@ -1086,7 +1091,7 @@ class StateMarginalDR(BaseStateMarginalOPEEstimator):
             Observed immediate rewards.
 
         state_marginal_importance_weight: array-like of shape (n_trajectories * step_per_trajectory, )
-            Importance weight wrt the state marginal distribution, i.e., :math:`d_{\\pi}(s) / d_{\\pi_b}(s)`
+            Importance weight wrt the state marginal distribution, i.e., :math:`d^{\\pi}(s) / d^{\\pi_b}(s)`
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
@@ -1186,7 +1191,7 @@ class StateMarginalDR(BaseStateMarginalOPEEstimator):
             Observed immediate rewards.
 
         state_marginal_importance_weight: array-like of shape (n_trajectories * step_per_trajectory, )
-            Importance weight wrt the state marginal distribution, i.e., :math:`d_{\\pi}(s) / d_{\\pi_b}(s)`
+            Importance weight wrt the state marginal distribution, i.e., :math:`d^{\\pi}(s) / d^{\\pi_b}(s)`
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
@@ -1353,7 +1358,7 @@ class StateMarginalDR(BaseStateMarginalOPEEstimator):
             Observed immediate rewards.
 
         state_marginal_importance_weight: array-like of shape (n_trajectories * step_per_trajectory, )
-            Importance weight wrt the state marginal distribution, i.e., :math:`d_{\\pi}(s) / d_{\\pi_b}(s)`
+            Importance weight wrt the state marginal distribution, i.e., :math:`d^{\\pi}(s) / d^{\\pi_b}(s)`
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
@@ -1534,10 +1539,11 @@ class StateMarginalSNIS(StateMarginalIS):
     .. math::
 
         \\hat{J}_{\\mathrm{SM-SNIS}} (\\pi; \\mathcal{D})
-        := \\mathbb{E}_{n} \\left[\\sum_{t=0}^{k-1} \\gamma^t \\frac{w_{0:t}}{\\sum_{n} w_{0:t}} r_t \\right]
-            + \\mathbb{E}_{n} \\left[\\sum_{t=k}^{T-1} \\gamma^t \\frac{w_s(s_{t-k}) w_{t-k:t}}{\\sum_n w_s(s_{t-k}) w_{t-k:t}} r_t \\right],
+        := \\sum_{i=1}^n \\sum_{t=0}^{k-1} \\gamma^t \\frac{w_{0:t}^{(i)}}{\\sum_{i'=1}^{n} w_{0:t}^{(i')}} r_t^{(i)}
+            + \\sum_{i=1}^n \\sum_{t=k}^{T-1} \\gamma^t \\frac{\\rho(s_{t-k}^{(i)}) w_{t-k:t}^{(i)}}{\\sum_{i'=1}^n \\rho(s_{t-k}^{(i')}) w_{t-k:t}^{(i')}} r_t^{(i)},
 
-    where :math:`w_s(s) := d_{\\pi}(s) / d_{\\pi_b}(s)` and :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} (\\pi(a_t | s_t) / \\pi_0(a_t | s_t))`.
+    where :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} (\\pi(a_t | s_t) / \\pi_0(a_t | s_t))` and :math:`\\rho(s) \\approx d^{\\pi}(s) / d^{\\pi_b}(s)` is the state-marginal importance weight,
+    where :math:`d^{\\pi}(s)` is the marginal visitation probability of the policy :math:`\\pi` on :math:`s`.
     When :math:`k=0`, this estimator is reduced to the vanilla state marginal SNIS.
 
     SM-SNIS is consistent when the marginal importance weight is estimated correctly.
@@ -1608,7 +1614,7 @@ class StateMarginalSNIS(StateMarginalIS):
             Observed immediate rewards.
 
         state_marginal_importance_weight: array-like of shape (n_trajectories * step_per_trajectory, )
-            Importance weight wrt the state marginal distribution, i.e., :math:`d_{\\pi}(s) / d_{\\pi_b}(s)`
+            Importance weight wrt the state marginal distribution, i.e., :math:`d^{\\pi}(s) / d^{\\pi_b}(s)`
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
@@ -1674,11 +1680,12 @@ class StateMarginalSNDR(StateMarginalDR):
     .. math::
 
         \\hat{J}_{\\mathrm{SM-SNDR}} (\\pi; \\mathcal{D})
-        &:= \\mathbb{E}_{n} [\\mathbb{E}_{a_0 \sim \\pi(a_0 | s_0)} [\\hat{Q}(s_0, a_0)]] \\\\
-        & \quad \quad + \\mathbb{E}_{n} \\left[\\sum_{t=0}^{k-1} \\gamma^t \\frac{w_{0:t}}{\\sum_{n} w_{0:t}} (r_t + \\gamma \\mathbb{E}_{a \\sim \\pi(a | s_t)}[\\hat{Q}(s_{t+1}, a)] - \\hat{Q}(s_t, a_t)) \\right] \\\\
-        & \quad \quad + \\mathbb{E}_{n} \\left[\\sum_{t=k}^{T-1} \\gamma^t \\frac{w_s(s_{t-k}) w_{t-k:t}}{\\sum_{n} w_s(s_{t-k}) w_{t-k:t}} (r_t + \\gamma \\mathbb{E}_{a \\sim \\pi(a | s_t)}[\\hat{Q}(s_{t+1}, a)] - \\hat{Q}(s_t, a_t)) \\right],
+        &:= \\frac{1}{n} \\sum_{i=1}^n \\sum_{a \\in \\mathcal{A}} \\pi(a | s_0^{(i)}) \\hat{Q}(s_0^{(i)}, a) \\\\
+        & \quad \quad + \\sum_{i=1}^n \\sum_{t=0}^{k-1} \\gamma^t \\frac{w_{0:t}^{(i)}}{\\sum_{i'=1}^n w_{0:t}^{(i')}} \\left(r_t^{(i)} + \\gamma \\sum_{a \\in \\mathcal{A}} \\pi(a | s_t^{(i)}) \\hat{Q}(s_{t+1}^{(i)}, a) - \\hat{Q}(s_t^{(i)}, a_t^{(i)}) \\right) \\\\
+        & \quad \quad + \\sum_{i=1}^n \\sum_{t=k}^{T-1} \\gamma^t \\frac{\\rho(s_{t-k}^{(i)}) w_{t-k:t}^{(i)}}{\\sum_{i'=1}^n \\rho(s_{t-k}^{(i')}) w_{t-k:t}^{(i')}} \\left(r_t^{(i)} + \\gamma \\sum_{a \\in \\mathcal{A}} \\pi(a | s_t^{(i)}) \\hat{Q}(s_{t+1}^{(i)}, a) - \\hat{Q}(s_t^{(i)}, a_t^{(i)}) \\right),
 
-    where :math:`w_s(s) := d_{\\pi}(s) / d_{\\pi_b}(s)` and :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} (\\pi(a_t | s_t) / \\pi_0(a_t | s_t))`. :math:`Q(s, a)` is the state-action value.
+    where :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} (\\pi(a_t | s_t) / \\pi_0(a_t | s_t))` and :math:`\\rho(s) \\approx d^{\\pi}(s) / d^{\\pi_b}(s)` is the state-marginal importance weight, 
+    where where :math:`d^{\\pi}(s)` is the marginal visitation probability of the policy :math:`\\pi` on :math:`s`. 
     When :math:`k=0`, this estimator is reduced to the vanilla state marginal SNDR.
 
     SM-SNDR is consistent when either the marginal importance weight or Q-function is estimated correctly.
@@ -1754,7 +1761,7 @@ class StateMarginalSNDR(StateMarginalDR):
             Observed immediate rewards.
 
         state_marginal_importance_weight: array-like of shape (n_trajectories * step_per_trajectory, )
-            Importance weight wrt the state marginal distribution, i.e., :math:`d_{\\pi}(s) / d_{\\pi_b}(s)`
+            Importance weight wrt the state marginal distribution, i.e., :math:`d^{\\pi}(s) / d^{\\pi_b}(s)`
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
@@ -1840,9 +1847,11 @@ class StateActionMarginalIS(BaseStateActionMarginalOPEEstimator):
     .. math::
 
         \\hat{J}_{\\mathrm{SAM-IS}} (\\pi; \\mathcal{D})
-        := \\mathbb{E}_{n} \\left[\\sum_{t=0}^{k-1} \\gamma^t w_{0:t} r_t \\right] + \\mathbb{E}_{n} \\left[\\sum_{t=k}^{T-1} \\gamma^t w(s_{t-k}, a_{t-k}) w_{t-k+1:t} r_t \\right],
+        := \\frac{1}{n} \\sum_{i=1}^n \\sum_{t=0}^{k-1} \\gamma^t w_{0:t}^{(i)} r_t^{(i)}
+        + \\frac{1}{n} \\sum_{i=1}^n \\sum_{t=k}^{T-1} \\gamma^t \\rho(s_{t-k}^{(i)}, a_{t-k}^{(i)}) w_{t-k+1:t}^{(i)} r_t^{(i)},
 
-    where :math:`w(s, a) := d_{\\pi}(s, a) / d_{\\pi_b}(s, a)` and :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} (\\pi(a_t | s_t) / \\pi_0(a_t | s_t))`.
+    where :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} (\\pi(a_t | s_t) / \\pi_0(a_t | s_t))` and :math:`\\rho(s, a) \\approx d^{\\pi}(s, a) / d^{\\pi_b}(s, a)` is the state-action marginal importance weight.
+    where :math:`d^{\\pi}(s, a)` is the marginal visitation probability of the policy :math:`\\pi` on :math:`(s, a)`.
     When :math:`k=0`, this estimator is reduced to the vanilla state-action marginal IS.
 
     SAM-IS is unbiased when the marginal importance weight is estimated correctly.
@@ -1910,7 +1919,7 @@ class StateActionMarginalIS(BaseStateActionMarginalOPEEstimator):
             Observed immediate rewards.
 
         state_action_marginal_importance_weight: array-like of shape (n_trajectories * step_per_trajectory, )
-            Importance weight wrt the state-action marginal distribution, i.e., :math:`d_{\\pi}(s, a) / d_{\\pi_b}(s, a)`
+            Importance weight wrt the state-action marginal distribution, i.e., :math:`d^{\\pi}(s, a) / d^{\\pi_b}(s, a)`
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
@@ -1990,7 +1999,7 @@ class StateActionMarginalIS(BaseStateActionMarginalOPEEstimator):
             Observed immediate rewards.
 
         state_action_marginal_importance_weight: array-like of shape (n_trajectories * step_per_trajectory, )
-            Importance weight wrt the state-action marginal distribution, i.e., :math:`d_{\\pi}(s, a) / d_{\\pi_b}(s, a)`
+            Importance weight wrt the state-action marginal distribution, i.e., :math:`d^{\\pi}(s, a) / d^{\\pi_b}(s, a)`
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
@@ -2125,7 +2134,7 @@ class StateActionMarginalIS(BaseStateActionMarginalOPEEstimator):
             Observed immediate rewards.
 
         state_action_marginal_importance_weight: array-like of shape (n_trajectories * step_per_trajectory, )
-            Importance weight wrt the state-action marginal distribution, i.e., :math:`d_{\\pi}(s, a) / d_{\\pi_b}(s, a)`
+            Importance weight wrt the state-action marginal distribution, i.e., :math:`d^{\\pi}(s, a) / d^{\\pi_b}(s, a)`
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
@@ -2268,11 +2277,12 @@ class StateActionMarginalDR(BaseStateActionMarginalOPEEstimator):
     .. math::
 
         \\hat{J}_{\\mathrm{SAM-DR}} (\\pi; \\mathcal{D})
-        &:= \\mathbb{E}_{n} [\\mathbb{E}_{a_0 \\sim \\pi(a_0 | s_0)} [\\hat{Q}(s_0, a_0)]] \\\\
-        & \quad \quad + \\mathbb{E}_{n} \\left[\\sum_{t=0}^{k-1} \\gamma^t w_{0:t} (r_t + \\gamma \\mathbb{E}_{a \\sim \\pi(a | s_t)}[\\hat{Q}(s_{t+1}, a)] - \\hat{Q}(s_t, a_t)) \\right] \\\\
-        & \quad \quad + \\mathbb{E}_{n} \\left[\\sum_{t=k}^{T-1} \\gamma^t w(s_{t-k}, a_{t-k}) w_{t-k+1:t} (r_t + \\gamma \\mathbb{E}_{a \\sim \\pi(a | s_t)}[\\hat{Q}(s_{t+1}, a)] - \\hat{Q}(s_t, a_t)) \\right],
+        &:= \\frac{1}{n} \\sum_{i=1}^n \\sum_{a \\in \\mathcal{A}} \\pi(a | s_0^{(i)}) \\hat{Q}(s_0^{(i)}, a) \\\\
+        & \quad \quad + \\frac{1}{n} \\sum_{i=1}^n \\sum_{t=0}^{k-1} \\gamma^t w_{0:t}^{(i)} \\left( r_t^{(i)} + \\gamma \\sum_{a \\in \\mathcal{A}} \\pi(a | s_t^{(i)}) \\hat{Q}(s_{t+1}^{(i)}, a) - \\hat{Q}(s_t^{(i)}, a_t^{(i)}) \\right) \\\\
+        & \quad \quad + \\frac{1}{n} \\sum_{i=1}^n \\sum_{t=k}^{T-1} \\gamma^t \\rho(s_{t-k}^{(i)}, a_{t-k}^{(i)}) w_{t-k+1:t}^{(i)} \\left( r_t^{(i)} + \\gamma \\sum_{a \\in \\mathcal{A}} \\pi(a | s_t^{(i)}) \\hat{Q}(s_{t+1}^{(i)}, a) - \\hat{Q}(s_t^{(i)}, a_t^{(i)}) \\right),
 
-    where :math:`w(s, a) := d_{\\pi}(s, a) / d_{\\pi_b}(s, a)` and :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} (\\pi(a_t | s_t) / \\pi_0(a_t | s_t))`. :math:`Q(s, a)` is the state-action value.
+    where :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} (\\pi(a_t | s_t) / \\pi_0(a_t | s_t))` and :math:`\\rho(s, a) \\approx d^{\\pi}(s, a) / d^{\\pi_b}(s, a)` is the state-action marginal importance weight. 
+    where :math:`d^{\\pi}(s, a)` is the marginal visitation probability of the policy :math:`\\pi` on :math:`(s, a)`. 
     When :math:`k=0`, this estimator is reduced to the vanilla state-action marginal DR.
 
     SAM-DR is unbiased when either the marginal importance weight or Q-function is estimated correctly.
@@ -2345,7 +2355,7 @@ class StateActionMarginalDR(BaseStateActionMarginalOPEEstimator):
             Observed immediate rewards.
 
         state_action_marginal_importance_weight: array-like of shape (n_trajectories * step_per_trajectory, )
-            Importance weight wrt the state-action marginal distribution, i.e., :math:`d_{\\pi}(s, a) / d_{\\pi_b}(s, a)`
+            Importance weight wrt the state-action marginal distribution, i.e., :math:`d^{\\pi}(s, a) / d^{\\pi_b}(s, a)`
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
@@ -2447,7 +2457,7 @@ class StateActionMarginalDR(BaseStateActionMarginalOPEEstimator):
             Observed immediate rewards.
 
         state_action_marginal_importance_weight: array-like of shape (n_trajectories * step_per_trajectory, )
-            Importance weight wrt the state-action marginal distribution, i.e., :math:`d_{\\pi}(s, a) / d_{\\pi_b}(s, a)`
+            Importance weight wrt the state-action marginal distribution, i.e., :math:`d^{\\pi}(s, a) / d^{\\pi_b}(s, a)`
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
@@ -2612,7 +2622,7 @@ class StateActionMarginalDR(BaseStateActionMarginalOPEEstimator):
             Observed immediate rewards.
 
         state_action_marginal_importance_weight: array-like of shape (n_trajectories * step_per_trajectory, )
-            Importance weight wrt the state-action marginal distribution, i.e., :math:`d_{\\pi}(s, a) / d_{\\pi_b}(s, a)`
+            Importance weight wrt the state-action marginal distribution, i.e., :math:`d^{\\pi}(s, a) / d^{\\pi_b}(s, a)`
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
@@ -2788,10 +2798,11 @@ class StateActionMarginalSNIS(StateActionMarginalIS):
     .. math::
 
         \\hat{J}_{\\mathrm{SAM-SNIS}} (\\pi; \\mathcal{D})
-        &:= \\mathbb{E}_{n} \\left[\\sum_{t=0}^{k-1} \\gamma^t \\frac{w_{0:t}}{\\sum_{n} w_{0:t}} r_t \\right] \\\\
-        & \quad \quad + \\mathbb{E}_{n} \\left[\\sum_{t=k}^{T-1} \\gamma^t \\frac{w(s_{t-k}, a_{t-k}) w_{t-k+1:t}}{\\sum_n w(s_{t-k}, a_{t-k}) w_{t-k+1:t}} r_t \\right],
+        &:= \\sum_{i=1}^n \\sum_{t=0}^{k-1} \\gamma^t \\frac{w_{0:t}^{(i)}}{\\sum_{i'=1}^n w_{0:t}^{(i')}} r_t^{(i)} \\\\
+        & \quad \quad + \\sum_{i=1}^n \\sum_{t=k}^{T-1} \\gamma^t \\frac{\\rho(s_{t-k}^{(i)}, a_{t-k}^{(i)}) w_{t-k+1:t}^{(i)}}{\\sum_{i'=1}^n \\rho(s_{t-k}^{(i')}, a_{t-k}^{(i')}) w_{t-k+1:t}^{(i')}} r_t^{(i)},
 
-    where :math:`w(s, a) := d_{\\pi}(s, a) / d_{\\pi_b}(s, a)` and :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} (\\pi(a_t | s_t) / \\pi_0(a_t | s_t))`.
+    where :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} (\\pi(a_t | s_t) / \\pi_0(a_t | s_t))` and :math:`\\rho(s, a) \\approx d^{\\pi}(s, a) / d^{\\pi_b}(s, a)` is the state-action marginal importance weight. 
+    where :math:`d^{\\pi}(s, a)` is the marginal visitation probability of the policy :math:`\\pi` on :math:`(s, a)`. 
     When :math:`k=0`, this estimator is reduced to the vanilla state-action marginal SNIS.
 
     SAM-SNIS is consistent when the marginal importance weight is estimated correctly.
@@ -2859,7 +2870,7 @@ class StateActionMarginalSNIS(StateActionMarginalIS):
             Observed immediate rewards.
 
         state_action_marginal_importance_weight: array-like of shape (n_trajectories * step_per_trajectory, )
-            Importance weight wrt the state-action marginal distribution, i.e., :math:`d_{\\pi}(s, a) / d_{\\pi_b}(s, a)`
+            Importance weight wrt the state-action marginal distribution, i.e., :math:`d^{\\pi}(s, a) / d^{\\pi_b}(s, a)`
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,
@@ -2927,11 +2938,12 @@ class StateActionMarginalSNDR(StateActionMarginalDR):
     .. math::
 
         \\hat{J}_{\\mathrm{SAM-SNDR}} (\\pi; \\mathcal{D})
-        &:= \\mathbb{E}_{n} [\\mathbb{E}_{a_0 \\sim \\pi(a_0 | s_0)} [\\hat{Q}(s_0, a_0)]] \\\\
-        & \quad \quad + \\mathbb{E}_{n} \\left[\\sum_{t=0}^{k-1} \\gamma^t \\frac{w_{0:t}}{\\sum_{n} w_{0:t}} (r_t + \\gamma \\mathbb{E}_{a \\sim \\pi(a | s_t)}[\\hat{Q}(s_{t+1}, a)] - \\hat{Q}(s_t, a_t)) \\right] \\\\
-        & \quad \quad + \\mathbb{E}_{n} \\left[\\sum_{t=k}^{T-1} \\gamma^t \\frac{w(s_{t-k}, a_{t-k}) w_{t-k+1:t}}{\\sum_{n} w(s_{t-k}, a_{t-k}) w_{t-k+1:t}} (r_t + \\gamma \\mathbb{E}_{a \\sim \\pi(a | s_t)}[\\hat{Q}(s_{t+1}, a)] - \\hat{Q}(s_t, a_t)) \\right],
+        &:= \\frac{1}{n} \\sum_{i=1}^n \\sum_{a \\in \\mathcal{A}} \\pi(a | s_0^{(t)}) \\hat{Q}(s_0^{(t)}, a) \\\\
+        & \quad \quad + \\sum_{i=1}^n \\sum_{t=0}^{k-1} \\gamma^t \\frac{w_{0:t}^{(i)}}{\\sum_{i'=1}^n w_{0:t}^{(i')}} \\left( r_t^{(i)} + \\gamma \\sum_{a \\in \\mathcal{A}} \\pi(a | s_t^{(i)}) \\hat{Q}(s_{t+1}^{(i)}, a) - \\hat{Q}(s_t^{(i)}, a_t^{(i)}) \\right) \\\\
+        & \quad \quad + \\sum_{i=1}^n \\sum_{t=k}^{T-1} \\gamma^t \\frac{\\rho(s_{t-k}^{(i)}, a_{t-k}^{(i)}) w_{t-k+1:t}^{(i)}}{\\sum_{i'=1}^n \\rho(s_{t-k}^{(i')}, a_{t-k}^{(i')}) w_{t-k+1:t}^{(i')}} \\left( r_t^{(i)} + \\gamma \\sum_{a \\in \\mathcal{A}} \\pi(a | s_t^{(i)}) \\hat{Q}(s_{t+1}^{(i)}, a) - \\hat{Q}(s_t^{(i)}, a_t^{(i)}) \\right),
 
-    where :math:`w(s, a) := d_{\\pi}(s, a) / d_{\\pi_b}(s, a)` and :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} (\\pi(a_t | s_t) / \\pi_0(a_t | s_t))`. :math:`Q(s, a)` is the state-action value.
+    where :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} (\\pi(a_t | s_t) / \\pi_0(a_t | s_t))` and :math:`\\rho(s, a) \\approx d^{\\pi}(s, a) / d^{\\pi_b}(s, a)` is the state-action marginal importance weight. 
+    where :math:`d^{\\pi}(s, a)` is the marginal visitation probability of the policy :math:`\\pi` on :math:`(s, a)`. 
     When :math:`k=0`, this estimator is reduced to the vanilla state-action marginal SNDR.
 
     SAM-SNDR is consistent when either the marginal importance weight or Q-function is estimated correctly.
@@ -3004,7 +3016,7 @@ class StateActionMarginalSNDR(StateActionMarginalDR):
             Observed immediate rewards.
 
         state_action_marginal_importance_weight: array-like of shape (n_trajectories * step_per_trajectory, )
-            Importance weight wrt the state-action marginal distribution, i.e., :math:`d_{\\pi}(s, a) / d_{\\pi_b}(s, a)`
+            Importance weight wrt the state-action marginal distribution, i.e., :math:`d^{\\pi}(s, a) / d^{\\pi_b}(s, a)`
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory, )
             Conditional action choice probability of the behavior policy,

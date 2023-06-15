@@ -817,7 +817,7 @@ class ContinuousMinimaxStateWeightLearning(BaseWeightValueLearner):
         )
         check_array(state, name="state", expected_dim=2)
         check_array(action, name="action", expected_dim=2)
-        check_array(pscore, name="pscore", expected_dim=2, min_val=0.0, max_val=1.0)
+        check_array(pscore, name="pscore", expected_dim=2, min_val=0.0)
         check_array(
             evaluation_policy_action,
             name="evaluation_policy_action",
@@ -979,7 +979,7 @@ class ContinuousMinimaxStateWeightLearning(BaseWeightValueLearner):
         """
         check_array(state, name="state", expected_dim=2)
         check_array(action, name="action", expected_dim=2)
-        check_array(pscore, name="pscore", expected_dim=2, min_val=0.0, max_val=1.0)
+        check_array(pscore, name="pscore", expected_dim=2, min_val=0.0)
         check_array(
             evaluation_policy_action,
             name="evaluation_policy_action",

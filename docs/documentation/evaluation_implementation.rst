@@ -392,9 +392,9 @@ It first learns the Q-function and then leverages the learned Q-function as foll
 
 .. math::
 
-    \hat{J}_{\mathrm{DM}} (\pi; \mathcal{D}) := \mathbb{E}_n [ \mathbb{E}_{a_0 \sim \pi(a_0 | s_0)} [\hat{Q}(s_0, a_0)] ] = \mathbb{E}_n [\hat{V}(s_0)],
+    \hat{J}_{\mathrm{DM}} (\pi; \mathcal{D}) := \frac{1}{n} \sum_{i=1}^n \sum_{a \in \mathcal{A}} \pi(a | s_{0}^{(i)}) \hat{Q}(s_{0}^{(i)}, a) = \frac{1}{n} \sum_{i=1}^n \hat{V}(s_{0}^{(i)}),
 
-where :math:`\mathcal{D}=\{\{(s_t, a_t, r_t)\}_{t=0}^T\}_{i=1}^n` is the logged dataset with :math:`n` trajectories.
+where :math:`\mathcal{D}=\{\{(s_t, a_t, r_t)\}_{t=0}^{T-1}\}_{i=1}^n` is the logged dataset with :math:`n` trajectories.
 :math:`T` indicates step per episode. :math:`\hat{Q}(s_t, a_t)` is the estimated state-action value and :math:`\hat{V}(s_t)` is the estimated state value.
 
 DM has low variance compared to other estimators, but can produce larger bias due to approximation errors.
@@ -414,7 +414,7 @@ TIS :cite:`precup2000eligibility` uses importance sampling technique to correct 
 
 .. math::
 
-    \hat{J}_{\mathrm{TIS}} (\pi; \mathcal{D}) := \mathbb{E}_{n} \left[\sum_{t=0}^{T-1} \gamma^t w_{1:T-1} r_t \right],
+    \hat{J}_{\mathrm{TIS}} (\pi; \mathcal{D}) := \frac{1}{n} \sum_{i=1}^n \sum_{t=0}^{T-1} \gamma^t w_{1:T-1}^{(i)} r_t^{(i)},
 
 where :math:`w_{0:T-1} := \prod_{t=0}^{T-1} (\pi(a_t | s_t) / \pi_0(a_t | s_t))` is the trajectory-wise importance weight.
 
@@ -433,9 +433,9 @@ PDIS only considers the importance weight of the past interactions when estimati
 
 .. math::
 
-    \hat{J}_{\mathrm{PDIS}} (\pi; \mathcal{D}) := \mathbb{E}_{n} \left[ \sum_{t=0}^{T-1} \gamma^t w_{0:t} r_t \right],
+    \hat{J}_{\mathrm{PDIS}} (\pi; \mathcal{D}) := \frac{1}{n} \sum_{i=1}^n \sum_{t=0}^{T-1} \gamma^t w_{0:t}^{(i)} r_t^{(i)},
 
-where :math:`w_{0:t} := \prod_{t'=0}^t (\pi_e(a_{t'} | s_{t'}) / \pi_b(a_{t'} | s_{t'}))` is the importance weight for each time step wrt the previous actions.
+where :math:`w_{0:t} := \prod_{t'=0}^t (\pi(a_{t'} | s_{t'}) / \pi_b(a_{t'} | s_{t'}))` is the importance weight for each time step wrt the previous actions.
 
 PDIS remains unbiased while reducing the variance of TIS. However, when :math:`t` is large, PDIS still suffers from high variance.
 
@@ -451,7 +451,7 @@ It introduces :math:`\hat{Q}` as a baseline estimation in the recursive form of 
 .. math::
 
     \hat{J}_{\mathrm{DR}} (\pi; \mathcal{D})
-    := \mathbb{E}_{n} \left[\sum_{t=0}^{T-1} \gamma^t (w_{0:t} (r_t - \hat{Q}(s_t, a_t)) + w_{0:t-1} \mathbb{E}_{a \sim \pi(a | s_t)}[\hat{Q}(s_t, a)])\right],
+    := \frac{1}{n} \sum_{i=1}^n \sum_{t=0}^{T-1} \gamma^t \left(w_{0:t}^{(i)} (r_t^{(i)} - \hat{Q}(s_t^{(i)}, a_t^{(i)})) + w_{0:t-1}^{(i)} \sum_{a \in \mathcal{A}} \pi(a | s_t^{(i)}) \hat{Q}(s_t^{(i)}, a) \right),
 
 DR is unbiased and has lower variance than PDIS when :math:`\hat{Q}(\cdot)` is reasonably accurate to satisfy :math:`0 < \hat{Q}(\cdot) < 2 Q(\cdot)`.
 However, when the importance weight is quite large, it may still suffer from a high variance.
@@ -463,11 +463,22 @@ However, when the importance weight is quite large, it may still suffer from a h
 Self-Normalized estimators
 ----------
 Self-normalized estimators :cite:`kallus2019intrinsically` aim to reduce the scale of importance weight for the variance reduction purpose.
-Specifically, it substitute importance weight :math:`w_{\ast}` as follows.
+Specifically, self-normalized versions of PDIS and DR is defined as follows.
 
 .. math::
 
-    \tilde{w}_{\ast} := w_{\ast} / \mathbb{E}_{n}[w_{\ast}]
+    \hat{J}_{\mathrm{SNPDIS}} (\pi; \mathcal{D}) := \sum_{i=1}^n \sum_{t=0}^{T-1} \gamma^t \frac{w_{0:t}^{(i)}}{\sum_{i'=1}^n w_{0:t}^{(i')}} r_t^{(i)},
+
+.. math::
+
+    \hat{J}_{\mathrm{SNDR}} (\pi; \mathcal{D})
+    := \sum_{i=1}^n \sum_{t=0}^{T-1} \gamma^t \left(\frac{w_{0:t}^{(i)}}{\sum_{i'=1}^n w_{0:t}^{(i')}} (r_t^{(i)} - \hat{Q}(s_t^{(i)}, a_t^{(i)})) + \frac{w_{0:t-1}^{(i)}}{\sum_{i'=1}^n w_{0:t-1}^{(i')}} \sum_{a \in \mathcal{A}} \pi(a | s_t^{(i)}) \hat{Q}(s_t^{(i)}, a) \right),
+
+In more general, self-normalized estimators substitute importance weight :math:`w_{\ast}` as follows.
+
+.. math::
+
+    \tilde{w}_{\ast} := \frac{w_{\ast}}{\sum_{i=1}^n w_{\ast}}
 
 where :math:`\tilde{w}_{\ast}` is the self-normalized importance weight.
 
@@ -486,21 +497,39 @@ To alleviate this, state marginal or state-action marginal importance weights ca
 
 .. math::
 
-    w_{s, a}(s, a) &:= d^{\pi}(s, a) / d^{\pi_0}(s, a) \\
-    w_s(s) &:= d^{\pi}(s) / d^{\pi_0}(s)
+    \rho(s, a) &:= d^{\pi}(s, a) / d^{\pi_0}(s, a) \\
+    \rho(s) &:= d^{\pi}(s) / d^{\pi_0}(s)
 
-Then, the importance weight is replaced as follows.
+:math:`d^{\pi}(s, a)` and :math:`d^{\pi}(s)` is the marginal visitation probability of the policy :math:`\pi` on :math:`(s, a)` or :math:`s`, respectively. 
+The use of marginal importance weights is particularly beneficial when policy visits the same or similar states among different trajectories or different timestep.
+(e.g., when the state transition is something like :math:`\cdots \rightarrow s_1 \rightarrow s_2 \rightarrow s_1 \rightarrow s_2 \rightarrow \cdots` or when the trajectories always visits some particular state as :math:`\cdots \rightarrow s_{*} \rightarrow s_{1} \rightarrow s_{*} \rightarrow \cdots`).
+Then, State-Action Mariginal Importance Sampling (SMIS) and State Marginal Doubly Robust (SMDR) are defined as follows.
 
 .. math::
 
-    w(s_t, a_t) &= w_{s, a}(s_t, a_t) \\
-    w(s_t, a_t) &= w_{s}(s_t) w_{t}(s_t, a_t)
+    \hat{J}_{\mathrm{SAM-IS}} (\pi; \mathcal{D}) 
+    := \frac{1}{n} \sum_{i=1}^n \sum_{t=0}^{T-1} \gamma^t \rho(s_t^{(i)}, a_t^{(i)}) r_t^{(i)},
 
+.. math::
 
-where :math:`w_t(s_t, a_t) = \pi(a_t | s_t) / \pi_0(a_t | s_t)` is the immediate importance weight.
+    \hat{J}_{\mathrm{SAM-DR}} (\pi; \mathcal{D})
+    &:= \frac{1}{n} \sum_{i=1}^n \sum_{a \in \mathcal{A}} \pi(a | s_0^{(i)}) \hat{Q}(s_0^{(i)}, a) \\
+    & \quad \quad + \frac{1}{n} \sum_{i=1}^n \sum_{t=0}^{T-1} \gamma^t \rho(s_t^{(i)}, a_t^{(i)}) \left(r_t^{(i)} + \gamma \sum_{a \in \mathcal{A}} \pi(a | s_t^{(i)}) \hat{Q}(s_{t+1}^{(i)}, a) - \hat{Q}(s_t^{(i)}, a_t^{(i)}) \right),
 
-This estimator is particularly useful when policy visits the same or similar states among different trajectories or different timestep.
-(e.g., when the state transition is something like :math:`\cdots \rightarrow s_1 \rightarrow s_2 \rightarrow s_1 \rightarrow s_2 \rightarrow \cdots` or when the trajectories always visits some particular state as :math:`\cdots \rightarrow s_{*} \rightarrow s_{1} \rightarrow s_{*} \rightarrow \cdots`)
+Similarly, State-Marginal Importance Sampling (SAMIS) and State Action-Marginal Doubly Robust (SAMDR) are defined as follows.
+
+.. math::
+
+    \hat{J}_{\mathrm{SM-IS}} (\pi; \mathcal{D}) 
+    := \frac{1}{n} \sum_{i=1}^n \sum_{t=0}^{T-1} \gamma^t \rho(s_t^{(i)}) w_t(s_t^{(i)}, a_t^{(i)}) r_t^{(i)},
+
+.. math::
+
+    \hat{J}_{\mathrm{SM-DR}} (\pi; \mathcal{D})
+    &:= \frac{1}{n} \sum_{i=1}^n \sum_{a \in \mathcal{A}} \pi(a | s_0^{(i)}) \hat{Q}(s_0^{(i)}, a) \\
+    & \quad \quad + \frac{1}{n} \sum_{i=1}^n \sum_{t=0}^{T-1} \gamma^t \rho(s_t^{(i)}) w_t(s_t^{(i)}, a_t^{(i)}) \left(r_t^{(i)} + \gamma \sum_{a \in \mathcal{A}} \pi(a | s_t^{(i)}) \hat{Q}(s_{t+1}^{(i)}, a) - \hat{Q}(s_t^{(i)}, a_t^{(i)}) \right),
+
+where :math:`w_t(s_t, a_t) := \pi(a_t | s_t) / \pi_0(a_t | s_t)` is the immediate importance weight at timestep :math:`t`.
 
 .. _tip_mariginal_iw:
 
@@ -563,15 +592,15 @@ Comparing DR in the standard and marginal OPE, we notice that their formulation 
 .. math::
 
     \hat{J}_{\mathrm{DR}} (\pi; \mathcal{D})
-    := \mathbb{E}_{n} \left[\sum_{t=0}^{T-1} \gamma^t (w_{0:t} (r_t - \hat{Q}(s_t, a_t)) + w_{0:t-1} \mathbb{E}_{a \sim \pi(a | s_t)}[\hat{Q}(s_t, a)]) \right],
+    := \frac{1}{n} \sum_{i=1}^n \sum_{t=0}^{T-1} \gamma^t \left( w_{0:t}^{(i)} (r_t^{(i)} - \hat{Q}(s_t^{(i)}, a_t^{(i)})) + w_{0:t-1}^{(i)} \sum_{a \in \mathcal{A}} \pi(a | s_t^{(i)}) \hat{Q}(s_t^{(i)}, a) \right),
 
 (DR in marginal OPE)
 
 .. math::
 
     \hat{J}_{\mathrm{SAM-DR}} (\pi; \mathcal{D})
-    &:= \mathbb{E}_{n} [\mathbb{E}_{a_0 \sim \pi(a_0 | s_0)} \hat{Q}(s_0, a_0)] \\
-    & \quad \quad + \mathbb{E}_{n} \left[\sum_{t=0}^{T-1} \gamma^t w_{s, a}(s_t, a_t) (r_t + \gamma \mathbb{E}_{a \sim \pi(a | s_t)}[\hat{Q}(s_{t+1}, a)] - \hat{Q}(s_t, a_t)) \right],
+    &:= \frac{1}{n} \sum_{i=1}^n \sum_{a \in \mathcal{A}} \pi(a | s_0^{(i)}) \hat{Q}(s_0^{(i)}, a) \\
+    & \quad \quad + \frac{1}{n} \sum_{i=1}^n \sum_{t=0}^{T-1} \gamma^t \rho(s_t^{(i)}, a_t^{(i)}) \left(r_t^{(i)} + \gamma \sum_{a \in \mathcal{A}} \pi(a | s_t^{(i)}) \hat{Q}(s_{t+1}^{(i)}, a) - \hat{Q}(s_t^{(i)}, a_t^{(i)}) \right),
 
 Then, a natural question arises, would it be possible to use marginal importance weight in DR in the standard formulation?
 
@@ -580,13 +609,13 @@ DRL :cite:`kallus2020double` leverages the marginal importance sampling in the s
 .. math::
 
     \hat{J}_{\mathrm{DRL}} (\pi; \mathcal{D})
-    & := \frac{1}{n} \sum_{k=1}^K \sum_{i=1}^{n_k} \sum_{t=0}^{T-1} (w_s^j(s_{i,t}, a_{i, t}) (r_{i, t} - Q^j(s_{i, t}, a_{i, t})) \\
-    & \quad \quad + w_s^j(s_{i, t-1}, a_{i, t-1}) \mathbb{E}_{a \sim \pi(a | s_t)}[Q^j(s_{i, t}, a)] )
+    & := \frac{1}{n} \sum_{k=1}^K \sum_{i=1}^{n_k} \sum_{t=0}^{T-1} (\rho^j(s_{t}^{(i)}, a_{t}^{(i)}) (r_{t}^{(i)} - Q^j(s_{t}^{(i)}, a_{t}^{(i)})) \\
+    & \quad \quad + \rho^j(s_{t-1}^{(i)}, a_{t-1}^{(i)}) \sum_{a \in \mathcal{A}} \pi(a | s_t^{(i)}) Q^j(s_{t}^{(i)}, a))
 
 DRL achieves the semiparametric efficiency bound with a consistent value predictor :math:`Q`.
 Therefore, to alleviate the potential bias introduced in :math:`Q`, DRL uses the "cross-fitting" technique to estimate the value function.
 Specifically, let :math:`K` is the number of folds and :math:`\mathcal{D}_j` is the :math:`j`-th split of logged data consisting of :math:`n_k` samples.
-Cross-fitting trains :math:`w^j` and :math:`Q^j` on the subset of data used for OPE, i.e., :math:`\mathcal{D} \setminus \mathcal{D}_j`.
+Cross-fitting trains :math:`\rho^j` and :math:`Q^j` on the subset of data used for OPE, i.e., :math:`\mathcal{D} \setminus \mathcal{D}_j`.
 
     * :class:`DoubleReinforcementLearning`
 
@@ -620,18 +649,33 @@ may introduce some bias in estimation. To alleviate this and control the bias-va
 
 .. math::
 
-    w(s_t, a_t) &=
+    w_{\mathrm{SOPE}}(s_t, a_t) &=
     \begin{cases}
         \prod_{t'=0}^{k-1} w_t(s_{t'}, a_{t'}) & \mathrm{if} \, t < k \\
-        w_{s, a}(s_{t-k}, a_{t-k}) \prod_{t'=t-k+1}^{t} w_t(s_{t'}, a_{t'}) & \mathrm{otherwise}
+        \rho(s_{t-k}, a_{t-k}) \prod_{t'=t-k+1}^{t} w_t(s_{t'}, a_{t'}) & \mathrm{otherwise}
     \end{cases} \\
-    w(s_t, a_t) &=
+    w_{\mathrm{SOPE}}(s_t, a_t) &=
     \begin{cases}
         \prod_{t'=0}^{k-1} w_t(s_{t'}, a_{t'}) & \mathrm{if} \, t < k \\
-        w_{s}(s_{t-k}) \prod_{t'=t-k}^{t} w_t(s_{t'}, a_{t'}) & \mathrm{otherwise}
+        \rho(s_{t-k}) \prod_{t'=t-k}^{t} w_t(s_{t'}, a_{t'}) & \mathrm{otherwise}
     \end{cases}
 
 where SOPE uses per-decision importance weight :math:`w_t(s_t, a_t) := \pi(a_t | s_t) / \pi_0(a_t | s_t)` for the :math:`k` most recent timesteps.
+
+For instance, State Action-Marginal Importance Sampling (SAMIS) and State Action-Marginal Doubly Robust (SAM-DR) are defined as follows.
+
+.. math::
+
+    \hat{J}_{\mathrm{SOPE-SAM-IS}} (\pi; \mathcal{D})
+    := \frac{1}{n} \sum_{i=1}^n \sum_{t=0}^{k-1} \gamma^t w_{0:t}^{(i)} r_t^{(i)} 
+    + \frac{1}{n} \sum_{i=1}^n \sum_{t=k}^{T-1} \gamma^t \rho(s_{t-k}^{(i)}, a_{t-k}^{(i)}) w_{t-k+1:t}^{(i)} r_t^{(i)},
+
+.. math::
+
+    \hat{J}_{\mathrm{SOPE-SAM-DR}} (\pi; \mathcal{D})
+    &:= \frac{1}{n} \sum_{i=1}^n \sum_{a \in \mathcal{A}} \pi(a | s_0^{(i)}) \hat{Q}(s_0^{(i)}, a) \\
+    & \quad \quad + \frac{1}{n} \sum_{i=1}^n \sum_{t=0}^{k-1} \gamma^t w_{0:t}^{(i)} \left(r_t^{(i)} + \gamma \sum_{a \in \mathcal{A}} \pi(a | s_t^{(i)}) \hat{Q}(s_{t+1}^{(i)}, a) - \hat{Q}(s_t^{(i)}, a_t^{(i)}) \right) \\
+    & \quad \quad + \frac{1}{n} \sum_{i=1}^n \sum_{t=k}^{T-1} \gamma^t \rho(s_{t-k}^{(i)}, a_{t-k}^{(i)}) w_{t-k+1:t}^{(i)} \left(r_t^{(i)} + \gamma \sum_{a \in \mathcal{A}} \pi(a | s_t^{(i)}) \hat{Q}(s_{t+1}^{(i)}, a) - \hat{Q}(s_t^{(i)}, a_t^{(i)}) \right),
 
 .. tip::
 
@@ -1035,9 +1079,9 @@ DM adopts a model-based approach to estimate the cumulative distribution functio
 
 .. math::
 
-        \hat{F}_{\mathrm{DM}}(m, \pi; \mathcal{D}) := \mathbb{E}_{n} [\mathbb{E}_{a_0 \sim \pi(a_0 | s_0)} \hat{G}(m; s_0, a_0)]
+        \hat{F}_{\mathrm{DM}}(m, \pi; \mathcal{D}) := \frac{1}{n} \sum_{i=1}^n \sum_{a \in \mathcal{A}} \pi(a | s_0^{(i)}) \hat{G}(m; s_0^{(i)}, a)
 
-where :math:`\hat{F}(\cdot)` is the estimated cumulative distribution function and :math:`\hat{G}(\cdot)` is an estimator for :math:`\mathbb{E}[\mathbb{I} \left \{\sum_{t=0}^{T-1} \gamma^t r_t \leq m \right \} \mid s,a]`.
+where :math:`\hat{F}(\cdot)` is the estimated cumulative distribution function and :math:`\hat{G}(\cdot)` is an estimator for :math:`\mathbb{E} \left[ \mathbb{I} \left \{\sum_{t=0}^{T-1} \gamma^t r_t \leq m \right \} \mid s,a \right]`.
 
 DM is vulnerable to the approximation error, but has low variance.
 
@@ -1052,8 +1096,9 @@ TIS corrects the distribution shift by applying importance sampling technique on
 
 .. math::
 
-        \hat{F}_{\mathrm{TIS}}(m, \pi; \mathcal{D}) := \mathbb{E}_{n} \left[ w_{0:T-1} \mathbb{I} \left \{\sum_{t=0}^{T-1} \gamma^t r_t \leq m \right \} \right]
+        \hat{F}_{\mathrm{TIS}}(m, \pi; \mathcal{D}) := \frac{1}{n} \sum_{i=1}^n w_{0:T-1}^{(i)} \mathbb{I} \left \{\sum_{t=0}^{T-1} \gamma^t r_t^{(i)} \leq m \right \}
 
+where :math:`w_{0:T-1} := \prod_{t=0}^{T-1} (\pi(a_t | s_t) / \pi_0(a_t | s_t))` is the trajectory-wise importance weight.
 TIS is unbiased but can suffer from high variance.
 As a consequence, :math:`\hat{F}_{\mathrm{TIS}}(\cdot)` sometimes becomes more than 1.0 when the variance is high.
 Therefore, we correct CDF as follows :cite:`huang2021off`.
@@ -1076,7 +1121,7 @@ TDR combines TIS and DM to reduce the variance while being unbiased.
 .. math::
 
     \hat{F}_{\mathrm{TDR}}(m, \pi; \mathcal{D})
-    := \mathbb{E}_{n} \left[ w_{0:T-1} \left( \mathbb{I} \left \{\sum_{t=0}^{T-1} \gamma^t r_t \leq m \right \} - \hat{G}(m; s_0, a_0) \right) \right]
+    := \frac{1}{n} \sum_{i=1}^n w_{0:T-1}^{(i)} \left( \mathbb{I} \left \{\sum_{t=0}^{T-1} \gamma^t r_t^{(i)} \leq m \right \} - \hat{G}(m; s_0^{(i)}, a_0^{(i)}) \right)
     + \hat{F}_{\mathrm{DM}}(m, \pi; \mathcal{D})
 
 TDR reduces the variance of TIS while being unbiased, leveraging the model-based estimate (i.e., DM) as a control variate.
@@ -1084,14 +1129,14 @@ Since :math:`\hat{F}_{\mathrm{TDR}}(\cdot)` may be less than zero or more than o
 
 .. math::
 
-    \hat{F}^{\ast}_{\mathrm{TIS}}(m, \pi; \mathcal{D}) := \mathrm{clip}(\max_{m' \leq m} \hat{F}_{\mathrm{TIS}}(m', \pi; \mathcal{D}), 0, 1).
+    \hat{F}^{\ast}_{\mathrm{TDR}}(m, \pi; \mathcal{D}) := \mathrm{clip}(\max_{m' \leq m} \hat{F}_{\mathrm{TDR}}(m', \pi; \mathcal{D}), 0, 1).
 
 Note that this estimator is not equivalent to the (recursive) DR estimator defined by :cite:`huang2022off`. We are planning to implement the recursive version in a future update of the software.
 
     * :class:`CumulativeDistributionTDR`
 
 Finally, we also provide the self-normalized estimators for TIS and TDR.
-They use the self-normalized importance weight :math:`\tilde{w}_{\ast} := w_{\ast} / \mathbb{E}_{n}[w_{\ast}]` for the variance reduction purpose.
+They use the self-normalized importance weight :math:`\tilde{w}_{\ast} := w_{\ast} / (\sum_{i=1}^{n} w_{\ast})` for the variance reduction purpose.
 
     * :class:`CumulativeDistributionSNTIS`
     * :class:`CumulativeDistributionSNDR`

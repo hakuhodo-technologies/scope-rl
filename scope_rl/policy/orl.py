@@ -519,7 +519,7 @@ class TrainCandidatePolicies:
                 else:
                     evaluation_policies[behavior_policy] = []
                     for dataset_id_ in range(len(base_policies[behavior_policy])):
-                        if len(base_policies[behavior_policy]) != len(
+                        if len(base_policies[behavior_policy][dataset_id_]) != len(
                             base_policies_name
                         ):
                             raise ValueError(
@@ -537,7 +537,7 @@ class TrainCandidatePolicies:
 
         else:
             if isinstance(base_policies[0], AlgoBase):
-                if len(base_policies[behavior_policy]) != len(base_policies_name):
+                if len(base_policies) != len(base_policies_name):
                     raise ValueError(
                         "Expected `len(base_policies) == len(base_policies_name)`, but found False"
                     )

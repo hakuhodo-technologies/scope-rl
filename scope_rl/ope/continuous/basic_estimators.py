@@ -29,12 +29,12 @@ class DirectMethod(BaseOffPolicyEstimator):
     .. math::
 
         \\hat{J}_{\\mathrm{DM}} (\\pi; \\mathcal{D})
-        := \\mathbb{E}_n [\\hat{Q}(s_0, \\pi(s_0))]
-        = \\mathbb{E}_n [\\hat{V}(s_0)],
+        := \\frac{1}{n} \\sum_{i=1}^n \\hat{Q}(s_0^{(i)}, \\pi(s_0^{(i)}))
+        = \\frac{1}{n} \\sum_{i=1}^n \\hat{V}(s_0^{(i)}),
 
     where :math:`\\mathcal{D}=\\{\\{(s_t, a_t, r_t)\\}_{t=0}^{T-1}\\}_{i=1}^n` is the logged dataset with :math:`n` trajectories.
     :math:`T` indicates step per episode. :math:`\\hat{Q}(s_t, a_t)` is the estimated Q value given a state-action pair.
-    \\hat{V}(s_t) is the estimated value function given a state.
+    :math:`\\hat{V}(s_t)` is the estimated value function given a state.
 
     DM has low variance compared to other estimators, but can produce larger bias due to approximation errors.
 
@@ -240,7 +240,8 @@ class TrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 
     .. math::
 
-        \\hat{J}_{\\mathrm{TIS}} (\\pi; \\mathcal{D}) := \\mathbb{E}_{n} \\left[\\sum_{t=0}^{T-1} \\gamma^t w_{0:T-1} \\delta(\\pi, a_{0:T-1}) r_t \\right],
+        \\hat{J}_{\\mathrm{TIS}} (\\pi; \\mathcal{D})
+        := \\frac{1}{n} \\sum_{i=1}^n \\sum_{t=0}^{T-1} \\gamma^t w_{0:T-1}^{(i)} \\delta(\\pi, a_{0:T-1}^{(i)}) r_t^{(i)},
 
     where :math:`w_{0:T-1} := \\prod_{t=0}^{T-1} (1 / \\pi_0(a_t | s_t))` is the (trajectory-wise) importance weight.
     :math:`\\delta(\\pi, a_{0:T-1}) = \\prod_{t=0}^{T-1} K(\\pi(s_t), a_t)` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy where :math:`K(\\cdot)` is a kernel function.
@@ -633,7 +634,8 @@ class PerDecisionImportanceSampling(BaseOffPolicyEstimator):
 
     .. math::
 
-        \\hat{J}_{\\mathrm{PDIS}} (\\pi; \\mathcal{D}) := \\mathbb{E}_{n} \\left[\\sum_{t=0}^{T-1} \\gamma^t w_{0:t} \\delta(\\pi, a_{0:t}) r_t \\right],
+        \\hat{J}_{\\mathrm{PDIS}} (\\pi; \\mathcal{D})
+        := \\frac{1}{n} \\sum_{i=1}^n \\sum_{t=0}^{T-1} \\gamma^t w_{0:t}^{(i)} \\delta(\\pi, a_{0:t}^{(i)}) r_t^{(i)},
 
     where :math:`w_{0:t} := \\prod_{t'=0}^t (1 / \\pi_0(a_{t'} | s_{t'}))`. is the importance weight for each time step wrt the previous actions (referred to as the per-decision or step-wise importance weight).
     :math:`\\delta(\\pi, a_{0:t}) = \\prod_{t'=0}^t K(\\pi(s_{t'}), a_{t'})` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy where :math:`K(\\cdot)` is a kernel function.
@@ -1027,13 +1029,13 @@ class DoublyRobust(BaseOffPolicyEstimator):
     .. math::
 
         \\hat{J}_{\\mathrm{DR}} (\\pi; \\mathcal{D})
-        &:= \\mathbb{E}_{n} \\Biggl[\\sum_{t=0}^{T-1} \\gamma^t (w_{0:t} \\delta(\\pi, a_{0:t}) (r_t - \\hat{Q}(s_t, a_t)) \\\\
-        & \quad \quad \quad \quad \quad + w_{0:t-1} \\delta(\\pi, a_{0:t-1}) \\hat{Q}(s_t, \\pi(s_t))) \\Biggr],
+        := \\frac{1}{n} \\sum_{i=1}^n \\sum_{t=0}^{T-1} \\gamma^t \\left(w_{0:t}^{(i)} \\delta(\\pi, a_{0:t}^{(i)}) (r_t^{(i)} - \\hat{Q}(s_t^{(i)}, a_t^{(i)}))
+        + w_{0:t-1}^{(i)} \\delta(\\pi, a_{0:t-1}^{(i)}) \\hat{Q}(s_t^{(i)}, \\pi(s_t^{(i)})) \\right),
 
     where :math:`w_{0:t} := \\prod_{t'=0}^t (1 / \\pi_0(a_{t'} | s_{t'}))` is the per-decision importance weight.
     :math:`\\delta(\\pi, a_{0:t}) = \\prod_{t'=1}^t K(\\pi(s_{t'}), a_{t'})` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy where :math:`K(\\cdot)` is a kernel function.
     Note that the bandwidth of the kernel is an important hyperparameter; the variance of the above estimator often becomes small when the bandwidth of the kernel is large, while the bias often becomes large in those cases.
-    
+
     DR corrects distribution shift between the behavior and evaluation policies and has lower variance than PDIS when :math:`\\hat{Q}(\\cdot)` is reasonably accurate and satisfies :math:`0 < \\hat{Q}(\\cdot) < 2 Q(\\cdot)`.
     However, when the importance weight is quite large, it may still suffer from a high variance.
 
@@ -1472,7 +1474,7 @@ class SelfNormalizedTIS(TrajectoryWiseImportanceSampling):
     .. math::
 
         \\hat{J}_{\\mathrm{SNTIS}} (\\pi; \\mathcal{D})
-        := \\mathbb{E}_{n} \\left[\\sum_{t=0}^{T-1} \\gamma^t \\frac{w_{0:T-1} \\delta(\\pi, a_{0:T-1})}{\\sum_{n} w_{1:T-1} \\delta(\\pi, a_{0:T-1})} r_t \\right],
+        := \\frac{1}{n} \\sum_{i=1}^n \\sum_{t=0}^{T-1} \\gamma^t \\frac{w_{0:T-1}^{(i)} \\delta(\\pi, a_{0:T-1}^{(i)})}{\\sum_{i'=1}^n w_{1:T-1}^{(i')} \\delta(\\pi, a_{0:T-1}^{(i')})} r_t^{(i)},
 
     where :math:`w_{0:T-1} := \\prod_{t=0}^{T-1} (1 / \\pi_0(a_t | s_t))` is the trajectory-wise importance weight.
     :math:`\\delta(\\pi, a_{0:T}) = \\prod_{t=0}^{T-1} K(\\pi(s_t), a_t)` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy where :math:`K(\\cdot)` is a kernel function.
@@ -1596,7 +1598,7 @@ class SelfNormalizedPDIS(PerDecisionImportanceSampling):
     .. math::
 
         \\hat{J}_{\\mathrm{SNPDIS}} (\\pi; \\mathcal{D})
-        := \\mathbb{E}_{n} \\left[\\sum_{t=0}^{T-1} \\gamma^t \\frac{w_{1:t} \\delta(\\pi, a_{0:t})}{\\sum_{n} w_{1:t} \\delta(\\pi, a_{0:t})} r_t \\right],
+        := \\frac{1}{n} \\sum_{i=1}^n \\sum_{t=0}^{T-1} \\gamma^t \\frac{w_{1:t}^{(i)} \\delta(\\pi, a_{0:t}^{(i)})}{\\sum_{i'=1}^n w_{1:t}^{(i')} \\delta(\\pi, a_{0:t}^{(i')})} r_t^{(i)},
 
     where :math:`w_{0:t} := \\prod_{t'=1}^t (1 / \\pi_0(a_{t'} | s_{t'}))` is the per-decision importance weight.
     :math:`\\delta(\\pi, a_{0:t}) = \\prod_{t'=1}^t K(\\pi(s_{t'}), a_{t'})` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy where :math:`K(\\cdot)` is a kernel function.
@@ -1720,13 +1722,13 @@ class SelfNormalizedDR(DoublyRobust):
     .. math::
 
         \\hat{J}_{\\mathrm{DR}} (\\pi; \\mathcal{D})
-        &:= \\mathbb{E}_{n} \\Biggl[\\sum_{t=0}^{T-1} \\gamma^t \\biggl( \\frac{w_{0:t} \\delta(\\pi, a_{0:t})}{\\sum_{n} w_{0:t} \\delta(\\pi, a_{0:t})} (r_t - \\hat{Q}(s_t, a_t)) \\\\
-        & \quad \quad \quad \quad \quad + \\frac{w_{0:t-1} \\delta(\\pi, a_{0:t-1})}{\\sum_{n} w_{0:t-1} \\delta(\\pi, a_{0:t-1})} \\hat{Q}(s_t, \\pi(s_t)) \\biggr) \\Biggr],
+        := \\frac{1}{n} \\sum_{i=1}^n \\sum_{t=0}^{T-1} \\gamma^t \\left( \\frac{w_{0:t}^{(i)} \\delta(\\pi, a_{0:t}^{(i)})}{\\sum_{i'=1}^n w_{0:t}^{(i')} \\delta(\\pi, a_{0:t}^{(i')})} (r_t^{(i)} - \\hat{Q}(s_t^{(i)}, a_t^{(i)}))
+        + \\frac{w_{0:t-1}^{(i)} \\delta(\\pi, a_{0:t-1}^{(i)})}{\\sum_{i'=1}^n w_{0:t-1}^{(i')} \\delta(\\pi, a_{0:t-1}^{(i')})} \\hat{Q}(s_t^{(i)}, \\pi(s_t^{(i)})) \\right),
 
     where :math:`w_{0:t} := \\prod_{t'=0}^t (1 / \\pi_0(a_{t'} | s_{t'}))` is the per-decision importance weight.
     :math:`\\delta(\\pi, a_{0:t}) = \\prod_{t'=1}^t K(\\pi(s_{t'}), a_{t'})` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy where :math:`K(\\cdot)` is a kernel function.
     Note that the bandwidth of the kernel is an important hyperparameter; the variance of the above estimator often becomes small when the bandwidth of the kernel is large, while the bias often becomes large in those cases.
-    
+
     The self-normalized estimator has variance bounded by :math:`r_{max}^2`.
 
     Parameters
