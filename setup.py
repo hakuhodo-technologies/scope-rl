@@ -23,7 +23,7 @@ setup(
     description="SCOPE-RL: A pipeline for offline reinforcement learning research and applications",
     url="https://github.com/hakuhodo-technologies/scope-rl",
     author="Haruka Kiyohara",
-    author_email="scope-rl@googlegroups.com",
+    author_email="hk844@cornell.edu",
     keywords=[
         "off-policy evaluation",
         "offline reinforcement learning",
