@@ -212,18 +212,18 @@ class MultipleInputDict:
     def get(self, behavior_policy_name: str, dataset_id: int):
         """Load input_dict.
 
-         Parameters
-         -------
+        Parameters
+        -------
         behavior_policy_name: str
-             Name of the behavior policy that generated the logged dataset.
+            Name of the behavior policy that generated the logged dataset.
 
-         dataset_id: int
-             Id of the logged dataset.
+        dataset_id: int
+            Id of the logged dataset.
 
-         Returns
-         -------
-         input_dict: OPEInputDict.
-             Input dictionary for OPE.
+        Returns
+        -------
+        input_dict: OPEInputDict.
+            Input dictionary for OPE.
 
         """
         if self.save_relative_path:
@@ -298,6 +298,8 @@ def l2_distance(
 ):
     """Calcilate L2 distance.
 
+    Parameters
+    -------
     x: array-like of shape (n_samples, n_dim)
         Input array 1.
 
@@ -351,6 +353,8 @@ def triangular_kernel(
 ):
     """Triangular kernel.
 
+    Parameters
+    -------
     x: array-like of shape (n_samples, n_dim)
         Input array 1.
 
@@ -378,6 +382,8 @@ def epanechnikov_kernel(
 ):
     """Epanechnikov kernel.
 
+    Parameters
+    -------
     x: array-like of shape (n_samples, n_dim)
         Input array 1.
 
@@ -432,6 +438,8 @@ def uniform_kernel(
 ):
     """Uniform kernel.
 
+    Parameters
+    -------
     x: array-like of shape (n_samples, n_dim)
         Input array 1.
 
@@ -514,7 +522,7 @@ def estimate_confidence_interval_by_hoeffding(
 
     .. math::
 
-        |\\hat{\\mu} - \\mu]| \\leq X_{\\max} \\sqrt{\\frac{\\log(1 / \\alpha)}{2 n}}`,
+        |\\hat{\\mu} - \\mu| \\leq X_{\\max} \\sqrt{\\frac{\\log(1 / \\alpha)}{2 n}},
 
     which holds with probability :math:`1 - \\alpha` where :math:`n` is the data size.
 
@@ -555,7 +563,7 @@ def estimate_confidence_interval_by_empirical_bernstein(
 
     .. math::
 
-        |\\hat{\\mu} - \\mu]| \\leq \\frac{7 X_{\\max} \\log(2 / \\alpha)}{3 (n - 1)} + \\sqrt{\\frac{2 \\hat{\\mathbb{V}}(X) \\log(2 / \\alpha)}{n(n - 1)}}`,
+        |\\hat{\\mu} - \\mu| \\leq \\frac{7 X_{\\max} \\log(2 / \\alpha)}{3 (n - 1)} + \\sqrt{\\frac{2 \\hat{\\mathbb{V}}(X) \\log(2 / \\alpha)}{n(n - 1)}},
 
     which holds with probability :math:`1 - \\alpha` where :math:`n` is the data size and :math:`\\hat{\\mathbb{V}}` is the sample variance.
 
@@ -600,7 +608,7 @@ def estimate_confidence_interval_by_t_test(
 
     .. math::
 
-        |\\hat{\\mu} - \\mu]| \\leq \\frac{T_{\\mathrm{test}}(1 - \\alpha, n-1)}{\\sqrt{n} / \\hat{\\sigma}}``
+        |\\hat{\\mu} - \\mu| \\leq \\frac{T_{\\mathrm{test}}(1 - \\alpha, n-1)}{\\sqrt{n} / \\hat{\\sigma}},
 
     where :math:`n` is the data size, :math:`T_{\\mathrm{test}}(\\cdot,\\cdot)` is the T-value, and :math:`\\sigma` is the standard deviation, respectively.
 
@@ -803,36 +811,21 @@ class OldGymAPIWrapper:
 
 
 class MinMaxActionScaler(ActionScaler):
-    r"""Min-Max normalization action preprocessing.
+    r"""Min-Max normalization action preprocessing (temporally supported).
+
     Actions will be normalized in range ``[-1.0, 1.0]``.
+
     .. math::
+
         a' = (a - \min{a}) / (\max{a} - \min{a}) * 2 - 1
-    .. code-block:: python
-        from d3rlpy.dataset import MDPDataset
-        from d3rlpy.algos import CQL
-        dataset = MDPDataset(observations, actions, rewards, terminals)
-        # initialize algorithm with MinMaxActionScaler
-        cql = CQL(action_scaler='min_max')
-        # scaler is initialized from the given transitions
-        transitions = []
-        for episode in dataset.episodes:
-            transitions += episode.transitions
-        cql.fit(transitions)
-    You can also initialize with :class:`d3rlpy.dataset.MDPDataset` object or
-    manually.
-    .. code-block:: python
-        from d3rlpy.preprocessing import MinMaxActionScaler
-        # initialize with dataset
-        scaler = MinMaxActionScaler(dataset)
-        # initialize manually
-        minimum = actions.min(axis=0)
-        maximum = actions.max(axis=0)
-        action_scaler = MinMaxActionScaler(minimum=minimum, maximum=maximum)
-        cql = CQL(action_scaler=action_scaler)
+
     Args:
         dataset (d3rlpy.dataset.MDPDataset): dataset object.
+
         min (numpy.ndarray): minimum values at each entry.
+
         max (numpy.ndarray): maximum values at each entry.
+
     """
 
     TYPE: ClassVar[str] = "min_max"
@@ -924,35 +917,19 @@ class MinMaxActionScaler(ActionScaler):
 
 
 class MinMaxScaler(Scaler):
-    r"""Min-Max normalization preprocessing.
+    """Min-Max normalization preprocessing (temporally supported).
+
     .. math::
+
         x' = (x - \min{x}) / (\max{x} - \min{x})
-    .. code-block:: python
-        from d3rlpy.dataset import MDPDataset
-        from d3rlpy.algos import CQL
-        dataset = MDPDataset(observations, actions, rewards, terminals)
-        # initialize algorithm with MinMaxScaler
-        cql = CQL(scaler='min_max')
-        # scaler is initialized from the given transitions
-        transitions = []
-        for episode in dataset.episodes:
-            transitions += episode.transitions
-        cql.fit(transitions)
-    You can also initialize with :class:`d3rlpy.dataset.MDPDataset` object or
-    manually.
-    .. code-block:: python
-        from d3rlpy.preprocessing import MinMaxScaler
-        # initialize with dataset
-        scaler = MinMaxScaler(dataset)
-        # initialize manually
-        minimum = observations.min(axis=0)
-        maximum = observations.max(axis=0)
-        scaler = MinMaxScaler(minimum=minimum, maximum=maximum)
-        cql = CQL(scaler=scaler)
+
     Args:
         dataset (d3rlpy.dataset.MDPDataset): dataset object.
+
         min (numpy.ndarray): minimum values at each entry.
+
         max (numpy.ndarray): maximum values at each entry.
+
     """
 
     TYPE: ClassVar[str] = "min_max"

@@ -27,8 +27,8 @@ class DirectMethod(BaseOffPolicyEstimator):
     .. math::
 
         \\hat{J}_{\\mathrm{DM}} (\\pi; \\mathcal{D})
-        := \\mathbb{E}_n [\\mathbb{E}_{a_0 \\sim \\pi(a_0 | s_0)} [\\hat{Q}(s_0, a_0)] ]
-        = \\mathbb{E}_n [\\hat{V}(s_0)],
+        := \\frac{1}{n} \\sum_{i=1}^n \\sum_{a \\in \\mathcal{A}} \\pi(a | s_0^{(i)}) \\hat{Q}(s_0^{(i)}, a)
+        = \\frac{1}{n} \\sum_{i=1}^n \\hat{V}(s_0^{(i)}),
 
     where :math:`\\mathcal{D}=\\{\\{(s_t, a_t, r_t)\\}_{t=0}^{T-1}\\}_{i=1}^n` is the logged dataset with :math:`n` trajectories.
     :math:`T` indicates step per episode. :math:`\\hat{Q}(s_t, a_t)` is the estimated Q value given a state-action pair.
@@ -308,7 +308,7 @@ class TrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 
     .. math::
 
-        \\hat{J}_{\\mathrm{TIS}} (\\pi; \\mathcal{D}) := \\mathbb{E}_{n} \\left[\\sum_{t=0}^{T-1} \\gamma^t w_{0:T-1} r_t \\right],
+        \\hat{J}_{\\mathrm{TIS}} (\\pi; \\mathcal{D}) := \\frac{1}{n} \\sum_{i=1}^n \\sum_{t=0}^{T-1} \\gamma^t w_{0:T-1}^{(i)} r_t^{(i)},
 
     where :math:`w_{0:T-1} := \\prod_{t=0}^{T-1} (\\pi(a_t | s_t) / \\pi_0(a_t | s_t))` is the trajectory-wise importance weight.
 
@@ -654,7 +654,7 @@ class PerDecisionImportanceSampling(BaseOffPolicyEstimator):
 
     .. math::
 
-        \\hat{J}_{\\mathrm{PDIS}} (\\pi; \\mathcal{D}) := \\mathbb{E}_{n} \\left[\\sum_{t=0}^{T-1} \\gamma^t w_{0:t} r_t \\right],
+        \\hat{J}_{\\mathrm{PDIS}} (\\pi; \\mathcal{D}) := \\frac{1}{n} \\sum_{i=1}^n \\sum_{t=0}^{T-1} \\gamma^t w_{0:t}^{(i)} r_t^{(i)},
 
     where :math:`w_{0:t} := \\prod_{t'=0}^t (\\pi(a_{t'} | s_{t'}) / \\pi_0(a_{t'} | s_{t'}))` is the importance weight for each time step wrt the previous actions (referred to as the per-decision or step-wise importance weight).
 
@@ -999,7 +999,7 @@ class DoublyRobust(BaseOffPolicyEstimator):
     .. math::
 
         \\hat{J}_{\\mathrm{DR}} (\\pi; \\mathcal{D})
-        := \\mathbb{E}_{n} \\left[\\sum_{t=0}^{T-1} \\gamma^t (w_{0:t} (r_t - \\hat{Q}(s_t, a_t)) + w_{0:t-1} \\mathbb{E}_{a \\sim \\pi(a | s_t)}[\\hat{Q}(s_t, a)]) \\right],
+        := \\frac{1}{n} \\sum_{i=1}^n \\sum_{t=0}^{T-1} \\gamma^t \\left( w_{0:t}^{(i)} (r_t^{(i)} - \\hat{Q}(s_t^{(i)}, a_t^{(i)})) + w_{0:t-1}^{(i)} \\sum_{a \\in \\mathcal{A}} \\pi(a | s_t^{(i)}) \\hat{Q}(s_t^{(i)}, a) \\right),
 
     where :math:`w_{0:t} := \\prod_{t'=0}^t (\\pi(a_{t'} | s_{t'}) / \\pi_0(a_{t'} | s_{t'}))` is the per-decision importance weight.
 
@@ -1409,7 +1409,7 @@ class SelfNormalizedTIS(TrajectoryWiseImportanceSampling):
     .. math::
 
         \\hat{J}_{\\mathrm{SNTIS}} (\\pi; \\mathcal{D})
-        := \\mathbb{E}_{n} \\left[\\sum_{t=0}^{T-1} \\gamma^t \\frac{w_{0:T-1}}{\\sum_{n} w_{0:T-1}} r_t \\right],
+        := \\sum_{i=1}^n \\sum_{t=0}^{T-1} \\gamma^t \\frac{w_{0:T-1}^{(i)}}{\\sum_{i'=1}^n w_{0:T-1}^{(i')}} r_t^{(i)},
 
     where :math:`w_{0:T-1} := \\prod_{t=0}^{T-1} (\\pi(a_t | s_t) / \\pi_0(a_t | s_t))` is the trajectory-wise importance weight.
 
@@ -1422,9 +1422,6 @@ class SelfNormalizedTIS(TrajectoryWiseImportanceSampling):
 
     References
     -------
-    Yuta Saito, Shunsuke Aihara, Megumi Matsutani, and Yusuke Narita.
-    "Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation." 2021.
-
     Nathan Kallus and Masatoshi Uehara.
     "Intrinsically Efficient, Stable, and Bounded Off-Policy Evaluation for Reinforcement Learning." 2019.
 
@@ -1516,7 +1513,7 @@ class SelfNormalizedPDIS(PerDecisionImportanceSampling):
     .. math::
 
         \\hat{J}_{\\mathrm{SNPDIS}} (\\pi; \\mathcal{D})
-        := \\mathbb{E}_{n} \\left[\\sum_{t=0}^{T-1} \\gamma^t \\frac{w_{1:t}}{\\sum_{n} w_{1:t}} r_t \\right],
+        := \\sum_{i=1}^n \\sum_{t=0}^{T-1} \\gamma^t \\frac{w_{1:t}^{(i)}}{\\sum_{i'=1}^n w_{1:t}^{(i')}} r_t^{(i)},
 
     where :math:`w_{0:t} := \\prod_{t'=1}^t (\\pi(a_{t'} | s_{t'}) / \\pi_0(a_{t'} | s_{t'}))` is the per-decision importance weight.
 
@@ -1620,8 +1617,8 @@ class SelfNormalizedDR(DoublyRobust):
     .. math::
 
         \\hat{J}_{\\mathrm{SNDR}} (\\pi; \\mathcal{D})
-        &:= \\mathbb{E}_{n} \\Biggl[\\sum_{t=0}^{T-1} \\gamma^t \\biggl( \\frac{w_{0:t}}{\\sum_{n} w_{0:t}} (r_t - \\hat{Q}(s_t, a_t)) \\\\
-        & \quad \quad \quad \quad \quad + \\frac{w_{0:t-1}}{\\sum_{n} w_{0:t-1}} \\mathbb{E}_{a \\sim \\pi(a | s_t)}[\\hat{Q}(s_t, a)] \\biggr) \\Biggr],
+        := \\sum_{i=1}^n \\sum_{t=0}^{T-1} \\gamma^t \\left( \\frac{w_{0:t}^{(i)}}{\\sum_{i'=1}^n w_{0:t}^{(i')}} (r_t^{(i)} - \\hat{Q}(s_t^{(i)}, a_t^{(i)}))
+        + \\frac{w_{0:t-1}^{(i)}}{\\sum_{i'=1}^n w_{0:t-1}^{(i')}} \\sum_{a \\in \\mathcal{A}} \\pi(a | s_t^{(i)}) \\hat{Q}(s_t^{(i)}, a) \\right),
 
     where :math:`w_{0:t} := \\prod_{t'=0}^t (\\pi(a_{t'} | s_{t'}) / \\pi_0(a_{t'} | s_{t'}))` is the per-decision importance weight.
 

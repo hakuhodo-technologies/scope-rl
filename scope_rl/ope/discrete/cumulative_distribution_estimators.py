@@ -30,9 +30,9 @@ class CumulativeDistributionDM(
 
     .. math::
 
-        \\hat{F}_{\\mathrm{DM}}(m, \\pi; \\mathcal{D}) := \\mathbb{E}_{n} [ \\mathbb{E}_{a_0 \\sim \\pi(a_0 \\mid s_0)} \\hat{G}(m; s_0, a_0) ]
+        \\hat{F}_{\\mathrm{DM}}(m, \\pi; \\mathcal{D}) := \\frac{1}{n} \\sum_{i=1}^n \\sum_{a \\in \\mathcal{A}} \\pi(a \\mid s_0^{(i)}) \\hat{G}(m; s_0^{(i)}, a)
 
-    where :math:`\\hat{F}(\\cdot)` is the estimated cumulative distribution function and :math:`\\hat{G}(\\cdot)` is an estimator for :math:`\\mathbb{E}[\\mathbb{I} \\left \\{\\sum_{t=0}^{T-1} \\gamma^t r_t \\leq m \\right \\} \\mid s,a]`.
+    where :math:`\\hat{F}(\\cdot)` is the estimated cumulative distribution function and :math:`\\hat{G}(\\cdot)` is an estimator for :math:`\\mathbb{E} \\left[ \\mathbb{I} \\left \\{\\sum_{t=0}^{T-1} \\gamma^t r_t \\leq m \\right \\} \\mid s,a \\right]`.
 
     DM has low variance compared to other estimators, but can produce larger bias due to approximation errors.
 
@@ -455,7 +455,7 @@ class CumulativeDistributionTIS(
 
     .. math::
 
-        \\hat{F}_{\\mathrm{TIS}}(m, \\pi; \\mathcal{D}) := \\mathbb{E}_{n} \\left[ w_{0:T-1} \\mathbb{I} \\left \\{\\sum_{t=0}^{T-1} \\gamma^t r_t \\leq m \\right \\} \\right]
+        \\hat{F}_{\\mathrm{TIS}}(m, \\pi; \\mathcal{D}) := \\frac{1}{n} \\sum_{i=1}^n w_{0:T-1}^{(i)} \\mathbb{I} \\left \\{\\sum_{t=0}^{T-1} \\gamma^t r_t^{(i)} \\leq m \\right \\}
 
     where :math:`\\hat{F}(\\cdot)` is the estimated cumulative distribution function,
     :math:`w_{0:T-1} := \\prod_{t=0}^{T-1} (\\pi(a_t \\mid s_t) / \\pi_0(a_t \\mid s_t))` is the trajectory-wise importance weight,
@@ -917,10 +917,10 @@ class CumulativeDistributionTDR(
     .. math::
 
         \\hat{F}_{\\mathrm{TDR}}(m, \\pi; \\mathcal{D})
-        &:= \\mathbb{E}_{n} [ \\mathbb{E}_{a_0 \\sim \\pi(a_0 \\mid s_0)} \\hat{G}(m; s_0, a_0) ] \\\\
-        & \quad \quad + \\mathbb{E}_{n} \\left[ w_{0:T-1} \\left( \\mathbb{I} \\left \\{\\sum_{t=0}^{T-1} \\gamma^t r_t \\leq m \\right \\} - \\hat{G}(m; s_0, a_0) \\right) \\right]
+        &:= \\frac{1}{n} \\sum_{i=1}^n \\sum_{a \\in \\mathcal{A}} \\pi(a \\mid s_0^{(i)}) \\hat{G}(m; s_0^{(i)}, a) \\\\
+        & \quad \quad + \\frac{1}{n} \\sum_{i=1}^n w_{0:T-1}^{(i)} \\left( \\mathbb{I} \\left \\{\\sum_{t=0}^{T-1} \\gamma^t r_t^{(i)} \\leq m \\right \\} - \\hat{G}(m; s_0^{(i)}, a_0^{(i)}) \\right)
 
-    where :math:`\\hat{F}(\\cdot)` is the estimated cumulative distribution function and :math:`\\hat{G}(\\cdot;s,a)` is an estimator for :math:`\\mathbb{E}[\\mathbb{I} \\left \\{\\sum_{t=0}^{T-1} \\gamma^t r_t \\leq m \\right \\} \\mid s,a]`.
+    where :math:`\\hat{F}(\\cdot)` is the estimated cumulative distribution function and :math:`\\hat{G}(\\cdot;s,a)` is an estimator for :math:`\\mathbb{E} \\left[ \\mathbb{I} \\left \\{\\sum_{t=0}^{T-1} \\gamma^t r_t \\leq m \\right \\} \\mid s,a \\right]`.
     :math:`w_{0:T-1} := \\prod_{t=0}^{T-1} (\\pi(a_t \\mid s_t) / \\pi_0(a_t \\mid s_t))` is the trajectory-wise importance weight
     and :math:`\\mathbb{I} \\{ \\cdot \\}` is the indicator function.
 
@@ -1422,7 +1422,7 @@ class CumulativeDistributionSNTIS(
     .. math::
 
         \\hat{F}_{\\mathrm{SNTIS}}(m, \\pi; \\mathcal{D}))
-        := \\mathbb{E}_{n} \\left[ \\frac{w_{0:T-1}}{\\sum_{n} w_{0:T-1}} \\mathbb{I} \\left \\{\\sum_{t=0}^{T-1} \\gamma^t r_t \\leq m \\right \\} \\right]
+        := \\sum_{i=1}^n \\frac{w_{0:T-1}^{(i)}}{\\sum_{i'=1}^n w_{0:T-1}^{(i')}} \\mathbb{I} \\left \\{\\sum_{t=0}^{T-1} \\gamma^t r_t^{(i)} \\leq m \\right \\}
 
     where :math:`\\hat{F}(\\cdot)` is the estimated cumulative distribution function,
     :math:`w_{0:T-1} := \\prod_{t=0}^{T-1} (\\pi(a_t \\mid s_t) / \\pi_0(a_t \\mid s_t))` is the trajectory-wise importance weight,
@@ -1602,10 +1602,10 @@ class CumulativeDistributionSNTDR(
     .. math::
 
         \\hat{F}_{\\mathrm{SNTDR}}(m, \\pi; \\mathcal{D}))
-        &:= \\mathbb{E}_{n} [ \\mathbb{E}_{a_0 \\sim \\pi(a_0 \\mid s_0)} \\hat{G}(m; s_0, a_0) ] \\\\
-        & \quad \quad + \\mathbb{E}_{n} \\left[ \\frac{w_{0:T-1}}{\\sum_{n} w_{0:T-1}} \\left( \\mathbb{I} \\left \\{\\sum_{t=0}^{T-1} \\gamma^t r_t \\leq t \\right \\} - \\hat{G}(m; s_0, a_0) \\right) \\right]
+        &:= \\frac{1}{n} \\sum_{i=1}^n \\sum_{a \\in \\mathcal{A}} \\pi(a \\mid s_0^{(t)}) \\hat{G}(m; s_0^{(t)}, a) \\\\
+        & \quad \quad + \\sum_{i=1}^n \\frac{w_{0:T-1}^{(i)}}{\\sum_{i'=1}^n w_{0:T-1}^{(i')}} \\left( \\mathbb{I} \\left \\{\\sum_{t=0}^{T-1} \\gamma^t r_t^{(i)} \\leq m \\right \\} - \\hat{G}(m; s_0^{(i)}, a_0^{(i)}) \\right)
 
-    where :math:`\\hat{F}(\\cdot)` is the estimated cumulative distribution function and :math:`\\hat{G}(\\cdot)` is an estimator for :math:`\\mathbb{E}[\\mathbb{I} \\left \\{\\sum_{t=0}^{T-1} \\gamma^t r_t \\leq m \\right \\} \\mid s,a]`.
+    where :math:`\\hat{F}(\\cdot)` is the estimated cumulative distribution function and :math:`\\hat{G}(\\cdot)` is an estimator for :math:`\\mathbb{E} \left[ \\mathbb{I} \\left \\{\\sum_{t=0}^{T-1} \\gamma^t r_t \\leq m \\right \\} \\mid s,a \\right]`.
     :math:`w_{0:T-1} := \\prod_{t=0}^{T-1} (\\pi(a_t \\mid s_t) / \\pi_0(a_t \\mid s_t))` is the trajectory-wise importance weight and
     and :math:`\\mathbb{I} \\{ \\cdot \\}` is the indicator function.
 

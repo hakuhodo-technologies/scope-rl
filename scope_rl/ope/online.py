@@ -362,7 +362,7 @@ def visualize_on_policy_conditional_value_at_risk(
     step_per_trajectory: Optional[int] = None,
     evaluate_on_stationary_distribution: bool = False,
     gamma: float = 1.0,
-    alphas: np.ndarray = np.linspace(0, 1, 20),
+    alphas: Optional[np.ndarray] = None,
     use_custom_reward_scale: bool = False,
     scale_min: Optional[float] = None,
     scale_max: Optional[float] = None,
@@ -396,8 +396,9 @@ def visualize_on_policy_conditional_value_at_risk(
     gamma: float, default=1.0
         Discount factor. The value should be within (0, 1].
 
-    alphas: array-like of shape (n_alpha, ) default=np.linspace(0, 1, 20)
-        Set of proportions of the shaded region. The value should be within (0, 1].
+    alphas: array-like of shape (n_alpha, ), default=None
+        Set of proportions of the shaded region. The values should be within `[0, 1)`.
+        If `None` is given, :class:`np.linspace(0, 1, 21)` will be used.
 
     use_custom_reward_scale: bool, default=False
         Whether to use a customized reward scale or the reward observed under the behavior policy.
@@ -1015,7 +1016,7 @@ def calc_on_policy_conditional_value_at_risk(
     step_per_trajectory: Optional[int] = None,
     evaluate_on_stationary_distribution: bool = False,
     gamma: float = 1.0,
-    alphas: Union[np.ndarray, float] = np.linspace(0, 1, 20),
+    alphas: Optional[Union[np.ndarray, float]] = None,
     use_custom_reward_scale: bool = False,
     scale_min: Optional[float] = None,
     scale_max: Optional[float] = None,
@@ -1046,8 +1047,9 @@ def calc_on_policy_conditional_value_at_risk(
     gamma: float, default=1.0
         Discount factor. The value should be within (0, 1].
 
-    alphas: {float, array-like of shape (n_alpha, )}, default=np.linspace(0, 1, 20)
-        Set of proportions of the shaded region. The value(s) should be within `[0, 1)`.
+    alphas: array-like of shape (n_alpha, ) or float, default=None
+        Set of proportions of the shaded region. The values should be within `[0, 1)`.
+        If `None` is given, :class:`np.linspace(0, 1, 21)` will be used.
 
     use_custom_reward_scale: bool, default=False
         Whether to use a customized reward scale or the reward observed under the behavior policy.
@@ -1075,7 +1077,9 @@ def calc_on_policy_conditional_value_at_risk(
         CVaR of the on-policy policy value.
 
     """
-    if isinstance(alphas, float):
+    if alphas is None:
+        alphas = np.linspace(0, 1, 21)
+    elif isinstance(alphas, float):
         check_scalar(alphas, name="alphas", target_type=float, min_val=0.0, max_val=1.0)
         alphas = np.array([alphas], dtype=float)
     elif isinstance(alphas, np.ndarray):

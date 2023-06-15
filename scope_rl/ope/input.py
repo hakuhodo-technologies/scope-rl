@@ -2460,7 +2460,6 @@ class CreateOPEInput:
                     method=w_function_method,
                     evaluation_policy=evaluation_policies[i],
                     k_fold=k_fold,
-                    n_steps=n_steps,
                 )
                 input_dict[evaluation_policies[i].name][
                     "state_marginal_importance_weight"
@@ -2468,7 +2467,6 @@ class CreateOPEInput:
                     method=w_function_method,
                     evaluation_policy=evaluation_policies[i],
                     k_fold=k_fold,
-                    n_steps=n_steps,
                 )
             else:
                 input_dict[evaluation_policies[i].name][

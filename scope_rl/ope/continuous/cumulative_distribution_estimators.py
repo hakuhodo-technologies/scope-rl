@@ -32,9 +32,9 @@ class CumulativeDistributionDM(
 
     .. math::
 
-        \\hat{F}_{\\mathrm{DM}}(m, \\pi; \\mathcal{D}) := \\mathbb{E}_{n} [\\hat{G}(m; s_0, \\pi(a_0))]
+        \\hat{F}_{\\mathrm{DM}}(m, \\pi; \\mathcal{D}) := \\frac{1}{n} \\sum_{i=1}^n \\hat{G}(m; s_0^{(i)}, \\pi(s_0^{(i)}))
 
-    where :math:`\\hat{F}(\\cdot)` is the estimated cumulative distribution function and :math:`\\hat{G}(\\cdot)` is an estimator for :math:`\\mathbb{E}[\\mathbb{I} \\left \\{\\sum_{t=0}^{T-1} \\gamma^t r_t \\leq m \\right \\} \\mid s,a]`.
+    where :math:`\\hat{F}(\\cdot)` is the estimated cumulative distribution function and :math:`\\hat{G}(\\cdot)` is an estimator for :math:`\\mathbb{E} \\left[ \\mathbb{I} \\left \\{\\sum_{t=0}^{T-1} \\gamma^t r_t \\leq m \\right \\} \\mid s,a \\right]`.
 
     DM has low variance compared to other estimators, but can produce larger bias due to approximation errors.
 
@@ -401,7 +401,7 @@ class CumulativeDistributionTIS(
     .. math::
 
         \\hat{F}_{\\mathrm{TIS}}(m, \\pi; \\mathcal{D})
-        := \\mathbb{E}_{n} \\left[ w_{1:T-1} \\delta(\\pi, a_{0:T-1}) \\mathbb{I} \\left \\{\\sum_{t=0}^{T-1} \\gamma^t r_t \\leq m \\right \\} \\right]
+        := \\frac{1}{n} \\sum_{i=1}^n w_{1:T-1}^{(i)} \\delta(\\pi, a_{0:T-1}^{(i)}) \\mathbb{I} \\left \\{\\sum_{t=0}^{T-1} \\gamma^t r_t^{(i)} \\leq m \\right \\}
 
     where :math:`\\hat{F}(\\cdot)` is the estimated cumulative distribution function,
     :math:`w_{0:T-1} := \\prod_{t=0}^{T-1} (\\pi(a_t \\mid s_t) / \\pi_0(a_t \\mid s_t))` is the trajectory-wise importance weight,
@@ -930,10 +930,10 @@ class CumulativeDistributionTDR(
     .. math::
 
         \\hat{F}_{\\mathrm{TDR}}(m, \\pi; \\mathcal{D})
-        &:= \\mathbb{E}_{n} [\\hat{G}(m; s_0, \\pi(a_0))] \\\\
-        & \quad \quad + \\mathbb{E}_{n} \\left[ w_{0:T-1} \\delta(\\pi, a_{0:T-1}) \\left( \\mathbb{I} \\left \\{\\sum_{t=0}^{T-1} \\gamma^t r_t \\leq m \\right \\} - \\hat{G}(m; s_0, a_0) \\right) \\right]
+        &:= \\frac{1}{n} \\sum_{i=1}^n \\hat{G}(m; s_0^{(i)}, \\pi(s_0^{(i)})) \\\\
+        & \quad \quad + \\frac{1}{n} \\sum_{i=1}^n w_{0:T-1}^{(i)} \\delta(\\pi, a_{0:T-1}^{(i)}) \\left( \\mathbb{I} \\left \\{\\sum_{t=0}^{T-1} \\gamma^t r_t^{(i)} \\leq m \\right \\} - \\hat{G}(m; s_0^{(i)}, a_0^{(i)}) \\right)
 
-    where :math:`\\hat{F}(\\cdot)` is the estimated cumulative distribution function and :math:`\\hat{G}(\\cdot)` is an estimator for :math:`\\mathbb{E}[\\mathbb{I} \\left \\{\\sum_{t=0}^{T-1} \\gamma^t r_t \\leq m \\right \\} \\mid s,a]`.
+    where :math:`\\hat{F}(\\cdot)` is the estimated cumulative distribution function and :math:`\\hat{G}(\\cdot)` is an estimator for :math:`\\mathbb{E} \\left[ \\mathbb{I} \\left \\{\\sum_{t=0}^{T-1} \\gamma^t r_t^{(i)} \\leq m \\right \\} \\mid s,a \\right]`.
     :math:`w_{0:T-1} := \\prod_{t=0}^{T-1} (\\pi(a_t \\mid s_t) / \\pi_0(a_t \\mid s_t))` is the trajectory-wise importance weight and :math:`\\mathbb{I} \\{ \\cdot \\}` is the indicator function.
     :math:`\\delta(\\pi, a_{0:T-1}) = \\prod_{t=0}^{T-1} K(\\pi(s_t), a_t)` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy.
     Note that the bandwidth of the kernel is an important hyperparameter; the variance of the above estimator often becomes small when the bandwidth of the kernel is large, while the bias often becomes large in those cases.
@@ -1495,7 +1495,7 @@ class CumulativeDistributionSNTIS(
     .. math::
 
         \\hat{F}_{\\mathrm{SNTIS}}(m, \\pi; \\mathcal{D}))
-        := \\mathbb{E}_{n} \\left[ \\frac{w_{0:T-1} \\delta(\\pi, a_{0:T-1})}{\\sum_{n} w_{0:T-1} \\delta(\\pi, a_{0:T-1})} \\mathbb{I} \\left \\{\\sum_{t=0}^{T-1} \\gamma^t r_t \\leq m \\right \\} \\right]
+        := \\sum_{i=1}^n \\frac{w_{0:T-1}^{(i)} \\delta(\\pi, a_{0:T-1}^{(i)})}{\\sum_{i'=1}^n w_{0:T-1}^{(i')} \\delta(\\pi, a_{0:T-1}^{(i')})} \\mathbb{I} \\left \\{\\sum_{t=0}^{T-1} \\gamma^t r_t^{(i)} \\leq m \\right \\}
 
     where :math:`\\hat{F}(\\cdot)` is the estimated cumulative distribution function,
     :math:`w_{0:T-1} := \\prod_{t=0}^{T-1} (\\pi(a_t \\mid s_t) / \\pi_0(a_t \\mid s_t))` is the trajectory-wise importance weight,
@@ -1691,11 +1691,11 @@ class CumulativeDistributionSNTDR(
     .. math::
 
         \\hat{F}_{\\mathrm{SNTDR}}(m, \\pi; \\mathcal{D}))
-        &:= \\mathbb{E}_{n} [\\hat{G}(m; s_0, \\pi(a_0))] \\\\
-        & \\quad \\quad + \\mathbb{E}_{n} \\left[ \\frac{w_{0:T-1} \\delta(\\pi, a_{0:T-1})}{\\sum_{n} w_{0:T-1} \\delta(\\pi, a_{0:T-1})} \\left( \\mathbb{I} \\left \\{\\sum_{t=0}^{T-1} \\gamma^t r_t \\leq t \\right \\} - \\hat{G}(m; s_0, a_0) \\right) \\right]
+        &:= \\frac{1}{n} \\sum_{i=1}^n \\hat{G}(m; s_0^{(i)}, \\pi(s_0^{(i)})) \\\\
+        & \\quad \\quad + \\sum_{i=1}^n \\frac{w_{0:T-1}^{(i)} \\delta(\\pi, a_{0:T-1}^{(i)})}{\\sum_{i'=1}^n w_{0:T-1}^{(i')} \\delta(\\pi, a_{0:T-1}^{(i')})} \\left( \\mathbb{I} \\left \\{\\sum_{t=0}^{T-1} \\gamma^t r_t^{(i)} \\leq m \\right \\} - \\hat{G}(m; s_0^{(i)}, a_0^{(i)}) \\right)
 
 
-    where :math:`\\hat{F}(\\cdot)` is the estimated cumulative distribution function and :math:`\\hat{G}(\\cdot)` is an estimator for :math:`\\mathbb{E}[\\mathbb{I} \\left \\{\\sum_{t=0}^{T-1} \\gamma^t r_t \\leq m \\right \\} \\mid s,a]`.
+    where :math:`\\hat{F}(\\cdot)` is the estimated cumulative distribution function and :math:`\\hat{G}(\\cdot)` is an estimator for :math:`\\mathbb{E} \\left[ \\mathbb{I} \\left \\{\\sum_{t=0}^{T-1} \\gamma^t r_t \\leq m \\right \\} \\mid s,a \\right]`.
     :math:`w_{0:T-1} := \\prod_{t=0}^{T-1} (\\pi(a_t \\mid s_t) / \\pi_0(a_t \\mid s_t))` is the trajectory-wise importance weight and :math:`\\mathbb{I} \\{ \\cdot \\}` is the indicator function.
     :math:`\\delta(\\pi, a_{0:T-1}) = \\prod_{t=0}^{T-1} K(\\pi(s_t), a_t)` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy.
     Note that the bandwidth of the kernel is an important hyperparameter; the variance of the above estimator often becomes small when the bandwidth of the kernel is large, while the bias often becomes large in those cases.

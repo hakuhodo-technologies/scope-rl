@@ -165,6 +165,7 @@ def obtain_train_logged_dataset(
     n_trajectories: int,
     base_random_state: int,
     log_dir: str,
+    device: str,
 ):
     behavior_policy_name = behavior_policy.name
 
@@ -179,6 +180,9 @@ def obtain_train_logged_dataset(
             train_logged_dataset = pickle.load(f)
 
     else:
+        torch_seed(base_random_state, device=device)
+        d3rlpy.seed(base_random_state)
+
         dataset = SyntheticDataset(
             env=env,
             max_episode_steps=env.spec.max_episode_steps,
@@ -442,6 +446,7 @@ def process(
         n_trajectories=n_trajectories,
         base_random_state=base_random_state,
         log_dir=log_dir,
+        device=device,
     )
 
     candidate_policies = train_candidate_policies(
