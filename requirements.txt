@@ -1,9 +1,9 @@
 scipy>=1.10.1
-numpy==1.22.4  # Currently checking compatibility with the latest version of seaborn.  # [TODO]
+numpy>=1.22.4
 pandas>=1.5.3
 scikit-learn>=1.0.2
 matplotlib>=3.7.1
-seaborn==0.11.2  # Currently checking compatibility with the latest version.  # [TODO]
+seaborn>=0.11.2
 torch>=2.0.0
 d3rlpy>=1.1.1
 gym>=0.26.2
