@@ -46,7 +46,7 @@ from scope_rl.utils import MinMaxActionScaler
 from scope_rl.utils import OldGymAPIWrapper
 from scope_rl.utils import MultipleLoggedDataset
 
-from experiments.utils import torch_seed, format_runtime
+from utils import torch_seed, format_runtime
 
 
 def load_behavior_policy(

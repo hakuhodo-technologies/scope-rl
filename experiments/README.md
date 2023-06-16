@@ -34,12 +34,12 @@ See Section 4.2 and Appendix C.1 of our paper or the package documentation for t
 ## Dependencies
 This repository supports Python 3.9 or newer.
 
-- numpy==1.22.4
+- numpy==1.24.3
 - scipy==1.10.1
 - scikit-learn==1.0.2
 - torch==2.0.0
-- pandas==1.5.3
-- seaborn==0.11.2
+- pandas==2.0.2
+- seaborn==0.12.2
 - matplotlib==3.7.1
 - gym==0.26.2
 - gymnasium==0.28.1

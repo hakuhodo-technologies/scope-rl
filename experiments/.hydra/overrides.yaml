@@ -1,2 +1,2 @@
-- setting=Acrobot
-- base_model_config=Acrobot
+- setting=CartPole
+- base_model_config=CartPole
