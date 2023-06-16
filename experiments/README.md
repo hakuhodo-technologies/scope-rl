@@ -32,7 +32,7 @@ In the benchmark experiment, we evaluate the estimation performance of the follo
 See Section 4.2 and Appendix C.1 of our paper or the package documentation for the details of these estimators.
 
 ## Dependencies
-This repository supports Python 3.7 or newer.
+This repository supports Python 3.9 or newer.
 
 - numpy==1.22.4
 - scipy==1.10.1
@@ -46,7 +46,7 @@ This repository supports Python 3.7 or newer.
 - mujoco==2.3.5
 - d3rlpy==1.1.1
 - hydra-core==1.3.2
-- scope-rl==0.0.0
+- scope-rl==0.1.0
 
 ## Running the code
 To conduct the synthetic experiment, run the following commands. Note that, make sure that the path is connected to `scope-rl` and `scope-rl/experiments` directories.
