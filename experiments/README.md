@@ -32,7 +32,7 @@ In the benchmark experiment, we evaluate the estimation performance of the follo
 See Section 4.2 and Appendix C.1 of our paper or the package documentation for the details of these estimators.
 
 ## Dependencies
-This repository supports Python 3.9 or newer
+This repository supports Python 3.9 or newer.
 
 - numpy==1.22.4
 - scipy==1.10.1
