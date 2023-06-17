@@ -13,7 +13,6 @@ import basicgym
 from basicgym import BasicEnv
 
 import numpy as np
-import torch
 
 from d3rlpy.algos import SAC
 from d3rlpy.algos import DoubleDQN as DDQN
@@ -32,8 +31,6 @@ from scope_rl.policy import DiscreteEpsilonGreedyHead as EpsilonGreedyHead
 from scope_rl.policy import DiscreteSoftmaxHead as SoftmaxHead
 from scope_rl.policy import OffPolicyLearning
 
-from scope_rl.ope.online import visualize_on_policy_policy_value
-from scope_rl.ope.online import calc_on_policy_policy_value
 
 from scope_rl.utils import MinMaxActionScaler
 from scope_rl.utils import OldGymAPIWrapper
@@ -95,8 +92,6 @@ from scope_rl.ope import DiscreteStateMarginalSNIS as D_SMSNIS
 from scope_rl.ope import DiscreteStateMarginalSNDR as D_SMSNDR
 # double reinforcement learning estimators
 from scope_rl.ope import DiscreteDoubleReinforcementLearning as D_DRL
-
-
 
 from scope_rl.ope import CreateOPEInput
 
@@ -316,7 +311,7 @@ def train_candidate_policies(
         torch_seed(base_random_state, device=device)
 
         if action_type == "continuous":
-            cql_b1 = CQL(
+            cql = CQL(
                 actor_encoder_factory=VectorEncoderFactory(hidden_units=[30, 30]),
                 critic_encoder_factory=VectorEncoderFactory(hidden_units=[30, 30]),
                 q_func_factory=MeanQFunctionFactory(),
@@ -326,17 +321,16 @@ def train_candidate_policies(
                     maximum=env.action_space.high,  # maximum value that policy can take
                 ),
             )
-            # algorithms = [cql_b1, cql_b2, cql_b3, iql_b1, iql_b2, iql_b3]
-            algorithms = [cql_b1]
+            algorithms = [cql]
 
         else:
-            cql_b1 = DiscreteCQL(
+            cql = DiscreteCQL(
                 encoder_factory=VectorEncoderFactory(hidden_units=[30, 30]),
                 q_func_factory=MeanQFunctionFactory(),
                 use_gpu=(device == "cuda:0"),
             )
             
-            algorithms = [cql_b1]
+            algorithms = [cql]
 
         base_policies = opl.learn_base_policy(
             logged_dataset=train_logged_dataset,
@@ -347,8 +341,7 @@ def train_candidate_policies(
             pickle.dump(base_policies, f)
 
     if action_type == "continuous":
-        # algorithms_name = ["cql_b1", "cql_b2", "cql_b3", "iql_b1", "iql_b2", "iql_b3"]
-        algorithms_name = ["cql_b1"]
+        algorithms_name = ["cql"]
 
         policy_wrappers = {}
         for sigma in candidate_sigmas:
@@ -360,7 +353,7 @@ def train_candidate_policies(
             )
 
     else:
-        algorithms_name = ["cql_b1"]
+        algorithms_name = ["cql"]
 
         policy_wrappers = {}
         for epsilon in candidate_epsilons:
@@ -477,7 +470,7 @@ def off_policy_evaluation(
             pickle.dump(input_dict, f)
 
     if action_type == "continuous":
-        # ope_estimators = [C_DM(),C_TIS(), C_PDIS(), C_DR(), C_MIS(), C_MDR()]
+
         basic_estimators = [C_DM(), C_TIS(), C_PDIS(), C_DR(), C_SNTIS(), C_SNPDIS(), C_SNDR()]
         state_marginal_estimators = [C_SMIS(), C_SMDR(), C_SMSNIS(), C_SMSNDR()]
         state_action_marginal_estimators = [C_SAMIS(), C_SAMDR(), C_SAMSNIS(), C_SAMSNDR()]
