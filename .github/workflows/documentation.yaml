@@ -13,12 +13,12 @@ jobs:
           pip install Sphinx pydata-sphinx-theme numpydoc sphinx_design sphinx-gallery sphinx-tabs sphinx-copybutton sphinxemoji sphinxcontrib-bibtex
       - name: Sphinx build
         run: |
-          sphinx-build docs _build
+          sphinx-build -b html docs docs/_build
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
         with:
           publish_branch: main
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: _build/
+          publish_dir: docs/_build/
           force_orphan: true
