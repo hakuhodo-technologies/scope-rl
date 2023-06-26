@@ -1,31 +1,18 @@
-name: Docs
-on: [push, pull_request, workflow_dispatch]
-permissions:
-    contents: write
+name: Deploy Sphinx documentation to Pages
+
+on:
+  push:
+    branches: [main, gh-pages] # branch to trigger deployment
+
 jobs:
-  docs:
-    runs-on: ubuntu-latest
+  pages:
+    runs-on: ubuntu-20.04
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    permissions:
+      pages: write
+      id-token: write
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v3
-      - name: Connect path to the modules
-        run: |
-          echo "PYTHONPATH=/home/runner/work/scope-rl/scope-rl" >> $GITHUB_ENV
-      - name: Install dependencies
-        run: |
-          pip install Sphinx pydata-sphinx-theme numpydoc sphinx_design sphinx-gallery sphinx-tabs sphinx-copybutton sphinxemoji sphinxcontrib-bibtex
-      - name: Install scope-rl from pip
-        run: |
-          git clone https://github.com/hakuhodo-technologies/scope-rl
-          cd scope-rl
-      - name: Sphinx build
-        run: |
-          sphinx-build -b html docs docs/_build
-      - name: Deploy
-        uses: peaceiris/actions-gh-pages@v3
-        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-        with:
-          publish_branch: gh-pages
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: docs/_build/
-          force_orphan: true
+    - id: deployment
+      uses: sphinx-notes/pages@v3
