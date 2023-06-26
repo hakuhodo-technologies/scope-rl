@@ -1,7 +1,9 @@
 name: Docs
 on: [push, pull_request, workflow_dispatch]
+
 permissions:
     contents: write
+
 jobs:
   docs:
     runs-on: ubuntu-latest
@@ -23,7 +25,7 @@ jobs:
           sphinx-build -b html docs docs/_build
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
-        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        if: ${{ github.event_name == 'push' }}
         with:
           publish_branch: gh-pages
           github_token: ${{ secrets.GITHUB_TOKEN }}
