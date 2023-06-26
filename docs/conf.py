@@ -96,7 +96,7 @@ html_static_path = ["_static"]
 html_css_files = ["css/custom.css"]
 
 html_title = "SCOPE-RL"
-# html_use_opensearch = "https://"
+html_use_opensearch = "https://hakuhodo-technologies.github.io/scope-rl/"
 
 
 # whether to display to the source .rst file
