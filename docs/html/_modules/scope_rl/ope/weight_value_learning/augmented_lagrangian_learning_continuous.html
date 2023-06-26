@@ -1,0 +1,1832 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_continuous &#8212; SCOPE-RL</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../../_static/styles/theme.css?digest=12da95d707ffb74b382d" rel="stylesheet" />
+<link href="../../../../_static/styles/bootstrap.css?digest=12da95d707ffb74b382d" rel="stylesheet" />
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=12da95d707ffb74b382d" rel="stylesheet" />
+
+  
+  <link href="../../../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=12da95d707ffb74b382d" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/copybutton.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/tabs.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/design-style.4045f2051d55cab465a707391d5b2007.min.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/css/custom.css" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=12da95d707ffb74b382d" />
+<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=12da95d707ffb74b382d" />
+
+    <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+    <script src="../../../../_static/jquery.js"></script>
+    <script src="../../../../_static/underscore.js"></script>
+    <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../../_static/doctools.js"></script>
+    <script src="../../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../../_static/clipboard.min.js"></script>
+    <script src="../../../../_static/copybutton.js"></script>
+    <script src="../../../../_static/tabs.js"></script>
+    <script src="../../../../_static/design-tabs.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/scope_rl/ope/weight_value_learning/augmented_lagrangian_learning_continuous';</script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <nav class="bd-header navbar navbar-expand-lg bd-navbar">
+<div class="bd-header__inner bd-page-width">
+  <label class="sidebar-toggle primary-toggle" for="__primary">
+    <span class="fa-solid fa-bars"></span>
+  </label>
+  
+  <div class="navbar-header-items__start">
+    
+      <div class="navbar-item">
+  
+
+<a class="navbar-brand logo" href="../../../../index.html">
+  
+  
+  
+  
+  
+    <p class="title logo__title">SCOPE-RL</p>
+  
+</a></div>
+    
+  </div>
+  
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../../documentation/installation.html">
+                        Installation
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../../documentation/quickstart.html">
+                        Quickstart
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../../documentation/index.html">
+                        Documentation
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../../documentation/examples/index.html">
+                        Usage
+                      </a>
+                    </li>
+                
+            <div class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    More
+                </button>
+                <div class="dropdown-menu">
+                    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../../documentation/subpackages/index.html">
+                        Sub-packages
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../../documentation/frequently_asked_questions.html">
+                        FAQs
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../../documentation/news.html">
+                        News
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-external" href="https://github.com/hakuhodo-technologies/scope-rl/releases">
+                        Release Notes
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-external" href="https://github.com/hakuhodo-technologies/scope-rl/404">
+                        Proceedings
+                      </a>
+                    </li>
+                
+                </div>
+            </div>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+  </button>
+`);
+</script>
+        </div>
+      
+      
+        <div class="navbar-item">
+<script>
+document.write(`
+  <button class="theme-switch-button btn btn-sm btn-outline-primary navbar-btn rounded-circle" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch" data-mode="light"><i class="fa-solid fa-sun"></i></span>
+    <span class="theme-switch" data-mode="dark"><i class="fa-solid fa-moon"></i></span>
+    <span class="theme-switch" data-mode="auto"><i class="fa-solid fa-circle-half-stroke"></i></span>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/hakuhodo-technologies/scope-rl" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-square-github"></i></span>
+            <label class="sr-only">GitHub</label></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://speakerdeck.com/aiueola/ofrl-designing-an-offline-reinforcement-learning-and-policy-evaluation-platform-from-practical-perspectives" title="Speaker Deck" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-speaker-deck"></i></span>
+            <label class="sr-only">Speaker Deck</label></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+  </button>
+`);
+</script>
+    </div>
+  
+
+  
+</div>
+
+    </nav>
+  
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      <div class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../../documentation/installation.html">
+                        Installation
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../../documentation/quickstart.html">
+                        Quickstart
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../../documentation/index.html">
+                        Documentation
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../../documentation/examples/index.html">
+                        Usage
+                      </a>
+                    </li>
+                
+            <div class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    More
+                </button>
+                <div class="dropdown-menu">
+                    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../../documentation/subpackages/index.html">
+                        Sub-packages
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../../documentation/frequently_asked_questions.html">
+                        FAQs
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../../documentation/news.html">
+                        News
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-external" href="https://github.com/hakuhodo-technologies/scope-rl/releases">
+                        Release Notes
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-external" href="https://github.com/hakuhodo-technologies/scope-rl/404">
+                        Proceedings
+                      </a>
+                    </li>
+                
+                </div>
+            </div>
+            
+  </ul>
+</nav></div>
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+<script>
+document.write(`
+  <button class="theme-switch-button btn btn-sm btn-outline-primary navbar-btn rounded-circle" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch" data-mode="light"><i class="fa-solid fa-sun"></i></span>
+    <span class="theme-switch" data-mode="dark"><i class="fa-solid fa-moon"></i></span>
+    <span class="theme-switch" data-mode="auto"><i class="fa-solid fa-circle-half-stroke"></i></span>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/hakuhodo-technologies/scope-rl" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-square-github"></i></span>
+            <label class="sr-only">GitHub</label></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://speakerdeck.com/aiueola/ofrl-designing-an-offline-reinforcement-learning-and-policy-evaluation-platform-from-practical-perspectives" title="Speaker Deck" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-speaker-deck"></i></span>
+            <label class="sr-only">Speaker Deck</label></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumbs">
+  <ul class="bd-breadcrumbs" role="navigation" aria-label="Breadcrumb">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_continuous</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article" role="main">
+                  
+  <h1>Source code for scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_continuous</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (c) 2023, Haruka Kiyohara, Ren Kishimoto, HAKUHODO Technologies Inc., and Hanjuku-kaso Co., Ltd. All rights reserved.</span>
+<span class="c1"># Licensed under the Apache 2.0 License.</span>
+
+<span class="sd">&quot;&quot;&quot;Augmented Lagrangian method for weight/value function learning (continuous action cases).&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
+<span class="kn">from</span> <span class="nn">tqdm.auto</span> <span class="kn">import</span> <span class="n">tqdm</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">warnings</span> <span class="kn">import</span> <span class="n">warn</span>
+
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">optim</span>
+<span class="kn">from</span> <span class="nn">torch.nn.utils</span> <span class="kn">import</span> <span class="n">clip_grad_norm_</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">sklearn.utils</span> <span class="kn">import</span> <span class="n">check_scalar</span>
+
+<span class="kn">from</span> <span class="nn">d3rlpy.preprocessing</span> <span class="kn">import</span> <span class="n">Scaler</span><span class="p">,</span> <span class="n">ActionScaler</span>
+
+<span class="kn">from</span> <span class="nn">.base</span> <span class="kn">import</span> <span class="n">BaseWeightValueLearner</span>
+<span class="kn">from</span> <span class="nn">.function</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">VFunction</span><span class="p">,</span>
+    <span class="n">StateWeightFunction</span><span class="p">,</span>
+    <span class="n">ContinuousQFunction</span><span class="p">,</span>
+    <span class="n">ContinuousStateActionWeightFunction</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">...utils</span> <span class="kn">import</span> <span class="n">check_array</span><span class="p">,</span> <span class="n">gaussian_kernel</span>
+
+
+<div class="viewcode-block" id="ContinuousDiceStateActionWightValueLearning"><a class="viewcode-back" href="../../../../documentation/_autosummary/scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_continuous.ContinuousDiceStateActionWightValueLearning.html#scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_continuous.ContinuousDiceStateActionWightValueLearning">[docs]</a><span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">ContinuousDiceStateActionWightValueLearning</span><span class="p">(</span><span class="n">BaseWeightValueLearner</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Augmented Lagrangian method for weight/value function of marginal OPE estimators (for continuous action space).</span>
+
+<span class="sd">    Bases: :class:`scope_rl.ope.weight_value_learning.BaseWeightValueLearner`</span>
+
+<span class="sd">    Imported as: :class:`scope_rl.ope.weight_value_learning.ContinuousDiceStateActionWightValueLearning`</span>
+
+<span class="sd">    Note</span>
+<span class="sd">    -------</span>
+<span class="sd">    Augmented Lagrangian method simultaneously learns the weight and value functions using the Lagrangian relaxation</span>
+<span class="sd">    of the primal dual problem of weight/value learning as follows (See (Yang et al., 2020) for the theories behind):</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        \\max_{w \\leq 0} \\min_{Q, \\lambda} L(w, Q, \\lambda)</span>
+
+<span class="sd">    where</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        L(w, Q, \\lambda)</span>
+<span class="sd">        &amp;:= (1 - \\gamma) \\mathbb{E}_{s_0 \\sim d(s_0), a_0 \\sim \\pi(s_0)} [Q(s_0, a_0)] + \\lambda \\\\</span>
+<span class="sd">        &amp; \\quad \\quad + \\mathbb{E}_{(s_t, a_t, r_t, s_{t+1}) \\sim d^{\\pi_b}, a_{t+1} \\sim \\pi(s_{t+1})} [w(s_t, a_t) (\\alpha_r r_t + \\gamma Q(s_{t+1}, a_{t+1}) - Q(s_t, a_t) - \\lambda)] \\\\</span>
+<span class="sd">        &amp; \\quad \\quad + \\alpha_Q \\mathbb{E}_{(s_t, a_t) \\sim d^{\\pi_b}} [Q^2(s_t, a_t)] - \\alpha_w \\mathbb{E}_{(s_t, a_t) \\sim d^{\\pi_b}} [w^2(s_t, a_t)]</span>
+
+<span class="sd">    where :math:`Q(s_t, a_t)` is the Q-function, :math:`w(s_t, a_t) \\approx d^{\\pi}(s_t, a_t) / d^{\\pi_b}(s_t, a_t)` is the state-action marginal importance weight.</span>
+
+<span class="sd">    This estimator corresponds to the following estimators in its special cases.</span>
+
+<span class="sd">    - DualDICE (Nachum et al., 2019): :math:`\\alpha_Q = 1, \\alpha_w = 0, \\alpha_r = 0, \\lambda = 0`.</span>
+<span class="sd">    - GenDICE (Zhang et al., 2020), GradientDICE (Zhang et al., 2020): :math:`\\alpha_Q = 1, \\alpha_w = 0, \\alpha_r = 0`</span>
+<span class="sd">    - AlgaeDICE (Nachum et al., 2019): :math:`\\alpha_Q = 0, \\alpha_w = 1, \\alpha_r = 1, \\lambda = 0`</span>
+<span class="sd">    - BestDICE (Yang et al., 2020): :math:`\\alpha_Q = 0, \\alpha_w = 1, \\alpha_r = 1`</span>
+<span class="sd">    - Minimax Q Learning (MQL) (Uehara and Jiang, 2019): :math:`\\alpha_Q = 0, \\alpha_w = 0, \\alpha_r = 1, \\lambda = 0`</span>
+<span class="sd">    - Minimax Weight Learning (MWL) (Uehara and Jiang, 2019): :math:`\\alpha_Q = 0, \\alpha_w = 0, \\alpha_r = 0, \\lambda = 0`</span>
+
+<span class="sd">    ALM is beneficial in that it can simultaneously learn both Q-function and W-function in an adversarial manner.</span>
+<span class="sd">    However, since the objective function of ALM is not convex, it may suffer from learning instability.</span>
+
+<span class="sd">    Note</span>
+<span class="sd">    -------</span>
+<span class="sd">    The positivity constraint :math:`w \\geq 0` should be imposed in the function approximation model.</span>
+
+<span class="sd">    .. seealso::</span>
+
+<span class="sd">        :class:`scope_rl.ope.weight_value_learning.function`</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -------</span>
+<span class="sd">    q_function: ContinuousQFunction</span>
+<span class="sd">        Q-function model.</span>
+
+<span class="sd">    w_function: ContinuousStateActionWeightFunction</span>
+<span class="sd">        Weight function model.</span>
+
+<span class="sd">    gamma: float, default=1.0</span>
+<span class="sd">        Discount factor. The value should be within (0, 1].</span>
+
+<span class="sd">    bandwidth: float, default=1.0 (&gt; 0)</span>
+<span class="sd">        Bandwidth hyperparameter of the Gaussian kernel. (This is for API consistency)</span>
+
+<span class="sd">    state_scaler: d3rlpy.preprocessing.Scaler, default=None</span>
+<span class="sd">        Scaling factor of state.</span>
+
+<span class="sd">    action_scaler: d3rlpy.preprocessing.ActionScaler, default=None</span>
+<span class="sd">        Scaling factor of action.</span>
+
+<span class="sd">    method: {&quot;dual_dice&quot;, &quot;gen_dice&quot;, &quot;algae_dice&quot;, &quot;best_dice&quot;, &quot;mql&quot;, &quot;mwl&quot;, &quot;custom&quot;}, default=&quot;best_dice&quot;</span>
+<span class="sd">        Indicates which parameter set should be used. When, &quot;custom&quot; users can specify their own parameter.</span>
+
+<span class="sd">    batch_size: int, default=128 (&gt; 0)</span>
+<span class="sd">        Batch size.</span>
+
+<span class="sd">    q_lr: float, default=1e-4 (&gt; 0)</span>
+<span class="sd">        Learning rate of q_function.</span>
+
+<span class="sd">    w_lr: float, default=1e-4 (&gt; 0)</span>
+<span class="sd">        Learning rate of w_function.</span>
+
+<span class="sd">    lambda_lr: float, default=1e-4 (&gt; 0)</span>
+<span class="sd">        Learning rate of lambda_.</span>
+
+<span class="sd">    alpha_q: float, default=None (&gt;= 0)</span>
+<span class="sd">        Regularization coefficient of the Q-function.</span>
+<span class="sd">        A value should be given if method is &quot;custom&quot;.</span>
+
+<span class="sd">    alpha_w: float, default=None (&gt;= 0)</span>
+<span class="sd">        Regularization coefficient of the weight function.</span>
+<span class="sd">        A value should be given if method is &quot;custom&quot;.</span>
+
+<span class="sd">    alpha_r: bool, default=None</span>
+<span class="sd">        Whether to consider the reward observation.</span>
+<span class="sd">        A value should be given if method is &quot;custom&quot;.</span>
+
+<span class="sd">    enable_lambda: bool, default=None</span>
+<span class="sd">        Whether to optimize :math:`\\lambda`. If `False`, :math:`\\lambda` is automatically set to zero.</span>
+<span class="sd">        A boolean value should be given if method is &quot;custom&quot;.</span>
+
+<span class="sd">    device: str, default=&quot;cuda:0&quot;</span>
+<span class="sd">        Specifies device used for torch.</span>
+
+<span class="sd">    References</span>
+<span class="sd">    -------</span>
+<span class="sd">    Masatoshi Uehara, Jiawei Huang, and Nan Jiang.</span>
+<span class="sd">    &quot;Minimax Weight and Q-Function Learning for Off-Policy Evaluation.&quot; 2020.</span>
+
+<span class="sd">    Mengjiao Yang, Ofir Nachum, Bo Dai, Lihong Li, and Dale Schuurmans.</span>
+<span class="sd">    &quot;Off-Policy Evaluation via the Regularized Lagrangian.&quot; 2020.</span>
+
+<span class="sd">    Shangtong Zhang, Bo Liu, and Shimon Whiteson.</span>
+<span class="sd">    &quot;GradientDICE: Rethinking Generalized Offline Estimation of Stationary Values.&quot; 2020.</span>
+
+<span class="sd">    Ruiyi Zhang, Bo Dai, Lihong Li, and Dale Schuurmans.</span>
+<span class="sd">    &quot;GenDICE: Generalized Offline Estimation of Stationary Values.&quot; 2020.</span>
+
+<span class="sd">    Ofir Nachum, Bo Dai, Ilya Kostrikov, Yinlam Chow, Lihong Li, and Dale Schuurmans.</span>
+<span class="sd">    &quot;AlgaeDICE: Policy Gradient from Arbitrary Experience.&quot; 2019.</span>
+
+<span class="sd">    Ofir Nachum, Yinlam Chow, Bo Dai, and Lihong Li.</span>
+<span class="sd">    &quot;DualDICE: Behavior-Agnostic Estimation of Discounted Stationary Distribution Corrections.&quot; 2019.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">q_function</span><span class="p">:</span> <span class="n">ContinuousQFunction</span>
+    <span class="n">w_function</span><span class="p">:</span> <span class="n">ContinuousStateActionWeightFunction</span>
+    <span class="n">gamma</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span>
+    <span class="n">bandwidth</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span>
+    <span class="n">state_scaler</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Scaler</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">action_scaler</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ActionScaler</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;best_dice&quot;</span>
+    <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">128</span>
+    <span class="n">q_lr</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-4</span>
+    <span class="n">w_lr</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-4</span>
+    <span class="n">lambda_lr</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-4</span>
+    <span class="n">alpha_q</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">alpha_w</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">alpha_r</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">enable_lambda</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">device</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;cuda:0&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">q_function</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">w_function</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+
+        <span class="n">check_scalar</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">gamma</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;gamma&quot;</span><span class="p">,</span> <span class="n">target_type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">min_val</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">max_val</span><span class="o">=</span><span class="mf">1.0</span>
+        <span class="p">)</span>
+        <span class="n">check_scalar</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bandwidth</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;bandwidth&quot;</span><span class="p">,</span> <span class="n">target_type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">min_val</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_scaler</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state_scaler</span><span class="p">,</span> <span class="n">Scaler</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;state_scaler must be an instance of d3rlpy.preprocessing.Scaler, but found False&quot;</span>
+                <span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">action_scaler</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">action_scaler</span><span class="p">,</span> <span class="n">ActionScaler</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;action_scaler must be an instance of d3rlpy.preprocessing.ActionScaler, but found False&quot;</span>
+                <span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span>
+            <span class="s2">&quot;dual_dice&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;gen_dice&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;algae_dice&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;best_dice&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;mql&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;mwl&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;custom&quot;</span><span class="p">,</span>
+        <span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;method must be one of </span><span class="si">{</span><span class="s1">&#39;dual_dice&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;gen_dice&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;algae_dice&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;best_dice&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;mql&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;mwl&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;custom&#39;</span><span class="si">}</span><span class="s2">, but </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">method</span><span class="si">}</span><span class="s2"> is given&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;custom&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha_q</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;alpha_q must be given when `method == &#39;custom&#39;`&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha_w</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;alpha_w must be given when `method == &#39;custom&#39;`&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha_r</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;alpha_r must be given when `method == &#39;custom&#39;`&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">enable_lambda</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;enable_lambda must be given when `method == &#39;custom&#39;`&quot;</span>
+                <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha_q</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">warn</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;alpha_q is given, but alpha_q will be initialized with by the setting of </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">method</span><span class="si">}</span><span class="s2">. &quot;</span>
+                    <span class="s2">&quot;To customize, `method` should be set to &#39;custom&#39;.&quot;</span>
+                <span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha_w</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">warn</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;alpha_w is given, but alpha_w will be initialized with by the setting of </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">method</span><span class="si">}</span><span class="s2">. &quot;</span>
+                    <span class="s2">&quot;To customize, `method` should be set to &#39;custom&#39;.&quot;</span>
+                <span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha_r</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">warn</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;alpha_r is given, but alpha_r will be initialized with by the setting of </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">method</span><span class="si">}</span><span class="s2">. &quot;</span>
+                    <span class="s2">&quot;To customize, `method` should be set to &#39;custom&#39;.&quot;</span>
+                <span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">alpha_q</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;dual_dice&quot;</span><span class="p">,</span> <span class="s2">&quot;gen_dice&quot;</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">alpha_w</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;algae_dice&quot;</span><span class="p">,</span> <span class="s2">&quot;best_dice&quot;</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">alpha_r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;algae_dice&quot;</span><span class="p">,</span> <span class="s2">&quot;best_dice&quot;</span><span class="p">,</span> <span class="s2">&quot;mql&quot;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">enable_lambda</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;gen_dice&quot;</span><span class="p">,</span> <span class="s2">&quot;best_dice&quot;</span><span class="p">]</span>
+
+        <span class="n">check_scalar</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">alpha_q</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;alpha_q&quot;</span><span class="p">,</span> <span class="n">target_type</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="n">check_scalar</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">alpha_w</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;alpha_w&quot;</span><span class="p">,</span> <span class="n">target_type</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="n">check_scalar</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;batch_size&quot;</span><span class="p">,</span> <span class="n">target_type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">min_val</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">check_scalar</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">q_lr</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;q_lr&quot;</span><span class="p">,</span> <span class="n">target_type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">min_val</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>
+        <span class="n">check_scalar</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">w_lr</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;w_lr&quot;</span><span class="p">,</span> <span class="n">target_type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">min_val</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>
+        <span class="n">check_scalar</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lambda_lr</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;lambda_lr&quot;</span><span class="p">,</span> <span class="n">target_type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">min_val</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ContinuousDiceStateActionWightValueLearning.load"><a class="viewcode-back" href="../../../../documentation/_autosummary/scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_continuous.ContinuousDiceStateActionWightValueLearning.html#scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_continuous.ContinuousDiceStateActionWightValueLearning.load">[docs]</a>    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path_q</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span> <span class="n">path_w</span><span class="p">:</span> <span class="n">Path</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">q_function</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">path_q</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">w_function</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">path_w</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="ContinuousDiceStateActionWightValueLearning.save"><a class="viewcode-back" href="../../../../documentation/_autosummary/scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_continuous.ContinuousDiceStateActionWightValueLearning.html#scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_continuous.ContinuousDiceStateActionWightValueLearning.save">[docs]</a>    <span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path_q</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span> <span class="n">path_w</span><span class="p">:</span> <span class="n">Path</span><span class="p">):</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">q_function</span><span class="o">.</span><span class="n">state_dict</span><span class="p">(),</span> <span class="n">path_q</span><span class="p">)</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">w_function</span><span class="o">.</span><span class="n">state_dict</span><span class="p">(),</span> <span class="n">path_w</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_objective_function</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">initial_state</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">initial_action</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">state</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">action</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">reward</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">next_state</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">next_action</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">lambda_</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Objective function of Augmented Lagrangian method.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -------</span>
+<span class="sd">        initial_state: Tensor of shape (n_trajectories, state_dim)</span>
+<span class="sd">            Initial state of a trajectory (or states sampled from a stationary distribution).</span>
+
+<span class="sd">        initial_action: Tensor of shape (n_trajectories, action_dim)</span>
+<span class="sd">            Initial action chose by the evaluation policy.</span>
+
+<span class="sd">        state: Tensor of shape (n_trajectories, state_dim)</span>
+<span class="sd">            State observed by the behavior policy.</span>
+
+<span class="sd">        action: Tensor of shape (n_trajectories, action_dim)</span>
+<span class="sd">            Action chosen by the behavior policy.</span>
+
+<span class="sd">        reward: Tensor of shape (n_trajectories, )</span>
+<span class="sd">            Reward observed for each (state, action) pair.</span>
+
+<span class="sd">        next_state: Tensor of shape (n_trajectories, state_dim)</span>
+<span class="sd">            Next state observed for each (state, action) pair.</span>
+
+<span class="sd">        next_action: Tensor of shape (n_trajectories, action_dim)</span>
+<span class="sd">            Next action chosen by the evaluation policy.</span>
+
+<span class="sd">        lambda_: Tensor of shape (1, )</span>
+<span class="sd">            lambda_ hyperparameter to stabilize the optimization.</span>
+
+<span class="sd">        Return</span>
+<span class="sd">        -------</span>
+<span class="sd">        objective_function: Tensor of shape (1, )</span>
+<span class="sd">            Objective function of the Augmented Lagrangian method.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">initial_value</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">gamma</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">q_function</span><span class="p">(</span>
+            <span class="n">initial_state</span><span class="p">,</span> <span class="n">initial_action</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span> <span class="o">+</span> <span class="n">lambda_</span>
+        <span class="n">td_value</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">w_function</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">action</span><span class="p">)</span>
+            <span class="o">*</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">alpha_r</span> <span class="o">*</span> <span class="n">reward</span>
+                <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">gamma</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">q_function</span><span class="p">(</span><span class="n">next_state</span><span class="p">,</span> <span class="n">next_action</span><span class="p">)</span>
+                <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">q_function</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">action</span><span class="p">)</span>
+                <span class="o">-</span> <span class="n">lambda_</span>
+            <span class="p">)</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+        <span class="n">q_regularization</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha_q</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">q_function</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">action</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+        <span class="n">w_regularization</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">alpha_w</span> <span class="o">*</span> <span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">w_function</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">action</span><span class="p">)</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">initial_value</span> <span class="o">+</span> <span class="n">td_value</span> <span class="o">+</span> <span class="n">q_regularization</span> <span class="o">-</span> <span class="n">w_regularization</span>
+
+<div class="viewcode-block" id="ContinuousDiceStateActionWightValueLearning.fit"><a class="viewcode-back" href="../../../../documentation/_autosummary/scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_continuous.ContinuousDiceStateActionWightValueLearning.html#scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_continuous.ContinuousDiceStateActionWightValueLearning.fit">[docs]</a>    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">step_per_trajectory</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">state</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">action</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">reward</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">evaluation_policy_action</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">n_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10000</span><span class="p">,</span>
+        <span class="n">n_steps_per_epoch</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10000</span><span class="p">,</span>
+        <span class="n">random_state</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Fit value and weight functions.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -------</span>
+<span class="sd">        step_per_trajectory: int (&gt; 0)</span>
+<span class="sd">            Number of timesteps in an episode.</span>
+
+<span class="sd">        state: array-like of shape (n_trajectories * step_per_trajectory, state_dim)</span>
+<span class="sd">            State observed by the behavior policy.</span>
+
+<span class="sd">        action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)</span>
+<span class="sd">            Action chosen by the behavior policy.</span>
+
+<span class="sd">        reward: array-like of shape (n_trajectories * step_per_trajectory)</span>
+<span class="sd">            Reward observed for each (state, action) pair.</span>
+
+<span class="sd">        evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)</span>
+<span class="sd">            Next action chose by the evaluation policy.</span>
+
+<span class="sd">        n_steps: int, default=10000 (&gt; 0)</span>
+<span class="sd">            Number of gradient steps.</span>
+
+<span class="sd">        n_steps_per_epoch: int, default=10000 (&gt; 0)</span>
+<span class="sd">            Number of gradient steps in a epoch.</span>
+
+<span class="sd">        random_state: int, default=None (&gt;= 0)</span>
+<span class="sd">            Random state.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">check_scalar</span><span class="p">(</span>
+            <span class="n">step_per_trajectory</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;step_per_trajectory&quot;</span><span class="p">,</span> <span class="n">target_type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">min_val</span><span class="o">=</span><span class="mi">1</span>
+        <span class="p">)</span>
+        <span class="n">check_array</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;state&quot;</span><span class="p">,</span> <span class="n">expected_dim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">check_array</span><span class="p">(</span><span class="n">action</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;action&quot;</span><span class="p">,</span> <span class="n">expected_dim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">check_array</span><span class="p">(</span><span class="n">reward</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;reward&quot;</span><span class="p">,</span> <span class="n">expected_dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">check_array</span><span class="p">(</span>
+            <span class="n">evaluation_policy_action</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;evaluation_policy_action&quot;</span><span class="p">,</span> <span class="n">expected_dim</span><span class="o">=</span><span class="mi">2</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span>
+            <span class="n">state</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="o">==</span> <span class="n">action</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="o">==</span> <span class="n">reward</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="o">==</span> <span class="n">evaluation_policy_action</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Expected `state.shape[0] == action.shape[0] == reward.shape[0] == evaluation_policy_action.shape[0]`, but found False&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">state</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">%</span> <span class="n">step_per_trajectory</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Expected `state.shape[0] </span><span class="si">% s</span><span class="s2">tep_per_trajectory == 0`, but found False&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">action</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="n">evaluation_policy_action</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Expected `action.shape[1] == evaluation_policy_action.shape[1]`, but found False&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">check_scalar</span><span class="p">(</span><span class="n">n_steps</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;n_steps&quot;</span><span class="p">,</span> <span class="n">target_type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">min_val</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">check_scalar</span><span class="p">(</span>
+            <span class="n">n_steps_per_epoch</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;n_steps_per_epoch&quot;</span><span class="p">,</span> <span class="n">target_type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">min_val</span><span class="o">=</span><span class="mi">1</span>
+        <span class="p">)</span>
+        <span class="n">n_epochs</span> <span class="o">=</span> <span class="p">(</span><span class="n">n_steps</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">//</span> <span class="n">n_steps_per_epoch</span> <span class="o">+</span> <span class="mi">1</span>
+
+        <span class="k">if</span> <span class="n">random_state</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Random state mush be given.&quot;</span><span class="p">)</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">manual_seed</span><span class="p">(</span><span class="n">random_state</span><span class="p">)</span>
+
+        <span class="n">state_dim</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">action_dim</span> <span class="o">=</span> <span class="n">action</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">state</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">step_per_trajectory</span><span class="p">,</span> <span class="n">state_dim</span><span class="p">))</span>
+        <span class="n">action</span> <span class="o">=</span> <span class="n">action</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">step_per_trajectory</span><span class="p">,</span> <span class="n">action_dim</span><span class="p">))</span>
+        <span class="n">reward</span> <span class="o">=</span> <span class="n">reward</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">step_per_trajectory</span><span class="p">))</span>
+        <span class="n">evaluation_policy_action</span> <span class="o">=</span> <span class="n">evaluation_policy_action</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
+            <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">step_per_trajectory</span><span class="p">,</span> <span class="n">action_dim</span><span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="n">n_trajectories</span><span class="p">,</span> <span class="n">step_per_trajectory</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">state</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+        <span class="n">action</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">(</span><span class="n">action</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+        <span class="n">reward</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">(</span><span class="n">reward</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+        <span class="n">evaluation_policy_action</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">(</span>
+            <span class="n">evaluation_policy_action</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_scaler</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_scaler</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">action_scaler</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">action</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">action_scaler</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
+
+        <span class="n">q_optimizer</span> <span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">q_function</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span>
+            <span class="n">lr</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">q_lr</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">w_optimizer</span> <span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">w_function</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span>
+            <span class="n">lr</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">w_lr</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">enable_lambda</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lambda_</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,),</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">,</span> <span class="n">requires_grad</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">lambda_optimizer</span> <span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span>
+                <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">lambda_</span><span class="p">],</span>
+                <span class="n">lr</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">lambda_lr</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lambda_</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,),</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n_epochs</span><span class="p">),</span>
+            <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;[fitting_weight_and_value_functions]&quot;</span><span class="p">,</span>
+            <span class="n">total</span><span class="o">=</span><span class="n">n_epochs</span><span class="p">,</span>
+        <span class="p">):</span>
+            <span class="k">for</span> <span class="n">grad_step</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n_steps_per_epoch</span><span class="p">),</span>
+                <span class="n">desc</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;[epoch: </span><span class="si">{</span><span class="n">epoch</span><span class="si">:</span><span class="s2"> &gt;4</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">,</span>
+                <span class="n">total</span><span class="o">=</span><span class="n">n_steps_per_epoch</span><span class="p">,</span>
+            <span class="p">):</span>
+                <span class="n">idx_</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">n_trajectories</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,))</span>
+                <span class="n">t_</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">step_per_trajectory</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,))</span>
+
+                <span class="n">objective_loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_objective_function</span><span class="p">(</span>
+                    <span class="n">initial_state</span><span class="o">=</span><span class="n">state</span><span class="p">[</span><span class="n">idx_</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+                    <span class="n">initial_action</span><span class="o">=</span><span class="n">evaluation_policy_action</span><span class="p">[</span><span class="n">idx_</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+                    <span class="n">state</span><span class="o">=</span><span class="n">state</span><span class="p">[</span><span class="n">idx_</span><span class="p">,</span> <span class="n">t_</span><span class="p">],</span>
+                    <span class="n">action</span><span class="o">=</span><span class="n">action</span><span class="p">[</span><span class="n">idx_</span><span class="p">,</span> <span class="n">t_</span><span class="p">],</span>
+                    <span class="n">reward</span><span class="o">=</span><span class="n">reward</span><span class="p">[</span><span class="n">idx_</span><span class="p">,</span> <span class="n">t_</span><span class="p">],</span>
+                    <span class="n">next_state</span><span class="o">=</span><span class="n">state</span><span class="p">[</span><span class="n">idx_</span><span class="p">,</span> <span class="n">t_</span> <span class="o">+</span> <span class="mi">1</span><span class="p">],</span>
+                    <span class="n">next_action</span><span class="o">=</span><span class="n">evaluation_policy_action</span><span class="p">[</span><span class="n">idx_</span><span class="p">,</span> <span class="n">t_</span> <span class="o">+</span> <span class="mi">1</span><span class="p">],</span>
+                    <span class="n">lambda_</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">lambda_</span><span class="p">,</span>
+                <span class="p">)</span>
+
+                <span class="n">q_optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
+                <span class="n">w_optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">enable_lambda</span><span class="p">:</span>
+                    <span class="n">lambda_optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
+
+                <span class="n">objective_loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+
+                <span class="n">clip_grad_norm_</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">q_function</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">max_norm</span><span class="o">=</span><span class="mf">10.0</span><span class="p">)</span>
+                <span class="n">clip_grad_norm_</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">w_function</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">max_norm</span><span class="o">=</span><span class="mf">10.0</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">enable_lambda</span><span class="p">:</span>
+                    <span class="n">clip_grad_norm_</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lambda_</span><span class="p">,</span> <span class="n">max_norm</span><span class="o">=</span><span class="mf">10.0</span><span class="p">)</span>
+
+                <span class="n">q_optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+                <span class="n">w_optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">enable_lambda</span><span class="p">:</span>
+                    <span class="n">lambda_optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+
+            <span class="nb">print</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;epoch=</span><span class="si">{</span><span class="n">epoch</span><span class="si">:</span><span class="s2"> &gt;4</span><span class="si">}</span><span class="s2">, &quot;</span> <span class="sa">f</span><span class="s2">&quot;objective_loss=</span><span class="si">{</span><span class="n">objective_loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">, &quot;</span>
+            <span class="p">)</span></div>
+
+<div class="viewcode-block" id="ContinuousDiceStateActionWightValueLearning.predict_q_function"><a class="viewcode-back" href="../../../../documentation/_autosummary/scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_continuous.ContinuousDiceStateActionWightValueLearning.html#scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_continuous.ContinuousDiceStateActionWightValueLearning.predict_q_function">[docs]</a>    <span class="k">def</span> <span class="nf">predict_q_function</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">state</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">action</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Predict Q-function.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -------</span>
+<span class="sd">        state: array-like of shape (n_trajectories * step_per_trajectory, state_dim)</span>
+<span class="sd">            State observed by the behavior policy.</span>
+
+<span class="sd">        action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)</span>
+<span class="sd">            Action chosen by the behavior/evaluation policy.</span>
+
+<span class="sd">        Return</span>
+<span class="sd">        -------</span>
+<span class="sd">        q_value: ndarray of shape (n_trajectories * step_per_trajectory)</span>
+<span class="sd">            Q value of each (state, action) pair.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">check_array</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;state&quot;</span><span class="p">,</span> <span class="n">expected_dim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">check_array</span><span class="p">(</span><span class="n">action</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;action&quot;</span><span class="p">,</span> <span class="n">expected_dim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">state</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">action</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Expected `state.shape[0] == action.shape[0]`, but found False&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">state</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+        <span class="n">action</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">(</span><span class="n">action</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_scaler</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_scaler</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">action_scaler</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">action</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">action_scaler</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+            <span class="n">q_value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">q_function</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">action</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s2">&quot;cpu&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">q_value</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">lambda_</span><span class="o">.</span><span class="n">item</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="ContinuousDiceStateActionWightValueLearning.predict_v_function"><a class="viewcode-back" href="../../../../documentation/_autosummary/scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_continuous.ContinuousDiceStateActionWightValueLearning.html#scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_continuous.ContinuousDiceStateActionWightValueLearning.predict_v_function">[docs]</a>    <span class="k">def</span> <span class="nf">predict_v_function</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">state</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">evaluation_policy_action</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Predict V function.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -------</span>
+<span class="sd">        state: array-like of shape (n_trajectories * step_per_trajectory, state_dim)</span>
+<span class="sd">            State observed by the behavior policy.</span>
+
+<span class="sd">        evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)</span>
+<span class="sd">            Action chosen by the evaluation policy.</span>
+
+<span class="sd">        Return</span>
+<span class="sd">        -------</span>
+<span class="sd">        v_function: ndarray of shape (n_trajectories * step_per_trajectory)</span>
+<span class="sd">            State value.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">predict_q_function</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">evaluation_policy_action</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ContinuousDiceStateActionWightValueLearning.predict_value"><a class="viewcode-back" href="../../../../documentation/_autosummary/scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_continuous.ContinuousDiceStateActionWightValueLearning.html#scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_continuous.ContinuousDiceStateActionWightValueLearning.predict_value">[docs]</a>    <span class="k">def</span> <span class="nf">predict_value</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">state</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">action</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Predict Q-function.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -------</span>
+<span class="sd">        state: array-like of shape (n_trajectories * step_per_trajectory, state_dim)</span>
+<span class="sd">            State observed by the behavior policy.</span>
+
+<span class="sd">        action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)</span>
+<span class="sd">            Action chosen by the behavior/evaluation policy.</span>
+
+<span class="sd">        Return</span>
+<span class="sd">        -------</span>
+<span class="sd">        q_value: ndarray of shape (n_trajectories * step_per_trajectory)</span>
+<span class="sd">            Q value of each (state, action) pair.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">predict_q_function</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">action</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ContinuousDiceStateActionWightValueLearning.predict_weight"><a class="viewcode-back" href="../../../../documentation/_autosummary/scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_continuous.ContinuousDiceStateActionWightValueLearning.html#scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_continuous.ContinuousDiceStateActionWightValueLearning.predict_weight">[docs]</a>    <span class="k">def</span> <span class="nf">predict_weight</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">state</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">action</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Predict state-action marginal importance weight.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -------</span>
+<span class="sd">        state: array-like of shape (n_trajectories * step_per_trajectory, state_dim)</span>
+<span class="sd">            State observed by the behavior policy.</span>
+
+<span class="sd">        action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)</span>
+<span class="sd">            Action chosen by the behavior policy.</span>
+
+<span class="sd">        Return</span>
+<span class="sd">        -------</span>
+<span class="sd">        w_hat: ndarray of shape (n_trajectories * step_per_trajectory)</span>
+<span class="sd">            Estimated state-action marginal importance weight.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">check_array</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;state&quot;</span><span class="p">,</span> <span class="n">expected_dim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">check_array</span><span class="p">(</span><span class="n">action</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;action&quot;</span><span class="p">,</span> <span class="n">expected_dim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">state</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">action</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Expected `state.shape[0] == action.shape[0]`, but found False&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">state</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+        <span class="n">action</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">(</span><span class="n">action</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_scaler</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_scaler</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">action_scaler</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">action</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">action_scaler</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+            <span class="n">w_hat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">w_function</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">action</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s2">&quot;cpu&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">w_hat</span></div>
+
+<div class="viewcode-block" id="ContinuousDiceStateActionWightValueLearning.predict"><a class="viewcode-back" href="../../../../documentation/_autosummary/scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_continuous.ContinuousDiceStateActionWightValueLearning.html#scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_continuous.ContinuousDiceStateActionWightValueLearning.predict">[docs]</a>    <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">state</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">action</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Predict Q value and state-action marginal importance weight.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -------</span>
+<span class="sd">        state: array-like of shape (n_trajectories * step_per_trajectory, state_dim)</span>
+<span class="sd">            State observed by the behavior policy.</span>
+
+<span class="sd">        action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)</span>
+<span class="sd">            Action chosen by the behavior policy.</span>
+
+<span class="sd">        Return</span>
+<span class="sd">        -------</span>
+<span class="sd">        q_value: ndarray of shape (n_trajectories * step_per_trajectory)</span>
+<span class="sd">            Q value of each (state, action) pair.</span>
+
+<span class="sd">        w_hat: ndarray of shape (n_trajectories * step_per_trajectory)</span>
+<span class="sd">            Estimated state-action marginal importance weight.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">q_value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">predict_value</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">action</span><span class="p">)</span>
+        <span class="n">w_hat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">predict_weight</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">action</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">q_value</span><span class="p">,</span> <span class="n">w_hat</span></div>
+
+<div class="viewcode-block" id="ContinuousDiceStateActionWightValueLearning.fit_predict"><a class="viewcode-back" href="../../../../documentation/_autosummary/scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_continuous.ContinuousDiceStateActionWightValueLearning.html#scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_continuous.ContinuousDiceStateActionWightValueLearning.fit_predict">[docs]</a>    <span class="k">def</span> <span class="nf">fit_predict</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">step_per_trajectory</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">state</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">action</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">reward</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">evaluation_policy_action</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">n_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10000</span><span class="p">,</span>
+        <span class="n">n_steps_per_epoch</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10000</span><span class="p">,</span>
+        <span class="n">random_state</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Fit and predict value/weight functions.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -------</span>
+<span class="sd">        step_per_trajectory: int (&gt; 0)</span>
+<span class="sd">            Number of timesteps in an episode.</span>
+
+<span class="sd">        state: array-like of shape (n_trajectories * step_per_trajectory, state_dim)</span>
+<span class="sd">            State observed by the behavior policy.</span>
+
+<span class="sd">        action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)</span>
+<span class="sd">            Action chosen by the behavior policy.</span>
+
+<span class="sd">        reward: array-like of shape (n_trajectories * step_per_trajectory)</span>
+<span class="sd">            Reward observed for each (state, action) pair.</span>
+
+<span class="sd">        evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)</span>
+<span class="sd">            Next action chose by the evaluation policy.</span>
+
+<span class="sd">        n_steps: int, default=10000 (&gt; 0)</span>
+<span class="sd">            Number of gradient steps.</span>
+
+<span class="sd">        n_steps_per_epoch: int, default=10000 (&gt; 0)</span>
+<span class="sd">            Number of gradient steps in a epoch.</span>
+
+<span class="sd">        random_state: int, default=None (&gt;= 0)</span>
+<span class="sd">            Random state.</span>
+
+<span class="sd">        Return</span>
+<span class="sd">        -------</span>
+<span class="sd">        q_value: ndarray of shape (n_trajectories * step_per_trajectory)</span>
+<span class="sd">            Q value of each (state, action) pair.</span>
+
+<span class="sd">        w_hat: ndarray of shape (n_trajectories * step_per_trajectory)</span>
+<span class="sd">            Estimated state-action marginal importance weight.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span>
+            <span class="n">step_per_trajectory</span><span class="o">=</span><span class="n">step_per_trajectory</span><span class="p">,</span>
+            <span class="n">state</span><span class="o">=</span><span class="n">state</span><span class="p">,</span>
+            <span class="n">action</span><span class="o">=</span><span class="n">action</span><span class="p">,</span>
+            <span class="n">reward</span><span class="o">=</span><span class="n">reward</span><span class="p">,</span>
+            <span class="n">evaluation_policy_action</span><span class="o">=</span><span class="n">evaluation_policy_action</span><span class="p">,</span>
+            <span class="n">n_steps</span><span class="o">=</span><span class="n">n_steps</span><span class="p">,</span>
+            <span class="n">n_steps_per_epoch</span><span class="o">=</span><span class="n">n_steps_per_epoch</span><span class="p">,</span>
+            <span class="n">random_state</span><span class="o">=</span><span class="n">random_state</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">action</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="ContinuousDiceStateWightValueLearning"><a class="viewcode-back" href="../../../../documentation/_autosummary/scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_continuous.ContinuousDiceStateWightValueLearning.html#scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_continuous.ContinuousDiceStateWightValueLearning">[docs]</a><span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">ContinuousDiceStateWightValueLearning</span><span class="p">(</span><span class="n">BaseWeightValueLearner</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Augmented Lagrangian method for weight/value function of marginal OPE estimators (for continuous action space).</span>
+
+<span class="sd">    Bases: :class:`scope_rl.ope.weight_value_learning.BaseWeightValueLearner`</span>
+
+<span class="sd">    Imported as: :class:`scope_rl.ope.weight_value_learning.ContinuousDiceStateWightValueLearning`</span>
+
+<span class="sd">    Note</span>
+<span class="sd">    -------</span>
+<span class="sd">    Augmented Lagrangian method simultaneously learns the weight and value functions using the Lagrangian relaxation</span>
+<span class="sd">    of the primal dual problem of weight/value learning (See (Yang et al., 2020) for the theories behind).</span>
+
+<span class="sd">    This class aims to learn V-function and state-marginal importance weight rather than estimating Q-function and</span>
+<span class="sd">    state-action marginal importance weight.</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        \\max_{w \\leq 0} \\min_{V, \\lambda} L(w, V, \\lambda)</span>
+
+<span class="sd">    where</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        L(w, V, \\lambda)</span>
+<span class="sd">        &amp;:= (1 - \\gamma) \\mathbb{E}_{s_0 \\sim d(s_0)} [V(s_0)] + \\lambda \\\\</span>
+<span class="sd">        &amp; \\quad \\quad + \\mathbb{E}_{(s_t, a_t, r_t, s_{t+1}) \\sim d^{\\pi_b}} [w_s(s_t) w_a(s_t, a_t) (\\alpha_r r_t + \\gamma V(s_{t+1}) - V(s_t) - \\lambda)] \\\\</span>
+<span class="sd">        &amp; \\quad \\quad + \\alpha_V \\mathbb{E}_{s_t \\sim d^{\\pi_b}} [V^2(s_t)] - \\alpha_w \\mathbb{E}_{s_t \\sim d^{\\pi_b}} [w_s^2(s_t)]</span>
+
+<span class="sd">    where :math:`V(s_t)` is the V-function, :math:`w_s(s_t) \\approx d^{\\pi}(s_t) / d^{\\pi_b}(s_t)` is the state marginal importance weight.</span>
+<span class="sd">    :math:`w_a(s_t, a_t) = \\pi(a_t | s_t) / \\pi_0(a_t | s_t)` is the immediate importance weight.</span>
+
+<span class="sd">    This estimator is analogous to the following estimators in its special cases (although the following uses Q-function and state-action marginal importance weight).</span>
+
+<span class="sd">    - DualDICE (Nachum et al., 2019): :math:`\\alpha_Q = 1, \\alpha_w = 0, \\alpha_r = 0, \\lambda = 0`.</span>
+<span class="sd">    - GenDICE (Zhang et al., 2020), GradientDICE (Zhang et al., 2020): :math:`\\alpha_Q = 1, \\alpha_w = 0, \\alpha_r = 0`</span>
+<span class="sd">    - AlgaeDICE (Nachum et al., 2019): :math:`\\alpha_Q = 0, \\alpha_w = 1, \\alpha_r = 1, \\lambda = 0`</span>
+<span class="sd">    - BestDICE (Yang et al., 2020): :math:`\\alpha_Q = 0, \\alpha_w = 1, \\alpha_r = 1`</span>
+<span class="sd">    - Minimax Value Learning (MVL) (Uehara and Jiang, 2019): :math:`\\alpha_Q = 0, \\alpha_w = 0, \\alpha_r = 1, \\lambda = 0`</span>
+<span class="sd">    - Minimax Weight Learning (MWL) (Uehara and Jiang, 2019): :math:`\\alpha_Q = 0, \\alpha_w = 0, \\alpha_r = 0, \\lambda = 0`</span>
+
+<span class="sd">    ALM is beneficial in that it can simultaneously learn both V-function and W-function in an adversarial manner.</span>
+<span class="sd">    However, since the objective function of ALM is not convex, it may suffer from learning instability.</span>
+
+<span class="sd">    Note</span>
+<span class="sd">    -------</span>
+<span class="sd">    The positivity constraint :math:`w \\geq 0` should be imposed in the function approximation model.</span>
+
+<span class="sd">    .. seealso::</span>
+
+<span class="sd">        :class:`scope_rl.ope.weight_value_learning.function`</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -------</span>
+<span class="sd">    v_function: VFunction</span>
+<span class="sd">        V function model.</span>
+
+<span class="sd">    w_function: StateWeightFunction</span>
+<span class="sd">        Weight function model.</span>
+
+<span class="sd">    gamma: float, default=1.0</span>
+<span class="sd">        Discount factor. The value should be within (0, 1].</span>
+
+<span class="sd">    bandwidth: float, default=1.0 (&gt; 0)</span>
+<span class="sd">        Bandwidth hyperparameter of the Gaussian kernel. (This is for API consistency)</span>
+
+<span class="sd">    state_scaler: d3rlpy.preprocessing.Scaler, default=None</span>
+<span class="sd">        Scaling factor of state.</span>
+
+<span class="sd">    action_scaler: d3rlpy.preprocessing.ActionScaler, default=None</span>
+<span class="sd">        Scaling factor of action.</span>
+
+<span class="sd">    method: {&quot;dual_dice&quot;, &quot;gen_dice&quot;, &quot;algae_dice&quot;, &quot;best_dice&quot;, &quot;mvl&quot;, &quot;mwl&quot;, &quot;custom&quot;}, default=&quot;best_dice&quot;</span>
+<span class="sd">        Indicates which parameter set should be used. When, &quot;custom&quot; users can specify their own parameter.</span>
+
+<span class="sd">    batch_size: int, default=128 (&gt; 0)</span>
+<span class="sd">        Batch size.</span>
+
+<span class="sd">    v_lr: float, default=1e-4 (&gt; 0)</span>
+<span class="sd">        Learning rate of v_function.</span>
+
+<span class="sd">    w_lr: float, default=1e-4 (&gt; 0)</span>
+<span class="sd">        Learning rate of w_function.</span>
+
+<span class="sd">    lambda_lr: float, default=1e-4 (&gt; 0)</span>
+<span class="sd">        Learning rate of lambda_.</span>
+
+<span class="sd">    alpha_v: float, default=None (&gt;= 0)</span>
+<span class="sd">        Regularization coefficient of the V-function.</span>
+<span class="sd">        A value should be given if method is &quot;custom&quot;.</span>
+
+<span class="sd">    alpha_w: float, default=None (&gt;= 0)</span>
+<span class="sd">        Regularization coefficient of the weight function.</span>
+<span class="sd">        A value should be given if method is &quot;custom&quot;.</span>
+
+<span class="sd">    alpha_r: bool, default=None</span>
+<span class="sd">        Whether to consider the reward observation.</span>
+<span class="sd">        A value should be given if method is &quot;custom&quot;.</span>
+
+<span class="sd">    enable_lambda: bool, default=None</span>
+<span class="sd">        Whether to optimize :math:`\\lambda`. If `False`, :math:`\\lambda` is automatically set to zero.</span>
+<span class="sd">        A boolean value should be given if method is &quot;custom&quot;.</span>
+
+<span class="sd">    device: str, default=&quot;cuda:0&quot;</span>
+<span class="sd">        Specifies device used for torch.</span>
+
+<span class="sd">    References</span>
+<span class="sd">    -------</span>
+<span class="sd">    Masatoshi Uehara, Jiawei Huang, and Nan Jiang.</span>
+<span class="sd">    &quot;Minimax Weight and Q-Function Learning for Off-Policy Evaluation.&quot; 2020.</span>
+
+<span class="sd">    Mengjiao Yang, Ofir Nachum, Bo Dai, Lihong Li, and Dale Schuurmans.</span>
+<span class="sd">    &quot;Off-Policy Evaluation via the Regularized Lagrangian.&quot; 2020.</span>
+
+<span class="sd">    Shangtong Zhang, Bo Liu, and Shimon Whiteson.</span>
+<span class="sd">    &quot;GradientDICE: Rethinking Generalized Offline Estimation of Stationary Values.&quot; 2020.</span>
+
+<span class="sd">    Ruiyi Zhang, Bo Dai, Lihong Li, and Dale Schuurmans.</span>
+<span class="sd">    &quot;GenDICE: Generalized Offline Estimation of Stationary Values.&quot; 2020.</span>
+
+<span class="sd">    Ofir Nachum, Bo Dai, Ilya Kostrikov, Yinlam Chow, Lihong Li, and Dale Schuurmans.</span>
+<span class="sd">    &quot;AlgaeDICE: Policy Gradient from Arbitrary Experience.&quot; 2019.</span>
+
+<span class="sd">    Ofir Nachum, Yinlam Chow, Bo Dai, and Lihong Li.</span>
+<span class="sd">    &quot;DualDICE: Behavior-Agnostic Estimation of Discounted Stationary Distribution Corrections.&quot; 2019.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">v_function</span><span class="p">:</span> <span class="n">VFunction</span>
+    <span class="n">w_function</span><span class="p">:</span> <span class="n">StateWeightFunction</span>
+    <span class="n">gamma</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span>
+    <span class="n">bandwidth</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span>
+    <span class="n">state_scaler</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Scaler</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">action_scaler</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ActionScaler</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;best_dice&quot;</span>
+    <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">128</span>
+    <span class="n">v_lr</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-4</span>
+    <span class="n">w_lr</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-4</span>
+    <span class="n">lambda_lr</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-4</span>
+    <span class="n">alpha_v</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">alpha_w</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">alpha_r</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">enable_lambda</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">device</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;cuda:0&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">v_function</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">w_function</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+
+        <span class="n">check_scalar</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">gamma</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;gamma&quot;</span><span class="p">,</span> <span class="n">target_type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">min_val</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">max_val</span><span class="o">=</span><span class="mf">1.0</span>
+        <span class="p">)</span>
+        <span class="n">check_scalar</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bandwidth</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;bandwidth&quot;</span><span class="p">,</span> <span class="n">target_type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">min_val</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_scaler</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state_scaler</span><span class="p">,</span> <span class="n">Scaler</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;state_scaler must be an instance of d3rlpy.preprocessing.Scaler, but found False&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">action_scaler</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">action_scaler</span><span class="p">,</span> <span class="n">ActionScaler</span>
+        <span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;action_scaler must be an instance of d3rlpy.preprocessing.ActionScaler, but found False&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span>
+            <span class="s2">&quot;dual_dice&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;gen_dice&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;algae_dice&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;best_dice&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;mvl&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;mwl&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;custom&quot;</span><span class="p">,</span>
+        <span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;method must be one of </span><span class="si">{</span><span class="s1">&#39;dual_dice&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;gen_dice&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;algae_dice&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;best_dice&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;mql&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;mwl&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;custom&#39;</span><span class="si">}</span><span class="s2">, but </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">method</span><span class="si">}</span><span class="s2"> is given&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;custom&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha_v</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;alpha_v must be given when `method == &#39;custom&#39;`&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha_w</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;alpha_w must be given when `method == &#39;custom&#39;`&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha_r</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;alpha_r must be given when `method == &#39;custom&#39;`&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">enable_lambda</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;enable_lambda must be given when `method == &#39;custom&#39;`&quot;</span>
+                <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha_v</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">warn</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;alpha_v is given, but alpha_v will be initialized with by the setting of </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">method</span><span class="si">}</span><span class="s2">.&quot;</span>
+                    <span class="s2">&quot;To customize, `method` should be set to &#39;custom&#39;.&quot;</span>
+                <span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha_w</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">warn</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;alpha_w is given, but alpha_w will be initialized with by the setting of </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">method</span><span class="si">}</span><span class="s2">.&quot;</span>
+                    <span class="s2">&quot;To customize, `method` should be set to &#39;custom&#39;.&quot;</span>
+                <span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha_r</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">warn</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;alpha_r is given, but alpha_r will be initialized with by the setting of </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">method</span><span class="si">}</span><span class="s2">.&quot;</span>
+                    <span class="s2">&quot;To customize, `method` should be set to &#39;custom&#39;.&quot;</span>
+                <span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">alpha_v</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;dual_dice&quot;</span><span class="p">,</span> <span class="s2">&quot;gen_dice&quot;</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">alpha_w</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;algae_dice&quot;</span><span class="p">,</span> <span class="s2">&quot;best_dice&quot;</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">alpha_r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;algae_dice&quot;</span><span class="p">,</span> <span class="s2">&quot;best_dice&quot;</span><span class="p">,</span> <span class="s2">&quot;mvl&quot;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">enable_lambda</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;gen_dice&quot;</span><span class="p">,</span> <span class="s2">&quot;best_dice&quot;</span><span class="p">]</span>
+
+        <span class="n">check_scalar</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">alpha_v</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;alpha_v&quot;</span><span class="p">,</span> <span class="n">target_type</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="n">check_scalar</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">alpha_w</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;alpha_w&quot;</span><span class="p">,</span> <span class="n">target_type</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="n">check_scalar</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;batch_size&quot;</span><span class="p">,</span> <span class="n">target_type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">min_val</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">check_scalar</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">v_lr</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;v_lr&quot;</span><span class="p">,</span> <span class="n">target_type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">min_val</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>
+        <span class="n">check_scalar</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">w_lr</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;w_lr&quot;</span><span class="p">,</span> <span class="n">target_type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">min_val</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>
+        <span class="n">check_scalar</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lambda_lr</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;lambda_lr&quot;</span><span class="p">,</span> <span class="n">target_type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">min_val</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ContinuousDiceStateWightValueLearning.load"><a class="viewcode-back" href="../../../../documentation/_autosummary/scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_continuous.ContinuousDiceStateWightValueLearning.html#scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_continuous.ContinuousDiceStateWightValueLearning.load">[docs]</a>    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path_v</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span> <span class="n">path_w</span><span class="p">:</span> <span class="n">Path</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">v_function</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">path_v</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">w_function</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">path_w</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="ContinuousDiceStateWightValueLearning.save"><a class="viewcode-back" href="../../../../documentation/_autosummary/scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_continuous.ContinuousDiceStateWightValueLearning.html#scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_continuous.ContinuousDiceStateWightValueLearning.save">[docs]</a>    <span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path_v</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span> <span class="n">path_w</span><span class="p">:</span> <span class="n">Path</span><span class="p">):</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">v_function</span><span class="o">.</span><span class="n">state_dict</span><span class="p">(),</span> <span class="n">path_v</span><span class="p">)</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">w_function</span><span class="o">.</span><span class="n">state_dict</span><span class="p">(),</span> <span class="n">path_w</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_objective_function</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">initial_state</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">state</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">reward</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">next_state</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">importance_weight</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">lambda_</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Objective function of Augmented Lagrangian method.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -------</span>
+<span class="sd">        initial_state: Tensor of shape (n_trajectories, state_dim)</span>
+<span class="sd">            Initial state of a trajectory (or states sampled from a stationary distribution).</span>
+
+<span class="sd">        state: array-like of shape (n_trajectories, state_dim)</span>
+<span class="sd">            State observed by the behavior policy.</span>
+
+<span class="sd">        reward: Tensor of shape (n_trajectories, )</span>
+<span class="sd">            Reward observed for each (state, action) pair.</span>
+
+<span class="sd">        next_state: Tensor of shape (n_trajectories, state_dim)</span>
+<span class="sd">            Next state observed for each (state, action) pair.</span>
+
+<span class="sd">        importance_weight: Tensor of shape (n_trajectories, )</span>
+<span class="sd">            Immediate importance weight at each step, i.e., :math:`K(a_t, \\pi(s_t)) / \\pi_0(a_t | s_t)`,</span>
+<span class="sd">            where :math:`K(\\cdot, \\cdot)` is a kernel function.</span>
+
+<span class="sd">        lambda_: Tensor of shape (1, )</span>
+<span class="sd">            lambda_ hyperparameter to stabilize the optimization.</span>
+
+<span class="sd">        Return</span>
+<span class="sd">        -------</span>
+<span class="sd">        objective_function: Tensor of shape (1, )</span>
+<span class="sd">            Objective function of the Augmented Lagrangian method.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">initial_value</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">gamma</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">v_function</span><span class="p">(</span>
+            <span class="n">initial_state</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span> <span class="o">+</span> <span class="n">lambda_</span>
+
+        <span class="n">td_value</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">w_function</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+            <span class="o">*</span> <span class="n">importance_weight</span>
+            <span class="o">*</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">alpha_r</span> <span class="o">*</span> <span class="n">reward</span>
+                <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">gamma</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">v_function</span><span class="p">(</span><span class="n">next_state</span><span class="p">)</span>
+                <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">v_function</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+                <span class="o">-</span> <span class="n">lambda_</span>
+            <span class="p">)</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+        <span class="n">v_regularization</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha_v</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">v_function</span><span class="p">(</span><span class="n">state</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+        <span class="n">w_regularization</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha_w</span> <span class="o">*</span> <span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">w_function</span><span class="p">(</span><span class="n">state</span><span class="p">)</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">initial_value</span> <span class="o">+</span> <span class="n">td_value</span> <span class="o">+</span> <span class="n">v_regularization</span> <span class="o">-</span> <span class="n">w_regularization</span>
+
+<div class="viewcode-block" id="ContinuousDiceStateWightValueLearning.fit"><a class="viewcode-back" href="../../../../documentation/_autosummary/scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_continuous.ContinuousDiceStateWightValueLearning.html#scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_continuous.ContinuousDiceStateWightValueLearning.fit">[docs]</a>    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">step_per_trajectory</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">state</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">action</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">reward</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">pscore</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">evaluation_policy_action</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">n_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10000</span><span class="p">,</span>
+        <span class="n">n_steps_per_epoch</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10000</span><span class="p">,</span>
+        <span class="n">random_state</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Fit value and weight functions.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -------</span>
+<span class="sd">        step_per_trajectory: int (&gt; 0)</span>
+<span class="sd">            Number of timesteps in an episode.</span>
+
+<span class="sd">        state: array-like of shape (n_trajectories * step_per_trajectory, state_dim)</span>
+<span class="sd">            State observed by the behavior policy.</span>
+
+<span class="sd">        action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)</span>
+<span class="sd">            Action chosen by the behavior policy.</span>
+
+<span class="sd">        reward: array-like of shape (n_trajectories * step_per_trajectory)</span>
+<span class="sd">            Reward observed for each (state, action) pair.</span>
+
+<span class="sd">        pscore: array-like of shape (n_trajectories * step_per_trajectory)</span>
+<span class="sd">            Propensity of the observed action being chosen under the behavior policy (pscore stands for propensity score).</span>
+
+<span class="sd">        evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)</span>
+<span class="sd">            Action chosen by the evaluation policy.</span>
+
+<span class="sd">        n_steps: int, default=10000 (&gt; 0)</span>
+<span class="sd">            Number of gradient steps.</span>
+
+<span class="sd">        n_steps_per_epoch: int, default=10000 (&gt; 0)</span>
+<span class="sd">            Number of gradient steps in a epoch.</span>
+
+<span class="sd">        random_state: int, default=None (&gt;= 0)</span>
+<span class="sd">            Random state.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">check_scalar</span><span class="p">(</span>
+            <span class="n">step_per_trajectory</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;step_per_trajectory&quot;</span><span class="p">,</span> <span class="n">target_type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">min_val</span><span class="o">=</span><span class="mi">1</span>
+        <span class="p">)</span>
+        <span class="n">check_array</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;state&quot;</span><span class="p">,</span> <span class="n">expected_dim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">check_array</span><span class="p">(</span><span class="n">action</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;action&quot;</span><span class="p">,</span> <span class="n">expected_dim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">check_array</span><span class="p">(</span><span class="n">reward</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;reward&quot;</span><span class="p">,</span> <span class="n">expected_dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">check_array</span><span class="p">(</span><span class="n">pscore</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;pscore&quot;</span><span class="p">,</span> <span class="n">expected_dim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">min_val</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>
+        <span class="n">check_array</span><span class="p">(</span>
+            <span class="n">evaluation_policy_action</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;evaluation_policy_action&quot;</span><span class="p">,</span> <span class="n">expected_dim</span><span class="o">=</span><span class="mi">2</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span>
+            <span class="n">state</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="o">==</span> <span class="n">action</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="o">==</span> <span class="n">reward</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="o">==</span> <span class="n">pscore</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="o">==</span> <span class="n">evaluation_policy_action</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Expected `state.shape[0] == action.shape[0] == reward.shape[0] == pscore.shape[0] == evaluation_policy_action.shape[0]`, but found False&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">state</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">%</span> <span class="n">step_per_trajectory</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Expected `state.shape[0] </span><span class="si">% s</span><span class="s2">tep_per_trajectory == 0`, but found False&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span>
+            <span class="n">action</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">evaluation_policy_action</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">pscore</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Expected `action.shape[1] == evaluation_policy_action.shape[1] == pscore.shape[1]`, but found False&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">check_scalar</span><span class="p">(</span><span class="n">n_steps</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;n_steps&quot;</span><span class="p">,</span> <span class="n">target_type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">min_val</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">check_scalar</span><span class="p">(</span>
+            <span class="n">n_steps_per_epoch</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;n_steps_per_epoch&quot;</span><span class="p">,</span> <span class="n">target_type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">min_val</span><span class="o">=</span><span class="mi">1</span>
+        <span class="p">)</span>
+        <span class="n">n_epochs</span> <span class="o">=</span> <span class="p">(</span><span class="n">n_steps</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">//</span> <span class="n">n_steps_per_epoch</span> <span class="o">+</span> <span class="mi">1</span>
+
+        <span class="k">if</span> <span class="n">random_state</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Random state mush be given.&quot;</span><span class="p">)</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">manual_seed</span><span class="p">(</span><span class="n">random_state</span><span class="p">)</span>
+
+        <span class="n">state_dim</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">action_dim</span> <span class="o">=</span> <span class="n">action</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">action_scaler</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">evaluation_policy_action_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">action_scaler</span><span class="o">.</span><span class="n">transform_numpy</span><span class="p">(</span>
+                <span class="n">evaluation_policy_action</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">action_dim</span><span class="p">))</span>
+            <span class="p">)</span>
+            <span class="n">action_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">action_scaler</span><span class="o">.</span><span class="n">transform_numpy</span><span class="p">(</span>
+                <span class="n">action</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">action_dim</span><span class="p">))</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">evaluation_policy_action_</span> <span class="o">=</span> <span class="n">evaluation_policy_action</span>
+            <span class="n">action_</span> <span class="o">=</span> <span class="n">action</span>
+
+        <span class="n">similarity_weight</span> <span class="o">=</span> <span class="n">gaussian_kernel</span><span class="p">(</span>
+            <span class="n">evaluation_policy_action_</span><span class="p">,</span>
+            <span class="n">action_</span><span class="p">,</span>
+            <span class="n">bandwidth</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">bandwidth</span><span class="p">,</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">step_per_trajectory</span><span class="p">))</span>
+
+        <span class="n">state</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">step_per_trajectory</span><span class="p">,</span> <span class="n">state_dim</span><span class="p">))</span>
+        <span class="n">action</span> <span class="o">=</span> <span class="n">action</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">step_per_trajectory</span><span class="p">,</span> <span class="n">action_dim</span><span class="p">))</span>
+        <span class="n">reward</span> <span class="o">=</span> <span class="n">reward</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">step_per_trajectory</span><span class="p">))</span>
+        <span class="n">pscore</span> <span class="o">=</span> <span class="n">pscore</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">step_per_trajectory</span><span class="p">))</span>
+        <span class="n">evaluation_policy_action</span> <span class="o">=</span> <span class="n">evaluation_policy_action</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
+            <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">step_per_trajectory</span><span class="p">,</span> <span class="n">action_dim</span><span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="n">n_trajectories</span><span class="p">,</span> <span class="n">step_per_trajectory</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">state</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+        <span class="n">reward</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">(</span><span class="n">reward</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+        <span class="n">importance_weight</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">(</span><span class="n">similarity_weight</span> <span class="o">/</span> <span class="n">pscore</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_scaler</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_scaler</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+
+        <span class="n">v_optimizer</span> <span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">v_function</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span>
+            <span class="n">lr</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">v_lr</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">w_optimizer</span> <span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">w_function</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span>
+            <span class="n">lr</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">w_lr</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">enable_lambda</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lambda_</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,),</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">,</span> <span class="n">requires_grad</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">lambda_optimizer</span> <span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span>
+                <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">lambda_</span><span class="p">],</span>
+                <span class="n">lr</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">lambda_lr</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lambda_</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,),</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n_epochs</span><span class="p">),</span>
+            <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;[fitting_weight_and_value_functions]&quot;</span><span class="p">,</span>
+            <span class="n">total</span><span class="o">=</span><span class="n">n_epochs</span><span class="p">,</span>
+        <span class="p">):</span>
+            <span class="k">for</span> <span class="n">grad_step</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n_steps_per_epoch</span><span class="p">),</span>
+                <span class="n">desc</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;[epoch: </span><span class="si">{</span><span class="n">epoch</span><span class="si">:</span><span class="s2"> &gt;4</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">,</span>
+                <span class="n">total</span><span class="o">=</span><span class="n">n_steps_per_epoch</span><span class="p">,</span>
+            <span class="p">):</span>
+                <span class="n">idx_</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">n_trajectories</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,))</span>
+                <span class="n">t_</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">step_per_trajectory</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,))</span>
+
+                <span class="n">objective_loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_objective_function</span><span class="p">(</span>
+                    <span class="n">initial_state</span><span class="o">=</span><span class="n">state</span><span class="p">[</span><span class="n">idx_</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+                    <span class="n">state</span><span class="o">=</span><span class="n">state</span><span class="p">[</span><span class="n">idx_</span><span class="p">,</span> <span class="n">t_</span><span class="p">],</span>
+                    <span class="n">reward</span><span class="o">=</span><span class="n">reward</span><span class="p">[</span><span class="n">idx_</span><span class="p">,</span> <span class="n">t_</span><span class="p">],</span>
+                    <span class="n">next_state</span><span class="o">=</span><span class="n">state</span><span class="p">[</span><span class="n">idx_</span><span class="p">,</span> <span class="n">t_</span> <span class="o">+</span> <span class="mi">1</span><span class="p">],</span>
+                    <span class="n">importance_weight</span><span class="o">=</span><span class="n">importance_weight</span><span class="p">[</span><span class="n">idx_</span><span class="p">,</span> <span class="n">t_</span><span class="p">],</span>
+                    <span class="n">lambda_</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">lambda_</span><span class="p">,</span>
+                <span class="p">)</span>
+
+                <span class="n">v_optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
+                <span class="n">w_optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">enable_lambda</span><span class="p">:</span>
+                    <span class="n">lambda_optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
+
+                <span class="n">objective_loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+
+                <span class="n">clip_grad_norm_</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">v_function</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">max_norm</span><span class="o">=</span><span class="mf">10.0</span><span class="p">)</span>
+                <span class="n">clip_grad_norm_</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">w_function</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">max_norm</span><span class="o">=</span><span class="mf">10.0</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">enable_lambda</span><span class="p">:</span>
+                    <span class="n">clip_grad_norm_</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lambda_</span><span class="p">,</span> <span class="n">max_norm</span><span class="o">=</span><span class="mf">10.0</span><span class="p">)</span>
+
+                <span class="n">v_optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+                <span class="n">w_optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">enable_lambda</span><span class="p">:</span>
+                    <span class="n">lambda_optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+
+            <span class="nb">print</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;epoch=</span><span class="si">{</span><span class="n">epoch</span><span class="si">:</span><span class="s2"> &gt;4</span><span class="si">}</span><span class="s2">, &quot;</span> <span class="sa">f</span><span class="s2">&quot;objective_loss=</span><span class="si">{</span><span class="n">objective_loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">, &quot;</span>
+            <span class="p">)</span></div>
+
+<div class="viewcode-block" id="ContinuousDiceStateWightValueLearning.predict_value"><a class="viewcode-back" href="../../../../documentation/_autosummary/scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_continuous.ContinuousDiceStateWightValueLearning.html#scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_continuous.ContinuousDiceStateWightValueLearning.predict_value">[docs]</a>    <span class="k">def</span> <span class="nf">predict_value</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">state</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Predict V function.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -------</span>
+<span class="sd">        state: array-like of shape (n_trajectories * step_per_trajectory, state_dim)</span>
+<span class="sd">            State observed by the behavior policy.</span>
+
+<span class="sd">        Return</span>
+<span class="sd">        -------</span>
+<span class="sd">        v_function: ndarray of shape (n_trajectories * step_per_trajectory)</span>
+<span class="sd">            State value.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">check_array</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;state&quot;</span><span class="p">,</span> <span class="n">expected_dim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">state</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_scaler</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_scaler</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+            <span class="n">v_function</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">v_function</span><span class="p">(</span><span class="n">state</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s2">&quot;cpu&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">v_function</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">lambda_</span><span class="o">.</span><span class="n">item</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="ContinuousDiceStateWightValueLearning.predict_weight"><a class="viewcode-back" href="../../../../documentation/_autosummary/scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_continuous.ContinuousDiceStateWightValueLearning.html#scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_continuous.ContinuousDiceStateWightValueLearning.predict_weight">[docs]</a>    <span class="k">def</span> <span class="nf">predict_weight</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">state</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Predict state marginal importance weight.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -------</span>
+<span class="sd">        state: array-like of shape (n_trajectories * step_per_trajectory, state_dim)</span>
+<span class="sd">            State observed by the behavior policy.</span>
+
+<span class="sd">        Return</span>
+<span class="sd">        -------</span>
+<span class="sd">        w_hat: ndarray of shape (n_trajectories * step_per_trajectory)</span>
+<span class="sd">            Estimated state marginal importance weight.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">check_array</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;state&quot;</span><span class="p">,</span> <span class="n">expected_dim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">state</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_scaler</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_scaler</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+            <span class="n">w_hat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">w_function</span><span class="p">(</span><span class="n">state</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s2">&quot;cpu&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">w_hat</span></div>
+
+<div class="viewcode-block" id="ContinuousDiceStateWightValueLearning.predict"><a class="viewcode-back" href="../../../../documentation/_autosummary/scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_continuous.ContinuousDiceStateWightValueLearning.html#scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_continuous.ContinuousDiceStateWightValueLearning.predict">[docs]</a>    <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">state</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Predict V function and state-action marginal importance weight.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -------</span>
+<span class="sd">        state: array-like of shape (n_trajectories * step_per_trajectory, state_dim)</span>
+<span class="sd">            State observed by the behavior policy.</span>
+
+<span class="sd">        Return</span>
+<span class="sd">        -------</span>
+<span class="sd">        v_function: ndarray of shape (n_trajectories * step_per_trajectory)</span>
+<span class="sd">            V function of each (state, action) pair.</span>
+
+<span class="sd">        w_hat: ndarray of shape (n_trajectories * step_per_trajectory)</span>
+<span class="sd">            Estimated state-action marginal importance weight.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">v_function</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">predict_value</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+        <span class="n">w_hat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">predict_weight</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">v_function</span><span class="p">,</span> <span class="n">w_hat</span></div>
+
+<div class="viewcode-block" id="ContinuousDiceStateWightValueLearning.fit_predict"><a class="viewcode-back" href="../../../../documentation/_autosummary/scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_continuous.ContinuousDiceStateWightValueLearning.html#scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_continuous.ContinuousDiceStateWightValueLearning.fit_predict">[docs]</a>    <span class="k">def</span> <span class="nf">fit_predict</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">step_per_trajectory</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">state</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">action</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">reward</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">pscore</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">evaluation_policy_action</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">n_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10000</span><span class="p">,</span>
+        <span class="n">n_steps_per_epoch</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10000</span><span class="p">,</span>
+        <span class="n">random_state</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kawrgs</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Fit and predict value/weight functions.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -------</span>
+<span class="sd">        step_per_trajectory: int (&gt; 0)</span>
+<span class="sd">            Number of timesteps in an episode.</span>
+
+<span class="sd">        state: array-like of shape (n_trajectories * step_per_trajectory, state_dim)</span>
+<span class="sd">            State observed by the behavior policy.</span>
+
+<span class="sd">        action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)</span>
+<span class="sd">            Action chosen by the behavior policy.</span>
+
+<span class="sd">        reward: array-like of shape (n_trajectories, )</span>
+<span class="sd">            Reward observed for each (state, action) pair.</span>
+
+<span class="sd">        pscore: array-like of shape (n_trajectories * step_per_trajectory)</span>
+<span class="sd">            Propensity of the observed action being chosen under the behavior policy (pscore stands for propensity score).</span>
+
+<span class="sd">        evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)</span>
+<span class="sd">            Action chosen by the evaluation policy.</span>
+
+<span class="sd">        n_steps: int, default=10000 (&gt; 0)</span>
+<span class="sd">            Number of gradient steps.</span>
+
+<span class="sd">        n_steps_per_epoch: int, default=10000 (&gt; 0)</span>
+<span class="sd">            Number of gradient steps in a epoch.</span>
+
+<span class="sd">        random_state: int, default=None (&gt;= 0)</span>
+<span class="sd">            Random state.</span>
+
+<span class="sd">        Return</span>
+<span class="sd">        -------</span>
+<span class="sd">        q_value: ndarray of shape (n_trajectories * step_per_trajectory)</span>
+<span class="sd">            Q value of each (state, action) pair.</span>
+
+<span class="sd">        w_hat: ndarray of shape (n_trajectories * step_per_trajectory)</span>
+<span class="sd">            Estimated state-action marginal importance weight.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span>
+            <span class="n">step_per_trajectory</span><span class="o">=</span><span class="n">step_per_trajectory</span><span class="p">,</span>
+            <span class="n">state</span><span class="o">=</span><span class="n">state</span><span class="p">,</span>
+            <span class="n">action</span><span class="o">=</span><span class="n">action</span><span class="p">,</span>
+            <span class="n">reward</span><span class="o">=</span><span class="n">reward</span><span class="p">,</span>
+            <span class="n">pscore</span><span class="o">=</span><span class="n">pscore</span><span class="p">,</span>
+            <span class="n">evaluation_policy_action</span><span class="o">=</span><span class="n">evaluation_policy_action</span><span class="p">,</span>
+            <span class="n">n_steps</span><span class="o">=</span><span class="n">n_steps</span><span class="p">,</span>
+            <span class="n">n_steps_per_epoch</span><span class="o">=</span><span class="n">n_steps_per_epoch</span><span class="p">,</span>
+            <span class="n">random_state</span><span class="o">=</span><span class="n">random_state</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">action</span><span class="p">)</span></div></div>
+</pre></div>
+
+                </article>
+              
+              
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            <div class="bd-footer-content__inner"></div>
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../../_static/scripts/bootstrap.js?digest=12da95d707ffb74b382d"></script>
+<script src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=12da95d707ffb74b382d"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+  <p class="copyright">
+    
+      © Copyright 2023, Haruka Kiyohara, Ren Kishimoto, HAKUHODO Technologies Inc., Hanjuku-kaso Co., Ltd.
+      <br/>
+    
+  </p>
+</div>
+      
+    </div>
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item"><p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.13.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

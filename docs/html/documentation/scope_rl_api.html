@@ -1,0 +1,1009 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+    <title>SCOPR-RL Package Reference &#8212; SCOPE-RL</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=12da95d707ffb74b382d" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=12da95d707ffb74b382d" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=12da95d707ffb74b382d" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=12da95d707ffb74b382d" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/tabs.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/design-style.4045f2051d55cab465a707391d5b2007.min.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/css/custom.css" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=12da95d707ffb74b382d" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=12da95d707ffb74b382d" />
+
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/clipboard.min.js"></script>
+    <script src="../_static/copybutton.js"></script>
+    <script src="../_static/design-tabs.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="scope_rl.dataset.base" href="_autosummary/dataset/scope_rl.dataset.base.html" />
+    <link rel="prev" title="Sub-packages" href="subpackages/index.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <nav class="bd-header navbar navbar-expand-lg bd-navbar">
+<div class="bd-header__inner bd-page-width">
+  <label class="sidebar-toggle primary-toggle" for="__primary">
+    <span class="fa-solid fa-bars"></span>
+  </label>
+  
+  <div class="navbar-header-items__start">
+    
+      <div class="navbar-item">
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    <p class="title logo__title">SCOPE-RL</p>
+  
+</a></div>
+    
+  </div>
+  
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="installation.html">
+                        Installation
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="quickstart.html">
+                        Quickstart
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item current active">
+                      <a class="nav-link nav-internal" href="index.html">
+                        Documentation
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="examples/index.html">
+                        Usage
+                      </a>
+                    </li>
+                
+            <div class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    More
+                </button>
+                <div class="dropdown-menu">
+                    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="subpackages/index.html">
+                        Sub-packages
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="frequently_asked_questions.html">
+                        FAQs
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="news.html">
+                        News
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-external" href="https://github.com/hakuhodo-technologies/scope-rl/releases">
+                        Release Notes
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-external" href="https://github.com/hakuhodo-technologies/scope-rl/404">
+                        Proceedings
+                      </a>
+                    </li>
+                
+                </div>
+            </div>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+  </button>
+`);
+</script>
+        </div>
+      
+      
+        <div class="navbar-item">
+<script>
+document.write(`
+  <button class="theme-switch-button btn btn-sm btn-outline-primary navbar-btn rounded-circle" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch" data-mode="light"><i class="fa-solid fa-sun"></i></span>
+    <span class="theme-switch" data-mode="dark"><i class="fa-solid fa-moon"></i></span>
+    <span class="theme-switch" data-mode="auto"><i class="fa-solid fa-circle-half-stroke"></i></span>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/hakuhodo-technologies/scope-rl" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-square-github"></i></span>
+            <label class="sr-only">GitHub</label></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://speakerdeck.com/aiueola/ofrl-designing-an-offline-reinforcement-learning-and-policy-evaluation-platform-from-practical-perspectives" title="Speaker Deck" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-speaker-deck"></i></span>
+            <label class="sr-only">Speaker Deck</label></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+  </button>
+`);
+</script>
+    </div>
+  
+
+  
+    <label class="sidebar-toggle secondary-toggle" for="__secondary">
+      <span class="fa-solid fa-outdent"></span>
+    </label>
+  
+</div>
+
+    </nav>
+  
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="installation.html">
+                        Installation
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="quickstart.html">
+                        Quickstart
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item current active">
+                      <a class="nav-link nav-internal" href="index.html">
+                        Documentation
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="examples/index.html">
+                        Usage
+                      </a>
+                    </li>
+                
+            <div class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    More
+                </button>
+                <div class="dropdown-menu">
+                    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="subpackages/index.html">
+                        Sub-packages
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="frequently_asked_questions.html">
+                        FAQs
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="news.html">
+                        News
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-external" href="https://github.com/hakuhodo-technologies/scope-rl/releases">
+                        Release Notes
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-external" href="https://github.com/hakuhodo-technologies/scope-rl/404">
+                        Proceedings
+                      </a>
+                    </li>
+                
+                </div>
+            </div>
+            
+  </ul>
+</nav></div>
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+<script>
+document.write(`
+  <button class="theme-switch-button btn btn-sm btn-outline-primary navbar-btn rounded-circle" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch" data-mode="light"><i class="fa-solid fa-sun"></i></span>
+    <span class="theme-switch" data-mode="dark"><i class="fa-solid fa-moon"></i></span>
+    <span class="theme-switch" data-mode="auto"><i class="fa-solid fa-circle-half-stroke"></i></span>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/hakuhodo-technologies/scope-rl" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-square-github"></i></span>
+            <label class="sr-only">GitHub</label></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://speakerdeck.com/aiueola/ofrl-designing-an-offline-reinforcement-learning-and-policy-evaluation-platform-from-practical-perspectives" title="Speaker Deck" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-speaker-deck"></i></span>
+            <label class="sr-only">Speaker Deck</label></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item"><nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Getting Started:</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="distinctive_features.html">Why SCOPE-RL?</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Online &amp; Offline RL:</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="online_offline_rl.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="learning_implementation.html">Supported Implementation</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Off-Policy Evaluation &amp; Selection:</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="ope_ops.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="evaluation_implementation.html">Supported Implementation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="visualization.html">Visualization Tools</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Our Proposal:</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="sharpe_ratio.html">Risk-Return Assessments of OPE via SharpRatio@k</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Sub-packages:</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="subpackages/index.html">Gallery of Sub-packages</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Package References:</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active has-children"><a class="current reference internal" href="#">SCOPR-RL Package Reference</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-1"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/dataset/scope_rl.dataset.base.html">scope_rl.dataset.base</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-2"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/dataset/scope_rl.dataset.base.BaseDataset.html">scope_rl.dataset.base.BaseDataset</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/dataset/scope_rl.dataset.synthetic.html">scope_rl.dataset.synthetic</a><input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-3"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/dataset/scope_rl.dataset.synthetic.SyntheticDataset.html">scope_rl.dataset.synthetic.SyntheticDataset</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/scope_rl.policy.head.html">scope_rl.policy.head</a><input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-4"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.policy.head.BaseHead.html">scope_rl.policy.head.BaseHead</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.policy.head.ContinuousEvalHead.html">scope_rl.policy.head.ContinuousEvalHead</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.policy.head.EpsilonGreedyHead.html">scope_rl.policy.head.EpsilonGreedyHead</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.policy.head.GaussianHead.html">scope_rl.policy.head.GaussianHead</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.policy.head.OnlineHead.html">scope_rl.policy.head.OnlineHead</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.policy.head.SoftmaxHead.html">scope_rl.policy.head.SoftmaxHead</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.policy.head.TruncatedGaussianHead.html">scope_rl.policy.head.TruncatedGaussianHead</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/scope_rl.ope.input.html">scope_rl.ope.input</a><input class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-5"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.input.CreateOPEInput.html">scope_rl.ope.input.CreateOPEInput</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/scope_rl.ope.ope.html">scope_rl.ope.ope</a><input class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-6"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.ope.CumulativeDistributionOPE.html">scope_rl.ope.ope.CumulativeDistributionOPE</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.ope.OffPolicyEvaluation.html">scope_rl.ope.ope.OffPolicyEvaluation</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/scope_rl.ope.ops.html">scope_rl.ope.ops</a><input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-7"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.ops.OffPolicySelection.html">scope_rl.ope.ops.OffPolicySelection</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/scope_rl.ope.estimators_base.html">scope_rl.ope.estimators_base</a><input class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-8"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.estimators_base.BaseCumulativeDistributionOPEEstimator.html">scope_rl.ope.estimators_base.BaseCumulativeDistributionOPEEstimator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.estimators_base.BaseMarginalOPEEstimator.html">scope_rl.ope.estimators_base.BaseMarginalOPEEstimator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.estimators_base.BaseOffPolicyEstimator.html">scope_rl.ope.estimators_base.BaseOffPolicyEstimator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.estimators_base.BaseStateActionMarginalOPEEstimator.html">scope_rl.ope.estimators_base.BaseStateActionMarginalOPEEstimator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.estimators_base.BaseStateMarginalOPEEstimator.html">scope_rl.ope.estimators_base.BaseStateMarginalOPEEstimator</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.basic_estimators.html">scope_rl.ope.discrete.basic_estimators</a><input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-9"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.basic_estimators.DirectMethod.html">scope_rl.ope.discrete.basic_estimators.DirectMethod</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.basic_estimators.DoublyRobust.html">scope_rl.ope.discrete.basic_estimators.DoublyRobust</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.basic_estimators.PerDecisionImportanceSampling.html">scope_rl.ope.discrete.basic_estimators.PerDecisionImportanceSampling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.basic_estimators.SelfNormalizedDR.html">scope_rl.ope.discrete.basic_estimators.SelfNormalizedDR</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.basic_estimators.SelfNormalizedPDIS.html">scope_rl.ope.discrete.basic_estimators.SelfNormalizedPDIS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.basic_estimators.SelfNormalizedTIS.html">scope_rl.ope.discrete.basic_estimators.SelfNormalizedTIS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.basic_estimators.TrajectoryWiseImportanceSampling.html">scope_rl.ope.discrete.basic_estimators.TrajectoryWiseImportanceSampling</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.basic_estimators.html">scope_rl.ope.continuous.basic_estimators</a><input class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-10"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.basic_estimators.DirectMethod.html">scope_rl.ope.continuous.basic_estimators.DirectMethod</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.basic_estimators.DoublyRobust.html">scope_rl.ope.continuous.basic_estimators.DoublyRobust</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.basic_estimators.PerDecisionImportanceSampling.html">scope_rl.ope.continuous.basic_estimators.PerDecisionImportanceSampling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.basic_estimators.SelfNormalizedDR.html">scope_rl.ope.continuous.basic_estimators.SelfNormalizedDR</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.basic_estimators.SelfNormalizedPDIS.html">scope_rl.ope.continuous.basic_estimators.SelfNormalizedPDIS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.basic_estimators.SelfNormalizedTIS.html">scope_rl.ope.continuous.basic_estimators.SelfNormalizedTIS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.basic_estimators.TrajectoryWiseImportanceSampling.html">scope_rl.ope.continuous.basic_estimators.TrajectoryWiseImportanceSampling</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.marginal_estimators.html">scope_rl.ope.discrete.marginal_estimators</a><input class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-11"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.marginal_estimators.DoubleReinforcementLearning.html">scope_rl.ope.discrete.marginal_estimators.DoubleReinforcementLearning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.marginal_estimators.StateActionMarginalDR.html">scope_rl.ope.discrete.marginal_estimators.StateActionMarginalDR</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.marginal_estimators.StateActionMarginalIS.html">scope_rl.ope.discrete.marginal_estimators.StateActionMarginalIS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.marginal_estimators.StateActionMarginalSNDR.html">scope_rl.ope.discrete.marginal_estimators.StateActionMarginalSNDR</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.marginal_estimators.StateActionMarginalSNIS.html">scope_rl.ope.discrete.marginal_estimators.StateActionMarginalSNIS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.marginal_estimators.StateMarginalDM.html">scope_rl.ope.discrete.marginal_estimators.StateMarginalDM</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.marginal_estimators.StateMarginalDR.html">scope_rl.ope.discrete.marginal_estimators.StateMarginalDR</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.marginal_estimators.StateMarginalIS.html">scope_rl.ope.discrete.marginal_estimators.StateMarginalIS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.marginal_estimators.StateMarginalSNDR.html">scope_rl.ope.discrete.marginal_estimators.StateMarginalSNDR</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.marginal_estimators.StateMarginalSNIS.html">scope_rl.ope.discrete.marginal_estimators.StateMarginalSNIS</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.marginal_estimators.html">scope_rl.ope.continuous.marginal_estimators</a><input class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-12"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.marginal_estimators.DoubleReinforcementLearning.html">scope_rl.ope.continuous.marginal_estimators.DoubleReinforcementLearning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.marginal_estimators.StateActionMarginalDR.html">scope_rl.ope.continuous.marginal_estimators.StateActionMarginalDR</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.marginal_estimators.StateActionMarginalIS.html">scope_rl.ope.continuous.marginal_estimators.StateActionMarginalIS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.marginal_estimators.StateActionMarginalSNDR.html">scope_rl.ope.continuous.marginal_estimators.StateActionMarginalSNDR</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.marginal_estimators.StateActionMarginalSNIS.html">scope_rl.ope.continuous.marginal_estimators.StateActionMarginalSNIS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.marginal_estimators.StateMarginalDM.html">scope_rl.ope.continuous.marginal_estimators.StateMarginalDM</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.marginal_estimators.StateMarginalDR.html">scope_rl.ope.continuous.marginal_estimators.StateMarginalDR</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.marginal_estimators.StateMarginalIS.html">scope_rl.ope.continuous.marginal_estimators.StateMarginalIS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.marginal_estimators.StateMarginalSNDR.html">scope_rl.ope.continuous.marginal_estimators.StateMarginalSNDR</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.marginal_estimators.StateMarginalSNIS.html">scope_rl.ope.continuous.marginal_estimators.StateMarginalSNIS</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.cumulative_distribution_estimators.html">scope_rl.ope.discrete.cumulative_distribution_estimators</a><input class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-13"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.cumulative_distribution_estimators.CumulativeDistributionDM.html">scope_rl.ope.discrete.cumulative_distribution_estimators.CumulativeDistributionDM</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.cumulative_distribution_estimators.CumulativeDistributionSNTDR.html">scope_rl.ope.discrete.cumulative_distribution_estimators.CumulativeDistributionSNTDR</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.cumulative_distribution_estimators.CumulativeDistributionSNTIS.html">scope_rl.ope.discrete.cumulative_distribution_estimators.CumulativeDistributionSNTIS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.cumulative_distribution_estimators.CumulativeDistributionTDR.html">scope_rl.ope.discrete.cumulative_distribution_estimators.CumulativeDistributionTDR</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.cumulative_distribution_estimators.CumulativeDistributionTIS.html">scope_rl.ope.discrete.cumulative_distribution_estimators.CumulativeDistributionTIS</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.cumulative_distribution_estimators.html">scope_rl.ope.continuous.cumulative_distribution_estimators</a><input class="toctree-checkbox" id="toctree-checkbox-14" name="toctree-checkbox-14" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-14"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.cumulative_distribution_estimators.CumulativeDistributionDM.html">scope_rl.ope.continuous.cumulative_distribution_estimators.CumulativeDistributionDM</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.cumulative_distribution_estimators.CumulativeDistributionSNTDR.html">scope_rl.ope.continuous.cumulative_distribution_estimators.CumulativeDistributionSNTDR</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.cumulative_distribution_estimators.CumulativeDistributionSNTIS.html">scope_rl.ope.continuous.cumulative_distribution_estimators.CumulativeDistributionSNTIS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.cumulative_distribution_estimators.CumulativeDistributionTDR.html">scope_rl.ope.continuous.cumulative_distribution_estimators.CumulativeDistributionTDR</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.cumulative_distribution_estimators.CumulativeDistributionTIS.html">scope_rl.ope.continuous.cumulative_distribution_estimators.CumulativeDistributionTIS</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.base.html">scope_rl.ope.weight_value_learning.base</a><input class="toctree-checkbox" id="toctree-checkbox-15" name="toctree-checkbox-15" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-15"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.base.BaseWeightValueLearner.html">scope_rl.ope.weight_value_learning.base.BaseWeightValueLearner</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.function.html">scope_rl.ope.weight_value_learning.function</a><input class="toctree-checkbox" id="toctree-checkbox-16" name="toctree-checkbox-16" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-16"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.function.ContinuousQFunction.html">scope_rl.ope.weight_value_learning.function.ContinuousQFunction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.function.ContinuousStateActionWeightFunction.html">scope_rl.ope.weight_value_learning.function.ContinuousStateActionWeightFunction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.function.DiscreteQFunction.html">scope_rl.ope.weight_value_learning.function.DiscreteQFunction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.function.DiscreteStateActionWeightFunction.html">scope_rl.ope.weight_value_learning.function.DiscreteStateActionWeightFunction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.function.StateWeightFunction.html">scope_rl.ope.weight_value_learning.function.StateWeightFunction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.function.VFunction.html">scope_rl.ope.weight_value_learning.function.VFunction</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_discrete.html">scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_discrete</a><input class="toctree-checkbox" id="toctree-checkbox-17" name="toctree-checkbox-17" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-17"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_discrete.DiscreteDiceStateActionWightValueLearning.html">scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_discrete.DiscreteDiceStateActionWightValueLearning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_discrete.DiscreteDiceStateWightValueLearning.html">scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_discrete.DiscreteDiceStateWightValueLearning</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_continuous.html">scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_continuous</a><input class="toctree-checkbox" id="toctree-checkbox-18" name="toctree-checkbox-18" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-18"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_continuous.ContinuousDiceStateActionWightValueLearning.html">scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_continuous.ContinuousDiceStateActionWightValueLearning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_continuous.ContinuousDiceStateWightValueLearning.html">scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_continuous.ContinuousDiceStateWightValueLearning</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.minimax_weight_learning_discrete.html">scope_rl.ope.weight_value_learning.minimax_weight_learning_discrete</a><input class="toctree-checkbox" id="toctree-checkbox-19" name="toctree-checkbox-19" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-19"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.minimax_weight_learning_discrete.DiscreteMinimaxStateActionWeightLearning.html">scope_rl.ope.weight_value_learning.minimax_weight_learning_discrete.DiscreteMinimaxStateActionWeightLearning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.minimax_weight_learning_discrete.DiscreteMinimaxStateWeightLearning.html">scope_rl.ope.weight_value_learning.minimax_weight_learning_discrete.DiscreteMinimaxStateWeightLearning</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.minimax_weight_learning_continuous.html">scope_rl.ope.weight_value_learning.minimax_weight_learning_continuous</a><input class="toctree-checkbox" id="toctree-checkbox-20" name="toctree-checkbox-20" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-20"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.minimax_weight_learning_continuous.ContinuousMinimaxStateActionWeightLearning.html">scope_rl.ope.weight_value_learning.minimax_weight_learning_continuous.ContinuousMinimaxStateActionWeightLearning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.minimax_weight_learning_continuous.ContinuousMinimaxStateWeightLearning.html">scope_rl.ope.weight_value_learning.minimax_weight_learning_continuous.ContinuousMinimaxStateWeightLearning</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.minimax_value_learning_discrete.html">scope_rl.ope.weight_value_learning.minimax_value_learning_discrete</a><input class="toctree-checkbox" id="toctree-checkbox-21" name="toctree-checkbox-21" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-21"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.minimax_value_learning_discrete.DiscreteMinimaxStateActionValueLearning.html">scope_rl.ope.weight_value_learning.minimax_value_learning_discrete.DiscreteMinimaxStateActionValueLearning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.minimax_value_learning_discrete.DiscreteMinimaxStateValueLearning.html">scope_rl.ope.weight_value_learning.minimax_value_learning_discrete.DiscreteMinimaxStateValueLearning</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.minimax_value_learning_continuous.html">scope_rl.ope.weight_value_learning.minimax_value_learning_continuous</a><input class="toctree-checkbox" id="toctree-checkbox-22" name="toctree-checkbox-22" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-22"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.minimax_value_learning_continuous.ContinuousMinimaxStateActionValueLearning.html">scope_rl.ope.weight_value_learning.minimax_value_learning_continuous.ContinuousMinimaxStateActionValueLearning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.minimax_value_learning_continuous.ContinuousMinimaxStateValueLearning.html">scope_rl.ope.weight_value_learning.minimax_value_learning_continuous.ContinuousMinimaxStateValueLearning</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/scope_rl.ope.online.html">scope_rl.ope.online</a><input class="toctree-checkbox" id="toctree-checkbox-23" name="toctree-checkbox-23" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-23"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.online.calc_on_policy_conditional_value_at_risk.html">scope_rl.ope.online.calc_on_policy_conditional_value_at_risk</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.online.calc_on_policy_cumulative_distribution_function.html">scope_rl.ope.online.calc_on_policy_cumulative_distribution_function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.online.calc_on_policy_interquartile_range.html">scope_rl.ope.online.calc_on_policy_interquartile_range</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.online.calc_on_policy_policy_value.html">scope_rl.ope.online.calc_on_policy_policy_value</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.online.calc_on_policy_policy_value_interval.html">scope_rl.ope.online.calc_on_policy_policy_value_interval</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.online.calc_on_policy_statistics.html">scope_rl.ope.online.calc_on_policy_statistics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.online.calc_on_policy_variance.html">scope_rl.ope.online.calc_on_policy_variance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.online.rollout_policy_online.html">scope_rl.ope.online.rollout_policy_online</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.online.visualize_on_policy_conditional_value_at_risk.html">scope_rl.ope.online.visualize_on_policy_conditional_value_at_risk</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.online.visualize_on_policy_cumulative_distribution_function.html">scope_rl.ope.online.visualize_on_policy_cumulative_distribution_function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.online.visualize_on_policy_interquartile_range.html">scope_rl.ope.online.visualize_on_policy_interquartile_range</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.online.visualize_on_policy_policy_value.html">scope_rl.ope.online.visualize_on_policy_policy_value</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.online.visualize_on_policy_policy_value_with_variance.html">scope_rl.ope.online.visualize_on_policy_policy_value_with_variance</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/scope_rl.utils.html">scope_rl.utils</a><input class="toctree-checkbox" id="toctree-checkbox-24" name="toctree-checkbox-24" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-24"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.utils.check_array.html">scope_rl.utils.check_array</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.utils.check_input_dict.html">scope_rl.utils.check_input_dict</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.utils.check_logged_dataset.html">scope_rl.utils.check_logged_dataset</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.utils.cosine_kernel.html">scope_rl.utils.cosine_kernel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.utils.defaultdict_to_dict.html">scope_rl.utils.defaultdict_to_dict</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.utils.epanechnikov_kernel.html">scope_rl.utils.epanechnikov_kernel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.utils.estimate_confidence_interval_by_bootstrap.html">scope_rl.utils.estimate_confidence_interval_by_bootstrap</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.utils.estimate_confidence_interval_by_empirical_bernstein.html">scope_rl.utils.estimate_confidence_interval_by_empirical_bernstein</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.utils.estimate_confidence_interval_by_hoeffding.html">scope_rl.utils.estimate_confidence_interval_by_hoeffding</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.utils.estimate_confidence_interval_by_t_test.html">scope_rl.utils.estimate_confidence_interval_by_t_test</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.utils.gaussian_kernel.html">scope_rl.utils.gaussian_kernel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.utils.l2_distance.html">scope_rl.utils.l2_distance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.utils.triangular_kernel.html">scope_rl.utils.triangular_kernel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.utils.uniform_kernel.html">scope_rl.utils.uniform_kernel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.utils.MinMaxActionScaler.html">scope_rl.utils.MinMaxActionScaler</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.utils.MinMaxScaler.html">scope_rl.utils.MinMaxScaler</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.utils.MultipleInputDict.html">scope_rl.utils.MultipleInputDict</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.utils.MultipleLoggedDataset.html">scope_rl.utils.MultipleLoggedDataset</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.utils.NewGymAPIWrapper.html">scope_rl.utils.NewGymAPIWrapper</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.utils.OldGymAPIWrapper.html">scope_rl.utils.OldGymAPIWrapper</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="subpackages/rtbgym_api.html">RTBGym Package Reference</a><input class="toctree-checkbox" id="toctree-checkbox-25" name="toctree-checkbox-25" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-25"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/rtbgym/env/rtbgym.envs.rtb.html">rtbgym.envs.rtb</a><input class="toctree-checkbox" id="toctree-checkbox-26" name="toctree-checkbox-26" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-26"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/rtbgym/env/rtbgym.envs.rtb.RTBEnv.html">rtbgym.envs.rtb.RTBEnv</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/rtbgym/env/rtbgym.envs.wrapper_rtb.html">rtbgym.envs.wrapper_rtb</a><input class="toctree-checkbox" id="toctree-checkbox-27" name="toctree-checkbox-27" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-27"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/rtbgym/env/rtbgym.envs.wrapper_rtb.CustomizedRTBEnv.html">rtbgym.envs.wrapper_rtb.CustomizedRTBEnv</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/rtbgym/simulation/rtbgym.envs.simulator.base.html">rtbgym.envs.simulator.base</a><input class="toctree-checkbox" id="toctree-checkbox-28" name="toctree-checkbox-28" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-28"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/rtbgym/simulation/rtbgym.envs.simulator.base.BaseClickAndConversionRate.html">rtbgym.envs.simulator.base.BaseClickAndConversionRate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/rtbgym/simulation/rtbgym.envs.simulator.base.BaseSimulator.html">rtbgym.envs.simulator.base.BaseSimulator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/rtbgym/simulation/rtbgym.envs.simulator.base.BaseWinningPriceDistribution.html">rtbgym.envs.simulator.base.BaseWinningPriceDistribution</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/rtbgym/simulation/rtbgym.envs.simulator.function.html">rtbgym.envs.simulator.function</a><input class="toctree-checkbox" id="toctree-checkbox-29" name="toctree-checkbox-29" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-29"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/rtbgym/simulation/rtbgym.envs.simulator.function.ClickThroughRate.html">rtbgym.envs.simulator.function.ClickThroughRate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/rtbgym/simulation/rtbgym.envs.simulator.function.ConversionRate.html">rtbgym.envs.simulator.function.ConversionRate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/rtbgym/simulation/rtbgym.envs.simulator.function.WinningPriceDistribution.html">rtbgym.envs.simulator.function.WinningPriceDistribution</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/rtbgym/simulation/rtbgym.envs.simulator.bidder.html">rtbgym.envs.simulator.bidder</a><input class="toctree-checkbox" id="toctree-checkbox-30" name="toctree-checkbox-30" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-30"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/rtbgym/simulation/rtbgym.envs.simulator.bidder.Bidder.html">rtbgym.envs.simulator.bidder.Bidder</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/rtbgym/simulation/rtbgym.envs.simulator.rtb_synthetic.html">rtbgym.envs.simulator.rtb_synthetic</a><input class="toctree-checkbox" id="toctree-checkbox-31" name="toctree-checkbox-31" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-31"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/rtbgym/simulation/rtbgym.envs.simulator.rtb_synthetic.RTBSyntheticSimulator.html">rtbgym.envs.simulator.rtb_synthetic.RTBSyntheticSimulator</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/rtbgym/utils/rtbgym.utils.html">rtbgym.utils</a><input class="toctree-checkbox" id="toctree-checkbox-32" name="toctree-checkbox-32" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-32"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/rtbgym/utils/rtbgym.utils.check_array.html">rtbgym.utils.check_array</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/rtbgym/utils/rtbgym.utils.sigmoid.html">rtbgym.utils.sigmoid</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/rtbgym/utils/rtbgym.utils.NormalDistribution.html">rtbgym.utils.NormalDistribution</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="subpackages/recgym_api.html">RECGym Package Reference</a><input class="toctree-checkbox" id="toctree-checkbox-33" name="toctree-checkbox-33" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-33"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/recgym/env/recgym.envs.rec.html">recgym.envs.rec</a><input class="toctree-checkbox" id="toctree-checkbox-34" name="toctree-checkbox-34" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-34"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/recgym/env/recgym.envs.rec.RECEnv.html">recgym.envs.rec.RECEnv</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/recgym/simulation/recgym.envs.simulator.base.html">recgym.envs.simulator.base</a><input class="toctree-checkbox" id="toctree-checkbox-35" name="toctree-checkbox-35" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-35"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/recgym/simulation/recgym.envs.simulator.base.BaseUserModel.html">recgym.envs.simulator.base.BaseUserModel</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/recgym/simulation/recgym.envs.simulator.function.html">recgym.envs.simulator.function</a><input class="toctree-checkbox" id="toctree-checkbox-36" name="toctree-checkbox-36" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-36"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/recgym/simulation/recgym.envs.simulator.function.UserModel.html">recgym.envs.simulator.function.UserModel</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="subpackages/basicgym_api.html">BasicGym Package Reference</a><input class="toctree-checkbox" id="toctree-checkbox-37" name="toctree-checkbox-37" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-37"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/basicgym/env/basicgym.envs.synthetic.html">basicgym.envs.synthetic</a><input class="toctree-checkbox" id="toctree-checkbox-38" name="toctree-checkbox-38" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-38"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/basicgym/env/basicgym.envs.synthetic.BasicEnv.html">basicgym.envs.synthetic.BasicEnv</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/basicgym/simulation/basicgym.envs.simulator.base.html">basicgym.envs.simulator.base</a><input class="toctree-checkbox" id="toctree-checkbox-39" name="toctree-checkbox-39" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-39"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/basicgym/simulation/basicgym.envs.simulator.base.BaseRewardFunction.html">basicgym.envs.simulator.base.BaseRewardFunction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/basicgym/simulation/basicgym.envs.simulator.base.BaseStateTransitionFunction.html">basicgym.envs.simulator.base.BaseStateTransitionFunction</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/basicgym/simulation/basicgym.envs.simulator.function.html">basicgym.envs.simulator.function</a><input class="toctree-checkbox" id="toctree-checkbox-40" name="toctree-checkbox-40" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-40"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/basicgym/simulation/basicgym.envs.simulator.function.RewardFunction.html">basicgym.envs.simulator.function.RewardFunction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/basicgym/simulation/basicgym.envs.simulator.function.StateTransitionFunction.html">basicgym.envs.simulator.function.StateTransitionFunction</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">See also:</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference external" href="https://github.com/hakuhodo-technologies/scope-rl">Github</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/hakuhodo-technologies/scope-rl/blob/main/LICENSE">LICENSE</a></li>
+<li class="toctree-l1"><a class="reference internal" href="frequently_asked_questions.html">FAQs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="news.html">News</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/hakuhodo-technologies/scope-rl/releases">Release Notes</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/hakuhodo-technologies/scope-rl/404">Proceedings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="references.html">References</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumbs">
+  <ul class="bd-breadcrumbs" role="navigation" aria-label="Breadcrumb">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">SCOPE-RL</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">SCOPR-RL Package Reference</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article" role="main">
+                  
+  <section id="scopr-rl-package-reference">
+<h1>SCOPR-RL Package Reference<a class="headerlink" href="#scopr-rl-package-reference" title="Permalink to this heading">#</a></h1>
+<section id="dataset-module">
+<span id="scope-rl-api-dataset"></span><h2>dataset module<a class="headerlink" href="#dataset-module" title="Permalink to this heading">#</a></h2>
+<table class="autosummary longtable table autosummary">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="_autosummary/dataset/scope_rl.dataset.base.html#module-scope_rl.dataset.base" title="scope_rl.dataset.base"><code class="xref py py-obj docutils literal notranslate"><span class="pre">scope_rl.dataset.base</span></code></a></p></td>
+<td><p>Abstract base class for logged dataset.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="_autosummary/dataset/scope_rl.dataset.synthetic.html#module-scope_rl.dataset.synthetic" title="scope_rl.dataset.synthetic"><code class="xref py py-obj docutils literal notranslate"><span class="pre">scope_rl.dataset.synthetic</span></code></a></p></td>
+<td><p>Class to handle synthetic dataset generation.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="policy-module">
+<span id="scope-rl-api-policy"></span><h2>policy module<a class="headerlink" href="#policy-module" title="Permalink to this heading">#</a></h2>
+<table class="autosummary longtable table autosummary">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="_autosummary/scope_rl.policy.head.html#module-scope_rl.policy.head" title="scope_rl.policy.head"><code class="xref py py-obj docutils literal notranslate"><span class="pre">scope_rl.policy.head</span></code></a></p></td>
+<td><p>Wrapper class to convert greedy policy into stochastic.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="ope-module">
+<span id="scope-rl-api-ope"></span><h2>ope module<a class="headerlink" href="#ope-module" title="Permalink to this heading">#</a></h2>
+<section id="pipeline">
+<span id="scope-rl-api-ope-pipeline"></span><h3>pipeline<a class="headerlink" href="#pipeline" title="Permalink to this heading">#</a></h3>
+<table class="autosummary longtable table autosummary">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="_autosummary/scope_rl.ope.input.html#module-scope_rl.ope.input" title="scope_rl.ope.input"><code class="xref py py-obj docutils literal notranslate"><span class="pre">scope_rl.ope.input</span></code></a></p></td>
+<td><p>Meta class to create input for Off-Policy Evaluation (OPE).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="_autosummary/scope_rl.ope.ope.html#module-scope_rl.ope.ope" title="scope_rl.ope.ope"><code class="xref py py-obj docutils literal notranslate"><span class="pre">scope_rl.ope.ope</span></code></a></p></td>
+<td><p>Meta class to handle standard and cumulative distribution OPE.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="_autosummary/scope_rl.ope.ops.html#module-scope_rl.ope.ops" title="scope_rl.ope.ops"><code class="xref py py-obj docutils literal notranslate"><span class="pre">scope_rl.ope.ops</span></code></a></p></td>
+<td><p>Meta class to handle Off-Policy Selection (OPS) and evaluation of OPE/OPS.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="ope-estimators">
+<span id="scope-rl-api-ope-estimators"></span><h3>OPE estimators<a class="headerlink" href="#ope-estimators" title="Permalink to this heading">#</a></h3>
+<table class="autosummary longtable table autosummary">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="_autosummary/scope_rl.ope.estimators_base.html#module-scope_rl.ope.estimators_base" title="scope_rl.ope.estimators_base"><code class="xref py py-obj docutils literal notranslate"><span class="pre">scope_rl.ope.estimators_base</span></code></a></p></td>
+<td><p>Abstract base class for Off-Policy Estimator.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.basic_estimators.html#module-scope_rl.ope.discrete.basic_estimators" title="scope_rl.ope.discrete.basic_estimators"><code class="xref py py-obj docutils literal notranslate"><span class="pre">scope_rl.ope.discrete.basic_estimators</span></code></a></p></td>
+<td><p>Off-Policy Estimators for discrete action cases.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.basic_estimators.html#module-scope_rl.ope.continuous.basic_estimators" title="scope_rl.ope.continuous.basic_estimators"><code class="xref py py-obj docutils literal notranslate"><span class="pre">scope_rl.ope.continuous.basic_estimators</span></code></a></p></td>
+<td><p>Off-Policy Estimators for continuous action cases (designed for deterministic evaluation policies).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.marginal_estimators.html#module-scope_rl.ope.discrete.marginal_estimators" title="scope_rl.ope.discrete.marginal_estimators"><code class="xref py py-obj docutils literal notranslate"><span class="pre">scope_rl.ope.discrete.marginal_estimators</span></code></a></p></td>
+<td><p>State(-Action) Marginal Off-Policy Estimators for discrete action cases.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.marginal_estimators.html#module-scope_rl.ope.continuous.marginal_estimators" title="scope_rl.ope.continuous.marginal_estimators"><code class="xref py py-obj docutils literal notranslate"><span class="pre">scope_rl.ope.continuous.marginal_estimators</span></code></a></p></td>
+<td><p>State(-Action) Marginal Off-Policy Estimators for continuous action cases (designed for deterministic evaluation policies).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.cumulative_distribution_estimators.html#module-scope_rl.ope.discrete.cumulative_distribution_estimators" title="scope_rl.ope.discrete.cumulative_distribution_estimators"><code class="xref py py-obj docutils literal notranslate"><span class="pre">scope_rl.ope.discrete.cumulative_distribution_estimators</span></code></a></p></td>
+<td><p>Cumulative Distribution Off-Policy Estimators for discrete action cases.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.cumulative_distribution_estimators.html#module-scope_rl.ope.continuous.cumulative_distribution_estimators" title="scope_rl.ope.continuous.cumulative_distribution_estimators"><code class="xref py py-obj docutils literal notranslate"><span class="pre">scope_rl.ope.continuous.cumulative_distribution_estimators</span></code></a></p></td>
+<td><p>Cumulative Distribution Off-Policy Estimators for continuous action cases (designed for deterministic evaluation policies).</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="weight-and-value-learning-methods">
+<span id="scope-rl-api-ope-weight-and-value-learning"></span><h3>weight and value learning methods<a class="headerlink" href="#weight-and-value-learning-methods" title="Permalink to this heading">#</a></h3>
+<table class="autosummary longtable table autosummary">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.base.html#module-scope_rl.ope.weight_value_learning.base" title="scope_rl.ope.weight_value_learning.base"><code class="xref py py-obj docutils literal notranslate"><span class="pre">scope_rl.ope.weight_value_learning.base</span></code></a></p></td>
+<td><p>Abstract base class for weight and value learning.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.function.html#module-scope_rl.ope.weight_value_learning.function" title="scope_rl.ope.weight_value_learning.function"><code class="xref py py-obj docutils literal notranslate"><span class="pre">scope_rl.ope.weight_value_learning.function</span></code></a></p></td>
+<td><p>Weight and Value Functions.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_discrete.html#module-scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_discrete" title="scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_discrete"><code class="xref py py-obj docutils literal notranslate"><span class="pre">scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_discrete</span></code></a></p></td>
+<td><p>Augmented Lagrangian method for weight/value function learning (discrete action cases).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_continuous.html#module-scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_continuous" title="scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_continuous"><code class="xref py py-obj docutils literal notranslate"><span class="pre">scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_continuous</span></code></a></p></td>
+<td><p>Augmented Lagrangian method for weight/value function learning (continuous action cases).</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.minimax_weight_learning_discrete.html#module-scope_rl.ope.weight_value_learning.minimax_weight_learning_discrete" title="scope_rl.ope.weight_value_learning.minimax_weight_learning_discrete"><code class="xref py py-obj docutils literal notranslate"><span class="pre">scope_rl.ope.weight_value_learning.minimax_weight_learning_discrete</span></code></a></p></td>
+<td><p>Minimax weight function learning (discrete action cases).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.minimax_weight_learning_continuous.html#module-scope_rl.ope.weight_value_learning.minimax_weight_learning_continuous" title="scope_rl.ope.weight_value_learning.minimax_weight_learning_continuous"><code class="xref py py-obj docutils literal notranslate"><span class="pre">scope_rl.ope.weight_value_learning.minimax_weight_learning_continuous</span></code></a></p></td>
+<td><p>Minimax weight function learning (continuous action cases).</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.minimax_value_learning_discrete.html#module-scope_rl.ope.weight_value_learning.minimax_value_learning_discrete" title="scope_rl.ope.weight_value_learning.minimax_value_learning_discrete"><code class="xref py py-obj docutils literal notranslate"><span class="pre">scope_rl.ope.weight_value_learning.minimax_value_learning_discrete</span></code></a></p></td>
+<td><p>Minimax value function learning (discrete action cases).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.minimax_value_learning_continuous.html#module-scope_rl.ope.weight_value_learning.minimax_value_learning_continuous" title="scope_rl.ope.weight_value_learning.minimax_value_learning_continuous"><code class="xref py py-obj docutils literal notranslate"><span class="pre">scope_rl.ope.weight_value_learning.minimax_value_learning_continuous</span></code></a></p></td>
+<td><p>Minimax value function learning (continuous action cases).</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="others">
+<span id="scope-rl-api-ope-utils"></span><h3>others<a class="headerlink" href="#others" title="Permalink to this heading">#</a></h3>
+<table class="autosummary longtable table autosummary">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="_autosummary/scope_rl.ope.online.html#module-scope_rl.ope.online" title="scope_rl.ope.online"><code class="xref py py-obj docutils literal notranslate"><span class="pre">scope_rl.ope.online</span></code></a></p></td>
+<td><p>On-Policy performance comparison.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="scope-rl-api-utils">
+<span id="id1"></span><h2>others<a class="headerlink" href="#scope-rl-api-utils" title="Permalink to this heading">#</a></h2>
+<table class="autosummary longtable table autosummary">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="_autosummary/scope_rl.utils.html#module-scope_rl.utils" title="scope_rl.utils"><code class="xref py py-obj docutils literal notranslate"><span class="pre">scope_rl.utils</span></code></a></p></td>
+<td><p>Useful tools.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="white-space-20px"></div><div class="sd-container-fluid sd-sphinx-override sd-m-0 docutils">
+<div class="sd-row docutils">
+<div class="sd-col sd-d-flex-column sd-col-3 sd-col-xs-3 sd-col-sm-3 sd-col-md-3 sd-col-lg-3 sd-m-0 sd-p-0 docutils">
+<div class="sd-container-fluid sd-sphinx-override sd-m-0 docutils">
+<div class="sd-row docutils">
+<div class="sd-col sd-d-flex-row sd-m-0 sd-p-0 docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-none sd-card-hover docutils">
+<div class="sd-card-body docutils">
+<p class="sd-card-text">&lt;&lt;&lt; Prev
+<strong>Documentation (Back to Top)</strong></p>
+</div>
+<a class="sd-stretched-link reference internal" href="index.html"><span class="doc"></span></a></div>
+</div>
+</div>
+</div>
+</div>
+<div class="sd-col sd-d-flex-column sd-col-6 sd-col-xs-6 sd-col-sm-6 sd-col-md-6 sd-col-lg-6 sd-m-0 sd-p-0 docutils">
+</div>
+<div class="sd-col sd-d-flex-column sd-col-3 sd-col-xs-3 sd-col-sm-3 sd-col-md-3 sd-col-lg-3 sd-m-0 sd-p-0 docutils">
+</div>
+</div>
+</div>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#dataset-module">dataset module</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#policy-module">policy module</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#ope-module">ope module</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pipeline">pipeline</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#ope-estimators">OPE estimators</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#weight-and-value-learning-methods">weight and value learning methods</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#others">others</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#scope-rl-api-utils">others</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            <div class="bd-footer-content__inner"></div>
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=12da95d707ffb74b382d"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=12da95d707ffb74b382d"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+  <p class="copyright">
+    
+      © Copyright 2023, Haruka Kiyohara, Ren Kishimoto, HAKUHODO Technologies Inc., Hanjuku-kaso Co., Ltd.
+      <br/>
+    
+  </p>
+</div>
+      
+    </div>
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item"><p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.13.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

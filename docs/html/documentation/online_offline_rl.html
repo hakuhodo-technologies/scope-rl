@@ -1,0 +1,1117 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+    <title>Overview &#8212; SCOPE-RL</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=12da95d707ffb74b382d" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=12da95d707ffb74b382d" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=12da95d707ffb74b382d" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=12da95d707ffb74b382d" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/tabs.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/design-style.4045f2051d55cab465a707391d5b2007.min.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/css/custom.css" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=12da95d707ffb74b382d" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=12da95d707ffb74b382d" />
+
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/clipboard.min.js"></script>
+    <script src="../_static/copybutton.js"></script>
+    <script src="../_static/design-tabs.js"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Supported Implementation" href="learning_implementation.html" />
+    <link rel="prev" title="Why SCOPE-RL?" href="distinctive_features.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <nav class="bd-header navbar navbar-expand-lg bd-navbar">
+<div class="bd-header__inner bd-page-width">
+  <label class="sidebar-toggle primary-toggle" for="__primary">
+    <span class="fa-solid fa-bars"></span>
+  </label>
+  
+  <div class="navbar-header-items__start">
+    
+      <div class="navbar-item">
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    <p class="title logo__title">SCOPE-RL</p>
+  
+</a></div>
+    
+  </div>
+  
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="installation.html">
+                        Installation
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="quickstart.html">
+                        Quickstart
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item current active">
+                      <a class="nav-link nav-internal" href="index.html">
+                        Documentation
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="examples/index.html">
+                        Usage
+                      </a>
+                    </li>
+                
+            <div class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    More
+                </button>
+                <div class="dropdown-menu">
+                    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="subpackages/index.html">
+                        Sub-packages
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="frequently_asked_questions.html">
+                        FAQs
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="news.html">
+                        News
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-external" href="https://github.com/hakuhodo-technologies/scope-rl/releases">
+                        Release Notes
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-external" href="https://github.com/hakuhodo-technologies/scope-rl/404">
+                        Proceedings
+                      </a>
+                    </li>
+                
+                </div>
+            </div>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+  </button>
+`);
+</script>
+        </div>
+      
+      
+        <div class="navbar-item">
+<script>
+document.write(`
+  <button class="theme-switch-button btn btn-sm btn-outline-primary navbar-btn rounded-circle" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch" data-mode="light"><i class="fa-solid fa-sun"></i></span>
+    <span class="theme-switch" data-mode="dark"><i class="fa-solid fa-moon"></i></span>
+    <span class="theme-switch" data-mode="auto"><i class="fa-solid fa-circle-half-stroke"></i></span>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/hakuhodo-technologies/scope-rl" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-square-github"></i></span>
+            <label class="sr-only">GitHub</label></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://speakerdeck.com/aiueola/ofrl-designing-an-offline-reinforcement-learning-and-policy-evaluation-platform-from-practical-perspectives" title="Speaker Deck" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-speaker-deck"></i></span>
+            <label class="sr-only">Speaker Deck</label></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+  </button>
+`);
+</script>
+    </div>
+  
+
+  
+    <label class="sidebar-toggle secondary-toggle" for="__secondary">
+      <span class="fa-solid fa-outdent"></span>
+    </label>
+  
+</div>
+
+    </nav>
+  
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="installation.html">
+                        Installation
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="quickstart.html">
+                        Quickstart
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item current active">
+                      <a class="nav-link nav-internal" href="index.html">
+                        Documentation
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="examples/index.html">
+                        Usage
+                      </a>
+                    </li>
+                
+            <div class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    More
+                </button>
+                <div class="dropdown-menu">
+                    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="subpackages/index.html">
+                        Sub-packages
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="frequently_asked_questions.html">
+                        FAQs
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="news.html">
+                        News
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-external" href="https://github.com/hakuhodo-technologies/scope-rl/releases">
+                        Release Notes
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-external" href="https://github.com/hakuhodo-technologies/scope-rl/404">
+                        Proceedings
+                      </a>
+                    </li>
+                
+                </div>
+            </div>
+            
+  </ul>
+</nav></div>
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+<script>
+document.write(`
+  <button class="theme-switch-button btn btn-sm btn-outline-primary navbar-btn rounded-circle" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch" data-mode="light"><i class="fa-solid fa-sun"></i></span>
+    <span class="theme-switch" data-mode="dark"><i class="fa-solid fa-moon"></i></span>
+    <span class="theme-switch" data-mode="auto"><i class="fa-solid fa-circle-half-stroke"></i></span>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/hakuhodo-technologies/scope-rl" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-square-github"></i></span>
+            <label class="sr-only">GitHub</label></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://speakerdeck.com/aiueola/ofrl-designing-an-offline-reinforcement-learning-and-policy-evaluation-platform-from-practical-perspectives" title="Speaker Deck" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-speaker-deck"></i></span>
+            <label class="sr-only">Speaker Deck</label></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item"><nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Getting Started:</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="distinctive_features.html">Why SCOPE-RL?</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Online &amp; Offline RL:</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="learning_implementation.html">Supported Implementation</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Off-Policy Evaluation &amp; Selection:</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="ope_ops.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="evaluation_implementation.html">Supported Implementation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="visualization.html">Visualization Tools</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Our Proposal:</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="sharpe_ratio.html">Risk-Return Assessments of OPE via SharpRatio@k</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Sub-packages:</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="subpackages/index.html">Gallery of Sub-packages</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Package References:</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="scope_rl_api.html">SCOPR-RL Package Reference</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-1"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/dataset/scope_rl.dataset.base.html">scope_rl.dataset.base</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-2"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/dataset/scope_rl.dataset.base.BaseDataset.html">scope_rl.dataset.base.BaseDataset</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/dataset/scope_rl.dataset.synthetic.html">scope_rl.dataset.synthetic</a><input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-3"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/dataset/scope_rl.dataset.synthetic.SyntheticDataset.html">scope_rl.dataset.synthetic.SyntheticDataset</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/scope_rl.policy.head.html">scope_rl.policy.head</a><input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-4"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.policy.head.BaseHead.html">scope_rl.policy.head.BaseHead</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.policy.head.ContinuousEvalHead.html">scope_rl.policy.head.ContinuousEvalHead</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.policy.head.EpsilonGreedyHead.html">scope_rl.policy.head.EpsilonGreedyHead</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.policy.head.GaussianHead.html">scope_rl.policy.head.GaussianHead</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.policy.head.OnlineHead.html">scope_rl.policy.head.OnlineHead</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.policy.head.SoftmaxHead.html">scope_rl.policy.head.SoftmaxHead</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.policy.head.TruncatedGaussianHead.html">scope_rl.policy.head.TruncatedGaussianHead</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/scope_rl.ope.input.html">scope_rl.ope.input</a><input class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-5"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.input.CreateOPEInput.html">scope_rl.ope.input.CreateOPEInput</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/scope_rl.ope.ope.html">scope_rl.ope.ope</a><input class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-6"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.ope.CumulativeDistributionOPE.html">scope_rl.ope.ope.CumulativeDistributionOPE</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.ope.OffPolicyEvaluation.html">scope_rl.ope.ope.OffPolicyEvaluation</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/scope_rl.ope.ops.html">scope_rl.ope.ops</a><input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-7"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.ops.OffPolicySelection.html">scope_rl.ope.ops.OffPolicySelection</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/scope_rl.ope.estimators_base.html">scope_rl.ope.estimators_base</a><input class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-8"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.estimators_base.BaseCumulativeDistributionOPEEstimator.html">scope_rl.ope.estimators_base.BaseCumulativeDistributionOPEEstimator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.estimators_base.BaseMarginalOPEEstimator.html">scope_rl.ope.estimators_base.BaseMarginalOPEEstimator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.estimators_base.BaseOffPolicyEstimator.html">scope_rl.ope.estimators_base.BaseOffPolicyEstimator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.estimators_base.BaseStateActionMarginalOPEEstimator.html">scope_rl.ope.estimators_base.BaseStateActionMarginalOPEEstimator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.estimators_base.BaseStateMarginalOPEEstimator.html">scope_rl.ope.estimators_base.BaseStateMarginalOPEEstimator</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.basic_estimators.html">scope_rl.ope.discrete.basic_estimators</a><input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-9"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.basic_estimators.DirectMethod.html">scope_rl.ope.discrete.basic_estimators.DirectMethod</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.basic_estimators.DoublyRobust.html">scope_rl.ope.discrete.basic_estimators.DoublyRobust</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.basic_estimators.PerDecisionImportanceSampling.html">scope_rl.ope.discrete.basic_estimators.PerDecisionImportanceSampling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.basic_estimators.SelfNormalizedDR.html">scope_rl.ope.discrete.basic_estimators.SelfNormalizedDR</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.basic_estimators.SelfNormalizedPDIS.html">scope_rl.ope.discrete.basic_estimators.SelfNormalizedPDIS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.basic_estimators.SelfNormalizedTIS.html">scope_rl.ope.discrete.basic_estimators.SelfNormalizedTIS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.basic_estimators.TrajectoryWiseImportanceSampling.html">scope_rl.ope.discrete.basic_estimators.TrajectoryWiseImportanceSampling</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.basic_estimators.html">scope_rl.ope.continuous.basic_estimators</a><input class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-10"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.basic_estimators.DirectMethod.html">scope_rl.ope.continuous.basic_estimators.DirectMethod</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.basic_estimators.DoublyRobust.html">scope_rl.ope.continuous.basic_estimators.DoublyRobust</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.basic_estimators.PerDecisionImportanceSampling.html">scope_rl.ope.continuous.basic_estimators.PerDecisionImportanceSampling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.basic_estimators.SelfNormalizedDR.html">scope_rl.ope.continuous.basic_estimators.SelfNormalizedDR</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.basic_estimators.SelfNormalizedPDIS.html">scope_rl.ope.continuous.basic_estimators.SelfNormalizedPDIS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.basic_estimators.SelfNormalizedTIS.html">scope_rl.ope.continuous.basic_estimators.SelfNormalizedTIS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.basic_estimators.TrajectoryWiseImportanceSampling.html">scope_rl.ope.continuous.basic_estimators.TrajectoryWiseImportanceSampling</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.marginal_estimators.html">scope_rl.ope.discrete.marginal_estimators</a><input class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-11"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.marginal_estimators.DoubleReinforcementLearning.html">scope_rl.ope.discrete.marginal_estimators.DoubleReinforcementLearning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.marginal_estimators.StateActionMarginalDR.html">scope_rl.ope.discrete.marginal_estimators.StateActionMarginalDR</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.marginal_estimators.StateActionMarginalIS.html">scope_rl.ope.discrete.marginal_estimators.StateActionMarginalIS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.marginal_estimators.StateActionMarginalSNDR.html">scope_rl.ope.discrete.marginal_estimators.StateActionMarginalSNDR</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.marginal_estimators.StateActionMarginalSNIS.html">scope_rl.ope.discrete.marginal_estimators.StateActionMarginalSNIS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.marginal_estimators.StateMarginalDM.html">scope_rl.ope.discrete.marginal_estimators.StateMarginalDM</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.marginal_estimators.StateMarginalDR.html">scope_rl.ope.discrete.marginal_estimators.StateMarginalDR</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.marginal_estimators.StateMarginalIS.html">scope_rl.ope.discrete.marginal_estimators.StateMarginalIS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.marginal_estimators.StateMarginalSNDR.html">scope_rl.ope.discrete.marginal_estimators.StateMarginalSNDR</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.marginal_estimators.StateMarginalSNIS.html">scope_rl.ope.discrete.marginal_estimators.StateMarginalSNIS</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.marginal_estimators.html">scope_rl.ope.continuous.marginal_estimators</a><input class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-12"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.marginal_estimators.DoubleReinforcementLearning.html">scope_rl.ope.continuous.marginal_estimators.DoubleReinforcementLearning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.marginal_estimators.StateActionMarginalDR.html">scope_rl.ope.continuous.marginal_estimators.StateActionMarginalDR</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.marginal_estimators.StateActionMarginalIS.html">scope_rl.ope.continuous.marginal_estimators.StateActionMarginalIS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.marginal_estimators.StateActionMarginalSNDR.html">scope_rl.ope.continuous.marginal_estimators.StateActionMarginalSNDR</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.marginal_estimators.StateActionMarginalSNIS.html">scope_rl.ope.continuous.marginal_estimators.StateActionMarginalSNIS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.marginal_estimators.StateMarginalDM.html">scope_rl.ope.continuous.marginal_estimators.StateMarginalDM</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.marginal_estimators.StateMarginalDR.html">scope_rl.ope.continuous.marginal_estimators.StateMarginalDR</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.marginal_estimators.StateMarginalIS.html">scope_rl.ope.continuous.marginal_estimators.StateMarginalIS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.marginal_estimators.StateMarginalSNDR.html">scope_rl.ope.continuous.marginal_estimators.StateMarginalSNDR</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.marginal_estimators.StateMarginalSNIS.html">scope_rl.ope.continuous.marginal_estimators.StateMarginalSNIS</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.cumulative_distribution_estimators.html">scope_rl.ope.discrete.cumulative_distribution_estimators</a><input class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-13"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.cumulative_distribution_estimators.CumulativeDistributionDM.html">scope_rl.ope.discrete.cumulative_distribution_estimators.CumulativeDistributionDM</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.cumulative_distribution_estimators.CumulativeDistributionSNTDR.html">scope_rl.ope.discrete.cumulative_distribution_estimators.CumulativeDistributionSNTDR</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.cumulative_distribution_estimators.CumulativeDistributionSNTIS.html">scope_rl.ope.discrete.cumulative_distribution_estimators.CumulativeDistributionSNTIS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.cumulative_distribution_estimators.CumulativeDistributionTDR.html">scope_rl.ope.discrete.cumulative_distribution_estimators.CumulativeDistributionTDR</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.cumulative_distribution_estimators.CumulativeDistributionTIS.html">scope_rl.ope.discrete.cumulative_distribution_estimators.CumulativeDistributionTIS</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.cumulative_distribution_estimators.html">scope_rl.ope.continuous.cumulative_distribution_estimators</a><input class="toctree-checkbox" id="toctree-checkbox-14" name="toctree-checkbox-14" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-14"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.cumulative_distribution_estimators.CumulativeDistributionDM.html">scope_rl.ope.continuous.cumulative_distribution_estimators.CumulativeDistributionDM</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.cumulative_distribution_estimators.CumulativeDistributionSNTDR.html">scope_rl.ope.continuous.cumulative_distribution_estimators.CumulativeDistributionSNTDR</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.cumulative_distribution_estimators.CumulativeDistributionSNTIS.html">scope_rl.ope.continuous.cumulative_distribution_estimators.CumulativeDistributionSNTIS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.cumulative_distribution_estimators.CumulativeDistributionTDR.html">scope_rl.ope.continuous.cumulative_distribution_estimators.CumulativeDistributionTDR</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.cumulative_distribution_estimators.CumulativeDistributionTIS.html">scope_rl.ope.continuous.cumulative_distribution_estimators.CumulativeDistributionTIS</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.base.html">scope_rl.ope.weight_value_learning.base</a><input class="toctree-checkbox" id="toctree-checkbox-15" name="toctree-checkbox-15" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-15"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.base.BaseWeightValueLearner.html">scope_rl.ope.weight_value_learning.base.BaseWeightValueLearner</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.function.html">scope_rl.ope.weight_value_learning.function</a><input class="toctree-checkbox" id="toctree-checkbox-16" name="toctree-checkbox-16" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-16"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.function.ContinuousQFunction.html">scope_rl.ope.weight_value_learning.function.ContinuousQFunction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.function.ContinuousStateActionWeightFunction.html">scope_rl.ope.weight_value_learning.function.ContinuousStateActionWeightFunction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.function.DiscreteQFunction.html">scope_rl.ope.weight_value_learning.function.DiscreteQFunction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.function.DiscreteStateActionWeightFunction.html">scope_rl.ope.weight_value_learning.function.DiscreteStateActionWeightFunction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.function.StateWeightFunction.html">scope_rl.ope.weight_value_learning.function.StateWeightFunction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.function.VFunction.html">scope_rl.ope.weight_value_learning.function.VFunction</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_discrete.html">scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_discrete</a><input class="toctree-checkbox" id="toctree-checkbox-17" name="toctree-checkbox-17" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-17"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_discrete.DiscreteDiceStateActionWightValueLearning.html">scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_discrete.DiscreteDiceStateActionWightValueLearning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_discrete.DiscreteDiceStateWightValueLearning.html">scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_discrete.DiscreteDiceStateWightValueLearning</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_continuous.html">scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_continuous</a><input class="toctree-checkbox" id="toctree-checkbox-18" name="toctree-checkbox-18" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-18"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_continuous.ContinuousDiceStateActionWightValueLearning.html">scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_continuous.ContinuousDiceStateActionWightValueLearning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_continuous.ContinuousDiceStateWightValueLearning.html">scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_continuous.ContinuousDiceStateWightValueLearning</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.minimax_weight_learning_discrete.html">scope_rl.ope.weight_value_learning.minimax_weight_learning_discrete</a><input class="toctree-checkbox" id="toctree-checkbox-19" name="toctree-checkbox-19" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-19"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.minimax_weight_learning_discrete.DiscreteMinimaxStateActionWeightLearning.html">scope_rl.ope.weight_value_learning.minimax_weight_learning_discrete.DiscreteMinimaxStateActionWeightLearning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.minimax_weight_learning_discrete.DiscreteMinimaxStateWeightLearning.html">scope_rl.ope.weight_value_learning.minimax_weight_learning_discrete.DiscreteMinimaxStateWeightLearning</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.minimax_weight_learning_continuous.html">scope_rl.ope.weight_value_learning.minimax_weight_learning_continuous</a><input class="toctree-checkbox" id="toctree-checkbox-20" name="toctree-checkbox-20" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-20"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.minimax_weight_learning_continuous.ContinuousMinimaxStateActionWeightLearning.html">scope_rl.ope.weight_value_learning.minimax_weight_learning_continuous.ContinuousMinimaxStateActionWeightLearning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.minimax_weight_learning_continuous.ContinuousMinimaxStateWeightLearning.html">scope_rl.ope.weight_value_learning.minimax_weight_learning_continuous.ContinuousMinimaxStateWeightLearning</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.minimax_value_learning_discrete.html">scope_rl.ope.weight_value_learning.minimax_value_learning_discrete</a><input class="toctree-checkbox" id="toctree-checkbox-21" name="toctree-checkbox-21" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-21"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.minimax_value_learning_discrete.DiscreteMinimaxStateActionValueLearning.html">scope_rl.ope.weight_value_learning.minimax_value_learning_discrete.DiscreteMinimaxStateActionValueLearning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.minimax_value_learning_discrete.DiscreteMinimaxStateValueLearning.html">scope_rl.ope.weight_value_learning.minimax_value_learning_discrete.DiscreteMinimaxStateValueLearning</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.minimax_value_learning_continuous.html">scope_rl.ope.weight_value_learning.minimax_value_learning_continuous</a><input class="toctree-checkbox" id="toctree-checkbox-22" name="toctree-checkbox-22" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-22"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.minimax_value_learning_continuous.ContinuousMinimaxStateActionValueLearning.html">scope_rl.ope.weight_value_learning.minimax_value_learning_continuous.ContinuousMinimaxStateActionValueLearning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.minimax_value_learning_continuous.ContinuousMinimaxStateValueLearning.html">scope_rl.ope.weight_value_learning.minimax_value_learning_continuous.ContinuousMinimaxStateValueLearning</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/scope_rl.ope.online.html">scope_rl.ope.online</a><input class="toctree-checkbox" id="toctree-checkbox-23" name="toctree-checkbox-23" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-23"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.online.calc_on_policy_conditional_value_at_risk.html">scope_rl.ope.online.calc_on_policy_conditional_value_at_risk</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.online.calc_on_policy_cumulative_distribution_function.html">scope_rl.ope.online.calc_on_policy_cumulative_distribution_function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.online.calc_on_policy_interquartile_range.html">scope_rl.ope.online.calc_on_policy_interquartile_range</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.online.calc_on_policy_policy_value.html">scope_rl.ope.online.calc_on_policy_policy_value</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.online.calc_on_policy_policy_value_interval.html">scope_rl.ope.online.calc_on_policy_policy_value_interval</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.online.calc_on_policy_statistics.html">scope_rl.ope.online.calc_on_policy_statistics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.online.calc_on_policy_variance.html">scope_rl.ope.online.calc_on_policy_variance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.online.rollout_policy_online.html">scope_rl.ope.online.rollout_policy_online</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.online.visualize_on_policy_conditional_value_at_risk.html">scope_rl.ope.online.visualize_on_policy_conditional_value_at_risk</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.online.visualize_on_policy_cumulative_distribution_function.html">scope_rl.ope.online.visualize_on_policy_cumulative_distribution_function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.online.visualize_on_policy_interquartile_range.html">scope_rl.ope.online.visualize_on_policy_interquartile_range</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.online.visualize_on_policy_policy_value.html">scope_rl.ope.online.visualize_on_policy_policy_value</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.online.visualize_on_policy_policy_value_with_variance.html">scope_rl.ope.online.visualize_on_policy_policy_value_with_variance</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/scope_rl.utils.html">scope_rl.utils</a><input class="toctree-checkbox" id="toctree-checkbox-24" name="toctree-checkbox-24" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-24"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.utils.check_array.html">scope_rl.utils.check_array</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.utils.check_input_dict.html">scope_rl.utils.check_input_dict</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.utils.check_logged_dataset.html">scope_rl.utils.check_logged_dataset</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.utils.cosine_kernel.html">scope_rl.utils.cosine_kernel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.utils.defaultdict_to_dict.html">scope_rl.utils.defaultdict_to_dict</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.utils.epanechnikov_kernel.html">scope_rl.utils.epanechnikov_kernel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.utils.estimate_confidence_interval_by_bootstrap.html">scope_rl.utils.estimate_confidence_interval_by_bootstrap</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.utils.estimate_confidence_interval_by_empirical_bernstein.html">scope_rl.utils.estimate_confidence_interval_by_empirical_bernstein</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.utils.estimate_confidence_interval_by_hoeffding.html">scope_rl.utils.estimate_confidence_interval_by_hoeffding</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.utils.estimate_confidence_interval_by_t_test.html">scope_rl.utils.estimate_confidence_interval_by_t_test</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.utils.gaussian_kernel.html">scope_rl.utils.gaussian_kernel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.utils.l2_distance.html">scope_rl.utils.l2_distance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.utils.triangular_kernel.html">scope_rl.utils.triangular_kernel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.utils.uniform_kernel.html">scope_rl.utils.uniform_kernel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.utils.MinMaxActionScaler.html">scope_rl.utils.MinMaxActionScaler</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.utils.MinMaxScaler.html">scope_rl.utils.MinMaxScaler</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.utils.MultipleInputDict.html">scope_rl.utils.MultipleInputDict</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.utils.MultipleLoggedDataset.html">scope_rl.utils.MultipleLoggedDataset</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.utils.NewGymAPIWrapper.html">scope_rl.utils.NewGymAPIWrapper</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.utils.OldGymAPIWrapper.html">scope_rl.utils.OldGymAPIWrapper</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="subpackages/rtbgym_api.html">RTBGym Package Reference</a><input class="toctree-checkbox" id="toctree-checkbox-25" name="toctree-checkbox-25" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-25"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/rtbgym/env/rtbgym.envs.rtb.html">rtbgym.envs.rtb</a><input class="toctree-checkbox" id="toctree-checkbox-26" name="toctree-checkbox-26" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-26"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/rtbgym/env/rtbgym.envs.rtb.RTBEnv.html">rtbgym.envs.rtb.RTBEnv</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/rtbgym/env/rtbgym.envs.wrapper_rtb.html">rtbgym.envs.wrapper_rtb</a><input class="toctree-checkbox" id="toctree-checkbox-27" name="toctree-checkbox-27" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-27"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/rtbgym/env/rtbgym.envs.wrapper_rtb.CustomizedRTBEnv.html">rtbgym.envs.wrapper_rtb.CustomizedRTBEnv</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/rtbgym/simulation/rtbgym.envs.simulator.base.html">rtbgym.envs.simulator.base</a><input class="toctree-checkbox" id="toctree-checkbox-28" name="toctree-checkbox-28" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-28"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/rtbgym/simulation/rtbgym.envs.simulator.base.BaseClickAndConversionRate.html">rtbgym.envs.simulator.base.BaseClickAndConversionRate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/rtbgym/simulation/rtbgym.envs.simulator.base.BaseSimulator.html">rtbgym.envs.simulator.base.BaseSimulator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/rtbgym/simulation/rtbgym.envs.simulator.base.BaseWinningPriceDistribution.html">rtbgym.envs.simulator.base.BaseWinningPriceDistribution</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/rtbgym/simulation/rtbgym.envs.simulator.function.html">rtbgym.envs.simulator.function</a><input class="toctree-checkbox" id="toctree-checkbox-29" name="toctree-checkbox-29" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-29"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/rtbgym/simulation/rtbgym.envs.simulator.function.ClickThroughRate.html">rtbgym.envs.simulator.function.ClickThroughRate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/rtbgym/simulation/rtbgym.envs.simulator.function.ConversionRate.html">rtbgym.envs.simulator.function.ConversionRate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/rtbgym/simulation/rtbgym.envs.simulator.function.WinningPriceDistribution.html">rtbgym.envs.simulator.function.WinningPriceDistribution</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/rtbgym/simulation/rtbgym.envs.simulator.bidder.html">rtbgym.envs.simulator.bidder</a><input class="toctree-checkbox" id="toctree-checkbox-30" name="toctree-checkbox-30" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-30"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/rtbgym/simulation/rtbgym.envs.simulator.bidder.Bidder.html">rtbgym.envs.simulator.bidder.Bidder</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/rtbgym/simulation/rtbgym.envs.simulator.rtb_synthetic.html">rtbgym.envs.simulator.rtb_synthetic</a><input class="toctree-checkbox" id="toctree-checkbox-31" name="toctree-checkbox-31" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-31"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/rtbgym/simulation/rtbgym.envs.simulator.rtb_synthetic.RTBSyntheticSimulator.html">rtbgym.envs.simulator.rtb_synthetic.RTBSyntheticSimulator</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/rtbgym/utils/rtbgym.utils.html">rtbgym.utils</a><input class="toctree-checkbox" id="toctree-checkbox-32" name="toctree-checkbox-32" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-32"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/rtbgym/utils/rtbgym.utils.check_array.html">rtbgym.utils.check_array</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/rtbgym/utils/rtbgym.utils.sigmoid.html">rtbgym.utils.sigmoid</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/rtbgym/utils/rtbgym.utils.NormalDistribution.html">rtbgym.utils.NormalDistribution</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="subpackages/recgym_api.html">RECGym Package Reference</a><input class="toctree-checkbox" id="toctree-checkbox-33" name="toctree-checkbox-33" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-33"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/recgym/env/recgym.envs.rec.html">recgym.envs.rec</a><input class="toctree-checkbox" id="toctree-checkbox-34" name="toctree-checkbox-34" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-34"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/recgym/env/recgym.envs.rec.RECEnv.html">recgym.envs.rec.RECEnv</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/recgym/simulation/recgym.envs.simulator.base.html">recgym.envs.simulator.base</a><input class="toctree-checkbox" id="toctree-checkbox-35" name="toctree-checkbox-35" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-35"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/recgym/simulation/recgym.envs.simulator.base.BaseUserModel.html">recgym.envs.simulator.base.BaseUserModel</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/recgym/simulation/recgym.envs.simulator.function.html">recgym.envs.simulator.function</a><input class="toctree-checkbox" id="toctree-checkbox-36" name="toctree-checkbox-36" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-36"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/recgym/simulation/recgym.envs.simulator.function.UserModel.html">recgym.envs.simulator.function.UserModel</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="subpackages/basicgym_api.html">BasicGym Package Reference</a><input class="toctree-checkbox" id="toctree-checkbox-37" name="toctree-checkbox-37" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-37"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/basicgym/env/basicgym.envs.synthetic.html">basicgym.envs.synthetic</a><input class="toctree-checkbox" id="toctree-checkbox-38" name="toctree-checkbox-38" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-38"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/basicgym/env/basicgym.envs.synthetic.BasicEnv.html">basicgym.envs.synthetic.BasicEnv</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/basicgym/simulation/basicgym.envs.simulator.base.html">basicgym.envs.simulator.base</a><input class="toctree-checkbox" id="toctree-checkbox-39" name="toctree-checkbox-39" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-39"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/basicgym/simulation/basicgym.envs.simulator.base.BaseRewardFunction.html">basicgym.envs.simulator.base.BaseRewardFunction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/basicgym/simulation/basicgym.envs.simulator.base.BaseStateTransitionFunction.html">basicgym.envs.simulator.base.BaseStateTransitionFunction</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/basicgym/simulation/basicgym.envs.simulator.function.html">basicgym.envs.simulator.function</a><input class="toctree-checkbox" id="toctree-checkbox-40" name="toctree-checkbox-40" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-40"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/basicgym/simulation/basicgym.envs.simulator.function.RewardFunction.html">basicgym.envs.simulator.function.RewardFunction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/basicgym/simulation/basicgym.envs.simulator.function.StateTransitionFunction.html">basicgym.envs.simulator.function.StateTransitionFunction</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">See also:</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference external" href="https://github.com/hakuhodo-technologies/scope-rl">Github</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/hakuhodo-technologies/scope-rl/blob/main/LICENSE">LICENSE</a></li>
+<li class="toctree-l1"><a class="reference internal" href="frequently_asked_questions.html">FAQs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="news.html">News</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/hakuhodo-technologies/scope-rl/releases">Release Notes</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/hakuhodo-technologies/scope-rl/404">Proceedings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="references.html">References</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumbs">
+  <ul class="bd-breadcrumbs" role="navigation" aria-label="Breadcrumb">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">SCOPE-RL</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">Overview</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article" role="main">
+                  
+  <section id="overview">
+<h1>Overview<a class="headerlink" href="#overview" title="Permalink to this heading">#</a></h1>
+<p>We describe the problem setup and prevalent approaches of online/offline Reinforcement Learning (RL).</p>
+<section id="online-reinforcement-learning">
+<span id="overview-online-rl"></span><h2>Online Reinforcement Learning<a class="headerlink" href="#online-reinforcement-learning" title="Permalink to this heading">#</a></h2>
+<p>We consider a general reinforcement learning setup, which is formalized by Markov Decision Process (MDP) as <span class="math notranslate nohighlight">\(\langle \mathcal{S}, \mathcal{A}, \mathcal{T}, P_r, \gamma \rangle\)</span>.
+<span class="math notranslate nohighlight">\(\mathcal{S}\)</span> is the state space and <span class="math notranslate nohighlight">\(\mathcal{A}\)</span> is the action space, which is either discrete or continuous.
+Let <span class="math notranslate nohighlight">\(\mathcal{T}: \mathcal{S} \times \mathcal{A} \rightarrow \mathcal{P}(\mathcal{S})\)</span> is the state transition probability where <span class="math notranslate nohighlight">\(\mathcal{T}(s' | s,a)\)</span> is the probability of observing state <span class="math notranslate nohighlight">\(s'\)</span> after taking action <span class="math notranslate nohighlight">\(a\)</span> given state <span class="math notranslate nohighlight">\(s\)</span>.
+<span class="math notranslate nohighlight">\(P_r: \mathcal{S} \times \mathcal{A} \times \mathbb{R} \rightarrow [0,1]\)</span> is the probability distribution of the immediate reward.
+Given <span class="math notranslate nohighlight">\(P_r\)</span>, <span class="math notranslate nohighlight">\(R: \mathcal{S} \times \mathcal{A} \rightarrow \mathbb{R}\)</span> is the expected reward function where <span class="math notranslate nohighlight">\(R(s,a) := \mathbb{E}_{r \sim P_r (r | s, a)}[r]\)</span> is the expected reward when taking action <span class="math notranslate nohighlight">\(a\)</span> for state <span class="math notranslate nohighlight">\(s\)</span>.
+We also let <span class="math notranslate nohighlight">\(\gamma \in (0,1]\)</span> be a discount factor. Finally, <span class="math notranslate nohighlight">\(\pi: \mathcal{S} \rightarrow \mathcal{P}(\mathcal{A})\)</span> denotes a <em>policy</em> where <span class="math notranslate nohighlight">\(\pi(a| s)\)</span> is the probability of taking action <span class="math notranslate nohighlight">\(a\)</span> at a given state <span class="math notranslate nohighlight">\(s\)</span>.
+Note that we also denote <span class="math notranslate nohighlight">\(d_0\)</span> as the initial state distribution.</p>
+<div class="sd-card sd-sphinx-override sd-w-75 sd-m-auto sd-shadow-sm sd-text-center docutils">
+<img alt="card-img-top" class="sd-card-img-top" src="../_images/onlinerl_setup.png" />
+<div class="sd-card-body docutils">
+<div class="sd-card-title sd-font-weight-bold docutils">
+Markov Decision Process in Reinforcement Learning</div>
+</div>
+</div>
+<div class="white-space-20px"></div><p>The goal of RL is to maximize the following expected cumulative reward (i.e., policy value) of an episode that consists of total <span class="math notranslate nohighlight">\(T\)</span> timesteps.</p>
+<div class="math notranslate nohighlight">
+\[\max_{\pi \in \Pi} \, J(\pi) := \mathbb{E}_{\tau \sim p_{\pi}(\tau)} \left [ \sum_{t=0}^{T-1} \gamma^t r_t | \pi \right ]\]</div>
+<p>where <span class="math notranslate nohighlight">\(\gamma\)</span> is a discount rate and <span class="math notranslate nohighlight">\(\tau := (s_t, a_t, s_{t+1}, r_t)_{t=0}^{T-1}\)</span> is the trajectory of the policy which is sampled from
+<span class="math notranslate nohighlight">\(p_{\pi}(\tau) := d_0(s_0) \prod_{t=0}^{T-1} \pi(a_t | s_t) \mathcal{T}(s_{t+1} | s_t, a_t) P_r(r_t | s_t, a_t)\)</span>.</p>
+<p>There are several approaches to maximize the policy value. Below, we review three basic methods, On-Policy Policy Gradient <span id="id1">[<a class="reference internal" href="references.html#id60" title="Sham M Kakade. A natural policy gradient. Advances in Neural Information Processing Systems, 2001.">41</a>, <a class="reference internal" href="references.html#id61" title="David Silver, Guy Lever, Nicolas Heess, Thomas Degris, Daan Wierstra, and Martin Riedmiller. Deterministic policy gradient algorithms. In Proceedings of the 31th International Conference on Machine Learning, 387–395. PMLR, 2014.">42</a>]</span>,
+Q-Learning <span id="id2">[<a class="reference internal" href="references.html#id62" title="Christopher JCH Watkins and Peter Dayan. Q-learning. Machine learning, 8(3):279–292, 1992.">43</a>, <a class="reference internal" href="references.html#id63" title="Volodymyr Mnih, Koray Kavukcuoglu, David Silver, Alex Graves, Ioannis Antonoglou, Daan Wierstra, and Martin Riedmiller. Playing atari with deep reinforcement learning. arXiv preprint arXiv:1312.5602, 2013.">44</a>]</span>, and Actor-Critic <span id="id3">[<a class="reference internal" href="references.html#id64" title="Vijay Konda and John Tsitsiklis. Actor-critic algorithms. Advances in Neural Information Processing Systems, 1999.">45</a>, <a class="reference internal" href="references.html#id65" title="Thomas Degris, Martha White, and Richard S Sutton. Off-policy actor-critic. In Proceedings of the 29th International Coference on Machine Learning, 179–186. 2012.">46</a>]</span>.</p>
+<section id="on-policy-policy-gradient">
+<h3>On-Policy Policy Gradient<a class="headerlink" href="#on-policy-policy-gradient" title="Permalink to this heading">#</a></h3>
+<p>One of the most naive approaches to maximize the policy value is to directly learn a policy through gradient ascent as follows <span id="id4">[<a class="reference internal" href="references.html#id60" title="Sham M Kakade. A natural policy gradient. Advances in Neural Information Processing Systems, 2001.">41</a>, <a class="reference internal" href="references.html#id61" title="David Silver, Guy Lever, Nicolas Heess, Thomas Degris, Daan Wierstra, and Martin Riedmiller. Deterministic policy gradient algorithms. In Proceedings of the 31th International Conference on Machine Learning, 387–395. PMLR, 2014.">42</a>]</span>.</p>
+<div class="math notranslate nohighlight">
+\[\theta_{k+1} \leftarrow \theta_{k} + \eta \nabla J(\pi_{\theta_k})\]</div>
+<p>where <span class="math notranslate nohighlight">\(\theta\)</span> is a set of policy parameters and <span class="math notranslate nohighlight">\(\eta\)</span> is a learning rate.</p>
+<p>Here, we approximate the policy gradient <span class="math notranslate nohighlight">\(J(\pi)\)</span> via on-policy estimation as follows.</p>
+<div class="math notranslate nohighlight">
+\[\nabla J(\pi) \approx \mathbb{E}_n \left [ \sum_{t=0}^{T-1} \nabla \log \pi(a_t | s_t) \gamma^t r_t \right ]\]</div>
+<p>where <span class="math notranslate nohighlight">\(\mathbb{E}_n [\cdot]\)</span> takes empirical average over <span class="math notranslate nohighlight">\(n\)</span> trajectories sampled from online interactions.</p>
+<p>The benefit of On-Policy Policy Gradient is to enable an unbiased estimation of the policy gradient.
+However, as the estimation needs <span class="math notranslate nohighlight">\(n\)</span> trajectories every time the policy is updated from <span class="math notranslate nohighlight">\(\pi_{k-1}\)</span> to <span class="math notranslate nohighlight">\(\pi_{k}\)</span>, On-Policy Policy Gradient often suffers from <em>sample inefficiency</em> and its training process can sometimes be unstable.</p>
+</section>
+<section id="q-learning">
+<h3>Q-Learning<a class="headerlink" href="#q-learning" title="Permalink to this heading">#</a></h3>
+<p>To pursue the sample efficiency, Q-Learning instead takes Off-Policy approach, which leverages a large amount of data collected in the replay buffer <span id="id5">[<a class="reference internal" href="references.html#id63" title="Volodymyr Mnih, Koray Kavukcuoglu, David Silver, Alex Graves, Ioannis Antonoglou, Daan Wierstra, and Martin Riedmiller. Playing atari with deep reinforcement learning. arXiv preprint arXiv:1312.5602, 2013.">44</a>]</span>.
+Specifically, the value-based approach aims to learn the following state value <span class="math notranslate nohighlight">\(V(s_t)\)</span> and state-action value <span class="math notranslate nohighlight">\(Q(s_t, a_t)\)</span> using the data collected by previous online interactions <span id="id6">[<a class="reference internal" href="references.html#id62" title="Christopher JCH Watkins and Peter Dayan. Q-learning. Machine learning, 8(3):279–292, 1992.">43</a>]</span>.</p>
+<div class="math notranslate nohighlight">
+\[V(s_t) := \mathbb{E}_{\tau_{t:T-1} \sim p_{\pi}(\tau_{t:T-1} | s_t)} \left[ \sum_{t'=t}^{T-1} \gamma^{t'-t} r_{t'} \right]\]</div>
+<div class="math notranslate nohighlight">
+\[Q(s_t, a_t) := \mathbb{E}_{\tau_{t:T-1} \sim p_{\pi}(\tau_{t:T-1} | s_t, a_t)} \left[ \sum_{t'=t}^{T-1} \gamma^{t'-t} r_{t'} \right]\]</div>
+<p>where <span class="math notranslate nohighlight">\(\tau_{t:T-1}\)</span> is the trajectory from timestep <span class="math notranslate nohighlight">\(t\)</span> to <span class="math notranslate nohighlight">\(T-1\)</span>.</p>
+<p>Using the recursive structure between <span class="math notranslate nohighlight">\(V(\cdot)\)</span> and <span class="math notranslate nohighlight">\(Q(\cdot)\)</span>, we can derive the following Bellman equation.</p>
+<div class="math notranslate nohighlight">
+\[Q(s_t, a_t) = r_t + \mathbb{E}_{(s_{t+1}, a_{t+1}) \sim \mathcal{T}(s_{t+1} | s_t, a_t) \pi(a_{t+1} | s_{t+1})} [ Q(s_{t+1}, a_{t+1}) ]\]</div>
+<p>Temporal Difference (TD) learning leverages this recursive formula to learn Q-function (i.e., <span class="math notranslate nohighlight">\(Q\)</span>).
+In particular, when we use a greedy policy, Q-Function is reduced to the following.</p>
+<div class="math notranslate nohighlight">
+\[\hat{Q}_{k+1} \leftarrow {\arg \min}_{Q_{k+1}} \mathbb{E}_n \left[ \left( Q_{k+1}(s_t, a_t) - (r_t + \hat{Q}_k(s_{t+1}, \pi_k(s_{t+1}))) \right)^2 \right]\]</div>
+<p>where <span class="math notranslate nohighlight">\(n\)</span> state-action pairs are randomly sampled from the replay buffer, which stores the past observations <span class="math notranslate nohighlight">\((s_t, a_t, s_{t+1}, r_t)\)</span>.
+Based on this Q-function, the greedy policy <span class="math notranslate nohighlight">\(\pi_k\)</span> chooses actions as follows.</p>
+<div class="math notranslate nohighlight">
+\[\pi_k(a_t | s_t) := \mathbb{I} \{ a_t = {\arg \max}_{a \in \mathcal{A}}  \hat{Q}_k(s_t, a) \},\]</div>
+<p>where <span class="math notranslate nohighlight">\(\mathbb{I} \{ \cdot \}\)</span> is the indicator function.</p>
+<p>Though Q-learning enhances sample efficiency compared to On-Policy Policy Gradient,
+it is also known to suffer from approximation error when the <em>deadly triad</em> conditions – bootstrapping (i.e., TD learning), function approximation, and off-policy – are satisfied at once <span id="id7">[<a class="reference internal" href="references.html#id12" title="Hado Van Hasselt, Yotam Doron, Florian Strub, Matteo Hessel, Nicolas Sonnerat, and Joseph Modayil. Deep reinforcement learning and the deadly triad. arXiv preprint arXiv:1812.02648, 2018.">47</a>]</span>.
+As a result, <span class="math notranslate nohighlight">\(\hat{Q}(\cdot)\)</span> may fail to estimate the true state-action value, potentially leading to a sub-optimal policy.</p>
+<p>To alleviate the estimation error of <span class="math notranslate nohighlight">\(\hat{Q}(\cdot)\)</span>, we often use epsilon-greedy policy, which chooses actions randomly with probability <span class="math notranslate nohighlight">\(\epsilon\)</span>.
+Such <em>exploration</em> helps improve the quality of <span class="math notranslate nohighlight">\(\hat{Q}(\cdot)\)</span> by collecting additional data to fit Q-function to the state-action pairs that have not seen in the replay buffer.</p>
+</section>
+<section id="actor-critic">
+<h3>Actor-Critic<a class="headerlink" href="#actor-critic" title="Permalink to this heading">#</a></h3>
+<p>Actor-critic <span id="id8">[<a class="reference internal" href="references.html#id64" title="Vijay Konda and John Tsitsiklis. Actor-critic algorithms. Advances in Neural Information Processing Systems, 1999.">45</a>, <a class="reference internal" href="references.html#id65" title="Thomas Degris, Martha White, and Richard S Sutton. Off-policy actor-critic. In Proceedings of the 29th International Coference on Machine Learning, 179–186. 2012.">46</a>]</span> is a hybrid of Policy Gradient and Q-Learning.
+It first estimates the Q-function and then calculates the advantage of choosing actions (<span class="math notranslate nohighlight">\(A(s, a) := Q(s, a) - V(s)\)</span>) to derive an approximated policy gradient as follows.</p>
+<div class="math notranslate nohighlight">
+\[\hat{Q}_{k+1} \leftarrow {\arg \min}_{Q_{k+1}} \mathbb{E}_n \left[ \left( Q_{k+1}(s_t, a_t) - (r_t + \hat{Q}_k(s_{t+1}, \pi_{\theta_k}(s_{t+1}))) \right)^2 \right]\]</div>
+<div class="math notranslate nohighlight">
+\[\theta_{k+1} \leftarrow \theta_{k} + \mathbb{E}_n \left[ \sum_{t=0}^{T-1} \nabla \log \pi_{\theta_k}(a_t | s_t) \gamma^t \hat{A}(s_t, a_t) \right]\]</div>
+<p>where <span class="math notranslate nohighlight">\(\hat{A}(s_t, a_t) := \hat{Q}(s_t, a_t) - \mathbb{E}_{a \sim \pi_{\theta_k}(a_t | s_t)} \left[ \hat{Q}(s_t, a) \right]\)</span>
+and <span class="math notranslate nohighlight">\(\pi_{\theta_k}(s_{t+1})\)</span> is an action sampled from <span class="math notranslate nohighlight">\(\pi_{\theta_k}(\cdot)\)</span>.</p>
+<p>Compared to the (vanilla) On-policy Policy Gradient, Actor-Critic stabilizes the policy gradient and enhances sample efficiency by the use of <span class="math notranslate nohighlight">\(\hat{Q}\)</span>.
+Moreover, in continuous action space, Actor-Critic is often more suitable than Q-learning, which requires discretization of the action space to choose actions.</p>
+</section>
+</section>
+<section id="offline-reinforcement-learning">
+<span id="overview-offline-rl"></span><h2>Offline Reinforcement Learning<a class="headerlink" href="#offline-reinforcement-learning" title="Permalink to this heading">#</a></h2>
+<p>While online learning is a powerful framework to learn a (near) optimal policy through interaction, it also entails risk of taking sub-optimal or even unsafe actions, especially in the initial learning phase <span id="id9">[<a class="reference internal" href="references.html#id48" title="Sergey Levine, Aviral Kumar, George Tucker, and Justin Fu. Offline reinforcement learning: tutorial, review, and perspectives on open problems. arXiv preprint arXiv:2005.01643, 2020.">48</a>]</span>.
+Moreover, updating a policy in a online manner may also require huge implementation costs (particularly in applications such as recommender systems and robotics) <span id="id10">[<a class="reference internal" href="references.html#id51" title="Tatsuya Matsushima, Hiroki Furuta, Yutaka Matsuo, Ofir Nachum, and Shixiang Gu. Deployment-efficient reinforcement learning via model-based offline optimization. Proceedings of the 9th International Conference on Learning Representations, 2021.">49</a>]</span>.</p>
+<div class="sd-card sd-sphinx-override sd-w-75 sd-m-auto sd-shadow-sm sd-text-center docutils">
+<img alt="card-img-top" class="sd-card-img-top" src="../_images/offlinerl_concept.png" />
+<div class="sd-card-body docutils">
+<div class="sd-card-title sd-font-weight-bold docutils">
+Description of Offline Reinforcement Learning</div>
+</div>
+</div>
+<div class="white-space-20px"></div><p>To overcome the above issue, offline RL aims to learn a new policy in an <cite>offline</cite> manner, leveraging the logged data collected by a past deployment policy.
+Specifically, let us assume that we are accessible to the logged dataset <span class="math notranslate nohighlight">\(\mathcal{D}\)</span> consisting of <span class="math notranslate nohighlight">\(n\)</span> trajectories, each of which is generated by a behavior policy <span class="math notranslate nohighlight">\(\pi_b\)</span> as follows.</p>
+<div class="math notranslate nohighlight">
+\[\tau := \{ (s_t, a_t, s_{t+1}, r_t) \}_{t=0}^{T-1} \sim p(s_0) \prod_{t=0}^{T-1} \pi_b(a_t | s_t) \mathcal{T}(s_{t+1} | s_t, a_t) P_r (r_t | s_t, a_t)\]</div>
+<p>A key ingredient here is that we can observe feedback only for the actions chosen by the behavior policy.
+Therefore, when learning a new policy in an offline manner, we need to answer the counterfactual question,</p>
+<div class="sd-card sd-sphinx-override sd-mb-3 sd-shadow-sm sd-text-center docutils">
+<div class="sd-card-body docutils">
+<p class="sd-card-text"><em>“What if a new policy chooses a different action from that of behavior policy?”</em></p>
+</div>
+</div>
+<p>Further, the state and reward observations in the logged dataset are also biased since state transition and data collection heavily depend on the action chosen by the behavior policy.
+Therefore, we need to tackle the <cite>distributional shift</cite> between the behavior policy and a new policy and deal with the out-of-distribution problem.</p>
+<section id="the-problem-of-extrapolation-error">
+<h3>The problem of Extrapolation Error<a class="headerlink" href="#the-problem-of-extrapolation-error" title="Permalink to this heading">#</a></h3>
+<p>Apparently, Q-learning seems to be compatible with the offline setting, as it uses large amount of data to learn Q-function.
+However, Q-function is known to suffer from <cite>extrapolation error</cite> <span id="id11">[<a class="reference internal" href="references.html#id11" title="Scott Fujimoto, David Meger, and Doina Precup. Off-policy deep reinforcement learning without exploration. In Proceedings of the 36th International Conference on Machine Learning, volume 97, 2052–2062. PMLR, 2019.">50</a>]</span>
+due to the distribution shift and the deadly triad conditions (i.e., the combination of the bootstrapping, function approximation, and off-policy) <span id="id12">[<a class="reference internal" href="references.html#id12" title="Hado Van Hasselt, Yotam Doron, Florian Strub, Matteo Hessel, Nicolas Sonnerat, and Joseph Modayil. Deep reinforcement learning and the deadly triad. arXiv preprint arXiv:1812.02648, 2018.">47</a>]</span>.</p>
+<p>To investigate why the extrapolation error arises, let us recall the following TD loss of the Q-learning.</p>
+<div class="math notranslate nohighlight">
+\[\hat{\mathcal{L}}_{\mathrm{TD}}(\theta, \mathcal{D}) \propto \mathbb{E}_n \left[ \left( Q_{\theta}(s_t, a_t) - (r_t + \hat{Q}_{\mathrm{target}}(s_{t+1}, \pi(s_{t+1}))) \right)^2 \right]\]</div>
+<p>where <span class="math notranslate nohighlight">\(Q_{\theta}\)</span> is the currently learning Q-function and <span class="math notranslate nohighlight">\(\theta\)</span> is its parameters.
+<span class="math notranslate nohighlight">\(\hat{Q}_{\mathrm{target}}\)</span> is the previous Q-function, which is used as the <cite>target</cite>. <span class="math notranslate nohighlight">\(\pi\)</span> is the policy derived from <span class="math notranslate nohighlight">\(\hat{Q}_{\mathrm{target}}\)</span>.</p>
+<p>One of the most problematic point here is that we have to calculate the TD loss using <span class="math notranslate nohighlight">\((s_t, a_t, r_t, s_{t+1}, a_{t+1}=\pi(s_{t+1}))\)</span>, while we are only accessible to <span class="math notranslate nohighlight">\((s_t, a_t, r_t, s_{t+1})\)</span> in the logged data.
+Moreover, since <span class="math notranslate nohighlight">\(\pi\)</span> chooses the action that maximizes <span class="math notranslate nohighlight">\(\hat{Q}_{\mathrm{target}}\)</span>, <span class="math notranslate nohighlight">\(\pi\)</span> tends to choose unobserved (or out-of-distribution) action whose <span class="math notranslate nohighlight">\(\hat{Q}_{\mathrm{target}}\)</span> is overestimated or coincidentally higher than the true Q-function.
+As a result, <span class="math notranslate nohighlight">\(Q_{\theta}(s_t, a_t)\)</span> also propagates the overestimation error, which eventually leads to an unsafe policy that chooses detrimental actions.</p>
+<p>Below, we describe several approaches to address the aforementioned issue.</p>
+</section>
+<section id="divergence-regularization-and-behavior-cloning">
+<h3>Divergence Regularization and Behavior Cloning<a class="headerlink" href="#divergence-regularization-and-behavior-cloning" title="Permalink to this heading">#</a></h3>
+<p>One way to mitigate the extrapolation error is to directly regularize the distribution shift.</p>
+<p>For example, BRAC <span id="id13">[<a class="reference internal" href="references.html#id13" title="Yifan Wu, George Tucker, and Ofir Nachum. Behavior regularized offline reinforcement learning. arXiv preprint arXiv:1911.11361, 2019.">51</a>]</span> regularizes the discrepancy between the behavior and learning policies at <span class="math notranslate nohighlight">\(s_{t+1}\)</span> as follows.</p>
+<p>(objective)</p>
+<div class="math notranslate nohighlight">
+\[\max_{\pi \in \Pi} \, J(\pi) := \mathbb{E}_{\tau \sim p_{\pi}(\tau)} \left [ \sum_{t=0}^{T-1} \gamma^t r_t - \alpha D(\pi, \pi_b) | \pi \right ]\]</div>
+<p>(TD loss)</p>
+<div class="math notranslate nohighlight">
+\[\hat{\mathcal{L}}_{\mathrm{TD}}(\theta, \mathcal{D}) \propto \mathbb{E}_n \left[ \left( Q_{\theta}(s_t, a_t) - (r_t + \hat{Q}_{\mathrm{target}}(s_{t+1}, \pi(s_{t+1})) - \alpha D(\pi(\cdot | s_{t+1}), \pi_b(\cdot | s_{t+1}))) \right)^2 \right]\]</div>
+<p>where <span class="math notranslate nohighlight">\(\alpha\)</span> is the weight of the divergence regularization and <span class="math notranslate nohighlight">\(D(\cdot, \cdot)\)</span> is some divergence metrics such as KL-divergence or Wassertein distance.
+This method forces <span class="math notranslate nohighlight">\(\hat{Q}_{\mathrm{target}}\)</span> to understimate the out-distribution actions by explicitly regularizing the distribution shift.
+However, the divergence regularization may also limit the generalizability of the policy, as the penalty term keeps the learned policy too similar to the behavior policy even when the Q-function is adequately accurate (e.g., when the <span class="math notranslate nohighlight">\(\pi_b\)</span> is uniform random or follows a multi-modal distribution).</p>
+<p>Similarly, we can regularize the distribution shift is by directly imitating <span class="math notranslate nohighlight">\(\pi_b\)</span> in the policy optimization phase.
+For example, TD3+BC <span id="id14">[<a class="reference internal" href="references.html#id14" title="Scott Fujimoto and Shixiang Shane Gu. A minimalist approach to offline reinforcement learning. Advances in neural information processing systems, 34:20132–20145, 2021.">52</a>]</span> imposes a strong behavior cloning regularization when the average Q-value is large.</p>
+<div class="math notranslate nohighlight">
+\[\pi \leftarrow {\arg\max}_{\pi \in \Pi} \, \mathbb{E}_{n} \left[ \lambda \hat{Q}(s_t, \pi(s_t)) - (\pi(s_t) - a_t)^2 \right]\]</div>
+<p>where the first term facilitates value optimization (based on <span class="math notranslate nohighlight">\(\hat{Q}\)</span>), whilst the second term promotes the behavior cloning. The weight parameter <span class="math notranslate nohighlight">\(\lambda\)</span> is defined as follows.</p>
+<div class="math notranslate nohighlight">
+\[\lambda = \frac{\alpha}{\mathbb{E}_n \left[ |Q(s_t, a_t)| \right]}\]</div>
+<p>where <span class="math notranslate nohighlight">\(\alpha\)</span> is the predefined hyperparameter.
+Intuitively, <span class="math notranslate nohighlight">\(\lambda\)</span> becomes small when the average Q-value is large. Therefore, <span class="math notranslate nohighlight">\(\pi\)</span> imitates <span class="math notranslate nohighlight">\(\pi_b\)</span> more when <span class="math notranslate nohighlight">\(\hat{Q}\)</span> tends to overestimate the Q-value and thus is unreliable.
+On the other hand, when <span class="math notranslate nohighlight">\(\hat{Q}\)</span> estimates well and the average Q-value is not very large, <span class="math notranslate nohighlight">\(\pi\)</span> simply maximizes <span class="math notranslate nohighlight">\(\hat{Q}\)</span>.</p>
+</section>
+<section id="uncertainty-estimation">
+<h3>Uncertainty Estimation<a class="headerlink" href="#uncertainty-estimation" title="Permalink to this heading">#</a></h3>
+<p>The second approach to deal with the overestimation bias of <span class="math notranslate nohighlight">\(\hat{Q}\)</span> is to derive the lower bound of the Q-value based on estimation uncertainty.
+This approach is somewhat similar to BRAC, but does not have to penalize the distribution shift as long as the Q-function is accurate.</p>
+<p>For example, BEAR <span id="id15">[<a class="reference internal" href="references.html#id15" title="Aviral Kumar, Justin Fu, Matthew Soh, George Tucker, and Sergey Levine. Stabilizing off-policy q-learning via bootstrapping error reduction. Advances in Neural Information Processing Systems, 2019.">53</a>]</span> estimates the Q-function as follows.</p>
+<div class="math notranslate nohighlight">
+\[\hat{\mathcal{L}}_{\mathrm{TD}}(\theta, \mathcal{D}) \propto \mathbb{E}_n \left[ \left( Q_{\theta}(s_t, a_t) - (r_t + \hat{Q}_{\mathrm{pess}}(s_{t+1}, \pi(s_{t+1})) \right)^2 \right]\]</div>
+<p>The pessimistic Q-function is learned through ensembling <span class="math notranslate nohighlight">\(m\)</span> different Q-functions as follows.</p>
+<div class="math notranslate nohighlight">
+\[\hat{Q}_{\mathrm{pess}}(s) := \max_{a \in \mathcal{A}} \left( \lambda \min_{j = 1,2, \ldots, m} \hat{Q}_j(s, a) + (1 - \lambda) \max_{j' = 1, 2, \ldots ,m} \hat{Q}_{j'}(s, a) \right)\]</div>
+<p>where <span class="math notranslate nohighlight">\(\lambda\)</span> is the hyperparameter that determines the degree of optimism/pessimism. A large value of <span class="math notranslate nohighlight">\(\lambda\)</span> leads to a pessimistic Q-function.</p>
+<p>Besides, we can penalize with the standard deviation as follows.</p>
+<div class="math notranslate nohighlight">
+\[\hat{Q}_{\mathrm{pess}}(s) := \max_{a \in \mathcal{A}} \left( \mathbb{E}_m [\hat{Q}_j(s, a)] - \sqrt{\mathbb{V}_m [\hat{Q}_j(s, a)]} \right)\]</div>
+<p>where <span class="math notranslate nohighlight">\(\mathbb{E}_m[\cdot]\)</span> and <span class="math notranslate nohighlight">\(\mathbb{V}_m[\cdot]\)</span> is the mean and variance among <span class="math notranslate nohighlight">\(m\)</span> different Q-functions.</p>
+</section>
+<section id="conservative-q-learning">
+<h3>Conservative Q-Learning<a class="headerlink" href="#conservative-q-learning" title="Permalink to this heading">#</a></h3>
+<p>To derive the conservative Q-function without explicitly quantifying the uncertainty, CQL <span id="id16">[<a class="reference internal" href="references.html#id21" title="Aviral Kumar, Aurick Zhou, George Tucker, and Sergey Levine. Conservative q-learning for offline reinforcement learning. In Advances in Neural Information Processing Systems, volume 33, 1179–1191. 2020.">2</a>]</span> minimizes the Q-value of the out-of-distribution state-action pairs while also minimizing the TD loss.</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}Q \leftarrow \max_{Q} \min_{\mu} \, &amp; \alpha \left( \mathbb{E}_n \left[ Q(s_t, \mu(s_t)) - Q(s_t, \pi_b(s_t)) \right]  \right) \\
+&amp; \quad \quad + \mathbb{E}_n \left[ \left( Q(s_t, a_t) - (r_t + \hat{Q}(s_{t+1}, \pi(s_{t+1}))) \right)^2 \right]\end{split}\]</div>
+<p>where <span class="math notranslate nohighlight">\(\alpha\)</span> is the hyperparameter to balance the loss function.
+The first term aims to minimize the maximum Q-value of the policy <span class="math notranslate nohighlight">\(\mu\)</span> to alleviate the overestimation while maximizing the Q-value of the behavior policy.
+By adding this loss function, CQL effectively learn the Q-function under the state-action pairs supported by <span class="math notranslate nohighlight">\(\pi_b\)</span>, while being conservative to the out-of-distribution action.
+However, CQL is also known to be too conservative to generalize well. Many advanced algorithms including COMBO <span id="id17">[<a class="reference internal" href="references.html#id22" title="Tianhe Yu, Aviral Kumar, Rafael Rafailov, Aravind Rajeswaran, Sergey Levine, and Chelsea Finn. Combo: conservative offline model-based policy optimization. Advances in neural information processing systems, 34:28954–28967, 2021.">54</a>]</span> (which exploits model-based data augmentation for OOD observations)
+have been developed to improve the generalizability of CQL.</p>
+</section>
+<section id="implicit-q-learning">
+<h3>Implicit Q-Learning<a class="headerlink" href="#implicit-q-learning" title="Permalink to this heading">#</a></h3>
+<p>One of the limitations of the above approaches is that they may sacrifice the generalizability due to the explicit regularization on the out-of-distribution state-action pairs.</p>
+<p>To tackle this issue, IQL <span id="id18">[<a class="reference internal" href="references.html#id17" title="Ilya Kostrikov, Ashvin Nair, and Sergey Levine. Offline reinforcement learning with implicit q-learning. arXiv preprint arXiv:2110.06169, 2021.">55</a>]</span> aims to learn a conservative policy without the explicit out-of-distribution regularization.
+For this, IQL first estimates the state-value function (V-function) with the asymmetric loss to penalize the optimism as follows.</p>
+<div class="math notranslate nohighlight">
+\[\hat{\mathcal{L}}_{V}(\psi) = \mathbb{E}_n [ L_2^{\lambda} (\hat{Q}_{\theta}(s_t, a_t) - V_{\psi}(s_t)) ]\]</div>
+<p>where <span class="math notranslate nohighlight">\(\hat{Q}_{\theta}\)</span> and <span class="math notranslate nohighlight">\(V_{\psi}\)</span> is learned distinctly, with different parameters <span class="math notranslate nohighlight">\(\theta\)</span> and <span class="math notranslate nohighlight">\(\psi\)</span>, respectively.
+<span class="math notranslate nohighlight">\(L_2^{\lambda}(z)\)</span> is the asymmetric loss function, which is defined as follows.</p>
+<div class="math notranslate nohighlight">
+\[L_2^{\lambda}(z) := |\tau - \mathbb{I}(z &lt; 0)| z^2\]</div>
+<p>where <span class="math notranslate nohighlight">\(\tau\)</span> is the parameter to control the asymmetricity. When <span class="math notranslate nohighlight">\(\tau &gt; 0.5\)</span>, the loss function penalizes the positive value of <span class="math notranslate nohighlight">\(z\)</span> more.
+Therefore, <span class="math notranslate nohighlight">\(\hat{V}\)</span> learned with <span class="math notranslate nohighlight">\(\tau \rightarrow 1\)</span> indicates the maximum Q-value among the observed state-action pairs,
+while that learned with <span class="math notranslate nohighlight">\(\tau = 0.5\)</span> indicates the average Q-value among those pairs.
+This prevents the propagation of the overestimation bias, even when the basic TD loss is used to learn the Q-function as follows.</p>
+<div class="math notranslate nohighlight">
+\[\hat{\mathcal{L}}_{Q}(\theta) = \mathbb{E}_n [ (\hat{Q}_{\theta}(s_t, a_t) - (r_t + \hat{V}_{\psi}(s_{t+1}))) ]\]</div>
+<p>Note that a suitable offline RL algorithm can change depending on the quality (e.g., state-action coverage and expertise of <span class="math notranslate nohighlight">\(\pi_b\)</span>) of logged dataset.
+Moreover, the performance of the learned policy also changes greatly with the hyperparameters used for offline training <span id="id19">[<a class="reference internal" href="references.html#id17" title="Ilya Kostrikov, Ashvin Nair, and Sergey Levine. Offline reinforcement learning with implicit q-learning. arXiv preprint arXiv:2110.06169, 2021.">55</a>]</span>.
+Therefore, <strong>it is crucial to evaluate the performance of the learned policy before deploying it to real-world systems through Off-Policy Evaluation (OPE)</strong>.
+We describe the problem formulation of Off-Policy Evaluation (OPE) and Selection (OPS) in <a class="reference internal" href="ope_ops.html"><span class="doc">Overview (OPE/OPS)</span></a>.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="learning_implementation.html"><span class="doc">Supported implementations and useful tools</span></a></p></li>
+<li><p><a class="reference internal" href="quickstart.html"><span class="doc">Quickstart</span></a></p></li>
+</ul>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>For further taxonomies, algorithms, and descriptions, we refer readers to survey papers <span id="id20">[<a class="reference internal" href="references.html#id48" title="Sergey Levine, Aviral Kumar, George Tucker, and Justin Fu. Offline reinforcement learning: tutorial, review, and perspectives on open problems. arXiv preprint arXiv:2005.01643, 2020.">48</a>]</span> <span id="id21">[<a class="reference internal" href="references.html#id49" title="Rafael Figueiredo Prudencio, Marcos ROA Maximo, and Esther Luna Colombini. A survey on offline reinforcement learning: taxonomy, review, and open problems. arXiv preprint arXiv:2203.01387, 2022.">56</a>]</span>.
+<a class="reference external" href="https://github.com/hanjuku-kaso/awesome-offline-rl">awesome-offline-rl</a> also provides a comprehensive list of literature.</p>
+</div>
+<div class="white-space-5px"></div><div class="sd-container-fluid sd-sphinx-override sd-m-0 docutils">
+<div class="sd-row docutils">
+<div class="sd-col sd-d-flex-column sd-col-3 sd-col-xs-3 sd-col-sm-3 sd-col-md-3 sd-col-lg-3 sd-m-0 sd-p-0 docutils">
+<div class="sd-container-fluid sd-sphinx-override sd-m-0 docutils">
+<div class="sd-row docutils">
+<div class="sd-col sd-d-flex-row sd-m-0 sd-p-0 docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-none sd-card-hover docutils">
+<div class="sd-card-body docutils">
+<p class="sd-card-text">&lt;&lt;&lt; Prev
+<strong>Documentation (Back to Top)</strong></p>
+</div>
+<a class="sd-stretched-link reference internal" href="index.html"><span class="doc"></span></a></div>
+</div>
+</div>
+</div>
+</div>
+<div class="sd-col sd-d-flex-column sd-col-6 sd-col-xs-6 sd-col-sm-6 sd-col-md-6 sd-col-lg-6 sd-m-0 sd-p-0 docutils">
+</div>
+<div class="sd-col sd-d-flex-column sd-col-3 sd-col-xs-3 sd-col-sm-3 sd-col-md-3 sd-col-lg-3 sd-m-0 sd-p-0 docutils">
+<div class="sd-container-fluid sd-sphinx-override sd-m-0 docutils">
+<div class="sd-row docutils">
+<div class="sd-col sd-d-flex-row sd-m-0 sd-p-0 docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-none sd-card-hover docutils">
+<div class="sd-card-body docutils">
+<p class="sd-card-text">Next &gt;&gt;&gt;
+<strong>Off_Policy Evaluation</strong></p>
+</div>
+<a class="sd-stretched-link reference internal" href="ope_ops.html"><span class="doc"></span></a></div>
+</div>
+<div class="sd-col sd-d-flex-row sd-m-0 sd-p-0 docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-none sd-card-hover docutils">
+<div class="sd-card-body docutils">
+<p class="sd-card-text">Next &gt;&gt;&gt;
+<strong>Supported Implementation</strong></p>
+</div>
+<a class="sd-stretched-link reference internal" href="learning_implementation.html"><span class="doc"></span></a></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#online-reinforcement-learning">Online Reinforcement Learning</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#on-policy-policy-gradient">On-Policy Policy Gradient</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#q-learning">Q-Learning</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#actor-critic">Actor-Critic</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#offline-reinforcement-learning">Offline Reinforcement Learning</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#the-problem-of-extrapolation-error">The problem of Extrapolation Error</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#divergence-regularization-and-behavior-cloning">Divergence Regularization and Behavior Cloning</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#uncertainty-estimation">Uncertainty Estimation</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#conservative-q-learning">Conservative Q-Learning</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#implicit-q-learning">Implicit Q-Learning</a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            <div class="bd-footer-content__inner"></div>
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=12da95d707ffb74b382d"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=12da95d707ffb74b382d"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+  <p class="copyright">
+    
+      © Copyright 2023, Haruka Kiyohara, Ren Kishimoto, HAKUHODO Technologies Inc., Hanjuku-kaso Co., Ltd.
+      <br/>
+    
+  </p>
+</div>
+      
+    </div>
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item"><p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.13.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

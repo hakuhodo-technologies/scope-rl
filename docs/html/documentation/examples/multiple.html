@@ -1,0 +1,1110 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+    <title>Example Codes with Multiple Logged Dataset and Behavior Policies &#8212; SCOPE-RL</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=12da95d707ffb74b382d" rel="stylesheet" />
+<link href="../../_static/styles/bootstrap.css?digest=12da95d707ffb74b382d" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=12da95d707ffb74b382d" rel="stylesheet" />
+
+  
+  <link href="../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=12da95d707ffb74b382d" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/tabs.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/design-style.4045f2051d55cab465a707391d5b2007.min.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=12da95d707ffb74b382d" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=12da95d707ffb74b382d" />
+
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/clipboard.min.js"></script>
+    <script src="../../_static/copybutton.js"></script>
+    <script src="../../_static/design-tabs.js"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <nav class="bd-header navbar navbar-expand-lg bd-navbar">
+<div class="bd-header__inner bd-page-width">
+  <label class="sidebar-toggle primary-toggle" for="__primary">
+    <span class="fa-solid fa-bars"></span>
+  </label>
+  
+  <div class="navbar-header-items__start">
+    
+      <div class="navbar-item">
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+    <p class="title logo__title">SCOPE-RL</p>
+  
+</a></div>
+    
+  </div>
+  
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../installation.html">
+                        Installation
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../quickstart.html">
+                        Quickstart
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../index.html">
+                        Documentation
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="index.html">
+                        Usage
+                      </a>
+                    </li>
+                
+            <div class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    More
+                </button>
+                <div class="dropdown-menu">
+                    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../subpackages/index.html">
+                        Sub-packages
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../frequently_asked_questions.html">
+                        FAQs
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../news.html">
+                        News
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-external" href="https://github.com/hakuhodo-technologies/scope-rl/releases">
+                        Release Notes
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-external" href="https://github.com/hakuhodo-technologies/scope-rl/404">
+                        Proceedings
+                      </a>
+                    </li>
+                
+                </div>
+            </div>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+  </button>
+`);
+</script>
+        </div>
+      
+      
+        <div class="navbar-item">
+<script>
+document.write(`
+  <button class="theme-switch-button btn btn-sm btn-outline-primary navbar-btn rounded-circle" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch" data-mode="light"><i class="fa-solid fa-sun"></i></span>
+    <span class="theme-switch" data-mode="dark"><i class="fa-solid fa-moon"></i></span>
+    <span class="theme-switch" data-mode="auto"><i class="fa-solid fa-circle-half-stroke"></i></span>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/hakuhodo-technologies/scope-rl" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-square-github"></i></span>
+            <label class="sr-only">GitHub</label></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://speakerdeck.com/aiueola/ofrl-designing-an-offline-reinforcement-learning-and-policy-evaluation-platform-from-practical-perspectives" title="Speaker Deck" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-speaker-deck"></i></span>
+            <label class="sr-only">Speaker Deck</label></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+  </button>
+`);
+</script>
+    </div>
+  
+
+  
+    <label class="sidebar-toggle secondary-toggle" for="__secondary">
+      <span class="fa-solid fa-outdent"></span>
+    </label>
+  
+</div>
+
+    </nav>
+  
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      <div class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../installation.html">
+                        Installation
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../quickstart.html">
+                        Quickstart
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../index.html">
+                        Documentation
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="index.html">
+                        Usage
+                      </a>
+                    </li>
+                
+            <div class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    More
+                </button>
+                <div class="dropdown-menu">
+                    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../subpackages/index.html">
+                        Sub-packages
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../frequently_asked_questions.html">
+                        FAQs
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../news.html">
+                        News
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-external" href="https://github.com/hakuhodo-technologies/scope-rl/releases">
+                        Release Notes
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-external" href="https://github.com/hakuhodo-technologies/scope-rl/404">
+                        Proceedings
+                      </a>
+                    </li>
+                
+                </div>
+            </div>
+            
+  </ul>
+</nav></div>
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+<script>
+document.write(`
+  <button class="theme-switch-button btn btn-sm btn-outline-primary navbar-btn rounded-circle" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch" data-mode="light"><i class="fa-solid fa-sun"></i></span>
+    <span class="theme-switch" data-mode="dark"><i class="fa-solid fa-moon"></i></span>
+    <span class="theme-switch" data-mode="auto"><i class="fa-solid fa-circle-half-stroke"></i></span>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/hakuhodo-technologies/scope-rl" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-square-github"></i></span>
+            <label class="sr-only">GitHub</label></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://speakerdeck.com/aiueola/ofrl-designing-an-offline-reinforcement-learning-and-policy-evaluation-platform-from-practical-perspectives" title="Speaker Deck" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-speaker-deck"></i></span>
+            <label class="sr-only">Speaker Deck</label></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumbs">
+  <ul class="bd-breadcrumbs" role="navigation" aria-label="Breadcrumb">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page">Example Codes with Multiple Logged Dataset and Behavior Policies</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article" role="main">
+                  
+  <section id="example-codes-with-multiple-logged-dataset-and-behavior-policies">
+<h1>Example Codes with Multiple Logged Dataset and Behavior Policies<a class="headerlink" href="#example-codes-with-multiple-logged-dataset-and-behavior-policies" title="Permalink to this heading">#</a></h1>
+<p>Here, we show example codes for conducting OPE and OPS with multiple logged datasets.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>For preparation, please also refer to the following pages about the case with a single logged dataset:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../learning_implementation.html"><span class="doc">Data collection and Offline RL</span></a></p></li>
+<li><p><a class="reference internal" href="basic_ope.html"><span class="doc">Example codes for basic OPE</span></a></p></li>
+<li><p><a class="reference internal" href="cumulative_dist_ope.html"><span class="doc">Example codes for cumulative distribution OPE</span></a></p></li>
+<li><p><a class="reference internal" href="ops.html"><span class="doc">Example codes for OPS</span></a></p></li>
+<li><p><a class="reference internal" href="assessments.html"><span class="doc">Example codes for assessing OPE and OPS</span></a></p></li>
+</ul>
+</div>
+<section id="logged-dataset">
+<h2>Logged Dataset<a class="headerlink" href="#logged-dataset" title="Permalink to this heading">#</a></h2>
+<p>Here, we assume that an RL environment, behavior policies, and evaluation policies are given as follows.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">behavior_policy</span></code>: an instance of <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseHead</span></code> or a list of instance(s) of <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseHead</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">evaluation_policies</span></code>: a list of instance(s) of <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseHead</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">env</span></code>: a gym environment (unecessary when using real-world datasets)</p></li>
+</ul>
+<p>Then, we can collect multiple logged datasets with a single behavior policy as follows.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">scope_rl.dataset</span> <span class="kn">import</span> <span class="n">SyntheticDataset</span>
+
+<span class="c1"># initialize dataset</span>
+<span class="n">dataset</span> <span class="o">=</span> <span class="n">SyntheticDataset</span><span class="p">(</span>
+    <span class="n">env</span><span class="o">=</span><span class="n">env</span><span class="p">,</span>
+    <span class="n">max_episode_steps</span><span class="o">=</span><span class="n">env</span><span class="o">.</span><span class="n">step_per_episode</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="c1"># obtain logged dataset</span>
+<span class="n">multiple_logged_datasets</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">obtain_episodes</span><span class="p">(</span>
+    <span class="n">behavior_policies</span><span class="o">=</span><span class="n">behavior_policies</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>  <span class="c1"># a single behavior policy</span>
+    <span class="n">n_datasets</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>  <span class="c1"># specify the number of dataset (i.e., number of different random seeeds)</span>
+    <span class="n">n_trajectories</span><span class="o">=</span><span class="mi">10000</span><span class="p">,</span>
+    <span class="n">random_state</span><span class="o">=</span><span class="n">random_state</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>Similarly, SCOPE-RL also collects multiple logged datasets with multiple behavior policies as follows.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">multiple_logged_datasets</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">obtain_episodes</span><span class="p">(</span>
+    <span class="n">behavior_policies</span><span class="o">=</span><span class="n">behavior_policies</span><span class="p">,</span>  <span class="c1"># multiple behavior policies</span>
+    <span class="n">n_datasets</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>  <span class="c1"># specify the number of dataset (i.e., number of different random seeeds) for each behavior policy</span>
+    <span class="n">n_trajectories</span><span class="o">=</span><span class="mi">10000</span><span class="p">,</span>
+    <span class="n">random_state</span><span class="o">=</span><span class="n">random_state</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>The multiple logged datasets are returned as an instance of <code class="xref py py-class docutils literal notranslate"><span class="pre">MultipleLoggedDataset</span></code>.
+Note that, we can also manually create multiple logged datasets as follows.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">scope_rl.utils</span> <span class="kn">import</span> <span class="n">MultipleLoggedDataset</span>
+
+<span class="n">multiple_logged_dataset</span> <span class="o">=</span> <span class="n">MultipleLoggedDataset</span><span class="p">(</span>
+    <span class="n">action_type</span><span class="o">=</span><span class="s2">&quot;discrete&quot;</span><span class="p">,</span>
+    <span class="n">path</span><span class="o">=</span><span class="s2">&quot;logged_dataset/&quot;</span><span class="p">,</span>  <span class="c1"># specify the path to the dataset</span>
+<span class="p">)</span>
+
+<span class="k">for</span> <span class="n">behavior_policy</span> <span class="ow">in</span> <span class="n">behavior_policies</span><span class="p">:</span>
+    <span class="n">single_logged_dataset</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">obtain_episodes</span><span class="p">(</span>
+        <span class="n">behavior_policies</span><span class="o">=</span><span class="n">behavior_policy</span><span class="p">,</span>  <span class="c1"># a single behavior policy</span>
+        <span class="n">n_trajectories</span><span class="o">=</span><span class="mi">10000</span><span class="p">,</span>
+        <span class="n">random_state</span><span class="o">=</span><span class="n">random_state</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="c1"># add a single_logged_dataset to multiple_logged_dataset</span>
+    <span class="n">multiple_logged_dataset</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
+        <span class="n">single_logged_dataset</span><span class="p">,</span>
+        <span class="n">behavior_policy_name</span><span class="o">=</span><span class="n">behavior_policy</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+        <span class="n">dataset_id</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+<p>Once you create the multiple logged datasets, each dataset is accessible via the following code.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">single_logged_dataset</span> <span class="o">=</span> <span class="n">multiple_logged_dataset</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+    <span class="n">behavior_policy_name</span><span class="o">=</span><span class="n">behavior_policies</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">dataset_id</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="xref py py-class docutils literal notranslate"><span class="pre">MultipleLoggedDataset</span></code> also has the following properties.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># a list of the name of behavior policies</span>
+<span class="n">multiple_logged_dataset</span><span class="o">.</span><span class="n">behavior_policy_names</span>
+
+<span class="c1"># a dictionary of the number of datasets for each behavior policy</span>
+<span class="n">multiple_logged_dataset</span><span class="o">.</span><span class="n">n_datasets</span>
+</pre></div>
+</div>
+</section>
+<section id="inputs">
+<h2>Inputs<a class="headerlink" href="#inputs" title="Permalink to this heading">#</a></h2>
+<p>The next step is to create the inputs for OPE estimators.
+Here, we show the case of creating inputs for importance-sampling based estimators for brevity.
+For the case of creating inputs for model-based and marginal importance-sampling based estimators, please also refer to <a class="reference internal" href="basic_ope.html"><span class="doc">Example Codes for Basic OPE</span></a>.</p>
+<p>We first show the case of creating whole logged datasets stored in <code class="docutils literal notranslate"><span class="pre">multiple_logged_datasets</span></code> (, which is essentially the same with the case of using <code class="docutils literal notranslate"><span class="pre">single_logged_dataset</span></code>).</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">scope_rl.ope</span> <span class="kn">import</span> <span class="n">CreateOPEInput</span>
+
+<span class="c1"># initialize class to create inputs</span>
+<span class="n">prep</span> <span class="o">=</span> <span class="n">CreateOPEInput</span><span class="p">(</span>
+    <span class="n">env</span><span class="o">=</span><span class="n">env</span><span class="p">,</span>  <span class="c1"># unecessary when using real-world dataset</span>
+<span class="p">)</span>
+<span class="c1"># create inputs (e.g., calculating )</span>
+<span class="n">multiple_input_dict</span> <span class="o">=</span> <span class="n">prep</span><span class="o">.</span><span class="n">obtain_whole_inputs</span><span class="p">(</span>
+    <span class="n">logged_dataset</span><span class="o">=</span><span class="n">multiple_logged_dataset</span><span class="p">,</span>
+    <span class="n">evaluation_policies</span><span class="o">=</span><span class="n">evaluation_policies</span><span class="p">,</span>
+    <span class="n">n_trajectories_on_policy_evaluation</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>  <span class="c1"># when evaluating OPE (optional)</span>
+    <span class="n">random_state</span><span class="o">=</span><span class="n">random_state</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>The above code returns <code class="docutils literal notranslate"><span class="pre">multiple_input_dict</span></code> as an instance of <code class="xref py py-class docutils literal notranslate"><span class="pre">MultipleInputDict</span></code>.
+Each input dictionary is accessble via the following code.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">single_input_dict</span> <span class="o">=</span> <span class="n">multiple_input_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+    <span class="n">behavior_policy_name</span><span class="o">=</span><span class="n">behavior_policies</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">dataset_id</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="xref py py-class docutils literal notranslate"><span class="pre">MultipleInputDict</span></code> has the following properties.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># a list of the name of behavior policies</span>
+<span class="n">multiple_input_dict</span><span class="o">.</span><span class="n">behavior_policy_names</span>
+
+<span class="c1"># a dictionary of the number of datasets for each behavior policy</span>
+<span class="n">multiple_input_dict</span><span class="o">.</span><span class="n">n_datasets</span>
+
+<span class="c1"># a dictionary of the number of evaluation policies of each input dict</span>
+<span class="n">multiple_input_dict</span><span class="o">.</span><span class="n">n_eval_policies</span>
+
+<span class="c1"># check if the contained logged datasets use the same evaluation policies</span>
+<span class="n">multiple_input_dict</span><span class="o">.</span><span class="n">use_same_eval_policy_across_dataset</span>
+</pre></div>
+</div>
+<p>Note that, it is also possible to create a single input dict using the <code class="xref py py-class docutils literal notranslate"><span class="pre">CreateOPEInput</span></code> class
+by specifying the behavior policy and the dataset id as follows.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">single_input_dict</span> <span class="o">=</span> <span class="n">prep</span><span class="o">.</span><span class="n">obtain_whole_inputs</span><span class="p">(</span>
+    <span class="n">logged_dataset</span><span class="o">=</span><span class="n">multiple_logged_dataset</span><span class="p">,</span>
+    <span class="n">behavior_policy_name</span><span class="o">=</span><span class="n">behavior_policies</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>  <span class="c1"># specify the behavior policy</span>
+    <span class="n">dataset_id</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>                                    <span class="c1"># specify the dataset id</span>
+    <span class="n">evaluation_policies</span><span class="o">=</span><span class="n">evaluation_policies</span><span class="p">,</span>
+    <span class="n">random_state</span><span class="o">=</span><span class="n">random_state</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="off-policy-evaluation">
+<h2>Off-Policy Evaluation<a class="headerlink" href="#off-policy-evaluation" title="Permalink to this heading">#</a></h2>
+<p>SCOPE-RL enables OPE with multiple logged datasets and multiple input dicts without additional efforts.
+Specifically, we can estimate the policy value via basic OPE as follows.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">scope_rl.ope</span> <span class="kn">import</span> <span class="n">OffPolicyEvaluation</span> <span class="k">as</span> <span class="n">OPE</span>
+
+<span class="c1"># initialize the OPE class</span>
+<span class="n">ope</span> <span class="o">=</span> <span class="n">OPE</span><span class="p">(</span>
+    <span class="n">logged_dataset</span><span class="o">=</span><span class="n">multiple_logged_dataset</span><span class="p">,</span>  <span class="c1">#</span>
+    <span class="n">ope_estimators</span><span class="o">=</span><span class="n">estimators</span><span class="p">,</span>  <span class="c1"># a list of OPE estimators</span>
+<span class="p">)</span>
+<span class="c1"># estimate policy value and its confidence intervals</span>
+<span class="n">policy_value_df_dict</span><span class="p">,</span> <span class="n">policy_value_interval_df_dict</span> <span class="o">=</span> <span class="n">ope</span><span class="o">.</span><span class="n">summarize_off_policy_estimates</span><span class="p">(</span>
+    <span class="n">input_dict</span><span class="o">=</span><span class="n">multiple_input_dict</span><span class="p">,</span>  <span class="c1">#</span>
+    <span class="n">random_state</span><span class="o">=</span><span class="n">random_state</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>The result for each logged dataset is accessible by the following keys.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">policy_value_df_dict</span><span class="p">[</span><span class="n">behavior_policies</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="p">][</span><span class="n">dataset_id</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>We can also specify the behavior policy and dataset id when calling the function as follows.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">policy_value_df_dict</span><span class="p">,</span> <span class="n">policy_value_interval_df_dict</span> <span class="o">=</span> <span class="n">ope</span><span class="o">.</span><span class="n">summarize_off_policy_estimates</span><span class="p">(</span>
+    <span class="n">input_dict</span><span class="o">=</span><span class="n">input_dict</span><span class="p">,</span>  <span class="c1"># either multiple or single input dict</span>
+    <span class="n">behavior_policy_name</span><span class="o">=</span><span class="n">behavior_policies</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>  <span class="c1"># specify the behavior policy name</span>
+    <span class="n">dataset_id</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>  <span class="c1"># specify the dataset id</span>
+    <span class="n">random_state</span><span class="o">=</span><span class="n">random_state</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>Next, to compare the OPE result for some specific logged dataset, use the following function.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ope</span><span class="o">.</span><span class="n">visualize_off_policy_estimates</span><span class="p">(</span>
+    <span class="n">input_dict</span><span class="p">,</span>  <span class="c1"># either multiple or single input dict</span>
+    <span class="n">behavior_policy_name</span><span class="o">=</span><span class="n">behavior_policies</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>  <span class="c1"># specify the behavior policy name</span>
+    <span class="n">dataset_id</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>  <span class="c1"># specify the dataset id</span>
+    <span class="n">random_state</span><span class="o">=</span><span class="n">random_state</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<div class="sd-card sd-sphinx-override sd-mb-3 sd-shadow-sm sd-text-center docutils">
+<img alt="card-img-top" class="sd-card-img-top" src="../../_images/multiple_ope_single_policy_value.png" />
+<div class="sd-card-body docutils">
+</div>
+</div>
+<p>We can also compare results with multiple datasets as follows.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ope</span><span class="o">.</span><span class="n">visualize_policy_value_with_multiple_estimates</span><span class="p">(</span>
+    <span class="n">input_dict</span><span class="o">=</span><span class="n">multiple_input_dict</span><span class="p">,</span>
+    <span class="n">plot_type</span><span class="o">=</span><span class="s2">&quot;ci&quot;</span><span class="p">,</span>  <span class="c1">#</span>
+    <span class="n">hue</span><span class="o">=</span><span class="s2">&quot;policy&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<div class="sd-card sd-sphinx-override sd-mb-3 sd-shadow-sm sd-text-center docutils">
+<img alt="card-img-top" class="sd-card-img-top" src="../../_images/multiple_ope_hist_policy_value.png" />
+<div class="sd-card-body docutils">
+</div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ope</span><span class="o">.</span><span class="n">visualize_policy_value_with_multiple_estimates</span><span class="p">(</span>
+    <span class="n">input_dict</span><span class="o">=</span><span class="n">multiple_input_dict</span><span class="p">,</span>
+    <span class="n">plot_type</span><span class="o">=</span><span class="s2">&quot;violin&quot;</span><span class="p">,</span>  <span class="c1">#</span>
+    <span class="n">hue</span><span class="o">=</span><span class="s2">&quot;policy&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<div class="sd-card sd-sphinx-override sd-mb-3 sd-shadow-sm sd-text-center docutils">
+<img alt="card-img-top" class="sd-card-img-top" src="../../_images/multiple_ope_violin_policy_value.png" />
+<div class="sd-card-body docutils">
+</div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ope</span><span class="o">.</span><span class="n">visualize_policy_value_with_multiple_estimates</span><span class="p">(</span>
+    <span class="n">input_dict</span><span class="o">=</span><span class="n">multiple_input_dict</span><span class="p">,</span>
+    <span class="n">plot_type</span><span class="o">=</span><span class="s2">&quot;scatter&quot;</span><span class="p">,</span>  <span class="c1">#</span>
+    <span class="n">hue</span><span class="o">=</span><span class="s2">&quot;policy&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<div class="sd-card sd-sphinx-override sd-mb-3 sd-shadow-sm sd-text-center docutils">
+<img alt="card-img-top" class="sd-card-img-top" src="../../_images/multiple_ope_scatter_policy_value.png" />
+<div class="sd-card-body docutils">
+</div>
+</div>
+</section>
+<section id="cumulative-distribution-off-policy-evaluation">
+<h2>Cumulative Distribution Off-Policy Evaluation<a class="headerlink" href="#cumulative-distribution-off-policy-evaluation" title="Permalink to this heading">#</a></h2>
+<p>CD-OPE also employs similar implementations with those of basic OPE.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">scope_rl.ope</span> <span class="kn">import</span> <span class="n">CumulativeDistributionOPE</span>
+
+<span class="c1"># initialize the OPE class</span>
+<span class="n">cd_ope</span> <span class="o">=</span> <span class="n">CumulativeDistributionOPE</span><span class="p">(</span>
+    <span class="n">logged_dataset</span><span class="o">=</span><span class="n">multiple_logged_dataset</span><span class="p">,</span>  <span class="c1">#</span>
+    <span class="n">ope_estimators</span><span class="o">=</span><span class="n">estimators</span><span class="p">,</span>  <span class="c1"># a list of OPE estimators</span>
+<span class="p">)</span>
+<span class="c1"># estimate policy value and its confidence intervals</span>
+<span class="n">cdf_dict</span> <span class="o">=</span> <span class="n">cd_ope</span><span class="o">.</span><span class="n">estimate_cumulative_distribution_function</span><span class="p">(</span>
+    <span class="n">input_dict</span><span class="o">=</span><span class="n">multiple_input_dict</span><span class="p">,</span>  <span class="c1">#</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>The result for each logged dataset is accessible by the following keys.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">cdf_dict</span><span class="p">[</span><span class="n">behavior_policies</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="p">][</span><span class="n">dataset_id</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>We can also specify the behavior policy and dataset id when calling the function as follows.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">cdf_dict</span> <span class="o">=</span> <span class="n">cd_ope</span><span class="o">.</span><span class="n">estimate_cumulative_distribution_function</span><span class="p">(</span>
+    <span class="n">input_dict</span><span class="o">=</span><span class="n">multiple_input_dict</span><span class="p">,</span>  <span class="c1">#</span>
+    <span class="n">behavior_policy_name</span><span class="o">=</span><span class="n">behavior_policies</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>  <span class="c1"># specify the behavior policy name</span>
+    <span class="n">dataset_id</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>  <span class="c1"># specify the dataset id</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>Similar codes also work for the following functions.</p>
+<ul class="simple">
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">estimate_cumulative_distribution_function</span></code></p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">estimate_mean</span></code></p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">estimate_variance</span></code></p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">estimate_conditional_value_at_risk</span></code></p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">estimate_interquartile_range</span></code></p></li>
+</ul>
+<p>The following code compares the OPE result for some specific logged dataset.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">cd_ope</span><span class="o">.</span><span class="n">visualize_cumulative_distribution_function</span><span class="p">(</span>
+    <span class="n">input_dict</span><span class="p">,</span>  <span class="c1"># either multiple or single input dict</span>
+    <span class="n">behavior_policy_name</span><span class="o">=</span><span class="n">behavior_policies</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>  <span class="c1"># specify the behavior policy name</span>
+    <span class="n">dataset_id</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>  <span class="c1"># specify the dataset id</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<div class="sd-card sd-sphinx-override sd-mb-3 sd-shadow-sm sd-text-center docutils">
+<img alt="card-img-top" class="sd-card-img-top" src="../../_images/multiple_ope_single_cdf.png" />
+<div class="sd-card-body docutils">
+</div>
+</div>
+<p>Similar codes also work for the following functions.</p>
+<ul class="simple">
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">visualize_cumulative_distribution_function</span></code></p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">visualize_policy_value</span></code></p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">visualize_conditional_value_at_risk</span></code></p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">visualize_interquartile_range</span></code></p></li>
+</ul>
+<p>Next, SCOPE-RL also visualizes CDF estimated on multiple logged dataset as follows.</p>
+<p>The first example shows the case of using a single behavior policy and multiple logged dataset.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">cd_ope</span><span class="o">.</span><span class="n">visualize_cumulative_distribution_function_with_multiple_estimates</span><span class="p">(</span>
+    <span class="n">multiple_input_dict</span><span class="p">,</span>
+    <span class="n">behavior_policy_name</span><span class="o">=</span><span class="n">behavior_policies</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>  <span class="c1"># specify the behavior policy name</span>
+    <span class="n">plot_type</span><span class="o">=</span><span class="s2">&quot;ci_hue&quot;</span><span class="p">,</span>  <span class="c1">#</span>
+    <span class="n">scale_min</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>  <span class="c1"># set the reward scale (i.e., x-axis or bins of CDF)</span>
+    <span class="n">scale_max</span><span class="o">=</span><span class="mf">10.0</span><span class="p">,</span>
+    <span class="n">n_partition</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
+    <span class="n">n_cols</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<div class="sd-card sd-sphinx-override sd-mb-3 sd-shadow-sm sd-text-center docutils">
+<img alt="card-img-top" class="sd-card-img-top" src="../../_images/multiple_ope_single_behavior_cdf.png" />
+<div class="sd-card-body docutils">
+</div>
+</div>
+<p>The next examples compare the results across multiple behavior policies.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">cd_ope</span><span class="o">.</span><span class="n">visualize_cumulative_distribution_function_with_multiple_estimates</span><span class="p">(</span>
+    <span class="n">multiple_input_dict</span><span class="p">,</span>
+    <span class="n">plot_type</span><span class="o">=</span><span class="s2">&quot;ci_behavior_policy&quot;</span><span class="p">,</span>  <span class="c1">#</span>
+    <span class="n">hue</span><span class="o">=</span><span class="s2">&quot;policy&quot;</span><span class="p">,</span>  <span class="c1">#</span>
+    <span class="n">scale_min</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+    <span class="n">scale_max</span><span class="o">=</span><span class="mf">10.0</span><span class="p">,</span>
+    <span class="n">n_partition</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<div class="sd-card sd-sphinx-override sd-mb-3 sd-shadow-sm sd-text-center docutils">
+<img alt="card-img-top" class="sd-card-img-top" src="../../_images/multiple_ope_all_cdf.png" />
+<div class="sd-card-body docutils">
+</div>
+</div>
+<p>The final example shows CDF for each logged dataset of a single behavior policy.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">cd_ope</span><span class="o">.</span><span class="n">visualize_cumulative_distribution_function_with_multiple_estimates</span><span class="p">(</span>
+    <span class="n">multiple_input_dict</span><span class="p">,</span>
+    <span class="n">behavior_policy_name</span><span class="o">=</span><span class="n">behavior_policies</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>  <span class="c1"># specify the behavior policy name</span>
+    <span class="n">plot_type</span><span class="o">=</span><span class="s2">&quot;enumerate&quot;</span><span class="p">,</span>  <span class="c1">#</span>
+    <span class="n">hue</span><span class="o">=</span><span class="s2">&quot;policy&quot;</span><span class="p">,</span>  <span class="c1">#</span>
+    <span class="n">scale_min</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+    <span class="n">scale_max</span><span class="o">=</span><span class="mf">10.0</span><span class="p">,</span>
+    <span class="n">n_partition</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<div class="sd-card sd-sphinx-override sd-mb-3 sd-shadow-sm sd-text-center docutils">
+<img alt="card-img-top" class="sd-card-img-top" src="../../_images/multiple_ope_enum_cdf.png" />
+<div class="sd-card-body docutils">
+</div>
+</div>
+<p>To compare the point-wise estimation result across multiple logged datasets, the following code works.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ope</span><span class="o">.</span><span class="n">visualize_policy_value_with_multiple_estimates</span><span class="p">(</span>
+    <span class="n">multiple_input_dict</span><span class="p">,</span>
+    <span class="n">plot_type</span><span class="o">=</span><span class="s2">&quot;ci&quot;</span><span class="p">,</span>  <span class="c1"># &quot;violin&quot;, &quot;scatter&quot;</span>
+    <span class="n">hue</span><span class="o">=</span><span class="s2">&quot;policy&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<div class="sd-card sd-sphinx-override sd-mb-3 sd-shadow-sm sd-text-center docutils">
+<img alt="card-img-top" class="sd-card-img-top" src="../../_images/multiple_cdope_hist_policy_value.png" />
+<div class="sd-card-body docutils">
+</div>
+</div>
+<p>Similar codes also work for the following functions.</p>
+<ul class="simple">
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">visualize_policy_value_with_multiple_estimates</span></code></p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">visualize_variance_with_multiple_estimates</span></code></p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">visualize_conditional_value_at_risk_with_multiple_estimates</span></code></p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">visualize_interquartile_range_with_multiple_estimates</span></code></p></li>
+</ul>
+</section>
+<section id="off-policy-selection">
+<h2>Off-Policy Selection<a class="headerlink" href="#off-policy-selection" title="Permalink to this heading">#</a></h2>
+<p>SCOPE-RL also enables OPS with multiple logged datasets without any additional efforts.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">scope_rl.ope</span> <span class="kn">import</span> <span class="n">OffPolicySelection</span>
+
+<span class="c1"># initialize the OPS class</span>
+<span class="n">ops</span> <span class="o">=</span> <span class="n">OffPolicySelection</span><span class="p">(</span>
+    <span class="n">ope</span><span class="o">=</span><span class="n">ope</span><span class="p">,</span>  <span class="c1"># either ope or cd_ope must be given</span>
+    <span class="n">cumulative_distribution_ope</span><span class="o">=</span><span class="n">cd_ope</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="c1"># OPS based on estimated policy value</span>
+<span class="n">ranking_df_dict</span><span class="p">,</span> <span class="n">metric_df_dict</span> <span class="o">=</span> <span class="n">ops</span><span class="o">.</span><span class="n">select_by_policy_value</span><span class="p">(</span>
+    <span class="n">multiple_input_dict</span><span class="p">,</span>
+    <span class="n">return_metrics</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">return_by_dataframe</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>The result for each logged dataset is accessible by the following keys.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ranking_df_dict</span><span class="p">[</span><span class="n">behavior_policies</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="p">][</span><span class="n">dataset_id</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>The following code compares the OPE result for some specific logged dataset.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ranking_df</span><span class="p">,</span> <span class="n">metric_df</span> <span class="o">=</span> <span class="n">ops</span><span class="o">.</span><span class="n">select_by_policy_value</span><span class="p">(</span>
+    <span class="n">input_dict</span><span class="o">=</span><span class="n">input_dict</span><span class="p">,</span>
+    <span class="n">behavior_policy_name</span><span class="o">=</span><span class="n">behavior_policies</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>  <span class="c1"># specify the behavior policy name</span>
+    <span class="n">dataset_id</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>  <span class="c1"># specify the dataset id</span>
+    <span class="n">return_metrics</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">return_by_dataframe</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>Similar codes also work for the following functions.</p>
+<ul class="simple">
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">select_by_policy_value</span></code></p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">select_by_policy_value_lower_bound</span></code></p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">select_by_policy_value_via_cumulative_distribution_ope</span></code></p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">select_by_conditional_value_at_risk</span></code></p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">select_by_lower_quartile</span></code></p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">obtain_true_selection_result</span></code></p></li>
+</ul>
+</section>
+<section id="assessments-of-ope-via-top-k-policy-selection">
+<h2>Assessments of OPE via top-<span class="math notranslate nohighlight">\(k\)</span> Policy Selection<a class="headerlink" href="#assessments-of-ope-via-top-k-policy-selection" title="Permalink to this heading">#</a></h2>
+<p>Next, we show how to assess the top-<span class="math notranslate nohighlight">\(k\)</span> policy selection with multiple logged datasets.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">topk_metric_df_dict</span> <span class="o">=</span> <span class="n">ops</span><span class="o">.</span><span class="n">obtain_topk_policy_value_selected_by_standard_ope</span><span class="p">(</span>
+    <span class="n">input_dict</span><span class="o">=</span><span class="n">multiple_input_dict</span><span class="p">,</span>
+    <span class="n">return_by_dataframe</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>The result for each logged dataset is accessible by the following keys.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">topk_metric_df_dict</span><span class="p">[</span><span class="n">behavior_policies</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="p">][</span><span class="n">dataset_id</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>The following code compares the top-<span class="math notranslate nohighlight">\(k\)</span> policies selected by each OPE estimator for some specific logged dataset.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">topk_metric_df</span> <span class="o">=</span> <span class="n">ope</span><span class="o">.</span><span class="n">obtain_topk_policy_value_selected_by_standard_ope</span><span class="p">(</span>
+    <span class="n">input_dict</span><span class="p">,</span>  <span class="c1"># either multiple or single input dict</span>
+    <span class="n">behavior_policy_name</span><span class="o">=</span><span class="n">behavior_policies</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>  <span class="c1"># specify the behavior policy name</span>
+    <span class="n">dataset_id</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>  <span class="c1"># specify the dataset id</span>
+    <span class="n">random_state</span><span class="o">=</span><span class="n">random_state</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>Similar codes also work for the following functions.</p>
+<ul class="simple">
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">obtain_topk_policy_value_selected_by_standard_ope</span></code></p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">obtain_topk_policy_value_selected_by_lower_bound</span></code></p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">obtain_topk_policy_value_selected_by_cumulative_distribution_ope</span></code></p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">obtain_topk_conditional_value_at_risk_selected_by_standard_ope</span></code></p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">obtain_topk_conditional_value_at_risk_selected_by_cumulative_distirbution_ope</span></code></p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">obtain_topk_lower_quartile_selected_by_standard_ope</span></code></p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">obtain_topk_lower_quartile_selected_by_cumulative_distribution_ope</span></code></p></li>
+</ul>
+<p>Visualization functions also works in a similar manner.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ops</span><span class="o">.</span><span class="n">visualize_topk_policy_value_selected_by_standard_ope</span><span class="p">(</span>
+    <span class="n">multiple_input_dict</span><span class="p">,</span>
+    <span class="n">compared_estimators</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;dm&quot;</span><span class="p">,</span> <span class="s2">&quot;tis&quot;</span><span class="p">,</span> <span class="s2">&quot;pdis&quot;</span><span class="p">,</span> <span class="s2">&quot;dr&quot;</span><span class="p">],</span>
+    <span class="n">visualize_ci</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">safety_threshold</span><span class="o">=</span><span class="mf">6.0</span><span class="p">,</span>  <span class="c1"># please specify this option instead of `relative_safety_criteria`</span>
+    <span class="n">legend</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">random_state</span><span class="o">=</span><span class="n">random_state</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<div class="sd-card sd-sphinx-override sd-mb-3 sd-shadow-sm sd-text-center docutils">
+<img alt="card-img-top" class="sd-card-img-top" src="../../_images/multiple_topk_policy_value.png" />
+<div class="sd-card-body docutils">
+</div>
+</div>
+<p>When using a single behavior policy, <code class="docutils literal notranslate"><span class="pre">relative_safety_criteria</span></code> option becomes available.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ops</span><span class="o">.</span><span class="n">visualize_topk_policy_value_selected_by_standard_ope</span><span class="p">(</span>
+    <span class="n">multiple_input_dict</span><span class="p">,</span>
+    <span class="n">behavior_policy_name</span><span class="o">=</span><span class="n">behavior_policies</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+    <span class="n">compared_estimators</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;dm&quot;</span><span class="p">,</span> <span class="s2">&quot;tis&quot;</span><span class="p">,</span> <span class="s2">&quot;pdis&quot;</span><span class="p">,</span> <span class="s2">&quot;dr&quot;</span><span class="p">],</span>
+    <span class="n">visualize_ci</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">safety_threshold</span><span class="o">=</span><span class="mf">6.0</span><span class="p">,</span>  <span class="c1"># please specify this option instead of `relative_safety_criteria`</span>
+    <span class="n">legend</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">random_state</span><span class="o">=</span><span class="n">random_state</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>When using a single logged dataset, specify both behavior policy name and dataset id.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ops</span><span class="o">.</span><span class="n">visualize_topk_policy_value_selected_by_standard_ope</span><span class="p">(</span>
+    <span class="n">input_dict</span><span class="p">,</span>  <span class="c1"># either multiple or single input dict</span>
+    <span class="n">behavior_policy_name</span><span class="o">=</span><span class="n">behavior_policies</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>  <span class="c1"># specify the behavior policy name</span>
+    <span class="n">dataset_id</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>  <span class="c1"># specify the dataset id</span>
+    <span class="n">compared_estimators</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;dm&quot;</span><span class="p">,</span> <span class="s2">&quot;tis&quot;</span><span class="p">,</span> <span class="s2">&quot;pdis&quot;</span><span class="p">,</span> <span class="s2">&quot;dr&quot;</span><span class="p">],</span>
+    <span class="n">visualize_ci</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">safety_threshold</span><span class="o">=</span><span class="mf">6.0</span><span class="p">,</span>  <span class="c1"># please specify this option instead of `relative_safety_criteria`</span>
+    <span class="n">legend</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">random_state</span><span class="o">=</span><span class="n">random_state</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>Similar codes also work for the following functions.</p>
+<ul class="simple">
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">visualize_topk_policy_value_selected_by_standard_ope</span></code></p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">visualize_topk_policy_value_selected_by_lower_bound</span></code></p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">visualize_topk_policy_value_selected_by_cumulative_distribution_ope</span></code></p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">visualize_topk_conditional_value_at_risk_selected_by_standard_ope</span></code></p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">visualize_topk_conditional_value_at_risk_selected_by_cumulative_distirbution_ope</span></code></p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">visualize_topk_lower_quartile_selected_by_standard_ope</span></code></p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">visualize_topk_lower_quartile_selected_by_cumulative_distribution_ope</span></code></p></li>
+</ul>
+</section>
+<section id="validating-true-and-estimated-policy-performance">
+<h2>Validating True and Estimated Policy Performance<a class="headerlink" href="#validating-true-and-estimated-policy-performance" title="Permalink to this heading">#</a></h2>
+<p>Finally, we also provide funnctions to compare the true and estimated policy performance.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ops</span><span class="o">.</span><span class="n">visualize_policy_value_for_validation</span><span class="p">(</span>
+    <span class="n">multiple_input_dict</span><span class="p">,</span>
+    <span class="n">n_cols</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+    <span class="n">share_axes</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<div class="sd-card sd-sphinx-override sd-mb-3 sd-shadow-sm sd-text-center docutils">
+<img alt="card-img-top" class="sd-card-img-top" src="../../_images/multiple_validation_policy_value.png" />
+<div class="sd-card-body docutils">
+</div>
+</div>
+<p>When using a single behavior policy, specify behavipr policy name.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ops</span><span class="o">.</span><span class="n">visualize_policy_value_for_validation</span><span class="p">(</span>
+    <span class="n">input_dict</span><span class="p">,</span>  <span class="c1"># either multiple or single input dict</span>
+    <span class="n">behavior_policy_name</span><span class="o">=</span><span class="n">behavior_policies</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>  <span class="c1"># specify the behavior policy name</span>
+    <span class="n">n_cols</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+    <span class="n">share_axes</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>When using a single logged dataset, specify both behavior policy name and dataset id.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ops</span><span class="o">.</span><span class="n">visualize_policy_value_for_validation</span><span class="p">(</span>
+    <span class="n">input_dict</span><span class="p">,</span>  <span class="c1"># either multiple or single input dict</span>
+    <span class="n">behavior_policy_name</span><span class="o">=</span><span class="n">behavior_policies</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>  <span class="c1"># specify the behavior policy name</span>
+    <span class="n">dataset_id</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>  <span class="c1"># specify the dataset id</span>
+    <span class="n">n_cols</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+    <span class="n">share_axes</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>Similar codes also work for the following functions.</p>
+<ul class="simple">
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">visualize_policy_value_for_validation</span></code></p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">visualize_policy_value_lower_bound_for_validation</span></code></p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">visualize_variance_for_validation</span></code></p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">visualize_conditional_value_at_risk_for_validation</span></code></p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">visualize_lower_bound_for_validation</span></code></p></li>
+</ul>
+<div class="white-space-20px"></div><div class="sd-container-fluid sd-sphinx-override sd-m-0 docutils">
+<div class="sd-row docutils">
+<div class="sd-col sd-d-flex-column sd-col-2 sd-col-xs-2 sd-col-sm-2 sd-col-md-2 sd-col-lg-2 sd-m-0 sd-p-0 docutils">
+<div class="sd-container-fluid sd-sphinx-override sd-m-0 docutils">
+<div class="sd-row docutils">
+<div class="sd-col sd-d-flex-row sd-m-0 sd-p-0 docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-none sd-card-hover docutils">
+<div class="sd-card-body docutils">
+<p class="sd-card-text">&lt;&lt;&lt; Prev
+<strong>Usage</strong></p>
+</div>
+<a class="sd-stretched-link reference internal" href="index.html"><span class="doc"></span></a></div>
+</div>
+</div>
+</div>
+</div>
+<div class="sd-col sd-d-flex-column sd-col-8 sd-col-xs-8 sd-col-sm-8 sd-col-md-8 sd-col-lg-8 sd-m-0 sd-p-0 docutils">
+</div>
+<div class="sd-col sd-d-flex-column sd-col-2 sd-col-xs-2 sd-col-sm-2 sd-col-md-2 sd-col-lg-2 sd-m-0 sd-p-0 docutils">
+<div class="sd-container-fluid sd-sphinx-override sd-m-0 docutils">
+<div class="sd-row docutils">
+<div class="sd-col sd-d-flex-row sd-m-0 sd-p-0 docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-none sd-card-hover docutils">
+<div class="sd-card-body docutils">
+<p class="sd-card-text">Next &gt;&gt;&gt;
+<strong>Real_World Datasets</strong></p>
+</div>
+<a class="sd-stretched-link reference internal" href="real_world.html"><span class="doc"></span></a></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#logged-dataset">Logged Dataset</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#inputs">Inputs</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#off-policy-evaluation">Off-Policy Evaluation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#cumulative-distribution-off-policy-evaluation">Cumulative Distribution Off-Policy Evaluation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#off-policy-selection">Off-Policy Selection</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#assessments-of-ope-via-top-k-policy-selection">Assessments of OPE via top-<span class="math notranslate nohighlight">\(k\)</span> Policy Selection</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#validating-true-and-estimated-policy-performance">Validating True and Estimated Policy Performance</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            <div class="bd-footer-content__inner"></div>
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../_static/scripts/bootstrap.js?digest=12da95d707ffb74b382d"></script>
+<script src="../../_static/scripts/pydata-sphinx-theme.js?digest=12da95d707ffb74b382d"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+  <p class="copyright">
+    
+      © Copyright 2023, Haruka Kiyohara, Ren Kishimoto, HAKUHODO Technologies Inc., Hanjuku-kaso Co., Ltd.
+      <br/>
+    
+  </p>
+</div>
+      
+    </div>
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item"><p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.13.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

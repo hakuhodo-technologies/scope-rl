@@ -1,0 +1,816 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+    <title>Example Codes for Assessing OPE Estimators &#8212; SCOPE-RL</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=12da95d707ffb74b382d" rel="stylesheet" />
+<link href="../../_static/styles/bootstrap.css?digest=12da95d707ffb74b382d" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=12da95d707ffb74b382d" rel="stylesheet" />
+
+  
+  <link href="../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=12da95d707ffb74b382d" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/tabs.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/design-style.4045f2051d55cab465a707391d5b2007.min.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=12da95d707ffb74b382d" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=12da95d707ffb74b382d" />
+
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/clipboard.min.js"></script>
+    <script src="../../_static/copybutton.js"></script>
+    <script src="../../_static/design-tabs.js"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <nav class="bd-header navbar navbar-expand-lg bd-navbar">
+<div class="bd-header__inner bd-page-width">
+  <label class="sidebar-toggle primary-toggle" for="__primary">
+    <span class="fa-solid fa-bars"></span>
+  </label>
+  
+  <div class="navbar-header-items__start">
+    
+      <div class="navbar-item">
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+    <p class="title logo__title">SCOPE-RL</p>
+  
+</a></div>
+    
+  </div>
+  
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../installation.html">
+                        Installation
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../quickstart.html">
+                        Quickstart
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../index.html">
+                        Documentation
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="index.html">
+                        Usage
+                      </a>
+                    </li>
+                
+            <div class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    More
+                </button>
+                <div class="dropdown-menu">
+                    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../subpackages/index.html">
+                        Sub-packages
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../frequently_asked_questions.html">
+                        FAQs
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../news.html">
+                        News
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-external" href="https://github.com/hakuhodo-technologies/scope-rl/releases">
+                        Release Notes
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-external" href="https://github.com/hakuhodo-technologies/scope-rl/404">
+                        Proceedings
+                      </a>
+                    </li>
+                
+                </div>
+            </div>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+  </button>
+`);
+</script>
+        </div>
+      
+      
+        <div class="navbar-item">
+<script>
+document.write(`
+  <button class="theme-switch-button btn btn-sm btn-outline-primary navbar-btn rounded-circle" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch" data-mode="light"><i class="fa-solid fa-sun"></i></span>
+    <span class="theme-switch" data-mode="dark"><i class="fa-solid fa-moon"></i></span>
+    <span class="theme-switch" data-mode="auto"><i class="fa-solid fa-circle-half-stroke"></i></span>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/hakuhodo-technologies/scope-rl" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-square-github"></i></span>
+            <label class="sr-only">GitHub</label></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://speakerdeck.com/aiueola/ofrl-designing-an-offline-reinforcement-learning-and-policy-evaluation-platform-from-practical-perspectives" title="Speaker Deck" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-speaker-deck"></i></span>
+            <label class="sr-only">Speaker Deck</label></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+  </button>
+`);
+</script>
+    </div>
+  
+
+  
+    <label class="sidebar-toggle secondary-toggle" for="__secondary">
+      <span class="fa-solid fa-outdent"></span>
+    </label>
+  
+</div>
+
+    </nav>
+  
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      <div class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../installation.html">
+                        Installation
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../quickstart.html">
+                        Quickstart
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../index.html">
+                        Documentation
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="index.html">
+                        Usage
+                      </a>
+                    </li>
+                
+            <div class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    More
+                </button>
+                <div class="dropdown-menu">
+                    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../subpackages/index.html">
+                        Sub-packages
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../frequently_asked_questions.html">
+                        FAQs
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../news.html">
+                        News
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-external" href="https://github.com/hakuhodo-technologies/scope-rl/releases">
+                        Release Notes
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-external" href="https://github.com/hakuhodo-technologies/scope-rl/404">
+                        Proceedings
+                      </a>
+                    </li>
+                
+                </div>
+            </div>
+            
+  </ul>
+</nav></div>
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+<script>
+document.write(`
+  <button class="theme-switch-button btn btn-sm btn-outline-primary navbar-btn rounded-circle" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch" data-mode="light"><i class="fa-solid fa-sun"></i></span>
+    <span class="theme-switch" data-mode="dark"><i class="fa-solid fa-moon"></i></span>
+    <span class="theme-switch" data-mode="auto"><i class="fa-solid fa-circle-half-stroke"></i></span>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/hakuhodo-technologies/scope-rl" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-square-github"></i></span>
+            <label class="sr-only">GitHub</label></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://speakerdeck.com/aiueola/ofrl-designing-an-offline-reinforcement-learning-and-policy-evaluation-platform-from-practical-perspectives" title="Speaker Deck" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-speaker-deck"></i></span>
+            <label class="sr-only">Speaker Deck</label></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumbs">
+  <ul class="bd-breadcrumbs" role="navigation" aria-label="Breadcrumb">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page">Example Codes for Assessing OPE Estimators</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article" role="main">
+                  
+  <section id="example-codes-for-assessing-ope-estimators">
+<h1>Example Codes for Assessing OPE Estimators<a class="headerlink" href="#example-codes-for-assessing-ope-estimators" title="Permalink to this heading">#</a></h1>
+<p>Here, we show example codes for assessing OPE/OPS results.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>For preparation, please also refer to the following pages:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../ope_ops.html"><span class="doc">What are Off-Policy Evaluation and Selection?</span></a></p></li>
+<li><p><a class="reference internal" href="../evaluation_implementation.html#implementation-eval-ope-ops"><span class="std std-ref">Supported Evaluation Protococols for OPE/OPS</span></a></p></li>
+<li><p><a class="reference internal" href="../sharpe_ratio.html"><span class="doc">Risk-Return Assessments of OPE via SharpRatio&#64;k</span></a></p></li>
+<li><p><a class="reference internal" href="../learning_implementation.html"><span class="doc">Supported Implementations for data collection and Offline RL</span></a></p></li>
+<li><p><a class="reference internal" href="basic_ope.html"><span class="doc">Example codes for basic OPE</span></a></p></li>
+<li><p><a class="reference internal" href="cumulative_dist_ope.html"><span class="doc">Example codes for cumulative distribution OPE</span></a></p></li>
+<li><p><a class="reference internal" href="ops.html"><span class="doc">Example codes for OPS</span></a></p></li>
+</ul>
+</div>
+<section id="prerequisite">
+<h2>Prerequisite<a class="headerlink" href="#prerequisite" title="Permalink to this heading">#</a></h2>
+<p>Here, we assume that an RL environment, a behavior policy, and evaluation policies are given as follows.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">behavior_policy</span></code>: an instance of <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseHead</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">evaluation_policies</span></code>: a list of instance(s) of <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseHead</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">env</span></code>: a gym environment (unecessary when using real-world datasets)</p></li>
+</ul>
+<p>Additionally, we assume that the logged datasets, inputs, and either ope or cd_ope instances are ready to use.
+For initializing the ope and cd_ope instances, please refer to <a class="reference internal" href="basic_ope.html"><span class="doc">this page</span></a>
+and <a class="reference internal" href="cumulative_dist_ope.html"><span class="doc">this page</span></a> as references, respectively.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">logged_dataset</span></code>: a dictionary containing the logged dataset</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">input_dict</span></code>: a dictionaty containing inputs for OPE</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ope</span></code>: an instance of <code class="xref py py-class docutils literal notranslate"><span class="pre">OffPolicyEvaluation</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cd_ope</span></code>: an instance of <code class="xref py py-class docutils literal notranslate"><span class="pre">CumulativeDistributionOPE</span></code></p></li>
+</ul>
+<p>Note that, to run the following example codes, <code class="docutils literal notranslate"><span class="pre">input_dict</span></code> should contain on-policy policies of each candidate policy.
+This requirement is automatically satisfied when collecting logged dataset by handing <code class="docutils literal notranslate"><span class="pre">env</span></code> over the <code class="xref py py-class docutils literal notranslate"><span class="pre">CreateInput</span></code> class.</p>
+<p>In the following examples, we also use a single logged dataset for simplicity.
+For the case of using multiple behavior policies or multiple logged datasets, refer to <a class="reference internal" href="multiple.html"><span class="doc">Example Codes with Multiple Logged Dataset and Behavior Policies</span></a>.</p>
+</section>
+<section id="assessing-ope-ops-results">
+<h2>Assessing OPE/OPS results<a class="headerlink" href="#assessing-ope-ops-results" title="Permalink to this heading">#</a></h2>
+<p>The assessments use the OPS class.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">scope_rl.ope</span> <span class="kn">import</span> <span class="n">OffPolicySelection</span>
+
+<span class="n">ops</span> <span class="o">=</span> <span class="n">OffPolicySelection</span><span class="p">(</span>
+    <span class="n">ope</span><span class="o">=</span><span class="n">ope</span><span class="p">,</span>  <span class="c1"># either ope or cd_ope must be given</span>
+    <span class="n">cumulative_distribution_ope</span><span class="o">=</span><span class="n">cd_ope</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<section id="assessments-with-conventional-metrics">
+<h3>Assessments with conventional metrics<a class="headerlink" href="#assessments-with-conventional-metrics" title="Permalink to this heading">#</a></h3>
+<p>The convensional metrics including MSE, RankCorr, Regret, and Type I and II Errors are available in the ops function.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ranking_dict</span><span class="p">,</span> <span class="n">metric_dict</span> <span class="o">=</span> <span class="n">ops</span><span class="o">.</span><span class="n">select_by_policy_value</span><span class="p">(</span>
+    <span class="n">input_dict</span><span class="o">=</span><span class="n">input_dict</span><span class="p">,</span>
+    <span class="n">return_metrics</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>  <span class="c1"># enable this option</span>
+    <span class="n">return_by_dataframe</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>To compare Regret&#64;k, specify the following commands.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ranking_dict</span><span class="p">,</span> <span class="n">metric_dict</span> <span class="o">=</span> <span class="n">ops</span><span class="o">.</span><span class="n">select_by_policy_value</span><span class="p">(</span>
+    <span class="n">input_dict</span><span class="o">=</span><span class="n">input_dict</span><span class="p">,</span>
+    <span class="n">top_k_in_eval_metrics</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>  <span class="c1"># specify the value of k</span>
+    <span class="n">return_metrics</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">return_by_dataframe</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>We can also specify the reward threshold for Type I and II errors as follows.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ranking_dict</span><span class="p">,</span> <span class="n">metric_dict</span> <span class="o">=</span> <span class="n">ops</span><span class="o">.</span><span class="n">select_by_policy_value</span><span class="p">(</span>
+    <span class="n">input_dict</span><span class="o">=</span><span class="n">input_dict</span><span class="p">,</span>
+    <span class="n">safety_threshold</span><span class="o">=</span><span class="mf">10.0</span><span class="p">,</span>  <span class="c1"># specify the safety threshold</span>
+    <span class="n">return_metrics</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">return_by_dataframe</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>To use the value relative to behavior policy as a threshold, use the following option.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ranking_dict</span><span class="p">,</span> <span class="n">metric_dict</span> <span class="o">=</span> <span class="n">ops</span><span class="o">.</span><span class="n">select_by_policy_value</span><span class="p">(</span>
+    <span class="n">input_dict</span><span class="o">=</span><span class="n">input_dict</span><span class="p">,</span>
+    <span class="n">relative_safety_criteria</span><span class="o">=</span><span class="mf">0.90</span><span class="p">,</span>  <span class="c1"># specify the relative safety threshold</span>
+    <span class="n">return_metrics</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">return_by_dataframe</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>Similar evaluations are available in the following functions.</p>
+<ul class="simple">
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">select_by_policy_value</span></code></p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">select_by_policy_value_lower_bound</span></code></p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">select_by_policy_value_via_cumulative_distribution_ope</span></code></p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">select_by_conditional_value_at_risk</span></code></p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">select_by_lower_quartile</span></code></p></li>
+</ul>
+</section>
+<section id="assessments-with-top-k-deployment-results">
+<h3>Assessments with top-<span class="math notranslate nohighlight">\(k\)</span> deployment results<a class="headerlink" href="#assessments-with-top-k-deployment-results" title="Permalink to this heading">#</a></h3>
+<p>SCOPE-RL enables to obtain and compare the statistics of policy portfolio formed by each estimator as follows.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">topk_metric_df</span> <span class="o">=</span> <span class="n">ops</span><span class="o">.</span><span class="n">obtain_topk_policy_value_selected_by_standard_ope</span><span class="p">(</span>
+    <span class="n">input_dict</span><span class="o">=</span><span class="n">input_dict</span><span class="p">,</span>
+    <span class="n">return_by_dataframe</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>In the <code class="docutils literal notranslate"><span class="pre">topk_metric_df</span></code>, you will find the <code class="docutils literal notranslate"><span class="pre">k-th</span></code>, <code class="docutils literal notranslate"><span class="pre">best</span></code>, <code class="docutils literal notranslate"><span class="pre">worst</span></code>, and <code class="docutils literal notranslate"><span class="pre">mean</span></code> policy values and <code class="docutils literal notranslate"><span class="pre">std</span></code> of policy values amond top- <span class="math notranslate nohighlight">\(k\)</span>
+policy portfolio. We also report the proposed SharpRatio&#64;k metric as <code class="docutils literal notranslate"><span class="pre">sharpe_ratio</span></code>.</p>
+<p>Note that, to additionally report the safety violation rate, specify the following options.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">topk_metric_df</span> <span class="o">=</span> <span class="n">ops</span><span class="o">.</span><span class="n">obtain_topk_policy_value_selected_by_standard_ope</span><span class="p">(</span>
+    <span class="n">input_dict</span><span class="o">=</span><span class="n">input_dict</span><span class="p">,</span>
+    <span class="n">return_safety_violation_rate</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>  <span class="c1"># enable this option</span>
+    <span class="n">safety_threshold</span><span class="o">=</span><span class="mf">10.0</span><span class="p">,</span>  <span class="c1"># specify the safety threshold</span>
+    <span class="n">return_by_dataframe</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>To use the value relative to the behavior policy as the safety requirement, use the following option.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">topk_metric_df</span> <span class="o">=</span> <span class="n">ops</span><span class="o">.</span><span class="n">obtain_topk_policy_value_selected_by_standard_ope</span><span class="p">(</span>
+    <span class="n">input_dict</span><span class="o">=</span><span class="n">input_dict</span><span class="p">,</span>
+    <span class="n">return_safety_violation_rate</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>  <span class="c1"># enable this option</span>
+    <span class="n">relative_safety_criteria</span><span class="o">=</span><span class="mf">0.90</span><span class="p">,</span>  <span class="c1"># specify the relative safety threshold</span>
+    <span class="n">return_by_dataframe</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>Similar evaluations are available in the following functions.</p>
+<ul class="simple">
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">obtain_topk_policy_value_selected_by_standard_ope</span></code></p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">obtain_topk_policy_value_selected_by_lower_bound</span></code></p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">obtain_topk_policy_value_selected_by_cumulative_distribution_ope</span></code></p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">obtain_topk_conditional_value_at_risk_selected_by_cumulative_distirbution_ope</span></code></p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">obtain_topk_lower_quartile_selected_by_cumulative_distribution_ope</span></code></p></li>
+</ul>
+<p>We can also evaluate CVaR of top-<span class="math notranslate nohighlight">\(k\)</span> policies selected based on estimated policy value as follows.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">topk_metric_df</span> <span class="o">=</span> <span class="n">ops</span><span class="o">.</span><span class="n">obtain_topk_conditional_value_at_risk_selected_by_standard_ope</span><span class="p">(</span>
+    <span class="n">input_dict</span><span class="o">=</span><span class="n">input_dict</span><span class="p">,</span>
+    <span class="n">return_by_dataframe</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">ope_alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>We can also evaluate the lower quartile of top-<span class="math notranslate nohighlight">\(k\)</span> policies selected based on estimated policy value as follows.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">topk_metric_df</span> <span class="o">=</span> <span class="n">ops</span><span class="o">.</span><span class="n">obtain_topk_lower_quartile_selected_by_standard_ope</span><span class="p">(</span>
+    <span class="n">input_dict</span><span class="o">=</span><span class="n">input_dict</span><span class="p">,</span>
+    <span class="n">return_by_dataframe</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">ope_alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="visualizing-top-k-deployment-results">
+<h3>Visualizing top-<span class="math notranslate nohighlight">\(k\)</span> deployment results<a class="headerlink" href="#visualizing-top-k-deployment-results" title="Permalink to this heading">#</a></h3>
+<p>SCOPE-RL also provides functions to visualize the above top-<span class="math notranslate nohighlight">\(k\)</span> policy performances.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ops</span><span class="o">.</span><span class="n">visualize_topk_policy_value_selected_by_standard_ope</span><span class="p">(</span>
+    <span class="n">input_dict</span><span class="o">=</span><span class="n">input_dict</span><span class="p">,</span>
+    <span class="n">metrics</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;k-th&quot;</span><span class="p">,</span> <span class="s2">&quot;best&quot;</span><span class="p">,</span> <span class="s2">&quot;worst&quot;</span><span class="p">,</span> <span class="s2">&quot;mean&quot;</span><span class="p">,</span> <span class="s2">&quot;std&quot;</span><span class="p">,</span> <span class="s2">&quot;safety_violation_rate&quot;</span><span class="p">,</span> <span class="s2">&quot;sharpe_ratio&quot;</span><span class="p">],</span>  <span class="c1"># (default)</span>
+    <span class="n">compared_estimators</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;dm&quot;</span><span class="p">,</span> <span class="s2">&quot;tis&quot;</span><span class="p">,</span> <span class="s2">&quot;pdis&quot;</span><span class="p">,</span> <span class="s2">&quot;dr&quot;</span><span class="p">],</span>  <span class="c1"># (optional)</span>
+    <span class="n">relative_safety_criteria</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>  <span class="c1"># (optional)</span>
+    <span class="n">clip_sharpe_ratio</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>  <span class="c1"># (optional)</span>
+    <span class="n">ymax_sharpe_ratio</span><span class="o">=</span><span class="mf">5.0</span><span class="p">,</span>  <span class="c1"># (optional)</span>
+    <span class="n">legend</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>  <span class="c1"># (optional)</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<div class="sd-card sd-sphinx-override sd-mb-3 sd-shadow-sm sd-text-center docutils">
+<img alt="card-img-top" class="sd-card-img-top" src="../../_images/ops_topk_policy_value.png" />
+<div class="sd-card-body docutils">
+</div>
+</div>
+<p>Similar evaluations are available in the following functions.</p>
+<ul class="simple">
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">visualize_topk_policy_value_selected_by_standard_ope</span></code></p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">visualize_topk_policy_value_selected_by_lower_bound</span></code></p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">visualize_topk_policy_value_selected_by_cumulative_distribution_ope</span></code></p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">visualize_topk_conditional_value_at_risk_selected_by_cumulative_distirbution_ope</span></code></p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">visualize_topk_lower_quartile_selected_by_cumulative_distribution_ope</span></code></p></li>
+</ul>
+<p>Again, the visualization functions are also able to show CVaR and lower quartile of top-<span class="math notranslate nohighlight">\(k\)</span> policies selected based on estimated policy value as follows.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># visualize CVaR</span>
+<span class="n">ops</span><span class="o">.</span><span class="n">visualize_topk_conditional_value_at_risk_selected_by_standard_ope</span><span class="p">(</span>
+    <span class="n">input_dict</span><span class="o">=</span><span class="n">input_dict</span><span class="p">,</span>
+    <span class="n">metrics</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;best&quot;</span><span class="p">,</span> <span class="s2">&quot;worst&quot;</span><span class="p">,</span> <span class="s2">&quot;mean&quot;</span><span class="p">,</span> <span class="s2">&quot;std&quot;</span><span class="p">],</span>  <span class="c1"># (optional)</span>
+    <span class="n">compared_estimators</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;dm&quot;</span><span class="p">,</span> <span class="s2">&quot;tis&quot;</span><span class="p">,</span> <span class="s2">&quot;pdis&quot;</span><span class="p">,</span> <span class="s2">&quot;dr&quot;</span><span class="p">],</span>  <span class="c1"># (optional)</span>
+    <span class="n">ope_alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="c1"># visualize lower quartile</span>
+<span class="n">ops</span><span class="o">.</span><span class="n">visualize_topk_lower_quartile_selected_by_standard_ope</span><span class="p">(</span>
+    <span class="n">input_dict</span><span class="o">=</span><span class="n">input_dict</span><span class="p">,</span>
+    <span class="n">metrics</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;best&quot;</span><span class="p">,</span> <span class="s2">&quot;worst&quot;</span><span class="p">,</span> <span class="s2">&quot;mean&quot;</span><span class="p">,</span> <span class="s2">&quot;std&quot;</span><span class="p">],</span>  <span class="c1"># (optional)</span>
+    <span class="n">compared_estimators</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;dm&quot;</span><span class="p">,</span> <span class="s2">&quot;tis&quot;</span><span class="p">,</span> <span class="s2">&quot;pdis&quot;</span><span class="p">,</span> <span class="s2">&quot;dr&quot;</span><span class="p">],</span>  <span class="c1"># (optional)</span>
+    <span class="n">ope_alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="visualizing-the-true-and-estimated-policy-performances">
+<h3>Visualizing the true and estimated policy performances<a class="headerlink" href="#visualizing-the-true-and-estimated-policy-performances" title="Permalink to this heading">#</a></h3>
+<p>Finally, SCOPE-RL also implements functions to compare the true and estimated policy performances via scatter plots.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ops</span><span class="o">.</span><span class="n">visualize_policy_value_for_validation</span><span class="p">(</span>
+    <span class="n">input_dict</span><span class="o">=</span><span class="n">input_dict</span><span class="p">,</span>
+    <span class="n">n_cols</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>  <span class="c1"># (optional)</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<div class="sd-card sd-sphinx-override sd-mb-3 sd-shadow-sm sd-text-center docutils">
+<img alt="card-img-top" class="sd-card-img-top" src="../../_images/ops_validation_policy_value.png" />
+<div class="sd-card-body docutils">
+</div>
+</div>
+<p>Note that, the same y-axes are used with <code class="docutils literal notranslate"><span class="pre">sharey</span></code> option.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ops</span><span class="o">.</span><span class="n">visualize_policy_value_for_validation</span><span class="p">(</span>
+    <span class="n">input_dict</span><span class="o">=</span><span class="n">input_dict</span><span class="p">,</span>
+    <span class="n">n_cols</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+    <span class="n">sharey</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>  <span class="c1"># enable this option</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>Similar evaluations are available in the following functions.</p>
+<ul class="simple">
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">visualize_policy_value_for_validation</span></code></p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">visualize_policy_value_of_cumulative_distribution_ope_for_validation</span></code></p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">visualize_variance_for_validation</span></code></p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">visualize_lower_quartile_for_validation</span></code></p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">visualize_conditional_value_at_risk_for_validation</span></code></p></li>
+</ul>
+<div class="white-space-20px"></div><div class="sd-container-fluid sd-sphinx-override sd-m-0 docutils">
+<div class="sd-row docutils">
+<div class="sd-col sd-d-flex-column sd-col-2 sd-col-xs-2 sd-col-sm-2 sd-col-md-2 sd-col-lg-2 sd-m-0 sd-p-0 docutils">
+<div class="sd-container-fluid sd-sphinx-override sd-m-0 docutils">
+<div class="sd-row docutils">
+<div class="sd-col sd-d-flex-row sd-m-0 sd-p-0 docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-none sd-card-hover docutils">
+<div class="sd-card-body docutils">
+<p class="sd-card-text">&lt;&lt;&lt; Prev
+<strong>Usage</strong></p>
+</div>
+<a class="sd-stretched-link reference internal" href="index.html"><span class="doc"></span></a></div>
+</div>
+</div>
+</div>
+</div>
+<div class="sd-col sd-d-flex-column sd-col-8 sd-col-xs-8 sd-col-sm-8 sd-col-md-8 sd-col-lg-8 sd-m-0 sd-p-0 docutils">
+</div>
+<div class="sd-col sd-d-flex-column sd-col-2 sd-col-xs-2 sd-col-sm-2 sd-col-md-2 sd-col-lg-2 sd-m-0 sd-p-0 docutils">
+<div class="sd-container-fluid sd-sphinx-override sd-m-0 docutils">
+<div class="sd-row docutils">
+<div class="sd-col sd-d-flex-row sd-m-0 sd-p-0 docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-none sd-card-hover docutils">
+<div class="sd-card-body docutils">
+<p class="sd-card-text">Next &gt;&gt;&gt;
+<strong>Multiple Datasets</strong></p>
+</div>
+<a class="sd-stretched-link reference internal" href="multiple.html"><span class="doc"></span></a></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#prerequisite">Prerequisite</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#assessing-ope-ops-results">Assessing OPE/OPS results</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#assessments-with-conventional-metrics">Assessments with conventional metrics</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#assessments-with-top-k-deployment-results">Assessments with top-<span class="math notranslate nohighlight">\(k\)</span> deployment results</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#visualizing-top-k-deployment-results">Visualizing top-<span class="math notranslate nohighlight">\(k\)</span> deployment results</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#visualizing-the-true-and-estimated-policy-performances">Visualizing the true and estimated policy performances</a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            <div class="bd-footer-content__inner"></div>
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../_static/scripts/bootstrap.js?digest=12da95d707ffb74b382d"></script>
+<script src="../../_static/scripts/pydata-sphinx-theme.js?digest=12da95d707ffb74b382d"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+  <p class="copyright">
+    
+      © Copyright 2023, Haruka Kiyohara, Ren Kishimoto, HAKUHODO Technologies Inc., Hanjuku-kaso Co., Ltd.
+      <br/>
+    
+  </p>
+</div>
+      
+    </div>
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item"><p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.13.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

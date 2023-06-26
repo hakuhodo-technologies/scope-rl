@@ -1,0 +1,1144 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+    <title>Why SCOPE-RL? &#8212; SCOPE-RL</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=12da95d707ffb74b382d" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=12da95d707ffb74b382d" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=12da95d707ffb74b382d" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=12da95d707ffb74b382d" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/tabs.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/design-style.4045f2051d55cab465a707391d5b2007.min.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/css/custom.css" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=12da95d707ffb74b382d" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=12da95d707ffb74b382d" />
+
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/clipboard.min.js"></script>
+    <script src="../_static/copybutton.js"></script>
+    <script src="../_static/design-tabs.js"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Overview" href="online_offline_rl.html" />
+    <link rel="prev" title="SCOPE-RL" href="index.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <nav class="bd-header navbar navbar-expand-lg bd-navbar">
+<div class="bd-header__inner bd-page-width">
+  <label class="sidebar-toggle primary-toggle" for="__primary">
+    <span class="fa-solid fa-bars"></span>
+  </label>
+  
+  <div class="navbar-header-items__start">
+    
+      <div class="navbar-item">
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    <p class="title logo__title">SCOPE-RL</p>
+  
+</a></div>
+    
+  </div>
+  
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="installation.html">
+                        Installation
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="quickstart.html">
+                        Quickstart
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item current active">
+                      <a class="nav-link nav-internal" href="index.html">
+                        Documentation
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="examples/index.html">
+                        Usage
+                      </a>
+                    </li>
+                
+            <div class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    More
+                </button>
+                <div class="dropdown-menu">
+                    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="subpackages/index.html">
+                        Sub-packages
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="frequently_asked_questions.html">
+                        FAQs
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="news.html">
+                        News
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-external" href="https://github.com/hakuhodo-technologies/scope-rl/releases">
+                        Release Notes
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-external" href="https://github.com/hakuhodo-technologies/scope-rl/404">
+                        Proceedings
+                      </a>
+                    </li>
+                
+                </div>
+            </div>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+  </button>
+`);
+</script>
+        </div>
+      
+      
+        <div class="navbar-item">
+<script>
+document.write(`
+  <button class="theme-switch-button btn btn-sm btn-outline-primary navbar-btn rounded-circle" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch" data-mode="light"><i class="fa-solid fa-sun"></i></span>
+    <span class="theme-switch" data-mode="dark"><i class="fa-solid fa-moon"></i></span>
+    <span class="theme-switch" data-mode="auto"><i class="fa-solid fa-circle-half-stroke"></i></span>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/hakuhodo-technologies/scope-rl" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-square-github"></i></span>
+            <label class="sr-only">GitHub</label></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://speakerdeck.com/aiueola/ofrl-designing-an-offline-reinforcement-learning-and-policy-evaluation-platform-from-practical-perspectives" title="Speaker Deck" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-speaker-deck"></i></span>
+            <label class="sr-only">Speaker Deck</label></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+  </button>
+`);
+</script>
+    </div>
+  
+
+  
+</div>
+
+    </nav>
+  
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="installation.html">
+                        Installation
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="quickstart.html">
+                        Quickstart
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item current active">
+                      <a class="nav-link nav-internal" href="index.html">
+                        Documentation
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="examples/index.html">
+                        Usage
+                      </a>
+                    </li>
+                
+            <div class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    More
+                </button>
+                <div class="dropdown-menu">
+                    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="subpackages/index.html">
+                        Sub-packages
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="frequently_asked_questions.html">
+                        FAQs
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="news.html">
+                        News
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-external" href="https://github.com/hakuhodo-technologies/scope-rl/releases">
+                        Release Notes
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-external" href="https://github.com/hakuhodo-technologies/scope-rl/404">
+                        Proceedings
+                      </a>
+                    </li>
+                
+                </div>
+            </div>
+            
+  </ul>
+</nav></div>
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+<script>
+document.write(`
+  <button class="theme-switch-button btn btn-sm btn-outline-primary navbar-btn rounded-circle" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch" data-mode="light"><i class="fa-solid fa-sun"></i></span>
+    <span class="theme-switch" data-mode="dark"><i class="fa-solid fa-moon"></i></span>
+    <span class="theme-switch" data-mode="auto"><i class="fa-solid fa-circle-half-stroke"></i></span>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/hakuhodo-technologies/scope-rl" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-square-github"></i></span>
+            <label class="sr-only">GitHub</label></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://speakerdeck.com/aiueola/ofrl-designing-an-offline-reinforcement-learning-and-policy-evaluation-platform-from-practical-perspectives" title="Speaker Deck" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-speaker-deck"></i></span>
+            <label class="sr-only">Speaker Deck</label></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item"><nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Getting Started:</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Why SCOPE-RL?</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Online &amp; Offline RL:</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="online_offline_rl.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="learning_implementation.html">Supported Implementation</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Off-Policy Evaluation &amp; Selection:</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="ope_ops.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="evaluation_implementation.html">Supported Implementation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="visualization.html">Visualization Tools</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Our Proposal:</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="sharpe_ratio.html">Risk-Return Assessments of OPE via SharpRatio@k</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Sub-packages:</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="subpackages/index.html">Gallery of Sub-packages</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Package References:</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="scope_rl_api.html">SCOPR-RL Package Reference</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-1"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/dataset/scope_rl.dataset.base.html">scope_rl.dataset.base</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-2"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/dataset/scope_rl.dataset.base.BaseDataset.html">scope_rl.dataset.base.BaseDataset</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/dataset/scope_rl.dataset.synthetic.html">scope_rl.dataset.synthetic</a><input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-3"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/dataset/scope_rl.dataset.synthetic.SyntheticDataset.html">scope_rl.dataset.synthetic.SyntheticDataset</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/scope_rl.policy.head.html">scope_rl.policy.head</a><input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-4"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.policy.head.BaseHead.html">scope_rl.policy.head.BaseHead</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.policy.head.ContinuousEvalHead.html">scope_rl.policy.head.ContinuousEvalHead</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.policy.head.EpsilonGreedyHead.html">scope_rl.policy.head.EpsilonGreedyHead</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.policy.head.GaussianHead.html">scope_rl.policy.head.GaussianHead</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.policy.head.OnlineHead.html">scope_rl.policy.head.OnlineHead</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.policy.head.SoftmaxHead.html">scope_rl.policy.head.SoftmaxHead</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.policy.head.TruncatedGaussianHead.html">scope_rl.policy.head.TruncatedGaussianHead</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/scope_rl.ope.input.html">scope_rl.ope.input</a><input class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-5"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.input.CreateOPEInput.html">scope_rl.ope.input.CreateOPEInput</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/scope_rl.ope.ope.html">scope_rl.ope.ope</a><input class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-6"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.ope.CumulativeDistributionOPE.html">scope_rl.ope.ope.CumulativeDistributionOPE</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.ope.OffPolicyEvaluation.html">scope_rl.ope.ope.OffPolicyEvaluation</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/scope_rl.ope.ops.html">scope_rl.ope.ops</a><input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-7"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.ops.OffPolicySelection.html">scope_rl.ope.ops.OffPolicySelection</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/scope_rl.ope.estimators_base.html">scope_rl.ope.estimators_base</a><input class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-8"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.estimators_base.BaseCumulativeDistributionOPEEstimator.html">scope_rl.ope.estimators_base.BaseCumulativeDistributionOPEEstimator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.estimators_base.BaseMarginalOPEEstimator.html">scope_rl.ope.estimators_base.BaseMarginalOPEEstimator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.estimators_base.BaseOffPolicyEstimator.html">scope_rl.ope.estimators_base.BaseOffPolicyEstimator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.estimators_base.BaseStateActionMarginalOPEEstimator.html">scope_rl.ope.estimators_base.BaseStateActionMarginalOPEEstimator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.estimators_base.BaseStateMarginalOPEEstimator.html">scope_rl.ope.estimators_base.BaseStateMarginalOPEEstimator</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.basic_estimators.html">scope_rl.ope.discrete.basic_estimators</a><input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-9"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.basic_estimators.DirectMethod.html">scope_rl.ope.discrete.basic_estimators.DirectMethod</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.basic_estimators.DoublyRobust.html">scope_rl.ope.discrete.basic_estimators.DoublyRobust</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.basic_estimators.PerDecisionImportanceSampling.html">scope_rl.ope.discrete.basic_estimators.PerDecisionImportanceSampling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.basic_estimators.SelfNormalizedDR.html">scope_rl.ope.discrete.basic_estimators.SelfNormalizedDR</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.basic_estimators.SelfNormalizedPDIS.html">scope_rl.ope.discrete.basic_estimators.SelfNormalizedPDIS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.basic_estimators.SelfNormalizedTIS.html">scope_rl.ope.discrete.basic_estimators.SelfNormalizedTIS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.basic_estimators.TrajectoryWiseImportanceSampling.html">scope_rl.ope.discrete.basic_estimators.TrajectoryWiseImportanceSampling</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.basic_estimators.html">scope_rl.ope.continuous.basic_estimators</a><input class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-10"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.basic_estimators.DirectMethod.html">scope_rl.ope.continuous.basic_estimators.DirectMethod</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.basic_estimators.DoublyRobust.html">scope_rl.ope.continuous.basic_estimators.DoublyRobust</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.basic_estimators.PerDecisionImportanceSampling.html">scope_rl.ope.continuous.basic_estimators.PerDecisionImportanceSampling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.basic_estimators.SelfNormalizedDR.html">scope_rl.ope.continuous.basic_estimators.SelfNormalizedDR</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.basic_estimators.SelfNormalizedPDIS.html">scope_rl.ope.continuous.basic_estimators.SelfNormalizedPDIS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.basic_estimators.SelfNormalizedTIS.html">scope_rl.ope.continuous.basic_estimators.SelfNormalizedTIS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.basic_estimators.TrajectoryWiseImportanceSampling.html">scope_rl.ope.continuous.basic_estimators.TrajectoryWiseImportanceSampling</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.marginal_estimators.html">scope_rl.ope.discrete.marginal_estimators</a><input class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-11"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.marginal_estimators.DoubleReinforcementLearning.html">scope_rl.ope.discrete.marginal_estimators.DoubleReinforcementLearning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.marginal_estimators.StateActionMarginalDR.html">scope_rl.ope.discrete.marginal_estimators.StateActionMarginalDR</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.marginal_estimators.StateActionMarginalIS.html">scope_rl.ope.discrete.marginal_estimators.StateActionMarginalIS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.marginal_estimators.StateActionMarginalSNDR.html">scope_rl.ope.discrete.marginal_estimators.StateActionMarginalSNDR</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.marginal_estimators.StateActionMarginalSNIS.html">scope_rl.ope.discrete.marginal_estimators.StateActionMarginalSNIS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.marginal_estimators.StateMarginalDM.html">scope_rl.ope.discrete.marginal_estimators.StateMarginalDM</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.marginal_estimators.StateMarginalDR.html">scope_rl.ope.discrete.marginal_estimators.StateMarginalDR</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.marginal_estimators.StateMarginalIS.html">scope_rl.ope.discrete.marginal_estimators.StateMarginalIS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.marginal_estimators.StateMarginalSNDR.html">scope_rl.ope.discrete.marginal_estimators.StateMarginalSNDR</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.marginal_estimators.StateMarginalSNIS.html">scope_rl.ope.discrete.marginal_estimators.StateMarginalSNIS</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.marginal_estimators.html">scope_rl.ope.continuous.marginal_estimators</a><input class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-12"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.marginal_estimators.DoubleReinforcementLearning.html">scope_rl.ope.continuous.marginal_estimators.DoubleReinforcementLearning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.marginal_estimators.StateActionMarginalDR.html">scope_rl.ope.continuous.marginal_estimators.StateActionMarginalDR</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.marginal_estimators.StateActionMarginalIS.html">scope_rl.ope.continuous.marginal_estimators.StateActionMarginalIS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.marginal_estimators.StateActionMarginalSNDR.html">scope_rl.ope.continuous.marginal_estimators.StateActionMarginalSNDR</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.marginal_estimators.StateActionMarginalSNIS.html">scope_rl.ope.continuous.marginal_estimators.StateActionMarginalSNIS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.marginal_estimators.StateMarginalDM.html">scope_rl.ope.continuous.marginal_estimators.StateMarginalDM</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.marginal_estimators.StateMarginalDR.html">scope_rl.ope.continuous.marginal_estimators.StateMarginalDR</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.marginal_estimators.StateMarginalIS.html">scope_rl.ope.continuous.marginal_estimators.StateMarginalIS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.marginal_estimators.StateMarginalSNDR.html">scope_rl.ope.continuous.marginal_estimators.StateMarginalSNDR</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.marginal_estimators.StateMarginalSNIS.html">scope_rl.ope.continuous.marginal_estimators.StateMarginalSNIS</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.cumulative_distribution_estimators.html">scope_rl.ope.discrete.cumulative_distribution_estimators</a><input class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-13"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.cumulative_distribution_estimators.CumulativeDistributionDM.html">scope_rl.ope.discrete.cumulative_distribution_estimators.CumulativeDistributionDM</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.cumulative_distribution_estimators.CumulativeDistributionSNTDR.html">scope_rl.ope.discrete.cumulative_distribution_estimators.CumulativeDistributionSNTDR</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.cumulative_distribution_estimators.CumulativeDistributionSNTIS.html">scope_rl.ope.discrete.cumulative_distribution_estimators.CumulativeDistributionSNTIS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.cumulative_distribution_estimators.CumulativeDistributionTDR.html">scope_rl.ope.discrete.cumulative_distribution_estimators.CumulativeDistributionTDR</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.discrete.cumulative_distribution_estimators.CumulativeDistributionTIS.html">scope_rl.ope.discrete.cumulative_distribution_estimators.CumulativeDistributionTIS</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.cumulative_distribution_estimators.html">scope_rl.ope.continuous.cumulative_distribution_estimators</a><input class="toctree-checkbox" id="toctree-checkbox-14" name="toctree-checkbox-14" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-14"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.cumulative_distribution_estimators.CumulativeDistributionDM.html">scope_rl.ope.continuous.cumulative_distribution_estimators.CumulativeDistributionDM</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.cumulative_distribution_estimators.CumulativeDistributionSNTDR.html">scope_rl.ope.continuous.cumulative_distribution_estimators.CumulativeDistributionSNTDR</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.cumulative_distribution_estimators.CumulativeDistributionSNTIS.html">scope_rl.ope.continuous.cumulative_distribution_estimators.CumulativeDistributionSNTIS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.cumulative_distribution_estimators.CumulativeDistributionTDR.html">scope_rl.ope.continuous.cumulative_distribution_estimators.CumulativeDistributionTDR</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.continuous.cumulative_distribution_estimators.CumulativeDistributionTIS.html">scope_rl.ope.continuous.cumulative_distribution_estimators.CumulativeDistributionTIS</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.base.html">scope_rl.ope.weight_value_learning.base</a><input class="toctree-checkbox" id="toctree-checkbox-15" name="toctree-checkbox-15" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-15"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.base.BaseWeightValueLearner.html">scope_rl.ope.weight_value_learning.base.BaseWeightValueLearner</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.function.html">scope_rl.ope.weight_value_learning.function</a><input class="toctree-checkbox" id="toctree-checkbox-16" name="toctree-checkbox-16" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-16"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.function.ContinuousQFunction.html">scope_rl.ope.weight_value_learning.function.ContinuousQFunction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.function.ContinuousStateActionWeightFunction.html">scope_rl.ope.weight_value_learning.function.ContinuousStateActionWeightFunction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.function.DiscreteQFunction.html">scope_rl.ope.weight_value_learning.function.DiscreteQFunction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.function.DiscreteStateActionWeightFunction.html">scope_rl.ope.weight_value_learning.function.DiscreteStateActionWeightFunction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.function.StateWeightFunction.html">scope_rl.ope.weight_value_learning.function.StateWeightFunction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.function.VFunction.html">scope_rl.ope.weight_value_learning.function.VFunction</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_discrete.html">scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_discrete</a><input class="toctree-checkbox" id="toctree-checkbox-17" name="toctree-checkbox-17" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-17"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_discrete.DiscreteDiceStateActionWightValueLearning.html">scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_discrete.DiscreteDiceStateActionWightValueLearning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_discrete.DiscreteDiceStateWightValueLearning.html">scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_discrete.DiscreteDiceStateWightValueLearning</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_continuous.html">scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_continuous</a><input class="toctree-checkbox" id="toctree-checkbox-18" name="toctree-checkbox-18" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-18"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_continuous.ContinuousDiceStateActionWightValueLearning.html">scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_continuous.ContinuousDiceStateActionWightValueLearning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_continuous.ContinuousDiceStateWightValueLearning.html">scope_rl.ope.weight_value_learning.augmented_lagrangian_learning_continuous.ContinuousDiceStateWightValueLearning</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.minimax_weight_learning_discrete.html">scope_rl.ope.weight_value_learning.minimax_weight_learning_discrete</a><input class="toctree-checkbox" id="toctree-checkbox-19" name="toctree-checkbox-19" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-19"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.minimax_weight_learning_discrete.DiscreteMinimaxStateActionWeightLearning.html">scope_rl.ope.weight_value_learning.minimax_weight_learning_discrete.DiscreteMinimaxStateActionWeightLearning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.minimax_weight_learning_discrete.DiscreteMinimaxStateWeightLearning.html">scope_rl.ope.weight_value_learning.minimax_weight_learning_discrete.DiscreteMinimaxStateWeightLearning</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.minimax_weight_learning_continuous.html">scope_rl.ope.weight_value_learning.minimax_weight_learning_continuous</a><input class="toctree-checkbox" id="toctree-checkbox-20" name="toctree-checkbox-20" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-20"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.minimax_weight_learning_continuous.ContinuousMinimaxStateActionWeightLearning.html">scope_rl.ope.weight_value_learning.minimax_weight_learning_continuous.ContinuousMinimaxStateActionWeightLearning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.minimax_weight_learning_continuous.ContinuousMinimaxStateWeightLearning.html">scope_rl.ope.weight_value_learning.minimax_weight_learning_continuous.ContinuousMinimaxStateWeightLearning</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.minimax_value_learning_discrete.html">scope_rl.ope.weight_value_learning.minimax_value_learning_discrete</a><input class="toctree-checkbox" id="toctree-checkbox-21" name="toctree-checkbox-21" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-21"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.minimax_value_learning_discrete.DiscreteMinimaxStateActionValueLearning.html">scope_rl.ope.weight_value_learning.minimax_value_learning_discrete.DiscreteMinimaxStateActionValueLearning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.minimax_value_learning_discrete.DiscreteMinimaxStateValueLearning.html">scope_rl.ope.weight_value_learning.minimax_value_learning_discrete.DiscreteMinimaxStateValueLearning</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.minimax_value_learning_continuous.html">scope_rl.ope.weight_value_learning.minimax_value_learning_continuous</a><input class="toctree-checkbox" id="toctree-checkbox-22" name="toctree-checkbox-22" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-22"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.minimax_value_learning_continuous.ContinuousMinimaxStateActionValueLearning.html">scope_rl.ope.weight_value_learning.minimax_value_learning_continuous.ContinuousMinimaxStateActionValueLearning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.weight_value_learning.minimax_value_learning_continuous.ContinuousMinimaxStateValueLearning.html">scope_rl.ope.weight_value_learning.minimax_value_learning_continuous.ContinuousMinimaxStateValueLearning</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/scope_rl.ope.online.html">scope_rl.ope.online</a><input class="toctree-checkbox" id="toctree-checkbox-23" name="toctree-checkbox-23" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-23"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.online.calc_on_policy_conditional_value_at_risk.html">scope_rl.ope.online.calc_on_policy_conditional_value_at_risk</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.online.calc_on_policy_cumulative_distribution_function.html">scope_rl.ope.online.calc_on_policy_cumulative_distribution_function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.online.calc_on_policy_interquartile_range.html">scope_rl.ope.online.calc_on_policy_interquartile_range</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.online.calc_on_policy_policy_value.html">scope_rl.ope.online.calc_on_policy_policy_value</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.online.calc_on_policy_policy_value_interval.html">scope_rl.ope.online.calc_on_policy_policy_value_interval</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.online.calc_on_policy_statistics.html">scope_rl.ope.online.calc_on_policy_statistics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.online.calc_on_policy_variance.html">scope_rl.ope.online.calc_on_policy_variance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.online.rollout_policy_online.html">scope_rl.ope.online.rollout_policy_online</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.online.visualize_on_policy_conditional_value_at_risk.html">scope_rl.ope.online.visualize_on_policy_conditional_value_at_risk</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.online.visualize_on_policy_cumulative_distribution_function.html">scope_rl.ope.online.visualize_on_policy_cumulative_distribution_function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.online.visualize_on_policy_interquartile_range.html">scope_rl.ope.online.visualize_on_policy_interquartile_range</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.online.visualize_on_policy_policy_value.html">scope_rl.ope.online.visualize_on_policy_policy_value</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.ope.online.visualize_on_policy_policy_value_with_variance.html">scope_rl.ope.online.visualize_on_policy_policy_value_with_variance</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/scope_rl.utils.html">scope_rl.utils</a><input class="toctree-checkbox" id="toctree-checkbox-24" name="toctree-checkbox-24" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-24"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.utils.check_array.html">scope_rl.utils.check_array</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.utils.check_input_dict.html">scope_rl.utils.check_input_dict</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.utils.check_logged_dataset.html">scope_rl.utils.check_logged_dataset</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.utils.cosine_kernel.html">scope_rl.utils.cosine_kernel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.utils.defaultdict_to_dict.html">scope_rl.utils.defaultdict_to_dict</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.utils.epanechnikov_kernel.html">scope_rl.utils.epanechnikov_kernel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.utils.estimate_confidence_interval_by_bootstrap.html">scope_rl.utils.estimate_confidence_interval_by_bootstrap</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.utils.estimate_confidence_interval_by_empirical_bernstein.html">scope_rl.utils.estimate_confidence_interval_by_empirical_bernstein</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.utils.estimate_confidence_interval_by_hoeffding.html">scope_rl.utils.estimate_confidence_interval_by_hoeffding</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.utils.estimate_confidence_interval_by_t_test.html">scope_rl.utils.estimate_confidence_interval_by_t_test</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.utils.gaussian_kernel.html">scope_rl.utils.gaussian_kernel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.utils.l2_distance.html">scope_rl.utils.l2_distance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.utils.triangular_kernel.html">scope_rl.utils.triangular_kernel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.utils.uniform_kernel.html">scope_rl.utils.uniform_kernel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.utils.MinMaxActionScaler.html">scope_rl.utils.MinMaxActionScaler</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.utils.MinMaxScaler.html">scope_rl.utils.MinMaxScaler</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.utils.MultipleInputDict.html">scope_rl.utils.MultipleInputDict</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.utils.MultipleLoggedDataset.html">scope_rl.utils.MultipleLoggedDataset</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.utils.NewGymAPIWrapper.html">scope_rl.utils.NewGymAPIWrapper</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/scope_rl.utils.OldGymAPIWrapper.html">scope_rl.utils.OldGymAPIWrapper</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="subpackages/rtbgym_api.html">RTBGym Package Reference</a><input class="toctree-checkbox" id="toctree-checkbox-25" name="toctree-checkbox-25" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-25"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/rtbgym/env/rtbgym.envs.rtb.html">rtbgym.envs.rtb</a><input class="toctree-checkbox" id="toctree-checkbox-26" name="toctree-checkbox-26" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-26"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/rtbgym/env/rtbgym.envs.rtb.RTBEnv.html">rtbgym.envs.rtb.RTBEnv</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/rtbgym/env/rtbgym.envs.wrapper_rtb.html">rtbgym.envs.wrapper_rtb</a><input class="toctree-checkbox" id="toctree-checkbox-27" name="toctree-checkbox-27" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-27"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/rtbgym/env/rtbgym.envs.wrapper_rtb.CustomizedRTBEnv.html">rtbgym.envs.wrapper_rtb.CustomizedRTBEnv</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/rtbgym/simulation/rtbgym.envs.simulator.base.html">rtbgym.envs.simulator.base</a><input class="toctree-checkbox" id="toctree-checkbox-28" name="toctree-checkbox-28" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-28"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/rtbgym/simulation/rtbgym.envs.simulator.base.BaseClickAndConversionRate.html">rtbgym.envs.simulator.base.BaseClickAndConversionRate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/rtbgym/simulation/rtbgym.envs.simulator.base.BaseSimulator.html">rtbgym.envs.simulator.base.BaseSimulator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/rtbgym/simulation/rtbgym.envs.simulator.base.BaseWinningPriceDistribution.html">rtbgym.envs.simulator.base.BaseWinningPriceDistribution</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/rtbgym/simulation/rtbgym.envs.simulator.function.html">rtbgym.envs.simulator.function</a><input class="toctree-checkbox" id="toctree-checkbox-29" name="toctree-checkbox-29" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-29"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/rtbgym/simulation/rtbgym.envs.simulator.function.ClickThroughRate.html">rtbgym.envs.simulator.function.ClickThroughRate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/rtbgym/simulation/rtbgym.envs.simulator.function.ConversionRate.html">rtbgym.envs.simulator.function.ConversionRate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/rtbgym/simulation/rtbgym.envs.simulator.function.WinningPriceDistribution.html">rtbgym.envs.simulator.function.WinningPriceDistribution</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/rtbgym/simulation/rtbgym.envs.simulator.bidder.html">rtbgym.envs.simulator.bidder</a><input class="toctree-checkbox" id="toctree-checkbox-30" name="toctree-checkbox-30" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-30"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/rtbgym/simulation/rtbgym.envs.simulator.bidder.Bidder.html">rtbgym.envs.simulator.bidder.Bidder</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/rtbgym/simulation/rtbgym.envs.simulator.rtb_synthetic.html">rtbgym.envs.simulator.rtb_synthetic</a><input class="toctree-checkbox" id="toctree-checkbox-31" name="toctree-checkbox-31" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-31"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/rtbgym/simulation/rtbgym.envs.simulator.rtb_synthetic.RTBSyntheticSimulator.html">rtbgym.envs.simulator.rtb_synthetic.RTBSyntheticSimulator</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/rtbgym/utils/rtbgym.utils.html">rtbgym.utils</a><input class="toctree-checkbox" id="toctree-checkbox-32" name="toctree-checkbox-32" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-32"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/rtbgym/utils/rtbgym.utils.check_array.html">rtbgym.utils.check_array</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/rtbgym/utils/rtbgym.utils.sigmoid.html">rtbgym.utils.sigmoid</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/rtbgym/utils/rtbgym.utils.NormalDistribution.html">rtbgym.utils.NormalDistribution</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="subpackages/recgym_api.html">RECGym Package Reference</a><input class="toctree-checkbox" id="toctree-checkbox-33" name="toctree-checkbox-33" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-33"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/recgym/env/recgym.envs.rec.html">recgym.envs.rec</a><input class="toctree-checkbox" id="toctree-checkbox-34" name="toctree-checkbox-34" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-34"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/recgym/env/recgym.envs.rec.RECEnv.html">recgym.envs.rec.RECEnv</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/recgym/simulation/recgym.envs.simulator.base.html">recgym.envs.simulator.base</a><input class="toctree-checkbox" id="toctree-checkbox-35" name="toctree-checkbox-35" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-35"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/recgym/simulation/recgym.envs.simulator.base.BaseUserModel.html">recgym.envs.simulator.base.BaseUserModel</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/recgym/simulation/recgym.envs.simulator.function.html">recgym.envs.simulator.function</a><input class="toctree-checkbox" id="toctree-checkbox-36" name="toctree-checkbox-36" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-36"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/recgym/simulation/recgym.envs.simulator.function.UserModel.html">recgym.envs.simulator.function.UserModel</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="subpackages/basicgym_api.html">BasicGym Package Reference</a><input class="toctree-checkbox" id="toctree-checkbox-37" name="toctree-checkbox-37" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-37"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/basicgym/env/basicgym.envs.synthetic.html">basicgym.envs.synthetic</a><input class="toctree-checkbox" id="toctree-checkbox-38" name="toctree-checkbox-38" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-38"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/basicgym/env/basicgym.envs.synthetic.BasicEnv.html">basicgym.envs.synthetic.BasicEnv</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/basicgym/simulation/basicgym.envs.simulator.base.html">basicgym.envs.simulator.base</a><input class="toctree-checkbox" id="toctree-checkbox-39" name="toctree-checkbox-39" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-39"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/basicgym/simulation/basicgym.envs.simulator.base.BaseRewardFunction.html">basicgym.envs.simulator.base.BaseRewardFunction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/basicgym/simulation/basicgym.envs.simulator.base.BaseStateTransitionFunction.html">basicgym.envs.simulator.base.BaseStateTransitionFunction</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_autosummary/basicgym/simulation/basicgym.envs.simulator.function.html">basicgym.envs.simulator.function</a><input class="toctree-checkbox" id="toctree-checkbox-40" name="toctree-checkbox-40" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-40"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/basicgym/simulation/basicgym.envs.simulator.function.RewardFunction.html">basicgym.envs.simulator.function.RewardFunction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/basicgym/simulation/basicgym.envs.simulator.function.StateTransitionFunction.html">basicgym.envs.simulator.function.StateTransitionFunction</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">See also:</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference external" href="https://github.com/hakuhodo-technologies/scope-rl">Github</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/hakuhodo-technologies/scope-rl/blob/main/LICENSE">LICENSE</a></li>
+<li class="toctree-l1"><a class="reference internal" href="frequently_asked_questions.html">FAQs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="news.html">News</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/hakuhodo-technologies/scope-rl/releases">Release Notes</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/hakuhodo-technologies/scope-rl/404">Proceedings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="references.html">References</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumbs">
+  <ul class="bd-breadcrumbs" role="navigation" aria-label="Breadcrumb">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">SCOPE-RL</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">Why SCOPE-RL?</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article" role="main">
+                  
+  <section id="why-scope-rl">
+<h1>Why SCOPE-RL?<a class="headerlink" href="#why-scope-rl" title="Permalink to this heading">#</a></h1>
+<section id="motivation">
+<h2>Motivation<a class="headerlink" href="#motivation" title="Permalink to this heading">#</a></h2>
+<p>Sequential decision making is ubiquitous in many real-world applications including recommender, search, and advertising systems.
+While a <em>logging</em> or <em>behavior</em> policy interacts with users to optimize such sequential decision making, it also produces logged data valuable for learning and evaluating future policies.
+For example, a search engine often records a user’s search query (state), the document presented by the behavior policy (action), the user response such as a click observed for the presented document (reward), and the next user behavior including a more specific search query (next state).
+Making most of these logged data to evaluate a counterfactual policy is particularly beneficial in practice, as it can be a safe and cost-effective substitute for online A/B tests.</p>
+<div class="sd-card sd-sphinx-override sd-w-75 sd-m-auto sd-shadow-sm sd-text-center docutils">
+<img alt="card-img-top" class="sd-card-img-top" src="../_images/real_world_interaction.png" />
+<div class="sd-card-body docutils">
+<p class="sd-card-text">An example of sequential decision makings in the real-world</p>
+</div>
+</div>
+<div class="white-space-20px"></div><p><strong>Off-Policy Evaluation (OPE)</strong>, which studies how to accurately estimate the performance of an <em>evaluation</em> policy using only offline logged data, is thus gaining growing interest.
+Especially in the reinforcement learning (RL) setting, a variety of theoretically grounded OPE estimators have been proposed to accurately estimate the expected reward <span id="id1">[<a class="reference internal" href="references.html#id20" title="Hoang Le, Cameron Voloshin, and Yisong Yue. Batch policy learning under constraints. In Proceedings of the 36th International Conference on Machine Learning, volume 97, 3703–3712. PMLR, 2019.">4</a>, <a class="reference internal" href="references.html#id26" title="Doina Precup, Richard S. Sutton, and Satinder P. Singh. Eligibility traces for off-policy policy evaluation. In Proceedings of the 17th International Conference on Machine Learning, 759–-766. 2000.">5</a>, <a class="reference internal" href="references.html#id28" title="Nan Jiang and Lihong Li. Doubly robust off-policy value evaluation for reinforcement learning. In Proceedings of the 33rd International Conference on Machine Learning, volume 48, 652–661. PMLR, 2016.">6</a>, <a class="reference internal" href="references.html#id32" title="Philip Thomas and Emma Brunskill. Data-efficient off-policy policy evaluation for reinforcement learning. In Proceedings of the 33rd International Conference on Machine Learning, volume 48, 2139–2148. PMLR, 2016.">7</a>, <a class="reference internal" href="references.html#id47" title="Nathan Kallus and Masatoshi Uehara. Intrinsically efficient, stable, and bounded off-policy evaluation for reinforcement learning. In Advances in Neural Information Processing Systems, 3325–3334. 2019.">11</a>, <a class="reference internal" href="references.html#id40" title="Masatoshi Uehara, Jiawei Huang, and Nan Jiang. Minimax weight and q-function learning for off-policy evaluation. In Proceedings of the 37th International Conference on Machine Learning, 9659–9668. PMLR, 2020.">12</a>, <a class="reference internal" href="references.html#id42" title="Qiang Liu, Lihong Li, Ziyang Tang, and Dengyong Zhou. Breaking the curse of horizon: infinite-horizon off-policy estimation. Advances in Neural Information Processing Systems, 2018.">13</a>]</span>.
+Moreover, several recent work on cumulative distribution OPE <span id="id2">[<a class="reference internal" href="references.html#id9" title="Audrey Huang, Liu Leqi, Zachary Lipton, and Kamyar Azizzadenesheli. Off-policy risk assessment in contextual bandits. In Advances in Neural Information Processing Systems, volume 34, 23714–23726. 2021.">8</a>, <a class="reference internal" href="references.html#id10" title="Audrey Huang, Liu Leqi, Zachary Lipton, and Kamyar Azizzadenesheli. Off-policy risk assessment for markov decision processes. In roceedings of the 25th International Conference on Artificial Intelligence and Statistics, 5022–5050. 2022.">9</a>, <a class="reference internal" href="references.html#id8" title="Yash Chandak, Scott Niekum, Bruno da Silva, Erik Learned-Miller, Emma Brunskill, and Philip S Thomas. Universal off-policy evaluation. In Advances in Neural Information Processing Systems, volume 34, 27475–27490. 2021.">10</a>]</span> also aim at estimating the cumulative distribution function (CDF) and risk functions (e.g., variance, conditional value at risk (CVaR), and interquartile range) of an evaluation policy.
+These risk functions provide informative insights on policy performance especially from safety perspectives, which are thus crucial for practical decision making.</p>
+<p>Unfortunately, despite these recent advances in OPE of RL policies, only a few existing platforms <span id="id3">[<a class="reference internal" href="references.html#id6" title="Cameron Voloshin, Hoang M Le, Nan Jiang, and Yisong Yue. Empirical study of off-policy policy evaluation for reinforcement learning. Advances in Neural Information Processing Systems, 2019.">25</a>, <a class="reference internal" href="references.html#id4" title="Justin Fu, Mohammad Norouzi, Ofir Nachum, George Tucker, Ziyu Wang, Alexander Novikov, Mengjiao Yang, Michael R. Zhang, Yutian Chen, Aviral Kumar, Cosmin Paduraru, Sergey Levine, and Thomas Paine. Benchmarks for deep off-policy evaluation. In Proceedings of the 9th International Conference on Learning Representations. 2021.">26</a>]</span> are available for extensive OPE studies and benchmarking experiments.
+Moreover, those existing platform lacks the following important properties:</p>
+<p>Most <em>offline RL</em> plaforms:</p>
+<ul class="simple">
+<li><p>… provide only a few basic OPE estimators.</p></li>
+</ul>
+<p>Existing <em>OPE</em> platforms:</p>
+<ul class="simple">
+<li><p>… have a limited flexibly in the choices of environments and offline RL methods (i.e., <strong>limited compatibility with gym/gymnasium and offline RL libraries</strong>).</p></li>
+<li><p>… support only the standard OPE framework and lack the implementation of <strong>cumulative distribution OPE</strong>.</p></li>
+<li><p>… only focus on the accuracy of OPE/OPS and do not take the <strong>risk-return tradeoff</strong> of the policy selection into account.</p></li>
+<li><p>… do not support user-friendly <strong>visualization tools</strong> to interpret the OPE results.</p></li>
+<li><p>… do not provide well-described <strong>documentations</strong>.</p></li>
+</ul>
+<p>It is critical to fill the above gaps to further facilitate the OPE research and its practical applications.
+This is why we build <strong>SCOPE-RL, the first end-to-end platform for offline RL and OPE, which puts an emphasis on the OPE modules</strong>.</p>
+</section>
+<section id="key-contributions">
+<h2>Key contributions<a class="headerlink" href="#key-contributions" title="Permalink to this heading">#</a></h2>
+<p>The distinctive features of our SCOPE-RL platform are summarized as follows.</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#feature-end-to-end"><span class="std std-ref">End-to-end implementation of Offline RL and OPE</span></a></p></li>
+<li><p><a class="reference internal" href="#feature-variety-ope"><span class="std std-ref">Variety of OPE estimators and evaluation protocol of OPE</span></a></p></li>
+<li><p><a class="reference internal" href="#feature-cd-ope"><span class="std std-ref">Cumulative Distribution OPE for risk function estimation</span></a></p></li>
+<li><p><a class="reference internal" href="#feature-sharpe-ratio"><span class="std std-ref">Risk-Return Assessments of OPS</span></a></p></li>
+</ul>
+<p>Below, we describe each advantage one by one.
+Note that for a quick comparison with the exising platforms, please refer to <a class="reference internal" href="#feature-comparison"><span class="std std-ref">the following section</span></a>.</p>
+<section id="end-to-end-implementation-of-offline-rl-and-ope">
+<span id="feature-end-to-end"></span><h3>End-to-end implementation of Offline RL and OPE<a class="headerlink" href="#end-to-end-implementation-of-offline-rl-and-ope" title="Permalink to this heading">#</a></h3>
+<p>While existing platforms support flexible implementations on either offline RL or OPE, we aim to bridge the offline RL and OPE processes and streamline an end-to-end procedure for the first time.
+Specifically, SCOPE-RL mainly consists of the following four modules as shown in the bottom figure:</p>
+<div class="sd-card sd-sphinx-override sd-w-75 sd-m-auto sd-shadow-sm sd-text-center docutils">
+<img alt="card-img-top" class="sd-card-img-top" src="../_images/scope_workflow.png" />
+<div class="sd-card-body docutils">
+<p class="sd-card-text">Workflow of offline RL and OPE streamlined by SCOPE-RL</p>
+</div>
+</div>
+<div class="white-space-20px"></div><ul class="simple">
+<li><p>Dataset module</p></li>
+<li><p>Offline Learning (ORL) module</p></li>
+<li><p>Off-Policy Evaluation (OPE) module</p></li>
+<li><p>Off-Policy Selection (OPS) module</p></li>
+</ul>
+<p>First, the <em>Dataset</em> module handles the data collection from RL environments.
+Since our Dataset module is compatible with <a class="reference external" href="https://github.com/openai/gym">OpenAI Gym</a> or <a class="reference external" href="https://github.com/Farama-Foundation/Gymnasium">Gymnasium</a>-like environments, SCOPE-RL is applicable to a variety of environmental settings.
+Moreover, SCOPE-RL supports compatibility with <a class="reference external" href="https://github.com/takuseno/d3rlpy">d3rlpy</a>, which provides implementations of various online and offline RL algorithms.
+This also allows us test the performance of offline RL and OPE with various behavior policies or other experimental settings.</p>
+<p>Next, the <em>ORL</em> module provides an easy-to-handle wrapper for learning new policies with various offline RL algorithms.
+While <a class="reference external" href="https://github.com/takuseno/d3rlpy">d3rlpy</a> has already supported user-friedly APIs, their implementation is basically intended to use offline RL algorithms one by one.
+Therefore, to further make the end-to-end offline RL and OPE processes smoothly connected, our OPL wrapper enables to handle multiple datasets and multiple algorithms in a single class.</p>
+<p>Finally, the <em>OPE</em> and <em>OPS</em> modules are particularly our focus.
+As we will review in the following sub-sections, we implement a variety of OPE estimators from the basic choices <span id="id5">[<a class="reference internal" href="references.html#id20" title="Hoang Le, Cameron Voloshin, and Yisong Yue. Batch policy learning under constraints. In Proceedings of the 36th International Conference on Machine Learning, volume 97, 3703–3712. PMLR, 2019.">4</a>, <a class="reference internal" href="references.html#id26" title="Doina Precup, Richard S. Sutton, and Satinder P. Singh. Eligibility traces for off-policy policy evaluation. In Proceedings of the 17th International Conference on Machine Learning, 759–-766. 2000.">5</a>, <a class="reference internal" href="references.html#id28" title="Nan Jiang and Lihong Li. Doubly robust off-policy value evaluation for reinforcement learning. In Proceedings of the 33rd International Conference on Machine Learning, volume 48, 652–661. PMLR, 2016.">6</a>, <a class="reference internal" href="references.html#id32" title="Philip Thomas and Emma Brunskill. Data-efficient off-policy policy evaluation for reinforcement learning. In Proceedings of the 33rd International Conference on Machine Learning, volume 48, 2139–2148. PMLR, 2016.">7</a>]</span>,
+advanced ones <span id="id6">[<a class="reference internal" href="references.html#id40" title="Masatoshi Uehara, Jiawei Huang, and Nan Jiang. Minimax weight and q-function learning for off-policy evaluation. In Proceedings of the 37th International Conference on Machine Learning, 9659–9668. PMLR, 2020.">12</a>, <a class="reference internal" href="references.html#id42" title="Qiang Liu, Lihong Li, Ziyang Tang, and Dengyong Zhou. Breaking the curse of horizon: infinite-horizon off-policy estimation. Advances in Neural Information Processing Systems, 2018.">13</a>, <a class="reference internal" href="references.html#id38" title="Christina Yuan, Yash Chandak, Stephen Giguere, Philip S Thomas, and Scott Niekum. Sope: spectrum of off-policy estimators. Advances in Neural Information Processing Systems, 34:18958–18969, 2021.">14</a>, <a class="reference internal" href="references.html#id39" title="Nathan Kallus and Masatoshi Uehara. Double reinforcement learning for efficient off-policy evaluation in markov decision processes. Journal of Machine Learning Research, 2020.">15</a>, <a class="reference internal" href="references.html#id41" title="Mengjiao Yang, Ofir Nachum, Bo Dai, Lihong Li, and Dale Schuurmans. Off-policy evaluation via the regularized lagrangian. Advances in Neural Information Processing Systems, 33:6551–6561, 2020.">16</a>]</span>, and estimators for the cutting-edge cumulative distribution OPE <span id="id7">[<a class="reference internal" href="references.html#id10" title="Audrey Huang, Liu Leqi, Zachary Lipton, and Kamyar Azizzadenesheli. Off-policy risk assessment for markov decision processes. In roceedings of the 25th International Conference on Artificial Intelligence and Statistics, 5022–5050. 2022.">9</a>, <a class="reference internal" href="references.html#id8" title="Yash Chandak, Scott Niekum, Bruno da Silva, Erik Learned-Miller, Emma Brunskill, and Philip S Thomas. Universal off-policy evaluation. In Advances in Neural Information Processing Systems, volume 34, 27475–27490. 2021.">10</a>]</span>.
+Moreover, we provide the meta-class to handle OPE/OPS experiments and the abstract base implementation of OPE estimators.
+This allows researchers to quickly test their own algorithms with this platform and also help practitioners empirically learn the property of various OPE methods.</p>
+</section>
+<section id="variety-of-ope-estimators-and-evaluation-protocol-of-ope">
+<span id="feature-variety-ope"></span><h3>Variety of OPE estimators and evaluation protocol of OPE<a class="headerlink" href="#variety-of-ope-estimators-and-evaluation-protocol-of-ope" title="Permalink to this heading">#</a></h3>
+<p>SCOPE-RL provides the implementation of various OPE estimators in both discrete and continuous action settings.
+In the standard OPE, which aim to estimate the expected performance of the given evaluation policy, we implement the OPE estimators listed below.
+These implementations are as comprehensive as the existing OPE platforms including <span id="id8">[<a class="reference internal" href="references.html#id6" title="Cameron Voloshin, Hoang M Le, Nan Jiang, and Yisong Yue. Empirical study of off-policy policy evaluation for reinforcement learning. Advances in Neural Information Processing Systems, 2019.">25</a>, <a class="reference internal" href="references.html#id4" title="Justin Fu, Mohammad Norouzi, Ofir Nachum, George Tucker, Ziyu Wang, Alexander Novikov, Mengjiao Yang, Michael R. Zhang, Yutian Chen, Aviral Kumar, Cosmin Paduraru, Sergey Levine, and Thomas Paine. Benchmarks for deep off-policy evaluation. In Proceedings of the 9th International Conference on Learning Representations. 2021.">26</a>]</span>.</p>
+<div class="sd-card sd-sphinx-override sd-w-75 sd-m-auto sd-shadow-sm sd-text-center docutils">
+<img alt="card-img-top" class="sd-card-img-top" src="../_images/ope_policy_value_variety.png" />
+<div class="sd-card-body docutils">
+<p class="sd-card-text">Example of estimating policy value using various OPE estimators</p>
+</div>
+</div>
+<div class="white-space-20px"></div><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>The detailed descriptions of each estimator and evaluation metrics are in <a class="reference internal" href="evaluation_implementation.html"><span class="doc">Supported Implemetation (OPE/OPS)</span></a>.</p>
+</div>
+<div class="white-space-5px"></div><p><strong>Basic estimators</strong></p>
+<ul class="simple">
+<li><p>(abstract base)</p></li>
+<li><p>Direct Method (DM) <span id="id9">[<a class="reference internal" href="references.html#id23" title="Alina Beygelzimer and John Langford. The offset tree for learning with partial labels. In Proceedings of the 15th ACM SIGKDD International Conference on Knowledge Discovery and Data Mining, 129–138. 2009.">3</a>, <a class="reference internal" href="references.html#id20" title="Hoang Le, Cameron Voloshin, and Yisong Yue. Batch policy learning under constraints. In Proceedings of the 36th International Conference on Machine Learning, volume 97, 3703–3712. PMLR, 2019.">4</a>]</span></p></li>
+<li><p>Trajectory-wise Importance Sampling (TIS) <span id="id10">[<a class="reference internal" href="references.html#id26" title="Doina Precup, Richard S. Sutton, and Satinder P. Singh. Eligibility traces for off-policy policy evaluation. In Proceedings of the 17th International Conference on Machine Learning, 759–-766. 2000.">5</a>]</span></p></li>
+<li><p>Per-Decision Importance Sampling (PDIS) <span id="id11">[<a class="reference internal" href="references.html#id26" title="Doina Precup, Richard S. Sutton, and Satinder P. Singh. Eligibility traces for off-policy policy evaluation. In Proceedings of the 17th International Conference on Machine Learning, 759–-766. 2000.">5</a>]</span></p></li>
+<li><p>Doubly Robust (DR) <span id="id12">[<a class="reference internal" href="references.html#id28" title="Nan Jiang and Lihong Li. Doubly robust off-policy value evaluation for reinforcement learning. In Proceedings of the 33rd International Conference on Machine Learning, volume 48, 652–661. PMLR, 2016.">6</a>, <a class="reference internal" href="references.html#id32" title="Philip Thomas and Emma Brunskill. Data-efficient off-policy policy evaluation for reinforcement learning. In Proceedings of the 33rd International Conference on Machine Learning, volume 48, 2139–2148. PMLR, 2016.">7</a>]</span></p></li>
+<li><p>Self-Normalized Trajectory-wise Importance Sampling (SNTIS) <span id="id13">[<a class="reference internal" href="references.html#id26" title="Doina Precup, Richard S. Sutton, and Satinder P. Singh. Eligibility traces for off-policy policy evaluation. In Proceedings of the 17th International Conference on Machine Learning, 759–-766. 2000.">5</a>, <a class="reference internal" href="references.html#id47" title="Nathan Kallus and Masatoshi Uehara. Intrinsically efficient, stable, and bounded off-policy evaluation for reinforcement learning. In Advances in Neural Information Processing Systems, 3325–3334. 2019.">11</a>]</span></p></li>
+<li><p>Self-Normalized Per-Decision Importance Sampling (SNPDIS) <span id="id14">[<a class="reference internal" href="references.html#id26" title="Doina Precup, Richard S. Sutton, and Satinder P. Singh. Eligibility traces for off-policy policy evaluation. In Proceedings of the 17th International Conference on Machine Learning, 759–-766. 2000.">5</a>, <a class="reference internal" href="references.html#id47" title="Nathan Kallus and Masatoshi Uehara. Intrinsically efficient, stable, and bounded off-policy evaluation for reinforcement learning. In Advances in Neural Information Processing Systems, 3325–3334. 2019.">11</a>]</span></p></li>
+<li><p>Self-Normalized Doubly Robust (SNDR) <span id="id15">[<a class="reference internal" href="references.html#id28" title="Nan Jiang and Lihong Li. Doubly robust off-policy value evaluation for reinforcement learning. In Proceedings of the 33rd International Conference on Machine Learning, volume 48, 652–661. PMLR, 2016.">6</a>, <a class="reference internal" href="references.html#id32" title="Philip Thomas and Emma Brunskill. Data-efficient off-policy policy evaluation for reinforcement learning. In Proceedings of the 33rd International Conference on Machine Learning, volume 48, 2139–2148. PMLR, 2016.">7</a>, <a class="reference internal" href="references.html#id47" title="Nathan Kallus and Masatoshi Uehara. Intrinsically efficient, stable, and bounded off-policy evaluation for reinforcement learning. In Advances in Neural Information Processing Systems, 3325–3334. 2019.">11</a>]</span></p></li>
+</ul>
+<div class="white-space-5px"></div><p><strong>State Marginal Estimators</strong></p>
+<ul class="simple">
+<li><p>(abstract base)</p></li>
+<li><p>State Marginal Direct Method (SM-DM) <span id="id16">[<a class="reference internal" href="references.html#id40" title="Masatoshi Uehara, Jiawei Huang, and Nan Jiang. Minimax weight and q-function learning for off-policy evaluation. In Proceedings of the 37th International Conference on Machine Learning, 9659–9668. PMLR, 2020.">12</a>]</span></p></li>
+<li><p>State Marginal Importance Sampling (SM-IS) <span id="id17">[<a class="reference internal" href="references.html#id40" title="Masatoshi Uehara, Jiawei Huang, and Nan Jiang. Minimax weight and q-function learning for off-policy evaluation. In Proceedings of the 37th International Conference on Machine Learning, 9659–9668. PMLR, 2020.">12</a>, <a class="reference internal" href="references.html#id42" title="Qiang Liu, Lihong Li, Ziyang Tang, and Dengyong Zhou. Breaking the curse of horizon: infinite-horizon off-policy estimation. Advances in Neural Information Processing Systems, 2018.">13</a>]</span></p></li>
+<li><p>State Marginal Doubly Robust (SM-DR) <span id="id18">[<a class="reference internal" href="references.html#id40" title="Masatoshi Uehara, Jiawei Huang, and Nan Jiang. Minimax weight and q-function learning for off-policy evaluation. In Proceedings of the 37th International Conference on Machine Learning, 9659–9668. PMLR, 2020.">12</a>, <a class="reference internal" href="references.html#id42" title="Qiang Liu, Lihong Li, Ziyang Tang, and Dengyong Zhou. Breaking the curse of horizon: infinite-horizon off-policy estimation. Advances in Neural Information Processing Systems, 2018.">13</a>]</span></p></li>
+<li><p>State Marginal Self-Normalized Importance Sampling (SM-SNIS) <span id="id19">[<a class="reference internal" href="references.html#id40" title="Masatoshi Uehara, Jiawei Huang, and Nan Jiang. Minimax weight and q-function learning for off-policy evaluation. In Proceedings of the 37th International Conference on Machine Learning, 9659–9668. PMLR, 2020.">12</a>, <a class="reference internal" href="references.html#id42" title="Qiang Liu, Lihong Li, Ziyang Tang, and Dengyong Zhou. Breaking the curse of horizon: infinite-horizon off-policy estimation. Advances in Neural Information Processing Systems, 2018.">13</a>]</span></p></li>
+<li><p>State Marginal Self-Normalized Doubly Robust (SM-SNDR) <span id="id20">[<a class="reference internal" href="references.html#id40" title="Masatoshi Uehara, Jiawei Huang, and Nan Jiang. Minimax weight and q-function learning for off-policy evaluation. In Proceedings of the 37th International Conference on Machine Learning, 9659–9668. PMLR, 2020.">12</a>, <a class="reference internal" href="references.html#id42" title="Qiang Liu, Lihong Li, Ziyang Tang, and Dengyong Zhou. Breaking the curse of horizon: infinite-horizon off-policy estimation. Advances in Neural Information Processing Systems, 2018.">13</a>]</span></p></li>
+<li><p>Spectrum of Off-Policy Evaluation (SOPE) <span id="id21">[<a class="reference internal" href="references.html#id38" title="Christina Yuan, Yash Chandak, Stephen Giguere, Philip S Thomas, and Scott Niekum. Sope: spectrum of off-policy estimators. Advances in Neural Information Processing Systems, 34:18958–18969, 2021.">14</a>]</span></p></li>
+</ul>
+<div class="white-space-5px"></div><p><strong>State-Action Marginal Estimators</strong></p>
+<ul class="simple">
+<li><p>(abstract base)</p></li>
+<li><p>State-Action Marginal Importance Sampling (SAM-IS) <span id="id22">[<a class="reference internal" href="references.html#id40" title="Masatoshi Uehara, Jiawei Huang, and Nan Jiang. Minimax weight and q-function learning for off-policy evaluation. In Proceedings of the 37th International Conference on Machine Learning, 9659–9668. PMLR, 2020.">12</a>]</span></p></li>
+<li><p>State-Action Marginal Doubly Robust (SAM-DR) <span id="id23">[<a class="reference internal" href="references.html#id40" title="Masatoshi Uehara, Jiawei Huang, and Nan Jiang. Minimax weight and q-function learning for off-policy evaluation. In Proceedings of the 37th International Conference on Machine Learning, 9659–9668. PMLR, 2020.">12</a>]</span></p></li>
+<li><p>State-Action Marginal Self-Normalized Importance Sampling (SAM-SNIS) <span id="id24">[<a class="reference internal" href="references.html#id40" title="Masatoshi Uehara, Jiawei Huang, and Nan Jiang. Minimax weight and q-function learning for off-policy evaluation. In Proceedings of the 37th International Conference on Machine Learning, 9659–9668. PMLR, 2020.">12</a>]</span></p></li>
+<li><p>State-Action Marginal Self-Normalized Doubly Robust (SAM-SNDR) <span id="id25">[<a class="reference internal" href="references.html#id40" title="Masatoshi Uehara, Jiawei Huang, and Nan Jiang. Minimax weight and q-function learning for off-policy evaluation. In Proceedings of the 37th International Conference on Machine Learning, 9659–9668. PMLR, 2020.">12</a>]</span></p></li>
+<li><p>Spectrum of Off-Policy Evaluation (SOPE) <span id="id26">[<a class="reference internal" href="references.html#id38" title="Christina Yuan, Yash Chandak, Stephen Giguere, Philip S Thomas, and Scott Niekum. Sope: spectrum of off-policy estimators. Advances in Neural Information Processing Systems, 34:18958–18969, 2021.">14</a>]</span></p></li>
+</ul>
+<div class="white-space-5px"></div><p><strong>Double Reinforcement Learning</strong></p>
+<ul class="simple">
+<li><p>Double Reinforcement Learning <span id="id27">[<a class="reference internal" href="references.html#id39" title="Nathan Kallus and Masatoshi Uehara. Double reinforcement learning for efficient off-policy evaluation in markov decision processes. Journal of Machine Learning Research, 2020.">15</a>]</span></p></li>
+</ul>
+<div class="white-space-5px"></div><p><strong>Weight and Value Learning Methods</strong></p>
+<ul class="simple">
+<li><dl class="simple">
+<dt>Augmented Lagrangian Method (ALM/DICE) <span id="id28">[<a class="reference internal" href="references.html#id41" title="Mengjiao Yang, Ofir Nachum, Bo Dai, Lihong Li, and Dale Schuurmans. Off-policy evaluation via the regularized lagrangian. Advances in Neural Information Processing Systems, 33:6551–6561, 2020.">16</a>]</span></dt><dd><p>BestDICE <span id="id29">[<a class="reference internal" href="references.html#id41" title="Mengjiao Yang, Ofir Nachum, Bo Dai, Lihong Li, and Dale Schuurmans. Off-policy evaluation via the regularized lagrangian. Advances in Neural Information Processing Systems, 33:6551–6561, 2020.">16</a>]</span> / GradientDICE <span id="id30">[<a class="reference internal" href="references.html#id43" title="Shangtong Zhang, Bo Liu, and Shimon Whiteson. Gradientdice: rethinking generalized offline estimation of stationary values. In Proceedings of the 37th International Conference on Machine Learning, 11194–11203. PMLR, 2020.">17</a>]</span> / GenDICE <span id="id31">[<a class="reference internal" href="references.html#id44" title="Ruiyi Zhang, Bo Dai, Lihong Li, and Dale Schuurmans. Gendice: generalized offline estimation of stationary values. Proceedings of the 8th International Conference on Learning Representations, 2020.">18</a>]</span> / AlgaeDICE <span id="id32">[<a class="reference internal" href="references.html#id45" title="Ofir Nachum, Bo Dai, Ilya Kostrikov, Yinlam Chow, Lihong Li, and Dale Schuurmans. Algaedice: policy gradient from arbitrary experience. arXiv preprint arXiv:1912.02074, 2019.">19</a>]</span> / DualDICE <span id="id33">[<a class="reference internal" href="references.html#id46" title="Ofir Nachum, Yinlam Chow, Bo Dai, and Lihong Li. Dualdice: behavior-agnostic estimation of discounted stationary distribution corrections. Advances in Neural Information Processing Systems, 2019.">20</a>]</span> / MQL/MWL <span id="id34">[<a class="reference internal" href="references.html#id40" title="Masatoshi Uehara, Jiawei Huang, and Nan Jiang. Minimax weight and q-function learning for off-policy evaluation. In Proceedings of the 37th International Conference on Machine Learning, 9659–9668. PMLR, 2020.">12</a>]</span></p>
+</dd>
+</dl>
+</li>
+<li><p>Minimax Q-Learning and Weight Learning (MQL/MWL) <span id="id35">[<a class="reference internal" href="references.html#id40" title="Masatoshi Uehara, Jiawei Huang, and Nan Jiang. Minimax weight and q-function learning for off-policy evaluation. In Proceedings of the 37th International Conference on Machine Learning, 9659–9668. PMLR, 2020.">12</a>]</span></p></li>
+</ul>
+<div class="white-space-5px"></div><p><strong>High Confidence OPE</strong></p>
+<ul class="simple">
+<li><p>Bootstrap <span id="id36">[<a class="reference internal" href="references.html#id31" title="Philip Thomas, Georgios Theocharous, and Mohammad Ghavamzadeh. High confidence policy improvement. In International Conference on Machine Learning, 2380–2388. PMLR, 2015.">21</a>, <a class="reference internal" href="references.html#id24" title="Josiah P Hanna, Peter Stone, and Scott Niekum. Bootstrapping with models: confidence intervals for off-policy evaluation. In Proceedings of the 31st AAAI Conference on Artificial Intelligence. 2017.">22</a>]</span></p></li>
+<li><p>Hoeffding <span id="id37">[<a class="reference internal" href="references.html#id30" title="Philip Thomas, Georgios Theocharous, and Mohammad Ghavamzadeh. High-confidence off-policy evaluation. In Proceedings of the AAAI Conference on Artificial Intelligence, volume 29. 2015.">23</a>]</span></p></li>
+<li><p>(Empirical) Bernstein <span id="id38">[<a class="reference internal" href="references.html#id31" title="Philip Thomas, Georgios Theocharous, and Mohammad Ghavamzadeh. High confidence policy improvement. In International Conference on Machine Learning, 2380–2388. PMLR, 2015.">21</a>, <a class="reference internal" href="references.html#id30" title="Philip Thomas, Georgios Theocharous, and Mohammad Ghavamzadeh. High-confidence off-policy evaluation. In Proceedings of the AAAI Conference on Artificial Intelligence, volume 29. 2015.">23</a>]</span></p></li>
+<li><p>Student T-test <span id="id39">[<a class="reference internal" href="references.html#id31" title="Philip Thomas, Georgios Theocharous, and Mohammad Ghavamzadeh. High confidence policy improvement. In International Conference on Machine Learning, 2380–2388. PMLR, 2015.">21</a>]</span></p></li>
+</ul>
+<div class="white-space-5px"></div>
+<div class="white-space-5px"></div><p>Moreover, we streamline the evaluation protocol of OPE/OPS with the following metrics.</p>
+<p><strong>OPE metrics</strong></p>
+<ul class="simple">
+<li><p>Mean Squared Error <span id="id40">[<a class="reference internal" href="references.html#id5" title="Tom Le Paine, Cosmin Paduraru, Andrea Michi, Caglar Gulcehre, Konrad Zolna, Alexander Novikov, Ziyu Wang, and Nando de Freitas. Hyperparameter selection for offline reinforcement learning. arXiv preprint arXiv:2007.09055, 2020.">24</a>, <a class="reference internal" href="references.html#id6" title="Cameron Voloshin, Hoang M Le, Nan Jiang, and Yisong Yue. Empirical study of off-policy policy evaluation for reinforcement learning. Advances in Neural Information Processing Systems, 2019.">25</a>, <a class="reference internal" href="references.html#id4" title="Justin Fu, Mohammad Norouzi, Ofir Nachum, George Tucker, Ziyu Wang, Alexander Novikov, Mengjiao Yang, Michael R. Zhang, Yutian Chen, Aviral Kumar, Cosmin Paduraru, Sergey Levine, and Thomas Paine. Benchmarks for deep off-policy evaluation. In Proceedings of the 9th International Conference on Learning Representations. 2021.">26</a>]</span></p></li>
+<li><p>Spearman’s Rank Correlation Coefficient <span id="id41">[<a class="reference internal" href="references.html#id5" title="Tom Le Paine, Cosmin Paduraru, Andrea Michi, Caglar Gulcehre, Konrad Zolna, Alexander Novikov, Ziyu Wang, and Nando de Freitas. Hyperparameter selection for offline reinforcement learning. arXiv preprint arXiv:2007.09055, 2020.">24</a>, <a class="reference internal" href="references.html#id4" title="Justin Fu, Mohammad Norouzi, Ofir Nachum, George Tucker, Ziyu Wang, Alexander Novikov, Mengjiao Yang, Michael R. Zhang, Yutian Chen, Aviral Kumar, Cosmin Paduraru, Sergey Levine, and Thomas Paine. Benchmarks for deep off-policy evaluation. In Proceedings of the 9th International Conference on Learning Representations. 2021.">26</a>]</span></p></li>
+<li><p>Regret <span id="id42">[<a class="reference internal" href="references.html#id5" title="Tom Le Paine, Cosmin Paduraru, Andrea Michi, Caglar Gulcehre, Konrad Zolna, Alexander Novikov, Ziyu Wang, and Nando de Freitas. Hyperparameter selection for offline reinforcement learning. arXiv preprint arXiv:2007.09055, 2020.">24</a>, <a class="reference internal" href="references.html#id4" title="Justin Fu, Mohammad Norouzi, Ofir Nachum, George Tucker, Ziyu Wang, Alexander Novikov, Mengjiao Yang, Michael R. Zhang, Yutian Chen, Aviral Kumar, Cosmin Paduraru, Sergey Levine, and Thomas Paine. Benchmarks for deep off-policy evaluation. In Proceedings of the 9th International Conference on Learning Representations. 2021.">26</a>]</span></p></li>
+<li><p>Type I and Type II Error Rates</p></li>
+</ul>
+<div class="white-space-5px"></div><p><strong>OPS metrics</strong> (performance of top <span class="math notranslate nohighlight">\(k\)</span> deployment policies)</p>
+<ul class="simple">
+<li><p>{Best/Worst/Mean/Std} of policy performance</p></li>
+<li><p>Safety violation rate</p></li>
+<li><p>Sharpe ratio (our proposal)</p></li>
+</ul>
+<p>Note that, the above top-<span class="math notranslate nohighlight">\(k\)</span> metrics are the proposal in our research paper <strong>”
+Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation in Reinforcement Learning”</strong>.
+<a class="reference internal" href="sharpe_ratio.html"><span class="doc">Risk-Return Assessments of OPE via SharpRatio&#64;k</span></a> describe the above metrics and the contribution of SharpRatio&#64;k in details. We also discuss these metrics briefly in <a class="reference internal" href="#feature-sharpe-ratio"><span class="std std-ref">the later sub-section</span></a>.</p>
+</section>
+<section id="cumulative-distribution-ope-for-risk-function-estimation">
+<span id="feature-cd-ope"></span><h3>Cumulative Distribution OPE for risk function estimation<a class="headerlink" href="#cumulative-distribution-ope-for-risk-function-estimation" title="Permalink to this heading">#</a></h3>
+<p>Besides the standard OPE, SCOPE-RL differentiates itself from other OPE platforms by supporting the cumulative distribution OPE for the first time.
+Roughly, cumulative distribution OPE aims to estimate the whole performance distribution of the policy performance, not just the expected performance as the standard OPE does.</p>
+<div class="sd-card sd-sphinx-override sd-w-75 sd-m-auto sd-shadow-sm sd-text-center docutils">
+<img alt="card-img-top" class="sd-card-img-top" src="../_images/ope_cumulative_distribution_function.png" />
+<div class="sd-card-body docutils">
+<p class="sd-card-text">Example of estimating the cumulative distribution function (CDF) via OPE</p>
+</div>
+</div>
+<div class="white-space-20px"></div><p>By estimating the cumulative distribution function (CDF), we can derive the following statistics of the policy performance:</p>
+<ul class="simple">
+<li><p>Mean (i.e., policy value)</p></li>
+<li><p>Variance</p></li>
+<li><p>Conditional Value at Risk (CVaR)</p></li>
+<li><p>Interquartile Range</p></li>
+</ul>
+<p>Knowing the whole performance distribution or deriving the risk metrics including CVaR is particularly beneficial in a real-life situation where the safety matters.
+For example, in recommender systems, we are interested in stably providing good-quality products rather than sometimes providing an extremely good one but sometimes hurting user satisfaction seriously with bad items.
+Moreover, in the self-diriving cars, the catastrophic accidents should be avoided even if its probability is small (e.g., less than 10%).
+We believe that the release of cumulative distribution OPE implementations will boost the applicability of OPE in practical situations.</p>
+</section>
+<section id="risk-return-assessments-of-ops">
+<span id="feature-sharpe-ratio"></span><h3>Risk-Return Assessments of OPS<a class="headerlink" href="#risk-return-assessments-of-ops" title="Permalink to this heading">#</a></h3>
+<p>Our SCOPE-RL is also unique in that it enables risk-return assessments of Off-Policy Selection (OPS).</p>
+<p>While OPE is useful for estimating the policy performance of a new policy using offline logged data,
+OPE sometimes produces erroneous estimation due to <em>counterfactual estimation</em> and <em>distribution shift</em> between the behavior and evaluation policies.
+Therefore, in practical situations, we cannot solely rely on OPE results to choose the production policy, but instead, combine OPE results and online A/B tests for policy evaluation and selection <span id="id43">[<a class="reference internal" href="references.html#id37" title="Vladislav Kurenkov and Sergey Kolesnikov. Showing your offline reinforcement learning work: online evaluation budget matters. In Proceedings of the 39th International Conference on Machine Learning, 11729–11752. PMLR, 2022.">27</a>]</span>.
+Specifically, the practical workflow often begins by filtering out poor-performing policies based on OPE results, then conducting A/B tests on the remaining top-<span class="math notranslate nohighlight">\(k\)</span>
+policies to identify the best policy based on reliable online evaluation, as illustrated in the following figure.</p>
+<div class="sd-card sd-sphinx-override sd-w-75 sd-m-auto sd-shadow-sm sd-text-center docutils">
+<img alt="card-img-top" class="sd-card-img-top" src="../_images/ops_workflow.png" />
+<div class="sd-card-body docutils">
+<p class="sd-card-text">Practical workflow of policy evaluation and selection</p>
+</div>
+</div>
+<div class="white-space-20px"></div><p>While the conventional metrics of OPE focus on the “accuracy” of OPE and OPS measured by mean-squared error (MSE) <span id="id44">[<a class="reference internal" href="references.html#id6" title="Cameron Voloshin, Hoang M Le, Nan Jiang, and Yisong Yue. Empirical study of off-policy policy evaluation for reinforcement learning. Advances in Neural Information Processing Systems, 2019.">25</a>, <a class="reference internal" href="references.html#id50" title="Masatoshi Uehara, Chengchun Shi, and Nathan Kallus. A review of off-policy evaluation in reinforcement learning. arXiv preprint arXiv:2212.06355, 2022.">28</a>]</span>, rank correlation <span id="id45">[<a class="reference internal" href="references.html#id5" title="Tom Le Paine, Cosmin Paduraru, Andrea Michi, Caglar Gulcehre, Konrad Zolna, Alexander Novikov, Ziyu Wang, and Nando de Freitas. Hyperparameter selection for offline reinforcement learning. arXiv preprint arXiv:2007.09055, 2020.">24</a>, <a class="reference internal" href="references.html#id4" title="Justin Fu, Mohammad Norouzi, Ofir Nachum, George Tucker, Ziyu Wang, Alexander Novikov, Mengjiao Yang, Michael R. Zhang, Yutian Chen, Aviral Kumar, Cosmin Paduraru, Sergey Levine, and Thomas Paine. Benchmarks for deep off-policy evaluation. In Proceedings of the 9th International Conference on Learning Representations. 2021.">26</a>]</span>, and regret <span id="id46">[<a class="reference internal" href="references.html#id71" title="Shayan Doroudi, Philip S Thomas, and Emma Brunskill. Importance sampling for fair policy selection. Grantee Submission, 2017.">29</a>, <a class="reference internal" href="references.html#id7" title="Shengpu Tang and Jenna Wiens. Model selection for offline reinforcement learning: practical considerations for healthcare settings. In Machine Learning for Healthcare Conference, 2–35. 2021.">30</a>]</span>,
+we measure risk, return, and efficiency of the selected top-<span class="math notranslate nohighlight">\(k\)</span> policy with the following metrics.</p>
+<div class="sd-card sd-sphinx-override sd-w-75 sd-m-auto sd-shadow-sm sd-text-center docutils">
+<img alt="card-img-top" class="sd-card-img-top" src="../_images/ops_topk_policy_value_multiple.png" />
+<div class="sd-card-body docutils">
+<p class="sd-card-text">Example of evaluating OPE/OPS methods with top-<span class="math notranslate nohighlight">\(k\)</span> risk-return tradeoff metrics</p>
+</div>
+</div>
+<div class="white-space-20px"></div><ul class="simple">
+<li><p>best &#64; <span class="math notranslate nohighlight">\(k\)</span> (<em>return</em>)</p></li>
+<li><p>worsk &#64; <span class="math notranslate nohighlight">\(k\)</span>, mean &#64; <span class="math notranslate nohighlight">\(k\)</span> (<em>risk</em>)</p></li>
+<li><p>safety violation rate &#64; <span class="math notranslate nohighlight">\(k\)</span> (<em>risk</em>)</p></li>
+<li><p>Sharpe ratio &#64; <span class="math notranslate nohighlight">\(k\)</span> (<em>efficiency</em>, our proposal)</p></li>
+</ul>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>Among the top-<span class="math notranslate nohighlight">\(k\)</span> risk-return tradeoff metrics, SharpRatio is the main propossal of our research paper
+<strong>“Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation in Reinforcement Learning”</strong>.
+We describe the motivation and contributions of the SharpRatio metric in <a class="reference internal" href="sharpe_ratio.html"><span class="doc">Risk-Return Assessments of OPE via SharpRatio&#64;k</span></a>.</p>
+</div>
+</section>
+</section>
+<section id="comparisons-with-the-existing-platforms">
+<span id="feature-comparison"></span><h2>Comparisons with the existing platforms<a class="headerlink" href="#comparisons-with-the-existing-platforms" title="Permalink to this heading">#</a></h2>
+<p>Finally, we provide a comprehensive comparion with the existing offline RL and OPE platforms.</p>
+<div class="sd-card sd-sphinx-override sd-w-75 sd-m-auto sd-shadow-sm sd-text-center docutils">
+<div class="sd-card-body docutils">
+<p class="sd-card-text">Comparing SCOPE-RL with existing offline RL and OPE platforms</p>
+</div>
+<img alt="card-img-bottom" class="sd-card-img-bottom" src="../_images/distinctive_features.png" />
+</div>
+<div class="white-space-20px"></div><p>The criteria of each colums is given as follows:</p>
+<ul class="simple">
+<li><p>“data collection”: ✅ means that the platform is compatible with Gymnasium environments <span id="id47">[<a class="reference internal" href="references.html#id29" title="Greg Brockman, Vicki Cheung, Ludwig Pettersson, Jonas Schneider, John Schulman, Jie Tang, and Wojciech Zaremba. Openai gym. arXiv preprint arXiv:1606.01540, 2016.">31</a>]</span> and thus is able to handle various settings.</p></li>
+<li><p>“offline RL”: ✅ means that the platform implements a variety of offline RL algorithms or the platform is compatible to one of offline RL libraries. In particular, our SCOPE-RL supports compatibility to <a class="reference external" href="https://github.com/takuseno/d3rlpy">d3rlpy</a> <span id="id49">[<a class="reference internal" href="references.html#id3" title="Takuma Seno and Michita Imai. D3rlpy: an offline deep reinforcement learning library. arXiv preprint arXiv:2111.03788, 2021.">32</a>]</span>.</p></li>
+<li><p>“OPE”: ✅ means that the platform implements various OPE estimators other than the standard choices including Direct Method <span id="id50">[<a class="reference internal" href="references.html#id20" title="Hoang Le, Cameron Voloshin, and Yisong Yue. Batch policy learning under constraints. In Proceedings of the 36th International Conference on Machine Learning, volume 97, 3703–3712. PMLR, 2019.">4</a>]</span>, Importance Sampling <span id="id51">[<a class="reference internal" href="references.html#id26" title="Doina Precup, Richard S. Sutton, and Satinder P. Singh. Eligibility traces for off-policy policy evaluation. In Proceedings of the 17th International Conference on Machine Learning, 759–-766. 2000.">5</a>]</span>, and Doubly Robust <span id="id52">[<a class="reference internal" href="references.html#id28" title="Nan Jiang and Lihong Li. Doubly robust off-policy value evaluation for reinforcement learning. In Proceedings of the 33rd International Conference on Machine Learning, volume 48, 652–661. PMLR, 2016.">6</a>]</span>. (limited) means that the platform supports only these standard estimators.</p></li>
+<li><p>“CD-OPE”: is the abbreviation of Cumulative Distribution OPE, which estimates the cumulative distribution function of the return under evaluation policy <span id="id53">[<a class="reference internal" href="references.html#id10" title="Audrey Huang, Liu Leqi, Zachary Lipton, and Kamyar Azizzadenesheli. Off-policy risk assessment for markov decision processes. In roceedings of the 25th International Conference on Artificial Intelligence and Statistics, 5022–5050. 2022.">9</a>, <a class="reference internal" href="references.html#id8" title="Yash Chandak, Scott Niekum, Bruno da Silva, Erik Learned-Miller, Emma Brunskill, and Philip S Thomas. Universal off-policy evaluation. In Advances in Neural Information Processing Systems, volume 34, 27475–27490. 2021.">10</a>]</span>.</p></li>
+</ul>
+<p>In summary, <strong>our unique contributions are
+(1) to provide the first end-to-end platform for offline RL, OPE, and OPS,
+(2) to support cumulative distribution ope for the first time, and
+(3) to implement (the proposed) SharpRatio&#64;k and other top-</strong> <span class="math notranslate nohighlight">\(k\)</span> <strong>risk-return tradeoff metics for the risk assessments of OPS.</strong>
+Additionally, we provide a user-friendly <a class="reference internal" href="visualization.html"><span class="doc">visualization tools</span></a>, <a class="reference internal" href="index.html"><span class="doc">documentation</span></a>, and <a class="reference external" href="https://github.com/hakuhodo-technologies/scope-rl/tree/main/examples/quickstart">quickstart examples</a> to facilitate a quick benckmarking and practical application.
+We hope that SCOPE-RL will serve as a important milestone for the future development of OPE research.</p>
+<p>Note that the compared platforms include the following:</p>
+<p>(offline RL platforms)</p>
+<ul class="simple">
+<li><p>d3rlpy <span id="id54">[<a class="reference internal" href="references.html#id3" title="Takuma Seno and Michita Imai. D3rlpy: an offline deep reinforcement learning library. arXiv preprint arXiv:2111.03788, 2021.">32</a>]</span></p></li>
+<li><p>CORL <span id="id55">[<a class="reference internal" href="references.html#id66" title="Denis Tarasov, Alexander Nikulin, Dmitry Akimov, Vladislav Kurenkov, and Sergey Kolesnikov. CORL: research-oriented deep offline reinforcement learning library. In 3rd Offline RL Workshop: Offline RL as a ”Launchpad”. 2022.">33</a>]</span></p></li>
+<li><p>RLlib <span id="id56">[<a class="reference internal" href="references.html#id67" title="Eric Liang, Richard Liaw, Robert Nishihara, Philipp Moritz, Roy Fox, Ken Goldberg, Joseph Gonzalez, Michael Jordan, and Ion Stoica. Rllib: abstractions for distributed reinforcement learning. In Proceeings of the 35th International Conference on Machine Learning, 3053–3062. PMLR, 2018.">34</a>]</span></p></li>
+<li><p>Horizon <span id="id57">[<a class="reference internal" href="references.html#id68" title="Jason Gauci, Edoardo Conti, Yitao Liang, Kittipat Virochsiri, Yuchen He, Zachary Kaden, Vivek Narayanan, Xiaohui Ye, Zhengxing Chen, and Scott Fujimoto. Horizon: facebook's open source applied reinforcement learning platform. arXiv preprint arXiv:1811.00260, 2018.">35</a>]</span></p></li>
+</ul>
+<p>(application-specific testbeds)</p>
+<ul class="simple">
+<li><p>NeoRL <span id="id58">[<a class="reference internal" href="references.html#id69" title="Rongjun Qin, Songyi Gao, Xingyuan Zhang, Zhen Xu, Shengkai Huang, Zewen Li, Weinan Zhang, and Yang Yu. Neorl: a near real-world benchmark for offline reinforcement learning. Advances in Neural Information Processing Systems, 2021.">36</a>]</span></p></li>
+<li><p>RecoGym <span id="id59">[<a class="reference internal" href="references.html#id56" title="David Rohde, Stephen Bonner, Travis Dunlop, Flavian Vasile, and Alexandros Karatzoglou. Recogym: a reinforcement learning environment for the problem of product recommendation in online advertising. arXiv preprint arXiv:1808.00720, 2018.">37</a>]</span></p></li>
+<li><p>RL4RS <span id="id60">[<a class="reference internal" href="references.html#id70" title="Kai Wang, Zhene Zou, Qilin Deng, Yue Shang, Minghao Zhao, Runze Wu, Xudong Shen, Tangjie Lyu, and Changjie Fan. Rl4rs: a real-world benchmark for reinforcement learning based recommender system. arXiv preprint arXiv:2110.11073, 2021.">38</a>]</span></p></li>
+<li><p>AuctionGym <span id="id61">[<a class="reference internal" href="references.html#id55" title="Olivier Jeunen, Sean Murphy, and Ben Allison. Learning to bid with auctiongym. In KDD 2022 Workshop on Artificial Intelligence for Computational Advertising (AdKDD). 2022. URL: https://www.amazon.science/publications/learning-to-bid-with-auctiongym.">39</a>]</span></p></li>
+</ul>
+<p>(OPE platforms)</p>
+<ul class="simple">
+<li><p>DOPE <span id="id62">[<a class="reference internal" href="references.html#id4" title="Justin Fu, Mohammad Norouzi, Ofir Nachum, George Tucker, Ziyu Wang, Alexander Novikov, Mengjiao Yang, Michael R. Zhang, Yutian Chen, Aviral Kumar, Cosmin Paduraru, Sergey Levine, and Thomas Paine. Benchmarks for deep off-policy evaluation. In Proceedings of the 9th International Conference on Learning Representations. 2021.">26</a>]</span></p></li>
+<li><p>COBS <span id="id63">[<a class="reference internal" href="references.html#id6" title="Cameron Voloshin, Hoang M Le, Nan Jiang, and Yisong Yue. Empirical study of off-policy policy evaluation for reinforcement learning. Advances in Neural Information Processing Systems, 2019.">25</a>]</span></p></li>
+<li><p>OBP <span id="id64">[<a class="reference internal" href="references.html#id2" title="Yuta Saito, Shunsuke Aihara, Megumi Matsutani, and Yusuke Narita. Open bandit dataset and pipeline: towards realistic and reproducible off-policy evaluation. Advances in Neural Information Processing Systems, 2021.">40</a>]</span></p></li>
+</ul>
+<div class="white-space-5px"></div><p><strong>Remark</strong></p>
+<p>Our implementations are highly inspired by <a class="reference external" href="https://zr-obp.readthedocs.io/en/latest/">OpenBanditPipeline (OBP)</a> <span id="id65">[<a class="reference internal" href="references.html#id2" title="Yuta Saito, Shunsuke Aihara, Megumi Matsutani, and Yusuke Narita. Open bandit dataset and pipeline: towards realistic and reproducible off-policy evaluation. Advances in Neural Information Processing Systems, 2021.">40</a>]</span>, which has demonstrated success in enabling flexible OPE experiments in contextual bandits.
+We hope that SCOPE-RL will also serve as a quick prototyping and benchmarking toolkit for OPE of RL policies, as done by OBP in non-RL settings.</p>
+<div class="white-space-5px"></div><div class="sd-container-fluid sd-sphinx-override sd-m-0 docutils">
+<div class="sd-row docutils">
+<div class="sd-col sd-d-flex-column sd-col-3 sd-col-xs-3 sd-col-sm-3 sd-col-md-3 sd-col-lg-3 sd-m-0 sd-p-0 docutils">
+<div class="sd-container-fluid sd-sphinx-override sd-m-0 docutils">
+<div class="sd-row docutils">
+<div class="sd-col sd-d-flex-row sd-m-0 sd-p-0 docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-none sd-card-hover docutils">
+<div class="sd-card-body docutils">
+<p class="sd-card-text">&lt;&lt;&lt; Prev
+<strong>Documentation (Back to Top)</strong></p>
+</div>
+<a class="sd-stretched-link reference internal" href="index.html"><span class="doc"></span></a></div>
+</div>
+</div>
+</div>
+</div>
+<div class="sd-col sd-d-flex-column sd-col-6 sd-col-xs-6 sd-col-sm-6 sd-col-md-6 sd-col-lg-6 sd-m-0 sd-p-0 docutils">
+</div>
+<div class="sd-col sd-d-flex-column sd-col-3 sd-col-xs-3 sd-col-sm-3 sd-col-md-3 sd-col-lg-3 sd-m-0 sd-p-0 docutils">
+<div class="sd-container-fluid sd-sphinx-override sd-m-0 docutils">
+<div class="sd-row docutils">
+<div class="sd-col sd-d-flex-row sd-m-0 sd-p-0 docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-none sd-card-hover docutils">
+<div class="sd-card-body docutils">
+<p class="sd-card-text">Next &gt;&gt;&gt;
+<strong>Problem Formulation</strong></p>
+</div>
+<a class="sd-stretched-link reference internal" href="online_offline_rl.html"><span class="doc"></span></a></div>
+</div>
+<div class="sd-col sd-d-flex-row sd-m-0 sd-p-0 docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-none sd-card-hover docutils">
+<div class="sd-card-body docutils">
+<p class="sd-card-text">Next &gt;&gt;&gt;
+<strong>Quickstart</strong></p>
+</div>
+<a class="sd-stretched-link reference internal" href="quickstart.html"><span class="doc"></span></a></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            <div class="bd-footer-content__inner"></div>
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=12da95d707ffb74b382d"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=12da95d707ffb74b382d"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+  <p class="copyright">
+    
+      © Copyright 2023, Haruka Kiyohara, Ren Kishimoto, HAKUHODO Technologies Inc., Hanjuku-kaso Co., Ltd.
+      <br/>
+    
+  </p>
+</div>
+      
+    </div>
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item"><p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.13.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>
