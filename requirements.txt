@@ -5,6 +5,7 @@ scikit-learn>=1.0.2
 matplotlib>=3.7.1
 seaborn>=0.11.2
 torch>=2.0.0
+pytorch_revgrad==0.2.0
 d3rlpy>=1.1.1
 gym>=0.26.2
 gymnasium>=0.28.1
