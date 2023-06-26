@@ -20,6 +20,7 @@ jobs:
         run: |
           git clone https://github.com/hakuhodo-technologies/scope-rl
           cd scope-rl
+          python setup.py install
       - name: Sphinx build
         run: |
           sphinx-build -b html docs docs/_build

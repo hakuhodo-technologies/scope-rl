@@ -4,30 +4,30 @@ SCOPR-RL Package Reference
 
 .. _scope_rl_api_dataset:
 
-.. dataset module
-.. ----------
-.. .. autosummary::
-..     :toctree: _autosummary/dataset
-..     :recursive:
-..     :nosignatures:
+dataset module
+----------
+.. autosummary::
+    :toctree: _autosummary/dataset
+    :recursive:
+    :nosignatures:
 
-..     scope_rl.dataset.base
-..     scope_rl.dataset.synthetic
+    scope_rl.dataset.base
+    scope_rl.dataset.synthetic
 
-.. .. _scope_rl_api_policy:
+.. _scope_rl_api_policy:
 
-.. policy module
-.. ----------
-.. .. autosummary::
-..     :toctree: _autosummary
-..     :recursive:
-..     :nosignatures:
-..     :template: module_head
+policy module
+----------
+.. autosummary::
+    :toctree: _autosummary
+    :recursive:
+    :nosignatures:
+    :template: module_head
 
-..     scope_rl.policy.head
-..     scope_rl.policy.opl
+    scope_rl.policy.head
+    scope_rl.policy.opl
 
-.. .. _scope_rl_api_ope:
+.. _scope_rl_api_ope:
 
 .. ope module
 .. ----------
@@ -83,25 +83,25 @@ SCOPR-RL Package Reference
 
 .. .. _scope_rl_api_ope_utils:
 
-.. others
-.. ^^^^^^
-.. .. autosummary::
-..     :toctree: _autosummary
-..     :recursive:
-..     :nosignatures:
+others
+^^^^^^
+.. autosummary::
+    :toctree: _autosummary
+    :recursive:
+    :nosignatures:
 
-..     scope_rl.ope.online
+    scope_rl.ope.online
 
-.. .. _scope_rl_api_utils:
+.. _scope_rl_api_utils:
 
-.. others
-.. ----------
-.. .. autosummary::
-..     :toctree: _autosummary
-..     :recursive:
-..     :nosignatures:
+others
+----------
+.. autosummary::
+    :toctree: _autosummary
+    :recursive:
+    :nosignatures:
 
-..     scope_rl.utils
+    scope_rl.utils
 
 .. raw:: html
 
