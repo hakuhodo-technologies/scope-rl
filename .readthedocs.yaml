@@ -16,6 +16,7 @@ build:
     # golang: "1.19"
   jobs:
     post_install:
+      - pip install Cython numpy
       - pip install d3rlpy
 
 # Build documentation in the "docs/" directory with Sphinx
