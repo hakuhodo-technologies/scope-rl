@@ -68,7 +68,7 @@
     )
 
 .. card:: 
-    :img-top: ../_static/images/ope_policy_value_basic.png
+    :img-top: _static/images/ope_policy_value_basic.png
     :text-align: center
     
     Policy Value Estimated by OPE Estimators
