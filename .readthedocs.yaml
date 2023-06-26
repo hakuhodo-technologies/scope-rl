@@ -29,5 +29,25 @@ sphinx:
 # See https://docs.readthedocs.io/en/stable/guides/reproducible-builds.html
 python:
    install:
-   - requirements: requirements.txt
    - requirements: docs/requirements.txt
+   - method: pip
+      path: .
+      extra_requirements:
+         - scope_rl
+         - basicgym
+         - recgym
+         - rtbgym
+   - mathod: pip
+      path: package
+      extra_requirements:
+         - scipy>=1.10.1
+         - numpy>=1.22.4
+         - pandas>=1.5.3
+         - scikit-learn>=1.0.2
+         - matplotlib>=3.7.1
+         - seaborn>=0.11.2
+         - torch>=2.0.0
+         - d3rlpy>=1.1.1
+         - gym>=0.26.2
+         - gymnasium>=0.28.1
+         - hydra-core>=1.3.2
