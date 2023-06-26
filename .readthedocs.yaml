@@ -31,13 +31,6 @@ python:
    install:
    - requirements: docs/requirements.txt
    - method: pip
-      path: .
-      extra_requirements:
-         - scope_rl
-         - basicgym
-         - recgym
-         - rtbgym
-   - mathod: pip
       path: package
       extra_requirements:
          - scipy>=1.10.1
