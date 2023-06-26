@@ -4,27 +4,27 @@ RECGym Package Reference
 
 .. _recgym_api_env:
 
-env module
-----------
-.. autosummary::
-    :toctree: ../_autosummary/recgym/env
-    :recursive:
-    :nosignatures:
-    :template: 
+.. env module
+.. ----------
+.. .. autosummary::
+..     :toctree: ../_autosummary/recgym/env
+..     :recursive:
+..     :nosignatures:
+..     :template: 
 
-    recgym.envs.rec
+..     recgym.envs.rec
     
-.. _recgym_api_simulation:
+.. .. _recgym_api_simulation:
 
-simulation module
-----------
-.. autosummary::
-    :toctree: ../_autosummary/recgym/simulation
-    :recursive:
-    :nosignatures:
+.. simulation module
+.. ----------
+.. .. autosummary::
+..     :toctree: ../_autosummary/recgym/simulation
+..     :recursive:
+..     :nosignatures:
 
-    recgym.envs.simulator.base
-    recgym.envs.simulator.function
+..     recgym.envs.simulator.base
+..     recgym.envs.simulator.function
 
 
 .. grid::
