@@ -14,6 +14,10 @@ jobs:
       - name: Install dependencies
         run: |
           pip install Sphinx pydata-sphinx-theme numpydoc sphinx_design sphinx-gallery sphinx-tabs sphinx-copybutton sphinxemoji sphinxcontrib-bibtex
+      - name: Install scope-rl from pip
+        run: |
+          git clone https://github.com/hakuhodo-technologies/scope-rl
+          cd scope-rl
       - name: Sphinx build
         run: |
           sphinx-build -b html docs docs/_build
