@@ -8,7 +8,7 @@ if "%SPHINXBUILD%" == "" (
 	set SPHINXBUILD=sphinx-build
 )
 set SOURCEDIR=.
-set BUILDDIR=_build
+set BUILDDIR=../docs
 
 if "%1" == "" goto help
 
@@ -26,7 +26,7 @@ if errorlevel 9009 (
 )
 
 :html
-%SPHINXBUILD% -b html %SOURCEDIR% "docs" %SPHINXOPTS% %O%
+%SPHINXBUILD% -b html %SOURCEDIR% %BUILDDIR %SPHINXOPTS% %O%
 goto end
 
 %SPHINXBUILD% -M %1 %SOURCEDIR% %BUILDDIR% %SPHINXOPTS% %O%
