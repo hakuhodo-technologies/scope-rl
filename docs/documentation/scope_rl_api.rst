@@ -1,18 +1,18 @@
 ==========
-SCOPR-RL Package Reference
+SCOPE-RL Package Reference
 ==========
 
-.. .. _scope_rl_api_dataset:
+.. _scope_rl_api_dataset:
 
-.. dataset module
-.. ----------
-.. .. autosummary::
-..     :toctree: _autosummary/dataset
-..     :recursive:
-..     :nosignatures:
+dataset module
+----------
+.. autosummary::
+    :toctree: _autosummary/dataset
+    :recursive:
+    :nosignatures:
 
-..     scope_rl.dataset.base
-..     scope_rl.dataset.synthetic
+    scope_rl.dataset.base
+    scope_rl.dataset.synthetic
 
 .. .. _scope_rl_api_policy:
 
