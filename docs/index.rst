@@ -106,7 +106,7 @@
     cd_ope.visualize_cumulative_distribution_function(input_dict, n_cols=4)
 
 .. card:: 
-    :img-top: ../_static/images/ope_cumulative_distribution_function.png
+    :img-top: _static/images/ope_cumulative_distribution_function.png
     :text-align: center
     
     Cumulative Distribution Function Estimated by OPE Estimators
@@ -141,7 +141,7 @@
     )
 
 .. card:: 
-    :img-top: ../_static/images/ops_topk_lower_quartile.png
+    :img-top: _static/images/ops_topk_lower_quartile.png
     :text-align: center
     
     Comparison of the Top-k Statistics of 10% Lower Quartile of Policy Value
@@ -175,7 +175,7 @@
     )
 
 .. card:: 
-    :img-top: ../_static/images/ops_variance_validation.png
+    :img-top: _static/images/ops_variance_validation.png
     :text-align: center
     
     Validation of Estimated and Ground-truth Variance of Policy Value
