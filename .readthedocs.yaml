@@ -30,17 +30,3 @@ sphinx:
 python:
    install:
    - requirements: docs/requirements.txt
-   - method: pip
-     path: package
-     extra_requirements:
-         - scipy
-         - numpy
-         - pandas
-         - scikit-learn
-         - matplotlib
-         - seaborn
-         - torch
-         - d3rlpy
-         - gym
-         - gymnasium
-         - hydra-core
