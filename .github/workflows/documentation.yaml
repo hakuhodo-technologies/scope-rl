@@ -16,6 +16,19 @@ jobs:
       - name: Install dependencies
         run: |
           pip install Sphinx pydata-sphinx-theme numpydoc sphinx_design sphinx-gallery sphinx-tabs sphinx-copybutton sphinxemoji sphinxcontrib-bibtex
+          pip install Cython numpy
+          pip install d3rlpy>=1.1.1
+          pip install scipy>=1.10.1
+          pip install numpy>=1.22.4
+          pip install pandas>=1.5.3
+          pip install scikit-learn>=1.0.2
+          pip install matplotlib>=3.7.1
+          pip install seaborn>=0.11.2
+          pip install torch>=2.0.0
+          pip install d3rlpy>=1.1.1
+          pip install gym>=0.26.2
+          pip install gymnasium>=0.28.1
+          pip install hydra-core>=1.3.2
       - name: Install scope-rl from pip
         run: |
           git clone https://github.com/hakuhodo-technologies/scope-rl
