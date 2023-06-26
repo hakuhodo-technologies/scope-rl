@@ -31,8 +31,15 @@ python:
    install:
    - requirements: docs/requirements.txt
    - method: pip
-      path: package
-      extra_requirements:
+     path: .
+     extra_requirements:
+         - scope_rl
+         - basicgym
+         - recgym
+         - rtbgym
+   - method: pip
+     path: package
+     extra_requirements:
          - scipy>=1.10.1
          - numpy>=1.22.4
          - pandas>=1.5.3
