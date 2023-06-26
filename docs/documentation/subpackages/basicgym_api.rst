@@ -4,27 +4,27 @@ BasicGym Package Reference
 
 .. _basicgym_api_env:
 
-.. env module
-.. ----------
-.. .. autosummary::
-..     :toctree: ../_autosummary/basicgym/env
-..     :recursive:
-..     :nosignatures:
-..     :template: 
+env module
+----------
+.. autosummary::
+    :toctree: ../_autosummary/basicgym/env
+    :recursive:
+    :nosignatures:
+    :template: 
 
-..     basicgym.envs.synthetic
+    basicgym.envs.synthetic
     
 .. _basicgym_api_simulation:
 
-.. simulation module
-.. ----------
-.. .. autosummary::
-..     :toctree: ../_autosummary/basicgym/simulation
-..     :recursive:
-..     :nosignatures:
+simulation module
+----------
+.. autosummary::
+    :toctree: ../_autosummary/basicgym/simulation
+    :recursive:
+    :nosignatures:
 
-..     basicgym.envs.simulator.base
-..     basicgym.envs.simulator.function
+    basicgym.envs.simulator.base
+    basicgym.envs.simulator.function
 
 
 .. grid::

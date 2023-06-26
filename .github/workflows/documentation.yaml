@@ -8,9 +8,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v3
-      - name: Check path
+      - name: Connect path to the modules
         run: |
-          ls /home/runner/work/scope-rl/scope-rl
+          echo "PYTHONPATH=/home/runner/work/scope-rl/scope-rl" >> $GITHUB_ENV
       - name: Install dependencies
         run: |
           pip install Sphinx pydata-sphinx-theme numpydoc sphinx_design sphinx-gallery sphinx-tabs sphinx-copybutton sphinxemoji sphinxcontrib-bibtex

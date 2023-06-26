@@ -4,41 +4,41 @@ RTBGym Package Reference
 
 .. _rtbgym_api_env:
 
-.. env module
-.. ----------
-.. .. autosummary::
-..     :toctree: ../_autosummary/rtbgym/env
-..     :recursive:
-..     :nosignatures:
-..     :template: module_rtb_env
+env module
+----------
+.. autosummary::
+    :toctree: ../_autosummary/rtbgym/env
+    :recursive:
+    :nosignatures:
+    :template: module_rtb_env
 
-..     rtbgym.envs.rtb
-..     rtbgym.envs.wrapper_rtb
+    rtbgym.envs.rtb
+    rtbgym.envs.wrapper_rtb
     
-.. .. _rtbgym_api_simulation:
+.. _rtbgym_api_simulation:
 
-.. simulation module
-.. ----------
-.. .. autosummary::
-..     :toctree: ../_autosummary/rtbgym/simulation
-..     :recursive:
-..     :nosignatures:
+simulation module
+----------
+.. autosummary::
+    :toctree: ../_autosummary/rtbgym/simulation
+    :recursive:
+    :nosignatures:
 
-..     rtbgym.envs.simulator.base
-..     rtbgym.envs.simulator.function
-..     rtbgym.envs.simulator.bidder
-..     rtbgym.envs.simulator.rtb_synthetic
+    rtbgym.envs.simulator.base
+    rtbgym.envs.simulator.function
+    rtbgym.envs.simulator.bidder
+    rtbgym.envs.simulator.rtb_synthetic
 
-.. .. _rtbgym_api_utils:
+.. _rtbgym_api_utils:
 
-.. others
-.. ----------
-.. .. autosummary::
-..     :toctree: ../_autosummary/rtbgym/utils
-..     :recursive:
-..     :nosignatures:
+others
+----------
+.. autosummary::
+    :toctree: ../_autosummary/rtbgym/utils
+    :recursive:
+    :nosignatures:
 
-..     rtbgym.utils
+    rtbgym.utils
 
 .. grid::
     :margin: 0
