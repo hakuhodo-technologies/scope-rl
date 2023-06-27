@@ -241,6 +241,8 @@
         :link: /documentation/examples/assessments
         :link-type: doc
 
+.. card-carousel:: 4
+
     .. card:: Implementing Custom Estimators
         :link: /documentation/examples/custom_estimators
         :link-type: doc
