@@ -290,7 +290,7 @@
     <h2>Citation</h2>
 
 
-If you use our pipeline or the proposed metric (SharpRatio@k) metric in your work, please cite our paper below.
+If you use our pipeline or the proposed metric (SharpRatio@k) in your work, please cite our paper below.
 
 .. card::
 
@@ -315,6 +315,7 @@ If you use our pipeline or the proposed metric (SharpRatio@k) metric in your wor
 
 Any contributions to SCOPE-RL are more than welcome!
 
+* `GitHub repository <https://github.com/hakuhodo-technologies/scope-rl>`_
 * `Guidelines for contribution (CONTRIBUTING.md) <https://github.com/hakuhodo-technologies/scope-rl/blob/main/CONTRIBUTING.md>`_
 * `Google Group (scope-rl@googlegroups.com) <https://groups.google.com/g/scope-rl>`_
 

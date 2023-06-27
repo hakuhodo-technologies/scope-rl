@@ -85,9 +85,9 @@ class OffPolicyEvaluation:
                 dataset_id,
             ]
 
-            .. seealso::
+        .. seealso::
 
-                :class:`scope_rl.dataset.SyntheticDataset` describes the components of :class:`logged_dataset`.
+            :class:`scope_rl.dataset.SyntheticDataset` describes the components of :class:`logged_dataset`.
 
     ope_estimators: list of BaseOffPolicyEstimator
         List of OPE estimators used to evaluate the policy value of the evaluation policies.
@@ -2447,9 +2447,9 @@ class CumulativeDistributionOPE:
                 dataset_id,
             ]
 
-            .. seealso::
+        .. seealso::
 
-                :class:`scope_rl.dataset.SyntheticDataset` describes the components of :class:`logged_dataset`.
+            :class:`scope_rl.dataset.SyntheticDataset` describes the components of :class:`logged_dataset`.
 
     ope_estimators: list of BaseOffPolicyEstimator
         List of OPE estimators used to evaluate the policy value of the evaluation policies.

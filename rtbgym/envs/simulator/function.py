@@ -76,7 +76,7 @@ class WinningPriceDistribution(BaseWinningPriceDistribution):
     ad_feature_dim: int
     user_feature_dim: int
     step_per_episode: int
-    standard_bid_price_distribution: Optional[NormalDistribution] = None,
+    standard_bid_price_distribution: Optional[NormalDistribution] = (None,)
     minimum_standard_bid_price: Optional[Union[int, float]] = None
     random_state: Optional[int] = None
 

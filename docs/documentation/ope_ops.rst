@@ -34,7 +34,7 @@ In OPE/OPS, we are given a logged dataset :math:`\mathcal{D}` consisting of :mat
 
     \tau := \{ (s_t, a_t, s_{t+1}, r_t) \}_{t=0}^{T} \sim p(s_0) \prod_{t=0}^{T} \pi_b(a_t | s_t) \mathcal{T}(s_{t+1} | s_t, a_t) P_r (r_t | s_t, a_t)
 
-Our goal is to leverage this the logged dataset to accurately evaluate the performance of evaluation policies (OPE) and to select the best candidate policies based on OPE result (i.e., Off-Policy Selection; OPS).
+Our goal is to leverage the logged dataset to accurately evaluate the performance of evaluation policies (Off-Policy Evaluation; OPE) and to select the best candidate policies based on OPE results (i.e., Off-Policy Selection; OPS).
 
 
 .. _overview_basic_ope:
@@ -48,16 +48,16 @@ In the basic OPE, we aim at evaluating the *policy value* or the expected trajec
 
     J(\pi) := \mathbb{E}_{\tau} \left [ \sum_{t=0}^{T-1} \gamma^t r_{t} \mid \pi \right ],
 
-Estimating the policy value before deploying policy in online environment is beneficial, as we can reduce the deployment cost and risks in online evaluation.
-However, the challenge is that we need to answer a counterfactual question, *''What if a new policy chooses a different action from that of behavior policy?''*
+Estimating the policy value before deploying the policy in an online environment is beneficial, as we can reduce the deployment cost and risks in online evaluation.
+However, the challenging point is that we need to answer a counterfactual question, *''What if a new policy chooses a different action from that of behavior policy?''*
 by dealing with the distribution shift between :math:`\pi_b` and :math:`\pi`.
 
 We discuss the properties of various OPE estimators together with their implementaion details in :doc:`Supported OPE estimators <evaluation_implementation>`.
 
 .. seealso::
 
-    * :ref:`Supported OPE estimators <implementation_basic_ope>` and :doc:`their API reference <_autosummary/scope_rl.ope.basic_estimators_discrete>` 
-    * (advanced) :ref:`Marginal OPE estimators <implementation_marginal_ope>` and :doc:`their API reference <_autosummary/scope_rl.ope.marginal_estimators_discrete>`
+    * :ref:`Supported OPE estimators <implementation_basic_ope>` and :doc:`their API reference <_autosummary/scope_rl.ope.discrete.basic_estimators>` 
+    * (advanced) :ref:`Marginal OPE estimators <implementation_marginal_ope>` and :doc:`their API reference <_autosummary/scope_rl.ope.discrete.marginal_estimators>`
     * :doc:`Quickstart <quickstart>` and :doc:`related example codes </documentation/examples/basic_ope>`
 
 .. _overview_cumulative_distribution_ope:
@@ -79,14 +79,14 @@ Then, we can derive various risk functions based on :math:`F(\cdot)` as follows.
 * :math:`\alpha`-quartile: :math:`Q^{\alpha}(F) := \min \{ G \mid F(G) \leq \alpha \}`
 * Conditional Value at Risk (CVaR): :math:`\int_{G} G \, \mathbb{I}\{ G \leq Q^{\alpha}(F) \} \, \mathrm{d}F(G)`
 
-where we let :math:`G := \sum_{t=0}^{T-1} \gamma^t r_t` to represent the random variable of trajectory-wise reward
+where we let :math:`G := \sum_{t=0}^{T-1} \gamma^t r_t` to represent the trajectory-wise reward as a random variable 
 and :math:`dF(G) := \mathrm{lim}_{\Delta \rightarrow 0} F(G) - F(G- \Delta)`.
 
 We also discuss the properties of various cumulative distribution OPE estimators together with their implementaion details in :doc:`Supported OPE estimators <evaluation_implementation>`.
 
 .. seealso::
 
-    * :ref:`Supported OPE estimators <implementation_cumulative_distribution_ope>` and :doc:`their API reference <_autosummary/scope_rl.ope.cumulative_distribution_estimators_discrete>` 
+    * :ref:`Supported OPE estimators <implementation_cumulative_distribution_ope>` and :doc:`their API reference <_autosummary/scope_rl.ope.discrete.cumulative_distribution_estimators>` 
     * :doc:`Quickstart <quickstart>` and :doc:`related example codes </documentation/examples/cumulative_dist_ope>`
 
 .. _overview_ops:
@@ -104,7 +104,8 @@ where the :math:`\hat{J}(\cdot)` is the OPE estimate of the policy value, which 
 
 In OPS, how well the ranking of the candidate policy preserves and the safety of the chosen policy matters as well as the accuracy of OPE.
 In the next page, we provide a review of conventional evaluation metrics of OPE/OPS and describe the risk-return tradeoff metrics of top-:math:`k` policy selection.
-We also feature SharpRatio@k, which is the main contribution of our research paper "Risk-Return Assessments of Off-Policy Evaluation in Offline" in :doc:`this page <sharpe_ratio>`. 
+We also feature SharpRatio@k, which is the main contribution of our research paper "Towards Assessing and Benchmarking
+Risk-Return Tradeoff of Off-Policy Evaluation in Reinforcement Learning" in :doc:`this page <sharpe_ratio>`. 
 
 .. seealso::
 
@@ -167,7 +168,7 @@ We also feature SharpRatio@k, which is the main contribution of our research pap
                 :padding: 0
 
                 Next >>>
-                **SharpRatio metrics**
+                **SharpeRatio metrics**
 
             .. grid-item-card::
                 :link: evaluation_implementation

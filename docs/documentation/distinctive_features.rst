@@ -18,7 +18,7 @@ Making most of these logged data to evaluate a counterfactual policy is particul
     :img-top: ../_static/images/real_world_interaction.png
     :text-align: center
 
-    An example of sequential decision makings in the real-world
+    An example of sequential decision makings in real-world applications
 
 .. raw:: html
 
@@ -229,9 +229,9 @@ Moreover, we streamline the evaluation protocol of OPE/OPS with the following me
 * Safety violation rate
 * Sharpe ratio (our proposal)
 
-Note that, the above top-:math:`k` metrics are the proposal in our research paper **"
+Note that, among the above top-:math:`k` metrics, SharpeRatio is the proposal in our research paper **"
 Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation in Reinforcement Learning"**.  
-:doc:`sharpe_ratio` describe the above metrics and the contribution of SharpRatio@k in details. We also discuss these metrics briefly in :ref:`the later sub-section <feature_sharpe_ratio>`.
+The page: :doc:`sharpe_ratio` describe the above metrics and the contribution of SharpRatio@k in details. We also discuss these metrics briefly in :ref:`the later sub-section <feature_sharpe_ratio>`.
 
 .. _feature_cd_ope:
 
@@ -261,7 +261,7 @@ By estimating the cumulative distribution function (CDF), we can derive the foll
 * Interquartile Range
 
 Knowing the whole performance distribution or deriving the risk metrics including CVaR is particularly beneficial in a real-life situation where the safety matters.
-For example, in recommender systems, we are interested in stably providing good-quality products rather than sometimes providing an extremely good one but sometimes hurting user satisfaction seriously with bad items.
+For example, in recommender systems, we are interested in stably providing good-quality products rather than sometimes providing an extremely good one while sometimes hurting user satisfaction seriously with bad items.
 Moreover, in the self-diriving cars, the catastrophic accidents should be avoided even if its probability is small (e.g., less than 10%).
 We believe that the release of cumulative distribution OPE implementations will boost the applicability of OPE in practical situations.
 
@@ -277,7 +277,7 @@ While OPE is useful for estimating the policy performance of a new policy using 
 OPE sometimes produces erroneous estimation due to *counterfactual estimation* and *distribution shift* between the behavior and evaluation policies.
 Therefore, in practical situations, we cannot solely rely on OPE results to choose the production policy, but instead, combine OPE results and online A/B tests for policy evaluation and selection :cite:`kurenkov2022showing`.
 Specifically, the practical workflow often begins by filtering out poor-performing policies based on OPE results, then conducting A/B tests on the remaining top-:math:`k`
-policies to identify the best policy based on reliable online evaluation, as illustrated in the following figure.
+policies to identify the best policy based on more reliable online evaluation, as illustrated in the following figure.
 
 .. card:: 
     :width: 75%
@@ -307,7 +307,7 @@ we measure risk, return, and efficiency of the selected top-:math:`k` policy wit
     <div class="white-space-20px"></div>
 
 * best @ :math:`k` (*return*)
-* worsk @ :math:`k`, mean @ :math:`k` (*risk*)
+* worsk @ :math:`k`, mean @ :math:`k`, std @ :math:`k` (*risk*)
 * safety violation rate @ :math:`k` (*risk*)
 * Sharpe ratio @ :math:`k` (*efficiency*, our proposal)
 

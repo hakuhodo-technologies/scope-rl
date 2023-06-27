@@ -35,7 +35,7 @@ The goal of RL is to maximize the following expected cumulative reward (i.e., po
 where :math:`\gamma` is a discount rate and :math:`\tau := (s_t, a_t, s_{t+1}, r_t)_{t=0}^{T-1}` is the trajectory of the policy which is sampled from
 :math:`p_{\pi}(\tau) := d_0(s_0) \prod_{t=0}^{T-1} \pi(a_t | s_t) \mathcal{T}(s_{t+1} | s_t, a_t) P_r(r_t | s_t, a_t)`.
 
-There are several approaches to maximize the policy value. Below, we review three basic methods, On-Policy Policy Gradient :cite:`kakade2001natural, silver2014deterministic`, 
+There are several approaches to maximize the policy value. Below, we review three basic ways, including On-Policy Policy Gradient :cite:`kakade2001natural, silver2014deterministic`, 
 Q-Learning :cite:`watkins1992q, mnih2013playing`, and Actor-Critic :cite:`konda1999actor, degris2012off`.
 
 On-Policy Policy Gradient
@@ -61,7 +61,7 @@ However, as the estimation needs :math:`n` trajectories every time the policy is
 
 Q-Learning
 ----------
-To pursue the sample efficiency, Q-Learning instead takes Off-Policy approach, which leverages a large amount of data collected in the replay buffer :cite:`mnih2013playing`.
+To pursue the sample efficiency, Q-Learning instead takes *Off-Policy* approach, which leverages a large amount of data collected in a replay buffer :cite:`mnih2013playing`.
 Specifically, the value-based approach aims to learn the following state value :math:`V(s_t)` and state-action value :math:`Q(s_t, a_t)` using the data collected by previous online interactions :cite:`watkins1992q`.
 
 .. math::
@@ -73,21 +73,21 @@ Specifically, the value-based approach aims to learn the following state value :
     Q(s_t, a_t) := \mathbb{E}_{\tau_{t:T-1} \sim p_{\pi}(\tau_{t:T-1} | s_t, a_t)} \left[ \sum_{t'=t}^{T-1} \gamma^{t'-t} r_{t'} \right]
 
 where :math:`\tau_{t:T-1}` is the trajectory from timestep :math:`t` to :math:`T-1`.
-
 Using the recursive structure between :math:`V(\cdot)` and :math:`Q(\cdot)`, we can derive the following Bellman equation.
 
 .. math::
 
     Q(s_t, a_t) = r_t + \mathbb{E}_{(s_{t+1}, a_{t+1}) \sim \mathcal{T}(s_{t+1} | s_t, a_t) \pi(a_{t+1} | s_{t+1})} [ Q(s_{t+1}, a_{t+1}) ]
 
+where we let :math:`Q(s_T, \cdot) = 0`. 
 Temporal Difference (TD) learning leverages this recursive formula to learn Q-function (i.e., :math:`Q`). 
-In particular, when we use a greedy policy, Q-Function is reduced to the following.
+In particular, when we use a greedy policy, Q-learning is reduced to the following.
 
 .. math::
 
     \hat{Q}_{k+1} \leftarrow {\arg \min}_{Q_{k+1}} \mathbb{E}_n \left[ \left( Q_{k+1}(s_t, a_t) - (r_t + \hat{Q}_k(s_{t+1}, \pi_k(s_{t+1}))) \right)^2 \right]
 
-where :math:`n` state-action pairs are randomly sampled from the replay buffer, which stores the past observations :math:`(s_t, a_t, s_{t+1}, r_t)`.
+where :math:`\mathbb{E}_n[\cdot]` denotes the empirical average over :math:`n` state-action pairs that are randomly sampled from the replay buffer, which stores the past observations :math:`(s_t, a_t, s_{t+1}, r_t)`.
 Based on this Q-function, the greedy policy :math:`\pi_k` chooses actions as follows.
 
 .. math::
@@ -100,7 +100,7 @@ Though Q-learning enhances sample efficiency compared to On-Policy Policy Gradie
 it is also known to suffer from approximation error when the *deadly triad* conditions -- bootstrapping (i.e., TD learning), function approximation, and off-policy -- are satisfied at once :cite:`van2018deep`.
 As a result, :math:`\hat{Q}(\cdot)` may fail to estimate the true state-action value, potentially leading to a sub-optimal policy.
 
-To alleviate the estimation error of :math:`\hat{Q}(\cdot)`, we often use epsilon-greedy policy, which chooses actions randomly with probability :math:`\epsilon`.
+Note that, to alleviate the estimation error of :math:`\hat{Q}(\cdot)`, we often use epsilon-greedy policy, which chooses actions randomly with probability :math:`\epsilon`.
 Such *exploration* helps improve the quality of :math:`\hat{Q}(\cdot)` by collecting additional data to fit Q-function to the state-action pairs that have not seen in the replay buffer.
 
 Actor-Critic
@@ -116,11 +116,11 @@ It first estimates the Q-function and then calculates the advantage of choosing 
 
     \theta_{k+1} \leftarrow \theta_{k} + \mathbb{E}_n \left[ \sum_{t=0}^{T-1} \nabla \log \pi_{\theta_k}(a_t | s_t) \gamma^t \hat{A}(s_t, a_t) \right]
 
-where :math:`\hat{A}(s_t, a_t) := \hat{Q}(s_t, a_t) - \mathbb{E}_{a \sim \pi_{\theta_k}(a_t | s_t)} \left[ \hat{Q}(s_t, a) \right]`
+where :math:`\hat{A}(s_t, a_t) := \hat{Q}(s_t, a_t) - \mathbb{E}_{a \sim \pi_{\theta_k}(a_t | s_t)} \bigl[ \hat{Q}(s_t, a) \bigr]`
 and :math:`\pi_{\theta_k}(s_{t+1})` is an action sampled from :math:`\pi_{\theta_k}(\cdot)`.
 
 Compared to the (vanilla) On-policy Policy Gradient, Actor-Critic stabilizes the policy gradient and enhances sample efficiency by the use of :math:`\hat{Q}`.
-Moreover, in continuous action space, Actor-Critic is often more suitable than Q-learning, which requires discretization of the action space to choose actions.
+Moreover, in continuous action space, Actor-Critic is often more suitable than Q-learning, which requires the discretization of the action space to choose actions.
 
 .. _overview_offline_rl:
 
@@ -172,7 +172,7 @@ To investigate why the extrapolation error arises, let us recall the following T
 where :math:`Q_{\theta}` is the currently learning Q-function and :math:`\theta` is its parameters.
 :math:`\hat{Q}_{\mathrm{target}}` is the previous Q-function, which is used as the `target`. :math:`\pi` is the policy derived from :math:`\hat{Q}_{\mathrm{target}}`.
 
-One of the most problematic point here is that we have to calculate the TD loss using :math:`(s_t, a_t, r_t, s_{t+1}, a_{t+1}=\pi(s_{t+1}))`, while we are only accessible to :math:`(s_t, a_t, r_t, s_{t+1})` in the logged data.
+One of the most problematic points here is that we have to calculate the TD loss using :math:`(s_t, a_t, r_t, s_{t+1}, a_{t+1}=\pi(s_{t+1}))`, even though we are only accessible to :math:`(s_t, a_t, r_t, s_{t+1})` in the logged data.
 Moreover, since :math:`\pi` chooses the action that maximizes :math:`\hat{Q}_{\mathrm{target}}`, :math:`\pi` tends to choose unobserved (or out-of-distribution) action whose :math:`\hat{Q}_{\mathrm{target}}` is overestimated or coincidentally higher than the true Q-function.
 As a result, :math:`Q_{\theta}(s_t, a_t)` also propagates the overestimation error, which eventually leads to an unsafe policy that chooses detrimental actions.
 
@@ -207,7 +207,7 @@ For example, TD3+BC :cite:`fujimoto2021minimalist` imposes a strong behavior clo
 
     \pi \leftarrow {\arg\max}_{\pi \in \Pi} \, \mathbb{E}_{n} \left[ \lambda \hat{Q}(s_t, \pi(s_t)) - (\pi(s_t) - a_t)^2 \right]
 
-where the first term facilitates value optimization (based on :math:`\hat{Q}`), whilst the second term promotes the behavior cloning. The weight parameter :math:`\lambda` is defined as follows.
+where the first term facilitates value-based optimization (with :math:`\hat{Q}`), whilst the second term promotes the behavior cloning. The weight parameter :math:`\lambda` is defined as follows.
 
 .. math::
 

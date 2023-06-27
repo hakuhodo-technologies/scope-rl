@@ -108,7 +108,7 @@ class CreateOPEInput:
     action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
         Scaling factor of action. Only applicable in the continuous action case.
 
-    device: str, default="cuda:0"
+    device: Optional[str] = None
         Specifies device used for torch.
 
     Examples
@@ -224,7 +224,7 @@ class CreateOPEInput:
     bandwidth: float = 1.0
     state_scaler: Optional[Scaler] = None
     action_scaler: Optional[ActionScaler] = None
-    device: str = "cuda:0"
+    device: Optional[str] = None
 
     def __post_init__(self) -> None:
         if self.model_args is None:
@@ -297,6 +297,9 @@ class CreateOPEInput:
                 raise ValueError(
                     "action_scaler must be an instance of d3rlpy.preprocessing.ActionScaler, but found False"
                 )
+
+        if self.device is None:
+            self.device = "cuda:0" if torch.cuda.is_available() else "cpu"
 
     def _register_logged_dataset(self, logged_dataset: LoggedDataset):
         self.fqe = {}

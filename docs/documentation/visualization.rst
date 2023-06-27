@@ -5,7 +5,7 @@ Visualization Tools
 ==========
 
 SCOPE-RL also provides user-friendly tools to visually compare and understand the performance of OPE methods.
-Specifically, the following figures are all available by calling only one function from either :class:`OffPolicyEvaluation` or :class:`OffPolicySelection` as follows.
+Specifically, the following figures are all available by calling only one function from either :class:`OffPolicyEvaluation`, :class:`CumulativeDistributionOPE`, or :class:`OffPolicySelection` as follows.
 
 .. card::
     :width: 75%

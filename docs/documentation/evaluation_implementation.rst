@@ -463,7 +463,7 @@ However, when the importance weight is quite large, it may still suffer from a h
 Self-Normalized estimators
 ----------
 Self-normalized estimators :cite:`kallus2019intrinsically` aim to reduce the scale of importance weight for the variance reduction purpose.
-Specifically, self-normalized versions of PDIS and DR is defined as follows.
+Specifically, the self-normalized versions of PDIS and DR are defined as follows.
 
 .. math::
 
@@ -474,7 +474,7 @@ Specifically, self-normalized versions of PDIS and DR is defined as follows.
     \hat{J}_{\mathrm{SNDR}} (\pi; \mathcal{D})
     := \sum_{i=1}^n \sum_{t=0}^{T-1} \gamma^t \left(\frac{w_{0:t}^{(i)}}{\sum_{i'=1}^n w_{0:t}^{(i')}} (r_t^{(i)} - \hat{Q}(s_t^{(i)}, a_t^{(i)})) + \frac{w_{0:t-1}^{(i)}}{\sum_{i'=1}^n w_{0:t-1}^{(i')}} \sum_{a \in \mathcal{A}} \pi(a | s_t^{(i)}) \hat{Q}(s_t^{(i)}, a) \right),
 
-In more general, self-normalized estimators substitute importance weight :math:`w_{\ast}` as follows.
+In more general, self-normalized estimators substitute the importance weight :math:`w_{\ast}` as follows.
 
 .. math::
 
@@ -843,7 +843,7 @@ Cumulative distribution OPE enables flexible estimation of various risk function
 * :math:`\alpha`-quartile: :math:`Q^{\alpha}(F) := \min \{ G \mid F(G) \leq \alpha \}`
 * Conditional Value at Risk (CVaR): :math:`\int_{G} G \, \mathbb{I}\{ G \leq Q^{\alpha}(F) \} \, \mathrm{d}F(G)`
 
-where we let :math:`G := \sum_{t=0}^{T-1} \gamma^t r_t` to represent the random variable of trajectory-wise reward
+where we let :math:`G := \sum_{t=0}^{T-1} \gamma^t r_t` to represent the trajectory-wise reward as a random variable 
 and :math:`dF(G) := \mathrm{lim}_{\Delta \rightarrow 0} F(G) - F(G- \Delta)`.
 
 To estimate both CDF and various risk functions, we provide the following :class:`CumulativeDistributionOffPolicyEvaluation` class.
@@ -1180,7 +1180,7 @@ The :class:`OffPolicySelection` class returns both the OPE results and the OPS m
         return_by_dataframe=True,
     )
 
-Moreover, the OPS class enables us to validate the best/worst/mean performance of top k deployment and how well the safety requirement is satisfied.
+Moreover, the OPS class enables us to validate the best/worst/mean/std performance of top k deployment and how well the safety requirement is satisfied. Note that, we provide the detailed description of these top- :math:`k` metrics and the proposed **SharpeRatio@k** metric in this page: :doc:`sharpe_ratio`.
 
 .. code-block:: python
 

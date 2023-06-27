@@ -5,10 +5,10 @@ We show an example workflow of synthetic dataset collection, offline Reinforceme
 The workflow mainly consists of following three steps:
 
 * **Synthetic Dataset Generation and Data Preprocessing**: 
-    The initial step is to collect logged data using a behavior policy. In a synthetic setup, we first train the behavior policy through online interaction and then generate dataset with the behavior policy. In a practical situation, we should use the preprocessed logged data from real-world applications.
+    The initial step is to collect logged data using a behavior policy. In a synthetic setup, we first train a behavior policy through online interaction and then generate dataset(s) with the behavior policy. In a practical situation, we should use the preprocessed logged data obtained from real-world applications.
 
 * **Offline Reinforcement Learning**:
-    We then learn new policies (which hopefully perform better than the behavior policy) from only offline logged data, without any online interactions.
+    We then learn new policies (, which hopefully perform better than the behavior policy) from only offline logged data, without any online interactions.
 
 * **Off-Policy Evaluation and Selection**:
     After learning several candidate policies in an offline manner, we need to choose the production policy.
