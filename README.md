@@ -156,14 +156,18 @@ random_state = 12345
 # (0) Setup environment
 env = gym.make("RTBEnv-discrete-v0")
 
+# for api compatibility to d3rlpy
+from scope_rl.utils import OldGymAPIWrapper
+env_ = OldGymAPIWrapper(env)
+
 # (1) Learn a baseline policy in an online environment (using d3rlpy)
 # initialize the algorithm
 ddqn = DoubleDQN()
 # train an online policy
 # this takes about 5min to compute
 ddqn.fit_online(
-    env,
-    buffer=ReplayBuffer(maxlen=10000, env=env),
+    env_,
+    buffer=ReplayBuffer(maxlen=10000, env=env_),
     explorer=ConstantEpsilonGreedy(epsilon=0.3),
     n_steps=100000,
     n_steps_per_epoch=1000,

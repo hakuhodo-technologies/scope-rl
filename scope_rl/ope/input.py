@@ -135,17 +135,21 @@ class CreateOPEInput:
         # initialize environment
         env = gym.make("RTBEnv-discrete-v0")
 
+        # for api compatibility to d3rlpy
+        from scope_rl.utils import OldGymAPIWrapper
+        env_ = OldGymAPIWrapper(env)
+
         # define (RL) agent (i.e., policy) and train on the environment
         ddqn = DoubleDQN()
         buffer = ReplayBuffer(
             maxlen=10000,
-            env=env,
+            env=env_,
         )
         explorer = ConstantEpsilonGreedy(
             epsilon=0.3,
         )
         ddqn.fit_online(
-            env=env,
+            env=env_,
             buffer=buffer,
             explorer=explorer,
             n_steps=10000,
@@ -211,6 +215,59 @@ class CreateOPEInput:
     .. code-block:: python
 
         >>> input_dict
+
+        {'ddqn':
+            {'evaluation_policy_action_dist':
+                array([[0., 0., 0., ..., 0., 1., 0.],
+                      [0., 0., 0., ..., 0., 0., 0.],
+                      [0., 0., 0., ..., 0., 1., 0.],
+                      ...,
+                      [0., 0., 0., ..., 0., 0., 0.],
+                      [0., 0., 0., ..., 0., 0., 0.],
+                      [0., 0., 0., ..., 0., 1., 0.]]),
+            'evaluation_policy_action': None,
+            'state_action_value_prediction':
+                array([[11.64699173, 10.1278677 , 10.09877205, ..., 10.16476822, 15.13939476,  8.95065594],
+                      [10.42242146,  7.73790789,  7.27790451, ...,  3.51157165, 12.0761919 ,  3.75301909],
+                      [ 7.22864819,  6.88499546,  5.68951464, ...,  6.10659647, 7.05469513,  4.81715965],
+                      ...,
+                      [ 7.28475332,  3.91264176,  4.6845212 , ..., -0.02834684, 7.94454432,  2.59267783],
+                      [13.44723797,  3.08360171,  5.99188185, ..., -2.16886044, 7.13434792,  5.72265959],
+                      [ 2.27913332,  3.07881427,  1.8636421 , ...,  3.37803316, 3.20135021,  2.68845224]]),
+            'initial_state_value_prediction': array([15.13939476, 14.83423805, 13.82990742, ..., 15.49367523, 15.49053097, 14.88922691]),
+            'state_action_marginal_importance_weight': None,
+            'state_marginal_importance_weight': None,
+            'on_policy_policy_value': array([ 8., 10.,  9., ...,  13., 18.,  4.]),
+            'gamma': 1.0,
+            'behavior_policy': 'ddqn_epsilon_0.3',
+            'evaluation_policy': 'ddqn',
+            'dataset_id': 0},},
+        'random':
+            {'evaluation_policy_action_dist':
+                array([[0.1, 0.1, 0.1, ..., 0.1, 0.1, 0.1],
+                      [0.1, 0.1, 0.1, ..., 0.1, 0.1, 0.1],
+                      [0.1, 0.1, 0.1, ..., 0.1, 0.1, 0.1],
+                      ...,
+                      [0.1, 0.1, 0.1, ..., 0.1, 0.1, 0.1],
+                      [0.1, 0.1, 0.1, ..., 0.1, 0.1, 0.1],
+                      [0.1, 0.1, 0.1, ..., 0.1, 0.1, 0.1]]),
+            'evaluation_policy_action': None,
+            'state_action_value_prediction':
+                array([[10.63342857, 10.61063576, 11.16767025, ..., 15.32427979, 15.08568764, 10.50707436],
+                      [ 4.02995491,  4.80947208,  7.07302999, ...,  9.928442  , 10.78198528,  9.04977417],
+                      [ 6.21145582,  6.08772421,  6.5972681 , ...,  9.68579388, 7.2353406 ,  6.17404699],
+                      ...,
+                      [ 1.2350018 ,  1.37531543,  3.48139453, ...,  3.44862366, 5.41990328, -0.20314722],
+                      [ 0.81208032, -0.28935188,  2.62608957, ...,  6.6619091 , -2.18710518, -2.34665537],
+                      [ 2.36533523,  2.24474525,  2.31729817, ...,  4.7845993 , 2.83752441,  3.00596046]]),
+            'initial_state_value_prediction': array([12.5472518 , 12.56364899, 12.30248432, ..., 12.62372198, 12.6544138 , 12.54314356]),
+            'state_action_marginal_importance_weight': None,
+            'state_marginal_importance_weight': None,
+            'on_policy_policy_value': array([ 9.,  7.,  4., ..., 15.,  8.,  5.]),
+            'gamma': 1.0,
+            'behavior_policy': 'ddqn_epsilon_0.3',
+            'evaluation_policy': 'random',
+            'dataset_id': 0}}
 
     .. seealso::
 

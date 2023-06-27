@@ -116,17 +116,21 @@ class OffPolicySelection:
         # initialize environment
         env = gym.make("RTBEnv-discrete-v0")
 
+        # for api compatibility to d3rlpy
+        from scope_rl.utils import OldGymAPIWrapper
+        env_ = OldGymAPIWrapper(env)
+
         # define (RL) agent (i.e., policy) and train on the environment
         ddqn = DoubleDQN()
         buffer = ReplayBuffer(
             maxlen=10000,
-            env=env,
+            env=env_,
         )
         explorer = ConstantEpsilonGreedy(
             epsilon=0.3,
         )
         ddqn.fit_online(
-            env=env,
+            env=env_,
             buffer=buffer,
             explorer=explorer,
             n_steps=10000,
@@ -149,7 +153,7 @@ class OffPolicySelection:
         )
 
         # data collection
-        logged_dataset = dataset.obtain_trajectories(
+        logged_dataset = dataset.obtain_episodes(
             behavior_policies=behavior_policy,
             n_trajectories=100,
             random_state=12345,
@@ -177,11 +181,11 @@ class OffPolicySelection:
 
         # create input for off-policy evaluation (OPE)
         prep = CreateOPEInput(
-            logged_dataset=logged_dataset,
+            env=env,
         )
         input_dict = prep.obtain_whole_inputs(
+            logged_dataset=logged_dataset,
             evaluation_policies=[ddqn_, random_],
-            env=env,
             n_trajectories_on_policy_evaluation=100,
             random_state=12345,
         )

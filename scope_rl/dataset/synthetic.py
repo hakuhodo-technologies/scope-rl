@@ -88,17 +88,21 @@ class SyntheticDataset(BaseDataset):
         # initialize environment
         env = gym.make("RTBEnv-discrete-v0")
 
+        # for api compatibility to d3rlpy
+        from scope_rl.utils import OldGymAPIWrapper
+        env_ = OldGymAPIWrapper(env)
+
         # define (RL) agent (i.e., policy) and train on the environment
         ddqn = DoubleDQN()
         buffer = ReplayBuffer(
             maxlen=10000,
-            env=env,
+            env=env_,
         )
         explorer = ConstantEpsilonGreedy(
             epsilon=0.3,
         )
         ddqn.fit_online(
-            env=env,
+            env=env_,
             buffer=buffer,
             explorer=explorer,
             n_steps=10000,
@@ -134,7 +138,7 @@ class SyntheticDataset(BaseDataset):
         )
 
         # data collection
-        logged_datasets = dataset.obtain_trajectories(
+        logged_datasets = dataset.obtain_episodes(
             behavior_policies=behavior_policy,
             n_trajectories=100,
             obtain_info=True,
@@ -155,6 +159,7 @@ class SyntheticDataset(BaseDataset):
         'action_keys': None,
         'action_meaning': array([ 0.1       ,  0.16681005,  0.27825594,  0.46415888,  0.77426368,
                 1.29154967,  2.15443469,  3.59381366,  5.9948425 , 10.        ]),
+        'state_dim': 7,
         'state_keys': ['timestep',
         'remaining_budget',
         'budget_consumption_rate',
@@ -192,7 +197,6 @@ class SyntheticDataset(BaseDataset):
     .. seealso::
 
         * :doc:`Quickstart </documentation/quickstart>`
-        * :doc:`Related tutorials </documentation/_autogallery/scope_rl_others/index>`
 
     """
 
