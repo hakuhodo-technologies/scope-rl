@@ -20,6 +20,8 @@
 
 </details>
 
+**Documentation is available [here](https://scope-rl.readthedocs.io/en/latest/)**
+
 ## Overview
 
 *SCOPE-RL* is an open-source Python Software for implementing the end-to-end procedure regarding **offline Reinforcement Learning (offline RL)**, from data collection to offline policy learning, off-policy performance evaluation, and policy selection. Our software includes a series of modules to implement synthetic dataset generation, dataset preprocessing, estimators for Off-Policy Evaluation (OPE), and Off-Policy Selection (OPS) methods.
