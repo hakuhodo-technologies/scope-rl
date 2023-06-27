@@ -2321,7 +2321,7 @@ class StateActionMarginalDR(BaseStateActionMarginalOPEEstimator):
         \\hat{J}_{\\mathrm{SAM-DR}} (\\pi; \\mathcal{D})
         &:= \\frac{1}{n} \\sum_{i=1}^n \\hat{Q}(s_0^{(i)}, \\pi(s_0^{(i)})) \\\\
         & \quad \quad + \\frac{1}{n} \\sum_{i=1}^n \\sum_{t=0}^{k-1} \\gamma^t w_{0:t}^{(i)} \\delta(\\pi, a_{0:t}^{(i)}) \\left( r_t^{(i)} + \\gamma \\hat{Q}(s_{t+1}^{(i)}, \\pi(s_{t+1}^{(i)})) - \\hat{Q}(s_t^{(i)}, a_t^{(i)}) \\right) \\\\
-        & \quad \quad + \\frac{1}{n} \\sum_{t=k}^{T-1} \\gamma^t \\rho(s_{t-k}^{(i)}, a_{t-k}^{(i)}) w_{t-k+1:t}^{(i)} \\delta(\\pi, a_{t-k+1:t}^{(i)}) \\left( r_t^{(i)} + \\gamma \\hat{Q}(s_{t+1}^{(i)}, \\pi(s_{t+1}^{(i)})) - \\hat{Q}(s_t^{(i)}, a_t^{(i)}) \\right),
+        & \quad \quad + \\frac{1}{n} \\sum_{i=1}^n \\sum_{t=k}^{T-1} \\gamma^t \\rho(s_{t-k}^{(i)}, a_{t-k}^{(i)}) w_{t-k+1:t}^{(i)} \\delta(\\pi, a_{t-k+1:t}^{(i)}) \\left( r_t^{(i)} + \\gamma \\hat{Q}(s_{t+1}^{(i)}, \\pi(s_{t+1}^{(i)})) - \\hat{Q}(s_t^{(i)}, a_t^{(i)}) \\right),
 
     where :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} (\\pi(a_t | s_t) / \\pi_0(a_t | s_t))` and :math:`\\rho(s, a) \\approx d^{\\pi}(s, a) / d^{\\pi_b}(s, a)` is the state-marginal importance weight,
     where :math:`d^{\\pi}(s, a)` is the marginal visitation probability of the policy :math:`\\pi` on :math:`(s, a)`.

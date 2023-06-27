@@ -1012,7 +1012,7 @@ class StateMarginalDR(BaseStateMarginalOPEEstimator):
         \\hat{J}_{\\mathrm{SM-DR}} (\\pi; \\mathcal{D})
         &:= \\frac{1}{n} \\sum_{i=1}^n \\sum_{a \\in \\mathcal{A}} \\pi(a | s_0^{(i)}) \\hat{Q}(s_0^{(i)}, a) \\\\
         & \quad \quad + \\frac{1}{n} \\sum_{i=1}^n \\sum_{t=0}^{k-1} \\gamma^t w_{0:t}^{(i)} \left(r_t^{(i)} + \\gamma \\sum_{a \\in \\mathcal{A}} \\pi(a | s_t^{(i)}) \\hat{Q}(s_{t+1}^{(i)}, a) - \\hat{Q}(s_t^{(i)}, a_t^{(i)}) \\right) \\\\
-        & \quad \quad + \\frac{1}{n} \\sum_{t=k}^{T-1} \\gamma^t \\rho(s_{t-k}^{(i)}) w_{t-k:t}^{(i)} \\left( r_t^{(i)} + \\gamma \\sum_{a \\in \\mathcal{A}} \\pi(a | s_t^{(i)}) \\hat{Q}(s_{t+1}^{(i)}, a) - \\hat{Q}(s_t^{(i)}, a_t^{(i)}) \\right),
+        & \quad \quad + \\frac{1}{n} \\sum_{i=1}^n \\sum_{t=k}^{T-1} \\gamma^t \\rho(s_{t-k}^{(i)}) w_{t-k:t}^{(i)} \\left( r_t^{(i)} + \\gamma \\sum_{a \\in \\mathcal{A}} \\pi(a | s_t^{(i)}) \\hat{Q}(s_{t+1}^{(i)}, a) - \\hat{Q}(s_t^{(i)}, a_t^{(i)}) \\right),
 
     where :math:`w_{t_1:t_2} := \\prod_{t=t_1}^{t_2} (\\pi(a_t | s_t) / \\pi_0(a_t | s_t))` and :math:`\\rho(s) \\approx d^{\\pi}(s) / d^{\\pi_b}(s)` is the state-marginal importance weight, 
     where where :math:`d^{\\pi}(s)` is the marginal visitation probability of the policy :math:`\\pi` on :math:`s`. 

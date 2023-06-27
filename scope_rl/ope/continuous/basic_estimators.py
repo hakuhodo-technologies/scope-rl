@@ -1474,7 +1474,7 @@ class SelfNormalizedTIS(TrajectoryWiseImportanceSampling):
     .. math::
 
         \\hat{J}_{\\mathrm{SNTIS}} (\\pi; \\mathcal{D})
-        := \\frac{1}{n} \\sum_{i=1}^n \\sum_{t=0}^{T-1} \\gamma^t \\frac{w_{0:T-1}^{(i)} \\delta(\\pi, a_{0:T-1}^{(i)})}{\\sum_{i'=1}^n w_{1:T-1}^{(i')} \\delta(\\pi, a_{0:T-1}^{(i')})} r_t^{(i)},
+        := \\sum_{i=1}^n \\sum_{t=0}^{T-1} \\gamma^t \\frac{w_{0:T-1}^{(i)} \\delta(\\pi, a_{0:T-1}^{(i)})}{\\sum_{i'=1}^n w_{1:T-1}^{(i')} \\delta(\\pi, a_{0:T-1}^{(i')})} r_t^{(i)},
 
     where :math:`w_{0:T-1} := \\prod_{t=0}^{T-1} (1 / \\pi_0(a_t | s_t))` is the trajectory-wise importance weight.
     :math:`\\delta(\\pi, a_{0:T}) = \\prod_{t=0}^{T-1} K(\\pi(s_t), a_t)` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy where :math:`K(\\cdot)` is a kernel function.
@@ -1598,7 +1598,7 @@ class SelfNormalizedPDIS(PerDecisionImportanceSampling):
     .. math::
 
         \\hat{J}_{\\mathrm{SNPDIS}} (\\pi; \\mathcal{D})
-        := \\frac{1}{n} \\sum_{i=1}^n \\sum_{t=0}^{T-1} \\gamma^t \\frac{w_{1:t}^{(i)} \\delta(\\pi, a_{0:t}^{(i)})}{\\sum_{i'=1}^n w_{1:t}^{(i')} \\delta(\\pi, a_{0:t}^{(i')})} r_t^{(i)},
+        := \\sum_{i=1}^n \\sum_{t=0}^{T-1} \\gamma^t \\frac{w_{1:t}^{(i)} \\delta(\\pi, a_{0:t}^{(i)})}{\\sum_{i'=1}^n w_{1:t}^{(i')} \\delta(\\pi, a_{0:t}^{(i')})} r_t^{(i)},
 
     where :math:`w_{0:t} := \\prod_{t'=1}^t (1 / \\pi_0(a_{t'} | s_{t'}))` is the per-decision importance weight.
     :math:`\\delta(\\pi, a_{0:t}) = \\prod_{t'=1}^t K(\\pi(s_{t'}), a_{t'})` quantifies the similarity between the action logged in the dataset and that taken by the evaluation policy where :math:`K(\\cdot)` is a kernel function.
@@ -1721,8 +1721,8 @@ class SelfNormalizedDR(DoublyRobust):
 
     .. math::
 
-        \\hat{J}_{\\mathrm{DR}} (\\pi; \\mathcal{D})
-        := \\frac{1}{n} \\sum_{i=1}^n \\sum_{t=0}^{T-1} \\gamma^t \\left( \\frac{w_{0:t}^{(i)} \\delta(\\pi, a_{0:t}^{(i)})}{\\sum_{i'=1}^n w_{0:t}^{(i')} \\delta(\\pi, a_{0:t}^{(i')})} (r_t^{(i)} - \\hat{Q}(s_t^{(i)}, a_t^{(i)}))
+        \\hat{J}_{\\mathrm{SNDR}} (\\pi; \\mathcal{D})
+        := \\sum_{i=1}^n \\sum_{t=0}^{T-1} \\gamma^t \\left( \\frac{w_{0:t}^{(i)} \\delta(\\pi, a_{0:t}^{(i)})}{\\sum_{i'=1}^n w_{0:t}^{(i')} \\delta(\\pi, a_{0:t}^{(i')})} (r_t^{(i)} - \\hat{Q}(s_t^{(i)}, a_t^{(i)}))
         + \\frac{w_{0:t-1}^{(i)} \\delta(\\pi, a_{0:t-1}^{(i)})}{\\sum_{i'=1}^n w_{0:t-1}^{(i')} \\delta(\\pi, a_{0:t-1}^{(i')})} \\hat{Q}(s_t^{(i)}, \\pi(s_t^{(i)})) \\right),
 
     where :math:`w_{0:t} := \\prod_{t'=0}^t (1 / \\pi_0(a_{t'} | s_{t'}))` is the per-decision importance weight.
