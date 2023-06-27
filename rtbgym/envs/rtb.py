@@ -122,14 +122,14 @@ class RTBEnv(gym.Env):
         Conversion rate (i.e., conversion / click).
         Both class and instance are acceptable.
 
-    standard_bid_price_distribution: NormalDistribution, default=NormalDistribution(mean=100, std=20)
+    standard_bid_price_distribution: NormalDistribution, default=None
         Distribution of the bid price whose average impression probability is expected to be 0.5.
 
     minimum_standard_bid_price: int, default=None (> 0)
         Minimum value for standard bid price.
         If `None`, minimum_standard_bid_price is set to :class:`standard_bid_price_distribution.mean / 2`.
 
-    search_volume_distribution: NormalDistribution, default=NormalDistribution(mean=30, std=10)
+    search_volume_distribution: NormalDistribution, default=None
         Search volume distribution for each timestep.
 
     minimum_search_volume: int, default = 10 (> 0)
@@ -236,17 +236,9 @@ class RTBEnv(gym.Env):
         WinningPriceDistribution: BaseWinningPriceDistribution = WinningPriceDistribution,
         ClickThroughRate: BaseClickAndConversionRate = ClickThroughRate,
         ConversionRate: BaseClickAndConversionRate = ConversionRate,
-        standard_bid_price_distribution: NormalDistribution = NormalDistribution(
-            mean=50,
-            std=5,
-            random_state=12345,
-        ),
+        standard_bid_price_distribution: Optional[NormalDistribution] = None,
         minimum_standard_bid_price: Optional[int] = None,
-        search_volume_distribution: NormalDistribution = NormalDistribution(
-            mean=200,
-            std=20,
-            random_state=12345,
-        ),
+        search_volume_distribution: Optional[NormalDistribution] = None,
         minimum_search_volume: int = 10,
         random_state: Optional[int] = None,
     ):
