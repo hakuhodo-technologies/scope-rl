@@ -70,6 +70,9 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 # a list of builtin themes.
 #
 html_theme = "pydata_sphinx_theme"
+html_context = {
+    "default_mode": "light",
+}
 html_theme_options = {
     "github_url": "https://github.com/hakuhodo-technologies/scope-rl",
     # "twitter_url": "https://twitter.com/{account}",
