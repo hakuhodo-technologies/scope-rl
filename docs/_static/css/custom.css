@@ -7,7 +7,7 @@
 /* Top page design */
 .top-page-title-background {
   background-color: transparent;
-  background-image: url("./images/top_img.png");
+  /* background-color: whitesmoke; */
   border: 2px solid transparent;
 }
 
@@ -22,7 +22,10 @@
   font-size: 20px;
   color: var(--pst-color-primary);
   text-align: center;
-  padding-bottom: 20%;
+  padding-top: 5%;
+  padding-bottom: 5%;
+  padding-left: 5%;
+  padding-right: 5%;
 }
 
 .top-page-list li {

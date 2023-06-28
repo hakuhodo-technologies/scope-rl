@@ -102,9 +102,7 @@ html_css_files = ["css/custom.css"]
 
 html_title = "SCOPE-RL"
 html_use_opensearch = "https://scope-rl.readthedocs.io/en/latest/"
-favicons = [
-    {"href": "images/favicon.png"}
-]
+favicons = [{"href": "images/favicon.png"}]
 
 
 # whether to display to the source .rst file

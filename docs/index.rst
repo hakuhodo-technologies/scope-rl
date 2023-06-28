@@ -1,14 +1,17 @@
 :html_theme.sidebar_secondary.remove:
 
-.. card:: SCOPE-RL
+.. card:: 
     :class-title: top-page-title-title
     :class-body: top-page-title-desc
     :text-align: center
     :shadow: none
 
-    | Towards Risk-Return Assessments of Off-Policy Evaluation in Reinforcement Learning
-    | 
-    | 
+    .. image:: _static/images/logo_top.png
+        :align: center
+
+    .. raw:: html
+
+        <div class="white-space-20px"></div>
 
     .. button-ref:: documentation/index
       :ref-type: doc
