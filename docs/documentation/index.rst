@@ -6,11 +6,13 @@ SCOPE-RL
 .. raw:: html
 
     <h3>A Python library for offline reinforcement learning, off-policy evaluation, and selection</h3>
+    <div class="white-space-5px"></div>
 
-
-.. .. card:: logo
-..     :img-top: ../_static/images/logo.png
-..     :text-align: center
+.. card::
+    :width: 75%
+    :margin: auto
+    :img-background: ../_static/images/logo.png
+    :text-align: center
 
 Overview
 ~~~~~~~~~~

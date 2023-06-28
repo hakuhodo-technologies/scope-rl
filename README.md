@@ -2,6 +2,8 @@
 <details>
 <summary><strong>Table of Contents </strong>(click to expand)</summary>
 
+<div align="center"><img src="./docs/_static/images/logo.png" width="100%"/></div>
+
 - [SCOPE-RL: A Python library for offline reinforcement learning, off-policy evaluation, and selection](#SCOPE-RL-a-python-library-for-offline-reinforcement-learning-off-policy-evaluation-and-selection)
 - [Overview](#overview)
 - [Installation](#installation)

@@ -45,6 +45,7 @@ extensions = [
     "sphinx.ext.githubpages",
     "sphinxcontrib.bibtex",
     "sphinx_copybutton",
+    "sphinx_favicon",
     # "sphinx_gallery.gen_gallery",
     "numpydoc",
     "sphinx_design",
@@ -70,6 +71,7 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 # a list of builtin themes.
 #
 html_theme = "pydata_sphinx_theme"
+html_logo = "_static/images/logo.png"
 html_context = {
     "default_mode": "light",
 }
@@ -85,7 +87,8 @@ html_theme_options = {
         },
     ],
     "header_links_before_dropdown": 4,
-    # "navbar_start": ["navbar-logo", "version"],
+    "navbar_start": ["navbar-logo"],
+    # "navbar_start": ["navbar-logo", "version"],  # causes some errors
     "footer_items": ["copyright"],
     "show_prev_next": False,
     # "google_analytics_id": "UA-XXXXXXX",
@@ -98,7 +101,10 @@ html_static_path = ["_static"]
 html_css_files = ["css/custom.css"]
 
 html_title = "SCOPE-RL"
-html_use_opensearch = "https://hakuhodo-technologies.github.io/scope-rl/"
+html_use_opensearch = "https://scope-rl.readthedocs.io/en/latest/"
+favicons = [
+    {"href": "images/favicon.png"}
+]
 
 
 # whether to display to the source .rst file

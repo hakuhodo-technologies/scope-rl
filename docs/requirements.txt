@@ -7,3 +7,4 @@ sphinx-tabs==3.4.1
 sphinx-copybutton==0.5.1
 sphinxemoji==0.2.0
 sphinxcontrib-bibtex==2.5.0
+sphinx-favicon==1.0.1

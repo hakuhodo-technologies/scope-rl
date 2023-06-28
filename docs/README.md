@@ -6,7 +6,7 @@ SCOPE-RL docstring
 Our documentation relies on [Sphinx](https://github.com/sphinx-doc/sphinx). To use, download the following packages through `pip` in advance.
 
 ```bash
-pip install Sphinx pydata-sphinx-theme numpydoc sphinx_design sphinx-gallery sphinx-tabs sphinx-copybutton sphinxemoji sphinxcontrib-bibtex
+pip install Sphinx pydata-sphinx-theme numpydoc sphinx_design sphinx-gallery sphinx-tabs sphinx-copybutton sphinxemoji sphinxcontrib-bibtex sphinx-favicon
 ```
 
 Please also refer to `./conf.py` for the list of extensions.
@@ -25,7 +25,8 @@ extensions = [
     "sphinx.ext.viewcode",
     "sphinxcontrib.bibtex",
     "sphinx_copybutton",
-    "sphinx_gallery.gen_gallery",
+    "sphinx_favicon",
+    # "sphinx_gallery.gen_gallery",
     "numpydoc",
     "sphinx_design",
     "sphinx_tabs.tabs",
