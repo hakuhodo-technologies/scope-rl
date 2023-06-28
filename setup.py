@@ -34,7 +34,7 @@ setup(
     install_requires=_requirements_from_text("requirements.txt"),
     license="Apache License 2.0",
     packages=find_packages(
-        exclude=[".github", "docs", "examples", "images", "tests"],
+        exclude=[".github", "docs", "examples", "tests"],
     ),
     classifiers=[
         "Intended Audience :: Science/Research",

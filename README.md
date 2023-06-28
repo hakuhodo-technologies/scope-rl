@@ -1,6 +1,6 @@
 # SCOPE-RL: A Python library for offline reinforcement learning, off-policy evaluation, and selection
 
-<div align="center"><img src="./docs/_static/images/logo.png" width="100%"/></div>
+<div align="center"><img src="./images/logo.png" width="100%"/></div>
 
 <details>
 <summary><strong>Table of Contents </strong>(click to expand)</summary>
@@ -298,7 +298,7 @@ ope.visualize_off_policy_estimates(
     sharey=True,
 )
 ```
-<div align="center"><img src="./docs/_static/images/ope_policy_value_basic.png" width="100%"/></div>
+<div align="center"><img src="./images/ope_policy_value_basic.png" width="100%"/></div>
 <figcaption>
 <p align="center">
   Policy Value Estimated by OPE Estimators
@@ -342,7 +342,7 @@ cvar_dict = cd_ope.estimate_conditional_value_at_risk(input_dict, alphas=0.3)
 # estimate and visualize the cumulative distribution function of the policy performance
 cd_ope.visualize_cumulative_distribution_function(input_dict, n_cols=4)
 ```
-<div align="center"><img src="./docs/_static/images/ope_cumulative_distribution_function.png" width="100%"/></div>
+<div align="center"><img src="./images/ope_cumulative_distribution_function.png" width="100%"/></div>
 <figcaption>
 <p align="center">
   Cumulative Distribution Function Estimated by OPE Estimators
@@ -378,7 +378,7 @@ ops.visualize_topk_policy_value_selected_by_standard_ope(
     safety_criteria=1.0,
 )
 ```
-<div align="center"><img src="./docs/_static/images/ops_topk_lower_quartile.png" width="100%"/></div>
+<div align="center"><img src="./images/ops_topk_lower_quartile.png" width="100%"/></div>
 <figcaption>
 <p align="center">
   Comparison of the Top-k Statistics of 10% Lower Quartile of Policy Value
@@ -401,7 +401,7 @@ ops.visualize_cvar_for_validation(
     share_axes=True,
 )
 ```
-<div align="center"><img src="./docs/_static/images/ops_variance_validation.png" width="100%"/></div>
+<div align="center"><img src="./images/ops_variance_validation.png" width="100%"/></div>
 <figcaption>
 <p align="center">
   Validation of Estimated and Ground-truth Variance of Policy Value
