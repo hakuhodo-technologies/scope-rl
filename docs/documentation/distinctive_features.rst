@@ -10,7 +10,7 @@ Motivation
 Sequential decision making is ubiquitous in many real-world applications, including recommender, search, and advertising systems.
 While a *logging* or *behavior* policy interacts with users to optimize such sequential decision making, it also produces logged data valuable for learning and evaluating future policies.
 For example, a search engine often records a user's search query (state), the document presented by the behavior policy (action), the user response such as a click observed for the presented document (reward), and the next user behavior including a more specific search query (next state).
-Making most of these logged data to evaluate a counterfactual policy is particularly beneficial in practice, as it can be safe and cost-effective substitute for online A/B tests.
+Making most of these logged data to evaluate a counterfactual policy is particularly beneficial in practice, as it can be a safe and cost-effective substitute for online A/B tests.
 
 .. card::
     :width: 75%
@@ -27,7 +27,7 @@ Making most of these logged data to evaluate a counterfactual policy is particul
 **Off-Policy Evaluation (OPE)**, which studies how to accurately estimate the performance of an *evaluation* policy using only offline logged data, is thus gaining growing interest.
 Especially in the reinforcement learning (RL) setting, a variety of theoretically grounded OPE estimators have been proposed to accurately estimate the expected reward :cite:`precup2000eligibility, jiang2016doubly, thomas2016data, farajtabar2018more, le2019batch, kallus2019intrinsically,liu2018breaking, uehara2020minimax`.
 Moreover, several recent work on cumulative distribution OPE :cite:`huang2021off, huang2022off, chandak2021universal` also aim at estimating the cumulative distribution function (CDF) and risk functions (e.g., variance, conditional value at risk (CVaR), and interquartile range) of an evaluation policy.
-These risk functions provide informative insights on policy performance especially from safety perspectives, which are thus crucial for practical decision making.
+These risk functions provide informative insights on policy performance, especially from safety perspectives, which are thus crucial for practical decision making.
 
 Unfortunately, despite these recent advances in OPE of RL policies, only a few existing platforms :cite:`fu2021benchmarks, voloshin2021empirical` are available for extensive OPE studies and benchmarking experiments. 
 Moreover, those existing platform lacks the following important properties:
@@ -38,13 +38,13 @@ Most *offline RL* plaforms:
 
 Existing *OPE* platforms:
 
-* ... have a limited flexibly in the choices of environments and offline RL methods (i.e., **limited compatibility with gym/gymnasium and offline RL libraries**).
+* ... have limited flexibility in the choices of environments and offline RL methods (i.e., **limited compatibility with gym/gymnasium and offline RL libraries**).
 * ... support only the standard OPE framework and lack the implementation of **cumulative distribution OPE**.
 * ... only focus on the accuracy of OPE/OPS and do not take the **risk-return tradeoff** of the policy selection into account.
 * ... do not support user-friendly **visualization tools** to interpret the OPE results.
 * ... do not provide well-described **documentations**.
 
-It is critical to fill the above gaps to further facilitate the OPE research and its practical applications.
+It is critical to fill the above gaps to further facilitate OPE research and its practical applications.
 This is why we build **SCOPE-RL, the first end-to-end platform for offline RL and OPE, which puts an emphasis on the OPE modules**.
 
 
@@ -62,7 +62,7 @@ The distinctive features of our SCOPE-RL platform are summarized as follows.
 * :ref:`feature_sharpe_ratio`
 
 Below, we describe each advantage one by one.
-Note that for a quick comparison with the exising platforms, please refer to :ref:`the following section <feature_comparison>`.
+Note that for a quick comparison with the existing platforms, please refer to :ref:`the following section <feature_comparison>`.
 
 .. _feature_end_to_end:
 
@@ -96,7 +96,7 @@ This also allows us to test the performance of offline RL and OPE with various b
 
 Next, the *ORL* module provides an easy-to-handle wrapper for learning new policies with various offline RL algorithms.
 While `d3rlpy <https://github.com/takuseno/d3rlpy>`_ has already supported user-friendly APIs, their implementation is basically intended to use offline RL algorithms one by one.
-Therefore, to further make the end-to-end offline RL and OPE processes smoothly connected, our OPL wrapper enables to handle multiple datasets and multiple algorithms in a single class.
+Therefore, to further make the end-to-end offline RL and OPE processes smoothly connected, the implemented OPL wrapper enables us to handle multiple datasets and multiple algorithms in a single class.
 
 .. Please refer to :ref:`this page <>` for the details.
 
@@ -262,7 +262,7 @@ By estimating the cumulative distribution function (CDF), we can derive the foll
 
 Knowing the whole performance distribution or deriving the risk metrics including CVaR is particularly beneficial in a real-life situation where safety matters.
 For example, in recommender systems, we are interested in stably providing good-quality products rather than sometimes providing an extremely good one while sometimes hurting user satisfaction seriously with bad items.
-Moreover, in the self-driving cars, catastrophic accidents should be avoided even if its probability is small (e.g., less than 10%).
+Moreover, in self-driving cars, catastrophic accidents should be avoided even if the probability is small (e.g., less than 10%).
 We believe that the release of cumulative distribution OPE implementations will boost the applicability of OPE in practical situations.
 
 
@@ -277,7 +277,7 @@ While OPE is useful for estimating the policy performance of a new policy using 
 OPE sometimes produces erroneous estimation due to *counterfactual estimation* and *distribution shift* between the behavior and evaluation policies.
 Therefore, in practical situations, we cannot solely rely on OPE results to choose the production policy, but instead, combine OPE results and online A/B tests for policy evaluation and selection :cite:`kurenkov2022showing`.
 Specifically, the practical workflow often begins by filtering out poor-performing policies based on OPE results, then conducting A/B tests on the remaining top-:math:`k`
-policies to identify the best policy based on more reliable online evaluation, as illustrated in the following figure.
+policies to identify the best policy based on the more reliable online evaluation, as illustrated in the following figure.
 
 .. card:: 
     :width: 75%
@@ -313,7 +313,7 @@ we measure risk, return, and efficiency of the selected top-:math:`k` policy wit
 
 .. seealso::
 
-    Among the top-:math:`k` risk-return tradeoff metrics, SharpeRatio is the main propossal of our research paper 
+    Among the top-:math:`k` risk-return tradeoff metrics, SharpeRatio is the main proposal of our research paper 
     **"Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation in Reinforcement Learning"**. 
     We describe the motivation and contributions of the SharpeRatio metric in :doc:`sharpe_ratio`.
 
@@ -324,7 +324,7 @@ we measure risk, return, and efficiency of the selected top-:math:`k` policy wit
 Comparisons with the existing platforms
 ~~~~~~~~~~
 
-Finally, we provide a comprehensive comparion with the existing offline RL and OPE platforms.
+Finally, we provide a comprehensive comparison with the existing offline RL and OPE platforms.
 
 .. card::
     :width: 75%
@@ -338,7 +338,7 @@ Finally, we provide a comprehensive comparion with the existing offline RL and O
 
     <div class="white-space-20px"></div>
 
-The criteria of each colums is given as follows:
+The criteria of each column is given as follows:
 
 * "data collection": |:white_check_mark:| means that the platform is compatible with Gymnasium environments :cite:`brockman2016openai` and thus is able to handle various settings.
 * "offline RL": |:white_check_mark:| means that the platform implements a variety of offline RL algorithms or the platform is compatible with one of offline RL libraries. In particular, our SCOPE-RL supports compatibility to `d3rlpy <https://github.com/takuseno/d3rlpy>`_ :cite:`seno2021d3rlpy`.
@@ -350,10 +350,7 @@ In summary, **our unique contributions are
 (2) to support cumulative distribution ope for the first time, and
 (3) to implement (the proposed) SharpeRatio@k and other top-** :math:`k` **risk-return tradeoff metics for the risk assessments of OPS.**
 Additionally, we provide a user-friendly :doc:`visualization tools <visualization>`, :doc:`documentation <index>`, and `quickstart examples <https://github.com/hakuhodo-technologies/scope-rl/tree/main/examples/quickstart>`_ to facilitate a quick benckmarking and practical application. 
-We hope that SCOPE-RL will serve as a important milestone for the future development of OPE research.
-
-.. We also provide an :doc:`OPE tutorial <_autogallery/index>` with SCOPE-RL experiments for educational purpose.
-.. We hope that SCOPE-RL will serve as a important milestone for the future development of OPE research.
+We hope that SCOPE-RL will serve as an important milestone for the future development of OPE research.
 
 Note that the compared platforms include the following:
 

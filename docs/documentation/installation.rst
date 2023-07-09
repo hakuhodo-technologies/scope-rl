@@ -32,7 +32,7 @@ If you use our pipeline in your work, please cite our paper below.
 .. card::
 
     | Haruka Kiyohara, Ren Kishimoto, Kosuke Kawakami, Ken Kobayashi, Kazuhide Nakata, Yuta Saito.
-    | **SCOPE-RL: A Python Library for Offline Reinforcement Learning, Off-Policy Evaluation, and Policy Selectio**
+    | **SCOPE-RL: A Python Library for Offline Reinforcement Learning, Off-Policy Evaluation, and Policy Selection**
     | (a preprint is coming soon..)
 
     .. code-block::

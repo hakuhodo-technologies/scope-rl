@@ -29,11 +29,11 @@
 
 *SCOPE-RL* is an open-source Python Software for implementing the end-to-end procedure regarding **offline Reinforcement Learning (offline RL)**, from data collection to offline policy learning, off-policy performance evaluation, and policy selection. Our software includes a series of modules to implement synthetic dataset generation, dataset preprocessing, estimators for Off-Policy Evaluation (OPE), and Off-Policy Selection (OPS) methods.
 
-This software is also compatible with [d3rlpy](https://github.com/takuseno/d3rlpy), which implements a range of online and offline RL methods. SCOPE-RL enables an easy, transparent, and reliable experiment in offline RL research on any environment with [OpenAI Gym](https://gym.openai.com) and [Gymnasium](https://gymnasium.farama.org/)-like interface. It also facilitates implementation of offline RL in practice on a variety of customized datasets and on real-world datasets.
+This software is also compatible with [d3rlpy](https://github.com/takuseno/d3rlpy), which implements a range of online and offline RL methods. SCOPE-RL enables an easy, transparent, and reliable experiment in offline RL research on any environment with [OpenAI Gym](https://gym.openai.com) and [Gymnasium](https://gymnasium.farama.org/)-like interface. It also facilitates the implementation of offline RL in practice on a variety of customized datasets and real-world datasets.
 
 In particular, SCOPE-RL enables and facilitates evaluation and algorithm comparison related to the following research topics:
 
-- **Offline Reinforcement Learning**: Offline RL aims at learning a new policy from only offline logged data collected by a behavior policy. SCOPE-RL enables flexible experiment using customized dataset collected by various behavior policies and on a variety of environment.
+- **Offline Reinforcement Learning**: Offline RL aims at learning a new policy from only offline logged data collected by a behavior policy. SCOPE-RL enables flexible experiments using customized datasets collected by various behavior policies and environments.
 
 - **Off-Policy Evaluation**: OPE aims at evaluating the performance of a counterfactual policy using only offline logged data. SCOPE-RL supports many OPE estimators and streamlines the experimental procedure to evaluate and compare OPE estimators. Moreover, we also implement advanced OPE methods, such as estimators based on state-action density estimation and cumulative distribution estimation.
 
@@ -45,7 +45,7 @@ This software is inspired by [Open Bandit Pipeline](https://github.com/st-tech/z
 
 *SCOPE-RL* mainly consists of the following three modules.
 - [**dataset module**](./_gym/dataset): This module provides tools to generate synthetic data from any environment on top of [OpenAI Gym](http://gym.openai.com/) and [Gymnasium](https://gymnasium.farama.org/)-like interface. It also provides tools to pre-process the logged data.
-- [**policy module**](./_gym/policy): This module provides a wrapper class for [d3rlpy](https://github.com/takuseno/d3rlpy) to enable a flexible data collection.
+- [**policy module**](./_gym/policy): This module provides a wrapper class for [d3rlpy](https://github.com/takuseno/d3rlpy) to enable flexible data collection.
 - [**ope module**](./_gym/ope): This module provides a generic abstract class to implement OPE estimators. It also provides some tools useful for performing OPS.
 
 <details>
@@ -114,7 +114,7 @@ This software is inspired by [Open Bandit Pipeline](https://github.com/st-tech/z
 
 </details>
 
-Note that in addition to the above OPE and OPS methods, researcher can easily implement and compare their own estimators through a generic abstract class implemented in SCOPE-RL. Moreover, practitioners can apply the above methods to their real-world data to evaluate and choose counterfactual policies for their own practical situations.
+Note that in addition to the above OPE and OPS methods, researchers can easily implement and compare their own estimators through a generic abstract class implemented in SCOPE-RL. Moreover, practitioners can apply the above methods to their real-world data to evaluate and choose counterfactual policies for their own practical situations.
 
 To provide an example of performing a customized experiment imitating a practical setup, we also provide [RTBGym](./rtbgym) and [RecGym](./recgym), RL environments for Real-Time Bidding (RTB) and Recommender Systems.
 
@@ -125,7 +125,7 @@ You can install SCOPE-RL using Python's package manager `pip`.
 pip install scope-rl
 ```
 
-You can also install SCOPE-RL from source.
+You can also install SCOPE-RL from the source.
 ```bash
 git clone https://github.com/hakuhodo-technologies/scope-rl
 cd scope-rl
@@ -238,7 +238,7 @@ cql.fit(
 
 ### Basic Off-Policy Evaluation
 
-Then, we evaluate the performance of several evaluation policy (ddqn, cql, and random) using offline logged data collected by the behavior policy. Specifically, we compare the estimation results of various OPE estimators, including Direct Method (DM), Trajectory-wise Importance Sampling (TIS), Per-Decision Importance Sampling (PDIS), and Doubly Robust (DR) below.
+Then, we evaluate the performance of several evaluation policies (ddqn, cql, and random) using offline logged data collected by the behavior policy. Specifically, we compare the estimation results of various OPE estimators, including Direct Method (DM), Trajectory-wise Importance Sampling (TIS), Per-Decision Importance Sampling (PDIS), and Doubly Robust (DR) below.
 
 ```Python
 # implement a basic OPE procedure using SCOPE-RL
@@ -305,7 +305,7 @@ ope.visualize_off_policy_estimates(
 </p>
 </figcaption>
 
-More formal example implementations with RTBGym is available at [./examples/quickstart/rtb/](./examples/quickstart/rtb). Those with RecGym are also available at [./examples/quickstart/rec/](./examples/quickstart/rec).
+More formal example implementations with RTBGym are available at [./examples/quickstart/rtb/](./examples/quickstart/rtb). Those with RecGym are also available at [./examples/quickstart/rec/](./examples/quickstart/rec).
 
 ### Advanced Off-Policy Evaluation
 
@@ -353,7 +353,7 @@ For more extensive examples, please refer to [quickstart/rtb/rtb_synthetic_discr
 
 ### Off-Policy Selection and Evaluation of OPE/OPS
 
-We can also select the best-performing policy among a set of candidate policies based on the OPE results using the OPS class. It is also possible to evaluate the reliability of OPE/OPS using various metrics such as mean-squared-error, rank correlation, regret, and type I and type II error rates.
+We can also select the best-performing policy among a set of candidate policies based on the OPE results using the OPS class. It is also possible to evaluate the reliability of OPE/OPS using various metrics such as mean squaredberror, rank correlation, regret, and type I and type II error rates.
 
 ```Python
 # perform off-policy selection based on the OPE results
@@ -506,7 +506,7 @@ For any questions about the paper and software, feel free to contact: hk844@corn
 
 26. Rafael Figueiredo Prudencio, Marcos R. O. A. Maximo, and Esther Luna Colombini. [A Survey on Offline Reinforcement Learning: Taxonomy, Review, and Open Problems](https://arxiv.org/abs/2203.01387). *arXiv preprint arXiv:2203.01387*, 2022.
 
-27. Yuta Saito, Shunsuke Aihara, Megumi Matsutani, and Yusuke Narita. [Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation](https://arxiv.org/abs/2008.07146). In *Advances in Neural Information Processing Systems*, , 2021.
+27. Yuta Saito, Shunsuke Aihara, Megumi Matsutani, and Yusuke Narita. [Open Bandit Dataset and Pipeline: Towards Realistic and Reproducible Off-Policy Evaluation](https://arxiv.org/abs/2008.07146). In *Advances in Neural Information Processing Systems*, 2021.
 
 28. Takuma Seno and Michita Imai. [d3rlpy: An Offline Deep Reinforcement Library](https://arxiv.org/abs/2111.03788), *arXiv preprint arXiv:2111.03788*, 2021.
 
@@ -542,6 +542,6 @@ For any questions about the paper and software, feel free to contact: hk844@corn
 This project is strongly inspired by the following three packages.
 - **Open Bandit Pipeline**  -- a pipeline implementation of OPE in contextual bandits: [[github](https://github.com/st-tech/zr-obp)] [[documentation](https://zr-obp.readthedocs.io/en/latest/)] [[paper](https://arxiv.org/abs/2008.07146)]
 - **d3rlpy** -- a set of implementations of offline RL algorithms: [[github](https://github.com/takuseno/d3rlpy)] [[documentation](https://d3rlpy.readthedocs.io/en/v0.91/)] [[paper](https://arxiv.org/abs/2111.03788)]
-- **Spinning Up** -- an educational resource for learning deepl RL: [[github](https://github.com/openai/spinningup)] [[documentation](https://spinningup.openai.com/en/latest/)]
+- **Spinning Up** -- an educational resource for learning deep RL: [[github](https://github.com/openai/spinningup)] [[documentation](https://spinningup.openai.com/en/latest/)]
 
 </details>

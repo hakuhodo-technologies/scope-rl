@@ -249,13 +249,13 @@ Cumulative Distribution OPE
 ----------
 while the basic OPE is beneficial for estimating the average policy performance, we are often also interested in the performance distribution of the evaluation policy
 and risk-sensitive performance metrics including conditional value at risk (CVaR).
-Cumulative distribution OPE enables to estimate the following cumulative distribution function and risk functions derived by CDF.
+Cumulative distribution OPE enables estimating the following cumulative distribution function and risk functions derived by CDF.
 
 .. math::
 
     F(m, \pi) := \mathbb{E} \left[ \mathbb{I} \left \{ \sum_{t=0}^{T-1} \gamma^t r_t \leq m \right \} \mid \pi \right]
 
-The following shows the example of estimating cumulative distribution function of the trajectory-wise rewards and its statistics 
+The following shows the example of estimating the cumulative distribution function of the trajectory-wise rewards and its statistics 
 using Cumulative Distribution OPE estimators :cite:`huang2021off, huang2022off, chandak2021universal`.
 
 .. code-block:: python
@@ -268,7 +268,7 @@ using Cumulative Distribution OPE estimators :cite:`huang2021off, huang2022off, 
     from scope_rl.ope.discrete import CumulativeDistributionSNIS as CD_SNIS
     from scope_rl.ope.discrete import CumulativeDistributionSNDR as CD_SNDR
 
-    # (4) Evaluate the learned policy using cumulative distribution function (in an offline manner)
+    # (4) Evaluate the learned policy using the cumulative distribution function (in an offline manner)
     # we compare ddqn, cql, and random policy defined in the previous section (i.e., (3) of basic OPE procedure)
     # initialize the OPE class
     cd_ope = CumulativeDistributionOPE(

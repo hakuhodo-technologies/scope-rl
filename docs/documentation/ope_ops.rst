@@ -52,7 +52,7 @@ Estimating the policy value before deploying the policy in an online environment
 However, the challenging point is that we need to answer a counterfactual question, *''What if a new policy chooses a different action from that of behavior policy?''*
 by dealing with the distribution shift between :math:`\pi_b` and :math:`\pi`.
 
-We discuss the properties of various OPE estimators together with their implementaion details in :doc:`Supported OPE estimators <evaluation_implementation>`.
+We discuss the properties of various OPE estimators together with their implementation details in :doc:`Supported OPE estimators <evaluation_implementation>`.
 
 .. seealso::
 
@@ -65,7 +65,7 @@ We discuss the properties of various OPE estimators together with their implemen
 Cumulative Distribution and Risk Function Estimation
 ----------
 
-In practical situation, we are sometimes more interested in risk functions such as conditional value at risk and quartile range rather than the expectation of the trajectory-wise reward.
+In practical situations, we are sometimes more interested in risk functions such as conditional value at risk and quartile range rather than the expectation of the trajectory-wise reward.
 To derive these risk functions, we first estimate the following cumulative distribution function.
 
 .. math::
@@ -82,7 +82,7 @@ Then, we can derive various risk functions based on :math:`F(\cdot)` as follows.
 where we let :math:`G := \sum_{t=0}^{T-1} \gamma^t r_t` to represent the trajectory-wise reward as a random variable 
 and :math:`dF(G) := \mathrm{lim}_{\Delta \rightarrow 0} F(G) - F(G- \Delta)`.
 
-We also discuss the properties of various cumulative distribution OPE estimators together with their implementaion details in :doc:`Supported OPE estimators <evaluation_implementation>`.
+We also discuss the properties of various cumulative distribution OPE estimators together with their implementation details in :doc:`Supported OPE estimators <evaluation_implementation>`.
 
 .. seealso::
 

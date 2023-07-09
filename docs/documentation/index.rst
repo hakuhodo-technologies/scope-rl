@@ -43,7 +43,7 @@ Our software facilitates implementation, evaluation and algorithm comparison rel
 
 * **Off-Policy Selection**:
    OPS aims to select the top-:math:`k` policies from several candidate policies using only offline logged data. Typically, the final production policy is chosen based on the online A/B tests of the top-:math:`k` policies selected by OPS.
-   SCOPE-RL supports implementations of a range of OPS methods and provides some metrics to evaluate OPS result.
+   SCOPE-RL supports implementations of a range of OPS methods and provides some metrics to evaluate the OPS result.
 
 .. note::
 
@@ -89,7 +89,7 @@ Basic OPE
     Policy Value Estimated by OPE Estimators
 
 SCOPE-RL provides a variety of OPE estimators both in discrete and continuous action spaces.
-Moreover, SCOPE-RL also implements meta classes to handle OPE with multiple estimators at once and provide generic classes of OPE estimators to facilitate research development.
+Moreover, SCOPE-RL also implements meta classes to handle OPE with multiple estimators at once and provides generic classes of OPE estimators to facilitate research development.
 
 Basic estimators
 ^^^^^^
@@ -214,7 +214,7 @@ If you use our pipeline in your work, please cite our paper below.
 .. card::
 
     | Haruka Kiyohara, Ren Kishimoto, Kosuke Kawakami, Ken Kobayashi, Kazuhide Nakata, Yuta Saito.
-    | **SCOPE-RL: A Python Library for Offline Reinforcement Learning, Off-Policy Evaluation, and Policy Selectio**
+    | **SCOPE-RL: A Python Library for Offline Reinforcement Learning, Off-Policy Evaluation, and Policy Selection**
     | (a preprint is coming soon..)
 
     .. code-block::

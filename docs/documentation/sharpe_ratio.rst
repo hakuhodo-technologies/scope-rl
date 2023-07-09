@@ -4,12 +4,12 @@
 Risk-Return Assessments of OPE via SharpeRatio@k
 ==========
 
-We describe the SharpeRatio@k metric for assessing the risk-return tradeoff of off-policy selection (OPS) result.
+We describe the SharpeRatio@k metric for assessing the risk-return tradeoff of off-policy selection (OPS) results.
 Note that for the basic problem formulation of Off-Policy Evaluation and Selection (OPE/OPS), please also refer to :doc:`Overview (OPE/OPS) <ope_ops>`.
 
 .. seealso::
 
-    The **SharpeRatio@k** metric is the main contribution of our paper **"Towards Risk-Return Assessments of Off-Policy Evaluation in Offline RL."** 
+    The **SharpeRatio@k** metric is the main contribution of our paper **"Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation in Reinforcement Learning."** 
     Our paper is currently under submission, and the arXiv version of the paper will come soon..
 
     .. A preprint is available at `arXiv <>`_.
@@ -77,7 +77,7 @@ In the above example, all three metrics report the same metric values for both e
     <div class="white-space-5px"></div>
 
 However, since estimator X underestimates near-optimal policies and estimator Y overestimates poor-performing policies, there exists a non-negligible difference in their risk-return tradeoff.
-Unfortunately, all the existing metrics fails to detect by the difference between estimator X and Y.
+Unfortunately, all the existing metrics fail to detect the difference between estimators X and Y.
 This motivates the development of a new evaluation protocol that can quantify the risk-return tradeoff of OPE estimators.
 
 
@@ -127,7 +127,7 @@ While the conventional metrics fail to distinguish the two estimators, SharpeRat
 As we can clearly see, SharpeRatio scores estimator X higher than Y.
 To understand the inner-workings of SharpeRatio@k, we also plot its numerator (return) and denominator (risk) separately in the figure.
 The decomposition of SharpeRatio@k shows that the return ( :math:`\text{best@}k (\hat{J}) - J(\pi_b)`) is the same for both X and Y, while the risk ( :math:`\text{std@}k(\hat{J})`) is substantially larger for estimator Y,
-since estimator Y overestimates the poor-performing policies and thus has the risk of deploying these detrimental polices during subsequent online A/B tests.
+since estimator Y overestimates the poor-performing policies and thus has the risk of deploying these detrimental policies during subsequent online A/B tests.
 Therefore, in terms of SharpeRatio@k, estimator X is preferable to Y, while the difference between the two estimators is overlooked by existing metrics.
 
 .. raw:: html
@@ -162,7 +162,7 @@ In this case, the typical metrics again give W and Z almost the same values, mak
 
     <div class="white-space-5px"></div>
 
-In contrast, our top-:math:`k` RRT metrics report the following results, which clearly distinguishes the two estimatorstaking the problem instance ( :math:`V(\pi_b)`) into account:
+In contrast, our top-:math:`k` RRT metrics report the following results, which clearly distinguish the two estimators taking the problem instance ( :math:`V(\pi_b)`) into account:
 
 .. card::
     :img-top: ../_static/images/sharpe_ratio_2.png
@@ -182,7 +182,7 @@ As shown here, SharpeRatio@k effectively provides valuable guidance on selecting
 
 OPE benchmarks with SharpeRatio@k
 ~~~~~~~~~~
-We conduct OPE benchmark using four continuous control benchmarks including Reacher, InvertedPendulum, Hopper, and Swimmer from Gym-Mujuco :cite:`brockman2016openai` and discrete controls such as CartPole, MountainCar, and Acrobot from Gym-Classic Control :cite:`brockman2016openai`.
+We conduct OPE benchmark using four continuous control benchmarks including Reacher, InvertedPendulum, Hopper, and Swimmer from Gym-Mujoco :cite:`brockman2016openai` and discrete controls such as CartPole, MountainCar, and Acrobot from Gym-Classic Control :cite:`brockman2016openai`.
 For the detailed settings, please refer to Section 4.1 of our paper.
 
 .. raw:: html
@@ -250,14 +250,14 @@ Overall, the benchmark results suggest that SharpeRatio@k provides a more practi
 
 The above figure reports the benchmark results of the OPE estimators with SharpeRatio@4 in various benchmark environments, providing the following directions and suggestions for future OPE research.
 
-1. Future research in OPE should include assessment of estimators under SharpeRatio@k:
+1. Future research in OPE should include assessments of estimators under SharpeRatio@k:
 
     We observe in the previous Acrobot case that SharpeRatio@k offers more practical insights than conventional accuracy metrics, and the benchmark results under SharpeRatio@k sometimes diverge substantially from those under conventional accuracy metrics (See our paper for the details).
     This indicates that future research should, at least additionally, employ SharpeRatio@k to assess OPE estimators in their experiments.
 
 2. A new estimator that explicitly optimizes the risk-return tradeoff:
 
-    Even though DR and MDR are generally considered as more sophisticated in existing research, they do not always outperform DM, PDIS, and MIS under SharpeRatio@k in the above figure.
+    Even though DR and MDR are generally considered more sophisticated in existing research, they do not always outperform DM, PDIS, and MIS under SharpeRatio@k in the above figure.
     This is because they are not specifically designed to enhance the risk-return tradeoff and associated efficiency.
     Therefore, it would be a valuable direction to develop a novel estimator that more explicitly optimizes the risk-return tradeoff than existing methods.
 

@@ -32,7 +32,7 @@ To solve this incompatibility, please use `NewGymAPIWrapper` provided in `scope_
     from scope_rl.utils import NewGymAPIWrapper
     env = NewGymAPIWrapper(env)
 
-.. rubric:: Q. xxx environment does not work on d3rlpy, which is used for model training. How should we fix it? (d3rlpy and SCOPE-RL is compatible with a different version of OpenAI Gym.)
+.. rubric:: Q. xxx environment does not work on d3rlpy, which is used for model training. How should we fix it? (d3rlpy and SCOPE-RL are compatible with a different version of OpenAI Gym.)
 
 A. While SCOPE-RL is compatible with the latest API of OpenAI Gym, d3rlpy is not. Therefore, please use `OldGymAPIWrapper` provided in `scope_rl/utils.py` to enable the use of d3rlpy.
 

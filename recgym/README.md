@@ -17,9 +17,9 @@
 
 ## Overview
 
-*RECGym* is an open-source Python platform for RL simulations on a recommender system (REC) environment. The simulator is particularly intended for reinforcement learning algorithms and follows [OpenAI Gym](https://gym.openai.com) and [Gymnasium](https://gymnasium.farama.org/)-like interface. We design RECGym as a configurative environment so that researchers and practitioner can customize the environmental modules including `UserModel`((i.e. `user_preference_dynamics` and `reward_function`) based on their own research purposes.
+*RECGym* is an open-source Python platform for RL simulations on a recommender system (REC) environment. The simulator is particularly intended for reinforcement learning algorithms and follows [OpenAI Gym](https://gym.openai.com) and [Gymnasium](https://gymnasium.farama.org/)-like interface. We design RECGym as a configurative environment so that researchers and practitioners can customize the environmental modules including `UserModel`((i.e. `user_preference_dynamics` and `reward_function`) based on their own research purposes.
 
-Note that RECGym is publicized under [SCOPE-RL](../) repository, which facilitates the implementation of offline reinforcement learning procedure.
+Note that RECGym is publicized under [SCOPE-RL](../) repository, which facilitates the implementation of the offline reinforcement learning procedure.
 
 ### Basic Setting
 
@@ -36,10 +36,10 @@ We often formulate this recommendation problem as the following (Partially Obser
 RECGym provides a recommender environment.
 - `"RECEnv-v0"`: Standard recommender environment.
 
-RECGym consists of the following a environments.
+RECGym consists of the following environment.
 - [RECEnv](./envs/rec.py#L14): The basic configurative environment.
 
-RECGym is configurative about the following a module.
+RECGym is configurative about the following module.
 - [UserModel](./envs/simulator/function.py#L13): Class to define the user model of the recommender system.
 
 Note that users can customize the above modules by following the [abstract class](./envs/simulator/base.py).
@@ -60,7 +60,7 @@ python setup.py install
 ## Usage
 
 We provide an example usage of the standard and customized environment. \
-The online/offline RL and Off-Policy Evaluation examples are provides in [SCOPE-RL's README](../README.md).
+The online/offline RL and Off-Policy Evaluation examples are provided in [SCOPE-RL's README](../README.md).
 
 ### Standard RECEnv
 
@@ -84,7 +84,7 @@ while not done:
     obs, reward, done, truncated, info = env.step(action)
 ```
 
-Let's visualize the case with uniform random policy .
+Let's visualize the case with the uniform random policy.
 
 ```Python
 # import from other libraries
@@ -123,7 +123,7 @@ plt.show()
 <div align="center"><img src="./images/basic_interaction.png" width="60%"/></div>
 <figcaption>
 <p align="center">
-  Transition of the Reward during a Single Episode
+  The Transition of the Reward during a Single Episode
 </p>
 </figcaption>
 

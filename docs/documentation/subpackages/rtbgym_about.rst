@@ -145,7 +145,7 @@ Customized RTBEnv
 
 Next, we describe how to customize the environment by instantiating the environment.
 
-The list of arguments are given as follows.
+The list of arguments is given as follows.
 
 * :class:`objective`: Objective KPIs of RTB, which is either "click" or "conversion".
 * :class:`cost_indicator`: Timing of arising costs, which is any of "impression", "click", and "conversion".
@@ -155,8 +155,8 @@ The list of arguments are given as follows.
 * :class:`n_users`: Number of users used for auction bidding.
 * :class:`ad_feature_dim`: Dimensions of the ad feature vectors.
 * :class:`user_feature_dim`: Dimensions of the user feature vectors.
-* :class:`ad_feature_vector`: Feature vectors that characterizes each ad.
-* :class:`user_feature_vector`: Feature vectors that characterizes each user.
+* :class:`ad_feature_vector`: Feature vectors that characterize each ad.
+* :class:`user_feature_vector`: Feature vectors that characterize each user.
 * :class:`ad_sampling_rate`: Sampling probabilities to determine which ad (id) is used in each auction.
 * :class:`user_sampling_rate`: Sampling probabilities to determine which user (id) is used in each auction.
 * :class:`WinningPriceDistribution`: Winning price distribution of auctions.
@@ -296,7 +296,7 @@ Example of Custom ClickThroughRate (and Conversion Rate):
             clicks = self.random_.rand(len(ad_ids)) < ctrs
             return clicks.astype(int)
 
-Note that custom conversion rate can be defined in a similar manner.
+Note that custom conversion rates can be defined in a similar manner.
 
 Wrapper class for custom bidding setup
 ----------
@@ -304,7 +304,7 @@ Wrapper class for custom bidding setup
 To customize the bidding setup, we also provide :class:`CustomizedRTBEnv`, which enables discretization or re-definition of the action space.
 In addition, users can set their own :class:`reward_predictor`.
 
-The list of arguments are given as follows.
+The list of arguments is given as follows.
 
 * :class:`original_env`: Original RTB Environment.
 * :class:`reward_predictor`: A machine learning model to predict the reward to determine the bidding price.

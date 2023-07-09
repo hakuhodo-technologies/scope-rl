@@ -45,7 +45,7 @@ Then, the above code produces the following visualization result.
 
     <div class="white-space-20px"></div>
 
-Similarly, the visualization tools are also available for cumulative distribution OPE (CD-OPE).
+Similarly, visualization tools are also available for cumulative distribution OPE (CD-OPE).
 
 .. card::
     :width: 75%
@@ -96,7 +96,7 @@ Similarly, the visualization tools are also available for cumulative distributio
     <div class="white-space-20px"></div>
 
 Moreover, the evaluation of OPE/OPS can also be done by visualizing the top-:math:`k` Risk-Return Tradeoff (RRT) metrics.
-Note that the following figures are applicable to all the point-wise performance estimate including expected policy value, variance, CVaR, and lower quartile.
+Note that the following figures are applicable to all the point-wise performance estimates including expected policy value, variance, CVaR, and lower quartile.
 
 .. card::
     :width: 75%
@@ -111,7 +111,7 @@ Note that the following figures are applicable to all the point-wise performance
     <div class="white-space-20px"></div>
 
 Furthermore, when conducting OPE on multiple logged datasets collected by various behavior policies,
-SCOPE-RL also enables to discuss how the quality of dataset may affect the performance of OPE.
+SCOPE-RL also enables a discussion on how the quality of the dataset may affect the performance of OPE.
 
 First, the following three figures are applicable to the point-wise estimate of expected policy value, variance, CVaR, and lower quartile.
 In the following example, we can learn that OPE results can be particularly unstable when using "ddqn_epsilon_0.1" as the behavior policy, which is more deterministic than other behavior policies.
@@ -168,8 +168,8 @@ In the figure, we observe that the cumulative distribution OPE results do not ch
     <div class="white-space-20px"></div>
 
 Finally, we compare the true policy value (x-axis) and estimated policy value (y-axis) in the following figure.
-For TIS, PDIS, and DR, the result suggests that the variance of OPE estimation becomes particularly large when using near-deterministic behavior policy named "sac_sigma_0.5".
-On the other hand, for SNTIS and SNPDIS, we found that the choice of behavior policy can heavily affects the estimation result of OPE -- OPE results are almost the same across various evaluation policies in the bottom left figures.
+For TIS, PDIS, and DR, the result suggests that the variance of OPE estimation becomes particularly large when using a near-deterministic behavior policy named "sac_sigma_0.5".
+On the other hand, for SNTIS and SNPDIS, we found that the choice of behavior policy can heavily affect the estimation result of OPE -- OPE results are almost the same across various evaluation policies in the bottom left figures.
 This kind of visualization is again available for all point-wise estimates including expected policy value, variance, CVaR, and lower quartile.
 
 .. card::

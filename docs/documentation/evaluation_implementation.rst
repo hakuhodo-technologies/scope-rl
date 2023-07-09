@@ -137,7 +137,7 @@ Before proceeding to OPE/OPS, we first create :class:`input_dict` to enable a sm
 
     .. dropdown:: How to collect input_dict in a non-episodic setting?
 
-        When the goal is to evaluate the policy under a stationary distribution (:math:`d^{\pi}(s)`) rather than in a episodic setting 
+        When the goal is to evaluate the policy under a stationary distribution (:math:`d^{\pi}(s)`) rather than in an episodic setting 
         (i.e., cartpole or taxi used in :cite:`liu2018breaking, uehara2020minimax`), we need to (re-)collect initial states from evaluation policies stationary distribution.
 
         In this case, please turn the following options.
@@ -193,7 +193,7 @@ Using the OPE class, we can obtain the OPE results of various estimators at once
 
     .. dropdown:: How to conduct OPE with multiple logged datasets?
 
-        Conducting OPE with multiple logged datasets requires no additional efforts.
+        Conducting OPE with multiple logged datasets requires no additional effort.
 
         First, the same command with the single logged dataset case also works with multiple logged datasets.
 
@@ -207,7 +207,7 @@ Using the OPE class, we can obtain the OPE results of various estimators at once
                 input_dict,  # MultipleInputDict
             )
 
-        The returned value is dictionary containing the ope result.
+        The returned value is a dictionary containing the ope result.
 
         In addition, we can specify which logged dataset and input_dict to use by setting ``behavior_policy_name`` and ``dataset_id``.
 
@@ -219,7 +219,7 @@ Using the OPE class, we can obtain the OPE results of various estimators at once
                 dataset_id=0,  # specify which logged dataset and input_dict to use
             )
 
-        The basic visualization function also work by specifying the dataset id.
+        The basic visualization function also works by specifying the dataset id.
 
         .. code-block:: python
 
@@ -236,7 +236,7 @@ Using the OPE class, we can obtain the OPE results of various estimators at once
 
             policy value estimated with the specified dataset
 
-        Moreover, we provide additional visualization functions for the multiple logged dataset case.
+        Moreover, we provide additional visualization functions for the case with multiple logged datasets.
 
         .. code-block:: python
 
@@ -344,7 +344,7 @@ Extensions
 
         To define your own OPE estimator, use :class:`BaseOffPolicyEstimator`.
 
-        Basically, the common inputs for each functions are the following keys from ``logged_dataset`` and ``input_dict``.
+        Basically, the common inputs for each function are the following keys from ``logged_dataset`` and ``input_dict``.
 
         (logged_dataset)
 
@@ -375,9 +375,9 @@ Extensions
 
         ``n_step_pdis`` is also applicable to marginal estimators and ``action_scaler`` and ``sigma`` are added in the continuous-action case.
 
-        If you want to add other arguments, please add them in the initialization arguments for API consistency.
+        If you want to add other arguments, please add them to the initialization arguments for API consistency.
 
-        Finally, contribution to SCOPE-RL with a new OPE estimator is more than welcome! Please read `the guidelines for contribution (CONTRIBUTING.md) <https://github.com/hakuhodo-technologies/scope-rl/blob/main/CONTRIBUTING.md>`_.
+        Finally, contributions to SCOPE-RL with a new OPE estimator are more than welcome! Please read `the guidelines for contribution (CONTRIBUTING.md) <https://github.com/hakuhodo-technologies/scope-rl/blob/main/CONTRIBUTING.md>`_.
 
         .. seealso::
 
@@ -387,7 +387,7 @@ Extensions
 
 Direct Method (DM)
 ----------
-DM :cite:`beygelzimer2009offset` is a model-based approach which uses the initial state value (estimated by e.g., Fitted Q Evaluation (FQE) :cite:`le2019batch`).
+DM :cite:`beygelzimer2009offset` is a model-based approach that uses the initial state value (estimated by e.g., Fitted Q Evaluation (FQE) :cite:`le2019batch`).
 It first learns the Q-function and then leverages the learned Q-function as follows.
 
 .. math::
@@ -410,7 +410,7 @@ DM has low variance compared to other estimators, but can produce larger bias du
 Trajectory-wise Importance Sampling (TIS)
 ----------
 
-TIS :cite:`precup2000eligibility` uses importance sampling technique to correct the distribution shift between :math:`\pi` and :math:`\pi_0` as follows.
+TIS :cite:`precup2000eligibility` uses the importance sampling technique to correct the distribution shift between :math:`\pi` and :math:`\pi_0` as follows.
 
 .. math::
 
@@ -454,7 +454,7 @@ It introduces :math:`\hat{Q}` as a baseline estimation in the recursive form of 
     := \frac{1}{n} \sum_{i=1}^n \sum_{t=0}^{T-1} \gamma^t \left(w_{0:t}^{(i)} (r_t^{(i)} - \hat{Q}(s_t^{(i)}, a_t^{(i)})) + w_{0:t-1}^{(i)} \sum_{a \in \mathcal{A}} \pi(a | s_t^{(i)}) \hat{Q}(s_t^{(i)}, a) \right),
 
 DR is unbiased and has lower variance than PDIS when :math:`\hat{Q}(\cdot)` is reasonably accurate to satisfy :math:`0 < \hat{Q}(\cdot) < 2 Q(\cdot)`.
-However, when the importance weight is quite large, it may still suffer from a high variance.
+However, when the importance weight is quite large, it may still suffer from high variance.
 
     * :class:`DoublyRobust`
 
@@ -482,7 +482,7 @@ In more general, self-normalized estimators substitute the importance weight :ma
 
 where :math:`\tilde{w}_{\ast}` is the self-normalized importance weight.
 
-Self-normalized estimators are no longer unbiased, but has variance bounded by :math:`r_{max}^2` while also remaining consistent.
+Self-normalized estimators are no longer unbiased, but have variance bounded by :math:`r_{max}^2` while also remaining consistent.
 
     * :class:`SelfNormalizedTIS`
     * :class:`SelfNormalizedPDIS`
@@ -492,7 +492,7 @@ Self-normalized estimators are no longer unbiased, but has variance bounded by :
 
 Marginalized Importance Sampling Estimators
 ----------
-When the length of trajectory (:math:`T`) is large, even per-decision importance weights can exponentially large in the latter part of the trajectory.
+When the length of the trajectory (:math:`T`) is large, even per-decision importance weights can be exponentially large in the latter part of the trajectory.
 To alleviate this, state marginal or state-action marginal importance weights can be used instead of the per-decision importance weight as follows :cite:`uehara2020minimax, liu2018breaking`.
 
 .. math::
@@ -501,9 +501,9 @@ To alleviate this, state marginal or state-action marginal importance weights ca
     \rho(s) &:= d^{\pi}(s) / d^{\pi_0}(s)
 
 :math:`d^{\pi}(s, a)` and :math:`d^{\pi}(s)` is the marginal visitation probability of the policy :math:`\pi` on :math:`(s, a)` or :math:`s`, respectively. 
-The use of marginal importance weights is particularly beneficial when policy visits the same or similar states among different trajectories or different timestep.
+The use of marginal importance weights is particularly beneficial when policy visits the same or similar states among different trajectories or different timesteps.
 (e.g., when the state transition is something like :math:`\cdots \rightarrow s_1 \rightarrow s_2 \rightarrow s_1 \rightarrow s_2 \rightarrow \cdots` or when the trajectories always visits some particular state as :math:`\cdots \rightarrow s_{*} \rightarrow s_{1} \rightarrow s_{*} \rightarrow \cdots`).
-Then, State-Action Mariginal Importance Sampling (SMIS) and State Marginal Doubly Robust (SMDR) are defined as follows.
+Then, State-Action Marginal Importance Sampling (SMIS) and State Marginal Doubly Robust (SMDR) are defined as follows.
 
 .. math::
 
@@ -556,7 +556,7 @@ where :math:`w_t(s_t, a_t) := \pi(a_t | s_t) / \pi_0(a_t | s_t)` is the immediat
 
         * Minimax Q-Learning and Weight Learning (MQL/MWL) :cite:`uehara2020minimax`:
             This method assumes that one of the value function or weight function is expressed by a function class in a reproducing kernel Hilbert space (RKHS)
-            and optimizes only either value function or weight function.
+            and optimizes only either the value function or the weight function.
 
         .. seealso::
 
@@ -732,7 +732,7 @@ For notations, we denote :math:`\hat{\mathbb{V}}_{\mathcal{D}}(\cdot)` to be the
 :math:`T_{\mathrm{test}}(\cdot,\cdot)` to be T value,
 and :math:`\sigma` to be the standard deviation.
 
-Among the above high confidence interval estimation, hoeffding and empirical bernstein derives lower bound without any distribution assumption of :math:`p(\hat{J})`, which sometimes leads to quite conservative estimation.
+Among the above high confidence interval estimation, hoeffding and empirical bernstein derives a lower bound without any distribution assumption of :math:`p(\hat{J})`, which sometimes leads to quite conservative estimation.
 On the other hand, T-test is based on the assumption that each sample of :math:`p(\hat{J})` follows the normal distribution.
 
 
@@ -803,7 +803,7 @@ We provide the following kernel functions in SCOPE-RL.
             )
 
         For multi-dimension actions, we define the kernel with dot product among actions as :math:`K(a, a') := K(a^T a')`.
-        To control the scale of each dimension, ``action_scaler``, which is speficied in :class:`OffPolicyEvaluation`, is also useful.
+        To control the scale of each dimension, ``action_scaler``, which is specified in :class:`OffPolicyEvaluation`, is also useful.
 
         .. code-block:: python
 
@@ -896,7 +896,7 @@ It estimates the cumulative distribution of the trajectory-wise reward and vario
                 dataset_id=0,  # specify which logged dataset and input_dict to use
             )
 
-        The basic visualization function also work by specifying the dataset id.
+        The basic visualization function also works by specifying the dataset id.
 
         .. code-block:: python
 
@@ -913,9 +913,9 @@ It estimates the cumulative distribution of the trajectory-wise reward and vario
 
             cumulative distribution function estimated with the specified dataset
 
-        Moreover, we provide additional visualization function for the multiple logged dataset case.
+        Moreover, we provide additional visualization functions for the multiple logged dataset case.
 
-        The following visualizes confidence intervals of cumulative distribution function.
+        The following visualizes confidence intervals of the cumulative distribution function.
 
         .. code-block:: python
 
@@ -932,7 +932,7 @@ It estimates the cumulative distribution of the trajectory-wise reward and vario
 
             cumulative distribution function estimated with the multiple datasets
 
-        On contrary, the following visualizes the distribution of multiple estimates of ponit-wise policy performance
+        In contrast, the following visualizes the distribution of multiple estimates of point-wise policy performance
         (e.g., policy value, variance, conditional value at risk, lower quartile).
 
         .. code-block:: python
@@ -1030,7 +1030,7 @@ Extension to the continuous action space
 
         To define your own OPE estimator, use :class:`BaseCumulativeDistributionOPEEstimator`. 
 
-        Basically, the common inputs for each functions are ``reward_scale`` (np.ndarray indicating x-axis of cumulative distribution function)
+        Basically, the common inputs for each function are ``reward_scale`` (np.ndarray indicating x-axis of cumulative distribution function)
         and the following keys from ``logged_dataset`` and ``input_dict``.
 
         (logged_dataset)
@@ -1062,9 +1062,9 @@ Extension to the continuous action space
 
         ``action_scaler`` and ``sigma`` are also added in the continuous-action case.
 
-        If you want to add other arguments, please add them in the initialization arguments for API consistency.
+        If you want to add other arguments, please add them to the initialization arguments for API consistency.
 
-        Finally, contribution to SCOPE-RL with a new OPE estimator is more than welcome! Please read `the guidelines for contribution (CONTRIBUTING.md) <https://github.com/hakuhodo-technologies/scope-rl/blob/main/CONTRIBUTING.md>`_.
+        Finally, contributions to SCOPE-RL with a new OPE estimator are more than welcome! Please read `the guidelines for contribution (CONTRIBUTING.md) <https://github.com/hakuhodo-technologies/scope-rl/blob/main/CONTRIBUTING.md>`_.
 
         .. seealso::
 
@@ -1092,7 +1092,7 @@ DM is vulnerable to the approximation error, but has low variance.
 Trajectory-wise Importance Sampling (TIS)
 ----------
 
-TIS corrects the distribution shift by applying importance sampling technique on the cumulative distribution estimation.
+TIS corrects the distribution shift by applying the importance sampling technique on the cumulative distribution estimation.
 
 .. math::
 
@@ -1148,16 +1148,16 @@ Evaluation Metrics of OPE/OPS
 Finally, we describe the metrics to evaluate the quality of OPE estimators and its OPS results.
 
 * Mean Squared Error (MSE) :cite:`paine2020hyperparameter, voloshin2021empirical, fu2021benchmarks`: 
-    This metrics measures the estimation accuracy as :math:`\sum_{\pi \in \Pi} (\hat{J}(\pi; \mathcal{D}) - J(\pi))^2 / |\Pi|`.
+    This metric measures the estimation accuracy as :math:`\sum_{\pi \in \Pi} (\hat{J}(\pi; \mathcal{D}) - J(\pi))^2 / |\Pi|`.
 
 * Regret@k :cite:`paine2020hyperparameter, fu2021benchmarks`: 
-    This metrics measures how well the selected policy(ies) performs. In particular, Regret@1 indicates the expected performance difference between the (oracle) best policy and the selected policy as :math:`J(\pi^{\ast}) - J(\hat{\pi}^{\ast})`, where :math:`\pi^{\ast} := {\arg\max}_{\pi \in \Pi} J(\pi)` and :math:`\hat{\pi}^{\ast} := {\arg\max}_{\pi \in \Pi} \hat{J}(\pi; \mathcal{D})`.
+    This metric measures how well the selected policy(ies) performs. In particular, Regret@1 indicates the expected performance difference between the (oracle) best policy and the selected policy as :math:`J(\pi^{\ast}) - J(\hat{\pi}^{\ast})`, where :math:`\pi^{\ast} := {\arg\max}_{\pi \in \Pi} J(\pi)` and :math:`\hat{\pi}^{\ast} := {\arg\max}_{\pi \in \Pi} \hat{J}(\pi; \mathcal{D})`.
 
 * Spearman's Rank Correlation Coefficient :cite:`paine2020hyperparameter, fu2021benchmarks`: 
-    This metrics measures how well the raking of the candidate estimators are preserved in the OPE result.
+    This metric measures how well the ranking of the candidate estimators is preserved in the OPE result.
 
 * Type I and Type II Error Rate:
-    This metrics measures how well an OPE estimator validates whether the policy performance surpasses the given safety threshold or not.
+    This metric measures how well an OPE estimator validates whether the policy performance surpasses the given safety threshold or not.
 
 To ease the comparison of candidate (evaluation) policies and the OPE estimators, we provide the :class:`OffPolicySelection` class.
 
@@ -1203,7 +1203,7 @@ Finally, the OPS class also implements the modules to compare the OPE result and
 
     .. dropdown:: How to conduct OPS with multiple logged datasets?
 
-        Conducting OPS with multiple logged datasets requires no additional efforts.
+        Conducting OPS with multiple logged datasets requires no additional effort.
 
         First, the same command with the single logged dataset case also works with multiple logged datasets.
 
@@ -1219,10 +1219,10 @@ Finally, the OPS class also implements the modules to compare the OPE result and
                 return_by_dataframe=True,
             )
 
-        The returned value is dictionary containing the ops result.
+        The returned value is a dictionary containing the ops result.
 
         Next, visualization functions for OPS demonstrate the aggregated ops result by default.
-        For example, the average topk performance and its confidence intervals is shown for topk visualization.
+        For example, the average top-k performance and its confidence intervals are shown for the top-k visualization.
 
         .. code-block:: python
 

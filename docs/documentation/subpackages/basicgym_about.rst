@@ -9,7 +9,7 @@ Overview
 ~~~~~~~~~~
 *BasicGym* is a basic simulation platform for RL.
 The simulator is particularly intended for reinforcement learning algorithms and follows `OpenAI Gym <https://github.com/openai/gym>`_ and `Gymnasium <https://github.com/Farama-Foundation/Gymnasium>`_ interface.
-We design BasicGym as a configurative environment so that researchers and practitioner can customize the environmental modules including UserModel.
+We design BasicGym as a configurative environment so that researchers and practitioners can customize the environmental modules including UserModel.
 
 Note that BasicGym is publicized as a sub-package of :doc:`SCOPE-RL </documentation/index>`, which streamlines the implementation of offline reinforcement learning (offline RL) and off-policy evaluation and selection (OPE/OPS) procedures.
 
@@ -117,7 +117,7 @@ The list of arguments are given as follows.
 * :class:`action_type`: Type of the action space.
 * :class:`n_actions`: Number of actions in the discrete action case.
 * :class:`action_dim`: Dimension of the action (context).
-* :class:`action_context`: Feature vectors that characterizes each action. Applicable only when action_type is "discrete".
+* :class:`action_context`: Feature vectors that characterize each action. Applicable only when action_type is "discrete".
 * :class:`reward_type`: Reward type.
 * :class:`reward_std`: Noise level of the reward. Applicable only when reward_type is "continuous".
 * :class:`obs_std`: Noise level of the state observation.
@@ -220,7 +220,7 @@ If you use our pipeline in your work, please cite our paper below.
    @article{kiyohara2023towards,
       author = {Kiyohara, Haruka and Kishimoto, Ren and Kawakami, Kosuke and Kobayashi, Ken and Nataka, Kazuhide and Saito, Yuta},
       title = {Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation in Reinforcement Learning},
-      journal = {A github repository},
+      journal = {A GitHub repository},
       pages = {xxx--xxx},
       year = {2023},
    }

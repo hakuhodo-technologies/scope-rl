@@ -126,8 +126,8 @@ Moreover, in continuous action space, Actor-Critic is often more suitable than Q
 
 Offline Reinforcement Learning
 ~~~~~~~~~~
-While online learning is a powerful framework to learn a (near) optimal policy through interaction, it also entails risk of taking sub-optimal or even unsafe actions, especially in the initial learning phase :cite:`levine2020offline`.
-Moreover, updating a policy in a online manner may also require huge implementation costs (particularly in applications such as recommender systems and robotics) :cite:`matsushima2020deployment`.
+While online learning is a powerful framework to learn a (near) optimal policy through interaction, it also entails the risk of taking sub-optimal or even unsafe actions, especially in the initial learning phase :cite:`levine2020offline`.
+Moreover, updating a policy in an online manner may also require huge implementation costs (particularly in applications such as recommender systems and robotics) :cite:`matsushima2020deployment`.
 
 .. card:: Description of Offline Reinforcement Learning
     :width: 75%
@@ -157,7 +157,7 @@ Therefore, when learning a new policy in an offline manner, we need to answer th
 Further, the state and reward observations in the logged dataset are also biased since state transition and data collection heavily depend on the action chosen by the behavior policy.
 Therefore, we need to tackle the `distributional shift` between the behavior policy and a new policy and deal with the out-of-distribution problem.
 
-The problem of Extrapolation Error
+The Problem of Extrapolation Error
 ----------
 Apparently, Q-learning seems to be compatible with the offline setting, as it uses a large amount of data to learn Q-function.
 However, Q-function is known to suffer from `extrapolation error` :cite:`fujimoto2019off`
@@ -196,11 +196,11 @@ For example, BRAC :cite:`wu2019behavior` regularizes the discrepancy between the
 
     \hat{\mathcal{L}}_{\mathrm{TD}}(\theta, \mathcal{D}) \propto \mathbb{E}_n \left[ \left( Q_{\theta}(s_t, a_t) - (r_t + \hat{Q}_{\mathrm{target}}(s_{t+1}, \pi(s_{t+1})) - \alpha D(\pi(\cdot | s_{t+1}), \pi_b(\cdot | s_{t+1}))) \right)^2 \right]
 
-where :math:`\alpha` is the weight of the divergence regularization and :math:`D(\cdot, \cdot)` is some divergence metrics such as KL-divergence or Wassertein distance.
-This method forces :math:`\hat{Q}_{\mathrm{target}}` to understimate the out-distribution actions by explicitly regularizing the distribution shift.
+where :math:`\alpha` is the weight of the divergence regularization and :math:`D(\cdot, \cdot)` is some divergence metrics such as KL-divergence or Wasserstein distance.
+This method forces :math:`\hat{Q}_{\mathrm{target}}` to underestimate the out-distribution actions by explicitly regularizing the distribution shift.
 However, the divergence regularization may also limit the generalizability of the policy, as the penalty term keeps the learned policy too similar to the behavior policy even when the Q-function is adequately accurate (e.g., when the :math:`\pi_b` is uniform random or follows a multi-modal distribution).
 
-Similarly, we can regularize the distribution shift is by directly imitating :math:`\pi_b` in the policy optimization phase.
+Similarly, we can regularize the distribution shift by directly imitating :math:`\pi_b` in the policy optimization phase.
 For example, TD3+BC :cite:`fujimoto2021minimalist` imposes a strong behavior cloning regularization when the average Q-value is large.
 
 .. math::
@@ -264,7 +264,7 @@ Implicit Q-Learning
 
 One of the limitations of the above approaches is that they may sacrifice the generalizability due to the explicit regularization on the out-of-distribution state-action pairs.
 
-To tackle this issue, IQL :cite:`kostrikov2021offline` aims to learn a conservative policy without the explicit out-of-distribution regularization.
+To tackle this issue, IQL :cite:`kostrikov2021offline` aims to learn a conservative policy without explicit out-of-distribution regularization.
 For this, IQL first estimates the state-value function (V-function) with the asymmetric loss to penalize the optimism as follows.
 
 .. math::

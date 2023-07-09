@@ -44,7 +44,7 @@ Then, it collects logged data by a behavior policy (i.e., data collection policy
         A policy head converts a `d3rlpy <https://github.com/takuseno/d3rlpy>`_'s deterministic behavior policy to 
         either a deterministic or stochastic policy with functions to calculate propensity scores (i.e., action choice probabilities).
 
-        For example, :class:`EpsilonGreedyHead` converts a discrete-action policy to a epsilon-greedy policy as follows.
+        For example, :class:`EpsilonGreedyHead` converts a discrete-action policy to an epsilon-greedy policy as follows.
 
         .. code-block:: python
 
@@ -72,7 +72,7 @@ Then, it collects logged data by a behavior policy (i.e., data collection policy
 
         .. seealso::
 
-            For the detail descriptions and additional supported implementations, please refer to the :ref:`Policy Wrappers <implementation_policy_head>` section later in this page.
+            For detailed descriptions and additional supported implementations, please refer to the :ref:`Policy Wrappers <implementation_policy_head>` section later in this page.
 
     .. dropdown:: How to customize the dataset class?
 
@@ -119,7 +119,7 @@ Then, it collects logged data by a behavior policy (i.e., data collection policy
 
         :class:`MultipleLoggedDataset` enables us to smoothly handle multiple logged datasets. 
 
-        Specifically, :class:`MultipleLoggedDataset` saves the paths to each logged dataset and make each dataset accessible through the following command.
+        Specifically, :class:`MultipleLoggedDataset` saves the paths to each logged dataset and makes each dataset accessible through the following command.
         
         .. code-block:: python
 
@@ -182,7 +182,7 @@ Then, it collects logged data by a behavior policy (i.e., data collection policy
     .. dropdown:: How to collect data in a non-episodic setting?
 
         When the goal is to evaluate the policy under a stationary distribution (:math:`d^{\pi}(s)`) rather than in an episodic setting 
-        (i.e., cartpole or taxi used in :cite:`liu2018breaking, uehara2020minimax`), we need to collect data from stationary distribution.
+        (i.e., cartpole or taxi used in :cite:`liu2018breaking, uehara2020minimax`), we need to collect data from the stationary distribution.
 
         For this, please consider using :class:`obtain_step` instead of :class:`obtain_episodes` as follows.
 
@@ -242,7 +242,7 @@ For this, `d3rlpy <https://github.com/takuseno/d3rlpy>`_ provides various offlin
         n_steps=10000,
     )
 
-While the above procedure is alreaady simple and easy-to-use, 
+While the above procedure is already simple and easy to use, 
 we also provide :class:`TrainCandidatePolicies` as a meta class to further smoothen the ORL procedure with various algorithms.
 
 .. code-block:: python
@@ -344,7 +344,7 @@ The obtained evaluation policies are the following (both algorithms and policy w
 
     .. dropdown:: How to handle OPL with multiple logged datasets?
 
-        :class:`TrainCandidatePolicies` is particularly useful when fitting offline RL algorithms on multiple logged dataset.
+        :class:`TrainCandidatePolicies` is particularly useful when fitting offline RL algorithms on multiple logged datasets.
 
         We can apply the same algorithms and policies wrappers across multiple datasets by the following command.
 
@@ -404,7 +404,7 @@ Here, we describe some useful wrapper tools to convert a `d3rlpy <https://github
 
         Please just override these functions for online interactions. :class:`OnlineHead` is also useful for this purpose.
 
-        Next, for the second purpose, you can customize how to convert a deterministic policy to a stochastic policy using following functions.
+        Next, for the second purpose, you can customize how to convert a deterministic policy to a stochastic policy using the following functions.
 
         * :class:`sample_action_and_output_pscore_online`
         * :class:`calc_action_choice_probability`
@@ -424,7 +424,7 @@ Here, we describe some useful wrapper tools to convert a `d3rlpy <https://github
 
 DiscreteHead
 ----------
-This module transforms a deterministic policy to a stochastic one in discrete action cases.
+This module transforms a deterministic policy into a stochastic one in discrete action cases.
 Specifically, we have the following two options.
 
     * :class:`EpsilonGreedyHead`: :math:`\pi(a | s) := (1 - \epsilon) * \pi_{\mathrm{det}}(a | s) + \epsilon / |\mathcal{A}|`.
@@ -450,7 +450,7 @@ We also provide the wrapper class of deterministic policy to be used in OPE.
 
 OnlineHead
 ----------
-This module enables online interaction of the policy (note: `d3rlpy <https://github.com/takuseno/d3rlpy>`_'s policy is particularly designed for batch interactions).
+This module enables online interaction with the policy (note: `d3rlpy <https://github.com/takuseno/d3rlpy>`_'s policy is particularly designed for batch interactions).
 
     * :class:`OnlineHead`
 

@@ -17,9 +17,9 @@
 
 ## Overview
 
-*BasicGym* is an open-source simulation platform for synthetic simulation, which is written in Python. The simulator is particularly intended for reinforcement learning algorithms and follows [OpenAI Gym](https://gym.openai.com) and [Gymnasium](https://gymnasium.farama.org/)-like interface. We design SyntheticGym as a configurative environment so that researchers and practitioner can customize the environmental modules including `StateTransitionFunction` and `RewardFunction`
+*BasicGym* is an open-source simulation platform for synthetic simulation, which is written in Python. The simulator is particularly intended for reinforcement learning algorithms and follows [OpenAI Gym](https://gym.openai.com) and [Gymnasium](https://gymnasium.farama.org/)-like interface. We design SyntheticGym as a configurative environment so that researchers and practitioners can customize the environmental modules including `StateTransitionFunction` and `RewardFunction`
 
-Note that SyntheticGym is publicized under [scope-rl](../) repository, which facilitates the implementation of offline reinforcement learning procedure.
+Note that SyntheticGym is publicized under [scope-rl](../) repository, which facilitates the implementation of the offline reinforcement learning procedure.
 
 ### Basic Setting
 
@@ -27,20 +27,20 @@ We formulate the following (Partially Observable) Markov Decision Process ((PO)M
 - `state`:
    - State observation, which may be noisy in POMDPs.
 - `action`:
-   - Indicating the action to presented by the RL agent.
+   - Indicating the action presented by the RL agent.
 - `reward`:
    - Observed immediate rewards.
 
 ### Implementation
 
-SyntheticGym provides a standardize environment in both discrete and continuous action settings.
+SyntheticGym provides a standardized environment in both discrete and continuous action settings.
 - `"BasicEnv-continuous-v0"`: Standard continuous environment.
 - `"BasicEnv-discrete-v0"`: Standard discrete environment.
 
 SyntheticGym consists of the following a environments.
 - [BasicEnv](./envs/basic.py#L18): The basic configurative environment.
 
-SyntheticGym is configurative about the following a module.
+SyntheticGym is configurative about the following module.
 - [StateTransitionFunction](./envs/simulator/function.py#L14): Class to define the state transition function.
 - [RewardFunction](./envs/simulator/function.py#L101): Class to define the reward function.
 
@@ -52,7 +52,7 @@ SyntheticGym can be installed as a part of [scope-rl](../) using Python's packag
 pip install scope-rl
 ```
 
-You can also install from source.
+You can also install from the source.
 ```bash
 git clone https://github.com/hakuhodo-technologies/scope-rl
 cd scope-rl
@@ -62,7 +62,7 @@ python setup.py install
 ## Usage
 
 We provide an example usage of the standard and customized environment. \
-The online/offline RL and Off-Policy Evaluation examples are provides in [SCOPE-RL's README](../README.md).
+The online/offline RL and Off-Policy Evaluation examples are provided in [SCOPE-RL's README](../README.md).
 
 ### Standard SyntheticEnv
 
@@ -86,7 +86,7 @@ while not done:
     obs, reward, done, truncated, info = env.step(action)
 ```
 
-Let's visualize the case with uniform random policy .
+Let's visualize the case with the uniform random policy.
 
 ```Python
 # import from other libraries
@@ -148,7 +148,7 @@ Next, we describe how to customize the environment by instantiating the environm
 - `action_type`: Type of the action space.
 - `n_actions`: Number of actions in the discrete action case.
 - `action_dim`: Dimension of the action (context).
-- `action_context`: Feature vectors that characterizes each action. Applicable only when action_type is "discrete".
+- `action_context`: Feature vectors that characterize each action. Applicable only when action_type is "discrete".
 - `reward_type`: Reward type.
 - `reward_std`: Noise level of the reward. Applicable only when reward_type is "continuous".
 - `obs_std`: Noise level of the state observation.

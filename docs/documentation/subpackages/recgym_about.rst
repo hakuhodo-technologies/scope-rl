@@ -7,7 +7,7 @@ RECGym
 
 Overview
 ~~~~~~~~~~
-*RECGym* is an open-source simulation platform for recommender system.
+*RECGym* is an open-source simulation platform for recommender systems.
 The simulator is particularly intended for reinforcement learning algorithms and follows `OpenAI Gym <https://github.com/openai/gym>`_ and `Gymnasium <https://github.com/Farama-Foundation/Gymnasium>`_ interface.
 We design RECGym as a configurative environment so researchers and practitioners can customize the environmental modules including UserModel.
 
@@ -21,7 +21,7 @@ We often formulate this problem as the following (Partially Observable) Markov D
 * `state` (:math:`s \in \mathcal{S}`):
 
     * A vector representing user preference. The preference changes over time in an episode depending on the actions presented by the RL agent.
-    * When the true state is unobservable, you can gain observation instead of state.
+    * When the true state is unobservable, you can gain observation instead of a state.
 
 * `action`(:math:`a \in \mathcal{A}`):  Index of an item to present to the user.
 * `reward`(:math:`r \in \mathbb{R}`): User engagement signal as a reward. Either binary or continuous.
@@ -104,7 +104,7 @@ Let's interact uniform random policy with a discrete action REC environment.
         obs, reward, done, truncated, info = env.step(action)
 
 Note that while we use :doc:`SCOPE-RL </documentation/index>` and `d3rlpy <https://github.com/takuseno/d3rlpy>`_ here,
-RECGym is compatible with any other libraries that is compatible with the `OpenAI Gym <https://github.com/openai/gym>`_
+RECGym is compatible with any other libraries that are compatible with the `OpenAI Gym <https://github.com/openai/gym>`_
 and `Gymnasium <https://github.com/Farama-Foundation/Gymnasium>`_ interface.
 
 Customized RECEnv
@@ -119,8 +119,8 @@ The list of arguments are given as follows.
 * :class:`n_users`: Number of users used for recommendation.
 * :class:`item_feature_dim`: Dimensions of the item feature vectors.
 * :class:`user_feature_dim`: Dimensions of the user feature vectors.
-* :class:`item_feature_vector`: Feature vectors that characterizes each item.
-* :class:`user_feature_vector`: Feature vectors that characterizes each user.
+* :class:`item_feature_vector`: Feature vectors that characterize each item.
+* :class:`user_feature_vector`: Feature vectors that characterize each user.
 * :class:`reward_type`: Reward type (i.e., continuous / binary).
 * :class:`reward_std`: Standard deviation of the reward distribution. Applicable only when reward_type is "continuous".
 * :class:`obs_std`: Standard deviation of the observation distribution.
@@ -178,7 +178,7 @@ Example of Custom UserModel:
             action: Action,
             alpha: float = 1.0,
         )-> np.ndarray:
-            """Function that determines the user state transition (i.e., user preference) based on the recommended item. user_feature is amplified by the recommended item_feature
+            """Function that determines the user state transition.
             """
             state = (state + alpha * state @ self.item_feature_vector[action] * self.item_feature_vector[action])
             state = state / np.linalg.norm(state, ord=2)
@@ -189,7 +189,7 @@ Example of Custom UserModel:
             state: np.ndarray,
             action: Action,
         )-> float:
-            """Reward function. inner product of state and recommended item_feature
+            """Reward function.
             """
             reward = state @ self.item_feature_vector[action]
             if self.reward_type is "continuous":
