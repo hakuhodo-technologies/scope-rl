@@ -14,3 +14,5 @@ def torch_seed(random_state: int, device=str):
         torch.cuda.manual_seed(random_state)
 
     torch.manual_seed(random_state)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False

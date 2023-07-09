@@ -4,21 +4,21 @@ This directory includes the code to replicate the benchmark experiment done in t
 
 Haruka Kiyohara, Ren Kishimoto, Kousuke Kawakami, Ken Kobayashi, Kazuhide Nakata, Yuta Saito.<br>
 **Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation in Reinforcement Learning**<br>
-[link]() (a preprint coming soon..)
+[link]() (a preprint is coming soon..)
 
 If you find this code useful in your research then please cite:
 ```
 @article{kiyohara2023towards,
   title={Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation in Reinforcement Learning},
   author={Kiyohara, Haruka and Kishimoto, Ren and Kawakami, Kosuke and Kobayashi, Ken and Nataka, Kazuhide and Saito, Yuta},
-  journal = {A github repository},
+  journal = {A GitHub repository},
   pages = {xxx--xxx},
   year = {2023},
 }
 ```
 
 ## Setting
-We use continuous control benchmarks such as Reacher, InvertedPendulum, Hopper, and Swimmer from Gym-Mujuco and discrete controls such as CartPole, MountainCar, and Acrobot from Gym-Classic Control.
+We use continuous control benchmarks such as Reacher, InvertedPendulum, Hopper, and Swimmer from Gym-Mujoco and discrete controls such as CartPole, MountainCar, and Acrobot from Gym-Classic Control.
 
 ## Compared Off-Policy Estimators
 In the benchmark experiment, we evaluate the estimation performance of the following OPE estimators.
@@ -46,7 +46,7 @@ This repository supports Python 3.9 or newer.
 - mujoco==2.3.5
 - d3rlpy==1.1.1
 - hydra-core==1.3.2
-- scope-rl==0.1.0
+- scope-rl==0.1.1
 
 ## Running the code
 To conduct the synthetic experiment, run the following commands. Note that, make sure that the path is connected to `scope-rl` and `scope-rl/experiments` directories.

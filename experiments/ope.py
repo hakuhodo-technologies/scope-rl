@@ -2,6 +2,7 @@ import time
 from typing import List
 from pathlib import Path
 import pickle
+import random
 
 import hydra
 from omegaconf import DictConfig
@@ -144,6 +145,8 @@ def obtain_test_logged_dataset(
             test_logged_dataset = pickle.load(f)
 
     else:
+        random.seed(base_random_state)
+        np.random.seed(base_random_state)
         torch_seed(base_random_state, device=device)
         d3rlpy.seed(base_random_state)
 
@@ -261,6 +264,8 @@ def off_policy_evaluation(
             input_dict = pickle.load(f)
 
     else:
+        random.seed(base_random_state)
+        np.random.seed(base_random_state)
         torch_seed(base_random_state, device=device)
         d3rlpy.seed(base_random_state)
 
@@ -340,6 +345,11 @@ def off_policy_evaluation(
         )
         with open(path_input_dict, "wb") as f:
             pickle.dump(input_dict, f)
+
+    random.seed(base_random_state)
+    np.random.seed(base_random_state)
+    torch_seed(base_random_state, device=device)
+    d3rlpy.seed(base_random_state)
 
     if action_type == "continuous":
         ope_estimators = [C_DM(), C_PDIS(), C_DR(), C_MIS(), C_MDR()]

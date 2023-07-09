@@ -2,6 +2,7 @@ import time
 from typing import List
 from pathlib import Path
 import pickle
+import random
 
 import hydra
 from omegaconf import DictConfig
@@ -60,6 +61,8 @@ def train_behavior_policy(
     path_.mkdir(exist_ok=True, parents=True)
     path_behavior_policy = Path(path_ / f"behavior_policy_{env_name}.pt")
 
+    random.seed(base_random_state)
+    np.random.seed(base_random_state)
     torch_seed(base_random_state, device=device)
     d3rlpy.seed(base_random_state)
 
@@ -180,6 +183,8 @@ def obtain_train_logged_dataset(
             train_logged_dataset = pickle.load(f)
 
     else:
+        random.seed(base_random_state)
+        np.random.seed(base_random_state)
         torch_seed(base_random_state, device=device)
         d3rlpy.seed(base_random_state)
 
@@ -237,6 +242,8 @@ def train_candidate_policies(
             base_policies = pickle.load(f)
 
     else:
+        random.seed(base_random_state)
+        np.random.seed(base_random_state)
         torch_seed(base_random_state, device=device)
         d3rlpy.seed(base_random_state)
 
@@ -460,6 +467,11 @@ def process(
         base_model_config=base_model_config,
         log_dir=log_dir,
     )
+
+    random.seed(base_random_state)
+    np.random.seed(base_random_state)
+    torch_seed(base_random_state, device=device)
+    d3rlpy.seed(base_random_state)
 
     path_ = Path(log_dir + f"/results/on_policy")
     path_.mkdir(exist_ok=True, parents=True)
