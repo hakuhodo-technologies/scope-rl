@@ -804,7 +804,7 @@ class OldGymAPIWrapper:
         self.env.close()
 
     def seed(self, seed: Optional[int] = None):
-        self.env.reset(seed)
+        self.env.reset(seed=seed)
 
     def __getattr__(self, key) -> Any:
         return object.__getattribute__(self.env, key)
