@@ -112,6 +112,13 @@ def train_behavior_policy(
                 epsilon=base_model_config.ddqn.explorer.epsilon,
             )
 
+        random.seed(base_random_state)
+        np.random.seed(base_random_state)
+        torch_seed(base_random_state, device=device)
+        d3rlpy.seed(base_random_state)
+        env.reset(seed=base_random_state)
+        env_.seed(base_random_state)
+
         if action_type == "continuous":
             model.fit_online(
                 env_,
