@@ -14,6 +14,7 @@ from basicgym import BasicEnv
 
 import numpy as np
 
+from d3rlpy.algos import DiscreteRandomPolicy
 from d3rlpy.algos import SAC
 from d3rlpy.algos import DoubleDQN as DDQN
 from d3rlpy.algos import CQL
@@ -24,12 +25,13 @@ from d3rlpy.online.explorers import LinearDecayEpsilonGreedy
 from d3rlpy.models.encoders import VectorEncoderFactory
 from d3rlpy.models.q_functions import MeanQFunctionFactory
 from d3rlpy.online.buffers import ReplayBuffer
+
 from scope_rl.dataset import SyntheticDataset
 from scope_rl.policy import BaseHead
-from scope_rl.policy import ContinuousGaussianHead as GaussianHead
-from scope_rl.policy import DiscreteEpsilonGreedyHead as EpsilonGreedyHead
-from scope_rl.policy import DiscreteSoftmaxHead as SoftmaxHead
-from scope_rl.policy import OffPolicyLearning
+from scope_rl.policy import GaussianHead
+from scope_rl.policy import EpsilonGreedyHead
+from scope_rl.policy import SoftmaxHead
+from scope_rl.policy import TrainCandidatePolicies
 
 
 from scope_rl.utils import MinMaxActionScaler
@@ -37,61 +39,54 @@ from scope_rl.utils import OldGymAPIWrapper
 from scope_rl.types import LoggedDataset
 
 # ope 
-from scope_rl.dataset import SyntheticDataset
-from scope_rl.policy import BaseHead
-from scope_rl.policy import ContinuousGaussianHead as GaussianHead
-from scope_rl.policy import DiscreteEpsilonGreedyHead as EpsilonGreedyHead
-from scope_rl.policy import DiscreteSoftmaxHead as SoftmaxHead
-from scope_rl.policy import OffPolicyLearning
-
 from scope_rl.ope import OffPolicyEvaluation
 from scope_rl.ope import OffPolicySelection
 # continuous
 # basic estimators
-from scope_rl.ope import ContinuousDirectMethod as C_DM
-from scope_rl.ope import ContinuousTrajectoryWiseImportanceSampling as C_TIS
-from scope_rl.ope import ContinuousPerDecisionImportanceSampling as C_PDIS
-from scope_rl.ope import ContinuousDoublyRobust as C_DR
+from scope_rl.ope.continuous import DirectMethod as C_DM
+from scope_rl.ope.continuous import TrajectoryWiseImportanceSampling as C_TIS
+from scope_rl.ope.continuous import PerDecisionImportanceSampling as C_PDIS
+from scope_rl.ope.continuous import DoublyRobust as C_DR
 # self normalized estimators
-from scope_rl.ope import ContinuousSelfNormalizedTIS as C_SNTIS
-from scope_rl.ope import ContinuousSelfNormalizedPDIS as C_SNPDIS
-from scope_rl.ope import ContinuousSelfNormalizedDR as C_SNDR
-from scope_rl.ope import ContinuousStateActionMarginalSNIS as C_MIS
-from scope_rl.ope import ContinuousStateActionMarginalSNDR as C_MDR
+from scope_rl.ope.continuous import SelfNormalizedTIS as C_SNTIS
+from scope_rl.ope.continuous import SelfNormalizedPDIS as C_SNPDIS
+from scope_rl.ope.continuous import SelfNormalizedDR as C_SNDR
+from scope_rl.ope.continuous import StateActionMarginalSNIS as C_MIS
+from scope_rl.ope.continuous import StateActionMarginalSNDR as C_MDR
 # marginal estimators
-from scope_rl.ope import ContinuousStateActionMarginalIS as C_SAMIS
-from scope_rl.ope import ContinuousStateActionMarginalDR as C_SAMDR
-from scope_rl.ope import ContinuousStateMarginalIS as C_SMIS
-from scope_rl.ope import ContinuousStateMarginalDR as C_SMDR
-from scope_rl.ope import ContinuousStateActionMarginalSNIS as C_SAMSNIS
-from scope_rl.ope import ContinuousStateActionMarginalSNDR as C_SAMSNDR
-from scope_rl.ope import ContinuousStateMarginalSNIS as C_SMSNIS
-from scope_rl.ope import ContinuousStateMarginalSNDR as C_SMSNDR
+from scope_rl.ope.continuous import StateActionMarginalIS as C_SAMIS
+from scope_rl.ope.continuous import StateActionMarginalDR as C_SAMDR
+from scope_rl.ope.continuous import StateMarginalIS as C_SMIS
+from scope_rl.ope.continuous import StateMarginalDR as C_SMDR
+from scope_rl.ope.continuous import StateActionMarginalSNIS as C_SAMSNIS
+from scope_rl.ope.continuous import StateActionMarginalSNDR as C_SAMSNDR
+from scope_rl.ope.continuous import StateMarginalSNIS as C_SMSNIS
+from scope_rl.ope.continuous import StateMarginalSNDR as C_SMSNDR
 # double reinforcement learning estimators
-from scope_rl.ope import ContinuousDoubleReinforcementLearning as C_DRL
+from scope_rl.ope.continuous import DoubleReinforcementLearning as C_DRL
 # discrete
 # basic estimators
-from scope_rl.ope import DiscreteDirectMethod as D_DM
-from scope_rl.ope import DiscreteTrajectoryWiseImportanceSampling as D_TIS
-from scope_rl.ope import DiscretePerDecisionImportanceSampling as D_PDIS
-from scope_rl.ope import DiscreteDoublyRobust as D_DR
+from scope_rl.ope.discrete import DirectMethod as D_DM
+from scope_rl.ope.discrete import TrajectoryWiseImportanceSampling as D_TIS
+from scope_rl.ope.discrete import PerDecisionImportanceSampling as D_PDIS
+from scope_rl.ope.discrete import DoublyRobust as D_DR
 # self normalized estimators
-from scope_rl.ope import DiscreteSelfNormalizedTIS as D_SNTIS
-from scope_rl.ope import DiscreteSelfNormalizedPDIS as D_SNPDIS
-from scope_rl.ope import DiscreteSelfNormalizedDR as D_SNDR
-from scope_rl.ope import DiscreteStateActionMarginalSNIS as D_MIS
-from scope_rl.ope import DiscreteStateActionMarginalSNDR as D_MDR
+from scope_rl.ope.discrete import SelfNormalizedTIS as D_SNTIS
+from scope_rl.ope.discrete import SelfNormalizedPDIS as D_SNPDIS
+from scope_rl.ope.discrete import SelfNormalizedDR as D_SNDR
+from scope_rl.ope.discrete import StateActionMarginalSNIS as D_MIS
+from scope_rl.ope.discrete import StateActionMarginalSNDR as D_MDR
 # marginal estimators
-from scope_rl.ope import DiscreteStateActionMarginalIS as D_SAMIS
-from scope_rl.ope import DiscreteStateActionMarginalDR as D_SAMDR
-from scope_rl.ope import DiscreteStateMarginalIS as D_SMIS
-from scope_rl.ope import DiscreteStateMarginalDR as D_SMDR
-from scope_rl.ope import DiscreteStateActionMarginalSNIS as D_SAMSNIS
-from scope_rl.ope import DiscreteStateActionMarginalSNDR as D_SAMSNDR
-from scope_rl.ope import DiscreteStateMarginalSNIS as D_SMSNIS
-from scope_rl.ope import DiscreteStateMarginalSNDR as D_SMSNDR
+from scope_rl.ope.discrete import StateActionMarginalIS as D_SAMIS
+from scope_rl.ope.discrete import StateActionMarginalDR as D_SAMDR
+from scope_rl.ope.discrete import StateMarginalIS as D_SMIS
+from scope_rl.ope.discrete import StateMarginalDR as D_SMDR
+from scope_rl.ope.discrete import StateActionMarginalSNIS as D_SAMSNIS
+from scope_rl.ope.discrete import StateActionMarginalSNDR as D_SAMSNDR
+from scope_rl.ope.discrete import StateMarginalSNIS as D_SMSNIS
+from scope_rl.ope.discrete import StateMarginalSNDR as D_SMSNDR
 # double reinforcement learning estimators
-from scope_rl.ope import DiscreteDoubleReinforcementLearning as D_DRL
+from scope_rl.ope.discrete import DoubleReinforcementLearning as D_DRL
 
 from scope_rl.ope import CreateOPEInput
 
@@ -185,6 +180,15 @@ def train_behavior_policy(
                 name=f"ddqn_softmax_{behavior_tau}",
                 random_state=base_random_state,
             )
+            # behavior_policy = DiscreteRandomPolicy(n_actions=env.action_space.n)
+
+            # behavior_policy = EpsilonGreedyHead(
+            #     model,
+            #     n_actions=env.action_space.n,
+            #     epsilon=0.3,
+            #     name=f"ddqn_softmax_{behavior_tau}",
+            #     random_state=base_random_state,
+            # )
 
         model.save_model(path_behavior_policy)
 
@@ -195,14 +199,14 @@ def train_behavior_policy(
             name=f"sac_gauss_{behavior_sigma}",
             random_state=base_random_state,
         )
-    else:
-        behavior_policy = SoftmaxHead(
-            model,
-            n_actions=env.action_space.n,
-            tau=behavior_tau,
-            name=f"ddqn_softmax_{behavior_tau}",
-            random_state=base_random_state,
-        )
+    # else:
+    #     behavior_policy = SoftmaxHead(
+    #         model,
+    #         n_actions=env.action_space.n,
+    #         tau=behavior_tau,
+    #         name=f"ddqn_softmax_{behavior_tau}",
+    #         random_state=base_random_state,
+    #     )
 
     return behavior_policy
 
@@ -296,7 +300,7 @@ def train_candidate_policies(
         path_ / f"candidate_policy_{env_name}_{variable_name}_{variable}.pkl"
     )
 
-    opl = OffPolicyLearning(
+    opl = TrainCandidatePolicies(
         fitting_args={
             "n_steps": 10000,
             "scorers": {},
@@ -329,6 +333,13 @@ def train_candidate_policies(
                 q_func_factory=MeanQFunctionFactory(),
                 use_gpu=(device == "cuda:0"),
             )
+            # cql = EpsilonGreedyHead(
+            #     cql,
+            #     n_actions=env.action_space.n,
+            #     epsilon=0.3,
+            #     name=f"cql",
+            #     random_state=base_random_state,
+            # )
             
             algorithms = [cql]
 
