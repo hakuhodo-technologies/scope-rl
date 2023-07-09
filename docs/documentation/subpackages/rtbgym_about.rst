@@ -9,7 +9,7 @@ Overview
 ~~~~~~~~~~
 *RTBGym* is an open-source simulation platform for Real-Time Bidding (RTB) of Display Advertising.
 The simulator is particularly intended for reinforcement learning algorithms and follows `OpenAI Gym <https://github.com/openai/gym>`_ and `Gymnasium <https://github.com/Farama-Foundation/Gymnasium>`_ interface.
-We design RTBGym as a configurative environment so that researchers and practitioners can customize the environmental modules including WinningPriceDistribution, ClickThroughRate, and ConversionRate.
+We design RTBGym as a configurative environment so researchers and practitioners can customize the environmental modules, including WinningPriceDistribution, ClickThroughRate, and ConversionRate.
 
 Note that RTBGym is publicized as a sub-package of :doc:`SCOPE-RL </documentation/index>`, which streamlines the implementation of offline reinforcement learning (offline RL) and off-policy evaluation and selection (OPE/OPS) procedures.
 
@@ -137,7 +137,7 @@ Let's interact uniform random policy with a continuous action RTB environment. T
         obs, reward, done, truncated, info = env.step(action)
 
 Note that while we use :doc:`SCOPE-RL </documentation/index>>` and `d3rlpy <https://github.com/takuseno/d3rlpy>`_ here,
-RTBGym is compatible with any other libraries that is compatible to the `OpenAI Gym <https://github.com/openai/gym>`_
+RTBGym is compatible with any other libraries that is compatible with the `OpenAI Gym <https://github.com/openai/gym>`_
 and `Gymnasium <https://github.com/Farama-Foundation/Gymnasium>`_ interface.
 
 Customized RTBEnv
@@ -346,12 +346,12 @@ If you use our pipeline in your work, please cite our paper below.
 
 Contact
 ~~~~~~~~~~
-For any question about the paper and pipeline, feel free to contact: hk844@cornell.edu
+For any questions about the paper and pipeline, feel free to contact: hk844@cornell.edu
 
 Contribution
 ~~~~~~~~~~
 Any contributions to RTBGym are more than welcome!
-Please refer to `CONTRIBUTING.md <https://github.com/hakuhodo-technologies/scope-rl/blob/main/CONTRIBUTING.md>`_ for general guidelines how to contribute to the project.
+Please refer to `CONTRIBUTING.md <https://github.com/hakuhodo-technologies/scope-rl/blob/main/CONTRIBUTING.md>`_ for general guidelines on how to contribute to the project.
 
 .. grid::
     :margin: 0

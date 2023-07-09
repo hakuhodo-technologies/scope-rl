@@ -5330,7 +5330,7 @@ class OffPolicySelection:
             The conditional value at risk required to be considered a safe policy.
 
         clip_sharpe_ratio: bool, default=False
-            Whether to clip a large value of SharpRatio with 1e2.
+            Whether to clip a large value of SharpeRatio with 1e2.
 
         return_by_dataframe: bool, default=False
             Whether to return the result in a dataframe format.
@@ -6282,7 +6282,7 @@ class OffPolicySelection:
             Only applicable when using a single behavior policy.
 
         clip_sharpe_ratio: bool, default=False
-            Whether to clip a large value of SharpRatio with 1e2.
+            Whether to clip a large value of SharpeRatio with 1e2.
 
         cis: list of {"bootstrap", "hoeffding", "bernstein", "ttest"}, default=["bootstrap"]
             Estimation methods for confidence intervals.
@@ -6780,7 +6780,7 @@ class OffPolicySelection:
             A policy whose policy value is below the given threshold is to be considered unsafe.
 
         clip_sharpe_ratio: bool, default=False
-            Whether to clip a large value of SharpRatio with 1e2.
+            Whether to clip a large value of SharpeRatio with 1e2.
 
         return_by_dataframe: bool, default=False
             Whether to return the result in a dataframe format.
@@ -6942,7 +6942,7 @@ class OffPolicySelection:
             A policy whose policy value is below the given threshold is to be considered unsafe.
 
         clip_sharpe_ratio: bool, default=False
-            Whether to clip a large value of SharpRatio with 1e2.
+            Whether to clip a large value of SharpeRatio with 1e2.
 
         return_by_dataframe: bool, default=False
             Whether to return the result in a dataframe format.
@@ -7105,7 +7105,7 @@ class OffPolicySelection:
             A policy whose policy value is below the given threshold is to be considered unsafe.
 
         clip_sharpe_ratio: bool, default=False
-            Whether to clip a large value of SharpRatio with 1e2.
+            Whether to clip a large value of SharpeRatio with 1e2.
 
         return_by_dataframe: bool, default=False
             Whether to return the result in a dataframe format.
@@ -7267,7 +7267,7 @@ class OffPolicySelection:
             A policy whose policy value is below the given threshold is to be considered unsafe.
 
         clip_sharpe_ratio: bool, default=False
-            Whether to clip a large value of SharpRatio with 1e2.
+            Whether to clip a large value of SharpeRatio with 1e2.
 
         return_by_dataframe: bool, default=False
             Whether to return the result in a dataframe format.
@@ -7582,7 +7582,7 @@ class OffPolicySelection:
             Label of the y-axis.
 
         ymax_sharp_ratio: float, default=None
-            Maximum value in y-axis of the plot of SharpRatio.
+            Maximum value in y-axis of the plot of SharpeRatio.
 
         fig_dir: Path, default=None
             Path to store the bar figure.
@@ -7876,10 +7876,10 @@ class OffPolicySelection:
             Only applicable when using a single behavior policy.
 
         clip_sharpe_ratio: bool, default=False
-            Whether to clip a large value of SharpRatio with 1e2.
+            Whether to clip a large value of SharpeRatio with 1e2.
 
         ymax_sharp_ratio: float, default=None
-            Maximum value in y-axis of the plot of SharpRatio.
+            Maximum value in y-axis of the plot of SharpeRatio.
 
         visualize_ci: bool, default=False
             Whether to visualize ci. (Only applicable when :class:`MultipleInputDict` is given.)
@@ -8080,10 +8080,10 @@ class OffPolicySelection:
             For example, when 0.9 is given, candidate policy must exceed 90\\% of the behavior policy performance.
 
         clip_sharpe_ratio: bool, default=False
-            Whether to clip a large value of SharpRatio with 1e2.
+            Whether to clip a large value of SharpeRatio with 1e2.
 
         ymax_sharp_ratio: float, default=None
-            Maximum value in y-axis of the plot of SharpRatio.
+            Maximum value in y-axis of the plot of SharpeRatio.
 
         visualize_ci: bool, default=False
             Whether to visualize ci. (Only applicable when :class:`MultipleInputDict` is given.)
@@ -8287,10 +8287,10 @@ class OffPolicySelection:
             For example, when 0.9 is given, candidate policy must exceed 90\\% of the behavior policy performance.
 
         clip_sharpe_ratio: bool, default=False
-            Whether to clip a large value of SharpRatio with 1e2.
+            Whether to clip a large value of SharpeRatio with 1e2.
 
         ymax_sharp_ratio: float, default=None
-            Maximum value in y-axis of the plot of SharpRatio.
+            Maximum value in y-axis of the plot of SharpeRatio.
 
         ope_cis: list of {"bootstrap", "hoeffding", "bernstein", "ttest"}, default=["bootstrap"]
             Estimation methods for confidence intervals.
@@ -8904,10 +8904,10 @@ class OffPolicySelection:
             The conditional value at risk required to be considered a safe policy.
 
         clip_sharpe_ratio: bool, default=False
-            Whether to clip a large value of SharpRatio with 1e2.
+            Whether to clip a large value of SharpeRatio with 1e2.
 
         ymax_sharp_ratio: float, default=None
-            Maximum value in y-axis of the plot of SharpRatio.
+            Maximum value in y-axis of the plot of SharpeRatio.
 
         visualize_ci: bool, default=False
             Whether to visualize ci. (Only applicable when :class:`MultipleInputDict` is given.)
@@ -8925,7 +8925,7 @@ class OffPolicySelection:
             Random state.
 
         ymax_sharp_ratio: float, default=None
-            Maximum value in y-axis of the plot of SharpRatio.
+            Maximum value in y-axis of the plot of SharpeRatio.
 
         legend: bool, default=True
             Whether to include a legend in the figure.
@@ -9112,10 +9112,10 @@ class OffPolicySelection:
             The conditional value at risk required to be considered a safe policy.
 
         clip_sharpe_ratio: bool, default=False
-            Whether to clip a large value of SharpRatio with 1e2.
+            Whether to clip a large value of SharpeRatio with 1e2.
 
         ymax_sharp_ratio: float, default=None
-            Maximum value in y-axis of the plot of SharpRatio.
+            Maximum value in y-axis of the plot of SharpeRatio.
 
         visualize_ci: bool, default=False
             Whether to visualize ci. (Only applicable when :class:`MultipleInputDict` is given.)
@@ -9318,10 +9318,10 @@ class OffPolicySelection:
             The conditional value at risk required to be considered a safe policy.
 
         clip_sharpe_ratio: bool, default=False
-            Whether to clip a large value of SharpRatio with 1e2.
+            Whether to clip a large value of SharpeRatio with 1e2.
 
         ymax_sharp_ratio: float, default=None
-            Maximum value in y-axis of the plot of SharpRatio.
+            Maximum value in y-axis of the plot of SharpeRatio.
 
         visualize_ci: bool, default=False
             Whether to visualize ci. (Only applicable when :class:`MultipleInputDict` is given.)
@@ -9523,10 +9523,10 @@ class OffPolicySelection:
             The conditional value at risk required to be considered a safe policy.
 
         clip_sharpe_ratio: bool, default=False
-            Whether to clip a large value of SharpRatio with 1e2.
+            Whether to clip a large value of SharpeRatio with 1e2.
 
         ymax_sharp_ratio: float, default=None
-            Maximum value in y-axis of the plot of SharpRatio.
+            Maximum value in y-axis of the plot of SharpeRatio.
 
         visualize_ci: bool, default=False
             Whether to visualize ci. (Only applicable when :class:`MultipleInputDict` is given.)
@@ -9544,7 +9544,7 @@ class OffPolicySelection:
             Random state.
 
         ymax_sharp_ratio: float, default=None
-            Maximum value in y-axis of the plot of SharpRatio.
+            Maximum value in y-axis of the plot of SharpeRatio.
 
         legend: bool, default=True
             Whether to include a legend in the figure.

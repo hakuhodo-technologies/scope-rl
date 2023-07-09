@@ -9,7 +9,7 @@ We rely on `d3rlpy <https://github.com/takuseno/d3rlpy>`_'s implementation of th
 
 Synthetic Dataset Generation
 ~~~~~~~~~~
-:class:`SyntheticDataset` is an easy-to-use data collection module which is compatible to any `OpenAI Gym <https://github.com/openai/gym>`_ and `Gymnasium <https://gymnasium.farama.org/>`_-like RL environment.
+:class:`SyntheticDataset` is an easy-to-use data collection module, which is compatible with any `OpenAI Gym <https://github.com/openai/gym>`_ and `Gymnasium <https://gymnasium.farama.org/>`_-like RL environment.
 
 It takes an RL environment as input to instantiate the class.
 

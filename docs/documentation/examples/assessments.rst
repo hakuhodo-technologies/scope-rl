@@ -118,7 +118,7 @@ SCOPE-RL enables to obtain and compare the statistics of policy portfolio formed
     )
 
 In the ``topk_metric_df``, you will find the ``k-th``, ``best``, ``worst``, and ``mean`` policy values and ``std`` of policy values amond top- :math:`k`
-policy portfolio. We also report the proposed SharpRatio@k metric as ``sharpe_ratio``.
+policy portfolio. We also report the proposed SharpeRatio@k metric as ``sharpe_ratio``.
 
 Note that, to additionally report the safety violation rate, specify the following options.
 

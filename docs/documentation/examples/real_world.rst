@@ -1,7 +1,7 @@
 Guidelines for Preparing Real-World Datasets
 ==========
 
-Here, we provide the guideline for preparing logged datasets and inputs that are compatible to SCOPE-RL.
+Here, we provide the guideline for preparing logged datasets and inputs that are compatible with SCOPE-RL.
 
 Logged Dataset
 ~~~~~~~~~~

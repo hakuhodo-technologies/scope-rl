@@ -102,7 +102,7 @@ Let's interact with a uniform random policy.
         obs, reward, done, truncated, info = env.step(action)
 
 Note that while we use :doc:`SCOPE-RL </documentation/index>` and `d3rlpy <https://github.com/takuseno/d3rlpy>`_ here,
-BasicGym is compatible with any other libraries that is compatible to the `OpenAI Gym <https://github.com/openai/gym>`_
+BasicGym is compatible with any other libraries that is compatible with the `OpenAI Gym <https://github.com/openai/gym>`_
 and `Gymnasium <https://github.com/Farama-Foundation/Gymnasium>`_ interface.
 
 Customized BasicEnv
@@ -227,12 +227,12 @@ If you use our pipeline in your work, please cite our paper below.
 
 Contact
 ~~~~~~~~~~
-For any question about the paper and pipeline, feel free to contact: hk844@cornell.edu
+For any questions about the paper and pipeline, feel free to contact: hk844@cornell.edu
 
 Contribution
 ~~~~~~~~~~
 Any contributions to BasicGym are more than welcome!
-Please refer to `CONTRIBUTING.md <https://github.com/hakuhodo-technologies/scope-rl/blob/main/CONTRIBUTING.md>`_ for general guidelines how to contribute to the project.
+Please refer to `CONTRIBUTING.md <https://github.com/hakuhodo-technologies/scope-rl/blob/main/CONTRIBUTING.md>`_ for general guidelines on how to contribute to the project.
 
 .. grid::
     :margin: 0

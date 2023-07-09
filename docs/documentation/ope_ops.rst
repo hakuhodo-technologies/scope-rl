@@ -104,12 +104,12 @@ where the :math:`\hat{J}(\cdot)` is the OPE estimate of the policy value, which 
 
 In OPS, how well the ranking of the candidate policy preserves and the safety of the chosen policy matters as well as the accuracy of OPE.
 In the next page, we provide a review of conventional evaluation metrics of OPE/OPS and describe the risk-return tradeoff metrics of top-:math:`k` policy selection.
-We also feature SharpRatio@k, which is the main contribution of our research paper "Towards Assessing and Benchmarking
+We also feature SharpeRatio@k, which is the main contribution of our research paper "Towards Assessing and Benchmarking
 Risk-Return Tradeoff of Off-Policy Evaluation in Reinforcement Learning" in :doc:`this page <sharpe_ratio>`. 
 
 .. seealso::
 
-    * :doc:`Conventional OPS metrics and SharpRatio@k <sharpe_ratio>`
+    * :doc:`Conventional OPS metrics and SharpeRatio@k <sharpe_ratio>`
     * :ref:`OPS evaluation protocols <implementation_eval_ope_ops>` and :doc:`their API reference <_autosummary/scope_rl.ope.ops>` 
     * :doc:`Quickstart <quickstart>` and :doc:`related example codes </documentation/examples/assessments>`
 

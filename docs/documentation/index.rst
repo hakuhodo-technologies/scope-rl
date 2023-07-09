@@ -19,7 +19,7 @@ Overview
 *SCOPE-RL* is an open-source Python library designed for both Offline Reinforcement Learning (RL) and Off-Policy Evaluation and Selection (OPE/OPS). This library is intended to streamline offline RL research by providing an easy, flexible, and reliable platform for conducting experiments. It also offers straightforward implementations for practitioners. SCOPE-RL incorporates a series of modules that allow for synthetic dataset generation, dataset preprocessing, and the conducting and evaluation of OPE/OPS.
 
 SCOPE-RL can be used in any RL environment that has an interface similar to `OpenAI Gym <https://github.com/openai/gym>`_ or `Gymnasium <https://github.com/Farama-Foundation/Gymnasium>`_-like interface.
-The library is also compatible with `d3rlpy <https://github.com/takuseno/d3rlpy>`_ which provides the implementation of both online and offline RL methods.
+The library is also compatible with `d3rlpy <https://github.com/takuseno/d3rlpy>`_ which implements both online and offline RL methods.
 
 Our software facilitates implementation, evaluation and algorithm comparison related to the following research topics:
 
@@ -36,21 +36,21 @@ Our software facilitates implementation, evaluation and algorithm comparison rel
     <div class="white-space-20px"></div>
 
 * **Offline Reinforcement Learning**:
-   Offline RL aims to train a new policy from only offline logged data collected by a behavior policy. SCOPE-RL enables a flexible experiment using customized dataset on diverse environments collected by various behavior policies.
+   Offline RL aims to train a new policy from only offline logged data collected by a behavior policy. SCOPE-RL enables a flexible experiment using customized datasets on diverse environments collected by various behavior policies.
 
 * **Off-Policy Evaluation**:
-   OPE aims to evaluate the performance of a counterfactual policy using only offline logged data. SCOPE-RL supports implementations of a range of OPE estimators and streamline the experimental procedure to evaluate the accuracy of OPE estimators.
+   OPE aims to evaluate the performance of a counterfactual policy using only offline logged data. SCOPE-RL supports implementations of a range of OPE estimators and streamlines the experimental procedure to evaluate the accuracy of OPE estimators.
 
 * **Off-Policy Selection**:
    OPS aims to select the top-:math:`k` policies from several candidate policies using only offline logged data. Typically, the final production policy is chosen based on the online A/B tests of the top-:math:`k` policies selected by OPS.
-   SCOPE-RL supports implementations of a range of OPS methods and provide some metrics to evaluate OPS result.
+   SCOPE-RL supports implementations of a range of OPS methods and provides some metrics to evaluate OPS result.
 
 .. note::
 
    This documentation aims to provide a gentle introduction to offline RL and OPE/OPS in the following steps.
 
    1. Explain the basic concepts in :doc:`Overview (online/offline RL) <online_offline_rl>` and :doc:`Overview (OPE/OPS) <ope_ops>`.
-   2. Provide a variety of examples of conducting offline RL and OPE/OPS in practical problem settings in :doc:`Quickstart <quickstart>` and :doc:`Example Codes <examples/index>`.
+   2. Provide various examples of conducting offline RL and OPE/OPS in practical problem settings in :doc:`Quickstart <quickstart>` and :doc:`Example Codes <examples/index>`.
    3. Describe the algorithms and implementations in detail in :doc:`Supported Implementation <evaluation_implementation>` and :doc:`Package Reference <scope_rl_api>`.
 
    **You can also find the distinctive features of SCOPE-RL here:** :doc:`distinctive_features`
@@ -62,7 +62,7 @@ Data Collection Policy and Offline RL
 ----------
 SCOPE-RL overrides `d3rlpy <https://github.com/takuseno/d3rlpy>`_'s implementation for the base RL algorithms.
 We provide a class to handle synthetic dataset generation, off-policy learning with multiple algorithms, and
-wrapper classes for transforming the policy into a stochastic policy as follows.
+wrapper classes for transforming the policy into a stochastic one.
 
 Meta class
 ^^^^^^
@@ -89,7 +89,7 @@ Basic OPE
     Policy Value Estimated by OPE Estimators
 
 SCOPE-RL provides a variety of OPE estimators both in discrete and continuous action spaces.
-Moreover, SCOPE-RL also implements meta class to handle OPE with multiple estimators at once and provide generic classes of OPE estimators to facilitate research development.
+Moreover, SCOPE-RL also implements meta classes to handle OPE with multiple estimators at once and provide generic classes of OPE estimators to facilitate research development.
 
 Basic estimators
 ^^^^^^
@@ -193,9 +193,9 @@ OPS metrics (performance of top :math:`k` deployment policies)
 
 .. seealso::
 
-    Among the top-:math:`k` risk-return tradeoff metrics, **SharpRatio** is the main propossal of our research paper 
-    **"Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation in Reinforcement Learning"**. 
-    We describe the motivation and contributions of the SharpRatio metric in :doc:`sharpe_ratio`.
+    Among the top-:math:`k` risk-return tradeoff metrics, **SharpeRatio** is the main proposal of our research paper 
+    **"Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation in Reinforcement Learning."** 
+    We describe the motivation and contributions of the SharpeRatio metric in :doc:`sharpe_ratio`.
 
 .. seealso::
 
@@ -208,21 +208,40 @@ OPS metrics (performance of top :math:`k` deployment policies)
 
 Citation
 ~~~~~~~~~~
+
 If you use our pipeline in your work, please cite our paper below.
 
-| Haruka Kiyohara, Ren Kishimoto, Kosuke Kawakami, Ken Kobayashi, Kazuhide Nakata, Yuta Saito.
-| **Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation in Reinforcement Learning**
-| (a preprint coming soon..)
+.. card::
 
-.. code-block::
+    | Haruka Kiyohara, Ren Kishimoto, Kosuke Kawakami, Ken Kobayashi, Kazuhide Nakata, Yuta Saito.
+    | **SCOPE-RL: A Python Library for Offline Reinforcement Learning, Off-Policy Evaluation, and Policy Selectio**
+    | (a preprint is coming soon..)
 
-   @article{kiyohara2023towards,
-      author = {Kiyohara, Haruka and Kishimoto, Ren and Kawakami, Kosuke and Kobayashi, Ken and Nataka, Kazuhide and Saito, Yuta},
-      title = {Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation in Reinforcement Learning},
-      journal = {A github repository},
-      pages = {xxx--xxx},
-      year = {2023},
-   }
+    .. code-block::
+
+        @article{kiyohara2023scope,
+            title={SCOPE-RL: A Python Library for Offline Reinforcement Learning, Off-Policy Evaluation, and Policy Selection},
+            author={Kiyohara, Haruka and Kishimoto, Ren and Kawakami, Kosuke and Kobayashi, Ken and Nakata, Kazuhide and Saito, Yuta},
+            journal={arXiv preprint arXiv:23xx.xxxxx},
+            year={2023}
+        }
+
+If you use the proposed metric (SharpeRatio@k) or refer to our findings in your work, please cite our paper below.
+
+.. card::
+
+    | Haruka Kiyohara, Ren Kishimoto, Kosuke Kawakami, Ken Kobayashi, Kazuhide Nakata, Yuta Saito.
+    | **Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation in Reinforcement Learning**
+    | (a preprint is coming soon..)
+
+    .. code-block::
+
+        @article{kiyohara2023towards,
+            title={Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation in Reinforcement Learning},
+            author={Kiyohara, Haruka and Kishimoto, Ren and Kawakami, Kosuke and Kobayashi, Ken and Nakata, Kazuhide and Saito, Yuta},
+            journal={arXiv preprint arXiv:23xx.xxxxx},
+            year={2023}
+        }
 
 Google Group
 ~~~~~~~~~~
@@ -230,12 +249,12 @@ Feel free to follow our updates from our google group: `scope-rl@googlegroups.co
 
 Contact
 ~~~~~~~~~~
-For any question about the paper and pipeline, feel free to contact: hk844@cornell.edu
+For any questions about the paper and pipeline, feel free to contact: hk844@cornell.edu
 
 Contribution
 ~~~~~~~~~~
 Any contributions to SCOPE-RL are more than welcome!
-Please refer to `CONTRIBUTING.md <https://github.com/hakuhodo-technologies/scope-rl/CONTRIBUTING.md>`_ for general guidelines how to contribute to the project.
+Please refer to `CONTRIBUTING.md <https://github.com/hakuhodo-technologies/scope-rl/CONTRIBUTING.md>`_ for general guidelines on how to contribute to the project.
 
 Table of Contents
 ~~~~~~~~~~

@@ -121,7 +121,7 @@ class DirectMethod(BaseOffPolicyEstimator):
 
         Return
         -------
-        V_hat: ndarray of shape (n_trajectories, )
+        V_hat: float
             Estimated policy value.
 
         """
@@ -429,7 +429,7 @@ class TrajectoryWiseImportanceSampling(BaseOffPolicyEstimator):
 
         Return
         -------
-        V_hat: ndarray of shape (n_trajectories, )
+        V_hat: float
             Estimated policy value.
 
         """
@@ -774,7 +774,7 @@ class PerDecisionImportanceSampling(BaseOffPolicyEstimator):
 
         Return
         -------
-        V_hat: ndarray of shape (n_trajectories, )
+        V_hat: float
             Estimated policy value.
 
         """
@@ -1148,7 +1148,7 @@ class DoublyRobust(BaseOffPolicyEstimator):
 
         Return
         -------
-        V_hat: ndarray of shape (n_trajectories, )
+        V_hat: float
             Estimated policy value.
 
         """

@@ -168,7 +168,7 @@ class DoubleReinforcementLearning(BaseOffPolicyEstimator):
 
         Return
         -------
-        V_hat: ndarray of shape (n_trajectories, )
+        V_hat: float
             Estimated policy value.
 
         """
@@ -481,7 +481,7 @@ class StateMarginalDM(BaseStateActionMarginalOPEEstimator):
 
         Return
         -------
-        V_hat: ndarray of shape (n_trajectories, )
+        V_hat: float
             Estimated policy value.
 
         """
@@ -742,7 +742,7 @@ class StateMarginalIS(BaseStateMarginalOPEEstimator):
 
         Return
         -------
-        V_hat: ndarray of shape (n_trajectories, )
+        V_hat: float
             Estimated policy value.
 
         """
@@ -1212,7 +1212,7 @@ class StateMarginalDR(BaseStateMarginalOPEEstimator):
 
         Return
         -------
-        V_hat: ndarray of shape (n_trajectories, )
+        V_hat: float
             Estimated policy value.
 
         """
@@ -2014,7 +2014,7 @@ class StateActionMarginalIS(BaseStateActionMarginalOPEEstimator):
 
         Return
         -------
-        V_hat: ndarray of shape (n_trajectories, )
+        V_hat: float
             Estimated policy value.
 
         """
@@ -2478,7 +2478,7 @@ class StateActionMarginalDR(BaseStateActionMarginalOPEEstimator):
 
         Return
         -------
-        V_hat: ndarray of shape (n_trajectories, )
+        V_hat: float
             Estimated policy value.
 
         """

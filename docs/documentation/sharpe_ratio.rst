@@ -1,15 +1,15 @@
 :html_theme.sidebar_secondary.remove:
 
 ==========
-Risk-Return Assessments of OPE via SharpRatio@k
+Risk-Return Assessments of OPE via SharpeRatio@k
 ==========
 
-We describe the SharpRatio@k metric for assessing the risk-return tradeoff of off-policy selection (OPS) result.
+We describe the SharpeRatio@k metric for assessing the risk-return tradeoff of off-policy selection (OPS) result.
 Note that for the basic problem formulation of Off-Policy Evaluation and Selection (OPE/OPS), please also refer to :doc:`Overview (OPE/OPS) <ope_ops>`.
 
 .. seealso::
 
-    The **SharpRatio@k** metric is the main contribution of our paper **"Towards Risk-Return Assessments of Off-Policy Evaluation in Offline RL."** 
+    The **SharpeRatio@k** metric is the main contribution of our paper **"Towards Risk-Return Assessments of Off-Policy Evaluation in Offline RL."** 
     Our paper is currently under submission, and the arXiv version of the paper will come soon..
 
     .. A preprint is available at `arXiv <>`_.
@@ -112,19 +112,19 @@ Below, we showcase how SharpeRatio@k provides valuable insights for comparing OP
 
 **Toy example 1: Overestimation vs. Underestimation.**
 The first case is the previously mentioned example of evaluating estimator X (which underestimates the near-best policy) and estimator Y (which overestimates the poor-performing policies) in the above figure.
-While the conventional metrics fail to distinguish the two estimators, SharpRatio@k reports the following results:
+While the conventional metrics fail to distinguish the two estimators, SharpeRatio@k reports the following results:
 
 .. card::
     :img-top: ../_static/images/sharpe_ratio_1.png
     :text-align: center
 
-    SharpRatio@k of the toy example 1
+    SharpeRatio@k of the toy example 1
 
 .. raw:: html
 
     <div class="white-space-20px"></div>
 
-As we can clearly see, SharpRatio scores estimator X higher than Y.
+As we can clearly see, SharpeRatio scores estimator X higher than Y.
 To understand the inner-workings of SharpeRatio@k, we also plot its numerator (return) and denominator (risk) separately in the figure.
 The decomposition of SharpeRatio@k shows that the return ( :math:`\text{best@}k (\hat{J}) - J(\pi_b)`) is the same for both X and Y, while the risk ( :math:`\text{std@}k(\hat{J})`) is substantially larger for estimator Y,
 since estimator Y overestimates the poor-performing policies and thus has the risk of deploying these detrimental polices during subsequent online A/B tests.
@@ -168,7 +168,7 @@ In contrast, our top-:math:`k` RRT metrics report the following results, which c
     :img-top: ../_static/images/sharpe_ratio_2.png
     :text-align: center
 
-    SharpRatio@k the toy example 2
+    SharpeRatio@k the toy example 2
 
 .. raw:: html
 
@@ -180,7 +180,7 @@ In contrast, when :math:`\pi_b` exhibits moderate performance ( :math:`J(\pi_b)=
 Finally, when :math:`\pi_b` already demonstrates strong performance ( :math:`J(\pi_b)=15`), estimator Y emerges as the more efficient option according to SharpeRatio@k.
 As shown here, SharpeRatio@k effectively provides valuable guidance on selecting the most appropriate estimator based on their efficiency, proving to be a more informative metric than existing "accuracy" metrics.
 
-OPE benchmarks with SharpRatio@k
+OPE benchmarks with SharpeRatio@k
 ~~~~~~~~~~
 We conduct OPE benchmark using four continuous control benchmarks including Reacher, InvertedPendulum, Hopper, and Swimmer from Gym-Mujuco :cite:`brockman2016openai` and discrete controls such as CartPole, MountainCar, and Acrobot from Gym-Classic Control :cite:`brockman2016openai`.
 For the detailed settings, please refer to Section 4.1 of our paper.
@@ -216,7 +216,7 @@ For the detailed settings, please refer to Section 4.1 of our paper.
 
     <div class="white-space-20px"></div>
 
-The above figure (Result 1-1.) presents a comparison between the benchmark results under SharpRatio@k and those under conventional metrics in Acrobot.
+The above figure (Result 1-1.) presents a comparison between the benchmark results under SharpeRatio@k and those under conventional metrics in Acrobot.
 The next figure (Result 1-2.) reports some reference statistics about the top- :math:`k` policy portfolios formed by each estimator, where " :math:`k`-th best policy's performance" shows the performance of the policy ranked :math:`k`-th among the candidates by each estimator.
 
 First, Result 1-1. shows that both conventional metrics and SharpeRatio@k acknowledge the advantage of MDR, which is ranked the best in SharpeRatio@k ( :math:`4 \leq k \leq 8`) and the second-best according to conventional metrics.
@@ -274,23 +274,21 @@ The above figure reports the benchmark results of the OPE estimators with Sharpe
 Citation
 ~~~~~~~~~~
 
-If you use our pipeline or the proposed metric (SharpRatio@k) in your work or consider our findings are valuable for your research,
-please cite our paper below.
+If you use the proposed metric (SharpeRatio@k) or refer to our findings in your work, please cite our paper below.
 
 .. card::
 
     | Haruka Kiyohara, Ren Kishimoto, Kosuke Kawakami, Ken Kobayashi, Kazuhide Nakata, Yuta Saito.
-    | **Towards Risk-Return Assessments of Off-Policy Evaluation in Reinforcement Learning**
-    | (a preprint coming soon..)
+    | **Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation in Reinforcement Learning**
+    | (a preprint is coming soon..)
 
     .. code-block::
 
         @article{kiyohara2023towards,
-            author = {Kiyohara, Haruka and Kishimoto, Ren and Kawakami, Kosuke and Kobayashi, Ken and Nataka, Kazuhide and Saito, Yuta},
-            title = {Towards Risk-Return Assessments of Off-Policy Evaluation in Reinforcement Learning},
-            journal = {A github repository},
-            pages = {xxx--xxx},
-            year = {2023},
+            title={Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation in Reinforcement Learning},
+            author={Kiyohara, Haruka and Kishimoto, Ren and Kawakami, Kosuke and Kobayashi, Ken and Nakata, Kazuhide and Saito, Yuta},
+            journal={arXiv preprint arXiv:23xx.xxxxx},
+            year={2023}
         }
 
 .. raw:: html

@@ -159,9 +159,9 @@ Therefore, we need to tackle the `distributional shift` between the behavior pol
 
 The problem of Extrapolation Error
 ----------
-Apparently, Q-learning seems to be compatible with the offline setting, as it uses large amount of data to learn Q-function.
+Apparently, Q-learning seems to be compatible with the offline setting, as it uses a large amount of data to learn Q-function.
 However, Q-function is known to suffer from `extrapolation error` :cite:`fujimoto2019off`
-due to the distribution shift and the deadly triad conditions (i.e., the combination of the bootstrapping, function approximation, and off-policy) :cite:`van2018deep`.
+due to the distribution shift and the deadly triad conditions (i.e., the combination of bootstrapping, function approximation, and off-policy) :cite:`van2018deep`.
 
 To investigate why the extrapolation error arises, let us recall the following TD loss of the Q-learning.
 

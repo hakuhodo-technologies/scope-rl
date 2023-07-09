@@ -3,7 +3,7 @@
 Installation
 ==========
 
-``scope-rl`` is available on PyPI, and can be installed from ``pip`` or from source as follows.
+``scope-rl`` is available on PyPI, and can be installed from ``pip`` or source as follows.
 
 .. card::
 
@@ -27,22 +27,38 @@ Installation
 Citation
 ==========
 
-If you use our pipeline or the proposed metric (SharpRatio@k) in your work, please cite our paper below.
+If you use our pipeline in your work, please cite our paper below.
+
+.. card::
+
+    | Haruka Kiyohara, Ren Kishimoto, Kosuke Kawakami, Ken Kobayashi, Kazuhide Nakata, Yuta Saito.
+    | **SCOPE-RL: A Python Library for Offline Reinforcement Learning, Off-Policy Evaluation, and Policy Selectio**
+    | (a preprint is coming soon..)
+
+    .. code-block::
+
+        @article{kiyohara2023scope,
+            title={SCOPE-RL: A Python Library for Offline Reinforcement Learning, Off-Policy Evaluation, and Policy Selection},
+            author={Kiyohara, Haruka and Kishimoto, Ren and Kawakami, Kosuke and Kobayashi, Ken and Nakata, Kazuhide and Saito, Yuta},
+            journal={arXiv preprint arXiv:23xx.xxxxx},
+            year={2023}
+        }
+
+If you use the proposed metric (SharpeRatio@k) or refer to our findings in your work, please cite our paper below.
 
 .. card::
 
     | Haruka Kiyohara, Ren Kishimoto, Kosuke Kawakami, Ken Kobayashi, Kazuhide Nakata, Yuta Saito.
     | **Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation in Reinforcement Learning**
-    | (a preprint coming soon..)
+    | (a preprint is coming soon..)
 
     .. code-block::
 
         @article{kiyohara2023towards,
-            author = {Kiyohara, Haruka and Kishimoto, Ren and Kawakami, Kosuke and Kobayashi, Ken and Nataka, Kazuhide and Saito, Yuta},
-            title = {Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation in Reinforcement Learning},
-            journal = {A github repository},
-            pages = {xxx--xxx},
-            year = {2023},
+            title={Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation in Reinforcement Learning},
+            author={Kiyohara, Haruka and Kishimoto, Ren and Kawakami, Kosuke and Kobayashi, Ken and Nakata, Kazuhide and Saito, Yuta},
+            journal={arXiv preprint arXiv:23xx.xxxxx},
+            year={2023}
         }
 
 .. raw:: html

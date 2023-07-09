@@ -28,7 +28,7 @@ class SyntheticDataset(BaseDataset):
     Note
     -------
     Logged dataset is directly used for Off-Policy Evaluation (OPE).
-    Moreover, it is also compatible to `d3rlpy <https://github.com/takuseno/d3rlpy>`_ (offline RL library) with the following command.
+    Moreover, it is also compatible with `d3rlpy <https://github.com/takuseno/d3rlpy>`_ (offline RL library) with the following command.
 
     .. code-block:: python
 

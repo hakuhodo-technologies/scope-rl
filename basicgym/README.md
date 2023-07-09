@@ -259,7 +259,7 @@ Bibtex:
 ## Contribution
 
 Any contributions to SyntheticGym are more than welcome!
-Please refer to [CONTRIBUTING.md](../CONTRIBUTING.md) for general guidelines how to contribute the project.
+Please refer to [CONTRIBUTING.md](../CONTRIBUTING.md) for general guidelines on how to contribute the project.
 
 ## License
 
@@ -276,7 +276,7 @@ This project is licensed under Apache 2.0 license - see [LICENSE](../LICENSE) fi
 
 ## Contact
 
-For any question about the paper and software, feel free to contact: hk844@cornell.edu
+For any questions about the paper and software, feel free to contact: hk844@cornell.edu
 
 ## References
 

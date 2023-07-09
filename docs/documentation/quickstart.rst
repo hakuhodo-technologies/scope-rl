@@ -2,7 +2,7 @@ Quickstart
 ==========
 
 We show an example workflow of synthetic dataset collection, offline Reinforcement Learning (RL), to Off-Policy Evaluation (OPE).
-The workflow mainly consists of following three steps:
+The workflow mainly consists of the following three steps:
 
 * **Synthetic Dataset Generation and Data Preprocessing**: 
     The initial step is to collect logged data using a behavior policy. In a synthetic setup, we first train a behavior policy through online interaction and then generate dataset(s) with the behavior policy. In a practical situation, we should use the preprocessed logged data obtained from real-world applications.
@@ -11,7 +11,7 @@ The workflow mainly consists of following three steps:
     We then learn new policies (, which hopefully perform better than the behavior policy) from only offline logged data, without any online interactions.
 
 * **Off-Policy Evaluation and Selection**:
-    After learning several candidate policies in an offline manner, we need to choose the production policy.
+    After learning several candidate policies offline, we need to choose the production policy.
     We consider a typical workflow that starts from screening out promising candidate policies through Off-Policy Evaluation (OPE)
     and then choosing the final production policy among the selected candidates based on more reliable online A/B tests result, as illustrated in the following figure.
 
