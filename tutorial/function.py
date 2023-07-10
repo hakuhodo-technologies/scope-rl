@@ -199,14 +199,14 @@ def train_behavior_policy(
             name=f"sac_gauss_{behavior_sigma}",
             random_state=base_random_state,
         )
-    # else:
-    #     behavior_policy = SoftmaxHead(
-    #         model,
-    #         n_actions=env.action_space.n,
-    #         tau=behavior_tau,
-    #         name=f"ddqn_softmax_{behavior_tau}",
-    #         random_state=base_random_state,
-    #     )
+    else:
+        behavior_policy = SoftmaxHead(
+            model,
+            n_actions=env.action_space.n,
+            tau=behavior_tau,
+            name=f"ddqn_softmax_{behavior_tau}",
+            random_state=base_random_state,
+        )
 
     return behavior_policy
 
