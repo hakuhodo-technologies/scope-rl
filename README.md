@@ -25,6 +25,8 @@
 
 **Documentation is available [here](https://scope-rl.readthedocs.io/en/latest/)**
 
+**Stable versions are available at [PyPI](https://pypi.org/project/scope-rl/)**
+
 ## Overview
 
 *SCOPE-RL* is an open-source Python Software for implementing the end-to-end procedure regarding **offline Reinforcement Learning (offline RL)**, from data collection to offline policy learning, off-policy performance evaluation, and policy selection. Our software includes a series of modules to implement synthetic dataset generation, dataset preprocessing, estimators for Off-Policy Evaluation (OPE), and Off-Policy Selection (OPS) methods.
@@ -109,8 +111,9 @@ This software is inspired by [Open Bandit Pipeline](https://github.com/st-tech/z
 - Spearman's Rank Correlation Coefficient
 - Regret
 - Type I and Type II Error Rates
-- {Best/Worst/Mean} performances of top-k policies
+- {Best/Worst/Mean/Std} performances of top-k policies
 - Safety violation rate of top-k policies
+- SharpeRatio@k
 
 </details>
 

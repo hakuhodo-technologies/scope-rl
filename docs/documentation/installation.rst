@@ -3,7 +3,7 @@
 Installation
 ==========
 
-``scope-rl`` is available on PyPI, and can be installed from ``pip`` or source as follows.
+``scope-rl`` is available at `PyPI <https://pypi.org/project/scope-rl/>`_, and can be installed from ``pip`` or source as follows.
 
 .. card::
 
