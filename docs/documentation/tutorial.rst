@@ -5,6 +5,10 @@ Tutorial
 
 Off-Policy Evaluation
 ~~~~~~~~~~
+Off-policy evaluation is a technique used in reinforcement learning to estimate the policy value based on data collected from a different policy. It is particularly useful when you want to evaluate the performance of candidate policies without actually executing it in the online environment.
+
+Setup
+----------
 We consider a general reinforcement learning setup, which is formalized by Markov Decision Process (MDP) as :math:`\langle \mathcal{S}, \mathcal{A}, \mathcal{T}, P_r, \gamma \rangle`.
 :math:`\mathcal{S}` is the state space and :math:`\mathcal{A}` is the action space, which is either discrete or continuous.
 Let :math:`\mathcal{T}: \mathcal{S} \times \mathcal{A} \rightarrow \mathcal{P}(\mathcal{S})` is the state transition probability where :math:`\mathcal{T}(s' | s,a)` is the probability of observing state :math:`s'` after taking action :math:`a` given state :math:`s`.
@@ -19,29 +23,23 @@ In OPE, we are given a logged dataset :math:`\mathcal{D}` consisting of :math:`n
 
     \tau := \{ (s_t, a_t, s_{t+1}, r_t) \}_{t=0}^{T} \sim p(s_0) \prod_{t=0}^{T} \pi_0(a_t | s_t) \mathcal{T}(s_{t+1} | s_t, a_t) P_r (r_t | s_t, a_t)
 
-Our goal is to leverage this the logged dataset to accurately evaluate the performance of evaluation policies (OPE)
-
-.. _overview_basic_ope:
-
-Policy Value Estimation
-----------
-
 In the basic OPE, we aim at evaluating the *policy value* or the expected trajectory-wise reward of the given evaluation policy :math:`\pi`:
 
 .. math::
 
     J(\pi) := \mathbb{E}_{\tau} \left [ \sum_{t=0}^{T-1} \gamma^t r_{t} \mid \pi \right ],
 
-Estimating the policy value before deploying policy in online environment is beneficial, as we can reduce the deployment cost and risks in online evaluation.
-However, the challenge is that we need to answer a counterfactual question, *''What if a new policy chooses a different action from that of behavior policy?''*
-by dealing with the distribution shift between :math:`\pi_0` and :math:`\pi`.
 
-.. seealso::
+We aim to develop an estimator :math:`\hat{J}` to estimate the value of a evaluation policy :math:`\pi` (which is different from π0) using only the logged data in :math:`\mathcal{D}`. The accuracy of :math:`\hat{J}` is quantified by mean squared error (MSE)
 
-    * :doc:`Supported OPE estimators <evaluation_implementation>` and :doc:`their API reference <_autosummary/ofrl.ope.basic_estimators_discrete>` 
-    * (advanced) :doc:`Marginal OPE estimators <evaluation_implementation>`, and their :doc:`API reference <_autosummary/ofrl.ope.marginal_ope_discrete>`
-    * :doc:`Quickstart <quickstart>` and :doc:`related tutorials <_autogallery/basic_ope/index>`
+.. math::
+    
+    \begin{aligned}
+        \operatorname{MSE}(\hat{J}(\pi)): & =\mathbb{E}_{\tau}\left[(J(\pi)-\hat{J}(\pi ; \mathcal{D}))^2\right] \\
+        & =\operatorname{Bias}(\hat{J}(\pi))^2+\mathbb{V}_{\tau}[\hat{J}(\pi ; \mathcal{D})]
+    \end{aligned}
 
+Let's introduce the property of OPE estimators in terms of bias and variance.
 
 Standard OPE estimators
 ----------
@@ -50,6 +48,9 @@ Standard OPE estimators
 
 Direct Method (DM)
 ----------
+
+    * :class:`DirectMethod`
+
 DM :cite:`beygelzimer2009offset` is a model-based approach which uses the initial state value (estimated by e.g., Fitted Q Evaluation (FQE) :cite:`le2019batch`).
 It first learns the Q-function and then leverages the learned Q-function as follows.
 
@@ -59,26 +60,22 @@ It first learns the Q-function and then leverages the learned Q-function as foll
 
 where :math:`\mathcal{D}=\{\{(s_t, a_t, r_t)\}_{t=0}^T\}_{i=1}^n` is the logged dataset with :math:`n` trajectories of data.
 :math:`T` indicates step per episode. :math:`\hat{Q}(s_t, a_t)` is the estimated state-action value and :math:`\hat{V}(s_t)` is the estimated state value.
-DM has low variance, but can incur bias due to approximation errors.
-
-    * :class:`DiscreteDirectMethod`
-    * :class:`ContinuousDirectMethod`
-
+By plugging the estimated Q-function into the policy value definition, DM estimates the policy value :math:`J(\pi)`. DM has lower variance compared to other estimators, but can produce large bias caused by approximation errors of the Q-function.
 
 .. _implementation_tis:
 
 Trajectory-wise Importance Sampling (TIS)
 ----------
 
+    * :class:`TrajectoryWiseImportanceSampling`
+
 TIS :cite:`precup2000eligibility` uses importance sampling technique to correct the distribution shift between :math:`\pi` and :math:`\pi_0` as follows.
 
 .. math::
 
-    \hat{J}_{\mathrm{TIS}} (\pi; \mathcal{D}) := \mathbb{E}_{n} \left[\sum_{t=0}^{T-1} \gamma^t w_{1:T-1} r_t \right],
+    \hat{J}_{\mathrm{TIS}} (\pi; \mathcal{D}) := \mathbb{E}_{n} \left[\sum_{t=0}^{T-1} \gamma^t w_{1:T-1} r_t \right]
 
-where :math:`w_{0:T-1} := \prod_{t=0}^{T-1} (\pi(a_t | s_t) / \pi_0(a_t | s_t))` is the trajectory-wise importance weight.
-
-TIS enables an unbiased estimation of the policy value. 
+where :math:`w_{0:T-1} := \prod_{t=0}^{T-1} (\pi(a_t | s_t) / \pi_0(a_t | s_t))` is the trajectory-wise importance weight. TIS is simply an application of the idea of the IPS estimator in the contextual bandit setting to the reinforcement learning setting. 
 
 Unbiased Estimator
 
@@ -91,18 +88,15 @@ Unbiased Estimator
     .. math::
 
         &\mathbb{E}_{\tau}[\hat{J}_{\mathrm{TIS}} (\pi; \mathcal{D})]\\
-        &=\mathbb{E}_{\tau \sim q} \left[\sum_{t=0}^{T-1} \gamma^t w_{1:T-1} r_t \right] \\
-        &= \mathbb{E}_{\tau \sim q}\left[\frac{\pi(a_1|s_1)\cdots \pi(a_{T-1}|s_{T-1})}
+        &=\mathbb{E}_{\tau \sim p_{\pi_0}} \left[\sum_{t=0}^{T-1} \gamma^t w_{1:T-1} r_t \right] \\
+        &= \mathbb{E}_{\tau \sim p_{\pi_0}}\left[\frac{\pi(a_1|s_1)\cdots \pi(a_{T-1}|s_{T-1})}
         {\pi_0(a_1|s_1)\cdots \pi_0(a_{T-1}|s_{T-1})} \sum_{t=0}^{T-1} \gamma^{t}r_t \right]\\
-        &= \mathbb{E}_{\tau \sim q}\left[\frac{p(s_0)\pi(a_1|s_1)P_r(r_1|s_t, a_t)\mathcal{T}(s_{t+1}|s_t, a_t)\cdots \pi(a_{T-1}|s_{T-1})P_r(r_{T-1}|s_{T-1}, a_{T-1})}
+        &= \mathbb{E}_{\tau \sim p_{\pi_0}}\left[\frac{p(s_0)\pi(a_1|s_1)P_r(r_1|s_t, a_t)\mathcal{T}(s_{t+1}|s_t, a_t)\cdots \pi(a_{T-1}|s_{T-1})P_r(r_{T-1}|s_{T-1}, a_{T-1})}
         {p(s_0)\pi_0(a_1|s_1)P_r(r_1|s_t, a_t)\mathcal{T}(s_{t+1}|s_t, a_t)\cdots \pi_0(a_{T-1}|s_{T-1})P_r(r_{T-1}|s_{T-1}, a_{T-1})} \sum_{t=0}^{T-1} \gamma^{t}r_t\right]\\
-        &= \mathbb{E}_{\tau \sim q}\left[\frac{p(\tau)}{q(\tau)}\sum_{t=0}^{T-1} \gamma^{t}r_t\right]\\
-        &= \mathbb{E}_{\tau \sim p}\left[\sum_{t=0}^{T-1} \gamma^{t}r_t\right]\\
+        &= \mathbb{E}_{\tau \sim p_{\pi_0}}\left[\frac{p_{\pi}(\tau)}{p_{\pi_0}(\tau)}\sum_{t=0}^{T-1} \gamma^{t}r_t\right]\\
+        &= \mathbb{E}_{\tau \sim p_{\pi}}\left[\sum_{t=0}^{T-1} \gamma^{t}r_t\right]\\
         &=J
-
-However, when the trajectory length :math:`T` is large, TIS suffers from high variance
-due to the product of importance weights.
-
+By the importance weight trick TIS enables an unbiased estimation of the policy value. 
 
 Variance Analysis
 
@@ -110,7 +104,6 @@ Variance Analysis
 
     \mathbb{V}_{\tau}[\hat{J}_{\mathrm{TIS}}(\pi; \mathcal{D})] = \mathbb{E}_{s, a}\left[w_{1:T-1}^2\mathbb{V}_{r}\left[ V(s)\right] \right ]+ \mathbb{E}_{s}\left[\mathbb{V}_{a}\left[ w_{1:T-1} Q(s, a)\right]\right]+\mathbb{V}_{s}\left[ w_{1:T-1} V(s)\right]
 
-where :math:`w_{t} := \pi_e(a_{t'} | s_{t'}) / \pi_b(a_{t'} | s_{t'})`
 
 .. dropdown:: proof
 
@@ -123,43 +116,13 @@ where :math:`w_{t} := \pi_e(a_{t'} | s_{t'}) / \pi_b(a_{t'} | s_{t'})`
         &= \mathbb{E}_{s, a}\left[w_{1:T-1}^2\mathbb{V}_{r}\left[ V(s)\right] \right ]+ \mathbb{E}_{s}\left[\mathbb{V}_{a}\left[ w_{1:T-1} Q(s, a)\right]\right]+\mathbb{V}_{s}\left[\mathbb{E}_{a}\left[ w_{1:T-1} Q(s, a)\right]\right]\\
         &= \mathbb{E}_{s, a}\left[w_{1:T-1}^2\mathbb{V}_{r}\left[ V(s)\right] \right ]+ \mathbb{E}_{s}\left[\mathbb{V}_{a}\left[ w_{1:T-1} Q(s, a)\right]\right]+\mathbb{V}_{s}\left[ w_{1:T-1} V(s)\right]\\
 
-.
-
-    * :class:`DiscreteTrajectoryWiseImportanceSampling`
-    * :class:`ContinuousTrajectoryWiseImportanceSampling`
-
+The square of the trajectory-wise importance weight  :math:`\mathbb{E}_{s, a}\left[w_{1:T-1}^2\mathbb{V}_{r}\left[ V(s)\right] \right ]` and the variance involving the trajectory-wise importance weights  :math:`\mathbb{E}_{s}\left[\mathbb{V}_{a}\left[ w_{1:T-1} Q(s, a)\right]\right]` have appeared in the variance equation.
+In particular, when the trajectory length :math:`T` is large, TIS suffers from high variance due to the product of importance weights.
 
 DM vs TIS Bias-Variance Trade-off 
 ^^^^^
 
-.. .. image:: ./images/bias_tis.png
-..     :scale: 45%
-..     :align: center
-
-.. |
-
-.. .. image:: ./images/variance_tis.png
-..     :scale: 45%
-..     :align: center
-
-.. |
-.. .. card:: 
-..     :width: 50%
-..     :margin: auto
-..     :img-top: ./images/bias_tis.png
-..     :text-align: left
-    
-..     Variance with varying number of trajectories
-
-.. .. card:: 
-..     :width: 50%
-..     :margin: auto
-..     :img-top: ./images/variance_tis.png
-..     :text-align: right
-    
-..     Variance with varying number of trajectories
-
-.. grid:: 1 1 2 2
+.. grid:: 1 1 2 3
 
     .. grid-item-card:: 
         :img-top: ./images/bias_tis.png
@@ -172,19 +135,24 @@ DM vs TIS Bias-Variance Trade-off
         Variance with varying number of trajectories
 
 
-    .. .. grid-item-card:: 
-    ..     :img-top: ./images/mse_tis.png
+    .. grid-item-card:: 
+        :img-top: ./images/mse_tis.png
 
         MSE with varying number of trajectories
 
 
-DM works well with small n_trajectries, TIS is getting better with large n_trajectries. 
+DM works well with small number of trajectries :math:`n`, TIS is getting better with large number of trajectries. 
 DM(high bias, low variance) and TIS(low bias, high variance) are a trade-off between bias and variance.
 
 
 DM vs TIS Curse of Horizon
 ^^^^^^
-.. grid:: 1 1 2 2
+.. grid:: 1 1 2 3
+
+    .. grid-item-card:: 
+        :img-top: ./images/bias_step_per_trajectory.png
+
+        Bias with varying number of step_per_trajectory
 
     .. grid-item-card:: 
         :img-top: ./images/variance_step_per_trajectory.png
@@ -197,12 +165,17 @@ DM vs TIS Curse of Horizon
         MSE with varying number of step_per_trajectory
 
 
-TIS tends to have less bias than DM, and the bias decreases as the number of trajectories :math:`n` increases. On the other hand, variance of TIS tends to be larger than that of DM, and the larger the trajectory length :math:`T`, the larger the variance.
+.. TIS tends to have less bias than DM, and the bias decreases as the trajectory length :math:`T` increases. 
+TIS tends to have less bias than DM,
+On the other hand, variance of TIS tends to be larger than that of DM, and the larger the trajectory length :math:`T`, the larger the variance.
 
 .. _implementation_pdis:
 
 Per-Decision Importance Sampling (PDIS)
 ----------
+
+    * :class:`PerDecisionImportanceSampling`
+
 PDIS :cite:`precup2000eligibility` leverages the sequential nature of the MDP to reduce the variance of TIS.
 Specifically, since :math:`s_t` only depends on :math:`s_0, \ldots, s_{t-1}` and :math:`a_0, \ldots, a_{t-1}` and is independent of :math:`s_{t+1}, \ldots, s_{T}` and :math:`a_{t+1}, \ldots, a_{T}`,
 PDIS only considers the importance weight of the past interactions when estimating :math:`r_t` as follows.
@@ -224,25 +197,27 @@ Unbiased Estimator
     .. math::
 
         \mathbb{E}_{\tau}[\hat{J}_{\mathrm{PDIS}} (\pi; \mathcal{D})]
-        &= \mathbb{E}_{\tau \sim q}\left[\sum_{t=0}^{T-1}\frac{\pi(a_1|s_1)\cdots \pi(a_{t}|s_{t})}
+        &= \mathbb{E}_{\tau \sim p_{\pi_0}}\left[\sum_{t=0}^{T-1}\frac{\pi(a_1|s_1)\cdots \pi(a_{t}|s_{t})}
         {\pi_0(a_1|s_1)\cdots \pi_0(a_{t}|s_{t})} \gamma^{t}r_t \right]\\
-        &= \sum_{t=0}^{T-1} \mathbb{E}_{\tau \sim q} \left[ \frac{\pi(a_1|s_1)\cdots \pi(a_{t}|s_{t})}
+        &= \sum_{t=0}^{T-1} \mathbb{E}_{\tau \sim p_{\pi_0}} \left[ \frac{\pi(a_1|s_1)\cdots \pi(a_{t}|s_{t})}
         {\pi_0(a_1|s_1)\cdots \pi_0(a_{t}|s_{t})} \gamma^{t}r_t  \right] \\
-        &= \sum_{t=0}^{T-1} \mathbb{E}_{\tau \sim q}\left[\frac{\pi(a_1|s_1)\cdots \pi(a_{t}|s_{t})}
+        &= \sum_{t=0}^{T-1} \mathbb{E}_{\tau \sim p_{\pi_0}}\left[\frac{\pi(a_1|s_1)\cdots \pi(a_{t}|s_{t})}
         {\pi_0(a_1|s_1)\cdots \pi_0(a_{t}|s_{t})} \gamma^{t}r_t \right]
-        \mathbb{E}_{\tau \sim q}\left[\frac{\pi(a_{t+1}|s_{t+1})\cdots \pi(a_{T-1}|s_{T-1})}
+    \underbrace{\mathbb{E}_{\pi_0(a_1|s_1)\cdots\pi_0(a_t|s_t)}\left[\sum_{a_{t+1}}\cdots\sum_{a_{T-1}}\pi(a_{t+1}|s_{t+1})\cdots\pi(a_{T-1}|s_{T-1})\right]}_{=1} \\
+        &= \sum_{t=0}^{T-1} \mathbb{E}_{\tau \sim p_{\pi_0}}\left[\frac{\pi(a_1|s_1)\cdots \pi(a_{t}|s_{t})}
+        {\pi_0(a_1|s_1)\cdots \pi_0(a_{t}|s_{t})} \gamma^{t}r_t \right]
+        \mathbb{E}_{\tau \sim p_{\pi_0}}\left[\frac{\pi(a_{t+1}|s_{t+1})\cdots \pi(a_{T-1}|s_{T-1})}
         {\pi_0(a_{t+1}|s_{t+1})\cdots \pi_0(a_{T-1}|s_{T-1})}\right]\\
-        &= \mathbb{E}_{\tau \sim q}\left[\sum_{t=0}^{T-1}\frac{\pi(a_1|s_1)\cdots \pi(a_{T-1}|s_{T-1})}
+        &= \mathbb{E}_{\tau \sim p_{\pi_0}}\left[\sum_{t=0}^{T-1}\frac{\pi(a_1|s_1)\cdots \pi(a_{T-1}|s_{T-1})}
         {\pi_0(a_1|s_1)\cdots \pi_0(a_{T-1}|s_{T-1})} \gamma^{t}r_t \right]\\
-        &= \mathbb{E}_{\tau}[\hat{J}_{\mathrm{TIS}} (\pi; \mathcal{D})] \\
+        &= \mathbb{E}_{\tau\sim p_{\pi}}[\hat{J}_{\mathrm{TIS}} (\pi; \mathcal{D})] \\
         &= J
-
 
 Variance Analysis
 
 .. math::
 
-    \mathbb{V}_{t}[\hat{J}_{\mathrm{PDIS}}^{H+1-t}(\pi; \mathcal{D})] = \mathbb{V}[J(s_t)] + \mathbb{E}_t[{w_t}^2\mathbb{V}_{t+1}[r_t]] + \mathbb{E}_t[\gamma^2{w_t}^2\mathbb{V}_{t+1}[\hat{J}_{\mathrm{PDIS}}^{H-t}(\pi; \mathcal{D})]] + \mathbb{E}_t[\mathbb{V}_t[w_tQ(s_t, a_t)]]
+    \mathbb{V}_{t}[\hat{J}_{\mathrm{PDIS}}^{H+1-t}(\pi; \mathcal{D})] = \mathbb{V}[J(s_t)] + \mathbb{E}_t[{w_t}^2\mathbb{V}_{t+1}[r_t]]+ \mathbb{E}_t[\mathbb{V}_t[w_tQ(s_t, a_t)]] + \mathbb{E}_t[\gamma^2{w_t}^2\mathbb{V}_{t+1}[\hat{J}_{\mathrm{PDIS}}^{H-t}(\pi; \mathcal{D})]] 
 
 where :math:`w_{t} := \pi_e(a_{t'} | s_{t'}) / \pi_b(a_{t'} | s_{t'})`, 
 :math:`\mathbb{E}_{t}:= \mathbb{E}[\cdot \mid s_0, a_0, r_0, ..., s_{t-1}, a_{t-1}, r_{t-1}]`
@@ -250,53 +225,24 @@ where :math:`w_{t} := \pi_e(a_{t'} | s_{t'}) / \pi_b(a_{t'} | s_{t'})`,
 .. dropdown:: proof
 
     .. math::
-
         &\mathbb{V}_{t}[\hat{J}_{\mathrm{PDIS}}^{H+1-t}(\pi; \mathcal{D})]\\
         &=\mathbb{E}_{t}\left[\left(\hat{J}_{\mathrm{PDIS}}^{H+1-t}\right)^2\right]-\Bigl(\mathbb{E}_{t}[V(s_t)]\Bigr)^2 \\
-        &=\mathbb{E}_{t}\left[\left(w_t\left(r_t+\gamma J_{\mathrm{PDIS}}^{H-t} \right)\right)^2\right]-\mathbb{E}_{t}[V(s_t)^2]+\mathbb{V}_t[V(s_t)]\\
-        &=\mathbb{E}_{t}\left[\left(w_tQ(s_t, a_t)+w_t\left(r_t+\gamma J_{\mathrm{PDIS}}^{H-t}-Q(s_t, a_t)\right)\right)^2-V(s_t)^2\right]+\mathbb{V}_{t}[V(s_t)]\\
-        &=\mathbb{E}_{t}\left[\left(w_tQ(s_t, a_t)+w_t\left(r_t-R(s_t, a_t)\right)+w_t\gamma \left(J_{\mathrm{PDIS}}^{H-t} -\mathbb{E}_{t+1}[V(s_{t+1})]\right)\right)^2 -V(s_t)^2\right]+\mathbb{V}_{t}[V(s_t)]\\
+        &=\mathbb{E}_{t}\left[\left(w_t\left(r_t+\gamma \hat{J}_{\mathrm{PDIS}}^{H-t} \right)\right)^2\right]-\mathbb{E}_{t}[V(s_t)^2]+\mathbb{V}_t[V(s_t)]\\
+        &=\mathbb{E}_{t}\left[\left(w_tQ(s_t, a_t)+w_t\left(r_t+\gamma \hat{J}_{\mathrm{PDIS}}^{H-t}-Q(s_t, a_t)\right)\right)^2-V(s_t)^2\right]+\mathbb{V}_{t}[V(s_t)]\\
+        &=\mathbb{E}_{t}\left[\left(w_tQ(s_t, a_t)+w_t\left(r_t-R(s_t, a_t)\right)+w_t\gamma \left(\hat{J}_{\mathrm{PDIS}}^{H-t} -\mathbb{E}_{t+1}[V(s_{t+1})]\right)\right)^2 -V(s_t)^2\right]+\mathbb{V}_{t}[V(s_t)]\\
         &=\mathbb{E}_{s_t, a_t}\left[\mathbb{E}_{r_t}\left[
-        \left(w_tQ(s_t, a_t)+w_t\left(r_t-R(s_t, a_t)\right)+w_t\gamma \left(J_{\mathrm{PDIS}}^{H-t} -\mathbb{E}_{t+1}[V(s_{t+1})]\right)\right)^2 -V(s_t)^2\right] \biggm\vert s_t, a_t\right]+\mathbb{V}_{t}[V(s_t)]\\
+        \left(w_tQ(s_t, a_t)+w_t\left(r_t-R(s_t, a_t)\right)+w_t\gamma \left(\hat{J}_{\mathrm{PDIS}}^{H-t} -\mathbb{E}_{t+1}[V(s_{t+1})]\right)\right)^2 -V(s_t)^2\right] \biggm\vert s_t, a_t\right]+\mathbb{V}_{t}[V(s_t)]\\
         &=\mathbb{E}_{s_t}\left[\mathbb{E}_{a_t, r_t}\left[
         \left(w_tQ(s_t, a_t)\right)^2 - V(s_t)^2 \mid s_t\right]\right]+\mathbb{E}_{s_t, a_t}\left[\mathbb{E}_{r_{t+1}}\left[w_{t}^2\left(r_t -R(s_t, a_t)\right)^2\right]\right]\\
-        &+\mathbb{E}_{s_t, a_t}\left[\mathbb{E}_{r_{t+1}}\left[w_t^2\gamma^2\left(J_{\mathrm{PDIS}}^{H-t}(s_t, a_t)-\mathbb{E}_{t+1}[V(s_{t+1})]\right)^2\right]\right]+\mathbb{V}_{t}[V(s_t)]\\
+        &+\mathbb{E}_{s_t, a_t}\left[\mathbb{E}_{r_{t+1}}\left[w_t^2\gamma^2\left(\hat{J}_{\mathrm{PDIS}}^{H-t}(s_t, a_t)-\mathbb{E}_{t+1}[V(s_{t+1})]\right)^2\right]\right]+\mathbb{V}_{t}[V(s_t)]\\
+        &=\mathbb{E}_{s_t} \left[ \mathbb{V}_{a_t, r_t} \left [ w_tQ(s_t, a_t) \mid s_t \right] \right ] + \mathbb{E}_{s_t,a_t} \left[w_t^2\mathbb{V}_{r_{t+1}}[r_t]\right]+\mathbb{E}_{s_t, a_t}\left[ w_t^2 \gamma^2\mathbb{V}_{r_{t+1}}[\hat{J}_{\mathrm{PDIS}}^{H-t}]\right]+ \mathbb{V}_t[V(s_t)]\\
         &=\mathbb{E}_{s_t}\left[\mathbb{V}_{a_t, r_t}\left[w_tQ(s_t, a_t) \mid s_t\right]\right]+\mathbb{E}_{s_t, a_t}\left[{w_t}^2\mathbb{V}_{r_{t+1}}[r_t]\right] + \mathbb{E}_{s_t, a_t}\left[\gamma^2{w_t}^2\mathbb{V}_{r_{t+1}}[\hat{J}_{\mathrm{PDIS}}^{H-t}]\right] + \mathbb{V}_t[V(s_t)] 
 
-
-
-
-:math:`\mathbb{V}[J(s_t)]`: state transition randomness
-
-:math:`\mathbb{E}_t[{w_t}^2\mathbb{V}_{t+1}[r_t]]` : action stochasticity in :math:`\pi_b` randomness
-
-:math:`\mathbb{E}_t[\gamma^2{w_t}^2\mathbb{V}_{t+1}[\hat{J}_{\mathrm{PDIS}}^{H-t}(\pi; \mathcal{D})]]`: variance from future steps
-
-:math:`\mathbb{E}_t[\mathbb{V}_t[w_t]Q(s_t, a_t)]` : reward randomness
-
-PDIS remains unbiased while reducing the variance of TIS. However, when trajectory length :math:`T` is large, PDIS still suffers from high variance.
-
-    * :class:`DiscretePerDecisionImportanceSampling`
-    * :class:`ContinuousPerDecisionWiseImportanceSampling`
+PDIS variance is decomposed by the calculation into four terms. The first three terms correspond to variances resulting from distinct sources of randomness at time step :math:`t`: :math:`\mathbb{V}[J(s_t)]` randomness in state transitions, :math:`\mathbb{E}_t[{w_t}^2\mathbb{V}_{t+1}[r_t]]` action stochasticity in reward randomness :math:`\pi_0`, and :math:`\mathbb{E}_t[\gamma^2{w_t}^2\mathbb{V}_{t+1}[\hat{J}_{\mathrm{PDIS}}^{H-t}(\pi; \mathcal{D})]]` variance in rewards. The fourth is a term that includes variances from future steps. PDIS remains unbiased while reducing the variance of TIS. 
 
 
 TIS vs PDIS
 ^^^^^^
-.. card:: 
-    :width: 50%
-    :margin: auto
-    :img-top: 
-    :text-align: center
-    
-
-
-.. card:: 
-    :width: 50%
-    :margin: auto
-    :img-top: 
-    :text-align: center
-    
-
 
 .. grid:: 1 1 2 2
 
@@ -311,13 +257,16 @@ TIS vs PDIS
         MSE with varying number of step_per_trajectory
 
 
-The PDIS has less variance than the TIS. When the number of trajectories:math:`n` is large, it still suffers from variance.
+The PDIS has less variance than the TIS. When the trajectory length :math:`T` is large, it still suffers from variance.
 
 
 .. _implementation_dr:
 
 Doubly Robust (DR)
 ----------
+
+    * :class:`DoublyRobust`
+
 DR :cite:`jiang2016doubly` :cite:`thomas2016data` is a hybrid of model-based estimation and importance sampling.
 It introduces :math:`\hat{Q}` as a baseline estimation in the recursive form of PDIS and applies importance weighting only on its residual.
 
@@ -335,60 +284,61 @@ Unbiased Estimator
 .. dropdown:: proof
 
     .. math::
-
-        &\mathbb{E}_{\tau \sim p}[\hat{J}_{\mathrm{DR}} (\pi; \mathcal{D})]\\
-        &= \mathbb{E}_{\tau \sim p} \left[\sum_{t=0}^{T-1} \gamma^t \left (w_{0:t} (r_t - \hat{Q}(s_t, a_t)) + w_{0:t-1} \mathbb{E}_{a \sim \pi(a | s_t)}[\hat{Q}(s_t, a)]\right)\right]\\
-        &= \mathbb{E}_{\tau \sim p} \left[\sum_{t=0}^{T-1} \gamma^t w_{0:t} r_t \right ] - \mathbb{E}_{\tau \sim p} \left[\sum_{t=0}^{T-1} \gamma^t w_{0:t}\hat{Q}(s_t, a_t)) \right] + \mathbb{E}_{\tau \sim p} \left[\sum_{t=0}^{T-1} \gamma^t w_{0:t-1} \mathbb{E}_{a \sim \pi(a | s_t)}[\hat{Q}(s_t, a)]\right]\\
-        &= \mathbb{E}_{\tau \sim p}[\hat{J}_{\mathrm{PDIS}} (\pi; \mathcal{D})]  - \mathbb{E}_{\tau \sim p} \left[\sum_{t=0}^{T-1} \gamma^t w_{0:t}\hat{Q}(s_t, a_t)) \right] + \mathbb{E}_{\tau \sim p} \left[\sum_{t=0}^{T-1} \gamma^t w_{0:t-1} \mathbb{E}_{a \sim \pi_0(a | s_t)}\left[\frac{\pi(a \mid s_t)}{\pi_0(a \mid s_t)}\hat{Q}(s_t, a)\right]\right]\\
-        &= \mathbb{E}_{\tau \sim p}[\hat{J}_{\mathrm{PDIS}} (\pi; \mathcal{D})]  - \mathbb{E}_{\tau \sim p} \left[\sum_{t=0}^{T-1} \gamma^t w_{0:t}\hat{Q}(s_t, a_t)) \right] + \mathbb{E}_{\tau \sim p} \left[\sum_{t=0}^{T-1} \gamma^t w_{0:t}\hat{Q}(s_t, a_t)) \right] \\
+        &\mathbb{E}_{\tau}[\hat{J}_{\mathrm{DR}} (\pi; \mathcal{D})]\\
+        &= \mathbb{E}_{\tau \sim p_{\pi_0}} \left[\sum_{t=0}^{T-1} \gamma^t \left (w_{0:t} (r_t - \hat{Q}(s_t, a_t)) + w_{0:t-1} \mathbb{E}_{a \sim \pi(a | s_t)}[\hat{Q}(s_t, a)]\right)\right]\\
+        &= \mathbb{E}_{\tau \sim p_{\pi_0}} \left[\sum_{t=0}^{T-1} \gamma^t w_{0:t} r_t \right ] - \mathbb{E}_{\tau \sim p_{\pi_0}} \left[\sum_{t=0}^{T-1} \gamma^t w_{0:t}\hat{Q}(s_t, a_t) \right] + \mathbb{E}_{\tau \sim p_{\pi_0}} \left[\sum_{t=0}^{T-1} \gamma^t w_{0:t-1} \mathbb{E}_{a \sim \pi(a | s_t)}[\hat{Q}(s_t, a)]\right]\\
+        &= \mathbb{E}_{\tau \sim p_{\pi_0}}[\hat{J}_{\mathrm{TIS}} (\pi; \mathcal{D})]  - \mathbb{E}_{\tau \sim p_{\pi_0}} \left[\sum_{t=0}^{T-1} \gamma^t w_{0:t}\hat{Q}(s_t, a_t) \right] + \mathbb{E}_{\tau \sim p_{\pi_0}} \left[\sum_{t=0}^{T-1} \gamma^t w_{0:t-1} \mathbb{E}_{a \sim \pi_0(a | s_t)}\left[\frac{\pi(a \mid s_t)}{\pi_0(a \mid s_t)}\hat{Q}(s_t, a)\right]\right]\\
+        &= \mathbb{E}_{\tau \sim p_{\pi_0}}[\hat{J}_{\mathrm{TIS}} (\pi; \mathcal{D})]  - \mathbb{E}_{\tau \sim p_{\pi_0}} \left[\sum_{t=0}^{T-1} \gamma^t w_{0:t}\hat{Q}(s_t, a_t) \right] + \mathbb{E}_{\tau \sim { (s_{t'}, s_{t'+1}, r_{t'}) \}_{t'=0}^{T-1}}} \prod_{t' = 0}^{T-1}\mathbb{E}_{a \sim \pi_0(\cdot | s_{t'})}\left [\sum_{t=0}^{T-1} \gamma^t w_{0:t-1} \mathbb{E}_{a \sim \pi_0(a | s_t)}\left[\frac{\pi(a \mid s_t)}{\pi_0(a \mid s_t)}\hat{Q}(s_t, a)\right]\right]\\
+        &= \mathbb{E}_{\tau \sim p_{\pi_0}}[\hat{J}_{\mathrm{TIS}} (\pi; \mathcal{D})]  - \mathbb{E}_{\tau \sim p_{\pi_0}} \left[\sum_{t=0}^{T-1} \gamma^t w_{0:t}\hat{Q}(s_t, a_t) \right] + \mathbb{E}_{\tau \sim { (s_{t'}, s_{t'+1}, r_{t'}) \}_{t'=0}^{T-1}}} \prod_{t' = 0}^{T-1}\mathbb{E}_{a \sim \pi_0(\cdot | s_{t'})}\left [\sum_{t=0}^{T-1} \gamma^t w_{0:t-1} \frac{\pi(a_t \mid s_t)}{\pi_0(a_t \mid s_t)}\hat{Q}(s_t, a_t)\right]\\
+        &= \mathbb{E}_{\tau \sim p_{\pi_0}}[\hat{J}_{\mathrm{TIS}} (\pi; \mathcal{D})]  - \mathbb{E}_{\tau \sim p_{\pi_0}} \left[\sum_{t=0}^{T-1} \gamma^t w_{0:t}\hat{Q}(s_t, a_t) \right] + \mathbb{E}_{\tau \sim p_{\pi_0}} \left[\sum_{t=0}^{T-1} \gamma^t w_{0:t}\hat{Q}(s_t, a_t)) \right] \\
         &= J
-
 
 Variance Analysis
 
 .. math::
 
-    \mathbb{V}_{t}[\hat{J}_{\mathrm{DR}}^{H+1-t}(\pi; \mathcal{D})] = \mathbb{V}[J(s_t)] + \mathbb{E}_t\left[{w_t}^2\mathbb{V}_{t+1}[r_t]\right] + \mathbb{E}_t\left[\gamma^2{w_t}^2\mathbb{V}_{t+1}[\hat{J}_{\mathrm{DR}}^{H-t}(\pi; \mathcal{D})]\right] + \mathbb{E}_t\left[\mathbb{V}_t[w_t(\hat{Q}(s_t, a_t)-Q(s_t, a_t))]\right]
+    \mathbb{V}_{t}[\hat{J}_{\mathrm{DR}}^{H+1-t}(\pi; \mathcal{D})] = \mathbb{V}[J(s_t)] + \mathbb{E}_t\left[{w_t}^2\mathbb{V}_{t+1}[r_t]\right] + \mathbb{E}_t\left[\mathbb{V}_t[w_t(\hat{Q}(s_t, a_t)-Q(s_t, a_t))]\right] + \mathbb{E}_t\left[\gamma^2{w_t}^2\mathbb{V}_{t+1}[\hat{J}_{\mathrm{DR}}^{H-t}(\pi; \mathcal{D})]\right] 
 
 .. dropdown:: proof
 
     .. math::
-
         &\mathbb{V}_{t}[\hat{J}_{\mathrm{DR}}^{H+1-t}(\pi; \mathcal{D})]\\
         &=\mathbb{E}_{t}\left[\left(\hat{J}_{\mathrm{DR}}^{H+1-t}\right)^2\right]-\Bigl(\mathbb{E}_{t}[V(s_t)]\Bigr)^2 \\
-        &=\mathbb{E}_{t}\left[\left(\hat{V}(s_t)+w_t\left(r_t+\gamma J_{\mathrm{DR}}^{H-t} - \hat{Q}(s_t, a_t)\right)\right)^2\right]-\mathbb{E}_{t}[V(s_t)^2]+\mathbb{V}_t[V(s_t)]\\
-        &=\mathbb{E}_{t}\left[\left(w_tQ(s_t, a_t)-w_t\hat{Q}(s_t, a_t)+\hat{V}(s_t)+w_t\left(r_t+\gamma J_{\mathrm{DR}}^{H-t}-Q(s_t, a_t)\right)\right)^2-V(s_t)^2\right]+\mathbb{V}_{t}[V(s_t)]\\
-        &=\mathbb{E}_{t}\left[\left(w_t(Q(s_t, a_t)-\hat{Q}(s_t, a_t))+\hat{V}(s_t)+w_t\left(r_t-R(s_t, a_t)\right)+w_t\gamma \left(J_{\mathrm{DR}}^{H-t} -\mathbb{E}_{t+1}[V(s_{t+1})]\right)\right)^2 -V(s_t)^2\right]+\mathbb{V}_{t}[V(s_t)]\\
+        &=\mathbb{E}_{t}\left[\left(\hat{V}(s_t)+w_t\left(r_t+\gamma \hat{J}_{\mathrm{DR}}^{H-t} - \hat{Q}(s_t, a_t)\right)\right)^2\right]-\mathbb{E}_{t}[V(s_t)^2]+\mathbb{V}_t[V(s_t)]\\
+        &=\mathbb{E}_{t}\left[\left(w_tQ(s_t, a_t)-w_t\hat{Q}(s_t, a_t)+\hat{V}(s_t)+w_t\left(r_t+\gamma \hat{J}_{\mathrm{DR}}^{H-t}-Q(s_t, a_t)\right)\right)^2-V(s_t)^2\right]+\mathbb{V}_{t}[V(s_t)]\\
+        &=\mathbb{E}_{t}\left[\left(w_t(Q(s_t, a_t)-\hat{Q}(s_t, a_t))+\hat{V}(s_t)+w_t\left(r_t-R(s_t, a_t)\right)+w_t\gamma \left(\hat{J}_{\mathrm{DR}}^{H-t} -\mathbb{E}_{t+1}[V(s_{t+1})]\right)\right)^2 -V(s_t)^2\right]+\mathbb{V}_{t}[V(s_t)]\\
         &=\mathbb{E}_{s_t, a_t}\left[\mathbb{E}_{r_t}\left[
-        \left(w_t(Q(s_t, a_t)-\hat{Q}(s_t, a_t))+\hat{V}(s_t)+w_t\left(r_t-R(s_t, a_t)\right)+w_t\gamma \left(J_{\mathrm{DR}}^{H-t} -\mathbb{E}_{t+1}[V(s_{t+1})]\right)\right)^2 -V(s_t)^2\right] \biggm\vert s_t, a_t\right]+\mathbb{V}_{t}[V(s_t)]\\
+        \left(w_t(Q(s_t, a_t)-\hat{Q}(s_t, a_t))+\hat{V}(s_t)+w_t\left(r_t-R(s_t, a_t)\right)+w_t\gamma \left(\hat{J}_{\mathrm{DR}}^{H-t} -\mathbb{E}_{t+1}[V(s_{t+1})]\right)\right)^2 -V(s_t)^2\right] \biggm\vert s_t, a_t\right]+\mathbb{V}_{t}[V(s_t)]\\
         &=\mathbb{E}_{s_t}\left[\mathbb{E}_{a_t, r_t}\left[
         \left(-w_t(Q(s_t, a_t)-\hat{Q}(s_t, a_t))+\hat{V}(s_t)\right)^2 - V(s_t)^2 \mid s_t\right]\right]+\mathbb{E}_{s_t, a_t}\left[\mathbb{E}_{r_{t+1}}\left[w_{t}^2\left(r_t -R(s_t, a_t)\right)^2\right]\right]\\
-        &+\mathbb{E}_{s_t, a_t}\left[\mathbb{E}_{r_{t+1}}\left[w_t^2\gamma^2\left(J_{\mathrm{DR}}^{H-t}(s_t, a_t)-\mathbb{E}_{t+1}[V(s_{t+1})]\right)^2\right]\right]+\mathbb{V}_{t}[V(s_t)]\\
+        &+\mathbb{E}_{s_t, a_t}\left[\mathbb{E}_{r_{t+1}}\left[w_t^2\gamma^2\left(\hat{J}_{\mathrm{DR}}^{H-t}(s_t, a_t)-\mathbb{E}_{t+1}[V(s_{t+1})]\right)^2\right]\right]+\mathbb{V}_{t}[V(s_t)]\\
         &=\mathbb{E}_{s_t} \left[ \mathbb{V}_{a_t, r_t} \left [ -w_t(Q(s_t, a_t)-\hat{Q}(s_t, a_t))+\hat{V}(s_t) \mid s_t \right] \right ] + \mathbb{E}_{s_t,a_t} \left[w_t^2\mathbb{V}_{r_{t+1}}[r_t]\right]+\mathbb{E}_{s_t, a_t}\left[ w_t^2 \gamma^2\mathbb{V}_{r_{t+1}}[\hat{J}_{\mathrm{DR}}^{H-t}]\right]+ \mathbb{V}_t[V(s_t)]\\
         &=\mathbb{E}_{s_t}\left[\mathbb{V}_{a_t, r_t}\left[w_t(\hat{Q}(s_t, a_t)-Q(s_t, a_t)) \mid s_t\right]\right]+\mathbb{E}_{s_t, a_t}\left[{w_t}^2\mathbb{V}_{r_{t+1}}[r_t]\right] + \mathbb{E}_{s_t, a_t}\left[\gamma^2{w_t}^2\mathbb{V}_{r_{t+1}}[\hat{J}_{\mathrm{DR}}^{H-t}]\right] + \mathbb{V}_t[V(s_t)] 
 
-
-The first 3 terms are he same as PDIS, but 4th term differs from PDIS.
-
-DR is unbiased and DR reduces the variance of PDIS when :math:`\hat{Q}(\cdot)` is reasonably accurate to satisfy :math:`0 < \hat{Q}(\cdot) < 2 Q(\cdot)`. 
-
-However, when the importance weight is quite large, it may still suffer from a high variance.
-
-    * :class:`DiscreteDoublyRobust`
-    * :class:`ContinuousDoublyRobust`
-
+3 terms are the same as PDIS, but 3rd term :math:`\mathbb{E}_t\left[\mathbb{V}_t[w_t(\hat{Q}(s_t, a_t)-Q(s_t, a_t))]\right]` differs from PDIS. DR reduces the variance of PDIS when :math:`\hat{Q}(\cdot)` is reasonably accurate to satisfy :math:`0 < \hat{Q}(\cdot) < 2 Q(\cdot)`. 
 
 DR vs PDIS
 ^^^^^^
 
+.. grid:: 1 1 2 3
 
-.. image:: ./images/variance_dr.png
-    :scale: 45%
-    :align: center
+    .. grid-item-card:: 
+        :img-top: ./images/bias_dr.png
 
-|
+        Bias with varying number of trajectories
 
-The DR has less variance than the PDIS. When the number of trajectories:math:`n` is large, it still suffers from variance. 
+    .. grid-item-card:: 
+        :img-top: ./images/variance_dr.png
+
+        Variance with varying number of trajectories
+
+    .. grid-item-card:: 
+        :img-top: ./images/mse_dr.png
+
+        MSE with varying number of trajectories
+
+
+The DR has less variance than the PDIS. However, DR also depends on importance weights as TIS, so when the trajectory length :math:`T` is large, DR can incur high variance.
 
 
 Self-Normalized estimators
@@ -409,44 +359,38 @@ Self-normalized estimators are no longer unbiased, but has variance bounded by :
 
 Self-normalized Trajectory-wise Importance Sampling (SNTIS)
 ----------
+
+    * :class:`SelfNormalizedTrajectoryWiseImportanceSampling`
+
 .. math::
 
     \hat{J}_{\mathrm{SNTIS}} (\pi; \mathcal{D}) := \mathbb{E}_{n} \left[\sum_{t=0}^{T-1} \gamma^t \frac{w_{1:T-1}}{\mathbb{E}_n[w_{1:T-1}]} r_t \right]   
 .
-
-    * :class:`DiscreteSelfNormalizedTrajectoryWiseImportanceSampling`
-    * :class:`ContinuousSelfNormalizedTrajectoryWiseImportanceSampling`
-
 
 .. _implementation_snpdis:
 
 Self-normalized Per-Decision Importance Sampling (SNPDIS)
 ----------
 
+    * :class:`SelfNormalizedPerDecisionImportanceSampling`
+
 .. math::
 
     \hat{J}_{\mathrm{SNPDIS}} (\pi; \mathcal{D}) := \mathbb{E}_{n} \left[ \sum_{t=0}^{T-1} \gamma^t \frac{w_{0:t}}{\mathbb{E}_n[w_{0:t}]} r_t \right]
 .
-
-    * :class:`DiscreteSelfNormalizedPerDecisionImportanceSampling`
-    * :class:`ContinuousSelfNormalizedPerDecisionImportanceSampling`
-
-
 
 .. _implementation_sndr:
 
 Self-normalized Doubly Robust (SNDR)
 ----------
 
+    * :class:`SelfNormalizedDoublyRobust`
+
 .. math::
 
     \hat{J}_{\mathrm{SNDR}} (\pi; \mathcal{D})
     := \mathbb{E}_{n} \left[\sum_{t=0}^{T-1} \gamma^t \left(\frac{w_{0:t}}{\mathbb{E}_n[w_{0:t}]} (r_t - \hat{Q}(s_t, a_t)) + \frac{w_{0:t-1}}{\mathbb{E}_n[w_{0:t-1}]} \mathbb{E}_{a \sim \pi(a | s_t)}[\hat{Q}(s_t, a)]\right)\right]
 .
-
-    * :class:`DiscreteSelfNormalizedDoublyRobust`
-    * :class:`ContinuousSelfNormalizedDoublyRobust`
-
 
 .. grid:: 1 1 2 3
 
@@ -465,12 +409,29 @@ Self-normalized Doubly Robust (SNDR)
 
         MSE with varying number of trajectories
 
+The SNTIS(Self-normalized Trajectory-wise Importance Sampling) is able to reduce the variance while keeping the bias much the same compared to the TIS, resulting in a reduced MSE.
+
 
 .. _implementation_marginal_ope:
 
 Marginalized Importance Sampling Estimators
 ----------
-When the length of trajectory (:math:`T`) is large, even per-decision importance weights can exponentially large in the latter part of the trajectory.
+(State Marginal Estimators)
+
+    * :class:`StateMarginalDM`
+    * :class:`StateMarginalIS`
+    * :class:`StateMarginalDR`
+    * :class:`StateMarginalSNIS`
+    * :class:`StateMarginalSNDR`
+
+(State-Action Marginal Estimators)
+
+    * :class:`StateActionMarginalIS`
+    * :class:`StateActionMarginalDR`
+    * :class:`StateActionMarginalSNIS`
+    * :class:`StateActionMarginalSNDR`
+
+When the length of trajectory :math:`T` is large, even per-decision importance weights can exponentially large in the latter part of the trajectory.
 To alleviate this, state marginal or state-action marginal importance weights can be used instead of the per-decision importance weight as follows :cite:`liu2018breaking` :cite:`uehara2020minimax`.
 
 .. math::
@@ -491,27 +452,34 @@ where :math:`w_t(s_t, a_t) = \pi(a_t | s_t) / \pi_0(a_t | s_t)` is the immediate
 This estimator is particularly useful when policy visits the same or similar states among different trajectories or different timestep.
 (e.g., when the state transition is something like :math:`\cdots \rightarrow s_1 \rightarrow s_2 \rightarrow s_1 \rightarrow s_2 \rightarrow \cdots` or when the trajectories always visits some particular state as :math:`\cdots \rightarrow s_{*} \rightarrow s_{1} \rightarrow s_{*} \rightarrow \cdots`)
 
-We implement state marginal and state-action marginal OPE estimators in the following classes (both for :class:`Discrete-` and :class:`Continuous-` action spaces).
+We implement state marginal and state-action marginal OPE estimators in the following classes 
 
-(State Marginal Estimators)
+.. grid:: 1 1 2 3
 
-    * :class:`StateMarginalDirectMethod`
-    * :class:`StateMarginalImportanceSampling`
-    * :class:`StateMarginalDoublyRobust`
-    * :class:`StateMarginalSelfNormalizedImportanceSampling`
-    * :class:`StateMarginalSelfNormalizedDoublyRobust`
+    .. grid-item-card:: 
+        :img-top: ./images/bias_samis.png
 
-(State-Action Marginal Estimators)
+        Bias with varying number of trajectories
 
-    * :class:`StateActionMarginalImportanceSampling`
-    * :class:`StateActionMarginalDoublyRobust`
-    * :class:`StateActionMarginalSelfNormalizedImportanceSampling`
-    * :class:`StateActionMarginalSelfNormalizedDoublyRobust`
+    .. grid-item-card:: 
+        :img-top: ./images/variance_samis.png
+
+        Variance with varying number of trajectories
+
+    .. grid-item-card:: 
+        :img-top: ./images/mse_samis.png
+
+        MSE with varying number of trajectories
+
+SAMIS(StateActionMarginalIS) requires estimating state-action marginal importance weights, which introduces a bias, but it can reduce variance more than PDIS.
 
 .. _implementation_drl:
 
 Double Reinforcement Learning (DRL)
 ----------
+
+    * :class:`DoubleReinforcementLearning`
+
 Comparing DR in the standard and marginal OPE, we notice that their formulation is slightly different as follows.
 
 (DR in standard OPE)
@@ -544,8 +512,25 @@ Therefore, to alleviate the potential bias introduced in :math:`Q`, DRL uses the
 Specifically, let :math:`K` is the number of folds and :math:`\mathcal{D}_j` is the :math:`j`-th split of logged data consisting of :math:`n_k` samples.
 Cross-fitting trains :math:`w^j` and :math:`Q^j` on the subset of data used for OPE, i.e., :math:`\mathcal{D} \setminus \mathcal{D}_j`.
 
-    * :class:`DiscreteDoubleReinforcementLearning`
-    * :class:`ContinuousDoubleReinforcementLearning`
+
+.. grid:: 1 1 2 3
+
+    .. grid-item-card:: 
+        :img-top: ./images/bias_drl.png
+
+        Bias with varying number of trajectories
+
+    .. grid-item-card:: 
+        :img-top: ./images/variance_drl.png
+
+        Variance with varying number of trajectories
+
+    .. grid-item-card:: 
+        :img-top: ./images/mse_drl.png
+
+        MSE with varying number of trajectories
+
+Similar to the relationship between DR and PDIS, the better the estimation of the Q function of DRL, the smaller the variance than MIS.
 
 .. _implementation_sope:
 
@@ -569,23 +554,25 @@ may introduce some bias in estimation. To alleviate this and control the bias-va
     
 where SOPE uses per-decision importance weight :math:`w_t(s_t, a_t) := \pi(a_t | s_t) / \pi_0(a_t | s_t)` for the :math:`k` most recent timesteps.
     
-.. grid:: 1 1 2 2
+.. grid:: 1 1 2 3
 
     .. grid-item-card:: 
-        :img-top: ./images/bias_samdr.png
+        :img-top: ./images/bias_sope.png
 
         Bias with varying number of trajectories
 
     .. grid-item-card:: 
-        :img-top: ./images/variance_samdr.png
+        :img-top: ./images/variance_sope.png
 
         Variance with varying number of trajectories
 
     .. grid-item-card:: 
-        :img-top: ./images/mse_samdr.png
+        :img-top: ./images/mse_sope.png
 
         MSE with varying number of trajectories
-    MSE with varying number of trajectories
+
+SOPE is a combined SIS and SAMIS. SOPE reduces MSE with less bias than SAMIS and less variance than PDIS. we use n_step_pdis :math:`k=5`. If :math:`k` is large, bias can be reduced, if it is small, variance can be reduced.
+
 More tutorials with a variety of environments and OPE estimators are available in the next page!
 
 .. raw:: html
