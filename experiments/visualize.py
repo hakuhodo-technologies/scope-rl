@@ -520,7 +520,7 @@ def process(
             env_name, conventional_metrics_dict, f"ddqn_softmax_{behavior_tau}"
         )
 
-    if env_name in ["Hopper", "Swimmer", "Acrobot"]:
+    if env_name in ["Hopper", "Swimmer", "CartPole"]:
         visualize_sharpe_ratio(
             env_name,
             topk_metrics_dict,

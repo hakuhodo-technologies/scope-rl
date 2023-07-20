@@ -112,12 +112,12 @@ hydra:
     hydra:
     - hydra.mode=RUN
     task:
-    - setting=CartPole
-    - base_model_config=CartPole
+    - setting=Acrobot
+    - base_model_config=Acrobot
   job:
-    name: policy_learning
+    name: visualize
     chdir: null
-    override_dirname: base_model_config=CartPole,setting=CartPole
+    override_dirname: base_model_config=Acrobot,setting=Acrobot
     id: ???
     num: ???
     config_name: config
@@ -144,8 +144,8 @@ hydra:
       provider: schema
     output_dir: /Users/haruka/Downloads/scope-rl/experiments
     choices:
-      base_model_config: CartPole
-      setting: CartPole
+      base_model_config: Acrobot
+      setting: Acrobot
       hydra/env: default
       hydra/callbacks: null
       hydra/job_logging: default

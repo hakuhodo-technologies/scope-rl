@@ -8,11 +8,11 @@ candidate_sigmas:
   - 1.0
   - 2.0
   - 4.0
-candidate_epsilons: 
-  - 0.10
-  - 0.15
-  - 0.20
-  - 0.25
+candidate_epsilons:
+- 0.05
+- 0.10
+- 0.15
+- 0.20
 max_episode_steps: None
 n_trajectories: 10000
 n_candidate_policies: 10

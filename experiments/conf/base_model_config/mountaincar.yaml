@@ -13,7 +13,7 @@ ddqn:
     type: linear
     epsilon: 0.01
     duration: 20000
-  n_steps: 100000
+  n_steps: 50000
   update_start_step: 1000
 cql:
   discrete:

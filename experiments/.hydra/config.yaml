@@ -1,8 +1,8 @@
 setting:
-  env_name: CartPole
+  env_name: Acrobot
   env_version: None
   behavior_sigma: 1.0
-  behavior_tau: 1.0
+  behavior_tau: 5.0
   candidate_sigmas:
   - 0.0
   - 0.5
@@ -10,11 +10,11 @@ setting:
   - 2.0
   - 4.0
   candidate_epsilons:
+  - 0.05
   - 0.1
-  - 0.3
-  - 0.5
-  - 0.7
-  max_episode_steps: 200
+  - 0.15
+  - 0.2
+  max_episode_steps: None
   n_trajectories: 10000
   n_candidate_policies: 10
   state_scaler: true
@@ -31,12 +31,12 @@ base_model_config:
   ddqn:
     target_update_interval: 100
     batch_size: 32
-    lr: 0.001
+    lr: 5.0e-05
     explorer:
       type: linear
-      epsilon: 0.01
-      duration: 8000
-    n_steps: 8000
+      epsilon: 0.1
+      duration: 10000
+    n_steps: 20000
     update_start_step: 1000
   cql:
     discrete:
@@ -45,9 +45,9 @@ base_model_config:
       alpha: 1.0
   bcq:
     batch_size: 32
-    lr: 0.001
+    lr: 5.0e-05
     target_update_interval: 1000
-    action_flexibility: 0.3
+    action_flexibility: 0.1
     beta: 0.01
   fqe:
     lr: 0.001

@@ -25,7 +25,7 @@ bcq:
   lr: 1e-3
   target_update_interval: 1000
   action_flexibility: 0.3
-  beta: 0.01
+  beta: 0.1
 fqe:
   lr: 1e-3
 continuous_ope:
