@@ -419,6 +419,22 @@ For more examples, please refer to [quickstart/rtb/rtb_synthetic_discrete_advanc
 If you use our software in your work, please cite our paper:
 
 Haruka Kiyohara, Ren Kishimoto, Kosuke Kawakami, Ken Kobayashi, Kazuhide Nakata, Yuta Saito.<br>
+**SCOPE-RL: A Python Library for Offline Reinforcement Learning, Off-Policy Evaluation, and Policy Selection**<br>
+[link]() (a preprint coming soon..)
+
+Bibtex:
+```
+@article{kiyohara2023towards,
+  author = {Kiyohara, Haruka and Kishimoto, Ren and Kawakami, Kosuke and Kobayashi, Ken and Nataka, Kazuhide and Saito, Yuta},
+  title = {SCOPE-RL: A Python Library for Offline Reinforcement Learning, Off-Policy Evaluation, and Policy Selection},
+  journal={arXiv preprint arXiv:23xx.xxxxx},
+  year={2023},
+}
+```
+
+If you use our proposed metric "SharpeRatio@k" in your work, please cite our paper:
+
+Haruka Kiyohara, Ren Kishimoto, Kosuke Kawakami, Ken Kobayashi, Kazuhide Nakata, Yuta Saito.<br>
 **Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation in Reinforcement Learning**<br>
 [link]() (a preprint coming soon..)
 
@@ -427,15 +443,20 @@ Bibtex:
 @article{kiyohara2023towards,
   author = {Kiyohara, Haruka and Kishimoto, Ren and Kawakami, Kosuke and Kobayashi, Ken and Nataka, Kazuhide and Saito, Yuta},
   title = {Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation in Reinforcement Learning},
-  journal = {A github repository},
-  pages = {xxx--xxx},
-  year = {2023},
+  journal={arXiv preprint arXiv:23xx.xxxxx},
+  year={2023},
 }
 ```
 
+## Google Group
+
+If you are interested in SCOPE-RL, please follow its updates via the google group:
+https://groups.google.com/g/scope-rl
+
+
 ## Contribution
 Any contributions to SCOPE-RL are more than welcome!
-Please refer to [CONTRIBUTING.md](./CONTRIBUTING.md) for general guidelines on how to contribute the project.
+Please refer to [CONTRIBUTING.md](./CONTRIBUTING.md) for general guidelines on how to contribute to the project.
 
 ## License
 

@@ -37,7 +37,7 @@ SyntheticGym provides a standardized environment in both discrete and continuous
 - `"BasicEnv-continuous-v0"`: Standard continuous environment.
 - `"BasicEnv-discrete-v0"`: Standard discrete environment.
 
-SyntheticGym consists of the following a environments.
+SyntheticGym consists of the following environment.
 - [BasicEnv](./envs/basic.py#L18): The basic configurative environment.
 
 SyntheticGym is configurative about the following module.
@@ -52,7 +52,7 @@ SyntheticGym can be installed as a part of [scope-rl](../) using Python's packag
 pip install scope-rl
 ```
 
-You can also install from the source.
+You can also install it from the source.
 ```bash
 git clone https://github.com/hakuhodo-technologies/scope-rl
 cd scope-rl
@@ -242,16 +242,15 @@ More examples are available at [quickstart/basic_synthetic_customize_env.ipynb](
 If you use our software in your work, please cite our paper:
 
 Haruka Kiyohara, Ren Kishimoto, Kosuke Kawakami, Ken Kobayashi, Kazuhide Nakata, Yuta Saito.<br>
-**Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation in Reinforcement Learning**<br>
+**SCOPE-RL: A Python Library for Offline Reinforcement Learning, Off-Policy Evaluation, and Policy Selection**<br>
 [link]() (a preprint coming soon..)
 
 Bibtex:
 ```
 @article{kiyohara2023towards,
   author = {Kiyohara, Haruka and Kishimoto, Ren and Kawakami, Kosuke and Kobayashi, Ken and Nataka, Kazuhide and Saito, Yuta},
-  title = {Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation in Reinforcement Learning},
-  journal = {A github repository},
-  pages = {xxx--xxx},
+  title = {SCOPE-RL: A Python Library for Offline Reinforcement Learning, Off-Policy Evaluation, and Policy Selection},
+  journal={arXiv preprint arXiv:23xx.xxxxx},
   year = {2023},
 }
 ```
