@@ -207,11 +207,11 @@ and Doubly Robust (DR) :cite:`jiang2016doubly, thomas2016data`.
     # create input for OPE class
     prep = CreateOPEInput(
         env=env,
-        logged_dataset=test_logged_dataset,
-        use_base_model=True,  # use model-based prediction
     )
     input_dict = prep.obtain_whole_inputs(
+        logged_dataset=test_logged_dataset,
         evaluation_policies=evaluation_policies,
+        require_value_prediction=True,
         n_trajectories_on_policy_evaluation=100,
         random_state=random_state,
     )

@@ -280,12 +280,13 @@ random_ = EpsilonGreedyHead(
 evaluation_policies = [cql_, ddqn_, random_]
 # create input for the OPE class
 prep = CreateOPEInput(
+    env=env,
     logged_dataset=test_logged_dataset,
-    use_base_model=True,  # use model-based prediction
 )
 input_dict = prep.obtain_whole_inputs(
+    logged_dataset=test_logged_dataset,
     evaluation_policies=evaluation_policies,
-    env=env,
+    require_value_prediction=True,
     n_trajectories_on_policy_evaluation=100,
     random_state=random_state,
 )

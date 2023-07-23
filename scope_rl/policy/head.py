@@ -680,7 +680,7 @@ class GaussianHead(BaseHead):
             raise ValueError("random_state must be given")
         self.random_ = check_random_state(self.random_state)
 
-    def _calc_pscore(self, greedy_action: np.ndarray, action: np.ndarray):
+    def calc_action_choice_probability(self, greedy_action: np.ndarray, action: np.ndarray):
         """Calculate pscore.
 
         Parameters
@@ -723,7 +723,7 @@ class GaussianHead(BaseHead):
         """
         greedy_action = self.base_policy.predict(x)
         action = self.sample_action(x)
-        pscore = self._calc_pscore(greedy_action, action)
+        pscore = self.calc_action_choice_probability(greedy_action, action)
         return action, pscore
 
     def calc_pscore_given_action(self, x: np.ndarray, action: np.ndarray):
@@ -744,7 +744,7 @@ class GaussianHead(BaseHead):
 
         """
         greedy_action = self.base_policy.predict(x)
-        return self._calc_pscore(greedy_action, action)
+        return self.calc_action_choice_probability(greedy_action, action)
 
     def sample_action(self, x: np.ndarray):
         """Sample action.
@@ -844,7 +844,7 @@ class TruncatedGaussianHead(BaseHead):
             raise ValueError("random_state must be given")
         self.random_ = check_random_state(self.random_state)
 
-    def _calc_pscore(self, greedy_action: np.ndarray, action: np.ndarray):
+    def calc_action_choice_probability(self, greedy_action: np.ndarray, action: np.ndarray):
         """Calculate pscore.
 
         Parameters
@@ -889,7 +889,7 @@ class TruncatedGaussianHead(BaseHead):
         """
         greedy_action = self.base_policy.predict(x)
         action = self.sample_action(x)
-        pscore = self._calc_pscore(greedy_action, action)
+        pscore = self.calc_action_choice_probability(greedy_action, action)
         return action, pscore
 
     def calc_pscore_given_action(self, x: np.ndarray, action: np.ndarray):
@@ -910,7 +910,7 @@ class TruncatedGaussianHead(BaseHead):
 
         """
         greedy_action = self.base_policy.predict(x)
-        return self._calc_pscore(greedy_action, action)
+        return self.calc_action_choice_probability(greedy_action, action)
 
     def sample_action(self, x: np.ndarray):
         """Sample action.
@@ -975,6 +975,18 @@ class ContinuousEvalHead(BaseHead):
         self.action_type = "continuous"
         if not isinstance(self.base_policy, AlgoBase):
             raise ValueError("base_policy must be a child class of AlgoBase")
+
+    def sample_action_and_output_pscore(self, x: np.ndarray):
+        """Only for API consistency."""
+        pass
+
+    def calc_action_choice_probability(self, x: np.ndarray):
+        """Only for API consistency."""
+        pass
+
+    def calc_pscore_given_action(self, x: np.ndarray, action: np.ndarray):
+        """Only for API consistency."""
+        pass
 
     def sample_action(self, x: np.ndarray):
         """Sample action.
