@@ -153,7 +153,6 @@ class TrainCandidatePolicies:
         if self.fitting_args is None:
             self.fitting_args = {
                 "n_steps": 10000,
-                "scorer": {},
             }
 
     def _learn_base_policy(
