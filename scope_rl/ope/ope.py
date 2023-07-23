@@ -125,7 +125,8 @@ class OffPolicyEvaluation:
         import gym
         import rtbgym
         from d3rlpy.algos import DoubleDQN
-        from d3rlpy.online.buffers import ReplayBuffer
+        from d3rlpy.dataset import ReplayBuffer
+
         from d3rlpy.online.explorers import ConstantEpsilonGreedy
 
         # initialize environment
@@ -2506,7 +2507,8 @@ class CumulativeDistributionOPE:
         import gym
         import rtbgym
         from d3rlpy.algos import DoubleDQN
-        from d3rlpy.online.buffers import ReplayBuffer
+        from d3rlpy.dataset import ReplayBuffer
+
         from d3rlpy.online.explorers import ConstantEpsilonGreedy
 
         # initialize environment

@@ -17,6 +17,7 @@ import gym
 from gym.spaces import Discrete
 
 from d3rlpy.dataset import MDPDataset
+from d3rlpy.ope import FQEConfig
 from d3rlpy.ope import DiscreteFQE
 from d3rlpy.ope import FQE as ContinuousFQE
 from d3rlpy.models.encoders import VectorEncoderFactory
@@ -129,7 +130,8 @@ class CreateOPEInput:
         import gym
         import rtbgym
         from d3rlpy.algos import DoubleDQN
-        from d3rlpy.online.buffers import ReplayBuffer
+        from d3rlpy.dataset import ReplayBuffer
+
         from d3rlpy.online.explorers import ConstantEpsilonGreedy
 
         # initialize environment
@@ -319,7 +321,6 @@ class CreateOPEInput:
                 ),
                 "q_func_factory": MeanQFunctionFactory(),
                 "learning_rate": 1e-4,
-                "use_gpu": torch.cuda.is_available(),
             }
 
         if self.model_args["state_action_dual"] is None:
@@ -406,8 +407,6 @@ class CreateOPEInput:
             actions=self.action,
             rewards=self.reward,
             terminals=self.done,
-            episode_terminals=self.terminal,
-            discrete_action=(self.action_type == "discrete"),
         )
 
     def build_and_fit_FQE(
@@ -440,34 +439,30 @@ class CreateOPEInput:
 
         else:
             self.fqe[evaluation_policy.name] = []
+            fqe_config = FQEConfig(gamma=self.gamma, **self.model_args["fqe"])
 
             for k in range(k_fold):
                 if self.action_type == "discrete":
                     self.fqe[evaluation_policy.name].append(
                         DiscreteFQE(
                             algo=evaluation_policy,
-                            scaler=self.state_scaler,
-                            gamma=self.gamma,
-                            **self.model_args["fqe"],
+                            config=fqe_config,
+                            device=self.device,
                         )
                     )
                 else:
                     self.fqe[evaluation_policy.name].append(
                         ContinuousFQE(
                             algo=evaluation_policy,
-                            scaler=self.state_scaler,
-                            action_scaler=self.action_scaler,
-                            gamma=self.gamma,
-                            **self.model_args["fqe"],
+                            config=fqe_config,
+                            device=self.device,
                         )
                     )
 
             if k_fold == 1:
                 self.fqe[evaluation_policy.name][0].fit(
-                    self.mdp_dataset.episodes,
-                    eval_episodes=self.mdp_dataset.episodes,
+                    self.mdp_dataset,
                     n_steps=n_steps,
-                    scorers={},
                 )
             else:
                 all_idx = np.arange(self.n_trajectories)
@@ -499,14 +494,10 @@ class CreateOPEInput:
                         actions=action_,
                         rewards=self.reward_2d[subset_idx_].flatten(),
                         terminals=self.done_2d[subset_idx_].flatten(),
-                        episode_terminals=self.terminal_2d[subset_idx_].flatten(),
-                        discrete_action=(self.action_type == "discrete"),
                     )
                     self.fqe[evaluation_policy.name][k].fit(
-                        mdp_dataset_.episodes,
-                        eval_episodes=mdp_dataset_.episodes,
+                        mdp_dataset_,
                         n_steps=n_steps,
-                        scorers={},
                     )
 
     def build_and_fit_state_action_dual_model(

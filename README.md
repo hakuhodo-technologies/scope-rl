@@ -153,7 +153,8 @@ from scope_rl.dataset import SyntheticDataset
 from scope_rl.policy import EpsilonGreedyHead
 # import d3rlpy algorithms
 from d3rlpy.algos import DoubleDQN
-from d3rlpy.online.buffers import ReplayBuffer
+from d3rlpy.dataset import ReplayBuffer
+
 from d3rlpy.online.explorers import ConstantEpsilonGreedy
 # import rtbgym and gym
 import rtbgym

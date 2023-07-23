@@ -9,7 +9,7 @@ from tqdm.auto import tqdm
 
 import numpy as np
 
-from d3rlpy.algos import AlgoBase
+from d3rlpy.algos import QLearningAlgoBase
 from d3rlpy.dataset import MDPDataset
 from sklearn.model_selection import train_test_split
 
@@ -48,7 +48,8 @@ class TrainCandidatePolicies:
         import gym
         import rtbgym
         from d3rlpy.algos import DoubleDQN
-        from d3rlpy.online.buffers import ReplayBuffer
+        from d3rlpy.dataset import ReplayBuffer
+
         from d3rlpy.online.explorers import ConstantEpsilonGreedy
         from d3rlpy.algos import DiscreteBCQ, DiscreteCQL
 
@@ -158,7 +159,7 @@ class TrainCandidatePolicies:
     def _learn_base_policy(
         self,
         logged_dataset: LoggedDataset,
-        algorithms: List[AlgoBase],
+        algorithms: List[QLearningAlgoBase],
         random_state: Optional[int] = None,
     ):
         """Learn base policy.
@@ -194,7 +195,7 @@ class TrainCandidatePolicies:
 
                 :class:`scope_rl.dataset.SyntheticDataset` describes the components of :class:`logged_dataset`.
 
-        algorithms: list of AlgoBase
+        algorithms: list of QLearningAlgoBase
             List of algorithms to fit.
 
         random_state: int, default=None (>= 0)
@@ -202,7 +203,7 @@ class TrainCandidatePolicies:
 
         Returns
         -------
-        base_policies: List of AlgoBase
+        base_policies: List of QLearningAlgoBase
             List of learned policies.
 
         """
@@ -211,13 +212,6 @@ class TrainCandidatePolicies:
             actions=logged_dataset["action"],
             rewards=logged_dataset["reward"],
             terminals=logged_dataset["done"],
-            episode_terminals=logged_dataset["done"],
-            discrete_action=(logged_dataset["action_type"] == "discrete"),
-        )
-        train_episodes, test_episodes = train_test_split(
-            offlinerl_dataset,
-            test_size=0.2,
-            random_state=random_state,
         )
 
         for i in tqdm(
@@ -226,8 +220,7 @@ class TrainCandidatePolicies:
             total=len(algorithms),
         ):
             algorithms[i].fit(
-                train_episodes,
-                eval_episodes=test_episodes,
+                offlinerl_dataset,
                 **self.fitting_args,
             )
 
@@ -235,7 +228,7 @@ class TrainCandidatePolicies:
 
     def _apply_head(
         self,
-        base_policies: List[AlgoBase],
+        base_policies: List[QLearningAlgoBase],
         base_policies_name: List[str],
         policy_wrappers: HeadDict,
         random_state: Optional[int] = None,
@@ -244,7 +237,7 @@ class TrainCandidatePolicies:
 
         Parameters
         -------
-        base_policies: list of AlgoBase
+        base_policies: list of QLearningAlgoBase
             List of base (learned) policies.
 
         base_policies_name: list of str
@@ -310,7 +303,7 @@ class TrainCandidatePolicies:
     def learn_base_policy(
         self,
         logged_dataset: Union[LoggedDataset, MultipleLoggedDataset],
-        algorithms: List[AlgoBase],
+        algorithms: List[QLearningAlgoBase],
         behavior_policy_name: Optional[str] = None,
         dataset_id: Optional[int] = None,
         random_state: Optional[int] = None,
@@ -350,7 +343,7 @@ class TrainCandidatePolicies:
 
                 :class:`scope_rl.dataset.SyntheticDataset` describes the components of :class:`logged_dataset`.
 
-        algorithms: list of AlgoBase
+        algorithms: list of QLearningAlgoBase
             List of algorithms to fit.
 
         behavior_policy_name: str, default=None
@@ -364,7 +357,7 @@ class TrainCandidatePolicies:
 
         Returns
         -------
-        base_policies: AlgoBase
+        base_policies: QLearningAlgoBase
             List of learned policies.
 
         """
@@ -438,7 +431,7 @@ class TrainCandidatePolicies:
 
     def apply_head(
         self,
-        base_policies: Union[List[AlgoBase], Dict[str, List[AlgoBase]]],
+        base_policies: Union[List[QLearningAlgoBase], Dict[str, List[QLearningAlgoBase]]],
         base_policies_name: List[str],
         policy_wrappers: HeadDict,
         random_state: Optional[int] = None,
@@ -447,7 +440,7 @@ class TrainCandidatePolicies:
 
         Parameters
         -------
-        base_policies: list of AlgoBase
+        base_policies: list of QLearningAlgoBase
             List of base (learned) policies.
 
         base_policies_name: list of str
@@ -504,7 +497,7 @@ class TrainCandidatePolicies:
         if isinstance(base_policies, dict):
             evaluation_policies = {}
             for behavior_policy in base_policies.keys():
-                if isinstance(base_policies[behavior_policy][0], AlgoBase):
+                if isinstance(base_policies[behavior_policy][0], QLearningAlgoBase):
                     if len(base_policies[behavior_policy]) != len(base_policies_name):
                         raise ValueError(
                             "Expected `len(base_policies[behavior_policy]) == len(base_policies_name)`, but found False"
@@ -536,7 +529,7 @@ class TrainCandidatePolicies:
                         )
 
         else:
-            if isinstance(base_policies[0], AlgoBase):
+            if isinstance(base_policies[0], QLearningAlgoBase):
                 if len(base_policies) != len(base_policies_name):
                     raise ValueError(
                         "Expected `len(base_policies) == len(base_policies_name)`, but found False"
@@ -563,7 +556,7 @@ class TrainCandidatePolicies:
     def obtain_evaluation_policy(
         self,
         logged_dataset: Union[LoggedDataset, MultipleLoggedDataset],
-        algorithms: List[AlgoBase],
+        algorithms: List[QLearningAlgoBase],
         algorithms_name: List[str],
         policy_wrappers: HeadDict,
         behavior_policy_name: Optional[str] = None,
@@ -603,7 +596,7 @@ class TrainCandidatePolicies:
 
                 :class:`scope_rl.dataset.SyntheticDataset` describes the components of :class:`logged_dataset`.
 
-        algorithms: list of AlgoBase
+        algorithms: list of QLearningAlgoBase
             List of algorithms to fit.
 
         algorithms_name: list of str
