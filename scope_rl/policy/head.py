@@ -94,13 +94,13 @@ class BaseHead(QLearningAlgoBase):
 
     def copy_policy_from(self, algo: QLearningAlgoBase):
         return self.base_policy.copy_policy_from(algo)
-    
+
     def copy_policy_optim_from(self, algo: QLearningAlgoBase):
         return self.base_policy.copy_policy_optim_from(algo)
 
     def copy_q_function_from(self, algo: QLearningAlgoBase):
         return self.base_policy.copy_q_function_from(algo)
-    
+
     def copy_q_function_optim_from(self, algo: QLearningAlgoBase):
         return self.base_policy.copy_q_function_optim_from(algo)
 
@@ -115,13 +115,13 @@ class BaseHead(QLearningAlgoBase):
 
     def update(self, batch: TransitionMiniBatch):
         return self.base_policy.update(batch)
-    
+
     def inner_update(self, batch: TransitionMiniBatch):
         return self.base_policy.inner_update(batch)
 
     def create_impl(self, observation_shape: Sequence[int], action_size: int):
         return self.base_policy.create_impl(observation_shape, action_size)
-    
+
     def inner_create_impl(self, observation_shape: Sequence[int], action_size: int):
         return self.base_policy.inner_create_impl(observation_shape, action_size)
 
@@ -133,7 +133,7 @@ class BaseHead(QLearningAlgoBase):
 
     def from_json(self, fname: str, **kwargs):
         return self.base_policy.from_json(fname, **kwargs)
-    
+
     def save_model(self, fname: str):
         return self.base_policy.save_model(fname)
 
@@ -145,7 +145,7 @@ class BaseHead(QLearningAlgoBase):
 
     def set_grad_step(self, grad_step: int):
         return self.base_policy.set_grad_step(grad_step)
-    
+
     def reset_optimizer_states(self):
         return self.base_policy.reset_optimizer_states()
 
@@ -668,7 +668,9 @@ class GaussianHead(BaseHead):
             raise ValueError("random_state must be given")
         self.random_ = check_random_state(self.random_state)
 
-    def calc_action_choice_probability(self, greedy_action: np.ndarray, action: np.ndarray):
+    def calc_action_choice_probability(
+        self, greedy_action: np.ndarray, action: np.ndarray
+    ):
         """Calculate action choice probabilities.
 
         Parameters
@@ -832,7 +834,9 @@ class TruncatedGaussianHead(BaseHead):
             raise ValueError("random_state must be given")
         self.random_ = check_random_state(self.random_state)
 
-    def calc_action_choice_probability(self, greedy_action: np.ndarray, action: np.ndarray):
+    def calc_action_choice_probability(
+        self, greedy_action: np.ndarray, action: np.ndarray
+    ):
         """Calculate action choice probabilities.
 
         Parameters
@@ -963,7 +967,7 @@ class ContinuousEvalHead(BaseHead):
         self.action_type = "continuous"
         if not isinstance(self.base_policy, QLearningAlgoBase):
             raise ValueError("base_policy must be a child class of QLearningAlgoBase")
-        
+
     def sample_action_and_output_pscore(self, x: np.ndarray):
         """Only for API consistency."""
         pass

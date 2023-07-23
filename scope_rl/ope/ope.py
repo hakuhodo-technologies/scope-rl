@@ -2174,14 +2174,17 @@ class OffPolicyEvaluation:
                         )
 
                     else:
-                        sns.swarmplot(
-                            data=df,
-                            x="eval_policy",
-                            y="policy_value",
-                            hue="behavior_policy",
-                            palette=palette,
-                            ax=ax,
-                        )
+                        try:
+                            sns.swarmplot(
+                                data=df,
+                                x="eval_policy",
+                                y="policy_value",
+                                hue="behavior_policy",
+                                palette=palette,
+                                ax=ax,
+                            )
+                        except:
+                            warn("Encountered NaN values during plot.")
 
                     if visualize_on_policy:
                         ax.scatter(

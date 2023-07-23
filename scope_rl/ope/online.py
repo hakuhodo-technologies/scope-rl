@@ -1473,7 +1473,9 @@ def rollout_policy_online(
             "env must be a child class of gym.Env",
         )
     if not isinstance(policy, (QLearningAlgoBase, BaseHead)):
-        raise ValueError("policy must be a child class of either QLearningAlgoBase or BaseHead")
+        raise ValueError(
+            "policy must be a child class of either QLearningAlgoBase or BaseHead"
+        )
     check_scalar(
         n_trajectories,
         name="n_trajectories",

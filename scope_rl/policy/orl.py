@@ -431,7 +431,9 @@ class TrainCandidatePolicies:
 
     def apply_head(
         self,
-        base_policies: Union[List[QLearningAlgoBase], Dict[str, List[QLearningAlgoBase]]],
+        base_policies: Union[
+            List[QLearningAlgoBase], Dict[str, List[QLearningAlgoBase]]
+        ],
         base_policies_name: List[str],
         policy_wrappers: HeadDict,
         random_state: Optional[int] = None,
