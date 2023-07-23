@@ -135,7 +135,7 @@ cd scope-rl
 python setup.py install
 ```
 
-SCOPE-RL supports Python 3.9 or newer. See [requirements.txt](./requirements.txt) for other requirements.
+SCOPE-RL supports Python 3.9 or newer. See [requirements.txt](./requirements.txt) for other requirements. Please also refer to issue [#17](https://github.com/hakuhodo-technologies/scope-rl/issues/17) when you encounter some dependency conflicts.
 
 ## Usage
 
