@@ -37,8 +37,6 @@ class SyntheticDataset(BaseDataset):
             actions=logged_datasets["action"],
             rewards=logged_datasets["reward"],
             terminals=logged_datasets["done"],
-            episode_terminals=logged_datasets["terminal"],
-            discrete_action=(logged_datasets["action_type"]=="discrete"),
         )
 
     .. seealso::
@@ -81,29 +79,24 @@ class SyntheticDataset(BaseDataset):
         # import necessary module from other libraries
         import gym
         import rtbgym
-        from d3rlpy.algos import DoubleDQN
-        from d3rlpy.dataset import ReplayBuffer
-
-        from d3rlpy.online.explorers import ConstantEpsilonGreedy
+        from d3rlpy.algos import DoubleDQNConfig
+        from d3rlpy.dataset import create_fifo_replay_buffer
+        from d3rlpy.algos import ConstantEpsilonGreedy
 
         # initialize environment
         env = gym.make("RTBEnv-discrete-v0")
 
-        # for api compatibility to d3rlpy
-        from scope_rl.utils import OldGymAPIWrapper
-        env_ = OldGymAPIWrapper(env)
-
         # define (RL) agent (i.e., policy) and train on the environment
-        ddqn = DoubleDQN()
-        buffer = ReplayBuffer(
-            maxlen=10000,
-            env=env_,
+        ddqn = DoubleDQNConfig().create()
+        buffer = create_fifo_replay_buffer(
+            limit=10000,
+            env=env,
         )
         explorer = ConstantEpsilonGreedy(
             epsilon=0.3,
         )
         ddqn.fit_online(
-            env=env_,
+            env=env,
             buffer=buffer,
             explorer=explorer,
             n_steps=10000,

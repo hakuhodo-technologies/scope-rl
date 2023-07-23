@@ -45,25 +45,27 @@ Note that in the following example, we use :doc:`RTBGym <subpackages/rtbgym_abou
     from scope_rl.dataset import SyntheticDataset
     from scope_rl.policy import EpsilonGreedyHead
     # import d3rlpy algorithms
-    from d3rlpy.algos import DoubleDQN
-    from d3rlpy.online.buffers import ReplayBuffer
-    from d3rlpy.online.explorers import ConstantEpsilonGreedy
+    from d3rlpy.algos import DoubleDQNConfig
+    from d3rlpy.dataset import create_fifo_replay_buffer
+    from d3rlpy.algos import ConstantEpsilonGreedy
     # import rtbgym and gym
     import rtbgym
     import gym
+    import torch
     # random state
     random_state = 12345
+    device = "cuda:0" if torch.cuda.is_available() else "cpu"
 
     # (0) Setup environment
     env = gym.make("RTBEnv-discrete-v0")
 
     # (1) Learn a baseline online policy (using d3rlpy)
     # initialize the algorithm
-    ddqn = DoubleDQN()
+    ddqn = DoubleDQNConfig().create(device=device)
     # train an online policy
     ddqn.fit_online(
         env,
-        buffer=ReplayBuffer(maxlen=10000, env=env),
+        buffer=create_fifo_replay_buffer(limit=10000, env=env),
         explorer=ConstantEpsilonGreedy(epsilon=0.3),
         n_steps=100000,
         n_steps_per_epoch=1000,
@@ -118,7 +120,7 @@ Note that, we use `d3rlpy <https://github.com/takuseno/d3rlpy>`_ for offline RL.
 
     # import d3rlpy algorithms
     from d3rlpy.dataset import MDPDataset
-    from d3rlpy.algos import DiscreteCQL
+    from d3rlpy.algos import DiscreteCQLConfig
 
     # (3) Learning a new policy from offline logged data (using d3rlpy)
     # convert dataset into d3rlpy's dataset
@@ -127,16 +129,13 @@ Note that, we use `d3rlpy <https://github.com/takuseno/d3rlpy>`_ for offline RL.
         actions=train_logged_dataset["action"],
         rewards=train_logged_dataset["reward"],
         terminals=train_logged_dataset["done"],
-        episode_terminals=train_logged_dataset["done"],
-        discrete_action=True,
     )
     # initialize the algorithm
-    cql = DiscreteCQL()
+    cql = DiscreteCQLConfig().create(device=device)
     # train an offline policy
     cql.fit(
         offlinerl_dataset,
         n_steps=10000,
-        scorers={},
     )
 
 .. seealso::
@@ -207,11 +206,11 @@ and Doubly Robust (DR) :cite:`jiang2016doubly, thomas2016data`.
     # create input for OPE class
     prep = CreateOPEInput(
         env=env,
-        logged_dataset=test_logged_dataset,
-        use_base_model=True,  # use model-based prediction
     )
     input_dict = prep.obtain_whole_inputs(
+        logged_dataset=test_logged_dataset,
         evaluation_policies=evaluation_policies,
+        require_value_prediction=True,
         n_trajectories_on_policy_evaluation=100,
         random_state=random_state,
     )
@@ -265,8 +264,8 @@ using Cumulative Distribution OPE estimators :cite:`huang2021off, huang2022off, 
     from scope_rl.ope.discrete import CumulativeDistributionDM as CD_DM
     from scope_rl.ope.discrete import CumulativeDistributionTIS as CD_IS
     from scope_rl.ope.discrete import CumulativeDistributionTDR as CD_DR
-    from scope_rl.ope.discrete import CumulativeDistributionSNIS as CD_SNIS
-    from scope_rl.ope.discrete import CumulativeDistributionSNDR as CD_SNDR
+    from scope_rl.ope.discrete import CumulativeDistributionSNTIS as CD_SNIS
+    from scope_rl.ope.discrete import CumulativeDistributionSNTDR as CD_SNDR
 
     # (4) Evaluate the learned policy using the cumulative distribution function (in an offline manner)
     # we compare ddqn, cql, and random policy defined in the previous section (i.e., (3) of basic OPE procedure)

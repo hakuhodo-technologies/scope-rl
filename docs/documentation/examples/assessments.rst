@@ -8,7 +8,7 @@ Here, we show example codes for assessing OPE/OPS results.
     For preparation, please also refer to the following pages:
 
     * :doc:`What are Off-Policy Evaluation and Selection? </documentation/ope_ops>`
-    * :ref:`Supported Evaluation Protococols for OPE/OPS <implementation_eval_ope_ops>`
+    * :ref:`Supported Evaluation Protocols for OPE/OPS <implementation_eval_ope_ops>`
     * :doc:`/documentation/sharpe_ratio`
     * :doc:`Supported Implementations for data collection and Offline RL </documentation/learning_implementation>`
     * :doc:`Example codes for basic OPE </documentation/examples/basic_ope>`
@@ -22,14 +22,14 @@ Here, we assume that an RL environment, a behavior policy, and evaluation polici
 
 * ``behavior_policy``: an instance of :class:`BaseHead`
 * ``evaluation_policies``: a list of instance(s) of :class:`BaseHead`
-* ``env``: a gym environment (unecessary when using real-world datasets)
+* ``env``: a gym environment (unnecessary when using real-world datasets)
 
 Additionally, we assume that the logged datasets, inputs, and either ope or cd_ope instances are ready to use.
 For initializing the ope and cd_ope instances, please refer to :doc:`this page </documentation/examples/basic_ope>` 
 and :doc:`this page </documentation/examples/cumulative_dist_ope>` as references, respectively.
 
 * ``logged_dataset``: a dictionary containing the logged dataset
-* ``input_dict``: a dictionaty containing inputs for OPE
+* ``input_dict``: a dictionary containing inputs for OPE
 * ``ope``: an instance of :class:`OffPolicyEvaluation`
 * ``cd_ope``: an instance of :class:`CumulativeDistributionOPE`
 

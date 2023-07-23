@@ -19,7 +19,7 @@ Here, we assume that an RL environment, a behavior policy, and evaluation polici
 
 * ``behavior_policy``: an instance of :class:`BaseHead`
 * ``evaluation_policies``: a list of instance(s) of :class:`BaseHead`
-* ``env``: a gym environment (unecessary when using real-world datasets)
+* ``env``: a gym environment (unnecessary when using real-world datasets)
 
 Then, we use the behavior policy to collect logged dataset as follows.
 
@@ -60,7 +60,7 @@ Then, when using only importance sampling-based estimators, the minimal sufficie
 
     # initialize class to create inputs
     prep = CreateOPEInput(
-        env=env,  # unecessary when using real-world dataset
+        env=env,  # unnecessary when using real-world dataset
     )
     # create inputs (e.g., calculating )
     input_dict = prep.obtain_whole_inputs(

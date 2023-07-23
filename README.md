@@ -152,31 +152,28 @@ Let's start by generating some synthetic logged data useful for performing offli
 from scope_rl.dataset import SyntheticDataset
 from scope_rl.policy import EpsilonGreedyHead
 # import d3rlpy algorithms
-from d3rlpy.algos import DoubleDQN
-from d3rlpy.dataset import ReplayBuffer
-
-from d3rlpy.online.explorers import ConstantEpsilonGreedy
+from d3rlpy.algos import DoubleDQNConfig
+from d3rlpy.dataset import create_fifo_replay_buffer
+from d3rlpy.algos import ConstantEpsilonGreedy
 # import rtbgym and gym
 import rtbgym
 import gym
+import torch
 # random state
 random_state = 12345
+device = "cuda:0" if torch.cuda.is_available() else "cpu"
 
 # (0) Setup environment
 env = gym.make("RTBEnv-discrete-v0")
 
-# for api compatibility to d3rlpy
-from scope_rl.utils import OldGymAPIWrapper
-env_ = OldGymAPIWrapper(env)
-
 # (1) Learn a baseline policy in an online environment (using d3rlpy)
 # initialize the algorithm
-ddqn = DoubleDQN()
+ddqn = DoubleDQNConfig().create(device=device)
 # train an online policy
 # this takes about 5min to compute
 ddqn.fit_online(
-    env_,
-    buffer=ReplayBuffer(maxlen=10000, env=env_),
+    env,
+    buffer=create_fifo_replay_buffer(limit=10000, env=env),
     explorer=ConstantEpsilonGreedy(epsilon=0.3),
     n_steps=100000,
     n_steps_per_epoch=1000,
@@ -195,15 +192,15 @@ behavior_policy = EpsilonGreedyHead(
 # initialize the dataset class
 dataset = SyntheticDataset(
     env=env,
-    maximum_episode_steps=env.step_per_episode,
+    max_episode_steps=env.step_per_episode,
 )
 # the behavior policy collects some logged data
-train_logged_dataset = dataset.obtain_trajectories(
+train_logged_dataset = dataset.obtain_episodes(
   behavior_policies=behavior_policy,
   n_trajectories=10000,
   random_state=random_state,
 )
-test_logged_dataset = dataset.obtain_trajectories(
+test_logged_dataset = dataset.obtain_episodes(
   behavior_policies=behavior_policy,
   n_trajectories=10000,
   random_state=random_state + 1,
@@ -218,7 +215,7 @@ We are now ready to learn a new policy (evaluation policy) from the logged data 
 
 # import d3rlpy algorithms
 from d3rlpy.dataset import MDPDataset
-from d3rlpy.algos import DiscreteCQL
+from d3rlpy.algos import DiscreteCQLConfig
 
 # (3) Learning a new policy from offline logged data (using d3rlpy)
 # convert the logged dataset into d3rlpy's dataset format
@@ -227,16 +224,13 @@ offlinerl_dataset = MDPDataset(
     actions=train_logged_dataset["action"],
     rewards=train_logged_dataset["reward"],
     terminals=train_logged_dataset["done"],
-    episode_terminals=train_logged_dataset["done"],
-    discrete_action=True,
 )
 # initialize the algorithm
-cql = DiscreteCQL()
+cql = DiscreteCQLConfig().create(device=device)
 # train an offline policy
 cql.fit(
     offlinerl_dataset,
     n_steps=10000,
-    scorers={},
 )
 ```
 
@@ -281,12 +275,12 @@ random_ = EpsilonGreedyHead(
 evaluation_policies = [cql_, ddqn_, random_]
 # create input for the OPE class
 prep = CreateOPEInput(
-    logged_dataset=test_logged_dataset,
-    use_base_model=True,  # use model-based prediction
+    env=env,
 )
 input_dict = prep.obtain_whole_inputs(
+    logged_dataset=test_logged_dataset,
     evaluation_policies=evaluation_policies,
-    env=env,
+    require_value_prediction=True,
     n_trajectories_on_policy_evaluation=100,
     random_state=random_state,
 )
@@ -357,7 +351,7 @@ For more extensive examples, please refer to [quickstart/rtb/rtb_synthetic_discr
 
 ### Off-Policy Selection and Evaluation of OPE/OPS
 
-We can also select the best-performing policy among a set of candidate policies based on the OPE results using the OPS class. It is also possible to evaluate the reliability of OPE/OPS using various metrics such as mean squaredberror, rank correlation, regret, and type I and type II error rates.
+We can also select the best-performing policy among a set of candidate policies based on the OPE results using the OPS class. It is also possible to evaluate the reliability of OPE/OPS using various metrics such as mean squared error, rank correlation, regret, and type I and type II error rates.
 
 ```Python
 # perform off-policy selection based on the OPE results
@@ -379,7 +373,7 @@ ranking_dict_ = ops.select_by_policy_value_via_cumulative_distribution_ope(input
 ops.visualize_topk_policy_value_selected_by_standard_ope(
     input_dict=input_dict,
     compared_estimators=["dm", "tis", "pdis", "dr"],
-    safety_criteria=1.0,
+    relative_safety_criteria=1.0,
 )
 ```
 <div align="center"><img src="https://raw.githubusercontent.com/hakuhodo-technologies/scope-rl/main/images/ops_topk_lower_quartile.png" width="100%"/></div>
@@ -399,7 +393,7 @@ ranking_df, metric_df = ops.select_by_lower_quartile(
     return_by_dataframe=True,
 )
 # visualize the OPS results with the ground-truth metrics
-ops.visualize_cvar_for_validation(
+ops.visualize_conditional_value_at_risk_for_validation(
     input_dict,
     alpha=0.3,
     share_axes=True,

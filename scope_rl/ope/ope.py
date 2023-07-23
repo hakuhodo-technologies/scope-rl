@@ -124,29 +124,24 @@ class OffPolicyEvaluation:
         # import necessary module from other libraries
         import gym
         import rtbgym
-        from d3rlpy.algos import DoubleDQN
-        from d3rlpy.dataset import ReplayBuffer
-
-        from d3rlpy.online.explorers import ConstantEpsilonGreedy
+        from d3rlpy.algos import DoubleDQNConfig
+        from d3rlpy.dataset import create_fifo_replay_buffer
+        from d3rlpy.algos import ConstantEpsilonGreedy
 
         # initialize environment
         env = gym.make("RTBEnv-discrete-v0")
 
-        # for api compatibility to d3rlpy
-        from scope_rl.utils import OldGymAPIWrapper
-        env_ = OldGymAPIWrapper(env)
-
         # define (RL) agent (i.e., policy) and train on the environment
-        ddqn = DoubleDQN()
-        buffer = ReplayBuffer(
-            maxlen=10000,
-            env=env_,
+        ddqn = DoubleDQNConfig().create()
+        buffer = create_fifo_replay_buffer(
+            limit=10000,
+            env=env,
         )
         explorer = ConstantEpsilonGreedy(
             epsilon=0.3,
         )
         ddqn.fit_online(
-            env=env_,
+            env=env,
             buffer=buffer,
             explorer=explorer,
             n_steps=10000,
@@ -2506,29 +2501,24 @@ class CumulativeDistributionOPE:
         # import necessary module from other libraries
         import gym
         import rtbgym
-        from d3rlpy.algos import DoubleDQN
-        from d3rlpy.dataset import ReplayBuffer
-
-        from d3rlpy.online.explorers import ConstantEpsilonGreedy
+        from d3rlpy.algos import DoubleDQNConfig
+        from d3rlpy.dataset import create_fifo_replay_buffer
+        from d3rlpy.algos import ConstantEpsilonGreedy
 
         # initialize environment
         env = gym.make("RTBEnv-discrete-v0")
 
-        # for api compatibility to d3rlpy
-        from scope_rl.utils import OldGymAPIWrapper
-        env_ = OldGymAPIWrapper(env)
-
         # define (RL) agent (i.e., policy) and train on the environment
-        ddqn = DoubleDQN()
-        buffer = ReplayBuffer(
-            maxlen=10000,
-            env=env_,
+        ddqn = DoubleDQNConfig().create()
+        buffer = create_fifo_replay_buffer(
+            limit=10000,
+            env=env,
         )
         explorer = ConstantEpsilonGreedy(
             epsilon=0.3,
         )
         ddqn.fit_online(
-            env=env_,
+            env=env,
             buffer=buffer,
             explorer=explorer,
             n_steps=10000,

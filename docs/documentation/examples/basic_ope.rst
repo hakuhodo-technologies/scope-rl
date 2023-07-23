@@ -17,7 +17,7 @@ Here, we assume that an RL environment, a behavior policy, and evaluation polici
 
 * ``behavior_policy``: an instance of :class:`BaseHead`
 * ``evaluation_policies``: a list of instance(s) of :class:`BaseHead`
-* ``env``: a gym environment (unecessary when using real-world datasets)
+* ``env``: a gym environment (unnecessary when using real-world datasets)
 
 Then, we use the behavior policy to collect logged dataset as follows.
 
@@ -30,7 +30,7 @@ Then, we use the behavior policy to collect logged dataset as follows.
         env=env,
         max_episode_steps=env.step_per_episode,
     )
-    # obtain logged dataset
+    # obtain a logged dataset
     logged_dataset = dataset.obtain_episodes(
         behavior_policies=behavior_policy,
         n_trajectories=10000, 
@@ -48,7 +48,7 @@ The next step is to create the inputs for OPE estimators. This procedure slightl
 OPE with importance sampling-based estimators
 ----------
 When using the importance sampling-based estimators including TIS, PDIS, SNTIS, and SNPDIS, 
-and hybrid estimators including DR and SNDR, make sure that "pscore" is recorded in the logged dataset.
+and hybrid estimators including DR and SNDR, make sure that "pscore" (i.e., action choice probability of the behavior policy) is recorded in the logged dataset.
 
 Then, when using only importance sampling-based estimators, the minimal sufficient codes are the following:
 
@@ -58,7 +58,7 @@ Then, when using only importance sampling-based estimators, the minimal sufficie
 
     # initialize class to create inputs
     prep = CreateOPEInput(
-        env=env,  # unecessary when using real-world dataset
+        env=env,  # unnecessary when using real-world dataset
     )
     # create inputs
     input_dict = prep.obtain_whole_inputs(
@@ -82,7 +82,6 @@ When using the model-based estimator (DM) or hybrid methods, we need to addition
                 "encoder_factory": VectorEncoderFactory(hidden_units=[30, 30]),
                 "q_func_factory": MeanQFunctionFactory(),
                 "learning_rate": 1e-4,
-                "use_gpu": torch.cuda.is_available(),
             },
         },
     )
@@ -148,11 +147,11 @@ We can also apply scaling to either state observation or (continuous) action as 
 
 .. code-block:: python
 
-    from scope_rl.utils import MinMaxScaler
+    from d3rlpy.preprocessing import MinMaxObservationScaler, MinMaxActionScaler
 
     prep = CreateOPEInput(
         env=env,
-        state_scaler=MinMaxScaler(  #
+        state_scaler=MinMaxObservationScaler(  #
             minimum=logged_dataset["state"].min(axis=0),
             maximum=logged_dataset["state"].max(axis=0),
         ),
@@ -220,7 +219,7 @@ Note that, the following provides the complete list of estimators that are curre
         * :doc:`Supported OPE estimators </documentation/evaluation_implementation>` summarizes the key properties of each estimator.
 
 
-We can easily conduct OPE and obtain and the results as follows.
+We can easily conduct OPE and obtain the results as follows.
 
 .. code-block:: python
 
@@ -290,7 +289,7 @@ Users can also specify the compared OPE estimators as follows.
         random_state=random_state, 
     )
 
-When ``legend`` is unecessary, just disable this option.
+When ``legend`` is unnecessary, just disable this option.
 
 .. code-block:: python
 
@@ -300,7 +299,7 @@ When ``legend`` is unecessary, just disable this option.
         random_state=random_state, 
     )
 
-To save figure, specify the directory to save it.
+To save the figure, specify the directory to save it.
 
 .. code-block:: python
 
@@ -313,7 +312,7 @@ To save figure, specify the directory to save it.
 
 Choosing the "Spectrum" of OPE for marginal estimators
 ----------
-The implemented OPE estimators can interpolates among naive importance sampling and
+The implemented OPE estimators can interpolate among naive importance sampling and
 marginal importance sampling by specifying the steps to use per-decision importance weight 
 (See :ref:`Supported OPE estimators (SOPE) <implementation_sope>` for the details). 
 This is done by specifying ``n_step_pdis`` when initializing the class.
@@ -329,7 +328,7 @@ This is done by specifying ``n_step_pdis`` when initializing the class.
 
 Choosing a kernel for continuous-action OPE
 ----------
-In continuous-action OPE, the choices of kernel and the bandwith hyperparameter can affect the bias-variance tradeoff and the estimation accuracy.
+In continuous-action OPE, the choices of the kernel and the bandwidth hyperparameter can affect the bias-variance tradeoff and the estimation accuracy.
 To control the hyperparameter, please use the following arguments.
 
 .. code-block:: python

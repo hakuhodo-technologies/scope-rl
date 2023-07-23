@@ -19,7 +19,7 @@ Here, we assume that an RL environment, behavior policies, and evaluation polici
 
 * ``behavior_policy``: an instance of :class:`BaseHead` or a list of instance(s) of :class:`BaseHead` 
 * ``evaluation_policies``: a list of instance(s) of :class:`BaseHead`
-* ``env``: a gym environment (unecessary when using real-world datasets)
+* ``env``: a gym environment (unnecessary when using real-world datasets)
 
 Then, we can collect multiple logged datasets with a single behavior policy as follows.
 
@@ -109,7 +109,7 @@ We first show the case of creating whole logged datasets stored in ``multiple_lo
 
     # initialize class to create inputs
     prep = CreateOPEInput(
-        env=env,  # unecessary when using real-world dataset
+        env=env,  # unnecessary when using real-world dataset
     )
     # create inputs (e.g., calculating )
     multiple_input_dict = prep.obtain_whole_inputs(
@@ -120,7 +120,7 @@ We first show the case of creating whole logged datasets stored in ``multiple_lo
     )
 
 The above code returns ``multiple_input_dict`` as an instance of :class:`MultipleInputDict`. 
-Each input dictionary is accessble via the following code.
+Each input dictionary is accessible via the following code.
 
 .. code-block:: python
 
@@ -159,7 +159,7 @@ by specifying the behavior policy and the dataset id as follows.
 
 Off-Policy Evaluation
 ~~~~~~~~~~
-SCOPE-RL enables OPE with multiple logged datasets and multiple input dicts without additional efforts.
+SCOPE-RL enables OPE with multiple logged datasets and multiple input dicts without additional effort.
 Specifically, we can estimate the policy value via basic OPE as follows.
 
 .. code-block:: python
@@ -531,7 +531,7 @@ Similar codes also work for the following functions.
 
 Validating True and Estimated Policy Performance
 ~~~~~~~~~~
-Finally, we also provide funnctions to compare the true and estimated policy performance.
+Finally, we also provide functions to compare the true and estimated policy performance.
 
 .. code-block:: python
 
@@ -545,7 +545,7 @@ Finally, we also provide funnctions to compare the true and estimated policy per
    :img-top: ../../_static/images/multiple_validation_policy_value.png
    :text-align: center
 
-When using a single behavior policy, specify behavipr policy name.
+When using a single behavior policy, specify the behavior policy name.
 
 .. code-block:: python
 
@@ -556,7 +556,7 @@ When using a single behavior policy, specify behavipr policy name.
         share_axes=True,
     )
 
-When using a single logged dataset, specify both behavior policy name and dataset id.
+When using a single logged dataset, specify both the behavior policy name and dataset id.
 
 .. code-block:: python
 

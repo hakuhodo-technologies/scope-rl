@@ -50,7 +50,7 @@ Then, it collects logged data by a behavior policy (i.e., data collection policy
 
             from scope_rl.policy import EpsilonGreedyHead
             behavior_policy = EpsilonGreedyHead(
-                base_policy,  # AlgoBase of d3rlpy
+                base_policy,  # QLearningAlgoBase of d3rlpy
                 n_actions=env.action_space.n,
                 epsilon=0.3,
                 name="eps_03",
@@ -64,7 +64,7 @@ Then, it collects logged data by a behavior policy (i.e., data collection policy
 
             from scope_rl.policy import GaussianHead
             behavior_policy = GaussianHead(
-                base_policy,  # AlgoBase of d3rlpy
+                base_policy,  # QLearningAlgoBase of d3rlpy
                 sigma=1.0,
                 name="sigma_10",
                 random_state=random_state,
@@ -210,35 +210,27 @@ For this, `d3rlpy <https://github.com/takuseno/d3rlpy>`_ provides various offlin
 
     # import modules
     from d3rlpy.dataset import MDPDataset
-    from d3rlpy.algos import DiscreteCQL as CQL
+    from d3rlpy.algos import DiscreteCQLConfig as CQLConfig
     from d3rlpy.models.encoders import VectorEncoderFactory
     from d3rlpy.models.q_functions import MeanQFunctionFactory
     
-    # convert a (single) logged dataset to d3rlpy dataset
+    # convert a (single) logged dataset to the d3rlpy dataset
     offlinerl_dataset = MDPDataset(
         observations=logged_dataset["state"],
         actions=logged_dataset["action"],
         rewards=logged_dataset["reward"],
         terminals=logged_dataset["done"],
-        episode_terminals=logged_dataset["done"],
-        discrete_action=True,
-    )
-    train_episodes, test_episodes = train_test_split(
-        offlinerl_dataset, 
-        test_size=0.2, 
-        random_state=random_state,
     )
 
     # define an offline RL algorithm
-    cql = CQL(
+    cql = CQLConfig(
         encoder_factory=VectorEncoderFactory(hidden_units=[30, 30]),
         q_func_factory=MeanQFunctionFactory(),
-    )
+    ).create()
 
     # fit algorithm in an offline manner
     cql.fit(
-        train_episodes,
-        eval_episodes=test_episodes,
+        offlinerl_dataset,
         n_steps=10000,
     )
 
@@ -248,18 +240,20 @@ we also provide :class:`TrainCandidatePolicies` as a meta class to further smoot
 .. code-block:: python
 
     # prepare offline RL algorithms
-    cql_b1 = CQL(
+    cql_b1 = CQLConfig(
         encoder_factory=VectorEncoderFactory(hidden_units=[30, 30]),
         q_func_factory=MeanQFunctionFactory(),
-    )
-    cql_b2 = CQL(
+    ).create()
+
+    cql_b2 = CQLConfig(
         encoder_factory=VectorEncoderFactory(hidden_units=[100]),
         q_func_factory=MeanQFunctionFactory(),
-    )
-    cql_b3 = CQL(
+    ).create()
+
+    cql_b3 = CQLConfig(
         encoder_factory=VectorEncoderFactory(hidden_units=[50, 10]),
         q_func_factory=MeanQFunctionFactory(),
-    )
+    ).create()
 
     # off-policy learning
     from scope_rl.policy import TrainCandidatePolicies
