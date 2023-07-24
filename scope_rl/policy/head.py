@@ -980,6 +980,18 @@ class ContinuousEvalHead(BaseHead):
         """Only for API consistency."""
         pass
 
+    def sample_action_and_output_pscore(self, x: np.ndarray):
+        """Only for API consistency."""
+        pass
+
+    def calc_action_choice_probability(self, x: np.ndarray):
+        """Only for API consistency."""
+        pass
+
+    def calc_pscore_given_action(self, x: np.ndarray, action: np.ndarray):
+        """Only for API consistency."""
+        pass
+
     def sample_action(self, x: np.ndarray):
         """Sample action.
 
