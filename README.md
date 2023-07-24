@@ -2,6 +2,14 @@
 
 <div align="center"><img src="https://raw.githubusercontent.com/hakuhodo-technologies/scope-rl/main/images/logo.png" width="100%"/></div>
 
+[![pypi](https://img.shields.io/pypi/v/scope-rl.svg)](https://pypi.python.org/pypi/scope-rl)
+[![Python](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11-blue)](https://www.python.org)
+[![Downloads](https://pepy.tech/badge/scope-rl)](https://pepy.tech/project/scope-rl)
+![GitHub commit activity](https://img.shields.io/github/commit-activity/m/hakuhodo-technologies/scope-rl)
+![GitHub last commit](https://img.shields.io/github/last-commit/hakuhodo-technologies/scope-rl)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![arXiv](https://img.shields.io/badge/arXiv-23xx.xxxxx-b31b1b.svg)](https://arxiv.org/abs/23xx.xxxxx)
+
 <details>
 <summary><strong>Table of Contents </strong>(click to expand)</summary>
 
