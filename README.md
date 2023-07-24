@@ -7,6 +7,7 @@
 [![Downloads](https://pepy.tech/badge/scope-rl)](https://pepy.tech/project/scope-rl)
 ![GitHub commit activity](https://img.shields.io/github/commit-activity/m/hakuhodo-technologies/scope-rl)
 ![GitHub last commit](https://img.shields.io/github/last-commit/hakuhodo-technologies/scope-rl)
+[![Documentation Status](https://readthedocs.org/projects/scope-rl/badge/?version=latest)](https://scope-rl.readthedocs.io/en/latest/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![arXiv](https://img.shields.io/badge/arXiv-23xx.xxxxx-b31b1b.svg)](https://arxiv.org/abs/23xx.xxxxx)
 
