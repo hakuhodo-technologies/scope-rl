@@ -47,19 +47,19 @@ class TrainCandidatePolicies:
         # import necessary module from other libraries
         import gym
         import rtbgym
-        from d3rlpy.algos import DoubleDQN
-        from d3rlpy.dataset import ReplayBuffer
+        from d3rlpy.algos import DoubleDQNConfig
+        from d3rlpy.dataset import create_fifo_replay_buffer
 
-        from d3rlpy.online.explorers import ConstantEpsilonGreedy
-        from d3rlpy.algos import DiscreteBCQ, DiscreteCQL
+        from d3rlpy.algos import ConstantEpsilonGreedy
+        from d3rlpy.algos import DiscreteBCQConfig, DiscreteCQLConfig
 
         # initialize environment
         env = gym.make("RTBEnv-discrete-v0")
 
         # define (RL) agent (i.e., policy) and train on the environment
-        ddqn = DoubleDQN()
-        buffer = ReplayBuffer(
-            maxlen=10000,
+        ddqn = DoubleDQNConfig().create()
+        buffer = create_fifo_replay_buffer(
+            limit=10000,
             env=env,
         )
         explorer = ConstantEpsilonGreedy(
@@ -85,20 +85,24 @@ class TrainCandidatePolicies:
         # initialize dataset class
         dataset = SyntheticDataset(
             env=env,
-            behavior_policy=behavior_policy,
-            random_state=12345,
+            max_episode_steps=env.step_per_episode,
         )
 
         # data collection
-        logged_dataset = dataset.obtain_episodes(n_trajectories=100)
+        logged_dataset = dataset.obtain_episodes(
+            behavior_policies=behavior_policy,
+            n_datasets=2,
+            n_trajectories=100,
+            random_state=12345,
+        )
 
     **Learning Evaluation Policies**:
 
     .. code-block:: python
 
         # base algorithms
-        bcq = DiscreteBCQ()
-        cql = DiscreteCQL()
+        bcq = DiscreteBCQConfig().create()
+        cql = DiscreteCQLConfig().create()
         algorithms = [bcq, cql]
         algorithms_name = ["bcq", "cql"]
 
@@ -130,6 +134,7 @@ class TrainCandidatePolicies:
         # off-policy learning
         orl = TrainCandidatePolicies()
         eval_policies = orl.obtain_evaluation_policy(
+            logged_dataset=logged_dataset,
             algorithms=algorithms,
             algorithms_name=algorithms_name,
             policy_wrappers=policy_wrappers,
@@ -140,7 +145,7 @@ class TrainCandidatePolicies:
 
     .. code-block:: python
 
-        >>> [eval_policy.name for eval_policy in eval_policies[0]]
+        >>> [eval_policy.name for eval_policy in eval_policies[behavior_policy.name][0]]
 
         ['bcq_eps_01', 'bcq_eps_03', 'bcq_softmax', 'cql_eps_01', 'cql_eps_03', 'cql_softmax']
 
@@ -651,7 +656,7 @@ class TrainCandidatePolicies:
             List of (stochastic) evaluation policies.
 
         """
-        if not len(algorithms) != len(algorithms_name):
+        if len(algorithms) != len(algorithms_name):
             raise ValueError(
                 "algorithms and alogirthms_name must have the same length, but found False"
             )
