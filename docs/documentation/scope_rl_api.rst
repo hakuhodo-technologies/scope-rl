@@ -25,7 +25,7 @@ policy module
     :template: module_head
 
     scope_rl.policy.head
-    scope_rl.policy.opl
+    scope_rl.policy.orl
 
 .. _scope_rl_api_ope:
 
