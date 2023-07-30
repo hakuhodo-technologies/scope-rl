@@ -11,10 +11,6 @@ from scope_rl.policy.head import (
     TruncatedGaussianHead,
     ContinuousEvalHead,
 )
-from scope_rl.policy.encoder import (
-    StateEncoder,
-    EmbeddingEncoderFactory,
-)
 
 
 __all__ = [
@@ -26,8 +22,6 @@ __all__ = [
     "GaussianHead",
     "TruncatedGaussianHead",
     "ContinuousEvalHead",
-    "StateEncoder",
-    "EmbeddingEncoderFactory",
 ]
 
 
@@ -39,10 +33,4 @@ __head__ = [
     "GaussianHead",
     "TruncatedGaussianHead",
     "ContinuousEvalHead",
-]
-
-
-__encoder__ = [
-    "StateEncoder",
-    "EmbeddingEncoderFactory",
 ]

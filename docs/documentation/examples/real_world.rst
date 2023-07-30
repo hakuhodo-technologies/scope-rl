@@ -94,11 +94,11 @@ For the keys that are (optional), please use ``None`` values when the data is un
 Note that, when ``state_action_value_prediction`` and ``initial_state_value_predictions`` are available, 
 the model-based and hybrid estimators (e.g., DM and DR) are applicable to OPE.
 On the other side, when ``state_action_marginal_importance_weight`` and ``state_marginal_importance_weight`` are available, 
-the marginal importance-sampling based estimators are apllicable to OPE.
+the marginal importance-sampling based estimators are applicable to OPE.
 Finally, the assessments of OPE methods become feasible when ``on_policy_policy_value`` is available.
 
 The shape of ``state_action_value_prediction`` is *(size, n_actions)* in discrete action cases, while it is *(size, 2)* in continuous action cases.
-In continuous action case, index 0 of ``axis=1`` should contain the predicted values for the actions chosen by the behavior policy, whreas index 1 of ``axis=1`` should contain those of evaluation policy. 
+In the continuous action case, index 0 of ``axis=1`` should contain the predicted values for the actions chosen by the behavior policy, whereas index 1 of ``axis=1`` should contain those of the evaluation policy. 
 
 .. raw:: html
 

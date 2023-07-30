@@ -327,7 +327,7 @@ Note that, the available inputs are the same with basic OPE.
 
 .. seealso::
 
-    Finally, contribution to SCOPE-RL with a new OPE estimator is more than welcome! Please read `the guidelines for contribution (CONTRIBUTING.md) <https://github.com/hakuhodo-technologies/scope-rl/blob/main/CONTRIBUTING.md>`_.
+    Finally, contributions to SCOPE-RL with a new OPE estimator are more than welcome! Please read `the guidelines for contribution (CONTRIBUTING.md) <https://github.com/hakuhodo-technologies/scope-rl/blob/main/CONTRIBUTING.md>`_.
 
 .. raw:: html
 

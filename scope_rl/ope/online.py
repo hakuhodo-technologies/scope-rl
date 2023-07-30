@@ -16,7 +16,7 @@ import seaborn as sns
 
 import gym
 from gym.wrappers import TimeLimit
-from d3rlpy.algos import AlgoBase
+from d3rlpy.algos import QLearningAlgoBase
 from sklearn.utils import check_scalar, check_random_state
 
 from ..policy.head import BaseHead, OnlineHead
@@ -28,7 +28,7 @@ from ..utils import (
 
 def visualize_on_policy_policy_value(
     env: gym.Env,
-    policies: List[Union[AlgoBase, BaseHead]],
+    policies: List[Union[QLearningAlgoBase, BaseHead]],
     policy_names: List[str],
     n_trajectories: int = 100,
     step_per_trajectory: Optional[int] = None,
@@ -47,7 +47,7 @@ def visualize_on_policy_policy_value(
     env: gym.Env
         Reinforcement learning (RL) environment.
 
-    policies: list of {AlgoBase, BaseHead}
+    policies: list of {QLearningAlgoBase, BaseHead}
         List of policies to be evaluated.
 
     policy_names: list of str
@@ -130,7 +130,7 @@ def visualize_on_policy_policy_value(
 
 def visualize_on_policy_policy_value_with_variance(
     env: gym.Env,
-    policies: List[Union[AlgoBase, BaseHead]],
+    policies: List[Union[QLearningAlgoBase, BaseHead]],
     policy_names: List[str],
     n_trajectories: int = 100,
     step_per_trajectory: Optional[int] = None,
@@ -148,7 +148,7 @@ def visualize_on_policy_policy_value_with_variance(
     env: gym.Env
         Reinforcement learning (RL) environment.
 
-    policies: list of {AlgoBase, BaseHead}
+    policies: list of {QLearningAlgoBase, BaseHead}
         List of policies to be evaluated.
 
     policy_names: list of str
@@ -247,7 +247,7 @@ def visualize_on_policy_policy_value_with_variance(
 
 def visualize_on_policy_cumulative_distribution_function(
     env: gym.Env,
-    policies: List[Union[AlgoBase, BaseHead]],
+    policies: List[Union[QLearningAlgoBase, BaseHead]],
     policy_names: List[str],
     n_trajectories: int = 100,
     step_per_trajectory: Optional[int] = None,
@@ -269,7 +269,7 @@ def visualize_on_policy_cumulative_distribution_function(
     env: gym.Env
         Reinforcement learning (RL) environment.
 
-    policy: {AlgoBase, BaseHead}
+    policy: {QLearningAlgoBase, BaseHead}
         A policy to be evaluated.
 
     n_trajectories: int, default=100 (> 0)
@@ -356,7 +356,7 @@ def visualize_on_policy_cumulative_distribution_function(
 
 def visualize_on_policy_conditional_value_at_risk(
     env: gym.Env,
-    policies: List[Union[AlgoBase, BaseHead]],
+    policies: List[Union[QLearningAlgoBase, BaseHead]],
     policy_names: List[str],
     n_trajectories: int = 100,
     step_per_trajectory: Optional[int] = None,
@@ -379,7 +379,7 @@ def visualize_on_policy_conditional_value_at_risk(
     env: gym.Env
         Reinforcement learning (RL) environment.
 
-    policy: {AlgoBase, BaseHead}
+    policy: {QLearningAlgoBase, BaseHead}
         A policy to be evaluated.
 
     n_trajectories: int, default=100 (> 0)
@@ -471,7 +471,7 @@ def visualize_on_policy_conditional_value_at_risk(
 
 def visualize_on_policy_interquartile_range(
     env: gym.Env,
-    policies: List[Union[AlgoBase, BaseHead]],
+    policies: List[Union[QLearningAlgoBase, BaseHead]],
     policy_names: List[str],
     n_trajectories: int = 100,
     step_per_trajectory: Optional[int] = None,
@@ -493,7 +493,7 @@ def visualize_on_policy_interquartile_range(
     env: gym.Env
         Reinforcement learning (RL) environment.
 
-    policy: {AlgoBase, BaseHead}
+    policy: {QLearningAlgoBase, BaseHead}
         A policy to be evaluated.
 
     n_trajectories: int, default=100 (> 0)
@@ -625,7 +625,7 @@ def visualize_on_policy_interquartile_range(
 
 def calc_on_policy_statistics(
     env: gym.Env,
-    policy: Union[AlgoBase, BaseHead],
+    policy: Union[QLearningAlgoBase, BaseHead],
     n_trajectories: int = 100,
     step_per_trajectory: Optional[int] = None,
     evaluate_on_stationary_distribution: bool = False,
@@ -645,7 +645,7 @@ def calc_on_policy_statistics(
     env: gym.Env
         Reinforcement learning (RL) environment.
 
-    policy: {AlgoBase, BaseHead}
+    policy: {QLearningAlgoBase, BaseHead}
         A policy to be evaluated.
 
     n_trajectories: int, default=100 (> 0)
@@ -811,7 +811,7 @@ def calc_on_policy_statistics(
 
 def calc_on_policy_policy_value(
     env: gym.Env,
-    policy: Union[AlgoBase, BaseHead],
+    policy: Union[QLearningAlgoBase, BaseHead],
     n_trajectories: int = 100,
     step_per_trajectory: Optional[int] = None,
     evaluate_on_stationary_distribution: bool = False,
@@ -828,7 +828,7 @@ def calc_on_policy_policy_value(
     env: gym.Env
         Reinforcement learning (RL) environment.
 
-    policy: {AlgoBase, BaseHead}
+    policy: {QLearningAlgoBase, BaseHead}
         A policy to be evaluated.
 
     n_trajectories: int, default=100 (> 0)
@@ -890,7 +890,7 @@ def calc_on_policy_policy_value(
 
 def calc_on_policy_policy_value_interval(
     env: gym.Env,
-    policy: Union[AlgoBase, BaseHead],
+    policy: Union[QLearningAlgoBase, BaseHead],
     n_trajectories: int = 100,
     step_per_trajectory: Optional[int] = None,
     evaluate_on_stationary_distribution: bool = False,
@@ -906,7 +906,7 @@ def calc_on_policy_policy_value_interval(
     env: gym.Env
         Reinforcement learning (RL) environment.
 
-    policy: {AlgoBase, BaseHead}
+    policy: {QLearningAlgoBase, BaseHead}
         A policy to be evaluated.
 
     n_trajectories: int, default=100 (> 0)
@@ -957,7 +957,7 @@ def calc_on_policy_policy_value_interval(
 
 def calc_on_policy_variance(
     env: gym.Env,
-    policy: Union[AlgoBase, BaseHead],
+    policy: Union[QLearningAlgoBase, BaseHead],
     n_trajectories: int = 100,
     step_per_trajectory: Optional[int] = None,
     evaluate_on_stationary_distribution: bool = False,
@@ -971,7 +971,7 @@ def calc_on_policy_variance(
     env: gym.Env
         Reinforcement learning (RL) environment.
 
-    policy: {AlgoBase, BaseHead}
+    policy: {QLearningAlgoBase, BaseHead}
         A policy to be evaluated.
 
     n_trajectories: int, default=100 (> 0)
@@ -1011,7 +1011,7 @@ def calc_on_policy_variance(
 
 def calc_on_policy_conditional_value_at_risk(
     env: gym.Env,
-    policy: Union[AlgoBase, BaseHead],
+    policy: Union[QLearningAlgoBase, BaseHead],
     n_trajectories: int = 100,
     step_per_trajectory: Optional[int] = None,
     evaluate_on_stationary_distribution: bool = False,
@@ -1030,7 +1030,7 @@ def calc_on_policy_conditional_value_at_risk(
     env: gym.Env
         Reinforcement learning (RL) environment.
 
-    policy: {AlgoBase, BaseHead}
+    policy: {QLearningAlgoBase, BaseHead}
         A policy to be evaluated.
 
     n_trajectories: int, default=100 (> 0)
@@ -1167,7 +1167,7 @@ def calc_on_policy_conditional_value_at_risk(
 
 def calc_on_policy_interquartile_range(
     env: gym.Env,
-    policy: Union[AlgoBase, BaseHead],
+    policy: Union[QLearningAlgoBase, BaseHead],
     n_trajectories: int = 100,
     step_per_trajectory: Optional[int] = None,
     evaluate_on_stationary_distribution: bool = False,
@@ -1184,7 +1184,7 @@ def calc_on_policy_interquartile_range(
     env: gym.Env
         Reinforcement learning (RL) environment.
 
-    policy: {AlgoBase, BaseHead}
+    policy: {QLearningAlgoBase, BaseHead}
         A policy to be evaluated.
 
     n_trajectories: int, default=100 (> 0)
@@ -1306,7 +1306,7 @@ def calc_on_policy_interquartile_range(
 
 def calc_on_policy_cumulative_distribution_function(
     env: gym.Env,
-    policy: Union[AlgoBase, BaseHead],
+    policy: Union[QLearningAlgoBase, BaseHead],
     n_trajectories: int = 100,
     step_per_trajectory: Optional[int] = None,
     evaluate_on_stationary_distribution: bool = False,
@@ -1324,7 +1324,7 @@ def calc_on_policy_cumulative_distribution_function(
     env: gym.Env
         Reinforcement learning (RL) environment.
 
-    policy: {AlgoBase, BaseHead}
+    policy: {QLearningAlgoBase, BaseHead}
         A policy to be evaluated.
 
     n_trajectories: int, default=100 (> 0)
@@ -1428,7 +1428,7 @@ def calc_on_policy_cumulative_distribution_function(
 
 def rollout_policy_online(
     env: gym.Env,
-    policy: Union[AlgoBase, BaseHead],
+    policy: Union[QLearningAlgoBase, BaseHead],
     n_trajectories: int = 100,
     step_per_trajectory: Optional[int] = None,
     evaluate_on_stationary_distribution: bool = False,
@@ -1442,7 +1442,7 @@ def rollout_policy_online(
     env: gym.Env
         Reinforcement learning (RL) environment.
 
-    policy: {AlgoBase, BaseHead}
+    policy: {QLearningAlgoBase, BaseHead}
         A policy to be evaluated.
 
     n_trajectories: int, default=100 (> 0)
@@ -1472,8 +1472,10 @@ def rollout_policy_online(
         raise ValueError(
             "env must be a child class of gym.Env",
         )
-    if not isinstance(policy, (AlgoBase, BaseHead)):
-        raise ValueError("policy must be a child class of either AlgoBase or BaseHead")
+    if not isinstance(policy, (QLearningAlgoBase, BaseHead)):
+        raise ValueError(
+            "policy must be a child class of either QLearningAlgoBase or BaseHead"
+        )
     check_scalar(
         n_trajectories,
         name="n_trajectories",

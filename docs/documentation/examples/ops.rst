@@ -20,14 +20,14 @@ Here, we assume that an RL environment, a behavior policy, and evaluation polici
 
 * ``behavior_policy``: an instance of :class:`BaseHead`
 * ``evaluation_policies``: a list of instance(s) of :class:`BaseHead`
-* ``env``: a gym environment (unecessary when using real-world datasets)
+* ``env``: a gym environment (unnecessary when using real-world datasets)
 
-Additionally, we assume that the logged datasets, inputs, and either ope or cd_ope instance are ready to use.
+Additionally, we assume that the logged datasets, inputs, and either ope or cd_ope instances are ready to use.
 For initializing the ope and cd_ope instances, please refer to :doc:`this page </documentation/examples/basic_ope>` 
 and :doc:`this page </documentation/examples/cumulative_dist_ope>` as references, respectively.
 
 * ``logged_dataset``: a dictionary containing the logged dataset
-* ``input_dict``: a dictionaty containing inputs for OPE
+* ``input_dict``: a dictionary containing inputs for OPE
 * ``ope``: an instance of :class:`OffPolicyEvaluation`
 * ``cd_ope``: an instance of :class:`CumulativeDistributionOPE`
 
@@ -92,7 +92,7 @@ OPS via cumulative distribution OPE
 ----------
 We can also conduct OPS via CD-OPE in a manner similar to basic OPE.
 
-First, the following conducts OPS via policy value estimated by CD-OPE.
+First, the following conduct OPS via policy value estimated by CD-OPE.
 
 .. code-block:: python
 
@@ -159,7 +159,7 @@ To return CVaR and the ranking of candidate policies based on CVaR, enable the f
         return_by_dataframe=True,
     )
 
-To return the lower quartile and the ranking of candidate policies based on lower quartile, enable the following option.
+To return the lower quartile and the ranking of candidate policies based on the lower quartile, enable the following option.
 
 .. code-block:: python
 

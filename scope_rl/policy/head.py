@@ -11,29 +11,28 @@ from scipy.stats import norm, truncnorm
 from sklearn.utils import check_scalar, check_random_state
 
 import gym
-from d3rlpy.algos import AlgoBase
-from d3rlpy.dataset import MDPDataset, Transition, TransitionMiniBatch
-from d3rlpy.logger import D3RLPyLogger
+from d3rlpy.algos import QLearningAlgoBase
+from d3rlpy.dataset import MDPDataset, TransitionMiniBatch
 
 from ..utils import check_array
 
 
 @dataclass
-class BaseHead(AlgoBase):
+class BaseHead(QLearningAlgoBase):
     """Base class to convert a greedy policy into a stochastic policy.
 
-    Bases: :class:`d3rlpy.algos.AlgoBase`
+    Bases: :class:`d3rlpy.algos.QLearningAlgoBase`
 
     Imported as: :class:`scope_rl.policy.BaseHead`
 
     Note
     -------
-    To ensure API compatibility with `d3rlpy <https://github.com/takuseno/d3rlpy>`_, :class:`BaseHead` inherits :class:`d3rlpy.algos.AlgoBase`.
+    To ensure API compatibility with `d3rlpy <https://github.com/takuseno/d3rlpy>`_, :class:`BaseHead` inherits :class:`d3rlpy.algos.QLearningAlgoBase`.
     This base class also has additional methods including :class:`fit`, :class:`predict`, and :class:`predict_value`. Please also refer to the following documentation for the methods that are not described in this API reference.
 
     .. seealso::
 
-        (external) `d3rlpy's documentation about AlgoBase <https://d3rlpy.readthedocs.io/en/latest/references/algos.html>`_
+        (external) `d3rlpy's documentation about QLearningAlgoBase <https://d3rlpy.readthedocs.io/en/latest/references/algos.html>`_
 
     """
 
@@ -93,17 +92,20 @@ class BaseHead(AlgoBase):
     def build_with_env(self, env: gym.Env):
         return self.base_policy.build_with_env(env)
 
-    def copy_policy_from(self, algo: AlgoBase):
+    def copy_policy_from(self, algo: QLearningAlgoBase):
         return self.base_policy.copy_policy_from(algo)
 
-    def copy_q_function_from(self, algo: AlgoBase):
+    def copy_policy_optim_from(self, algo: QLearningAlgoBase):
+        return self.base_policy.copy_policy_optim_from(algo)
+
+    def copy_q_function_from(self, algo: QLearningAlgoBase):
         return self.base_policy.copy_q_function_from(algo)
+
+    def copy_q_function_optim_from(self, algo: QLearningAlgoBase):
+        return self.base_policy.copy_q_function_optim_from(algo)
 
     def fit(self, dataset: MDPDataset, **kwargs):
         return self.base_policy.fit(dataset, **kwargs)
-
-    def fit_batch_online(self, env: gym.Env, **kwargs):
-        return self.base_policy.fit_batch_online(env, **kwargs)
 
     def fit_online(self, env: gym.Env, **kwargs):
         return self.base_policy.fit_online(env, **kwargs)
@@ -111,23 +113,20 @@ class BaseHead(AlgoBase):
     def fitter(self, env: gym.Env, **kwargs):
         return self.base_policy.fitter(env, **kwargs)
 
-    def generate_new_data(self, transition: Transition):
-        return self.base_policy.generate_new_data(transition)
-
-    def collect(self, env: gym.Env, **kwargs):
-        return self.base_policy.collect(env, **kwargs)
-
     def update(self, batch: TransitionMiniBatch):
         return self.base_policy.update(batch)
+
+    def inner_update(self, batch: TransitionMiniBatch):
+        return self.base_policy.inner_update(batch)
 
     def create_impl(self, observation_shape: Sequence[int], action_size: int):
         return self.base_policy.create_impl(observation_shape, action_size)
 
+    def inner_create_impl(self, observation_shape: Sequence[int], action_size: int):
+        return self.base_policy.inner_create_impl(observation_shape, action_size)
+
     def get_action_type(self):
         return self.base_policy.get_action_type()
-
-    def get_params(self, **kwargs):
-        return self.base_policy.get_params()
 
     def load_model(self, fname: str):
         return self.base_policy.load_model(fname)
@@ -138,24 +137,21 @@ class BaseHead(AlgoBase):
     def save_model(self, fname: str):
         return self.base_policy.save_model(fname)
 
-    def save_params(self, logger: D3RLPyLogger):
-        return self.base_policy.save_model(logger)
+    def save(self, fname: str):
+        return self.base_policy.save(fname)
 
     def save_policy(self, fname: str, **kwargs):
         return self.base_policy.save_policy(fname, **kwargs)
 
-    def set_active_logger(self, logger: D3RLPyLogger):
-        return self.base_policy.set_active_logger(logger)
-
     def set_grad_step(self, grad_step: int):
         return self.base_policy.set_grad_step(grad_step)
 
-    def set_params(self, **params):
-        return self.base_policy.set_params(**params)
+    def reset_optimizer_states(self):
+        return self.base_policy.reset_optimizer_states()
 
     @property
-    def scaler(self):
-        return self.base_policy.scaler
+    def observation_scaler(self):
+        return self.base_policy.observation_scaler
 
     @property
     def action_scalar(self):
@@ -166,8 +162,8 @@ class BaseHead(AlgoBase):
         return self.base_policy.reward_scaler
 
     @property
-    def observation_space(self):
-        return self.base_policy.observation_space
+    def observation_shape(self):
+        return self.base_policy.observation_shape
 
     @property
     def action_size(self):
@@ -186,20 +182,12 @@ class BaseHead(AlgoBase):
         return self.base_policy.grad_step
 
     @property
-    def n_frames(self):
-        return self.base_policy.n_frames
-
-    @property
-    def n_steps(self):
-        return self.base_policy.n_steps
-
-    @property
     def impl(self):
         return self.base_policy.impl
 
     @property
-    def action_logger(self):
-        return self.base_policy.action_logger
+    def config(self):
+        return self.base_policy.config
 
 
 @dataclass
@@ -216,16 +204,16 @@ class OnlineHead(BaseHead):
 
     Note
     -------
-    To ensure API compatibility with `d3rlpy <https://github.com/takuseno/d3rlpy>`_, :class:`BaseHead` inherits :class:`d3rlpy.algos.AlgoBase`.
+    To ensure API compatibility with `d3rlpy <https://github.com/takuseno/d3rlpy>`_, :class:`BaseHead` inherits :class:`d3rlpy.algos.QLearningAlgoBase`.
     This base class also has additional methods including :class:`fit`, :class:`predict`, and :class:`predict_value`. Please also refer to the following documentation for the methods that are not described in this API reference.
 
     .. seealso::
 
-        (external) `d3rlpy's documentation about AlgoBase <https://d3rlpy.readthedocs.io/en/latest/references/algos.html>`_
+        (external) `d3rlpy's documentation about QLearningAlgoBase <https://d3rlpy.readthedocs.io/en/latest/references/algos.html>`_
 
     Parameters
     -------
-    base_policy: AlgoBase
+    base_policy: QLearningAlgoBase
         Reinforcement learning (RL) policy.
 
     name: str
@@ -233,7 +221,7 @@ class OnlineHead(BaseHead):
 
     """
 
-    base_policy: AlgoBase
+    base_policy: QLearningAlgoBase
     name: str
 
     def sample_action_and_output_pscore(self, x: np.ndarray):
@@ -270,16 +258,16 @@ class EpsilonGreedyHead(BaseHead):
 
     Note
     -------
-    To ensure API compatibility with `d3rlpy <https://github.com/takuseno/d3rlpy>`_, :class:`BaseHead` inherits :class:`d3rlpy.algos.AlgoBase`.
+    To ensure API compatibility with `d3rlpy <https://github.com/takuseno/d3rlpy>`_, :class:`BaseHead` inherits :class:`d3rlpy.algos.QLearningAlgoBase`.
     This base class also has additional methods including :class:`fit`, :class:`predict`, and :class:`predict_value`. Please also refer to the following documentation for the methods that are not described in this API reference.
 
     .. seealso::
 
-        (external) `d3rlpy's documentation about AlgoBase <https://d3rlpy.readthedocs.io/en/latest/references/algos.html>`_
+        (external) `d3rlpy's documentation about QLearningAlgoBase <https://d3rlpy.readthedocs.io/en/latest/references/algos.html>`_
 
     Parameters
     -------
-    base_policy: AlgoBase
+    base_policy: QLearningAlgoBase
         Reinforcement learning (RL) policy.
 
     name: str
@@ -296,7 +284,7 @@ class EpsilonGreedyHead(BaseHead):
 
     """
 
-    base_policy: AlgoBase
+    base_policy: QLearningAlgoBase
     name: str
     n_actions: int
     epsilon: float
@@ -306,8 +294,8 @@ class EpsilonGreedyHead(BaseHead):
         "Initialize class."
         self.action_type = "discrete"
 
-        if not isinstance(self.base_policy, AlgoBase):
-            raise ValueError("base_policy must be a child class of AlgoBase")
+        if not isinstance(self.base_policy, QLearningAlgoBase):
+            raise ValueError("base_policy must be a child class of QLearningAlgoBase")
 
         check_scalar(self.n_actions, name="n_actions", target_type=int, min_val=2)
         self.action_matrix = np.eye(self.n_actions)
@@ -429,16 +417,16 @@ class SoftmaxHead(BaseHead):
 
     Note
     -------
-    To ensure API compatibility with `d3rlpy <https://github.com/takuseno/d3rlpy>`_, :class:`BaseHead` inherits :class:`d3rlpy.algos.AlgoBase`.
+    To ensure API compatibility with `d3rlpy <https://github.com/takuseno/d3rlpy>`_, :class:`BaseHead` inherits :class:`d3rlpy.algos.QLearningAlgoBase`.
     This base class also has additional methods including :class:`fit`, :class:`predict`, and :class:`predict_value`. Please also refer to the following documentation for the methods that are not described in this API reference.
 
     .. seealso::
 
-        (external) `d3rlpy's documentation about AlgoBase <https://d3rlpy.readthedocs.io/en/latest/references/algos.html>`_
+        (external) `d3rlpy's documentation about QLearningAlgoBase <https://d3rlpy.readthedocs.io/en/latest/references/algos.html>`_
 
     Parameters
     -------
-    base_policy: AlgoBase
+    base_policy: QLearningAlgoBase
         Reinforcement learning (RL) policy.
 
     name: str
@@ -456,7 +444,7 @@ class SoftmaxHead(BaseHead):
 
     """
 
-    base_policy: AlgoBase
+    base_policy: QLearningAlgoBase
     name: str
     n_actions: int
     tau: float = 1.0
@@ -466,8 +454,8 @@ class SoftmaxHead(BaseHead):
         """Initialize class."""
         self.action_type = "discrete"
 
-        if not isinstance(self.base_policy, AlgoBase):
-            raise ValueError("base_policy must be a child class of AlgoBase")
+        if not isinstance(self.base_policy, QLearningAlgoBase):
+            raise ValueError("base_policy must be a child class of QLearningAlgoBase")
 
         check_scalar(self.n_actions, name="actions", target_type=int, min_val=2)
         check_scalar(self.tau, name="tau", target_type=float)
@@ -639,16 +627,16 @@ class GaussianHead(BaseHead):
 
     Note
     -------
-    To ensure API compatibility with `d3rlpy <https://github.com/takuseno/d3rlpy>`_, :class:`BaseHead` inherits :class:`d3rlpy.algos.AlgoBase`.
+    To ensure API compatibility with `d3rlpy <https://github.com/takuseno/d3rlpy>`_, :class:`BaseHead` inherits :class:`d3rlpy.algos.QLearningAlgoBase`.
     This base class also has additional methods including :class:`fit`, :class:`predict`, and :class:`predict_value`. Please also refer to the following documentation for the methods that are not described in this API reference.
 
     .. seealso::
 
-        (external) `d3rlpy's documentation about AlgoBase <https://d3rlpy.readthedocs.io/en/latest/references/algos.html>`_
+        (external) `d3rlpy's documentation about QLearningAlgoBase <https://d3rlpy.readthedocs.io/en/latest/references/algos.html>`_
 
     Parameters
     -------
-    base_policy: AlgoBase
+    base_policy: QLearningAlgoBase
         Reinforcement learning (RL) policy.
 
     name: str
@@ -662,7 +650,7 @@ class GaussianHead(BaseHead):
 
     """
 
-    base_policy: AlgoBase
+    base_policy: QLearningAlgoBase
     name: str
     sigma: np.ndarray
     random_state: Optional[int] = None
@@ -671,8 +659,8 @@ class GaussianHead(BaseHead):
         """Initialize class."""
         self.action_type = "continuous"
 
-        if not isinstance(self.base_policy, AlgoBase):
-            raise ValueError("base_policy must be a child class of AlgoBase")
+        if not isinstance(self.base_policy, QLearningAlgoBase):
+            raise ValueError("base_policy must be a child class of QLearningAlgoBase")
 
         check_array(self.sigma, name="sigma", expected_dim=1, min_val=0.0)
 
@@ -680,8 +668,10 @@ class GaussianHead(BaseHead):
             raise ValueError("random_state must be given")
         self.random_ = check_random_state(self.random_state)
 
-    def calc_action_choice_probability(self, greedy_action: np.ndarray, action: np.ndarray):
-        """Calculate pscore.
+    def calc_action_choice_probability(
+        self, greedy_action: np.ndarray, action: np.ndarray
+    ):
+        """Calculate action choice probabilities.
 
         Parameters
         -------
@@ -789,16 +779,16 @@ class TruncatedGaussianHead(BaseHead):
 
     Note
     -------
-    To ensure API compatibility with `d3rlpy <https://github.com/takuseno/d3rlpy>`_, :class:`BaseHead` inherits :class:`d3rlpy.algos.AlgoBase`.
+    To ensure API compatibility with `d3rlpy <https://github.com/takuseno/d3rlpy>`_, :class:`BaseHead` inherits :class:`d3rlpy.algos.QLearningAlgoBase`.
     This base class also has additional methods including :class:`fit`, :class:`predict`, and :class:`predict_value`. Please also refer to the following documentation for the methods that are not described in this API reference.
 
     .. seealso::
 
-        (external) `d3rlpy's documentation about AlgoBase <https://d3rlpy.readthedocs.io/en/latest/references/algos.html>`_
+        (external) `d3rlpy's documentation about QLearningAlgoBase <https://d3rlpy.readthedocs.io/en/latest/references/algos.html>`_
 
     Parameters
     -------
-    base_policy: AlgoBase
+    base_policy: QLearningAlgoBase
         Reinforcement learning (RL) policy.
 
     name: str
@@ -818,7 +808,7 @@ class TruncatedGaussianHead(BaseHead):
 
     """
 
-    base_policy: AlgoBase
+    base_policy: QLearningAlgoBase
     name: str
     sigma: np.ndarray
     minimum: np.ndarray
@@ -829,8 +819,8 @@ class TruncatedGaussianHead(BaseHead):
         """Initialize class."""
         self.action_type = "continuous"
 
-        if not isinstance(self.base_policy, AlgoBase):
-            raise ValueError("base_policy must be a child class of AlgoBase")
+        if not isinstance(self.base_policy, QLearningAlgoBase):
+            raise ValueError("base_policy must be a child class of QLearningAlgoBase")
 
         check_array(self.sigma, name="sigma", expected_dim=1, min_val=0.0)
         check_array(self.minimum, name="minimum", expected_dim=1)
@@ -844,8 +834,10 @@ class TruncatedGaussianHead(BaseHead):
             raise ValueError("random_state must be given")
         self.random_ = check_random_state(self.random_state)
 
-    def calc_action_choice_probability(self, greedy_action: np.ndarray, action: np.ndarray):
-        """Calculate pscore.
+    def calc_action_choice_probability(
+        self, greedy_action: np.ndarray, action: np.ndarray
+    ):
+        """Calculate action choice probabilities.
 
         Parameters
         -------
@@ -946,16 +938,16 @@ class ContinuousEvalHead(BaseHead):
 
     Note
     -------
-    To ensure API compatibility with `d3rlpy <https://github.com/takuseno/d3rlpy>`_, :class:`BaseHead` inherits :class:`d3rlpy.algos.AlgoBase`.
+    To ensure API compatibility with `d3rlpy <https://github.com/takuseno/d3rlpy>`_, :class:`BaseHead` inherits :class:`d3rlpy.algos.QLearningAlgoBase`.
     This base class also has additional methods including :class:`fit`, :class:`predict`, and :class:`predict_value`. Please also refer to the following documentation for the methods that are not described in this API reference.
 
     .. seealso::
 
-        (external) `d3rlpy's documentation about AlgoBase <https://d3rlpy.readthedocs.io/en/latest/references/algos.html>`_
+        (external) `d3rlpy's documentation about QLearningAlgoBase <https://d3rlpy.readthedocs.io/en/latest/references/algos.html>`_
 
     Parameters
     -------
-    base_policy: AlgoBase
+    base_policy: QLearningAlgoBase
         Reinforcement learning (RL) policy.
 
     name: str
@@ -966,15 +958,27 @@ class ContinuousEvalHead(BaseHead):
 
     """
 
-    base_policy: AlgoBase
+    base_policy: QLearningAlgoBase
     name: str
     random_state: Optional[int] = None
 
     def __post_init__(self):
         """Initialize class."""
         self.action_type = "continuous"
-        if not isinstance(self.base_policy, AlgoBase):
-            raise ValueError("base_policy must be a child class of AlgoBase")
+        if not isinstance(self.base_policy, QLearningAlgoBase):
+            raise ValueError("base_policy must be a child class of QLearningAlgoBase")
+
+    def sample_action_and_output_pscore(self, x: np.ndarray):
+        """Only for API consistency."""
+        pass
+
+    def calc_action_choice_probability(self, x: np.ndarray):
+        """Only for API consistency."""
+        pass
+
+    def calc_pscore_given_action(self, x: np.ndarray, action: np.ndarray):
+        """Only for API consistency."""
+        pass
 
     def sample_action_and_output_pscore(self, x: np.ndarray):
         """Only for API consistency."""

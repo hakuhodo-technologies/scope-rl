@@ -1,7 +1,7 @@
 {{ fullname | escape | underline}}
 
 .. automodule:: {{ fullname }}
-   :exclude-members: build_with_dataset,build_with_env,copy_policy_from,copy_q_function_from,fitter,generate_new_data,create_impl,get_action_type,get_params,load_model,save_model,from_json,save_params,save_policy,set_active_logger,set_grad_step,set_params,impl,grad_step,n_frames,action_size,batch_size,gamma,n_steps,reward_scaler,scaler,fit,fit_online,update,collect,action_logger,action_scalar,observation_space,predict,predict_value,fit_batch_online,sample_action
+   :exclude-members: build_with_dataset,build_with_env,copy_policy_from,copy_policy_optim_from,copy_q_function_from,copy_q_function_optim_from,fitter,update,inner_update,create_impl,inner_create_impl,get_action_type,load_model,save_model,from_json,save,save_policy,set_grad_step,reset_optimizer_states,impl,grad_step,action_size,batch_size,gamma,config,reward_scaler,observation_scaler,action_scaler,fit,fit_online,observation_shape,predict,predict_value,sample_action
 
    {% block functions %}
    {% if functions %}
