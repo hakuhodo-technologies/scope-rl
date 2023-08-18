@@ -19,7 +19,7 @@ from ...utils import check_array
 
 @dataclass
 class WinningPriceDistribution(BaseWinningPriceDistribution):
-    """Class to sample the winning price (i.e., second price) and compare with the given bid price.
+    """Class to sample the winning price (i.e., second price) and compare it with the given bid price.
 
     Imported as: :class:`rtbgym.envs.simulator.WinningDistribution`
 
@@ -54,7 +54,7 @@ class WinningPriceDistribution(BaseWinningPriceDistribution):
     step_per_episode: int (> 0)
         Length of the CTR trend cycle. (This is for API consistency)
 
-    standard_bid_price_distribution: NormalDistribution, default=NormalDistribution(mean=100, std=20)
+    standard_bid_price_distribution: NormalDistribution, default=None
         Distribution of the bid price whose average impression probability is expected to be 0.5.
 
     minimum_standard_bid_price: {int, float}, default=None (> 0)
@@ -76,11 +76,7 @@ class WinningPriceDistribution(BaseWinningPriceDistribution):
     ad_feature_dim: int
     user_feature_dim: int
     step_per_episode: int
-    standard_bid_price_distribution: NormalDistribution = NormalDistribution(
-        mean=50,
-        std=5,
-        random_state=12345,
-    )
+    standard_bid_price_distribution: Optional[NormalDistribution] = (None,)
     minimum_standard_bid_price: Optional[Union[int, float]] = None
     random_state: Optional[int] = None
 
@@ -104,6 +100,12 @@ class WinningPriceDistribution(BaseWinningPriceDistribution):
             raise ValueError("random_state must be given")
         self.random_ = check_random_state(self.random_state)
 
+        if self.standard_bid_price_distribution is None:
+            self.standard_bid_price_distribution = NormalDistribution(
+                mean=50,
+                std=5,
+                random_state=self.random_state,
+            )
         standard_bid_prices = np.clip(
             self.standard_bid_price_distribution.sample(self.n_ads),
             self.minimum_standard_bid_price,
@@ -387,7 +389,7 @@ class ClickThroughRate(BaseClickAndConversionRate):
         Returns
         -------
         clicks: array-like of shape (search_volume/n_samples, )
-            Whether click occurs in impression=True case.
+            Whether click occurs when impression=True.
 
         """
         ctrs = self.calc_prob(
@@ -602,7 +604,7 @@ class ConversionRate(BaseClickAndConversionRate):
         Returns
         -------
         conversions: ndarray of shape (search_volume/n_samples, )
-            Whether conversion occurs in click=True case.
+            Whether conversion occurs when click=True.
 
         """
         cvrs = self.calc_prob(

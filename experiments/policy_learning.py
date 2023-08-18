@@ -12,11 +12,11 @@ from gym.spaces import Box
 import numpy as np
 import torch
 
+import d3rlpy
 from d3rlpy.algos import SAC
 from d3rlpy.algos import DoubleDQN as DDQN
 from d3rlpy.algos import CQL
 from d3rlpy.algos import IQL
-from d3rlpy.algos import BCQ
 from d3rlpy.algos import DiscreteCQL
 from d3rlpy.algos import DiscreteBCQ
 from d3rlpy.online.explorers import LinearDecayEpsilonGreedy, ConstantEpsilonGreedy
@@ -26,10 +26,10 @@ from d3rlpy.online.buffers import ReplayBuffer
 
 from scope_rl.dataset import SyntheticDataset
 from scope_rl.policy import BaseHead
-from scope_rl.policy import ContinuousGaussianHead as GaussianHead
-from scope_rl.policy import DiscreteEpsilonGreedyHead as EpsilonGreedyHead
-from scope_rl.policy import DiscreteSoftmaxHead as SoftmaxHead
-from scope_rl.policy import OffPolicyLearning
+from scope_rl.policy import GaussianHead
+from scope_rl.policy import EpsilonGreedyHead
+from scope_rl.policy import SoftmaxHead
+from scope_rl.policy import TrainCandidatePolicies
 
 from scope_rl.ope.online import visualize_on_policy_policy_value
 from scope_rl.ope.online import calc_on_policy_policy_value
@@ -38,7 +38,7 @@ from scope_rl.utils import MinMaxActionScaler
 from scope_rl.utils import OldGymAPIWrapper
 from scope_rl.types import LoggedDataset
 
-from experiments.utils import torch_seed, format_runtime
+from utils import torch_seed, format_runtime
 
 
 def train_behavior_policy(
@@ -61,6 +61,7 @@ def train_behavior_policy(
     path_behavior_policy = Path(path_ / f"behavior_policy_{env_name}.pt")
 
     torch_seed(base_random_state, device=device)
+    d3rlpy.seed(base_random_state)
 
     if action_type == "continuous":
         model = SAC(
@@ -164,6 +165,7 @@ def obtain_train_logged_dataset(
     n_trajectories: int,
     base_random_state: int,
     log_dir: str,
+    device: str,
 ):
     behavior_policy_name = behavior_policy.name
 
@@ -178,6 +180,9 @@ def obtain_train_logged_dataset(
             train_logged_dataset = pickle.load(f)
 
     else:
+        torch_seed(base_random_state, device=device)
+        d3rlpy.seed(base_random_state)
+
         dataset = SyntheticDataset(
             env=env,
             max_episode_steps=env.spec.max_episode_steps,
@@ -220,7 +225,7 @@ def train_candidate_policies(
         path_ / f"candidate_policy_{env_name}_{behavior_policy_name}.pkl"
     )
 
-    opl = OffPolicyLearning(
+    opl = TrainCandidatePolicies(
         fitting_args={
             "n_steps": base_model_config.opl.fitting_steps,
             "scorers": {},
@@ -233,6 +238,7 @@ def train_candidate_policies(
 
     else:
         torch_seed(base_random_state, device=device)
+        d3rlpy.seed(base_random_state)
 
         if action_type == "continuous":
             cql_b1 = CQL(
@@ -440,6 +446,7 @@ def process(
         n_trajectories=n_trajectories,
         base_random_state=base_random_state,
         log_dir=log_dir,
+        device=device,
     )
 
     candidate_policies = train_candidate_policies(
@@ -460,10 +467,8 @@ def process(
     visualize_on_policy_policy_value(
         env=env,
         policies=[behavior_policy] + candidate_policies,
-        # policies=[behavior_policy],
         policy_names=[behavior_policy.name]
         + [candidate_policy.name for candidate_policy in candidate_policies],
-        # policy_names=[behavior_policy.name],
         random_state=base_random_state,
         step_per_trajectory=env.spec.max_episode_steps,
         fig_dir=path_,

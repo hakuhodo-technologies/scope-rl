@@ -17,34 +17,34 @@
 
 ## Overview
 
-*BasicGym* is an open-source simulation platform for synthetic simulation, which is written in Python. The simulator is particularly intended for reinforcement learning algorithms and follows [OpenAI Gym](https://gym.openai.com) and [Gymnasium](https://gymnasium.farama.org/)-like interface. We design SyntheticGym as a configurative environment so that researchers and practitioner can customize the environmental modules including `StateTransitionFunction` and `RewardFunction`
+*BasicGym* is an open-source simulation platform for synthetic simulation, which is written in Python. The simulator is particularly intended for reinforcement learning algorithms and follows [OpenAI Gym](https://gym.openai.com) and [Gymnasium](https://gymnasium.farama.org/)-like interface. We design SyntheticGym as a configurative environment so that researchers and practitioners can customize the environmental modules including `StateTransitionFunction` and `RewardFunction`
 
-Note that, SyntheticGym is publicized under [scope-rl](../) repository, which facilitates the implementation of offline reinforcement learning procedure.
+Note that SyntheticGym is publicized under [scope-rl](../) repository, which facilitates the implementation of the offline reinforcement learning procedure.
 
 ### Basic Setting
 
 We formulate the following (Partially Observable) Markov Decision Process ((PO)MDP):
-- `state`: 
+- `state`:
    - State observation, which may be noisy in POMDPs.
-- `action`:  
-   - Indicating the action to presented by the RL agent.
+- `action`:
+   - Indicating the action presented by the RL agent.
 - `reward`:
-   - Reward observation.
+   - Observed immediate rewards.
 
 ### Implementation
 
-SyntheticGym provides a standardize environment in both discrete and continuous action settings.
+SyntheticGym provides a standardized environment in both discrete and continuous action settings.
 - `"BasicEnv-continuous-v0"`: Standard continuous environment.
 - `"BasicEnv-discrete-v0"`: Standard discrete environment.
 
-SyntheticGym consists of the following a environments.
+SyntheticGym consists of the following environment.
 - [BasicEnv](./envs/basic.py#L18): The basic configurative environment.
 
-SyntheticGym is configurative about the following a module.
+SyntheticGym is configurative about the following module.
 - [StateTransitionFunction](./envs/simulator/function.py#L14): Class to define the state transition function.
 - [RewardFunction](./envs/simulator/function.py#L101): Class to define the reward function.
 
-Note that, users can customize the above modules by following the [abstract class](./envs/simulator/base.py).
+Note that users can customize the above modules by following the [abstract class](./envs/simulator/base.py).
 
 ## Installation
 SyntheticGym can be installed as a part of [scope-rl](../) using Python's package manager `pip`.
@@ -52,7 +52,7 @@ SyntheticGym can be installed as a part of [scope-rl](../) using Python's packag
 pip install scope-rl
 ```
 
-You can also install from source.
+You can also install it from the source.
 ```bash
 git clone https://github.com/hakuhodo-technologies/scope-rl
 cd scope-rl
@@ -62,7 +62,7 @@ python setup.py install
 ## Usage
 
 We provide an example usage of the standard and customized environment. \
-The online/offlline RL and Off-Policy Evaluation examples are provides in [SCOPE-RL's README](../README.md).
+The online/offline RL and Off-Policy Evaluation examples are provided in [SCOPE-RL's README](../README.md).
 
 ### Standard SyntheticEnv
 
@@ -73,7 +73,7 @@ Our standard SyntheticEnv is available from `gym.make()`, following the [OpenAI 
 import basicgym
 import gym
 
-# (1) standard environment 
+# (1) standard environment
 env = gym.make('BasicEnv-continuous-v0')
 ```
 
@@ -86,7 +86,7 @@ while not done:
     obs, reward, done, truncated, info = env.step(action)
 ```
 
-Let's visualize the case with uniform random policy .
+Let's visualize the case with the uniform random policy.
 
 ```Python
 # import from other libraries
@@ -105,7 +105,7 @@ agent = OnlineHead(
 )
 agent.build_with_env(env)
 
-# (2) basic interaction 
+# (2) basic interaction
 obs, info = env.reset()
 done = False
 # logs
@@ -134,7 +134,7 @@ plt.show()
 </p>
 </figcaption>
 
-Note that, while we use [SCOPE-RL](../README.md) and [d3rlpy](https://github.com/takuseno/d3rlpy) here, SyntheticGym is compatible with any other libraries working on the [OpenAI Gym](https://gym.openai.com) and [Gymnasium](https://gymnasium.farama.org/)-like interface.
+Note that while we use [SCOPE-RL](../README.md) and [d3rlpy](https://github.com/takuseno/d3rlpy) here, SyntheticGym is compatible with any other libraries working on the [OpenAI Gym](https://gym.openai.com) and [Gymnasium](https://gymnasium.farama.org/)-like interface.
 
 ### Customized SyntheticEnv
 
@@ -145,15 +145,15 @@ Next, we describe how to customize the environment by instantiating the environm
 
 - `step_per_episode`: Number of timesteps in an episode.
 - `state_dim`: Dimension of the state.
-- `action_type`: Action type of the RL agent.
+- `action_type`: Type of the action space.
 - `n_actions`: Number of actions in the discrete action case.
 - `action_dim`: Dimension of the action (context).
-- `action_context`: Feature vectors that characterizes each action. Applicable only when action_type is "discrete".
+- `action_context`: Feature vectors that characterize each action. Applicable only when action_type is "discrete".
 - `reward_type`: Reward type.
 - `reward_std`: Noise level of the reward. Applicable only when reward_type is "continuous".
 - `obs_std`: Noise level of the state observation.
 - `StateTransitionFunction`: State transition function.
-- `RewardFunction`: Mean reward function.
+- `RewardFunction`: Expected immediate reward function
 - `random_state` : Random state.
 
 </details>
@@ -235,23 +235,22 @@ class CustomizedRewardFunction(BaseRewardFunction):
         return reward
 ```
 
-More examples are available at [quickstart/basic_synthetic_customize_env.ipynb](./examples/quickstart/basic_synthetic_customize_env.ipynb). 
+More examples are available at [quickstart/basic_synthetic_customize_env.ipynb](./examples/quickstart/basic_synthetic_customize_env.ipynb).
 
 ## Citation
 
 If you use our software in your work, please cite our paper:
 
 Haruka Kiyohara, Ren Kishimoto, Kosuke Kawakami, Ken Kobayashi, Kazuhide Nakata, Yuta Saito.<br>
-**Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation in Reinforcement Learning**<br>
+**SCOPE-RL: A Python Library for Offline Reinforcement Learning, Off-Policy Evaluation, and Policy Selection**<br>
 [link]() (a preprint coming soon..)
 
 Bibtex:
 ```
 @article{kiyohara2023towards,
   author = {Kiyohara, Haruka and Kishimoto, Ren and Kawakami, Kosuke and Kobayashi, Ken and Nataka, Kazuhide and Saito, Yuta},
-  title = {Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation in Reinforcement Learning},
-  journal = {A github repository},
-  pages = {xxx--xxx},
+  title = {SCOPE-RL: A Python Library for Offline Reinforcement Learning, Off-Policy Evaluation, and Policy Selection},
+  journal={arXiv preprint arXiv:23xx.xxxxx},
   year = {2023},
 }
 ```
@@ -259,7 +258,7 @@ Bibtex:
 ## Contribution
 
 Any contributions to SyntheticGym are more than welcome!
-Please refer to [CONTRIBUTING.md](../CONTRIBUTING.md) for general guidelines how to contribute the project.
+Please refer to [CONTRIBUTING.md](../CONTRIBUTING.md) for general guidelines on how to contribute the project.
 
 ## License
 
@@ -276,7 +275,7 @@ This project is licensed under Apache 2.0 license - see [LICENSE](../LICENSE) fi
 
 ## Contact
 
-For any question about the paper and software, feel free to contact: hk844@cornell.edu
+For any questions about the paper and software, feel free to contact: hk844@cornell.edu
 
 ## References
 

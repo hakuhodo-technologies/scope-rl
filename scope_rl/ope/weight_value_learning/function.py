@@ -18,7 +18,7 @@ class VFunction(nn.Module):
     Parameters
     -------
     state_dim: int (> 0)
-        Dimensions of the states.
+        Dimensions of the state space.
 
     hidden_dim: int, default=100 (> 0)
         Hidden dimension of the network.
@@ -52,7 +52,7 @@ class StateWeightFunction(nn.Module):
     Parameters
     -------
     state_dim: int (> 0)
-        Dimensions of the states.
+        Dimensions of the state space.
 
     hidden_dim: int, default=100 (> 0)
         Hidden dimension of the network.
@@ -98,10 +98,10 @@ class DiscreteQFunction(nn.Module):
     Parameters
     -------
     n_actions: int (> 0)
-        Number of discrete actions.
+        Number of actions.
 
     state_dim: int (> 0)
-        Dimensions of the states.
+        Dimensions of the state space.
 
     hidden_dim: int, default=100 (> 0)
         Hidden dimension of the network.
@@ -176,10 +176,10 @@ class ContinuousQFunction(nn.Module):
     Parameters
     -------
     action_dim: int (> 0)
-        Dimensions of the actions.
+        Dimensions of the action space.
 
     state_dim: int (> 0)
-        Dimensions of the states.
+        Dimensions of the state space.
 
     hidden_dim: int, default=100 (> 0)
         Hidden dimension of the network.
@@ -217,10 +217,10 @@ class DiscreteStateActionWeightFunction(nn.Module):
     Parameters
     -------
     n_actions: int (> 0)
-        Number of discrete actions.
+        Number of actions.
 
     state_dim: int (> 0)
-        Dimensions of the states.
+        Dimensions of the state space.
 
     hidden_dim: int, default=100 (> 0)
         Hidden dimension of the network.
@@ -274,10 +274,10 @@ class ContinuousStateActionWeightFunction(nn.Module):
     Parameters
     -------
     action_dim: int (> 0)
-        Dimensions of the actions.
+        Dimensions of the action space.
 
     state_dim: int (> 0)
-        Dimensions of the states.
+        Dimensions of the state space.
 
     hidden_dim: int, default=100 (> 0)
         Hidden dimension of the network.

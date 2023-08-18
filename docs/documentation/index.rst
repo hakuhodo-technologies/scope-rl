@@ -6,24 +6,24 @@ SCOPE-RL
 .. raw:: html
 
     <h3>A Python library for offline reinforcement learning, off-policy evaluation, and selection</h3>
+    <div class="white-space-5px"></div>
 
+.. card::
+    :width: 75%
+    :margin: auto
+    :img-background: ../_static/images/logo.png
+    :text-align: center
 
-.. .. card:: logo
-..     :img-top: ../_static/images/logo.png
-..     :text-align: center
-    
 Overview
 ~~~~~~~~~~
-*SCOPE-RL* is an open-source Python library for offline Reinforcement Learning (RL) and Off-Policy Evaluation and Selection (OPE/OPS).
-This library aims to facilitate an easy, flexible and reliable experiment in offline RL research, as well as to provide a streamlined implementation for practitioners.
-SCOPE-RL includes a series of modules to implement synthetic dataset generation and dataset preprocessing and methods for conducting and evaluating OPE/OPS.
+*SCOPE-RL* is an open-source Python library designed for both Offline Reinforcement Learning (RL) and Off-Policy Evaluation and Selection (OPE/OPS). This library is intended to streamline offline RL research by providing an easy, flexible, and reliable platform for conducting experiments. It also offers straightforward implementations for practitioners. SCOPE-RL incorporates a series of modules that allow for synthetic dataset generation, dataset preprocessing, and the conducting and evaluation of OPE/OPS.
 
-SCOPE-RL is applicable to any RL environment with `OpenAI Gym <https://github.com/openai/gym>`_ or `Gymnasium <https://github.com/Farama-Foundation/Gymnasium>`_-like interface.
-The library is also compatible with `d3rlpy <https://github.com/takuseno/d3rlpy>`_, which provides the algorithm implementation of both online and offline RL methods.
+SCOPE-RL can be used in any RL environment that has an interface similar to `OpenAI Gym <https://github.com/openai/gym>`_ or `Gymnasium <https://github.com/Farama-Foundation/Gymnasium>`_-like interface.
+The library is also compatible with `d3rlpy <https://github.com/takuseno/d3rlpy>`_ which implements both online and offline RL methods.
 
 Our software facilitates implementation, evaluation and algorithm comparison related to the following research topics:
 
-.. card:: 
+.. card::
    :width: 75%
    :margin: auto
    :img-top: ../_static/images/offline_rl_workflow.png
@@ -35,23 +35,22 @@ Our software facilitates implementation, evaluation and algorithm comparison rel
 
     <div class="white-space-20px"></div>
 
-* **Offline Reinforcement Learning**: 
-   Offline RL aims to learn a new policy from only offline logged data collected by a behavior policy. SCOPE-RL enables a flexible experiment using customized dataset on diverse environments collected by various behavior policies.
+* **Offline Reinforcement Learning**:
+   Offline RL aims to train a new policy from only offline logged data collected by a behavior policy. SCOPE-RL enables a flexible experiment using customized datasets on diverse environments collected by various behavior policies.
 
-* **Off-Policy Evaluation**: 
-   OPE aims to evaluate the policies of a counterfactual policy using only offline logged data. SCOPE-RL supports the basic implementations of OPE estimators and streamline the experimental procedure to evaluate OPE estimators.
+* **Off-Policy Evaluation**:
+   OPE aims to evaluate the performance of a counterfactual policy using only offline logged data. SCOPE-RL supports implementations of a range of OPE estimators and streamlines the experimental procedure to evaluate the accuracy of OPE estimators.
 
-* **Off-Policy Selection**: 
-   OPS aims to select the top-:math:`k` policies from several candidate policies using offline logged data. Typically, the final production policy is chosen based on the online A/B tests results of the selected top-:math:`k` policies.
-   SCOPE-RL supports the basic implementations of OPS methods and provide some metrics to evaluate OPS result.
+* **Off-Policy Selection**:
+   OPS aims to select the top-:math:`k` policies from several candidate policies using only offline logged data. Typically, the final production policy is chosen based on the online A/B tests of the top-:math:`k` policies selected by OPS.
+   SCOPE-RL supports implementations of a range of OPS methods and provides some metrics to evaluate the OPS result.
 
 .. note::
 
    This documentation aims to provide a gentle introduction to offline RL and OPE/OPS in the following steps.
 
-   .. 2. Provide a variety of examples of conducting offline RL and OPE/OPS in practical problem settings in :doc:`Quickstart <quickstart>` and :doc:`Tutorial <tutorial>`.
    1. Explain the basic concepts in :doc:`Overview (online/offline RL) <online_offline_rl>` and :doc:`Overview (OPE/OPS) <ope_ops>`.
-   2. Provide a variety of examples of conducting offline RL and OPE/OPS in practical problem settings in :doc:`Quickstart <quickstart>`.
+   2. Provide various examples of conducting offline RL and OPE/OPS in practical problem settings in :doc:`Quickstart <quickstart>` and :doc:`Example Codes <examples/index>`.
    3. Describe the algorithms and implementations in detail in :doc:`Supported Implementation <evaluation_implementation>` and :doc:`Package Reference <scope_rl_api>`.
 
    **You can also find the distinctive features of SCOPE-RL here:** :doc:`distinctive_features`
@@ -61,14 +60,14 @@ Implementation
 
 Data Collection Policy and Offline RL
 ----------
-SCOPE-RL override `d3rlpy <https://github.com/takuseno/d3rlpy>`_'s implementation for the base algorithms.
-We provide a class to handle synthetic dataset deneration, off-policy learning with multiple algorithms, and
-wrapper classes for transforming the policy into a stochastic policy as follows.
+SCOPE-RL overrides `d3rlpy <https://github.com/takuseno/d3rlpy>`_'s implementation for the base RL algorithms.
+We provide a class to handle synthetic dataset generation, off-policy learning with multiple algorithms, and
+wrapper classes for transforming the policy into a stochastic one.
 
 Meta class
 ^^^^^^
 * SyntheticDataset
-* OffPolicyLearning
+* TrainCandidatePolicies
 
 Discrete
 ^^^^^^
@@ -83,39 +82,39 @@ Continuous
 Basic OPE
 ----------
 
-.. card:: 
+.. card::
     :img-top: ../_static/images/ope_policy_value_basic.png
     :text-align: center
-    
+
     Policy Value Estimated by OPE Estimators
 
 SCOPE-RL provides a variety of OPE estimators both in discrete and continuous action spaces.
-Moreover, SCOPE-RL also implements meta class to handle OPE with multiple estimators at once and provide generic classes of OPE estimators to facilitate research development.
+Moreover, SCOPE-RL also implements meta classes to handle OPE with multiple estimators at once and provides generic classes of OPE estimators to facilitate research development.
 
 Basic estimators
 ^^^^^^
-* Direct Method (DM) :cite:`beygelzimer2009offset` :cite:`le2019batch`
+* Direct Method (DM) :cite:`beygelzimer2009offset, le2019batch`
 * Trajectory-wise Importance Sampling (TIS) :cite:`precup2000eligibility`
 * Per-Decision Importance Sampling (PDIS) :cite:`precup2000eligibility`
-* Doubly Robust (DR) :cite:`jiang2016doubly` :cite:`thomas2016data`
-* Self-Normalized Trajectory-wise Importance Sampling (SNTIS) :cite:`precup2000eligibility` :cite:`kallus2019intrinsically`
-* Self-Normalized Per-Decision Importance Sampling (SNPDIS) :cite:`precup2000eligibility` :cite:`kallus2019intrinsically`
-* Self-Normalized Doubly Robust (SNDR) :cite:`jiang2016doubly` :cite:`thomas2016data` :cite:`kallus2019intrinsically`
+* Doubly Robust (DR) :cite:`jiang2016doubly, thomas2016data`
+* Self-Normalized Trajectory-wise Importance Sampling (SNTIS) :cite:`precup2000eligibility, kallus2019intrinsically`
+* Self-Normalized Per-Decision Importance Sampling (SNPDIS) :cite:`precup2000eligibility, kallus2019intrinsically`
+* Self-Normalized Doubly Robust (SNDR) :cite:`jiang2016doubly, thomas2016data, kallus2019intrinsically`
 
 State Marginal Estimators
 ^^^^^^
 * State Marginal Direct Method (SM-DM) :cite:`uehara2020minimax`
-* State Marginal Importance Sampling (SM-IS) :cite:`liu2018breaking` :cite:`uehara2020minimax` :cite:`yuan2021sope`
-* State Marginal Doubly Robust (SM-DR) :cite:`liu2018breaking` :cite:`uehara2020minimax` :cite:`yuan2021sope`
-* State Marginal Self-Normalized Importance Sampling (SM-SNIS) :cite:`liu2018breaking` :cite:`uehara2020minimax` :cite:`yuan2021sope`
-* State Marginal Self-Normalized Doubly Robust (SM-SNDR) :cite:`liu2018breaking` :cite:`uehara2020minimax` :cite:`yuan2021sope`
+* State Marginal Importance Sampling (SM-IS) :cite:`liu2018breaking, uehara2020minimax, yuan2021sope`
+* State Marginal Doubly Robust (SM-DR) :cite:`liu2018breaking, uehara2020minimax, yuan2021sope`
+* State Marginal Self-Normalized Importance Sampling (SM-SNIS) :cite:`liu2018breaking, uehara2020minimax, yuan2021sope`
+* State Marginal Self-Normalized Doubly Robust (SM-SNDR) :cite:`liu2018breaking, uehara2020minimax, yuan2021sope`
 
 State-Action Marginal Estimators
 ^^^^^^
-* State-Action Marginal Importance Sampling (SAM-IS) :cite:`uehara2020minimax` :cite:`yuan2021sope`
-* State-Action Marginal Doubly Robust (SAM-DR) :cite:`uehara2020minimax` :cite:`yuan2021sope`
-* State-Action Marginal Self-Normalized Importance Sampling (SAM-SNIS) :cite:`uehara2020minimax` :cite:`yuan2021sope`
-* State-Action Marginal Self-Normalized Doubly Robust (SAM-SNDR) :cite:`uehara2020minimax` :cite:`yuan2021sope`
+* State-Action Marginal Importance Sampling (SAM-IS) :cite:`uehara2020minimax, yuan2021sope`
+* State-Action Marginal Doubly Robust (SAM-DR) :cite:`uehara2020minimax, yuan2021sope`
+* State-Action Marginal Self-Normalized Importance Sampling (SAM-SNIS) :cite:`uehara2020minimax, yuan2021sope`
+* State-Action Marginal Self-Normalized Doubly Robust (SAM-SNDR) :cite:`uehara2020minimax, yuan2021sope`
 
 Double Reinforcement Learning
 ^^^^^^
@@ -134,29 +133,29 @@ Weight and Value Learning Methods
 
 High Confidence OPE
 ^^^^^^
-* Bootstrap :cite:`thomas2015improvement` :cite:`hanna2017bootstrapping`
+* Bootstrap :cite:`thomas2015improvement, hanna2017bootstrapping`
 * Hoeffding :cite:`thomas2015evaluation`
-* (Empirical) Bernstein :cite:`thomas2015evaluation` :cite:`thomas2015improvement`
+* (Empirical) Bernstein :cite:`thomas2015evaluation, thomas2015improvement`
 * Student T-test :cite:`thomas2015improvement`
 
 Cumulative Distribution OPE
 ----------
 
-.. card:: 
+.. card::
     :img-top: ../_static/images/ope_cumulative_distribution_function.png
     :text-align: center
 
     Cumulative Distribution Function Estimated by OPE Estimators
 
-SCOPE-RL also provides cumulative distribution OPE estimators, which enables practitioners to evaluate various risk metrics (e.g., conditional value at risk) for safety assessment.
-Meta class and generic abstract class are available also for cumulative distribution OPE.
+SCOPE-RL also provides cumulative distribution OPE estimators, which enables practitioners to evaluate various risk metrics (e.g., conditional value at risk) for safety assessment beyond the mere expectation of the trajectory-wise reward.
+Meta class and generic abstract class are also available for cumulative distribution OPE.
 
 Estimators
 ^^^^^^
 * Direct Method (DM) :cite:`huang2021off`
-* Trajectory-wise Importance Sampling (TIS) :cite:`huang2021off` :cite:`chandak2021universal`
+* Trajectory-wise Importance Sampling (TIS) :cite:`huang2021off, chandak2021universal`
 * Trajectory-wise Doubly Robust (TDR) :cite:`huang2021off`
-* Self-Normalized Trajectory-wise Importance Sampling (SNTIS) :cite:`huang2021off` :cite:`chandak2021universal`
+* Self-Normalized Trajectory-wise Importance Sampling (SNTIS) :cite:`huang2021off, chandak2021universal`
 * Self-Normalized Trajectory-wise Doubly Robust (SNDR) :cite:`huang2021off`
 
 Metrics of Interest
@@ -170,21 +169,19 @@ Metrics of Interest
 Off-Policy Selection Metrics
 ----------
 
-.. card:: 
+.. card::
     :img-top: ../_static/images/ops_topk_lower_quartile.png
     :text-align: center
-    
+
     Comparison of the Top-k Statistics of 10% Lower Quartile of Policy Value
 
-Finally, SCOPE-RL also standardizes the evaluation protocol of OPE in two axes, first by measuring the accuracy of OPE over the whole candidate policies, 
-and second by evaluating the gains and costs in top-k deployment (e.g., the best and worst performance in top-k deployment).
-The streamlined implementations and visualization of OPS class provide informative insights on offline RL and OPE performance.
+Finally, SCOPE-RL also standardizes the evaluation protocol of OPE in two axes, firstly by measuring the accuracy of OPE over the whole candidate policies, and secondly by evaluating the gains and costs in top-k deployment (e.g., the best and worst performance in top-k deployment). The streamlined implementations and visualization of OPS class provide informative insights on offline RL and OPE performance.
 
 OPE metrics
 ^^^^^^
-* Mean Squared Error :cite:`paine2020hyperparameter` :cite:`voloshin2021empirical` :cite:`fu2021benchmarks`
-* Spearman's Rank Correlation Coefficient :cite:`paine2020hyperparameter` :cite:`fu2021benchmarks`
-* Regret :cite:`paine2020hyperparameter` :cite:`fu2021benchmarks`
+* Mean Squared Error :cite:`paine2020hyperparameter, voloshin2021empirical, fu2021benchmarks`
+* Spearman's Rank Correlation Coefficient :cite:`paine2020hyperparameter, fu2021benchmarks`
+* Regret :cite:`paine2020hyperparameter, fu2021benchmarks`
 * Type I and Type II Error Rates
 
 OPS metrics (performance of top :math:`k` deployment policies)
@@ -192,6 +189,13 @@ OPS metrics (performance of top :math:`k` deployment policies)
 * {Best/Worst/Mean/Std} of {policy value/conditional value at risk/lower quartile}
 * Safety violation rate
 * Sharpe ratio (our proposal)
+
+
+.. seealso::
+
+    Among the top-:math:`k` risk-return tradeoff metrics, **SharpeRatio** is the main proposal of our research paper 
+    **"Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation in Reinforcement Learning."** 
+    We describe the motivation and contributions of the SharpeRatio metric in :doc:`sharpe_ratio`.
 
 .. seealso::
 
@@ -204,21 +208,40 @@ OPS metrics (performance of top :math:`k` deployment policies)
 
 Citation
 ~~~~~~~~~~
+
 If you use our pipeline in your work, please cite our paper below.
 
-| Haruka Kiyohara, Ren Kishimoto, Kosuke Kawakami, Ken Kobayashi, Kazuhide Nakata, Yuta Saito.
-| **Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation in Reinforcement Learning**
-| (a preprint coming soon..)
+.. card::
 
-.. code-block::
+    | Haruka Kiyohara, Ren Kishimoto, Kosuke Kawakami, Ken Kobayashi, Kazuhide Nakata, Yuta Saito.
+    | **SCOPE-RL: A Python Library for Offline Reinforcement Learning, Off-Policy Evaluation, and Policy Selection**
+    | (a preprint is coming soon..)
 
-   @article{kiyohara2023towards,
-      author = {Kiyohara, Haruka and Kishimoto, Ren and Kawakami, Kosuke and Kobayashi, Ken and Nataka, Kazuhide and Saito, Yuta},
-      title = {Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation in Reinforcement Learning},
-      journal = {A github repository},
-      pages = {xxx--xxx},
-      year = {2023},
-   }
+    .. code-block::
+
+        @article{kiyohara2023scope,
+            title={SCOPE-RL: A Python Library for Offline Reinforcement Learning, Off-Policy Evaluation, and Policy Selection},
+            author={Kiyohara, Haruka and Kishimoto, Ren and Kawakami, Kosuke and Kobayashi, Ken and Nakata, Kazuhide and Saito, Yuta},
+            journal={arXiv preprint arXiv:23xx.xxxxx},
+            year={2023}
+        }
+
+If you use the proposed metric (SharpeRatio@k) or refer to our findings in your work, please cite our paper below.
+
+.. card::
+
+    | Haruka Kiyohara, Ren Kishimoto, Kosuke Kawakami, Ken Kobayashi, Kazuhide Nakata, Yuta Saito.
+    | **Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation in Reinforcement Learning**
+    | (a preprint is coming soon..)
+
+    .. code-block::
+
+        @article{kiyohara2023towards,
+            title={Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation in Reinforcement Learning},
+            author={Kiyohara, Haruka and Kishimoto, Ren and Kawakami, Kosuke and Kobayashi, Ken and Nakata, Kazuhide and Saito, Yuta},
+            journal={arXiv preprint arXiv:23xx.xxxxx},
+            year={2023}
+        }
 
 Google Group
 ~~~~~~~~~~
@@ -226,12 +249,12 @@ Feel free to follow our updates from our google group: `scope-rl@googlegroups.co
 
 Contact
 ~~~~~~~~~~
-For any question about the paper and pipeline, feel free to contact: hk844@cornell.edu
+For any questions about the paper and pipeline, feel free to contact: hk844@cornell.edu
 
 Contribution
 ~~~~~~~~~~
 Any contributions to SCOPE-RL are more than welcome!
-Please refer to `CONTRIBUTING.md <https://github.com/hakuhodo-technologies/scope-rl/CONTRIBUTING.md>`_ for general guidelines how to contribute to the project.
+Please refer to `CONTRIBUTING.md <https://github.com/hakuhodo-technologies/scope-rl/CONTRIBUTING.md>`_ for general guidelines on how to contribute to the project.
 
 Table of Contents
 ~~~~~~~~~~
@@ -265,6 +288,12 @@ Table of Contents
    :caption: Our Proposal:
 
    sharpe_ratio
+
+.. toctree::
+   :max_depth: 1
+   :caption: Usages:
+
+   Gallery of Example Codes <examples/index>
 
 .. toctree::
    :maxdepth: 1

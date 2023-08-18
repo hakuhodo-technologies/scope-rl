@@ -97,14 +97,14 @@ class CustomizedRTBEnv(gym.Env):
         Maximum value of action.
 
     action_type: {"discrete", "continuous"}, default="discrete"
-        Action type of the RL agent.
+        Type of the action space.
 
     n_actions: int, default=10 (> 0)
-        Number of the discrete actions.
+        Number of actions.
         Used only when `action_type="discrete"`.
 
     action_meaning: ndarray of shape (n_actions, ), default=None
-        Dictionary which maps discrete action index into specific actions.
+        Dictionary to map discrete action index to a specific action.
         Used only when `action_type == "discrete"`.
 
         If `None`, the values are automatically set to `[action_min, action_max]` as `np.logspace(-1, 1, n_actions)`.
@@ -317,10 +317,10 @@ class CustomizedRTBEnv(gym.Env):
             Total clicks/conversions gained during the timestep.
 
         done: bool
-            Wether the episode end or not.
+            Whether the episode end or not.
 
         info: dict
-            Additional feedbacks (total impressions, clicks, and conversions) for analysts.
+            Additional feedbacks (total impressions, clicks, and conversions) that may be useful for the package users.
             These are unavailable for the RL agent.
 
         """
@@ -371,7 +371,8 @@ class CustomizedRTBEnv(gym.Env):
                 - adjust rate (i.e., agent action) at the previous timestep
 
         info: (empty) dict
-            Additional feedbacks, which is unavailable to the agent.
+            Additional information that may be useful for the package users.
+            This is unavailable to the RL agent.
 
         """
         return self.env.reset(seed)

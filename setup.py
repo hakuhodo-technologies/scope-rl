@@ -23,7 +23,7 @@ setup(
     description="SCOPE-RL: A pipeline for offline reinforcement learning research and applications",
     url="https://github.com/hakuhodo-technologies/scope-rl",
     author="Haruka Kiyohara",
-    author_email="scope-rl@googlegroups.com",
+    author_email="hk844@cornell.edu",
     keywords=[
         "off-policy evaluation",
         "offline reinforcement learning",
@@ -32,14 +32,12 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     install_requires=_requirements_from_text("requirements.txt"),
-    license="Apache License",
+    license="Apache License 2.0",
     packages=find_packages(
-        exclude=[".github", "docs", "examples", "images", "tests"],
+        exclude=[".github", "docs", "examples", "tests"],
     ),
     classifiers=[
         "Intended Audience :: Science/Research",
-        "Programming Language :: Python :: 3.7",
-        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",

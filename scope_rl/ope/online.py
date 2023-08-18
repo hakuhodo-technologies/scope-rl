@@ -16,7 +16,7 @@ import seaborn as sns
 
 import gym
 from gym.wrappers import TimeLimit
-from d3rlpy.algos import AlgoBase
+from d3rlpy.algos import QLearningAlgoBase
 from sklearn.utils import check_scalar, check_random_state
 
 from ..policy.head import BaseHead, OnlineHead
@@ -28,7 +28,7 @@ from ..utils import (
 
 def visualize_on_policy_policy_value(
     env: gym.Env,
-    policies: List[Union[AlgoBase, BaseHead]],
+    policies: List[Union[QLearningAlgoBase, BaseHead]],
     policy_names: List[str],
     n_trajectories: int = 100,
     step_per_trajectory: Optional[int] = None,
@@ -47,7 +47,7 @@ def visualize_on_policy_policy_value(
     env: gym.Env
         Reinforcement learning (RL) environment.
 
-    policies: list of {AlgoBase, BaseHead}
+    policies: list of {QLearningAlgoBase, BaseHead}
         List of policies to be evaluated.
 
     policy_names: list of str
@@ -60,8 +60,9 @@ def visualize_on_policy_policy_value(
         Number of timesteps in an trajectory.
 
     evaluate_on_stationary_distribution: bool, default=False
-        Whether to evaluate policy on stationary distribution.
-        When True, evaluation policy is evaluated by rollout without resetting environment at each trajectory.
+        Whether to evaluate a policy based on the stationary state distribution induced by it.
+        When True, the evaluation policy is evaluated by rollout without resetting environment at each trajectory.
+        This argument is irrelevant when working on the finite horizon setting.
 
     gamma: float, default=1.0
         Discount factor. The value should be within (0, 1].
@@ -129,7 +130,7 @@ def visualize_on_policy_policy_value(
 
 def visualize_on_policy_policy_value_with_variance(
     env: gym.Env,
-    policies: List[Union[AlgoBase, BaseHead]],
+    policies: List[Union[QLearningAlgoBase, BaseHead]],
     policy_names: List[str],
     n_trajectories: int = 100,
     step_per_trajectory: Optional[int] = None,
@@ -147,7 +148,7 @@ def visualize_on_policy_policy_value_with_variance(
     env: gym.Env
         Reinforcement learning (RL) environment.
 
-    policies: list of {AlgoBase, BaseHead}
+    policies: list of {QLearningAlgoBase, BaseHead}
         List of policies to be evaluated.
 
     policy_names: list of str
@@ -160,8 +161,9 @@ def visualize_on_policy_policy_value_with_variance(
         Number of timesteps in an trajectory.
 
     evaluate_on_stationary_distribution: bool, default=False
-        Whether to evaluate policy on stationary distribution.
-        When True, evaluation policy is evaluated by rollout without resetting environment at each trajectory.
+        Whether to evaluate a policy based on the stationary state distribution induced by it.
+        When True, the evaluation policy is evaluated by rollout without resetting environment at each trajectory.
+        This argument is irrelevant when working on the finite horizon setting.
 
     gamma: float, default=1.0
         Discount factor. The value should be within (0, 1].
@@ -245,7 +247,7 @@ def visualize_on_policy_policy_value_with_variance(
 
 def visualize_on_policy_cumulative_distribution_function(
     env: gym.Env,
-    policies: List[Union[AlgoBase, BaseHead]],
+    policies: List[Union[QLearningAlgoBase, BaseHead]],
     policy_names: List[str],
     n_trajectories: int = 100,
     step_per_trajectory: Optional[int] = None,
@@ -267,7 +269,7 @@ def visualize_on_policy_cumulative_distribution_function(
     env: gym.Env
         Reinforcement learning (RL) environment.
 
-    policy: {AlgoBase, BaseHead}
+    policy: {QLearningAlgoBase, BaseHead}
         A policy to be evaluated.
 
     n_trajectories: int, default=100 (> 0)
@@ -277,27 +279,28 @@ def visualize_on_policy_cumulative_distribution_function(
         Number of timesteps in an trajectory.
 
     evaluate_on_stationary_distribution: bool, default=False
-        Whether to evaluate policy on stationary distribution.
-        When True, evaluation policy is evaluated by rollout without resetting environment at each trajectory.
+        Whether to evaluate a policy based on the stationary state distribution induced by it.
+        When True, the evaluation policy is evaluated by rollout without resetting environment at each trajectory.
+        This argument is irrelevant when working on the finite horizon setting.
 
     gamma: float, default=1.0
         Discount factor. The value should be within (0, 1].
 
     use_custom_reward_scale: bool, default=False
-        Whether to use the custom reward scale or the reward observed by the behavior policy.
+        Whether to use a customized reward scale or the reward observed under the behavior policy.
         If True, the reward scale is uniform, following Huang et al. (2021).
         If False, the reward scale follows the one defined in Chundak et al. (2021).
 
     scale_min: float, default=None
-        Minimum value of the reward scale in CDF.
+        Minimum value of the reward scale in the CDF.
         When `use_custom_reward_scale == True`, a value must be given.
 
     scale_max: float, default=None
-        Maximum value of the reward scale in CDF.
+        Maximum value of the reward scale in the CDF.
         When `use_custom_reward_scale == True`, a value must be given.
 
     n_partition: int, default=None
-        Number of partitions in the reward scale (x-axis of CDF).
+        Number of partitions in the reward scale (x-axis of the CDF).
         When `use_custom_reward_scale == True`, a value must be given.
 
     random_state: int, default=None (>= 0)
@@ -339,7 +342,7 @@ def visualize_on_policy_cumulative_distribution_function(
         ax.plot(reward_scale, cdf, label=policy_name)
 
     ax.set_title("cumulative distribution function")
-    ax.set_xlabel("trajectory wise reward")
+    ax.set_xlabel("trajectory-wise reward")
     ax.set_ylabel("cumulative probability")
     if legend:
         ax.legend()
@@ -353,13 +356,13 @@ def visualize_on_policy_cumulative_distribution_function(
 
 def visualize_on_policy_conditional_value_at_risk(
     env: gym.Env,
-    policies: List[Union[AlgoBase, BaseHead]],
+    policies: List[Union[QLearningAlgoBase, BaseHead]],
     policy_names: List[str],
     n_trajectories: int = 100,
     step_per_trajectory: Optional[int] = None,
     evaluate_on_stationary_distribution: bool = False,
     gamma: float = 1.0,
-    alphas: np.ndarray = np.linspace(0, 1, 20),
+    alphas: Optional[np.ndarray] = None,
     use_custom_reward_scale: bool = False,
     scale_min: Optional[float] = None,
     scale_max: Optional[float] = None,
@@ -376,7 +379,7 @@ def visualize_on_policy_conditional_value_at_risk(
     env: gym.Env
         Reinforcement learning (RL) environment.
 
-    policy: {AlgoBase, BaseHead}
+    policy: {QLearningAlgoBase, BaseHead}
         A policy to be evaluated.
 
     n_trajectories: int, default=100 (> 0)
@@ -386,30 +389,32 @@ def visualize_on_policy_conditional_value_at_risk(
         Number of timesteps in an trajectory.
 
     evaluate_on_stationary_distribution: bool, default=False
-        Whether to evaluate policy on stationary distribution.
-        When True, evaluation policy is evaluated by rollout without resetting environment at each trajectory.
+        Whether to evaluate a policy based on the stationary state distribution induced by it.
+        When True, the evaluation policy is evaluated by rollout without resetting environment at each trajectory.
+        This argument is irrelevant when working on the finite horizon setting.
 
     gamma: float, default=1.0
         Discount factor. The value should be within (0, 1].
 
-    alphas: array-like of shape (n_alpha, ) default=np.linspace(0, 1, 20)
-        Set of proportions of the sided region. The value should be within (0, 1].
+    alphas: array-like of shape (n_alpha, ), default=None
+        Set of proportions of the shaded region. The values should be within `[0, 1)`.
+        If `None` is given, :class:`np.linspace(0, 1, 21)` will be used.
 
     use_custom_reward_scale: bool, default=False
-        Whether to use the custom reward scale or the reward observed by the behavior policy.
+        Whether to use a customized reward scale or the reward observed under the behavior policy.
         If True, the reward scale is uniform, following Huang et al. (2021).
         If False, the reward scale follows the one defined in Chundak et al. (2021).
 
     scale_min: float, default=None
-        Minimum value of the reward scale in CDF.
+        Minimum value of the reward scale in the CDF.
         When `use_custom_reward_scale == True`, a value must be given.
 
     scale_max: float, default=None
-        Maximum value of the reward scale in CDF.
+        Maximum value of the reward scale in the CDF.
         When `use_custom_reward_scale == True`, a value must be given.
 
     n_partition: int, default=None
-        Number of partitions in the reward scale (x-axis of CDF).
+        Number of partitions in the reward scale (x-axis of the CDF).
         When `use_custom_reward_scale == True`, a value must be given.
 
     random_state: int, default=None (>= 0)
@@ -466,7 +471,7 @@ def visualize_on_policy_conditional_value_at_risk(
 
 def visualize_on_policy_interquartile_range(
     env: gym.Env,
-    policies: List[Union[AlgoBase, BaseHead]],
+    policies: List[Union[QLearningAlgoBase, BaseHead]],
     policy_names: List[str],
     n_trajectories: int = 100,
     step_per_trajectory: Optional[int] = None,
@@ -488,7 +493,7 @@ def visualize_on_policy_interquartile_range(
     env: gym.Env
         Reinforcement learning (RL) environment.
 
-    policy: {AlgoBase, BaseHead}
+    policy: {QLearningAlgoBase, BaseHead}
         A policy to be evaluated.
 
     n_trajectories: int, default=100 (> 0)
@@ -498,8 +503,9 @@ def visualize_on_policy_interquartile_range(
         Number of timesteps in an trajectory.
 
     evaluate_on_stationary_distribution: bool, default=False
-        Whether to evaluate policy on stationary distribution.
-        When True, evaluation policy is evaluated by rollout without resetting environment at each trajectory.
+        Whether to evaluate a policy based on the stationary state distribution induced by it.
+        When True, the evaluation policy is evaluated by rollout without resetting environment at each trajectory.
+        This argument is irrelevant when working on the finite horizon setting.
 
     gamma: float, default=1.0
         Discount factor. The value should be within (0, 1].
@@ -508,20 +514,20 @@ def visualize_on_policy_interquartile_range(
         Significance level. The value should be within `[0, 1)`.
 
     use_custom_reward_scale: bool, default=False
-        Whether to use the custom reward scale or the reward observed by the behavior policy.
+        Whether to use a customized reward scale or the reward observed under the behavior policy.
         If True, the reward scale is uniform, following Huang et al. (2021).
         If False, the reward scale follows the one defined in Chundak et al. (2021).
 
     scale_min: float, default=None
-        Minimum value of the reward scale in CDF.
+        Minimum value of the reward scale in the CDF.
         When `use_custom_reward_scale == True`, a value must be given.
 
     scale_max: float, default=None
-        Maximum value of the reward scale in CDF.
+        Maximum value of the reward scale in the CDF.
         When `use_custom_reward_scale == True`, a value must be given.
 
     n_partition: int, default=None
-        Number of partitions in the reward scale (x-axis of CDF).
+        Number of partitions in the reward scale (x-axis of the CDF).
         When `use_custom_reward_scale == True`, a value must be given.
 
     random_state: int, default=None (>= 0)
@@ -619,7 +625,7 @@ def visualize_on_policy_interquartile_range(
 
 def calc_on_policy_statistics(
     env: gym.Env,
-    policy: Union[AlgoBase, BaseHead],
+    policy: Union[QLearningAlgoBase, BaseHead],
     n_trajectories: int = 100,
     step_per_trajectory: Optional[int] = None,
     evaluate_on_stationary_distribution: bool = False,
@@ -639,7 +645,7 @@ def calc_on_policy_statistics(
     env: gym.Env
         Reinforcement learning (RL) environment.
 
-    policy: {AlgoBase, BaseHead}
+    policy: {QLearningAlgoBase, BaseHead}
         A policy to be evaluated.
 
     n_trajectories: int, default=100 (> 0)
@@ -649,33 +655,34 @@ def calc_on_policy_statistics(
         Number of timesteps in an trajectory.
 
     evaluate_on_stationary_distribution: bool, default=False
-        Whether to evaluate policy on stationary distribution.
-        When True, evaluation policy is evaluated by rollout without resetting environment at each trajectory.
+        Whether to evaluate a policy based on the stationary state distribution induced by it.
+        When True, the evaluation policy is evaluated by rollout without resetting environment at each trajectory.
+        This argument is irrelevant when working on the finite horizon setting.
 
     gamma: float, default=1.0
         Discount factor. The value should be within (0, 1].
 
     quartile_alpha: float, default=0.05
-        Proportion of the sided region. The value should be within (0, 1].
+        Proportion of the shaded region. The value should be within (0, 1].
 
     cvar_alpha: float, default=0.05
-        Proportion of the sided region. The value should be within (0, 1].
+        Proportion of the shaded region. The value should be within (0, 1].
 
     use_custom_reward_scale: bool, default=False
-        Whether to use the custom reward scale or the reward observed by the behavior policy.
+        Whether to use a customized reward scale or the reward observed under the behavior policy.
         If True, the reward scale is uniform, following Huang et al. (2021).
         If False, the reward scale follows the one defined in Chundak et al. (2021).
 
     scale_min: float, default=None
-        Minimum value of the reward scale in CDF.
+        Minimum value of the reward scale in the CDF.
         When `use_custom_reward_scale == True`, a value must be given.
 
     scale_max: float, default=None
-        Maximum value of the reward scale in CDF.
+        Maximum value of the reward scale in the CDF.
         When `use_custom_reward_scale == True`, a value must be given.
 
     n_partition: int, default=None
-        Number of partitions in the reward scale (x-axis of CDF).
+        Number of partitions in the reward scale (x-axis of the CDF).
         When `use_custom_reward_scale == True`, a value must be given.
 
     random_state: int, default=None (>= 0)
@@ -804,7 +811,7 @@ def calc_on_policy_statistics(
 
 def calc_on_policy_policy_value(
     env: gym.Env,
-    policy: Union[AlgoBase, BaseHead],
+    policy: Union[QLearningAlgoBase, BaseHead],
     n_trajectories: int = 100,
     step_per_trajectory: Optional[int] = None,
     evaluate_on_stationary_distribution: bool = False,
@@ -821,7 +828,7 @@ def calc_on_policy_policy_value(
     env: gym.Env
         Reinforcement learning (RL) environment.
 
-    policy: {AlgoBase, BaseHead}
+    policy: {QLearningAlgoBase, BaseHead}
         A policy to be evaluated.
 
     n_trajectories: int, default=100 (> 0)
@@ -831,8 +838,9 @@ def calc_on_policy_policy_value(
         Number of timesteps in an trajectory.
 
     evaluate_on_stationary_distribution: bool, default=False
-        Whether to evaluate policy on stationary distribution.
-        When True, evaluation policy is evaluated by rollout without resetting environment at each trajectory.
+        Whether to evaluate a policy based on the stationary state distribution induced by it.
+        When True, the evaluation policy is evaluated by rollout without resetting environment at each trajectory.
+        This argument is irrelevant when working on the finite horizon setting.
 
     gamma: float, default=1.0
         Discount factor. The value should be within (0, 1].
@@ -882,7 +890,7 @@ def calc_on_policy_policy_value(
 
 def calc_on_policy_policy_value_interval(
     env: gym.Env,
-    policy: Union[AlgoBase, BaseHead],
+    policy: Union[QLearningAlgoBase, BaseHead],
     n_trajectories: int = 100,
     step_per_trajectory: Optional[int] = None,
     evaluate_on_stationary_distribution: bool = False,
@@ -891,14 +899,14 @@ def calc_on_policy_policy_value_interval(
     n_bootstrap_samples: int = 100,
     random_state: Optional[int] = None,
 ):
-    """Calculate confidence interval of on-policy policy value by nonparametric bootstrap.
+    """Estimate the confidence interval of on-policy policy value by nonparametric bootstrap.
 
     Parameters
     -------
     env: gym.Env
         Reinforcement learning (RL) environment.
 
-    policy: {AlgoBase, BaseHead}
+    policy: {QLearningAlgoBase, BaseHead}
         A policy to be evaluated.
 
     n_trajectories: int, default=100 (> 0)
@@ -908,8 +916,9 @@ def calc_on_policy_policy_value_interval(
         Number of timesteps in an trajectory.
 
     evaluate_on_stationary_distribution: bool, default=False
-        Whether to evaluate policy on stationary distribution.
-        When True, evaluation policy is evaluated by rollout without resetting environment at each trajectory.
+        Whether to evaluate a policy based on the stationary state distribution induced by it.
+        When True, the evaluation policy is evaluated by rollout without resetting environment at each trajectory.
+        This argument is irrelevant when working on the finite horizon setting.
 
     gamma: float, default=1.0
         Discount factor. The value should be within (0, 1].
@@ -948,7 +957,7 @@ def calc_on_policy_policy_value_interval(
 
 def calc_on_policy_variance(
     env: gym.Env,
-    policy: Union[AlgoBase, BaseHead],
+    policy: Union[QLearningAlgoBase, BaseHead],
     n_trajectories: int = 100,
     step_per_trajectory: Optional[int] = None,
     evaluate_on_stationary_distribution: bool = False,
@@ -962,7 +971,7 @@ def calc_on_policy_variance(
     env: gym.Env
         Reinforcement learning (RL) environment.
 
-    policy: {AlgoBase, BaseHead}
+    policy: {QLearningAlgoBase, BaseHead}
         A policy to be evaluated.
 
     n_trajectories: int, default=100 (> 0)
@@ -972,8 +981,9 @@ def calc_on_policy_variance(
         Number of timesteps in an trajectory.
 
     evaluate_on_stationary_distribution: bool, default=False
-        Whether to evaluate policy on stationary distribution.
-        When True, evaluation policy is evaluated by rollout without resetting environment at each trajectory.
+        Whether to evaluate a policy based on the stationary state distribution induced by it.
+        When True, the evaluation policy is evaluated by rollout without resetting environment at each trajectory.
+        This argument is irrelevant when working on the finite horizon setting.
 
     gamma: float, default=1.0
         Discount factor. The value should be within (0, 1].
@@ -1001,12 +1011,12 @@ def calc_on_policy_variance(
 
 def calc_on_policy_conditional_value_at_risk(
     env: gym.Env,
-    policy: Union[AlgoBase, BaseHead],
+    policy: Union[QLearningAlgoBase, BaseHead],
     n_trajectories: int = 100,
     step_per_trajectory: Optional[int] = None,
     evaluate_on_stationary_distribution: bool = False,
     gamma: float = 1.0,
-    alphas: Union[np.ndarray, float] = np.linspace(0, 1, 20),
+    alphas: Optional[Union[np.ndarray, float]] = None,
     use_custom_reward_scale: bool = False,
     scale_min: Optional[float] = None,
     scale_max: Optional[float] = None,
@@ -1020,7 +1030,7 @@ def calc_on_policy_conditional_value_at_risk(
     env: gym.Env
         Reinforcement learning (RL) environment.
 
-    policy: {AlgoBase, BaseHead}
+    policy: {QLearningAlgoBase, BaseHead}
         A policy to be evaluated.
 
     n_trajectories: int, default=100 (> 0)
@@ -1030,30 +1040,32 @@ def calc_on_policy_conditional_value_at_risk(
         Number of timesteps in an trajectory.
 
     evaluate_on_stationary_distribution: bool, default=False
-        Whether to evaluate policy on stationary distribution.
-        When True, evaluation policy is evaluated by rollout without resetting environment at each trajectory.
+        Whether to evaluate a policy based on the stationary state distribution induced by it.
+        When True, the evaluation policy is evaluated by rollout without resetting environment at each trajectory.
+        This argument is irrelevant when working on the finite horizon setting.
 
     gamma: float, default=1.0
         Discount factor. The value should be within (0, 1].
 
-    alphas: {float, array-like of shape (n_alpha, )}, default=np.linspace(0, 1, 20)
-        Set of proportions of the sided region. The value(s) should be within `[0, 1)`.
+    alphas: array-like of shape (n_alpha, ) or float, default=None
+        Set of proportions of the shaded region. The values should be within `[0, 1)`.
+        If `None` is given, :class:`np.linspace(0, 1, 21)` will be used.
 
     use_custom_reward_scale: bool, default=False
-        Whether to use the custom reward scale or the reward observed by the behavior policy.
+        Whether to use a customized reward scale or the reward observed under the behavior policy.
         If True, the reward scale is uniform, following Huang et al. (2021).
         If False, the reward scale follows the one defined in Chundak et al. (2021).
 
     scale_min: float, default=None
-        Minimum value of the reward scale in CDF.
+        Minimum value of the reward scale in the CDF.
         When `use_custom_reward_scale == True`, a value must be given.
 
     scale_max: float, default=None
-        Maximum value of the reward scale in CDF.
+        Maximum value of the reward scale in the CDF.
         When `use_custom_reward_scale == True`, a value must be given.
 
     n_partition: int, default=None
-        Number of partitions in the reward scale (x-axis of CDF).
+        Number of partitions in the reward scale (x-axis of the CDF).
         When `use_custom_reward_scale == True`, a value must be given.
 
     random_state: int, default=None (>= 0)
@@ -1065,7 +1077,9 @@ def calc_on_policy_conditional_value_at_risk(
         CVaR of the on-policy policy value.
 
     """
-    if isinstance(alphas, float):
+    if alphas is None:
+        alphas = np.linspace(0, 1, 21)
+    elif isinstance(alphas, float):
         check_scalar(alphas, name="alphas", target_type=float, min_val=0.0, max_val=1.0)
         alphas = np.array([alphas], dtype=float)
     elif isinstance(alphas, np.ndarray):
@@ -1153,7 +1167,7 @@ def calc_on_policy_conditional_value_at_risk(
 
 def calc_on_policy_interquartile_range(
     env: gym.Env,
-    policy: Union[AlgoBase, BaseHead],
+    policy: Union[QLearningAlgoBase, BaseHead],
     n_trajectories: int = 100,
     step_per_trajectory: Optional[int] = None,
     evaluate_on_stationary_distribution: bool = False,
@@ -1170,7 +1184,7 @@ def calc_on_policy_interquartile_range(
     env: gym.Env
         Reinforcement learning (RL) environment.
 
-    policy: {AlgoBase, BaseHead}
+    policy: {QLearningAlgoBase, BaseHead}
         A policy to be evaluated.
 
     n_trajectories: int, default=100 (> 0)
@@ -1180,30 +1194,31 @@ def calc_on_policy_interquartile_range(
         Number of timesteps in an trajectory.
 
     evaluate_on_stationary_distribution: bool, default=False
-        Whether to evaluate policy on stationary distribution.
-        When True, evaluation policy is evaluated by rollout without resetting environment at each trajectory.
+        Whether to evaluate a policy based on the stationary state distribution induced by it.
+        When True, the evaluation policy is evaluated by rollout without resetting environment at each trajectory.
+        This argument is irrelevant when working on the finite horizon setting.
 
     gamma: float, default=1.0
         Discount factor. The value should be within (0, 1].
 
     alpha: float, default=0.05
-        Proportion of the sided region. The value should be within (0, 1].
+        Proportion of the shaded region. The value should be within (0, 1].
 
     use_custom_reward_scale: bool, default=False
-        Whether to use the custom reward scale or the reward observed by the behavior policy.
+        Whether to use a customized reward scale or the reward observed under the behavior policy.
         If True, the reward scale is uniform, following Huang et al. (2021).
         If False, the reward scale follows the one defined in Chundak et al. (2021).
 
     scale_min: float, default=None
-        Minimum value of the reward scale in CDF.
+        Minimum value of the reward scale in the CDF.
         When `use_custom_reward_scale == True`, a value must be given.
 
     scale_max: float, default=None
-        Maximum value of the reward scale in CDF.
+        Maximum value of the reward scale in the CDF.
         When `use_custom_reward_scale == True`, a value must be given.
 
     n_partition: int, default=None
-        Number of partitions in the reward scale (x-axis of CDF).
+        Number of partitions in the reward scale (x-axis of the CDF).
         When `use_custom_reward_scale == True`, a value must be given.
 
     random_state: int, default=None (>= 0)
@@ -1291,7 +1306,7 @@ def calc_on_policy_interquartile_range(
 
 def calc_on_policy_cumulative_distribution_function(
     env: gym.Env,
-    policy: Union[AlgoBase, BaseHead],
+    policy: Union[QLearningAlgoBase, BaseHead],
     n_trajectories: int = 100,
     step_per_trajectory: Optional[int] = None,
     evaluate_on_stationary_distribution: bool = False,
@@ -1309,7 +1324,7 @@ def calc_on_policy_cumulative_distribution_function(
     env: gym.Env
         Reinforcement learning (RL) environment.
 
-    policy: {AlgoBase, BaseHead}
+    policy: {QLearningAlgoBase, BaseHead}
         A policy to be evaluated.
 
     n_trajectories: int, default=100 (> 0)
@@ -1319,27 +1334,28 @@ def calc_on_policy_cumulative_distribution_function(
         Number of timesteps in an trajectory.
 
     evaluate_on_stationary_distribution: bool, default=False
-        Whether to evaluate policy on stationary distribution.
-        When True, evaluation policy is evaluated by rollout without resetting environment at each trajectory.
+        Whether to evaluate a policy based on the stationary state distribution induced by it.
+        When True, the evaluation policy is evaluated by rollout without resetting environment at each trajectory.
+        This argument is irrelevant when working on the finite horizon setting.
 
     gamma: float, default=1.0
         Discount factor. The value should be within (0, 1].
 
     use_custom_reward_scale: bool, default=False
-        Whether to use the custom reward scale or the reward observed by the behavior policy.
+        Whether to use a customized reward scale or the reward observed under the behavior policy.
         If True, the reward scale is uniform, following Huang et al. (2021).
         If False, the reward scale follows the one defined in Chundak et al. (2021).
 
     scale_min: float, default=None
-        Minimum value of the reward scale in CDF.
+        Minimum value of the reward scale in the CDF.
         When `use_custom_reward_scale == True`, a value must be given.
 
     scale_max: float, default=None
-        Maximum value of the reward scale in CDF.
+        Maximum value of the reward scale in the CDF.
         When `use_custom_reward_scale == True`, a value must be given.
 
     n_partition: int, default=None
-        Number of partitions in the reward scale (x-axis of CDF).
+        Number of partitions in the reward scale (x-axis of the CDF).
         When `use_custom_reward_scale == True`, a value must be given.
 
     random_state: int, default=None (>= 0)
@@ -1412,21 +1428,21 @@ def calc_on_policy_cumulative_distribution_function(
 
 def rollout_policy_online(
     env: gym.Env,
-    policy: Union[AlgoBase, BaseHead],
+    policy: Union[QLearningAlgoBase, BaseHead],
     n_trajectories: int = 100,
     step_per_trajectory: Optional[int] = None,
     evaluate_on_stationary_distribution: bool = False,
     gamma: float = 1.0,
     random_state: Optional[int] = None,
 ):
-    """Rollout a given policy on the environment and collect the trajectory-wise on-policy policy value.
+    """Rollout a given policy on the environment and generate trajectory-wise rewards under the policy online.
 
     Parameters
     -------
     env: gym.Env
         Reinforcement learning (RL) environment.
 
-    policy: {AlgoBase, BaseHead}
+    policy: {QLearningAlgoBase, BaseHead}
         A policy to be evaluated.
 
     n_trajectories: int, default=100 (> 0)
@@ -1436,8 +1452,9 @@ def rollout_policy_online(
         Number of timesteps in an trajectory.
 
     evaluate_on_stationary_distribution: bool, default=False
-        Whether to evaluate policy on stationary distribution.
-        When True, evaluation policy is evaluated by rollout without resetting environment at each trajectory.
+        Whether to evaluate a policy based on the stationary state distribution induced by it.
+        When True, the evaluation policy is evaluated by rollout without resetting environment at each trajectory.
+        This argument is irrelevant when working on the finite horizon setting.
 
     gamma: float, default=1.0
         Discount factor. The value should be within (0, 1].
@@ -1455,8 +1472,10 @@ def rollout_policy_online(
         raise ValueError(
             "env must be a child class of gym.Env",
         )
-    if not isinstance(policy, (AlgoBase, BaseHead)):
-        raise ValueError("policy must be a child class of either AlgoBase or BaseHead")
+    if not isinstance(policy, (QLearningAlgoBase, BaseHead)):
+        raise ValueError(
+            "policy must be a child class of either QLearningAlgoBase or BaseHead"
+        )
     check_scalar(
         n_trajectories,
         name="n_trajectories",

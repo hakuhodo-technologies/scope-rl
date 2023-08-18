@@ -30,7 +30,7 @@ class ContinuousMinimaxStateActionWeightLearning(BaseWeightValueLearner):
 
     Bases: :class:`scope_rl.ope.weight_value_learning.BaseWeightValueLearner`
 
-    Imported as: :class:`scope_rl.ope.ContinuousMinimaxStateActionWightLearning`
+    Imported as: :class:`scope_rl.ope.weight_value_learning.ContinuousMinimaxStateActionWightLearning`
 
     Note
     -------
@@ -38,24 +38,24 @@ class ContinuousMinimaxStateActionWeightLearning(BaseWeightValueLearner):
 
     .. math::
 
-        \\mathbb{E}_{(s_t, a_t, r_t, s_{t+1}) \\sim d^{\\pi_0}, a_{t+1} \\sim \\pi(a_{t+1} | s_{t+1})} [w(s_t, a_t) (Q(s_t, a_t) - \\gamma Q(s_{t+1}, a_{t+1}))]
-        = \\mathbb{E}_{s_0 \\sim d^{\\pi_0}, a_0 \\sim \\pi(a_0 | s_0)} [Q(s_0, a_0)]
+        \\mathbb{E}_{(s_t, a_t, r_t, s_{t+1}) \\sim d^{\\pi_b}, a_{t+1} \\sim \\pi(a_{t+1} | s_{t+1})} [w(s_t, a_t) (Q(s_t, a_t) - \\gamma Q(s_{t+1}, a_{t+1}))]
+        = \\mathbb{E}_{s_0 \\sim d^{\\pi_b}, a_0 \\sim \\pi(a_0 | s_0)} [Q(s_0, a_0)]
 
-    where :math:`Q(s_t, a_t)` is the Q-function, :math:`w(s_t, a_t) \\approx d^{\\pi}(s_t, a_t) / d^{\\pi_0}(s_t, a_t)` is the state-action marginal importance weight.
+    where :math:`Q(s_t, a_t)` is the Q-function, :math:`w(s_t, a_t) \\approx d^{\\pi}(s_t, a_t) / d^{\\pi_b}(s_t, a_t)` is the state-action marginal importance weight.
 
     Then, it adversarially minimize the difference between RHS and LHS (which we denote :math:`L_w(w, Q)`) to the worst case in terms of :math:`Q(\\cdot)`
     using a discriminator defined in reproducing kernel Hilbert space (RKHS) as follows.
 
     .. math::
 
-        \\max_w L_w^2(w, Q) 
-        &= \\mathbb{E}_{(s_t, a_t, s_{t+1}), (\\tilde{s}_t, \\tilde{a}_t, \\tilde{s}_{t+1}) \\sim d^{\\pi_0}, a_{t+1} \\sim \\pi(a_{t+1} | s_{t+1}), \\tilde{a}_{t+1} \\sim \\pi(\\tilde{a}_{t+1} | \\tilde{s}_{t+1})}[
+        \\max_w L_w^2(w, Q)
+        &= \\mathbb{E}_{(s_t, a_t, s_{t+1}), (\\tilde{s}_t, \\tilde{a}_t, \\tilde{s}_{t+1}) \\sim d^{\\pi_b}, a_{t+1} \\sim \\pi(a_{t+1} | s_{t+1}), \\tilde{a}_{t+1} \\sim \\pi(\\tilde{a}_{t+1} | \\tilde{s}_{t+1})}[
             w(s_t, a_t) w(\\tilde{s}_t, \\tilde{a}_t) ( K((s_t, a_t), (\\tilde{s}_t, \\tilde{a}_t)) + K((s_{t+1}, a_{t+1}), (\\tilde{s}_{t+1}, \\tilde{a}_{t+1})) - \\gamma ( K((s_t, a_t), (\\tilde{s}_{t+1}, \\tilde{a}_{t+1})) + K((s_{t+1}, a_{t+1}), (\\tilde{s}_t, \\tilde{a}_t)) ))
         ] \\\\
-        & \\quad \\quad + \\gamma (1 - \\gamma) \\mathbb{E}_{(s_t, a_t, s_{t+1}), (\\tilde{s}_t, \\tilde{a}_t, \\tilde{s}_{t+1}) \\sim d^{\\pi_0}, a_{t+1} \\sim \\pi(a_{t+1} | s_{t+1}), \\tilde{a}_{t+1} \\sim \\pi(\\tilde{a}_{t+1} | \\tilde{s}_{t+1}), s_0 \\sim d(s_0), \\tilde{s}_0 \\sim d(\\tilde{s}_0), a_0 \\sim \\pi(a_0 | s_0), \\tilde{a}_0 \\sim \\pi(\\tilde{a}_0 | \\tilde{s}_0)}[
+        & \\quad \\quad + \\gamma (1 - \\gamma) \\mathbb{E}_{(s_t, a_t, s_{t+1}), (\\tilde{s}_t, \\tilde{a}_t, \\tilde{s}_{t+1}) \\sim d^{\\pi_b}, a_{t+1} \\sim \\pi(a_{t+1} | s_{t+1}), \\tilde{a}_{t+1} \\sim \\pi(\\tilde{a}_{t+1} | \\tilde{s}_{t+1}), s_0 \\sim d(s_0), \\tilde{s}_0 \\sim d(\\tilde{s}_0), a_0 \\sim \\pi(a_0 | s_0), \\tilde{a}_0 \\sim \\pi(\\tilde{a}_0 | \\tilde{s}_0)}[
             w(s_t, a_t) K((s_{t+1}, a_{t+1}), (\\tilde{s}_0, \\tilde{a}_0)) + w(\\tilde{s}_t, \\tilde{a}_t) K((\\tilde{s}_{t+1}, \\tilde{a}_{t+1}), (s_0, a_0))
         ] \\\\
-        & \\quad \\quad - (1 - \\gamma) \\mathbb{E}_{(s_t, a_t), (\\tilde{s}_t, \\tilde{a}_t) \\sim d^{\\pi_0}, s_0 \\sim d(s_0), \\tilde{s}_0 \\sim d(\\tilde{s}_0), a_0 \\sim \\pi(a_0 | s_0), \\tilde{a}_0 \\sim \\pi(\\tilde{a}_0 | \\tilde{s}_0)}[
+        & \\quad \\quad - (1 - \\gamma) \\mathbb{E}_{(s_t, a_t), (\\tilde{s}_t, \\tilde{a}_t) \\sim d^{\\pi_b}, s_0 \\sim d(s_0), \\tilde{s}_0 \\sim d(\\tilde{s}_0), a_0 \\sim \\pi(a_0 | s_0), \\tilde{a}_0 \\sim \\pi(\\tilde{a}_0 | \\tilde{s}_0)}[
             w(s_t, a_t) K((s_t, a_t), (\\tilde{s}_0, \\tilde{a}_0)) + w(\\tilde{s}_t, \\tilde{a}_t) K((\\tilde{s}_t, \\tilde{a}_t), (s_0, a_0))
         ]
 
@@ -69,8 +69,8 @@ class ContinuousMinimaxStateActionWeightLearning(BaseWeightValueLearner):
     gamma: float, default=1.0
         Discount factor. The value should be within (0, 1].
 
-    sigma: float, default=1.0 (> 0)
-        Bandwidth hyperparameter of gaussian kernel.
+    bandwidth: float, default=1.0 (> 0)
+        Bandwidth hyperparameter of the Gaussian kernel.
 
     state_scaler: d3rlpy.preprocessing.Scaler, default=None
         Scaling factor of state.
@@ -96,7 +96,7 @@ class ContinuousMinimaxStateActionWeightLearning(BaseWeightValueLearner):
 
     w_function: ContinuousStateActionWeightFunction
     gamma: float = 1.0
-    sigma: float = 1.0
+    bandwidth: float = 1.0
     state_scaler: Optional[Scaler] = None
     action_scaler: Optional[ActionScaler] = None
     batch_size: int = 128
@@ -109,7 +109,7 @@ class ContinuousMinimaxStateActionWeightLearning(BaseWeightValueLearner):
         check_scalar(
             self.gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0
         )
-        check_scalar(self.sigma, name="sigma", target_type=float, min_val=0.0)
+        check_scalar(self.bandwidth, name="bandwidth", target_type=float, min_val=0.0)
         if self.state_scaler is not None and not isinstance(self.state_scaler, Scaler):
             raise ValueError(
                 "state_scaler must be an instance of d3rlpy.preprocessing.Scaler, but found False"
@@ -146,7 +146,9 @@ class ContinuousMinimaxStateActionWeightLearning(BaseWeightValueLearner):
             x2_2 = (x2**2).sum(dim=1)
             x_y = x1 @ x2.T
             distance = x1_2[:, None] + x2_2[None, :] - 2 * x_y
-            kernel = torch.exp(-distance / self.sigma)
+            kernel = torch.exp(-distance / (2 * self.bandwidth**2)) / np.sqrt(
+                2 * np.pi * self.bandwidth**2
+            )
 
         return kernel  # shape (n_trajectories, n_trajectories)
 
@@ -285,8 +287,8 @@ class ContinuousMinimaxStateActionWeightLearning(BaseWeightValueLearner):
         state: np.ndarray,
         action: np.ndarray,
         evaluation_policy_action: np.ndarray,
-        n_epochs: int = 10,
-        n_steps_per_epoch: int = 1000,
+        n_steps: int = 10000,
+        n_steps_per_epoch: int = 10000,
         regularization_weight: float = 1.0,
         random_state: Optional[int] = None,
         **kwargs,
@@ -307,10 +309,10 @@ class ContinuousMinimaxStateActionWeightLearning(BaseWeightValueLearner):
         evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
 
-        n_epochs: int, default=10 (> 0)
-            Number of epochs to train.
+        n_steps: int, default=10000 (> 0)
+            Number of gradient steps.
 
-        n_steps_per_epoch: int, default=1000 (> 0)
+        n_steps_per_epoch: int, default=10000 (> 0)
             Number of gradient steps in a epoch.
 
         regularization_weight: float, default=1.0 (> 0)
@@ -343,10 +345,11 @@ class ContinuousMinimaxStateActionWeightLearning(BaseWeightValueLearner):
                 "Expected `action.shape[1] == evaluation_policy_action.shape[1]`, but found False"
             )
 
-        check_scalar(n_epochs, name="n_epochs", target_type=int, min_val=1)
+        check_scalar(n_steps, name="n_steps", target_type=int, min_val=1)
         check_scalar(
             n_steps_per_epoch, name="n_steps_per_epoch", target_type=int, min_val=1
         )
+        n_epochs = (n_steps - 1) // n_steps_per_epoch + 1
 
         if random_state is None:
             raise ValueError("Random state mush be given.")
@@ -483,8 +486,8 @@ class ContinuousMinimaxStateActionWeightLearning(BaseWeightValueLearner):
         state: np.ndarray,
         action: np.ndarray,
         evaluation_policy_action: np.ndarray,
-        n_epochs: int = 10,
-        n_steps_per_epoch: int = 1000,
+        n_steps: int = 10000,
+        n_steps_per_epoch: int = 10000,
         regularization_weight: float = 1.0,
         random_state: Optional[int] = None,
         **kwargs,
@@ -505,10 +508,10 @@ class ContinuousMinimaxStateActionWeightLearning(BaseWeightValueLearner):
         evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Next action chosen by the evaluation policy.
 
-        n_epochs: int, default=10 (> 0)
-            Number of epochs to train.
+        n_steps: int, default=10000 (> 0)
+            Number of gradient steps.
 
-        n_steps_per_epoch: int, default=1000 (> 0)
+        n_steps_per_epoch: int, default=10000 (> 0)
             Number of gradient steps in a epoch.
 
         regularization_weight: float, default=1.0 (> 0)
@@ -528,7 +531,7 @@ class ContinuousMinimaxStateActionWeightLearning(BaseWeightValueLearner):
             state=state,
             action=action,
             evaluation_policy_action=evaluation_policy_action,
-            n_epochs=n_epochs,
+            n_steps=n_steps,
             n_steps_per_epoch=n_steps_per_epoch,
             regularization_weight=regularization_weight,
             random_state=random_state,
@@ -542,75 +545,75 @@ class ContinuousMinimaxStateWeightLearning(BaseWeightValueLearner):
 
     Bases: :class:`scope_rl.ope.weight_value_learning.BaseWeightValueLearner`
 
-    Imported as: :class:`scope_rl.ope.ContinuousMinimaxStateWightLearning`
-    
+    Imported as: :class:`scope_rl.ope.weight_value_learning.ContinuousMinimaxStateWightLearning`
+
     Note
     -------
     Minimax Weight Learning uses that the following holds true about Q-function.
-    
+
     .. math::
 
-        \\mathbb{E}_{(s_t, a_t, r_t, s_{t+1}) \\sim d^{\\pi_0}, a_{t+1} \\sim \\pi(a_{t+1} | s_{t+1})} [w(s_t, a_t) (Q(s_t, a_t) - \\gamma Q(s_{t+1}, a_{t+1}))]
-        = \\mathbb{E}_{s_0 \\sim d^{\\pi_0}, a_0 \\sim \\pi(a_0 | s_0)} [Q(s_0, a_0)]
-    
-    where :math:`Q(s_t, a_t)` is the Q-function, :math:`w(s_t, a_t) \\approx d^{\\pi}(s_t, a_t) / d^{\\pi_0}(s_t, a_t) = d^{\\pi}(s_t) \\pi(a_t | s_t) / d^{\\pi_0}(s_t) \\pi_0(a_t | s_t)`
+        \\mathbb{E}_{(s_t, a_t, r_t, s_{t+1}) \\sim d^{\\pi_b}, a_{t+1} \\sim \\pi(a_{t+1} | s_{t+1})} [w(s_t, a_t) (Q(s_t, a_t) - \\gamma Q(s_{t+1}, a_{t+1}))]
+        = \\mathbb{E}_{s_0 \\sim d^{\\pi_b}, a_0 \\sim \\pi(a_0 | s_0)} [Q(s_0, a_0)]
+
+    where :math:`Q(s_t, a_t)` is the Q-function, :math:`w(s_t, a_t) \\approx d^{\\pi}(s_t, a_t) / d^{\\pi_b}(s_t, a_t) = d^{\\pi}(s_t) \\pi(a_t | s_t) / d^{\\pi_b}(s_t) \\pi_0(a_t | s_t)`
     is the state-action marginal importance weight.
-    
+
     Then, it adversarially minimize the difference between RHS and LHS (which we denote :math:`L_w(w, Q)`) to the worst case in terms of :math:`Q(\\cdot)`
     using a discriminator defined in reproducing kernel Hilbert space (RKHS) as follows.
-    
+
     .. math::
 
-        \\max_w L_w^2(w, Q) 
-        &= \\mathbb{E}_{(s_t, a_t, s_{t+1}), (\\tilde{s}_t, \\tilde{a}_t, \\tilde{s}_{t+1}) \\sim d^{\\pi_0}, a_{t+1} \\sim \\pi(a_{t+1} | s_{t+1}), \\tilde{a}_{t+1} \\sim \\pi(\\tilde{a}_{t+1} | \\tilde{s}_{t+1})}[
+        \\max_w L_w^2(w, Q)
+        &= \\mathbb{E}_{(s_t, a_t, s_{t+1}), (\\tilde{s}_t, \\tilde{a}_t, \\tilde{s}_{t+1}) \\sim d^{\\pi_b}, a_{t+1} \\sim \\pi(a_{t+1} | s_{t+1}), \\tilde{a}_{t+1} \\sim \\pi(\\tilde{a}_{t+1} | \\tilde{s}_{t+1})}[
             w_s(s_t) w_a(s_t, a_t) w_s(\\tilde{s}_t) w_a(\\tilde{s}_t, \\tilde{a}_t) ( K((s_t, a_t), (\\tilde{s}_t, \\tilde{a}_t)) + K((s_{t+1}, a_{t+1}), (\\tilde{s}_{t+1}, \\tilde{a}_{t+1})) - \\gamma ( K((s_t, a_t), (\\tilde{s}_{t+1}, \\tilde{a}_{t+1})) + K((s_{t+1}, a_{t+1}), (\\tilde{s}_t, \\tilde{a}_t)) ))
         ] \\\\
-        & \\quad \\quad + \\gamma (1 - \\gamma) \\mathbb{E}_{(s_t, a_t, s_{t+1}), (\\tilde{s}_t, \\tilde{a}_t, \\tilde{s}_{t+1}) \\sim d^{\\pi_0}, a_{t+1} \\sim \\pi(a_{t+1} | s_{t+1}), \\tilde{a}_{t+1} \\sim \\pi(\\tilde{a}_{t+1} | \\tilde{s}_{t+1}), s_0 \\sim d(s_0), \\tilde{s}_0 \\sim d(\\tilde{s}_0), a_0 \\sim \\pi(a_0 | s_0), \\tilde{a}_0 \\sim \\pi(\\tilde{a}_0 | \\tilde{s}_0)}[
+        & \\quad \\quad + \\gamma (1 - \\gamma) \\mathbb{E}_{(s_t, a_t, s_{t+1}), (\\tilde{s}_t, \\tilde{a}_t, \\tilde{s}_{t+1}) \\sim d^{\\pi_b}, a_{t+1} \\sim \\pi(a_{t+1} | s_{t+1}), \\tilde{a}_{t+1} \\sim \\pi(\\tilde{a}_{t+1} | \\tilde{s}_{t+1}), s_0 \\sim d(s_0), \\tilde{s}_0 \\sim d(\\tilde{s}_0), a_0 \\sim \\pi(a_0 | s_0), \\tilde{a}_0 \\sim \\pi(\\tilde{a}_0 | \\tilde{s}_0)}[
             w_s(s_t) w_a(s_t, a_t) K((s_{t+1}, a_{t+1}), (\\tilde{s}_0, \\tilde{a}_0)) + w_s(\\tilde{s}_t) w_a(\\tilde{s}_t, \\tilde{a}_t) K((\\tilde{s}_{t+1}, \\tilde{a}_{t+1}), (s_0, a_0))
         ] \\\\
-        & \\quad \\quad - (1 - \\gamma) \\mathbb{E}_{(s_t, a_t), (\\tilde{s}_t, \\tilde{a}_t) \\sim d^{\\pi_0}, s_0 \\sim d(s_0), \\tilde{s}_0 \\sim d(\\tilde{s}_0), a_0 \\sim \\pi(a_0 | s_0), \\tilde{a}_0 \\sim \\pi(\\tilde{a}_0 | \\tilde{s}_0)}[
+        & \\quad \\quad - (1 - \\gamma) \\mathbb{E}_{(s_t, a_t), (\\tilde{s}_t, \\tilde{a}_t) \\sim d^{\\pi_b}, s_0 \\sim d(s_0), \\tilde{s}_0 \\sim d(\\tilde{s}_0), a_0 \\sim \\pi(a_0 | s_0), \\tilde{a}_0 \\sim \\pi(\\tilde{a}_0 | \\tilde{s}_0)}[
             w_s(s_t) w_a(s_t, a_t) K((s_t, a_t), (\\tilde{s}_0, \\tilde{a}_0)) + w_s(\\tilde{s}_t) w_a(\\tilde{s}_t, \\tilde{a}_t) K((\\tilde{s}_t, \\tilde{a}_t), (s_0, a_0))
         ]
 
-    where :math:`K(\\cdot, \\cdot)` is a kernel function, :math:`w_s(s_t) \\approx d^{\\pi}(s_t) / d^{\\pi_0}(s_t)` is the state-marginal importance weight,
+    where :math:`K(\\cdot, \\cdot)` is a kernel function, :math:`w_s(s_t) \\approx d^{\\pi}(s_t) / d^{\\pi_b}(s_t)` is the state-marginal importance weight,
     and :math:`w_a(s_t, a_t) := \\pi(a_t | s_t) / \\pi_0(a_t | s_t)` is the immediate importance weight.
-    
+
     Parameters
     -------
     w_function: StateWeightFunction
         Weight function model.
-    
+
     gamma: float, default=1.0
         Discount factor. The value should be within (0, 1].
-    
-    sigma: float, default=1.0 (> 0)
-        Bandwidth hyperparameter of gaussian kernel.
-    
+
+    bandwidth: float, default=1.0 (> 0)
+        Bandwidth hyperparameter of the Gaussian kernel.
+
     state_scaler: d3rlpy.preprocessing.Scaler, default=None
         Scaling factor of state.
-    
+
     action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
         Scaling factor of action.
-    
+
     batch_size: int, default=128 (> 0)
         Batch size.
-    
+
     lr: float, default=1e-4 (> 0)
         Learning rate.
-    
+
     device: str, default="cuda:0"
         Specifies device used for torch.
-    
+
     References
     -------
     Masatoshi Uehara, Jiawei Huang, and Nan Jiang.
     "Minimax Weight and Q-Function Learning for Off-Policy Evaluation." 2020.
-    
+
     """
 
     w_function: StateWeightFunction
     gamma: float = 1.0
-    sigma: float = 1.0
+    bandwidth: float = 1.0
     state_scaler: Optional[Scaler] = None
     action_scaler: Optional[ActionScaler] = None
     batch_size: int = 128
@@ -623,7 +626,7 @@ class ContinuousMinimaxStateWeightLearning(BaseWeightValueLearner):
         check_scalar(
             self.gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0
         )
-        check_scalar(self.sigma, name="sigma", target_type=float, min_val=0.0)
+        check_scalar(self.bandwidth, name="bandwidth", target_type=float, min_val=0.0)
         if self.state_scaler is not None and not isinstance(self.state_scaler, Scaler):
             raise ValueError(
                 "state_scaler must be an instance of d3rlpy.preprocessing.Scaler, but found False"
@@ -657,7 +660,9 @@ class ContinuousMinimaxStateWeightLearning(BaseWeightValueLearner):
             x_y = state_1 @ state_2.T
             distance = x_2[:, None] + y_2[None, :] - 2 * x_y
 
-            kernel = torch.exp(-distance / self.sigma)
+            kernel = torch.exp(-distance / (2 * self.bandwidth**2)) / np.sqrt(
+                2 * np.pi * self.bandwidth**2
+            )
 
         return kernel  # shape (n_trajectories, n_trajectories)
 
@@ -769,8 +774,8 @@ class ContinuousMinimaxStateWeightLearning(BaseWeightValueLearner):
         action: np.ndarray,
         pscore: np.ndarray,
         evaluation_policy_action: np.ndarray,
-        n_epochs: int = 10,
-        n_steps_per_epoch: int = 1000,
+        n_steps: int = 10000,
+        n_steps_per_epoch: int = 10000,
         regularization_weight: float = 1.0,
         random_state: Optional[int] = None,
         **kwargs,
@@ -789,15 +794,15 @@ class ContinuousMinimaxStateWeightLearning(BaseWeightValueLearner):
             Action chosen by the behavior policy.
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory)
-            Action choice probability of the behavior policy for the chosen action.
+            Propensity of the observed action being chosen under the behavior policy (pscore stands for propensity score).
 
         evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
 
-        n_epochs: int, default=100 (> 0)
-            Number of epochs to train.
+        n_steps: int, default=10000 (> 0)
+            Number of gradient steps.
 
-        n_steps_per_epoch: int, default=100 (> 0)
+        n_steps_per_epoch: int, default=10000 (> 0)
             Number of gradient steps in a epoch.
 
         regularization_weight: float, default=1.0 (> 0)
@@ -812,7 +817,7 @@ class ContinuousMinimaxStateWeightLearning(BaseWeightValueLearner):
         )
         check_array(state, name="state", expected_dim=2)
         check_array(action, name="action", expected_dim=2)
-        check_array(pscore, name="pscore", expected_dim=2, min_val=0.0, max_val=1.0)
+        check_array(pscore, name="pscore", expected_dim=2, min_val=0.0)
         check_array(
             evaluation_policy_action,
             name="evaluation_policy_action",
@@ -838,10 +843,11 @@ class ContinuousMinimaxStateWeightLearning(BaseWeightValueLearner):
                 "Expected `action.shape[1] == evaluation_policy_action_dist.shape[1] == pscore.shape[1]`, but found False"
             )
 
-        check_scalar(n_epochs, name="n_epochs", target_type=int, min_val=1)
+        check_scalar(n_steps, name="n_steps", target_type=int, min_val=1)
         check_scalar(
             n_steps_per_epoch, name="n_steps_per_epoch", target_type=int, min_val=1
         )
+        n_epochs = (n_steps - 1) // n_steps_per_epoch + 1
 
         if random_state is None:
             raise ValueError("Random state mush be given.")
@@ -870,7 +876,7 @@ class ContinuousMinimaxStateWeightLearning(BaseWeightValueLearner):
         similarity_weight = gaussian_kernel(
             evaluation_policy_action_,
             action_,
-            sigma=self.sigma,
+            bandwidth=self.bandwidth,
         ).reshape((-1, step_per_trajectory))
 
         n_trajectories, step_per_trajectory, _ = state.shape
@@ -960,7 +966,7 @@ class ContinuousMinimaxStateWeightLearning(BaseWeightValueLearner):
             Action chosen by the behavior policy.
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory)
-            Action choice probability of the behavior policy for the chosen action.
+            Propensity of the observed action being chosen under the behavior policy (pscore stands for propensity score).
 
         evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
@@ -973,7 +979,7 @@ class ContinuousMinimaxStateWeightLearning(BaseWeightValueLearner):
         """
         check_array(state, name="state", expected_dim=2)
         check_array(action, name="action", expected_dim=2)
-        check_array(pscore, name="pscore", expected_dim=2, min_val=0.0, max_val=1.0)
+        check_array(pscore, name="pscore", expected_dim=2, min_val=0.0)
         check_array(
             evaluation_policy_action,
             name="evaluation_policy_action",
@@ -1010,7 +1016,7 @@ class ContinuousMinimaxStateWeightLearning(BaseWeightValueLearner):
         similarity_weight = gaussian_kernel(
             evaluation_policy_action_,
             action_,
-            sigma=self.sigma,
+            bandwidth=self.bandwidth,
         )
 
         state_marginal_importance_weight = (
@@ -1067,8 +1073,8 @@ class ContinuousMinimaxStateWeightLearning(BaseWeightValueLearner):
         action: np.ndarray,
         pscore: np.ndarray,
         evaluation_policy_action: np.ndarray,
-        n_epochs: int = 100,
-        n_steps_per_epoch: int = 100,
+        n_steps: int = 10000,
+        n_steps_per_epoch: int = 10000,
         regularization_weight: float = 1.0,
         random_state: Optional[int] = None,
         **kwargs,
@@ -1087,15 +1093,15 @@ class ContinuousMinimaxStateWeightLearning(BaseWeightValueLearner):
             Action chosen by the behavior policy.
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory)
-            Action choice probability of the behavior policy for the chosen action.
+            Propensity of the observed action being chosen under the behavior policy (pscore stands for propensity score).
 
         evaluation_policy_action: array-like of shape (n_trajectories * step_per_trajectory, action_dim)
             Action chosen by the evaluation policy.
 
-        n_epochs: int, default=100 (> 0)
-            Number of epochs to train.
+        n_steps: int, default=10000 (> 0)
+            Number of gradient steps.
 
-        n_steps_per_epoch: int, default=100 (> 0)
+        n_steps_per_epoch: int, default=10000 (> 0)
             Number of gradient steps in a epoch.
 
         regularization_weight: float, default=1.0 (> 0)
@@ -1116,7 +1122,7 @@ class ContinuousMinimaxStateWeightLearning(BaseWeightValueLearner):
             action=action,
             pscore=pscore,
             evaluation_policy_action=evaluation_policy_action,
-            n_epochs=n_epochs,
+            n_steps=n_steps,
             n_steps_per_epoch=n_steps_per_epoch,
             regularization_weight=regularization_weight,
             random_state=random_state,

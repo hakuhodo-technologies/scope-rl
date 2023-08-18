@@ -24,7 +24,7 @@ from ...types import Numeric
 
 @dataclass
 class RTBSyntheticSimulator(BaseSimulator):
-    """Class to calculate outcome probability and stochastically determine auction result in Real-Time Bidding (RTB) setting for display advertising.
+    """Class to calculate the outcome probability and stochastically determine auction result in Real-Time Bidding (RTB) setting for display advertising.
 
     Imported as: :class:`rtbgym.envs.simulator.RTBSyntheticSimulator`
 
@@ -66,14 +66,14 @@ class RTBSyntheticSimulator(BaseSimulator):
         Conversion rate (i.e., conversion / click).
         Both class and instance are acceptable.
 
-    standard_bid_price_distribution: NormalDistribution, default=NormalDistribution(mean=50, std=5, random_state=12345)
+    standard_bid_price_distribution: NormalDistribution, default=None
         Distribution of the bid price whose average impression probability is expected to be 0.5.
 
     minimum_standard_bid_price: int, default=None (> 0)
         Minimum value for standard bid price.
         If `None`, minimum_standard_bid_price is set to :class:`standard_bid_price_distribution.mean / 2`.
 
-    search_volume_distribution: NormalDistribution, default=NormalDistribution(mean=200, std=20, random_state=12345)
+    search_volume_distribution: NormalDistribution, default=None
         Search volume distribution for each timestep.
 
     minimum_search_volume: int, default = 10 (> 0)
@@ -107,17 +107,9 @@ class RTBSyntheticSimulator(BaseSimulator):
     )
     ClickThroughRate: BaseClickAndConversionRate = ClickThroughRate  # noqa: F811
     ConversionRate: BaseClickAndConversionRate = ConversionRate  # noqa: F811
-    standard_bid_price_distribution: NormalDistribution = NormalDistribution(
-        mean=50,
-        std=5,
-        random_state=12345,
-    )
+    standard_bid_price_distribution: Optional[NormalDistribution] = (None,)
     minimum_standard_bid_price: Optional[Union[int, float]] = None
-    search_volume_distribution: NormalDistribution = NormalDistribution(
-        mean=200,
-        std=20,
-        random_state=12345,
-    )
+    search_volume_distribution: Optional[NormalDistribution] = (None,)
     minimum_search_volume: int = 10
     random_state: Optional[int] = None
 
@@ -255,6 +247,12 @@ class RTBSyntheticSimulator(BaseSimulator):
                 "Expected `user_sampling_rate.sum(axis=1) == np.ones(step_per_episode)`, but found False"
             )
 
+        if self.standard_bid_price_distribution is None:
+            self.standard_bid_price_distribution = NormalDistribution(
+                mean=50,
+                std=5,
+                random_state=self.random_state,
+            )
         if not isinstance(self.standard_bid_price_distribution, NormalDistribution):
             raise ValueError(
                 "standard_bid_price_distribution must be a NormalDistribution"
@@ -273,6 +271,12 @@ class RTBSyntheticSimulator(BaseSimulator):
                 f"minimum_standard_bid_price must be a float value within [0, standard_bid_price_distribution.mean], but {self.minimum_standard_bid_price} is given"
             )
 
+        if self.search_volume_distribution is None:
+            self.search_volume_distribution = NormalDistribution(
+                mean=200,
+                std=20,
+                random_state=self.random_state,
+            )
         if isinstance(self.search_volume_distribution.mean, Numeric):
             self.search_volume_distribution = NormalDistribution(
                 mean=np.full(
@@ -367,7 +371,7 @@ class RTBSyntheticSimulator(BaseSimulator):
         Parameters
         -------
         volume: int, default=None (> 0)
-            Total numbers of the auctions to generate.
+            Total number of auctions to generate.
 
         timestep: int, default=None (> 0)
             Timestep in the RL environment.

@@ -1,8 +1,8 @@
 # Frequently Asked Questions
 
-Q. xxx environment does not work on OFRL. How should we fix it?
+Q. xxx environment does not work on SCOPE-RL. How should we fix it?
 
-A. OFRL is compatible to Open AI Gym API, specifically for `gym>=0.26.0`, which works as follows. 
+A. SCOPE-RL is compatible with OpenAI Gym API, specifically for `gym>=0.26.0`, which works as follows.
 ```Python
 obs, info = env.reset(), False
 while not done:
@@ -24,11 +24,13 @@ from scope_rl.utils import NewGymAPIWrapper
 env = NewGymAPIWrapper(env)
 ```
 
-Q. xxx environment does not work on d3rlpy, which is used for model training. How should we fix it? (d3rlpy and OFRL is compatible to different version of Open AI Gym.)
+Q. xxx environment does not work on d3rlpy, which is used for model training. How should we fix it? (d3rlpy and SCOPE-RL are compatible with different version of OpenAI Gym.)
 
-A. While OFRL is compatible to the latest API of Open AI Gym, d3rlpy is not. Therefore, please use `OldGymAPIWrapper` provided in `scope_rl/utils.py` to make the environment work for d3rlpy.
+A. A. Both `scope-rl>=0.2.1` and `d3rlpy>=2.0.2` supports compatibility with `gym>=0.26.0` and `gymnasium` environments. The source is available in the `main` branch.
+
+If you want to use the older interface of `d3rlpy`, make sure to use `scope-rl==0.1.3` and `d3rlpy==1.1.1`. Then, please use `OldGymAPIWrapper` provided in `scope_rl/utils.py` to enable the use of d3rlpy. The source is available in the `depreciated` branch.
 ```Python
 from scope_rl.utils import OldGymAPIWrapper
-env = gym.make("xxx_v0")  # compatible to gym>=0.26.2 and OFRL
-env_ = OldGymAPIWrapper(env)  # compatible to gym<0.26.2 and d3rlpy
+env = gym.make("xxx_v0")  # compatible with gym>=0.26.2 and scope-rl==0.1.3
+env_ = OldGymAPIWrapper(env)  # compatible with gym<0.26.2 and d3rlpy==1.1.1
 ```

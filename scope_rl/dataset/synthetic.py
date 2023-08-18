@@ -28,7 +28,7 @@ class SyntheticDataset(BaseDataset):
     Note
     -------
     Logged dataset is directly used for Off-Policy Evaluation (OPE).
-    Moreover, it is also compatible to `d3rlpy <https://github.com/takuseno/d3rlpy>`_ (offline RL library) with the following command.
+    Moreover, it is also compatible with `d3rlpy <https://github.com/takuseno/d3rlpy>`_ (offline RL library) with the following command.
 
     .. code-block:: python
 
@@ -37,8 +37,6 @@ class SyntheticDataset(BaseDataset):
             actions=logged_datasets["action"],
             rewards=logged_datasets["reward"],
             terminals=logged_datasets["done"],
-            episode_terminals=logged_datasets["terminal"],
-            discrete_action=(logged_datasets["action_type"]=="discrete"),
         )
 
     .. seealso::
@@ -54,18 +52,18 @@ class SyntheticDataset(BaseDataset):
         Maximum number of timesteps in an episode.
 
     action_meaning: dict
-        Dictionary which maps discrete action index into specific actions.
+        Dictionary to map discrete action index to a specific action.
         If action_type is "continuous", `None` is recorded.
 
     action_keys: list of str
-        Name of the action variable at each dimension.
+        Name of each dimension in the action space.
         If action_type is "discrete", `None` is recorded.
 
     state_keys: list of str
-        Name of the state variable at each dimension.
+        Name of each dimension of the state space.
 
     info_keys: Dict[str, type]
-        Dictionary containing of key and the type of info components.
+        Dictionary containing the key and type of info components.
 
     Examples
     -------
@@ -76,22 +74,22 @@ class SyntheticDataset(BaseDataset):
 
         # import necessary module from SCOPE-RL
         from scope_rl.dataset import SyntheticDataset
-        from scope_rl.policy import DiscreteEpsilonGreedyHead
+        from scope_rl.policy import EpsilonGreedyHead
 
         # import necessary module from other libraries
         import gym
         import rtbgym
-        from d3rlpy.algos import DoubleDQN
-        from d3rlpy.online.buffers import ReplayBuffer
-        from d3rlpy.online.explorers import ConstantEpsilonGreedy
+        from d3rlpy.algos import DoubleDQNConfig
+        from d3rlpy.dataset import create_fifo_replay_buffer
+        from d3rlpy.algos import ConstantEpsilonGreedy
 
         # initialize environment
         env = gym.make("RTBEnv-discrete-v0")
 
         # define (RL) agent (i.e., policy) and train on the environment
-        ddqn = DoubleDQN()
-        buffer = ReplayBuffer(
-            maxlen=10000,
+        ddqn = DoubleDQNConfig().create()
+        buffer = create_fifo_replay_buffer(
+            limit=10000,
             env=env,
         )
         explorer = ConstantEpsilonGreedy(
@@ -106,7 +104,7 @@ class SyntheticDataset(BaseDataset):
         )
 
         # convert ddqn policy to stochastic data collection policy
-        behavior_policy = DiscreteEpsilonGreedyHead(
+        behavior_policy = EpsilonGreedyHead(
             ddqn,
             n_actions=env.action_space.n,
             epsilon=0.3,
@@ -134,7 +132,7 @@ class SyntheticDataset(BaseDataset):
         )
 
         # data collection
-        logged_datasets = dataset.obtain_trajectories(
+        logged_datasets = dataset.obtain_episodes(
             behavior_policies=behavior_policy,
             n_trajectories=100,
             obtain_info=True,
@@ -155,6 +153,7 @@ class SyntheticDataset(BaseDataset):
         'action_keys': None,
         'action_meaning': array([ 0.1       ,  0.16681005,  0.27825594,  0.46415888,  0.77426368,
                 1.29154967,  2.15443469,  3.59381366,  5.9948425 , 10.        ]),
+        'state_dim': 7,
         'state_keys': ['timestep',
         'remaining_budget',
         'budget_consumption_rate',
@@ -192,7 +191,6 @@ class SyntheticDataset(BaseDataset):
     .. seealso::
 
         * :doc:`Quickstart </documentation/quickstart>`
-        * :doc:`Related tutorials </documentation/_autogallery/scope_rl_others/index>`
 
     """
 
@@ -256,7 +254,7 @@ class SyntheticDataset(BaseDataset):
         This function is intended to be used for the environment which has a fixed length of episodes (episodic setting).
 
         For non-episodic, stationary setting (such as cartpole or taxi as used in (Liu et al., 2018) and (Uehara et al., 2020)),
-        please also consider using :class:`.obtain_steps()` to collect logged dataset.
+        please also consider using :class:`.obtain_steps()` to generate a logged dataset.
 
         **References**
 
@@ -269,13 +267,13 @@ class SyntheticDataset(BaseDataset):
         Parameters
         -------
         behavior_policy: BaseHead
-            RL policy that collects the logged data.
+            RL policy to generate a logged dataset.
 
         dataset_id: int, default=0 (>= 0)
             Id of the logged dataset.
 
         n_trajectories: int, default=10000 (> 0)
-            Number of trajectories to rollout the behavior policy and collect data.
+            Number of trajectories to generate by rolling out the behavior policy.
 
         step_per_trajectory: int, default=None (> 0)
             Number of timesteps in an trajectory.
@@ -284,7 +282,7 @@ class SyntheticDataset(BaseDataset):
             Whether to gain info from the environment or not.
 
         record_unclipped_action: bool, default=False
-            Whether to record unclipped action in the logged dataset. Only applicable when action_type is continuous.
+            Whether to record unclipped action values in the logged dataset. Only applicable when action_type is continuous.
 
         random_state: int, default=None (>= 0)
             Random state.
@@ -292,7 +290,7 @@ class SyntheticDataset(BaseDataset):
         Returns
         -------
         logged_dataset: list of dict
-            Dictionary containing the environmental settings and trajectories obtained by the behavior policy.
+            Dictionary containing environmental settings and trajectories generated by the behavior policy.
 
             .. code-block:: python
 
@@ -328,30 +326,30 @@ class SyntheticDataset(BaseDataset):
                 Number of timesteps in an trajectory.
 
             action_type: str
-                Action type of the RL agent.
+                Type of the action space.
                 Either "discrete" or "continuous".
 
             n_actions: int (> 0)
-                Number of discrete actions.
+                Number of actions.
                 If action_type is "continuous", `None` is recorded.
 
             action_dim: int (> 0)
-                Dimensions of the actions.
+                Dimensions of the action space.
                 If action_type is "discrete", `None` is recorded.
 
             action_keys: list of str
-                Name of the action variable at each dimension.
+                Name of each dimension in the action space.
                 If action_type is "discrete", `None` is recorded.
 
             action_meaning: dict
-                Dictionary which maps discrete action index into specific actions.
+                Dictionary to map discrete action index to a specific action.
                 If action_type is "continuous", `None` is recorded.
 
             state_dim: int (> 0)
-                Dimensions of the states.
+                Dimensions of the state space.
 
             state_keys: list of str
-                Name of the state variable at each dimension.
+                Name of each dimension of the state space.
 
             state: ndarray of shape (size, state_dim)
                 State observed by the behavior policy.
@@ -372,7 +370,7 @@ class SyntheticDataset(BaseDataset):
                 Additional feedbacks from the environment.
 
             pscore: ndarray of shape (size, )
-                Action choice probability of the behavior policy for the chosen action.
+                Propensity of the observed action being chosen under the behavior policy (pscore stands for propensity score).
 
             behavior_policy: str
                 Name of the behavior policy.
@@ -433,7 +431,7 @@ class SyntheticDataset(BaseDataset):
                 (
                     action,
                     action_prob,
-                ) = behavior_policy.stochastic_action_with_pscore_online(state)
+                ) = behavior_policy.sample_action_and_output_pscore_online(state)
 
                 if self.action_type == "continuous":
                     if record_unclipped_action:
@@ -531,22 +529,26 @@ class SyntheticDataset(BaseDataset):
         Parameters
         -------
         behavior_policy: BaseHead
-            RL policy that collects the logged data.
+            RL policy to generate a logged dataset.
 
         dataset_id: int, default=0 (>= 0)
             Id of the logged dataset.
 
         n_trajectories: int, default=10000 (> 0)
-            Number of trajectories to rollout the behavior policy and collect data.
+            Number of trajectories to generate by rolling out the behavior policy.
 
         step_per_trajectory: int, default=100 (> 0)
             Number of timesteps in an trajectory.
 
         minimum_rollout_length: int, default=0 (>= 0)
-            Minimum length of rollout before collecting dataset.
+            Minimum length of rollout by the behavior policy before generating the logged dataset
+            when working on the infinite horizon setting.
+            This argument is irrelevant when working on the finite horizon setting.
 
         maximum_rollout_length: int, default=100 (>= minimum_rollout_length)
-            Maximum length of rollout before collecting dataset.
+            Maximum length of rollout by the behavior policy before generating the logged dataset
+            when working on the infinite horizon setting.
+            This argument is irrelevant when working on the finite horizon setting.
 
         obtain_info: bool, default=False
             Whether to gain info from the environment or not.
@@ -557,7 +559,7 @@ class SyntheticDataset(BaseDataset):
             If `False`, the initial state will be sampled by rolling out the behavior policy after resetting the environment.
 
         record_unclipped_action: bool, default=False
-            Whether to record unclipped action in the logged dataset. Only applicable when action_type is continuous.
+            Whether to record unclipped action values in the logged dataset. Only applicable when action_type is continuous.
 
         random_state: int, default=None (>= 0)
             Random state.
@@ -565,7 +567,7 @@ class SyntheticDataset(BaseDataset):
         Returns
         -------
         logged_dataset: dict
-            Dictionary containing the environmental settings and trajectories obtained by the behavior policy.
+            Dictionary containing environmental settings and trajectories generated by the behavior policy.
 
             .. code-block:: python
 
@@ -601,30 +603,30 @@ class SyntheticDataset(BaseDataset):
                 Number of timesteps in an trajectory.
 
             action_type: str
-                Action type of the RL agent.
+                Type of the action space.
                 Either "discrete" or "continuous".
 
             n_actions: int (> 0)
-                Number of discrete actions.
+                Number of actions.
                 If action_type is "continuous", `None` is recorded.
 
             action_dim: int (> 0)
-                Dimensions of the actions.
+                Dimensions of the action space.
                 If action_type is "discrete", `None` is recorded.
 
             action_keys: list of str
-                Name of the action variable at each dimension.
+                Name of each dimension in the action space.
                 If action_type is "discrete", `None` is recorded.
 
             action_meaning: dict
-                Dictionary which maps discrete action index into specific actions.
+                Dictionary to map discrete action index to a specific action.
                 If action_type is "continuous", `None` is recorded.
 
             state_dim: int (> 0)
-                Dimensions of the states.
+                Dimensions of the state space.
 
             state_keys: list of str
-                Name of the state variable at each dimension.
+                Name of each dimension of the state space.
 
             state: ndarray of shape (size, state_dim)
                 State observed by the behavior policy.
@@ -645,7 +647,7 @@ class SyntheticDataset(BaseDataset):
                 Additional feedbacks from the environment.
 
             pscore: ndarray of shape (size, )
-                Action choice probability of the behavior policy for the chosen action.
+                Propensity of the observed action being chosen under the behavior policy (pscore stands for propensity score).
 
             behavior_policy: str
                 Name of the behavior policy.
@@ -748,7 +750,7 @@ class SyntheticDataset(BaseDataset):
                 (
                     action,
                     action_prob,
-                ) = self.behavior_policy.stochastic_action_with_pscore_online(state)
+                ) = self.behavior_policy.sample_action_and_output_pscore_online(state)
                 next_state, reward, done, truncated, info_ = self.env.step(action)
 
                 states[idx] = state
@@ -824,7 +826,7 @@ class SyntheticDataset(BaseDataset):
         This function is intended to be used for the environment which has a fixed length of episodes (episodic setting).
 
         For non-episodic, stationary setting (such as cartpole or taxi as used in (Liu et al., 2018) and (Uehara et al., 2020)),
-        please also consider using :class:`.obtain_steps()` to collect logged dataset.
+        please also consider using :class:`.obtain_steps()` to generate a logged dataset.
 
         **References**
 
@@ -837,14 +839,14 @@ class SyntheticDataset(BaseDataset):
         Parameters
         -------
         behavior_policies: list of BaseHead or BaseHead
-            List of RL policies that collect the logged data.
+            List of RL policies that generate logged data.
 
         n_datasets: int, default=1 (> 0)
-            Number of (independent) dataset.
+            Number of generated (independent) datasets.
             If the value is more than 1, the method returns :class:`MultipleLoggedDataset` instead of :class:`LoggedDataset`.
 
         n_trajectories: int, default=10000 (> 0)
-            Number of trajectories to rollout the behavior policy and collect data.
+            Number of trajectories to generate by rolling out the behavior policy.
 
         step_per_trajectory: int, default=None (> 0)
             Number of timesteps in an trajectory.
@@ -853,17 +855,17 @@ class SyntheticDataset(BaseDataset):
             Whether to gain info from the environment or not.
 
         record_unclipped_action: bool, default=False
-            Whether to record unclipped action in the logged dataset. Only applicable when action_type is continuous.
+            Whether to record unclipped action values in the logged dataset. Only applicable when action_type is continuous.
 
         path: str
-            Path to the directory. Either absolute and relative path is acceptable.
+            Path to the directory. Either absolute or relative path is acceptable.
 
         save_relative_path: bool, default=False.
             Whether to save a relative path.
             If `True`, a path relative to the scope-rl directory will be saved.
             If `False`, the absolute path will be saved.
 
-            Note that, this option was added in order to run examples in the documentation properly.
+            Note that this option was added in order to run examples in the documentation properly.
             Otherwise, the default setting (`False`) is recommended.
 
         random_state: int, default=None (>= 0)
@@ -872,7 +874,7 @@ class SyntheticDataset(BaseDataset):
         Returns
         -------
         logged_dataset(s): LoggedDataset or MultipleLoggedDataset
-            MultipleLoggedDataset is a instance containing (multiple) logged datasets.
+            MultipleLoggedDataset is an instance containing (multiple) logged datasets.
 
             Each logged dataset is accessible by the following command.
 
@@ -916,30 +918,30 @@ class SyntheticDataset(BaseDataset):
                 Number of timesteps in an trajectory.
 
             action_type: str
-                Action type of the RL agent.
+                Type of the action space.
                 Either "discrete" or "continuous".
 
             n_actions: int (> 0)
-                Number of discrete actions.
+                Number of actions.
                 If action_type is "continuous", `None` is recorded.
 
             action_dim: int (> 0)
-                Dimensions of the actions.
+                Dimensions of the action space.
                 If action_type is "discrete", `None` is recorded.
 
             action_keys: list of str
-                Name of the action variable at each dimension.
+                Name of each dimension in the action space.
                 If action_type is "discrete", `None` is recorded.
 
             action_meaning: dict
-                Dictionary which maps discrete action index into specific actions.
+                Dictionary to map discrete action index to a specific action.
                 If action_type is "continuous", `None` is recorded.
 
             state_dim: int (> 0)
-                Dimensions of the states.
+                Dimensions of the state space.
 
             state_keys: list of str
-                Name of the state variable at each dimension.
+                Name of each dimension of the state space.
 
             state: ndarray of shape (size, state_dim)
                 State observed by the behavior policy.
@@ -960,7 +962,7 @@ class SyntheticDataset(BaseDataset):
                 Additional feedbacks from the environment.
 
             pscore: ndarray of shape (size, )
-                Action choice probability of the behavior policy for the chosen action.
+                Propensity of the observed action being chosen under the behavior policy (pscore stands for propensity score).
 
             behavior_policy: str
                 Name of the behavior policy.
@@ -1093,23 +1095,27 @@ class SyntheticDataset(BaseDataset):
         Parameters
         -------
         behavior_policies: list of BaseHead or BaseHead
-            List of RL policies that collect the logged data.
+            List of RL policies that generate logged data.
 
         n_datasets: int, default=1 (> 0)
-            Number of (independent) dataset.
+            Number of generated (independent) datasets.
             If the value is more than 1, the method returns :class:`MultiplLoggedeDataset` instead of :class:`LoggedDataset`.
 
         n_trajectories: int, default=10000 (> 0)
-            Number of trajectories to rollout the behavior policy and collect data.
+            Number of trajectories to generate by rolling out the behavior policy.
 
         step_per_trajectory: int, default=100 (> 0)
             Number of timesteps in an trajectory.
 
         minimum_rollout_length: int, default=0 (>= 0)
-            Minimum length of rollout before collecting dataset.
+            Minimum length of rollout by the behavior policy before generating the logged dataset
+            when working on the infinite horizon setting.
+            This argument is irrelevant when working on the finite horizon setting.
 
         maximum_rollout_length: int, default=100 (>= minimum_rollout_length)
-            Maximum length of rollout before collecting dataset.
+            Maximum length of rollout by the behavior policy before generating the logged dataset
+            when working on the infinite horizon setting.
+            This argument is irrelevant when working on the finite horizon setting.
 
         obtain_info: bool, default=False
             Whether to gain info from the environment or not.
@@ -1120,20 +1126,20 @@ class SyntheticDataset(BaseDataset):
             If `False`, the initial state will be sampled by rolling out the behavior policy after resetting the environment.
 
         record_unclipped_action: bool, default=False
-            Whether to record unclipped action in the logged dataset. Only applicable when action_type is continuous.
+            Whether to record unclipped action values in the logged dataset. Only applicable when action_type is continuous.
 
         seed_env: bool, default=False
             Whether to set seed on environment or not.
 
         path: str
-            Path to the directory. Either absolute and relative path is acceptable.
+            Path to the directory. Either absolute or relative path is acceptable.
 
         save_relative_path: bool, default=False.
             Whether to save a relative path.
             If `True`, a path relative to the scope-rl directory will be saved.
             If `False`, the absolute path will be saved.
 
-            Note that, this option was added in order to run examples in the documentation properly.
+            Note that this option was added in order to run examples in the documentation properly.
             Otherwise, the default setting (`False`) is recommended.
 
         random_state: int, default=None (>= 0)
@@ -1142,7 +1148,7 @@ class SyntheticDataset(BaseDataset):
         Returns
         -------
         logged_dataset(s): LoggedDataset or MultipleLoggedDataset
-            MultipleLoggedDataset is a instance containing (multiple) logged datasets.
+            MultipleLoggedDataset is an instance containing (multiple) logged datasets.
 
             By calling the following command, we can access each logged dataset as follows.
 
@@ -1186,30 +1192,30 @@ class SyntheticDataset(BaseDataset):
                 Number of timesteps in an trajectory.
 
             action_type: str
-                Action type of the RL agent.
+                Type of the action space.
                 Either "discrete" or "continuous".
 
             n_actions: int (> 0)
-                Number of discrete actions.
+                Number of actions.
                 If action_type is "continuous", `None` is recorded.
 
             action_dim: int (> 0)
-                Dimensions of the actions.
+                Dimensions of the action space.
                 If action_type is "discrete", `None` is recorded.
 
             action_keys: list of str
-                Name of the action variable at each dimension.
+                Name of each dimension in the action space.
                 If action_type is "discrete", `None` is recorded.
 
             action_meaning: dict
-                Dictionary which maps discrete action index into specific actions.
+                Dictionary to map discrete action index to a specific action.
                 If action_type is "continuous", `None` is recorded.
 
             state_dim: int (> 0)
-                Dimensions of the states.
+                Dimensions of the state space.
 
             state_keys: list of str
-                Name of the state variable at each dimension.
+                Name of each dimension of the state space.
 
             state: ndarray of shape (size, state_dim)
                 State observed by the behavior policy.
@@ -1230,7 +1236,7 @@ class SyntheticDataset(BaseDataset):
                 Additional feedbacks from the environment.
 
             pscore: ndarray of shape (size, )
-                Action choice probability of the behavior policy for the chosen action.
+                Propensity of the observed action being chosen under the behavior policy (pscore stands for propensity score).
 
             behavior_policy: str
                 Name of the behavior policy.

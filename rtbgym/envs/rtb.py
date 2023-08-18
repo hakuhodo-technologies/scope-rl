@@ -58,7 +58,7 @@ class RTBEnv(gym.Env):
 
                 {bid price}_{t, i} = {adjust rate}_{t} \\times {predicted reward}_{t,i} ( \\times {const.})
 
-            Note that, you can also use predicted reward instead of ground-truth reward in the above equation.
+            Note that you can also use predicted reward instead of the ground-truth reward in the above equation.
             Please also refer to CustomizedRTBEnv Wrapper.
 
         reward: int (>= 0)
@@ -122,14 +122,14 @@ class RTBEnv(gym.Env):
         Conversion rate (i.e., conversion / click).
         Both class and instance are acceptable.
 
-    standard_bid_price_distribution: NormalDistribution, default=NormalDistribution(mean=100, std=20)
+    standard_bid_price_distribution: NormalDistribution, default=None
         Distribution of the bid price whose average impression probability is expected to be 0.5.
 
     minimum_standard_bid_price: int, default=None (> 0)
         Minimum value for standard bid price.
         If `None`, minimum_standard_bid_price is set to :class:`standard_bid_price_distribution.mean / 2`.
 
-    search_volume_distribution: NormalDistribution, default=NormalDistribution(mean=30, std=10)
+    search_volume_distribution: NormalDistribution, default=None
         Search volume distribution for each timestep.
 
     minimum_search_volume: int, default = 10 (> 0)
@@ -236,17 +236,9 @@ class RTBEnv(gym.Env):
         WinningPriceDistribution: BaseWinningPriceDistribution = WinningPriceDistribution,
         ClickThroughRate: BaseClickAndConversionRate = ClickThroughRate,
         ConversionRate: BaseClickAndConversionRate = ConversionRate,
-        standard_bid_price_distribution: NormalDistribution = NormalDistribution(
-            mean=50,
-            std=5,
-            random_state=12345,
-        ),
+        standard_bid_price_distribution: Optional[NormalDistribution] = None,
         minimum_standard_bid_price: Optional[int] = None,
-        search_volume_distribution: NormalDistribution = NormalDistribution(
-            mean=200,
-            std=20,
-            random_state=12345,
-        ),
+        search_volume_distribution: Optional[NormalDistribution] = None,
         minimum_search_volume: int = 10,
         random_state: Optional[int] = None,
     ):
@@ -373,10 +365,10 @@ class RTBEnv(gym.Env):
                 Total clicks/conversions gained during the timestep.
 
             done: bool
-                Wether the episode end or not.
+                Whether the episode end or not.
 
             info: dict
-                Additional feedbacks (total impressions, clicks, and conversions) for analysts.
+                Additional feedbacks (total impressions, clicks, and conversions) that may be useful for the package users.
                 These are unavailable to the agent.
 
         """
@@ -497,7 +489,8 @@ class RTBEnv(gym.Env):
                 - adjust rate (i.e., agent action) at the previous timestep
 
         info: (empty) dict
-            Additional feedbacks, which is unavailable to the agent.
+            Additional information that may be useful for the package users.
+            This is unavailable to the RL agent.
 
         """
         if seed is not None:

@@ -11,7 +11,7 @@ import numpy as np
 
 @dataclass
 class BaseSimulator(metaclass=ABCMeta):
-    """Base class to calculate outcome probability and stochastically determine auction result.
+    """Base class to calculate the outcome probability and stochastically determine auction result.
 
     Imported as: :class:`rtbgym.envs.simulator.BaseSimulator`
 
@@ -24,7 +24,7 @@ class BaseSimulator(metaclass=ABCMeta):
         Parameters
         -------
         search_volume: int, default=None (> 0)
-            Total numbers of the auctions to generate.
+            Total number of auctions to generate.
 
         Returns
         -------
@@ -108,7 +108,7 @@ class BaseSimulator(metaclass=ABCMeta):
 
 @dataclass
 class BaseWinningPriceDistribution(metaclass=ABCMeta):
-    """Base class to sample the winning price (i.e., second price) and compare with the given bid price.
+    """Base class to sample the winning price (i.e., second price) and compare it with the given bid price.
 
     Imported as: class:`rtbgym.BaseWinningPriceDistribution`
 
@@ -233,7 +233,7 @@ class BaseClickAndConversionRate(metaclass=ABCMeta):
         Returns
         -------
         clicks/conversions: array-like of shape (search_volume/n_samples, )
-            Whether click occurs in impression=True case or whether conversion occurs in click=True case.
+            Whether click occurs (when impression=True) or whether conversion occurs (when click=True).
 
         """
         raise NotImplementedError

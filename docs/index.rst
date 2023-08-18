@@ -1,14 +1,17 @@
 :html_theme.sidebar_secondary.remove:
 
-.. card:: SCOPE-RL
+.. card:: 
     :class-title: top-page-title-title
     :class-body: top-page-title-desc
     :text-align: center
     :shadow: none
 
-    | Towards Risk-Return Assessments of Off-Policy Evaluation in Reinforcement Learning
-    | 
-    | 
+    .. image:: _static/images/logo_top.png
+        :align: center
+
+    .. raw:: html
+
+        <div class="white-space-20px"></div>
 
     .. button-ref:: documentation/index
       :ref-type: doc
@@ -68,7 +71,7 @@
     )
 
 .. card:: 
-    :img-top: ../_static/images/ope_policy_value_basic.png
+    :img-top: _static/images/ope_policy_value_basic.png
     :text-align: center
     
     Policy Value Estimated by OPE Estimators
@@ -106,7 +109,7 @@
     cd_ope.visualize_cumulative_distribution_function(input_dict, n_cols=4)
 
 .. card:: 
-    :img-top: ../_static/images/ope_cumulative_distribution_function.png
+    :img-top: _static/images/ope_cumulative_distribution_function.png
     :text-align: center
     
     Cumulative Distribution Function Estimated by OPE Estimators
@@ -141,7 +144,7 @@
     )
 
 .. card:: 
-    :img-top: ../_static/images/ops_topk_lower_quartile.png
+    :img-top: _static/images/ops_topk_lower_quartile.png
     :text-align: center
     
     Comparison of the Top-k Statistics of 10% Lower Quartile of Policy Value
@@ -175,7 +178,7 @@
     )
 
 .. card:: 
-    :img-top: ../_static/images/ops_variance_validation.png
+    :img-top: _static/images/ops_variance_validation.png
     :text-align: center
     
     Validation of Estimated and Ground-truth Variance of Policy Value
@@ -187,66 +190,102 @@
     </div>
     <div class="white-space-5px"></div>
 
-.. .. raw:: html
+.. raw:: html
 
-..     <h2>Explore more with SCOPE-RL</h2>
+    <h2>Explore more with SCOPE-RL</h2>
 
-..     <div class="top-page-gallery-link">
-..         <a href="documentation/_autogallery/index.html">Tutorials</a>
-..     </div>
+    <div class="top-page-gallery-link">
+        <a href="documentation/index.html">Featured Documentations</a>
+    </div>
 
-.. .. card-carousel:: 4
+.. card-carousel:: 4
 
-..     .. card:: Basic Off-Policy Evaluation
-..         :img-top: .png
+    .. card:: SCOPE-RL Documentation
+        :link: /documentation/index
+        :link-type: doc
 
-..     .. card:: Marginal Off-Policy Evaluation
-..         :img-top: .png
+    .. card:: Why SCOPE-RL?
+        :link: /documentation/distinctive_features
+        :link-type: doc
 
-..     .. card:: Cumulative Distribution Off-Policy Evaluation
-..         :img-top: .png
+    .. card:: Assessing OPE with SharpeRatio@k
+        :link: /documentation/sharpe_ratio
+        :link-type: doc
 
-..     .. card:: Off-Policy Selection
-..         :img-top: .png
+    .. card:: Supported OPE Estimators
+        :link: /documentation/evaluation_implementation
+        :link-type: doc
 
-..     .. card:: Evaluation of OPE/OPS
-..         :img-top: .png
+.. raw:: html
 
-..     .. card:: Ablation with various value functions
-..         :img-top: .png
+    <div class="top-page-gallery-link">
+        <a href="documentation/index.html">Example Codes</a>
+    </div>
 
-..     .. card:: Ablation with xxx
-..         :img-top: .png
+.. card-carousel:: 4
 
-..     .. card:: Handling multiple datasets
-..         :img-top: .png
+    .. card:: Gallery of Example Codes
+        :link: /documentation/examples/index
+        :link-type: doc
 
-..     .. card:: Evaluating with various behavior policies
-..         :img-top: .png
+    .. card:: Basic Off-Policy Evaluation
+        :link: /documentation/examples/basic_ope
+        :link-type: doc
 
-..     .. card:: Evaluating on non-episodic setting
-..         :img-top: .png
+    .. card:: Cumulative Distribution Off-Policy Evaluation
+        :link: /documentation/examples/cumulative_dist_ope
+        :link-type: doc
 
-.. .. raw:: html
+    .. card:: Off-Policy Selection
+        :link: /documentation/examples/ops
+        :link-type: doc
 
-..     <div class="top-page-gallery-link">
-..         <a href="documentation/subpackages/index.html">Applications</a>
-..     </div>
+    .. card:: Evaluation of OPE/OPS
+        :link: /documentation/examples/assessments
+        :link-type: doc
+
+.. card-carousel:: 4
+
+    .. card:: Implementing Custom Estimators
+        :link: /documentation/examples/custom_estimators
+        :link-type: doc
+
+    .. card:: Handling Multiple Datasets
+        :link: /documentation/examples/multiple
+        :link-type: doc
+
+    .. card:: Handling Real-World Dataset
+        :link: /documentation/examples/real_world
+        :link-type: doc
+
+    .. card:: Dataset and Integration with d3rlpy
+        :link: /documentation/learning_implementation
+        :link-type: doc
+
+.. raw:: html
+
+    <div class="top-page-gallery-link">
+        <a href="documentation/subpackages/index.html">Sub-packages</a>
+    </div>
 
 
-.. .. card-carousel:: 4
+.. card-carousel:: 4
 
-..     .. card:: Example on Real-Time Bidding
-..         :img-top: .png
+    .. card:: Gallery of Sub-packages
+        :link: /documentation/subpackages/index
+        :link-type: doc
 
-..     .. card:: Example on Recommendation
-..         :img-top: .png
+    .. card:: Real-Time Bidding Environment
+        :link: /documentation/subpackages/rtbgym_about
+        :link-type: doc
 
-..     .. card:: Example on xxx
-..         :img-top: .png
+    .. card:: Recommendation Environment
+        :link: /documentation/subpackages/recgym_about
+        :link-type: doc
 
-..     .. card:: Example on xxx
-..         :img-top: .png
+    .. card:: Basic Environment
+        :link: /documentation/subpackages/basicgym_about
+        :link-type: doc
 
 
 .. raw:: html
@@ -254,22 +293,21 @@
     <h2>Citation</h2>
 
 
-If you use our pipeline or the proposed metric (SharpRatio@k) metric in your work, please cite our paper below.
+If you use our pipeline in your work, please cite our paper below.
 
 .. card::
 
     | Haruka Kiyohara, Ren Kishimoto, Kosuke Kawakami, Ken Kobayashi, Kazuhide Nakata, Yuta Saito.
-    | **Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation in Reinforcement Learning**
-    | (a preprint coming soon..)
+    | **SCOPE-RL: A Python Library for Offline Reinforcement Learning, Off-Policy Evaluation, and Policy Selection**
+    | (a preprint is coming soon..)
 
     .. code-block::
 
-        @article{kiyohara2023towards,
-            author = {Kiyohara, Haruka and Kishimoto, Ren and Kawakami, Kosuke and Kobayashi, Ken and Nataka, Kazuhide and Saito, Yuta},
-            title = {Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation in Reinforcement Learning},
-            journal = {A github repository},
-            pages = {xxx--xxx},
-            year = {2023},
+        @article{kiyohara2023scope,
+            title={SCOPE-RL: A Python Library for Offline Reinforcement Learning, Off-Policy Evaluation, and Policy Selection},
+            author={Kiyohara, Haruka and Kishimoto, Ren and Kawakami, Kosuke and Kobayashi, Ken and Nakata, Kazuhide and Saito, Yuta},
+            journal={arXiv preprint arXiv:23xx.xxxxx},
+            year={2023}
         }
 
 .. raw:: html
@@ -279,6 +317,7 @@ If you use our pipeline or the proposed metric (SharpRatio@k) metric in your wor
 
 Any contributions to SCOPE-RL are more than welcome!
 
+* `GitHub repository <https://github.com/hakuhodo-technologies/scope-rl>`_
 * `Guidelines for contribution (CONTRIBUTING.md) <https://github.com/hakuhodo-technologies/scope-rl/blob/main/CONTRIBUTING.md>`_
 * `Google Group (scope-rl@googlegroups.com) <https://groups.google.com/g/scope-rl>`_
 
@@ -302,9 +341,10 @@ Welcome!
     Installation <documentation/installation>
     Quickstart <documentation/quickstart>
     Documentation <documentation/index>
+    Usage <documentation/examples/index>
+    Sub-packages <documentation/subpackages/index>
     FAQs <documentation/frequently_asked_questions>
     News <documentation/news>
-    Sub-packages <documentation/subpackages/index>
     Release Notes <https://github.com/hakuhodo-technologies/scope-rl/releases>
     Proceedings <https://github.com/hakuhodo-technologies/scope-rl/404>
 

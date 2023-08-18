@@ -15,13 +15,6 @@ from sklearn.utils import check_scalar, check_random_state
 
 from .types import LoggedDataset, OPEInputDict
 
-# for scalers
-from typing import ClassVar, List
-import gym
-import torch
-from d3rlpy.dataset import MDPDataset, Transition
-from d3rlpy.preprocessing import Scaler, ActionScaler
-
 
 @dataclass
 class MultipleLoggedDataset:
@@ -30,17 +23,17 @@ class MultipleLoggedDataset:
     Parameters
     -------
     action_type: {"discrete", "continuous"}
-        Action type of the RL agent.
+        Type of the action space.
 
     path: str
-        Path to the directory. Either absolute and relative path is acceptable.
+        Path to the directory. Either absolute or relative path is acceptable.
 
     save_relative_path: bool, default=False.
         Whether to save a relative path.
         If `True`, a path relative to the scope-rl directory will be saved.
         If `False`, the absolute path will be saved.
 
-        Note that, this option was added in order to run examples in the documentation properly.
+        Note that this option was added in order to run examples in the documentation properly.
         Otherwise, the default setting (`False`) is recommended.
 
     """
@@ -77,7 +70,7 @@ class MultipleLoggedDataset:
             Logged dataset to save.
 
         behavior_policy_name: str
-            Name of the behavior policy which collected the logged dataset.
+            Name of the behavior policy that generated the logged dataset.
 
         """
         dataset_id = self.dataset_ids[behavior_policy_name]
@@ -97,7 +90,7 @@ class MultipleLoggedDataset:
         Parameters
         -------
         behavior_policy_name: str
-            Name of the behavior policy which collected the logged dataset.
+            Name of the behavior policy that generated the logged dataset.
 
         dataset_id: int
             Id of the logged dataset.
@@ -145,17 +138,17 @@ class MultipleInputDict:
     Parameters
     -------
     action_type: {"discrete", "continuous"}
-        Action type of the RL agent.
+        Type of the action space.
 
     path: str
-        Path to the directory. Either absolute and relative path is acceptable.
+        Path to the directory. Either absolute or relative path is acceptable.
 
     save_relative_path: bool, default=False.
         Whether to save a relative path.
         If `True`, a path relative to the scope-rl directory will be saved.
         If `False`, the absolute path will be saved.
 
-        Note that, this option was added in order to run examples in the documentation properly.
+        Note that this option was added in order to run examples in the documentation properly.
         Otherwise, the default setting (`False`) is recommended.
 
     """
@@ -193,7 +186,7 @@ class MultipleInputDict:
             Input dictionary for OPE to save.
 
         behavior_policy_name: str
-            Name of the behavior policy which collected the logged dataset.
+            Name of the behavior policy that generated the logged dataset.
 
         dataset_id: int
             Id of the logged dataset.
@@ -212,18 +205,18 @@ class MultipleInputDict:
     def get(self, behavior_policy_name: str, dataset_id: int):
         """Load input_dict.
 
-         Parameters
-         -------
+        Parameters
+        -------
         behavior_policy_name: str
-             Name of the behavior policy which collected the logged dataset.
+            Name of the behavior policy that generated the logged dataset.
 
-         dataset_id: int
-             Id of the logged dataset.
+        dataset_id: int
+            Id of the logged dataset.
 
-         Returns
-         -------
-         input_dict: OPEInputDict.
-             Input dictionary for OPE.
+        Returns
+        -------
+        input_dict: OPEInputDict.
+            Input dictionary for OPE.
 
         """
         if self.save_relative_path:
@@ -291,10 +284,37 @@ class MultipleInputDict:
         return {key: len(value) for key, value in self.dataset_ids.items()}
 
 
+def l2_distance(
+    x: np.ndarray,
+    y: np.ndarray,
+    bandwidth: float = 1.0,
+):
+    """Calcilate L2 distance.
+
+    Parameters
+    -------
+    x: array-like of shape (n_samples, n_dim)
+        Input array 1.
+
+    y: array-like of shape (n_samples, n_dim)
+        Input array 2.
+
+    Returns
+    -------
+    distance: ndarray of (n_samples, )
+        distance between x and y.
+
+    """
+    x_2 = (x**2).sum(axis=1)
+    y_2 = (y**2).sum(axis=1)
+    x_y = (x[:, np.newaxis, :] @ y[:, :, np.newaxis]).flatten()
+    return x_2 + y_2 - 2 * x_y
+
+
 def gaussian_kernel(
     x: np.ndarray,
     y: np.ndarray,
-    sigma: float = 1.0,
+    bandwidth: float = 1.0,
 ):
     """Gaussian kernel.
 
@@ -304,8 +324,8 @@ def gaussian_kernel(
     y: array-like of shape (n_samples, n_dim)
         Input array 2.
 
-    sigma: float, default=1.0
-        Bandwidth hyperparameter of gaussian kernel.
+    bandwidth: float, default=1.0
+        Bandwidth hyperparameter of the Gaussian kernel.
 
     Returns
     -------
@@ -313,11 +333,124 @@ def gaussian_kernel(
         kernel density of x given y.
 
     """
-    x_2 = (x**2).sum(axis=1)
-    y_2 = (y**2).sum(axis=1)
-    x_y = (x[:, np.newaxis, :] @ y[:, :, np.newaxis]).flatten()
-    distance = x_2 + y_2 - 2 * x_y
-    return np.exp(-distance / (2 * sigma**2))
+    distance = l2_distance(x, y)
+    return np.exp(-distance / (2 * bandwidth**2)) / np.sqrt(
+        2 * np.pi * bandwidth**2
+    )
+
+
+def triangular_kernel(
+    x: np.ndarray,
+    y: np.ndarray,
+    bandwidth: float = 1.0,
+):
+    """Triangular kernel.
+
+    Parameters
+    -------
+    x: array-like of shape (n_samples, n_dim)
+        Input array 1.
+
+    y: array-like of shape (n_samples, n_dim)
+        Input array 2.
+
+    bandwidth: float, default=1.0
+        Bandwidth hyperparameter of the Trianglar kernel.
+
+    Returns
+    -------
+    kernel_density: ndarray of (n_samples, )
+        kernel density of x given y.
+
+    """
+    distance = np.sqrt(l2_distance(x, y))
+    norm_dist = np.clip(distance / bandwidth)
+    return (norm_dist < 1) * (1 - norm_dist) / bandwidth
+
+
+def epanechnikov_kernel(
+    x: np.ndarray,
+    y: np.ndarray,
+    bandwidth: float = 1.0,
+):
+    """Epanechnikov kernel.
+
+    Parameters
+    -------
+    x: array-like of shape (n_samples, n_dim)
+        Input array 1.
+
+    y: array-like of shape (n_samples, n_dim)
+        Input array 2.
+
+    bandwidth: float, default=1.0
+        Bandwidth hyperparameter of the Trianglar kernel.
+
+    Returns
+    -------
+    kernel_density: ndarray of (n_samples, )
+        kernel density of x given y.
+
+    """
+    distance = np.sqrt(l2_distance(x, y))
+    clipped_norm_dist = np.clip(distance / bandwidth, None, 1.0)
+    return 0.75 * (1 - clipped_norm_dist**2) / bandwidth
+
+
+def cosine_kernel(
+    x: np.ndarray,
+    y: np.ndarray,
+    bandwidth: float = 1.0,
+):
+    """Cosine kernel.
+
+    x: array-like of shape (n_samples, n_dim)
+        Input array 1.
+
+    y: array-like of shape (n_samples, n_dim)
+        Input array 2.
+
+    bandwidth: float, default=1.0
+        Bandwidth hyperparameter of the Trianglar kernel.
+
+    Returns
+    -------
+    kernel_density: ndarray of (n_samples, )
+        kernel density of x given y.
+
+    """
+    distance = np.sqrt(l2_distance(x, y))
+    norm_dist = np.clip(distance / bandwidth)
+    return (norm_dist < 1) * (np.pi / 4) * np.cos(norm_dist * np.pi / 2) / bandwidth
+
+
+def uniform_kernel(
+    x: np.ndarray,
+    y: np.ndarray,
+    bandwidth: float = 1.0,
+):
+    """Uniform kernel.
+
+    Parameters
+    -------
+    x: array-like of shape (n_samples, n_dim)
+        Input array 1.
+
+    y: array-like of shape (n_samples, n_dim)
+        Input array 2.
+
+    bandwidth: float, default=1.0
+        Bandwidth hyperparameter of the Trianglar kernel.
+
+    Returns
+    -------
+    kernel_density: ndarray of (n_samples, )
+        kernel density of x given y.
+
+    """
+    distance = np.sqrt(l2_distance(x, y))
+    norm_dist = np.clip(distance / bandwidth)
+    return (norm_dist < 1) / (2 * bandwidth)
 
 
 def estimate_confidence_interval_by_bootstrap(
@@ -326,7 +459,7 @@ def estimate_confidence_interval_by_bootstrap(
     n_bootstrap_samples: int = 100,
     random_state: Optional[int] = None,
 ) -> Dict[str, float]:
-    """Estimate the confidence interval by nonparametric bootstrap-like procedure.
+    """Estimate the confidence interval by a nonparametric bootstrap-like procedure.
 
     Parameters
     -------
@@ -378,13 +511,13 @@ def estimate_confidence_interval_by_hoeffding(
 
     Note
     -------
-    The Hoeffding's inequality derives the confidence intervals of :math:`\\mu := \\mathbb{E}[X], X \\sim p(X)` with probability :math:`1 - \\alpha` as follows.
+    The Hoeffding's inequality provides high-probability bounds of the expectation :math:`\\mu := \\mathbb{E}[X], X \\sim p(X)` as follows.
 
     .. math::
 
-        |\\hat{\\mu} - \\mu]| \\leq X_{\\max} \\sqrt{\\frac{\\log(1 / \\alpha)}{2 n}}`
+        |\\hat{\\mu} - \\mu| \\leq X_{\\max} \\sqrt{\\frac{\\log(1 / \\alpha)}{2 n}},
 
-    where :math:`n` is the data size.
+    which holds with probability :math:`1 - \\alpha` where :math:`n` is the data size.
 
     Parameters
     -------
@@ -419,13 +552,13 @@ def estimate_confidence_interval_by_empirical_bernstein(
 
     Note
     -------
-    The empirical bernstein inequality derives the confidence intervals of :math:`\\mu := \\mathbb{E}[X], X \\sim p(X)` with probability :math:`1 - \\alpha` as follows.
+    The empirical bernstein inequality provides high-probability bounds of the expectation :math:`\\mu := \\mathbb{E}[X], X \\sim p(X)` as follows.
 
     .. math::
 
-        |\\hat{\\mu} - \\mu]| \\leq \\frac{7 X_{\\max} \\log(2 / \\alpha)}{3 (n - 1)} + \\sqrt{\\frac{2 \\hat{\\mathbb{V}}(X) \\log(2 / \\alpha)}{n(n - 1)}}`
+        |\\hat{\\mu} - \\mu| \\leq \\frac{7 X_{\\max} \\log(2 / \\alpha)}{3 (n - 1)} + \\sqrt{\\frac{2 \\hat{\\mathbb{V}}(X) \\log(2 / \\alpha)}{n(n - 1)}},
 
-    where :math:`n` is the data size and :math:`\\hat{\\mathbb{V}}` is the sample variance.
+    which holds with probability :math:`1 - \\alpha` where :math:`n` is the data size and :math:`\\hat{\\mathbb{V}}` is the sample variance.
 
     Parameters
     -------
@@ -464,11 +597,11 @@ def estimate_confidence_interval_by_t_test(
     Note
     -------
     Student T-test assumes that :math:`X \\sim p(X)` follows a normal distribution.
-    Based on this assumption, the confidence intervals of :math:`\\mu := \\mathbb{E}[X]` with probability :math:`1 - \\alpha` is derived as follows.
+    Based on this assumption, the :math:`1 - \\alpha` \% confidence interval of :math:`\\mu := \\mathbb{E}[X]` is derived as follows.
 
     .. math::
 
-        |\\hat{\\mu} - \\mu]| \\leq \\frac{T_{\\mathrm{test}}(1 - \\alpha, n-1)}{\\sqrt{n} / \\hat{\\sigma}}``
+        |\\hat{\\mu} - \\mu| \\leq \\frac{T_{\\mathrm{test}}(1 - \\alpha, n-1)}{\\sqrt{n} / \\hat{\\sigma}},
 
     where :math:`n` is the data size, :math:`T_{\\mathrm{test}}(\\cdot,\\cdot)` is the T-value, and :math:`\\sigma` is the standard deviation, respectively.
 
@@ -499,7 +632,7 @@ def estimate_confidence_interval_by_t_test(
 
 
 def defaultdict_to_dict(dict_: Union[Dict[Any, Any], DefaultDict[Any, Any]]):
-    """Transform a defaultdict into the dict."""
+    """Transform a defaultdict into a corresponding dict."""
     if isinstance(dict_, defaultdict):
         dict_ = {key: defaultdict_to_dict(value) for key, value in dict_.items()}
     return dict_
@@ -530,10 +663,10 @@ def check_array(
         Expected dtype of the input array.
 
     min_val: float, default=None
-        Minimum number allowed in the input array.
+        Minimum value allowed in the input array.
 
     max_val: float, default=None
-        Maximum number allowed in the input array.
+        Maximum value allowed in the input array.
 
     """
     if not isinstance(array, np.ndarray):
@@ -664,244 +797,7 @@ class OldGymAPIWrapper:
         self.env.close()
 
     def seed(self, seed: Optional[int] = None):
-        self.env.reset(seed)
+        self.env.reset(seed=seed)
 
     def __getattr__(self, key) -> Any:
         return object.__getattribute__(self.env, key)
-
-
-class MinMaxActionScaler(ActionScaler):
-    r"""Min-Max normalization action preprocessing.
-    Actions will be normalized in range ``[-1.0, 1.0]``.
-    .. math::
-        a' = (a - \min{a}) / (\max{a} - \min{a}) * 2 - 1
-    .. code-block:: python
-        from d3rlpy.dataset import MDPDataset
-        from d3rlpy.algos import CQL
-        dataset = MDPDataset(observations, actions, rewards, terminals)
-        # initialize algorithm with MinMaxActionScaler
-        cql = CQL(action_scaler='min_max')
-        # scaler is initialized from the given transitions
-        transitions = []
-        for episode in dataset.episodes:
-            transitions += episode.transitions
-        cql.fit(transitions)
-    You can also initialize with :class:`d3rlpy.dataset.MDPDataset` object or
-    manually.
-    .. code-block:: python
-        from d3rlpy.preprocessing import MinMaxActionScaler
-        # initialize with dataset
-        scaler = MinMaxActionScaler(dataset)
-        # initialize manually
-        minimum = actions.min(axis=0)
-        maximum = actions.max(axis=0)
-        action_scaler = MinMaxActionScaler(minimum=minimum, maximum=maximum)
-        cql = CQL(action_scaler=action_scaler)
-    Args:
-        dataset (d3rlpy.dataset.MDPDataset): dataset object.
-        min (numpy.ndarray): minimum values at each entry.
-        max (numpy.ndarray): maximum values at each entry.
-    """
-
-    TYPE: ClassVar[str] = "min_max"
-    _minimum: Optional[np.ndarray]
-    _maximum: Optional[np.ndarray]
-
-    def __init__(
-        self,
-        dataset: Optional[MDPDataset] = None,
-        maximum: Optional[np.ndarray] = None,
-        minimum: Optional[np.ndarray] = None,
-    ):
-        self._minimum = None
-        self._maximum = None
-        if dataset:
-            transitions = []
-            for episode in dataset.episodes:
-                transitions += episode.transitions
-            self.fit(transitions)
-        elif maximum is not None and minimum is not None:
-            self._minimum = np.asarray(minimum)
-            self._maximum = np.asarray(maximum)
-
-    def fit(self, transitions: List[Transition]) -> None:
-        if self._minimum is not None and self._maximum is not None:
-            return
-
-        for i, transition in enumerate(transitions):
-            action = np.asarray(transition.action)
-            if i == 0:
-                minimum = action
-                maximum = action
-            else:
-                minimum = np.minimum(minimum, action)
-                maximum = np.maximum(maximum, action)
-
-        self._minimum = minimum.reshape((1,) + minimum.shape)
-        self._maximum = maximum.reshape((1,) + maximum.shape)
-
-    def fit_with_env(self, env: gym.Env) -> None:
-        if self._minimum is not None and self._maximum is not None:
-            return
-
-        assert isinstance(env.action_space, gym.spaces.Box)
-        shape = env.action_space.shape
-        low = np.asarray(env.action_space.low)
-        high = np.asarray(env.action_space.high)
-        self._minimum = low.reshape((1,) + shape)
-        self._maximum = high.reshape((1,) + shape)
-
-    def transform(self, action: torch.Tensor) -> torch.Tensor:
-        assert self._minimum is not None and self._maximum is not None
-        minimum = torch.tensor(self._minimum, dtype=torch.float32, device=action.device)
-        maximum = torch.tensor(self._maximum, dtype=torch.float32, device=action.device)
-        # transform action into [-1.0, 1.0]
-        return ((action - minimum) / (maximum - minimum)) * 2.0 - 1.0
-
-    def reverse_transform(self, action: torch.Tensor) -> torch.Tensor:
-        assert self._minimum is not None and self._maximum is not None
-        minimum = torch.tensor(self._minimum, dtype=torch.float32, device=action.device)
-        maximum = torch.tensor(self._maximum, dtype=torch.float32, device=action.device)
-        # transform action from [-1.0, 1.0]
-        return ((maximum - minimum) * ((action + 1.0) / 2.0)) + minimum
-
-    def transform_numpy(self, action: np.ndarray) -> np.ndarray:
-        assert self._minimum is not None and self._maximum is not None
-        minimum, maximum = self._minimum, self._maximum
-        # transform action into [-1.0, 1.0]
-        return ((action - minimum) / (maximum - minimum)) * 2.0 - 1.0
-
-    def reverse_transform_numpy(self, action: np.ndarray) -> np.ndarray:
-        assert self._minimum is not None and self._maximum is not None
-        minimum, maximum = self._minimum, self._maximum
-        # transform action from [-1.0, 1.0]
-        return ((maximum - minimum) * ((action + 1.0) / 2.0)) + minimum
-
-    def get_params(self, deep: bool = False) -> Dict[str, Any]:
-        if self._minimum is not None:
-            minimum = self._minimum.copy() if deep else self._minimum
-        else:
-            minimum = None
-
-        if self._maximum is not None:
-            maximum = self._maximum.copy() if deep else self._maximum
-        else:
-            maximum = None
-
-        return {"minimum": minimum, "maximum": maximum}
-
-
-class MinMaxScaler(Scaler):
-    r"""Min-Max normalization preprocessing.
-    .. math::
-        x' = (x - \min{x}) / (\max{x} - \min{x})
-    .. code-block:: python
-        from d3rlpy.dataset import MDPDataset
-        from d3rlpy.algos import CQL
-        dataset = MDPDataset(observations, actions, rewards, terminals)
-        # initialize algorithm with MinMaxScaler
-        cql = CQL(scaler='min_max')
-        # scaler is initialized from the given transitions
-        transitions = []
-        for episode in dataset.episodes:
-            transitions += episode.transitions
-        cql.fit(transitions)
-    You can also initialize with :class:`d3rlpy.dataset.MDPDataset` object or
-    manually.
-    .. code-block:: python
-        from d3rlpy.preprocessing import MinMaxScaler
-        # initialize with dataset
-        scaler = MinMaxScaler(dataset)
-        # initialize manually
-        minimum = observations.min(axis=0)
-        maximum = observations.max(axis=0)
-        scaler = MinMaxScaler(minimum=minimum, maximum=maximum)
-        cql = CQL(scaler=scaler)
-    Args:
-        dataset (d3rlpy.dataset.MDPDataset): dataset object.
-        min (numpy.ndarray): minimum values at each entry.
-        max (numpy.ndarray): maximum values at each entry.
-    """
-
-    TYPE: ClassVar[str] = "min_max"
-    _minimum: Optional[np.ndarray]
-    _maximum: Optional[np.ndarray]
-
-    def __init__(
-        self,
-        dataset: Optional[MDPDataset] = None,
-        maximum: Optional[np.ndarray] = None,
-        minimum: Optional[np.ndarray] = None,
-    ):
-        self._minimum = None
-        self._maximum = None
-        if dataset:
-            transitions = []
-            for episode in dataset.episodes:
-                transitions += episode.transitions
-            self.fit(transitions)
-        elif maximum is not None and minimum is not None:
-            self._minimum = np.asarray(minimum)
-            self._maximum = np.asarray(maximum)
-
-    def fit(self, transitions: List[Transition]) -> None:
-        if self._minimum is not None and self._maximum is not None:
-            return
-
-        for i, transition in enumerate(transitions):
-            observation = np.asarray(transition.observation)
-            if i == 0:
-                minimum = observation
-                maximum = observation
-            else:
-                minimum = np.minimum(minimum, observation)
-                maximum = np.maximum(maximum, observation)
-
-        self._minimum = minimum.reshape((1,) + minimum.shape)
-        self._maximum = maximum.reshape((1,) + maximum.shape)
-
-    def fit_with_env(self, env: gym.Env) -> None:
-        if self._minimum is not None and self._maximum is not None:
-            return
-
-        assert isinstance(env.observation_space, gym.spaces.Box)
-        shape = env.observation_space.shape
-        low = np.asarray(env.observation_space.low)
-        high = np.asarray(env.observation_space.high)
-        self._minimum = low.reshape((1,) + shape)
-        self._maximum = high.reshape((1,) + shape)
-
-    def transform(self, x: torch.Tensor) -> torch.Tensor:
-        assert self._minimum is not None and self._maximum is not None
-        minimum = torch.tensor(self._minimum, dtype=torch.float32, device=x.device)
-        maximum = torch.tensor(self._maximum, dtype=torch.float32, device=x.device)
-        return (x - minimum) / (maximum - minimum)
-
-    def reverse_transform(self, x: torch.Tensor) -> torch.Tensor:
-        assert self._minimum is not None and self._maximum is not None
-        minimum = torch.tensor(self._minimum, dtype=torch.float32, device=x.device)
-        maximum = torch.tensor(self._maximum, dtype=torch.float32, device=x.device)
-        return ((maximum - minimum) * x) + minimum
-
-    def transform_numpy(self, x: np.ndarray) -> np.ndarray:
-        assert self._minimum is not None and self._maximum is not None
-        minimum, maximum = self._minimum, self._maximum
-        return (x - minimum) / (maximum - minimum)
-
-    def reverse_transform_numpy(self, x: torch.Tensor) -> torch.Tensor:
-        assert self._minimum is not None and self._maximum is not None
-        minimum, maximum = self._minimum, self._maximum
-        return ((maximum - minimum) * x) + minimum
-
-    def get_params(self, deep: bool = False) -> Dict[str, Any]:
-        if self._maximum is not None:
-            maximum = self._maximum.copy() if deep else self._maximum
-        else:
-            maximum = None
-
-        if self._minimum is not None:
-            minimum = self._minimum.copy() if deep else self._minimum
-        else:
-            minimum = None
-
-        return {"maximum": maximum, "minimum": minimum}

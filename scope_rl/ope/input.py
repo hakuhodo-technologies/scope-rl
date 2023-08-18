@@ -17,6 +17,7 @@ import gym
 from gym.spaces import Discrete
 
 from d3rlpy.dataset import MDPDataset
+from d3rlpy.ope import FQEConfig
 from d3rlpy.ope import DiscreteFQE
 from d3rlpy.ope import FQE as ContinuousFQE
 from d3rlpy.models.encoders import VectorEncoderFactory
@@ -97,10 +98,10 @@ class CreateOPEInput:
             * (API reference) :class:`scope_rl.ope.weight_value_learning`
 
     gamma: float, default=1.0
-            Discount factor. The value should be within (0, 1].
+        Discount factor. The value should be within (0, 1].
 
-    sigma: float, default=1.0 (> 0)
-        Bandwidth hyperparameter of gaussian kernel.
+    bandwidth: float, default=1.0 (> 0)
+        Bandwidth hyperparameter of the kernel.
 
     state_scaler: d3rlpy.preprocessing.Scaler, default=None
         Scaling factor of state.
@@ -108,7 +109,7 @@ class CreateOPEInput:
     action_scaler: d3rlpy.preprocessing.ActionScaler, default=None
         Scaling factor of action. Only applicable in the continuous action case.
 
-    device: str, default="cuda:0"
+    device: Optional[str] = None
         Specifies device used for torch.
 
     Examples
@@ -119,26 +120,26 @@ class CreateOPEInput:
 
         # import necessary module from SCOPE-RL
         from scope_rl.dataset import SyntheticDataset
-        from scope_rl.policy import DiscreteEpsilonGreedyHead
+        from scope_rl.policy import EpsilonGreedyHead
         from scope_rl.ope import CreateOPEInput
-        from scope_rl.ope import DiscreteOffPolicyEvaluation as OPE
-        from scope_rl.ope import DiscreteTrajectoryWiseImportanceSampling as TIS
-        from scope_rl.ope import DiscretePerDecisionImportanceSampling as PDIS
+        from scope_rl.ope import OffPolicyEvaluation as OPE
+        from scope_rl.ope.discrete import TrajectoryWiseImportanceSampling as TIS
+        from scope_rl.ope.discrete import PerDecisionImportanceSampling as PDIS
 
         # import necessary module from other libraries
         import gym
         import rtbgym
-        from d3rlpy.algos import DoubleDQN
-        from d3rlpy.online.buffers import ReplayBuffer
-        from d3rlpy.online.explorers import ConstantEpsilonGreedy
+        from d3rlpy.algos import DoubleDQNConfig
+        from d3rlpy.dataset import create_fifo_replay_buffer
+        from d3rlpy.algos import ConstantEpsilonGreedy
 
         # initialize environment
         env = gym.make("RTBEnv-discrete-v0")
 
         # define (RL) agent (i.e., policy) and train on the environment
-        ddqn = DoubleDQN()
-        buffer = ReplayBuffer(
-            maxlen=10000,
+        ddqn = DoubleDQNConfig().create()
+        buffer = create_fifo_replay_buffer(
+            limit=10000,
             env=env,
         )
         explorer = ConstantEpsilonGreedy(
@@ -153,7 +154,7 @@ class CreateOPEInput:
         )
 
         # convert ddqn policy to stochastic data collection policy
-        behavior_policy = DiscreteEpsilonGreedyHead(
+        behavior_policy = EpsilonGreedyHead(
             ddqn,
             n_actions=env.action_space.n,
             epsilon=0.3,
@@ -179,14 +180,14 @@ class CreateOPEInput:
     .. code-block:: python
 
         # evaluation policy
-        ddqn_ = DiscreteEpsilonGreedyHead(
+        ddqn_ = EpsilonGreedyHead(
             base_policy=ddqn,
             n_actions=env.action_space.n,
             name="ddqn",
             epsilon=0.0,
             random_state=12345
         )
-        random_ = DiscreteEpsilonGreedyHead(
+        random_ = EpsilonGreedyHead(
             base_policy=ddqn,
             n_actions=env.action_space.n,
             name="random",
@@ -212,20 +213,72 @@ class CreateOPEInput:
 
         >>> input_dict
 
+        {'ddqn':
+            {'evaluation_policy_action_dist':
+                array([[0., 0., 0., ..., 0., 1., 0.],
+                      [0., 0., 0., ..., 0., 0., 0.],
+                      [0., 0., 0., ..., 0., 1., 0.],
+                      ...,
+                      [0., 0., 0., ..., 0., 0., 0.],
+                      [0., 0., 0., ..., 0., 0., 0.],
+                      [0., 0., 0., ..., 0., 1., 0.]]),
+            'evaluation_policy_action': None,
+            'state_action_value_prediction':
+                array([[11.64699173, 10.1278677 , 10.09877205, ..., 10.16476822, 15.13939476,  8.95065594],
+                      [10.42242146,  7.73790789,  7.27790451, ...,  3.51157165, 12.0761919 ,  3.75301909],
+                      [ 7.22864819,  6.88499546,  5.68951464, ...,  6.10659647, 7.05469513,  4.81715965],
+                      ...,
+                      [ 7.28475332,  3.91264176,  4.6845212 , ..., -0.02834684, 7.94454432,  2.59267783],
+                      [13.44723797,  3.08360171,  5.99188185, ..., -2.16886044, 7.13434792,  5.72265959],
+                      [ 2.27913332,  3.07881427,  1.8636421 , ...,  3.37803316, 3.20135021,  2.68845224]]),
+            'initial_state_value_prediction': array([15.13939476, 14.83423805, 13.82990742, ..., 15.49367523, 15.49053097, 14.88922691]),
+            'state_action_marginal_importance_weight': None,
+            'state_marginal_importance_weight': None,
+            'on_policy_policy_value': array([ 8., 10.,  9., ...,  13., 18.,  4.]),
+            'gamma': 1.0,
+            'behavior_policy': 'ddqn_epsilon_0.3',
+            'evaluation_policy': 'ddqn',
+            'dataset_id': 0},},
+        'random':
+            {'evaluation_policy_action_dist':
+                array([[0.1, 0.1, 0.1, ..., 0.1, 0.1, 0.1],
+                      [0.1, 0.1, 0.1, ..., 0.1, 0.1, 0.1],
+                      [0.1, 0.1, 0.1, ..., 0.1, 0.1, 0.1],
+                      ...,
+                      [0.1, 0.1, 0.1, ..., 0.1, 0.1, 0.1],
+                      [0.1, 0.1, 0.1, ..., 0.1, 0.1, 0.1],
+                      [0.1, 0.1, 0.1, ..., 0.1, 0.1, 0.1]]),
+            'evaluation_policy_action': None,
+            'state_action_value_prediction':
+                array([[10.63342857, 10.61063576, 11.16767025, ..., 15.32427979, 15.08568764, 10.50707436],
+                      [ 4.02995491,  4.80947208,  7.07302999, ...,  9.928442  , 10.78198528,  9.04977417],
+                      [ 6.21145582,  6.08772421,  6.5972681 , ...,  9.68579388, 7.2353406 ,  6.17404699],
+                      ...,
+                      [ 1.2350018 ,  1.37531543,  3.48139453, ...,  3.44862366, 5.41990328, -0.20314722],
+                      [ 0.81208032, -0.28935188,  2.62608957, ...,  6.6619091 , -2.18710518, -2.34665537],
+                      [ 2.36533523,  2.24474525,  2.31729817, ...,  4.7845993 , 2.83752441,  3.00596046]]),
+            'initial_state_value_prediction': array([12.5472518 , 12.56364899, 12.30248432, ..., 12.62372198, 12.6544138 , 12.54314356]),
+            'state_action_marginal_importance_weight': None,
+            'state_marginal_importance_weight': None,
+            'on_policy_policy_value': array([ 9.,  7.,  4., ..., 15.,  8.,  5.]),
+            'gamma': 1.0,
+            'behavior_policy': 'ddqn_epsilon_0.3',
+            'evaluation_policy': 'random',
+            'dataset_id': 0}}
+
     .. seealso::
 
         * :doc:`Quickstart </documentation/quickstart>`
-        * :doc:`Related tutorials </documentation/_autogallery/scope_rl_others/index>`
 
     """
 
     env: Optional[gym.Env] = None
     model_args: Optional[Dict[str, Any]] = None
     gamma: float = 1.0
-    sigma: float = 1.0
+    bandwidth: float = 1.0
     state_scaler: Optional[Scaler] = None
     action_scaler: Optional[ActionScaler] = None
-    device: str = "cuda:0"
+    device: Optional[str] = None
 
     def __post_init__(self) -> None:
         if self.model_args is None:
@@ -263,7 +316,6 @@ class CreateOPEInput:
                 ),
                 "q_func_factory": MeanQFunctionFactory(),
                 "learning_rate": 1e-4,
-                "use_gpu": torch.cuda.is_available(),
             }
 
         if self.model_args["state_action_dual"] is None:
@@ -287,7 +339,7 @@ class CreateOPEInput:
         check_scalar(
             self.gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0
         )
-        check_scalar(self.sigma, name="sigma", target_type=float, min_val=0.0)
+        check_scalar(self.bandwidth, name="bandwidth", target_type=float, min_val=0.0)
         if self.state_scaler is not None:
             if not isinstance(self.state_scaler, Scaler):
                 raise ValueError(
@@ -298,6 +350,9 @@ class CreateOPEInput:
                 raise ValueError(
                     "action_scaler must be an instance of d3rlpy.preprocessing.ActionScaler, but found False"
                 )
+
+        if self.device is None:
+            self.device = "cuda:0" if torch.cuda.is_available() else "cpu"
 
     def _register_logged_dataset(self, logged_dataset: LoggedDataset):
         self.fqe = {}
@@ -347,18 +402,15 @@ class CreateOPEInput:
             actions=self.action,
             rewards=self.reward,
             terminals=self.done,
-            episode_terminals=self.terminal,
-            discrete_action=(self.action_type == "discrete"),
         )
 
     def build_and_fit_FQE(
         self,
         evaluation_policy: BaseHead,
         k_fold: int = 1,
-        n_epochs: int = 1,
-        n_steps_per_epoch: int = 10000,
+        n_steps: int = 10000,
     ) -> None:
-        """Fit Fitted Q Evaluation (FQE).
+        """Perform Fitted Q Evaluation (FQE).
 
         Parameters
         -------
@@ -366,57 +418,46 @@ class CreateOPEInput:
             Evaluation policy.
 
         k_fold: int, default=1 (> 0)
-            Number of folds for cross-fitting.
+            Number of folds to perform cross-fitting.
 
-        n_epochs: int, default=1 (> 0)
-            Number of epochs to fit FQE.
-
-        n_steps_per_epoch: int, default=10000 (> 0)
-            Number of steps in an epoch.
+        n_steps: int, default=10000 (> 0)
+            Number of gradient steps.
 
         """
         if not isinstance(evaluation_policy, BaseHead):
             raise ValueError("evaluation_policy must be a child class of BaseHead")
 
-        check_scalar(n_epochs, name="n_epochs", target_type=int, min_val=1)
-        check_scalar(
-            n_steps_per_epoch, name="n_steps_per_epoch", target_type=int, min_val=1
-        )
+        check_scalar(n_steps, name="n_steps", target_type=int, min_val=1)
 
         if evaluation_policy.name in self.fqe:
             pass
 
         else:
             self.fqe[evaluation_policy.name] = []
+            fqe_config = FQEConfig(gamma=self.gamma, **self.model_args["fqe"])
 
             for k in range(k_fold):
                 if self.action_type == "discrete":
                     self.fqe[evaluation_policy.name].append(
                         DiscreteFQE(
                             algo=evaluation_policy,
-                            scaler=self.state_scaler,
-                            gamma=self.gamma,
-                            **self.model_args["fqe"],
+                            config=fqe_config,
+                            device=self.device,
                         )
                     )
                 else:
                     self.fqe[evaluation_policy.name].append(
                         ContinuousFQE(
                             algo=evaluation_policy,
-                            scaler=self.state_scaler,
-                            action_scaler=self.action_scaler,
-                            gamma=self.gamma,
-                            **self.model_args["fqe"],
+                            config=fqe_config,
+                            device=self.device,
                         )
                     )
 
             if k_fold == 1:
                 self.fqe[evaluation_policy.name][0].fit(
-                    self.mdp_dataset.episodes,
-                    eval_episodes=self.mdp_dataset.episodes,
-                    n_epochs=n_epochs,
-                    n_steps_per_epoch=n_steps_per_epoch,
-                    scorers={},
+                    self.mdp_dataset,
+                    n_steps=n_steps,
                 )
             else:
                 all_idx = np.arange(self.n_trajectories)
@@ -448,26 +489,20 @@ class CreateOPEInput:
                         actions=action_,
                         rewards=self.reward_2d[subset_idx_].flatten(),
                         terminals=self.done_2d[subset_idx_].flatten(),
-                        episode_terminals=self.terminal_2d[subset_idx_].flatten(),
-                        discrete_action=(self.action_type == "discrete"),
                     )
                     self.fqe[evaluation_policy.name][k].fit(
-                        mdp_dataset_.episodes,
-                        eval_episodes=mdp_dataset_.episodes,
-                        n_epochs=n_epochs,
-                        n_steps_per_epoch=n_steps_per_epoch,
-                        scorers={},
+                        mdp_dataset_,
+                        n_steps=n_steps,
                     )
 
     def build_and_fit_state_action_dual_model(
         self,
         evaluation_policy: BaseHead,
         k_fold: int = 1,
-        n_epochs: int = 1,
-        n_steps_per_epoch: int = 10000,
+        n_steps: int = 10000,
         random_state: Optional[int] = None,
     ) -> None:
-        """Fit Augmented Lagrangian Method (ALM) for state-action value weight function.
+        """Perform Augmented Lagrangian Method (ALM) to estimate the state-action value weight function.
 
         Parameters
         -------
@@ -475,13 +510,10 @@ class CreateOPEInput:
             Evaluation policy.
 
         k_fold: int, default=1 (> 0)
-            Number of folds for cross-fitting.
+            Number of folds to perform cross-fitting.
 
-        n_epochs: int, default=1 (> 0)
-            Number of epochs to fit FQE.
-
-        n_steps_per_epoch: int, default=10000 (> 0)
-            Number of steps in an epoch.
+        n_steps: int, default=10000 (> 0)
+            Number of gradient steps.
 
         random_state: int, default=None (>= 0)
             Random state.
@@ -490,10 +522,7 @@ class CreateOPEInput:
         if not isinstance(evaluation_policy, BaseHead):
             raise ValueError("evaluation_policy must be a child class of BaseHead")
 
-        check_scalar(n_epochs, name="n_epochs", target_type=int, min_val=1)
-        check_scalar(
-            n_steps_per_epoch, name="n_steps_per_epoch", target_type=int, min_val=1
-        )
+        check_scalar(n_steps, name="n_steps", target_type=int, min_val=1)
 
         if evaluation_policy.name in self.state_action_dual_function:
             pass
@@ -519,6 +548,7 @@ class CreateOPEInput:
                                 device=self.device,
                             ),
                             state_scaler=self.state_scaler,
+                            bandwidth=self.bandwidth,
                             device=self.device,
                             **self.model_args["state_action_dual"],
                         )
@@ -539,6 +569,7 @@ class CreateOPEInput:
                             ),
                             state_scaler=self.state_scaler,
                             action_scaler=self.action_scaler,
+                            bandwidth=self.bandwidth,
                             device=self.device,
                             **self.model_args["state_action_dual"],
                         )
@@ -563,7 +594,7 @@ class CreateOPEInput:
                         action=self.action,
                         reward=self.reward,
                         evaluation_policy_action_dist=evaluation_policy_action_dist,
-                        n_epochs=n_epochs,
+                        n_steps=n_steps,
                         random_state=random_state,
                     )
                 else:
@@ -573,7 +604,7 @@ class CreateOPEInput:
                         action=self.action,
                         reward=self.reward,
                         evaluation_policy_action=evaluation_policy_action,
-                        n_epochs=n_epochs,
+                        n_steps=n_steps,
                         random_state=random_state,
                     )
             else:
@@ -625,7 +656,7 @@ class CreateOPEInput:
                             action=action_,
                             reward=self.reward_2d[subset_idx_].flatten(),
                             evaluation_policy_action_dist=evaluation_policy_action_dist_,
-                            n_epochs=n_epochs,
+                            n_steps=n_steps,
                             random_state=random_state,
                         )
                     else:
@@ -637,7 +668,7 @@ class CreateOPEInput:
                             action=action_,
                             reward=self.reward_2d[subset_idx_].flatten(),
                             evaluation_policy_action=evaluation_policy_action_,
-                            n_epochs=n_epochs,
+                            n_steps=n_steps,
                             random_state=random_state,
                         )
 
@@ -645,11 +676,10 @@ class CreateOPEInput:
         self,
         evaluation_policy: BaseHead,
         k_fold: int = 1,
-        n_epochs: int = 1,
-        n_steps_per_epoch: int = 10000,
+        n_steps: int = 10000,
         random_state: Optional[int] = None,
     ) -> None:
-        """Fit Minimax Q Learning (MQL) for state-action value function.
+        """Perform Minimax Q Learning (MQL) to estimate the state-action value function.
 
         Parameters
         -------
@@ -657,13 +687,10 @@ class CreateOPEInput:
             Evaluation policy.
 
         k_fold: int, default=1 (> 0)
-            Number of folds for cross-fitting.
+            Number of folds to perform cross-fitting.
 
-        n_epochs: int, default=1 (> 0)
-            Number of epochs to fit FQE.
-
-        n_steps_per_epoch: int, default=10000 (> 0)
-            Number of steps in an epoch.
+        n_steps: int, default=10000 (> 0)
+            Number of gradient steps.
 
         random_state: int, default=None (>= 0)
             Random state.
@@ -672,10 +699,7 @@ class CreateOPEInput:
         if not isinstance(evaluation_policy, BaseHead):
             raise ValueError("evaluation_policy must be a child class of BaseHead")
 
-        check_scalar(n_epochs, name="n_epochs", target_type=int, min_val=1)
-        check_scalar(
-            n_steps_per_epoch, name="n_steps_per_epoch", target_type=int, min_val=1
-        )
+        check_scalar(n_steps, name="n_steps", target_type=int, min_val=1)
 
         if evaluation_policy.name in self.state_action_value_function:
             pass
@@ -694,6 +718,7 @@ class CreateOPEInput:
                                 hidden_dim=self.model_args["hidden_dim"],
                             ),
                             state_scaler=self.state_scaler,
+                            bandwidth=self.bandwidth,
                             device=self.device,
                             **self.model_args["state_action_value"],
                         )
@@ -708,6 +733,7 @@ class CreateOPEInput:
                             ),
                             state_scaler=self.state_scaler,
                             action_scaler=self.action_scaler,
+                            bandwidth=self.bandwidth,
                             device=self.device,
                             **self.model_args["state_action_value"],
                         )
@@ -733,7 +759,7 @@ class CreateOPEInput:
                         reward=self.reward,
                         pscore=self.pscore,
                         evaluation_policy_action_dist=evaluation_policy_action_dist,
-                        n_epochs=n_epochs,
+                        n_steps=n_steps,
                         random_state=random_state,
                     )
                 else:
@@ -744,7 +770,7 @@ class CreateOPEInput:
                         reward=self.reward,
                         pscore=self.pscore,
                         evaluation_policy_action=evaluation_policy_action,
-                        n_epochs=n_epochs,
+                        n_steps=n_steps,
                         random_state=random_state,
                     )
             else:
@@ -797,7 +823,7 @@ class CreateOPEInput:
                             reward=self.reward_2d[subset_idx_].flatten(),
                             pscore=self.pscore_2d[subset_idx_].flatten(),
                             evaluation_policy_action_dist=evaluation_policy_action_dist_,
-                            n_epochs=n_epochs,
+                            n_steps=n_steps,
                             random_state=random_state,
                         )
                     else:
@@ -812,7 +838,7 @@ class CreateOPEInput:
                                 (-1, self.action_dim)
                             ),
                             evaluation_policy_action=evaluation_policy_action_,
-                            n_epochs=n_epochs,
+                            n_steps=n_steps,
                             random_state=random_state,
                         )
 
@@ -820,11 +846,10 @@ class CreateOPEInput:
         self,
         evaluation_policy: BaseHead,
         k_fold: int = 1,
-        n_epochs: int = 1,
-        n_steps_per_epoch: int = 10000,
+        n_steps: int = 10000,
         random_state: Optional[int] = None,
     ) -> None:
-        """Fit Minimax Weight Learning (MWL) for state-action weight function.
+        """Perform Minimax Weight Learning (MWL) to estimate the state-action weight function.
 
         Parameters
         -------
@@ -832,13 +857,10 @@ class CreateOPEInput:
             Evaluation policy.
 
         k_fold: int, default=1 (> 0)
-            Number of folds for cross-fitting.
+            Number of folds to perform cross-fitting.
 
-        n_epochs: int, default=1 (> 0)
-            Number of epochs to fit FQE.
-
-        n_steps_per_epoch: int, default=10000 (> 0)
-            Number of steps in an epoch.
+        n_steps: int, default=10000 (> 0)
+            Number of gradient steps.
 
         random_state: int, default=None (>= 0)
             Random state.
@@ -847,13 +869,7 @@ class CreateOPEInput:
         if not isinstance(evaluation_policy, BaseHead):
             raise ValueError("evaluation_policy must be a child class of BaseHead")
 
-        check_scalar(n_epochs, name="n_epochs", target_type=int, min_val=1)
-        check_scalar(
-            n_steps_per_epoch, name="n_steps_per_epoch", target_type=int, min_val=1
-        )
-
-        if n_epochs is None:
-            n_epochs = 1
+        check_scalar(n_steps, name="n_steps", target_type=int, min_val=1)
 
         if evaluation_policy.name in self.state_action_weight_function:
             pass
@@ -873,6 +889,7 @@ class CreateOPEInput:
                                 device=self.device,
                             ),
                             state_scaler=self.state_scaler,
+                            bandwidth=self.bandwidth,
                             device=self.device,
                             **self.model_args["state_action_weight"],
                         )
@@ -888,6 +905,7 @@ class CreateOPEInput:
                             ),
                             state_scaler=self.state_scaler,
                             action_scaler=self.action_scaler,
+                            bandwidth=self.bandwidth,
                             device=self.device,
                             **self.model_args["state_action_weight"],
                         )
@@ -912,7 +930,7 @@ class CreateOPEInput:
                         action=self.action,
                         reward=self.reward,
                         evaluation_policy_action_dist=evaluation_policy_action_dist,
-                        n_epochs=n_epochs,
+                        n_steps=n_steps,
                         random_state=random_state,
                     )
                 else:
@@ -922,7 +940,7 @@ class CreateOPEInput:
                         action=self.action,
                         reward=self.reward,
                         evaluation_policy_action=evaluation_policy_action,
-                        n_epochs=n_epochs,
+                        n_steps=n_steps,
                         random_state=random_state,
                     )
             else:
@@ -976,7 +994,7 @@ class CreateOPEInput:
                             action=action_,
                             reward=self.reward_2d[subset_idx_].flatten(),
                             evaluation_policy_action_dist=evaluation_policy_action_dist_,
-                            n_epochs=n_epochs,
+                            n_steps=n_steps,
                             random_state=random_state,
                         )
                     else:
@@ -990,7 +1008,7 @@ class CreateOPEInput:
                             action=action_,
                             reward=self.reward_2d[subset_idx_].flatten(),
                             evaluation_policy_action=evaluation_policy_action_,
-                            n_epochs=n_epochs,
+                            n_steps=n_steps,
                             random_state=random_state,
                         )
 
@@ -998,11 +1016,10 @@ class CreateOPEInput:
         self,
         evaluation_policy: BaseHead,
         k_fold: int = 1,
-        n_epochs: int = 1,
-        n_steps_per_epoch: int = 10000,
+        n_steps: int = 10000,
         random_state: Optional[int] = None,
     ) -> None:
-        """Fit Augmented Lagrangian Method (ALM) for state value weight function.
+        """Perform Augmented Lagrangian Method (ALM) to estimate the state value weight function.
 
         Parameters
         -------
@@ -1010,13 +1027,10 @@ class CreateOPEInput:
             Evaluation policy.
 
         k_fold: int, default=1 (> 0)
-            Number of folds for cross-fitting.
+            Number of folds to perform cross-fitting.
 
-        n_epochs: int, default=1 (> 0)
-            Number of epochs to fit FQE.
-
-        n_steps_per_epoch: int, default=10000 (> 0)
-            Number of steps in an epoch.
+        n_steps: int, default=10000 (> 0)
+            Number of gradient steps.
 
         random_state: int, default=None (>= 0)
             Random state.
@@ -1025,10 +1039,7 @@ class CreateOPEInput:
         if not isinstance(evaluation_policy, BaseHead):
             raise ValueError("evaluation_policy must be a child class of BaseHead")
 
-        check_scalar(n_epochs, name="n_epochs", target_type=int, min_val=1)
-        check_scalar(
-            n_steps_per_epoch, name="n_steps_per_epoch", target_type=int, min_val=1
-        )
+        check_scalar(n_steps, name="n_steps", target_type=int, min_val=1)
 
         if evaluation_policy.name in self.state_dual_function:
             pass
@@ -1050,6 +1061,7 @@ class CreateOPEInput:
                                 enable_gradient_reversal=True,
                             ),
                             state_scaler=self.state_scaler,
+                            bandwidth=self.bandwidth,
                             device=self.device,
                             **self.model_args["state_dual"],
                         )
@@ -1068,6 +1080,7 @@ class CreateOPEInput:
                             ),
                             state_scaler=self.state_scaler,
                             action_scaler=self.action_scaler,
+                            bandwidth=self.bandwidth,
                             device=self.device,
                             **self.model_args["state_dual"],
                         )
@@ -1093,7 +1106,7 @@ class CreateOPEInput:
                         reward=self.reward,
                         pscore=self.pscore,
                         evaluation_policy_action_dist=evaluation_policy_action_dist,
-                        n_epochs=n_epochs,
+                        n_steps=n_steps,
                         random_state=random_state,
                     )
                 else:
@@ -1104,7 +1117,7 @@ class CreateOPEInput:
                         reward=self.reward,
                         pscore=self.pscore,
                         evaluation_policy_action=evaluation_policy_action,
-                        n_epochs=n_epochs,
+                        n_steps=n_steps,
                         random_state=random_state,
                     )
             else:
@@ -1157,7 +1170,7 @@ class CreateOPEInput:
                             reward=self.reward_2d[subset_idx_].flatten(),
                             pscore=self.pscore_2d[subset_idx_].flatten(),
                             evaluation_policy_action_dist=evaluation_policy_action_dist_,
-                            n_epochs=n_epochs,
+                            n_steps=n_steps,
                             random_state=random_state,
                         )
                     else:
@@ -1172,7 +1185,7 @@ class CreateOPEInput:
                                 (-1, self.action_dim)
                             ),
                             evaluation_policy_action=evaluation_policy_action_,
-                            n_epochs=n_epochs,
+                            n_steps=n_steps,
                             random_state=random_state,
                         )
 
@@ -1180,11 +1193,10 @@ class CreateOPEInput:
         self,
         evaluation_policy: BaseHead,
         k_fold: int = 1,
-        n_epochs: int = 1,
-        n_steps_per_epoch: int = 10000,
+        n_steps: int = 10000,
         random_state: Optional[int] = None,
     ) -> None:
-        """Fit Minimax V Learning (MVL) for state value function.
+        """Perform Minimax V Learning (MVL) to estimate the state value function.
 
         Parameters
         -------
@@ -1192,13 +1204,10 @@ class CreateOPEInput:
             Evaluation policy.
 
         k_fold: int, default=1 (> 0)
-            Number of folds for cross-fitting.
+            Number of folds to perform cross-fitting.
 
-        n_epochs: int, default=1 (> 0)
-            Number of epochs to fit FQE.
-
-        n_steps_per_epoch: int, default=10000 (> 0)
-            Number of steps in an epoch.
+        n_steps: int, default=10000 (> 0)
+            Number of gradient steps.
 
         random_state: int, default=None (>= 0)
             Random state.
@@ -1207,10 +1216,7 @@ class CreateOPEInput:
         if not isinstance(evaluation_policy, BaseHead):
             raise ValueError("evaluation_policy must be a child class of BaseHead")
 
-        check_scalar(n_epochs, name="n_epochs", target_type=int, min_val=1)
-        check_scalar(
-            n_steps_per_epoch, name="n_steps_per_epoch", target_type=int, min_val=1
-        )
+        check_scalar(n_steps, name="n_steps", target_type=int, min_val=1)
 
         if evaluation_policy.name in self.state_value_function:
             pass
@@ -1227,6 +1233,7 @@ class CreateOPEInput:
                                 hidden_dim=self.model_args["hidden_dim"],
                             ),
                             state_scaler=self.state_scaler,
+                            bandwidth=self.bandwidth,
                             device=self.device,
                             **self.model_args["state_value"],
                         )
@@ -1240,6 +1247,7 @@ class CreateOPEInput:
                             ),
                             state_scaler=self.state_scaler,
                             action_scaler=self.action_scaler,
+                            bandwidth=self.bandwidth,
                             device=self.device,
                             **self.model_args["state_value"],
                         )
@@ -1265,7 +1273,7 @@ class CreateOPEInput:
                         reward=self.reward,
                         pscore=self.pscore,
                         evaluation_policy_action_dist=evaluation_policy_action_dist,
-                        n_epochs=n_epochs,
+                        n_steps=n_steps,
                         random_state=random_state,
                     )
                 else:
@@ -1276,7 +1284,7 @@ class CreateOPEInput:
                         reward=self.reward,
                         pscore=self.pscore,
                         evaluation_policy_action=evaluation_policy_action,
-                        n_epochs=n_epochs,
+                        n_steps=n_steps,
                         random_state=random_state,
                     )
             else:
@@ -1329,7 +1337,7 @@ class CreateOPEInput:
                             reward=self.reward_2d[subset_idx_].flatten(),
                             pscore=self.pscore_2d[subset_idx_].flatten(),
                             evaluation_policy_action_dist=evaluation_policy_action_dist_,
-                            n_epochs=n_epochs,
+                            n_steps=n_steps,
                             random_state=random_state,
                         )
                     else:
@@ -1344,7 +1352,7 @@ class CreateOPEInput:
                                 (-1, self.action_dim)
                             ),
                             evaluation_policy_action=evaluation_policy_action_,
-                            n_epochs=n_epochs,
+                            n_steps=n_steps,
                             random_state=random_state,
                         )
 
@@ -1352,11 +1360,10 @@ class CreateOPEInput:
         self,
         evaluation_policy: BaseHead,
         k_fold: int = 1,
-        n_epochs: int = 1,
-        n_steps_per_epoch: int = 10000,
+        n_steps: int = 10000,
         random_state: Optional[int] = None,
     ) -> None:
-        """Fit Minimax Weight Learning (MWL) for state weight function.
+        """Perform Minimax Weight Learning (MWL) to estimate state weight function.
 
         Parameters
         -------
@@ -1364,13 +1371,10 @@ class CreateOPEInput:
             Evaluation policy.
 
         k_fold: int, default=1 (> 0)
-            Number of folds for cross-fitting.
+            Number of folds to perform cross-fitting.
 
-        n_epochs: int, default=1 (> 0)
-            Number of epochs to fit FQE.
-
-        n_steps_per_epoch: int, default=10000 (> 0)
-            Number of steps in an epoch.
+        n_steps: int, default=10000 (> 0)
+            Number of gradient steps.
 
         random_state: int, default=None (>= 0)
             Random state.
@@ -1379,10 +1383,7 @@ class CreateOPEInput:
         if not isinstance(evaluation_policy, BaseHead):
             raise ValueError("evaluation_policy must be a child class of BaseHead")
 
-        check_scalar(n_epochs, name="n_epochs", target_type=int, min_val=1)
-        check_scalar(
-            n_steps_per_epoch, name="n_steps_per_epoch", target_type=int, min_val=1
-        )
+        check_scalar(n_steps, name="n_steps", target_type=int, min_val=1)
 
         if evaluation_policy.name in self.state_weight_function:
             pass
@@ -1400,6 +1401,7 @@ class CreateOPEInput:
                                 enable_gradient_reversal=True,
                             ),
                             state_scaler=self.state_scaler,
+                            bandwidth=self.bandwidth,
                             device=self.device,
                             **self.model_args["state_weight"],
                         )
@@ -1414,6 +1416,7 @@ class CreateOPEInput:
                             ),
                             state_scaler=self.state_scaler,
                             action_scaler=self.action_scaler,
+                            bandwidth=self.bandwidth,
                             device=self.device,
                             **self.model_args["state_weight"],
                         )
@@ -1439,7 +1442,7 @@ class CreateOPEInput:
                         reward=self.reward,
                         pscore=self.pscore,
                         evaluation_policy_action_dist=evaluation_policy_action_dist,
-                        n_epochs=n_epochs,
+                        n_steps=n_steps,
                         random_state=random_state,
                     )
                 else:
@@ -1450,7 +1453,7 @@ class CreateOPEInput:
                         reward=self.reward,
                         pscore=self.pscore,
                         evaluation_policy_action=evaluation_policy_action,
-                        n_epochs=n_epochs,
+                        n_steps=n_steps,
                         random_state=random_state,
                     )
             else:
@@ -1503,7 +1506,7 @@ class CreateOPEInput:
                                 reward=self.reward_2d[subset_idx_].flatten(),
                                 pscore=self.pscore_2d[subset_idx_].flatten(),
                                 evaluation_policy_action_dist=evaluation_policy_action_dist_,
-                                n_epochs=n_epochs,
+                                n_steps=n_steps,
                                 random_state=random_state,
                             )
                         else:
@@ -1518,7 +1521,7 @@ class CreateOPEInput:
                                     (-1, self.action_dim)
                                 ),
                                 evaluation_policy_action=evaluation_policy_action_,
-                                n_epochs=n_epochs,
+                                n_steps=n_steps,
                                 random_state=random_state,
                             )
 
@@ -1530,7 +1533,7 @@ class CreateOPEInput:
         maximum_rollout_length: int = 100,
         random_state: Optional[int] = None,
     ):
-        """Obtain initial state distribution (stationary distribution) of evaluation policy.
+        """Obtain initial state distribution (stationary distribution) of the evaluation policy.
 
         Parameters
         -------
@@ -1538,14 +1541,18 @@ class CreateOPEInput:
             Evaluation policy.
 
         resample_initial_state: bool, default=False
-            Whether to resample initial state distribution using the given evaluation policy.
+            Whether to resample from initial state distribution using the given evaluation policy.
             If `False`, the initial state distribution of the behavior policy is used instead.
 
         minimum_rollout_length: int, default=0 (>= 0)
-            Minimum length of rollout before collecting dataset.
+            Minimum length of rollout by the behavior policy before generating the logged dataset
+            when working on the infinite horizon setting.
+            This argument is irrelevant when working on the finite horizon setting.
 
         maximum_rollout_length: int, default=100 (>= minimum_rollout_length)
-            Maximum length of rollout before collecting dataset.
+            Maximum length of rollout by the behavior policy before generating the logged dataset
+            when working on the infinite horizon setting.
+            This argument is irrelevant when working on the finite horizon setting.
 
         random_state: int, default=None (>= 0)
             Random state.
@@ -1553,7 +1560,7 @@ class CreateOPEInput:
         Return
         -------
         evaluation_policy_initial_state: ndarray of shape (n_trajectories, )
-            Initial state distribution of evaluation policy.
+            Initial state distribution of the evaluation policy.
             This is intended to be used in marginal OPE estimators.
 
         """
@@ -1623,7 +1630,7 @@ class CreateOPEInput:
             Evaluation policy.
 
         state: np.ndarray, default=None
-            State to obtain evaluation policy action.
+            Sample an action from the evaluation_policy at this state.
             If None is given, state observed in the logged data will be used.
 
         Return
@@ -1649,7 +1656,7 @@ class CreateOPEInput:
         evaluation_policy: BaseHead,
         state: Optional[np.ndarray] = None,
     ) -> np.ndarray:
-        """Obtain action choice probability of the discrete evaluation policy and its Q hat of the observed state.
+        """Obtain action choice probability of the evaluation policy and its an estimated Q-function of the observed state.
 
         Parameters
         -------
@@ -1657,7 +1664,7 @@ class CreateOPEInput:
             Evaluation policy.
 
         state: np.ndarray, default=None
-            State to obtain evaluation policy action.
+            Sample an action from the evaluation_policy at this state..
             If None is given, state observed in the logged data will be used.
 
         Return
@@ -1706,7 +1713,7 @@ class CreateOPEInput:
         evaluation_policy: BaseHead,
         k_fold: int = 1,
     ) -> np.ndarray:
-        """Obtain Q hat of the observed state and all actions (discrete) or that actions chosen by behavior and (deterministic) evaluation policies (continuous).
+        """Obtain an estimated Q-function of the observed state and all actions (discrete) or that of the actions chosen by behavior and (deterministic) evaluation policies (continuous).
 
         Parameters
         -------
@@ -1717,7 +1724,7 @@ class CreateOPEInput:
             Evaluation policy.
 
         k_fold: int, default=1 (> 0)
-            Number of folds for cross-fitting.
+            Number of folds to perform cross-fitting.
 
         Return
         -------
@@ -1725,7 +1732,7 @@ class CreateOPEInput:
             If action_type is "discrete", output is state action value for observed state and all actions,
             i.e., :math:`\\hat{Q}(s, a) \\forall a \\in \\mathcal{A}`.
 
-            If action_type is "continuous", output is state action value for the observed action and action chosen evaluation policy,
+            If action_type is "continuous", output is state action value for the observed action and that chosen by the evaluation policy,
             i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(s_t))`.
 
         """
@@ -1856,7 +1863,7 @@ class CreateOPEInput:
         maximum_rollout_length: int = 100,
         random_state: Optional[int] = None,
     ) -> np.ndarray:
-        """Obtain the initial state value of the discrete evaluation policy.
+        """Obtain the initial state value of the evaluation policy in the case of discrete action spaces.
 
         Parameters
         -------
@@ -1867,17 +1874,21 @@ class CreateOPEInput:
             Evaluation policy.
 
         k_fold: int, default=1 (> 0)
-            Number of folds for cross-fitting.
+            Number of folds to perform cross-fitting.
 
         resample_initial_state: bool, default=False
             Whether to resample initial state distribution using the given evaluation policy.
             If `False`, the initial state distribution of the behavior policy is used instead.
 
         minimum_rollout_length: int, default=0 (>= 0)
-            Minimum length of rollout before collecting dataset.
+            Minimum length of rollout by the behavior policy before generating the logged dataset
+            when working on the infinite horizon setting.
+            This argument is irrelevant when working on the finite horizon setting.
 
         maximum_rollout_length: int, default=100 (>= minimum_rollout_length)
-            Maximum length of rollout before collecting dataset.
+            Maximum length of rollout by the behavior policy before generating the logged dataset
+            when working on the infinite horizon setting.
+            This argument is irrelevant when working on the finite horizon setting.
 
         random_state: int, default=None (>= 0)
             Random state.
@@ -1885,7 +1896,7 @@ class CreateOPEInput:
         Return
         -------
         initial_state_value_prediction: ndarray of shape (n_trajectories, )
-            State action value of the observed state.
+            State action value of the observed initial state.
 
         """
         if method not in ["fqe", "dice_q", "dice_v", "mql", "mvl"]:
@@ -2015,12 +2026,12 @@ class CreateOPEInput:
             Evaluation policy.
 
         k_fold: int, default=1 (> 0)
-            Number of folds for cross-fitting.
+            Number of folds to perform cross-fitting.
 
         Return
         -------
         state_action_weight_prediction: ndarray of shape (n_trajectories * step_per_trajectory, )
-            State-action marginal importance weight for observed state and the action chosen by the behavior policy.
+            State-action marginal importance weight for the observed state and action.
 
         """
         if method not in ["dice", "mwl"]:
@@ -2080,7 +2091,7 @@ class CreateOPEInput:
             Evaluation policy.
 
         k_fold: int, default=1 (> 0)
-            Number of folds for cross-fitting.
+            Number of folds to perform cross-fitting.
 
         Return
         -------
@@ -2134,8 +2145,7 @@ class CreateOPEInput:
         v_function_method: str = "fqe",
         w_function_method: str = "dice",
         k_fold: int = 1,
-        n_epochs: int = 1,
-        n_steps_per_epoch: int = 10000,
+        n_steps: int = 10000,
         n_trajectories_on_policy_evaluation: int = 100,
         use_stationary_distribution_on_policy_evaluation: bool = False,
         minimum_rollout_length: int = 0,
@@ -2181,28 +2191,28 @@ class CreateOPEInput:
             Evaluation policies.
 
         require_value_prediction: bool, default=False
-            Whether to obtain value prediction.
+            Whether to obtain an estimated value function.
 
         require_weight_prediction: bool, default=False
-            Whether to obtain weight prediction.
+            Whether to obtain an estimated weight function.
 
         resample_initial_state: bool, default=False
             Whether to resample initial state distribution using the given evaluation policy.
             If `False`, the initial state distribution of the behavior policy is used instead.
 
-            Note that, this parameter is applicable only when self.env is given.
+            Note that this parameter is applicable only when self.env is given.
 
         q_function_method: {"fqe", "dice_q", "mql"}, default="fqe"
-            Estimation method of :math:`Q(s, a)`.
+            Method to estimate :math:`Q(s, a)`.
 
         v_function_method: {"fqe", "dice_q", "dice_v", "mql", "mvl"}, default="fqe"
-            Estimation method of :math:`V(s)`.
+            Method to estimate :math:`V(s)`.
 
         w_function_method: {"dice", "mwl"}, default="dice"
-            Estimation method of :math:`w(s, a)` and :math:`w(s)`.
+            Method to estimate :math:`w(s, a)` and :math:`w(s)`.
 
         k_fold: int, default=1 (> 0)
-            Number of folds for cross-fitting.
+            Number of folds to perform cross-fitting.
 
             If :math:`K>1`, we split the logged dataset into :math:`K` folds.
             :math:`\\mathcal{D}_j` is the :math:`j`-th split of logged data consisting of :math:`n_k` samples.
@@ -2211,17 +2221,14 @@ class CreateOPEInput:
 
             If :math:`K=1`, the value and weight functions are trained on the entire data.
 
-        n_epochs: int, default=None (> 0)
-            Number of epochs to fit FQE.
-
-        n_steps_per_epoch: int, default=None (> 0)
-            Number of steps in an epoch.
+        n_steps: int, default=10000 (> 0)
+            Number of gradient steps to train weight and value learning models.
 
         n_trajectories_on_policy_evaluation: int, default=None (> 0)
             Number of episodes to perform on-policy evaluation.
 
         use_stationary_distribution_on_policy_evaluation: bool, default=False
-            Whether to evaluate policy on stationary distribution.
+            Whether to evaluate a policy based on stationary distribution.
             If `True`, evaluation policy is evaluated by rollout without resetting environment at each episode.
 
         minimum_rollout_length: int, default=0 (>= 0)
@@ -2268,7 +2275,7 @@ class CreateOPEInput:
                 i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
                 shape (n_trajectories * step_per_trajectory, n_actions)
 
-                If action_type is "continuous", :math:`\\hat{Q}` for the observed action and action chosen evaluation policy,
+                If action_type is "continuous", :math:`\\hat{Q}` for the observed action and that chosen by the evaluation policy,
                 i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a \\mid s_t))`.
                 shape (n_trajectories * step_per_trajectory, 2)
 
@@ -2281,13 +2288,13 @@ class CreateOPEInput:
 
             state_action_marginal_importance_weight: ndarray of shape (n_trajectories * step_per_trajectory, )
                 Estimated state-action marginal importance weight,
-                i.e., :math:`\\hat{w}(s_t, a_t) \\approx d^{\\pi}(s_t, a_t) / d^{\\pi_0}(s_t, a_t)`.
+                i.e., :math:`\\hat{w}(s_t, a_t) \\approx d^{\\pi}(s_t, a_t) / d^{\\pi_b}(s_t, a_t)`.
 
                 If require_weight_prediction is `False`, `None` is recorded.
 
             state_marginal_importance_weight: ndarray of shape (n_trajectories * step_per_trajectory, )
                 Estimated state marginal importance weight,
-                i.e., :math:`\\hat{w}(s_t) \\approx d^{\\pi}(s_t) / d^{\\pi_0}(s_t)`.
+                i.e., :math:`\\hat{w}(s_t) \\approx d^{\\pi}(s_t) / d^{\\pi_b}(s_t)`.
 
                 If require_weight_prediction is `False`, `None` is recorded.
 
@@ -2346,10 +2353,7 @@ class CreateOPEInput:
                     total=len(evaluation_policies),
                 ):
                     self.build_and_fit_FQE(
-                        evaluation_policies[i],
-                        k_fold=k_fold,
-                        n_epochs=n_epochs,
-                        n_steps_per_epoch=n_steps_per_epoch,
+                        evaluation_policies[i], k_fold=k_fold, n_steps=n_steps
                     )
 
             if q_function_method == "dice_q" or v_function_method == "dice_q":
@@ -2361,8 +2365,7 @@ class CreateOPEInput:
                     self.build_and_fit_state_action_dual_model(
                         evaluation_policies[i],
                         k_fold=k_fold,
-                        n_epochs=n_epochs,
-                        n_steps_per_epoch=n_steps_per_epoch,
+                        n_steps=n_steps,
                         random_state=random_state,
                     )
 
@@ -2375,8 +2378,7 @@ class CreateOPEInput:
                     self.build_and_fit_state_dual_model(
                         evaluation_policies[i],
                         k_fold=k_fold,
-                        n_epochs=n_epochs,
-                        n_steps_per_epoch=n_steps_per_epoch,
+                        n_steps=n_steps,
                         random_state=random_state,
                     )
 
@@ -2389,8 +2391,7 @@ class CreateOPEInput:
                     self.build_and_fit_state_action_value_model(
                         evaluation_policies[i],
                         k_fold=k_fold,
-                        n_epochs=n_epochs,
-                        n_steps_per_epoch=n_steps_per_epoch,
+                        n_steps=n_steps,
                         random_state=random_state,
                     )
 
@@ -2403,8 +2404,7 @@ class CreateOPEInput:
                     self.build_and_fit_state_value_model(
                         evaluation_policies[i],
                         k_fold=k_fold,
-                        n_epochs=n_epochs,
-                        n_steps_per_epoch=n_steps_per_epoch,
+                        n_steps=n_steps,
                         random_state=random_state,
                     )
 
@@ -2418,15 +2418,13 @@ class CreateOPEInput:
                     self.build_and_fit_state_action_dual_model(
                         evaluation_policies[i],
                         k_fold=k_fold,
-                        n_epochs=n_epochs,
-                        n_steps_per_epoch=n_steps_per_epoch,
+                        n_steps=n_steps,
                         random_state=random_state,
                     )
                     self.build_and_fit_state_dual_model(
                         evaluation_policies[i],
                         k_fold=k_fold,
-                        n_epochs=n_epochs,
-                        n_steps_per_epoch=n_steps_per_epoch,
+                        n_steps=n_steps,
                         random_state=random_state,
                     )
 
@@ -2439,15 +2437,13 @@ class CreateOPEInput:
                     self.build_and_fit_state_action_weight_model(
                         evaluation_policies[i],
                         k_fold=k_fold,
-                        n_epochs=n_epochs,
-                        n_steps_per_epoch=n_steps_per_epoch,
+                        n_steps=n_steps,
                         random_state=random_state,
                     )
                     self.build_and_fit_state_weight_model(
                         evaluation_policies[i],
                         k_fold=k_fold,
-                        n_epochs=n_epochs,
-                        n_steps_per_epoch=n_steps_per_epoch,
+                        n_steps=n_steps,
                         random_state=random_state,
                     )
 
@@ -2569,8 +2565,7 @@ class CreateOPEInput:
         v_function_method: str = "fqe",
         w_function_method: str = "dice",
         k_fold: int = 1,
-        n_epochs: int = 1,
-        n_steps_per_epoch: int = 10000,
+        n_steps: int = 10000,
         n_trajectories_on_policy_evaluation: int = 100,
         use_stationary_distribution_on_policy_evaluation: bool = False,
         minimum_rollout_length: int = 0,
@@ -2637,28 +2632,28 @@ class CreateOPEInput:
             Id of the logged dataset.
 
         require_value_prediction: bool, default=False
-            Whether to obtain value prediction.
+            Whether to obtain an estimated value function.
 
         require_weight_prediction: bool, default=False
-            Whether to obtain weight prediction.
+            Whether to obtain an estimated weight function.
 
         resample_initial_state: bool, default=False
             Whether to resample initial state distribution using the given evaluation policy.
             If `False`, the initial state distribution of the behavior policy is used instead.
 
-            Note that, this parameter is applicable only when self.env is given.
+            Note that this parameter is applicable only when self.env is given.
 
         q_function_method: {"fqe", "dice_q", "mql"}, default="fqe"
-            Estimation method of :math:`Q(s, a)`.
+            Method to estimate :math:`Q(s, a)`.
 
         v_function_method: {"fqe", "dice_q", "dice_v", "mql", "mvl"}, default="fqe"
-            Estimation method of :math:`V(s)`.
+            Method to estimate :math:`V(s)`.
 
         w_function_method: {"dice", "mwl"}, default="dice"
-            Estimation method of :math:`w(s, a)` and :math:`w(s)`.
+            Method to estimate :math:`w(s, a)` and :math:`w(s)`.
 
         k_fold: int, default=1 (> 0)
-            Number of folds for cross-fitting.
+            Number of folds to perform cross-fitting.
 
             If :math:`K>1`, we split the logged dataset into :math:`K` folds.
             :math:`\\mathcal{D}_j` is the :math:`j`-th split of logged data consisting of :math:`n_k` samples.
@@ -2667,17 +2662,14 @@ class CreateOPEInput:
 
             If :math:`K=1`, the value and weight functions are trained on the entire data.
 
-        n_epochs: int, default=None (> 0)
-            Number of epochs to fit FQE.
-
-        n_steps_per_epoch: int, default=None (> 0)
-            Number of steps in an epoch.
+        n_steps: int, default=10000 (> 0)
+            Number of gradient steps to fit weight and value learning methods.
 
         n_trajectories_on_policy_evaluation: int, default=None (> 0)
             Number of episodes to perform on-policy evaluation.
 
         use_stationary_distribution_on_policy_evaluation: bool, default=False
-            Whether to evaluate policy on stationary distribution.
+            Whether to evaluate a policy based on stationary distribution.
             If `True`, evaluation policy is evaluated by rollout without resetting environment at each episode.
 
         minimum_rollout_length: int, default=0 (>= 0)
@@ -2690,20 +2682,20 @@ class CreateOPEInput:
             Random state.
 
         path: str
-            Path to the directory. Either absolute and relative path is acceptable.
+            Path to the directory. Either absolute or relative path is acceptable.
 
         save_relative_path: bool, default=False.
             Whether to save a relative path.
             If `True`, a path relative to the scope-rl directory will be saved.
             If `False`, the absolute path will be saved.
 
-            Note that, this option was added in order to run examples in the documentation properly.
+            Note that this option was added in order to run examples in the documentation properly.
             Otherwise, the default setting (`False`) is recommended.
 
         Return
         -------
         input_dicts: OPEInputDict or MultipleInputDict
-            MultipleInputDict is a instance containing (multiple) input dictionary for OPE.
+            MultipleInputDict is an instance containing (multiple) input dictionary for OPE.
 
             Each input dict is accessible by the following command.
 
@@ -2743,7 +2735,7 @@ class CreateOPEInput:
                 i.e., :math:`\\hat{Q}(s_t, a) \\forall a \\in \\mathcal{A}`.
                 shape (n_trajectories * step_per_trajectory, n_actions)
 
-                If action_type is "continuous", :math:`\\hat{Q}` for the observed action and action chosen evaluation policy,
+                If action_type is "continuous", :math:`\\hat{Q}` for the observed action and that chosen by the evaluation policy,
                 i.e., (row 0) :math:`\\hat{Q}(s_t, a_t)` and (row 2) :math:`\\hat{Q}(s_t, \\pi(a \\mid s_t))`.
                 shape (n_trajectories * step_per_trajectory, 2)
 
@@ -2756,13 +2748,13 @@ class CreateOPEInput:
 
             state_action_marginal_importance_weight: ndarray of shape (n_trajectories * step_per_trajectory, )
                 Estimated state-action marginal importance weight,
-                i.e., :math:`\\hat{w}(s_t, a_t) \\approx d^{\\pi}(s_t, a_t) / d^{\\pi_0}(s_t, a_t)`.
+                i.e., :math:`\\hat{w}(s_t, a_t) \\approx d^{\\pi}(s_t, a_t) / d^{\\pi_b}(s_t, a_t)`.
 
                 If require_weight_prediction is `False`, `None` is recorded.
 
             state_marginal_importance_weight: ndarray of shape (n_trajectories * step_per_trajectory, )
                 Estimated state marginal importance weight,
-                i.e., :math:`\\hat{w}(s_t) \\approx d^{\\pi}(s_t) / d^{\\pi_0}(s_t)`.
+                i.e., :math:`\\hat{w}(s_t) \\approx d^{\\pi}(s_t) / d^{\\pi_b}(s_t)`.
 
                 If require_weight_prediction is `False`, `None` is recorded.
 
@@ -2916,8 +2908,7 @@ class CreateOPEInput:
                             v_function_method=v_function_method,
                             w_function_method=w_function_method,
                             k_fold=k_fold,
-                            n_epochs=n_epochs,
-                            n_steps_per_epoch=n_steps_per_epoch,
+                            n_steps=n_steps,
                             n_trajectories_on_policy_evaluation=n_trajectories_on_policy_evaluation,
                             use_stationary_distribution_on_policy_evaluation=use_stationary_distribution_on_policy_evaluation,
                             minimum_rollout_length=minimum_rollout_length,
@@ -2951,8 +2942,7 @@ class CreateOPEInput:
                         v_function_method=v_function_method,
                         w_function_method=w_function_method,
                         k_fold=k_fold,
-                        n_epochs=n_epochs,
-                        n_steps_per_epoch=n_steps_per_epoch,
+                        n_steps=n_steps,
                         n_trajectories_on_policy_evaluation=n_trajectories_on_policy_evaluation,
                         use_stationary_distribution_on_policy_evaluation=use_stationary_distribution_on_policy_evaluation,
                         minimum_rollout_length=minimum_rollout_length,
@@ -2987,8 +2977,7 @@ class CreateOPEInput:
                         v_function_method=v_function_method,
                         w_function_method=w_function_method,
                         k_fold=k_fold,
-                        n_epochs=n_epochs,
-                        n_steps_per_epoch=n_steps_per_epoch,
+                        n_steps=n_steps,
                         n_trajectories_on_policy_evaluation=n_trajectories_on_policy_evaluation,
                         use_stationary_distribution_on_policy_evaluation=use_stationary_distribution_on_policy_evaluation,
                         minimum_rollout_length=minimum_rollout_length,
@@ -3015,8 +3004,7 @@ class CreateOPEInput:
                     v_function_method=v_function_method,
                     w_function_method=w_function_method,
                     k_fold=k_fold,
-                    n_epochs=n_epochs,
-                    n_steps_per_epoch=n_steps_per_epoch,
+                    n_steps=n_steps,
                     n_trajectories_on_policy_evaluation=n_trajectories_on_policy_evaluation,
                     use_stationary_distribution_on_policy_evaluation=use_stationary_distribution_on_policy_evaluation,
                     minimum_rollout_length=minimum_rollout_length,
@@ -3035,8 +3023,7 @@ class CreateOPEInput:
                 v_function_method=v_function_method,
                 w_function_method=w_function_method,
                 k_fold=k_fold,
-                n_epochs=n_epochs,
-                n_steps_per_epoch=n_steps_per_epoch,
+                n_steps=n_steps,
                 n_trajectories_on_policy_evaluation=n_trajectories_on_policy_evaluation,
                 use_stationary_distribution_on_policy_evaluation=use_stationary_distribution_on_policy_evaluation,
                 minimum_rollout_length=minimum_rollout_length,

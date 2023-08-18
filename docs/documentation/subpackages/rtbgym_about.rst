@@ -8,15 +8,15 @@ RTBGym
 Overview
 ~~~~~~~~~~
 *RTBGym* is an open-source simulation platform for Real-Time Bidding (RTB) of Display Advertising.
-The simulator is particularly intended for reinforcement learning algorithms and follows `OpenAI Gym <https://gym.openai.com>`_ and `Gymnasium <https://github.com/Farama-Foundation/Gymnasium>`_ interface.
-We design RTBGym as a configurative environment so that researchers and practitioner can customize the environmental modules including WinningPriceDistribution, ClickThroughRate, and ConversionRate.
+The simulator is particularly intended for reinforcement learning algorithms and follows `OpenAI Gym <https://github.com/openai/gym>`_ and `Gymnasium <https://github.com/Farama-Foundation/Gymnasium>`_ interface.
+We design RTBGym as a configurative environment so researchers and practitioners can customize the environmental modules, including WinningPriceDistribution, ClickThroughRate, and ConversionRate.
 
-Note that, RTBGym is publicized as a sub-package of :doc:`SCOPE-RL <index>`, which streamlines the implementation of offline reinforcement learning (offline RL) and off-policy evaluation and selection (OPE/OPS) procedures.
+Note that RTBGym is publicized as a sub-package of :doc:`SCOPE-RL </documentation/index>`, which streamlines the implementation of offline reinforcement learning (offline RL) and off-policy evaluation and selection (OPE/OPS) procedures.
 
 Basic Setting
 ~~~~~~~~~~
-In RTB, the objective of the RL agent is to maximize some Key Performance Indicators (KPIs; number of clicks or conversions) within an episode under given budget constraints.
-We often aim to achieve this goal by adjusting bidding price function parameter :math:`\alpha`. Specifically, we adjust bid price using :math:`\alpha` as follows.
+In RTB, the objective of the RL agent is to maximize some Key Performance Indicators (KPIs, e.g., the number of clicks or conversions) within an episode under given budget constraints.
+We often aim to achieve this goal by adjusting a parameter :math:`\alpha` to control the bid price as follows.
 
 .. math::
 
@@ -33,7 +33,7 @@ We often formulate this RTB problem as the following Constrained Markov Decision
     * remaining budget
     * impression level features (budget consumption rate, cost per mille of impressions, auction winning rate, reward) at the previous timestep
     * adjust rate (RL agent's decision making) at the previous timestep
-    
+
 * `action` (:math:`a \in \mathcal{A}`): Agent chooses adjust rate parameter :math:`\alpha` to maximize KPIs.
 * `reward` (:math:`r \in \mathbb{R}`): Total number of clicks or conversions obtained during the timestep.
 * `constraints` (:math:`C`): The pre-determined episodic budget should not be exceeded.
@@ -44,7 +44,7 @@ Given :math:`P_r`, :math:`R: \mathcal{S} \times \mathcal{A} \rightarrow \mathbb{
 We also let :math:`\gamma \in (0,1]` be a discount factor and :math:`C \ge 0` be a budget constraint.
 Finally, :math:`\pi: \mathcal{S} \rightarrow \mathcal{P}(\mathcal{A})` denotes a policy (i.e., agent) where :math:`\pi(a | s)` is the probability of taking action :math:`a` at a given state :math:`s`.
 
-Based on this formulation, our goal is to maximize the expected trajectory-wise reward while satisfying the safety constraints as follows.
+Based on this formulation, our goal is to maximize the expected trajectory-wise reward while satisfying the cost (i.e., budget) constraints as follows.
 
 .. math::
 
@@ -73,20 +73,19 @@ Configurative Modules
     * :class:`ClickThroughRate`: Class to define the click through rate of users.
     * :class:`ConversionRate`: Class to define the conversion rate of users.
 
-Note that, users can customize the above modules by following the abstract class.
+Note that users can customize the above modules by following the abstract class.
 We also define the bidding function in the Bidder class and the auction simulation in the Simulator class, respectively.
 
 Quickstart and Configurations
 ~~~~~~~~~~
 
 We provide an example usage of the standard and customized environment. 
-The online/offlline RL and OPE/OPS examples are provides in :doc:`SCOPE-RL's quickstart <quickstart>`.
 
 Standard RTBEnv
 ----------
 
-Our standard RTBEnv is available from :class:`gym.make()`, 
-following the `OpenAI Gym <https://gym.openai.com>`_ and `Gymnasium <https://github.com/Farama-Foundation/Gymnasium>`_ interface.
+Our standard RTBEnv is available from :class:`gym.make()`,
+following the `OpenAI Gym <https://github.com/openai/gym>`_ and `Gymnasium <https://github.com/Farama-Foundation/Gymnasium>`_ interface.
 
 .. code-block:: python
 
@@ -137,8 +136,8 @@ Let's interact uniform random policy with a continuous action RTB environment. T
         action = agent.predict_online(obs)
         obs, reward, done, truncated, info = env.step(action)
 
-Note that, while we use :doc:`SCOPE-RL <index>` and `d3rlpy <https://github.com/takuseno/d3rlpy>`_ here,
-RTBGym is compatible with any other libraries that is compatible to the `OpenAI Gym <https://github.com/openai/gym>`_ 
+Note that while we use :doc:`SCOPE-RL </documentation/index>>` and `d3rlpy <https://github.com/takuseno/d3rlpy>`_ here,
+RTBGym is compatible with any other libraries that is compatible with the `OpenAI Gym <https://github.com/openai/gym>`_
 and `Gymnasium <https://github.com/Farama-Foundation/Gymnasium>`_ interface.
 
 Customized RTBEnv
@@ -146,7 +145,7 @@ Customized RTBEnv
 
 Next, we describe how to customize the environment by instantiating the environment.
 
-The list of arguments are given as follows.
+The list of arguments is given as follows.
 
 * :class:`objective`: Objective KPIs of RTB, which is either "click" or "conversion".
 * :class:`cost_indicator`: Timing of arising costs, which is any of "impression", "click", and "conversion".
@@ -156,8 +155,8 @@ The list of arguments are given as follows.
 * :class:`n_users`: Number of users used for auction bidding.
 * :class:`ad_feature_dim`: Dimensions of the ad feature vectors.
 * :class:`user_feature_dim`: Dimensions of the user feature vectors.
-* :class:`ad_feature_vector`: Feature vectors that characterizes each ad.
-* :class:`user_feature_vector`: Feature vectors that characterizes each user.
+* :class:`ad_feature_vector`: Feature vectors that characterize each ad.
+* :class:`user_feature_vector`: Feature vectors that characterize each user.
 * :class:`ad_sampling_rate`: Sampling probabilities to determine which ad (id) is used in each auction.
 * :class:`user_sampling_rate`: Sampling probabilities to determine which user (id) is used in each auction.
 * :class:`WinningPriceDistribution`: Winning price distribution of auctions.
@@ -182,7 +181,7 @@ Example:
         random_state=12345,
     )
 
-Specifically, users can define their own :class:`WinningPriceDistribution`, :class:`ClickThroughRate`, and :class:`ConversionRate` as follows.
+In particular, users can define their own :class:`WinningPriceDistribution`, :class:`ClickThroughRate`, and :class:`ConversionRate` as follows.
 
 Example of Custom Winning Price Distribution:
 
@@ -297,7 +296,7 @@ Example of Custom ClickThroughRate (and Conversion Rate):
             clicks = self.random_.rand(len(ad_ids)) < ctrs
             return clicks.astype(int)
 
-Note that, custom conversion rate can be defined in a similar manner.
+Note that custom conversion rates can be defined in a similar manner.
 
 Wrapper class for custom bidding setup
 ----------
@@ -305,7 +304,7 @@ Wrapper class for custom bidding setup
 To customize the bidding setup, we also provide :class:`CustomizedRTBEnv`, which enables discretization or re-definition of the action space.
 In addition, users can set their own :class:`reward_predictor`.
 
-The list of arguments are given as follows.
+The list of arguments is given as follows.
 
 * :class:`original_env`: Original RTB Environment.
 * :class:`reward_predictor`: A machine learning model to predict the reward to determine the bidding price.
@@ -327,14 +326,14 @@ Example:
         action_type="discrete",
     )
 
-More examples are available at :doc:`RTBGym Tutorials <_autogallery/rtbgym/index>`.
+More examples are available at `Quickstarts for RTBGym <https://github.com/hakuhodo-technologies/scope-rl/tree/main/examples/quickstart/rtb>`_.
 
 Citation
 ~~~~~~~~~~
 If you use our pipeline in your work, please cite our paper below.
 
-| **Accelerating Offline Reinforcement Learning Application in Real-Time Bidding and Recommendation: Potential Use of Simulation** [`arXiv <https://arxiv.org/abs/2109.08331>`_]
 | Haruka Kiyohara, Kosuke Kawakami, Yuta Saito.
+| **Accelerating Offline Reinforcement Learning Application in Real-Time Bidding and Recommendation: Potential Use of Simulation** [`arXiv <https://arxiv.org/abs/2109.08331>`_]
 
 .. code-block::
 
@@ -347,12 +346,12 @@ If you use our pipeline in your work, please cite our paper below.
 
 Contact
 ~~~~~~~~~~
-For any question about the paper and pipeline, feel free to contact: hk844@cornell.edu
+For any questions about the paper and pipeline, feel free to contact: hk844@cornell.edu
 
 Contribution
 ~~~~~~~~~~
 Any contributions to RTBGym are more than welcome!
-Please refer to `CONTRIBUTING.md <https://github.com/hakuhodo-technologies/scope-rl/CONTRIBUTING.md>`_ for general guidelines how to contribute to the project.
+Please refer to `CONTRIBUTING.md <https://github.com/hakuhodo-technologies/scope-rl/blob/main/CONTRIBUTING.md>`_ for general guidelines on how to contribute to the project.
 
 .. grid::
     :margin: 0

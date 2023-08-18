@@ -282,7 +282,7 @@ class Bidder:
 
         Note
         -------
-        Intended only used when use_reward_predictor=True option.
+        Intended to be used only when use_reward_predictor=True option.
 
         X and y of the prediction model is given as follows.
             X: array-like of shape (search_volume, ad_feature_dim + user_feature_dim + 1)
@@ -359,11 +359,11 @@ class Bidder:
         user_feature_vector: np.ndarray,
         timestep: Union[int, np.ndarray],
     ) -> np.ndarray:
-        """Predict reward (i.e., auction outcome) to determine bidding price.
+        """Predict the reward (i.e., auction outcome) to determine bidding price.
 
         Note
         -------
-        Intended only used when use_reward_predictor=True option.
+        Intended to be used only when use_reward_predictor=True option.
 
         X and y of the prediction model is given as follows.
             X: array-like of shape (search_volume, ad_feature_dim + user_feature_dim + 1)
@@ -433,7 +433,7 @@ class Bidder:
         user_feature_vector: np.ndarray,
         timestep: Union[int, np.ndarray],
     ) -> np.ndarray:
-        """Calculate ground-truth reward (i.e., auction outcome) to determine bidding price.
+        """Calculate the ground-truth reward (i.e., auction outcome) to determine bidding price.
 
         Parameters
         -------

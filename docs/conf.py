@@ -13,8 +13,7 @@
 import os
 import sys
 
-sys.path.insert(0, os.path.abspath(".."))
-
+sys.path.insert(0, os.path.abspath("../"))
 
 # -- Project information -----------------------------------------------------
 
@@ -43,9 +42,11 @@ extensions = [
     "sphinx.ext.coverage",
     "sphinx.ext.mathjax",
     "sphinx.ext.viewcode",
+    "sphinx.ext.githubpages",
     "sphinxcontrib.bibtex",
     "sphinx_copybutton",
-    "sphinx_gallery.gen_gallery",
+    "sphinx_favicon",
+    # "sphinx_gallery.gen_gallery",
     "numpydoc",
     "sphinx_design",
     "sphinx_tabs.tabs",
@@ -70,19 +71,24 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 # a list of builtin themes.
 #
 html_theme = "pydata_sphinx_theme"
+html_logo = "_static/images/logo.png"
+html_context = {
+    "default_mode": "light",
+}
 html_theme_options = {
     "github_url": "https://github.com/hakuhodo-technologies/scope-rl",
     # "twitter_url": "https://twitter.com/{account}",
     "icon_links": [
         {
             "name": "Speaker Deck",
-            "url": "https://speakerdeck.com/aiueola/scope_rl-designing-an-offline-reinforcement-learning-and-policy-evaluation-platform-from-practical-perspectives",
+            "url": "https://speakerdeck.com/aiueola/ofrl-designing-an-offline-reinforcement-learning-and-policy-evaluation-platform-from-practical-perspectives",
             "icon": "fa-brands fa-speaker-deck",
             "type": "fontawesome",
         },
     ],
-    "header_links_before_dropdown": 5,
-    # "navbar_start": ["navbar-logo", "version"],
+    "header_links_before_dropdown": 4,
+    "navbar_start": ["navbar-logo"],
+    # "navbar_start": ["navbar-logo", "version"],  # causes some errors
     "footer_items": ["copyright"],
     "show_prev_next": False,
     # "google_analytics_id": "UA-XXXXXXX",
@@ -95,7 +101,8 @@ html_static_path = ["_static"]
 html_css_files = ["css/custom.css"]
 
 html_title = "SCOPE-RL"
-# html_use_opensearch = "https://"
+html_use_opensearch = "https://scope-rl.readthedocs.io/en/latest/"
+favicons = [{"href": "images/favicon.png"}]
 
 
 # whether to display to the source .rst file
@@ -116,10 +123,10 @@ numpydoc_member_order = "bysource"
 numpydoc_show_inherited_class_members = {
     "scope_rl.policy.head.BaseHead": False,
     "scope_rl.policy.head.ContinuousEvalHead": False,
-    "scope_rl.policy.head.ContinuousGaussianHead": False,
-    "scope_rl.policy.head.ContinuousTruncatedGaussianHead": False,
-    "scope_rl.policy.head.DiscreteEpsilonGreedyHead": False,
-    "scope_rl.policy.head.DiscreteSoftmaxHead": False,
+    "scope_rl.policy.head.GaussianHead": False,
+    "scope_rl.policy.head.TruncatedGaussianHead": False,
+    "scope_rl.policy.head.EpsilonGreedyHead": False,
+    "scope_rl.policy.head.SoftmaxHead": False,
     "scope_rl.policy.head.OnlineHead": False,
     "scope_rl.ope.weight_value_learning.function.VFunction": False,
     "scope_rl.ope.weight_value_learning.function.StateWeightFunction": False,
@@ -128,9 +135,16 @@ numpydoc_show_inherited_class_members = {
     "scope_rl.ope.weight_value_learning.function.DiscreteStateActionWeightFunction": False,
     "scope_rl.ope.weight_value_learning.function.ContinuousStateActionWeightFunction": False,
 }
-numpydoc_xref_aliases = {
-    # 'LeaveOneOut': 'sklearn.model_selection.LeaveOneOut',
-}
+# numpydoc_xref_param_type = True
+# numpydoc_xref_aliases = {
+#     "OffPolicyEvaluation": "scope\_rl.ope.ope.OffPolicyEvaluation",
+#     "CumulativeDistributionOPE": "scope\_rl.ope.ope.CumulativeDistributionOPE",
+#     "OffPolicySelection": "scope\_rl.ope.ops.OffPolicySelection",
+#     "BaseOffPolicyEstimator": "scope\_rl.ope.estimators_base.BaseOffPolicyEstimator",
+#     "BaseCumulativeDistributionOPEEstimator": "scope\_rl.ope.estimators\_base.BaseCumulativeDistributionOPEEstimator",
+#     "SyntheticDataset": "scope\_rl.dataset.synthetic.SyntheticDataset",
+#     "TrainCandidatePolicies": "scope\_rl.policy.opl.TrainCandidatePolicies",
+# }
 
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3/", None),
@@ -140,27 +154,27 @@ intersphinx_mapping = {
     "gymnasium": ("https://gymnasium.farama.org/", None),
 }
 
-# gallery example path
-from sphinx_gallery.sorting import ExplicitOrder
-from sphinx_gallery.sorting import FileNameSortKey
+# # gallery example path
+# from sphinx_gallery.sorting import ExplicitOrder
+# from sphinx_gallery.sorting import FileNameSortKey
 
-sphinx_gallery_conf = {
-    "examples_dirs": "tutorial",  # path to your example scripts
-    "gallery_dirs": "documentation/_autogallery",  # path to where to save gallery generated output
-    "subsection_order": ExplicitOrder(
-        [
-            "tutorial/basic_ope",
-            "tutorial/cumulative_distribution_ope",
-            "tutorial/ops",
-            "tutorial/scope_rl_others",
-            "tutorial/multiple_datasets",
-            "tutorial/rtbgym",
-            "tutorial/footer",
-        ]
-    ),
-    "within_subsection_order": FileNameSortKey,
-    "download_all_examples": False,
-}
+# sphinx_gallery_conf = {
+#     "examples_dirs": "example",  # path to your example scripts
+#     "gallery_dirs": "documentation/_autogallery",  # path to where to save gallery generated output
+#     "subsection_order": ExplicitOrder(
+#         [
+#             "example/basic_ope",
+#             "example/cumulative_distribution_ope",
+#             "example/ops",
+#             "example/scope_rl_others",
+#             "example/multiple_datasets",
+#             "example/rtbgym",
+#             "example/footer",
+#         ]
+#     ),
+#     "within_subsection_order": FileNameSortKey,
+#     "download_all_examples": False,
+# }
 # gallery thumbnail
 # nbsphinx_thumbnails = {
 #     'gallery/thumbnail-from-conf-py': 'gallery/a-local-file.png',

@@ -1,7 +1,0 @@
-.. _tutorial:
-
-Tutorial
-==========
-
-OFRL
-----------

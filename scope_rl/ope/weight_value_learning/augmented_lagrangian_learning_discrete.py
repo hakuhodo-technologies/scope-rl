@@ -33,7 +33,7 @@ class DiscreteDiceStateActionWightValueLearning(BaseWeightValueLearner):
 
     Bases: :class:`scope_rl.ope.weight_value_learning.BaseWeightValueLearner`
 
-    Imported as: :class:`scope_rl.ope.DiscreteAugmentedLagrangianStateActionWightValueLearning`
+    Imported as: :class:`scope_rl.ope.weight_value_learning.DiscreteAugmentedLagrangianStateActionWightValueLearning`
 
     Note
     -------
@@ -48,12 +48,12 @@ class DiscreteDiceStateActionWightValueLearning(BaseWeightValueLearner):
 
     .. math::
 
-        L(w, Q, \\lambda) 
+        L(w, Q, \\lambda)
         &:= (1 - \\gamma) \\mathbb{E}_{s_0 \\sim d(s_0), a_0 \\sim \\pi(s_0)} [Q(s_0, a_0)] + \\lambda \\\\
-        & \\quad \\quad + \\mathbb{E}_{(s_t, a_t, r_t, s_{t+1}) \\sim d^{\\pi_0}, a_{t+1} \\sim \\pi(a_{t+1} | s_{t+1})} [w(s_t, a_t) (\\alpha_r r_t + \\gamma Q(s_{t+1}, a_{t+1}) - Q(s_t, a_t) - \\lambda)] \\\\
-        & \\quad \\quad + \\alpha_Q \\mathbb{E}_{(s_t, a_t) \\sim d^{\\pi_0}} [Q^2(s_t, a_t)] - \\alpha_w \\mathbb{E}_{(s_t, a_t) \\sim d^{\\pi_0}} [w^2(s_t, a_t)]
+        & \\quad \\quad + \\mathbb{E}_{(s_t, a_t, r_t, s_{t+1}) \\sim d^{\\pi_b}, a_{t+1} \\sim \\pi(a_{t+1} | s_{t+1})} [w(s_t, a_t) (\\alpha_r r_t + \\gamma Q(s_{t+1}, a_{t+1}) - Q(s_t, a_t) - \\lambda)] \\\\
+        & \\quad \\quad + \\alpha_Q \\mathbb{E}_{(s_t, a_t) \\sim d^{\\pi_b}} [Q^2(s_t, a_t)] - \\alpha_w \\mathbb{E}_{(s_t, a_t) \\sim d^{\\pi_b}} [w^2(s_t, a_t)]
 
-    where :math:`Q(s_t, a_t)` is the Q-function, :math:`w(s_t, a_t) \\approx d^{\\pi}(s_t, a_t) / d^{\\pi_0}(s_t, a_t)` is the state-action marginal importance weight.
+    where :math:`Q(s_t, a_t)` is the Q-function, :math:`w(s_t, a_t) \\approx d^{\\pi}(s_t, a_t) / d^{\\pi_b}(s_t, a_t)` is the state-action marginal importance weight.
 
     This estimator corresponds to the following estimators in its special cases.
 
@@ -64,7 +64,7 @@ class DiscreteDiceStateActionWightValueLearning(BaseWeightValueLearner):
     - Minimax Q Learning (MQL) (Uehara and Jiang, 2019): :math:`\\alpha_Q = 0, \\alpha_w = 0, \\alpha_r = 1, \\lambda = 0`
     - Minimax Weight Learning (MWL) (Uehara and Jiang, 2019): :math:`\\alpha_Q = 0, \\alpha_w = 0, \\alpha_r = 0, \\lambda = 0`
 
-    ALM is beneficial in that it can simultaneously learn both Q-function and W-function in an adversarial manner. 
+    ALM is beneficial in that it can simultaneously learn both Q-function and W-function in an adversarial manner.
     However, since the objective function of ALM is not convex, it may suffer from learning instability.
 
     Note
@@ -78,7 +78,7 @@ class DiscreteDiceStateActionWightValueLearning(BaseWeightValueLearner):
     Parameters
     -------
     q_function: DiscreteQFunction
-        Q function model.
+        Q-function model.
 
     w_function: DiscreteStateActionWeightFunction
         Weight function model.
@@ -86,8 +86,8 @@ class DiscreteDiceStateActionWightValueLearning(BaseWeightValueLearner):
     gamma: float, default=1.0
         Discount factor. The value should be within (0, 1].
 
-    sigma: float, default=1.0 (> 0)
-        Bandwidth hyperparameter of gaussian kernel. (This is for API consistency)
+    bandwidth: float, default=1.0 (> 0)
+        Bandwidth hyperparameter of the Gaussian kernel. (This is for API consistency)
 
     state_scaler: d3rlpy.preprocessing.Scaler, default=None
         Scaling factor of state.
@@ -116,7 +116,7 @@ class DiscreteDiceStateActionWightValueLearning(BaseWeightValueLearner):
         A value should be given if method is "custom".
 
     alpha_r: bool, default=None
-        Wether to consider the reward observation.
+        Whether to consider the reward observation.
         A value should be given if method is "custom".
 
     enable_lambda: bool, default=None
@@ -151,7 +151,7 @@ class DiscreteDiceStateActionWightValueLearning(BaseWeightValueLearner):
     q_function: DiscreteQFunction
     w_function: DiscreteStateActionWeightFunction
     gamma: float = 1.0
-    sigma: float = 1.0
+    bandwidth: float = 1.0
     state_scaler: Optional[Scaler] = None
     method: str = "best_dice"
     batch_size: int = 128
@@ -171,7 +171,7 @@ class DiscreteDiceStateActionWightValueLearning(BaseWeightValueLearner):
         check_scalar(
             self.gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0
         )
-        check_scalar(self.sigma, name="sigma", target_type=float, min_val=0.0)
+        check_scalar(self.bandwidth, name="bandwidth", target_type=float, min_val=0.0)
         if self.state_scaler is not None and not isinstance(self.state_scaler, Scaler):
             raise ValueError(
                 "state_scaler must be an instance of d3rlpy.preprocessing.Scaler, but found False"
@@ -307,8 +307,8 @@ class DiscreteDiceStateActionWightValueLearning(BaseWeightValueLearner):
         action: np.ndarray,
         reward: np.ndarray,
         evaluation_policy_action_dist: np.ndarray,
-        n_epochs: int = 100,
-        n_steps_per_epoch: int = 100,
+        n_steps: int = 10000,
+        n_steps_per_epoch: int = 10000,
         random_state: Optional[int] = None,
         **kwargs,
     ):
@@ -332,10 +332,10 @@ class DiscreteDiceStateActionWightValueLearning(BaseWeightValueLearner):
             Conditional action distribution induced by the evaluation policy,
             i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
 
-        n_epochs: int, default=100 (> 0)
-            Number of epochs to train.
+        n_steps: int, default=10000 (> 0)
+            Number of gradient steps.
 
-        n_steps_per_epoch: int, default=100 (> 0)
+        n_steps_per_epoch: int, default=10000 (> 0)
             Number of gradient steps in a epoch.
 
         random_state: int, default=None (>= 0)
@@ -376,10 +376,11 @@ class DiscreteDiceStateActionWightValueLearning(BaseWeightValueLearner):
                 "evaluation_policy_action_dist must sums up to one in axis=1, but found False"
             )
 
-        check_scalar(n_epochs, name="n_epochs", target_type=int, min_val=1)
+        check_scalar(n_steps, name="n_steps", target_type=int, min_val=1)
         check_scalar(
             n_steps_per_epoch, name="n_steps_per_epoch", target_type=int, min_val=1
         )
+        n_epochs = (n_steps - 1) // n_steps_per_epoch + 1
 
         if random_state is None:
             raise ValueError("Random state mush be given.")
@@ -476,7 +477,7 @@ class DiscreteDiceStateActionWightValueLearning(BaseWeightValueLearner):
         self,
         state: np.ndarray,
     ):
-        """Predict Q function for all actions.
+        """Predict Q-function for all actions.
 
         Parameters
         -------
@@ -505,7 +506,7 @@ class DiscreteDiceStateActionWightValueLearning(BaseWeightValueLearner):
         state: np.ndarray,
         action: np.ndarray,
     ):
-        """Predict Q function.
+        """Predict Q-function.
 
         Parameters
         -------
@@ -603,7 +604,7 @@ class DiscreteDiceStateActionWightValueLearning(BaseWeightValueLearner):
         state: np.ndarray,
         action: np.ndarray,
     ):
-        """Predict Q function.
+        """Predict Q-function.
 
         Parameters
         -------
@@ -695,8 +696,8 @@ class DiscreteDiceStateActionWightValueLearning(BaseWeightValueLearner):
         action: np.ndarray,
         reward: np.ndarray,
         evaluation_policy_action_dist: np.ndarray,
-        n_epochs: int = 100,
-        n_steps_per_epoch: int = 100,
+        n_steps: int = 10000,
+        n_steps_per_epoch: int = 10000,
         random_state: Optional[int] = None,
         **kwargs,
     ):
@@ -723,10 +724,10 @@ class DiscreteDiceStateActionWightValueLearning(BaseWeightValueLearner):
         method: {"dual_dice", "gen_dice", "algae_dice", "best_dice", "mql", "mwl", "custom"}, default="best_dice"
             Indicates which parameter set should be used. When, "custom" users can specify their own parameter.
 
-        n_epochs: int, default=100 (> 0)
+        n_steps: int, default=10000 (> 0)
             Number of epochs to train.
 
-        n_steps_per_epoch: int, default=100 (> 0)
+        n_steps_per_epoch: int, default=10000 (> 0)
             Number of gradient steps in a epoch.
 
         random_state: int, default=None (>= 0)
@@ -747,7 +748,7 @@ class DiscreteDiceStateActionWightValueLearning(BaseWeightValueLearner):
             action=action,
             reward=reward,
             evaluation_policy_action_dist=evaluation_policy_action_dist,
-            n_epochs=n_epochs,
+            n_steps=n_steps,
             n_steps_per_epoch=n_steps_per_epoch,
             random_state=random_state,
         )
@@ -760,7 +761,7 @@ class DiscreteDiceStateWightValueLearning(BaseWeightValueLearner):
 
     Bases: :class:`scope_rl.ope.weight_value_learning.BaseWeightValueLearner`
 
-    Imported as: :class:`scope_rl.ope.DiscreteAugmentedLagrangianStateWightValueLearning`
+    Imported as: :class:`scope_rl.ope.weight_value_learning.DiscreteAugmentedLagrangianStateWightValueLearning`
 
     Note
     -------
@@ -778,12 +779,12 @@ class DiscreteDiceStateWightValueLearning(BaseWeightValueLearner):
 
     .. math::
 
-        L(w, V, \\lambda) 
+        L(w, V, \\lambda)
         &:= (1 - \\gamma) \\mathbb{E}_{s_0 \\sim d(s_0)} [V(s_0)] + \\lambda \\\\
-        & \\quad \\quad + \\mathbb{E}_{(s_t, a_t, r_t, s_{t+1}) \\sim d^{\\pi_0}} [w_s(s_t) w_a(s_t, a_t) (\\alpha_r r_t + \\gamma V(s_{t+1}) - V(s_t) - \\lambda)] \\\\
-        & \\quad \\quad + \\alpha_V \\mathbb{E}_{s_t \\sim d^{\\pi_0}} [V^2(s_t)] - \\alpha_w \\mathbb{E}_{s_t \\sim d^{\\pi_0}} [w_s^2(s_t)]
+        & \\quad \\quad + \\mathbb{E}_{(s_t, a_t, r_t, s_{t+1}) \\sim d^{\\pi_b}} [w_s(s_t) w_a(s_t, a_t) (\\alpha_r r_t + \\gamma V(s_{t+1}) - V(s_t) - \\lambda)] \\\\
+        & \\quad \\quad + \\alpha_V \\mathbb{E}_{s_t \\sim d^{\\pi_b}} [V^2(s_t)] - \\alpha_w \\mathbb{E}_{s_t \\sim d^{\\pi_b}} [w_s^2(s_t)]
 
-    where :math:`V(s_t)` is the V-function, :math:`w_s(s_t) \\approx d^{\\pi}(s_t) / d^{\\pi_0}(s_t)` is the state marginal importance weight.
+    where :math:`V(s_t)` is the V-function, :math:`w_s(s_t) \\approx d^{\\pi}(s_t) / d^{\\pi_b}(s_t)` is the state marginal importance weight.
     :math:`w_a(s_t, a_t) = \\pi(a_t | s_t) / \\pi_0(a_t | s_t)` is the immediate importance weight.
 
     This estimator is analogous to the following estimators in its special cases (although the following uses Q-function and state-action marginal importance weight).
@@ -795,7 +796,7 @@ class DiscreteDiceStateWightValueLearning(BaseWeightValueLearner):
     - Minimax Value Learning (MVL) (Uehara and Jiang, 2019): :math:`\\alpha_Q = 0, \\alpha_w = 0, \\alpha_r = 1, \\lambda = 0`
     - Minimax Weight Learning (MWL) (Uehara and Jiang, 2019): :math:`\\alpha_Q = 0, \\alpha_w = 0, \\alpha_r = 0, \\lambda = 0`
 
-    ALM is beneficial in that it can simultaneously learn both V-function and W-function in an adversarial manner. 
+    ALM is beneficial in that it can simultaneously learn both V-function and W-function in an adversarial manner.
     However, since the objective function of ALM is not convex, it may suffer from learning instability.
 
     Note
@@ -817,8 +818,8 @@ class DiscreteDiceStateWightValueLearning(BaseWeightValueLearner):
     gamma: float, default=1.0
         Discount factor. The value should be within (0, 1].
 
-    sigma: float, default=1.0 (> 0)
-        Bandwidth hyperparameter of gaussian kernel. (This is for API consistency)
+    bandwidth: float, default=1.0 (> 0)
+        Bandwidth hyperparameter of the Gaussian kernel. (This is for API consistency)
 
     state_scaler: d3rlpy.preprocessing.Scaler, default=None
         Scaling factor of state.
@@ -847,7 +848,7 @@ class DiscreteDiceStateWightValueLearning(BaseWeightValueLearner):
         A value should be given if method is "custom".
 
     alpha_r: bool, default=None
-        Wether to consider the reward observation.
+        Whether to consider the reward observation.
         A value should be given if method is "custom".
 
     enable_lambda: bool, default=None
@@ -882,7 +883,7 @@ class DiscreteDiceStateWightValueLearning(BaseWeightValueLearner):
     v_function: VFunction
     w_function: StateWeightFunction
     gamma: float = 1.0
-    sigma: float = 1.0
+    bandwidth: float = 1.0
     state_scaler: Optional[Scaler] = None
     method: str = "best_dice"
     batch_size: int = 128
@@ -902,7 +903,7 @@ class DiscreteDiceStateWightValueLearning(BaseWeightValueLearner):
         check_scalar(
             self.gamma, name="gamma", target_type=float, min_val=0.0, max_val=1.0
         )
-        check_scalar(self.sigma, name="sigma", target_type=float, min_val=0.0)
+        check_scalar(self.bandwidth, name="bandwidth", target_type=float, min_val=0.0)
         if self.state_scaler is not None and not isinstance(self.state_scaler, Scaler):
             raise ValueError(
                 "state_scaler must be an instance of d3rlpy.preprocessing.Scaler, but found False"
@@ -1030,8 +1031,8 @@ class DiscreteDiceStateWightValueLearning(BaseWeightValueLearner):
         reward: np.ndarray,
         pscore: np.ndarray,
         evaluation_policy_action_dist: np.ndarray,
-        n_epochs: int = 100,
-        n_steps_per_epoch: int = 100,
+        n_steps: int = 10000,
+        n_steps_per_epoch: int = 10000,
         random_state: Optional[int] = None,
         **kwargs,
     ):
@@ -1052,16 +1053,16 @@ class DiscreteDiceStateWightValueLearning(BaseWeightValueLearner):
             Reward observed for each (state, action) pair.
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory)
-            Action choice probability of the behavior policy for the chosen action.
+            Propensity of the observed action being chosen under the behavior policy (pscore stands for propensity score).
 
         evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_actions)
             Conditional action distribution induced by the evaluation policy,
             i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
 
-        n_epochs: int, default=100 (> 0)
-            Number of epochs to train.
+        n_steps: int, default=10000 (> 0)
+            Number of gradient steps.
 
-        n_steps_per_epoch: int, default=100 (> 0)
+        n_steps_per_epoch: int, default=10000 (> 0)
             Number of gradient steps in a epoch.
 
         random_state: int, default=None (>= 0)
@@ -1104,10 +1105,11 @@ class DiscreteDiceStateWightValueLearning(BaseWeightValueLearner):
                 "evaluation_policy_action_dist must sums up to one in axis=1, but found False"
             )
 
-        check_scalar(n_epochs, name="n_epochs", target_type=int, min_val=1)
+        check_scalar(n_steps, name="n_steps", target_type=int, min_val=1)
         check_scalar(
             n_steps_per_epoch, name="n_steps_per_epoch", target_type=int, min_val=1
         )
+        n_epochs = (n_steps - 1) // n_steps_per_epoch + 1
 
         if random_state is None:
             raise ValueError("Random state mush be given.")
@@ -1282,8 +1284,8 @@ class DiscreteDiceStateWightValueLearning(BaseWeightValueLearner):
         reward: np.ndarray,
         pscore: np.ndarray,
         evaluation_policy_action_dist: np.ndarray,
-        n_epochs: int = 100,
-        n_steps_per_epoch: int = 100,
+        n_steps: int = 10000,
+        n_steps_per_epoch: int = 10000,
         random_state: Optional[int] = None,
         **kwargs,
     ):
@@ -1304,16 +1306,16 @@ class DiscreteDiceStateWightValueLearning(BaseWeightValueLearner):
             Reward observed for each (state, action) pair.
 
         pscore: array-like of shape (n_trajectories * step_per_trajectory)
-            Action choice probability of the behavior policy for the chosen action.
+            Propensity of the observed action being chosen under the behavior policy (pscore stands for propensity score).
 
         evaluation_policy_action_dist: array-like of shape (n_trajectories * step_per_trajectory, n_actions)
             Conditional action distribution induced by the evaluation policy,
             i.e., :math:`\\pi(a \\mid s_t) \\forall a \\in \\mathcal{A}`
 
-        n_epochs: int, default=100 (> 0)
-            Number of epochs to train.
+        n_steps: int, default=10000 (> 0)
+            Number of gradient steps.
 
-        n_steps_per_epoch: int, default=100 (> 0)
+        n_steps_per_epoch: int, default=10000 (> 0)
             Number of gradient steps in a epoch.
 
         random_state: int, default=None (>= 0)
@@ -1335,7 +1337,7 @@ class DiscreteDiceStateWightValueLearning(BaseWeightValueLearner):
             reward=reward,
             pscore=pscore,
             evaluation_policy_action_dist=evaluation_policy_action_dist,
-            n_epochs=n_epochs,
+            n_steps=n_steps,
             n_steps_per_epoch=n_steps_per_epoch,
             random_state=random_state,
         )

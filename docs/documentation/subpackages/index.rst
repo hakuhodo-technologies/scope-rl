@@ -45,7 +45,7 @@ SCOPE-RL provides three sub-packages to simulate RL interactions in various situ
     :link: recgym_about
     :link-type: doc
 
-    **RECGym**: Recommender Systems Environment for E-commerce
+    **RECGym**: Recommender Systems' Environment for E-commerce
 
     .. .. grid::
     ..     :gutter: 1
@@ -105,6 +105,15 @@ SCOPE-RL provides three sub-packages to simulate RL interactions in various situ
     ..             .. grid-item:: 
 
     ..                 brief description
+
+
+.. seealso::
+
+    The quickstart examples with the above packages are available in the GitHub repository:
+
+    * `Quickstart with RTBGym <https://github.com/hakuhodo-technologies/scope-rl/tree/main/examples/quickstart/rtb>`_
+    * `Quickstart with RECGym <https://github.com/hakuhodo-technologies/scope-rl/tree/main/examples/quickstart/rec>`_
+    * `Quickstart with BasicGym <https://github.com/hakuhodo-technologies/scope-rl/tree/main/examples/quickstart/basic>`_
 
 .. raw:: html
 

@@ -2,14 +2,14 @@
 Supported Implementation
 ==========
 
-Our implementation aims to streamline the data collection, (offline) policy learning, and off-policy evaluation/selection (OPE/OPS) procedure.
+Our implementation aims to streamline the data collection, (offline) policy learning, and off-policy evaluation and selection (OPE/OPS) procedure.
 We rely on `d3rlpy <https://github.com/takuseno/d3rlpy>`_'s implementation of the learning algorithms and provide some useful tools to streamline the above offline RL procedure.
 
 .. _implementation_dataset:
 
 Synthetic Dataset Generation
 ~~~~~~~~~~
-:class:`SyntheticDataset` is an easy-to-use data collection module which is compatible to any `OpenAI Gym <https://gym.openai.com>`_ and `Gymnasium <https://gymnasium.farama.org/>`_-like RL environment.
+:class:`SyntheticDataset` is an easy-to-use data collection module, which is compatible with any `OpenAI Gym <https://github.com/openai/gym>`_ and `Gymnasium <https://gymnasium.farama.org/>`_-like RL environment.
 
 It takes an RL environment as input to instantiate the class.
 
@@ -44,13 +44,13 @@ Then, it collects logged data by a behavior policy (i.e., data collection policy
         A policy head converts a `d3rlpy <https://github.com/takuseno/d3rlpy>`_'s deterministic behavior policy to 
         either a deterministic or stochastic policy with functions to calculate propensity scores (i.e., action choice probabilities).
 
-        For example, :class:`DiscreteEpsilonGreedyHead` converts a discrete-action policy to a epsilon-greedy policy as follows.
+        For example, :class:`EpsilonGreedyHead` converts a discrete-action policy to an epsilon-greedy policy as follows.
 
         .. code-block:: python
 
-            from scope_rl.policy import DiscreteEpsilonGreedyHead
-            behavior_policy = DiscreteEpsilonGreedyHead(
-                base_policy,  # AlgoBase of d3rlpy
+            from scope_rl.policy import EpsilonGreedyHead
+            behavior_policy = EpsilonGreedyHead(
+                base_policy,  # QLearningAlgoBase of d3rlpy
                 n_actions=env.action_space.n,
                 epsilon=0.3,
                 name="eps_03",
@@ -58,13 +58,13 @@ Then, it collects logged data by a behavior policy (i.e., data collection policy
             )
 
 
-        :class:`ContinuousGaussianHead` converts a continuous-action policy to a stochastic policy as follows.
+        :class:`GaussianHead` converts a continuous-action policy to a stochastic policy as follows.
 
         .. code-block:: python
 
-            from scope_rl.policy import ContinuousGaussianHead
-            behavior_policy = ContinuousGaussianHead(
-                base_policy,  # AlgoBase of d3rlpy
+            from scope_rl.policy import GaussianHead
+            behavior_policy = GaussianHead(
+                base_policy,  # QLearningAlgoBase of d3rlpy
                 sigma=1.0,
                 name="sigma_10",
                 random_state=random_state,
@@ -72,7 +72,7 @@ Then, it collects logged data by a behavior policy (i.e., data collection policy
 
         .. seealso::
 
-            For the detail descriptions and additional supported implementations, please refer to the :ref:`Policy Wrappers <implementation_policy_head>` section later in this page.
+            For detailed descriptions and additional supported implementations, please refer to the :ref:`Policy Wrappers <implementation_policy_head>` section later in this page.
 
     .. dropdown:: How to customize the dataset class?
 
@@ -112,14 +112,14 @@ Then, it collects logged data by a behavior policy (i.e., data collection policy
 
         .. seealso::
 
-            :doc:`API reference of BaseDataset<_autosummary/dataset/scope_rl.dataset.base>` explains the meaning of each keys in detail.
+            :doc:`API reference of BaseDataset<_autosummary/dataset/scope_rl.dataset.base>` and :doc:`/documentation/examples/real_world` explain the meaning of each keys in detail.
 
 
     .. dropdown:: How to handle multiple logged datasets at once?
 
         :class:`MultipleLoggedDataset` enables us to smoothly handle multiple logged datasets. 
 
-        Specifically, :class:`MultipleLoggedDataset` saves the paths to each logged dataset and make each dataset accessible through the following command.
+        Specifically, :class:`MultipleLoggedDataset` saves the paths to each logged dataset and makes each dataset accessible through the following command.
         
         .. code-block:: python
 
@@ -171,17 +171,18 @@ Then, it collects logged data by a behavior policy (i.e., data collection policy
                 multiple_logged_dataset.add(
                     single_logged_dataset, 
                     behavior_policy_name=behavior_policy.name,
+                    dataset_id=0,
                 )
 
         .. seealso::
 
             * :doc:`API reference of MultipleLoggedDataset <_autosummary/scope_rl.utils.MultipleLoggedDataset>`
-            .. * :ref:`Tutorial with MultipleLoggedDataset <scope_rl_multiple_tutorial>`
+            * :doc:`Example codes with MultipleLoggedDataset </documentation/examples/multiple>`
 
     .. dropdown:: How to collect data in a non-episodic setting?
 
         When the goal is to evaluate the policy under a stationary distribution (:math:`d^{\pi}(s)`) rather than in an episodic setting 
-        (i.e., cartpole or taxi used in :cite:`liu2018breaking` :cite:`uehara2020minimax`), we need to collect data from stationary distribution.
+        (i.e., cartpole or taxi used in :cite:`liu2018breaking, uehara2020minimax`), we need to collect data from the stationary distribution.
 
         For this, please consider using :class:`obtain_step` instead of :class:`obtain_episodes` as follows.
 
@@ -196,11 +197,10 @@ Then, it collects logged data by a behavior policy (i.e., data collection policy
 .. seealso::
 
     * :doc:`quickstart` 
-    .. * and :ref:`related tutorials <scope_rl_others_tutorial>`
 
 .. _implementation_opl:
 
-Off-Policy Learning
+Offline Learning
 ~~~~~~~~~~
 
 Once we obtain the logged dataset, it's time to learn a new policy in an offline manner. 
@@ -210,60 +210,54 @@ For this, `d3rlpy <https://github.com/takuseno/d3rlpy>`_ provides various offlin
 
     # import modules
     from d3rlpy.dataset import MDPDataset
-    from d3rlpy.algos import DiscreteCQL as CQL
+    from d3rlpy.algos import DiscreteCQLConfig as CQLConfig
     from d3rlpy.models.encoders import VectorEncoderFactory
     from d3rlpy.models.q_functions import MeanQFunctionFactory
     
-    # convert a (single) logged dataset to d3rlpy dataset
+    # convert a (single) logged dataset to the d3rlpy dataset
     offlinerl_dataset = MDPDataset(
         observations=logged_dataset["state"],
         actions=logged_dataset["action"],
         rewards=logged_dataset["reward"],
         terminals=logged_dataset["done"],
-        episode_terminals=logged_dataset["done"],
-        discrete_action=True,
-    )
-    train_episodes, test_episodes = train_test_split(
-        offlinerl_dataset, 
-        test_size=0.2, 
-        random_state=random_state,
     )
 
     # define an offline RL algorithm
-    cql = CQL(
+    cql = CQLConfig(
         encoder_factory=VectorEncoderFactory(hidden_units=[30, 30]),
         q_func_factory=MeanQFunctionFactory(),
-    )
+    ).create()
 
     # fit algorithm in an offline manner
     cql.fit(
-        train_episodes,
-        eval_episodes=test_episodes,
+        offlinerl_dataset,
         n_steps=10000,
     )
 
-While the above procedure is alreaady simple and easy-to-use, 
-we also provide :class:`OffPolicyLearning` as a meta class to further smoothen the OPL procedure with various algorithms.
+While the above procedure is already simple and easy to use, 
+we also provide :class:`TrainCandidatePolicies` as a meta class to further smoothen the ORL procedure with various algorithms.
 
 .. code-block:: python
 
     # prepare offline RL algorithms
-    cql_b1 = CQL(
+    cql_b1 = CQLConfig(
         encoder_factory=VectorEncoderFactory(hidden_units=[30, 30]),
         q_func_factory=MeanQFunctionFactory(),
-    )
-    cql_b2 = CQL(
+    ).create()
+
+    cql_b2 = CQLConfig(
         encoder_factory=VectorEncoderFactory(hidden_units=[100]),
         q_func_factory=MeanQFunctionFactory(),
-    )
-    cql_b3 = CQL(
+    ).create()
+
+    cql_b3 = CQLConfig(
         encoder_factory=VectorEncoderFactory(hidden_units=[50, 10]),
         q_func_factory=MeanQFunctionFactory(),
-    )
+    ).create()
 
     # off-policy learning
-    from scope_rl.policy import OffPolicyLearning
-    opl = OffPolicyLearning(
+    from scope_rl.policy import TrainCandidatePolicies
+    opl = TrainCandidatePolicies(
         fitting_args={"n_steps": 10000},
     )
     base_policies = opl.learn_base_policy(
@@ -272,12 +266,12 @@ we also provide :class:`OffPolicyLearning` as a meta class to further smoothen t
         random_state=random_state,
     )
 
-Using :class:`OffPolicyLearning`, we can also convert the deterministic base policies to stochastic (evaluation) policies as follows.
+Using :class:`TrainCandidatePolicies`, we can also convert the deterministic base policies to stochastic (evaluation) policies as follows.
 
 .. code-block:: python
 
     # policy wrapper
-    from scope_rl.policy import DiscreteEpsilonGreedyHead as EpsilonGreedyHead
+    from scope_rl.policy import EpsilonGreedyHead
 
     policy_wrappers = {
         "eps_00": (
@@ -344,7 +338,7 @@ The obtained evaluation policies are the following (both algorithms and policy w
 
     .. dropdown:: How to handle OPL with multiple logged datasets?
 
-        :class:`OffPolicyLearning` is particularly useful when fitting offline RL algorithms on multiple logged dataset.
+        :class:`TrainCandidatePolicies` is particularly useful when fitting offline RL algorithms on multiple logged datasets.
 
         We can apply the same algorithms and policies wrappers across multiple datasets by the following command.
 
@@ -365,7 +359,7 @@ The obtained evaluation policies are the following (both algorithms and policy w
         .. seealso::
 
             * :ref:`How to obtain MultipleLoggedDataset? <tips_synthetic_dataset>`
-            .. * :ref:`Tutorial with MultipleLoggedDataset <scope_rl_multiple_tutorial>`
+            * :doc:`Examples with MultipleLoggedDataset </documentation/examples/multiple>`
 
 .. seealso::
 
@@ -377,7 +371,7 @@ The obtained evaluation policies are the following (both algorithms and policy w
 Policy Wrapper
 ~~~~~~~~~~
 
-Here, we describe some useful wrapper tools to convert a `d3rlpy <https://github.com/takuseno/d3rlpy>`_'s policy to the behavior/evaluation policies.
+Here, we describe some useful wrapper tools to convert a `d3rlpy <https://github.com/takuseno/d3rlpy>`_'s policy to (stochastic) behavior and evaluation policies.
 
 
 ======================================================   =============================================
@@ -400,13 +394,13 @@ Here, we describe some useful wrapper tools to convert a `d3rlpy <https://github
         * :class:`predict_online`
         * :class:`predict_value_online`
         * :class:`sample_action_online`
-        * :class:`stochastic_action_with_pscore_online`
+        * :class:`sample_action_and_output_pscore_online`
 
         Please just override these functions for online interactions. :class:`OnlineHead` is also useful for this purpose.
 
-        Next, for the second purpose, you can customize how to convert a deterministic policy to a stochastic policy using following functions.
+        Next, for the second purpose, you can customize how to convert a deterministic policy to a stochastic policy using the following functions.
 
-        * :class:`stochastic_action_with_pscore_online`
+        * :class:`sample_action_and_output_pscore_online`
         * :class:`calc_action_choice_probability`
         * :class:`calc_pscore_given_action`
 
@@ -424,24 +418,23 @@ Here, we describe some useful wrapper tools to convert a `d3rlpy <https://github
 
 DiscreteHead
 ----------
-This module transforms a deterministic policy to a stochastic one in discrete action cases.
-Specifically, we have two stochastic policies.
+This module transforms a deterministic policy into a stochastic one in discrete action cases.
+Specifically, we have the following two options.
 
-    * :class:`DiscreteEpsilonGreedyHead`: :math:`\pi(a | s) := (1 - \epsilon) * \pi_{\mathrm{det}}(a | s) + \epsilon / |\mathcal{A}|`.
-    * :class:`DiscreteSoftmaxHead`: :math:`\pi(a | s) := \displaystyle \frac{\exp(Q^{(\pi_{\mathrm{det}})}(s, a) / \tau)}{\sum_{a' \in \mathcal{A}} \exp(Q^{(\pi_{\mathrm{det}})}(s, a') / \tau)}`.
+    * :class:`EpsilonGreedyHead`: :math:`\pi(a | s) := (1 - \epsilon) * \pi_{\mathrm{det}}(a | s) + \epsilon / |\mathcal{A}|`.
+    * :class:`SoftmaxHead`: :math:`\pi(a | s) := \displaystyle \frac{\exp(Q^{(\pi_{\mathrm{det}})}(s, a) / \tau)}{\sum_{a' \in \mathcal{A}} \exp(Q^{(\pi_{\mathrm{det}})}(s, a') / \tau)}`.
 
 Note that :math:`\epsilon \in [0, 1]` is the degree of exploration :math:`\tau` is the temperature hyperparameter.
-DiscreteEpsilonGreedyHead is also used to construct a deterministic evaluation policy in OPE/OPS by setting :math:`\epsilon=0.0`.
+EpsilonGreedyHead is also used to construct a deterministic evaluation policy in OPE/OPS by setting :math:`\epsilon=0.0`.
 
 .. _implementation_continuous_head:
 
 ContinuousHead
 ----------
 This module transforms a deterministic policy to a stochastic one in continuous action cases.
-Specifically, we have two stochastic policies.
 
-    * :class:`ContinuousGaussianHead`: :math:`\pi(a | s) := \mathrm{Normal}(\pi_{\mathrm{det}}(s), \sigma)`.
-    * :class:`ContinuousTruncatedGaussianHead`: :math:`\pi(a | s) := \mathrm{TruncatedNormal}(\pi_{\mathrm{det}}(s), \sigma)`.
+    * :class:`GaussianHead`: :math:`\pi(a | s) := \mathrm{Normal}(\pi_{\mathrm{det}}(s), \sigma)`.
+    * :class:`TruncatedGaussianHead`: :math:`\pi(a | s) := \mathrm{TruncatedNormal}(\pi_{\mathrm{det}}(s), \sigma)`.
 
 We also provide the wrapper class of deterministic policy to be used in OPE.
 
@@ -451,7 +444,7 @@ We also provide the wrapper class of deterministic policy to be used in OPE.
 
 OnlineHead
 ----------
-This module enables online interaction of the policy (note: `d3rlpy <https://github.com/takuseno/d3rlpy>`_'s policy is particularly designed for batch interactions).
+This module enables online interaction with the policy (note: `d3rlpy <https://github.com/takuseno/d3rlpy>`_'s policy is particularly designed for batch interactions).
 
     * :class:`OnlineHead`
 

@@ -19,14 +19,15 @@
 
 ## Overview
 
-*RTBGym* is an open-source simulation platform for Real-Time Bidding (RTB) of Display Advertising, which is written in Python. The simulator is particularly intended for reinforcement learning algorithms and follows [OpenAI Gym](https://gym.openai.com) and [Gymnasium](https://gymnasium.farama.org/)-like interface. We design RTBGym as a configurative environment so that researchers and practitioner can customize the environmental modules including `WinningPriceDistribution`, `ClickThroughRate`, and `ConversionRate`.
+*RTBGym* is an open-source simulation platform for Real-Time Bidding (RTB) of Display Advertising, which is written in Python. The simulator is particularly intended for reinforcement learning algorithms and follows [OpenAI Gym](https://gym.openai.com) and [Gymnasium](https://gymnasium.farama.org/)-like interface. We design RTBGym as a configurative environment so that researchers and practitioners can customize the environmental modules including `WinningPriceDistribution`, `ClickThroughRate`, and `ConversionRate`.
 
-Note that, RTBGym is publicized under [SCOPE-RL](../) repository, which facilitates the implementation of offline reinforcement learning procedure.
+Note that RTBGym is publicized under [SCOPE-RL](../) repository, which facilitates the implementation of the offline reinforcement learning procedure.
 
 ### Basic Setting
 
 In RTB, the objective of the RL agent is to maximize some KPIs (number of clicks or conversions) within an episode under given budget constraints. \
-We often aim to achieve this goal by adjusting bidding price function parameter $\alpha$. Specifically, we adjust bid price using $\alpha$ as follows.
+We often aim to achieve this goal by adjusting a parameter $\alpha$ to control the bid price as follows.
+
 <p align="center">
 $bid_{t,i} = \alpha \cdot r^{\ast}$,
 </p>
@@ -48,7 +49,7 @@ The goal of RTB is to maximize the expected trajectory-wise reward under the bud
 
 ### Implementation
 
-RTBGym provides two standardized RTB environment.
+RTBGym provides two standardized RTB environments.
 - `"RTBEnv-discrete-v0"`: Standard RTB environment with discrete action space.
 - `"RTBEnv-continuous-v0"`: Standard RTB environment with continuous action space.
 
@@ -61,7 +62,7 @@ RTBGym is configurative about the following three modules.
 - [ClickThroughRate](./envs/simulator/function.py#L183): Class to define the click through rate of users.
 - [ConversionRate](./envs/simulator/function.py#L393): Class to define the conversion rate of users.
 
-Note that, users can customize the above modules by following the [abstract class](./envs/simulator/base.py). \
+Note that users can customize the above modules by following the [abstract class](./envs/simulator/base.py). \
 We also define the bidding function in the [Bidder](./envs/simulator/bidder.py#15) class and the auction simulation in the [Simulator](./envs/simulator/rtb_synthetic.py#23) class, respectively.
 
 ## Installation
@@ -70,7 +71,7 @@ RTBGym can be installed as a part of [SCOPE-RL](../) using Python's package mana
 pip install scope-rl
 ```
 
-You can also install from source.
+You can also install it from the source.
 ```bash
 git clone https://github.com/hakuhodo-technologies/scope-rl
 cd scope-rl
@@ -80,7 +81,7 @@ python setup.py install
 ## Usage
 
 We provide an example usage of the standard and customized environment. \
-The online/offlline RL and Off-Policy Evaluation examples are provides in [SCOPE-RL's README](../README.md).
+The online/offline RL and Off-Policy Evaluation examples are provided in [SCOPE-RL's README](../README.md).
 
 ### Standard RTBEnv
 
@@ -107,7 +108,7 @@ while not done:
     obs, reward, done, truncated, info = env.step(action)
 ```
 
-Let's visualize the case with uniform random policy (in continuous action case). The discrete case also works in a similar manner.
+Let's visualize the case with the uniform random policy (in a continuous action case). The discrete case also works in a similar manner.
 
 ```Python
 # import from other libraries
@@ -159,11 +160,11 @@ plt.show()
 <div align="center"><img src="./images/basic_interaction.png" width="60%"/></div>
 <figcaption>
 <p align="center">
-  Transition of the Remaining Budget and Cumulative Reward during a Single Episode
+  The Transition of the Remaining Budget and Cumulative Reward during a Single Episode
 </p>
 </figcaption>
 
-Note that, while we use [SCOPE-RL](../README.md) and [d3rlpy](https://github.com/takuseno/d3rlpy) here, RTBGym is compatible with any other libraries working on the [OpenAI Gym](https://gym.openai.com) and [Gymnasium](https://gymnasium.farama.org/)-like interface.
+Note that while we use [SCOPE-RL](../README.md) and [d3rlpy](https://github.com/takuseno/d3rlpy) here, RTBGym is compatible with any other libraries working on the [OpenAI Gym](https://gym.openai.com) and [Gymnasium](https://gymnasium.farama.org/)-like interface.
 
 ### Customized RTGEnv
 
@@ -318,7 +319,7 @@ class CustomizedClickThroughRate(BaseClickAndConversionRate):
         clicks = self.random_.rand(len(ad_ids)) < ctrs
         return clicks.astype(int)
 ```
-Note that, custom conversion rate can be defined in a simmilar manner.
+Note that the custom conversion rate can be defined in a similar manner.
 
 ### Wrapper class for custom bidding setup
 To customize the bidding setup, we also provide `CustomizedRTBEnv`.
@@ -349,10 +350,10 @@ custom_env = CustomizedRTBEnv(
 )
 ```
 
-More examples are available at [quickstart/rtb_synthetic_customize_env.ipynb](./examples/quickstart/rtb_synthetic_customize_env.ipynb). \
-The statistics of the environment is also visualized at [quickstart/rtb_synthetic_data_collection.ipynb](./examples/quickstart/rtb_synthetic_data_collection.ipynb).
+More examples are available at [quickstart/rtb/rtb_synthetic_customize_env.ipynb](./examples/quickstart/rtb/rtb_synthetic_customize_env.ipynb). \
+The statistics of the environment are also visualized at [quickstart/rtb/rtb_synthetic_data_collection.ipynb](./examples/quickstart/rtb/rtb_synthetic_data_collection.ipynb).
 
-Finally, example usages for online/offline RL and OPE/OPS studies are available at [quickstart/rtb_synthetic_discrete_basic.ipynb](./examples/quickstart/rtb_synthetic_discrete_basic.ipynb) (discrete action space) and [quickstart/rtb_synthetic_continuous_basic.ipynb](./examples/quickstart/rtb_synthetic_continuous_basic.ipynb) (continuous action space).
+Finally, example usages for online/offline RL and OPE/OPS studies are available at [quickstart/rtb/rtb_synthetic_discrete_basic.ipynb](./examples/quickstart/rtb/rtb_synthetic_discrete_basic.ipynb) (discrete action space) and [quickstart/rtb/rtb_synthetic_continuous_basic.ipynb](./examples/quickstart/rtb/rtb_synthetic_continuous_basic.ipynb) (continuous action space).
 
 ## Citation
 
@@ -375,7 +376,7 @@ Bibtex:
 
 ## Contribution
 Any contributions to RTBGym are more than welcome!
-Please refer to [CONTRIBUTING.md](../CONTRIBUTING.md) for general guidelines how to contribute the project.
+Please refer to [CONTRIBUTING.md](../CONTRIBUTING.md) for general guidelines on how to contribute the project.
 
 ## License
 
@@ -393,7 +394,7 @@ This project is licensed under Apache 2.0 license - see [LICENSE](../LICENSE) fi
 
 ## Contact
 
-For any question about the paper and software, feel free to contact: hk844@cornell.edu
+For any questions about the paper and software, feel free to contact: hk844@cornell.edu
 
 ## References
 

@@ -15,7 +15,7 @@ from ...types import Action
 
 @dataclass
 class UserModel(BaseUserModel):
-    """Class to define user model with user_preference_dynamics and reward_function.
+    """Class to define a user model based on user_preference_dynamics and reward_function.
 
     Bases: :class:`recgym.BaseUserModel`
 
@@ -87,12 +87,12 @@ class UserModel(BaseUserModel):
         item_feature_vector: np.ndarray,
         alpha: float = 1.0,
     ) -> np.ndarray:
-        """Function that determines how to update the state (i.e., user preference) based on the recommended item. user_feature is amplified by the recommended item_feature
+        """Function that determines the user state transition (i.e., user preference) based on the recommended item. user_feature is amplified by the recommended item_feature
 
         Parameters
         -------
         state: array-like of shape (user_feature_dim, )
-            A vector representing user preference.  The preference changes over time in an episode by the actions presented by the RL agent.
+            A vector representing user preference. The preference changes over time in an episode depending on the actions presented by the RL agent.
             When the true state is unobservable, you can gain observation instead of state.
 
         action: int or array-like of shape (1, )
@@ -107,7 +107,7 @@ class UserModel(BaseUserModel):
         Returns
         -------
         state: array-like of shape (user_feature_dim, )
-            A vector representing user preference.  The preference changes over time in an episode by the actions presented by the RL agent.
+            A vector representing user preference. The preference changes over time in an episode depending on the actions presented by the RL agent.
             When the true state is unobservable, you can gain observation instead of state.
 
         """
@@ -127,7 +127,7 @@ class UserModel(BaseUserModel):
         Parameters
         -------
         state: array-like of shape (user_feature_dim, )
-            A vector representing user preference.  The preference changes over time in an episode by the actions presented by the RL agent.
+            A vector representing user preference. The preference changes over time in an episode depending on the actions presented by the RL agent.
             When the true state is unobservable, you can gain observation instead of state.
 
         action: int or array-like of shape (1, )
@@ -139,7 +139,7 @@ class UserModel(BaseUserModel):
         Returns
         -------
         reward: float
-            User engagement signal. Either binary or continuous.
+            User engagement signal as a reward. Either binary or continuous.
 
         """
         logit = state @ item_feature_vector[action]

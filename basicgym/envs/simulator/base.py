@@ -30,7 +30,7 @@ class BaseStateTransitionFunction(metaclass=ABCMeta):
             Current state.
 
         action: array-like of shape (action_dim, )
-            Indicating the action presented by the agent.
+            Indicating the action chosen by the agent.
 
         Return
         -------
@@ -43,7 +43,7 @@ class BaseStateTransitionFunction(metaclass=ABCMeta):
 
 @dataclass
 class BaseRewardFunction(metaclass=ABCMeta):
-    """Base class to define the mean reward function.
+    """Base class to define the expected immediate reward function.
 
     Imported as: :class:`basicgym.BaseRewardFunction`
 
@@ -55,7 +55,7 @@ class BaseRewardFunction(metaclass=ABCMeta):
         state: np.ndarray,
         action: np.ndarray,
     ) -> float:
-        """Mean reward function.
+        """Expected immediate reward function
 
         Parameters
         -------
@@ -63,12 +63,12 @@ class BaseRewardFunction(metaclass=ABCMeta):
             State in the RL environment.
 
         action: array-like of shape (action_dim, )
-            Indicating the action presented by the agent.
+            Indicating the action chosen by the agent.
 
         Return
         -------
         mean_reward_function: float
-            Mean reward function conditioned on the state and action.
+            Expected immediate reward function conditioned on the state and action.
 
         """
         raise NotImplementedError
