@@ -350,10 +350,10 @@ custom_env = CustomizedRTBEnv(
 )
 ```
 
-More examples are available at [quickstart/rtb/rtb_synthetic_customize_env.ipynb](./examples/quickstart/rtb/rtb_synthetic_customize_env.ipynb). \
-The statistics of the environment are also visualized at [quickstart/rtb/rtb_synthetic_data_collection.ipynb](./examples/quickstart/rtb/rtb_synthetic_data_collection.ipynb).
+More examples are available at [quickstart/rtb/rtb_synthetic_customize_env.ipynb](../examples/quickstart/rtb/rtb_synthetic_customize_env.ipynb). \
+The statistics of the environment are also visualized at [quickstart/rtb/rtb_synthetic_data_collection.ipynb](../examples/quickstart/rtb/rtb_synthetic_data_collection.ipynb).
 
-Finally, example usages for online/offline RL and OPE/OPS studies are available at [quickstart/rtb/rtb_synthetic_discrete_basic.ipynb](./examples/quickstart/rtb/rtb_synthetic_discrete_basic.ipynb) (discrete action space) and [quickstart/rtb/rtb_synthetic_continuous_basic.ipynb](./examples/quickstart/rtb/rtb_synthetic_continuous_basic.ipynb) (continuous action space).
+Finally, example usages for online/offline RL and OPE/OPS studies are available at [quickstart/rtb/rtb_synthetic_discrete_basic.ipynb](../examples/quickstart/rtb/rtb_synthetic_discrete_basic.ipynb) (discrete action space) and [quickstart/rtb/rtb_synthetic_continuous_basic.ipynb](../examples/quickstart/rtb/rtb_synthetic_continuous_basic.ipynb) (continuous action space).
 
 ## Citation
 

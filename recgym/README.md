@@ -219,8 +219,8 @@ class CustomizedUserModel(BaseUserModel):
         return reward
 ```
 
-More examples are available at [quickstart/rec/rec_synthetic_customize_env.ipynb](./examples/quickstart/rec/rec_synthetic_customize_env.ipynb). \
-The statistics of the environment is also visualized at [quickstart/rec/rec_synthetic_data_collection.ipynb](./examples/quickstart/rec/rec_synthetic_data_collection.ipynb).
+More examples are available at [quickstart/rec/rec_synthetic_customize_env.ipynb](../examples/quickstart/rec/rec_synthetic_customize_env.ipynb). \
+The statistics of the environment is also visualized at [quickstart/rec/rec_synthetic_data_collection.ipynb](../examples/quickstart/rec/rec_synthetic_data_collection.ipynb).
 
 ## Citation
 

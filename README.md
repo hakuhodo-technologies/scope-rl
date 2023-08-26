@@ -4,7 +4,7 @@
 
 [![pypi](https://img.shields.io/pypi/v/scope-rl.svg)](https://pypi.python.org/pypi/scope-rl)
 [![Python](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11-blue)](https://www.python.org)
-[![Downloads](https://pepy.tech/badge/scope-rl)](https://pepy.tech/project/scope-rl)
+<!-- [![Downloads](https://pepy.tech/badge/scope-rl)](https://pepy.tech/project/scope-rl) -->
 [![GitHub commit activity](https://img.shields.io/github/commit-activity/m/hakuhodo-technologies/scope-rl)](https://github.com/hakuhodo-technologies/scope-rl/graphs/contributors)
 [![GitHub last commit](https://img.shields.io/github/last-commit/hakuhodo-technologies/scope-rl)](https://github.com/hakuhodo-technologies/scope-rl/graphs/commit-activity)
 [![Documentation Status](https://readthedocs.org/projects/scope-rl/badge/?version=latest)](https://scope-rl.readthedocs.io/en/latest/)
