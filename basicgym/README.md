@@ -235,7 +235,7 @@ class CustomizedRewardFunction(BaseRewardFunction):
         return reward
 ```
 
-More examples are available at [quickstart/basic_synthetic_customize_env.ipynb](../examples/quickstart/basic_synthetic_customize_env.ipynb).
+More examples are available at [quickstart/basic/basic_synthetic_customize_env.ipynb](../examples/quickstart/basic/basic_synthetic_customize_env.ipynb).
 
 ## Citation
 
