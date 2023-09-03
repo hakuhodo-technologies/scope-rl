@@ -252,7 +252,7 @@ This project is licensed under Apache 2.0 license - see [LICENSE](../LICENSE) fi
 
 ## Project Team
 
-- [Haruka Kiyohara](https://sites.google.com/view/harukakiyohara) (**Main Contributor**)
+- [Haruka Kiyohara](https://sites.google.com/view/harukakiyohara) (**Main Contributor**; Cornell University)
 - Ren Kishimoto (Tokyo Institute of Technology)
 - Kosuke Kawakami (HAKUHODO Technologies Inc.)
 - Ken Kobayashi (Tokyo Institute of Technology)
