@@ -1,30 +1,30 @@
-import time
+# import time
 from typing import List
 from pathlib import Path
 import pickle
 
-import hydra
-from omegaconf import DictConfig
+# import hydra
+# from omegaconf import DictConfig
 
 import gym
 from gym.spaces import Box
 
-import basicgym
-from basicgym import BasicEnv
+# import basicgym
+# from basicgym import BasicEnv
 
 import numpy as np
-
-from d3rlpy.algos import DiscreteRandomPolicy
-from d3rlpy.algos import SAC
-from d3rlpy.algos import DoubleDQN as DDQN
-from d3rlpy.algos import CQL
-from d3rlpy.algos import IQL
-from d3rlpy.algos import DiscreteCQL
-from d3rlpy.algos import DiscreteBCQ
-from d3rlpy.online.explorers import LinearDecayEpsilonGreedy
+from d3rlpy.preprocessing import MinMaxObservationScaler, MinMaxActionScaler
+# from d3rlpy.algos import DiscreteRandomPolicy
+from d3rlpy.algos import SACConfig
+from d3rlpy.algos import DoubleDQNConfig
+from d3rlpy.algos import CQLConfig
+# from d3rlpy.algos import IQLConfig
+from d3rlpy.algos import DiscreteCQLConfig
+# from d3rlpy.algos import DiscreteBQLConfig
+from d3rlpy.algos import LinearDecayEpsilonGreedy
 from d3rlpy.models.encoders import VectorEncoderFactory
 from d3rlpy.models.q_functions import MeanQFunctionFactory
-from d3rlpy.online.buffers import ReplayBuffer
+from d3rlpy.dataset import create_fifo_replay_buffer
 
 from scope_rl.dataset import SyntheticDataset
 from scope_rl.policy import BaseHead
@@ -33,26 +33,27 @@ from scope_rl.policy import EpsilonGreedyHead
 from scope_rl.policy import SoftmaxHead
 from scope_rl.policy import TrainCandidatePolicies
 
-
-from scope_rl.utils import MinMaxActionScaler
-from scope_rl.utils import OldGymAPIWrapper
+# from scope_rl.utils import OldGymAPIWrapper
 from scope_rl.types import LoggedDataset
 
-# ope 
+# ope
 from scope_rl.ope import OffPolicyEvaluation
-from scope_rl.ope import OffPolicySelection
+
+
 # continuous
 # basic estimators
 from scope_rl.ope.continuous import DirectMethod as C_DM
 from scope_rl.ope.continuous import TrajectoryWiseImportanceSampling as C_TIS
 from scope_rl.ope.continuous import PerDecisionImportanceSampling as C_PDIS
 from scope_rl.ope.continuous import DoublyRobust as C_DR
+
 # self normalized estimators
 from scope_rl.ope.continuous import SelfNormalizedTIS as C_SNTIS
 from scope_rl.ope.continuous import SelfNormalizedPDIS as C_SNPDIS
 from scope_rl.ope.continuous import SelfNormalizedDR as C_SNDR
-from scope_rl.ope.continuous import StateActionMarginalSNIS as C_MIS
-from scope_rl.ope.continuous import StateActionMarginalSNDR as C_MDR
+# from scope_rl.ope.continuous import StateActionMarginalSNIS as C_MIS
+# from scope_rl.ope.continuous import StateActionMarginalSNDR as C_MDR
+
 # marginal estimators
 from scope_rl.ope.continuous import StateActionMarginalIS as C_SAMIS
 from scope_rl.ope.continuous import StateActionMarginalDR as C_SAMDR
@@ -62,20 +63,24 @@ from scope_rl.ope.continuous import StateActionMarginalSNIS as C_SAMSNIS
 from scope_rl.ope.continuous import StateActionMarginalSNDR as C_SAMSNDR
 from scope_rl.ope.continuous import StateMarginalSNIS as C_SMSNIS
 from scope_rl.ope.continuous import StateMarginalSNDR as C_SMSNDR
+
 # double reinforcement learning estimators
 from scope_rl.ope.continuous import DoubleReinforcementLearning as C_DRL
+
 # discrete
 # basic estimators
 from scope_rl.ope.discrete import DirectMethod as D_DM
 from scope_rl.ope.discrete import TrajectoryWiseImportanceSampling as D_TIS
 from scope_rl.ope.discrete import PerDecisionImportanceSampling as D_PDIS
 from scope_rl.ope.discrete import DoublyRobust as D_DR
+
 # self normalized estimators
 from scope_rl.ope.discrete import SelfNormalizedTIS as D_SNTIS
 from scope_rl.ope.discrete import SelfNormalizedPDIS as D_SNPDIS
 from scope_rl.ope.discrete import SelfNormalizedDR as D_SNDR
-from scope_rl.ope.discrete import StateActionMarginalSNIS as D_MIS
-from scope_rl.ope.discrete import StateActionMarginalSNDR as D_MDR
+# from scope_rl.ope.discrete import StateActionMarginalSNIS as D_MIS
+# from scope_rl.ope.discrete import StateActionMarginalSNDR as D_MDR
+
 # marginal estimators
 from scope_rl.ope.discrete import StateActionMarginalIS as D_SAMIS
 from scope_rl.ope.discrete import StateActionMarginalDR as D_SAMDR
@@ -85,17 +90,14 @@ from scope_rl.ope.discrete import StateActionMarginalSNIS as D_SAMSNIS
 from scope_rl.ope.discrete import StateActionMarginalSNDR as D_SAMSNDR
 from scope_rl.ope.discrete import StateMarginalSNIS as D_SMSNIS
 from scope_rl.ope.discrete import StateMarginalSNDR as D_SMSNDR
+
 # double reinforcement learning estimators
 from scope_rl.ope.discrete import DoubleReinforcementLearning as D_DRL
 
 from scope_rl.ope import CreateOPEInput
-
-from scope_rl.utils import MinMaxScaler
-from scope_rl.utils import MinMaxActionScaler
-from scope_rl.utils import OldGymAPIWrapper
 from scope_rl.utils import MultipleLoggedDataset
 
-from experiments.utils import torch_seed, format_runtime
+from experiments.utils import torch_seed
 
 
 def train_behavior_policy(
@@ -106,10 +108,10 @@ def train_behavior_policy(
     device: str,
     base_random_state: int,
     log_dir: str,
-    variable,
-    variable_name,
+    variable: str,
+    variable_name: str,
 ):
-    env_ = OldGymAPIWrapper(env)
+    # env_ = OldGymAPIWrapper(env)
     action_type = "continuous" if isinstance(env.action_space, Box) else "discrete"
     if action_type == "continuous":
         action_dim = env.action_space.shape[0]
@@ -118,39 +120,41 @@ def train_behavior_policy(
     path_.mkdir(exist_ok=True, parents=True)
 
     if variable == "n_step_pdis":
-        path_behavior_policy = Path(path_ / f"behavior_policy_{env_name}_{variable_name}.pt")
+        path_behavior_policy = Path(
+            path_ / f"behavior_policy_{env_name}_{variable_name}.pt"
+        )
     else:
-        path_behavior_policy = Path(path_ / f"behavior_policy_{env_name}_{variable_name}_{variable}.pt")
+        path_behavior_policy = Path(
+            path_ / f"behavior_policy_{env_name}_{variable_name}_{variable}.pt"
+        )
 
     torch_seed(base_random_state, device=device)
 
     if action_type == "continuous":
-        model = SAC(
+        model = SACConfig(
             actor_encoder_factory=VectorEncoderFactory(hidden_units=[30, 30]),
             critic_encoder_factory=VectorEncoderFactory(hidden_units=[30, 30]),
             q_func_factory=MeanQFunctionFactory(),
-            use_gpu=(device == "cuda:0"),
             action_scaler=MinMaxActionScaler(
                 minimum=env.action_space.low,
                 maximum=env.action_space.high,
             ),
-        )
+        ).create(device=device)
     else:
-        model = DDQN(
+        model = DoubleDQNConfig(
             encoder_factory=VectorEncoderFactory(hidden_units=[30, 30]),
             q_func_factory=MeanQFunctionFactory(),
             target_update_interval=100,
-            use_gpu=(device == "cuda:0"),
-        )
+        ).create(device=device)
 
     if path_behavior_policy.exists():
-        model.build_with_env(env_)
+        model.build_with_env(env)
         model.load_model(path_behavior_policy)
 
     else:
-        buffer = ReplayBuffer(
-            maxlen=10000,
-            env=env_,
+        buffer = create_fifo_replay_buffer(
+            limit=10000,
+            env=env,
         )
         explorer = LinearDecayEpsilonGreedy(
             start_epsilon=1.0,
@@ -159,9 +163,9 @@ def train_behavior_policy(
         )
         if action_type == "continuous":
             model.fit_online(
-                env_,
+                env,
                 buffer,
-                eval_env=env_,
+                eval_env=env,
                 n_steps=1000,
                 n_steps_per_epoch=100,
                 update_start_step=100,
@@ -169,10 +173,10 @@ def train_behavior_policy(
 
         else:
             model.fit_online(
-                env_,
+                env,
                 buffer,
                 explorer=explorer,
-                eval_env=env_,
+                eval_env=env,
                 n_steps=100000,
                 n_steps_per_epoch=100,
                 update_start_step=100,
@@ -184,15 +188,6 @@ def train_behavior_policy(
                 name=f"ddqn_softmax_{behavior_tau}",
                 random_state=base_random_state,
             )
-            # behavior_policy = DiscreteRandomPolicy(n_actions=env.action_space.n)
-
-            # behavior_policy = EpsilonGreedyHead(
-            #     model,
-            #     n_actions=env.action_space.n,
-            #     epsilon=0.3,
-            #     name=f"ddqn_softmax_{behavior_tau}",
-            #     random_state=base_random_state,
-            # )
 
         model.save_model(path_behavior_policy)
 
@@ -223,14 +218,14 @@ def obtain_logged_dataset(
     n_random_state: int,
     base_random_state: int,
     log_dir: str,
-    variable,
-    variable_name,
+    variable: str,
+    variable_name: str,
 ):
     behavior_policy_name = behavior_policy.name
 
     path_ = Path(log_dir + f"/logged_dataset")
     path_.mkdir(exist_ok=True, parents=True)
-    
+
     if variable == "n_step_pdis":
         path_train_logged_dataset = Path(
             path_
@@ -249,7 +244,6 @@ def obtain_logged_dataset(
             path_
             / f"test_logged_dataset_{env_name}_{behavior_policy_name}_{variable_name}_{variable}.pkl"
         )
-
 
     if path_train_logged_dataset.exists():
         with open(path_train_logged_dataset, "rb") as f:
@@ -303,8 +297,8 @@ def train_candidate_policies(
     device: str,
     base_random_state: int,
     log_dir: str,
-    variable,
-    variable_name,
+    variable: str,
+    variable_name: str,
 ):
     action_type = "continuous" if isinstance(env.action_space, Box) else "discrete"
     if action_type == "continuous":
@@ -325,7 +319,6 @@ def train_candidate_policies(
     opl = TrainCandidatePolicies(
         fitting_args={
             "n_steps": 10000,
-            "scorers": {},
         }
     )
 
@@ -337,32 +330,22 @@ def train_candidate_policies(
         torch_seed(base_random_state, device=device)
 
         if action_type == "continuous":
-            cql = CQL(
+            cql = CQLConfig(
                 actor_encoder_factory=VectorEncoderFactory(hidden_units=[30, 30]),
                 critic_encoder_factory=VectorEncoderFactory(hidden_units=[30, 30]),
                 q_func_factory=MeanQFunctionFactory(),
-                use_gpu=(device == "cuda:0"),
                 action_scaler=MinMaxActionScaler(
                     minimum=env.action_space.low,  # minimum value that policy can take
                     maximum=env.action_space.high,  # maximum value that policy can take
-                ),
-            )
+                )
+            ).create(device=device)
             algorithms = [cql]
 
         else:
-            cql = DiscreteCQL(
+            cql = DiscreteCQLConfig(
                 encoder_factory=VectorEncoderFactory(hidden_units=[30, 30]),
                 q_func_factory=MeanQFunctionFactory(),
-                use_gpu=(device == "cuda:0"),
-            )
-            # cql = EpsilonGreedyHead(
-            #     cql,
-            #     n_actions=env.action_space.n,
-            #     epsilon=0.3,
-            #     name=f"cql",
-            #     random_state=base_random_state,
-            # )
-            
+            ).create(device=device)
             algorithms = [cql]
 
         base_policies = opl.learn_base_policy(
@@ -417,8 +400,8 @@ def off_policy_evaluation(
     device: str,
     base_random_state: int,
     log_dir: str,
-    variable,
-    variable_name,
+    variable: str,
+    variable_name: str,
 ):
     action_type = "continuous" if isinstance(env.action_space, Box) else "discrete"
 
@@ -428,7 +411,9 @@ def off_policy_evaluation(
     if variable == "n_step_pdis":
         path_input_dict = Path(path_ / f"input_dict_{env_name}_{variable_name}.pkl")
     else:
-        path_input_dict = Path(path_ / f"input_dict_{env_name}_{variable_name}_{variable}.pkl")
+        path_input_dict = Path(
+            path_ / f"input_dict_{env_name}_{variable_name}_{variable}.pkl"
+        )
 
     if path_input_dict.exists():
         with open(path_input_dict, "rb") as f:
@@ -445,7 +430,7 @@ def off_policy_evaluation(
                         "use_gpu": (device == "cuda:0"),
                     }
                 },
-                state_scaler=MinMaxScaler(
+                state_scaler=MinMaxObservationScaler(
                     minimum=test_logged_dataset.get(
                         behavior_policy_name=test_logged_dataset.behavior_policy_names[
                             0
@@ -474,12 +459,12 @@ def off_policy_evaluation(
                     "fqe": {
                         "encoder_factory": VectorEncoderFactory(hidden_units=[30, 30]),
                         "q_func_factory": MeanQFunctionFactory(),
-                        "n_steps": 5,
+                        # "n_steps": 5,
                         "learning_rate": 1e-5,
-                        "use_gpu": (device == "cuda:0"),
+                        # "use_gpu": (device == "cuda:0"),
                     }
                 },
-                state_scaler=MinMaxScaler(
+                state_scaler=MinMaxObservationScaler(
                     minimum=test_logged_dataset.get(
                         behavior_policy_name=test_logged_dataset.behavior_policy_names[
                             0
@@ -510,16 +495,47 @@ def off_policy_evaluation(
             pickle.dump(input_dict, f)
 
     if action_type == "continuous":
-        basic_estimators = [C_DM(), C_TIS(), C_PDIS(), C_DR(), C_SNTIS(), C_SNPDIS(), C_SNDR()]
+        basic_estimators = [
+            C_DM(),
+            C_TIS(),
+            C_PDIS(),
+            C_DR(),
+            C_SNTIS(),
+            C_SNPDIS(),
+            C_SNDR(),
+        ]
         state_marginal_estimators = [C_SMIS(), C_SMDR(), C_SMSNIS(), C_SMSNDR()]
-        state_action_marginal_estimators = [C_SAMIS(), C_SAMDR(), C_SAMSNIS(), C_SAMSNDR()]
+        state_action_marginal_estimators = [
+            C_SAMIS(),
+            C_SAMDR(),
+            C_SAMSNIS(),
+            C_SAMSNDR(),
+        ]
         drl_estimators = [C_DRL()]
     else:
-        basic_estimators = [D_DM(), D_TIS(), D_PDIS(), D_DR(), D_SNTIS(), D_SNPDIS(), D_SNDR()]
+        basic_estimators = [
+            D_DM(),
+            D_TIS(),
+            D_PDIS(),
+            D_DR(),
+            D_SNTIS(),
+            D_SNPDIS(),
+            D_SNDR(),
+        ]
         state_marginal_estimators = [D_SMIS(), D_SMDR(), D_SMSNIS(), D_SMSNDR()]
-        state_action_marginal_estimators = [D_SAMIS(), D_SAMDR(), D_SAMSNIS(), D_SAMSNDR()]
+        state_action_marginal_estimators = [
+            D_SAMIS(),
+            D_SAMDR(),
+            D_SAMSNIS(),
+            D_SAMSNDR(),
+        ]
         drl_estimators = [D_DRL()]
-    all_estimators = basic_estimators + state_marginal_estimators + state_action_marginal_estimators + drl_estimators
+    all_estimators = (
+        basic_estimators
+        + state_marginal_estimators
+        + state_action_marginal_estimators
+        + drl_estimators
+    )
 
     ope = OffPolicyEvaluation(
         logged_dataset=test_logged_dataset,

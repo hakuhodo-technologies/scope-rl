@@ -23,7 +23,7 @@ In OPE, we are given a logged dataset :math:`\mathcal{D}` consisting of :math:`n
 
     \tau := \{ (s_t, a_t, s_{t+1}, r_t) \}_{t=0}^{T} \sim p(s_0) \prod_{t=0}^{T} \pi_0(a_t | s_t) \mathcal{T}(s_{t+1} | s_t, a_t) P_r (r_t | s_t, a_t)
 
-In the basic OPE, we aim at evaluating the *policy value* or the expected trajectory-wise reward of the given evaluation policy :math:`\pi`:
+We aim at evaluating the *policy value* or the expected trajectory-wise reward of the given evaluation policy :math:`\pi`:
 
 .. math::
 
@@ -49,8 +49,6 @@ Standard OPE estimators
 Direct Method (DM)
 ----------
 
-    * :class:`DirectMethod`
-
 DM :cite:`beygelzimer2009offset` is a model-based approach that uses the initial state value (estimated by e.g., Fitted Q Evaluation (FQE) :cite:`le2019batch`).
 It first learns the Q-function and then leverages the learned Q-function as follows.
 
@@ -66,9 +64,6 @@ By plugging the estimated Q-function into the policy value definition, DM estima
 
 Trajectory-wise Importance Sampling (TIS)
 ----------
-
-    * :class:`TrajectoryWiseImportanceSampling`
-
 TIS :cite:`precup2000eligibility` uses a importance sampling technique to correct the distribution shift between :math:`\pi` and :math:`\pi_0` as follows.
 
 .. math::
@@ -81,7 +76,7 @@ Unbiased Estimator
 
 .. math::
 
-    \mathbb{E}_{\tau}[\hat{J}_{\mathrm{TIS}} (\pi; \mathcal{D})] = J
+    \mathbb{E}_{\tau}[\hat{J}_{\mathrm{TIS}} (\pi; \mathcal{D})] = J(\pi)
 
 .. dropdown:: proof
 
@@ -95,7 +90,7 @@ Unbiased Estimator
         {p(s_0)\pi_0(a_1|s_1)P_r(r_1|s_t, a_t)\mathcal{T}(s_{t+1}|s_t, a_t)\cdots \pi_0(a_{T-1}|s_{T-1})P_r(r_{T-1}|s_{T-1}, a_{T-1})} \sum_{t=0}^{T-1} \gamma^{t}r_t\right]\\
         &= \mathbb{E}_{\tau \sim p_{\pi_0}}\left[\frac{p_{\pi}(\tau)}{p_{\pi_0}(\tau)}\sum_{t=0}^{T-1} \gamma^{t}r_t\right]\\
         &= \mathbb{E}_{\tau \sim p_{\pi}}\left[\sum_{t=0}^{T-1} \gamma^{t}r_t\right]\\
-        &=J
+        &=J(\pi)
 By the importance weight trick TIS enables an unbiased estimation of the policy value. 
 
 Variance Analysis
@@ -152,17 +147,17 @@ DM vs TIS Curse of Horizon
     .. grid-item-card:: 
         :img-top: ./images/bias_step_per_trajectory_tis.png
 
-        Bias with varying number of step_per_trajectory
+        Bias with varying the trajectory length
 
     .. grid-item-card:: 
         :img-top: ./images/variance_step_per_trajectory_tis.png
 
-        Variance with varying number of step_per_trajectory
+        Variance with varying the trajectory length
 
     .. grid-item-card:: 
         :img-top: ./images/mse_step_per_trajectory_tis.png
 
-        MSE with varying number of step_per_trajectory
+        MSE with varying the trajectory length
 
 
 .. TIS tends to have less bias than DM, and the bias decreases as the trajectory length :math:`T` increases. 
@@ -173,9 +168,6 @@ On the other hand, the variance of TIS tends to be larger than that of DM, and t
 
 Per-Decision Importance Sampling (PDIS)
 ----------
-
-    * :class:`PerDecisionImportanceSampling`
-
 PDIS :cite:`precup2000eligibility` leverages the sequential nature of the MDP to reduce the variance of TIS.
 Specifically, since :math:`s_t` only depends on :math:`s_0, \ldots, s_{t-1}` and :math:`a_0, \ldots, a_{t-1}` and is independent of :math:`s_{t+1}, \ldots, s_{T}` and :math:`a_{t+1}, \ldots, a_{T}`,
 PDIS only considers the importance weight of the past interactions when estimating :math:`r_t` as follows.
@@ -184,13 +176,13 @@ PDIS only considers the importance weight of the past interactions when estimati
 
     \hat{J}_{\mathrm{PDIS}} (\pi; \mathcal{D}) := \mathbb{E}_{n} \left[ \sum_{t=0}^{T-1} \gamma^t w_{0:t} r_t \right],
 
-where :math:`w_{0:t} := \prod_{t'=0}^t (\pi_e(a_{t'} | s_{t'}) / \pi_b(a_{t'} | s_{t'}))` is the importance weight of past interactions.
+where :math:`w_{0:t} := \prod_{t'=0}^t (\pi(a_{t'} | s_{t'}) / \pi_0(a_{t'} | s_{t'}))` is the importance weight of past interactions.
 
-Unbiased Estimator
+PDIS is unbiased under 
 
 .. math::
 
-    \mathbb{E}_{\tau}[\hat{J}_{\mathrm{PDIS}} (\pi; \mathcal{D})] = J
+    \mathbb{E}_{\tau}[\hat{J}_{\mathrm{PDIS}} (\pi; \mathcal{D})] = J(\pi)
 
 .. dropdown:: proof
 
@@ -210,8 +202,9 @@ Unbiased Estimator
         {\pi_0(a_{t+1}|s_{t+1})\cdots \pi_0(a_{T-1}|s_{T-1})}\right]\\
         &= \mathbb{E}_{\tau \sim p_{\pi_0}}\left[\sum_{t=0}^{T-1}\frac{\pi(a_1|s_1)\cdots \pi(a_{T-1}|s_{T-1})}
         {\pi_0(a_1|s_1)\cdots \pi_0(a_{T-1}|s_{T-1})} \gamma^{t}r_t \right]\\
-        &= \mathbb{E}_{\tau\sim p_{\pi}}[\hat{J}_{\mathrm{TIS}} (\pi; \mathcal{D})] \\
-        &= J
+        &= \mathbb{E}_{\tau \sim p_{\pi_0}}\left[\frac{p_{\pi}(\tau)}{p_{\pi_0}(\tau)}\sum_{t=0}^{T-1} \gamma^{t}r_t\right]\\
+        &= \mathbb{E}_{\tau \sim p_{\pi}}\left[\sum_{t=0}^{T-1} \gamma^{t}r_t\right]\\
+        &=J(\pi)
 
 Variance Analysis
 
@@ -219,8 +212,8 @@ Variance Analysis
 
     \mathbb{V}_{t}[\hat{J}_{\mathrm{PDIS}}^{H+1-t}(\pi; \mathcal{D})] = \mathbb{V}[J(s_t)] + \mathbb{E}_t[{w_t}^2\mathbb{V}_{t+1}[r_t]]+ \mathbb{E}_t[\mathbb{V}_t[w_tQ(s_t, a_t)]] + \mathbb{E}_t[\gamma^2{w_t}^2\mathbb{V}_{t+1}[\hat{J}_{\mathrm{PDIS}}^{H-t}(\pi; \mathcal{D})]] 
 
-where :math:`w_{t} := \pi_e(a_{t'} | s_{t'}) / \pi_b(a_{t'} | s_{t'})`, 
-:math:`\mathbb{E}_{t}:= \mathbb{E}[\cdot \mid s_0, a_0, r_0, ..., s_{t-1}, a_{t-1}, r_{t-1}]`
+where :math:`w_{t} := \pi(a_{t'} | s_{t'}) / \pi_0(a_{t'} | s_{t'})`, 
+:math:`\mathbb{E}_{t}:= \mathbb{E}_{s_t, a_t, r_t}[\cdot \mid s_0, a_0, r_0, ..., s_{t-1}, a_{t-1}, r_{t-1}]`
 
 .. dropdown:: proof
 
@@ -248,17 +241,17 @@ TIS vs PDIS
     .. grid-item-card:: 
         :img-top: ./images/bias_step_per_trajectory_pdis.png
 
-        Bias with varying number of trajectories
+        Bias with varying the trajectory length
 
     .. grid-item-card:: 
         :img-top: ./images/variance_step_per_trajectory_pdis.png
 
-        Variance with varying number of step_per_trajectory
+        Variance with varying the trajectory length
 
     .. grid-item-card:: 
         :img-top: ./images/mse_step_per_trajectory_pdis.png
 
-        MSE with varying number of step_per_trajectory
+        MSE with varying the trajectory length
 
 
 The PDIS has less variance than the TIS. When the trajectory length :math:`T` is large, it still suffers from variance.
@@ -268,9 +261,6 @@ The PDIS has less variance than the TIS. When the trajectory length :math:`T` is
 
 Doubly Robust (DR)
 ----------
-
-    * :class:`DoublyRobust`
-
 DR :cite:`jiang2016doubly` :cite:`thomas2016data` is a hybrid of model-based estimation and importance sampling.
 It introduces :math:`\hat{Q}` as a baseline estimation in the recursive form of PDIS and applies importance weighting only on its residual.
 
@@ -283,7 +273,7 @@ Unbiased Estimator
 
 .. math::
 
-    \mathbb{E}_{\tau}[\hat{J}_{\mathrm{DR}} (\pi; \mathcal{D})] = J
+    \mathbb{E}_{\tau}[\hat{J}_{\mathrm{DR}} (\pi; \mathcal{D})] = J(\pi)
 
 .. dropdown:: proof
 
@@ -295,7 +285,7 @@ Unbiased Estimator
         &= \mathbb{E}_{\tau \sim p_{\pi_0}}[\hat{J}_{\mathrm{TIS}} (\pi; \mathcal{D})]  - \mathbb{E}_{\tau \sim p_{\pi_0}} \left[\sum_{t=0}^{T-1} \gamma^t w_{0:t}\hat{Q}(s_t, a_t) \right] + \mathbb{E}_{\tau \sim { (s_{t'}, s_{t'+1}, r_{t'}) \}_{t'=0}^{T-1}}} \prod_{t' = 0}^{T-1}\mathbb{E}_{a \sim \pi_0(\cdot | s_{t'})}\left [\sum_{t=0}^{T-1} \gamma^t w_{0:t-1} \mathbb{E}_{a \sim \pi_0(a | s_t)}\left[\frac{\pi(a \mid s_t)}{\pi_0(a \mid s_t)}\hat{Q}(s_t, a)\right]\right]\\
         &= \mathbb{E}_{\tau \sim p_{\pi_0}}[\hat{J}_{\mathrm{TIS}} (\pi; \mathcal{D})]  - \mathbb{E}_{\tau \sim p_{\pi_0}} \left[\sum_{t=0}^{T-1} \gamma^t w_{0:t}\hat{Q}(s_t, a_t) \right] + \mathbb{E}_{\tau \sim { (s_{t'}, s_{t'+1}, r_{t'}) \}_{t'=0}^{T-1}}} \prod_{t' = 0}^{T-1}\mathbb{E}_{a \sim \pi_0(\cdot | s_{t'})}\left [\sum_{t=0}^{T-1} \gamma^t w_{0:t-1} \frac{\pi(a_t \mid s_t)}{\pi_0(a_t \mid s_t)}\hat{Q}(s_t, a_t)\right]\\
         &= \mathbb{E}_{\tau \sim p_{\pi_0}}[\hat{J}_{\mathrm{TIS}} (\pi; \mathcal{D})]  - \mathbb{E}_{\tau \sim p_{\pi_0}} \left[\sum_{t=0}^{T-1} \gamma^t w_{0:t}\hat{Q}(s_t, a_t) \right] + \mathbb{E}_{\tau \sim p_{\pi_0}} \left[\sum_{t=0}^{T-1} \gamma^t w_{0:t}\hat{Q}(s_t, a_t)) \right] \\
-        &= J
+        &= J(\pi)
 
 Variance Analysis
 
@@ -364,8 +354,6 @@ Self-normalized estimators are no longer unbiased but have variance bounded by :
 Self-normalized Trajectory-wise Importance Sampling (SNTIS)
 ----------
 
-    * :class:`SelfNormalizedTrajectoryWiseImportanceSampling`
-
 .. math::
 
     \hat{J}_{\mathrm{SNTIS}} (\pi; \mathcal{D}) := \mathbb{E}_{n} \left[\sum_{t=0}^{T-1} \gamma^t \frac{w_{1:T-1}}{\mathbb{E}_n[w_{1:T-1}]} r_t \right]   
@@ -375,9 +363,6 @@ Self-normalized Trajectory-wise Importance Sampling (SNTIS)
 
 Self-normalized Per-Decision Importance Sampling (SNPDIS)
 ----------
-
-    * :class:`SelfNormalizedPerDecisionImportanceSampling`
-
 .. math::
 
     \hat{J}_{\mathrm{SNPDIS}} (\pi; \mathcal{D}) := \mathbb{E}_{n} \left[ \sum_{t=0}^{T-1} \gamma^t \frac{w_{0:t}}{\mathbb{E}_n[w_{0:t}]} r_t \right]
@@ -387,9 +372,6 @@ Self-normalized Per-Decision Importance Sampling (SNPDIS)
 
 Self-normalized Doubly Robust (SNDR)
 ----------
-
-    * :class:`SelfNormalizedDoublyRobust`
-
 .. math::
 
     \hat{J}_{\mathrm{SNDR}} (\pi; \mathcal{D})
@@ -422,18 +404,9 @@ Marginalized Importance Sampling Estimators
 ----------
 (State Marginal Estimators)
 
-    * :class:`StateMarginalDM`
-    * :class:`StateMarginalIS`
-    * :class:`StateMarginalDR`
-    * :class:`StateMarginalSNIS`
-    * :class:`StateMarginalSNDR`
-
 (State-Action Marginal Estimators)
 
-    * :class:`StateActionMarginalIS`
-    * :class:`StateActionMarginalDR`
-    * :class:`StateActionMarginalSNIS`
-    * :class:`StateActionMarginalSNDR`
+
 
 When the length of the trajectory :math:`T` is large, even per-decision importance weights can be exponentially large in the latter part of the trajectory.
 To alleviate this, state marginal or state-action marginal importance weights can be used instead of the per-decision importance weight as follows :cite:`liu2018breaking` :cite:`uehara2020minimax`.
@@ -461,17 +434,17 @@ This estimator is particularly useful when policy visits the same or similar sta
     .. grid-item-card:: 
         :img-top: ./images/bias_samis.png
 
-        Bias with varying number of step_per_trajectory
+        Bias with varying the trajectory length
 
     .. grid-item-card:: 
         :img-top: ./images/variance_samis.png
 
-        Variance with varying number of step_per_trajectory
+        Variance with varying the trajectory length
 
     .. grid-item-card:: 
         :img-top: ./images/mse_samis.png
 
-        MSE with varying number of step_per_trajectory
+        MSE with varying the trajectory length
 
 SAMIS requires estimating state-action marginal importance weights, which introduces a bias, but it can reduce variance more than PDIS.
 
@@ -479,9 +452,6 @@ SAMIS requires estimating state-action marginal importance weights, which introd
 
 Double Reinforcement Learning (DRL)
 ----------
-
-    * :class:`DoubleReinforcementLearning`
-
 Comparing DR in the standard and marginal OPE, we notice that their formulation is slightly different as follows.
 
 (DR in standard OPE)
@@ -520,17 +490,17 @@ Cross-fitting trains :math:`w^j` and :math:`Q^j` on the subset of data used for 
     .. grid-item-card:: 
         :img-top: ./images/bias_drl.png
 
-        Bias with varying number of step_per_trajectory
+        Bias with varying the trajectory length
 
     .. grid-item-card:: 
         :img-top: ./images/variance_drl.png
 
-        Variance with varying number of step_per_trajectory
+        Variance with varying the trajectory length
 
     .. grid-item-card:: 
         :img-top: ./images/mse_drl.png
 
-        MSE with varying number of step_per_trajectory
+        MSE with varying the trajectory length
 
 DRL can suppress the variance even when the length of the trajectory is large by using marginal importance weight, theoretically satisfying efficiency and robustness. The better the estimation of the Q function of DRL, the smaller the variance.
 
