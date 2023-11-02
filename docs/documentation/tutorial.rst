@@ -21,7 +21,7 @@ In OPE, we are given a logged dataset :math:`\mathcal{D}` consisting of :math:`n
 
 .. math::
 
-    \tau := \{ (s_t, a_t, s_{t+1}, r_t) \}_{t=0}^{T} \sim p(s_0) \prod_{t=0}^{T} \pi_0(a_t | s_t) \mathcal{T}(s_{t+1} | s_t, a_t) P_r (r_t | s_t, a_t)
+    \tau := \{ (s_t, a_t, s_{t+1}, r_t) \}_{t=0}^{T-1} \sim p(s_0) \prod_{t=0}^{T-1} \pi_0(a_t | s_t) \mathcal{T}(s_{t+1} | s_t, a_t) P_r (r_t | s_t, a_t)
 
 We aim at evaluating the *policy value* or the expected trajectory-wise reward of the given evaluation policy :math:`\pi`:
 
@@ -35,16 +35,26 @@ We aim to develop an estimator :math:`\hat{J}` to estimate the value of an evalu
 .. math::
     
     \begin{aligned}
-        \operatorname{MSE}(\hat{J}(\pi)): & =\mathbb{E}_{\tau}\left[(J(\pi)-\hat{J}(\pi ; \mathcal{D}))^2\right] \\
-        & =\operatorname{Bias}(\hat{J}(\pi))^2+\mathbb{V}_{\tau}[\hat{J}(\pi ; \mathcal{D})]
+        \operatorname{MSE}(\hat{J}(\pi; \mathcal{D})): & =\mathbb{E}_{\tau  \sim p_{\pi}}\left[(J(\pi)-\hat{J}(\pi ; \mathcal{D}))^2\right] \\
+        & =\operatorname{Bias}(\hat{J}(\pi; \mathcal{D}))^2+\mathbb{V}_{\tau  \sim p_{\pi}}[\hat{J}(\pi ; \mathcal{D})]
     \end{aligned}
 
-Let's introduce the property of OPE estimators in terms of bias and variance.
+MSE can be decomposed into bias squared and variance. Let's introduce the property of OPE estimators in terms of bias and variance.
 
-Standard OPE estimators
+OPE estimators
 ----------
 
-.. _implementation_dm:
+**We introduce OPE estimators and explain it both theoretically and through simple experiments.** 
+
+- Direct Method (DM)
+- Trajectory-wise Importance Sampling (TIS)
+- Per-Decision Importance Sampling (PDIS)
+- Doubly Robust 推定量 (DR)
+- Self-Normalized 
+- Marginalized Importance Sampling (MIS)
+- Spectrum of Off-Policy (SOPE)
+- Double Reinforcement Learning 推定量(DRL)
+
 
 Direct Method (DM)
 ----------
@@ -54,8 +64,8 @@ It first learns the Q-function and then leverages the learned Q-function as foll
 
 .. math::
 
-    \hat{J}_{\mathrm{DM}} (\pi; \mathcal{D}) := \mathbb{E}_n [ \mathbb{E}_{a_0 \sim \pi(a_0 | s_0)} [\hat{Q}(s_0, a_0)] ] = \mathbb{E}_n [\hat{V}(s_0)],
-
+    \hat{J}_{\mathrm{DM}} (\pi; \mathcal{D}) := \frac{1}{n} \sum_{i=1}^n \sum_{a \in \mathcal{A}} \pi(a | s_{0}^{(i)}) \hat{Q^{\pi}}(s_{0}^{(i)}, a) = \frac{1}{n} \sum_{i=1}^n \hat{V^{\pi}}(s_{0}^{(i)})
+    
 where :math:`\mathcal{D}=\{\{(s_t, a_t, r_t)\}_{t=0}^T\}_{i=1}^n` is the logged dataset with :math:`n` trajectories of data.
 :math:`T` indicates step per episode. :math:`\hat{Q}(s_t, a_t)` is the estimated state-action value and :math:`\hat{V}(s_t)` is the estimated state value.
 By plugging the estimated Q-function into the policy value definition, DM estimates the policy value :math:`J(\pi)`. DM has lower variance compared to other estimators but can produce large bias caused by approximation errors of the Q-function.
