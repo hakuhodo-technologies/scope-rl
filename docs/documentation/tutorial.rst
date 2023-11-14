@@ -23,6 +23,8 @@ In OPE, we are given a logged dataset :math:`\mathcal{D}` consisting of :math:`n
 
     \tau := \{ (s_t, a_t, s_{t+1}, r_t) \}_{t=0}^{T-1} \sim p(s_0) \prod_{t=0}^{T-1} \pi_0(a_t | s_t) \mathcal{T}(s_{t+1} | s_t, a_t) P_r (r_t | s_t, a_t)
 
+    \mathcal{D} = \{\tau_i\}_{i=1}^n \sim p_{\pi_0}
+
 We aim at evaluating the *policy value* or the expected trajectory-wise reward of the given evaluation policy :math:`\pi`:
 
 .. math::
@@ -49,11 +51,11 @@ OPE estimators
 - Direct Method (DM)
 - Trajectory-wise Importance Sampling (TIS)
 - Per-Decision Importance Sampling (PDIS)
-- Doubly Robust 推定量 (DR)
+- Doubly Robust (DR)
 - Self-Normalized 
 - Marginalized Importance Sampling (MIS)
 - Spectrum of Off-Policy (SOPE)
-- Double Reinforcement Learning 推定量(DRL)
+- Double Reinforcement Learning (DRL)
 
 
 Direct Method (DM)
@@ -66,9 +68,19 @@ It first learns the Q-function and then leverages the learned Q-function as foll
 
     \hat{J}_{\mathrm{DM}} (\pi; \mathcal{D}) := \frac{1}{n} \sum_{i=1}^n \sum_{a \in \mathcal{A}} \pi(a | s_{0}^{(i)}) \hat{Q^{\pi}}(s_{0}^{(i)}, a) = \frac{1}{n} \sum_{i=1}^n \hat{V^{\pi}}(s_{0}^{(i)})
     
-where :math:`\mathcal{D}=\{\{(s_t, a_t, r_t)\}_{t=0}^T\}_{i=1}^n` is the logged dataset with :math:`n` trajectories of data.
-:math:`T` indicates step per episode. :math:`\hat{Q}(s_t, a_t)` is the estimated state-action value and :math:`\hat{V}(s_t)` is the estimated state value.
-By plugging the estimated Q-function into the policy value definition, DM estimates the policy value :math:`J(\pi)`. DM has lower variance compared to other estimators but can produce large bias caused by approximation errors of the Q-function.
+
+:math:`T` indicates step per episode. :math:`\hat{Q}(s_t, a_t) \simeq \mE_{\tau_{t:T-1}\sim p_{\pi}(\tau_{t:T-1}|s_t, a_t)}\left[\sum_{t'=t}^{T-1}\gamma^{t'-t}r_{t'}\right]` is the estimated state-action value and :math:`\hat{V}(s_t) \simeq \mE_{\tau_{t:T-1} \sim p_{\pi}(\tau_{t:T-1}|s_t)}\left[\sum_{t'=t}^{T-1}\gamma^{t'-t}r_{t'}\right]` is the estimated state value.
+Now that you understand the definition of DM, the next step is to check an important property, bias of DM , by calculation.
+
+.. math::
+
+    \begin{align*}
+            \operatorname{Bias}[\hat{J}_{\mathrm{DM}}(\pi;D)] & = J(\pi)-  \mathbb{E}_{s_0\sim P(d_0)}\left[\hat{V}^{\pi}(s_0)\right]\\
+            & = \mathbb{E}_{s_0\sim P(d_0)}\left[\sum_{a\in\cal{A}}\pi(a | s_0)Q^{\pi}(s_0, a)\right]-  \mathbb{E}_{s_0\sim P(d_0)}\left[\sum_{a\in\cal{A}}\pi(a | s_0)\hat{Q}^{\pi}(s_0, a)\right]\\
+            & = \mathbb{E}_{s_0\sim P(d_0)}\left[\sum_{a\in\cal{A}}\pi(a | s_0)\left(Q^{\pi}(s_0, a)- \hat{Q}^{\pi}(s_0, a)\right) \right]
+    \end{align*}
+
+DM has lower variance compared to other estimators but can produce large bias caused by approximation errors :math:`Q^{\pi}(s_0, a)- \hat{Q}^{\pi}(s_0, a)`.
 
 .. _implementation_tis:
 
@@ -80,30 +92,47 @@ TIS :cite:`precup2000eligibility` uses a importance sampling technique to correc
 
     \hat{J}_{\mathrm{TIS}} (\pi; \mathcal{D}) := \mathbb{E}_{n} \left[\sum_{t=0}^{T-1} \gamma^t w_{1:T-1} r_t \right]
 
-where :math:`w_{0:T-1} := \prod_{t=0}^{T-1} (\pi(a_t | s_t) / \pi_0(a_t | s_t))` is the trajectory-wise importance weight. TIS is simply an application of the idea of the IPS estimator in the contextual bandit setting to the reinforcement learning setting. 
-
-Unbiased Estimator
+where :math:`w_{0:T-1} := \prod_{t=0}^{T-1} (\pi(a_t | s_t) / \pi_0(a_t | s_t))` is the trajectory-wise importance weight. TIS is unbiased under the assumption of common support :math:`\forall(s_0, a_0, ..., s_{T-1}, a_{T-1}) \in S^{T-1} \times A^{T-1},  \prod_{t=0}^{T-1}\pi(a_t \mid s_t) > 0 \rightarrow \prod_{t=0}^{T-1}\pi_0(a_t \mid s_t) > 0`.
 
 .. math::
 
-    \mathbb{E}_{\tau}[\hat{J}_{\mathrm{TIS}} (\pi; \mathcal{D})] = J(\pi)
+    \mathbb{E}_{\tau \sim p_{\pi_0}(\tau)}[\hat{J}_{\mathrm{TIS}} (\pi; \mathcal{D})] = J(\pi)
 
 .. dropdown:: proof
 
     .. math::
 
         &\mathbb{E}_{\tau}[\hat{J}_{\mathrm{TIS}} (\pi; \mathcal{D})]\\
-        &=\mathbb{E}_{\tau \sim p_{\pi_0}} \left[\sum_{t=0}^{T-1} \gamma^t w_{1:T-1} r_t \right] \\
-        &= \mathbb{E}_{\tau \sim p_{\pi_0}}\left[\frac{\pi(a_1|s_1)\cdots \pi(a_{T-1}|s_{T-1})}
-        {\pi_0(a_1|s_1)\cdots \pi_0(a_{T-1}|s_{T-1})} \sum_{t=0}^{T-1} \gamma^{t}r_t \right]\\
-        &= \mathbb{E}_{\tau \sim p_{\pi_0}}\left[\frac{p(s_0)\pi(a_1|s_1)P_r(r_1|s_t, a_t)\mathcal{T}(s_{t+1}|s_t, a_t)\cdots \pi(a_{T-1}|s_{T-1})P_r(r_{T-1}|s_{T-1}, a_{T-1})}
-        {p(s_0)\pi_0(a_1|s_1)P_r(r_1|s_t, a_t)\mathcal{T}(s_{t+1}|s_t, a_t)\cdots \pi_0(a_{T-1}|s_{T-1})P_r(r_{T-1}|s_{T-1}, a_{T-1})} \sum_{t=0}^{T-1} \gamma^{t}r_t\right]\\
+        &=\mathbb{E}_{\tau \sim p_{\pi_0}}\left[\sum_{t=0}^{T-1} \gamma^t w_{0:T-1} r_t \right] \\
+        &= \mathbb{E}_{\tau \sim p_{\pi_0}}\left[\frac{\pi(a_0|s_0)\cdots \pi(a_{T-1}|s_{T-1})}
+        {\pi_0(a_0|s_0)\cdots \pi_0(a_{T-1}|s_{T-1})} \sum_{t=0}^{T-1} \gamma^{t}r_t \right]\\
+        &= \mathbb{E}_{\tau \sim p_{\pi_0}}\left[\frac{p(s_0)\pi(a_0|s_0)P_r(r_0|s_0, a_0)\mathcal{T}(s_{1}|s_0, a_0)\cdots \pi(a_{T-1}|s_{T-1})P_r(r_{T-1}|s_{T-1}, a_{T-1})}
+        {p(s_0)\pi_0(a_0|s_0)P_r(r_0|s_0, a_0)\mathcal{T}(s_{1}|s_0, a_0)\cdots \pi_0(a_{T-1}|s_{T-1})P_r(r_{T-1}|s_{T-1}, a_{T-1})} \sum_{t=0}^{T-1} \gamma^{t}r_t\right]\\
         &= \mathbb{E}_{\tau \sim p_{\pi_0}}\left[\frac{p_{\pi}(\tau)}{p_{\pi_0}(\tau)}\sum_{t=0}^{T-1} \gamma^{t}r_t\right]\\
+        &=\sum_{\tau}p_{\pi_0}(\tau)\frac{p_{\pi}(\tau)}{p_{\pi_0}(\tau)}\sum_{t=0}^{T-1} \gamma^{t}r_t\\
+        &=\sum_{\tau}p_{\pi}(\tau)\sum_{t=0}^{T-1} \gamma^{t}r_t\\
         &= \mathbb{E}_{\tau \sim p_{\pi}}\left[\sum_{t=0}^{T-1} \gamma^{t}r_t\right]\\
         &=J(\pi)
-By the importance weight trick TIS enables an unbiased estimation of the policy value. 
 
-Variance Analysis
+
+By the importance weight trick TIS enables an unbiased estimation of the policy value. After examining bias, we will next focus on another important property, variacne. To facilitate the derivation of variances, we will first express TIS recursively.
+
+.. math::
+
+    J_{\mathrm{TIS}}^{T-1-t} := w_t(w_{t+1:T-1} r_t + \gamma J_{\mathrm{TIS}}^{T-1-(t+1)})
+
+
+.. dropdown:: proof
+
+    .. math::
+
+        J_{\mathrm{TIS}}^{T-1-t} &= \sum_{t' = t}^{T-1}\gamma^{t' -t}w_{t:T-1}r_{t'}\\
+        &=w_{t:T}r_t + \sum_{t' = t+1}^{T-1}\gamma^{t' -t}w_{t:T-1}r_{t'}\\
+        &=w_t\left(w_{t+1:T-1}r_t + \sum_{t' = t+1}^{T-1}\gamma^{t' -t}w_{t+1:T-1}r_{t'}\right)\\
+        &=w_t\left(w_{t+1:T-1}r_t + \gamma\sum_{t' = t+1}^{T-1}\gamma^{t' -(t+1)}w_{t+1:T-1}r_{t'}\right)\\
+        &=w_t\left(w_{t+1:T-1}r_t + \gamma J_{\mathrm{TIS}}^{T-1-(t+1)}\right)\\
+
+The term $(T-1-t)$ in $J_{\mathrm{TIS}}^{T-1-t}$ represents the remaining trajectory length at time $t$, and when $t=T-1$, $J_{\mathrm{TIS}}^0 = 0$, and when $t=0$, $J_{\mathrm{TIS}}^{T-1} = J_{\mathrm{TIS}}$ holds true. 
 
 .. math::
 
