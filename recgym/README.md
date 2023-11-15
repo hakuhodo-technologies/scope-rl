@@ -226,18 +226,17 @@ The statistics of the environment is also visualized at [quickstart/rec/rec_synt
 
 If you use our software in your work, please cite our paper:
 
-Haruka Kiyohara, Kosuke Kawakami, Yuta Saito.<br>
-**Accelerating Offline Reinforcement Learning Application in Real-Time Bidding and Recommendation: Potential Use of Simulation**<br>
-(RecSys'21 SimuRec workshop)<br>
-[https://arxiv.org/abs/2109.08331](https://arxiv.org/abs/2109.08331)
+Haruka Kiyohara, Ren Kishimoto, Kosuke Kawakami, Ken Kobayashi, Kazuhide Nakata, Yuta Saito.<br>
+**SCOPE-RL: A Python Library for Offline Reinforcement Learning, Off-Policy Evaluation, and Policy Selection**<br>
+[link]() (a preprint coming soon..)
 
 Bibtex:
 ```
-@article{kiyohara2021accelerating,
-  title={Accelerating Offline Reinforcement Learning Application in Real-Time Bidding and Recommendation: Potential Use of Simulation},
-  author={Kiyohara, Haruka and Kawakami, Kosuke and Saito, Yuta},
-  journal={arXiv preprint arXiv:2109.08331},
-  year={2021}
+@article{kiyohara2023towards,
+  author = {Kiyohara, Haruka and Kishimoto, Ren and Kawakami, Kosuke and Kobayashi, Ken and Nataka, Kazuhide and Saito, Yuta},
+  title = {SCOPE-RL: A Python Library for Offline Reinforcement Learning, Off-Policy Evaluation, and Policy Selection},
+  journal={arXiv preprint arXiv:23xx.xxxxx},
+  year = {2023},
 }
 ```
 
