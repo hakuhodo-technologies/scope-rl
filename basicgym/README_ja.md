@@ -1,25 +1,25 @@
-# BasicGym: ベーシックな強化学習環境
+# BasicGym: 簡易的な強化学習環境
 <details>
 <summary><strong>目次 </strong>(クリックして展開)</summary>
 
-- [BasicGym: ベーシックな強化学習環境](#BasicGym-a-reinforcement-learning-environment-for-synthetic-simulation)
-- [概要](#overview)
-- [インストール](#installation)
-- [用法](#usage)
-- [引用](#citation)
-- [貢献](#contribution)
-- [ライセンス](#license)
-- [プロジェクトチーム](#project-team)
-- [連絡先](#contact)
-- [参考文献](#reference)
+- [BasicGym: 簡易的な強化学習環境](#basicgym-簡易的な強化学習環境)
+- [概要](#概要)
+- [インストール](#インストール)
+- [用法](#用法)
+- [引用](#引用)
+- [貢献](#貢献)
+- [ライセンス](#ライセンス)
+- [プロジェクトチーム](#プロジェクトチーム)
+- [連絡先](#連絡先)
+- [参考文献](#参考文献)
 
 </details>
 
 ## 概要
 
-*BasicGym* はPythonで書かれた合成シミュレーションのためのオープンソースシミュレーションプラットフォームです．このシミュレーターは特に強化学習アルゴリズム用に設計されており，[OpenAI Gym](https://gym.openai.com) および [Gymnasium](https://gymnasium.farama.org/) のようなインターフェイスに従っています．BasicGymは，研究者や実践者が `StateTransitionFunction` や `RewardFunction`を含む環境モジュールをカスタマイズできるように設計されています．
+*BasicGym* は強化学習の簡易なシミュレーションのための環境です．このシミュレーターは特に強化学習アルゴリズム用に設計されており，[OpenAI Gym](https://gym.openai.com) および [Gymnasium](https://gymnasium.farama.org/) のインターフェイスに従っています．BasicGymは，`StateTransitionFunction` や `RewardFunction`を含む環境モジュールをカスタマイズできるように設計されています．
 
-BasicGymは [scope-rl](../) リポジトリの下で公開されており，オフライン強化学習手続きの実装を容易にします．
+BasicGymは [scope-rl](../) リポジトリの下で公開されており，オフライン強化学習の実装を試す環境として容易に使えます．
 
 ### 標準設定
 
@@ -33,18 +33,18 @@ BasicGymは [scope-rl](../) リポジトリの下で公開されており，オ�
 
 ### 実装
 
-BasicGymは，離散的および連続的な行動空間の両方において標準的な環境を提供します．
+BasicGymでは，離散的および連続的な行動空間の両方において標準的な環境を提供しています．
 - `"BasicEnv-continuous-v0"`: 連続行動空間に対する標準的な環境.
 - `"BasicEnv-discrete-v0"`: 離散行動空間に対する標準的な環境.
 
 BasicGym は以下の環境で構成されています．
-- [BasicEnv](./envs/basic.py#L18): 基本的な設定可能な環境．
+- [BasicEnv](./envs/basic.py#L18): 大枠となる環境．カスタマイズ可能な環境設定を引数に持つ．
 
-BasicGymは以下のモジュールについて設定可能です．
+BasicGymでは以下のモジュールをカスタマイズできます．
 - [StateTransitionFunction](./envs/simulator/function.py#L14): 状態遷移関数を定義するクラス．
 - [RewardFunction](./envs/simulator/function.py#L101): 期待報酬関数を定義するクラス．
 
-ユーザーは [abstract class](./envs/simulator/base.py) に従って上記モジュールをカスタマイズすることができます．
+なお，カスタマイズはBasicGymで実装されている [abstract class](./envs/simulator/base.py) に従って行うことができます．
 
 
 ## インストール
@@ -63,12 +63,12 @@ python setup.py install
 
 ## 用法
 
-標準環境とカスタマイズされた環境の使用例を提供します．
-オンライン/オフラインRLおよびオフ方策評価の例は，[SCOPE-RLのREADME](../README.md)で提供されています
+標準実装の環境を用いる例とカスタマイズした環境を用いる例を紹介します．
+なお，オンライン/オフライン強化学習およびオフ方策評価の実装例は，[SCOPE-RLのREADME](../README.md)で紹介されています．
 
 ### 標準的な BasicEnv
 
-標準的なBasicEnvは，[OpenAI Gym](https://gym.openai.com) や [Gymnasium](https://gymnasium.farama.org/)のようなインターフェースに従って `gym.make()` から利用可能です．
+標準実装のBasicEnvは，[OpenAI Gym](https://gym.openai.com) や [Gymnasium](https://gymnasium.farama.org/)のインターフェースに従い， `gym.make()` から利用可能です．
 
 ```Python
 # basicgymとgymをインポートする
@@ -88,7 +88,7 @@ while not done:
     obs, reward, done, truncated, info = env.step(action)
 ```
 
-一様なランダム方策の場合を視覚化してみましょう．
+ランダム方策で行うインタラクションを可視化してみましょう．
 
 ```Python
 # 他のライブラリからインポートする
@@ -120,7 +120,7 @@ while not done:
     reward_list.append(reward)
 
 
-# 結果を視覚化する
+# 結果を可視化する
 fig = plt.figure()
 ax1 = fig.add_subplot(111)
 ax1.plot(reward_list[:-1], label='reward', color='tab:orange')
@@ -132,15 +132,15 @@ plt.show()
 <div align="center"><img src="./images/basic_interaction.png" width="60%"/></div>
 <figcaption>
 <p align="center">
-   1エピソード中に観察された報酬
+   一エピソード中に観察された報酬
 </p>
 </figcaption>
 
-ここで[SCOPE-RL](../README.md) と [d3rlpy](https://github.com/takuseno/d3rlpy) を利用していますが，BasicGymは[OpenAI Gym](https://gym.openai.com) と [Gymnasium](https://gymnasium.farama.org/)のようなインターフェースで動作する他のライブラリとも互換性があります．
+今回の例では [SCOPE-RL](../README.md) と [d3rlpy](https://github.com/takuseno/d3rlpy) を利用していますが，BasicGymは[OpenAI Gym](https://gym.openai.com) と [Gymnasium](https://gymnasium.farama.org/)のインターフェースに対応している他のライブラリとも互換性があります．
 
-### カスタマイズされたBasicEnv
+### カスタマイズしたBasicEnv
 
-次に，環境のインスタンス化によるカスタマイズの方法を説明します．
+次に，環境のカスタマイズの方法を説明します．
 
 <details>
 <summary>環境設定のリスト: (クリックして展開)</summary>
@@ -174,7 +174,7 @@ env = BasicEnv(
 )
 ```
 
-具体的には，ユーザーは以下のように独自の `StateTransitionFunction` と `RewardFunction` を定義できます．
+また，以下のように独自の `StateTransitionFunction` と `RewardFunction` を定義・使用できます．
 
 #### 状態遷移関数のカスタマイズの例
 ```Python
@@ -238,11 +238,11 @@ class CustomizedRewardFunction(BaseRewardFunction):
         return reward
 ```
 
-より多くの例は[quickstart/basic_synthetic_customize_env.ipynb](./examples/quickstart/basic_synthetic_customize_env.ipynb)で利用可能です.
+より多くの例は[quickstart_ja/basic_synthetic_customize_env_ja.ipynb](./examples/quickstart_ja/basic_synthetic_customize_env_ja.ipynb)を参照してください．
 
 ## 引用
 
-ソフトウェアを使用する場合は，以下の論文を引用してください．
+ソフトウェアを使用する場合は，以下の論文をお願いします．
 
 Haruka Kiyohara, Ren Kishimoto, Kosuke Kawakami, Ken Kobayashi, Kazuhide Nakata, Yuta Saito.<br>
 **SCOPE-RL: A Python Library for Offline Reinforcement Learning, Off-Policy Evaluation, and Policy Selection**<br>
@@ -269,12 +269,12 @@ SCOPE-RLへの貢献も歓迎しています！
 
 ## プロジェクトチーム
 
-- [Haruka Kiyohara](https://sites.google.com/view/harukakiyohara) (**Main Contributor**)
-- Ren Kishimoto (Tokyo Institute of Technology)
-- Kosuke Kawakami (HAKUHODO Technologies Inc.)
-- Ken Kobayashi (Tokyo Institute of Technology)
-- Kazuhide Nakata (Tokyo Institute of Technology)
-- [Yuta Saito](https://usait0.com/en/) (Cornell University)
+- [清原 明加 (Haruka Kiyohara)](https://sites.google.com/view/harukakiyohara) (コーネル大学，**Main Contributor**)
+- 岸本 廉 (Ren Kishimoto) (東京工業大学)
+- 川上 孝介 (Kosuke Kawakami) (博報堂テクノロジーズ)
+- 小林 健 (Ken Kobayashi) (東京工業大学)
+- 中田 和秀 (Kazuhide Nakata) (東京工業大学)
+- [齋藤 優太 (Yuta Saito)](https://usait0.com/en/) (コーネル大学)
 
 ## 連絡先
 
@@ -295,8 +295,8 @@ SCOPE-RLへの貢献も歓迎しています！
 <details>
 <summary><strong>プロジェクト </strong>(クリックして展開)</summary>
 
-このプロジェクトは，以下のパッケージから強い影響を受けています．
-- **Open Bandit Pipeline**  -- a pipeline implementation of OPE in contextual bandits: [[github](https://github.com/st-tech/zr-obp)] [[documentation](https://zr-obp.readthedocs.io/en/latest/)] [[paper](https://arxiv.org/abs/2008.07146)]
+このプロジェクトは，以下のパッケージを参考にしています．
+- **Open Bandit Pipeline**  -- 文脈つきバンディットにおけるオフ方策評価のパイプライン実装: [[github](https://github.com/st-tech/zr-obp)] [[documentation](https://zr-obp.readthedocs.io/en/latest/)] [[論文](https://arxiv.org/abs/2008.07146)]
 
 </details>
 
