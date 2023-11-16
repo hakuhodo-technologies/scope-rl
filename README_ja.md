@@ -39,7 +39,7 @@
 ## 概要
 SCOPE-RL は，データ収集からオフ方策学習，オフ方策性能評価，方策選択をend-to-endで実装するためのオープンソースのPythonソフトウェアです．私たちのソフトウェアには，人工データ生成，データの前処理，オフ方策評価 (off-policy evaluation; OPE) の推定量，オフ方策選択 (off-policy selection; OPS) 手法を実装するための一連のモジュールが含まれています．
 
-このソフトウェアは，オンラインおよびオフラインの強化学習(RL)メソッドを実装する[d3rlpy](https://github.com/takuseno/d3rlpy)とも互換性があります．SCOPE-RLは，[OpenAI Gym](https://gym.openai.com)や[Gymnasium](https://gymnasium.farama.org/)のようなインターフェースを用いて，どのような環境でも，簡単で透明性が高く，信頼性の高いオフライン強化学習の実験を可能にします．また，様々なカスタマイズされたデータや実データに対して，オフライン強化学習の実践的な実装を容易にします．
+このソフトウェアは，オンラインおよびオフラインの強化学習 (reinforment learning; RL) 手法を実装する[d3rlpy](https://github.com/takuseno/d3rlpy)とも互換性があります．また，SCOPE-RLは [OpenAI Gym](https://gym.openai.com) や [Gymnasium](https://gymnasium.farama.org/) のインターフェースに基づく環境であればどのような設定の環境でも使用できます．さらに，様々なカスタマイズされたデータや実データに対して，オフライン強化学習の実践的な実装や，透明性や信頼性の高い実験を容易にします．
 
 
 特に，SCOPE-RLは以下の研究トピックに関連する評価とアルゴリズム比較を簡単に行えます：
