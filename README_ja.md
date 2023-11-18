@@ -17,18 +17,18 @@
 - [SCOPE-RL: A Python library for offline reinforcement learning, off-policy evaluation, and selection](#SCOPE-RL-a-python-library-for-offline-reinforcement-learning-off-policy-evaluation-and-selection)
 - [概要](#概要)
 - [インストール](#インストール)
-- [用法](#usage)
-  - [人工データ生成と前処理](#synthetic-dataset-generation-and-data-preprocessing)
-  - [オフライン強化学習](#offline-reinforcement-learning)
-  - [標準的なオフ方策評価](#basic-off-policy-evaluation)
-  - [発展的なオフ方策評価](#advanced-off-policy-evaluation)
-  - [オフ方策選択とOPE/OPSの評価](#off-policy-selection-and-evaluation-of-opeops)
-- [引用](#citation)
-- [貢献](#contribution)
-- [ライセンス](#license)
-- [プロジェクトチーム](#project-team)
-- [連絡先](#contact)
-- [参考文献](#reference)
+- [用法](#用法)
+  - [人工データ生成と前処理](#人工データ生成と前処理)
+  - [オフライン強化学習](#オフライン強化学習)
+  - [標準的なオフ方策評価](#標準的なオフ方策評価)
+  - [発展的なオフ方策評価](#発展的なオフ方策評価)
+  - [オフ方策選択とOPE/OPSの評価](#オフ方策選択とopeopsの評価)
+- [引用](#引用)
+- [貢献](#貢献)
+- [ライセンス](#ライセンス)
+- [プロジェクトチーム](#プロジェクトチーム)
+- [連絡先](#連絡先)
+- [参考文献](#参考文献)
 
 </details>
 
@@ -59,7 +59,7 @@ SCOPE-RL は，データ収集からオフ方策学習，オフ方策性能評�
 
 - [**dataset module**](./_gym/dataset): このモジュールは，[OpenAI Gym](http://gym.openai.com/) や[Gymnasium](https://gymnasium.farama.org/)のようなインターフェイスに基づく任意の環境から人工データを生成するためのツールを提供します．また，ログデータの前処理を行うためのツールも提供します．
 - [**policy module**](./_gym/policy): このモジュールはd3rlpyのwrapperクラスを提供し，様々な挙動方策による柔軟なデータ収集を可能にします．
-- [**ope module**](./_gym/ope): このモジュールは，OPE推定量を実装するための汎用的な抽象クラスを提供します．また，OPSを実行するためのいくつかの便利なツールも提供します．
+- [**ope module**](./_gym/ope): このモジュールは，オフ方策推定量を実装するための汎用的な抽象クラスを提供します．また，オフ方策選択を実行するために便利ないくつかのツールも提供します．
 
 <details>
 <summary><strong>挙動方策</strong>(クリックして展開)</summary>
@@ -76,8 +76,8 @@ SCOPE-RL は，データ収集からオフ方策学習，オフ方策性能評�
 <details>
 <summary><strong>OPE推定量</strong>(クリックして展開)</summary>
 
-- Expected Reward Estimation
-  - Basic Estimators
+- 性能期待値の推定
+  - 基礎的な推定量
     - Direct Method (Fitted Q Evaluation)
     - Trajectory-wise Importance Sampling
     - Per-Decision Importance Sampling
@@ -85,18 +85,18 @@ SCOPE-RL は，データ収集からオフ方策学習，オフ方策性能評�
     - Self-Normalized Trajectory-wise Importance Sampling
     - Self-Normalized Per-Decision Importance Sampling
     - Self-Normalized Doubly Robust
-  - State Marginal Estimators
-  - State-Action Marginal Estimators
+  - State Marginal Estimators (状態分布を用いた推定量)
+  - State-Action Marginal Estimators (状態行動分布を用いた推定量)
   - Double Reinforcement Learning
-  - Weight and Value Learning Methods
+  - 重みと状態 (行動) 価値の推定手法
     - Augmented Lagrangian Method (BestDICE, DualDICE, GradientDICE, GenDICE, MQL/MWL)
     - Minimax Q-Learning and Weight Learning (MQL/MWL)
-- Confidence Interval Estimation
+- 性能の信頼区間推定
   - Bootstrap
   - Hoeffding
   - (Empirical) Bernstein
   - Student T-test
-- Cumulative Distribution Function Estimation
+- 性能の累積分布推定
   - Direct Method (Fitted Q Evaluation)
   - Trajectory-wise Importance Sampling
   - Trajectory-wise Doubly Robust
@@ -106,7 +106,7 @@ SCOPE-RL は，データ収集からオフ方策学習，オフ方策性能評�
 </details>
 
 <details>
-<summary><strong>OPSの基準</strong>(クリックして展開)</summary>
+<summary><strong>オフ方策選択に用いる指標</strong>(クリックして展開)</summary>
 
 - Policy Value
 - Policy Value Lower Bound
@@ -116,21 +116,21 @@ SCOPE-RL は，データ収集からオフ方策学習，オフ方策性能評�
 </details>
 
 <details>
-<summary><strong>OPSの評価指標</strong>(クリックして展開)</summary>
+<summary><strong>オフ方策選択の評価指標</strong>(クリックして展開)</summary>
 
 - Mean Squared Error
 - Spearman's Rank Correlation Coefficient
 - Regret
 - Type I and Type II Error Rates
-- {Best/Worst/Mean/Std} performances of top-k policies
-- Safety violation rate of top-k policies
+- 上位k個の方策の{Best/Worst/Mean/Std}
+- 上位k個の方策のsafety violation rate
 - SharpeRatio@k
 
 </details>
 
-OPEおよびOPS手法に加えて，研究者はSCOPE-RLに実装された一般的な抽象クラスを通じて自分の推定量を簡単に実装し，比較することができます．さらに，実務家はこれらの方法を実データに適用し，自身の実際の状況に合った反実的方策を評価し，選択することができます．
+研究上でのSCOPE-RLの利点は，抽象クラスを用いることで既に実装されているオフ方策評価およびオフ方策選択手法に加えて，研究者が自分の推定量を簡単に実装し，比較することができることです．さらに実践上では，様々なオフ方策推定量を実データに適用し，自身の実際の状況に合った方策を評価し，選択することができることです．
 
-実用的なセットアップを模倣し，カスタマイズされた実験を行う例として，Real-Time Bidding(RTB)と推薦システム用の強化学習環境である[RTBGym](./rtbgym)と[RecGym](./recgym)も提供します
+またSCOPE-RLはサブパッケージとして、シンプルな設定の[BasicGym](./basicgym)実用的な環境をシミュレーションした広告入札 (real-time bidding; RTB) と推薦システム用の強化学習環境である[RTBGym](./rtbgym)と[RecGym](./recgym)も提供しています。
 
 
 
@@ -152,11 +152,11 @@ SCOPE-RLはPython 3.9以降をサポートしています．その他の要件�
 
 ## 用法
 
-ここでは，[RTBGym](./rtbgym)を使用してSCOPE-RLでオフライン強化学習，OPE，OPSを実行するための例を紹介します．
+ここでは，[RTBGym](./rtbgym)を使用してSCOPE-RLでオフライン強化学習，オフ方策評価，オフ方策選択を実行するための例を紹介します．
 
 ### 人工データの生成と前処理
 
-まず，オフライン強化学習を実行するために役立ついくつかの人工ログデータを生成します．
+まず，オフライン強化学習を実行するためにいくつかの (人工) ログデータを生成します．
 
 ```Python
 # RTBGym環境でのデータ収集手順を実装する
@@ -172,7 +172,6 @@ from d3rlpy.algos import ConstantEpsilonGreedy
 import rtbgym
 import gym
 import torch
-# 乱数の状態
 random_state = 12345
 device = "cuda:0" if torch.cuda.is_available() else "cpu"
 
@@ -222,7 +221,7 @@ test_logged_dataset = dataset.obtain_episodes(
 ```
 
 ### オフライン強化学習
-ここまででログデータを使用して新しい方策(評価方策)を学習する準備が整いました．[d3rlpy](https://github.com/takuseno/d3rlpy)を使用します．
+ログデータを生成したことで，新しい方策 (評価方策) を学習する準備が整いました．次は [d3rlpy](https://github.com/takuseno/d3rlpy)を使用し，オフライン強化学習を行います．
 
 ```Python
 # SCOPE-RLとd3rlpyを使用してオフラインRL手順を実装する
@@ -251,7 +250,7 @@ cql.fit(
 
 ### 標準的なオフ方策評価
 
-次に，挙動方策によって収集されたオフラインのログデータを使用して，いくつかの評価方策(ddqn，cql，random)のパフォーマンスを評価します．具体的には，Direct Method (DM)，Trajectory-wise Importance Sampling (TIS)，Per-Decision Importance Sampling (PDIS)，Doubly Robust (DR)を含む様々なOPE推定量の推定結果を比較します．
+次に，挙動方策によって収集されたオフラインのログデータを使用して，いくつかの評価方策 (ddqn，cql，random) のパフォーマンスを評価します．具体的には，Direct Method (DM)，Trajectory-wise Importance Sampling (TIS)，Per-Decision Importance Sampling (PDIS)，Doubly Robust (DR) を含む様々なオフ方策推定量の推定結果を比較します．
 
 ```Python
 # SCOPE-RLを使用して基本的なOPE手順を実装する
@@ -288,7 +287,7 @@ random_ = EpsilonGreedyHead(
     random_state=random_state,
 )
 evaluation_policies = [cql_, ddqn_, random_]
-# OPEクラス用の入力を作成する
+# オフ方策評価クラスに入力するデータを作成する
 prep = CreateOPEInput(
     env=env,
 )
@@ -299,12 +298,12 @@ input_dict = prep.obtain_whole_inputs(
     n_trajectories_on_policy_evaluation=100,
     random_state=random_state,
 )
-# OPEクラスを初期化する
+# オフ方策評価クラスを初期化する
 ope = OPE(
     logged_dataset=test_logged_dataset,
     ope_estimators=[DM(), TIS(), PDIS(), DR()],
 )
-# OPEを実行し，結果を視覚化する
+# オフ方策評価を実行し，結果を可視化する
 ope.visualize_off_policy_estimates(
     input_dict,
     random_state=random_state,
@@ -314,16 +313,16 @@ ope.visualize_off_policy_estimates(
 <div align="center"><img src="https://raw.githubusercontent.com/hakuhodo-technologies/scope-rl/main/images/ope_policy_value_basic.png" width="100%"/></div>
 <figcaption>
 <p align="center">
-  Policy Value Estimated by OPE Estimators
+  様々なオフ方策推定量により推定した方策の期待性能
 </p>
 </figcaption>
 
-より正式なRTBGymを使用した実装の例は，[./examples/quickstart/rtb/](./examples/quickstart/rtb)で利用できます．RecGymを使用した例も[./examples/quickstart/rec/](./examples/quickstart/rec)で利用可能です．
+RTBGymを使用したより詳細の実装の例は，[./examples/quickstart_ja/rtb/](./examples/quickstart_ja/rtb)で確認できます．RecGymを使用した例も[./examples/quickstart_ja/rec/](./examples/quickstart_ja/rec)で公開しています．
 
 
 ### 発展的なオフ方策評価
 
-評価方策の期待性能だけでなく，その分散やconditional value at risk (CVaR)など，様々な統計を推定することもできます．これは，評価方策のもとでの報酬の累積分布関数(CDF)を推定することで行います．
+評価方策の期待性能だけでなく，その分散や下位試行平均性能 (conditional value at risk; CVaR) など，様々な統計を推定することもできます．これは，評価方策のもとでの報酬の累積分布関数 (cumulative distribution function; CDF) を推定することで行います．
 
 ```Python
 # SCOPE-RLを使用して累積分布推定手順を実装する
@@ -359,36 +358,36 @@ cd_ope.visualize_cumulative_distribution_function(input_dict, n_cols=4)
 <div align="center"><img src="https://raw.githubusercontent.com/hakuhodo-technologies/scope-rl/main/images/ope_cumulative_distribution_function.png" width="100%"/></div>
 <figcaption>
 <p align="center">
-  OPE推定量による累積分布関数の推定
+  様々なオフ推定量による累積分布関数の推定
 </p>
 </figcaption>
 
 
-より詳細な例については[quickstart/rtb/rtb_synthetic_discrete_advanced.ipynb](./examples/quickstart/rtb/rtb_synthetic_discrete_advanced.ipynb)を参照してください.
+より詳細な実装例については[examples/quickstart_ja/rtb/rtb_synthetic_discrete_advanced_ja.ipynb](./examples/quickstart_ja/rtb/rtb_synthetic_discrete_advanced_ja.ipynb)を参照してください.
 
 ### オフ方策選択とOPE/OPSの評価
 
-OPSクラスを使用して，OPEの結果に基づき，候補方策の中から最も性能の高い方策を選択することもできます．mean squared error，rank correlation，regret，type I や type IIの誤差率など，様々な指標を使用してOPE/OPSの信頼性を評価することも可能です．
+オフ方策選択クラスを用いると，オフ方策評価の結果に基づき，候補方策の中から最も性能の高い方策を選択することができます．mean squared error，rank correlation，regret，type I & type II error rates など，様々な指標を使用してオフ方策評価やオフ方策選択の信頼性を評価することも可能です．
 
 ```Python
-# OPEの結果に基づいてオフ方策選択を行う
+# オフ方策評価の結果に基づきオフ方策選択を行う
 
 # SCOPE-RLモジュールをインポートする
 from scope_rl.ope import OffPolicySelection
 
 # (5) オフ方策選択を実施する
-# OPSクラスを初期化する
+# オフ方策選択クラスを初期化する
 ops = OffPolicySelection(
     ope=ope,
     cumulative_distribution_ope=cd_ope,
 )
-# (標準的な) OPEによって推定された方策価値に基づいて候補方策をランク付けする
+# (標準的な，期待性能を推定する) オフ方策評価によって推定された方策価値に基づき候補方策をランク付けする
 ranking_dict = ops.select_by_policy_value(input_dict)
 
-# 累積分布OPEによって推定された方策価値に基づいて候補方策をランク付けする
+# 累積分布オフ方策評価によって推定された方策価値に基づき候補方策をランク付けする
 ranking_dict_ = ops.select_by_policy_value_via_cumulative_distribution_ope(input_dict)
 
-# top-kのデプロイ結果を視覚化する
+# オフ方策選択で選ばれた上位k個の方策のデプロイ結果を可視化する
 ops.visualize_topk_policy_value_selected_by_standard_ope(
     input_dict=input_dict,
     compared_estimators=["dm", "tis", "pdis", "dr"],
@@ -399,20 +398,20 @@ ops.visualize_topk_policy_value_selected_by_standard_ope(
 <div align="center"><img src="https://raw.githubusercontent.com/hakuhodo-technologies/scope-rl/main/images/ops_topk_lower_quartile.png" width="100%"/></div>
 <figcaption>
 <p align="center">
-  top-kの統計量の比較 (方策価値の下位四分位10%)
+  オフ方策選択で選ばれた上位k個の統計量の比較 (下位10%での方策性能)
 </p>
 </figcaption>
 
 ```Python
-# (6) OPS/OPEの結果を評価する
-# 推定された下位四分位数によって候補方策をランク付けし，選択結果を評価する
+# (6) オフ方策評価やオフ方策選択の結果を評価・検証する
+# 推定された下位試行性能によって候補方策をランク付けし，選択結果を評価する
 ranking_df, metric_df = ops.select_by_lower_quartile(
     input_dict,
     alpha=0.3,
     return_metrics=True,
     return_by_dataframe=True,
 )
-# 真の性能を利用し，OPS結果を視覚化する
+# 真の性能に基づき，オフ方策選択結果を可視化する
 ops.visualize_conditional_value_at_risk_for_validation(
     input_dict,
     alpha=0.3,
@@ -426,45 +425,45 @@ ops.visualize_conditional_value_at_risk_for_validation(
 </p>
 </figcaption>
 
-より具体的には離散行動空間は[quickstart/rtb/rtb_synthetic_discrete_advanced.ipynb](./examples/quickstart/rtb/rtb_synthetic_discrete_advanced.ipynb)，連続行動空間は
-[quickstart/rtb/rtb_synthetic_continuous_advanced.ipynb](./examples/quickstart/rtb/rtb_synthetic_continuous_advanced.ipynb) を参照してください
+より詳細の実装は，離散行動空間は[quickstart_ja/rtb/rtb_synthetic_discrete_advanced_ja.ipynb](./examples/quickstart_ja/rtb/rtb_synthetic_discrete_advanced_ja.ipynb)，連続行動空間は
+[quickstart_ja/rtb/rtb_synthetic_continuous_advanced_ja.ipynb](./examples/quickstart_ja/rtb/rtb_synthetic_continuous_advanced_ja.ipynb) を参照してください．
 
 ## 引用
 
-ソフトウェアを使用する場合は，以下の論文を引用してください．
+ソフトウェアを使用する場合は，以下の論文を引用をお願いします．
 
 Haruka Kiyohara, Ren Kishimoto, Kosuke Kawakami, Ken Kobayashi, Kazuhide Nakata, Yuta Saito.<br>
-**SCOPE-RL: A Python Library for Offline Reinforcement Learning, Off-Policy Evaluation, and Policy Selection**<br>
+**SCOPE-RL: A Python Library for Offline Reinforcement Learning and Off-Policy Evaluation**<br>
 [link]() (a preprint coming soon..)
 
 Bibtex:
 ```
-@article{kiyohara2023towards,
+@article{kiyohara2023scope,
   author = {Kiyohara, Haruka and Kishimoto, Ren and Kawakami, Kosuke and Kobayashi, Ken and Nataka, Kazuhide and Saito, Yuta},
-  title = {SCOPE-RL: A Python Library for Offline Reinforcement Learning, Off-Policy Evaluation, and Policy Selection},
+  title = {SCOPE-RL: A Python Library for Offline Reinforcement Learning and Off-Policy Evaluation},
   journal={arXiv preprint arXiv:23xx.xxxxx},
   year={2023},
 }
 ```
 
-我々が提案した指標"SharpeRatio@k"を使用する場合は，以下の論文を引用してください．
+オフ方策選択の評価指標である SharpeRatio@k を使用する場合は，以下の論文の引用をお願いします．
 
 Haruka Kiyohara, Ren Kishimoto, Kosuke Kawakami, Ken Kobayashi, Kazuhide Nakata, Yuta Saito.<br>
-**Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation in Reinforcement Learning**<br>
+**Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation**<br>
 [link]() (a preprint coming soon..)
 
 Bibtex:
 ```
 @article{kiyohara2023towards,
   author = {Kiyohara, Haruka and Kishimoto, Ren and Kawakami, Kosuke and Kobayashi, Ken and Nataka, Kazuhide and Saito, Yuta},
-  title = {Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation in Reinforcement Learning},
+  title = {Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation},
   journal={arXiv preprint arXiv:23xx.xxxxx},
   year={2023},
 }
 ```
 
 ## Google グループ
-SCOPE-RLに興味がある場合は，Googleグループを通じて更新情報をフォローしてください
+SCOPE-RLのアップデートに興味がある場合は，Googleグループを通じて更新情報を受け取ることができます．
 https://groups.google.com/g/scope-rl
 
 
@@ -479,7 +478,7 @@ SCOPE-RLへの貢献も歓迎しています！
 
 ## プロジェクトチーム
 
-- [Haruka Kiyohara](https://sites.google.com/view/harukakiyohara) (**Main Contributor**)
+- [清原 明加 (Haruka Kiyohara)](https://sites.google.com/view/harukakiyohara) (コーネル大学，**Main Contributor**)
 - 岸本 廉 (Ren Kishimoto) (東京工業大学)
 - 川上 孝介 (Kosuke Kawakami) (博報堂テクノロジーズ)
 - 小林 健 (Ken Kobayashi) (東京工業大学)
