@@ -482,7 +482,7 @@ SCOPE-RLへの貢献も歓迎しています！
 - [Haruka Kiyohara](https://sites.google.com/view/harukakiyohara) (**Main Contributor**)
 - 岸本 廉 (Ren Kishimoto) (東京工業大学)
 - 川上 孝介 (Kosuke Kawakami) (博報堂テクノロジーズ)
-- Ken Kobayashi (Tokyo Institute of Technology)
+- 小林 健 (Ken Kobayashi) (東京工業大学)
 - Kazuhide Nakata (Tokyo Institute of Technology)
 - [Yuta Saito](https://usait0.com/en/) (Cornell University)
 
