@@ -579,7 +579,7 @@ SCOPE-RLへの貢献も歓迎しています！
 <details>
 <summary><strong>プロジェクト </strong>(クリックして展開)</summary>
 
-このプロジェクトは，以下の3つのパッケージから強い影響を受けています．
+このプロジェクトは，以下の3つのパッケージを参考にしています．
 - **Open Bandit Pipeline**  -- 文脈つきバンディットのためのオフ方策評価のパイプライン実装: [[github](https://github.com/st-tech/zr-obp)] [[documentation](https://zr-obp.readthedocs.io/en/latest/)] [[論文](https://arxiv.org/abs/2008.07146)]
 - **d3rlpy** -- オフライン強化学習のアルゴリズム実装: [[github](https://github.com/takuseno/d3rlpy)] [[documentation](https://d3rlpy.readthedocs.io/en/v0.91/)] [[論文](https://arxiv.org/abs/2111.03788)]
 - **Spinning Up** -- 深層強化学習の学習教材: [[github](https://github.com/openai/spinningup)] [[documentation](https://spinningup.openai.com/en/latest/)]
