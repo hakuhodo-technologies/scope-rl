@@ -359,7 +359,7 @@ custom_env = CustomizedRTBEnv(
 
 ## 引用
 
-ソフトウェアを使用する場合は，以下の論文を引用してください．:
+ソフトウェアを使用する場合は，以下の論文の引用をお願いします．
 Haruka Kiyohara, Ren Kishimoto, Kosuke Kawakami, Ken Kobayashi, Kazuhide Nakata, Yuta Saito.<br>
 **SCOPE-RL: A Python Library for Offline Reinforcement Learning, Off-Policy Evaluation, and Policy Selection**<br>
 [link]() (a preprint coming soon..)
