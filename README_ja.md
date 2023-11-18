@@ -480,7 +480,7 @@ SCOPE-RLへの貢献も歓迎しています！
 ## プロジェクトチーム
 
 - [Haruka Kiyohara](https://sites.google.com/view/harukakiyohara) (**Main Contributor**)
-- Ren Kishimoto (Tokyo Institute of Technology)
+- 岸本 廉 (Ren Kishimoto) (東京工業大学)
 - Kosuke Kawakami (HAKUHODO Technologies Inc.)
 - Ken Kobayashi (Tokyo Institute of Technology)
 - Kazuhide Nakata (Tokyo Institute of Technology)
