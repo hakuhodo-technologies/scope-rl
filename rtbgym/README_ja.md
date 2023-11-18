@@ -325,7 +325,7 @@ class CustomizedClickThroughRate(BaseClickAndConversionRate):
 
 ### Wrapperクラス
 
-`CustomizedRTBEnv` は行動空間の離散化や再定義を可能にします．
+`CustomizedRTBEnv` は行動空間の離散化や再定義を可能にするモジュールです．
 さらに，ユーザーは独自の `reward_predictor` を設定することができます．
 
 <details>
