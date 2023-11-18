@@ -416,7 +416,7 @@ SCOPE-RLへの貢献も歓迎しています！
 <details>
 <summary><strong>プロジェクト </strong>(クリックして展開)</summary>
 
-このプロジェクトは，以下のパッケージから強い影響を受けています．
+このプロジェクトは，以下の4つのパッケージを参考にしています．
 - **AuctionGym** -- 広告入札のための強化学習環境: [[github](https://github.com/amzn/auction-gym)] [[論文]
 (https://www.amazon.science/publications/learning-to-bid-with-auctiongym)]
 - **RecoGym**  -- 推薦システムのための強化学習環境 [[github](https://github.com/criteo-research/reco-gym)] [[論文](https://arxiv.org/abs/1808.00720)]
