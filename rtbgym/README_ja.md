@@ -3,7 +3,7 @@
 <summary><strong>目次</strong>(クリックして展開)</summary>
 
 - [RTBGym: 入札オークションの強化学習環境](#rtbgym-入札オークションの強化学習環境)
-- [概要](#overview)
+- [概要](#概要)
 - [インストール](#installation)
 - [用法](#usage)
   - [離散](#discrete-control)
