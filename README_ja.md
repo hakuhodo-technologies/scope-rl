@@ -44,9 +44,9 @@ SCOPE-RL は，データ収集からオフ方策学習，オフ方策性能評�
 
 特に，SCOPE-RLは以下の研究トピックに関連する評価とアルゴリズム比較を簡単に行えます：
 
-- **オフライン強化学習**：オフライン強化学習は，挙動方策によって収集されたオフラインのログデータのみから新しい方策を学習することを目的としています．SCOPE-RLは，様々な挙動方策と環境によって収集されたデータによる柔軟な実験を可能にします．
+- **オフライン強化学習**：オフライン強化学習は，データ収集方策によって収集されたオフラインのログデータのみから新しい方策を学習することを目的としています．SCOPE-RLは，様々なデータ収集と環境によって収集されたデータによる柔軟な実験を可能にします．
 
-- **オフ方策評価(OPE)**：オフ方策評価は，挙動方策により集められたオフラインのログデータのみを使用して（挙動方策とは異なる）新たな方策の性能を評価することを目的とします．SCOPE-RLは多くのオフ方策推定量の実装可能にする抽象クラスや、推定量を評価し比較するための実験手順を実装しています．また、SCOPE-RLが実装し公開している発展的なオフ方策評価手法には、状態-行動密度推定や累積分布推定に基づく推定量なども含まれます．
+- **オフ方策評価(OPE)**：オフ方策評価は，データ収集方策により集められたオフラインのログデータのみを使用して（データ収集方策とは異なる）新たな方策の性能を評価することを目的とします．SCOPE-RLは多くのオフ方策推定量の実装可能にする抽象クラスや、推定量を評価し比較するための実験手順を実装しています．また、SCOPE-RLが実装し公開している発展的なオフ方策評価手法には、状態-行動密度推定や累積分布推定に基づく推定量なども含まれます．
 
 - **オフ方策選択(OPS)**：オフ方策選択は，オフラインのログデータを使用して，いくつかの候補方策の中から最も性能の良い方策を特定することを目的とします．SCOPE-RLは様々な方策選択の基準を実装するだけでなく，方策選択の結果を評価するためのいくつかの指標を提供します．
 
@@ -58,11 +58,11 @@ SCOPE-RL は，データ収集からオフ方策学習，オフ方策性能評�
 *SCOPE-RL* は主に以下の3つのモジュールから構成されています．
 
 - [**dataset module**](./_gym/dataset): このモジュールは，[OpenAI Gym](http://gym.openai.com/) や[Gymnasium](https://gymnasium.farama.org/)のようなインターフェイスに基づく任意の環境から人工データを生成するためのツールを提供します．また，ログデータの前処理を行うためのツールも提供します．
-- [**policy module**](./_gym/policy): このモジュールはd3rlpyのwrapperクラスを提供し，様々な挙動方策による柔軟なデータ収集を可能にします．
+- [**policy module**](./_gym/policy): このモジュールはd3rlpyのwrapperクラスを提供し，様々なデータ収集方策による柔軟なデータ収集を可能にします．
 - [**ope module**](./_gym/ope): このモジュールは，オフ方策推定量を実装するための汎用的な抽象クラスを提供します．また，オフ方策選択を実行するために便利ないくつかのツールも提供します．
 
 <details>
-<summary><strong>挙動方策</strong>(クリックして展開)</summary>
+<summary><strong>データ収集方策</strong>(クリックして展開)</summary>
 
 - Discrete
   - Epsilon Greedy
@@ -181,7 +181,7 @@ env = gym.make("RTBEnv-discrete-v0")
 # (1) オンライン環境で基本方策を学習する(d3rlpyを使用)
 # アルゴリズムを初期化する
 ddqn = DoubleDQNConfig().create(device=device)
-# オンライン挙動方策を訓練する
+# オンラインデータ収集方策を訓練する
 # 約5分かかる
 ddqn.fit_online(
     env,
@@ -193,7 +193,7 @@ ddqn.fit_online(
 )
 
 # (2) ログデータを生成する
-# ddqn方策を確率的な挙動方策に変換する
+# ddqn方策を確率的なデータ収集方策に変換する
 behavior_policy = EpsilonGreedyHead(
     ddqn,
     n_actions=env.action_space.n,
@@ -206,7 +206,7 @@ dataset = SyntheticDataset(
     env=env,
     max_episode_steps=env.step_per_episode,
 )
-# 挙動方策がいくつかのログデータを収集する
+# データ収集方策がいくつかのログデータを収集する
 train_logged_dataset = dataset.obtain_episodes(
   behavior_policies=behavior_policy,
   n_trajectories=10000,
@@ -250,7 +250,7 @@ cql.fit(
 
 ### 標準的なオフ方策評価
 
-次に，挙動方策によって収集されたオフラインのログデータを使用して，いくつかの評価方策 (ddqn，cql，random) のパフォーマンスを評価します．具体的には，Direct Method (DM)，Trajectory-wise Importance Sampling (TIS)，Per-Decision Importance Sampling (PDIS)，Doubly Robust (DR) を含む様々なオフ方策推定量の推定結果を比較します．
+次に，データ収集方策によって収集されたオフラインのログデータを使用して，いくつかの評価方策 (ddqn，cql，random) のパフォーマンスを評価します．具体的には，Direct Method (DM)，Trajectory-wise Importance Sampling (TIS)，Per-Decision Importance Sampling (PDIS)，Doubly Robust (DR) を含む様々なオフ方策推定量の推定結果を比較します．
 
 ```Python
 # SCOPE-RLを使用して基本的なOPE手順を実装する

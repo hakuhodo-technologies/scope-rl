@@ -9,7 +9,7 @@ Note that for the basic problem formulation of Off-Policy Evaluation and Selecti
 
 .. seealso::
 
-    The **SharpeRatio@k** metric is the main contribution of our paper **"Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation in Reinforcement Learning."** 
+    The **SharpeRatio@k** metric is the main contribution of our paper **"Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation."** 
     Our paper is currently under submission, and the arXiv version of the paper will come soon..
 
     .. A preprint is available at `arXiv <>`_.
@@ -49,7 +49,7 @@ To evaluate and compare the performance of OPE estimators, the following three m
 In the above metrics, MSE measures the accuracy of OPE estimation, while the latter two assess the accuracy of downstream policy selection tasks.
 By combining these metrics, especially the latter two, we can quantify how likely an OPE estimator can choose a near-optimal policy in policy selection when solely relying on the OPE result.
 However, a critical shortcoming of the current evaluation protocol is that these metrics do not assess potential risks experienced during online A/B tests in more practical two-stage selection combined with online A/B tests.
-For instance, let us now consider the following toy situation as an illustrative example.
+For instance, let us now consider the following situation as an illustrative example.
 
 .. card::
     :width: 75%
@@ -57,7 +57,7 @@ For instance, let us now consider the following toy situation as an illustrative
     :img-top: ../_static/images/toy_example_1.png
     :text-align: center
 
-    Toy example 1: overestimation vs. underestimation
+    Example 1: overestimation vs. underestimation
 
 .. raw:: html
 
@@ -110,7 +110,7 @@ Below, we showcase how SharpeRatio@k provides valuable insights for comparing OP
 
     <div class="white-space-5px"></div>
 
-**Toy example 1: Overestimation vs. Underestimation.**
+**Example 1: Overestimation vs. Underestimation.**
 The first case is the previously mentioned example of evaluating estimator X (which underestimates the near-best policy) and estimator Y (which overestimates the poor-performing policies) in the above figure.
 While the conventional metrics fail to distinguish the two estimators, SharpeRatio@k reports the following results:
 
@@ -118,7 +118,7 @@ While the conventional metrics fail to distinguish the two estimators, SharpeRat
     :img-top: ../_static/images/sharpe_ratio_1.png
     :text-align: center
 
-    SharpeRatio@k of the toy example 1
+    SharpeRatio@k of example 1
 
 .. raw:: html
 
@@ -134,7 +134,7 @@ Therefore, in terms of SharpeRatio@k, estimator X is preferable to Y, while the 
 
     <div class="white-space-5px"></div>
 
-**Toy example 2: Conservative vs. High-Stakes.**
+**Example 2: Conservative vs. High-Stakes.**
 Another example involves evaluating a conservative OPE (estimator W, which always underestimates) and a uniform random OPE (estimator Z) as shown in the following figure.
 
 .. card::
@@ -143,7 +143,7 @@ Another example involves evaluating a conservative OPE (estimator W, which alway
     :img-top: ../_static/images/toy_example_2.png
     :text-align: center
 
-    Toy example 2: conservative vs. high-stakes
+    Example 2: conservative vs. high-stakes
 
 .. raw:: html
 
@@ -168,7 +168,7 @@ In contrast, our top-:math:`k` RRT metrics report the following results, which c
     :img-top: ../_static/images/sharpe_ratio_2.png
     :text-align: center
 
-    SharpeRatio@k the toy example 2
+    SharpeRatio@k of example 2
 
 .. raw:: html
 
@@ -189,13 +189,43 @@ For the detailed settings, please refer to Section 4.1 of our paper.
 
     <div class="white-space-20px"></div>
 
-**Result 1: SharpeRatio@k is more appropriate and informative than conventional accuracy metrics.**
+**Result 1: SharpeRatio report the performance of OPE estimators differently from conventional metrics.**
 
 .. card::
-    :img-top: ../_static/images/benchmark_acrobot.png
+    :img-top: ../_static/images/empirical_comparison.png
     :text-align: left
 
-    **Result 1-1**: Estimators' performance comparison based on **SharpeRatio@k** (the left figure) and **conventional metrics including nMSE, RankCorr, and nRegret@1** (the right three figures) in **Acrobot**.
+    (Left) Comparison of **SharpeRatio@4** and **conventional metrics (RankCorr, nRegret, nMSE)** in assessing OPE estimators. 
+    (Right) **The number of trials in which the best estimator, selected by SharpeRatio@4 (SR@4) and conventional metrics, aligns.** Both figures report the results of 70 trials, consisting of 7 tasks and 10 random seeds for each. A lower value is better for nMSE and nRegret, while a higher value is better for RankCorr and SharpeRatio@4.
+
+
+.. raw:: html
+
+    <div class="white-space-20px"></div>
+
+The left figure illustrates the correlation and divergence between SharpeRatio@4 and conventional metrics in evaluating OPE estimators across various RL tasks. 
+Each point in the figure represents the metrics for five estimators over 70 trials, consisting of 7 different tasks and 10 random seeds. 
+The right figure presents the number of trials where the best estimators, as identified by SharpeRatio@4 and each conventional metric, coincide. 
+
+The above figures reveal that superior conventional metric values (i.e., higher RankCorr and lower nRegret and nMSE) do not consistently correspond to higher SharpeRatio@4 values. 
+The most significant deviation of SharpeRatio@4 is from nMSE, which is understandable given that nMSE focuses solely on the estimation accuracy of OPE without considering policy selection effectiveness. 
+In contrast, SharpeRatio@4 shows some correlation with policy selection metrics (RankCorr and nRegret). 
+Nonetheless, the best estimator chosen by SharpeRatio@4 often differs from those selected by RankCorr and nRegret. 
+SharpeRatio@4 and nRegret align in only 8 of the 70 trials, and RankCorr, despite being the most closely correlated metric with SharpeRatio, diverges in the choice of the estimator in over 40\% of the trials (29 out of 70). 
+
+The following sections explore specific instances where SharpeRatio@k and conventional metrics diverge, demonstrating how SharpeRatio@k effectively validates the risk-return trade-off, while conventional metrics fall short.
+
+.. raw:: html
+
+    <div class="white-space-20px"></div>
+
+**Result 2: SharpeRatio@k is more appropriate and informative than conventional accuracy metrics.**
+
+.. card::
+    :img-top: ../_static/images/benchmark_mountaincar.png
+    :text-align: left
+
+    **Result 2-1**: Estimators' performance comparison based on **SharpeRatio@k** (the left figure) and **conventional metrics including nMSE, RankCorr, and nRegret@1** (the right three figures) in **MounrainCar**.
     A lower value is better for nMSE and nRegret@1, while a higher value is better for RankCorr and SharpeRatio@k. The stars ( :math:`\star`) indicate the best estimator(s) under each metric.
 
 .. raw:: html
@@ -204,10 +234,10 @@ For the detailed settings, please refer to Section 4.1 of our paper.
 
 
 .. card::
-    :img-top: ../_static/images/topk_metrics_acrobot.png
+    :img-top: ../_static/images/topk_metrics_mountaincar.png
     :text-align: left
 
-    **Result 1-2**: **Reference statistics of the top-** :math:`k` **policy portfolio** formed by each estimator in **Acrobot**
+    **Result 2-2**: **Reference statistics of the top-** :math:`k` **policy portfolio** formed by each estimator in **MounrainCar**
     "best" is used as the numerator of SharpeRatio@k, while "std" is used as its denominator.
     A higher value is better for "best" and " :math:`k`-th best policy's performance", while a lower value is better for "std".
     The dark red lines show the performance of :math:`\pi_b`, which is the risk-free baseline of SharpeRatio@k.
@@ -216,27 +246,25 @@ For the detailed settings, please refer to Section 4.1 of our paper.
 
     <div class="white-space-20px"></div>
 
-The above figure (Result 1-1.) presents a comparison between the benchmark results under SharpeRatio@k and those under conventional metrics in Acrobot.
-The next figure (Result 1-2.) reports some reference statistics about the top- :math:`k` policy portfolios formed by each estimator, where " :math:`k`-th best policy's performance" shows the performance of the policy ranked :math:`k`-th among the candidates by each estimator.
+The top figure (Result 2-1) contrasts the benchmark results obtained using SharpeRatio@k with those derived from conventional metrics in the MountainCar task. 
+The bottom figure (Result 2-2) details reference statistics for the top-:math:`k` policy portfolios created by each estimator. 
+Notably, the ":math:`k`-th best policy's performance" indicates how well the policy, ranked :math:`k`-th by each estimator, performs. 
 
-First, Result 1-1. shows that both conventional metrics and SharpeRatio@k acknowledge the advantage of MDR, which is ranked the best in SharpeRatio@k ( :math:`4 \leq k \leq 8`) and the second-best according to conventional metrics.
-In contrast, there exists a substantial difference in the evaluation of MIS and DM between SharpeRatio@k and the other metrics.
-This discrepancy arises because, as shown in " :math:`k`-th best policy's performance" of Result 1-2, MIS overestimates one of the worst policies, even though it ranks the other policies in a nearly perfect order (which parallels that of estimator Y in the toy example 2).
-Thus, conventional metrics evaluate MIS as the most "accurate" estimator, neglecting the evident risk of implementing a detrimental policy.
-On the other hand, SharpeRatio@k successfully detects this risky conduct of MIS by taking "std" (risk metric) into account, gives more preference to MDR and DM for :math:`k \ge 4`, as they perform safer than MIS.
+These results highlight that the preferred OPE estimator varies significantly based on the evaluation metrics used. 
+For instance, MSE and Regret favor MIS as the best estimator, while Rankcorr and SharpeRatio@7 select DM, and SharpeRatio@4 opts for PDIS. 
+Upon examining these three estimators through the reference statistics in the bottom figure (Result 2-2), it becomes evident that conventional metrics tend to overlook the risk associated with OPE estimators including suboptimal policies in their portfolio. 
+Specifically, nMSE and nRegret fail to recognize the danger of MIS implementing an almost worst-case estimator for :math:`k \leq 4`. 
+Additionally, RankCorr does not acknowledge the risk involved with PDIS implementing a nearly worst-case estimator for :math:`k \leq 6`, and it inappropriately ranks PDIS higher than MDR, which avoids deploying a suboptimal policy until the last deployment (:math:`k=9, 10`). 
 
-It is worth noticing that SharpeRatio@k evaluates DM as the best estimator when :math:`k \geq 6`, whereas it is among the worst estimators under conventional metrics.
-This contrast can be attributed to DM's weakness in accurately ranking the top candidate policies.
-As we can see in " :math:`k`-th best policy's performance" of Result 1-2, DM is also able to avoid selecting the worse policy until the very last ( :math:`k=10`) in this environment.
-SharpeRatio@k captures this particular characteristic of DM and precisely evaluates its risk-return tradeoffs with varying online evaluation budgets ( :math:`k`), while existing accuracy metrics fail to do so.
+In contrast, SharpeRatio@k effectively discerns the varied characteristics of policy portfolios and adeptly identifies a safe and efficient estimator that is adaptable to the specific budget (:math:`k`) or problem instance (:math:`J(\pi_b)`). 
 
-Overall, the benchmark results suggest that SharpeRatio@k provides a more practically meaningful comparison of OPE estimators than conventional accuracy metrics.
+Overall, the benchmark findings suggest that SharpeRatio@k offers a more pragmatically meaningful comparison of OPE estimators than existing accuracy metrics.
 
 .. raw:: html
 
     <div class="white-space-20px"></div>
 
-**Result 2: Comprehensive results and suggested future works**
+**Result 3: Comprehensive results and suggested future works**
 
 .. card::
     :img-top: ../_static/images/benchmark_sharpe_ratio_4.png
@@ -248,28 +276,32 @@ Overall, the benchmark results suggest that SharpeRatio@k provides a more practi
 
     <div class="white-space-20px"></div>
 
-The above figure reports the benchmark results of the OPE estimators with SharpeRatio@4 in various benchmark environments, providing the following directions and suggestions for future OPE research.
+The above figure reports the benchmark results of OPE estimators with SharpeRatio@4 in various RL environments, providing the following directions and suggestions for future OPE research.
 
-1. Future research in OPE should include assessments of estimators under SharpeRatio@k:
+1. Future research in OPE should include the assessment of estimators based on SharpeRatio@k:
 
-    We observe in the previous Acrobot case that SharpeRatio@k offers more practical insights than conventional accuracy metrics, and the benchmark results under SharpeRatio@k sometimes diverge substantially from those under conventional accuracy metrics (See our paper for the details).
-    This indicates that future research should, at least additionally, employ SharpeRatio@k to assess OPE estimators in their experiments.
-
+    The findings from the previous section suggest that SharpeRatio@k provides more actionable insights compared to traditional accuracy metrics. 
+    The benchmark results using SharpeRatio@k, as shown in Figure~\ref{fig:sharpe_ratio_benchmark}, often significantly differ from those obtained with conventional accuracy metrics. 
+    This highlights the importance of integrating SharpeRatio@k into future research to more effectively evaluate the efficiency of OPE estimators.
+    
 2. A new estimator that explicitly optimizes the risk-return tradeoff:
 
-    Even though DR and MDR are generally considered more sophisticated in existing research, they do not always outperform DM, PDIS, and MIS under SharpeRatio@k in the above figure.
-    This is because they are not specifically designed to enhance the risk-return tradeoff and associated efficiency.
-    Therefore, it would be a valuable direction to develop a novel estimator that more explicitly optimizes the risk-return tradeoff than existing methods.
+    While DR and MDR are generally regarded as advanced in existing literature, they do not consistently outperform DM, PDIS, and MIS according to SharpeRatio@k, as indicated in the figure. 
+    This is attributable to their lack of specific design for optimizing the risk-return tradeoff and efficiency. 
+    Consequently, a promising research avenue would be to create a new estimator that explicitly focuses more on optimizing this risk-return tradeoff than existing methods.
 
 3. A data-driven estimator selection method:
 
-    The results demonstrate that the most *efficient* estimator can change greatly across environments, suggesting that adaptively selecting an appropriate estimator is critical for a reliable OPE in practice.
-    Since existing methods in estimator selection mostly focus on the "accuracy" metrics such as MSE and Regret, developing a novel estimator selection method that can account for risks and efficiency would also be an interesting direction for future studies.
+    The results show that the most *efficient* estimator varies significantly across different environments, underscoring the need for adaptively selecting the most suitable estimator for reliable OPE. 
+    Given that existing estimator selection methods predominantly focus on "accuracy'' metrics like MSE and Regret, there is an intriguing opportunity for future research to develop a novel estimator selection method that considers risks and efficiency.
 
+.. raw:: html
+
+    <div class="white-space-5px"></div>
 
 .. seealso::
 
-    More results and discussions are available in our research paper.
+    More results and discussions are available in Appendix of our research paper.
 
 Citation
 ~~~~~~~~~~
@@ -279,13 +311,13 @@ If you use the proposed metric (SharpeRatio@k) or refer to our findings in your 
 .. card::
 
     | Haruka Kiyohara, Ren Kishimoto, Kosuke Kawakami, Ken Kobayashi, Kazuhide Nakata, Yuta Saito.
-    | **Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation in Reinforcement Learning**
+    | **Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation**
     | (a preprint is coming soon..)
 
     .. code-block::
 
         @article{kiyohara2023towards,
-            title={Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation in Reinforcement Learning},
+            title={Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation},
             author={Kiyohara, Haruka and Kishimoto, Ren and Kawakami, Kosuke and Kobayashi, Ken and Nakata, Kazuhide and Saito, Yuta},
             journal={arXiv preprint arXiv:23xx.xxxxx},
             year={2023}

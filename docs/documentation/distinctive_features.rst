@@ -7,10 +7,10 @@ Why SCOPE-RL?
 Motivation
 ~~~~~~~~~~
 
-Sequential decision making is ubiquitous in many real-world applications, including recommender, search, and advertising systems.
+Sequential decision making is ubiquitous in many real-world applications, including healthcare, education, recommender systems, and robotics.
 While a *logging* or *behavior* policy interacts with users to optimize such sequential decision making, it also produces logged data valuable for learning and evaluating future policies.
-For example, a search engine often records a user's search query (state), the document presented by the behavior policy (action), the user response such as a click observed for the presented document (reward), and the next user behavior including a more specific search query (next state).
-Making most of these logged data to evaluate a counterfactual policy is particularly beneficial in practice, as it can be a safe and cost-effective substitute for online A/B tests.
+For example, a medical agency often records patients' condition (state), the treatment chosen by the expert or behavior policy (action), the patients' health index after the treatment such as vitals (reward), and the patients' condition in the next time period (next state).
+Making most of these logged data to evaluate a counterfactual policy is particularly beneficial in practice, as it can be a safe and cost-effective substitute for online A/B tests or clinical trials.
 
 .. card::
     :width: 75%
@@ -230,7 +230,7 @@ Moreover, we streamline the evaluation protocol of OPE/OPS with the following me
 * Sharpe ratio (our proposal)
 
 Note that, among the above top-:math:`k` metrics, SharpeRatio is the proposal in our research paper **"
-Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation in Reinforcement Learning"**.  
+Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation"**.  
 The page: :doc:`sharpe_ratio` describe the above metrics and the contribution of SharpeRatio@k in details. We also discuss these metrics briefly in :ref:`the later sub-section <feature_sharpe_ratio>`.
 
 .. _feature_cd_ope:
@@ -314,7 +314,7 @@ we measure risk, return, and efficiency of the selected top-:math:`k` policy wit
 .. seealso::
 
     Among the top-:math:`k` risk-return tradeoff metrics, SharpeRatio is the main proposal of our research paper 
-    **"Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation in Reinforcement Learning"**. 
+    **"Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation"**. 
     We describe the motivation and contributions of the SharpeRatio metric in :doc:`sharpe_ratio`.
 
 

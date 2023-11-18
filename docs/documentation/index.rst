@@ -194,7 +194,7 @@ OPS metrics (performance of top :math:`k` deployment policies)
 .. seealso::
 
     Among the top-:math:`k` risk-return tradeoff metrics, **SharpeRatio** is the main proposal of our research paper 
-    **"Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation in Reinforcement Learning."** 
+    **"Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation."** 
     We describe the motivation and contributions of the SharpeRatio metric in :doc:`sharpe_ratio`.
 
 .. seealso::
@@ -214,13 +214,13 @@ If you use our pipeline in your work, please cite our paper below.
 .. card::
 
     | Haruka Kiyohara, Ren Kishimoto, Kosuke Kawakami, Ken Kobayashi, Kazuhide Nakata, Yuta Saito.
-    | **SCOPE-RL: A Python Library for Offline Reinforcement Learning, Off-Policy Evaluation, and Policy Selection**
+    | **SCOPE-RL: A Python Library for Offline Reinforcement Learning and Off-Policy Evaluation**
     | (a preprint is coming soon..)
 
     .. code-block::
 
         @article{kiyohara2023scope,
-            title={SCOPE-RL: A Python Library for Offline Reinforcement Learning, Off-Policy Evaluation, and Policy Selection},
+            title={SCOPE-RL: A Python Library for Offline Reinforcement Learning and Off-Policy Evaluation},
             author={Kiyohara, Haruka and Kishimoto, Ren and Kawakami, Kosuke and Kobayashi, Ken and Nakata, Kazuhide and Saito, Yuta},
             journal={arXiv preprint arXiv:23xx.xxxxx},
             year={2023}
@@ -231,13 +231,13 @@ If you use the proposed metric (SharpeRatio@k) or refer to our findings in your 
 .. card::
 
     | Haruka Kiyohara, Ren Kishimoto, Kosuke Kawakami, Ken Kobayashi, Kazuhide Nakata, Yuta Saito.
-    | **Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation in Reinforcement Learning**
+    | **Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation**
     | (a preprint is coming soon..)
 
     .. code-block::
 
         @article{kiyohara2023towards,
-            title={Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation in Reinforcement Learning},
+            title={Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation},
             author={Kiyohara, Haruka and Kishimoto, Ren and Kawakami, Kosuke and Kobayashi, Ken and Nakata, Kazuhide and Saito, Yuta},
             journal={arXiv preprint arXiv:23xx.xxxxx},
             year={2023}
@@ -265,7 +265,6 @@ Table of Contents
 
    installation
    quickstart
-   .. _autogallery/index
    distinctive_features
 
 .. toctree::
