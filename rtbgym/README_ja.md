@@ -5,7 +5,7 @@
 - [RTBGym: 入札オークションの強化学習環境](#rtbgym-入札オークションの強化学習環境)
 - [概要](#概要)
 - [インストール](#インストール)
-- [用法](#usage)
+- [用法](#用法)
   - [離散](#discrete-control)
   - [連続](#continuous-control)
 - [引用](#citation)
