@@ -15,7 +15,7 @@
 <summary><strong>目次</strong>(クリックして展開)</summary>
 
 - [SCOPE-RL: A Python library for offline reinforcement learning, off-policy evaluation, and selection](#SCOPE-RL-a-python-library-for-offline-reinforcement-learning-off-policy-evaluation-and-selection)
-- [概要](#overview)
+- [概要](#概要)
 - [インストール](#installation)
 - [用法](#usage)
   - [人工データ生成と前処理](#synthetic-dataset-generation-and-data-preprocessing)
