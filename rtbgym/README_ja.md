@@ -353,7 +353,7 @@ custom_env = CustomizedRTBEnv(
 
 より多くの例は[quickstart_ja/rtb/rtb_synthetic_customize_env_ja.ipynb](./examples/quickstart_ja/rtb/rtb_synthetic_customize_env_ja.ipynb)を参照してください．
 
-環境の統計は[quickstart/rtb/rtb_synthetic_data_collection.ipynb](./examples/quickstart/rtb/rtb_synthetic_data_collection.ipynb)で視覚化されています．
+環境の統計量の可視化は[examples/quickstart_ja/rtb/rtb_synthetic_data_collection_ja.ipynb](./examples/quickstart_ja/rtb/rtb_synthetic_data_collection_ja.ipynb)で確認できます．
 
 さらに，オンライン/オフラインRLやOPE/OPSの用法の例は以下を参照してください．[quickstart/rtb/rtb_synthetic_discrete_basic.ipynb](./examples/quickstart/rtb/rtb_synthetic_discrete_basic.ipynb) (離散行動空間) and [quickstart/rtb/rtb_synthetic_continuous_basic.ipynb](./examples/quickstart/rtb/rtb_synthetic_continuous_basic.ipynb) (連続行動空間).
 
