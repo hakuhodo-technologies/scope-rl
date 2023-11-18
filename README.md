@@ -36,6 +36,8 @@
 
 **Stable versions are available at [PyPI](https://pypi.org/project/scope-rl/)**
 
+**日本語は[こちら](README_ja.md)**
+
 ## Overview
 
 *SCOPE-RL* is an open-source Python Software for implementing the end-to-end procedure regarding **offline Reinforcement Learning (offline RL)**, from data collection to offline policy learning, off-policy performance evaluation, and policy selection. Our software includes a series of modules to implement synthetic dataset generation, dataset preprocessing, estimators for Off-Policy Evaluation (OPE), and Off-Policy Selection (OPS) methods.
@@ -55,9 +57,9 @@ This software is inspired by [Open Bandit Pipeline](https://github.com/st-tech/z
 ### Implementations
 
 *SCOPE-RL* mainly consists of the following three modules.
-- [**dataset module**](./_gym/dataset): This module provides tools to generate synthetic data from any environment on top of [OpenAI Gym](http://gym.openai.com/) and [Gymnasium](https://gymnasium.farama.org/)-like interface. It also provides tools to pre-process the logged data.
-- [**policy module**](./_gym/policy): This module provides a wrapper class for [d3rlpy](https://github.com/takuseno/d3rlpy) to enable flexible data collection.
-- [**ope module**](./_gym/ope): This module provides a generic abstract class to implement OPE estimators. It also provides some tools useful for performing OPS.
+- [**dataset module**](./scope_rl/dataset): This module provides tools to generate synthetic data from any environment on top of [OpenAI Gym](http://gym.openai.com/) and [Gymnasium](https://gymnasium.farama.org/)-like interface. It also provides tools to pre-process the logged data.
+- [**policy module**](./scope_rl/policy/): This module provides a wrapper class for [d3rlpy](https://github.com/takuseno/d3rlpy) to enable flexible data collection.
+- [**ope module**](./scope_rl//ope): This module provides a generic abstract class to implement OPE estimators. It also provides some tools useful for performing OPS.
 
 <details>
 <summary><strong>Behavior Policy </strong>(click to expand)</summary>
@@ -423,14 +425,14 @@ For more examples, please refer to [quickstart/rtb/rtb_synthetic_discrete_advanc
 If you use our software in your work, please cite our paper:
 
 Haruka Kiyohara, Ren Kishimoto, Kosuke Kawakami, Ken Kobayashi, Kazuhide Nakata, Yuta Saito.<br>
-**SCOPE-RL: A Python Library for Offline Reinforcement Learning, Off-Policy Evaluation, and Policy Selection**<br>
+**SCOPE-RL: A Python Library for Offline Reinforcement Learning and Off-Policy Evaluation**<br>
 [link]() (a preprint coming soon..)
 
 Bibtex:
 ```
 @article{kiyohara2023towards,
   author = {Kiyohara, Haruka and Kishimoto, Ren and Kawakami, Kosuke and Kobayashi, Ken and Nataka, Kazuhide and Saito, Yuta},
-  title = {SCOPE-RL: A Python Library for Offline Reinforcement Learning, Off-Policy Evaluation, and Policy Selection},
+  title = {SCOPE-RL: A Python Library for Offline Reinforcement Learning and Off-Policy Evaluation},
   journal={arXiv preprint arXiv:23xx.xxxxx},
   year={2023},
 }
@@ -439,14 +441,14 @@ Bibtex:
 If you use our proposed metric "SharpeRatio@k" in your work, please cite our paper:
 
 Haruka Kiyohara, Ren Kishimoto, Kosuke Kawakami, Ken Kobayashi, Kazuhide Nakata, Yuta Saito.<br>
-**Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation in Reinforcement Learning**<br>
+**Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation**<br>
 [link]() (a preprint coming soon..)
 
 Bibtex:
 ```
 @article{kiyohara2023towards,
   author = {Kiyohara, Haruka and Kishimoto, Ren and Kawakami, Kosuke and Kobayashi, Ken and Nataka, Kazuhide and Saito, Yuta},
-  title = {Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation in Reinforcement Learning},
+  title = {Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation},
   journal={arXiv preprint arXiv:23xx.xxxxx},
   year={2023},
 }
