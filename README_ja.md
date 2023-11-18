@@ -58,7 +58,7 @@ SCOPE-RL は，データ収集からオフ方策学習，オフ方策性能評�
 *SCOPE-RL* は主に以下の3つのモジュールから構成されています．
 
 - [**dataset module**](./_gym/dataset): このモジュールは，[OpenAI Gym](http://gym.openai.com/) や[Gymnasium](https://gymnasium.farama.org/)のようなインターフェイスに基づく任意の環境から人工データを生成するためのツールを提供します．また，ログデータの前処理を行うためのツールも提供します．
-- [**policy module**](./_gym/policy): このモジュールはd3rlpyのwrapperクラスを提供し，柔軟なデータ収集を可能にします．
+- [**policy module**](./_gym/policy): このモジュールはd3rlpyのwrapperクラスを提供し，様々な挙動方策による柔軟なデータ収集を可能にします．
 - [**ope module**](./_gym/ope): このモジュールは，OPE推定量を実装するための汎用的な抽象クラスを提供します．また，OPSを実行するためのいくつかの便利なツールも提供します．
 
 <details>
