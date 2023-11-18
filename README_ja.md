@@ -483,7 +483,7 @@ SCOPE-RLへの貢献も歓迎しています！
 - 岸本 廉 (Ren Kishimoto) (東京工業大学)
 - 川上 孝介 (Kosuke Kawakami) (博報堂テクノロジーズ)
 - 小林 健 (Ken Kobayashi) (東京工業大学)
-- Kazuhide Nakata (Tokyo Institute of Technology)
+- 中田 和秀 (Kazuhide Nakata) (東京工業大学)
 - [Yuta Saito](https://usait0.com/en/) (Cornell University)
 
 ## 連絡先
