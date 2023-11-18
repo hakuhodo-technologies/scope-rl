@@ -17,14 +17,13 @@
 
 ## 概要
 
-*RECGym* は推薦 (REC) 環境での強化学習シミュレーション用のオープンソースPythonプラットフォームです. このシミュレータは特に強化学習アルゴリズム用に設計されており，[OpenAI Gym](https://gym.openai.com) および [Gymnasium](https://gymnasium.farama.org/) のようなインターフェイスに従っています．RECGymは，研究者や実務家が独自の研究目的に基づいて環境モジュール(例えば`UserModel`(`user_preference_dynamics`や`reward_function`を含む))をカスタマイズできるように設定可能な環境として設計されています．
+*RECGym* は推薦設定での強化学習シミュレーション環境です. このシミュレータは [OpenAI Gym](https://gym.openai.com) および [Gymnasium](https://gymnasium.farama.org/) のインターフェイスに従っています．RECGymは，`UserModel`(`user_preference_dynamics`や`reward_function`を実装) といった内部モジュールをカスタマイズできるように設計されています．
 
-RECGymは [scope-rl](../) リポジトリの下で公開されており，オフライン強化学習手続きの実装を容易にします．
+RECGymは [scope-rl](../) リポジトリの下で公開されており，オフライン強化学習の実装を試す環境として容易に使えます．
 
 ### 標準設定
 
-推薦システムにおいて, 強化学習エージェントの目的は累積報酬を最大化することです．
-この問題を(部分観測)マルコフ決定過程((PO)MDP)として定式化します．
+推薦システムにおける累積報酬を最大化の問題を(部分観測)マルコフ決定過程((PO)MDP)として定式化します．
 - `状態`: 
    - ユーザーの持つ特徴ベクトルで，エージェントが提示する行動に応じて時間と共に変化する.
    - 真の状態が観測できない場合，エージェントは状態の代わりにノイズがのった観測を用いる．
@@ -33,16 +32,16 @@ RECGymは [scope-rl](../) リポジトリの下で公開されており，オフ
 
 ### 実装
 
-RECGymは，推薦環境を提供します．
+RECGymでは，推薦環境の標準的な環境を提供しています．
 - `"RECEnv-v0"`: 標準的な推薦環境.
 
 RECGym は以下の環境で構成されています．
-- [RECEnv](./envs/rec.py#L14): 基本的な設定可能な環境．
+- [RECEnv](./envs/rec.py#L14): 大枠となる環境．カスタマイズ可能な環境設定を引数に持つ．
 
 RECGymは以下のモジュールについて設定可能です．
 - [UserModel](./envs/simulator/function.py#L13): 推薦システムのユーザーモデルを定義するクラス．
 
-ユーザーは [abstract class](./envs/simulator/base.py) に従って上記モジュールをカスタマイズすることができます．
+上記のモジュールは [abstract class](./envs/simulator/base.py) に従ってカスタマイズすることができます．
 
 ## インストール
 BasicGymは，Pythonの`pip`を使用して [scope-rl](../) の一部としてインストールすることができます．
@@ -60,11 +59,11 @@ python setup.py install
 ## 用法
 
 標準環境とカスタマイズされた環境の使用例を提供します．
-オンライン/オフラインRLおよびオフ方策評価の例は，[SCOPE-RLのREADME](../README.md)で提供されています
+なお，オンライン/オフライン強化学習およびオフ方策評価の実装例は，[SCOPE-RLのREADME](../README.md)で紹介されています．
 
-### 標準的な RECEnv
+### 標準的な推薦環境
 
-標準的なRECEnvは，[OpenAI Gym](https://gym.openai.com) や [Gymnasium](https://gymnasium.farama.org/)のようなインターフェースに従って `gym.make()` から利用可能です．
+標準的なRECEnvは，[OpenAI Gym](https://gym.openai.com) や [Gymnasium](https://gymnasium.farama.org/)のインターフェースに従い `gym.make()` から利用可能です．
 
 ```Python
 # recgymとgymをインポートする
@@ -84,7 +83,7 @@ while not done:
     obs, reward, done, truncated, info = env.step(action)
 ```
 
-一様なランダム方策の場合を視覚化してみましょう．
+ランダム方策で行うインタラクションを可視化してみましょう．
 
 ```Python
 # 他のライブラリからインポートする
@@ -111,7 +110,7 @@ while not done:
     reward_list.append(reward)
 
 
-# 結果を視覚化する
+# 結果を可視化する
 fig = plt.figure()
 ax1 = fig.add_subplot(111)
 ax1.plot(reward_list[:-1], label='reward', color='tab:orange')
@@ -123,15 +122,15 @@ plt.show()
 <div align="center"><img src="./images/basic_interaction.png" width="60%"/></div>
 <figcaption>
 <p align="center">
-  1エピソードにおける報酬の変遷
+  一エピソードにおける報酬の変遷
 </p>
 </figcaption>
 
-ここで[SCOPE-RL](../README.md) と [d3rlpy](https://github.com/takuseno/d3rlpy) を利用していますが，BasicGymは[OpenAI Gym](https://gym.openai.com) と [Gymnasium](https://gymnasium.farama.org/)のようなインターフェースで動作する他のライブラリとも互換性があります．
+今回の例では [SCOPE-RL](../README.md) と [d3rlpy](https://github.com/takuseno/d3rlpy) を利用していますが，BasicGymは[OpenAI Gym](https://gym.openai.com) と [Gymnasium](https://gymnasium.farama.org/)のインターフェースに対応している他のライブラリとも互換性があります．
 
-### カスタマイズされたRECEnv
+### カスタマイズしたRECEnv
 
-次に，環境のインスタンス化によるカスタマイズの方法を説明します．
+次に，環境のカスタマイズの方法を説明します．
 
 <details>
 <summary>環境設定のリスト: (クリックして展開)</summary>
@@ -167,7 +166,7 @@ env = RECEnv(
 )
 ```
 
-具体的には，ユーザーは以下のように独自の `UserModel`を定義できます．
+また，以下のように独自の `UserModel`を定義・使用できます．
 
 #### ユーザーモデルの例
 ```Python
@@ -220,22 +219,22 @@ class CustomizedUserModel(BaseUserModel):
         return reward
 ```
 
-より多くの例は [quickstart/rec/rec_synthetic_customize_env.ipynb](./examples/quickstart/rec/rec_synthetic_customize_env.ipynb)で利用可能です．\
-環境の統計は，[quickstart/rec/rec_synthetic_data_collection.ipynb](./examples/quickstart/rec/rec_synthetic_data_collection.ipynb)で視覚化されています．
+より多くの例は [quickstart_ja/rec/rec_synthetic_customize_env_ja.ipynb](./examples/quickstart_ja/rec/rec_synthetic_customize_env_ja.ipynb)を参照してください．\
+環境の統計量の可視化は，[quickstart_ja/rec/rec_synthetic_data_collection_ja.ipynb](./examples/quickstart_ja/rec/rec_synthetic_data_collection_ja.ipynb)で確認できます．
 
 ## 引用
 
-ソフトウェアを使用する場合は，以下の論文を引用してください．
+ソフトウェアを使用する場合は，以下の論文の引用をお願いします．
 
 Haruka Kiyohara, Ren Kishimoto, Kosuke Kawakami, Ken Kobayashi, Kazuhide Nakata, Yuta Saito.<br>
-**SCOPE-RL: A Python Library for Offline Reinforcement Learning, Off-Policy Evaluation, and Policy Selection**<br>
+**SCOPE-RL: A Python Library for Offline Reinforcement Learning and Off-Policy Evaluation**<br>
 [link]() (a preprint coming soon..)
 
 Bibtex:
 ```
-@article{kiyohara2023towards,
+@article{kiyohara2023scope,
   author = {Kiyohara, Haruka and Kishimoto, Ren and Kawakami, Kosuke and Kobayashi, Ken and Nataka, Kazuhide and Saito, Yuta},
-  title = {SCOPE-RL: A Python Library for Offline Reinforcement Learning, Off-Policy Evaluation, and Policy Selection},
+  title = {SCOPE-RL: A Python Library for Offline Reinforcement Learning and Off-Policy Evaluation},
   journal={arXiv preprint arXiv:23xx.xxxxx},
   year = {2023},
 }
@@ -251,12 +250,12 @@ SCOPE-RLへの貢献も歓迎しています！
 
 ## プロジェクトチーム
 
-- [Haruka Kiyohara](https://sites.google.com/view/harukakiyohara) (**Main Contributor**)
-- Ren Kishimoto (Tokyo Institute of Technology)
-- Kosuke Kawakami (HAKUHODO Technologies Inc.)
-- Ken Kobayashi (Tokyo Institute of Technology)
-- Kazuhide Nakata (Tokyo Institute of Technology)
-- [Yuta Saito](https://usait0.com/en/) (Cornell University)
+- [清原 明加 (Haruka Kiyohara)](https://sites.google.com/view/harukakiyohara) (コーネル大学，**Main Contributor**)
+- 岸本 廉 (Ren Kishimoto) (東京工業大学)
+- 川上 孝介 (Kosuke Kawakami) (博報堂テクノロジーズ)
+- 小林 健 (Ken Kobayashi) (東京工業大学)
+- 中田 和秀 (Kazuhide Nakata) (東京工業大学)
+- [齋藤 優太 (Yuta Saito)](https://usait0.com/en/) (コーネル大学)
 
 ## 連絡先
 
@@ -278,11 +277,11 @@ SCOPE-RLへの貢献も歓迎しています！
 <details>
 <summary><strong>プロジェクト </strong>(クリックして展開)</summary>
 
-This project is inspired by the following three packages.
-- **RecoGym**  -- an RL environment for recommender systems: [[github](https://github.com/criteo-research/reco-gym)] [[paper](https://arxiv.org/abs/1808.00720)]
-- **RecSim** -- a configurative RL environment for recommender systems: [[github](https://github.com/google-research/recsim)] [[paper](https://arxiv.org/abs/1909.04847)]
-- **AuctionGym** -- an RL environment for online advertising auctions: [[github](https://github.com/amzn/auction-gym)] [[paper](https://www.amazon.science/publications/learning-to-bid-with-auctiongym)]
-- **FinRL** -- an RL environment for finance: [[github](https://github.com/AI4Finance-Foundation/FinRL)] [[paper](https://arxiv.org/abs/2011.09607)]
+このプロジェクトは，以下の4つのプロジェクトを参考にしています.
+- **RecoGym**  -- 推薦システムのための強化学習環境: [[github](https://github.com/criteo-research/reco-gym)] [[論文](https://arxiv.org/abs/1808.00720)]
+- **RecSim** -- 推薦システムのためのカスタマイズ可能な強化学習環境: [[github](https://github.com/google-research/recsim)] [[論文](https://arxiv.org/abs/1909.04847)]
+- **AuctionGym** -- 広告入札のための強化学習環境: [[github](https://github.com/amzn/auction-gym)] [[論文](https://www.amazon.science/publications/learning-to-bid-with-auctiongym)]
+- **FinRL** -- 金融・投資のための強化学習環境: [[github](https://github.com/AI4Finance-Foundation/FinRL)] [[論文](https://arxiv.org/abs/2011.09607)]
 
 </details>
 
