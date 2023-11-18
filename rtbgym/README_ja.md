@@ -2,7 +2,7 @@
 <details>
 <summary><strong>目次</strong>(クリックして展開)</summary>
 
-- [RTBGym: real-time bidding の強化学習環境](#rtbgym-a-reinforcement-learning-environment-for-real-time-bidding-research)
+- [RTBGym: 入札オークションの強化学習環境](#rtbgym-入札オークションの強化学習環境)
 - [概要](#overview)
 - [インストール](#installation)
 - [用法](#usage)
