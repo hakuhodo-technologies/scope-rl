@@ -4,7 +4,7 @@
 
 - [RECGym: 推薦システムの強化学習環境](#RECGym-推薦システムの強化学習環境)
 - [概要](#概要)
-- [インストール](#installation)
+- [インストール](#インストール)
 - [用法](#usage)
 - [引用](#citation)
 - [貢献](#contribution)
