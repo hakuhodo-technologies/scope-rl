@@ -16,7 +16,7 @@
 
 - [SCOPE-RL: A Python library for offline reinforcement learning, off-policy evaluation, and selection](#SCOPE-RL-a-python-library-for-offline-reinforcement-learning-off-policy-evaluation-and-selection)
 - [概要](#概要)
-- [インストール](#installation)
+- [インストール](#インストール)
 - [用法](#usage)
   - [人工データ生成と前処理](#synthetic-dataset-generation-and-data-preprocessing)
   - [オフライン強化学習](#offline-reinforcement-learning)
@@ -57,8 +57,8 @@ SCOPE-RL は，データ収集からオフ方策学習，オフ方策性能評�
 
 *SCOPE-RL* は主に以下の3つのモジュールから構成されています．
 
-- [**dataset module**](./_gym/dataset): このモジュールは，[OpenAI Gym](http://gym.openai.com/) や[Gymnasium](https://gymnasium.farama.org/)のようなインターフェイスの上で任意の環境から人工データを生成するためのツールを提供します．また，ログデータの前処理を行うためのツールも提供します．
-- [**policy module**](./_gym/policy): このモジュールはd3rlpyのwrapperクラスを提供し，柔軟なデータ収集を可能にします．
+- [**dataset module**](./_gym/dataset): このモジュールは，[OpenAI Gym](http://gym.openai.com/) や[Gymnasium](https://gymnasium.farama.org/)のようなインターフェイスに基づく任意の環境から人工データを生成するためのツールを提供します．また，ログデータの前処理を行うためのツールも提供します．
+- [**policy module**](./_gym/policy): このモジュールはd3rlpyのwrapperクラスを提供し，様々な挙動方策による柔軟なデータ収集を可能にします．
 - [**ope module**](./_gym/ope): このモジュールは，OPE推定量を実装するための汎用的な抽象クラスを提供します．また，OPSを実行するためのいくつかの便利なツールも提供します．
 
 <details>
@@ -353,7 +353,7 @@ cd_ope = CumulativeDistributionOPE(
 variance_dict = cd_ope.estimate_variance(input_dict)
 # CVaRを推定する
 cvar_dict = cd_ope.estimate_conditional_value_at_risk(input_dict, alphas=0.3)
-# 方策性能の累積分布関数を推定し，視覚化する
+# 方策性能の累積分布関数を推定し，可視化する
 cd_ope.visualize_cumulative_distribution_function(input_dict, n_cols=4)
 ```
 <div align="center"><img src="https://raw.githubusercontent.com/hakuhodo-technologies/scope-rl/main/images/ope_cumulative_distribution_function.png" width="100%"/></div>
@@ -579,7 +579,7 @@ SCOPE-RLへの貢献も歓迎しています！
 <details>
 <summary><strong>プロジェクト </strong>(クリックして展開)</summary>
 
-このプロジェクトは，以下の3つのパッケージから強い影響を受けています．
+このプロジェクトは，以下の3つのパッケージを参考にしています．
 - **Open Bandit Pipeline**  -- 文脈つきバンディットのためのオフ方策評価のパイプライン実装: [[github](https://github.com/st-tech/zr-obp)] [[documentation](https://zr-obp.readthedocs.io/en/latest/)] [[論文](https://arxiv.org/abs/2008.07146)]
 - **d3rlpy** -- オフライン強化学習のアルゴリズム実装: [[github](https://github.com/takuseno/d3rlpy)] [[documentation](https://d3rlpy.readthedocs.io/en/v0.91/)] [[論文](https://arxiv.org/abs/2111.03788)]
 - **Spinning Up** -- 深層強化学習の学習教材: [[github](https://github.com/openai/spinningup)] [[documentation](https://spinningup.openai.com/en/latest/)]
