@@ -420,7 +420,7 @@ SCOPE-RLへの貢献も歓迎しています！
 - **AuctionGym** -- 広告入札のための強化学習環境: [[github](https://github.com/amzn/auction-gym)] [[論文]
 (https://www.amazon.science/publications/learning-to-bid-with-auctiongym)]
 - **RecoGym**  -- 推薦システムのための強化学習環境 [[github](https://github.com/criteo-research/reco-gym)] [[論文](https://arxiv.org/abs/1808.00720)]
-- **RecSim** -- a configurative RL environment for recommender systems: [[github](https://github.com/google-research/recsim)] [[paper](https://arxiv.org/abs/1909.04847)]
+- **RecSim** -- 推薦システムのためのカスタマイズ可能な強化学習環境: [[github](https://github.com/google-research/recsim)] [[論文](https://arxiv.org/abs/1909.04847)]
 - **FinRL** -- an RL environment for finance: [[github](https://github.com/AI4Finance-Foundation/FinRL)] [[paper](https://arxiv.org/abs/2011.09607)]
 
 </details>
