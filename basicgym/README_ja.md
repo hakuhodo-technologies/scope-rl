@@ -245,14 +245,14 @@ class CustomizedRewardFunction(BaseRewardFunction):
 ソフトウェアを使用する場合は，以下の論文をお願いします．
 
 Haruka Kiyohara, Ren Kishimoto, Kosuke Kawakami, Ken Kobayashi, Kazuhide Nakata, Yuta Saito.<br>
-**SCOPE-RL: A Python Library for Offline Reinforcement Learning, Off-Policy Evaluation, and Policy Selection**<br>
+**SCOPE-RL: A Python Library for Offline Reinforcement Learning and Off-Policy Evaluation**<br>
 [link]() (a preprint coming soon..)
 
 Bibtex:
 ```
-@article{kiyohara2023towards,
+@article{kiyohara2023scope,
   author = {Kiyohara, Haruka and Kishimoto, Ren and Kawakami, Kosuke and Kobayashi, Ken and Nataka, Kazuhide and Saito, Yuta},
-  title = {SCOPE-RL: A Python Library for Offline Reinforcement Learning, Off-Policy Evaluation, and Policy Selection},
+  title = {SCOPE-RL: A Python Library for Offline Reinforcement Learning and Off-Policy Evaluation},
   journal={arXiv preprint arXiv:23xx.xxxxx},
   year = {2023},
 }
