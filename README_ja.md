@@ -353,7 +353,7 @@ cd_ope = CumulativeDistributionOPE(
 variance_dict = cd_ope.estimate_variance(input_dict)
 # CVaRを推定する
 cvar_dict = cd_ope.estimate_conditional_value_at_risk(input_dict, alphas=0.3)
-# 方策性能の累積分布関数を推定し，視覚化する
+# 方策性能の累積分布関数を推定し，可視化する
 cd_ope.visualize_cumulative_distribution_function(input_dict, n_cols=4)
 ```
 <div align="center"><img src="https://raw.githubusercontent.com/hakuhodo-technologies/scope-rl/main/images/ope_cumulative_distribution_function.png" width="100%"/></div>
