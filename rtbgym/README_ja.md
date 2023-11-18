@@ -6,27 +6,26 @@
 - [概要](#概要)
 - [インストール](#インストール)
 - [用法](#用法)
-  - [離散](#discrete-control)
-  - [連続](#continuous-control)
-- [引用](#citation)
-- [貢献](#contribution)
-- [ライセンス](#license)
-- [プロジェクトチーム](#project-team)
-- [連絡先](#contact)
-- [参考文献](#reference)
+  - [離散行動空間](#離散行動空間)
+  - [連続行動空間](#連続行動空間)
+- [引用](#引用)
+- [貢献](#貢献)
+- [ライセンス](#ライセンス)
+- [プロジェクトチーム](#プロジェクトチーム)
+- [連絡先](#連絡先)
+- [参考文献](#参考文献)
 
 </details>
 
 ## 概要
 
-*RTBGym* は，ディスプレイ広告のreal-time bidding(RTB)用のオープンソースシミュレーションプラットフォームで，Pythonで書かれています．このシミュレーターは特に強化学習アルゴリズム向けに設計されており，[OpenAI Gym](https://gym.openai.com) および [Gymnasium](https://gymnasium.farama.org/) のようなインターフェースに従っています．RTBGymは，研究者や実践者が `WinningPriceDistribution`，`ClickThroughRate`，`ConversionRate` などの環境モジュールをカスタマイズできるように設計された設定可能な環境です．
+*RTBGym* は，広告入札 (real-time bidding; RTB) のためのシミュレーション環境です．このシミュレーターは強化学習の定式化に則り，[OpenAI Gym](https://gym.openai.com) および [Gymnasium](https://gymnasium.farama.org/) のインターフェースに従っています．RTBGymは，`WinningPriceDistribution`，`ClickThroughRate`，`ConversionRate` などの環境モジュールをカスタマイズできるように設計されています．
 
-RTBGymは [SCOPE-RL](../) リポジトリの下で公開されており，オフライン強化学習手順の実装を容易にします．
+RTBGymは [SCOPE-RL](../) リポジトリの下で公開されており，オフライン強化学習の実装を試す環境として容易に使えます．
 
 ### 基本設定
 
-RTBにおいて強化学習エージェントの目的は，予算制約が与えられもとで，一つのエピソード内でのKPI(クリックやコンバージョン)を最大化することです. KPIを最大にするために，エージェントは入札価格関数パラメータ $\alpha$ を選択します．
-入札価格関数パラメータ $\alpha$ を利用することで以下の入札価格を決定します．
+広告入札エージェントの目的は，ある予算制約が与えられもとで，一つのエピソード内でのKPI (クリックやコンバージョン) を最大化することです. KPIを最大にするために，エージェントは以下の式中の入札価格関数パラメータ $\alpha$ を選択・最適化します．
 
 <p align="center">
     $bid_{t,i} = \alpha \cdot r^{\ast}$,
@@ -50,7 +49,7 @@ RTBにおいて強化学習エージェントの目的は，予算制約が与�
 
 ### 実装
 
-RTBGym は2つの標準的なRTB環境を提供します.
+RTBGymでは2つの標準的なRTB環境を提供しています.
 - `"RTBEnv-discrete-v0"`: 連続行動空間に対する標準的な環境．
 - `"RTBEnv-continuous-v0"`: 離散行動空間に対する標準的な環境．
 
@@ -82,12 +81,12 @@ python setup.py install
 
 ## 用法
 
-標準環境とカスタマイズされた環境の使用例を提供します．
-オンライン/オフラインRLおよびオフ方策評価の例は，[SCOPE-RLのREADME](../README.md)で提供されています
+標準実装の環境を用いる例とカスタマイズした環境を用いる例を紹介します．
+なお，オンライン/オフライン強化学習およびオフ方策評価の実装例は，[SCOPE-RLのREADME](../README.md)で提供されています．
 
-### 標準的な RTBEnv
+### 標準実装でのRTBEnv
 
-標準的なRTBEnvは，[OpenAI Gym](https://gym.openai.com) や [Gymnasium](https://gymnasium.farama.org/)のようなインターフェースに従って `gym.make()` から利用可能です．
+RTBEnvの標準実装は，[OpenAI Gym](https://gym.openai.com) や [Gymnasium](https://gymnasium.farama.org/)のインターフェースに従って `gym.make()` から利用可能です．
 
 ```Python
 # rtbgymとgymをインポートする
@@ -110,7 +109,7 @@ while not done:
     obs, reward, done, truncated, info = env.step(action)
 ```
 
-一様なランダム方策の場合を視覚化してみましょう．(連続行動空間) 離散の場合も同じように行えます．
+ランダム方策で行うインタラクションを可視化してみましょう．(連続行動空間) 離散行動空間の場合も同様に扱うことができます．
 
 
 ```Python
@@ -146,7 +145,7 @@ while not done:
     remaining_budget.append(obs[1])
     cumulative_reward.append(cumulative_reward[-1] + reward)
 
-# 結果を視覚化する
+# 結果を可視化する
 fig = plt.figure()
 ax1 = fig.add_subplot(111)
 ax1.plot(remaining_budget[:-1], label='remaining budget')
@@ -169,9 +168,9 @@ plt.show()
 
 ここで[SCOPE-RL](../README.md) と [d3rlpy](https://github.com/takuseno/d3rlpy) を利用していますが，RTBGymは[OpenAI Gym](https://gym.openai.com) と [Gymnasium](https://gymnasium.farama.org/)のようなインターフェースで動作する他のライブラリとも互換性があります．
 
-### Customized RTBEnv
+### カスタマイズしたRTBEnv
 
-次に，環境のインスタンス化によるカスタマイズの方法を説明します．
+次に，環境のカスタマイズの方法を説明します．
 
 <details>
 <summary>環境設定のリスト: (クリックして展開)</summary>
@@ -361,14 +360,14 @@ custom_env = CustomizedRTBEnv(
 
 ソフトウェアを使用する場合は，以下の論文の引用をお願いします．
 Haruka Kiyohara, Ren Kishimoto, Kosuke Kawakami, Ken Kobayashi, Kazuhide Nakata, Yuta Saito.<br>
-**SCOPE-RL: A Python Library for Offline Reinforcement Learning, Off-Policy Evaluation, and Policy Selection**<br>
+**SCOPE-RL: A Python Library for Offline Reinforcement Learning and Off-Policy Evaluation**<br>
 [link]() (a preprint coming soon..)
 
 Bibtex:
 ```
-@article{kiyohara2023towards,
+@article{kiyohara2023scope,
   author = {Kiyohara, Haruka and Kishimoto, Ren and Kawakami, Kosuke and Kobayashi, Ken and Nataka, Kazuhide and Saito, Yuta},
-  title = {SCOPE-RL: A Python Library for Offline Reinforcement Learning, Off-Policy Evaluation, and Policy Selection},
+  title = {SCOPE-RL: A Python Library for Offline Reinforcement Learning and Off-Policy Evaluation},
   journal={arXiv preprint arXiv:23xx.xxxxx},
   year = {2023},
 }
