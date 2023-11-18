@@ -1,4 +1,4 @@
-# RTBGym: real-time bidding の強化学習環境
+# RTBGym: 入札オークションの強化学習環境
 <details>
 <summary><strong>目次</strong>(クリックして展開)</summary>
 
