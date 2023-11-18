@@ -351,7 +351,7 @@ custom_env = CustomizedRTBEnv(
 )
 ```
 
-より多くの例は[quickstart/rtb/rtb_synthetic_customize_env.ipynb](./examples/quickstart/rtb/rtb_synthetic_customize_env.ipynb)で利用可能です．
+より多くの例は[quickstart_ja/rtb/rtb_synthetic_customize_env_ja.ipynb](./examples/quickstart_ja/rtb/rtb_synthetic_customize_env_ja.ipynb)を参照してください．
 
 環境の統計は[quickstart/rtb/rtb_synthetic_data_collection.ipynb](./examples/quickstart/rtb/rtb_synthetic_data_collection.ipynb)で視覚化されています．
 
