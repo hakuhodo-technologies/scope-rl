@@ -2,7 +2,7 @@
 <details>
 <summary><strong>目次 </strong>(クリックして展開)</summary>
 
-- [RECGym: 推薦システムの強化学習環境m](#RECGym-a-reinforcement-learning-environment-for-recommender-system)
+- [RECGym: 推薦システムの強化学習環境](#RECGym-推薦システムの強化学習環境)
 - [概要](#overview)
 - [インストール](#installation)
 - [用法](#usage)
