@@ -324,7 +324,6 @@ class CustomizedClickThroughRate(BaseClickAndConversionRate):
 
 
 ### Wrapperクラス
-入札設定をカスタマイズするために，`CustomizedRTBEnv` も提供しています．
 
 `CustomizedRTBEnv` は行動空間の離散化や再定義を可能にします．
 さらに，ユーザーは独自の `reward_predictor` を設定することができます．
