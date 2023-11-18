@@ -417,7 +417,8 @@ SCOPE-RLへの貢献も歓迎しています！
 <summary><strong>プロジェクト </strong>(クリックして展開)</summary>
 
 このプロジェクトは，以下のパッケージから強い影響を受けています．
-- **AuctionGym** -- an RL environment for online advertising auctions: [[github](https://github.com/amzn/auction-gym)] [[paper](https://www.amazon.science/publications/learning-to-bid-with-auctiongym)]
+- **AuctionGym** -- 広告入札のための強化学習環境: [[github](https://github.com/amzn/auction-gym)] [[論文]
+(https://www.amazon.science/publications/learning-to-bid-with-auctiongym)]
 - **RecoGym**  -- an RL environment for recommender systems: [[github](https://github.com/criteo-research/reco-gym)] [[paper](https://arxiv.org/abs/1808.00720)]
 - **RecSim** -- a configurative RL environment for recommender systems: [[github](https://github.com/google-research/recsim)] [[paper](https://arxiv.org/abs/1909.04847)]
 - **FinRL** -- an RL environment for finance: [[github](https://github.com/AI4Finance-Foundation/FinRL)] [[paper](https://arxiv.org/abs/2011.09607)]
