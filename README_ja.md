@@ -484,7 +484,7 @@ SCOPE-RLへの貢献も歓迎しています！
 - 川上 孝介 (Kosuke Kawakami) (博報堂テクノロジーズ)
 - 小林 健 (Ken Kobayashi) (東京工業大学)
 - 中田 和秀 (Kazuhide Nakata) (東京工業大学)
-- [Yuta Saito](https://usait0.com/en/) (Cornell University)
+- [齋藤 優太 (Yuta Saito)](https://usait0.com/en/) (コーネル大学)
 
 ## 連絡先
 
