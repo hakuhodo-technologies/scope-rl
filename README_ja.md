@@ -1,4 +1,4 @@
-# SCOPE-RL: A Python library for offline reinforcement learning, off-policy evaluation, and selection
+# SCOPE-RL: オフライン強化学習とオフ方策評価のためのPythonライブラリ
 
 <div align="center"><img src="https://raw.githubusercontent.com/hakuhodo-technologies/scope-rl/main/images/logo.png" width="100%"/></div>
 
@@ -14,7 +14,7 @@
 <details>
 <summary><strong>目次</strong>(クリックして展開)</summary>
 
-- [SCOPE-RL: A Python library for offline reinforcement learning, off-policy evaluation, and selection](#SCOPE-RL-a-python-library-for-offline-reinforcement-learning-off-policy-evaluation-and-selection)
+- [SCOPE-RL: オフライン強化学習とオフ方策評価のためのPythonライブラリ](#SCOPE-RL-オフライン強化学習とオフ方策評価のためのPythonライブラリ)
 - [概要](#概要)
 - [インストール](#インストール)
 - [用法](#用法)
