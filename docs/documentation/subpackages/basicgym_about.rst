@@ -212,14 +212,14 @@ Citation
 If you use our pipeline in your work, please cite our paper below.
 
 | Haruka Kiyohara, Ren Kishimoto, Kosuke Kawakami, Ken Kobayashi, Kazuhide Nakata, Yuta Saito.
-| **Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation in Reinforcement Learning**
+| **Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation**
 | (a preprint coming soon..)
 
 .. code-block::
 
    @article{kiyohara2023towards,
       author = {Kiyohara, Haruka and Kishimoto, Ren and Kawakami, Kosuke and Kobayashi, Ken and Nataka, Kazuhide and Saito, Yuta},
-      title = {Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation in Reinforcement Learning},
+      title = {Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation},
       journal = {A GitHub repository},
       pages = {xxx--xxx},
       year = {2023},

@@ -3,13 +3,13 @@
 This directory includes the code to replicate the benchmark experiment done in the following paper.
 
 Haruka Kiyohara, Ren Kishimoto, Kousuke Kawakami, Ken Kobayashi, Kazuhide Nakata, Yuta Saito.<br>
-**Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation in Reinforcement Learning**<br>
+**Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation**<br>
 [link]() (a preprint coming soon..)
 
 If you find this code useful in your research then please cite:
 ```
 @article{kiyohara2023towards,
-  title={Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation in Reinforcement Learning},
+  title={Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation},
   author={Kiyohara, Haruka and Kishimoto, Ren and Kawakami, Kosuke and Kobayashi, Ken and Nataka, Kazuhide and Saito, Yuta},
   journal = {A github repository},
   pages = {xxx--xxx},

@@ -15,11 +15,13 @@
 
 </details>
 
+**日本語は[こちら](README_ja.md)**
+
 ## Overview
 
-*BasicGym* is an open-source simulation platform for synthetic simulation, which is written in Python. The simulator is particularly intended for reinforcement learning algorithms and follows [OpenAI Gym](https://gym.openai.com) and [Gymnasium](https://gymnasium.farama.org/)-like interface. We design SyntheticGym as a configurative environment so that researchers and practitioners can customize the environmental modules including `StateTransitionFunction` and `RewardFunction`
+*BasicGym* is an open-source simulation platform for synthetic simulation, which is written in Python. The simulator is particularly intended for reinforcement learning algorithms and follows [OpenAI Gym](https://gym.openai.com) and [Gymnasium](https://gymnasium.farama.org/)-like interface. We design BasicGym as a configurative environment so that researchers and practitioners can customize the environmental modules including `StateTransitionFunction` and `RewardFunction`
 
-Note that SyntheticGym is publicized under [scope-rl](../) repository, which facilitates the implementation of the offline reinforcement learning procedure.
+Note that BasicGym is publicized under [scope-rl](../) repository, which facilitates the implementation of the offline reinforcement learning procedure.
 
 ### Basic Setting
 
@@ -33,21 +35,21 @@ We formulate the following (Partially Observable) Markov Decision Process ((PO)M
 
 ### Implementation
 
-SyntheticGym provides a standardized environment in both discrete and continuous action settings.
+BasicGym provides a standardized environment in both discrete and continuous action settings.
 - `"BasicEnv-continuous-v0"`: Standard continuous environment.
 - `"BasicEnv-discrete-v0"`: Standard discrete environment.
 
-SyntheticGym consists of the following environment.
+BasicGym consists of the following environment.
 - [BasicEnv](./envs/basic.py#L18): The basic configurative environment.
 
-SyntheticGym is configurative about the following module.
+BasicGym is configurative about the following module.
 - [StateTransitionFunction](./envs/simulator/function.py#L14): Class to define the state transition function.
 - [RewardFunction](./envs/simulator/function.py#L101): Class to define the reward function.
 
 Note that users can customize the above modules by following the [abstract class](./envs/simulator/base.py).
 
 ## Installation
-SyntheticGym can be installed as a part of [scope-rl](../) using Python's package manager `pip`.
+BasicGym can be installed as a part of [scope-rl](../) using Python's package manager `pip`.
 ```
 pip install scope-rl
 ```
@@ -64,12 +66,12 @@ python setup.py install
 We provide an example usage of the standard and customized environment. \
 The online/offline RL and Off-Policy Evaluation examples are provided in [SCOPE-RL's README](../README.md).
 
-### Standard SyntheticEnv
+### Standard BasicEnv
 
-Our standard SyntheticEnv is available from `gym.make()`, following the [OpenAI Gym](https://gym.openai.com) and [Gymnasium](https://gymnasium.farama.org/)-like interface.
+Our standard BasicEnv is available from `gym.make()`, following the [OpenAI Gym](https://gym.openai.com) and [Gymnasium](https://gymnasium.farama.org/)-like interface.
 
 ```Python
-# import SyntheticGym and gym
+# import BasicGym and gym
 import basicgym
 import gym
 
@@ -134,9 +136,9 @@ plt.show()
 </p>
 </figcaption>
 
-Note that while we use [SCOPE-RL](../README.md) and [d3rlpy](https://github.com/takuseno/d3rlpy) here, SyntheticGym is compatible with any other libraries working on the [OpenAI Gym](https://gym.openai.com) and [Gymnasium](https://gymnasium.farama.org/)-like interface.
+Note that while we use [SCOPE-RL](../README.md) and [d3rlpy](https://github.com/takuseno/d3rlpy) here, BasicGym is compatible with any other libraries working on the [OpenAI Gym](https://gym.openai.com) and [Gymnasium](https://gymnasium.farama.org/)-like interface.
 
-### Customized SyntheticEnv
+### Customized BasicEnv
 
 Next, we describe how to customize the environment by instantiating the environment.
 
@@ -242,14 +244,14 @@ More examples are available at [quickstart/basic/basic_synthetic_customize_env.i
 If you use our software in your work, please cite our paper:
 
 Haruka Kiyohara, Ren Kishimoto, Kosuke Kawakami, Ken Kobayashi, Kazuhide Nakata, Yuta Saito.<br>
-**SCOPE-RL: A Python Library for Offline Reinforcement Learning, Off-Policy Evaluation, and Policy Selection**<br>
+**SCOPE-RL: A Python Library for Offline Reinforcement Learning and Off-Policy Evaluation**<br>
 [link]() (a preprint coming soon..)
 
 Bibtex:
 ```
-@article{kiyohara2023towards,
+@article{kiyohara2023scope,
   author = {Kiyohara, Haruka and Kishimoto, Ren and Kawakami, Kosuke and Kobayashi, Ken and Nataka, Kazuhide and Saito, Yuta},
-  title = {SCOPE-RL: A Python Library for Offline Reinforcement Learning, Off-Policy Evaluation, and Policy Selection},
+  title = {SCOPE-RL: A Python Library for Offline Reinforcement Learning and Off-Policy Evaluation},
   journal={arXiv preprint arXiv:23xx.xxxxx},
   year = {2023},
 }
@@ -257,7 +259,7 @@ Bibtex:
 
 ## Contribution
 
-Any contributions to SyntheticGym are more than welcome!
+Any contributions to BasicGym are more than welcome!
 Please refer to [CONTRIBUTING.md](../CONTRIBUTING.md) for general guidelines on how to contribute the project.
 
 ## License

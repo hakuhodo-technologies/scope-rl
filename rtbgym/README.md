@@ -17,6 +17,8 @@
 
 </details>
 
+**日本語は[こちら](README_ja.md)**
+
 ## Overview
 
 *RTBGym* is an open-source simulation platform for Real-Time Bidding (RTB) of Display Advertising, which is written in Python. The simulator is particularly intended for reinforcement learning algorithms and follows [OpenAI Gym](https://gym.openai.com) and [Gymnasium](https://gymnasium.farama.org/)-like interface. We design RTBGym as a configurative environment so that researchers and practitioners can customize the environmental modules including `WinningPriceDistribution`, `ClickThroughRate`, and `ConversionRate`.
@@ -166,7 +168,7 @@ plt.show()
 
 Note that while we use [SCOPE-RL](../README.md) and [d3rlpy](https://github.com/takuseno/d3rlpy) here, RTBGym is compatible with any other libraries working on the [OpenAI Gym](https://gym.openai.com) and [Gymnasium](https://gymnasium.farama.org/)-like interface.
 
-### Customized RTGEnv
+### Customized RTBEnv
 
 Next, we describe how to customize the environment by instantiating the environment.
 
@@ -359,18 +361,17 @@ Finally, example usages for online/offline RL and OPE/OPS studies are available 
 
 If you use our software in your work, please cite our paper:
 
-Haruka Kiyohara, Kosuke Kawakami, Yuta Saito.<br>
-**Accelerating Offline Reinforcement Learning Application in Real-Time Bidding and Recommendation: Potential Use of Simulation**<br>
-(RecSys'21 SimuRec workshop)<br>
-[https://arxiv.org/abs/2109.08331](https://arxiv.org/abs/2109.08331)
+Haruka Kiyohara, Ren Kishimoto, Kosuke Kawakami, Ken Kobayashi, Kazuhide Nakata, Yuta Saito.<br>
+**SCOPE-RL: A Python Library for Offline Reinforcement Learning and Off-Policy Evaluation**<br>
+[link]() (a preprint coming soon..)
 
 Bibtex:
 ```
-@article{kiyohara2021accelerating,
-  title={Accelerating Offline Reinforcement Learning Application in Real-Time Bidding and Recommendation: Potential Use of Simulation},
-  author={Kiyohara, Haruka and Kawakami, Kosuke and Saito, Yuta},
-  journal={arXiv preprint arXiv:2109.08331},
-  year={2021}
+@article{kiyohara2023scope,
+  author = {Kiyohara, Haruka and Kishimoto, Ren and Kawakami, Kosuke and Kobayashi, Ken and Nataka, Kazuhide and Saito, Yuta},
+  title = {SCOPE-RL: A Python Library for Offline Reinforcement Learning and Off-Policy Evaluation},
+  journal={arXiv preprint arXiv:23xx.xxxxx},
+  year = {2023},
 }
 ```
 
