@@ -106,6 +106,18 @@ advanced ones :cite:`kallus2020double, uehara2020minimax, liu2018breaking, yang2
 Moreover, we provide the meta-class to handle OPE/OPS experiments and the abstract base implementation of OPE estimators.
 This allows researchers to quickly test their own algorithms with this platform and also helps practitioners empirically learn the property of various OPE methods.
 
+.. card::
+    :width: 75%
+    :margin: auto
+    :img-top: ../_static/images/ope_features.png
+    :text-align: center
+
+    Four key features of OPE/OPS modules of SCOPE-RL
+
+.. raw:: html
+
+    <div class="white-space-20px"></div>
+
 .. _feature_variety_ope:
 
 Variety of OPE estimators and evaluation protocol of OPE

@@ -56,6 +56,13 @@ This software is inspired by [Open Bandit Pipeline](https://github.com/st-tech/z
 
 ### Implementations
 
+<div align="center"><img src="https://raw.githubusercontent.com/hakuhodo-technologies/scope-rl/main/images/scope_workflow.png" width="100%"/></div>
+<figcaption>
+<p align="center">
+  End-to-end workflow of offline RL and OPE with SCOPE-RL
+</p>
+</figcaption>
+
 *SCOPE-RL* mainly consists of the following three modules.
 - [**dataset module**](./scope_rl/dataset): This module provides tools to generate synthetic data from any environment on top of [OpenAI Gym](http://gym.openai.com/) and [Gymnasium](https://gymnasium.farama.org/)-like interface. It also provides tools to pre-process the logged data.
 - [**policy module**](./scope_rl/policy/): This module provides a wrapper class for [d3rlpy](https://github.com/takuseno/d3rlpy) to enable flexible data collection.
@@ -129,6 +136,15 @@ This software is inspired by [Open Bandit Pipeline](https://github.com/st-tech/z
 </details>
 
 Note that in addition to the above OPE and OPS methods, researchers can easily implement and compare their own estimators through a generic abstract class implemented in SCOPE-RL. Moreover, practitioners can apply the above methods to their real-world data to evaluate and choose counterfactual policies for their own practical situations.
+
+The distinctive features of OPE/OPS modules of SCOPE-RL are summarized as follows.
+
+<div align="center"><img src="https://raw.githubusercontent.com/hakuhodo-technologies/scope-rl/main/images/ope_features.png" width="100%"/></div>
+<figcaption>
+<p align="center">
+  Four distinctive features of OPE/OPS implementation of SCOPE-RL
+</p>
+</figcaption>
 
 To provide an example of performing a customized experiment imitating a practical setup, we also provide [RTBGym](./rtbgym) and [RecGym](./recgym), RL environments for Real-Time Bidding (RTB) and Recommender Systems.
 

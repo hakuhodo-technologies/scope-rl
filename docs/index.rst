@@ -342,6 +342,7 @@ Welcome!
     Quickstart <documentation/quickstart>
     Documentation <documentation/index>
     Usage <documentation/examples/index>
+    API <documentation/scope_rl_api>
     Sub-packages <documentation/subpackages/index>
     FAQs <documentation/frequently_asked_questions>
     News <documentation/news>
