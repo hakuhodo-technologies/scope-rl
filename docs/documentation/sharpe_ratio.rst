@@ -281,7 +281,7 @@ The above figure reports the benchmark results of OPE estimators with SharpeRati
 1. Future research in OPE should include the assessment of estimators based on SharpeRatio@k:
 
     The findings from the previous section suggest that SharpeRatio@k provides more actionable insights compared to traditional accuracy metrics. 
-    The benchmark results using SharpeRatio@k, as shown in Figure~\ref{fig:sharpe_ratio_benchmark}, often significantly differ from those obtained with conventional accuracy metrics. 
+    The benchmark results using SharpeRatio@k (particularly as shown in the figures of Result 2), often significantly differ from those obtained with conventional accuracy metrics. 
     This highlights the importance of integrating SharpeRatio@k into future research to more effectively evaluate the efficiency of OPE estimators.
     
 2. A new estimator that explicitly optimizes the risk-return tradeoff:
