@@ -6,6 +6,10 @@ Example Codes
 SCOPE-RL
 ----------
 
+.. seealso::
+
+    Please also refer to :doc:`SCOPE-RL package reference </documentation/scope_rl_api>` for APIs.
+
 .. _basic_ope_example:
 
 Basic and High-Confidence Off-Policy Evaluation (OPE):

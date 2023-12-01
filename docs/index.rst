@@ -299,14 +299,13 @@ If you use our pipeline in your work, please cite our paper below.
 
     | Haruka Kiyohara, Ren Kishimoto, Kosuke Kawakami, Ken Kobayashi, Kazuhide Nakata, Yuta Saito.
     | **SCOPE-RL: A Python Library for Offline Reinforcement Learning and Off-Policy Evaluation**
-    | (a preprint is coming soon..)
 
     .. code-block::
 
         @article{kiyohara2023scope,
             title={SCOPE-RL: A Python Library for Offline Reinforcement Learning and Off-Policy Evaluation},
             author={Kiyohara, Haruka and Kishimoto, Ren and Kawakami, Kosuke and Kobayashi, Ken and Nakata, Kazuhide and Saito, Yuta},
-            journal={arXiv preprint arXiv:23xx.xxxxx},
+            journal={arXiv preprint arXiv:2311.18206},
             year={2023}
         }
 
@@ -342,6 +341,7 @@ Welcome!
     Quickstart <documentation/quickstart>
     Documentation <documentation/index>
     Usage <documentation/examples/index>
+    API <documentation/scope_rl_api>
     Sub-packages <documentation/subpackages/index>
     FAQs <documentation/frequently_asked_questions>
     News <documentation/news>

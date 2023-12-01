@@ -10,9 +10,8 @@ Note that for the basic problem formulation of Off-Policy Evaluation and Selecti
 .. seealso::
 
     The **SharpeRatio@k** metric is the main contribution of our paper **"Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation."** 
-    Our paper is currently under submission, and the arXiv version of the paper will come soon..
+    Our paper is currently under submission, and the arXiv version of the paper is available `here <https://arxiv.org/abs/2311.18207>`_.
 
-    .. A preprint is available at `arXiv <>`_.
 
 Background
 ~~~~~~~~~~
@@ -281,7 +280,7 @@ The above figure reports the benchmark results of OPE estimators with SharpeRati
 1. Future research in OPE should include the assessment of estimators based on SharpeRatio@k:
 
     The findings from the previous section suggest that SharpeRatio@k provides more actionable insights compared to traditional accuracy metrics. 
-    The benchmark results using SharpeRatio@k, as shown in Figure~\ref{fig:sharpe_ratio_benchmark}, often significantly differ from those obtained with conventional accuracy metrics. 
+    The benchmark results using SharpeRatio@k (particularly as shown in the figures of Result 2), often significantly differ from those obtained with conventional accuracy metrics. 
     This highlights the importance of integrating SharpeRatio@k into future research to more effectively evaluate the efficiency of OPE estimators.
     
 2. A new estimator that explicitly optimizes the risk-return tradeoff:
@@ -312,14 +311,13 @@ If you use the proposed metric (SharpeRatio@k) or refer to our findings in your 
 
     | Haruka Kiyohara, Ren Kishimoto, Kosuke Kawakami, Ken Kobayashi, Kazuhide Nakata, Yuta Saito.
     | **Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation**
-    | (a preprint is coming soon..)
 
     .. code-block::
 
         @article{kiyohara2023towards,
             title={Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation},
             author={Kiyohara, Haruka and Kishimoto, Ren and Kawakami, Kosuke and Kobayashi, Ken and Nakata, Kazuhide and Saito, Yuta},
-            journal={arXiv preprint arXiv:23xx.xxxxx},
+            journal={arXiv preprint arXiv:2311.18207},
             year={2023}
         }
 

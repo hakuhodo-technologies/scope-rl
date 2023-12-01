@@ -9,7 +9,8 @@
 [![GitHub last commit](https://img.shields.io/github/last-commit/hakuhodo-technologies/scope-rl)](https://github.com/hakuhodo-technologies/scope-rl/graphs/commit-activity)
 [![Documentation Status](https://readthedocs.org/projects/scope-rl/badge/?version=latest)](https://scope-rl.readthedocs.io/en/latest/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![arXiv](https://img.shields.io/badge/arXiv-23xx.xxxxx-b31b1b.svg)](https://arxiv.org/abs/23xx.xxxxx)
+[[![arXiv](https://img.shields.io/badge/arXiv-2311.18206-b31b1b.svg)](https://arxiv.org/abs/2311.18206)
+[![arXiv](https://img.shields.io/badge/arXiv-2311.18207-b31b1b.svg)](https://arxiv.org/abs/2311.18207)
 
 <details>
 <summary><strong>目次</strong>(クリックして展開)</summary>
@@ -36,6 +37,9 @@
 
 **PyPIで最新版が利用可能 [PyPI](https://pypi.org/project/scope-rl/)**
 
+**解説スライドは [こちら](https://speakerdeck.com/aiueola/scope-rl-ja)**
+
+
 ## 概要
 SCOPE-RL は，データ収集からオフ方策学習，オフ方策性能評価，方策選択をend-to-endで実装するためのオープンソースのPythonソフトウェアです．私たちのソフトウェアには，人工データ生成，データの前処理，オフ方策評価 (off-policy evaluation; OPE) の推定量，オフ方策選択 (off-policy selection; OPS) 手法を実装するための一連のモジュールが含まれています．
 
@@ -54,6 +58,13 @@ SCOPE-RL は，データ収集からオフ方策学習，オフ方策性能評�
 
 
 ### 実装
+
+<div align="center"><img src="https://raw.githubusercontent.com/hakuhodo-technologies/scope-rl/main/images/scope_workflow.png" width="100%"/></div>
+<figcaption>
+<p align="center">
+  SCOPE-RL上で行えるオフライン強化学習とオフ方策評価の一貫した実装手順
+</p>
+</figcaption>
 
 *SCOPE-RL* は主に以下の3つのモジュールから構成されています．
 
@@ -129,6 +140,15 @@ SCOPE-RL は，データ収集からオフ方策学習，オフ方策性能評�
 </details>
 
 研究上でのSCOPE-RLの利点は，抽象クラスを用いることで既に実装されているオフ方策評価およびオフ方策選択手法に加えて，研究者が自分の推定量を簡単に実装し，比較することができることです．さらに実践上では，様々なオフ方策推定量を実データに適用し，自身の実際の状況に合った方策を評価し，選択することができることです．
+
+さらにSCOPE-RLでは既存のパッケージの機能に留まらず，以下の図の通りより実用に即したオフ方策評価の実装が可能です．
+
+<div align="center"><img src="https://raw.githubusercontent.com/hakuhodo-technologies/scope-rl/main/images/ope_features_ja.png" width="100%"/></div>
+<figcaption>
+<p align="center">
+  SCOPE-RLのオフ方策評価モジュールが力を入れる4つの機能
+</p>
+</figcaption>
 
 またSCOPE-RLはサブパッケージとして、シンプルな設定の[BasicGym](./basicgym)実用的な環境をシミュレーションした広告入札 (real-time bidding; RTB) と推薦システム用の強化学習環境である[RTBGym](./rtbgym)と[RecGym](./recgym)も提供しています。
 
@@ -434,14 +454,14 @@ ops.visualize_conditional_value_at_risk_for_validation(
 
 Haruka Kiyohara, Ren Kishimoto, Kosuke Kawakami, Ken Kobayashi, Kazuhide Nakata, Yuta Saito.<br>
 **SCOPE-RL: A Python Library for Offline Reinforcement Learning and Off-Policy Evaluation**<br>
-[link]() (a preprint coming soon..)
+[[arXiv](https://arxiv.org/abs/2311.18206)] [[日本語スライド](https://speakerdeck.com/aiueola/scope-rl-ja)]
 
 Bibtex:
 ```
 @article{kiyohara2023scope,
   author = {Kiyohara, Haruka and Kishimoto, Ren and Kawakami, Kosuke and Kobayashi, Ken and Nataka, Kazuhide and Saito, Yuta},
   title = {SCOPE-RL: A Python Library for Offline Reinforcement Learning and Off-Policy Evaluation},
-  journal={arXiv preprint arXiv:23xx.xxxxx},
+  journal={arXiv preprint arXiv:2311.18206},
   year={2023},
 }
 ```
@@ -450,14 +470,14 @@ Bibtex:
 
 Haruka Kiyohara, Ren Kishimoto, Kosuke Kawakami, Ken Kobayashi, Kazuhide Nakata, Yuta Saito.<br>
 **Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation**<br>
-[link]() (a preprint coming soon..)
+[[arXiv](https://arxiv.org/abs/2311.18207)] [[日本語スライド](https://speakerdeck.com/aiueola/towards-risk-return-assessment-of-ope-ja)]
 
 Bibtex:
 ```
 @article{kiyohara2023towards,
   author = {Kiyohara, Haruka and Kishimoto, Ren and Kawakami, Kosuke and Kobayashi, Ken and Nataka, Kazuhide and Saito, Yuta},
   title = {Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation},
-  journal={arXiv preprint arXiv:23xx.xxxxx},
+  journal={arXiv preprint arXiv:2311.18207},
   year={2023},
 }
 ```

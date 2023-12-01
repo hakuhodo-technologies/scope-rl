@@ -9,7 +9,8 @@
 [![GitHub last commit](https://img.shields.io/github/last-commit/hakuhodo-technologies/scope-rl)](https://github.com/hakuhodo-technologies/scope-rl/graphs/commit-activity)
 [![Documentation Status](https://readthedocs.org/projects/scope-rl/badge/?version=latest)](https://scope-rl.readthedocs.io/en/latest/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![arXiv](https://img.shields.io/badge/arXiv-23xx.xxxxx-b31b1b.svg)](https://arxiv.org/abs/23xx.xxxxx)
+[![arXiv](https://img.shields.io/badge/arXiv-2311.18206-b31b1b.svg)](https://arxiv.org/abs/2311.18206)
+[![arXiv](https://img.shields.io/badge/arXiv-2311.18207-b31b1b.svg)](https://arxiv.org/abs/2311.18207)
 
 <details>
 <summary><strong>Table of Contents </strong>(click to expand)</summary>
@@ -36,6 +37,8 @@
 
 **Stable versions are available at [PyPI](https://pypi.org/project/scope-rl/)**
 
+**Slides are available [here](https://speakerdeck.com/harukakiyohara_/scope-rl)**
+
 **日本語は[こちら](README_ja.md)**
 
 ## Overview
@@ -55,6 +58,13 @@ In particular, SCOPE-RL enables and facilitates evaluation and algorithm compari
 This software is inspired by [Open Bandit Pipeline](https://github.com/st-tech/zr-obp), which is a library for OPE in contextual bandits. However, SCOPE-RL also implements a set of OPE estimators and tools to facilitate experiments about OPE for the contextual bandit setup by itself as well as those for RL.
 
 ### Implementations
+
+<div align="center"><img src="https://raw.githubusercontent.com/hakuhodo-technologies/scope-rl/main/images/scope_workflow.png" width="100%"/></div>
+<figcaption>
+<p align="center">
+  End-to-end workflow of offline RL and OPE with SCOPE-RL
+</p>
+</figcaption>
 
 *SCOPE-RL* mainly consists of the following three modules.
 - [**dataset module**](./scope_rl/dataset): This module provides tools to generate synthetic data from any environment on top of [OpenAI Gym](http://gym.openai.com/) and [Gymnasium](https://gymnasium.farama.org/)-like interface. It also provides tools to pre-process the logged data.
@@ -129,6 +139,15 @@ This software is inspired by [Open Bandit Pipeline](https://github.com/st-tech/z
 </details>
 
 Note that in addition to the above OPE and OPS methods, researchers can easily implement and compare their own estimators through a generic abstract class implemented in SCOPE-RL. Moreover, practitioners can apply the above methods to their real-world data to evaluate and choose counterfactual policies for their own practical situations.
+
+The distinctive features of OPE/OPS modules of SCOPE-RL are summarized as follows.
+
+<div align="center"><img src="https://raw.githubusercontent.com/hakuhodo-technologies/scope-rl/main/images/ope_features.png" width="100%"/></div>
+<figcaption>
+<p align="center">
+  Four distinctive features of OPE/OPS implementation of SCOPE-RL
+</p>
+</figcaption>
 
 To provide an example of performing a customized experiment imitating a practical setup, we also provide [RTBGym](./rtbgym) and [RecGym](./recgym), RL environments for Real-Time Bidding (RTB) and Recommender Systems.
 
@@ -426,14 +445,14 @@ If you use our software in your work, please cite our paper:
 
 Haruka Kiyohara, Ren Kishimoto, Kosuke Kawakami, Ken Kobayashi, Kazuhide Nakata, Yuta Saito.<br>
 **SCOPE-RL: A Python Library for Offline Reinforcement Learning and Off-Policy Evaluation**<br>
-[link]() (a preprint coming soon..)
+[[arXiv](https://arxiv.org/abs/2311.18206)] [[slides](https://speakerdeck.com/harukakiyohara_/scope-rl)]
 
 Bibtex:
 ```
 @article{kiyohara2023scope,
   author = {Kiyohara, Haruka and Kishimoto, Ren and Kawakami, Kosuke and Kobayashi, Ken and Nataka, Kazuhide and Saito, Yuta},
   title = {SCOPE-RL: A Python Library for Offline Reinforcement Learning and Off-Policy Evaluation},
-  journal={arXiv preprint arXiv:23xx.xxxxx},
+  journal={arXiv preprint arXiv:2311.18206},
   year={2023},
 }
 ```
@@ -442,14 +461,14 @@ If you use our proposed metric "SharpeRatio@k" in your work, please cite our pap
 
 Haruka Kiyohara, Ren Kishimoto, Kosuke Kawakami, Ken Kobayashi, Kazuhide Nakata, Yuta Saito.<br>
 **Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation**<br>
-[link]() (a preprint coming soon..)
+[[arXiv](https://arxiv.org/abs/2311.18207)] [[slides](https://speakerdeck.com/harukakiyohara_/towards-risk-return-assessment-of-ope)]
 
 Bibtex:
 ```
 @article{kiyohara2023towards,
   author = {Kiyohara, Haruka and Kishimoto, Ren and Kawakami, Kosuke and Kobayashi, Ken and Nataka, Kazuhide and Saito, Yuta},
   title = {Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation},
-  journal={arXiv preprint arXiv:23xx.xxxxx},
+  journal={arXiv preprint arXiv:2311.18207},
   year={2023},
 }
 ```

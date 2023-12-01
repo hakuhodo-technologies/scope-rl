@@ -2,7 +2,19 @@ Quickstart
 ==========
 
 We show an example workflow of synthetic dataset collection, offline Reinforcement Learning (RL), to Off-Policy Evaluation (OPE).
-The workflow mainly consists of the following three steps:
+The workflow mainly consists of the following three steps (and a validation step):
+
+.. card::
+   :width: 75%
+   :margin: auto
+   :img-top: ../_static/images/scope_workflow.png
+   :text-align: center
+
+   Workflow of offline RL and OPE streamlined by SCOPE-RL
+
+.. raw:: html
+
+    <div class="white-space-20px"></div>
 
 * **Synthetic Dataset Generation and Data Preprocessing**: 
     The initial step is to collect logged data using a behavior policy. In a synthetic setup, we first train a behavior policy through online interaction and then generate dataset(s) with the behavior policy. In a practical situation, we should use the preprocessed logged data obtained from real-world applications.
