@@ -10,9 +10,8 @@ Note that for the basic problem formulation of Off-Policy Evaluation and Selecti
 .. seealso::
 
     The **SharpeRatio@k** metric is the main contribution of our paper **"Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation."** 
-    Our paper is currently under submission, and the arXiv version of the paper will come soon..
+    Our paper is currently under submission, and the arXiv version of the paper is available `here <https://arxiv.org/abs/2311.18207>`_.
 
-    .. A preprint is available at `arXiv <>`_.
 
 Background
 ~~~~~~~~~~
