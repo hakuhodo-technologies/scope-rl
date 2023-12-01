@@ -37,6 +37,8 @@
 
 **Stable versions are available at [PyPI](https://pypi.org/project/scope-rl/)**
 
+**Slides are available [here](https://speakerdeck.com/harukakiyohara_/scope-rl)**
+
 **日本語は[こちら](README_ja.md)**
 
 ## Overview

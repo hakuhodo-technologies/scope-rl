@@ -37,6 +37,9 @@
 
 **PyPIで最新版が利用可能 [PyPI](https://pypi.org/project/scope-rl/)**
 
+**解説スライドは [こちら](https://speakerdeck.com/aiueola/scope-rl-ja)**
+
+
 ## 概要
 SCOPE-RL は，データ収集からオフ方策学習，オフ方策性能評価，方策選択をend-to-endで実装するためのオープンソースのPythonソフトウェアです．私たちのソフトウェアには，人工データ生成，データの前処理，オフ方策評価 (off-policy evaluation; OPE) の推定量，オフ方策選択 (off-policy selection; OPS) 手法を実装するための一連のモジュールが含まれています．
 
