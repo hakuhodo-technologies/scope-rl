@@ -230,14 +230,13 @@ If you use our software in your work, please cite our paper:
 
 Haruka Kiyohara, Ren Kishimoto, Kosuke Kawakami, Ken Kobayashi, Kazuhide Nakata, Yuta Saito.<br>
 **SCOPE-RL: A Python Library for Offline Reinforcement Learning and Off-Policy Evaluation**<br>
-[link]() (a preprint coming soon..)
 
 Bibtex:
 ```
 @article{kiyohara2023scope,
   author = {Kiyohara, Haruka and Kishimoto, Ren and Kawakami, Kosuke and Kobayashi, Ken and Nataka, Kazuhide and Saito, Yuta},
   title = {SCOPE-RL: A Python Library for Offline Reinforcement Learning and Off-Policy Evaluation},
-  journal={arXiv preprint arXiv:23xx.xxxxx},
+  journal={arXiv preprint arXiv:2311.18206},
   year = {2023},
 }
 ```

@@ -81,7 +81,7 @@ html_theme_options = {
     "icon_links": [
         {
             "name": "Speaker Deck",
-            "url": "https://speakerdeck.com/aiueola/ofrl-designing-an-offline-reinforcement-learning-and-policy-evaluation-platform-from-practical-perspectives",
+            "url": "https://speakerdeck.com/harukakiyohara_/scope-rl",
             "icon": "fa-brands fa-speaker-deck",
             "type": "fontawesome",
         },

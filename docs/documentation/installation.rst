@@ -40,7 +40,7 @@ If you use our pipeline in your work, please cite our paper below.
         @article{kiyohara2023scope,
             title={SCOPE-RL: A Python Library for Offline Reinforcement Learning and Off-Policy Evaluation},
             author={Kiyohara, Haruka and Kishimoto, Ren and Kawakami, Kosuke and Kobayashi, Ken and Nakata, Kazuhide and Saito, Yuta},
-            journal={arXiv preprint arXiv:23xx.xxxxx},
+            journal={arXiv preprint arXiv:2311.18206},
             year={2023}
         }
 
@@ -50,14 +50,13 @@ If you use the proposed metric (SharpeRatio@k) or refer to our findings in your 
 
     | Haruka Kiyohara, Ren Kishimoto, Kosuke Kawakami, Ken Kobayashi, Kazuhide Nakata, Yuta Saito.
     | **Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation**
-    | (a preprint is coming soon..)
 
     .. code-block::
 
         @article{kiyohara2023towards,
             title={Towards Assessing and Benchmarking Risk-Return Tradeoff of Off-Policy Evaluation},
             author={Kiyohara, Haruka and Kishimoto, Ren and Kawakami, Kosuke and Kobayashi, Ken and Nakata, Kazuhide and Saito, Yuta},
-            journal={arXiv preprint arXiv:23xx.xxxxx},
+            journal={arXiv preprint arXiv:2311.18207},
             year={2023}
         }
 
