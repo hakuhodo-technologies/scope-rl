@@ -1,4 +1,7 @@
 # logs
 logs_n_step_pdis/
 logs_steps_per/
+logs_n_trajectory/
 best n_random_state=100 step_per=15 n_action=5 behavior_tau = 3.5/
+logs/
+logs_best/
