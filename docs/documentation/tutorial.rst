@@ -5,7 +5,8 @@ Tutorial
 
 Off-Policy Evaluation
 ~~~~~~~~~~
-Off-policy evaluation is used to estimate the policy value based on data collected from a behavior policy, which is different from evaluation policies. It is particularly useful when we aim to evaluate the performance of candidate policies planned for deployment without actually executing them in an online environment.
+Off-policy evaluation (OPE) estimates the performance of a policy (referred to as *policy value*) using data collected by a behavior policy, which is often different from evaluation policies. 
+It is particularly useful when we aim to evaluate the performance of candidate policies planned for deployment without actually executing them in an online environment.
 
 
 .. card::
@@ -29,20 +30,21 @@ In OPE, we are given a logged dataset :math:`\mathcal{D}` consisting of :math:`n
 
 .. math::
 
-    \tau := \{ (s_t, a_t, s_{t+1}, r_t) \}_{t=0}^{T-1} \sim p(s_0) \prod_{t=0}^{T-1} \pi_0(a_t | s_t) \mathcal{T}(s_{t+1} | s_t, a_t) P_r (r_t | s_t, a_t)
+    \tau := \{ (s_t, a_t, s_{t+1}, r_t) \}_{t=0}^{T-1} \sim \underbrace{p(s_0) \prod_{t=0}^{T-1} \pi_0(a_t | s_t) \mathcal{T}(s_{t+1} | s_t, a_t) P_r (r_t | s_t, a_t)}_{:= p_{\pi_0}}
 
 .. math::
 
     \mathcal{D} = \{\tau_i\}_{i=1}^n \sim p_{\pi_0}
 
-We aim at evaluating the *policy value* or the expected trajectory-wise reward of the given evaluation policy :math:`\pi`:
+The most typical OPE aims at the expected trajectory-wise given evaluation policy :math:`\pi` as the policy value:
 
 .. math::
 
-    J(\pi) := \mathbb{E}_{\tau} \left [ \sum_{t=0}^{T-1} \gamma^t r_{t} \mid \pi \right ]
+    J(\pi) := \mathbb{E}_{\tau \sim p_{\pi}} \left [ \sum_{t=0}^{T-1} \gamma^t r_{t} \right ]
 
 
-We aim to develop an estimator :math:`\hat{J}` to estimate the value of an evaluation policy :math:`\pi` (which is different from :math:`\pi_0`) using only the logged data in :math:`\mathcal{D}`. The accuracy of :math:`\hat{J}` is quantified by mean squared error (MSE).
+The goal of OPE research is to estimate :math:`J(\pi)` using the logged data :math:`\mathcal{D}` collected by a different policy :math:`\pi_0` with an OPE estimator :math:`\hat{J}`. 
+One can tell the accuracy of :math:`\hat{J}` by mean squared error (MSE).
 
 .. math::
     
@@ -53,13 +55,13 @@ We aim to develop an estimator :math:`\hat{J}` to estimate the value of an evalu
         & =\operatorname{Bias}(\hat{J}(\pi  ; \mathcal{D}))^2+\mathbb{V}_{\tau  \sim p_{\pi}}[\hat{J}(\pi ; \mathcal{D})]
     \end{aligned}
 
-MSE can be decomposed into bias squared and variance. Therefore, to reduce the MSE, it is important to reduce both bias and variance. 
-Let's introduce the properties of OPE estimators in terms of bias and variance.
+MSE can be decomposed into bias squared and variance. Therefore, to reduce the MSE, it is important to reduce both of them. 
+Thus, the following sections discuss the properties of OPE estimators wrt their bias and variance.
 
 OPE estimators
 ----------
 
-**We introduce OPE estimators and explain them both theoretically and through simple experiments.** 
+We discuss the properties of the following OPE estimator first in a theoretical manner and demonstrate the results with some toy experiments.
 
 - Direct Method (DM)
 - Trajectory-wise Importance Sampling (TIS)
