@@ -709,7 +709,7 @@ class SyntheticDataset(BaseDataset):
         idx, step = 0, 0
         done = False
         state, info_ = self.env.reset()
-
+        next_state = None
         for i in tqdm(
             np.arange(n_trajectories),
             desc="[obtain_trajectories]",
@@ -1268,7 +1268,6 @@ class SyntheticDataset(BaseDataset):
                 path=path,
                 save_relative_path=save_relative_path,
             )
-
             for j in tqdm(
                 np.arange(len(behavior_policies)),
                 desc="[obtain_datasets: behavior_policy]",
