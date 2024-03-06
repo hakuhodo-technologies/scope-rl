@@ -691,10 +691,10 @@ class SyntheticDataset(BaseDataset):
             actions = np.zeros(n_trajectories * step_per_trajectory, dtype=int)
             action_probs = np.zeros(n_trajectories * step_per_trajectory, dtype=int)
         else:
-            actions = np.zeros(n_trajectories * step_per_trajectory, self.action_dim)
-            action_probs = np.zeros(
+            actions = np.zeros((n_trajectories * step_per_trajectory, self.action_dim))
+            action_probs = np.zeros((
                 n_trajectories * step_per_trajectory, self.action_dim
-            )
+            ))
 
         rewards = np.zeros(n_trajectories * step_per_trajectory)
         dones = np.zeros(n_trajectories * step_per_trajectory)
