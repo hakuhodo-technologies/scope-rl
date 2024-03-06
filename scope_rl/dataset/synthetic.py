@@ -720,7 +720,7 @@ class SyntheticDataset(BaseDataset):
             if not obtain_trajectories_from_single_interaction:
                 done = True
 
-                for rollout_step in rollout_lengths[i]:
+                for rollout_step in range(rollout_lengths[i]):
                     if done:
                         state, info_ = self.env.reset()
                         step = 0
