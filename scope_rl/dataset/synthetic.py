@@ -750,7 +750,7 @@ class SyntheticDataset(BaseDataset):
                 (
                     action,
                     action_prob,
-                ) = self.behavior_policy.sample_action_and_output_pscore_online(state)
+                ) = behavior_policy.sample_action_and_output_pscore_online(state)
                 next_state, reward, done, truncated, info_ = self.env.step(action)
 
                 states[idx] = state
